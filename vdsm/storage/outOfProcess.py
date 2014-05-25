@@ -287,11 +287,25 @@ def truncateFile(ioproc, path, size, mode=None, creatExcl=False):
         _IOProcessOs(ioproc).chmod(path, mode)
 
 
+class _IOProcWrapper(types.ModuleType):
+    def __init__(self, modname, ioproc):
+        self._modName = modname
+        self._ioproc = ioproc
+
+        self.glob = _IOProcessGlob(ioproc)
+        self.fileUtils = _IOProcessFileUtils(ioproc)
+        self.os = _IOProcessOs(ioproc)
+
+        self.directReadLines = partial(directReadLines, ioproc)
+        self.readLines = partial(readLines, ioproc)
+        self.writeLines = partial(writeLines, ioproc)
+        self.simpleWalk = partial(simpleWalk, ioproc)
+        self.directTouch = partial(directTouch, ioproc)
+        self.truncateFile = partial(truncateFile, ioproc)
+
+
 class _ModuleWrapper(types.ModuleType):
-    def __init__(self, modName, procPool, ioproc, timeout, subModNames=()):
-        '''
-        ioproc : when initialized will override some of RFH functionality
-        '''
+    def __init__(self, modName, procPool, timeout, subModNames=()):
         self._modName = modName
         self._procPool = procPool
         self._timeout = timeout
@@ -306,41 +320,9 @@ class _ModuleWrapper(types.ModuleType):
             setattr(self, subModName,
                     _ModuleWrapper(fullModName,
                                    self._procPool,
-                                   ioproc,
                                    DEFAULT_TIMEOUT,
                                    subSubModNames)
                     )
-
-        if ioproc:
-            self.glob = _IOProcessGlob(ioproc)
-            self.fileUtils.cleanupdir = \
-                _IOProcessFileUtils(ioproc).cleanupdir
-            self.fileUtils.createdir = \
-                _IOProcessFileUtils(ioproc).createdir
-            self.fileUtils.validateAccess = \
-                _IOProcessFileUtils(ioproc).validateAccess
-            self.fileUtils.pathExists = \
-                _IOProcessFileUtils(ioproc).pathExists
-            self.fileUtils.fsyncPath = \
-                _IOProcessFileUtils(ioproc).fsyncPath
-            self.fileUtils.copyUserModeToGroup = \
-                _IOProcessFileUtils(ioproc).copyUserModeToGroup
-            self.os.chmod = _IOProcessOs(ioproc).chmod
-            self.os.statvfs = _IOProcessOs(ioproc).statvfs
-            self.os.rename = _IOProcessOs(ioproc).rename
-            self.os.unlink = _IOProcessOs(ioproc).unlink
-            self.os.path = _IOProcessOs(ioproc).path
-            self.os.mkdir = _IOProcessOs(ioproc).mkdir
-            self.os.remove = _IOProcessOs(ioproc).remove
-            self.os.rmdir = _IOProcessOs(ioproc).rmdir
-            self.os.stat = _IOProcessOs(ioproc).stat
-            self.os.access = _IOProcessOs(ioproc).access
-            self.directReadLines = partial(directReadLines, ioproc)
-            self.writeLines = partial(writeLines, ioproc)
-            self.simpleWalk = partial(simpleWalk, ioproc)
-            self.readLines = partial(readLines, ioproc)
-            self.directTouch = partial(directTouch, ioproc)
-            self.truncateFile = partial(truncateFile, ioproc)
 
     def __getattr__(self, name):
         # Root modules is fake, we need to remove it
@@ -350,10 +332,13 @@ class _ModuleWrapper(types.ModuleType):
                        fullName)
 
 
-def _OopWrapper(procPool, ioproc=None):
-    return _ModuleWrapper("oop", procPool, ioproc, DEFAULT_TIMEOUT,
-                          (("os",
-                            ("path",)),
-                           "glob",
-                           "fileUtils",
-                           "utils"))
+def _OopWrapper(procPool):
+    if _oopImpl == IOPROC:
+        return _IOProcWrapper("oop", procPool)
+    else:
+        return _ModuleWrapper("oop", procPool, DEFAULT_TIMEOUT,
+                              (("os",
+                                ("path",)),
+                               "glob",
+                               "fileUtils",
+                               "utils"))
