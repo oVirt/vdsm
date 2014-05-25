@@ -102,16 +102,6 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         return os.path.join(cls.storage_repository, sd.DOMAIN_MNT_POINT,
                             mountPath)
 
-    def selftest(self):
-        """
-        Run internal self test
-        """
-        if not mount.isMounted(self.mountpoint):
-            raise se.StorageDomainFSNotMounted(self.mountpoint)
-
-        # Run general part of selftest
-        fileSD.FileStorageDomain.selftest(self)
-
     @staticmethod
     def findDomainPath(sdUUID):
         for tmpSdUUID, domainPath in fileSD.scanDomains("*"):
