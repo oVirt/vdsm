@@ -404,19 +404,20 @@ class StorageDomain(object):
         """
         pass
 
-    def validateCreateVolumeParams(self, volFormat, preallocate, srcVolUUID):
+    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+                                   preallocate=None):
         """
         Validate create volume parameters
         """
         if volFormat not in volume.VOL_FORMAT:
             raise se.IncorrectFormat(volume.type2name(volFormat))
 
-        if preallocate not in volume.VOL_TYPE:
-            raise se.IncorrectType(volume.type2name(preallocate))
-
         # Volumes with a parent must be cow
         if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
             raise se.IncorrectFormat(volume.type2name(volFormat))
+
+        if preallocate is not None and preallocate not in volume.VOL_TYPE:
+            raise se.IncorrectType(volume.type2name(preallocate))
 
     def createVolume(self, imgUUID, size, volFormat, preallocate, diskType,
                      volUUID, desc, srcImgUUID, srcVolUUID):

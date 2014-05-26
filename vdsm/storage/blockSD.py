@@ -629,9 +629,10 @@ class BlockStorageDomain(sd.StorageDomain):
 
     getVAllocSize = getVSize
 
-    def validateCreateVolumeParams(self, volFormat, preallocate, srcVolUUID):
+    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+                                   preallocate=None):
         super(BlockStorageDomain, self).validateCreateVolumeParams(
-            volFormat, preallocate, srcVolUUID)
+            volFormat, srcVolUUID, preallocate=preallocate)
         # Sparse-Raw not supported for block volumes
         if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
             raise se.IncorrectFormat(volume.type2name(volFormat))

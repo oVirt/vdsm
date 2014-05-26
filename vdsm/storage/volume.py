@@ -369,7 +369,8 @@ class Volume(object):
             'srcVolUUID' - source volume UUID
         """
         dom = sdCache.produce(sdUUID)
-        dom.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+        dom.validateCreateVolumeParams(volFormat, srcVolUUID,
+                                       preallocate=preallocate)
 
         imgPath = image.Image(repoPath).create(sdUUID, imgUUID)
 
