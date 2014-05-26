@@ -321,17 +321,6 @@ class FileStorageDomain(sd.StorageDomain):
 
         return stat.st_blocks * ST_BYTES_PER_BLOCK
 
-    @classmethod
-    def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
-        """
-        Validate create volume parameters.
-            'srcVolUUID' - backing volume UUID
-            'volFormat' - volume format RAW/QCOW2
-            'preallocate' - sparse/preallocate
-        """
-        fileVolume.FileVolume.validateCreateVolumeParams(
-            volFormat, preallocate, srcVolUUID)
-
     def getVolumeLease(self, imgUUID, volUUID):
         """
         Return the volume lease (leasePath, leaseOffset)

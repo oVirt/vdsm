@@ -357,21 +357,6 @@ class Volume(object):
                 fileUtils.cleanupdir(imageDir)
 
     @classmethod
-    def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
-        """
-        Validate create volume parameters
-        """
-        if volFormat not in VOL_FORMAT:
-            raise se.IncorrectFormat(type2name(volFormat))
-
-        if preallocate not in VOL_TYPE:
-            raise se.IncorrectType(type2name(preallocate))
-
-        # Volumes with a parent must be cow
-        if srcVolUUID != BLANK_UUID and volFormat != COW_FORMAT:
-            raise se.IncorrectFormat(type2name(volFormat))
-
-    @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
                diskType, volUUID, desc, srcImgUUID, srcVolUUID):
         """
@@ -383,9 +368,9 @@ class Volume(object):
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
         """
-        cls.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
-
         dom = sdCache.produce(sdUUID)
+        dom.validateCreateVolumeParams(volFormat, preallocate, srcVolUUID)
+
         imgPath = image.Image(repoPath).create(sdUUID, imgUUID)
 
         volPath = os.path.join(imgPath, volUUID)

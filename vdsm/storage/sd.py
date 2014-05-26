@@ -34,6 +34,7 @@ from vdsm import constants
 import clusterlock
 import outOfProcess as oop
 from persistentDict import unicodeEncoder, unicodeDecoder
+import volume
 
 from vdsm.config import config
 
@@ -403,12 +404,19 @@ class StorageDomain(object):
         """
         pass
 
-    @classmethod
-    def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
+    def validateCreateVolumeParams(self, volFormat, preallocate, srcVolUUID):
         """
         Validate create volume parameters
         """
-        pass
+        if volFormat not in volume.VOL_FORMAT:
+            raise se.IncorrectFormat(volume.type2name(volFormat))
+
+        if preallocate not in volume.VOL_TYPE:
+            raise se.IncorrectType(volume.type2name(preallocate))
+
+        # Volumes with a parent must be cow
+        if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
+            raise se.IncorrectFormat(volume.type2name(volFormat))
 
     def createVolume(self, imgUUID, size, volFormat, preallocate, diskType,
                      volUUID, desc, srcImgUUID, srcVolUUID):

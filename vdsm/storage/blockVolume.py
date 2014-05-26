@@ -113,21 +113,6 @@ class BlockVolume(volume.Volume):
                     os.unlink(volPath)
 
     @classmethod
-    def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
-        """
-        Validate create volume parameters.
-        'srcVolUUID' - backing volume UUID
-        'volFormat' - volume format RAW/QCOW2
-        'preallocate' - sparse/preallocate
-        """
-        volume.Volume.validateCreateVolumeParams(volFormat, preallocate,
-                                                 srcVolUUID)
-
-        # Sparse-Raw not supported for block volumes
-        if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
-            raise se.IncorrectFormat(volume.type2name(volFormat))
-
-    @classmethod
     def createVolumeMetadataRollback(cls, taskObj, sdUUID, offs):
         cls.log.info("Metadata rollback for sdUUID=%s offs=%s", sdUUID, offs)
         cls.__putMetadata((sdUUID, int(offs)),

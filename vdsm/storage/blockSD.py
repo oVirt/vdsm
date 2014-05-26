@@ -50,6 +50,7 @@ from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
 import mount
 import supervdsm as svdsm
+import volume
 
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
@@ -628,16 +629,12 @@ class BlockStorageDomain(sd.StorageDomain):
 
     getVAllocSize = getVSize
 
-    @classmethod
-    def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
-        """
-        Validate create volume parameters.
-        'srcVolUUID' - backing volume UUID
-        'volFormat' - volume format RAW/QCOW2
-        'preallocate' - sparse/preallocate
-        """
-        blockVolume.BlockVolume.validateCreateVolumeParams(
+    def validateCreateVolumeParams(self, volFormat, preallocate, srcVolUUID):
+        super(BlockStorageDomain, self).validateCreateVolumeParams(
             volFormat, preallocate, srcVolUUID)
+        # Sparse-Raw not supported for block volumes
+        if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
+            raise se.IncorrectFormat(volume.type2name(volFormat))
 
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
