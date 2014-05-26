@@ -1027,7 +1027,8 @@ class Drive(VmDevice):
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
                  'index', 'name', 'optional', 'shared', 'truesize',
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
-                 '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID')
+                 '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID',
+                 'diskReplicate')
     VOLWM_CHUNK_MB = config.getint('irs', 'volume_utilization_chunk_mb')
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
