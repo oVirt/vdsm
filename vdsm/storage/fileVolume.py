@@ -90,21 +90,6 @@ class FileVolume(volume.Volume):
             oop.getProcessPool(sdUUID).os.unlink(volPath)
 
     @classmethod
-    def validateCreateVolumeParams(cls, volFormat, preallocate, srcVolUUID):
-        """
-        Validate create volume parameters.
-        'srcVolUUID' - backing volume UUID
-        'volFormat' - volume format RAW/QCOW2
-        'preallocate' - sparse/preallocate
-        """
-        volume.Volume.validateCreateVolumeParams(volFormat, preallocate,
-                                                 srcVolUUID)
-
-        # Snapshot should be COW volume
-        if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
-            raise se.IncorrectFormat(srcVolUUID)
-
-    @classmethod
     def createVolumeMetadataRollback(cls, taskObj, volPath):
         cls.log.info("createVolumeMetadataRollback: volPath=%s" % (volPath))
         metaPath = cls.__metaVolumePath(volPath)

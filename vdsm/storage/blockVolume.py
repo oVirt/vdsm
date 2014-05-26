@@ -127,10 +127,6 @@ class BlockVolume(volume.Volume):
         if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
             raise se.IncorrectFormat(srcVolUUID)
 
-        # Snapshot should be COW volume
-        if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
-            raise se.IncorrectFormat(srcVolUUID)
-
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, sdUUID, offs):
         cls.log.info("Metadata rollback for sdUUID=%s offs=%s", sdUUID, offs)

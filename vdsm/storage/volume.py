@@ -367,6 +367,10 @@ class Volume(object):
         if preallocate not in VOL_TYPE:
             raise se.IncorrectType(type2name(preallocate))
 
+        # Volumes with a parent must be cow
+        if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
+            raise se.IncorrectFormat(srcVolUUID)
+
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
                diskType, volUUID, desc, srcImgUUID, srcVolUUID):
