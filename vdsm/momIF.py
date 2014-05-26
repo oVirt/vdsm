@@ -21,6 +21,8 @@
 import logging
 import threading
 from vdsm.config import config
+from caps import PAGE_SIZE_BYTES
+from vdsm.define import Mbytes
 
 try:
     import mom
@@ -51,11 +53,16 @@ class MomThread(threading.Thread):
         self.start()
 
     def getKsmStats(self):
+        """
+        Get information about KSM and convert memory data from page
+        based values to MiB.
+        """
         stats = self._mom.getStatistics()['host']
         ret = {}
         ret['ksmState'] = bool(stats['ksm_run'])
         ret['ksmPages'] = stats['ksm_pages_to_scan']
-        ret['memShared'] = stats['ksm_pages_sharing']
+        ret['memShared'] = stats['ksm_pages_sharing'] * PAGE_SIZE_BYTES
+        ret['memShared'] /= Mbytes
         ret['ksmCpu'] = stats['ksmd_cpu_usage']
         return ret
 

@@ -48,6 +48,7 @@ try:
 except ImportError:
     python_apt = False
 
+PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 try:
     from gluster.api import GLUSTER_RPM_PACKAGES
