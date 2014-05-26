@@ -509,8 +509,8 @@ def routeShowTable(table):
     return _execCmd(command)
 
 
-def routeAdd(route, version=4, dev=None):
-    command = [_IP_BINARY.cmd, '-%s' % version, 'route', 'add']
+def routeAdd(route, family=4, dev=None):
+    command = [_IP_BINARY.cmd, '-%s' % family, 'route', 'add']
     command += route
     if dev is not None:
         command += ['dev', dev]
