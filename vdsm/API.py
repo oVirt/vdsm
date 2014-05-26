@@ -48,6 +48,7 @@ from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
 import ksm
+from caps import PAGE_SIZE_BYTES
 
 import supervdsm
 
@@ -59,8 +60,6 @@ except ImportError:
 
 # default message for system shutdown, will be displayed in guest
 USER_SHUTDOWN_MESSAGE = 'System going down'
-
-PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 
 class APIBase(object):
