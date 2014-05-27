@@ -56,7 +56,7 @@ public class TestManagerProvider extends ManagerProvider {
     }
 
     @Override
-    public TrustManager[] getTustManagers() {
+    public TrustManager[] getTrustManagers() {
         try {
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(this.trustStream, this.pass.toCharArray());

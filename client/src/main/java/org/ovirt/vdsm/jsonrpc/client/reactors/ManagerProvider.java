@@ -13,7 +13,7 @@ import javax.net.ssl.TrustManager;
  *
  */
 public abstract class ManagerProvider {
-    public abstract TrustManager[] getTustManagers() throws GeneralSecurityException;
+    public abstract TrustManager[] getTrustManagers() throws GeneralSecurityException;
 
     public abstract KeyManager[] getKeyManagers() throws GeneralSecurityException;
 
@@ -21,7 +21,7 @@ public abstract class ManagerProvider {
         final SSLContext context;
         try {
             context = SSLContext.getInstance("TLS");
-            context.init(getKeyManagers(), getTustManagers(), null);
+            context.init(getKeyManagers(), getTrustManagers(), null);
         } catch (KeyManagementException | NoSuchAlgorithmException ex) {
             throw new RuntimeException(ex);
         }

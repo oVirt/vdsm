@@ -180,6 +180,8 @@ public abstract class ReactorClient {
             this.channel.close();
         } catch (IOException e) {
             // Ignore
+        } finally {
+            this.channel = null;
         }
     }
 
