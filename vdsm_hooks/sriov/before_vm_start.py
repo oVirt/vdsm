@@ -26,7 +26,7 @@ definitions to the guest xml.
 
 def getDeviceDetails(addr):
     ''' investigate device by its address and return
-    [bus, slot, function] list
+    [domain, bus, slot, function] list
     '''
 
     connection = libvirtconnection.get(None)
@@ -34,6 +34,8 @@ def getDeviceDetails(addr):
 
     devXml = minidom.parseString(nodeDevice.XMLDesc(0))
 
+    domain = hex(int(
+        devXml.getElementsByTagName('domain')[0].firstChild.nodeValue))
     bus = hex(int(devXml.getElementsByTagName('bus')[0].firstChild.nodeValue))
     slot = hex(int(
                devXml.getElementsByTagName('slot')[0]
@@ -45,10 +47,10 @@ def getDeviceDetails(addr):
     sys.stderr.write('sriov: bus=%s slot=%s function=%s\n' %
                      (bus, slot, function))
 
-    return (bus, slot, function)
+    return (domain, bus, slot, function)
 
 
-def createSriovElement(domxml, bus, slot, function):
+def createSriovElement(domxml, domain, bus, slot, function):
     '''
     create host device element for libvirt domain xml:
 
@@ -69,7 +71,7 @@ def createSriovElement(domxml, bus, slot, function):
 
     address = domxml.createElement('address')
     address.setAttribute('type', 'pci')
-    address.setAttribute('domain', '0')
+    address.setAttribute('domain', domain)
     address.setAttribute('bus', bus)
     address.setAttribute('slot', slot)
     address.setAttribute('function', function)
@@ -139,9 +141,10 @@ if 'sriov' in os.environ:
 
                 devpath = os.path.realpath(SYS_NIC_PATH % nic + '/device')
                 addr = getPciAddress(devpath)
-                bus, slot, function = getDeviceDetails(addr)
+                domain, bus, slot, function = getDeviceDetails(addr)
 
-                interface = createSriovElement(domxml, bus, slot, function)
+                interface = createSriovElement(
+                    domxml, domain, bus, slot, function)
 
                 sys.stderr.write('sriov: VF %s xml: %s\n' %
                                  (nic, interface.toxml()))
