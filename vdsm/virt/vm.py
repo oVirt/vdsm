@@ -2636,7 +2636,7 @@ class Vm(object):
         return stats
 
     def _getVmStatus(self):
-        def _getGuestStatus():
+        def _getVmStatusFromGuest():
             GUEST_WAIT_TIMEOUT = 60
             now = time.time()
             if now - self._guestEventTime < 5 * GUEST_WAIT_TIMEOUT and \
@@ -2660,7 +2660,7 @@ class Vm(object):
             else:
                 return {'status': vmstatus.MIGRATION_SOURCE}
         elif self.lastStatus == vmstatus.UP:
-            return {'status': _getGuestStatus()}
+            return {'status': _getVmStatusFromGuest()}
         else:
             return {'status': self.lastStatus}
 
