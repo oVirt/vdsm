@@ -535,8 +535,8 @@ class ConfigWriter(object):
         writes the new configuration and sets the specified access mode.'''
         self._backup(fileName)
         configuration = self.CONFFILE_HEADER + '\n' + configuration
-        logging.debug('Writing to file %s configuration:\n%s' % (fileName,
-                      configuration))
+        logging.debug('Writing to file %s configuration:\n%s', fileName,
+                      configuration)
         with open(fileName, 'w') as confFile:
             confFile.write(configuration)
         os.chmod(fileName, 0o664)

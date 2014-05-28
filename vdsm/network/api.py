@@ -631,7 +631,7 @@ def setupNetworks(networks, bondings, **options):
         # Remove edited networks and networks with 'remove' attribute
         for network, networkAttrs in networks.items():
             if network in _netinfo.networks:
-                logger.debug("Removing network %r" % network)
+                logger.debug("Removing network %r", network)
                 delNetwork(network, configurator=configurator, force=force,
                            implicitBonding=False, _netinfo=_netinfo)
                 if 'remove' in networkAttrs:
@@ -643,7 +643,7 @@ def setupNetworks(networks, bondings, **options):
                 # If the network was not in _netinfo but is in the networks
                 # returned by libvirt, it means that we are dealing with
                 # a broken network.
-                logger.debug('Removing broken network %r' % network)
+                logger.debug('Removing broken network %r', network)
                 _delBrokenNetwork(network, libvirt_nets[network],
                                   configurator=configurator)
                 if 'remove' in networkAttrs:
@@ -669,7 +669,7 @@ def setupNetworks(networks, bondings, **options):
                 d['nics'] = [d.pop('nic')] if 'nic' in d else []
             d['force'] = force
 
-            logger.debug("Adding network %r" % network)
+            logger.debug("Adding network %r", network)
             addNetwork(network, configurator=configurator,
                        implicitBonding=True, _netinfo=_netinfo, **d)
             _netinfo.updateDevices()  # Things like a bond mtu can change

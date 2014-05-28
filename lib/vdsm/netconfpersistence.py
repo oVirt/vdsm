@@ -65,25 +65,25 @@ class BaseConfig(object):
                           ('configurator', '_netinfo', 'force',
                            'implicitBonding'))
         self.networks[network] = cleanAttrs
-        logging.info('Adding network %s(%s)' % (network, cleanAttrs))
+        logging.info('Adding network %s(%s)', network, cleanAttrs)
 
     def removeNetwork(self, network):
         try:
             del self.networks[network]
-            logging.info('Removing network %s' % network)
+            logging.info('Removing network %s', network)
         except KeyError:
-            logging.debug('Network %s not found for removal' % network)
+            logging.debug('Network %s not found for removal', network)
 
     def setBonding(self, bonding, attributes):
         self.bonds[bonding] = attributes
-        logging.info('Adding %s(%s)' % (bonding, attributes))
+        logging.info('Adding %s(%s)', bonding, attributes)
 
     def removeBonding(self, bonding):
         try:
             del self.bonds[bonding]
-            logging.info('Removing %s' % bonding)
+            logging.info('Removing %s', bonding)
         except KeyError:
-            logging.debug('%s not found for removal' % bonding)
+            logging.debug('%s not found for removal', bonding)
 
     @staticmethod
     def _confDictDiff(lhs, rhs):
@@ -118,7 +118,7 @@ class Config(BaseConfig):
                 return json.load(configurationFile)
         except IOError as ioe:
             if ioe.errno == os.errno.ENOENT:
-                logging.debug('Network entity at %s not found' % path)
+                logging.debug('Network entity at %s not found', path)
                 return {}
             else:
                 raise
@@ -154,8 +154,8 @@ class Config(BaseConfig):
 
     def _clearDisk(self):
         try:
-            logging.info('Clearing %s and %s' % (self.networksPath,
-                                                 self.bondingsPath))
+            logging.info('Clearing %s and %s', self.networksPath,
+                         self.bondingsPath)
             for filePath in os.listdir(self.networksPath):
                 self._removeConfig(self.networksPath + filePath)
 

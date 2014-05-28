@@ -116,7 +116,7 @@ class DynamicSourceRoute(StaticSourceRoute):
             try:
                 route = Route.fromText(entry)
             except ValueError:
-                logging.debug("Could not parse route %s" % entry)
+                logging.debug("Could not parse route %s", entry)
             else:
                 if route.table == table:
                     routes.append(route)
@@ -145,7 +145,7 @@ class DynamicSourceRoute(StaticSourceRoute):
             try:
                 rule = Rule.fromText(entry)
             except ValueError:
-                logging.debug("Could not parse rule %s" % entry)
+                logging.debug("Could not parse rule %s", entry)
             else:
                 allRules.append(rule)
 
@@ -153,7 +153,7 @@ class DynamicSourceRoute(StaticSourceRoute):
         rules = [rule for rule in allRules if rule.srcDevice == device]
 
         if not rules:
-            logging.error("Routing rules not found for device %s" % device)
+            logging.error("Routing rules not found for device %s", device)
             return
 
         # Extract its destination network
@@ -166,7 +166,7 @@ class DynamicSourceRoute(StaticSourceRoute):
         return rules
 
     def remove(self):
-        logging.info("Removing gateway - device: %s" % self.device)
+        logging.info("Removing gateway - device: %s", self.device)
 
         rules = self._getRules(self.device)
         if rules:

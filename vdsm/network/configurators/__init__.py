@@ -125,7 +125,7 @@ class Configurator(object):
 
     def _removeSourceRoute(self, netEnt, sourceRouteClass):
         if netEnt.ipConfig.bootproto != 'dhcp' and netEnt.master is None:
-            logging.debug("Removing source route for device %s" % netEnt.name)
+            logging.debug("Removing source route for device %s", netEnt.name)
             sourceRouteClass(netEnt.name, self).remove()
 
     def _setNewMtu(self, iface, ifaceVlans):

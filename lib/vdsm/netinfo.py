@@ -829,7 +829,7 @@ def IPv4toMapped(ip):
         ipv6bin = '\x00' * 10 + '\xff\xff' + socket.inet_aton(ip)
         mapped = socket.inet_ntop(socket.AF_INET6, ipv6bin)
     except socket.error as e:
-        logging.debug("getIfaceByIP: %s" % str(e))
+        logging.debug("getIfaceByIP: %s", e)
 
     return mapped
 
@@ -840,13 +840,13 @@ def getRouteDeviceTo(destinationIP):
     try:
         route = routeGet([destinationIP])[0]
     except (IPRoute2Error, IndexError):
-        logging.exception('Could not route to %s' % destinationIP)
+        logging.exception('Could not route to %s', destinationIP)
         return ''
 
     try:
         return Route.fromText(route).device
     except ValueError:
-        logging.exception('Could not parse route %s' % route)
+        logging.exception('Could not parse route %s', route)
         return ''
 
 

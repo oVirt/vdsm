@@ -58,7 +58,7 @@ class NwFilter(object):
         """
 
         nwFilter = conn.nwfilterDefineXML(self.buildFilterXml())
-        logging.debug("Filter %s was defined" % nwFilter.name())
+        logging.debug("Filter %s was defined", nwFilter.name())
 
 
 class NoMacSpoofingFilter(NwFilter):
