@@ -57,15 +57,19 @@ class Listener(threading.Thread):
                 self.log.debug("Received %.08X. On fd removed by epoll.",
                                event)
         elif (event & select.EPOLLIN):
-            obj = self._channels[fileno]
-            obj['reconnects'] = 0
-            try:
-                if obj['read_cb'](obj['opaque']):
-                    obj['read_time'] = time.time()
-                else:
-                    reconnect = True
-            except:
-                self.log.exception("Exception on read callback.")
+            obj = self._channels.get(fileno, None)
+            if obj:
+                obj['reconnects'] = 0
+                try:
+                    if obj['read_cb'](obj['opaque']):
+                        obj['read_time'] = time.time()
+                    else:
+                        reconnect = True
+                except:
+                    self.log.exception("Exception on read callback.")
+            else:
+                self.log.debug("Received epoll event %.08X for no longer "
+                               "tracked fd = %d", event, fileno)
 
         if reconnect:
             self._prepare_reconnect(fileno)
