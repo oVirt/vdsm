@@ -70,6 +70,7 @@ test_modules = \
 	sslTests.py \
 	storageMailboxTests.py \
 	tcTests.py \
+	testrunnerTests.py \
 	toolTests.py \
 	transportWrapperTests.py \
 	utilsTests.py \

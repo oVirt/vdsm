@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -181,6 +181,15 @@ class VdsmTestCase(unittest.TestCase):
         with context:
             callableObj(*args, **kwargs)
 
+    def assertNotRaises(self, callableObj=None, *args, **kwargs):
+        # This is required when any exception raised during the call should be
+        # considered as a test failure.
+        context = not_raises(self)
+        if callableObj is None:
+            return context
+        with context:
+            callableObj(*args, **kwargs)
+
     # FIXME: This is a forward port of the assertIn from python
     #        2.7, remove when no loger supporting earlier versions
     def assertIn(self, member, container, msg=None):
@@ -318,6 +327,14 @@ class _AssertRaisesContext(object):
                                         (expected_regexp.pattern,
                                          str(exc_value)))
         return True
+
+
+@contextmanager
+def not_raises(test_case):
+    try:
+        yield
+    except Exception as e:
+        raise test_case.failureException("Exception raised: %s" % e)
 
 
 # FIXME: This is a forward port of the assertIn from python
