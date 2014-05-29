@@ -1153,6 +1153,7 @@ exit 0
 
 %files python
 %defattr(-, root, root, -)
+%{_mandir}/man1/vdsm-tool.1*
 %{_bindir}/vdsm-tool
 %dir %{python_sitearch}/%{vdsm_name}
 %dir %{python_sitearch}/%{vdsm_name}/tool

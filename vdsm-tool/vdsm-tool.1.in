@@ -1,0 +1,191 @@
+.TH man 1 "29 May, 2014" "1.0" "vdsm-tool man page"
+.SH NAME
+vdsm-tool \- Virtual Desktops and Servers Manager Tool
+.SH SYNOPSIS
+vdsm-tool [options] <action> [arguments]
+.SH DESCRIPTION
+\fBvdsm-tool\fP is a command line tool for configuring VDSM.
+.SH OPTIONS
+.TP
+.B -h, --help
+Displays a list of options.
+.TP
+.B -l, --logfile <path>
+Specifies a path on the local file system to which any messages output by the operation being performed will be redirected.
+.TP
+.B -v, --verbose
+Specifies that additional information is to be included in logging.
+.TP
+.B -a, --append
+Specifies that log files are to be appended to instead of truncated.
+.TP
+Options for the \fIconfigurator\fP module:
+.RS
+.TP
+.B configure
+Configures external services for VDSM.
+.RS
+.P
+Usage: \fBvdsm-tool [options] configure [-h|...]\fP
+.TP
+.B -h, --help
+Displays a list of options.
+.TP
+.B --module \fISTRING\fP
+Specifies the module on which the action is to be run, such as 'libvirt' or 'sanlock'. If no module is specified, the action will be performed on all relevant modules.
+.TP
+.B --force
+Forces configuration and triggers the restart of relevant services.
+.RE
+.TP
+.B is-configured
+Determines if a given module has been configured.
+.RS
+.P
+Usage: \fBvdsm-tool is-configured [-h] [--module \fISTRING\fP]\fP
+.TP
+.B -h, --help
+Displays a list of options.
+.TP
+.B --module \fISTRING\fP
+Specifies the module on which the action is to be run, such as 'libvirt' or 'sanlock'. If no module is specified, the action will be performed on all relevant modules.
+.RE
+.TP
+.B validate-config
+Determines if the current configuration is valid.
+.RS
+.P
+Usage: \fBvdsm-tool validate-config [-h] [--module \fISTRING\fP]\fP
+.TP
+.B -h, --help
+Displays a list of options.
+.TP
+.B --module \fISTRING\fP
+Specifies the module on which the action is to be run, such as 'libvirt' or 'sanlock'. If no module is specified, the action will be performed on all relevant modules.
+.RE
+.RE
+.TP
+Options for the \fIdummybr\fP module:
+.RS
+.TP
+.B dummybr
+Defines a dummy bridge on a libvirt network.
+.RE
+.TP
+Options for the \fIload_needed_modules\fP module:
+.RS
+.TP
+.B load-needed-modules
+Loads the required modules.
+.RE
+.TP
+Options for the \fInwfilter\fP module:
+.RS
+.TP
+.B nwfilter
+Defines network filters on libvirt.
+.RE
+.TP
+Options for the \fIpasswd\fP module:
+.RS
+.TP
+.B set-saslpasswd
+Sets a VDSM password for libvirt connections.
+.RE
+.TP
+Options for the \fIrestore_nets\fP module:
+.RS
+.TP
+.B restore-nets
+Restores the networks to what was previously persisted via VDSM.
+.RE
+.TP
+Options for the \fIseboolsetup\fP module:
+.RS
+.TP
+.B sebool-config
+Enables the required SELinux booleans.
+.TP
+.B sebool-unconfig
+Disables the required SELinux booleans.
+.RE
+.TP
+Options for the \fIservice\fP module:
+.RS
+.TP
+.B service-disable
+Disables a system service.
+.TP
+.B service-is-managed
+Checks whether a given system service exists.
+.TP
+.B service-reload
+Notifies a system service to reload its configuration.
+.TP
+.B service-restart
+Restarts a system service.
+.TP
+.B service-start
+Starts a system service.
+.TP
+.B service-status
+Gets the current status of a system service.
+.TP
+.B service-stop
+Stops a system service.
+.RE
+.TP
+Options for the \fItransient\fP module:
+.RS
+.TP
+.B cleanup-transient-repository
+Cleans up the unused transient disks present in the repository. (NOTE: do NOT execute this command when the VDSM daemon is running.)
+.TP
+.B setup-transient-repository
+Prepares the transient disks repository.
+.RE
+.TP
+Options for the \fIunified_persistence\fP module:
+.RS
+.TP
+.B upgrade-unified-persistence
+Upgrades host networking persistence from \fBifcfg\fP to \fBunified\fP if the persistence model is set as \fBunified\fP in the \fI/usr/lib64/python2.X/site-packages/vdsm/config.py\fP file.
+.RS
+.P
+Usage: \fBvdsm-tool upgrade-unified-persistence [-h] [--run-again]\fP
+.TP
+.B -h, --help
+Displays a list of options.
+.TP
+.B --run-again
+Runs the upgrade operation again, even if this operation has been performed previously.
+.RE
+.RE
+.TP
+Options for the \fIupgrade_300_networks\fP module:
+.RS
+.TP
+.B upgrade-3.0.0-networks
+Since ovirt-3.0, VDSM uses libvirt networks (with names prefixed vdsm-*) to store its own networks. Such networks were not defined in older versions of VDSM, and only Linux bridges were used. This option is kept as a tool for upgrading networks using the old scheme for the (very few) people who still have such old setups running.
+.RE
+.TP
+Options for the \fIvalidate_ovirt_certs\fP module:
+.RS
+.TP
+.B validate-ovirt-certs
+Validates \fIvdsmcert.pem\fP against \fIcacert.pem\fP. If the current \fIcacert.pem\fP is invalid, the command will find a valid certificate file and replace the old \fIcacert.pem\fP with that certificate, and then persist that change.
+.RE
+.TP
+Options for the \fIvdsm-id\fP module:
+.RS
+.TP
+.B vdsm-id
+Prints the host UUID.
+.RE
+.SH AUTHOR
+<Author list>
+.SH BUGS
+Report bugs to <http://bugzilla.redhat.com>
+.SH COPYRIGHT
+Copyright 2011-2014 Red Hat, Inc.
+License GPLv2: GNU GPL Version 2 <http://gnu.org/licenses/gpl.html>.

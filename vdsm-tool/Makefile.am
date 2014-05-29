@@ -21,3 +21,9 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_bin_SCRIPTS = \
 	vdsm-tool
+
+nodist_man1_MANS = \
+	vdsm-tool.1
+
+EXTRA_DIST = \
+	vdsm-tool.1.in
