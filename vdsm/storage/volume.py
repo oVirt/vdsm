@@ -369,7 +369,7 @@ class Volume(object):
 
         # Volumes with a parent must be cow
         if srcVolUUID != BLANK_UUID and volFormat != COW_FORMAT:
-            raise se.IncorrectFormat(srcVolUUID)
+            raise se.IncorrectFormat(type2name(volFormat))
 
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
