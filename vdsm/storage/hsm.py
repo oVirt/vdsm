@@ -1491,7 +1491,10 @@ class HSM(object):
         pool = self.getPool(spUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
 
-        vars.task.getExclusiveLock(STORAGE, imgUUID)
+        # Taking an exclusive lock on both imgUUID and sdUUID since
+        # an image can exist on two SDs concurrently (e.g. during LSM flow);
+        # hence, we need a unique identifier.
+        vars.task.getExclusiveLock(STORAGE, "%s_%s", imgUUID, sdUUID)
         vars.task.getSharedLock(STORAGE, sdUUID)
         allVols = dom.getAllVolumes()
         volsByImg = sd.getVolsOfImage(allVols, imgUUID)
