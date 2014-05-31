@@ -368,7 +368,7 @@ class Volume(object):
             raise se.IncorrectType(type2name(preallocate))
 
         # Volumes with a parent must be cow
-        if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
+        if srcVolUUID != BLANK_UUID and volFormat != COW_FORMAT:
             raise se.IncorrectFormat(srcVolUUID)
 
     @classmethod
