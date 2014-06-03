@@ -421,7 +421,7 @@ class MonitorThread(threading.Thread):
                                ' (monitoring interval set to 0)')
 
     def monitor_migration(self):
-        def calculateProgress(remaining, total):
+        def update_progress(remaining, total):
             if remaining == 0 and total:
                 return 100
             progress = 100 - 100 * remaining / total if total else 0
@@ -478,7 +478,7 @@ class MonitorThread(threading.Thread):
                     dataRemaining / Mbytes, lowmark / Mbytes)
 
             if jobType != libvirt.VIR_DOMAIN_JOB_NONE:
-                self.progress = calculateProgress(dataRemaining, dataTotal)
+                self.progress = update_progress(dataRemaining, dataTotal)
 
                 self._vm.log.info('Migration Progress: %s seconds elapsed,'
                                   ' %s%% of data processed' %
