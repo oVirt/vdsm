@@ -1172,9 +1172,12 @@ class StoragePool(object):
         domUUIDs = self.getDomains(activeOnly=True).keys()
 
         # msdUUID should be present and active in getDomains result.
-        # TODO: Consider remove if clause.
-        if msdUUID in domUUIDs:
+        try:
             domUUIDs.remove(msdUUID)
+        except ValueError:
+            self.log.error('master storage domain %s not found in the pool '
+                           'domains or not active', msdUUID)
+            raise se.StoragePoolWrongMaster(self.spUUID, msdUUID)
 
         # TODO: Consider to remove this whole block. UGLY!
         # We want to avoid looking up (vgs) of unknown block domains.
