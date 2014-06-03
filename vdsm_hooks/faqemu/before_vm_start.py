@@ -29,19 +29,15 @@ if config.getboolean('vars', 'fake_kvm_support'):
     graphics = domxml.getElementsByTagName("graphics")[0]
     graphics.removeAttribute("passwdValidTo")
 
-    for memtag in ("memory", "currentMemory"):
-        memvalue = domxml.getElementsByTagName(memtag)[0]
-        while memvalue.firstChild:
-            memvalue.removeChild(memvalue.firstChild)
+    memory = config.get('vars', 'fake_kvm_memory')
 
-        arch = config.get('vars', 'fake_kvm_architecture')
+    if memory != '0':
+        for memtag in ("memory", "currentMemory"):
+            memvalue = domxml.getElementsByTagName(memtag)[0]
+            while memvalue.firstChild:
+                memvalue.removeChild(memvalue.firstChild)
 
-        if arch == 'x86_64':
-            memory = '20480'
-        elif arch == 'ppc64':
-            memory = '262144'
-
-        memvalue.appendChild(domxml.createTextNode(memory))
+            memvalue.appendChild(domxml.createTextNode(memory))
 
     for cputag in domxml.getElementsByTagName("cpu"):
         cputag.parentNode.removeChild(cputag)

@@ -207,6 +207,9 @@ parameters = [
         ('fake_kvm_architecture', 'x86_64',
             'Choose the target architecture of the fake KVM mode'),
 
+        ('fake_kvm_memory', '0', 'Set memory of fake KVM hosts. '
+         'Set to \'0\' to use supplied memory value'),
+
         ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
 
         ('xmlrpc_http11', 'true',
