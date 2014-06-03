@@ -4131,6 +4131,35 @@
  'returns': 'UUID'}
 
 ##
+# @Image.sparsify:
+#
+# Create a copy of a sparse volume to a destination volume within the same
+# Storage Pool with free space removed from the source volume.
+#
+# @tmpSdUUID:        The UUID of the storage domain having temporary snapshot
+#                    of source volume
+#
+# @tmpImgUUID:       The UUID of the snapshot image
+#
+# @tmpVolUUID:       The UUID of the snapshot volume
+#
+# @dstSdUUID:        The UUID of the destination storage domain
+#
+# @dstImgUUID:       The UUID of the destination image
+#
+# @dstVolUUID:       The UUID of the destination volume
+#
+# Returns:
+# A task UUID
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Image', 'name': 'sparsify'},
+ 'data': {'tmpSdUUID': 'UUID', 'tmpImgUUID': 'UUID', 'tmpVolUUID': 'UUID',
+          'dstSdUUID': 'UUID', 'dstImgUUID': 'UUID', 'dstVolUUID': 'UUID'},
+ 'returns': 'UUID'}
+
+##
 # @Image.cloneStructure:
 #
 # Clone an image structure from a source domain to a destination domain

@@ -1356,6 +1356,16 @@ class service:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
 
+    def sparsifyImage(self, args):
+        (spUUID, tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID, dstImgUUID,
+         dstVolUUID) = args
+        status = self.s.sparsifyImage(spUUID, tmpSdUUID, tmpImgUUID,
+                                      tmpVolUUID, dstSdUUID, dstImgUUID,
+                                      dstVolUUID)
+        if status['status']['code']:
+            return status['status']['code'], status['status']['message']
+        return 0, status['uuid']
+
     def cloneImageStructure(self, args):
         spUUID, sdUUID, imgUUID, dstSdUUID = args
         image = self.s.cloneImageStructure(spUUID, sdUUID, imgUUID, dstSdUUID)
@@ -2498,6 +2508,13 @@ if __name__ == '__main__':
                        'Move/Copy image between storage domains within same '
                        'storage pool'
                        )),
+        'sparsifyImage': (serv.sparsifyImage,
+                          ('<spUUID> <tmpSdUUID> <tmpImgUUID> <tmpVolUUID> '
+                           '<dstSdUUID> <dstImgUUID> <dstVolUUID>',
+                           'Reduce the size of a sparse image by converting '
+                           'free space on image to free space on storage '
+                           'domain using virt-sparsify'
+                           )),
         'cloneImageStructure': (serv.cloneImageStructure,
                                 ('<spUUID> <sdUUID> <imgUUID> <dstSdUUID>',
                                  'Clone an image structure from a source '

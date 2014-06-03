@@ -329,6 +329,16 @@ class VolumeResizeValueError(StorageException):
     message = "Incorrect size value for volume resize"
 
 
+class VolumeNotSparse(StorageException):
+    code = 233
+    message = "Volume type is not sparse"
+
+
+class CannotSparsifyVolume(StorageException):
+    code = 234
+    message = "Cannot sparsify volume"
+
+
 #################################################
 #  Images Exceptions
 #################################################

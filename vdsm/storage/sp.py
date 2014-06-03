@@ -1546,6 +1546,48 @@ class StoragePool(object):
             image.Image(self.poolPath).move(srcDomUUID, dstDomUUID, imgUUID,
                                             vmUUID, op, postZero, force)
 
+    def sparsifyImage(self, tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID,
+                      dstImgUUID, dstVolUUID):
+        """
+        Reduce sparse image size by converting free space on image to free
+        space on host using virt-sparsify.
+
+        :param tmpSdUUID: The UUID of the storage domain where the temporary
+                            snapshot of source volume exists.
+        :type tmpSdUUID: UUUID
+        :param tmpImgUUID: The UUID of the temporary snapshot image.
+        :type tmpImgUUID: UUID
+        :param tmpVolUUID: The UUID of the temporary snapshot volume that needs
+                            to be sparsified.
+        :type tmpVolUUID: UUID
+        :param dstSdUUID: The UUID of the storage domain where the destination
+                            image exists.
+        :type dstSdUUID: UUUID
+        :param dstImgUUID: The UUID of the destination image to which the
+                            destination volume belongs.
+        :type dstImgUUID: UUID
+        :param dstVolUUID: The UUID of the destination volume for the
+                            sparsified volume.
+        :type dstVolUUID: UUID
+        """
+        srcNamespace = sd.getNamespace(tmpSdUUID, IMAGE_NAMESPACE)
+        dstNamespace = sd.getNamespace(dstSdUUID, IMAGE_NAMESPACE)
+
+        # virt-sparsify writes to temporary volume when using --tmp:prebuilt,
+        # so we acquire exclusive lock for the temporary image.
+        # Destination image is where the sparsified volume gets written to, so
+        # we acquire exclusive lock for the destination image too.
+        # Since source volume is only a parent of temporary volume, we don't
+        # need to acquire any lock for it.
+        with nested(
+            rmanager.acquireResource(srcNamespace, tmpImgUUID,
+                                     rm.LockType.exclusive),
+            rmanager.acquireResource(dstNamespace, dstImgUUID,
+                                     rm.LockType.exclusive)):
+            image.Image(self.poolPath).sparsify(
+                tmpSdUUID, tmpImgUUID, tmpVolUUID, dstSdUUID, dstImgUUID,
+                dstVolUUID)
+
     def cloneImageStructure(self, sdUUID, imgUUID, dstSdUUID):
         """
         Clone an image structure from a source domain to a destination domain

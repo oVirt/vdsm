@@ -35,6 +35,7 @@ dist_vdsmpylib_PYTHON = \
 	sslutils.py \
 	utils.py \
 	vdscli.py \
+	virtsparsify.py \
 	xmlrpc.py \
 	$(NULL)
 

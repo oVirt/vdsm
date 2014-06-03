@@ -681,6 +681,11 @@ class BindingXMLRPC(object):
         image = API.Image(imgUUID, spUUID, srcDomUUID)
         return image.move(dstDomUUID, op, postZero, force)
 
+    def imageSparsify(self, spUUID, sdUUID, imgUUID, tmpVolUUID, dstSdUUID,
+                      dstImgUUID, dstVolUUID):
+        image = API.Image(imgUUID, spUUID, sdUUID)
+        return image.sparsify(tmpVolUUID, dstSdUUID, dstImgUUID, dstVolUUID)
+
     def imageCloneStructure(self, spUUID, sdUUID, imgUUID, dstSdUUID):
         image = API.Image(imgUUID, spUUID, sdUUID)
         return image.cloneStructure(dstSdUUID)
@@ -1043,6 +1048,7 @@ class BindingXMLRPC(object):
                 (self.imageDeleteVolumes, 'deleteVolume'),
                 (self.imageMergeSnapshots, 'mergeSnapshots'),
                 (self.imageMove, 'moveImage'),
+                (self.imageSparsify, 'sparsifyImage'),
                 (self.imageCloneStructure, 'cloneImageStructure'),
                 (self.imageSyncData, 'syncImageData'),
                 (self.imageUpload, 'uploadImage'),
