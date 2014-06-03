@@ -468,14 +468,12 @@ class MonitorThread(threading.Thread):
                     ' Refer to RHBZ#919201.',
                     dataRemaining / Mbytes, lowmark / Mbytes)
 
-            if jobType == 0:
-                continue
+            if jobType != libvirt.VIR_DOMAIN_JOB_NONE:
+                self.progress = calculateProgress(dataRemaining, dataTotal)
 
-            self.progress = calculateProgress(dataRemaining, dataTotal)
-
-            self._vm.log.info('Migration Progress: %s seconds elapsed, %s%% of'
-                              ' data processed' %
-                              (timeElapsed / 1000, self.progress))
+                self._vm.log.info('Migration Progress: %s seconds elapsed,'
+                                  ' %s%% of data processed' %
+                                  (timeElapsed / 1000, self.progress))
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
