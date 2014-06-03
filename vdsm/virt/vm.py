@@ -115,6 +115,11 @@ class VolumeError(RuntimeError):
 class DoubleDownError(RuntimeError):
     pass
 
+
+class ImprobableResizeRequestError(RuntimeError):
+    pass
+
+
 VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.MIGRATION_SOURCE, vmstatus.PAUSED,
                 vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
@@ -1149,14 +1154,16 @@ class Drive(VmDevice):
         return (self.VOLWM_FREE_PCT * self.volExtensionChunk *
                 constants.MEGAB / 100)
 
-    def getNextVolumeSize(self):
+    def getNextVolumeSize(self, curSize):
         """
         Returns the next volume size in megabytes. This value is based on the
         volExtensionChunk property and it's the size that should be requested
-        for the next LV extension.
+        for the next LV extension.  curSize is the current size of the volume
+        to be extended.  For the leaf volume curSize == self.apparentsize.
+        For internal volumes it is discovered by calling irs.getVolumeSize().
         """
         return (self.volExtensionChunk +
-                ((self.apparentsize + constants.MEGAB - 1) / constants.MEGAB))
+                ((curSize + constants.MEGAB - 1) / constants.MEGAB))
 
     @property
     def networkDev(self):
@@ -2252,62 +2259,73 @@ class Vm(object):
         with self._confLock:
             self.conf['timeOffset'] = newTimeOffset
 
-    def extendDrivesIfNeeded(self):
-        extend = []
+    def _getExtendCandidates(self):
+        ret = []
 
         for drive in self._devices[DISK_DEVICES]:
             if not drive.blockDev or drive.format != 'cow':
                 continue
 
             capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+            ret.append((drive, drive.volumeID, capacity, alloc, physical))
+        return ret
 
-            # Since the check based on nextPhysSize is extremly risky (it
-            # may result in the VM being paused) we can't use the regular
-            # getNextVolumeSize call as it relies on a cached value of the
-            # drive apparentsize.
-            nextPhysSize = physical + drive.VOLWM_CHUNK_MB * constants.MEGAB
+    def _shouldExtendVolume(self, drive, volumeID, capacity, alloc, physical):
+        # Since the check based on nextPhysSize is extremly risky (it
+        # may result in the VM being paused) we can't use the regular
+        # getNextVolumeSize call as it relies on a cached value of the
+        # drive apparentsize.
+        nextPhysSize = physical + drive.VOLWM_CHUNK_MB * constants.MEGAB
 
-            # NOTE: the intent of this check is to prevent faulty images to
-            # trick qemu in requesting extremely large extensions (BZ#998443).
-            # Probably the definitive check would be comparing the allocated
-            # space with capacity + format_overhead. Anyway given that:
-            #
-            # - format_overhead is tricky to be computed (it depends on few
-            #   assumptions that may change in the future e.g. cluster size)
-            # - currently we allow only to extend by one chunk at time
-            #
-            # the current check compares alloc with the next volume size.
-            # It should be noted that alloc cannot be directly compared with
-            # the volume physical size as it includes also the clusters not
-            # written yet (pending).
-            if alloc > nextPhysSize:
-                self.log.error(
-                    "Improbable extension request for volume %s on domain "
-                    "%s, pausing the VM to avoid corruptions (capacity: %s, "
-                    "allocated: %s, physical: %s, next physical size: %s)",
-                    drive.volumeID, drive.domainID, capacity, alloc,
-                    physical, nextPhysSize)
-                self.pause(pauseCode='EOTHER')
-                return False
+        # NOTE: the intent of this check is to prevent faulty images to
+        # trick qemu in requesting extremely large extensions (BZ#998443).
+        # Probably the definitive check would be comparing the allocated
+        # space with capacity + format_overhead. Anyway given that:
+        #
+        # - format_overhead is tricky to be computed (it depends on few
+        #   assumptions that may change in the future e.g. cluster size)
+        # - currently we allow only to extend by one chunk at time
+        #
+        # the current check compares alloc with the next volume size.
+        # It should be noted that alloc cannot be directly compared with
+        # the volume physical size as it includes also the clusters not
+        # written yet (pending).
+        if alloc > nextPhysSize:
+            msg = ("Improbable extension request for volume %s on domain "
+                   "%s, pausing the VM to avoid corruptions (capacity: %s, "
+                   "allocated: %s, physical: %s, next physical size: %s)",
+                   volumeID, drive.domainID, capacity, alloc,
+                   physical, nextPhysSize)
+            self.log.error(msg)
+            self.pause(pauseCode='EOTHER')
+            raise ImprobableResizeRequestError(msg)
 
-            if physical - alloc < drive.watermarkLimit:
-                extend.append((drive, capacity, alloc, physical))
+        if physical - alloc < drive.watermarkLimit:
+            return True
+        return False
 
-        for drive, capacity, alloc, physical in extend:
+    def extendDrivesIfNeeded(self):
+        try:
+            extend = [x for x in self._getExtendCandidates()
+                      if self._shouldExtendVolume(*x)]
+        except ImprobableResizeRequestError:
+            return False
+
+        for drive, volumeID, capacity, alloc, physical in extend:
             self.log.info(
                 "Requesting extension for volume %s on domain %s (apparent: "
                 "%s, capacity: %s, allocated: %s, physical: %s)",
-                drive.volumeID, drive.domainID, drive.apparentsize, capacity,
+                volumeID, drive.domainID, drive.apparentsize, capacity,
                 alloc, physical)
-            self.extendDriveVolume(drive)
+            self.extendDriveVolume(drive, volumeID, physical)
 
         return len(extend) > 0
 
-    def extendDriveVolume(self, vmDrive):
+    def extendDriveVolume(self, vmDrive, volumeID, curSize):
         if not vmDrive.blockDev:
             return
 
-        newSize = vmDrive.getNextVolumeSize()  # newSize is in megabytes
+        newSize = vmDrive.getNextVolumeSize(curSize)  # newSize is in megabytes
 
         if getattr(vmDrive, 'diskReplicate', None):
             volInfo = {'poolID': vmDrive.diskReplicate['poolID'],
@@ -2321,7 +2339,7 @@ class Vm(object):
                                        newSize * constants.MEGAB,
                                        self.__afterReplicaExtension)
         else:
-            self.__extendDriveVolume(vmDrive, newSize)
+            self.__extendDriveVolume(vmDrive, volumeID, newSize)
 
     def __refreshDriveVolume(self, volInfo):
         self.cif.irs.refreshVolume(volInfo['domainID'], volInfo['poolID'],
@@ -2365,12 +2383,13 @@ class Vm(object):
         self.log.debug("Requesting extension for the original drive: %s "
                        "(domainID: %s, volumeID: %s)",
                        vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
-        self.__extendDriveVolume(vmDrive, volInfo['newSize'])
+        self.__extendDriveVolume(vmDrive, vmDrive.volumeID, volInfo['newSize'])
 
-    def __extendDriveVolume(self, vmDrive, newSize):
+    def __extendDriveVolume(self, vmDrive, volumeID, newSize):
         volInfo = {'poolID': vmDrive.poolID, 'domainID': vmDrive.domainID,
-                   'imageID': vmDrive.imageID, 'volumeID': vmDrive.volumeID,
-                   'name': vmDrive.name, 'newSize': newSize}
+                   'imageID': vmDrive.imageID, 'volumeID': volumeID,
+                   'name': vmDrive.name, 'newSize': newSize,
+                   'internal': bool(vmDrive.volumeID != volumeID)}
         self.log.debug("Requesting an extension for the volume: %s", volInfo)
         self.cif.irs.sendExtendMsg(
             vmDrive.poolID,
@@ -2379,12 +2398,15 @@ class Vm(object):
             self.__afterVolumeExtension)
 
     def __afterVolumeExtension(self, volInfo):
-        # Either the extension succeeded and we're setting the new apparentSize
-        # and trueSize, or it fails and we raise an exception.
+        # Check if the extension succeeded.  On failure an exception is raised
         # TODO: Report failure to the engine.
         apparentSize, trueSize = self.__verifyVolumeExtension(volInfo)
-        vmDrive = self._findDriveByName(volInfo['name'])
-        vmDrive.apparentsize, vmDrive.truesize = apparentSize, trueSize
+
+        # Only update apparentsize and truesize if we've resized the leaf
+        if not volInfo['internal']:
+            vmDrive = self._findDriveByName(volInfo['name'])
+            vmDrive.apparentsize, vmDrive.truesize = apparentSize, trueSize
+
         try:
             self.cont()
         except libvirt.libvirtError:
@@ -4050,7 +4072,8 @@ class Vm(object):
             return errCode['replicaErr']
 
         try:
-            self.extendDriveVolume(srcDrive)
+            self.extendDriveVolume(srcDrive, srcDrive.volumeID,
+                                   srcDrive.apparentsize)
         except Exception:
             self.log.error("Initial extension request failed for %s",
                            srcDrive.name, exc_info=True)
