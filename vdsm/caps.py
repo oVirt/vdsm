@@ -191,8 +191,11 @@ def _findLiveSnapshotSupport(guest):
     None if libvirt does not report the live
     snapshot support (as in version <= 1.2.2),
     '''
-    features = guest.getElementsByTagName('features')[0]
-    for feature in features.childNodes:
+    features = guest.getElementsByTagName('features')
+    if not features:
+        return None
+
+    for feature in features[0].childNodes:
         if feature.nodeName == 'disksnapshot':
             value = feature.getAttribute('default')
             if value.lower() == 'on':
