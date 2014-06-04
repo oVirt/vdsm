@@ -77,6 +77,24 @@ __connections = {}
 __connectionLock = threading.Lock()
 
 
+def _open_qemu_connection():
+    def req(credentials, user_data):
+        passwd = file(constants.P_VDSM_LIBVIRT_PASSWD).readline().rstrip("\n")
+        for cred in credentials:
+            if cred[0] == libvirt.VIR_CRED_AUTHNAME:
+                cred[4] = constants.SASL_USERNAME
+            elif cred[0] == libvirt.VIR_CRED_PASSPHRASE:
+                cred[4] = passwd
+        return 0
+
+    auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE],
+            req, None]
+
+    libvirtOpen = functools.partial(
+        libvirt.openAuth, 'qemu:///system', auth, 0)
+    return utils.retry(libvirtOpen, timeout=10, sleep=0.2)
+
+
 def get(target=None, killOnFailure=True):
     """Return current connection to libvirt or open a new one.
     Use target to get/create the connection object linked to that object.
@@ -126,25 +144,11 @@ def get(target=None, killOnFailure=True):
                 raise
         return wrapper
 
-    def req(credentials, user_data):
-        passwd = file(constants.P_VDSM_LIBVIRT_PASSWD).readline().rstrip("\n")
-        for cred in credentials:
-            if cred[0] == libvirt.VIR_CRED_AUTHNAME:
-                cred[4] = constants.SASL_USERNAME
-            elif cred[0] == libvirt.VIR_CRED_PASSPHRASE:
-                cred[4] = passwd
-        return 0
-
-    auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE],
-            req, None]
-
     with __connectionLock:
         conn = __connections.get(id(target))
         if not conn:
-            libvirtOpenAuth = functools.partial(libvirt.openAuth,
-                                                'qemu:///system', auth, 0)
             log.debug('trying to connect libvirt')
-            conn = utils.retry(libvirtOpenAuth, timeout=10, sleep=0.2)
+            conn = _open_qemu_connection()
             __connections[id(target)] = conn
 
             setattr(conn, 'pingLibvirt', getattr(conn, 'getLibVersion'))
