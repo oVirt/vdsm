@@ -64,10 +64,20 @@ def _getNetInfo():
             networks[network]['bridged'] = netParams['bridged']
 
             # Determine devices: nic/bond -> vlan -> bridge
-            physicalDevice = "".join(netParams['ports']) if \
-                netParams.get('ports') else netParams.get('interface')
-            topLevelDevice = netParams['iface'] if \
-                netParams['bridged'] else physicalDevice
+            topLevelDevice = netParams['iface']
+            if netParams['bridged']:
+                devices = (netinfo.nics.keys() + netinfo.vlans.keys() +
+                           netinfo.bondings.keys())
+                nonVnicPorts = [dev for dev in netParams['ports'] if
+                                dev in devices]
+                # A network should only ever have (at most) an underlying
+                # device hierarchy
+                if nonVnicPorts:
+                    physicalDevice, = nonVnicPorts
+                else:
+                    physicalDevice = None  # vdsm allows nicless VM nets
+            else:
+                physicalDevice = topLevelDevice
 
             # Copy ip addressing information
             bootproto = str(getIfaceCfg(topLevelDevice).get('BOOTPROTO'))
@@ -96,8 +106,10 @@ def _getNetInfo():
             # Is the physical device a bond or a nic?
             if physicalDevice in netinfo.bondings:
                 networks[network]['bonding'] = physicalDevice
-            else:
+            elif physicalDevice in netinfo.nics:
                 networks[network]['nic'] = physicalDevice
+            else:  # Nic-less networks
+                pass
 
         return networks
 
