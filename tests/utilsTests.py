@@ -28,7 +28,6 @@ import threading
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import permutations, expandPermutations
 from testValidation import checkSudo
-from testValidation import brokentest
 from testValidation import stresstest
 from vdsm import utils
 from vdsm import constants
@@ -511,7 +510,6 @@ class ExecCmdStressTest(TestCaseBase):
     def test_read_stdout_stderr(self):
         self.check(self.read_stdout_stderr)
 
-    @brokentest("Always fails when using AsyncProc in sync mode")
     @stresstest
     def test_write_stdin_read_stderr(self):
         self.data = 'x' * self.BLOCK_SIZE * self.BLOCK_COUNT
