@@ -850,10 +850,6 @@ class BindingXMLRPC(object):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.setSize(newSize)
 
-    def volumePrepare(self, sdUUID, spUUID, imgUUID, volUUID, rw=True):
-        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
-        return volume.prepare(rw)
-
     def volumeRefresh(self, sdUUID, spUUID, imgUUID, volUUID):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.refresh()
@@ -866,10 +862,6 @@ class BindingXMLRPC(object):
     def volumeSetLegality(self, sdUUID, spUUID, imgUUID, volUUID, legality):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.setLegality(legality)
-
-    def volumeTearDown(self, sdUUID, spUUID, imgUUID, volUUID):
-        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
-        return volume.tearDown()
 
     def taskClear(self, taskId):
         task = API.Task(taskId)
@@ -1079,11 +1071,9 @@ class BindingXMLRPC(object):
                 (self.volumeGetPath, 'getVolumePath'),
                 (self.volumeGetSize, 'getVolumeSize'),
                 (self.volumeSetSize, 'volumeSetSize'),
-                (self.volumePrepare, 'prepareVolume'),
                 (self.volumeRefresh, 'refreshVolume'),
                 (self.volumeSetDescription, 'setVolumeDescription'),
                 (self.volumeSetLegality, 'setVolumeLegality'),
-                (self.volumeTearDown, 'teardownVolume'),
                 (self.tasksGetAllInfo, 'getAllTasksInfo'),
                 (self.tasksGetAllStatuses, 'getAllTasksStatuses'),
                 (self.tasksGetAll, 'getAllTasks'),

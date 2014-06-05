@@ -766,10 +766,6 @@ class Volume(APIBase):
         return self._irs.setVolumeSize(self._sdUUID, self._spUUID,
                                        self._imgUUID, self._UUID, newSize)
 
-    def prepare(self, rw):
-        return self._irs.prepareVolume(self._sdUUID, self._spUUID,
-                                       self._imgUUID, self._UUID, rw)
-
     def refresh(self):
         return self._irs.refreshVolume(self._sdUUID, self._spUUID,
                                        self._imgUUID, self._UUID)
@@ -782,10 +778,6 @@ class Volume(APIBase):
     def setLegality(self, legality):
         return self._irs.setVolumeLegality(self._sdUUID, self._spUUID,
                                            self._imgUUID, self._UUID, legality)
-
-    def tearDown(self):
-        return self._irs.teardownVolume(self._sdUUID, self._spUUID,
-                                        self._imgUUID, self._UUID)
 
 
 class Image(APIBase):

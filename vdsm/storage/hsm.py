@@ -65,7 +65,6 @@ import storage_exception as se
 from threadLocal import vars
 from vdsm import constants
 from storageConstants import STORAGE
-from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 import devicemapper
 import logUtils
@@ -3127,88 +3126,6 @@ class HSM:
         fails = supervdsm.getProxy().rmAppropriateRules(thiefId)
         if fails:
             self.log.error("Failed to remove the following rules: %s", fails)
-
-    @public
-    def prepareVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=True,
-                      options=None):
-        """
-        Prepares a volume (used in SAN).
-        Activates LV and rebuilds 'images' subtree.
-
-        .. warning::
-            This method is obsolete and is kept only for testing purposes;
-            use prepareImage instead.
-
-        :param sdUUID: The UUID of the storage domain that owns the volume.
-        :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that owns the volume.
-        :type spUUID: UUID
-        :param imgUUID: The UUID of the image contained on the volume.
-        :type imgUUID: UUID
-        :param volUUID: The UUID of the volume you want to prepare.
-        :type volUUID: UUID
-        :param rw: Should the volume be set as RW. ?
-        :type rw: bool
-        :param options: ?
-        """
-        vars.task.getSharedLock(STORAGE, sdUUID)
-        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
-        lockType = rm.LockType.exclusive if rw else rm.LockType.shared
-        timeout = config.getint('irs', 'prepare_image_timeout') / 1000.0
-
-        imgResource = rmanager.acquireResource(imageResourcesNamespace,
-                                               imgUUID, lockType, timeout)
-        try:
-            vol = sdCache.produce(sdUUID=sdUUID).produceVolume(
-                imgUUID=imgUUID, volUUID=volUUID)
-            # NB We want to be sure that at this point HSM does not use stale
-            # LVM cache info, so we call refresh explicitly. We may want to
-            # remove this refresh later, when we come up with something better.
-            vol.refreshVolume()
-            vol.prepare(rw=rw)
-
-            self._preparedVolumes[sdUUID + volUUID].append(imgResource)
-        except:
-            self.log.error("Prepare volume %s in domain %s failed",
-                           volUUID, sdUUID, exc_info=True)
-            imgResource.release()
-            raise
-
-    @public
-    def teardownVolume(self, sdUUID, spUUID, imgUUID, volUUID, rw=False,
-                       options=None):
-        """
-        Tears down a volume (used in SAN).
-        Deactivates LV.
-
-        .. warning::
-            This method is obsolete and is kept only for testing purposes;
-            use teardownImage instead.
-
-        :param sdUUID: The UUID of the storage domain that owns the volume.
-        :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that owns the volume.
-        :type spUUID: UUID
-        :param imgUUID: The UUID of the image contained on the volume.
-        :type imgUUID: UUID
-        :param volUUID: The UUID of the volume you want to teardown.
-        :type volUUID: UUID
-        :param rw: deprecated
-        :param options: ?
-        """
-        vars.task.getSharedLock(STORAGE, sdUUID)
-        try:
-            imgResource = self._preparedVolumes[sdUUID + volUUID].pop()
-        except IndexError:
-            raise se.VolumeWasNotPreparedBeforeTeardown()
-
-        imgResource.release()
-
-        try:
-            volclass = sdCache.produce(sdUUID).getVolumeClass()
-            volclass.teardown(sdUUID=sdUUID, volUUID=volUUID)
-        except Exception:
-            self.log.warn("Problem tearing down volume", exc_info=True)
 
     @public
     def prepareImage(self, sdUUID, spUUID, imgUUID, leafUUID):

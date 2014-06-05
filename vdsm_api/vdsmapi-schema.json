@@ -7233,28 +7233,6 @@
  'returns': 'VolumeSizeInfo'}
 
 ##
-# @Volume.prepare:
-#
-# Make a Volume accessible.
-#
-# @volumeID:         The UUID of the Volume
-#
-# @storagepoolID:    The Storage Pool associated with the Volume
-#
-# @storagedomainID:  The Storage Domain associated with the Volume
-#
-# @imageID:          The Image associated with the Volume
-#
-# @rw:               If True, the Volume should be made writeable, otherwise
-#                    read-only
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'Volume', 'name': 'prepare'},
- 'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
-          'storagedomainID': 'UUID', 'imageID': 'UUID', 'rw': 'bool'}}
-
-##
 # @Volume.refresh:
 #
 # Refresh Volume to synchronize changes made by a remote host.
@@ -7315,25 +7293,6 @@
  'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
           'storagedomainID': 'UUID', 'imageID': 'UUID',
           'legality': 'VolumeLegality'}}
-
-##
-# @Volume.tearDown:
-#
-# Deactivate the Volume and release resources.
-#
-# @volumeID:         The UUID of the Volume
-#
-# @storagepoolID:    The Storage Pool associated with the Volume
-#
-# @storagedomainID:  The Storage Domain associated with the Volume
-#
-# @imageID:          The Image associated with the Volume
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'Volume', 'name': 'tearDown'},
- 'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
-          'storagedomainID': 'UUID', 'imageID': 'UUID'}}
 
 ##
 # @VM.setNumberOfCpus:
