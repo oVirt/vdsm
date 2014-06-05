@@ -154,6 +154,8 @@ def main():
         return tool_command[cmd]["command"](*args)
     except vdsm.tool.UsageError as e:
         print('Error: ', e, '\n', file=sys.stderr)
+        return 1
+    except vdsm.tool.ExtraArgsError as e:
         print_command_usage(tool_command[cmd]["command"], sys.stderr)
         return 1
     except Exception:
