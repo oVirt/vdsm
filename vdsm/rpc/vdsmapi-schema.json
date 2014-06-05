@@ -2957,7 +2957,7 @@
 ##
 # @VmTpmDeviceType:
 #
-# An enumeration of VM smartcard device types.
+# An enumeration of VM tpm device types.
 #
 # @tpm: A tpm
 #
