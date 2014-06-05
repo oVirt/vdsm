@@ -4162,6 +4162,43 @@
           'storagedomainID': 'UUID', 'imageID': 'UUID', '*volumeID': 'UUID'},
  'returns': 'UUID'}
 
+##
+# @Image.prepare:
+#
+# Prepare an image, making the needed volumes available.
+#
+# @storagepoolID:    The UUID of the Storage Pool associated with the Image
+#
+# @storagedomainID:  The UUID of the Storage Domain associated with the Image
+#
+# @imageID:          The UUID of the Image
+#
+# @volumeID:         #optional The UUID of the Volume (optional)
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'Image', 'name': 'prepare'},
+ 'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
+          'imageID': 'UUID', '*volumeID': 'UUID'}}
+
+##
+# @Image.teardown:
+#
+# Teardown an image, releasing the prepared volumes.
+#
+# @storagepoolID:    The UUID of the Storage Pool associated with the Image
+#
+# @storagedomainID:  The UUID of the Storage Domain associated with the Image
+#
+# @imageID:          The UUID of the Image
+#
+# @volumeID:         #optional The UUID of the Volume (optional)
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'Image', 'name': 'teardown'},
+ 'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
+          'imageID': 'UUID', '*volumeID': 'UUID'}}
 
 ## Category: @LVMVolumeGroup ###################################################
 ##

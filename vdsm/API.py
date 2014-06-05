@@ -848,6 +848,14 @@ class Image(APIBase):
         return self._irs.downloadImage(
             methodArgs, self._spUUID, self._sdUUID, self._UUID, volUUID)
 
+    def prepare(self, volUUID=None):
+        return self._irs.prepareImage(
+            self._sdUUID, self._spUUID, self._UUID, volUUID)
+
+    def teardown(self, volUUID=None):
+        return self._irs.teardownImage(
+            self._sdUUID, self._spUUID, self._UUID, volUUID)
+
     def uploadToStream(self, methodArgs, callback, startEvent, volUUID=None):
         return self._irs.uploadImageToStream(
             methodArgs, callback, startEvent, self._spUUID, self._sdUUID,

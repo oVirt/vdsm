@@ -1340,6 +1340,28 @@ class service:
 
         return 0, image['uuid']
 
+    def prepareImage(self, args):
+        if len(args) < 3 or len(args) > 4:
+            raise ValueError('Wrong number of parameters')
+
+        ret = self.s.prepareImage(*args)
+
+        if 'info' in ret:
+            pp.pprint(ret['info'])
+
+        if ret['status']['code']:
+            return ret['status']['code'], ret['status']['message']
+
+        return 0, ''
+
+    def teardownImage(self, args):
+        if len(args) < 3 or len(args) > 4:
+            raise ValueError('Wrong number of parameters')
+
+        ret = self.s.teardownImage(*args)
+
+        return ret['status']['code'], ret['status']['message']
+
     def moveMultiImage(self, args):
         spUUID = args[0]
         srcDomUUID = args[1]
@@ -2422,6 +2444,14 @@ if __name__ == '__main__':
             '<methodArgs> <spUUID> <sdUUID> <imgUUID> [<volUUID>]',
             'Download an image from a remote endpoint using the specified',
             'methodArgs.'
+        )),
+        'prepareImage': (serv.prepareImage, (
+            '<spUUID> <sdUUID> <imgUUID> [<volUUID>]',
+            'Prepare an image, making the needed volumes available.'
+        )),
+        'teardownImage': (serv.teardownImage, (
+            '<spUUID> <sdUUID> <imgUUID> [<volUUID>]',
+            'Teardown an image, releasing the prepared volumes.'
         )),
         'moveMultiImage': (serv.moveMultiImage,
                            ('<spUUID> <srcDomUUID> <dstDomUUID> '
