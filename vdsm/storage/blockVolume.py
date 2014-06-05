@@ -125,7 +125,7 @@ class BlockVolume(volume.Volume):
 
         # Sparse-Raw not supported for block volumes
         if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
-            raise se.IncorrectFormat(type2name(volFormat))
+            raise se.IncorrectFormat(volume.type2name(volFormat))
 
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, sdUUID, offs):
