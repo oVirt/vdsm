@@ -180,19 +180,15 @@ class Ifcfg(Configurator):
         _netinfo = netinfo.NetInfo()
         to_be_removed = self._ifaceDownAndCleanup(bonding, _netinfo)
         if to_be_removed:
+            self.configApplier.removeBonding(bonding.name)
             if bonding.destroyOnMasterRemoval:
-                self.configApplier.removeBonding(bonding.name)
                 for slave in bonding.slaves:
                     slave.remove()
                 if self.unifiedPersistence:
                     self.runningConfig.removeBonding(bonding.name)
-            else:
-                self.configApplier.setBondingMtu(bonding.name,
-                                                 netinfo.DEFAULT_MTU)
-                if bonding.bridge is not None:
-                    self.configApplier._updateConfigValue(
-                        netinfo.NET_CONF_PREF + bonding.name, 'BRIDGE', None)
-                ifup(bonding.name)
+            else:  # Recreate the bond with ip and master info cleared
+                bonding.ip = bonding.master = None
+                bonding.configure()
         else:
             set_mtu = self._setNewMtu(
                 bonding, _netinfo.getVlanDevsForIface(bonding.name))
