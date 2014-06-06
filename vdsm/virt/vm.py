@@ -2290,15 +2290,64 @@ class Vm(object):
         with self._confLock:
             self.conf['timeOffset'] = newTimeOffset
 
+    def _getMergeWriteWatermarks(self):
+        # TODO: Adopt the future libvirt API when the following RFE is done
+        # https://bugzilla.redhat.com/show_bug.cgi?id=1041569
+        return {}
+
+    def _getLiveMergeExtendCandidates(self):
+        ret = {}
+        watermarks = self._getMergeWriteWatermarks()
+        for job in self.conf['_blockJobs'].values():
+            drive = self._findDriveByUUIDs(job['disk'])
+            if not drive.blockDev or drive.format != 'cow':
+                continue
+
+            if job['strategy'] == 'commit':
+                volumeID = job['baseVolume']
+            else:
+                self.log.debug("Unrecognized merge strategy '%s'",
+                               job['strategy'])
+                continue
+            volSize = self.cif.irs.getVolumeSize(drive.domainID, drive.poolID,
+                                                 drive.imageID, volumeID)
+            if volSize['status']['code'] != 0:
+                self.log.error("Unable to get the size of volume %s (domain: "
+                               "%s image: %s)", volumeID, drive.domainID,
+                               drive.imageID)
+                continue
+
+            if volumeID in watermarks:
+                self.log.debug("Adding live merge extension candidate: "
+                               "volume=%s", volumeID)
+                ret[drive.imageID] = {
+                    'alloc': watermarks[volumeID],
+                    'physical': int(volSize['truesize']),
+                    'capacity': drive.apparentsize,
+                    'volumeID': volumeID}
+            else:
+                self.log.warning("No watermark info available for %s",
+                                 volumeID)
+        return ret
+
     def _getExtendCandidates(self):
         ret = []
 
+        mergeCandidates = self._getLiveMergeExtendCandidates()
         for drive in self._devices[DISK_DEVICES]:
             if not drive.blockDev or drive.format != 'cow':
                 continue
 
             capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
             ret.append((drive, drive.volumeID, capacity, alloc, physical))
+
+            try:
+                mergeCandidate = mergeCandidates[drive.imageID]
+            except KeyError:
+                continue
+            ret.append((drive, mergeCandidate['volumeID'],
+                        mergeCandidate['capacity'], mergeCandidate['alloc'],
+                        mergeCandidate['physical']))
         return ret
 
     def _shouldExtendVolume(self, drive, volumeID, capacity, alloc, physical):
@@ -3223,8 +3272,11 @@ class Vm(object):
 
     def _lookupDeviceByAlias(self, devType, alias):
         for dev in self._devices[devType][:]:
-            if dev.alias == alias:
-                return dev
+            try:
+                if dev.alias == alias:
+                    return dev
+            except AttributeError:
+                continue
         raise LookupError('Device instance for device identified by alias %s '
                           'not found' % alias)
 
@@ -5174,7 +5226,8 @@ class Vm(object):
             except LookupError:
                 newJob = {'jobID': jobID, 'disk': driveSpec,
                           'baseVolume': base, 'topVolume': top,
-                          'strategy': strategy}
+                          'strategy': strategy,
+                          'chain': self._driveGetActualVolumeChain(drive)}
                 self.conf['_blockJobs'][jobID] = newJob
             else:
                 self.log.error("A block job with id %s already exists for vm "
@@ -5260,6 +5313,7 @@ class Vm(object):
         if res['info']['voltype'] == 'SHARED':
             self.log.error("merge: Refusing to merge into a shared volume")
             return errCode['mergeErr']
+        baseSize = int(res['info']['apparentsize'])
 
         try:
             self.trackBlockJob(jobUUID, drive, baseVolUUID, topVolUUID,
@@ -5290,7 +5344,11 @@ class Vm(object):
             self.untrackBlockJob(jobUUID)
             return errCode['mergeErr']
 
-        # TODO: Handle block volume resizing for base volume
+        # blockCommit will cause data to be written into the base volume.
+        # Perform an initial extension to ensure there is enough space to
+        # start copying.  The normal monitoring code will take care of any
+        # future internal volume extensions that may be necessary
+        self.extendDriveVolume(drive, baseVolUUID, baseSize)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
@@ -5395,6 +5453,7 @@ class Vm(object):
                              blockJobType)
             return
 
+        self.log.info("Live merge completed for path '%s'", path)
         drive = self._lookupDeviceByPath(path)
         try:
             jobID = self.getBlockJob(drive)['jobID']
