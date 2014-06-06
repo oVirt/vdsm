@@ -5,7 +5,6 @@ import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_D
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_MESSAGE;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_RECEIPT;
-import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +79,7 @@ public class CommandFactory {
                     }
 
                     for (MessageListener el : eventListeners) {
-                        el.onMessageReceived(message.getContent().getBytes(UTF8));
+                        el.onMessageReceived(message.getContent());
                     }
 
                     return null;

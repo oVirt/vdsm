@@ -1,7 +1,6 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
-import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -33,7 +32,7 @@ public class StompListener extends StompClient implements Sender {
     public void sendMessage(byte[] message) {
         send(new Message().message()
                 .withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
-                .withContent(new String(message, UTF8))
+                .withContent(message)
                 .build());
     }
 

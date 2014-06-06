@@ -6,6 +6,7 @@ import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_I
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_RECEIPT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_RECEIPT_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_TRANSACTION;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.isEmpty;
 
 import java.io.IOException;
@@ -60,7 +61,7 @@ public class StompClient implements Reciever {
             headers.put(HEADER_TRANSACTION, this.transactionId);
         }
         headers.put(HEADER_DESTINATION, channel);
-        this.transport.send(new Message().send().withContent(content).withHeaders(headers).build(),
+        this.transport.send(new Message().send().withContent(content.getBytes(UTF8)).withHeaders(headers).build(),
                 key);
     }
 
@@ -119,7 +120,7 @@ public class StompClient implements Reciever {
             String destination = message.getHeaders().get(HEADER_DESTINATION);
             Listener listener = this.listener.get(destination);
             if (listener != null) {
-                listener.update(message.getContent());
+                listener.update(new String(message.getContent(), UTF8));
             }
         } else if (Command.ERROR.toString().equals(message.getCommand())) {
             String destination = message.getHeaders().get(HEADER_DESTINATION);

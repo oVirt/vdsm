@@ -70,9 +70,12 @@ public class JsonUtils {
     }
 
     public static ByteBuffer cloneBuffer(ByteBuffer original) {
+        int pos = original.position();
+        original.clear();
         ByteBuffer clone = ByteBuffer.allocate(original.capacity());
         clone.put(original);
         clone.flip();
+        clone.position(pos);
         return clone;
     }
 

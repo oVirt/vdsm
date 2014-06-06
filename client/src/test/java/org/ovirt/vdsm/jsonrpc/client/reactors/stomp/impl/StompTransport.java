@@ -1,7 +1,5 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl;
 
-import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -12,7 +10,6 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Deque;
-import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class StompTransport extends Thread implements TestSender {
@@ -101,11 +98,8 @@ public class StompTransport extends Thread implements TestSender {
                             this.readBuffer.rewind();
                             this.readBuffer.get(msgBuff);
                             this.readBuffer.clear();
-                            List<Message> messages =
-                                    Message.buildMessages(new String(msgBuff, UTF8));
-                            for (Message message : messages) {
-                                this.reciever.recieve(message, key);
-                            }
+                            Message message = Message.parse(msgBuff);
+                            this.reciever.recieve(message, key);
                         }
                     }
                     if (key.isValid() && key.isWritable()) {

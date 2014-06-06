@@ -15,13 +15,14 @@ import javax.net.ssl.SSLException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 
 /**
  * <code>ReactorClient</code> implementation to provide encrypted communication.
  *
  */
-public abstract class SSLClient extends ReactorClient {
+public abstract class SSLClient extends StompCommonClient {
     private static Log log = LogFactory.getLog(SSLClient.class);
     protected final Selector selector;
     protected SSLEngineNioHelper nioEngine;

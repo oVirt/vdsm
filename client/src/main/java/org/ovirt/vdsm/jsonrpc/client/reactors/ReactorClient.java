@@ -34,7 +34,7 @@ public abstract class ReactorClient {
     public interface MessageListener {
         public void onMessageReceived(byte[] message);
     }
-
+    public static final int BUFFER_SIZE = 1024;
     private static Log log = LogFactory.getLog(ReactorClient.class);
     private final String hostname;
     private final int port;
@@ -138,31 +138,18 @@ public abstract class ReactorClient {
         return task;
     }
 
-    protected void readBytes(ByteBuffer ibuff) throws IOException, ClientConnectionException {
-        int read = readBuffer(ibuff);
-        if (read <= 0) {
-            return;
-        }
-        ibuff.rewind();
-        byte[] message = new byte[read];
-        ibuff.get(message);
-        emitOnMessageReceived(message);
-        this.ibuff = null;
-    }
-
     public void process() throws IOException, ClientConnectionException {
         processIncoming();
         processOutgoing();
     }
 
-    protected void processIncoming() throws IOException, ClientConnectionException {
-        if (this.ibuff == null) {
-            this.ibuff = ByteBuffer.allocate(16384);
-            readBytes(this.ibuff);
-        } else {
-            readBytes(this.ibuff);
-        }
-    }
+    /**
+     * Process incoming channel.
+     *
+     * @throws IOException Thrown when reading issue occurred.
+     * @throws ClientConnectionException  Thrown when issues with connection.
+     */
+    protected abstract void processIncoming() throws IOException, ClientConnectionException;
 
     protected void processOutgoing() throws IOException, ClientConnectionException {
         final ByteBuffer buff = outbox.peekLast();
@@ -207,6 +194,11 @@ public abstract class ReactorClient {
         write(buff);
     }
 
+    /**
+     * Sends message using provided byte array.
+     *
+     * @param message - content of the message to sent.
+     */
     public abstract void sendMessage(byte[] message);
 
     /**

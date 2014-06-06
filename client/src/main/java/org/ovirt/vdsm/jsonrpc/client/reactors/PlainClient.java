@@ -8,13 +8,14 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 
 /**
  * <code>ReactorClient</code> implementation to provide not encrypted communication.
  *
  */
-public abstract class PlainClient extends ReactorClient {
+public abstract class PlainClient extends StompCommonClient {
     protected final Selector selector;
 
     public PlainClient(Reactor reactor, Selector selector, String hostname, int port) throws ClientConnectionException {

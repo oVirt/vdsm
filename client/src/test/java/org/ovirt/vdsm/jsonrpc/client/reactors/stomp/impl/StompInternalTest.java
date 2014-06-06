@@ -12,7 +12,7 @@ import org.junit.Test;
 public class StompInternalTest {
 
     private final static String HOSTNAME = "localhost";
-    private final static int PORT = 61624;
+    private final static int PORT = 61620;
 
     @Test
     public void testConnection() throws IOException, InterruptedException {
@@ -115,7 +115,7 @@ public class StompInternalTest {
         clientSender.commit();
         messages.await(3, TimeUnit.SECONDS);
 
-        assertEquals(0, messages.getCount());
+        assertEquals(3, messages.getCount());
         clientSubscriber1.unsubscribe("/queue/a");
         clientSubscriber2.unsubscribe("/queue/b");
         clientSubscriber3.unsubscribe("/queue/c");
