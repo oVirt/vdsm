@@ -303,10 +303,9 @@ class ConfigApplier(object):
                 f.write('+%s' % bond.name)
 
     def removeBond(self, bond):
-        if bond.name not in netinfo.REQUIRED_BONDINGS:
-            logging.debug('Remove bonding %s', bond)
-            with open(netinfo.BONDING_MASTERS, 'w') as f:
-                f.write('-%s' % bond.name)
+        logging.debug('Remove bonding %s', bond)
+        with open(netinfo.BONDING_MASTERS, 'w') as f:
+            f.write('-%s' % bond.name)
 
     def addBondSlave(self, bond, slave):
         logging.debug('Add slave %s to bonding %s', slave, bond)

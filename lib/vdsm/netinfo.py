@@ -83,8 +83,6 @@ _TEE_BINARY = CommandPath('tee', constants.EXT_TEE)
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DEFAULT_MTU = '1500'
 
-REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
-
 _Qos = namedtuple('Qos', 'inbound outbound')
 
 OPERSTATE_UP = 'up'

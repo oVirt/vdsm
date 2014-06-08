@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2014 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -44,6 +44,7 @@ from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
 from vdsm import ipwrapper
 from vdsm.utils import pgrep
 
+import caps
 from network import errors
 
 
@@ -261,6 +262,17 @@ class NetworkTest(TestCaseBase):
     def assertMtu(self, mtu, *elems):
         for elem in elems:
             self.assertEquals(int(mtu), int(self.vdsm_net.getMtu(elem)))
+
+    def testLegacyBonds(self):
+        if not (caps.getos() in (caps.OSName.RHEVH, caps.OSName.RHEL)
+                and caps.osversion()['version'].startswith('6')):
+            raise SkipTest('legacy bonds are expected only on el6')
+
+        for b in caps._REQUIRED_BONDINGS:
+            # assertBondExists is not used here since we do not care about
+            # whether the bond exists in the running config; we only need it to
+            # be reported to legacy Engines.
+            self.assertIn(b, self.vdsm_net.netinfo.bondings)
 
     @cleanupNet
     @permutations([[True], [False]])

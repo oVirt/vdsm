@@ -1,4 +1,5 @@
 # Copyright IBM, Corp. 2012
+# Copyright 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +21,6 @@
 
 import os.path
 
-from .. import netinfo
 from . import expose, ExtraArgsError
 from ..utils import execCmd
 
@@ -37,15 +37,6 @@ def _exec_command(argv):
         raise RuntimeError(
             "Execute command %s failed: %s" % (argv, err)
         )
-
-
-def _enable_bond_dev():
-    # @ENGINENAME@ currently assumes that all bonding devices pre-exist
-    with open(netinfo.BONDING_MASTERS) as f:
-        existing = set(f.read().split())
-    for bond in netinfo.REQUIRED_BONDINGS - existing:
-        with open(netinfo.BONDING_MASTERS, 'w') as f:
-            f.write('+%s\n' % bond)
 
 
 def _enable_softdog():
@@ -65,5 +56,4 @@ def load_needed_modules(*args):
 
     for mod in ['bridge', 'tun', 'bonding', '8021q']:
         _exec_command([EX_MODPROBE, mod])
-    _enable_bond_dev()
     _enable_softdog()

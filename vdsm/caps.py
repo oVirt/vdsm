@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,6 +75,28 @@ class AutoNumaBalancingStatus:
 
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
+
+_REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
+
+
+def _report_legacy_bondings(caps):
+    """Engine <= 3.2 expects to always see bond0-bond4
+
+    The legacy bonds were generated only on el6 installations. There is no
+    reason to start reporting them from other OSs
+    """
+
+    if (getos() in (OSName.RHEVH, OSName.RHEL)
+            and osversion()['version'].startswith('6')):
+        for b in _REQUIRED_BONDINGS:
+            if b not in caps['bondings']:
+                caps['bondings'][b] = {
+                    'addr': '',
+                    'cfg': {},
+                    'hwaddr': '00:00:00:00:00:00',
+                    'mtu': '1500',
+                    'netmask': '',
+                    'slaves': []}
 
 
 class Architecture:
@@ -558,6 +580,7 @@ def get():
 
     caps.update(_getVersionInfo())
     caps.update(netinfo.get())
+    _report_legacy_bondings(caps)
 
     try:
         caps['hooks'] = hooks.installed()
