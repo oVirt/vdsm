@@ -4647,6 +4647,26 @@ class Vm(object):
             self.saveState()
             return {'status': doneCode}
 
+    def setCpuTuneQuota(self, quota):
+        try:
+            self._dom.setSchedulerParameters({'vcpu_quota': int(quota)})
+        except ValueError:
+            return self._reportError(key='cpuTuneErr',
+                                     msg='an integer is required for period')
+        except libvirt.libvirtError as e:
+            return self._reportException(key='cpuTuneErr', msg=e.message)
+        return {'status': doneCode}
+
+    def setCpuTunePeriod(self, period):
+        try:
+            self._dom.setSchedulerParameters({'vcpu_period': int(period)})
+        except ValueError:
+            return self._reportError(key='cpuTuneErr',
+                                     msg='an integer is required for period')
+        except libvirt.libvirtError as e:
+            return self._reportException(key='cpuTuneErr', msg=e.message)
+        return {'status': doneCode}
+
     def _reportError(self, key, msg=None):
         """
         Produce an error status.

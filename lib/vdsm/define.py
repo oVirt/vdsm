@@ -138,6 +138,9 @@ errCode = {
     'haErr': {'status': {
         'code': 61,
         'message': 'Failed to set Hosted Engine HA policy'}},
+    'cpuTuneErr': {'status': {
+        'code': 62,
+        'message': 'CpuTune operation is not available'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

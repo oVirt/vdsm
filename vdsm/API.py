@@ -690,6 +690,18 @@ class VM(APIBase):
             return errCode['noVM']
         return v.setBalloonTarget(target)
 
+    def setCpuTuneQuota(self, quota):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.setCpuTuneQuota(quota)
+
+    def setCpuTunePeriod(self, period):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.setCpuTunePeriod(period)
+
     def getDiskAlignment(self, drive):
         if self._UUID != VM.BLANK_UUID:
             return errCode['noimpl']

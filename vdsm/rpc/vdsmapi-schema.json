@@ -7434,3 +7434,35 @@
 {'command': {'class': 'VM', 'name': 'setNumberOfCpus'},
  'data': {'vmID': 'UUID', 'numberOfCpus': 'int'},
  'returns': 'VmDefinition'}
+
+
+##
+# @VM.setCpuTuneQuota:
+#
+# Set the vCpu quota tune parameter to the VM
+#
+# @quota: a number representing the quota to be set
+# Returns:
+# Status code
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'VM', 'name': 'setCpuTuneQuota'},
+ 'data': {'quota': 'int'},
+ 'returns': 'TasksStatus'}
+
+
+##
+# @VM.setCpuTunePeriod:
+#
+# Set the vCpu period tune parameter to the VM
+#
+# @period: a number representing the period to be set
+# Returns:
+# Status code
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'VM', 'name': 'setCpuTunePeriod'},
+ 'data': {'period': 'int'},
+ 'returns': 'TasksStatus'}
