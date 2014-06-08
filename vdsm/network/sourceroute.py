@@ -150,7 +150,7 @@ class DynamicSourceRoute(StaticSourceRoute):
                 allRules.append(rule)
 
         # Find the rule we put in place with 'device' as its 'srcDevice'
-        rules = [rule for rule in allRules if rule.srcDevice == device]
+        rules = [r for r in allRules if r.srcDevice == device]
 
         if not rules:
             logging.error("Routing rules not found for device %s", device)
@@ -161,7 +161,7 @@ class DynamicSourceRoute(StaticSourceRoute):
 
         # Find the other rule we put in place - It'll have 'network' as
         # its source
-        rules += [rule for rule in allRules if rule.source == network]
+        rules += [r for r in allRules if r.source == network]
 
         return rules
 
