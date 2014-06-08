@@ -24,6 +24,7 @@ import httplib
 import logging
 import libvirt
 import threading
+import re
 import sys
 
 from vdsm import utils
@@ -99,9 +100,10 @@ class BindingXMLRPC(object):
             HEADER_IMAGE = 'Image-Id'
             HEADER_VOLUME = 'Volume-Id'
             HEADER_TASK_ID = 'Task-Id'
-            HEADER_SIZE = 'Size'
+            HEADER_RANGE = 'Range'
             HEADER_CONTENT_LENGTH = 'content-length'
             HEADER_CONTENT_TYPE = 'content-type'
+            HEADER_CONTENT_RANGE = 'content-range'
 
             class RequestException():
                 def __init__(self, httpStatusCode, errorMessage):
@@ -115,8 +117,7 @@ class BindingXMLRPC(object):
 
             def do_GET(self):
                 try:
-                    length = self._getIntHeader(self.HEADER_SIZE,
-                                                httplib.BAD_REQUEST)
+                    length = self._getLength()
                     img = self._createImage()
                     startEvent = threading.Event()
                     methodArgs = {'fileObj': self.wfile,
@@ -133,10 +134,12 @@ class BindingXMLRPC(object):
                                                   startEvent, volUUID)
 
                     if response['status']['code'] == 0:
-                        self.send_response(httplib.OK)
+                        self.send_response(httplib.PARTIAL_CONTENT)
                         self.send_header(self.HEADER_CONTENT_TYPE,
                                          'application/octet-stream')
                         self.send_header(self.HEADER_CONTENT_LENGTH, length)
+                        self.send_header(self.HEADER_CONTENT_RANGE,
+                                         "bytes 0-%d" % (length - 1))
                         self.send_header(self.HEADER_TASK_ID, response['uuid'])
                         self.end_headers()
                         startEvent.set()
@@ -218,21 +221,40 @@ class BindingXMLRPC(object):
                     event.wait()
 
             def _getIntHeader(self, headerName, missingError):
+                value = self._getRequiredHeader(headerName, missingError)
+
+                return self._getInt(value)
+
+            def _getRequiredHeader(self, headerName, missingError):
                 value = self.headers.getheader(
                     headerName)
                 if not value:
                     raise self.RequestException(
                         missingError,
                         "missing header %s" % headerName)
+                return value
 
+            def _getInt(self, value):
                 try:
-                    value = int(value)
+                    return int(value)
                 except ValueError:
                     raise self.RequestException(
                         httplib.BAD_REQUEST,
-                        "invalid header value %r" % value)
+                        "not int value %r" % value)
 
-                return value
+            def _getLength(self):
+                value = self._getRequiredHeader(self.HEADER_RANGE,
+                                                httplib.BAD_REQUEST)
+
+                m = re.match(r'^bytes=0-(\d+)$', value)
+                if m is None:
+                    raise self.RequestException(
+                        httplib.BAD_REQUEST,
+                        "Unsupported range: %r , expected: bytes=0-last_byte" %
+                        value)
+
+                last_byte = m.group(1)
+                return self._getInt(last_byte) + 1
 
             def send_error(self, error, message, exc_info=False):
                 try:
