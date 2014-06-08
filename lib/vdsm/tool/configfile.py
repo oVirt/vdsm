@@ -25,6 +25,9 @@ import re
 import selinux
 import io
 
+from .. import utils
+if utils.isOvirtNode():
+    from ovirt.node.utils.fs import Config as NodeCfg
 
 (
     BEFORE,
@@ -82,7 +85,7 @@ class ConfigFile(object):
                  version,
                  sectionStart='## beginning of configuration section by vdsm',
                  sectionEnd='## end of configuration section by vdsm',
-                 prefix='# VDSM backup ',
+                 prefix='# VDSM backup',
                  lineComment='by vdsm'):
         if not os.path.exists(filename):
             raise OSError(
@@ -170,7 +173,13 @@ class ConfigFile(object):
                     f.writelines(oldlines)
                     if self._entries:
                         self._writeEntries(f, oldentries)
+
+                if utils.isOvirtNode():
+                    NodeCfg().unpersist(self._filename)
                 os.rename(tname, self._filename)
+                if utils.isOvirtNode():
+                    NodeCfg().persist(self._filename)
+
                 if self._oldmod != os.stat(self._filename).st_mode:
                     os.chmod(self._filename, self._oldmod)
 
