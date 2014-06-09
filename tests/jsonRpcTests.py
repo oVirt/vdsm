@@ -20,7 +20,6 @@
 import threading
 import socket
 import logging
-import apiTests
 from Queue import Queue
 from contextlib import contextmanager
 from testValidation import brokentest
@@ -43,6 +42,7 @@ from yajsonrpc import \
 
 
 CALL_TIMEOUT = 5
+CALL_ID = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
 
 
 class _EchoMessageHandler(object):
@@ -190,8 +190,7 @@ class JsonRpcServerTests(TestCaseBase):
             with self._client(clientFactory) as client:
                 self.log.info("Calling 'echo'")
                 self.assertEquals(self._callTimeout(client, "echo", (data,),
-                                  apiTests.id,
-                                  CALL_TIMEOUT), data)
+                                  CALL_ID, CALL_TIMEOUT), data)
 
     @permutations(CONNECTION_PERMUTATIONS)
     def testMethodCallArgDict(self, rt, ssl):
@@ -202,8 +201,7 @@ class JsonRpcServerTests(TestCaseBase):
             with self._client(clientFactory) as client:
                 self.assertEquals(self._callTimeout(client, "echo",
                                   {'text': data},
-                                  apiTests.id,
-                                  CALL_TIMEOUT), data)
+                                  CALL_ID, CALL_TIMEOUT), data)
 
     @permutations(CONNECTION_PERMUTATIONS)
     def testMethodMissingMethod(self, rt, ssl):
@@ -212,8 +210,7 @@ class JsonRpcServerTests(TestCaseBase):
             with self._client(clientFactory) as client:
                 with self.assertRaises(JsonRpcError) as cm:
                     self._callTimeout(client, "I.DO.NOT.EXIST :(", [],
-                                      apiTests.id,
-                                      CALL_TIMEOUT)
+                                      CALL_ID, CALL_TIMEOUT)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcMethodNotFoundError().code)
@@ -227,8 +224,7 @@ class JsonRpcServerTests(TestCaseBase):
             with self._client(clientFactory) as client:
                 with self.assertRaises(JsonRpcError) as cm:
                     self._callTimeout(client, "echo", [],
-                                      apiTests.id,
-                                      timeout=CALL_TIMEOUT)
+                                      CALL_ID, timeout=CALL_TIMEOUT)
 
                 self.assertEquals(cm.exception.code,
                                   JsonRpcInternalError().code)
@@ -239,6 +235,5 @@ class JsonRpcServerTests(TestCaseBase):
         with constructServer(rt, bridge, ssl) as (server, clientFactory):
             with self._client(clientFactory) as client:
                 res = self._callTimeout(client, "ping", [],
-                                        apiTests.id,
-                                        timeout=CALL_TIMEOUT)
+                                        CALL_ID, timeout=CALL_TIMEOUT)
                 self.assertEquals(res, True)

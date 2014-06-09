@@ -3,27 +3,14 @@ import socket
 from contextlib import closing
 from contextlib import contextmanager
 from functools import partial
-from nose.plugins.skip import SkipTest
 from itertools import product
 import os
 
 from yajsonrpc import \
     JsonRpcServer, \
-    asyncoreReactor, \
     stompReactor, \
     JsonRpcClientPool, \
     SSLContext
-
-protonReactor = None
-try:
-    from yajsonrpc import protonReactor
-    protonReactor  # unused import
-except ImportError:
-    pass
-
-
-def hasProton():
-    return protonReactor is not None
 
 
 def getFreePort():
@@ -44,29 +31,7 @@ def _stompServerConstructor():
     yield reactorType, address
 
 
-@contextmanager
-def _tcpServerConstructor():
-    port = getFreePort()
-    address = ("127.0.0.1", port)
-    reactorType = asyncoreReactor.AsyncoreReactor
-    yield reactorType, address
-
-
-@contextmanager
-def _protonServerConstructor():
-    if protonReactor is None:
-        raise SkipTest("qpid-proton python bindings are not installed")
-
-    port = getFreePort()
-    reactorType = protonReactor.ProtonReactor
-
-    yield (reactorType,
-           ("127.0.0.1", port))
-
-
-REACTOR_CONSTRUCTORS = {"tcp": _tcpServerConstructor,
-                        "amqp": _protonServerConstructor,
-                        "stomp": _stompServerConstructor}
+REACTOR_CONSTRUCTORS = {"stomp": _stompServerConstructor}
 REACTOR_TYPE_PERMUTATIONS = [[r] for r in REACTOR_CONSTRUCTORS.iterkeys()]
 CONNECTION_PERMUTATIONS = tuple(product(REACTOR_CONSTRUCTORS.iterkeys(),
                                         (True, False)))

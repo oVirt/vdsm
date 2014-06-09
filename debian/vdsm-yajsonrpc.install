@@ -1,6 +1,4 @@
 ./usr/lib/python2.7/dist-packages/yajsonrpc/__init__.py
-./usr/lib/python2.7/dist-packages/yajsonrpc/asyncoreReactor.py
-./usr/lib/python2.7/dist-packages/yajsonrpc/client.py
-./usr/lib/python2.7/dist-packages/yajsonrpc/protonReactor.py
+./usr/lib/python2.7/dist-packages/yajsonrpc/betterAsyncore.py
 ./usr/lib/python2.7/dist-packages/yajsonrpc/stomp.py
 ./usr/lib/python2.7/dist-packages/yajsonrpc/stompReactor.py

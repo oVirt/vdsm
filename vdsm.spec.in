@@ -1420,8 +1420,6 @@ exit 0
 %files yajsonrpc
 %dir %{python_sitelib}/yajsonrpc
 %{python_sitelib}/yajsonrpc/__init__.py*
-%{python_sitelib}/yajsonrpc/asyncoreReactor.py*
-%{python_sitelib}/yajsonrpc/protonReactor.py*
 %{python_sitelib}/yajsonrpc/betterAsyncore.py*
 %{python_sitelib}/yajsonrpc/stomp.py*
 %{python_sitelib}/yajsonrpc/stompReactor.py*
