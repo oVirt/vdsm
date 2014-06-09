@@ -37,6 +37,7 @@ import ethtool
 
 from .config import config
 from . import constants
+from .ipwrapper import drv_name
 from .ipwrapper import DUMMY_BRIDGE
 from .ipwrapper import getLink, getLinks, Link
 from .ipwrapper import IPRoute2Error
@@ -274,6 +275,18 @@ def vlanSpeed(vlanName):
     return speed
 
 
+def _ibHackedSpeed(nicName):
+    """If the nic is an InfiniBand device, return a speed of 10000 Mbps.
+
+    This is only needed until the kernel reports ib*/speed, see
+    https://bugzilla.redhat.com/show_bug.cgi?id=1101314
+    """
+    try:
+        return 10000 if drv_name(nicName) == 'ib_ipoib' else 0
+    except IOError:
+        return 0
+
+
 def nicSpeed(nicName):
     """Returns the nic speed if it is a legal value and nicName refers to a
     nic, 0 otherwise."""
@@ -289,7 +302,9 @@ def nicSpeed(nicName):
         if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
             return s
     except IOError as ose:
-        if ose.errno != errno.EINVAL:
+        if ose.errno == errno.EINVAL:
+            return _ibHackedSpeed(nicName)
+        else:
             logging.exception('cannot read %s nic speed', nicName)
     except Exception:
         logging.exception('cannot read %s speed', nicName)

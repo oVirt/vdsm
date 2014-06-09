@@ -170,7 +170,7 @@ class Link(object):
         # TODO: Add support for virtual functions
         detectedType = None
         try:
-            driver = _drvinfo(name)
+            driver = drv_name(name)
         except IOError as ioe:
             if ioe.errno == errno.EOPNOTSUPP:
                 if name == 'lo':
@@ -255,7 +255,7 @@ class Link(object):
         return False
 
 
-def _drvinfo(devName):
+def drv_name(devName):
     """Returns the driver used by a device.
     Throws IOError ENODEV for non existing devices.
     Throws IOError EOPNOTSUPP for non supported devices, i.g., loopback."""

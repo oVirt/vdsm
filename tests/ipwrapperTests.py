@@ -315,5 +315,5 @@ class TestDrvinfo(TestCaseBase):
         self._bridge.delDevice()
 
     def testBridgeEthtoolDrvinfo(self):
-        self.assertEqual(ipwrapper._drvinfo(self._bridge.devName),
+        self.assertEqual(ipwrapper.drv_name(self._bridge.devName),
                          ipwrapper.LinkType.BRIDGE)
