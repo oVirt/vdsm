@@ -251,9 +251,9 @@ class Bond(NetDevice):
                       for nic in _netinfo.getNicsForBonding(name)]
             options = _netinfo.bondings[name]['cfg'].get('BONDING_OPTS')
         else:
-            raise ConfigNetworkError(ne.ERR_BAD_BONDING,
-                                     'Bonding %s not specified and it is not '
-                                     'already on the system' % name)
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                                     'Missing required nics on a bonding %s '
+                                     'that is unknown to Vdsm ' % name)
         if not slaves:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required nics'
                                      ' for bonding device.')
