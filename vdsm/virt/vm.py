@@ -3715,11 +3715,17 @@ class Vm(object):
     def snapshot(self, snapDrives, memoryParams):
         """Live snapshot command"""
 
-        def _diskSnapshot(vmDev, newPath):
+        def _diskSnapshot(vmDev, newPath, sourceType):
             """Libvirt snapshot XML"""
 
-            disk = XMLElement('disk', name=vmDev, snapshot='external')
-            disk.appendChildWithArgs('source', file=newPath)
+            disk = XMLElement('disk', name=vmDev, snapshot='external',
+                              type=sourceType)
+            if sourceType == 'block':
+                args = {'dev': newPath}
+            elif sourceType == 'file':
+                args = {'file': newPath}
+            args['type'] = sourceType
+            disk.appendChildWithArgs('source', **args)
             return disk
 
         def _normSnapDriveParams(drive):
@@ -3784,6 +3790,7 @@ class Vm(object):
         snap = xml.dom.minidom.Element('domainsnapshot')
         disks = xml.dom.minidom.Element('disks')
         newDrives = {}
+        snapTypes = {}
 
         if self.isMigrating():
             return errCode['migInProgress']
@@ -3823,6 +3830,7 @@ class Vm(object):
             newDrives[vmDevName]["poolID"] = vmDrive.poolID
             newDrives[vmDevName]["name"] = vmDevName
             newDrives[vmDevName]["format"] = "cow"
+            snapTypes[vmDevName] = ('file', 'block')[vmDrive.blockDev]
 
         # If all the drives are the current ones, return success
         if len(newDrives) == 0:
@@ -3845,7 +3853,8 @@ class Vm(object):
                 _rollbackDrives(preparedDrives)
                 return errCode['snapshotErr']
 
-            snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"])
+            snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"],
+                                     snapTypes[vmDevName])
             disks.appendChild(snapelem)
 
         snap.appendChild(disks)
