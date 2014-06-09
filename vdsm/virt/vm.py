@@ -255,7 +255,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             # Avoid queries from storage during recovery process
             return
 
-        for vmDrive in self._vm._devices[DISK_DEVICES]:
+        for vmDrive in self._vm.getDiskDevices():
             self._vm.updateDriveVolume(vmDrive)
 
     def _sampleCpu(self):
@@ -268,7 +268,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             return
 
         diskSamples = {}
-        for vmDrive in self._vm._devices[DISK_DEVICES]:
+        for vmDrive in self._vm.getDiskDevices():
             diskSamples[vmDrive.name] = self._vm._dom.blockStats(vmDrive.name)
 
         return diskSamples
@@ -282,14 +282,14 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         # 'rd_bytes': 85172430L, 'flush_operations': 0L,
         # 'wr_operations': 0L, 'wr_bytes': 0L}
         diskLatency = {}
-        for vmDrive in self._vm._devices[DISK_DEVICES]:
+        for vmDrive in self._vm.getDiskDevices():
             diskLatency[vmDrive.name] = self._vm._dom.blockStatsFlags(
                 vmDrive.name, flags=libvirt.VIR_TYPED_PARAM_STRING_OKAY)
         return diskLatency
 
     def _sampleNet(self):
         netSamples = {}
-        for nic in self._vm._devices[NIC_DEVICES]:
+        for nic in self._vm.getNicDevices():
             netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
         return netSamples
 
@@ -360,9 +360,8 @@ class VmStatsThread(sampling.AdvancedStatsThread):
 
         sInfo, eInfo, sampleInterval = self.sampleBalloon.getStats()
 
-        for dev in self._vm.conf['devices']:
-            if dev['type'] == BALLOON_DEVICES and \
-                    dev['specParams']['model'] != 'none':
+        for dev in self._vm.getBalloonDevicesConf():
+            if dev['specParams']['model'] != 'none':
                 balloon_target = dev.get('target', max_mem)
                 break
         else:
@@ -456,7 +455,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         if sInfo is None:
             return
 
-        for nic in self._vm._devices[NIC_DEVICES]:
+        for nic in self._vm.getNicDevices():
             if nic.name.startswith('hostdev'):
                 continue
 
@@ -471,7 +470,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
     def _getDiskStats(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleDisk.getStats()
 
-        for vmDrive in self._vm._devices[DISK_DEVICES]:
+        for vmDrive in self._vm.getDiskDevices():
             dName = vmDrive.name
             dStats = {}
             try:
@@ -519,7 +518,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 'writeLatency': str(writeLatency),
                 'flushLatency': str(flushLatency)}
 
-        for vmDrive in self._vm._devices[DISK_DEVICES]:
+        for vmDrive in self._vm.getDiskDevices():
             dName = vmDrive.name
             dLatency = {'readLatency': '0',
                         'writeLatency': '0',
@@ -5689,6 +5688,17 @@ class Vm(object):
         for dev in self.conf.get('devices', ()):
             if dev.get('type') == GRAPHICS_DEVICES:
                 return dev
+
+    def getDiskDevices(self):
+        return self._devices[DISK_DEVICES]
+
+    def getNicDevices(self):
+        return self._devices[NIC_DEVICES]
+
+    def getBalloonDevicesConf(self):
+        for dev in self.conf['devices']:
+            if dev['type'] == BALLOON_DEVICES:
+                yield dev
 
 
 def _getNetworkIp(network):
