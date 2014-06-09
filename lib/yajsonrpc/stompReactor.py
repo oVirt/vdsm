@@ -14,18 +14,14 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import asyncore
-import socket
 import os
 import threading
 import logging
 
 import stomp
 
-from betterAsyncore import \
-    Dispatcher, \
-    SSLDispatcher
-from vdsm.sslutils import SSLContext
-
+from betterAsyncore import Dispatcher
+from vdsm.sslutils import SSLSocket
 
 _STATE_LEN = "Waiting for message length"
 _STATE_MSG = "Waiting for message"
@@ -33,16 +29,6 @@ _STATE_MSG = "Waiting for message"
 
 _DEFAULT_RESPONSE_DESTINATIOM = "/queue/_local/vdsm/reponses"
 _DEFAULT_REQUEST_DESTINATION = "/queue/_local/vdsm/requests"
-
-
-def _SSLContextFactory(ctxdef):
-    """Creates an appropriate ssl context from the generic defenition defined
-    in __init__.py"""
-    return SSLContext(cert_file=ctxdef.cert_file,
-                      key_file=ctxdef.key_file,
-                      ca_cert=ctxdef.ca_cert,
-                      session_id=ctxdef.session_id,
-                      protocol=ctxdef.protocol)
 
 
 class StompAdapterImpl(object):
@@ -90,33 +76,13 @@ class StompAdapterImpl(object):
 
 
 class _StompConnection(object):
-    def __init__(self, aclient, sock, reactor, addr, sslctx=None):
-        self._addr = addr
+    def __init__(self, aclient, sock, reactor):
+        self._socket = sock
         self._reactor = reactor
         self._messageHandler = None
 
         adisp = self._adisp = stomp.AsyncDispatcher(aclient)
-        if sslctx is None:
-            try:
-                sslctx = sock.get_context()
-            except AttributeError:
-                # if get_context() is missing it just means we recieved an
-                # socket that doesn't use SSL
-                pass
-        else:
-            sslctx = _SSLContextFactory(sslctx)
-
-        if sslctx is None:
-            dispatcher = Dispatcher(adisp, sock=sock, map=reactor._map)
-        else:
-            dispatcher = SSLDispatcher(adisp, sslctx, sock=sock,
-                                       map=reactor._map)
-
-        if sock is None:
-            address_family = socket.getaddrinfo(*addr)[0][0]
-            dispatcher.create_socket(address_family, socket.SOCK_STREAM)
-
-        self._dispatcher = dispatcher
+        self._dispatcher = Dispatcher(adisp, sock=sock, map=reactor._map)
 
     def send_raw(self, msg):
         self._adisp.send_raw(msg)
@@ -126,7 +92,7 @@ class _StompConnection(object):
         self._dispatcher.socket.settimeout(timeout)
 
     def connect(self):
-        self._dispatcher.connect(self._addr)
+        pass
 
     def close(self):
         self._dispatcher.close()
@@ -135,18 +101,16 @@ class _StompConnection(object):
 class StompServer(object):
     log = logging.getLogger("yajsonrpc.StompServer")
 
-    def __init__(self, sock, reactor, addr, sslctx=None):
-        self._addr = addr
+    def __init__(self, sock, reactor):
         self._reactor = reactor
         self._messageHandler = None
+        self._socket = sock
 
         adapter = StompAdapterImpl(reactor, self._handleMessage)
         self._stompConn = _StompConnection(
             adapter,
             sock,
             reactor,
-            addr,
-            sslctx
         )
 
     def setTimeout(self, timeout):
@@ -162,6 +126,11 @@ class StompServer(object):
 
     def setMessageHandler(self, msgHandler):
         self._messageHandler = msgHandler
+        self.check_read()
+
+    def check_read(self):
+        if isinstance(self._socket, SSLSocket) and self._socket.pending() > 0:
+            self._stompConn._dispatcher.handle_read()
 
     def send(self, message):
         self.log.debug("Sending response")
@@ -178,18 +147,16 @@ class StompServer(object):
 class StompClient(object):
     log = logging.getLogger("jsonrpc.AsyncoreClient")
 
-    def __init__(self, sock, reactor, addr, sslctx=None):
-        self._addr = addr
+    def __init__(self, sock, reactor):
         self._reactor = reactor
         self._messageHandler = None
+        self._socket = sock
 
         self._aclient = stomp.AsyncClient(self, "vdsm")
         self._stompConn = _StompConnection(
             self._aclient,
             sock,
-            reactor,
-            addr,
-            sslctx
+            reactor
         )
 
     def setTimeout(self, timeout):
@@ -205,6 +172,11 @@ class StompClient(object):
 
     def setMessageHandler(self, msgHandler):
         self._messageHandler = msgHandler
+        self.check_read()
+
+    def check_read(self):
+        if isinstance(self._socket, SSLSocket) and self._socket.pending() > 0:
+            self._stompConn._dispatcher.handle_read()
 
     def send(self, message):
         self._aclient.send(self._stompConn, _DEFAULT_REQUEST_DESTINATION,
@@ -216,13 +188,9 @@ class StompClient(object):
         self._stompConn.close()
 
 
-def StompListener(reactor, address, acceptHandler, sslctx=None):
-    impl = StompListenerImpl(reactor, address, acceptHandler)
-    if sslctx is None:
-        return Dispatcher(impl, map=reactor._map)
-    else:
-        sslctx = _SSLContextFactory(sslctx)
-        return SSLDispatcher(impl, sslctx, map=reactor._map)
+def StompListener(reactor, acceptHandler, connected_socket):
+    impl = StompListenerImpl(reactor, acceptHandler, connected_socket)
+    return Dispatcher(impl, connected_socket, map=reactor._map)
 
 
 # FIXME: We should go about making a listener wrapper like the client wrapper
@@ -231,33 +199,15 @@ def StompListener(reactor, address, acceptHandler, sslctx=None):
 class StompListenerImpl(object):
     log = logging.getLogger("jsonrpc.StompListener")
 
-    def __init__(self, reactor, address, acceptHandler):
+    def __init__(self, reactor, acceptHandler, connected_socket):
         self._reactor = reactor
-        self._address = address
+        self._socket = connected_socket
         self._acceptHandler = acceptHandler
 
     def init(self, dispatcher):
-        address_family = socket.getaddrinfo(*self._address)[0][0]
-        dispatcher.create_socket(address_family, socket.SOCK_STREAM)
-
         dispatcher.set_reuse_addr()
-        dispatcher.bind(self._address)
-        dispatcher.listen(5)
 
-    def handle_accept(self, dispatcher):
-        try:
-            pair = dispatcher.accept()
-        except Exception as e:
-            self.log.exception(e)
-            raise
-        if pair is None:
-            return
-
-        sock, addr = pair
-        self.log.debug("Accepting connection from client "
-                       "at tcp://%s:%s", addr[0], addr[1])
-
-        client = StompServer(sock, self._reactor, addr)
+        client = StompServer(self._socket, self._reactor)
         self._acceptHandler(self, client)
 
     def writable(self, dispatcher):
@@ -308,19 +258,18 @@ class _AsyncoreEvent(asyncore.file_dispatcher):
 
 
 class StompReactor(object):
-    def __init__(self, sslctx=None):
-        self.sslctx = sslctx
+    def __init__(self):
         self._map = {}
         self._isRunning = False
         self._wakeupEvent = _AsyncoreEvent(self._map)
 
-    def createListener(self, address, acceptHandler):
-        listener = StompListener(self, address, acceptHandler, self.sslctx)
+    def createListener(self, connected_socket, address, acceptHandler):
+        listener = StompListener(self, acceptHandler, connected_socket)
         self.wakeup()
         return listener
 
-    def createClient(self, address):
-        return StompClient(None, self, address, self.sslctx)
+    def createClient(self, connected_socket):
+        return StompClient(connected_socket, self)
 
     def process_requests(self):
         self._isRunning = True
@@ -341,3 +290,21 @@ class StompReactor(object):
         except (IOError, OSError):
             # Client woke up and closed the event dispatcher without our help
             pass
+
+
+class StompDetector():
+    log = logging.getLogger("protocoldetector.StompDetector")
+    NAME = "stomp"
+    REQUIRED_SIZE = 7
+
+    def __init__(self, json_binding):
+        self.json_binding = json_binding
+        self._reactor = self.json_binding.createStompReactor()
+
+    def detect(self, data):
+        return data.startswith("CONNECT") or data.startswith("SEND")
+
+    def handleSocket(self, client_socket, socket_address):
+        self.json_binding.add_socket(self._reactor, client_socket,
+                                     socket_address)
+        self.log.debug("Stomp detected from %s", socket_address)

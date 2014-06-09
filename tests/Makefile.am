@@ -40,8 +40,8 @@ test_modules = \
 	hooksTests.py \
 	ipwrapperTests.py \
 	iscsiTests.py \
+	jsonRpcHelper.py \
 	jsonRpcTests.py \
-	jsonRpcUtils.py \
 	ksmTests.py \
 	libvirtconnectionTests.py \
 	lsblkTests.py \

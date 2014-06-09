@@ -17,22 +17,17 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import threading
-import socket
 import logging
-from Queue import Queue
 from contextlib import contextmanager
-from testValidation import brokentest
 
 from testrunner import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
     permutations, \
     dummyTextGenerator
 
-from jsonRpcUtils import \
-    CONNECTION_PERMUTATIONS, \
-    constructReactor, \
-    constructServer
+from jsonRpcHelper import \
+    PERMUTATIONS, \
+    constructClient
 
 from yajsonrpc import \
     JsonRpcError, \
@@ -45,111 +40,12 @@ CALL_TIMEOUT = 5
 CALL_ID = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
 
 
-class _EchoMessageHandler(object):
-    def handleMessage(self, msgCtx):
-        msgCtx.sendReply(msgCtx.data)
-
-
-class _EchoServer(object):
-    log = logging.getLogger("EchoServer")
-
-    def __init__(self):
-        self._queue = Queue()
-
-    def accept(self, l, c):
-        c.setMessageHandler(self._queue.put_nowait)
-
-    def serve(self):
-        while True:
-            try:
-                client, msg = self._queue.get()
-                if client is None:
-                    return
-
-                client.send(msg)
-            except Exception:
-                self.log.error("EchoServer died unexpectedly", exc_info=True)
-
-
-class ReactorClientSyncWrapper(object):
-    def __init__(self, client):
-        self._client = client
-        self._queue = Queue()
-        self._client.setMessageHandler(self._queue.put_nowait)
-
-    def send(self, data):
-        self._client.send(data)
-
-    def connect(self):
-        self._client.setTimeout(CALL_TIMEOUT)
-        self._client.connect()
-
-    def recv(self, timeout=None):
-        return self._queue.get(True, timeout)[1]
-
-
-@expandPermutations
-class ReactorTests(TestCaseBase):
-    @brokentest
-    @permutations(CONNECTION_PERMUTATIONS)
-    def test(self, rt, ssl):
-        data = dummyTextGenerator(((2 ** 10) * 200))
-
-        echosrv = _EchoServer()
-
-        def serve(reactor):
-            try:
-                reactor.process_requests()
-            except socket.error as e:
-                pass
-            except Exception as e:
-                self.log.error("Reactor died unexpectedly", exc_info=True)
-                self.fail("Reactor died: (%s) %s" % (type(e), e))
-
-        with constructReactor(rt, ssl) as \
-                (reactor, clientReactor, laddr):
-
-            t = threading.Thread(target=echosrv.serve)
-            t.setDaemon(True)
-            t.start()
-
-            reactor.createListener(laddr, echosrv.accept)
-
-            clientNum = 2
-            repeats = 10
-            subRepeats = 10
-
-            clients = []
-            for i in range(clientNum):
-                c = ReactorClientSyncWrapper(
-                    clientReactor.createClient(laddr))
-                c.connect()
-                clients.append(c)
-
-            for i in range(repeats):
-                for client in clients:
-                    for i in range(subRepeats):
-                        self.log.info("Sending message...")
-                        client.send(data)
-
-            for i in range(repeats * subRepeats):
-                for client in clients:
-                    self.log.info("Waiting for reply...")
-                    retData = client.recv(CALL_TIMEOUT)
-                    self.log.info("Asserting reply...")
-                    self.assertTrue(isinstance(retData,
-                                               (str, unicode)))
-                    plen = 20  # Preview len, used for debugging
-                    self.assertEquals(
-                        retData, data,
-                        "Data is not as expected " +
-                        "'%s...%s' (%d chars) != '%s...%s' (%d chars)" %
-                        (retData[:plen], retData[-plen:], len(retData),
-                         data[:plen], data[-plen:], len(data)))
-
-
 class _DummyBridge(object):
     log = logging.getLogger("tests.DummyBridge")
+
+    def getBridgeMethods(self):
+        return ((self.echo, 'echo'),
+                (self.ping, 'ping'))
 
     def echo(self, text):
         self.log.info("ECHO: '%s'", text)
@@ -181,59 +77,84 @@ class JsonRpcServerTests(TestCaseBase):
             finally:
                 client.close()
 
-    @permutations(CONNECTION_PERMUTATIONS)
-    def testMethodCallArgList(self, rt, ssl):
+    @permutations(PERMUTATIONS)
+    def testMethodCallArgList(self, ssl, type):
         data = dummyTextGenerator(1024)
 
         bridge = _DummyBridge()
-        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
             with self._client(clientFactory) as client:
                 self.log.info("Calling 'echo'")
-                self.assertEquals(self._callTimeout(client, "echo", (data,),
-                                  CALL_ID, CALL_TIMEOUT), data)
+                if type == "xml":
+                    response = client.send("echo", (data,))
+                    self.assertEquals(response, data)
+                else:
+                    self.assertEquals(self._callTimeout(client, "echo",
+                                      (data,), CALL_ID,
+                                      CALL_TIMEOUT), data)
 
-    @permutations(CONNECTION_PERMUTATIONS)
-    def testMethodCallArgDict(self, rt, ssl):
+    @permutations(PERMUTATIONS)
+    def testMethodCallArgDict(self, ssl, type):
         data = dummyTextGenerator(1024)
 
         bridge = _DummyBridge()
-        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
             with self._client(clientFactory) as client:
-                self.assertEquals(self._callTimeout(client, "echo",
-                                  {'text': data},
-                                  CALL_ID, CALL_TIMEOUT), data)
+                if type == "xml":
+                        response = client.send("echo", (data,))
+                        self.assertEquals(response, data)
+                else:
+                    self.assertEquals(self._callTimeout(client, "echo",
+                                      {'text': data}, CALL_ID,
+                                      CALL_TIMEOUT), data)
 
-    @permutations(CONNECTION_PERMUTATIONS)
-    def testMethodMissingMethod(self, rt, ssl):
+    @permutations(PERMUTATIONS)
+    def testMethodMissingMethod(self, ssl, type):
         bridge = _DummyBridge()
-        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
             with self._client(clientFactory) as client:
-                with self.assertRaises(JsonRpcError) as cm:
-                    self._callTimeout(client, "I.DO.NOT.EXIST :(", [],
-                                      CALL_ID, CALL_TIMEOUT)
+                if type == "xml":
+                    response = client.send("I.DO.NOT.EXIST :(", ())
+                    self.assertTrue("\"I.DO.NOT.EXIST :(\" is not supported"
+                                    in response)
+                else:
+                    with self.assertRaises(JsonRpcError) as cm:
+                        self._callTimeout(client, "I.DO.NOT.EXIST :(", [],
+                                          CALL_ID, CALL_TIMEOUT)
 
-                self.assertEquals(cm.exception.code,
-                                  JsonRpcMethodNotFoundError().code)
+                    self.assertEquals(cm.exception.code,
+                                      JsonRpcMethodNotFoundError().code)
 
-    @permutations(CONNECTION_PERMUTATIONS)
-    def testMethodBadParameters(self, rt, ssl):
+    @permutations(PERMUTATIONS)
+    def testMethodBadParameters(self, ssl, type):
         # Without a schema the server returns an internal error
 
         bridge = _DummyBridge()
-        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
             with self._client(clientFactory) as client:
-                with self.assertRaises(JsonRpcError) as cm:
-                    self._callTimeout(client, "echo", [],
-                                      CALL_ID, timeout=CALL_TIMEOUT)
+                if type == "xml":
+                    response = client.send("echo", ())
+                    self.assertTrue("echo() takes exactly 2 arguments"
+                                    in response)
+                else:
+                    with self.assertRaises(JsonRpcError) as cm:
+                        self._callTimeout(client, "echo", [],
+                                          CALL_ID, timeout=CALL_TIMEOUT)
 
-                self.assertEquals(cm.exception.code,
-                                  JsonRpcInternalError().code)
+                    self.assertEquals(cm.exception.code,
+                                      JsonRpcInternalError().code)
 
-    @permutations(CONNECTION_PERMUTATIONS)
-    def testMethodReturnsNullAndServerReturnsTrue(self, rt, ssl):
+    @permutations(PERMUTATIONS)
+    def testMethodReturnsNullAndServerReturnsTrue(self, ssl, type):
         bridge = _DummyBridge()
-        with constructServer(rt, bridge, ssl) as (server, clientFactory):
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
             with self._client(clientFactory) as client:
-                res = self._callTimeout(client, "ping", [],
-                                        CALL_ID, timeout=CALL_TIMEOUT)
-                self.assertEquals(res, True)
+                if type == "xml":
+                    response = client.send("ping", ())
+                    # for xml empty response is not allowed by design
+                    self.assertTrue("None unless allow_none is enabled"
+                                    in response)
+                else:
+                    res = self._callTimeout(client, "ping", [],
+                                            CALL_ID, timeout=CALL_TIMEOUT)
+                    self.assertEquals(res, True)

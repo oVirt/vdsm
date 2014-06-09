@@ -17,7 +17,6 @@
 # us to use. This does tries to reuse enought code from the original asyncore
 # while enabling compositing instead of inheritance.
 import asyncore
-from M2Crypto import SSL
 import socket
 from sys import py3kwarning
 from warnings import filterwarnings, catch_warnings
@@ -282,33 +281,6 @@ class Dispatcher(asyncore.dispatcher):
     def handle_write(self):
         return self.__invoke("handle_write")
 
-
-class SSLDispatcher(asyncore.dispatcher):
-    def __init__(self, impl, sslcontext, sock=None, map=None):
-        self.__impl = impl
-        self.__sslcontext = sslcontext
-        asyncore.dispatcher.__init__(self, sock=sock, map=map)
-
-        try:
-            impl.init(self)
-        except AttributeError:
-            pass
-
-    def create_socket(self, family, type):
-        self.family_and_type = family, type
-        sock = SSL.Connection(self.__sslcontext.context, family=family)
-        self.set_socket(sock)
-
-    def connect(self, addr):
-        self.connected = False
-        self.connecting = True
-        socket = self.socket
-        socket.setblocking(1)
-        socket.connect(addr)
-        socket.setblocking(0)
-        self.addr = addr
-        self.handle_connect_event()
-
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
@@ -326,36 +298,3 @@ class SSLDispatcher(asyncore.dispatcher):
                 return ''
             else:
                 raise
-
-    def __invoke(self, name, *args, **kwargs):
-        if hasattr(self.__impl, name):
-            return getattr(self.__impl, name)(self, *args, **kwargs)
-        else:
-            return getattr(asyncore.dispatcher, name)(self, *args, **kwargs)
-
-    def handle_connect(self):
-        return self.__invoke("handle_connect")
-
-    def handle_close(self):
-        return self.__invoke("handle_close")
-
-    def handle_accept(self):
-        return self.__invoke("handle_accept")
-
-    def handle_read(self):
-        return self.__invoke("handle_read")
-
-    def handle_write(self):
-        return self.__invoke("handle_write")
-
-    def handle_expt(self):
-        return self.__invoke("handle_expt")
-
-    def handle_error(self):
-        return self.__invoke("handle_error")
-
-    def readable(self):
-        return self.__invoke("readable")
-
-    def writable(self):
-        return self.__invoke("writable")

@@ -18,7 +18,6 @@ import logging
 
 from yajsonrpc import JsonRpcServer
 from yajsonrpc.stompReactor import StompReactor
-from yajsonrpc.betterAsyncore import SSLContext
 
 
 def _simpleThreadFactory(func):
@@ -30,66 +29,36 @@ def _simpleThreadFactory(func):
 class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
-    def __init__(self, bridge, backendConfig, truststore_path=None):
-        reactors = {}
-        self.bridge = bridge
-        self.server = JsonRpcServer(bridge,
-                                    _simpleThreadFactory)
-        self._cfg = backendConfig
+    def __init__(self, bridge):
+        self._server = JsonRpcServer(bridge, _simpleThreadFactory)
+        self._reactors = []
 
-        for backendType, cfg in backendConfig:
-            if backendType not in reactors:
-                if backendType == "stomp":
-                    reactors["stomp"] = self._createStompReactor(
-                        truststore_path)
-
-        self._reactors = reactors
-
-    def _createStompListener(self, cfg):
-        address = cfg.get("ip", "0.0.0.0")
-        try:
-            port = cfg["port"]
-        except KeyError:
-            raise ValueError("cfg")
-
-        return self._reactors["stomp"].createListener((address, port),
-                                                      self._onAccept)
+    def add_socket(self, reactor, client_socket, socket_address):
+        reactor.createListener(client_socket, socket_address, self._onAccept)
 
     def _onAccept(self, listener, client):
-        client.setMessageHandler(self.server.queueRequest)
+        client.setMessageHandler(self._server.queueRequest)
 
-    def _createStompReactor(self, truststore_path=None):
-        if truststore_path is None:
-            return StompReactor()
-        else:
-            key_file = truststore_path + '/keys/vdsmkey.pem'
-            cert_file = truststore_path + '/certs/vdsmcert.pem'
-            ca_cert = truststore_path + '/certs/cacert.pem'
-            return StompReactor(SSLContext(cert_file, key_file, ca_cert))
+    def createStompReactor(self):
+        reactor = StompReactor()
+        self._reactors.append(reactor)
+        self.startReactor(reactor)
+        return reactor
 
     def start(self):
-        t = threading.Thread(target=self.server.serve_requests,
+        t = threading.Thread(target=self._server.serve_requests,
                              name='JsonRpcServer')
         t.setDaemon(True)
         t.start()
 
-        for reactor in self._reactors.itervalues():
-            reactorName = reactor.__class__.__name__
-            t = threading.Thread(target=reactor.process_requests,
-                                 name='JsonRpc (%s)' % reactorName)
-            t.setDaemon(True)
-            t.start()
+    def startReactor(self, reactor):
+        reactorName = reactor.__class__.__name__
+        t = threading.Thread(target=reactor.process_requests,
+                             name='JsonRpc (%s)' % reactorName)
+        t.setDaemon(True)
+        t.start()
 
-        for backendType, cfg in self._cfg:
-            try:
-                if backendType == "stomp":
-                    self._createStompListener(cfg)
-            except:
-                # TBD: propegate error and crash VDSM
-                self.log.warning("Could not listen on reactor '%s'",
-                                 reactorName, exc_info=True)
-
-    def prepareForShutdown(self):
-        self.server.stop()
-        for reactor in self._reactors.itervalues():
+    def stop(self):
+        self._server.stop()
+        for reactor in self._reactors:
             reactor.stop()

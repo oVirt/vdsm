@@ -18,22 +18,13 @@ from functools import partial
 from Queue import Queue
 from weakref import ref
 from threading import Lock, Event
+from vdsm.utils import traceback
 
 __all__ = ["tcpReactor"]
 
 _STATE_INCOMING = 1
 _STATE_OUTGOING = 2
 _STATE_ONESHOT = 4
-
-
-class SSLContext(object):
-    def __init__(self, cert_file, key_file, ca_cert=None, session_id="SSL",
-                 protocol="sslv23"):
-        self.cert_file = cert_file
-        self.key_file = key_file
-        self.ca_cert = ca_cert
-        self.session_id = session_id
-        self.protocol = protocol
 
 
 class JsonRpcError(RuntimeError):
@@ -269,18 +260,15 @@ class _JsonRpcServeRequestContext(object):
 
 
 class JsonRpcClientPool(object):
-    def __init__(self, reactors):
+    def __init__(self, reactor):
         self.log = logging.getLogger("JsonRpcClientPool")
-        self._reactors = reactors
+        self._reactor = reactor
         self._inbox = Queue()
         self._clients = {}
         self._eventcbs = []
 
-    def createClient(self, address):
-        rtype, address = address.split("://")
-        host, port = address.split(":")
-        port = int(port)
-        transport = self._reactors[rtype].createClient((host, port))
+    def createClient(self, connected_socket):
+        transport = self._reactor.createClient(connected_socket)
         transport.setMessageHandler(self._handleClientMessage)
         client = JsonRpcClient(transport)
         self._clients[transport] = client
@@ -501,6 +489,7 @@ class JsonRpcServer(object):
 
             ctx.requestDone(JsonRpcResponse(res, None, req.id))
 
+    @traceback(on=log.name)
     def serve_requests(self):
         while True:
             self.log.debug("Waiting for request")

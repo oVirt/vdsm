@@ -108,7 +108,7 @@ class clientIF:
             port = config.getint('addresses', 'management_port')
             self._createAcceptor(host, port)
             self._prepareXMLRPCBinding(host, port)
-            self._prepareJSONRPCBinding(host, port)
+            self._prepareJSONRPCBinding()
         except:
             self.log.error('failed to init clientIF, '
                            'shutting down storage dispatcher')
@@ -186,21 +186,21 @@ class clientIF:
                 xml_detector = XmlDetector(xml_binding)
                 self._acceptor.add_detector(xml_detector)
 
-    def _prepareJSONRPCBinding(self, host, port):
+    def _prepareJSONRPCBinding(self):
         if config.getboolean('vars', 'jsonrpc_enable'):
             try:
-                from rpc.Bridge import DynamicBridge
+                from rpc import Bridge
                 from rpc.BindingJsonRpc import BindingJsonRpc
+                from yajsonrpc.stompReactor import StompDetector
             except ImportError:
                 self.log.warn('Unable to load the json rpc server module. '
                               'Please make sure it is installed.')
             else:
-                truststore_path = None
-                if config.getboolean('vars', 'ssl'):
-                    truststore_path = config.get('vars', 'trust_store_path')
-                conf = [('stomp', {"ip": host, "port": port})]
-                self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf,
-                                                       truststore_path)
+                bridge = Bridge.DynamicBridge()
+                json_binding = BindingJsonRpc(bridge)
+                self.bindings['jsonrpc'] = json_binding
+                stomp_detector = StompDetector(json_binding)
+                self._acceptor.add_detector(stomp_detector)
 
     def _prepareMOM(self):
         momconf = config.get("mom", "conf")
