@@ -61,10 +61,10 @@ import numaUtils
 # local package imports
 from . import guestagent
 from . import migration
-from . import sampling
 from . import vmexitreason
 from . import vmstatus
 
+from .sampling import AdvancedStatsFunction, AdvancedStatsThread
 from .utils import isVdsmImage
 from vmpowerdown import VmShutdown, VmReboot
 
@@ -166,7 +166,7 @@ class UpdatePortMirroringError(Exception):
     pass
 
 
-class VmStatsThread(sampling.AdvancedStatsThread):
+class VmStatsThread(AdvancedStatsThread):
     MBPS_TO_BPS = 10 ** 6 / 8
 
     # CPU tune sampling window
@@ -174,55 +174,55 @@ class VmStatsThread(sampling.AdvancedStatsThread):
     CPU_TUNE_SAMPLING_WINDOW = 2
 
     def __init__(self, vm):
-        sampling.AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
+        AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
         self._vm = vm
 
         self.highWrite = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._highWrite,
                 config.getint('vars', 'vm_watermark_interval')))
         self.updateVolumes = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._updateVolumes,
                 config.getint('irs', 'vol_size_sample_interval')))
 
         self.sampleCpu = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleCpu,
                 config.getint('vars', 'vm_sample_cpu_interval'),
                 config.getint('vars', 'vm_sample_cpu_window')))
         self.sampleDisk = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleDisk,
                 config.getint('vars', 'vm_sample_disk_interval'),
                 config.getint('vars', 'vm_sample_disk_window')))
         self.sampleDiskLatency = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleDiskLatency,
                 config.getint('vars', 'vm_sample_disk_latency_interval'),
                 config.getint('vars', 'vm_sample_disk_latency_window')))
         self.sampleNet = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleNet,
                 config.getint('vars', 'vm_sample_net_interval'),
                 config.getint('vars', 'vm_sample_net_window')))
         self.sampleBalloon = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleBalloon,
                 config.getint('vars', 'vm_sample_balloon_interval'),
                 config.getint('vars', 'vm_sample_balloon_window')))
         self.sampleVmJobs = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleVmJobs,
                 config.getint('vars', 'vm_sample_jobs_interval'),
                 config.getint('vars', 'vm_sample_jobs_window')))
         self.sampleVcpuPinning = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleVcpuPinning,
                 config.getint('vars', 'vm_sample_vcpu_pin_interval'),
                 config.getint('vars', 'vm_sample_vcpu_pin_window')))
         self.sampleCpuTune = (
-            sampling.AdvancedStatsFunction(
+            AdvancedStatsFunction(
                 self._sampleCpuTune,
                 config.getint('vars', 'vm_sample_cpu_tune_interval'),
                 self.CPU_TUNE_SAMPLING_WINDOW))
