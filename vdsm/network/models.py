@@ -233,7 +233,7 @@ class Bond(NetDevice):
     @classmethod
     def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
                     destroyOnMasterRemoval=None):
-        if name and nics:  # New bonding or edit bonding.
+        if nics:  # New bonding or edit bonding.
             slaves = cls._objectivizeSlaves(name, configurator, _nicSort(nics),
                                             mtu, _netinfo)
             if name in _netinfo.bondings:
