@@ -3062,9 +3062,11 @@ class Vm(object):
         utils.rmFile(self._recoveryFile)
         self._guestSockCleanup(self._qemuguestSocketFile)
 
+    def _isDomainRunning(self):
+        return self._dom.info()[0] == libvirt.VIR_DOMAIN_RUNNING
+
     def updateGuestCpuRunning(self):
-        self._guestCpuRunning = (self._dom.info()[0] ==
-                                 libvirt.VIR_DOMAIN_RUNNING)
+        self._guestCpuRunning = self._isDomainRunning()
 
     def _getUnderlyingVmDevicesInfo(self):
         """
@@ -3162,8 +3164,7 @@ class Vm(object):
             self._guestSocketFile, self.cif.channelListener, self.log,
             connect=utils.tobool(self.conf.get('vmchannel', 'true')))
 
-        self._guestCpuRunning = (self._dom.info()[0] ==
-                                 libvirt.VIR_DOMAIN_RUNNING)
+        self._guestCpuRunning = self._isDomainRunning()
         if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
                                    vmstatus.RESTORING_STATE):
             self._initTimePauseCode = self._readPauseCode(0)
