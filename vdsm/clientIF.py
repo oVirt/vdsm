@@ -148,7 +148,7 @@ class clientIF:
         return cls._instance
 
     def _loadBindingXMLRPC(self):
-        from BindingXMLRPC import BindingXMLRPC
+        from rpc.BindingXMLRPC import BindingXMLRPC
         ip = config.get('addresses', 'management_ip')
         xmlrpc_port = config.get('addresses', 'management_port')
         use_ssl = config.getboolean('vars', 'ssl')

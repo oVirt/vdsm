@@ -34,7 +34,6 @@
 ./usr/libexec/vdsm/vdsmd_init_common.sh
 ./usr/share/man/man8/vdsmd.8
 ./usr/share/vdsm/API.py
-./usr/share/vdsm/BindingXMLRPC.py
 ./usr/share/vdsm/addNetwork
 ./usr/share/vdsm/alignmentScan.py
 ./usr/share/vdsm/blkid.py
@@ -77,6 +76,7 @@
 ./usr/share/vdsm/respawn
 ./usr/share/vdsm/rpc/__init__.py
 ./usr/share/vdsm/rpc/BindingJsonRpc.py
+./usr/share/vdsm/rpc/BindingXMLRPC.py
 ./usr/share/vdsm/rpc/Bridge.py
 ./usr/share/vdsm/rpc/process-schema.py
 ./usr/share/vdsm/rpc/vdsmapi.py

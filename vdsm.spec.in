@@ -44,8 +44,6 @@
 %global with_tmpfiles_macro 1
 %endif
 
-%global with_jsonrpc 1
-
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
@@ -122,6 +120,7 @@ Requires: m2crypto
 Requires: libguestfs-tools-c
 Requires: libnl
 Requires: %{name}-xmlrpc = %{version}-%{release}
+Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: mom >= 0.3.2-3
 Requires: numactl
 
@@ -269,7 +268,6 @@ Requires: %{name}-python = %{version}-%{release}
 An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
-%if 0%{?with_jsonrpc}
 %package jsonrpc
 Summary:        VDSM API Server
 BuildArch:      noarch
@@ -291,7 +289,6 @@ Requires:       python >= 2.6
 
 %description yajsonrpc
 A JSON RPC server and client implementation.
-%endif
 
 %package python-zombiereaper
 Summary:        Collects zombie processes automatically
@@ -1397,31 +1394,22 @@ exit 0
 %files xmlrpc
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
-%{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
+%{_datadir}/%{vdsm_name}/rpc/BindingXMLRPC.py*
 
-%if 0%{?with_jsonrpc}
 %files jsonrpc
 %doc %{vdsm_name}/rpc/vdsm-api.html
-%{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{_datadir}/%{vdsm_name}/rpc/__init__.py*
 %{_datadir}/%{vdsm_name}/rpc/BindingJsonRpc.py*
 %{_datadir}/%{vdsm_name}/rpc/Bridge.py*
+%{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{python_sitelib}/vdsmapi.py*
+%{python_sitelib}/yajsonrpc/__init__.py*
 
 %files yajsonrpc
 %dir %{python_sitelib}/yajsonrpc
-%{python_sitelib}/yajsonrpc/__init__.py*
 %{python_sitelib}/yajsonrpc/betterAsyncore.py*
 %{python_sitelib}/yajsonrpc/stomp.py*
 %{python_sitelib}/yajsonrpc/stompReactor.py*
-%else
-%exclude %{python_sitelib}/yajsonrpc
-%exclude %{_datadir}/%{vdsm_name}/rpc/__init__.py*
-%exclude %{_datadir}/%{vdsm_name}/rpc/Bridge.py*
-%exclude %{_datadir}/%{vdsm_name}/rpc/BindingJsonRpc.py*
-%exclude %{python_sitelib}/vdsmapi.py*
-%exclude %{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
-%endif
 
 %files python-zombiereaper
 %{python_sitelib}/zombiereaper/__init__.py*

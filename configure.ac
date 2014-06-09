@@ -134,7 +134,6 @@ AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pyexecdir}/vdsm'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
-AC_SUBST([vdsmapidir], ['${datarootdir}/vdsm_api'])
 
 # VDSM registration default paths
 AC_SUBST([vdsmregdir], ['${datarootdir}/vdsm-reg'])
