@@ -47,6 +47,7 @@ from virt import vm
 from virt import vmstatus
 from virt.vm import Vm
 from virt.vmchannels import Listener
+from virt.utils import isVdsmImage
 try:
     import gluster.api as gapi
     _glusterEnabled = True
@@ -265,7 +266,7 @@ class clientIF(object):
         if type(drive) is dict:
             device = drive['device']
             # PDIV drive format
-            if device == 'disk' and vm.isVdsmImage(drive):
+            if device == 'disk' and isVdsmImage(drive):
                 res = self.irs.prepareImage(
                     drive['domainID'], drive['poolID'],
                     drive['imageID'], drive['volumeID'])
@@ -352,7 +353,7 @@ class clientIF(object):
     def teardownVolumePath(self, drive):
         res = {'status': doneCode}
         try:
-            if vm.isVdsmImage(drive):
+            if isVdsmImage(drive):
                 res = self.irs.teardownImage(drive['domainID'],
                                              drive['poolID'], drive['imageID'])
         except TypeError:

@@ -65,6 +65,7 @@ from . import sampling
 from . import vmexitreason
 from . import vmstatus
 
+from .utils import isVdsmImage
 from vmpowerdown import VmShutdown, VmReboot
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
@@ -97,18 +98,6 @@ _NO_CPU_QUOTA = 0
 
 # A libvirt constant for undefined cpu period
 _NO_CPU_PERIOD = 0
-
-
-def isVdsmImage(drive):
-    """
-    Tell if drive looks like a vdsm image
-
-    :param drive: drive to check
-    :type drive: dict or vm.Drive
-    :return: bool
-    """
-    required = ('domainID', 'imageID', 'poolID', 'volumeID')
-    return all(k in drive for k in required)
 
 
 def _filterSnappableDiskDevices(diskDeviceXmlElements):

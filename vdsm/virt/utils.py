@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,18 +18,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+"""
+shared utilities and common code for the virt package
+"""
 
-vdsm_virtdir = $(vdsmdir)/virt
-dist_vdsm_virt_PYTHON = \
-	__init__.py \
-	guestagent.py \
-	migration.py \
-	sampling.py \
-	vm.py \
-	vmchannels.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstatus.py \
-	utils.py \
-	$(NULL)
+
+def isVdsmImage(drive):
+    """
+    Tell if drive looks like a vdsm image
+
+    :param drive: drive to check
+    :type drive: dict or vm.Drive
+    :return: bool
+    """
+    required = ('domainID', 'imageID', 'poolID', 'volumeID')
+    return all(k in drive for k in required)

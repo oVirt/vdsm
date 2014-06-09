@@ -936,6 +936,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/vmexitreason.py*
 %{_datadir}/%{vdsm_name}/virt/vmpowerdown.py*
 %{_datadir}/%{vdsm_name}/virt/sampling.py*
+%{_datadir}/%{vdsm_name}/virt/utils.py*
 %{_datadir}/%{vdsm_name}/tool
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
