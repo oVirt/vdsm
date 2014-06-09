@@ -38,7 +38,8 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush, LinkType,
                             getLinks)
 
-from vdsm.utils import RollbackContext
+from vdsm.constants import EXT_BRCTL
+from vdsm.utils import RollbackContext, execCmd
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
                           getDhclientIfaces)
 from vdsm import ipwrapper
@@ -1901,6 +1902,38 @@ class NetworkTest(TestCaseBase):
                                                       NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME)
+            network[NETWORK_NAME] = {'remove': True}
+            status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                      NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testReconfigureBrNetWithVanishedPort(self):
+        """Test for re-defining a bridged network for which the device
+        providing connectivity to the bridge had been removed from it"""
+        with dummyIf(1) as nics:
+            nic, = nics
+            network = {NETWORK_NAME: {'nic': nic, 'bridged': True}}
+            status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+
+            # Remove the nic from the bridge
+            execCmd([EXT_BRCTL, 'delif', NETWORK_NAME, nic])
+            self.vdsm_net.refreshNetinfo()
+            self.assertEqual(len(
+                self.vdsm_net.netinfo.networks[NETWORK_NAME]['ports']), 0)
+
+            # Attempt to reconfigure the network
+            status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertEqual(
+                self.vdsm_net.netinfo.networks[NETWORK_NAME]['ports'], [nic])
+
+            # cleanup
             network[NETWORK_NAME] = {'remove': True}
             status, msg = self.vdsm_net.setupNetworks(network, {},
                                                       NOCHK)
