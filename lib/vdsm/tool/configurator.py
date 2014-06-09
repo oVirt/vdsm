@@ -21,13 +21,26 @@ import os
 import sys
 import grp
 import argparse
+import pwd
 
 from .. import utils
 from . import service, expose
 from ..constants import P_VDSM_EXEC, QEMU_PROCESS_GROUP, VDSM_GROUP
 
+# Declare state of configuration
+#
+# CONFIGURED     = Module is set properly without any required changes on
+#                  force.
+# NOT_CONFIGURED = Module is not set properly for VDSM and need to be
+#                  configured.
+# NOT_SURE       = VDSM configured module already but on force configure vdsm
+#                  will set configurations to defaults parameters.
+#
+CONFIGURED, NOT_CONFIGURED, NOT_SURE = range(3)
+
 
 class _ModuleConfigure(object):
+
     def __init__(self):
         pass
 
@@ -44,10 +57,7 @@ class _ModuleConfigure(object):
         pass
 
     def isconfigured(self):
-        return True
-
-    def reconfigureOnForce(self):
-        return True
+        return NOT_CONFIGURED
 
 
 class LibvirtModuleConfigure(_ModuleConfigure):
@@ -101,9 +111,9 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         """
         try:
             self._exec_libvirt_configure("check_if_configured")
-            return True
+            return NOT_SURE
         except RuntimeError:
-            return False
+            return NOT_CONFIGURED
 
 
 class SanlockModuleConfigure(_ModuleConfigure):
@@ -146,47 +156,46 @@ class SanlockModuleConfigure(_ModuleConfigure):
         True if sanlock service is configured, False if sanlock service
         requires a restart to reload the relevant supplementary groups.
         """
-        configured = False
-        try:
-            with open("/var/run/sanlock/sanlock.pid", "r") as f:
-                sanlock_pid = f.readline().strip()
-            with open(os.path.join('/proc', sanlock_pid, 'status'),
-                      "r") as sanlock_status:
-                proc_status_group_prefix = "Groups:\t"
-                for status_line in sanlock_status:
-                    if status_line.startswith(proc_status_group_prefix):
-                        groups = [int(x) for x in
-                                  status_line[len(proc_status_group_prefix):].
-                                  strip().split(" ")]
-                        break
+        configured = NOT_CONFIGURED
+        groups = [g.gr_name for g in grp.getgrall()
+                  if 'sanlock' in g.gr_mem]
+        gid = pwd.getpwnam('sanlock').pw_gid
+        groups.append(grp.getgrgid(gid).gr_name)
+        if all(group in groups for group in self.SANLOCK_GROUPS):
+            configured = NOT_SURE
+
+        if configured == NOT_SURE:
+            try:
+                with open("/var/run/sanlock/sanlock.pid", "r") as f:
+                    sanlock_pid = f.readline().strip()
+                with open(os.path.join('/proc', sanlock_pid, 'status'),
+                          "r") as sanlock_status:
+                    proc_status_group_prefix = "Groups:\t"
+                    for status_line in sanlock_status:
+                        if status_line.startswith(proc_status_group_prefix):
+                            groups = [int(x) for x in status_line[
+                                len(proc_status_group_prefix):]
+                                .strip().split(" ")]
+                            break
+                    else:
+                        raise RuntimeError(
+                            "Unable to find sanlock service groups"
+                        )
+
+                is_sanlock_groups_set = True
+                for g in self.SANLOCK_GROUPS:
+                    if grp.getgrnam(g)[2] not in groups:
+                        is_sanlock_groups_set = False
+                if is_sanlock_groups_set:
+                    configured = CONFIGURED
+
+            except IOError as e:
+                if e.errno == os.errno.ENOENT:
+                    configured = CONFIGURED
                 else:
-                    raise RuntimeError("Unable to find sanlock service groups")
-
-            is_sanlock_groups_set = True
-            for g in self.SANLOCK_GROUPS:
-                if grp.getgrnam(g)[2] not in groups:
-                    is_sanlock_groups_set = False
-            configured = is_sanlock_groups_set
-
-        except IOError as e:
-            if e.errno == os.errno.ENOENT:
-                sys.stdout.write("sanlock service is not running\n")
-                configured = True
-            else:
-                raise
-
-        if not configured:
-            sys.stdout.write("sanlock service requires restart\n")
-        else:
-            sys.stdout.write("sanlock service is already configured\n")
+                    raise
 
         return configured
-
-    def reconfigureOnForce(self):
-        # If sanlock is down isconfigure returns True and configure will skip
-        # sanlock configure. on force users expected to run configure even if
-        # isconfigure returned True.
-        return True
 
 
 __configurers = (
@@ -206,12 +215,12 @@ def configure(*args):
     sys.stdout.write("\nChecking configuration status...\n\n")
     for c in __configurers:
         if c.getName() in args.modules:
-            override = args.force and c.reconfigureOnForce()
+            override = args.force and (c.isconfigured != CONFIGURED)
             if not override and not c.validate():
                 raise RuntimeError(
                     "Configuration of %s is invalid" % c.getName()
                 )
-            if override or not c.isconfigured():
+            if override:
                 configurer_to_trigger.append(c)
 
     services = []
@@ -248,7 +257,7 @@ def isconfigured(*args):
 
     m = [
         c.getName() for c in __configurers
-        if c.getName() in args.modules and not c.isconfigured()
+        if c.getName() in args.modules and c.isconfigured() == NOT_CONFIGURED
     ]
 
     if m:
