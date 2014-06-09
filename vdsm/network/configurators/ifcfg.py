@@ -518,20 +518,6 @@ class ConfigWriter(object):
             else:
                 os.remove(fpath)
 
-    @classmethod
-    def ifcfgPorts(cls, network):
-        ports = []
-        for filePath in glob.iglob(netinfo.NET_CONF_PREF + '*'):
-            with open(filePath, 'r') as confFile:
-                for line in confFile:
-                    if line.startswith('BRIDGE=' + network):
-                        port = filePath[filePath.rindex('-') + 1:]
-                        logging.debug('port %s found in ifcfg for %s', port,
-                                      network)
-                        ports.append(port)
-                        break
-        return ports
-
     def writeConfFile(self, fileName, configuration):
         '''Backs up the previous contents of the file referenced by fileName
         writes the new configuration and sets the specified access mode.'''
@@ -802,3 +788,18 @@ def ifup(iface, async=False):
     else:
         rc, out, err = _ifup(iface)
         return rc
+
+
+def configuredPorts(nets, bridge):
+    """Returns the list of ports a bridge has"""
+    ports = []
+    for filePath in glob.iglob(netinfo.NET_CONF_PREF + '*'):
+        with open(filePath) as confFile:
+            for line in confFile:
+                if line.startswith('BRIDGE=' + bridge):
+                    port = filePath[filePath.rindex('-') + 1:]
+                    logging.debug('port %s found in ifcfg for %s', port,
+                                  bridge)
+                    ports.append(port)
+                    break
+    return ports

@@ -30,7 +30,6 @@ from vdsm import constants
 from vdsm import netinfo
 from vdsm import utils
 
-from .configurators.ifcfg import ConfigWriter
 from .configurators import libvirt
 from .errors import ConfigNetworkError
 from . import errors as ne
@@ -52,7 +51,19 @@ def _getConfiguratorClass():
         from .configurators.ifcfg import Ifcfg
         return Ifcfg
 
+
+def _getPersistenceModule():
+    persistence = config.get('vars', 'net_persistence')
+    if persistence == 'unified':
+        from vdsm import netconfpersistence
+        return netconfpersistence
+    else:
+        from .configurators import ifcfg
+        return ifcfg
+
+
 ConfiguratorClass = _getConfiguratorClass()
+persistence = _getPersistenceModule()
 
 
 def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
@@ -371,7 +382,12 @@ def _delBrokenNetwork(network, netAttr, configurator):
     _netinfo = netinfo.NetInfo()
     _netinfo.networks[network] = netAttr
     if _netinfo.networks[network]['bridged']:
-        _netinfo.networks[network]['ports'] = ConfigWriter.ifcfgPorts(network)
+        try:
+            nets = configurator.runningConfig.networks
+        except AttributeError:
+            nets = None  # ifcfg does not need net definitions
+        _netinfo.networks[network]['ports'] = persistence.configuredPorts(
+            nets, network)
     elif not os.path.exists('/sys/class/net/' + netAttr['iface']):
         # Bridgeless broken network without underlying device
         libvirt.removeNetwork(network)

@@ -199,3 +199,17 @@ class PersistentConfig(Config):
     def restore(self):
         restore()
         return RunningConfig()
+
+
+def configuredPorts(nets, bridge):
+    """Return the configured ports for the bridge"""
+    network = nets[bridge]
+    nic = network.get('nic')
+    bond = network.get('bonding')
+    vlan = network.get('vlan', '')
+    if bond:
+        return [bond + vlan]
+    elif nic:
+        return [nic + vlan]
+    else:  # isolated bridged network
+        return []
