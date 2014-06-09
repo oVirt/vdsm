@@ -1004,7 +1004,7 @@ class StoragePool(APIBase):
     def destroy(self, hostID, scsiKey):
         return self._irs.destroyStoragePool(self._UUID, hostID)
 
-    def disconnect(self, hostID, scsiKey, remove):
+    def disconnect(self, hostID, scsiKey, remove=False):
         return self._irs.disconnectStoragePool(self._UUID, hostID, remove)
 
     def disconnectStorageServer(self, domainType, connectionParams):

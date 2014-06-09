@@ -15,11 +15,14 @@
 
 from functools import partial
 
-import vdsmapi
+import inspect
 import logging
 import types
+
 import API
+import vdsmapi
 import yajsonrpc
+
 try:
     import gluster.apiwrapper as gapi
     _glusterEnabled = True
@@ -54,9 +57,20 @@ class DynamicBridge(object):
 
         return result
 
-    def _getArgs(self, argobj, arglist):
-        return tuple(argobj[self._symNameFilter(arg)] for arg in arglist
-                     if self._symNameFilter(arg) in argobj)
+    def _getArgs(self, argobj, arglist, defaultArgs):
+        ret = ()
+        for arg in arglist:
+            if arg.startswith('*'):
+                name = self._symNameFilter(arg)
+                if name in argobj:
+                    ret = ret + (argobj[name],)
+                else:
+                    if len(defaultArgs) > 0:
+                        ret = ret + (defaultArgs[0],)
+                defaultArgs = defaultArgs[1:]
+            elif arg in argobj:
+                ret = ret + (argobj[arg],)
+        return ret
 
     def _getResult(self, response, member=None):
         if member is None:
@@ -106,8 +120,10 @@ class DynamicBridge(object):
         # Get the list of ctor_args
         if _glusterEnabled and className.startswith('Gluster'):
             ctorArgs = getattr(gapi, className).ctorArgs
+            defaultArgs = self._getDefaultArgs(gapi, className, methodName)
         else:
             ctorArgs = getattr(API, className).ctorArgs
+            defaultArgs = self._getDefaultArgs(API, className, methodName)
 
         # Determine the method arguments by subtraction
         methodArgs = []
@@ -115,7 +131,19 @@ class DynamicBridge(object):
             if arg not in ctorArgs:
                 methodArgs.append(arg)
 
-        return self._getArgs(argObj, methodArgs)
+        return self._getArgs(argObj, methodArgs, defaultArgs)
+
+    def _getDefaultArgs(self, api, className, methodName):
+        result = []
+        for class_name, class_obj in inspect.getmembers(api, inspect.isclass):
+            if class_name is className:
+                for method_name, method_obj in inspect.getmembers(
+                        class_obj, inspect.ismethod):
+                    if method_name == methodName:
+                        args = inspect.getargspec(method_obj).defaults
+                        if args:
+                            result = list(args)
+        return result
 
     def _getApiInstance(self, className, argObj):
         className = self._convertClassName(className)
@@ -125,7 +153,7 @@ class DynamicBridge(object):
         else:
             apiObj = getattr(API, className)
 
-        ctorArgs = self._getArgs(argObj, apiObj.ctorArgs)
+        ctorArgs = self._getArgs(argObj, apiObj.ctorArgs, [])
         return apiObj(*ctorArgs)
 
     def _symNameFilter(self, symName):
@@ -324,9 +352,11 @@ command_info = {
     'Host_getVMList': {'call': Host_getVMList_Call, 'ret': Host_getVMList_Ret},
     'Host_getVMFullList': {'call': Host_getVMFullList_Call, 'ret': 'vmList'},
     'Host_getAllVmStats': {'ret': 'statsList'},
+    'Host_setupNetworks': {'ret': 'status'},
     'Image_delete': {'ret': 'uuid'},
     'Image_deleteVolumes': {'ret': 'uuid'},
     'Image_getVolumes': {'ret': 'uuidlist'},
+    'Image_download': {'ret': 'uuid'},
     'Image_mergeSnapshots': {'ret': 'uuid'},
     'Image_move': {'ret': 'uuid'},
     'ISCSIConnection_discoverSendTargets': {'ret': 'fullTargets'},

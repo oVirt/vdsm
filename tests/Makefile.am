@@ -25,6 +25,7 @@ SUBDIRS = functional
 test_modules = \
 	alignmentScanTests.py \
 	blocksdTests.py \
+	bridgeTests.py \
 	cPopenTests.py \
 	capsTests.py \
 	clientifTests.py \
