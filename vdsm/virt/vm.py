@@ -4499,26 +4499,18 @@ class Vm(object):
 
     def setBalloonTarget(self, target):
 
-        def reportError(key='balloonErr', msg=None):
-            self.log.error("Set new balloon target failed", exc_info=True)
-            if msg is None:
-                error = errCode[key]
-            else:
-                error = {'status': {'code': errCode[key]
-                         ['status']['code'], 'message': msg}}
-            return error
-
         if self._dom is None:
-            return reportError()
+            return self._reportError(key='balloonErr')
         try:
             target = int(target)
             self._dom.setMemory(target)
         except ValueError:
-            return reportError(msg='an integer is required for target')
+            return self._reportException(
+                key='balloonErr', msg='an integer is required for target')
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return reportError(key='noVM')
-            return reportError(msg=e.message)
+                return self._reportException(key='noVM')
+            return self._reportException(key='balloonErr', msg=e.message)
         else:
             for dev in self.conf['devices']:
                 if dev['type'] == BALLOON_DEVICES and \
@@ -4527,6 +4519,25 @@ class Vm(object):
             # persist the target value to make it consistent after recovery
             self.saveState()
             return {'status': doneCode}
+
+    def _reportError(self, key, msg=None):
+        """
+        Produce an error status.
+        """
+        if msg is None:
+            error = errCode[key]
+        else:
+            error = {'status': {'code': errCode[key]
+                                ['status']['code'], 'message': msg}}
+        return error
+
+    def _reportException(self, key, msg=None):
+        """
+        Convert an exception to an error status.
+        This method should be called only within exception-handling context.
+        """
+        self.log.exception("Operation failed")
+        return self._reportError(key, msg)
 
     def _getUnderlyingDeviceAddress(self, devXml):
         """
