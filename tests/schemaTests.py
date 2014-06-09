@@ -18,7 +18,7 @@
 #
 
 from testrunner import VdsmTestCase as TestCaseBase
-import vdsmapi
+from rpc import vdsmapi
 
 
 class SchemaTest(TestCaseBase):

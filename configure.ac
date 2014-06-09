@@ -274,13 +274,13 @@ AC_OUTPUT([
 	vdsm/gluster/Makefile
 	vdsm/network/Makefile
 	vdsm/network/configurators/Makefile
+	vdsm/rpc/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
 	vdsm/storage/vdsm-lvm.rules
 	vdsm/virt/Makefile
-	vdsm_api/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/checkimages/Makefile
 	vdsm_hooks/directlun/Makefile

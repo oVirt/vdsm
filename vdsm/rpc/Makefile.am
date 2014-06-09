@@ -1,3 +1,4 @@
+vdsmrpcdir = $(vdsmdir)/rpc
 CLEANFILES = \
 	vdsm-api.html \
 	$(NULL)
@@ -7,12 +8,13 @@ EXTRA_DIST = \
 	vdsmapi-schema.json \
 	$(NULL)
 
-dist_vdsm_PYTHON = \
+dist_vdsmrpc_PYTHON = \
+	__init__.py \
 	BindingJsonRpc.py \
 	Bridge.py \
 	$(NULL)
 
-dist_vdsm_DATA = \
+dist_vdsmrpc_DATA = \
 	vdsmapi-schema.json \
 	$(NULL)
 

@@ -27,7 +27,6 @@ SUBDIRS = \
 	vds_bootstrap \
 	vdsm \
 	vdsm-tool \
-	vdsm_api \
 	vdsm_hooks \
 	vdsm_reg \
 	$(NULL)

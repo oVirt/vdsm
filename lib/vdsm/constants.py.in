@@ -68,6 +68,7 @@ MEGAB = 2 ** 20  # = 1024 ** 2 = 1 MiB
 #
 P_LIBVIRT_VMCHANNELS = '/var/lib/libvirt/qemu/channels/'
 P_VDSM = '@VDSMDIR@/'
+P_VDSM_RPC = '@VDSMDIR@/rpc/'
 P_VDSM_HOOKS = '@HOOKSDIR@/'
 P_VDSM_LIB = '@VDSMLIBDIR@/'
 P_VDSM_RUN = '@VDSMRUNDIR@/'

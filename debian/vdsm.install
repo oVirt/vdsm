@@ -34,9 +34,7 @@
 ./usr/libexec/vdsm/vdsmd_init_common.sh
 ./usr/share/man/man8/vdsmd.8
 ./usr/share/vdsm/API.py
-./usr/share/vdsm/BindingJsonRpc.py
 ./usr/share/vdsm/BindingXMLRPC.py
-./usr/share/vdsm/Bridge.py
 ./usr/share/vdsm/addNetwork
 ./usr/share/vdsm/alignmentScan.py
 ./usr/share/vdsm/blkid.py
@@ -77,6 +75,11 @@
 ./usr/share/vdsm/parted_utils.py
 ./usr/share/vdsm/ppc64HardwareInfo.py
 ./usr/share/vdsm/respawn
+./usr/share/vdsm/rpc/__init__.py
+./usr/share/vdsm/rpc/BindingJsonRpc.py
+./usr/share/vdsm/rpc/Bridge.py
+./usr/share/vdsm/rpc/process-schema.py
+./usr/share/vdsm/rpc/vdsmapi.py
 ./usr/share/vdsm/set-conf-item
 ./usr/share/vdsm/storage/__init__.py
 ./usr/share/vdsm/storage/blockSD.py

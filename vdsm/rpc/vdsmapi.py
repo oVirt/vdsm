@@ -122,7 +122,7 @@ def find_schema(schema_name='vdsmapi', raiseOnError=True):
     from vdsm import constants
 
     localpath = os.path.dirname(__file__)
-    installedpath = constants.P_VDSM
+    installedpath = constants.P_VDSM_RPC
     for directory in localpath, installedpath:
         path = os.path.join(directory, schema_name + '-schema.json')
         if os.access(path, os.R_OK):

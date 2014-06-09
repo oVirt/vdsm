@@ -161,8 +161,8 @@ class clientIF:
                                                 default_bridge)
 
     def _loadBindingJsonRpc(self):
-        from BindingJsonRpc import BindingJsonRpc
-        from Bridge import DynamicBridge
+        from rpc.BindingJsonRpc import BindingJsonRpc
+        from rpc.Bridge import DynamicBridge
         ip = config.get('addresses', 'management_ip')
         port = config.getint('addresses', 'json_port')
         truststore_path = None

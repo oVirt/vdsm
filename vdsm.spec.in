@@ -270,19 +270,11 @@ An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
 %if 0%{?with_jsonrpc}
-%package api
-Summary:        VDSM API definition
-BuildArch:      noarch
-
-%description api
-Provides the VDSM API schema and documentation.
-
 %package jsonrpc
 Summary:        VDSM API Server
 BuildArch:      noarch
 
 Requires: %{name}-python = %{version}-%{release}
-Requires: %{name}-api = %{version}-%{release}
 Requires: %{name}-yajsonrpc = %{version}-%{release}
 %if 0%{?rhel} == 6
 Requires: python-ordereddict
@@ -1408,14 +1400,13 @@ exit 0
 %{_datadir}/%{vdsm_name}/BindingXMLRPC.py*
 
 %if 0%{?with_jsonrpc}
-%files api
-%doc vdsm_api/vdsm-api.html
-%{_datadir}/%{vdsm_name}/vdsmapi-schema.json
-%{python_sitelib}/vdsmapi.py*
-
 %files jsonrpc
-%{_datadir}/%{vdsm_name}/BindingJsonRpc.py*
-%{_datadir}/%{vdsm_name}/Bridge.py*
+%doc %{vdsm_name}/rpc/vdsm-api.html
+%{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
+%{_datadir}/%{vdsm_name}/rpc/__init__.py*
+%{_datadir}/%{vdsm_name}/rpc/BindingJsonRpc.py*
+%{_datadir}/%{vdsm_name}/rpc/Bridge.py*
+%{python_sitelib}/vdsmapi.py*
 
 %files yajsonrpc
 %dir %{python_sitelib}/yajsonrpc
@@ -1425,10 +1416,11 @@ exit 0
 %{python_sitelib}/yajsonrpc/stompReactor.py*
 %else
 %exclude %{python_sitelib}/yajsonrpc
-%exclude %{_datadir}/%{vdsm_name}/Bridge.py*
-%exclude %{_datadir}/%{vdsm_name}/BindingJsonRpc.py*
+%exclude %{_datadir}/%{vdsm_name}/rpc/__init__.py*
+%exclude %{_datadir}/%{vdsm_name}/rpc/Bridge.py*
+%exclude %{_datadir}/%{vdsm_name}/rpc/BindingJsonRpc.py*
 %exclude %{python_sitelib}/vdsmapi.py*
-%exclude %{_datadir}/%{vdsm_name}/vdsmapi-schema.json
+%exclude %{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %endif
 
 %files python-zombiereaper

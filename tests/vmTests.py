@@ -38,7 +38,7 @@ from testrunner import permutations, expandPermutations, namedTemporaryDir
 import caps
 from vdsm import utils
 from vdsm import libvirtconnection
-import vdsmapi
+from rpc import vdsmapi
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
@@ -1098,7 +1098,7 @@ class TestVmStats(TestCaseBase):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
         apiPath = os.path.join(
-            dirName, '..', 'vdsm_api', 'vdsmapi-schema.json')
+            dirName, '..', 'vdsm', 'rpc', 'vdsmapi-schema.json')
         return vdsmapi.get_api(apiPath)
 
     def assertVmStatsSchemaCompliancy(self, schema, stats):
