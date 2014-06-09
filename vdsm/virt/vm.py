@@ -2288,7 +2288,7 @@ class Vm(object):
 
             if ('migrationDest' in self.conf or 'restoreState' in self.conf) \
                     and self.lastStatus != vmstatus.DOWN:
-                self._waitForIncomingMigrationFinish()
+                self._completeIncomingMigration()
 
             self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
@@ -3941,7 +3941,7 @@ class Vm(object):
         else:
             self._monitorResponse = 0
 
-    def _waitForIncomingMigrationFinish(self):
+    def _completeIncomingMigration(self):
         if 'restoreState' in self.conf:
             self.cont()
             del self.conf['restoreState']
@@ -3949,40 +3949,9 @@ class Vm(object):
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
                                        {'FROM_SNAPSHOT': fromSnapshot})
         elif 'migrationDest' in self.conf:
-            timeout = config.getint('vars', 'migration_destination_timeout')
-            self.log.debug("Waiting %s seconds for end of migration", timeout)
-            self._incomingMigrationFinished.wait(timeout)
-
-            try:
-                # Would fail if migration isn't successful,
-                # or restart vdsm if connection to libvirt was lost
-                self._dom = NotifyingVirDomain(
-                    self._connection.lookupByUUIDString(self.id),
-                    self._timeoutExperienced)
-
-                if not self._incomingMigrationFinished.isSet():
-                    state = self._dom.state(0)
-                    if state[0] == libvirt.VIR_DOMAIN_PAUSED:
-                        if state[1] == libvirt.VIR_DOMAIN_PAUSED_MIGRATION:
-                            raise MigrationError("Migration Error - Timed out "
-                                                 "(did not receive success "
-                                                 "event)")
-                    self.log.debug("NOTE: incomingMigrationFinished event has "
-                                   "not been set and wait timed out after %d "
-                                   "seconds. Current VM state: %d, reason %d. "
-                                   "Continuing with VM initialization anyway.",
-                                   timeout, state[0], state[1])
-            except libvirt.libvirtError as e:
-                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    if not self._incomingMigrationFinished.isSet():
-                        newMsg = ('%s - Timed out '
-                                  '(did not receive success event)' %
-                                  (e.args[0] if len(e.args) else
-                                   'Migration Error'))
-                        e.args = (newMsg,) + e.args[1:]
-                    raise MigrationError(e.get_error_message())
-                raise
-
+            usedTimeout = self._waitForUnderlyingMigration()
+            self._attachLibvirtDomainAfterMigration(
+                self._incomingMigrationFinished.isSet(), usedTimeout)
             self._domDependentInit()
             del self.conf['migrationDest']
             hooks.after_vm_migrate_destination(self._dom.XMLDesc(0), self.conf)
@@ -3999,6 +3968,43 @@ class Vm(object):
             del self.conf['username']
         self.saveState()
         self.log.debug("End of migration")
+
+    def _waitForUnderlyingMigration(self):
+        timeout = config.getint('vars', 'migration_destination_timeout')
+        self.log.debug("Waiting %s seconds for end of migration", timeout)
+        self._incomingMigrationFinished.wait(timeout)
+        return timeout
+
+    def _attachLibvirtDomainAfterMigration(self, migrationFinished, timeout):
+        try:
+            # Would fail if migration isn't successful,
+            # or restart vdsm if connection to libvirt was lost
+            self._dom = NotifyingVirDomain(
+                self._connection.lookupByUUIDString(self.id),
+                self._timeoutExperienced)
+
+            if not migrationFinished:
+                state = self._dom.state(0)
+                if state[0] == libvirt.VIR_DOMAIN_PAUSED:
+                    if state[1] == libvirt.VIR_DOMAIN_PAUSED_MIGRATION:
+                        raise MigrationError("Migration Error - Timed out "
+                                             "(did not receive success "
+                                             "event)")
+                self.log.debug("NOTE: incomingMigrationFinished event has "
+                               "not been set and wait timed out after %d "
+                               "seconds. Current VM state: %d, reason %d. "
+                               "Continuing with VM initialization anyway.",
+                               timeout, state[0], state[1])
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                if not migrationFinished:
+                    newMsg = ('%s - Timed out '
+                              '(did not receive success event)' %
+                              (e.args[0] if len(e.args) else
+                               'Migration Error'))
+                    e.args = (newMsg,) + e.args[1:]
+                raise MigrationError(e.get_error_message())
+            raise
 
     def _underlyingCont(self):
         hooks.before_vm_cont(self._dom.XMLDesc(0), self.conf)
@@ -5425,7 +5431,7 @@ class Vm(object):
                 # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
                 # when migration completes, see qemuMigrationFinish function).
                 # In this case self._dom is None because the function
-                # _waitForIncomingMigrationFinish didn't update it yet.
+                # _completeIncomingMigration didn't update it yet.
                 try:
                     domxml = self._dom.XMLDesc(0)
                 except AttributeError:
