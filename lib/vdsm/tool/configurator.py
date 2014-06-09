@@ -182,7 +182,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
                   if SANLOCK_USER in g.gr_mem]
         gid = pwd.getpwnam(SANLOCK_USER).pw_gid
         groups.append(grp.getgrgid(gid).gr_name)
-        if all(group in self.SANLOCK_GROUPS for group in groups):
+        if all(group in groups for group in self.SANLOCK_GROUPS):
             configured = NOT_SURE
 
         if configured == NOT_SURE:
@@ -194,10 +194,9 @@ class SanlockModuleConfigure(_ModuleConfigure):
                     proc_status_group_prefix = "Groups:\t"
                     for status_line in sanlock_status:
                         if status_line.startswith(proc_status_group_prefix):
-                            groups = [int(x) for x in
-                                      status_line[
-                                      len(proc_status_group_prefix):].
-                                      strip().split(" ")]
+                            groups = [int(x) for x in status_line[
+                                len(proc_status_group_prefix):]
+                                .strip().split(" ")]
                             break
                     else:
                         raise InvalidConfig(

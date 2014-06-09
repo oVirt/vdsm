@@ -153,28 +153,34 @@ class LibvirtModuleConfigureTests(TestCase):
         libvirtConfigure = configurator.LibvirtModuleConfigure(test_env)
         self._setConfig('VDSM_CONF_FILE', 'withssl')
         self._setConfig('LCONF', 'libvirt_conf')
-        self.assertTrue(libvirtConfigure.isconfigured())
+        self.assertTrue(libvirtConfigure.isconfigured() ==
+                        configurator.NOT_SURE)
 
     def testLibvirtNotConfigured(self):
         libvirtConfigure = configurator.LibvirtModuleConfigure(test_env)
         self._setConfig('LCONF', 'empty')
-        self.assertFalse(libvirtConfigure.isconfigured())
+        self.assertTrue(libvirtConfigure.isconfigured() ==
+                        configurator.NOT_CONFIGURED)
 
     def testLibvirtConfigureToSSLTrue(self):
         libvirtConfigure = configurator.LibvirtModuleConfigure(test_env)
         self._setConfig('LCONF', 'empty')
         self._setConfig('VDSM_CONF_FILE', 'withssl')
-        self.assertFalse(libvirtConfigure.isconfigured())
+        self.assertTrue(libvirtConfigure.isconfigured() ==
+                        configurator.NOT_CONFIGURED)
         libvirtConfigure.configure()
-        self.assertTrue(libvirtConfigure.isconfigured())
+        self.assertTrue(libvirtConfigure.isconfigured() ==
+                        configurator.NOT_SURE)
 
     def testLibvirtConfigureToSSLFalse(self):
         libvirtConfigure = configurator.LibvirtModuleConfigure(test_env)
         self._setConfig('LCONF', 'empty')
         self._setConfig('VDSM_CONF_FILE', 'withnossl')
-        self.assertFalse(libvirtConfigure.isconfigured())
+        self.assertTrue(libvirtConfigure.isconfigured() ==
+                        configurator.NOT_CONFIGURED)
         libvirtConfigure.configure()
-        self.assertTrue(libvirtConfigure.isconfigured())
+        self.assertTrue(libvirtConfigure.isconfigured() ==
+                        configurator.NOT_SURE)
 
 
 class ConfigFileTests(TestCase):
