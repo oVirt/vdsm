@@ -17,105 +17,13 @@
 # us to use. This does tries to reuse enought code from the original asyncore
 # while enabling compositing instead of inheritance.
 import asyncore
-from M2Crypto import SSL, X509
+from M2Crypto import SSL
 import socket
 from sys import py3kwarning
 from warnings import filterwarnings, catch_warnings
 from threading import Lock
-import logging
 
 from collections import deque
-
-
-class SSLSocket(object):
-    """SSL decorator for sockets.
-
-    This class wraps a socket returned by the accept method of a
-    server socket providing the SSL socket methods that are missing in
-    the connection class. The rest of the methods are just delegated.
-    """
-
-    def __init__(self, connection, wrappedContext):
-        # Save the reference to the connection so that we can delegate
-        # calls to it later:
-        self.connection = connection
-        self.__wctx = wrappedContext
-
-    def pending(self):
-        return self.connection.pending()
-
-    def get_context(self):
-        return self.__wctx
-
-    def gettimeout(self):
-        return self.connection.socket.gettimeout()
-
-    def close(self):
-        self.connection.shutdown(socket.SHUT_RDWR)
-        self.connection.close()
-
-    def __getattr__(self, name):
-        # This is how we delegate all the rest of the methods to the
-        # underlying SSL connection:
-        return getattr(self.connection, name)
-
-    def accept(self):
-        # The SSL connection already returns a SSL prepared socket, but it
-        # misses some of the methods that the XML PRC server uses, so we need
-        # to wrap it as well:
-        client, address = self.connection.accept()
-        client = SSLSocket(client)
-        return client, address
-
-
-class SSLContext(object):
-    def __init__(self, cert_file, key_file, ca_cert=None, session_id="SSL",
-                 protocol="sslv23"):
-        self.cert_file = cert_file
-        self.key_file = key_file
-        self.ca_cert = ca_cert
-        self.session_id = session_id
-        self.protocol = protocol
-        self._initContext()
-
-    def _loadCertChain(self):
-        if self.cert_file and self.key_file:
-            self.context.load_cert_chain(self.cert_file, self.key_file)
-
-    def _verify(self, context, certificate, error, depth, result):
-        # The validation of the client certificate has already been
-        # performed by the OpenSSL library and the handshake already aborted
-        # if it fails as we use the verify_fail_if_no_peer_cert mode. We
-        # are not doing any additional validation, so we just need to log
-        # it and return the same result.
-        if not result:
-            certificate = X509.X509(certificate)
-            logging.error(
-                "invalid client certificate with subject \"%s\"",
-                certificate.get_subject())
-
-        return result
-
-    def _loadCAs(self):
-        context = self.context
-
-        if self.ca_cert:
-            context.load_verify_locations(self.ca_cert)
-            context.set_verify(
-                mode=SSL.verify_peer | SSL.verify_fail_if_no_peer_cert,
-                depth=10,
-                callback=self._verify)
-
-    def _initContext(self):
-        self.context = context = SSL.Context(self.protocol)
-        context.set_session_id_ctx(self.session_id)
-
-        self._loadCertChain()
-        self._loadCAs()
-
-    def wrapSocket(self, sock):
-        context = self.context
-        return SSLSocket(SSL.Connection(context, sock=sock), self)
 
 
 # This is a copy of the standard library asyncore converted to support

@@ -34,6 +34,7 @@ dist_vdsmpylib_PYTHON = \
 	profile.py \
 	qemuimg.py \
 	SecureXMLRPCServer.py \
+	sslutils.py \
 	utils.py \
 	$(NULL)
 

@@ -23,8 +23,8 @@ import stomp
 
 from betterAsyncore import \
     Dispatcher, \
-    SSLDispatcher, \
-    SSLContext
+    SSLDispatcher
+from vdsm.sslutils import SSLContext
 
 
 _STATE_LEN = "Waiting for message length"

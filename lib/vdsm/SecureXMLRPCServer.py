@@ -36,110 +36,13 @@ import SocketServer
 import logging
 
 import M2Crypto
-from M2Crypto import SSL, X509
+from sslutils import SSLServerSocket
 
 from .utils import IPXMLRPCRequestHandler, IPXMLRPCServer
 
 M2Crypto.threading.init()
 
 SecureXMLRPCRequestHandler = IPXMLRPCRequestHandler
-
-
-class SSLSocket(object):
-    """SSL decorator for sockets.
-
-    This class wraps a socket returned by the accept method of a
-    server socket providing the SSL socket methods that are missing in
-    the connection class. The rest of the methods are just delegated.
-    """
-
-    def __init__(self, connection):
-        # Save the reference to the connection so that we can delegate
-        # calls to it later:
-        self.connection = connection
-
-    def gettimeout(self):
-        return self.connection.socket.gettimeout()
-
-    def settimeout(self, *args, **kwargs):
-        settimeout = getattr(self.connection, 'settimeout',
-                             self.connection.socket.settimeout)
-        return settimeout(*args, **kwargs)
-
-    def close(self):
-        self.connection.shutdown(socket.SHUT_RDWR)
-        self.connection.close()
-
-    def __getattr__(self, name):
-        # This is how we delegate all the rest of the methods to the
-        # underlying SSL connection:
-        return getattr(self.connection, name)
-
-
-class SSLServerSocket(SSLSocket):
-    """SSL decorator for server sockets.
-
-    This class wraps a normal socket so that when the accept method is
-    called the accepted socket is also decorated.
-    """
-
-    def __init__(self, raw, certfile=None, keyfile=None, ca_certs=None,
-                 session_id="vdsm", protocol="sslv23"):
-        # Create the SSL context:
-        self.context = SSL.Context(protocol)
-        self.context.set_session_id_ctx(session_id)
-
-        # Load the server certificate and key files:
-        if certfile and keyfile:
-            self.context.load_cert_chain(certfile, keyfile)
-
-        def verify(context, certificate, error, depth, result):
-            # The validation of the client certificate has already been
-            # performed by the OpenSSL library and the handhake already aborted
-            # if it fails as we use the verify_fail_if_no_peer_cert mode. We
-            # are not doing any additional validation, so we just need to log
-            # it and return the same result.
-            if not result:
-                certificate = X509.X509(certificate)
-                logging.error(
-                    "invalid client certificate with subject \"%s\"",
-                    certificate.get_subject())
-            return result
-
-        # Load the certificates of the CAs used to verify client
-        # connections:
-        if ca_certs:
-            self.context.load_verify_locations(ca_certs)
-            self.context.set_verify(
-                mode=SSL.verify_peer | SSL.verify_fail_if_no_peer_cert,
-                depth=10,
-                callback=verify)
-
-        # Create the SSL connection:
-        self.connection = SSL.Connection(self.context, sock=raw)
-
-    def accept(self):
-        # First we need to call the accept method of the raw
-        # socket and build a new SSL connection object with the
-        # results:
-        client, address = self.connection.socket.accept()
-        client = SSL.Connection(self.context, client)
-        client.addr = address
-
-        # Now perform the SSL setup and add the IP address of the client
-        # to the exception message if any SSL error is detected:
-        try:
-            client.setup_ssl()
-            client.set_accept_state()
-            client.accept_ssl()
-        except SSL.SSLError as e:
-            raise SSL.SSLError("%s, client %s" % (e, address[0]))
-
-        # Finally wrap the connection so that it mimics a
-        # socket as the XMLRPC server expects:
-        client = SSLSocket(client)
-
-        return client, address
 
 
 class SecureXMLRPCServer(IPXMLRPCServer):

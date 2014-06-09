@@ -9,8 +9,8 @@ import os
 from yajsonrpc import \
     JsonRpcServer, \
     stompReactor, \
-    JsonRpcClientPool, \
-    SSLContext
+    JsonRpcClientPool
+from vdsm.sslutils import SSLContext
 
 
 def getFreePort():
