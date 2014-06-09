@@ -931,6 +931,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/ppc64HardwareInfo.py*
+%{_datadir}/%{vdsm_name}/protocoldetector.py*
 %{_datadir}/%{vdsm_name}/supervdsm.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
 %{_datadir}/%{vdsm_name}/vdsm

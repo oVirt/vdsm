@@ -28,8 +28,9 @@ plentifuly around vdsm.
 """
 from collections import namedtuple, deque
 from fnmatch import fnmatch
-from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
+from Queue import Queue
 from StringIO import StringIO
 from weakref import proxy
 import SocketServer
@@ -46,7 +47,6 @@ import platform
 import select
 import shutil
 import signal
-import socket
 import stat
 import subprocess
 import threading
@@ -230,24 +230,58 @@ class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
             self.wfile.write(response)
 
 
-class IPXMLRPCServer(SimpleXMLRPCServer):
+class ConnectedTCPServer(SocketServer.TCPServer, object):
+
+    def __init__(self, RequestHandlerClass):
+        super(ConnectedTCPServer, self).__init__(None, RequestHandlerClass,
+                                                 bind_and_activate=False)
+        self.queue = Queue()
+
+    def add(self, connected_socket, socket_address):
+        self.queue.put((connected_socket, socket_address))
+
+    def get_request(self):
+        return self.queue.get(True)
+
+    def server_close(self):
+        self.queue.put((None, None))
+
+    def verify_request(self, request, client_address):
+        if not request or not client_address:
+            return False
+        return True
+
+
+class ConnectedSimpleXmlRPCServer(ConnectedTCPServer,
+                                  SimpleXMLRPCDispatcher):
+    """
+    Code based on Python 2.7's SimpleXMLRPCServer.SimpleXMLRPCServer.__init__
+    """
+
+    def __init__(self, requestHandler, logRequests=True, allow_none=False,
+                 encoding=None):
+        self.logRequests = logRequests
+
+        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+        ConnectedTCPServer.__init__(self, requestHandler)
+
+
+class IPXMLRPCServer(ConnectedSimpleXmlRPCServer):
 
     # Create daemon threads when mixed with SocketServer.ThreadingMixIn
     daemon_threads = True
 
-    def __init__(self, addr, requestHandler=IPXMLRPCRequestHandler,
+    def __init__(self, requestHandler=IPXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None,
-                 bind_and_activate=True):
-        self.address_family = socket.getaddrinfo(*addr)[0][0]
-        SimpleXMLRPCServer.__init__(self, addr, requestHandler,
-                                    logRequests, allow_none, encoding,
-                                    bind_and_activate)
+                 bind_and_activate=False):
+        ConnectedSimpleXmlRPCServer.__init__(self, requestHandler,
+                                             logRequests, allow_none, encoding)
 
 
 # Threaded version of SimpleXMLRPCServer
 class SimpleThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
                                  IPXMLRPCServer):
-    allow_reuse_address = True
+    pass
 
 
 def _parseMemInfo(lines):

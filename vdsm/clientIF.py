@@ -32,12 +32,14 @@ from momIF import MomThread, isMomAvailable
 from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode
 import libvirt
+from vdsm.sslutils import SSLContext
 from vdsm import libvirtconnection
 from vdsm import constants
 from vdsm import utils
 import caps
 import blkid
 import supervdsm
+from protocoldetector import MultiProtocolAcceptor
 
 from virt import migration
 from virt import sampling
@@ -81,6 +83,7 @@ class clientIF:
         self.channelListener = Listener(self.log)
         self._generationID = str(uuid.uuid4())
         self.mom = None
+        self.bindings = {}
         if _glusterEnabled:
             self.gluster = gapi.GlusterApi(self, log)
         else:
@@ -100,6 +103,12 @@ class clientIF:
             self.channelListener.start()
             self.threadLocal = threading.local()
             self.threadLocal.client = ''
+
+            host = config.get('addresses', 'management_ip')
+            port = config.getint('addresses', 'management_port')
+            self._createAcceptor(host, port)
+            self._prepareXMLRPCBinding(host, port)
+            self._prepareJSONRPCBinding(host, port)
         except:
             self.log.error('failed to init clientIF, '
                            'shutting down storage dispatcher')
@@ -108,7 +117,6 @@ class clientIF:
             if self.mom:
                 self.mom.stop()
             raise
-        self._prepareBindings()
 
     @property
     def ready(self):
@@ -147,47 +155,52 @@ class clientIF:
                     cls._instance = clientIF(irs, log)
         return cls._instance
 
-    def _loadBindingXMLRPC(self):
-        from rpc.BindingXMLRPC import BindingXMLRPC
-        ip = config.get('addresses', 'management_ip')
-        xmlrpc_port = config.get('addresses', 'management_port')
-        use_ssl = config.getboolean('vars', 'ssl')
-        resp_timeout = config.getint('vars', 'vds_responsiveness_timeout')
-        truststore_path = config.get('vars', 'trust_store_path')
-        default_bridge = config.get("vars", "default_bridge")
-        self.bindings['xmlrpc'] = BindingXMLRPC(self, self.log, ip,
-                                                xmlrpc_port, use_ssl,
-                                                resp_timeout, truststore_path,
-                                                default_bridge)
+    def _createAcceptor(self, host, port):
+        sslctx = self._createSSLContext()
 
-    def _loadBindingJsonRpc(self):
-        from rpc.BindingJsonRpc import BindingJsonRpc
-        from rpc.Bridge import DynamicBridge
-        ip = config.get('addresses', 'management_ip')
-        port = config.getint('addresses', 'json_port')
-        truststore_path = None
+        self._acceptor = MultiProtocolAcceptor(host, port, sslctx)
+
+    def _createSSLContext(self):
+        sslctx = None
         if config.getboolean('vars', 'ssl'):
             truststore_path = config.get('vars', 'trust_store_path')
-        # TODO: update config.py
-        conf = [('stomp', {"ip": ip, "port": port})]
-        self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf,
-                                               truststore_path)
+            key_file = os.path.join(truststore_path, 'keys', 'vdsmkey.pem')
+            cert_file = os.path.join(truststore_path, 'certs', 'vdsmcert.pem')
+            ca_cert = os.path.join(truststore_path, 'certs', 'cacert.pem')
+            sslctx = SSLContext(cert_file, key_file, ca_cert)
+        return sslctx
 
-    def _prepareBindings(self):
-        self.bindings = {}
+    def _prepareXMLRPCBinding(self, host, port):
         if config.getboolean('vars', 'xmlrpc_enable'):
             try:
-                self._loadBindingXMLRPC()
+                from rpc.BindingXMLRPC import BindingXMLRPC
+                from rpc.BindingXMLRPC import XmlDetector
             except ImportError:
                 self.log.error('Unable to load the xmlrpc server module. '
                                'Please make sure it is installed.')
+            else:
+                default_bridge = config.get("vars", "default_bridge")
+                xml_binding = BindingXMLRPC(self, self.log, host, port,
+                                            default_bridge)
+                self.bindings['xmlrpc'] = xml_binding
+                xml_detector = XmlDetector(xml_binding)
+                self._acceptor.add_detector(xml_detector)
 
+    def _prepareJSONRPCBinding(self, host, port):
         if config.getboolean('vars', 'jsonrpc_enable'):
             try:
-                self._loadBindingJsonRpc()
+                from rpc.Bridge import DynamicBridge
+                from rpc.BindingJsonRpc import BindingJsonRpc
             except ImportError:
                 self.log.warn('Unable to load the json rpc server module. '
                               'Please make sure it is installed.')
+            else:
+                truststore_path = None
+                if config.getboolean('vars', 'ssl'):
+                    truststore_path = config.get('vars', 'trust_store_path')
+                conf = [('stomp', {"ip": host, "port": port})]
+                self.bindings['json'] = BindingJsonRpc(DynamicBridge(), conf,
+                                                       truststore_path)
 
     def _prepareMOM(self):
         momconf = config.get("mom", "conf")
@@ -218,8 +231,11 @@ class clientIF:
             if not self._enabled:
                 self.log.debug('cannot run prepareForShutdown twice')
                 return errCode['unavail']
+
+            self._acceptor.stop()
             for binding in self.bindings.values():
-                binding.prepareForShutdown()
+                binding.stop()
+
             self._enabled = False
             self.channelListener.stop()
             self._hostStats.stop()
@@ -235,6 +251,10 @@ class clientIF:
     def start(self):
         for binding in self.bindings.values():
             binding.start()
+        self.thread = threading.Thread(target=self._acceptor.serve_forever,
+                                       name='Detector thread')
+        self.thread.setDaemon(True)
+        self.thread.start()
 
     def _getUUIDSpecPath(self, uuid):
         try:

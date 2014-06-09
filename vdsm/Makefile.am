@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = gluster rpc network sos storage virt
+SUBDIRS = gluster network rpc sos storage virt
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -41,6 +41,7 @@ dist_vdsm_PYTHON = \
 	momIF.py \
 	parted_utils.py \
 	ppc64HardwareInfo.py \
+	protocoldetector.py \
 	supervdsm.py \
 	vdsmDebugPlugin.py \
 	$(NULL)

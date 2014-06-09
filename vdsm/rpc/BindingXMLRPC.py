@@ -19,8 +19,6 @@
 #
 
 from errno import EINTR
-import SimpleXMLRPCServer
-from vdsm import SecureXMLRPCServer
 import json
 import httplib
 import logging
@@ -43,15 +41,11 @@ except ImportError:
 
 
 class BindingXMLRPC(object):
-    def __init__(self, cif, log, ip, port, ssl, vds_resp_timeout,
-                 trust_store_path, default_bridge):
+    def __init__(self, cif, log, host, port, default_bridge):
         self.cif = cif
         self.log = log
-        self.serverIP = ip
+        self.serverIP = host
         self.serverPort = port
-        self.enableSSL = ssl
-        self.serverRespTimeout = vds_resp_timeout
-        self.trustStorePath = trust_store_path
         self.defaultBridge = default_bridge
 
         self._enabled = False
@@ -79,36 +73,24 @@ class BindingXMLRPC(object):
         self._thread.daemon = True
         self._thread.start()
 
-    def prepareForShutdown(self):
+    def add_socket(self, connected_socket, socket_address):
+        self.server.add(connected_socket, socket_address)
+
+    def stop(self):
         self._enabled = False
         self.server.server_close()
         self._thread.join()
         return {'status': doneCode}
 
-    def _getKeyCertFilenames(self):
-        """
-        Get the locations of key and certificate files.
-        """
-        KEYFILE = self.trustStorePath + '/keys/vdsmkey.pem'
-        CERTFILE = self.trustStorePath + '/certs/vdsmcert.pem'
-        CACERT = self.trustStorePath + '/certs/cacert.pem'
-        return KEYFILE, CERTFILE, CACERT
-
     def _createXMLRPCServer(self):
         """
-        Create xml-rpc server over http or https.
+        Create xml-rpc server over http
         """
         HTTP_HEADER_FLOWID = "FlowID"
 
         threadLocal = self.cif.threadLocal
 
-        server_address = (self.serverIP, int(self.serverPort))
-        if self.enableSSL:
-            basehandler = SecureXMLRPCServer.SecureXMLRPCRequestHandler
-        else:
-            basehandler = SimpleXMLRPCServer.SimpleXMLRPCRequestHandler
-
-        class RequestHandler(basehandler):
+        class RequestHandler(utils.IPXMLRPCRequestHandler):
 
             # Timeout for the request socket
             timeout = 60
@@ -131,7 +113,7 @@ class BindingXMLRPC(object):
             def setup(self):
                 threadLocal.client = self.client_address[0]
                 threadLocal.server = self.request.getsockname()[0]
-                return basehandler.setup(self)
+                return utils.IPXMLRPCRequestHandler.setup(self)
 
             def do_GET(self):
                 try:
@@ -274,12 +256,12 @@ class BindingXMLRPC(object):
                 self.wfile.write(json_response)
 
             def parse_request(self):
-                r = basehandler.parse_request(self)
+                r = utils.IPXMLRPCRequestHandler.parse_request(self)
                 threadLocal.flowID = self.headers.get(HTTP_HEADER_FLOWID)
                 return r
 
             def finish(self):
-                basehandler.finish(self)
+                utils.IPXMLRPCRequestHandler.finish(self)
                 threadLocal.client = None
                 threadLocal.server = None
                 threadLocal.flowID = None
@@ -292,18 +274,9 @@ class BindingXMLRPC(object):
                 def address_string(self):
                     return self.client_address[0]
 
-        if self.enableSSL:
-            KEYFILE, CERTFILE, CACERT = self._getKeyCertFilenames()
-            server = SecureXMLRPCServer.SecureThreadedXMLRPCServer(
-                server_address,
-                keyfile=KEYFILE, certfile=CERTFILE, ca_certs=CACERT,
-                timeout=self.serverRespTimeout,
-                requestHandler=RequestHandler)
-        else:
-            server = utils.SimpleThreadedXMLRPCServer(
-                server_address,
-                requestHandler=RequestHandler, logRequests=True)
-        utils.closeOnExec(server.socket.fileno())
+        server = utils.SimpleThreadedXMLRPCServer(
+            requestHandler=RequestHandler,
+            logRequests=True)
 
         return server
 
@@ -996,7 +969,7 @@ class BindingXMLRPC(object):
                 (self.ping, 'ping'),
                 (self.setSafeNetworkConfig, 'setSafeNetworkConfig'),
                 (self.fenceNode, 'fenceNode'),
-                (self.prepareForShutdown, 'prepareForShutdown'),
+                (self.stop, 'prepareForShutdown'),
                 (self.setLogLevel, 'setLogLevel'),
                 (self.setMOMPolicy, 'setMOMPolicy'),
                 (self.setMOMPolicyParameters, 'setMOMPolicyParameters'),
@@ -1144,3 +1117,20 @@ def wrapApiMethod(f):
     wrapper.__name__ = f.__name__
     wrapper.__doc__ = f.__doc__
     return wrapper
+
+
+class XmlDetector():
+    log = logging.getLogger("XmlDetector")
+    NAME = "xml"
+    REQUIRED_SIZE = 6
+
+    def __init__(self, xml_binding):
+        self.xml_binding = xml_binding
+
+    def detect(self, data):
+        return (data.startswith("PUT /") or data.startswith("GET /") or
+                data.startswith("POST /"))
+
+    def handleSocket(self, client_socket, socket_address):
+        self.xml_binding.add_socket(client_socket, socket_address)
+        self.log.debug("xml over http detected from %s", socket_address)
