@@ -248,7 +248,9 @@ class ConfigApplier(object):
         ipwrapper.linkSet(iface.name, ['up'])
         if iface.ipConfig.bootproto == 'dhcp':
             dhclient = DhcpClient(iface.name)
-            dhclient.start(iface.ipConfig.async)
+            rc = dhclient.start(iface.ipConfig.async)
+            if not iface.ipConfig.async and rc:
+                raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient failed')
 
     def ifdown(self, iface):
         ipwrapper.linkSet(iface.name, ['down'])
