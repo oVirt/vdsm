@@ -4699,8 +4699,7 @@
 #
 # @hostID:         A host ID number unique across all hosts in the same cluster
 #
-# @scsiKey:        A key that will be used to validate other API calls related
-#                  to this Storage Pool
+# @scsiKey:        Deprecated. Retained here to support older versions
 #
 # @masterSdUUID:   The UUID of a Storage Domain to use as the master domain
 #
@@ -4802,7 +4801,7 @@
 #
 # @hostID:         A host ID number unique across all hosts in the same cluster
 #
-# @scsiKey:        The key that was passed into @StoragePool.connect
+# @scsiKey:        Deprecated. Retained here to support older versions
 #
 # Since: 4.10.0
 ##
@@ -4818,7 +4817,7 @@
 #
 # @hostID:         A host ID number unique across all hosts in the same cluster
 #
-# @scsiKey:        The key that was passed into @StoragePool.connect
+# @scsiKey:        Deprecated. Retained here to support older versions
 #
 # @remove:         #optional If True, remove the Storage Pool after it is disconnected
 #                  Not used by vdsm and set to false

@@ -1012,7 +1012,7 @@ class StoragePool(APIBase):
         APIBase.__init__(self)
         self._UUID = UUID
 
-    def connect(self, hostID, scsiKey, masterSdUUID, masterVersion,
+    def connect(self, hostID, deprecatedSCSIKey, masterSdUUID, masterVersion,
                 domainsMap=None):
         return self._irs.connectStoragePool(
             self._UUID, hostID, masterSdUUID, masterVersion, domainsMap)
@@ -1031,10 +1031,10 @@ class StoragePool(APIBase):
             masterVersion, lockPolicy, lockRenewalIntervalSec, leaseTimeSec,
             ioOpTimeoutSec, leaseRetries)
 
-    def destroy(self, hostID, scsiKey):
+    def destroy(self, hostID, deprecatedSCSIKey):
         return self._irs.destroyStoragePool(self._UUID, hostID)
 
-    def disconnect(self, hostID, scsiKey, remove=False):
+    def disconnect(self, hostID, deprecatedSCSIKey, remove):
         return self._irs.disconnectStoragePool(self._UUID, hostID, remove)
 
     def disconnectStorageServer(self, domainType, connectionParams):
