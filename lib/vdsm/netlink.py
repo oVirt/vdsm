@@ -30,6 +30,7 @@ import ethtool
 NETLINK_ROUTE = 0
 _POOL_SIZE = 5
 CHARBUFFSIZE = 40  # Increased to fit IPv6 expanded representations
+HWADDRSIZE = 60    # InfiniBand HW address needs 59+1 bytes
 
 
 def iter_links():
@@ -179,7 +180,7 @@ def _link_address(link):
     have a physical address."""
     nl_addr = _rtnl_link_get_addr(link)
     if nl_addr:
-        address = (c_char * CHARBUFFSIZE)()
+        address = (c_char * HWADDRSIZE)()
         return _nl_addr2str(nl_addr, address, sizeof(address))
     else:
         return None
