@@ -34,8 +34,10 @@ from utils import SUCCESS
 
 
 def customize_vm(ident):
-    return {'vmId': '99999999-fedc-3333-abcd-'.ljust(36, '%i' % ident),
-            'vmName': 'testRecoveryVm%02i' % ident}
+    return {
+        'display': 'qxl',
+        'vmId': '99999999-fedc-3333-abcd-'.ljust(36, '%i' % ident),
+        'vmName': 'testRecoveryVm%02i' % ident}
 
 
 class VMProxy(object):
