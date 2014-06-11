@@ -23,6 +23,7 @@ from os.path import normpath
 import re
 import os
 import stat
+import threading
 
 from vdsm import constants
 import misc
@@ -35,6 +36,10 @@ VFS_EXT3 = "ext3"
 
 MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "
                          "fs_mntops fs_freq fs_passno")
+
+_ETC_MTAB_PATH = '/etc/mtab'
+_PROC_MOUNTS_PATH = '/proc/mounts'
+_SYS_DEV_BLOCK_PATH = '/sys/dev/block/'
 
 _RE_ESCAPE = re.compile(r"\\0\d\d")
 
@@ -62,7 +67,7 @@ def _parseFstabLine(line):
 
 
 def _iterateMtab():
-    with open("/etc/mtab", "r") as f:
+    with open(_ETC_MTAB_PATH, "r") as f:
         for line in f:
             yield _parseFstabLine(line)
 
@@ -73,6 +78,26 @@ def _parseFstabPath(path):
 
 class MountError(RuntimeError):
     pass
+
+
+_loopFsSpecsLock = threading.Lock()
+_loopFsSpecs = {}
+_loopFsSpecsTimestamp = None
+
+
+def _getLoopFsSpecs():
+    with _loopFsSpecsLock:
+        mtabTimestamp = os.stat(_ETC_MTAB_PATH).st_mtime
+        if _loopFsSpecsTimestamp != mtabTimestamp:
+            global _loopFsSpecs
+            _loopFsSpecs = {}
+            for entry in _iterateMtab():
+                for opt in entry.fs_mntops:
+                    if opt.startswith('loop='):
+                        _loopFsSpecs[opt[len('loop='):]] = entry.fs_spec
+            global _loopFsSpecsTimestamp
+            _loopFsSpecsTimestamp = mtabTimestamp
+    return _loopFsSpecs
 
 
 def _resolveLoopDevice(path):
@@ -93,7 +118,9 @@ def _resolveLoopDevice(path):
 
     minor = os.minor(st.st_rdev)
     major = os.major(st.st_rdev)
-    loopdir = "/sys/dev/block/%d:%d/loop" % (major, minor)
+    loopdir = os.path.join(_SYS_DEV_BLOCK_PATH,
+                           '%d:%d' % (major, minor),
+                           'loop')
     if os.path.exists(loopdir):
         with open(loopdir + "/backing_file", "r") as f:
             # Remove trailing newline
@@ -101,19 +128,17 @@ def _resolveLoopDevice(path):
 
     # Old kernels might not have the sysfs entry, this is a bit slower and does
     # not work on hosts that do support the above method.
-    for rec in _iterateMtab():
-        loopOpt = "loop=%s" % path
-        for opt in rec.fs_mntops:
-            if opt != loopOpt:
-                continue
 
-            return rec.fs_spec
+    lookup = _getLoopFsSpecs()
+
+    if path in lookup:
+        return lookup[path]
 
     return path
 
 
 def _iterKnownMounts():
-    with open("/proc/mounts", "r") as f:
+    with open(_PROC_MOUNTS_PATH, "r") as f:
         for line in f:
             yield _parseFstabLine(line)
 
