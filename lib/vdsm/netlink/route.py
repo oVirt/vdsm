@@ -27,6 +27,7 @@ from . import _addr_to_str, _af_to_str, _scope_to_str
 from .link import _nl_link_cache, _link_index_to_name
 
 _RT_TABLE_COMPAT = 252
+_RT_TABLE_MAIN = 254
 
 
 def iter_routes():

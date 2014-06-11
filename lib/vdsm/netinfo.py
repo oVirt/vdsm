@@ -49,6 +49,7 @@ from .netconfpersistence import RunningConfig
 from .utils import execCmd, memoized, CommandPath
 from .netlink import link as nl_link
 from .netlink import addr as nl_addr
+from .netlink import route as nl_route
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -355,10 +356,6 @@ def getDefaultGateway():
     return Route.fromText(output[0]) if output else None
 
 
-def getgateway(gateways, dev):
-    return gateways.get(dev, '')
-
-
 def getIpInfo(dev, ipaddrs):
     ipv4addr = ''
     ipv4netmask = ''
@@ -426,47 +423,6 @@ def intToAddress(ip_num):
         ip_address.append(str(ip_val))
 
     return '.'.join(ip_address)
-
-
-def getRoutes():
-    """Return the default gateway for each interface that has one."""
-    default_routes = (Route.fromText(text) for text in
-                      routeShowAllDefaultGateways())
-    return dict((route.device, route.via) for route in default_routes)
-
-
-def ipv6StrToAddress(ipv6_str):
-
-    return socket.inet_ntop(
-        socket.AF_INET6,
-        struct.pack('>QQ', *divmod(int(ipv6_str, 16), 2 ** 64)))
-
-
-def getIPv6Routes():
-    """
-    Return the default IPv6 gateway for each interface or None if not found.
-    """
-
-    ipv6gateways = dict()
-
-    try:
-        with open("/proc/net/ipv6_route") as route_file:
-            for route_line in route_file.xreadlines():
-                route_parm = route_line.rstrip().split(' ')
-                dest = route_parm[0]
-                prefix = route_parm[1]
-                nexthop = route_parm[4]
-                device = route_parm[-1]
-                if dest == '0' * 32 and prefix == '00' and nexthop != '0' * 32:
-                    ipv6gateways[device] = ipv6StrToAddress(nexthop)
-    except IOError as e:
-        if e.errno == errno.ENOENT:
-            # ipv6 module not loaded
-            pass
-        else:
-            raise
-
-    return ipv6gateways
 
 
 def getIfaceCfg(iface):
@@ -604,8 +560,8 @@ def _bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
-                qosInbound, qosOutbound):
+def _getNetInfo(iface, dhcp4, bridged, routes, ipaddrs, qosInbound,
+                qosOutbound):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -623,10 +579,10 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
                      'bootproto4': 'dhcp' if iface in dhcp4 else 'none',
-                     'gateway': getgateway(gateways, iface),
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
-                     'ipv6gateway': ipv6routes.get(iface, '::'),
+                     'gateway': _get_gateway(routes, iface),
+                     'ipv6gateway': _get_gateway(routes, iface, family=6),
                      'mtu': str(getMtu(iface))})
         if qosInbound:
             data['qosInbound'] = qosInbound
@@ -641,10 +597,8 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
     return data
 
 
-def _bridgeinfo(link, gateways, ipv6routes):
-    return {'gateway': getgateway(gateways, link.name),
-            'ipv6gateway': ipv6routes.get(link.name, '::'),
-            'ports': ports(link.name),
+def _bridgeinfo(link):
+    return {'ports': ports(link.name),
             'stp': bridge_stp_state(link.name),
             'opts': bridgeOpts(link.name)}
 
@@ -671,12 +625,14 @@ def _vlaninfo(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
 
-def _devinfo(link, ipaddrs, dhcp4):
+def _devinfo(link, routes, ipaddrs, dhcp4):
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(link.name, ipaddrs)
     info = {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
             'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
+            'gateway': _get_gateway(routes, link.name),
+            'ipv6gateway': _get_gateway(routes, link.name, family=6),
             'bootproto4': 'dhcp' if link.name in dhcp4 else 'none',
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}
@@ -761,14 +717,44 @@ def _getIpAddrs():
     return addrs
 
 
-def _libvirtNets2vdsm(nets, dhcp4=None, gateways=None, ipv6routes=None,
-                      ipAddrs=None):
+def _get_gateway(routes_by_dev=None, dev=None, family=4,
+                 table=nl_route._RT_TABLE_MAIN):
+    """Returns the default gateway for a device and an address family"""
+    if dev is None:  # get all routes
+        routes = nl_route.iter_routes()
+    else:  # get only routes for the device
+        if routes_by_dev is None:
+            routes_by_dev = _get_routes()
+        routes = routes_by_dev[dev]
+
+    gateways = [r for r in routes if r['destination'] == 'none' and
+                r.get('table') == table and r['scope'] == 'global' and
+                r['family'] == ('inet6' if family == 6 else 'inet')]
+    try:
+        gateway, = gateways
+    except ValueError:
+        if len(gateways) > 1:
+            logging.error('Multiple default gateways (%r) in table: %s',
+                          gateways, table)
+        return '::' if family == 6 else ''
+    return gateway['gateway']
+
+
+def _get_routes():
+    """Returns all the routes data dictionaries"""
+    routes = defaultdict(list)
+    for route in nl_route.iter_routes():
+        oif = route.get('oif')
+        if oif is not None:
+            routes[oif].append(route)
+    return routes
+
+
+def _libvirtNets2vdsm(nets, dhcp4=None, routes=None, ipAddrs=None):
     if dhcp4 is None:
         dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
-    if gateways is None:
-        gateways = getRoutes()
-    if ipv6routes is None:
-        ipv6routes = getIPv6Routes()
+    if routes is None:
+        routes = _get_routes()
     if ipAddrs is None:
         ipAddrs = _getIpAddrs()
     d = {}
@@ -776,8 +762,7 @@ def _libvirtNets2vdsm(nets, dhcp4=None, gateways=None, ipv6routes=None,
         try:
             d[net] = _getNetInfo(netAttr.get('iface', net),
                                  dhcp4,
-                                 netAttr['bridged'], gateways,
-                                 ipv6routes, ipAddrs,
+                                 netAttr['bridged'], routes, ipAddrs,
                                  netAttr.get('qosInbound'),
                                  netAttr.get('qosOutbound'))
         except KeyError:
@@ -795,23 +780,20 @@ def _cfgBootprotoCompat(networks):
 def get(vdsmnets=None):
     d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
          'vlans': {}}
-    gateways = getRoutes()
-    ipv6routes = getIPv6Routes()
     paddr = permAddr()
     ipaddrs = _getIpAddrs()
     dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
+    routes = _get_routes()
 
     if vdsmnets is None:
         nets = networks()
-        d['networks'] = _libvirtNets2vdsm(nets, dhcp4, gateways, ipv6routes,
-                                          ipaddrs)
+        d['networks'] = _libvirtNets2vdsm(nets, dhcp4, routes, ipaddrs)
     else:
         d['networks'] = vdsmnets
 
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
-            devinfo = d['bridges'][dev.name] = _bridgeinfo(dev, gateways,
-                                                           ipv6routes)
+            devinfo = d['bridges'][dev.name] = _bridgeinfo(dev)
         elif dev.isNICLike():
             devinfo = d['nics'][dev.name] = _nicinfo(dev, paddr)
         elif dev.isBOND():
@@ -820,7 +802,7 @@ def get(vdsmnets=None):
             devinfo = d['vlans'][dev.name] = _vlaninfo(dev)
         else:
             continue
-        devinfo.update(_devinfo(dev, ipaddrs, dhcp4))
+        devinfo.update(_devinfo(dev, routes, ipaddrs, dhcp4))
         if dev.isBOND():
             _bondOptsCompat(devinfo)
 
