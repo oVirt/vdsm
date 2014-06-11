@@ -743,8 +743,8 @@ class SamplingMethod(object):
         self._log.debug("Trying to enter sampling method (%s.%s)",
                         self.__funcParent, self.__funcName)
         if self.__barrier.enter():
-            self._log.debug("Got in to sampling method")
             try:
+                self._log.debug("Got in to sampling method")
                 self.__lastResult = self.__func(*args, **kwargs)
             finally:
                 self.__barrier.exit()
