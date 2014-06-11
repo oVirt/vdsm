@@ -669,8 +669,7 @@ class DynamicBarrier(object):
         >>    print "Do stuff"
         >>    dynamicBarrier.exit()
         """
-        self._cond.acquire()
-        try:
+        with self._cond:
             if self._lock.acquire(False):
                 # The first thread entered the barrier.
                 return True
@@ -694,16 +693,10 @@ class DynamicBarrier(object):
 
             return False
 
-        finally:
-            self._cond.release()
-
     def exit(self):
-        self._cond.acquire()
-        try:
+        with self._cond:
             self._lock.release()
             self._cond.notifyAll()
-        finally:
-            self._cond.release()
 
 
 class SamplingMethod(object):
