@@ -204,11 +204,22 @@ class GlusterApi(object):
         self.svdsmProxy.glusterVolumeRemoveBrickForce(volumeName, brickList,
                                                       replicaCount)
 
+    def _computeVolumeStats(self, data):
+        total = (data.f_blocks - (data.f_bfree - data.f_bavail)) * data.f_bsize
+        free = data.f_bavail * data.f_bsize
+        used = total - free
+        return {'sizeTotal': str(total),
+                'sizeFree': str(free),
+                'sizeUsed': str(used)}
+
     @exportAsVerb
     def volumeStatus(self, volumeName, brick=None, statusOption=None,
                      options=None):
         status = self.svdsmProxy.glusterVolumeStatus(volumeName, brick,
                                                      statusOption)
+        if statusOption == 'detail':
+            data = self.svdsmProxy.glusterVolumeStatvfs(volumeName)
+            status['volumeStatsInfo'] = self._computeVolumeStats(data)
         return {'volumeStatus': status}
 
     @exportAsVerb
@@ -305,6 +316,11 @@ class GlusterApi(object):
     def tasksList(self, taskIds=[], options=None):
         status = self.svdsmProxy.glusterTasksList(taskIds)
         return {'tasks': status}
+
+    @exportAsVerb
+    def volumeStatsInfoGet(self, volumeName, options=None):
+        data = self.svdsmProxy.glusterVolumeStatvfs(volumeName)
+        return self._computeVolumeStats(data)
 
 
 def getGlusterMethods(gluster):

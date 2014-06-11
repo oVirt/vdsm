@@ -486,3 +486,23 @@ class GlusterServiceActionNotSupportedException(GlusterServiceException):
         prefix = "%s: " % (action)
         self.message = prefix + "Service action is not supported"
         self.err = [self.message]
+
+
+class GlusterLibgfapiException(GlusterException):
+    code = 4570
+    message = "Gluster Libgfapi Exception"
+
+
+class GlfsStatvfsException(GlusterLibgfapiException):
+    code = 4571
+    message = "Failed to get Gluster volume Size info"
+
+
+class GlfsInitException(GlusterLibgfapiException):
+    code = 4572
+    message = "glfs init failed"
+
+
+class GlfsFiniException(GlusterLibgfapiException):
+    code = 4573
+    message = "glfs fini failed"

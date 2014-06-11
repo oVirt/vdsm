@@ -422,6 +422,14 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeStatsInfoGet(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeStatsInfoGet(volumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -717,5 +725,10 @@ def getGlusterCmdDict(serv):
              serv.do_glusterTasksList,
              ('[taskIds=<task_id1,task_id2,..>]',
               'list all or given gluster tasks'
+              )),
+         'glusterVolumeStatsInfoGet': (
+             serv.do_glusterVolumeStatsInfoGet,
+             ('volumeName=<volume name>',
+              'Returns total, free and used space(bytes) of gluster volume'
               )),
          }

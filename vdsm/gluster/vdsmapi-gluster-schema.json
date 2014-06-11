@@ -1205,3 +1205,36 @@
 ##
 {'command': {'class': 'GlusterHost', 'name': 'list'},
  'returns': ['HostList']}
+
+##
+# @GlusterVolumeStatsInfo:
+#
+# Gluster Volumes disk usage statistics
+#
+# @sizeTotal: Total space available in bytes
+#
+# @sizeFree: Free space available in bytes
+#
+# @sizeUsed: Used space in bytes
+#
+# Since: 4.15.0
+##
+{'type': 'GlusterVolumeStatsInfo',
+ 'data': {'sizeTotal': 'str', 'sizeFree': 'str', 'sizeUsed': 'str'}}
+
+
+##
+# @GlusterVolume.statsInfoGet:
+#
+# Get the size info of gluster volume
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# Stats info of GlusterFS volume
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'statsInfoGet'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'GlusterVolumeStatsInfo'}
