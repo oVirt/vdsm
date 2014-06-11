@@ -670,14 +670,18 @@ def _vlaninfo(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
 
-def _devinfo(link, ipaddrs):
+def _devinfo(link, ipaddrs, dhcp4):
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(link.name, ipaddrs)
-    return {'addr': ipv4addr,
+    info = {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
             'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
+            'bootproto4': 'dhcp' if link.name in dhcp4 else 'none',
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}
+    if 'BOOTPROTO' not in info['cfg']:
+        info['cfg']['BOOTPROTO'] = info['bootproto4']
+    return info
 
 
 def _parseExpiryTime(expiryTime):
@@ -756,9 +760,10 @@ def _getIpAddrs():
     return addrs
 
 
-def _libvirtNets2vdsm(nets, gateways=None, ipv6routes=None,
+def _libvirtNets2vdsm(nets, dhcp4=None, gateways=None, ipv6routes=None,
                       ipAddrs=None):
-    dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
+    if dhcp4 is None:
+        dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
     if gateways is None:
         gateways = getRoutes()
     if ipv6routes is None:
@@ -779,18 +784,11 @@ def _libvirtNets2vdsm(nets, gateways=None, ipv6routes=None,
     return d
 
 
-def _cfgBootprotoCompat(netsAndDevices):
+def _cfgBootprotoCompat(networks):
     """Set network 'cfg' 'BOOTPROTO' for backwards engine compatibility."""
-    for netAttrs in netsAndDevices['networks'].itervalues():
-        if netAttrs['bridged']:
+    for netAttrs in networks.itervalues():
+        if netAttrs['bridged'] and 'BOOTPROTO' not in netAttrs['cfg']:
             netAttrs['cfg']['BOOTPROTO'] = netAttrs['bootproto4']
-
-        for devType in ('bondings', 'bridges', 'nics', 'vlans'):
-            dev = netsAndDevices[devType].get(netAttrs['iface'])
-
-            if dev:
-                dev['cfg']['BOOTPROTO'] = netAttrs['bootproto4']
-                break
 
 
 def get(vdsmnets=None):
@@ -800,10 +798,12 @@ def get(vdsmnets=None):
     ipv6routes = getIPv6Routes()
     paddr = permAddr()
     ipaddrs = _getIpAddrs()
+    dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
 
     if vdsmnets is None:
         nets = networks()
-        d['networks'] = _libvirtNets2vdsm(nets, gateways, ipv6routes, ipaddrs)
+        d['networks'] = _libvirtNets2vdsm(nets, dhcp4, gateways, ipv6routes,
+                                          ipaddrs)
     else:
         d['networks'] = vdsmnets
 
@@ -819,11 +819,11 @@ def get(vdsmnets=None):
             devinfo = d['vlans'][dev.name] = _vlaninfo(dev)
         else:
             continue
-        devinfo.update(_devinfo(dev, ipaddrs))
+        devinfo.update(_devinfo(dev, ipaddrs, dhcp4))
         if dev.isBOND():
             _bondOptsCompat(devinfo)
 
-    _cfgBootprotoCompat(d)
+    _cfgBootprotoCompat(d['networks'])
 
     return d
 

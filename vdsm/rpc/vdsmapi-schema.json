@@ -573,6 +573,10 @@
 # @stp:         Whether Spanning Tree Protocol status for the bridge device
 #               should be turned on
 #
+# @bootproto4:  The protocol used to set up the network. Reported values are
+#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
+#               (Added in version 4.15.0.)
+#
 # @addr:        The primary IPv4 address assigned to the bridge device
 #
 # @netmask:     The primary IPv4 netmask of the defined subnet
@@ -607,7 +611,7 @@
 # XXX: Add types for IP Address?
 ##
 {'type': 'NetInfoBridgedNetwork',
- 'data': {'ports': ['str'], 'stp': 'bool', 'addr': 'str',
+ 'data': {'ports': ['str'], 'stp': 'bool', 'bootproto4': 'str', 'addr': 'str',
           'netmask': 'str', 'gateway': 'str', 'ipv4addrs': ['str'],
           'ipv6addrs': ['str'], 'ipv6gateway': 'str', 'mtu': 'uint',
           'cfg': 'StringMap', 'bridged': 'bool',
@@ -649,6 +653,10 @@
 #
 # @speed:       The reported speed of the nic
 #
+# @bootproto4:  The protocol used to set up the network. Reported values are
+#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
+#               (Added in version 4.16.0.)
+#
 # @addr:        The primary IPv4 address assigned to the nic device
 #
 # @netmask:     The primary IPv4 netmask of the defined subnet
@@ -669,7 +677,7 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoNic',
- 'data': {'speed': 'int', 'addr': 'str', 'netmask': 'str',
+ 'data': {'speed': 'int', 'bootproto4': 'str', 'addr': 'str', 'netmask': 'str',
           'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'hwaddr': 'str',
           'mtu': 'uint', '*permhwaddr': 'str'}}
 
@@ -679,6 +687,10 @@
 # Information about a ethernet bond device
 #
 # @slaves:      A list of devices that are enslaved to the bond device
+#
+# @bootproto4:  The protocol used to set up the network. Reported values are
+#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
+#               (Added in version 4.16.0.)
 #
 # @addr:        The primary IPv4 address assigned to the bond device
 #
@@ -702,9 +714,10 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoBond',
- 'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str',
-          'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'hwaddr': 'str',
-          'cfg': 'StringMap', 'mtu': 'uint', 'opts': 'StringMap'}}
+ 'data': {'slaves': ['str'], 'bootproto4': 'str', 'addr': 'str',
+          'netmask': 'str', 'ipv4addrs': ['str'], 'ipv6addrs': ['str'],
+          'hwaddr': 'str', 'cfg': 'StringMap', 'mtu': 'uint',
+          'opts': 'StringMap'}}
 
 ##
 # @NetInfoVlan:
@@ -712,6 +725,10 @@
 # Information about a Virtual Local Area Network
 #
 # @iface:       The network device associated with the vlan
+#
+# @bootproto4:  The protocol used to set up the network. Reported values are
+#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
+#               (Added in version 4.16.0.)
 #
 # @addr:        The primary IPv4 address assigned to the vlan device
 #
@@ -730,7 +747,7 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoVlan',
- 'data': {'iface': 'str', 'addr': 'str', 'netmask': 'str',
+ 'data': {'iface': 'str', 'bootproto4': 'str', 'addr': 'str', 'netmask': 'str',
           'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'mtu': 'uint',
           'vlanid': 'uint'}}
 
