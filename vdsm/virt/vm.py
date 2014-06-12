@@ -31,7 +31,6 @@ import tempfile
 import threading
 import time
 import xml.dom.minidom
-import json
 import uuid
 
 # 3rd party libs imports
