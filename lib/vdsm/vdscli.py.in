@@ -63,24 +63,12 @@ def __guessDefaults():
     global d_useSSL, d_tsPath, d_addr, d_port
     VDSM_CONF = '/etc/vdsm/vdsm.conf'
     try:
-        try:
-            from .config import config
-            config.read(VDSM_CONF)
-            d_useSSL = config.getboolean('vars', 'ssl')
-            d_tsPath = config.get('vars', 'trust_store_path')
-            d_port = config.get('addresses', 'management_port')
-            d_addr = config.get('addresses', 'management_ip')
-        except:
-            pass
-        if os.name == 'nt':
-            def getRHEVMInstallPath():
-                import _winreg
-                key_path = 'SOFTWARE\\RedHat\\RHEVM Service'
-                root = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, key_path)
-                val, v_type = _winreg.QueryValueEx(root, "Location")
-                retval = os.path.dirname(os.path.dirname(val))
-                return str(retval)
-            d_tsPath = os.path.join(getRHEVMInstallPath(), "Service", "ca")
+        from .config import config
+        config.read(VDSM_CONF)
+        d_useSSL = config.getboolean('vars', 'ssl')
+        d_tsPath = config.get('vars', 'trust_store_path')
+        d_port = config.get('addresses', 'management_port')
+        d_addr = config.get('addresses', 'management_ip')
     except:
         pass
 
@@ -111,14 +99,9 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
     if tsPath is None:
         tsPath = d_tsPath
     if useSSL:
-        if os.name == 'nt':
-            KEYFILE = tsPath + '\\keys\\rhevm.pem'
-            CERTFILE = tsPath + '\\certs\\rhevm.cer'
-            CACERT = tsPath + '\\certs\\ca.pem'
-        else:
-            KEYFILE = tsPath + '/keys/vdsmkey.pem'
-            CERTFILE = tsPath + '/certs/vdsmcert.pem'
-            CACERT = tsPath + '/certs/cacert.pem'
+        KEYFILE = tsPath + '/keys/vdsmkey.pem'
+        CERTFILE = tsPath + '/certs/vdsmcert.pem'
+        CACERT = tsPath + '/certs/cacert.pem'
 
         for f in (KEYFILE, CERTFILE, CACERT):
             if not os.access(f, os.R_OK):
