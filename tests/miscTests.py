@@ -1145,3 +1145,91 @@ class NoIntrPollTests(TestCaseBase):
         proc.start()
         self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
         proc.join()
+
+
+class SamplingMethodTests(TestCaseBase):
+
+    # Note: this should be long enough so even on very loaded machine, all
+    # threads will start within this delay. If this tests fails randomly,
+    # increase this value.
+    COMPUTE_SECONDS = 0.2
+
+    def setUp(self):
+        # Will raise if more then one thread try to enter the sampling method
+        self.single_thread_allowed = threading.BoundedSemaphore(1)
+        self.entered_sampling_method = threading.Event()
+        self.results = ['result-1', 'result-2']
+
+    def test_single_thread(self):
+        """
+        This is just a sanity test that may help to debug issues in the more
+        complex tests.
+        """
+        thread = SamplingThread(self.sampling_method)
+        thread.start()
+        thread.join()
+        self.assertEqual('result-1', thread.result)
+        self.assertEqual(['result-2'], self.results)
+
+    def test_two_threads(self):
+        """
+        The second thread must wait until the first thread is finished before
+        it calls the sampling method.
+        """
+        first_thread = SamplingThread(self.sampling_method)
+        second_thread = SamplingThread(self.sampling_method)
+        first_thread.start()
+        self.entered_sampling_method.wait()
+        second_thread.start()
+        second_thread.join()
+        self.assertEqual('result-1', first_thread.result)
+        self.assertEqual('result-2', second_thread.result)
+        self.assertEqual([], self.results)
+
+    def test_many_threads(self):
+        """
+        The other threads must wait until the first thread is finished before
+        they enter the sampling method. Then, one of the other threads will
+        call the sampling method, and all of them will return the result
+        obtained in this call.
+        """
+        first_thread = SamplingThread(self.sampling_method)
+        others = []
+        for i in range(3):
+            thread = SamplingThread(self.sampling_method)
+            others.append(thread)
+        first_thread.start()
+        self.entered_sampling_method.wait()
+        for thread in others:
+            thread.start()
+        for thread in others:
+            thread.join()
+        self.assertEqual('result-1', first_thread.result)
+        for thread in others:
+            self.assertEqual('result-2', thread.result)
+        self.assertEqual([], self.results)
+
+    @misc.samplingmethod
+    def sampling_method(self):
+        with self.single_thread_allowed:
+            self.entered_sampling_method.set()
+            time.sleep(self.COMPUTE_SECONDS)
+            return self.results.pop(0)
+
+
+class SamplingThread(object):
+
+    def __init__(self, func):
+        self._func = func
+        self._thread = threading.Thread(target=self._run)
+        self._thread.daemon = True
+        self.result = None
+
+    def start(self):
+        self._thread.start()
+
+    def join(self):
+        self._thread.join()
+
+    def _run(self):
+        self.result = self._func()

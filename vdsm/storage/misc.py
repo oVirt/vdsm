@@ -672,14 +672,26 @@ class DynamicBarrier(object):
         self._cond.acquire()
         try:
             if self._lock.acquire(False):
+                # The first thread entered the barrier.
                 return True
 
             self._cond.wait()
+
+            # The first thread has exited. Threads waiting here do not know
+            # when the barrier was entered, and so they cannot use the result
+            # obtained by this thread.
 
             if self._lock.acquire(False):
+                # The second thread entered the barrier.
                 return True
 
             self._cond.wait()
+
+            # The seocnd thread has exited the barrier. Threads waiting here
+            # know that the barrier was entered after they tried to enter the
+            # barrier, so they can safely use the result obtained by the second
+            # thread.
+
             return False
 
         finally:
