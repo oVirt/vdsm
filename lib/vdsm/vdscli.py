@@ -28,7 +28,7 @@ from . import SecureXMLRPCServer
 
 
 d_useSSL = False
-d_tsPath = '@TRUSTSTORE@'
+d_tsPath = '/etc/pki/vdsm'
 d_addr = '0'
 d_port = '54321'
 

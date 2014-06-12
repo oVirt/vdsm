@@ -36,13 +36,13 @@ dist_vdsmpylib_PYTHON = \
 	SecureXMLRPCServer.py \
 	sslutils.py \
 	utils.py \
+	vdscli.py \
 	xmlrpc.py \
 	$(NULL)
 
 nodist_vdsmpylib_PYTHON = \
 	config.py \
 	constants.py \
-	vdscli.py \
 	$(NULL)
 
 nodist_noinst_DATA= \
@@ -58,7 +58,6 @@ CLEANFILES = \
 EXTRA_DIST = \
 	config.py.in \
 	constants.py.in \
-	vdscli.py.in \
 	vdsm.conf.sample \
 	$(NULL)
 
