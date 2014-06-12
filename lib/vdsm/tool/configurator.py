@@ -17,16 +17,16 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
-import sys
-import grp
 import argparse
+import grp
+import os
 import pwd
+import sys
 
-from .. import utils
-from . import service, expose, NotRootError, UsageError
 from ..constants import P_VDSM_EXEC, QEMU_PROCESS_GROUP, \
     SANLOCK_USER, VDSM_GROUP
+from . import service, expose, NotRootError, UsageError
+from .. import utils
 
 
 class InvalidConfig(UsageError):
