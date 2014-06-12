@@ -289,7 +289,7 @@ SD_MD_FIELDS = {
 }
 
 
-class StorageDomain:
+class StorageDomain(object):
     log = logging.getLogger("Storage.StorageDomain")
     storage_repository = config.get('irs', 'repository')
     mdBackupVersions = config.get('irs', 'md_backup_versions')

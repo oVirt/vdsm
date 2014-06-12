@@ -89,8 +89,11 @@ class TestFileGetAllVolumes(TestCaseBase):
         def __init__(self, sdUUID):
                 self.sdUUID = sdUUID
                 self.mountpoint = testDir
-                self.oop = Moop()
                 self.stat = None
+
+        @property
+        def oop(self):
+            return Moop()
 
     def test_getAllVolumes(self):
         sdName = "1c60971a-8647-44ac-ae33-6520887f8843"
