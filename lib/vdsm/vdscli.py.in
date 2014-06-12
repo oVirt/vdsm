@@ -20,7 +20,6 @@
 #
 
 import xmlrpclib
-import subprocess
 import os
 import re
 import sys
@@ -70,10 +69,7 @@ def __guessDefaults():
             d_useSSL = config.getboolean('vars', 'ssl')
             d_tsPath = config.get('vars', 'trust_store_path')
             d_port = config.get('addresses', 'management_port')
-            if d_useSSL:
-                d_addr = __getLocalVdsName(d_tsPath)
-            else:
-                d_addr = config.get('addresses', 'management_ip')
+            d_addr = config.get('addresses', 'management_ip')
         except:
             pass
         if os.name == 'nt':
@@ -87,29 +83,6 @@ def __guessDefaults():
             d_tsPath = os.path.join(getRHEVMInstallPath(), "Service", "ca")
     except:
         pass
-
-
-def __getLocalVdsName(tsPath):
-    LOOPBACK_ADDR = '0'
-
-    p = subprocess.Popen(['openssl', 'x509', '-noout', '-subject', '-in',
-                          '%s/certs/vdsmcert.pem' % tsPath],
-                         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         close_fds=True)
-    out, err = p.communicate()
-    if p.returncode != 0:
-        return LOOPBACK_ADDR
-
-    for keyval in out.split('/'):
-        try:
-            key, val = keyval.split('=', 1)
-        except ValueError:
-            pass
-        else:
-            if key == 'CN':
-                return val.strip()
-
-    return LOOPBACK_ADDR
 
 
 __guessDefaults()

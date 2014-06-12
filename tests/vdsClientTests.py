@@ -21,13 +21,10 @@
 import os
 from tempfile import mkstemp
 from contextlib import contextmanager
-import subprocess
 
 from testrunner import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatch
 
 import vdsClient
-from vdsm.vdscli import __getLocalVdsName as getLocalVdsName
 
 
 @contextmanager
@@ -134,22 +131,3 @@ class _FakePopen():
 
     def communicate(self):
         return self._output, ''
-
-
-class vdscliTests(TestCaseBase):
-    @MonkeyPatch(subprocess, 'Popen', lambda *y, **x: _FakePopen(
-        'subject= /O=VDSM Certificate/CN=myhost\n'))
-    def test__getLocalVdsName1(self):
-        cn = getLocalVdsName('fake')
-        self.assertEquals('myhost', cn)
-
-    @MonkeyPatch(subprocess, 'Popen', lambda *y, **x: _FakePopen(
-        'subject= /CN=myhost/O=VDSM Certificate\n'))
-    def test__getLocalVdsName2(self):
-        cn = getLocalVdsName('fake')
-        self.assertEquals('myhost', cn)
-
-    @MonkeyPatch(subprocess, 'Popen', lambda *y, **x: _FakePopen('garbled='))
-    def test__getLocalVdsName3(self):
-        cn = getLocalVdsName('fake')
-        self.assertEquals('0', cn)
