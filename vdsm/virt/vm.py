@@ -389,6 +389,29 @@ class VmStatsThread(sampling.AdvancedStatsThread):
 
         return infos
 
+    def _getIoTuneStats(self, stats):
+        """
+        Collect the current ioTune settings for all disks VDSM knows about.
+
+        This assumes VDSM always has the correct info and nobody else is
+        touching the device without telling VDSM about it.
+
+        TODO: We might want to move to XML parsing (first update) and events
+        once libvirt supports them:
+        https://bugzilla.redhat.com/show_bug.cgi?id=1114492
+        """
+        ioTuneInfo = []
+
+        for disk in self._vm._devices[DISK_DEVICES]:
+            if "ioTune" in disk.specParams:
+                ioTuneInfo.append({
+                    "name": disk.name,
+                    "path": disk.path,
+                    "ioTune": disk.specParams["ioTune"]
+                })
+
+        stats['ioTune'] = ioTuneInfo
+
     def _diff(self, prev, curr, val):
         return prev[val] - curr[val]
 
@@ -631,6 +654,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         self._getCpuTuneInfo(stats)
         self._getCpuCount(stats)
         self._getUserCpuTuneInfo(stats)
+        self._getIoTuneStats(stats)
 
         return stats
 
