@@ -2332,6 +2332,24 @@
           '*ioTune': 'VmDiskDeviceIoTuneParams'}}
 
 ##
+# @VmDiskDeviceTuneParams:
+#
+# Extra parameters for VM disk devices. At least one
+# device identifier (name/path) is needed.
+#
+# @name:    #optional The name of the taget device
+#
+# @path:    #optional The path of the taget device
+#
+# @ioTune:  IO tune parameters
+#
+# Since: 4.15.0
+##
+{'type': 'VmDiskDeviceTuneParams',
+ 'data': {'*name': 'str', '*path': 'str',
+          'ioTune': 'VmDiskDeviceIoTuneParams'}}
+
+##
 # @VmDiskDeviceVolumeChainEntry:
 #
 # Identifies one volume in a VM disk device volume chain.
@@ -6313,6 +6331,9 @@
 # @vcpuUserLimit:      #optional Cpu usage hard limit in percents.
 #                      (new in version 4.15.0)
 #
+# @ioTune:             #optional Current QoS settings for IO devices
+#                      (new in version 4.15.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -6336,7 +6357,8 @@
           'displayInfo': ['VmDisplayInfo'], '*vmJobs': 'VmJobsMap',
           '*vNodeRuntimeInfo': 'VmNumaNodeRuntimeInfoMap',
           'displayInfo': ['VmDisplayInfo'], '*vcpuQuota': 'int',
-          '*vcpuPeriod': 'int', '*vcpuCount': 'int', '*vcpuUserLimit': 'int'}}
+          '*vcpuPeriod': 'int', '*vcpuCount': 'int', '*vcpuUserLimit': 'int',
+          '*ioTune': ['VmDiskDeviceTuneParams']}}
 
 ##
 # @VmStats:
