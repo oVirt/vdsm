@@ -54,7 +54,7 @@ except ImportError:
     _glusterEnabled = False
 
 
-class clientIF:
+class clientIF(object):
     """
     The client interface of vdsm.
 

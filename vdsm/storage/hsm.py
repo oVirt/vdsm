@@ -246,7 +246,7 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
     return storageServer.ConnectionInfo(typeName, params)
 
 
-class HSM:
+class HSM(object):
     """
     This is the HSM class. It controls all the stuff relate to the Host.
     Further more it doesn't change any pool metadata.

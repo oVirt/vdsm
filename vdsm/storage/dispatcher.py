@@ -33,7 +33,7 @@ def exported(f):
     return f
 
 
-class Dispatcher:
+class Dispatcher(object):
     log = logging.getLogger('Storage.Dispatcher')
 
     STATUS_OK = {'status': {'code': 0, 'message': "OK"}}
