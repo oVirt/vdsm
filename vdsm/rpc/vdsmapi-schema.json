@@ -2350,6 +2350,26 @@
           'ioTune': 'VmDiskDeviceIoTuneParams'}}
 
 ##
+# @VmDiskDeviceTuneLimits:
+#
+# Extra parameters for VM disk devices.
+#
+# @name:        #optional The name of the target device
+#
+# @path:        #optional The path of the target device
+#
+# @guaranteed:  IO tune parameters - guaranteed values
+#
+# @maximum:     IO tune parameters - the hard limits
+#
+# Since: 4.15.0
+##
+{'type': 'VmDiskDeviceTuneLimits',
+ 'data': {'*name': 'str', '*path': 'str',
+          'guaranteed': 'VmDiskDeviceIoTuneParams',
+          'maximum': 'VmDiskDeviceIoTuneParams'}}
+
+##
 # @VmDiskDeviceVolumeChainEntry:
 #
 # Identifies one volume in a VM disk device volume chain.
@@ -7545,14 +7565,32 @@
  'returns': 'TaskStatus'}
 
 ##
+# @UpdateVmPolicyParams:
+#
+# QoS policy update data
+#
+# @vcpuLimit: #optional vcpu limit to set - the value is a percentage
+#             representation of the amount of cpu from the Host that
+#             the VM can consume
+#
+# @ioTune:    #optional list of ioTune limits to set
+#
+# Since: 4.15.0
+##
+{'type': 'UpdateVmPolicyParams',
+ 'data': {'*vcpuLimit': 'int',
+          '*ioTune': ['VmDiskDeviceTuneLimits']}}
+
+##
 # @VM.updateVmPolicy:
 #
 # Set VM SLA parameters
 #
 # @vmID:      The UUID of the VM
 #
-# @vcpuLimit: vcpu limit to set - the value is a percentage representation
-#             of the amount of cpu from the Host that the VM can consume
+# @params:    The UpdateVmPolicyParams structure that defines
+#             the changes that are to be applied to the current
+#             QoS policy.
 #
 # Returns:
 # The VM definition, as updated
@@ -7560,4 +7598,5 @@
 # Since: 4.15.0
 ##
 {'command': {'class': 'VM', 'name': 'updateVmPolicy'},
- 'data': {'vmID': 'UUID', 'vcpuLimit': 'int'}}
+ 'data': {'vmID': 'UUID', 'params': 'UpdateVmPolicyParams'},
+ 'returns': 'TaskStatus'}
