@@ -77,6 +77,7 @@ class FakeDomain(object):
         self._domState = domState
         self._vmId = vmId
         self._metadata = ""
+        self._io_tune = {}
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
@@ -115,6 +116,10 @@ class FakeDomain(object):
     def schedulerParameters(self):
         return {'vcpu_quota': vm._NO_CPU_QUOTA,
                 'vcpu_period': vm._NO_CPU_PERIOD}
+
+    def setBlockIoTune(self, name, io_tune, flags):
+        self._io_tune[name] = io_tune
+        return 1
 
 
 class TestVm(TestCaseBase):
@@ -1191,6 +1196,76 @@ class TestVm(TestCaseBase):
 
             self.maxDiff = None
             self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
+
+    def testSetIoTune(self):
+
+        drives = [
+            vm.Drive({
+                "specParams": {
+                    "ioTune": {
+                        "total_bytes_sec": 9999,
+                        "total_iops_sec": 9999}
+                }},
+                log=self.log,
+                index=0,
+                device="hdd",
+                path="/dev/dummy",
+                type=vm.DISK_DEVICES,
+                iface="ide")
+        ]
+
+        # Make the drive look like a VDSM volume
+        required = ('domainID', 'imageID', 'poolID', 'volumeID')
+        for p in required:
+            setattr(drives[0], p, "1")
+        drives[0]._blockDev = True
+
+        tunables = [
+            {
+                "name": drives[0].name,
+                "ioTune": {
+                    "write_bytes_sec": 1,
+                    "total_bytes_sec": 0,
+                    "read_bytes_sec": 2
+                }
+            }
+        ]
+
+        expected_io_tune = {
+            drives[0].name: {
+                "write_bytes_sec": 1,
+                "total_bytes_sec": 0,
+                "read_bytes_sec": 2
+            }
+        }
+
+        expected_xml = """
+            <disk device="hdd" snapshot="no" type="block">
+                <source dev="/dev/dummy"/>
+                <target bus="ide" dev="hda"/>
+                <serial></serial>
+                <iotune>
+                    <read_bytes_sec>2</read_bytes_sec>
+                    <write_bytes_sec>1</write_bytes_sec>
+                    <total_bytes_sec>0</total_bytes_sec>
+                </iotune>
+            </disk>"""
+
+        with FakeVM() as machine:
+            dom = FakeDomain()
+            machine._dom = dom
+            for drive in drives:
+                machine._devices[drive.type].append(drive)
+
+            machine.setIoTune(tunables)
+
+            self.assertEqual(expected_io_tune, dom._io_tune)
+
+            # Test that caches were properly updated
+            self.assertEqual(drives[0].specParams["ioTune"],
+                             expected_io_tune[drives[0].name])
+            self.assertEqual(self._xml_sanitizer(drives[0]._deviceXML),
+                             self._xml_sanitizer(expected_xml))
 
 
 class FakeGuestAgent(object):
