@@ -640,42 +640,34 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
     return data
 
 
-def _bridgeinfo(link, gateways, ipv6routes, ipaddrs):
-    info = _devinfo(link, ipaddrs)
-    info.update({'gateway': getgateway(gateways, link.name),
-                 'ipv6gateway': ipv6routes.get(link.name, '::'),
-                 'ports': ports(link.name),
-                 'stp': bridge_stp_state(link.name),
-                 'opts': bridgeOpts(link.name)})
-    return info
+def _bridgeinfo(link, gateways, ipv6routes):
+    return {'gateway': getgateway(gateways, link.name),
+            'ipv6gateway': ipv6routes.get(link.name, '::'),
+            'ports': ports(link.name),
+            'stp': bridge_stp_state(link.name),
+            'opts': bridgeOpts(link.name)}
 
 
-def _nicinfo(link, paddr, ipaddrs):
-    info = _devinfo(link, ipaddrs)
-    info.update({'hwaddr': link.address, 'speed': nicSpeed(link.name)})
+def _nicinfo(link, paddr):
+    info = {'hwaddr': link.address, 'speed': nicSpeed(link.name)}
     if paddr.get(link.name):
         info['permhwaddr'] = paddr[link.name]
     return info
 
 
-def _bondinfo(link, ipaddrs):
-    info = _devinfo(link, ipaddrs)
-    opts = _getBondingOptions(link.name)
-
-    info.update({'hwaddr': link.address, 'slaves': slaves(link.name),
-                 'opts': opts})
-
-    # Add legacy ifcfg option if missing
-    if opts and 'BONDING_OPTS' not in info['cfg']:
-        info['cfg']['BONDING_OPTS'] = _bondOptsForIfcfg(opts)
-
-    return info
+def _bondinfo(link):
+    return {'hwaddr': link.address, 'slaves': slaves(link.name),
+            'opts': _getBondingOptions(link.name)}
 
 
-def _vlaninfo(link, ipaddrs):
-    info = _devinfo(link, ipaddrs)
-    info.update({'iface': link.device, 'vlanid': link.vlanid})
-    return info
+def _bondOptsCompat(info):
+    """Add legacy ifcfg option if missing."""
+    if info['opts'] and 'BONDING_OPTS' not in info['cfg']:
+        info['cfg']['BONDING_OPTS'] = _bondOptsForIfcfg(info['opts'])
+
+
+def _vlaninfo(link):
+    return {'iface': link.device, 'vlanid': link.vlanid}
 
 
 def _devinfo(link, ipaddrs):
@@ -817,14 +809,19 @@ def get(vdsmnets=None):
 
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
-            d['bridges'][dev.name] = \
-                _bridgeinfo(dev, gateways, ipv6routes, ipaddrs)
+            devinfo = d['bridges'][dev.name] = _bridgeinfo(dev, gateways,
+                                                           ipv6routes)
         elif dev.isNICLike():
-            d['nics'][dev.name] = _nicinfo(dev, paddr, ipaddrs)
+            devinfo = d['nics'][dev.name] = _nicinfo(dev, paddr)
         elif dev.isBOND():
-            d['bondings'][dev.name] = _bondinfo(dev, ipaddrs)
+            devinfo = d['bondings'][dev.name] = _bondinfo(dev)
         elif dev.isVLAN():
-            d['vlans'][dev.name] = _vlaninfo(dev, ipaddrs)
+            devinfo = d['vlans'][dev.name] = _vlaninfo(dev)
+        else:
+            continue
+        devinfo.update(_devinfo(dev, ipaddrs))
+        if dev.isBOND():
+            _bondOptsCompat(devinfo)
 
     _cfgBootprotoCompat(d)
 
