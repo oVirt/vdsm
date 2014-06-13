@@ -560,24 +560,6 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
     return data
 
 
-def _bridgeinfo(link, gateways, ipv6routes, ipaddrs):
-    info = _devinfo(link, ipaddrs)
-    info.update({'gateway': getgateway(gateways, link.name),
-                 'ipv6gateway': ipv6routes.get(link.name, '::'),
-                 'ports': ports(link.name),
-                 'stp': bridge_stp_state(link.name),
-                 'opts': bridgeOpts(link.name)})
-    return info
-
-
-def _nicinfo(link, paddr, ipaddrs):
-    info = _devinfo(link, ipaddrs)
-    info.update({'hwaddr': link.address, 'speed': nicSpeed(link.name)})
-    if paddr.get(link.name):
-        info['permhwaddr'] = paddr[link.name]
-    return info
-
-
 def _randomIfaceName():
     MAX_LENGTH = 15
     CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
@@ -656,6 +638,24 @@ def _bondOptsForIfcfg(opts):
     """
     return ' '.join((opt + '=' + val[-1] for (opt, val)
                      in sorted(opts.iteritems())))
+
+
+def _bridgeinfo(link, gateways, ipv6routes, ipaddrs):
+    info = _devinfo(link, ipaddrs)
+    info.update({'gateway': getgateway(gateways, link.name),
+                 'ipv6gateway': ipv6routes.get(link.name, '::'),
+                 'ports': ports(link.name),
+                 'stp': bridge_stp_state(link.name),
+                 'opts': bridgeOpts(link.name)})
+    return info
+
+
+def _nicinfo(link, paddr, ipaddrs):
+    info = _devinfo(link, ipaddrs)
+    info.update({'hwaddr': link.address, 'speed': nicSpeed(link.name)})
+    if paddr.get(link.name):
+        info['permhwaddr'] = paddr[link.name]
+    return info
 
 
 def _bondinfo(link, ipaddrs):
