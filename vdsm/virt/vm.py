@@ -1355,9 +1355,8 @@ class Drive(VmDevice):
 
         return devname.get(self.iface, 'hd') + (devindex or 'a')
 
-    def _checkIoTuneCategories(self):
+    def _checkIoTuneCategories(self, ioTuneParamsInfo):
         categories = ("bytes", "iops")
-        ioTuneParamsInfo = self.specParams['ioTune']
         for category in categories:
             if ioTuneParamsInfo.get('total_' + category + '_sec', 0) and \
                     (ioTuneParamsInfo.get('read_' + category + '_sec', 0) or
@@ -1366,15 +1365,15 @@ class Drive(VmDevice):
                                  ' read/write value for %s_sec can not be'
                                  ' set at the same time' % category)
 
-    def _validateIoTuneParams(self):
+    def _validateIoTuneParams(self, params):
         ioTuneParams = ('total_bytes_sec', 'read_bytes_sec',
                         'write_bytes_sec', 'total_iops_sec',
                         'write_iops_sec', 'read_iops_sec')
-        for key, value in self.specParams['ioTune'].iteritems():
+        for key, value in params.iteritems():
             try:
                 if key in ioTuneParams:
-                    self.specParams['ioTune'][key] = int(value)
-                    if self.specParams['ioTune'][key] >= 0:
+                    params[key] = int(value)
+                    if params[key] >= 0:
                         continue
                 else:
                     raise Exception('parameter %s name is invalid' % key)
@@ -1386,7 +1385,7 @@ class Drive(VmDevice):
                 raise ValueError('parameter %s value should be'
                                  ' equal or greater than zero' % key)
 
-        self._checkIoTuneCategories()
+        self._checkIoTuneCategories(params)
 
     def getLeasesXML(self):
         """
@@ -1494,7 +1493,7 @@ class Drive(VmDevice):
             diskelem.appendChildWithArgs('driver', **driverAttrs)
 
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
-            self._validateIoTuneParams()
+            self._validateIoTuneParams(self.specParams['ioTune'])
             iotune = XMLElement('iotune')
             for key, value in self.specParams['ioTune'].iteritems():
                 iotune.appendChildWithArgs(key, text=str(value))
