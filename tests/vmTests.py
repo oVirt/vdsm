@@ -33,6 +33,7 @@ import libvirt
 from virt import vm
 from virt import vmexitreason
 from virt import vmstatus
+from virt.vmtune import ioTuneMerge, ioTuneDomToValues, ioTuneToDom
 from vdsm import constants
 from vdsm import define
 from testrunner import VdsmTestCase as TestCaseBase
@@ -75,6 +76,7 @@ class FakeDomain(object):
         self._virtError = virtError
         self._domState = domState
         self._vmId = vmId
+        self._metadata = ""
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
@@ -100,7 +102,15 @@ class FakeDomain(object):
 
     def metadata(self, type, uri, flags):
         self._failIfRequested()
-        return '<qos></qos>'
+
+        if not self._metadata:
+            e = libvirt.libvirtError("No metadata")
+            e.err = [libvirt.VIR_ERR_NO_DOMAIN_METADATA]
+            raise e
+        return self._metadata
+
+    def setMetadata(self, type, xml, prefix, uri, flags):
+        self._metadata = xml
 
     def schedulerParameters(self):
         return {'vcpu_quota': vm._NO_CPU_QUOTA,
@@ -908,6 +918,279 @@ class TestVm(TestCaseBase):
         with FakeVM() as fake:
             fake._dom = FakeDomain(virtError=libvirt.VIR_ERR_NO_DOMAIN)
             self.assertEqual(fake._getVmPolicy(), None)
+
+    def _xml_sanitizer(self, text):
+        return re.sub(">[\t\n ]+<", "><", text).strip()
+
+    def testUpdateVmPolicy(self):
+        with FakeVM() as machine:
+            dom = FakeDomain()
+            machine._dom = dom
+
+            policy = {
+                "vcpuLimit": 50,
+                "ioTune": [
+                    {
+                        "name": "test-device-by-name",
+                        "maximum": {
+                            "total_bytes_sec": 200, "total_iops_sec": 201,
+                            "read_bytes_sec": 202, "read_iops_sec": 203,
+                            "write_bytes_sec": 204, "write_iops_sec": 205
+                        },
+                        "guaranteed": {
+                            "total_bytes_sec": 100, "total_iops_sec": 101,
+                            "read_bytes_sec": 102, "read_iops_sec": 103,
+                            "write_bytes_sec": 104, "write_iops_sec": 105
+                        }
+                    },
+                    {
+                        "path": "test-device-by-path",
+                        "maximum": {
+                            "total_bytes_sec": 400, "total_iops_sec": 401,
+                            "read_bytes_sec": 402, "read_iops_sec": 403,
+                            "write_bytes_sec": 404, "write_iops_sec": 405
+                        },
+                        "guaranteed": {
+                            "total_bytes_sec": 300, "total_iops_sec": 301,
+                            "read_bytes_sec": 302, "read_iops_sec": -1,
+                            "write_bytes_sec": 304, "write_iops_sec": 305
+                        }
+                    }
+                ]
+            }
+
+            machine.updateVmPolicy(policy)
+
+            expected_xml = self._xml_sanitizer(u"""
+            <qos>
+                <vcpuLimit>50</vcpuLimit>
+                <ioTune>
+                    <device name="test-device-by-name">
+                        <maximum>
+                            <total_bytes_sec>200</total_bytes_sec>
+                            <total_iops_sec>201</total_iops_sec>
+                            <read_bytes_sec>202</read_bytes_sec>
+                            <read_iops_sec>203</read_iops_sec>
+                            <write_bytes_sec>204</write_bytes_sec>
+                            <write_iops_sec>205</write_iops_sec>
+                        </maximum>
+                        <guaranteed>
+                            <total_bytes_sec>100</total_bytes_sec>
+                            <total_iops_sec>101</total_iops_sec>
+                            <read_bytes_sec>102</read_bytes_sec>
+                            <read_iops_sec>103</read_iops_sec>
+                            <write_bytes_sec>104</write_bytes_sec>
+                            <write_iops_sec>105</write_iops_sec>
+                        </guaranteed>
+                    </device>
+                    <device path="test-device-by-path">
+                        <maximum>
+                            <total_bytes_sec>400</total_bytes_sec>
+                            <total_iops_sec>401</total_iops_sec>
+                            <read_bytes_sec>402</read_bytes_sec>
+                            <read_iops_sec>403</read_iops_sec>
+                            <write_bytes_sec>404</write_bytes_sec>
+                            <write_iops_sec>405</write_iops_sec>
+                        </maximum>
+                        <guaranteed>
+                            <total_bytes_sec>300</total_bytes_sec>
+                            <total_iops_sec>301</total_iops_sec>
+                            <read_bytes_sec>302</read_bytes_sec>
+                            <write_bytes_sec>304</write_bytes_sec>
+                            <write_iops_sec>305</write_iops_sec>
+                        </guaranteed>
+                    </device>
+                </ioTune>
+            </qos>
+            """)
+
+            self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
+
+    def testIoTuneParser(self):
+        with FakeVM() as machine:
+            dom = FakeDomain()
+            machine._dom = dom
+
+            ioTuneValues = {
+                "name": "test-device-by-name",
+                "path": "test-path",
+                "maximum": {
+                    "total_bytes_sec": 200, "total_iops_sec": 201,
+                    "read_bytes_sec": 202, "read_iops_sec": 203,
+                    "write_bytes_sec": 204, "write_iops_sec": 205
+                },
+                "guaranteed": {
+                    "total_bytes_sec": 100, "total_iops_sec": 101,
+                    "read_bytes_sec": 102, "read_iops_sec": 103,
+                    "write_bytes_sec": 104, "write_iops_sec": 105
+                }
+            }
+
+            dom = ioTuneToDom(ioTuneValues)
+            parsed = ioTuneDomToValues(dom)
+
+            self.assertEqual(ioTuneValues, parsed)
+
+    def testIoTuneMerge(self):
+        with FakeVM() as machine:
+            dom = FakeDomain()
+            machine._dom = dom
+
+            ioTuneValues1 = {
+                "path": "test-path",
+                "maximum": {
+                    "total_bytes_sec": 0, "total_iops_sec": 0,
+                    "read_bytes_sec": 0,
+                    "write_bytes_sec": 999, "write_iops_sec": 0
+                },
+                "guaranteed": {
+                    "total_bytes_sec": 999, "total_iops_sec": 0,
+                    "read_bytes_sec": 0, "read_iops_sec": 0,
+                    "write_bytes_sec": 0, "write_iops_sec": 0
+                }
+            }
+
+            ioTuneValues2 = {
+                "name": "test-device-by-name",
+                "maximum": {
+                    "total_bytes_sec": 200, "total_iops_sec": 201,
+                    "read_bytes_sec": 202, "read_iops_sec": 203,
+                    "write_iops_sec": 205
+                },
+                "guaranteed": {
+                    "total_bytes_sec": -1, "total_iops_sec": 101,
+                    "read_bytes_sec": 102, "read_iops_sec": 103,
+                    "write_bytes_sec": 104, "write_iops_sec": 105
+                }
+            }
+
+            ioTuneExpectedValues = {
+                "name": "test-device-by-name",
+                "path": "test-path",
+                "maximum": {
+                    "total_bytes_sec": 200, "total_iops_sec": 201,
+                    "read_bytes_sec": 202, "read_iops_sec": 203,
+                    "write_bytes_sec": 999, "write_iops_sec": 205
+                },
+                "guaranteed": {
+                    "total_bytes_sec": -1, "total_iops_sec": 101,
+                    "read_bytes_sec": 102, "read_iops_sec": 103,
+                    "write_bytes_sec": 104, "write_iops_sec": 105
+                }
+            }
+
+            ioTuneMerged = ioTuneMerge(ioTuneValues1, ioTuneValues2)
+
+            self.assertEqual(ioTuneMerged, ioTuneExpectedValues)
+
+    def testUpdateExistingVmPolicy(self):
+        with FakeVM() as machine:
+            dom = FakeDomain()
+            dom._metadata = """
+            <qos>
+                <vcpuLimit>999</vcpuLimit>
+                <ioTune>
+                    <device name='test-device-by-name'>
+                        <maximum>
+                            <totalBytes>9999</totalBytes>
+                        </maximum>
+                    </device>
+                    <device name='other-device'>
+                        <maximum>
+                            <totalBytes>9999</totalBytes>
+                        </maximum>
+                    </device>
+                </ioTune>
+            </qos>
+            """
+
+            machine._dom = dom
+
+            policy = {
+                "vcpuLimit": 50,
+                "ioTune": [
+                    {
+                        "name": "test-device-by-name",
+                        "maximum": {
+                            "total_bytes_sec": 200, "total_iops_sec": 201,
+                            "read_bytes_sec": 202, "read_iops_sec": 203,
+                            "write_bytes_sec": 204, "write_iops_sec": 205
+                        },
+                        "guaranteed": {
+                            "total_bytes_sec": 100, "total_iops_sec": 101,
+                            "read_bytes_sec": 102, "read_iops_sec": 103,
+                            "write_bytes_sec": 104, "write_iops_sec": 105
+                        }
+                    },
+                    {
+                        "path": "test-device-by-path",
+                        "maximum": {
+                            "total_bytes_sec": 400, "total_iops_sec": 401,
+                            "read_bytes_sec": 402, "read_iops_sec": 403,
+                            "write_bytes_sec": 404, "write_iops_sec": 405
+                        },
+                        "guaranteed": {
+                            "total_bytes_sec": 300, "total_iops_sec": 301,
+                            "read_bytes_sec": 302, "read_iops_sec": 303,
+                            "write_bytes_sec": 304, "write_iops_sec": 305
+                        }
+                    }
+                ]
+            }
+
+            machine.updateVmPolicy(policy)
+
+            expected_xml = self._xml_sanitizer(u"""
+            <qos>
+                <ioTune>
+                    <device name="other-device">
+                        <maximum>
+                            <totalBytes>9999</totalBytes>
+                        </maximum>
+                    </device>
+                    <device name="test-device-by-name">
+                        <maximum>
+                            <total_bytes_sec>200</total_bytes_sec>
+                            <total_iops_sec>201</total_iops_sec>
+                            <read_bytes_sec>202</read_bytes_sec>
+                            <read_iops_sec>203</read_iops_sec>
+                            <write_bytes_sec>204</write_bytes_sec>
+                            <write_iops_sec>205</write_iops_sec>
+                        </maximum>
+                        <guaranteed>
+                            <total_bytes_sec>100</total_bytes_sec>
+                            <total_iops_sec>101</total_iops_sec>
+                            <read_bytes_sec>102</read_bytes_sec>
+                            <read_iops_sec>103</read_iops_sec>
+                            <write_bytes_sec>104</write_bytes_sec>
+                            <write_iops_sec>105</write_iops_sec>
+                        </guaranteed>
+                    </device>
+                    <device path="test-device-by-path">
+                        <maximum>
+                            <total_bytes_sec>400</total_bytes_sec>
+                            <total_iops_sec>401</total_iops_sec>
+                            <read_bytes_sec>402</read_bytes_sec>
+                            <read_iops_sec>403</read_iops_sec>
+                            <write_bytes_sec>404</write_bytes_sec>
+                            <write_iops_sec>405</write_iops_sec>
+                        </maximum>
+                        <guaranteed>
+                            <total_bytes_sec>300</total_bytes_sec>
+                            <total_iops_sec>301</total_iops_sec>
+                            <read_bytes_sec>302</read_bytes_sec>
+                            <read_iops_sec>303</read_iops_sec>
+                            <write_bytes_sec>304</write_bytes_sec>
+                            <write_iops_sec>305</write_iops_sec>
+                        </guaranteed>
+                    </device>
+                </ioTune>
+                <vcpuLimit>50</vcpuLimit>
+            </qos>
+            """)
+
+            self.maxDiff = None
+            self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
 
 
 class FakeGuestAgent(object):

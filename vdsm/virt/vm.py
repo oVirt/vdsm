@@ -65,6 +65,7 @@ from . import migration
 from . import sampling
 from . import vmexitreason
 from . import vmstatus
+from .vmtune import updateIoTuneDom
 
 from .utils import isVdsmImage, XMLElement
 from vmpowerdown import VmShutdown, VmReboot
@@ -3761,6 +3762,7 @@ class Vm(object):
         Supported properties are:
 
         vcpuLimit - the CPU usage hard limit
+        ioTune - the IO limits
 
         In the case not all properties are provided, the missing properties'
         setting will be left intact.
@@ -3805,6 +3807,20 @@ class Vm(object):
 
             metadata_modified = True
             del params['vcpuLimit']
+
+        if 'ioTune' in params:
+            # Make sure the top level element exists
+            ioTuneList = qos.getElementsByTagName("ioTune")
+            if not ioTuneList:
+                ioTuneElement = XMLElement("ioTune")
+                ioTuneList.append(ioTuneElement)
+                qos.appendChild(ioTuneElement)
+                metadata_modified = True
+
+            if updateIoTuneDom(ioTuneList[0], params["ioTune"]) > 0:
+                metadata_modified = True
+
+            del params['ioTune']
 
         # Check remaining fields in params and report the list of unsupported
         # params to the log
