@@ -144,6 +144,9 @@ errCode = {
     'updateVmPolicyErr': {'status': {
         'code': 63,
         'message': 'Failed to update VM SLA policy'}},
+    'updateIoTuneErr': {'status': {
+        'code': 64,
+        'message': 'Failed to update ioTune values'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

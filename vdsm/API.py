@@ -708,6 +708,12 @@ class VM(APIBase):
             return errCode['noVM']
         return v.setCpuTuneQuota(quota)
 
+    def setIoTune(self, tunables):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.setIoTune(tunables)
+
     def setCpuTunePeriod(self, period):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:

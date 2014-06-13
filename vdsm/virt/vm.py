@@ -63,7 +63,8 @@ from . import guestagent
 from . import migration
 from . import vmexitreason
 from . import vmstatus
-from .vmtune import updateIoTuneDom
+from .vmtune import updateIoTuneDom, collectInnerElements
+from .vmtune import ioTuneValuesToDom
 
 from .sampling import AdvancedStatsFunction, AdvancedStatsThread
 from .utils import isVdsmImage, XMLElement
@@ -3775,6 +3776,75 @@ class Vm(object):
 
         metadata = xml.dom.minidom.parseString(metadata_xml)
         return metadata.getElementsByTagName("qos")[0]
+
+    def _findDeviceByNameOrPath(self, device_name, device_path):
+        for device in self._devices[DISK_DEVICES]:
+            if ((device.name == device_name
+                or ("path" in device and device["path"] == device_path))
+                    and isVdsmImage(device)):
+                return device
+        else:
+            return None
+
+    def setIoTune(self, tunables):
+        for io_tune_change in tunables:
+            device_name = io_tune_change.get('name', None)
+            device_path = io_tune_change.get('path', None)
+            io_tune = io_tune_change['ioTune']
+
+            # Find the proper device object
+            found_device = self._findDeviceByNameOrPath(device_name,
+                                                        device_path)
+            if found_device is None:
+                return self._reportError(
+                    key='updateIoTuneErr',
+                    msg="Device {} not found".format(device_name))
+
+            # Merge the update with current values
+            dom = found_device.getXML()
+            io_dom_list = dom.getElementsByTagName("iotune")
+            old_io_tune = {}
+            if io_dom_list:
+                collectInnerElements(io_dom_list[0], old_io_tune)
+                old_io_tune.update(io_tune)
+                io_tune = old_io_tune
+
+            # Verify the ioTune params
+            try:
+                found_device._validateIoTuneParams(io_tune)
+            except ValueError:
+                return self._reportException(key='updateIoTuneErr',
+                                             msg='Invalid ioTune value')
+
+            try:
+                self._dom.setBlockIoTune(found_device.name, io_tune,
+                                         libvirt.VIR_DOMAIN_AFFECT_LIVE)
+            except libvirt.libvirtError as e:
+                self.log.exception("setVmIoTune failed")
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    return errCode['noVM']
+                else:
+                    return self._reportError(key='updateIoTuneErr',
+                                             msg=e.message)
+
+            # Update both the ioTune arguments and device xml DOM
+            # so we are still up-to-date
+            # TODO: improve once libvirt gets support for iotune events
+            #       see https://bugzilla.redhat.com/show_bug.cgi?id=1114492
+            if io_dom_list:
+                dom.removeChild(io_dom_list[0])
+            io_dom = XMLElement("iotune")
+            ioTuneValuesToDom(io_tune, io_dom)
+            dom.appendChild(io_dom)
+            found_device.specParams['ioTune'] = io_tune
+
+            # Make sure the cached XML representation is valid as well
+            xml = found_device.getXML().toprettyxml(encoding='utf-8')
+            self.log.debug("New device XML for %s: %s",
+                           found_device.name, xml)
+            found_device._deviceXML = xml
+
+        return {'status': doneCode}
 
     def _createTransientDisk(self, diskParams):
         if diskParams.get('shared', None) != DRIVE_SHARED_TYPE.TRANSIENT:
