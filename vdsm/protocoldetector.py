@@ -204,6 +204,7 @@ class MultiProtocolAcceptor:
                             % (self._host, str(self._port)))
         server_socket = socket.socket(addr[0][0], addr[0][1], addr[0][2])
         utils.closeOnExec(server_socket.fileno())
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(addr[0][4])
         server_socket.listen(5)
 
