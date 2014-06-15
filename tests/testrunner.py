@@ -17,8 +17,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import logging
+
 import sys
+
+# When using Python 2, we must monkey patch threading module before importing
+# any other module.
+if sys.version_info[0] == 2:
+    import pthreading
+    pthreading.monkey_patch()
+
+import logging
 import os
 import unittest
 from functools import wraps
@@ -32,14 +40,6 @@ from vdsm import utils
 from nose import config
 from nose import core
 from nose import result
-
-# Monkey patch pthreading in necessary
-if sys.version_info[0] == 2:
-    # as long as we work with Python 2, we need to monkey-patch threading
-    # module before it is ever used.
-    import pthreading
-    pthreading.monkey_patch()
-
 
 from testValidation import SlowTestsPlugin, StressTestsPlugin
 
