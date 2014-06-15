@@ -49,7 +49,7 @@ PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
 TIMEOUT = 3
 
 
-class FakeClientIf():
+class FakeClientIf(object):
     log = logging.getLogger("FakeClientIf")
 
     def __init__(self):
@@ -62,6 +62,10 @@ class FakeClientIf():
         API.Image.BLANK_UUID = '00000000-0000-0000-0000-000000000000'
         API.StorageDomain.BLANK_UUID = '00000000-0000-0000-0000-000000000000'
         API.Volume.BLANK_UUID = "00000000-0000-0000-0000-000000000000"
+
+    @property
+    def ready(self):
+        return True
 
 
 @contextmanager
