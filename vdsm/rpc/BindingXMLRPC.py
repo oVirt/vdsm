@@ -276,7 +276,7 @@ class BindingXMLRPC(object):
 
         server = utils.SimpleThreadedXMLRPCServer(
             requestHandler=RequestHandler,
-            logRequests=True)
+            logRequests=False)
 
         return server
 
