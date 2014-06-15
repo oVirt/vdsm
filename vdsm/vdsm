@@ -8,8 +8,15 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-import os
 import sys
+
+# When using Python 2, we must monkey patch threading module before importing
+# any other module.
+if sys.version_info[0] == 2:
+    import pthreading
+    pthreading.monkey_patch()
+
+import os
 import getopt
 import signal
 import getpass
@@ -33,11 +40,6 @@ from storage.hsm import HSM
 
 import zombiereaper
 import dsaversion
-if sys.version_info[0] == 2:
-    # as long as we work with Python 2, we need to monkey-patch threading
-    # module before it is ever used.
-    import pthreading
-    pthreading.monkey_patch()
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 
