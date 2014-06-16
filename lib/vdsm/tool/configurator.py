@@ -101,7 +101,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         return self.FILES[fname]['path']
 
     def getServices(self):
-        return ["supervdsmd", "vdsmd", "libvirtd"]
+        return ["vdsmd", "supervdsmd", "libvirtd"]
 
     def configure(self):
         if os.getuid() != 0:
