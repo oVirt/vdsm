@@ -27,7 +27,7 @@ import subprocess
 import errno
 
 import testrunner
-from vdsm import SecureXMLRPCServer
+from vdsm.sslutils import SSLServerSocket
 
 
 class SSLServerThread(threading.Thread):
@@ -100,7 +100,7 @@ class SSLTests(testrunner.VdsmTestCase):
 
         # Create the server socket:
         self.server = socket.socket()
-        self.server = SecureXMLRPCServer.SSLServerSocket(
+        self.server = SSLServerSocket(
             raw=self.server,
             keyfile=self.keyfile,
             certfile=self.certfile,
