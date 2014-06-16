@@ -75,6 +75,7 @@ test_modules = \
 	transportWrapperTests.py \
 	utilsTests.py \
 	vdsClientTests.py \
+	vmApiTests.py \
 	vmTestsData.py \
 	vmTests.py \
 	volumeTests.py \

@@ -21,7 +21,6 @@
 
 from contextlib import contextmanager
 from itertools import product
-import os.path
 import re
 import shutil
 import tempfile
@@ -38,7 +37,6 @@ from testrunner import permutations, expandPermutations, namedTemporaryDir
 import caps
 from vdsm import utils
 from vdsm import libvirtconnection
-from rpc import vdsmapi
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
@@ -1091,55 +1089,6 @@ class TestLibVirtCallbacks(TestCaseBase):
                             libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
             self.assertTrue(fake._guestCpuRunning)
             self.assertNotIn('pauseCode', fake.conf)  # no error recorded
-
-
-@contextmanager
-def ensureVmStats(vm):
-    vm._initVmStats()
-    try:
-        yield vm
-    finally:
-        vm._vmStats.stop()
-
-
-class TestVmStats(TestCaseBase):
-    @utils.memoized
-    def _getAPI(self):
-        testPath = os.path.realpath(__file__)
-        dirName = os.path.split(testPath)[0]
-        apiPath = os.path.join(
-            dirName, '..', 'vdsm', 'rpc', 'vdsmapi-schema.json')
-        return vdsmapi.get_api(apiPath)
-
-    def assertVmStatsSchemaCompliancy(self, schema, stats):
-        api = self._getAPI()
-        ref = api['types'][schema]['data']
-        for apiItem, apiType in ref.items():
-            if apiItem[0] == '*':
-                # optional, may be absent and it is fine
-                self.assertTrue(stats.get(apiItem[1:], True))
-            else:
-                # mandatory
-                self.assertIn(apiItem, stats)
-        # TODO: type checking
-
-    def testDownStats(self):
-        with FakeVM() as fake:
-            fake.setDownStatus(define.ERROR, vmexitreason.GENERIC_ERROR)
-            self.assertVmStatsSchemaCompliancy('ExitedVmStats',
-                                               fake.getStats())
-
-    def testRunningStats(self):
-        vmParams = {
-            'displayPort': -1, 'displaySecurePort': -1, 'display': 'qxl',
-            'displayIp': '127.0.0.1', 'vmType': 'kvm', 'devices': {},
-            'memSize': 1024,
-            # HACKs
-            'pauseCode': 'NOERR'}
-        with FakeVM(vmParams) as fake:
-            with ensureVmStats(fake):
-                self.assertVmStatsSchemaCompliancy('RunningVmStats',
-                                                   fake.getStats())
 
 
 @expandPermutations
