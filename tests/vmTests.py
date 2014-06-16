@@ -848,7 +848,7 @@ class FakeGuestAgent(object):
             'session': 'Unknown',
             'memUsage': 0,
             'appsList': [],
-            'guestIPs': [],
+            'guestIPs': '',
             'guestFQDN': '',
             'disksUsage': [],
             'netIfaces': [],
