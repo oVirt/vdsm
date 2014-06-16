@@ -112,6 +112,11 @@ class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
 
 
 class ConnectedTCPServer(SocketServer.TCPServer, object):
+    """
+    ConnectedTCPServer provides ability to add connected sockets
+    for TCPServer to process. New connections are put to the queue
+    and TCPServers gets them by calling get_request method.
+    """
 
     def __init__(self, RequestHandlerClass):
         super(ConnectedTCPServer, self).__init__(None, RequestHandlerClass,

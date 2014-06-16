@@ -32,6 +32,31 @@ from vdsm import utils
 
 
 class MultiProtocolAcceptor:
+    """
+    Provides multiple protocol support on a single port.
+
+    MultiProtocolAcceptor binds and listen on a single port. It accepts
+    incoming connections and handles handshake if required. Next it peeks
+    into the first bytes sent to detect the protocol, and pass the connection
+    to the server handling this protocol.
+
+    To support a new protocol, register a detector object using
+    add_detector. Protocol detectors must implement this interface:
+
+    class ProtocolDetector(object):
+        NAME = "protocol name"
+
+        # How many bytes are needed to detect this protocol
+        REQUIRED_SIZE = 6
+
+        def detect(self, data):
+            Given first bytes read from the connection, try to detect the
+            protocol. Returns True if protocol is detected.
+
+        def handleSocket(self, client_socket, socket_address):
+            Called after detect() succeeded. The detector owns the socket and
+            is responsible for closing it.
+    """
     log = logging.getLogger("vds.MultiProtocolAcceptor")
 
     READ_ONLY_MASK = (select.POLLIN | select.POLLPRI | select.POLLHUP
