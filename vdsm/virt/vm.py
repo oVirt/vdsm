@@ -2811,7 +2811,7 @@ class Vm(object):
                             int(self.conf['memSize']) * 100)
             else:
                 memUsage = 0
-            stats['memUsage'] = utils.convertToStr(memUsage)
+            stats['memUsage'] = utils.convertToStr(int(memUsage))
         return stats
 
     def isMigrating(self):
