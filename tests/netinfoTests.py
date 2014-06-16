@@ -30,7 +30,7 @@ from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
 from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
-                          BONDING_OPT, _randomIfaceName, getBondingOptions)
+                          BONDING_OPT, _randomIfaceName, _getBondingOptions)
 
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
@@ -337,12 +337,12 @@ class TestNetinfo(TestCaseBase):
             bonds.flush()
 
             try:
-                self.assertEqual(getBondingOptions(bondName), {})
+                self.assertEqual(_getBondingOptions(bondName), {})
 
                 with open(BONDING_OPT % (bondName, 'miimon'), 'w') as opt:
                     opt.write(INTERVAL)
 
-                self.assertEqual(getBondingOptions(bondName),
+                self.assertEqual(_getBondingOptions(bondName),
                                  {'miimon': [INTERVAL]})
 
             finally:

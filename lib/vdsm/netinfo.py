@@ -523,43 +523,6 @@ def permAddr():
     return paddr
 
 
-def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
-                qosInbound, qosOutbound):
-    '''Returns a dictionary of properties about the network's interface status.
-    Raises a KeyError if the iface does not exist.'''
-    data = {}
-    try:
-        if bridged:
-            data.update({'ports': ports(iface), 'stp': bridge_stp_state(iface),
-                         'cfg': getIfaceCfg(iface)})
-        else:
-            # ovirt-engine-3.1 expects to see the "interface" attribute iff the
-            # network is bridgeless. Please remove the attribute and this
-            # comment when the version is no longer supported.
-            data['interface'] = iface
-
-        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
-        data.update({'iface': iface, 'bridged': bridged,
-                     'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'bootproto4': 'dhcp' if iface in dhcp4 else 'none',
-                     'gateway': getgateway(gateways, iface),
-                     'ipv4addrs': ipv4addrs,
-                     'ipv6addrs': ipv6addrs,
-                     'ipv6gateway': ipv6routes.get(iface, '::'),
-                     'mtu': str(getMtu(iface))})
-        if qosInbound:
-            data['qosInbound'] = qosInbound
-        if qosOutbound:
-            data['qosOutbound'] = qosOutbound
-    except (IOError, OSError) as e:
-        if e.errno == errno.ENOENT:
-            logging.info('Obtaining info for net %s.', iface, exc_info=True)
-            raise KeyError('Network %s was not found' % iface)
-        else:
-            raise
-    return data
-
-
 def _randomIfaceName():
     MAX_LENGTH = 15
     CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
@@ -604,7 +567,7 @@ def _getAllDefaultBondingOptions():
 
 
 @memoized
-def getDefaultBondingOptions(mode=None):
+def _getDefaultBondingOptions(mode=None):
     """
     Return default options for the given mode. If it is None, return options
     for the default mode (usually '0').
@@ -617,14 +580,14 @@ def getDefaultBondingOptions(mode=None):
     return defaults[mode]
 
 
-def getBondingOptions(bond):
+def _getBondingOptions(bond):
     """
     Return non-empty options differing from defaults, excluding not actual or
     not applicable options, e.g. 'ad_num_ports' or 'slaves'.
     """
     opts = _realBondOpts(bond)
     mode = opts['mode'][-1] if 'mode' in opts else None
-    defaults = getDefaultBondingOptions(mode)
+    defaults = _getDefaultBondingOptions(mode)
 
     return dict(((opt, val) for (opt, val) in opts.iteritems()
                  if val and val != defaults.get(opt)))
@@ -638,6 +601,43 @@ def _bondOptsForIfcfg(opts):
     """
     return ' '.join((opt + '=' + val[-1] for (opt, val)
                      in sorted(opts.iteritems())))
+
+
+def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
+                qosInbound, qosOutbound):
+    '''Returns a dictionary of properties about the network's interface status.
+    Raises a KeyError if the iface does not exist.'''
+    data = {}
+    try:
+        if bridged:
+            data.update({'ports': ports(iface), 'stp': bridge_stp_state(iface),
+                         'cfg': getIfaceCfg(iface)})
+        else:
+            # ovirt-engine-3.1 expects to see the "interface" attribute iff the
+            # network is bridgeless. Please remove the attribute and this
+            # comment when the version is no longer supported.
+            data['interface'] = iface
+
+        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
+        data.update({'iface': iface, 'bridged': bridged,
+                     'addr': ipv4addr, 'netmask': ipv4netmask,
+                     'bootproto4': 'dhcp' if iface in dhcp4 else 'none',
+                     'gateway': getgateway(gateways, iface),
+                     'ipv4addrs': ipv4addrs,
+                     'ipv6addrs': ipv6addrs,
+                     'ipv6gateway': ipv6routes.get(iface, '::'),
+                     'mtu': str(getMtu(iface))})
+        if qosInbound:
+            data['qosInbound'] = qosInbound
+        if qosOutbound:
+            data['qosOutbound'] = qosOutbound
+    except (IOError, OSError) as e:
+        if e.errno == errno.ENOENT:
+            logging.info('Obtaining info for net %s.', iface, exc_info=True)
+            raise KeyError('Network %s was not found' % iface)
+        else:
+            raise
+    return data
 
 
 def _bridgeinfo(link, gateways, ipv6routes, ipaddrs):
@@ -660,7 +660,7 @@ def _nicinfo(link, paddr, ipaddrs):
 
 def _bondinfo(link, ipaddrs):
     info = _devinfo(link, ipaddrs)
-    opts = getBondingOptions(link.name)
+    opts = _getBondingOptions(link.name)
 
     info.update({'hwaddr': link.address, 'slaves': slaves(link.name),
                  'options': opts})
