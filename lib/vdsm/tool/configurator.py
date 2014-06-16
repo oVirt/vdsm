@@ -18,6 +18,7 @@
 #
 
 import argparse
+import errno
 import filecmp
 import grp
 import os
@@ -321,7 +322,11 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         if utils.isOvirtNode():
             NodeCfg().delete(content['path'])
         else:
-            utils.rmFile(content['path'])
+            try:
+                os.unlink(content['path'])
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
 
     def _unprefixAndRemoveSection(self, path):
         """
