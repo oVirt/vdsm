@@ -318,9 +318,10 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         """
         delete a file if it exists.
         """
-        utils.rmFile(content['path'])
         if utils.isOvirtNode():
-            NodeCfg().unpersist(content['path'])
+            NodeCfg().delete(content['path'])
+        else:
+            utils.rmFile(content['path'])
 
     def _unprefixAndRemoveSection(self, path):
         """
