@@ -481,6 +481,7 @@ class JsonRpcServer(object):
         except JsonRpcError as e:
             ctx.requestDone(JsonRpcResponse(None, e, req.id))
         except Exception as e:
+            self.log.exception("Internal server error")
             ctx.requestDone(JsonRpcResponse(None,
                                             JsonRpcInternalError(str(e)),
                                             req.id))

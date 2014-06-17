@@ -1188,7 +1188,7 @@ class Global(APIBase):
             return {'status': {'code': 0, 'message': message},
                     'power': power}
         threading.Thread(target=fence, args=(script, inp)).start()
-        return {'status': doneCode}
+        return {'status': doneCode, 'power': 'unknown'}
 
     def ping(self):
         "Ping the server. Useful for tests"
