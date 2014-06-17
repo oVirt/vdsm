@@ -262,7 +262,8 @@ class ConnectedSimpleXmlRPCServer(ConnectedTCPServer,
                  encoding=None):
         self.logRequests = logRequests
 
-        SimpleXMLRPCDispatcher.__init__(self, allow_none, encoding)
+        SimpleXMLRPCDispatcher.__init__(self, allow_none=allow_none,
+                                        encoding=encoding)
         ConnectedTCPServer.__init__(self, requestHandler)
 
 
@@ -274,8 +275,10 @@ class IPXMLRPCServer(ConnectedSimpleXmlRPCServer):
     def __init__(self, requestHandler=IPXMLRPCRequestHandler,
                  logRequests=True, allow_none=False, encoding=None,
                  bind_and_activate=False):
-        ConnectedSimpleXmlRPCServer.__init__(self, requestHandler,
-                                             logRequests, allow_none, encoding)
+        ConnectedSimpleXmlRPCServer.__init__(
+            self, requestHandler=requestHandler,
+            logRequests=logRequests, allow_none=allow_none,
+            encoding=encoding)
 
 
 # Threaded version of SimpleXMLRPCServer
