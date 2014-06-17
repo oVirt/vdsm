@@ -670,6 +670,37 @@ def traceback(on="", msg="Unhandled exception"):
     return decorator
 
 
+class Canceled(BaseException):
+    """
+    Raised by methods decorated with @cancelpoint.
+
+    Objects using cancellation points may like to handle this exception for
+    cleaning up after cancellation.
+
+    Inherits from BaseException so it can propagate through normal Exception
+    handlers.
+    """
+
+
+def cancelpoint(meth):
+    """
+    Decorate a method so it raises Canceled exception if the methods is invoked
+    after the object was canceled.
+
+    Decorated object must implement __canceled__ method, returning truthy value
+    if the object is canceled.
+    """
+    @functools.wraps(meth)
+    def wrapper(self, *a, **kw):
+        if self.__canceled__():
+            raise Canceled()
+        value = meth(self, *a, **kw)
+        if self.__canceled__():
+            raise Canceled()
+        return value
+    return wrapper
+
+
 def tobool(s):
     try:
         if s is None:

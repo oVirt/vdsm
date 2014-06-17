@@ -178,6 +178,10 @@ class DomainMonitorThread(object):
     def getStatus(self):
         return self.status.copy()
 
+    def __canceled__(self):
+        """ Accessed by methods decorated with @util.cancelpoint """
+        return self.stopEvent.is_set()
+
     @utils.traceback(on=log.name)
     def _run(self):
         self.log.debug("Starting domain monitor for %s", self.sdUUID)
@@ -192,6 +196,9 @@ class DomainMonitorThread(object):
         while not self.stopEvent.is_set():
             try:
                 self._monitorDomain()
+            except utils.Canceled:
+                self.log.debug("Canceled domain monitor for %s", self.sdUUID)
+                return
             except:
                 self.log.error("The domain monitor for %s failed unexpectedly",
                                self.sdUUID, exc_info=True)
@@ -244,6 +251,7 @@ class DomainMonitorThread(object):
     def _statusDidChange(self):
         return self.firstChange or self.status.valid != self.nextStatus.valid
 
+    @utils.cancelpoint
     def _notifyStatusChanges(self):
         self.log.debug("Domain %s changed its status to %s", self.sdUUID,
                        "Valid" if self.nextStatus.valid else "Invalid")
@@ -259,6 +267,7 @@ class DomainMonitorThread(object):
     def _shouldRefreshDomain(self):
         return time.time() - self.lastRefresh > self.refreshTime
 
+    @utils.cancelpoint
     def _refreshDomain(self):
         self.log.debug("Refreshing domain %s", self.sdUUID)
         sdCache.manuallyRemoveDomain(self.sdUUID)
@@ -266,9 +275,11 @@ class DomainMonitorThread(object):
 
     # Deferred initialization
 
+    @utils.cancelpoint
     def _produceDomain(self):
         self.domain = sdCache.produce(self.sdUUID)
 
+    @utils.cancelpoint
     def _setIsoDomainInfo(self):
         isIsoDomain = self.domain.isISO()
         if isIsoDomain:
@@ -277,11 +288,13 @@ class DomainMonitorThread(object):
 
     # Collecting monitoring info
 
+    @utils.cancelpoint
     def _performDomainSelftest(self):
         # This may trigger a refresh of lvm cache. We have seen this taking up
         # to 90 seconds on overloaded machines.
         self.domain.selftest()
 
+    @utils.cancelpoint
     def _checkReadDelay(self):
         # This may block for long time if the storage server is not accessible.
         # On overloaded machines we have seen this take up to 15 seconds.
@@ -319,6 +332,7 @@ class DomainMonitorThread(object):
         # it is superfluous.
         return self.domain and not self.isIsoDomain
 
+    @utils.cancelpoint
     def _acquireHostId(self):
         try:
             self.domain.acquireHostId(self.hostId, async=True)
