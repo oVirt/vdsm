@@ -1172,6 +1172,11 @@
 # @kdumpStatus:         The current status of kdump configuration for the host:
 #                       enabled (1), disabled(0), unknown(-1)
 #                       (new in version 4.15.0)
+#
+# @liveMerge:           #optional Indicates if live merge is supported on this
+#                       host.
+#                       (new in version 4.15.0)
+#
 # Since: 4.15.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -1196,7 +1201,7 @@
           'numaNodeDistance': 'NumaNodeDistanceMap',
           'autoNumaBalancing': 'AutoNumaBalancingStatus',
           'selinux': 'SELinuxStatus', '*liveSnapshot': 'bool',
-          'kdumpStatus': 'int'}}
+          'kdumpStatus': 'int', '*liveMerge': 'bool'}}
 
 ##
 # @Host.getCapabilities:

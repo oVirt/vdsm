@@ -5483,6 +5483,10 @@ class Vm(object):
         return jobs
 
     def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
+        if not caps.getLiveMergeSupport():
+            self.log.error("Live merge is not supported on this host")
+            return errCode['mergeErr']
+
         bandwidth = int(bandwidth)
         if jobUUID is None:
             jobUUID = str(uuid.uuid4())
@@ -5522,6 +5526,11 @@ class Vm(object):
             self.log.error("merge: Refusing to merge into a shared volume")
             return errCode['mergeErr']
         baseSize = int(res['info']['apparentsize'])
+
+        # Indicate that we expect libvirt to maintain the relative paths of
+        # backing files.  This is necessary to ensure that a volume chain is
+        # visible from any host even if the mountpoint is different.
+        flags = libvirt.VIR_DOMAIN_BLOCK_COMMIT_RELATIVE
 
         try:
             self.trackBlockJob(jobUUID, drive, baseVolUUID, topVolUUID,
