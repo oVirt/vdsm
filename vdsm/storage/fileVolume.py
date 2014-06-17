@@ -371,7 +371,7 @@ class FileVolume(volume.Volume):
         if matches:
             children = []
             for line in matches:
-                volMeta = os.path.basename(line.split(':')[0])
+                volMeta = os.path.basename(line.rsplit(':', 1)[0])
                 children.append(os.path.splitext(volMeta)[0])  # volUUID
         else:
             children = tuple()
