@@ -1651,6 +1651,48 @@
 {'type': 'SnapshotCreateDetail',
  'data': {'uuid': 'UUID', 'name': 'str'}}
 
+#
+# @GlusterVolume.geoRepSessionCreate:
+#
+# Creates a Geo Replication session
+#
+# @volumeName:         Is an existing volume name in the master node
+#
+# @remoteHost:         Is remote slave host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the slave node
+#
+# @remoteUserName:     #optional Name of user in remote Machine
+#
+# @force:              #optional For creating a georeplication session
+#                      forcefully
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionCreate'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str',
+          'remoteVolumeName': 'str', '*remoteUserName': 'str',
+          '*force': 'bool'}}
+
+#
+# @GlusterVolume.geoRepSessionDelete:
+#
+# Deletes a Geo Replication session
+#
+# @volumeName:         Is an existing volume name in the master node
+#
+# @remoteHost:         Is remote slave host name or ip
+#
+# @remoteVolumeName:   Is an available existing volume name in the slave node
+#
+# @remoteUserName:     #optional Name of user in remote Machine
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionDelete'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str',
+          'remoteVolumeName': 'str', '*remoteUserName': 'str'}}
+
 ##
 # @GlusterVolume.snapshotCreate:
 #

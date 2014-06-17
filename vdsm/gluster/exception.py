@@ -651,6 +651,16 @@ class GlusterMountBrokerRootCreateFailedException(
     message = "geo rep mount broker root create failed"
 
 
+class GlusterGeoRepSessionCreateFailedException(GlusterGeoRepException):
+    code = 4214
+    message = "Geo Rep session Creation failed"
+
+
+class GlusterGeoRepSessionDeleteFailedException(GlusterGeoRepException):
+    code = 4215
+    message = "Geo Rep session deletion failed"
+
+
 # Volume Snapshot
 class GlusterSnapshotException(GlusterException):
     code = 4700

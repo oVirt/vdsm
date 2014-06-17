@@ -1553,3 +1553,40 @@ def executeMountBrokerOpt(optionName, optionValue):
         raise ge.GlusterGeoRepExecuteMountBrokerOptFailedException(rc,
                                                                    out, err)
     return True
+
+
+@makePublic
+def volumeGeoRepSessionCreate(volumeName, remoteHost,
+                              remoteVolumeName,
+                              remoteUserName=None, force=False):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
+    command = _getGlusterVolCmd() + ["geo-replication", volumeName,
+                                     "%s::%s" % (userAtHost, remoteVolumeName),
+                                     "create", "no-verify"]
+    if force:
+        command.append('force')
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterGeoRepSessionCreateFailedException(rc=e.rc, err=e.err)
+
+
+@makePublic
+def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
+                              remoteUserName=None):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
+    command = _getGlusterVolCmd() + ["geo-replication", volumeName,
+                                     "%s::%s" % (userAtHost, remoteVolumeName),
+                                     "delete"]
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterGeoRepSessionDeleteFailedException(rc=e.rc, err=e.err)
