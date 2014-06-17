@@ -5463,8 +5463,8 @@ class Vm(object):
         # VMStatsThread and API calls.  The _jobsLock ensures that a cohesive
         # data set is returned by serializing each call.
         with self._jobsLock:
-            for jobID, val in jobs.iteritems():
-                if val is None:
+            for jobID in jobs.keys():
+                if jobs[jobID] is None:
                     self.untrackBlockJob(jobID)
                     del jobs[jobID]
         return jobs
