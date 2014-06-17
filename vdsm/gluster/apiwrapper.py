@@ -275,6 +275,26 @@ class GlusterVolume(GlusterApiBase):
                                                     remoteGroupName,
                                                     remoteVolumeName)
 
+    def geoRepSessionCreate(self, volumeName, remoteHost, remotVolumeName,
+                            remoteUserName=None, force=False):
+        return self._gluster.volumeGeoRepSessionCreate(
+            volumeName,
+            remoteHost,
+            remotVolumeName,
+            remoteUserName,
+            force
+        )
+
+    def geoRepSessionDelete(self, volumeName, remoteHost,
+                            remoteVolumeName,
+                            remoteUserName=None):
+        return self._gluster.volumeGeoRepSessionDelete(
+            volumeName,
+            remoteHost,
+            remoteVolumeName,
+            remoteUserName
+        )
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):

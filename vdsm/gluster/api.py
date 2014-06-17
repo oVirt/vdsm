@@ -602,6 +602,29 @@ class GlusterApi(object):
         self.svdsmProxy.glusterExecuteMountBrokerUserAdd(remoteUserName,
                                                          remoteVolumeName)
 
+    @exportAsVerb
+    def volumeGeoRepSessionCreate(self, volumeName, remoteHost,
+                                  remotVolumeName, remoteUserName=None,
+                                  force=False, options=None):
+        self.svdsmProxy.glusterVolumeGeoRepSessionCreate(
+            volumeName,
+            remoteHost,
+            remotVolumeName,
+            remoteUserName,
+            force
+        )
+
+    @exportAsVerb
+    def volumeGeoRepSessionDelete(self, volumeName, remoteHost,
+                                  remoteVolumeName, remoteUserName=None,
+                                  options=None):
+        self.svdsmProxy.glusterVolumeGeoRepSessionDelete(
+            volumeName,
+            remoteHost,
+            remoteVolumeName,
+            remoteUserName
+        )
+
 
 def getGlusterMethods(gluster):
     l = []

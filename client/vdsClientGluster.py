@@ -701,6 +701,36 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeGeoRepSessionCreate(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteUserName = params.get('remoteUserName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeGeoRepSessionCreate(volumeName,
+                                                         remoteHost,
+                                                         remoteVolumeName,
+                                                         remoteUserName,
+                                                         force)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeGeoRepSessionDelete(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        remoteUserName = params.get('remoteUserName', '')
+        remoteHost = params.get('remoteHost', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+
+        status = self.s.glusterVolumeGeoRepSessionDelete(volumeName,
+                                                         remoteHost,
+                                                         remoteVolumeName,
+                                                         remoteUserName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1194,5 +1224,28 @@ def getGlusterCmdDict(serv):
               'remoteVolumeName=remote_volume_name'
               'remoteGroupName=remote_group_name',
               'setup mount broker for geo replication'
+              )),
+         'glusterVolumeGeoRepSessionCreate': (
+             serv.do_glusterVolumeGeoRepSessionCreate,
+             ('volumeName=<master_volume_name> '
+              'remoteUserName=<remote_user_name>'
+              'remoteHost=<slave_host_name> '
+              'remoteVolumeName=<slave_volume_name> '
+              '[force={yes|no}]\n\t'
+              '<master_volume_name>existing volume name in the master node\n\t'
+              '<slave_host_name>is remote slave host name or ip\n\t'
+              '<slave_volume_name>existing volume name in the slave node',
+              'Create the geo-replication session'
+              )),
+         'glusterVolumeGeoRepSessionDelete': (
+             serv.do_glusterVolumeGeoRepSessionDelete,
+             ('volumeName=<master_volume_name> '
+              'remoteUserName=<remote_user_name>'
+              'remoteHost=<slave_host_name> '
+              'remoteVolumeName=<slave_volume_name> '
+              '<master_volume_name>existing volume name in the master node\n\t'
+              '<slave_host_name>is remote slave host name or ip\n\t'
+              '<slave_volume_name>existing volume name in the slave node',
+              'Delete the geo-replication session'
               ))
          }
