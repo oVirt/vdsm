@@ -67,6 +67,7 @@ test_modules = \
 	samplingTests.py \
 	schemaTests.py \
 	securableTests.py \
+	sslhelper.py \
 	sslTests.py \
 	storageMailboxTests.py \
 	tcTests.py \
@@ -95,9 +96,12 @@ EXTRA_DIST = \
 	$(NULL)
 
 dist_noinst_DATA = \
-	jsonrpc-tests.server.crt \
-	jsonrpc-tests.server.csr \
-	jsonrpc-tests.server.key \
+	server.crt \
+	server.csr \
+	server.key \
+	other.crt \
+	other.csr \
+	other.key \
 	run_tests_local.sh
 
 dist_vdsmtests_DATA = \
@@ -148,7 +152,7 @@ dist_vdsmtests_SCRIPTS = \
 all-local: \
 	$(nodist_vdsmtests_PYTHON)
 
-jsonrpc-tests.server.crt:
+server.crt:
 	./makecert.sh
 
 # crossImportsTests.py has to be run separate due to different tests which

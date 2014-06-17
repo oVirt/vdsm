@@ -1163,7 +1163,6 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/netlink/route.py*
 %{python_sitearch}/%{vdsm_name}/profile.py*
 %{python_sitearch}/%{vdsm_name}/qemuimg.py*
-%{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*
 %{python_sitearch}/%{vdsm_name}/netconfpersistence.py*
 %{python_sitearch}/%{vdsm_name}/sslutils.py*
 %{python_sitearch}/%{vdsm_name}/utils.py*

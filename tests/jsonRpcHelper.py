@@ -19,7 +19,6 @@
 #
 import httplib
 import logging
-import os
 import socket
 import threading
 
@@ -27,22 +26,13 @@ from xmlrpclib import Transport, dumps, Fault
 from contextlib import contextmanager
 from functools import partial
 from itertools import product
-from vdsm.sslutils import SSLContext
 from M2Crypto import SSL
 from rpc.BindingXMLRPC import BindingXMLRPC, XmlDetector
 from yajsonrpc.stompReactor import StompDetector
 from protocoldetector import MultiProtocolAcceptor
 from yajsonrpc import JsonRpcClientPool
 from rpc.BindingJsonRpc import BindingJsonRpc
-
-
-CERT_DIR = os.path.abspath(os.path.dirname(__file__))
-CRT_FILE = os.path.join(CERT_DIR, "jsonrpc-tests.server.crt")
-KEY_FILE = os.path.join(CERT_DIR, "jsonrpc-tests.server.key")
-KS_FILE = os.path.join(CERT_DIR, "jsonrpc-tests.p12")
-
-DEAFAULT_SSL_CONTEXT = SSLContext(
-    CRT_FILE, KEY_FILE, session_id="json-rpc-tests")
+from sslhelper import DEAFAULT_SSL_CONTEXT
 
 PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
 

@@ -3,7 +3,7 @@ if [ -z "$PYTHON_EXE" ]; then
     PYTHON_EXE="@PYTHON@"
 fi
 
-if [ ! -f @top_srcdir@/tests/jsonrpc-tests.server.crt ] || [ ! -f @top_srcdir@/tests/jsonrpc-tests.server.csr ] || [ ! -f @top_srcdir@/tests/jsonrpc-tests.server.key ]; then
+if [ ! -f @top_srcdir@/tests/server.crt ] || [ ! -f @top_srcdir@/tests/server.csr ] || [ ! -f @top_srcdir@/tests/server.key ] || [ ! -f @top_srcdir@/tests/other.crt ] || [ ! -f @top_srcdir@/tests/other.csr ] || [ ! -f @top_srcdir@/tests/other.key ]; then
     @top_srcdir@/tests/makecert.sh
 fi
 

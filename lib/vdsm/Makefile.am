@@ -32,7 +32,6 @@ dist_vdsmpylib_PYTHON = \
 	netinfo.py \
 	profile.py \
 	qemuimg.py \
-	SecureXMLRPCServer.py \
 	sslutils.py \
 	utils.py \
 	vdscli.py \

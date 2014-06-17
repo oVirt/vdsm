@@ -17,14 +17,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import httplib
+import socket
+import ssl
+import xmlrpclib
 
 from M2Crypto import SSL, X509, threading
 
 # M2Crypto.threading needs initialization.
 # See https://bugzilla.redhat.com/482420
 threading.init()
-
-import socket
 
 
 class SSLSocket(object):
@@ -162,3 +164,76 @@ class SSLContext(object):
     def wrapSocket(self, sock):
         context = self.context
         return SSLSocket(SSL.Connection(context, sock=sock), self)
+
+
+class VerifyingHTTPSConnection(httplib.HTTPSConnection):
+    def __init__(self, host, port=None, key_file=None, cert_file=None,
+                 strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+        httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
+                                         strict, timeout)
+        self.ca_certs = ca_certs
+        self.cert_reqs = cert_reqs
+
+    def connect(self):
+        "Connect to a host on a given (SSL) port."
+
+        sock = socket.create_connection((self.host, self.port), self.timeout)
+        if self._tunnel_host:
+            self.sock = sock
+            self._tunnel()
+        # DK added: pass ca_cert to sslsocket
+        self.sock = ssl.wrap_socket(sock, self.key_file, self.cert_file,
+                                    ca_certs=self.ca_certs, server_side=False,
+                                    cert_reqs=self.cert_reqs)
+
+
+class VerifyingSafeTransport(xmlrpclib.SafeTransport):
+    def __init__(self, use_datetime=0, key_file=None, cert_file=None,
+                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+        xmlrpclib.SafeTransport.__init__(self, use_datetime)
+        self.key_file = key_file
+        self.cert_file = cert_file
+        self.ca_certs = ca_certs
+        self.cert_reqs = cert_reqs
+
+    def make_connection(self, host):
+        """Return VerifyingHTTPS object that is aware of ca_certs, and will
+        create VerifyingHTTPSConnection.
+        In Python 2.7, return VerifyingHTTPSConnection object
+        """
+        chost, self._extra_headers, x509 = self.get_host_info(host)
+        if hasattr(xmlrpclib.SafeTransport, "single_request"):   # Python 2.7
+            return VerifyingHTTPSConnection(
+                chost, None, key_file=self.key_file, strict=None,
+                cert_file=self.cert_file, ca_certs=self.ca_certs,
+                cert_reqs=self.cert_reqs)
+        else:
+            return VerifyingHTTPS(
+                chost, None, key_file=self.key_file,
+                cert_file=self.cert_file, ca_certs=self.ca_certs,
+                cert_reqs=self.cert_reqs)
+
+
+class VerifyingHTTPS(httplib.HTTPS):
+    _connection_class = VerifyingHTTPSConnection
+
+    def __init__(self, host='', port=None, key_file=None, cert_file=None,
+                 strict=None, ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+        """A ca_cert-aware HTTPS object,
+        that creates a VerifyingHTTPSConnection
+        """
+        # provide a default host, pass the X509 cert info
+
+        # urf. compensate for bad input.
+        if port == 0:
+            port = None
+        self._setup(self._connection_class(host, port, key_file,
+                                           cert_file, strict,
+                                           ca_certs=ca_certs,
+                                           cert_reqs=cert_reqs))
+
+        # we never actually use these for anything, but we keep them
+        # here for compatibility with post-1.5.2 CVS.
+        self.key_file = key_file
+        self.cert_file = cert_file

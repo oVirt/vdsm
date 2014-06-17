@@ -24,7 +24,7 @@ import os
 import re
 import sys
 from xml.parsers.expat import ExpatError
-from . import SecureXMLRPCServer
+from . import sslutils
 
 
 d_useSSL = False
@@ -92,7 +92,7 @@ def cannonizeHostPort(hostPort=None, port=d_port):
 
 
 def connect(hostPort=None, useSSL=None, tsPath=None,
-            TransportClass=SecureXMLRPCServer.VerifyingSafeTransport):
+            TransportClass=sslutils.VerifyingSafeTransport):
     hostPort = cannonizeHostPort(hostPort)
     if useSSL is None:
         useSSL = d_useSSL

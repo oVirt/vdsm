@@ -109,7 +109,7 @@ class TcpkeepHTTP(httplib.HTTP):
 
 ###################
 # the same, for ssl
-from vdsm import SecureXMLRPCServer
+from vdsm import sslutils
 import ssl
 
 
@@ -121,7 +121,7 @@ def SslServer(url, ctx, *args, **kwargs):
 SslServerProxy = SslServer
 
 
-class TcpkeepSafeTransport(SecureXMLRPCServer.VerifyingSafeTransport):
+class TcpkeepSafeTransport(sslutils.VerifyingSafeTransport):
 
     def make_connection(self, host):
         chost, self._extra_headers, x509 = self.get_host_info(host)
@@ -138,17 +138,17 @@ class TcpkeepSafeTransport(SecureXMLRPCServer.VerifyingSafeTransport):
                 cert_reqs=self.cert_reqs)
 
 
-class TcpkeepHTTPSConnection(SecureXMLRPCServer.VerifyingHTTPSConnection):
+class TcpkeepHTTPSConnection(sslutils.VerifyingHTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
                  strict=None, timeout=CONNECTTIMEOUT,
                  ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
-        SecureXMLRPCServer.VerifyingHTTPSConnection.__init__(
+        sslutils.VerifyingHTTPSConnection.__init__(
             self, host, port=port, key_file=key_file, cert_file=cert_file,
             strict=strict, timeout=timeout,
             ca_certs=ca_certs, cert_reqs=cert_reqs)
 
     def connect(self):
-        SecureXMLRPCServer.VerifyingHTTPSConnection.connect(self)
+        sslutils.VerifyingHTTPSConnection.connect(self)
 
         # after TCP_KEEPIDLE seconds of silence, TCP_KEEPCNT probes would be
         # sent, TCP_KEEPINTVL seconds apart of each other. If all of them fail,
@@ -159,5 +159,5 @@ class TcpkeepHTTPSConnection(SecureXMLRPCServer.VerifyingHTTPSConnection):
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, KEEPCNT)
 
 
-class TcpkeepHTTPS(SecureXMLRPCServer.VerifyingHTTPS):
+class TcpkeepHTTPS(sslutils.VerifyingHTTPS):
     _connection_class = TcpkeepHTTPSConnection

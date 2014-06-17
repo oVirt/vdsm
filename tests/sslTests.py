@@ -18,16 +18,115 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import os
 import re
+import SimpleXMLRPCServer
 import socket
+import ssl
+import subprocess
 import tempfile
 import threading
-import subprocess
-import errno
+import xmlrpclib
 
-import testrunner
+from contextlib import contextmanager
+from M2Crypto import SSL
+from sslhelper import KEY_FILE, CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
+from testrunner import VdsmTestCase as TestCaseBase
 from vdsm.sslutils import SSLServerSocket
+from vdsm.sslutils import VerifyingSafeTransport
+
+HOST = '127.0.0.1'
+
+
+class MathService():
+
+    def add(self, x, y):
+        return x + y
+
+
+class TestServer():
+
+    def __init__(self):
+        self.server = SimpleXMLRPCServer.SimpleXMLRPCServer((HOST, 0),
+                                                            logRequests=False)
+        self.server.socket = SSLServerSocket(raw=self.server.socket,
+                                             keyfile=KEY_FILE,
+                                             certfile=CRT_FILE,
+                                             ca_certs=CRT_FILE)
+        _, self.port = self.server.socket.getsockname()
+        self.server.register_instance(MathService())
+
+    def start(self):
+        self.thread = threading.Thread(target=self.serve_forever)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def serve_forever(self):
+        try:
+            self.server.serve_forever()
+        except SSL.SSLError:
+            # expected sslerror is thrown in server side during test_invalid
+            # method we do not want to pollute test console output
+            pass
+
+    def stop(self):
+        self.server.shutdown()
+
+
+class VerifyingClient():
+
+    def __init__(self, port, key_file, cert_file):
+        self.transport = VerifyingSafeTransport(key_file=key_file,
+                                                cert_file=cert_file,
+                                                ca_certs=CRT_FILE,
+                                                cert_reqs=ssl.CERT_REQUIRED)
+        self.transport.timeout = 1
+        self.proxy = xmlrpclib.ServerProxy('https://%s:%s' % (HOST, port),
+                                           transport=self.transport)
+
+    def add(self, numer1, number2):
+        return self.proxy.add(numer1, number2)
+
+    def close(self):
+        if hasattr(self.transport, 'close'):
+            self.transport.close()
+
+
+@contextmanager
+def verifyingclient(key_file, crt_file):
+    server = TestServer()
+    server.start()
+    try:
+        client = VerifyingClient(server.port, key_file, crt_file)
+        try:
+            yield client
+        finally:
+            client.close()
+    finally:
+        server.stop()
+
+
+class VerifyingTransportTests(TestCaseBase):
+
+    def test_valid(self):
+        with verifyingclient(KEY_FILE, CRT_FILE) as client:
+            self.assertEquals(client.add(2, 3), 5)
+
+    def test_different_signature_chain(self):
+        with verifyingclient(OTHER_KEY_FILE, OTHER_CRT_FILE) as client:
+            with self.assertRaises(ssl.SSLError):
+                client.add(2, 3)
+
+    def test_cert_do_not_match_with_key(self):
+        with verifyingclient(KEY_FILE, OTHER_CRT_FILE) as client:
+            with self.assertRaises(ssl.SSLError):
+                client.add(2, 3)
+
+    def test_key_do_not_match_with_cert(self):
+        with verifyingclient(OTHER_KEY_FILE, CRT_FILE) as client:
+            with self.assertRaises(ssl.SSLError):
+                client.add(2, 3)
 
 
 class SSLServerThread(threading.Thread):
@@ -77,7 +176,7 @@ class SSLServerThread(threading.Thread):
         self.stop.set()
 
 
-class SSLTests(testrunner.VdsmTestCase):
+class SSLTests(TestCaseBase):
     """Tests of SSL communication"""
 
     def setUp(self):
