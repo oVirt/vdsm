@@ -247,6 +247,30 @@ def _getLiveSnapshotSupport(arch, capabilities=None):
 
 
 @utils.memoized
+def getLiveMergeSupport():
+    """
+    Determine if libvirt provides the necessary features to enable live merge.
+    We check for the existence of several libvirt flags to serve as indicators:
+
+    VIR_DOMAIN_BLOCK_COMMIT_RELATIVE indicates that libvirt can maintain
+    relative backing file path names when rewriting a backing chain.
+
+    VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2 indicates that libvirt can pass a drive
+    name (ie. vda) rather than a path to the block job event callback.
+
+    VIR_DOMAIN_BLOCK_COMMIT_ACTIVE indicates that libvirt supports merging the
+    active layer using the virDomainBlockCommit API.
+    """
+    for flag in ('VIR_DOMAIN_BLOCK_COMMIT_RELATIVE',
+                 'VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2',
+                 'VIR_DOMAIN_BLOCK_COMMIT_ACTIVE'):
+        if not hasattr(libvirt, flag):
+            logging.debug("libvirt is missing '%s': live merge disabled", flag)
+            return False
+    return True
+
+
+@utils.memoized
 def getNumaTopology():
     capabilities = _getCapsXMLStr()
     caps = minidom.parseString(capabilities)
@@ -622,6 +646,7 @@ def get():
     liveSnapSupported = _getLiveSnapshotSupport(targetArch)
     if liveSnapSupported is not None:
         caps['liveSnapshot'] = str(liveSnapSupported).lower()
+    caps['liveMerge'] = str(getLiveMergeSupport()).lower()
     caps['kdumpStatus'] = _getKdumpStatus()
 
     return caps
