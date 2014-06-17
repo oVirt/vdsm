@@ -343,7 +343,7 @@ class TestNetinfo(TestCaseBase):
                     opt.write(INTERVAL)
 
                 self.assertEqual(_getBondingOptions(bondName),
-                                 {'miimon': [INTERVAL]})
+                                 {'miimon': INTERVAL})
 
             finally:
                 bonds.write('-' + bondName)

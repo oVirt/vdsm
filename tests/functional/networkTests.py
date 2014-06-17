@@ -228,10 +228,10 @@ class NetworkTest(TestCaseBase):
             self.assertIn(bondName, config.bonds)
             self.assertEqual(set(nics),
                              set(config.bonds[bondName].get('nics')))
-        if options is None:
-            options = 'mode=4 miimon=150'
-        active = netinfo.bondings[bondName]['cfg']['BONDING_OPTS']
-        self.assertTrue(set(options.split()) <= set(active.split()))
+        if options is not None:
+            active = (opt + '=' + val for (opt, val)
+                      in netinfo.bondings[bondName]['opts'].iteritems())
+            self.assertTrue(set(options.split()) <= set(active))
 
     def assertBondDoesntExist(self, bondName, nics=None):
         netinfo = self.vdsm_net.netinfo

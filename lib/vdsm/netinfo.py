@@ -589,7 +589,7 @@ def _getBondingOptions(bond):
     mode = opts['mode'][-1] if 'mode' in opts else None
     defaults = _getDefaultBondingOptions(mode)
 
-    return dict(((opt, val) for (opt, val) in opts.iteritems()
+    return dict(((opt, val[-1]) for (opt, val) in opts.iteritems()
                  if val and val != defaults.get(opt)))
 
 
@@ -599,7 +599,7 @@ def _bondOptsForIfcfg(opts):
     the order symbolic name, numeric value, e.g. 'balance-rr 0'.
     Choose the numeric value from a list given by bondOpts().
     """
-    return ' '.join((opt + '=' + val[-1] for (opt, val)
+    return ' '.join((opt + '=' + val for (opt, val)
                      in sorted(opts.iteritems())))
 
 
@@ -663,13 +663,11 @@ def _bondinfo(link, ipaddrs):
     opts = _getBondingOptions(link.name)
 
     info.update({'hwaddr': link.address, 'slaves': slaves(link.name),
-                 'options': opts})
+                 'opts': opts})
 
-    # Replace or empty legacy ifcfg options
-    if opts:
+    # Add legacy ifcfg option if missing
+    if opts and 'BONDING_OPTS' not in info['cfg']:
         info['cfg']['BONDING_OPTS'] = _bondOptsForIfcfg(opts)
-    elif 'BONDING_OPTS' in info['cfg']:
-        info['cfg']['BONDING_OPTS'] = ''
 
     return info
 

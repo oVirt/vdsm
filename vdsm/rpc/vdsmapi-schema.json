@@ -600,7 +600,7 @@
 #
 # @qosOutbound: #optional BandwidthParams for outgoing traffic.
 #
-# @opts: A map containing information about the bridge specific options.
+# @opts:        A map containing information about the bridge specific options.
 #               (new in version 4.15.0)
 #
 # Since: 4.10.0
@@ -696,12 +696,15 @@
 #
 # @mtu:         The Maximum Transmission Unit size for the nic
 #
+# @opts:        A map of options; the values are numeric, but reported as
+#               strings (new in version 4.16.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'NetInfoBond',
  'data': {'slaves': ['str'], 'addr': 'str', 'netmask': 'str',
           'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'hwaddr': 'str',
-          'cfg': 'StringMap', 'mtu': 'uint'}}
+          'cfg': 'StringMap', 'mtu': 'uint', 'opts': 'StringMap'}}
 
 ##
 # @NetInfoVlan:
