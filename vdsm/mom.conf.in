@@ -25,7 +25,7 @@ hypervisor-interface: VDSM
 policy-engine-interval: 10
 
 # A comma-separated list of Controller plugins to enable
-controllers: Balloon, KSM
+controllers: Balloon, KSM, CpuTune
 
 # Sets the maximum number of statistic samples to keep for the purpose of
 # calculating moving averages.
@@ -67,8 +67,8 @@ backup-count: 5
 
 [host]
 # A comma-separated list of Collector plugins to use for Host data collection.
-collectors: HostMemory, HostKSM
+collectors: HostMemory, HostKSM, HostCpu
 
 [guest]
 # A comma-separated list of Collector plugins to use for Guest data collection.
-collectors: GuestQemuProc, GuestMemory, GuestBalloon
+collectors: GuestQemuProc, GuestMemory, GuestBalloon, GuestCpuTune
