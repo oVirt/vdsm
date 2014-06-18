@@ -66,7 +66,7 @@ from . import sampling
 from . import vmexitreason
 from . import vmstatus
 from .vmtune import updateIoTuneDom, collectInnerElements
-from .vmtune import ioTuneValuesToDom
+from .vmtune import ioTuneValuesToDom, ioTuneDomToValues
 
 from .utils import isVdsmImage, XMLElement
 from vmpowerdown import VmShutdown, VmReboot
@@ -3881,6 +3881,18 @@ class Vm(object):
                 return device
         else:
             return None
+
+    def getIoTunePolicy(self):
+        tunables = []
+        qos = self._getVmPolicy()
+        ioTuneList = qos.getElementsByTagName("ioTune")
+        if not ioTuneList or not ioTuneList[0].hasChildNodes():
+            return []
+
+        for device in ioTuneList[0].getElementsByTagName("device"):
+            tunables.append(ioTuneDomToValues(device))
+
+        return tunables
 
     def setIoTune(self, tunables):
         for io_tune_change in tunables:

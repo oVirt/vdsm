@@ -461,6 +461,7 @@ command_info = {
     'VM_pause': {'ret': VM_running_state_change_Ret},
     'VM_setNumberOfCpus': {'ret': 'vmList'},
     'VM_updateDevice': {'ret': 'vmList'},
+    'VM_getIoTunePolicy': {'ret': 'ioTunePolicyList'},
     'Volume_copy': {'ret': 'uuid'},
     'Volume_create': {'ret': 'uuid'},
     'Volume_delete': {'ret': 'uuid'},
