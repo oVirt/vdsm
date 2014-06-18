@@ -1,8 +1,8 @@
 [loggers]
-keys=root,vds,Storage,metadata,ovirt_hosted_engine_ha
+keys=root,vds,Storage,ovirt_hosted_engine_ha
 
 [handlers]
-keys=console,syslog,logfile,metadata
+keys=console,syslog,logfile
 
 [formatters]
 keys=long,simple,none,sysform
@@ -24,12 +24,6 @@ handlers=logfile
 qualname=Storage
 propagate=0
 
-[logger_metadata]
-level=WARNING
-handlers=metadata
-qualname=irs.metadata
-propagate=0
-
 [logger_ovirt_hosted_engine_ha]
 level=ERROR
 handlers=
@@ -47,12 +41,6 @@ class=logging.handlers.WatchedFileHandler
 args=('@VDSMLOGDIR@/vdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG
-formatter=long
-
-[handler_metadata]
-class=logging.handlers.WatchedFileHandler
-args=('@VDSMLOGDIR@/metadata.log',)
-level=WARNING
 formatter=long
 
 [handler_console]
