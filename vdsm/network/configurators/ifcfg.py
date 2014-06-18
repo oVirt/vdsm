@@ -37,6 +37,9 @@ from vdsm import netinfo
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig
 
+if utils.isOvirtNode():
+    from ovirt.node.utils import fs as node_fs
+
 from . import Configurator, dhclient, getEthtoolOpts, libvirt
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, IpConfig
@@ -270,12 +273,11 @@ class ConfigWriter(object):
 
     @staticmethod
     def _removeFile(filename):
-        """Remove file, umounting ovirt config files if needed."""
-
-        mounts = open('/proc/mounts').read()
-        if ' /config ext3' in mounts and ' %s ext3' % filename in mounts:
-            utils.execCmd([constants.EXT_UMOUNT, '-n', filename])
-        utils.rmFile(filename)
+        """Remove file (directly or using oVirt node's library)"""
+        if utils.isOvirtNode():
+            node_fs.Config().delete(filename)  # unpersists and shreds the file
+        else:
+            utils.rmFile(filename)
         logging.debug("Removed file %s", filename)
 
     def createLibvirtNetwork(self, network, bridged=True, iface=None,
