@@ -31,16 +31,7 @@ from rpc import vdsmapi
 from vmTests import FakeVM
 
 
-@contextmanager
-def ensureVmStats(vm):
-    vm._initVmStats()
-    try:
-        yield vm
-    finally:
-        vm._vmStats.stop()
-
-
-class TestVmStats(TestCaseBase):
+class TestSchemaCompliancyBase(TestCaseBase):
     @utils.memoized
     def _getAPI(self):
         testPath = os.path.realpath(__file__)
@@ -61,6 +52,17 @@ class TestVmStats(TestCaseBase):
                 self.assertIn(apiItem, stats)
         # TODO: type checking
 
+
+@contextmanager
+def ensureVmStats(vm):
+    vm._initVmStats()
+    try:
+        yield vm
+    finally:
+        vm._vmStats.stop()
+
+
+class TestVmStats(TestSchemaCompliancyBase):
     def testDownStats(self):
         with FakeVM() as fake:
             fake.setDownStatus(define.ERROR, vmexitreason.GENERIC_ERROR)
