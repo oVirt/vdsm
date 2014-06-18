@@ -1159,10 +1159,8 @@ def panic(msg):
 
 @memoized
 def isOvirtNode():
-    return (
-        os.path.exists('/etc/rhev-hypervisor-release') or
-        glob.glob('/etc/ovirt-node-*-release')
-    )
+    return (os.path.exists('/etc/rhev-hypervisor-release') or
+            bool(glob.glob('/etc/ovirt-node-*-release')))
 
 
 # Copied from
