@@ -7548,6 +7548,23 @@
  'returns': 'TaskStatus'}
 
 ##
+# @VM.getIoTunePolicy:
+#
+# Gets the ioTune policy settings for block devices
+#
+# @vmID:    The UUID of the VM
+#
+# Returns:
+# list of VmDiskDeviceTuneParams objects describing
+# the current settings
+#
+# Since: 4.15.0
+##
+{'command': {'class': 'VM', 'name': 'getIoTunePolicy'},
+ 'data': {'vmID': 'UUID'},
+ 'returns': ['VmDiskDeviceTuneParams']}
+
+##
 # @VM.setCpuTuneQuota:
 #
 # Set the vCpu quota tune parameter to the VM

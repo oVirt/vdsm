@@ -1179,6 +1179,41 @@ class TestVm(TestCaseBase):
             self.maxDiff = None
             self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
 
+    def testGetIoTune(self):
+        with FakeVM() as machine:
+            dom = FakeDomain()
+            dom._metadata = """
+            <qos>
+                <vcpuLimit>999</vcpuLimit>
+                <ioTune>
+                    <device name='test-device-by-name'>
+                        <maximum>
+                            <totalBytes>9999</totalBytes>
+                        </maximum>
+                    </device>
+                    <device name='other-device'>
+                        <guaranteed>
+                            <totalBytes>9999</totalBytes>
+                        </guaranteed>
+                    </device>
+                </ioTune>
+            </qos>
+            """
+            machine._dom = dom
+
+            tunables = machine.getIoTunePolicy()
+            expected = [
+                {'name': u'test-device-by-name',
+                 'maximum': {
+                     u'totalBytes': 9999
+                 }},
+                {'name': u'other-device',
+                 'guaranteed': {
+                     u'totalBytes': 9999
+                 }}
+            ]
+            self.assertEqual(tunables, expected)
+
     def testSetIoTune(self):
 
         drives = [

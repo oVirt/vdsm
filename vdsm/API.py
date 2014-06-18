@@ -714,6 +714,12 @@ class VM(APIBase):
             return errCode['noVM']
         return v.setIoTune(tunables)
 
+    def getIoTunePolicy(self):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.getIoTunePolicy()
+
     def setCpuTunePeriod(self, period):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
@@ -1194,7 +1200,7 @@ class Global(APIBase):
             return {'status': {'code': 0, 'message': message},
                     'power': power}
         threading.Thread(target=fence, args=(script, inp)).start()
-        return {'status': doneCode, 'power': 'unknown'}
+        return {'status': doneCode}
 
     def ping(self):
         "Ping the server. Useful for tests"
