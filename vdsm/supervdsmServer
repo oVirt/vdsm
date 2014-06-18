@@ -30,6 +30,7 @@ import getopt
 import signal
 import logging
 import logging.config
+import vdsm.infra.zombiereaper as zombiereaper
 
 import numaUtils
 
@@ -235,23 +236,30 @@ class _SuperVdsm(object):
         proc = Process(target=child, args=(hisPipe,))
         proc.start()
 
-        if not pipe.poll(RUN_AS_TIMEOUT):
-            try:
-                os.kill(proc.pid, signal.SIGKILL)
-            except OSError as e:
-                # If it didn't fail because process is already dead
-                if e.errno != errno.ESRCH:
-                    raise
+        try:
+            if not pipe.poll(RUN_AS_TIMEOUT):
+                try:
+                    os.kill(proc.pid, signal.SIGKILL)
+                except OSError as e:
+                    # If it didn't fail because process is already dead
+                    if e.errno != errno.ESRCH:
+                        raise
 
-            raise Timeout()
+                raise Timeout()
 
-        res, err = pipe.recv()
-        pipe.send("Bye")
-        proc.terminate()
-        if err is not None:
-            raise err
+            res, err = pipe.recv()
+            pipe.send("Bye")
+            proc.terminate()
 
-        return res
+            if err is not None:
+                raise err
+
+            return res
+
+        finally:
+            # Add to zombiereaper if process has not been waited upon
+            if proc.exitcode is None:
+                zombiereaper.autoReapPID(proc.pid)
 
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
@@ -399,6 +407,7 @@ def terminate(signo, frame):
 
 def main(sockfile, pidfile=None):
     log = logging.getLogger("SuperVdsm.Server")
+    zombiereaper.registerSignalHandler()
 
     def bind(func):
         def wrapper(_SuperVdsm, *args, **kwargs):
