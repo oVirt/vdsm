@@ -3716,24 +3716,25 @@ class Vm(object):
                                      msg="updateVmPolicy got an empty policy.")
 
         #
+        # Get the current QoS block
+        qos = self._getVmPolicy()
+        metadata_modified = False
+
+        #
         # Process provided properties, remove property after it is processed
 
         if 'vcpuLimit' in params:
-            try:
-                self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                                      '<qos><vcpulimit>' +
-                                      params['vcpuLimit'] +
-                                      '</vcpulimit></qos>', 'ovirt',
-                                      METADATA_VM_TUNE_URI, 0)
-            except libvirt.libvirtError as e:
-                self.log.exception("updateVmPolicy failed")
-                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    return errCode['noVM']
-                else:
-                    return self._reportError(key='updateVmPolicyErr',
-                                             msg=e.message)
-            else:
-                del params['vcpuLimit']
+            # Remove old value
+            vcpuLimit = qos.getElementsByTagName("vcpuLimit")
+            if vcpuLimit:
+                qos.removeChild(vcpuLimit[0])
+
+            vcpuLimit = XMLElement("vcpuLimit")
+            vcpuLimit.appendTextNode(str(params["vcpuLimit"]))
+            qos.appendChild(vcpuLimit)
+
+            metadata_modified = True
+            del params['vcpuLimit']
 
         # Check remaining fields in params and report the list of unsupported
         # params to the log
@@ -3742,7 +3743,48 @@ class Vm(object):
             self.log.warn("updateVmPolicy got unknown parameters: %s",
                           ", ".join(params.iterkeys()))
 
+        #
+        # Save modified metadata
+
+        if metadata_modified:
+            metadata_xml = qos.toprettyxml()
+
+            try:
+                self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                                      metadata_xml, 'ovirt',
+                                      METADATA_VM_TUNE_URI, 0)
+            except libvirt.libvirtError as e:
+                self.log.exception("updateVmPolicy failed")
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    return errCode['noVM']
+                else:
+                    return self._reportError(key='updateVmPolicyErr',
+                                             msg=e.message)
+
         return {'status': doneCode}
+
+    def _getVmPolicy(self):
+        """
+        This method gets the current qos block from the libvirt metadata.
+        If there is not any, it will create a new empty DOM tree with
+        the <qos> root element.
+
+        :return: XML DOM object representing the root qos element
+        """
+
+        metadata_xml = "<qos></qos>"
+
+        try:
+            metadata_xml = self._dom.metadata(
+                libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                METADATA_VM_TUNE_URI, 0)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
+                return self._reportException(key='updateVmPolicyErr',
+                                             msg=e.message)
+
+        metadata = xml.dom.minidom.parseString(metadata_xml)
+        return metadata.getElementsByTagName("qos")[0]
 
     def _createTransientDisk(self, diskParams):
         if diskParams.get('shared', None) != DRIVE_SHARED_TYPE.TRANSIENT:
