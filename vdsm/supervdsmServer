@@ -32,6 +32,7 @@ import signal
 import logging
 import logging.config
 from vdsm.infra import sigutils
+from vdsm.infra import zombiereaper
 
 import numaUtils
 
@@ -242,23 +243,34 @@ class _SuperVdsm(object):
         proc = Process(target=child, args=(hisPipe,))
         proc.start()
 
-        if not pipe.poll(RUN_AS_TIMEOUT):
-            try:
-                os.kill(proc.pid, signal.SIGKILL)
-            except OSError as e:
-                # If it didn't fail because process is already dead
-                if e.errno != errno.ESRCH:
-                    raise
+        needReaping = True
+        try:
+            if not pipe.poll(RUN_AS_TIMEOUT):
+                try:
 
-            raise Timeout()
+                    os.kill(proc.pid, signal.SIGKILL)
+                except OSError as e:
+                    # Don't add to zombiereaper of PID no longer exists
+                    if e.errno == errno.ESRCH:
+                        needReaping = False
+                    else:
+                        raise
 
-        res, err = pipe.recv()
-        pipe.send("Bye")
-        proc.terminate()
-        if err is not None:
-            raise err
+                raise Timeout()
 
-        return res
+            res, err = pipe.recv()
+            pipe.send("Bye")
+            proc.terminate()
+
+            if err is not None:
+                raise err
+
+            return res
+
+        finally:
+            # Add to zombiereaper if process has not been waited upon
+            if proc.exitcode is None and needReaping:
+                zombiereaper.autoReapPID(proc.pid)
 
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
@@ -472,6 +484,7 @@ def main(sockfile, pidfile=None):
     if not config.getboolean('vars', 'core_dump_enable'):
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     sigutils.register()
+    zombiereaper.registerSignalHandler()
 
     def bind(func):
         def wrapper(_SuperVdsm, *args, **kwargs):
