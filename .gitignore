@@ -70,7 +70,7 @@ vdsm/vdsm.rwtab
 vdsm/vdsmd.8
 vdsm/gluster/hostname.py
 vdsm-tool/vdsm-tool.1
-vdsm_api/vdsm-api.html
+vdsm/rpc/vdsm-api.html
 vdsm_hooks/openstacknet/sudoers
 vdsm_hooks/persist-vdsm-hooks
 vdsm_reg/config.py
