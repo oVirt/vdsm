@@ -4734,11 +4734,17 @@ class Vm(object):
         try:
             self._dom.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
         except libvirt.libvirtError as e:
-            self.log.warning("Failed to destroy VM '%s' gracefully",
-                             self.conf['vmId'], exc_info=True)
-            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
-                return self._destroyVmForceful()
-            return errCode['destroyErr']
+            # after succesfull migraions
+            if (self.lastStatus == vmstatus.DOWN and
+               e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN):
+                self.log.info("VM '%s' already down and destroyed",
+                              self.conf['vmId'])
+            else:
+                self.log.warning("Failed to destroy VM '%s' gracefully",
+                                 self.conf['vmId'], exc_info=True)
+                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
+                    return self._destroyVmForceful()
+                return errCode['destroyErr']
         return {'status': doneCode}
 
     def _destroyVmForceful(self):
