@@ -617,7 +617,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             'balloon_min': str(
                 int(self._vm.conf.get('memGuaranteedSize', '0')) * 1024),
             'balloon_cur': str(sInfo) if sInfo is not None else '0',
-            'balloon_target': balloon_target}
+            'balloon_target': str(balloon_target)}
 
     def _getNetworkStats(self, stats):
         stats['network'] = {}
