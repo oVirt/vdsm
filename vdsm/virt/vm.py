@@ -402,7 +402,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         if eInfo is None:
             return
 
-        if eInfo['vcpuCount']:
+        if 'vcpuCount' in eInfo:
             vcpuCount = eInfo['vcpuCount']
             if vcpuCount != -1:
                 stats['vcpuCount'] = vcpuCount
@@ -416,7 +416,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         if eInfo is None:
             return
 
-        if eInfo['vcpuLimit']:
+        if 'vcpuLimit' in eInfo:
             value = eInfo['vcpuLimit']
             stats['vcpuUserLimit'] = value
         else:
