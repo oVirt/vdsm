@@ -387,7 +387,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         # According to libvirt API:"A quota with value 0 means no value."
         # The value does not have to be present in some transient cases
         if eInfo.get('vcpu_quota', _NO_CPU_QUOTA) != _NO_CPU_QUOTA:
-            stats['vcpuQuota'] = eInfo['vcpu_quota']
+            stats['vcpuQuota'] = str(eInfo['vcpu_quota'])
 
         # Handling the case where period is not set, setting to 0.
         # According to libvirt API:"A period with value 0 means no value."
