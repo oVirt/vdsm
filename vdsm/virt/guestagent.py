@@ -31,7 +31,7 @@ import supervdsm
 
 from . import vmstatus
 
-_MAX_SUPPORTED_API_VERSION = 1
+_MAX_SUPPORTED_API_VERSION = 2
 _IMPLICIT_API_VERSION_ZERO = 0
 
 _MESSAGE_API_VERSION_LOOKUP = {
@@ -262,6 +262,10 @@ class GuestAgent(object):
             self.guestInfo['guestName'] = args['name']
         elif message == 'os-version':
             self.guestInfo['guestOs'] = args['version']
+        elif message == 'os-info':
+            self.guestInfo['guestOsInfo'] = args
+        elif message == 'timezone':
+            self.guestInfo['guestTimezone'] = args
         elif message == 'network-interfaces':
             interfaces = []
             old_ips = ''

@@ -3803,6 +3803,12 @@
 #
 # @clientIp:              The IP address of the client connected to the display
 #
+# @guestOsInfo:           #optional Guest OS information like architecture,
+#                         type, and version (Since 4.17.0)
+#
+# @guestTimezone:         #optional Timezone and time offset of the guest OS
+#                         (Since 4.17.0)
+#
 # Since: 4.14.1
 ##
 {'type': 'VMFullInfo',
@@ -3818,7 +3824,46 @@
           'displayPort': 'uint', 'guestIPs': 'str',
           'guestDiskMapping': 'GuestDisksMappingMap',
           'smartcardEnable': 'bool', 'nicModel': 'VmInterfaceDeviceModel',
-          'pitReinjection': 'bool', 'status': 'str', 'clientIp': 'str'}}
+          'pitReinjection': 'bool', 'status': 'str', 'clientIp': 'str',
+          '*guestOsInfo': 'VMGuestOsInfo',
+          '*guestTimezone': 'VMGuestTimezone'}}
+
+##
+# @VMGuestTimezone:
+#
+# Timezone configuration of the guest operating system
+#
+# @zone:        Name of the timezone native to the Guest OS
+#
+# @offset:      Time offset of the configured timezone in minutes
+#
+# Since: 4.17.0
+##
+{'type': 'VMGuestTimezone',
+ 'data': {'zone': 'string', 'offset': 'uint'}}
+
+##
+# @VMGuestOsInfo:
+#
+# Information about the guest operating system on a VM
+#
+# @version:             Operating system version
+#
+# @distribution:        Name of the linux distribution
+#
+# @codename:            Codename of the OS
+#
+# @arch:                Architecture of the OS (x86, x86_64, ppc64, ...)
+#
+# @type:                Type of the OS (linux, windows, ...)
+#
+# @kernel:              Kernel version reported by a linux guest
+#
+# Since: 4.17.0
+##
+{'type': 'VMGuestOsInfo',
+ 'data': {'version': 'string', 'distribution': 'string', 'codename': 'string',
+          'arch': 'string', 'type': 'string', 'kernel': 'string'}}
 
 ##
 # @Host.getVMFullList:
