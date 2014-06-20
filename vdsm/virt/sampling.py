@@ -352,6 +352,15 @@ class AdvancedStatsFunction(object):
 
         return bgn_sample, end_sample, (end_time - bgn_time)
 
+    def getLastSample(self):
+        """
+        Return the last collected sample.
+        """
+        if not self._sample:
+            return None
+        last_time, last_sample = self._sample[-1]
+        return last_sample
+
 
 class AdvancedStatsThread(threading.Thread):
     """

@@ -18,8 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import itertools
 import os
 import tempfile
+import random
 import shutil
 
 from vdsm import ipwrapper
@@ -111,3 +113,75 @@ class InterfaceSampleTests(TestCaseBase):
         s1 = sampling.InterfaceSample(lo)
         s1.operstate = 'x'
         self.assertEquals('operstate:x', s1.connlog_diff(s0))
+
+
+class AdvancedStatsFunctionTests(TestCaseBase):
+    def testIntervalBadValues(self):
+        self.assertRaises(
+            ValueError,
+            sampling.AdvancedStatsFunction, random.randint, 0)
+        self.assertRaises(
+            ValueError,
+            sampling.AdvancedStatsFunction, random.randint, -1)
+        self.assertRaises(
+            ValueError,
+            sampling.AdvancedStatsFunction, random.randint, None)
+        self.assertRaises(
+            ValueError,
+            sampling.AdvancedStatsFunction, random.randint, 1.333)
+        self.assertRaises(
+            ValueError,
+            sampling.AdvancedStatsFunction, random.randint, 'foo')
+
+    def testIntervalGoodValue(self):
+        interval = 42
+        stat = sampling.AdvancedStatsFunction(random.randint, interval)
+        self.assertEqual(stat.interval, interval)
+
+    def testCall(self):
+        value = 42
+        stat = sampling.AdvancedStatsFunction(lambda x: x, interval=1)
+        ret = stat(value)
+        self.assertEqual(ret, value)
+
+    def testWindowSizeZero(self):
+        value = 42
+        stat = sampling.AdvancedStatsFunction(
+            lambda x: x, interval=1, window=0)
+        stat(value)
+        self.assertEqual(stat.getStats(), (None, None, None))
+
+    def testWindowSizeOne(self):
+        value = 42
+        stat = sampling.AdvancedStatsFunction(
+            lambda x: x, interval=1, window=1)
+        stat(value)
+        self.assertEqual(stat.getStats(), (None, None, None))
+        self.assertEqual(stat.getLastSample(), value)
+
+    def testWindowSizeTwo(self):
+        values = range(42)
+        stat = sampling.AdvancedStatsFunction(
+            lambda x: x, interval=1, window=2)
+        for val in values:
+            stat(val)
+        bgn, end, diff = stat.getStats()
+        self.assertEqual(bgn, values[-2])
+        self.assertEqual(end, values[-1])
+
+    def testElapsedTime(self):
+        counter = itertools.count()
+        stat = sampling.AdvancedStatsFunction(
+            lambda x: x, interval=1, window=2, timefn=lambda: next(counter))
+        for val in range(42):
+            stat(val)
+        bgn, end, diff = stat.getStats()
+        self.assertTrue(diff > 0)  # assertGreater requires py >= 2.7
+
+    def testLastSample(self):
+        values = range(42)
+        stat = sampling.AdvancedStatsFunction(
+            lambda x: x, interval=1, window=2)
+        for val in values:
+            stat(val)
+        self.assertEqual(stat.getLastSample(), values[-1])
