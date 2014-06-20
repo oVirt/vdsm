@@ -5600,7 +5600,7 @@ class Vm(object):
             volChain.insert(0, pathToVolID(drive, path))
             bsXML = findElement(diskXML, 'backingStore')
             if not bsXML:
-                return None
+                break
             diskXML = bsXML
         return volChain
 
