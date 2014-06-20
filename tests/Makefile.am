@@ -30,6 +30,7 @@ test_modules = \
 	capsTests.py \
 	clientifTests.py \
 	configNetworkTests.py \
+	domainMonitorTests.py \
 	fileVolumeTests.py \
 	fileUtilTests.py \
 	fuserTests.py \

@@ -40,9 +40,6 @@ class DomainMonitorStatus(object):
     )
 
     def __init__(self):
-        self.clear()
-
-    def clear(self):
         self.error = None
         self.checkTime = time.time()
         self.valid = True
@@ -64,14 +61,18 @@ class DomainMonitorStatus(object):
         self.isoPrefix = None
         self.version = -1
 
-    def update(self, st):
-        for attr in self.__slots__:
-            setattr(self, attr, getattr(st, attr))
 
-    def copy(self):
-        res = DomainMonitorStatus()
-        res.update(self)
-        return res
+class FrozenStatus(DomainMonitorStatus):
+
+    def __init__(self, other):
+        for name in other.__slots__:
+            value = getattr(other, name)
+            super(FrozenStatus, self).__setattr__(name, value)
+
+    def __setattr__(self, *args):
+        raise AssertionError('%s is readonly' % self)
+
+    __delattr__ = __setattr__
 
 
 class DomainMonitor(object):
@@ -170,8 +171,8 @@ class DomainMonitorThread(object):
         self.hostId = hostId
         self.interval = interval
         self.firstChange = True
-        self.status = DomainMonitorStatus()
         self.nextStatus = DomainMonitorStatus()
+        self.status = FrozenStatus(self.nextStatus)
         self.isIsoDomain = None
         self.isoPrefix = None
         self.lastRefresh = time.time()
@@ -188,7 +189,7 @@ class DomainMonitorThread(object):
         self.thread.join()
 
     def getStatus(self):
-        return self.status.copy()
+        return self.status
 
     def getHostStatus(self, hostId):
         if not self.domain:
@@ -222,7 +223,7 @@ class DomainMonitorThread(object):
             self.stopEvent.wait(self.interval)
 
     def _monitorDomain(self):
-        self.nextStatus.clear()
+        self.nextStatus = DomainMonitorStatus()
 
         # Pick up changes in the domain, for example, domain upgrade.
         if self._shouldRefreshDomain():
@@ -261,7 +262,7 @@ class DomainMonitorThread(object):
         if self._shouldAcquireHostId():
             self._acquireHostId()
 
-        self.status.update(self.nextStatus)
+        self.status = FrozenStatus(self.nextStatus)
 
     # Notifiying status changes
 
