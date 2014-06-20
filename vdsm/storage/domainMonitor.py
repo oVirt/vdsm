@@ -119,8 +119,9 @@ class DomainMonitor(object):
 
         del self._domains[sdUUID]
 
-    def getStatus(self, sdUUID):
-        return self._domains[sdUUID].getStatus()
+    def getMonitoredDomainsStatus(self):
+        for sdUUID, monitor in self._domains.items():
+            yield sdUUID, monitor.getStatus()
 
     def close(self):
         self.log.info("Stopping domain monitors")
