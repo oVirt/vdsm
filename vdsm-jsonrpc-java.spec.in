@@ -19,6 +19,8 @@
 
 %global		package_version @PACKAGE_VERSION@
 %global		package_maven_version @PACKAGE_MAVEN_VERSION@
+# Version 1.9 of jackson currently no available for rhel or centos
+%global		jackson_deps_available 0
 
 %if 0%{?rhel:1}
 %global		maven2brewrepodir %{_javadir}/repository.jboss.com/maven2-brew/dummy
@@ -65,8 +67,9 @@ BuildRequires:	junit4
 # Package not in rhel. it is only build time, at this point (until rhel-7) we can accept that
 # BuildRequires:	mockito
 Requires:	jakarta-commons-logging
-Requires:	codehaus-jackson-core-asl
-Requires:	codehaus-jackson-mapper-asl
+%if %{jackson_deps_available}
+Requires:	jackson >= 1.9
+%endif
 %endif
 
 %description
@@ -95,6 +98,9 @@ Summary:	%{name} maven repo
 %if 0%{?fedora:1}
 %global conf --with-maven --disable-java-build
 %else
+%if !%{jackson_deps_available}
+%global conf --with-maven --enable-java-build
+%else
 %global conf \\\
 	JACKSON_CORE_ASL=$(build-classpath codehaus-jackson/jackson-core-asl) \\\
 	JACKSON_MAPPER_ASL=$(build-classpath codehaus-jackson/jackson-mapper-asl) \\\
@@ -102,6 +108,7 @@ Summary:	%{name} maven repo
 	JAVAC=/usr/lib/jvm/java-1.7.0/bin/javac \\\
 	JAR=/usr/lib/jvm/java-1.7.0/bin/jar \\\
 	%{?null}
+%endif
 %endif
 %configure %{?conf}
 make %{?_smp_mflags}
@@ -151,6 +158,9 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
+* Tue Jun 24 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.1
+- Make jackson dependency conditional for rhel and centos
+
 * Thu Dec 19 2013 Piotr Kliczewski <pkliczew@redhat.com> 1.0
 - Initial template for vdsm-jsonrpc-java.
 
