@@ -107,7 +107,7 @@ class clientIF(object):
             host = config.get('addresses', 'management_ip')
             port = config.getint('addresses', 'management_port')
             self._createAcceptor(host, port)
-            self._prepareXMLRPCBinding(host, port)
+            self._prepareXMLRPCBinding(port)
             self._prepareJSONRPCBinding()
         except:
             self.log.error('failed to init clientIF, '
@@ -170,7 +170,7 @@ class clientIF(object):
             sslctx = SSLContext(cert_file, key_file, ca_cert)
         return sslctx
 
-    def _prepareXMLRPCBinding(self, host, port):
+    def _prepareXMLRPCBinding(self, port):
         if config.getboolean('vars', 'xmlrpc_enable'):
             try:
                 from rpc.BindingXMLRPC import BindingXMLRPC
@@ -179,9 +179,7 @@ class clientIF(object):
                 self.log.error('Unable to load the xmlrpc server module. '
                                'Please make sure it is installed.')
             else:
-                default_bridge = config.get("vars", "default_bridge")
-                xml_binding = BindingXMLRPC(self, self.log, host, port,
-                                            default_bridge)
+                xml_binding = BindingXMLRPC(self, self.log, port)
                 self.bindings['xmlrpc'] = xml_binding
                 xml_detector = XmlDetector(xml_binding)
                 self._acceptor.add_detector(xml_detector)

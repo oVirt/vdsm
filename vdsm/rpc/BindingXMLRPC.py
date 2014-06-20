@@ -41,12 +41,10 @@ except ImportError:
 
 
 class BindingXMLRPC(object):
-    def __init__(self, cif, log, host, port, default_bridge):
+    def __init__(self, cif, log, port):
         self.cif = cif
         self.log = log
-        self.serverIP = host
         self.serverPort = port
-        self.defaultBridge = default_bridge
 
         self._enabled = False
         self.server = self._createXMLRPCServer()
@@ -440,7 +438,6 @@ class BindingXMLRPC(object):
     def getCapabilities(self):
         api = API.Global()
         ret = api.getCapabilities()
-        ret['info']['management_ip'] = self.serverIP
         ret['info']['lastClient'] = self.cif.threadLocal.client
         ret['info']['lastClientIface'] = getDeviceByIP(
             self.cif.threadLocal.server)

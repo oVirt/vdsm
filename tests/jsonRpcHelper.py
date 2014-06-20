@@ -75,7 +75,7 @@ def constructAcceptor(log, ssl, jsonBridge):
     cif = FakeClientIf()
 
     _, port = acceptor._socket.getsockname()
-    xml_binding = BindingXMLRPC(cif, cif.log, "127.0.0.1", port, None)
+    xml_binding = BindingXMLRPC(cif, cif.log, port)
     xml_binding.start()
     xmlDetector = XmlDetector(xml_binding)
     acceptor.add_detector(xmlDetector)
