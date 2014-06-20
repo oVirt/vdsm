@@ -87,7 +87,8 @@ class DomainMonitor(object):
 
     @property
     def poolMonitoredDomains(self):
-        return [k for k, v in self._domains.iteritems() if v.poolDomain]
+        return [sdUUID for sdUUID, monitor in self._domains.items()
+                if monitor.poolDomain]
 
     def startMonitoring(self, sdUUID, hostId, poolDomain=True):
         domainThread = self._domains.get(sdUUID)
