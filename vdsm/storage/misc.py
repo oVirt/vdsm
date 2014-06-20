@@ -652,8 +652,8 @@ class RWLock(object):
 
 class DynamicBarrier(object):
     def __init__(self):
-        self._lock = threading.Lock()
         self._cond = threading.Condition()
+        self._busy = False
 
     def enter(self):
         """
@@ -670,8 +670,9 @@ class DynamicBarrier(object):
         >>    dynamicBarrier.exit()
         """
         with self._cond:
-            if self._lock.acquire(False):
+            if not self._busy:
                 # The first thread entered the barrier.
+                self._busy = True
                 return True
 
             self._cond.wait()
@@ -680,8 +681,9 @@ class DynamicBarrier(object):
             # when the barrier was entered, and so they cannot use the result
             # obtained by this thread.
 
-            if self._lock.acquire(False):
+            if not self._busy:
                 # The second thread entered the barrier.
+                self._busy = True
                 return True
 
             self._cond.wait()
@@ -695,7 +697,8 @@ class DynamicBarrier(object):
 
     def exit(self):
         with self._cond:
-            self._lock.release()
+            assert self._busy, "Attempt to exit a barrier without entering"
+            self._busy = False
             self._cond.notifyAll()
 
 
