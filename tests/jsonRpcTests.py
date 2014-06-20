@@ -36,7 +36,7 @@ from yajsonrpc import \
     JsonRpcRequest
 
 
-CALL_TIMEOUT = 5
+CALL_TIMEOUT = 15
 CALL_ID = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
 
 
