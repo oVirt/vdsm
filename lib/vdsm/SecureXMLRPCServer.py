@@ -37,7 +37,7 @@ import logging
 
 from sslutils import SSLServerSocket
 
-from .utils import IPXMLRPCRequestHandler, IPXMLRPCServer
+from .xmlrpc import IPXMLRPCRequestHandler, IPXMLRPCServer
 
 
 SecureXMLRPCRequestHandler = IPXMLRPCRequestHandler

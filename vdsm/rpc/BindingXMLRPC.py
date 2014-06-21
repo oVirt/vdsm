@@ -27,6 +27,7 @@ import threading
 import sys
 
 from vdsm import utils
+from vdsm import xmlrpc
 from vdsm.define import doneCode, errCode
 from vdsm.netinfo import getDeviceByIP
 import API
@@ -90,7 +91,7 @@ class BindingXMLRPC(object):
 
         threadLocal = self.cif.threadLocal
 
-        class RequestHandler(utils.IPXMLRPCRequestHandler):
+        class RequestHandler(xmlrpc.IPXMLRPCRequestHandler):
 
             # Timeout for the request socket
             timeout = 60
@@ -113,7 +114,7 @@ class BindingXMLRPC(object):
             def setup(self):
                 threadLocal.client = self.client_address[0]
                 threadLocal.server = self.request.getsockname()[0]
-                return utils.IPXMLRPCRequestHandler.setup(self)
+                return xmlrpc.IPXMLRPCRequestHandler.setup(self)
 
             def do_GET(self):
                 try:
@@ -256,12 +257,12 @@ class BindingXMLRPC(object):
                 self.wfile.write(json_response)
 
             def parse_request(self):
-                r = utils.IPXMLRPCRequestHandler.parse_request(self)
+                r = xmlrpc.IPXMLRPCRequestHandler.parse_request(self)
                 threadLocal.flowID = self.headers.get(HTTP_HEADER_FLOWID)
                 return r
 
             def finish(self):
-                utils.IPXMLRPCRequestHandler.finish(self)
+                xmlrpc.IPXMLRPCRequestHandler.finish(self)
                 threadLocal.client = None
                 threadLocal.server = None
                 threadLocal.flowID = None
@@ -274,7 +275,7 @@ class BindingXMLRPC(object):
                 def address_string(self):
                     return self.client_address[0]
 
-        server = utils.SimpleThreadedXMLRPCServer(
+        server = xmlrpc.SimpleThreadedXMLRPCServer(
             requestHandler=RequestHandler,
             logRequests=False)
 

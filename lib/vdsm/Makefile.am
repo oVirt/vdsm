@@ -36,6 +36,7 @@ dist_vdsmpylib_PYTHON = \
 	SecureXMLRPCServer.py \
 	sslutils.py \
 	utils.py \
+	xmlrpc.py \
 	$(NULL)
 
 nodist_vdsmpylib_PYTHON = \

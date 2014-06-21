@@ -1156,6 +1156,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/sslutils.py*
 %{python_sitearch}/%{vdsm_name}/utils.py*
 %{python_sitearch}/%{vdsm_name}/vdscli.py*
+%{python_sitearch}/%{vdsm_name}/xmlrpc.py*
 %{python_sitearch}/%{vdsm_name}/tool/__init__.py*
 %if 0%{?with_systemd}
 %exclude %{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*

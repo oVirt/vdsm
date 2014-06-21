@@ -32,3 +32,4 @@
 ./usr/lib/python2.7/dist-packages/vdsm/tool/vdsm-id.py
 ./usr/lib/python2.7/dist-packages/vdsm/utils.py
 ./usr/lib/python2.7/dist-packages/vdsm/vdscli.py
+./usr/lib/python2.7/dist-packages/vdsm/xmlrpc.py
