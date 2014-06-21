@@ -18,15 +18,16 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from threading import Thread, Event
-from time import time
+import logging
+import threading
+import time
 import weakref
 
-import logging
-import misc
 from vdsm import utils
 from vdsm.config import config
-from sdc import sdCache
+
+from . import misc
+from .sdc import sdCache
 
 
 class DomainMonitorStatus(object):
@@ -42,7 +43,7 @@ class DomainMonitorStatus(object):
 
     def clear(self):
         self.error = None
-        self.checkTime = time()
+        self.checkTime = time.time()
         self.valid = True
         self.readDelay = 0
         self.diskUtilization = (None, None)
@@ -133,11 +134,11 @@ class DomainMonitorThread(object):
     log = logging.getLogger('Storage.DomainMonitorThread')
 
     def __init__(self, domainMonitor, sdUUID, hostId, interval):
-        self.thread = Thread(target=self._monitorLoop)
+        self.thread = threading.Thread(target=self._monitorLoop)
         self.thread.setDaemon(True)
 
         self.domainMonitor = domainMonitor
-        self.stopEvent = Event()
+        self.stopEvent = threading.Event()
         self.domain = None
         self.sdUUID = sdUUID
         self.hostId = hostId
@@ -147,7 +148,7 @@ class DomainMonitorThread(object):
         self.nextStatus = DomainMonitorStatus()
         self.isIsoDomain = None
         self.isoPrefix = None
-        self.lastRefresh = time()
+        self.lastRefresh = time.time()
         self.refreshTime = \
             config.getint("irs", "repo_stats_cache_refresh_timeout")
 
@@ -188,12 +189,12 @@ class DomainMonitorThread(object):
     def _monitorDomain(self):
         self.nextStatus.clear()
 
-        if time() - self.lastRefresh > self.refreshTime:
+        if time.time() - self.lastRefresh > self.refreshTime:
             # Refreshing the domain object in order to pick up changes as,
             # for example, the domain upgrade.
             self.log.debug("Refreshing domain %s", self.sdUUID)
             sdCache.manuallyRemoveDomain(self.sdUUID)
-            self.lastRefresh = time()
+            self.lastRefresh = time.time()
 
         try:
             # We should produce the domain inside the monitoring loop because
@@ -241,7 +242,7 @@ class DomainMonitorThread(object):
                            "information", self.sdUUID, exc_info=True)
             self.nextStatus.error = e
 
-        self.nextStatus.checkTime = time()
+        self.nextStatus.checkTime = time.time()
         self.nextStatus.valid = (self.nextStatus.error is None)
 
         if self._statusDidChange():
