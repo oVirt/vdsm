@@ -36,6 +36,7 @@ SUBDIRS += \
 	isolatedprivatevlan \
 	macbind \
 	nestedvt \
+	noipspoof \
 	numa \
 	pincpu \
 	promisc \
