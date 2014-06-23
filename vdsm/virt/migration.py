@@ -100,8 +100,9 @@ class SourceThread(threading.Thread):
         # FIXME: The port will depend on the binding being used.
         # This assumes xmlrpc
         hostPort = vdscli.cannonizeHostPort(
-            self._dst, self._vm.cif.bindings['xmlrpc'].serverPort)
-        self.remoteHost, self.remotePort = hostPort.rsplit(':', 1)
+            self._dst,
+            config.getint('addresses', 'management_port'))
+        self.remoteHost, _ = hostPort.rsplit(':', 1)
 
         if config.getboolean('vars', 'ssl'):
             self.destServer = vdscli.connect(
