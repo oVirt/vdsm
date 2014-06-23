@@ -323,6 +323,7 @@ Manager.
 Summary:        VDSM python libraries
 Requires:       %{name}-python-zombiereaper = %{version}-%{release}
 Requires:       python-cpopen >= 1.2.3-5
+Requires:       m2crypto
 
 %description python
 Shared libraries between the various VDSM packages.
