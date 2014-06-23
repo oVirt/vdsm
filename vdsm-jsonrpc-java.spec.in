@@ -125,10 +125,11 @@ ln -s %{name}-client-%{package_maven_version}.jar %{buildroot}%{_javadir}/%{name
 %endif
 
 %if 0%{?rhel:1}
-install -d "%{buildroot}%{maven2brewrepodir}"
-cp pom.xml "%{buildroot}%{maven2brewrepodir}/root-%{package_maven_version}.pom"
-cp "%{buildroot}%{_javadir}/%{name}/%{name}-client.jar" "%{buildroot}%{maven2brewrepodir}/%{name}-client-%{package_maven_version}.jar"
-cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}-client-%{package_maven_version}.pom"
+install -d "%{buildroot}%{maven2brewrepodir}/root"
+install -d "%{buildroot}%{maven2brewrepodir}/%{name}"
+cp pom.xml "%{buildroot}%{maven2brewrepodir}/root/root-%{package_maven_version}.pom"
+cp "%{buildroot}%{_javadir}/%{name}/%{name}-client.jar" "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{package_maven_version}.jar"
+cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{package_maven_version}.pom"
 %endif
 
 %if 0%{?fedora:1}
