@@ -35,12 +35,10 @@ import socket
 import SocketServer
 import logging
 
-import M2Crypto
 from sslutils import SSLServerSocket
 
 from .utils import IPXMLRPCRequestHandler, IPXMLRPCServer
 
-M2Crypto.threading.init()
 
 SecureXMLRPCRequestHandler = IPXMLRPCRequestHandler
 
