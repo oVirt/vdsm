@@ -18,8 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from M2Crypto import SSL, X509, threading
+
+# M2Crypto.threading needs initialization.
+# See https://bugzilla.redhat.com/482420
+threading.init()
+
 import socket
-from M2Crypto import SSL, X509
 
 
 DEFAULT_ACCEPT_TIMEOUT = 5
