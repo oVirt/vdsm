@@ -5106,6 +5106,19 @@ class Vm(object):
                     dev['alias'] = alias
                     break
 
+    def _getDriveIdentification(self, dom):
+        sources = dom.getElementsByTagName('source')
+        if sources:
+            devPath = (sources[0].getAttribute('file') or
+                       sources[0].getAttribute('dev') or
+                       sources[0].getAttribute('name'))
+        else:
+            devPath = ''
+        target = dom.getElementsByTagName('target')
+        name = target[0].getAttribute('dev') if target else ''
+        alias = dom.getElementsByTagName('alias')[0].getAttribute('name')
+        return alias, devPath, name
+
     def _getUnderlyingDriveInfo(self):
         """
         Obtain block devices info from libvirt.
@@ -5116,17 +5129,7 @@ class Vm(object):
         # In the future we can return this real data to management instead of
         # vm's conf
         for x in disksxml:
-            sources = x.getElementsByTagName('source')
-            if sources:
-                devPath = (sources[0].getAttribute('file') or
-                           sources[0].getAttribute('dev') or
-                           sources[0].getAttribute('name'))
-            else:
-                devPath = ''
-
-            target = x.getElementsByTagName('target')
-            name = target[0].getAttribute('dev') if target else ''
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias, devPath, name = self._getDriveIdentification(x)
             readonly = bool(x.getElementsByTagName('readonly'))
             boot = x.getElementsByTagName('boot')
             bootOrder = boot[0].getAttribute('order') if boot else ''
