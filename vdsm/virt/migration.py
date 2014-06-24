@@ -149,7 +149,7 @@ class SourceThread(threading.Thread):
                                      ' unresponsive. Hiberanting without '
                                      'desktopLock.')
                     break
-            self._vm.pause('Saving State')
+            self._vm.pause(vmstatus.SAVING_STATE)
         else:
             self.log.debug("Migration started")
             self._vm.lastStatus = vmstatus.MIGRATION_SOURCE
