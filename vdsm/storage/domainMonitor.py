@@ -26,6 +26,7 @@ import weakref
 from vdsm import utils
 from vdsm.config import config
 
+from . import clusterlock
 from . import misc
 from .sdc import sdCache
 
@@ -116,6 +117,17 @@ class DomainMonitor(object):
         for sdUUID, monitor in self._monitors.items():
             yield sdUUID, monitor.getStatus()
 
+    def getHostStatus(self, domains):
+        status = {}
+        for sdUUID, hostId in domains.iteritems():
+            try:
+                monitor = self._monitors[sdUUID]
+            except KeyError:
+                status[sdUUID] = clusterlock.HOST_STATUS_UNAVAILABLE
+            else:
+                status[sdUUID] = monitor.getHostStatus(hostId)
+        return status
+
     def close(self):
         self.log.info("Stopping all domain monitors")
         self._stopMonitors(self._monitors.values())
@@ -177,6 +189,11 @@ class DomainMonitorThread(object):
 
     def getStatus(self):
         return self.status.copy()
+
+    def getHostStatus(self, hostId):
+        if not self.domain:
+            return clusterlock.HOST_STATUS_UNAVAILABLE
+        return self.domain.getHostStatus(hostId)
 
     def __canceled__(self):
         """ Accessed by methods decorated with @util.cancelpoint """
