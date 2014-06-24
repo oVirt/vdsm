@@ -24,6 +24,8 @@ from itertools import product
 import re
 import shutil
 import tempfile
+import threading
+import time
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -32,6 +34,7 @@ from virt import vm
 from virt import vmexitreason
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from virt import vmxml
+from virt import vmstatus
 from vdsm import constants
 from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
@@ -44,6 +47,8 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
+
+from testValidation import slowtest
 
 
 class ConnectionMock:
@@ -60,6 +65,7 @@ class ConnectionMock:
 class FakeClientIF(object):
     def __init__(self, *args, **kwargs):
         self.channelListener = None
+        self.vmContainer = {}
 
 
 class FakeDomain(object):
@@ -1339,17 +1345,21 @@ class FakeGuestAgent(object):
 
 @contextmanager
 def FakeVM(params=None, devices=None, runCpu=False,
-           arch=caps.Architecture.X86_64):
+           arch=caps.Architecture.X86_64, status=None):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get', ConnectionMock)]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
-            fake = vm.Vm(FakeClientIF(), vmParams)
+            cif = FakeClientIF()
+            fake = vm.Vm(cif, vmParams)
+            cif.vmContainer[fake.id] = fake
             fake.arch = arch
             fake.guestAgent = FakeGuestAgent()
             fake.conf['devices'] = [] if devices is None else devices
             fake._guestCpuRunning = runCpu
+            if status is not None:
+                fake._lastStatus = status
             yield fake
 
 
@@ -1758,3 +1768,32 @@ class TestVmFunctions(TestCaseBase):
         with MonkeyPatchScope([(vm, '_listDomains',
                                 lambda: self._getAllDomains('novdsm'))]):
             self.assertFalse(vm.getVDSMDomains())
+
+
+class TestVmStatusTransitions(TestCaseBase):
+    @slowtest
+    def testSavingState(self):
+        with FakeVM(runCpu=True, status=vmstatus.UP) as vm:
+            vm._dom = FakeDomain(domState=libvirt.VIR_DOMAIN_RUNNING)
+
+            def _asyncEvent():
+                vm._onLibvirtLifecycleEvent(
+                    libvirt.VIR_DOMAIN_EVENT_SUSPENDED,
+                    -1, -1)
+
+            t = threading.Thread(target=_asyncEvent)
+            t.daemon = True
+
+            def _fireAsyncEvent(*args):
+                t.start()
+                time.sleep(0.5)
+                # pause the main thread to let the event one run
+
+            with MonkeyPatchScope([(vm, '_underlyingPause', _fireAsyncEvent)]):
+                self.assertEqual(vm.status()['status'], vmstatus.UP)
+                vm.pause(vmstatus.SAVING_STATE)
+                self.assertEqual(vm.status()['status'], vmstatus.SAVING_STATE)
+                t.join()
+                self.assertEqual(vm.status()['status'], vmstatus.SAVING_STATE)
+                # state must not change even after we are sure the event was
+                # handled
