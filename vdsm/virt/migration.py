@@ -35,6 +35,13 @@ from . import vmexitreason
 from . import vmstatus
 
 
+MODE_REMOTE = 'remote'
+MODE_FILE = 'file'
+
+
+METHOD_ONLINE = 'online'
+
+
 class SourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
@@ -49,7 +56,7 @@ class SourceThread(threading.Thread):
         cls._ongoingMigrations = threading.BoundedSemaphore(n)
 
     def __init__(self, vm, dst='', dstparams='',
-                 mode='remote', method='online',
+                 mode=MODE_REMOTE, method=METHOD_ONLINE,
                  tunneled=False, dstqemu='', abortOnError=False, **kwargs):
         self.log = vm.log
         self._vm = vm
@@ -73,6 +80,10 @@ class SourceThread(threading.Thread):
         self._migrationCanceledEvt = False
         self._monitorThread = None
 
+    @property
+    def hibernating(self):
+        return self._mode == MODE_FILE
+
     def getStat(self):
         """
         Get the status of the migration.
@@ -83,7 +94,7 @@ class SourceThread(threading.Thread):
         return self.status
 
     def _setupVdsConnection(self):
-        if self._mode == 'file':
+        if self.hibernating:
             return
 
         # FIXME: The port will depend on the binding being used.
@@ -126,12 +137,12 @@ class SourceThread(threading.Thread):
         for k in ('_migrationParams', 'pid'):
             if k in self._machineParams:
                 del self._machineParams[k]
-        if self._mode != 'file':
+        if not self.hibernating:
             self._machineParams['migrationDest'] = 'libvirt'
         self._machineParams['_srcDomXML'] = self._vm._dom.XMLDesc(0)
 
     def _prepareGuest(self):
-        if self._mode == 'file':
+        if self.hibernating:
             self.log.debug("Save State begins")
             if self._vm.guestAgent.isResponsive():
                 lockTimeout = 30
@@ -158,20 +169,20 @@ class SourceThread(threading.Thread):
         if not self.status['status']['code']:
             self.status = errCode['migrateErr']
         self.log.error(message)
-        if self._mode != 'file':
+        if not self.hibernating:
             try:
                 self.destServer.destroy(self._vm.id)
             except Exception:
                 self.log.error("Failed to destroy remote VM", exc_info=True)
         # if the guest was stopped before migration, we need to cont it
-        if self._mode == 'file' or self._method != 'online':
+        if self.hibernating or self._method != METHOD_ONLINE:
             self._vm.cont()
         # either way, migration has finished
         self._vm.lastStatus = vmstatus.UP
 
     def _finishSuccessfully(self):
         self.status['progress'] = 100
-        if self._mode != 'file':
+        if not self.hibernating:
             self._vm.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
             self.status['status']['message'] = 'Migration done'
         else:
@@ -259,7 +270,7 @@ class SourceThread(threading.Thread):
             self.log.error("Failed to migrate", exc_info=True)
 
     def _startUnderlyingMigration(self, startTime):
-        if self._mode == 'file':
+        if self.hibernating:
             hooks.before_vm_hibernate(self._vm._dom.XMLDesc(0), self._vm.conf)
             try:
                 self._vm._vmStats.pause()

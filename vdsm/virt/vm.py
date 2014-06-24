@@ -2865,7 +2865,7 @@ class Vm(object):
         if self.lastStatus in statuses:
             return {'status': self.lastStatus}
         elif self.isMigrating():
-            if self._migrationSourceThread._mode == 'file':
+            if self._migrationSourceThread.hibernating:
                 return {'status': vmstatus.SAVING_STATE}
             else:
                 return {'status': vmstatus.MIGRATION_SOURCE}
