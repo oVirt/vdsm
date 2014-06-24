@@ -18,7 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import logging
+from clientIF import clientIF
 from contextlib import contextmanager
+from monkeypatch import MonkeyPatch
 
 from testrunner import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -27,7 +29,8 @@ from testrunner import VdsmTestCase as TestCaseBase, \
 
 from jsonRpcHelper import \
     PERMUTATIONS, \
-    constructClient
+    constructClient, \
+    FakeClientIf
 
 from yajsonrpc import \
     JsonRpcError, \
@@ -55,6 +58,10 @@ class _DummyBridge(object):
         return None
 
 
+def getInstance():
+    return FakeClientIf()
+
+
 @expandPermutations
 class JsonRpcServerTests(TestCaseBase):
     def _callTimeout(self, client, methodName, params=None, rid=None,
@@ -77,6 +84,7 @@ class JsonRpcServerTests(TestCaseBase):
             finally:
                 client.close()
 
+    @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
     def testMethodCallArgList(self, ssl, type):
         data = dummyTextGenerator(1024)
@@ -93,6 +101,7 @@ class JsonRpcServerTests(TestCaseBase):
                                       (data,), CALL_ID,
                                       CALL_TIMEOUT), data)
 
+    @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
     def testMethodCallArgDict(self, ssl, type):
         data = dummyTextGenerator(1024)
@@ -108,6 +117,7 @@ class JsonRpcServerTests(TestCaseBase):
                                       {'text': data}, CALL_ID,
                                       CALL_TIMEOUT), data)
 
+    @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
     def testMethodMissingMethod(self, ssl, type):
         bridge = _DummyBridge()
@@ -125,6 +135,7 @@ class JsonRpcServerTests(TestCaseBase):
                     self.assertEquals(cm.exception.code,
                                       JsonRpcMethodNotFoundError().code)
 
+    @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
     def testMethodBadParameters(self, ssl, type):
         # Without a schema the server returns an internal error
@@ -144,6 +155,7 @@ class JsonRpcServerTests(TestCaseBase):
                     self.assertEquals(cm.exception.code,
                                       JsonRpcInternalError().code)
 
+    @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
     def testMethodReturnsNullAndServerReturnsTrue(self, ssl, type):
         bridge = _DummyBridge()
