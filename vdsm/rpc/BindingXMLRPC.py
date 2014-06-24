@@ -482,6 +482,14 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getAllVmStats()
 
+    def vmGetIoTunePolicy(self, vmId):
+        vm = API.VM(vmId)
+        return vm.getIoTunePolicy()
+
+    def vmSetIoTune(self, vmId, tunables):
+        vm = API.VM(vmId)
+        return vm.setIoTune(tunables)
+
     def vmMigrationCreate(self, params):
         vm = API.VM(params['vmId'])
         return vm.migrationCreate(params)
@@ -1014,7 +1022,9 @@ class BindingXMLRPC(object):
                 (self.vmUpdateDevice, 'vmUpdateDevice'),
                 (self.vmSetNumberOfCpus, 'setNumberOfCpus'),
                 (self.merge, 'merge'),
-                (self.vmUpdateVmPolicy, 'updateVmPolicy'))
+                (self.vmUpdateVmPolicy, 'updateVmPolicy'),
+                (self.vmSetIoTune, 'setIoTune'),
+                (self.vmGetIoTunePolicy, 'getIoTunePolicy'))
 
     def getIrsMethods(self):
         return ((self.domainActivate, 'activateStorageDomain'),
