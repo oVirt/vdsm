@@ -54,10 +54,14 @@ def set_saslpasswd(*args):
 
 
 @expose("remove-saslpasswd")
-def remove_saslpasswd():
+def remove_saslpasswd(*args):
     """
     Remove vdsm password for libvirt connection
     """
+
+    if args[1:]:
+        raise ExtraArgsError()
+
     rc, out, err = utils.execCmd(
         (
             constants.EXT_SASLPASSWD2,
