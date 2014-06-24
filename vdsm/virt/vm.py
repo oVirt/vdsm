@@ -2722,8 +2722,8 @@ class Vm(object):
                 self.log.error('cannot cont while %s', self.lastStatus)
                 return errCode['unexpected']
             self._underlyingCont()
-            if hasattr(self, 'updateGuestCpuRunning'):
-                self.updateGuestCpuRunning()
+            self._setGuestCpuRunning(self._isDomainRunning(),
+                                     guestCpuLocked=True)
             self._lastStatus = afterState
             try:
                 with self._confLock:
@@ -2743,10 +2743,24 @@ class Vm(object):
             with self._confLock:
                 self.conf['pauseCode'] = pauseCode
             self._underlyingPause()
-            if hasattr(self, 'updateGuestCpuRunning'):
-                self.updateGuestCpuRunning()
+            self._setGuestCpuRunning(self._isDomainRunning(),
+                                     guestCpuLocked=True)
             self._lastStatus = afterState
             return {'status': doneCode, 'output': ['']}
+        finally:
+            if not guestCpuLocked:
+                self._guestCpuLock.release()
+
+    def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False):
+        """
+        here we want to synchronize the access to guestCpuRunning
+        made by callback with the pause/cont methods.
+        To do so we reuse guestCpuLocked.
+        """
+        if not guestCpuLocked:
+            self._acquireCpuLockWithTimeout()
+        try:
+            self._guestCpuRunning = isRunning
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
@@ -3173,9 +3187,6 @@ class Vm(object):
             return False
         else:
             return status[0] == libvirt.VIR_DOMAIN_RUNNING
-
-    def updateGuestCpuRunning(self):
-        self._guestCpuRunning = self._isDomainRunning()
 
     def _getUnderlyingVmDevicesInfo(self):
         """
@@ -4778,7 +4789,7 @@ class Vm(object):
             self.log.info('abnormal vm stop device %s error %s',
                           blockDevAlias, err)
             self.conf['pauseCode'] = err.upper()
-            self._guestCpuRunning = False
+            self._setGuestCpuRunning(False)
             if err.upper() == 'ENOSPC':
                 if not self.extendDrivesIfNeeded():
                     self.log.info("No VM drives were extended")
@@ -5475,7 +5486,7 @@ class Vm(object):
                         self._shutdownReason = vmexitreason.USER_SHUTDOWN
                 self._onQemuDeath()
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
-            self._guestCpuRunning = False
+            self._setGuestCpuRunning(False)
             if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED:
                 # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
                 # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
@@ -5490,7 +5501,7 @@ class Vm(object):
                     hooks.after_vm_pause(domxml, self.conf)
 
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
-            self._guestCpuRunning = True
+            self._setGuestCpuRunning(True)
             if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
                 # This is not a real solution however the safest way to handle
                 # this for now. Ultimately we need to change the way how we are
