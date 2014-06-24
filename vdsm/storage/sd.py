@@ -482,6 +482,9 @@ class StorageDomain(object):
     def hasHostId(self, hostId):
         return self._clusterLock.hasHostId(hostId)
 
+    def getHostStatus(self, hostId):
+        return self._clusterLock.getHostStatus(hostId)
+
     def hasVolumeLeases(self):
         domVersion = self.getVersion()
         try:

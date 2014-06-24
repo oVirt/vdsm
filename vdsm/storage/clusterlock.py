@@ -41,6 +41,33 @@ MAX_HOST_ID = 250
 SDM_LEASE_NAME = 'SDM'
 SDM_LEASE_OFFSET = 512 * 2048
 
+# Host status - currently only sanlock supports this, and the documentaion
+# describes the sanlock implementation. For more info see:
+# https://git.fedorahosted.org/cgit/sanlock.git/tree/src/lockspace.c
+
+# Cannot tell because clusterlock does not implement this or call failed.
+HOST_STATUS_UNAVAILABLE = "unavailable"
+
+# Host has a lease on the storage, but the clusterlock cannot tell if the host
+# is live or dead yet. Would typically last for 10-20 seconds, but it's
+# possible that this could persist for up to 80 seconds before host is
+# considered live or fail.
+HOST_STATUS_UNKNOWN = "unknown"
+
+# There is no lease for this host id.
+HOST_STATUS_FREE = "free"
+
+# Host has renewed its lease in the last 80 seconds. It may be renewing its
+# lease now or not, we can tell that only by checking again later.
+HOST_STATUS_LIVE = "live"
+
+# Host has not renewed its lease for 80 seconds. Would last for 60 seconds
+# before host is considered dead.
+HOST_STATUS_FAIL = "fail"
+
+# Host has not renewed its lease for 140 seconds.
+HOST_STATUS_DEAD = "dead"
+
 
 class InquireNotSupportedError(Exception):
     """Raised when the clusterlock class is not supporting inquire"""
@@ -90,6 +117,9 @@ class SafeLease(object):
 
     def hasHostId(self, hostId):
         return True
+
+    def getHostStatus(self, hostId):
+        return HOST_STATUS_UNAVAILABLE
 
     def acquire(self, hostID):
         leaseTimeMs = self._leaseTimeSec * 1000
@@ -153,6 +183,15 @@ def initSANLock(sdUUID, idsPath, leasesPath):
 
 
 class SANLock(object):
+
+    STATUS_NAME = {
+        sanlock.HOST_UNKNOWN: HOST_STATUS_UNKNOWN,
+        sanlock.HOST_FREE: HOST_STATUS_FREE,
+        sanlock.HOST_LIVE: HOST_STATUS_LIVE,
+        sanlock.HOST_FAIL: HOST_STATUS_FAIL,
+        sanlock.HOST_DEAD: HOST_STATUS_DEAD,
+    }
+
     log = logging.getLogger("Storage.SANLock")
 
     _sanlock_fd = None
@@ -224,6 +263,28 @@ class SANLock(object):
                 self.log.debug("Unable to inquire sanlock lockspace "
                                "status, returning False", exc_info=True)
                 return False
+
+    def getHostStatus(self, hostId):
+        # Note: get_hosts has off-by-one bug when asking for particular host
+        # id, so get all hosts info and filter.
+        # See https://bugzilla.redhat.com/1111210
+        try:
+            hosts = sanlock.get_hosts(self._sdUUID)
+        except sanlock.SanlockException as e:
+            self.log.debug("Unable to get host %d status in lockspace %s: %s",
+                           hostId, self._sdUUID, e)
+            return HOST_STATUS_UNAVAILABLE
+
+        for info in hosts:
+            if info['host_id'] == hostId:
+                status = info['flags']
+                return self.STATUS_NAME[status]
+
+        # get_hosts with host_id=0 returns only hosts with timestamp != 0,
+        # which means that no host is using this host id now. If there a
+        # timestamp, sanlock will return HOST_UNKNOWN and then HOST_LIVE or
+        # HOST_FAIL.
+        return HOST_STATUS_FREE
 
     # The hostId parameter is maintained here only for compatibility with
     # ClusterLock. We could consider to remove it in the future but keeping it
@@ -357,6 +418,9 @@ class LocalLock(object):
         with self._globalLockMapSync:
             currentHostId, lockFile = self._getLease()
             return currentHostId == hostId
+
+    def getHostStatus(self, hostId):
+        return HOST_STATUS_UNAVAILABLE
 
     def acquire(self, hostId):
         with self._globalLockMapSync:

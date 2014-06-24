@@ -23,6 +23,7 @@ from time import time
 import weakref
 
 import logging
+import clusterlock
 import misc
 from vdsm import utils
 from vdsm.config import config
@@ -121,6 +122,17 @@ class DomainMonitor(object):
     def getStatus(self, sdUUID):
         return self._domains[sdUUID].getStatus()
 
+    def getHostStatus(self, domains):
+        status = {}
+        for sdUUID, hostId in domains.iteritems():
+            try:
+                monitor = self._domains[sdUUID]
+            except KeyError:
+                status[sdUUID] = clusterlock.HOST_STATUS_UNAVAILABLE
+            else:
+                status[sdUUID] = monitor.getHostStatus(hostId)
+        return status
+
     def close(self):
         self.log.info("Stopping domain monitors")
         for sdUUID in self._domains.keys():
@@ -159,6 +171,11 @@ class DomainMonitorThread(object):
 
     def getStatus(self):
         return self.status.copy()
+
+    def getHostStatus(self, hostId):
+        if not self.domain:
+            return clusterlock.HOST_STATUS_UNAVAILABLE
+        return self.domain.getHostStatus(hostId)
 
     @utils.traceback(on=log.name)
     def _monitorLoop(self):

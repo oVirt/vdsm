@@ -3647,3 +3647,17 @@ class HSM(object):
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
             self.domainMonitor.stopMonitoring(sdUUID)
+
+    @public
+    def getHostLeaseStatus(self, domains):
+        """
+        Returns host lease status for specified domains.
+
+        Warning: Internal use only.
+
+        :param domains:     mapping of host id indexed by domain uuid.
+        :returns:           mapping of host lease status indexed by domain
+                            uuid.  See clusterlock.py for possible values and
+                            their meaning.
+        """
+        return {'domains': self.domainMonitor.getHostStatus(domains)}

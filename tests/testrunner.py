@@ -52,8 +52,19 @@ TEMPDIR = '/var/tmp'
 
 PERMUTATION_ATTR = "_permutations_"
 
-# At the moment of this writing the tests don't need a mock object for sanlock
-sys.modules.update({'sanlock': object()})
+
+class FakeSanlock(object):
+    """
+    Minimal test double exposing what the tests needs at this point.
+    """
+    HOST_UNKNOWN = 1
+    HOST_FREE = 2
+    HOST_LIVE = 3
+    HOST_FAIL = 4
+    HOST_DEAD = 5
+
+
+sys.modules.update({'sanlock': FakeSanlock()})
 
 
 def dummyTextGenerator(size):
