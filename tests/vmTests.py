@@ -379,6 +379,20 @@ class TestVm(TestCaseBase):
         domxml.appendClock()
         self.assertXML(domxml.dom, clockXML, 'clock')
 
+    def testHyperVClockXML(self):
+        clockXML = """
+            <clock adjustment="-3600" offset="variable">
+                <timer name="rtc" tickpolicy="catchup" track="guest"/>
+                <timer name="pit" tickpolicy="delay"/>
+                <timer name="hpet" present="no"/>
+            </clock>"""
+        conf = {'timeOffset': '-3600', 'hypervEnable': 'true'}
+        conf.update(self.conf)
+        domxml = vm._DomXML(conf, self.log,
+                            caps.Architecture.X86_64)
+        domxml.appendClock()
+        self.assertXML(domxml.dom, clockXML, 'clock')
+
     def testCpuXML(self):
         cpuXML = """
           <cpu match="exact">
