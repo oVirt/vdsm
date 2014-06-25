@@ -525,6 +525,8 @@ class StorageDomain(object):
         self.setMetaParam(DMDK_POOLS, pools)
 
     def detach(self, spUUID):
+        self.log.info('detaching storage domain %s from pool %s',
+                      self.sdUUID, spUUID)
         self.invalidateMetadata()
         pools = self.getPools()
         try:

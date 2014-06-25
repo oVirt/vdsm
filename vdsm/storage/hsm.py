@@ -742,6 +742,30 @@ class HSM(object):
                        in guids)
         pool.extendSD(sdUUID, dmDevs, force)
 
+    def _deatchStorageDomainFromOldPools(self, sdUUID):
+        # We are called with blank pool uuid, to avoid changing exiting
+        # API which we want to drop in next version anyway.
+        # So to get the pool we use the fact that there can be only one
+        # pool, and get the host id from it.
+        if len(self.pools) > 1:
+            raise AssertionError("Multiple pools are not supported")
+        try:
+            pool = self.pools.values()[0]
+        except IndexError:
+            raise se.StoragePoolNotConnected()
+
+        dom = sdCache.produce(sdUUID=sdUUID)
+        dom.acquireHostId(pool.id)
+        try:
+            dom.acquireClusterLock(pool.id)
+            try:
+                for domPoolUUID in dom.getPools():
+                    dom.detach(domPoolUUID)
+            finally:
+                dom.releaseClusterLock()
+        finally:
+            dom.releaseHostId(pool.id)
+
     @public
     def forcedDetachStorageDomain(self, sdUUID, spUUID, options=None):
         """Forced detach a storage domain from a storage pool.
@@ -753,11 +777,15 @@ class HSM(object):
         vars.task.setDefaultException(
             se.StorageDomainActionError(
                 "sdUUID=%s, spUUID=%s" % (sdUUID, spUUID)))
-        vars.task.getExclusiveLock(STORAGE, spUUID)
-        pool = self.getPool(spUUID)
-        if sdUUID == pool.masterDomain.sdUUID:
-            raise se.CannotDetachMasterStorageDomain(sdUUID)
-        pool.forcedDetachSD(sdUUID)
+
+        if spUUID == sd.BLANK_UUID:
+            self._deatchStorageDomainFromOldPools(sdUUID)
+        else:
+            vars.task.getExclusiveLock(STORAGE, spUUID)
+            pool = self.getPool(spUUID)
+            if sdUUID == pool.masterDomain.sdUUID:
+                raise se.CannotDetachMasterStorageDomain(sdUUID)
+            pool.forcedDetachSD(sdUUID)
 
     @public
     def detachStorageDomain(self, sdUUID, spUUID, msdUUID=None,
