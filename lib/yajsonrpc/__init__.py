@@ -213,7 +213,7 @@ class _JsonRpcClientRequestContext(object):
 class _JsonRpcServeRequestContext(object):
     def __init__(self, client):
         self._requests = []
-        self._client = client
+        self.client = client
         self._counter = 0
         self._requests = {}
         self._responses = []
@@ -248,7 +248,7 @@ class _JsonRpcServeRequestContext(object):
         else:
             data = '[' + ','.join(encodedObjects) + ']'
 
-        self._client.send(data.encode('utf-8'))
+        self.client.send(data.encode('utf-8'))
 
     def addResponse(self, response):
         self._responses.append(response)
@@ -473,10 +473,13 @@ class JsonRpcServer(object):
 
         try:
             params = req.params
+            server_address = ctx.client.get_local_address()
+            self._bridge.register_server_address(server_address)
             if isinstance(req.params, list):
                 res = method(*params)
             else:
                 res = method(**params)
+            self._bridge.unregister_server_address()
         except JsonRpcError as e:
             ctx.requestDone(JsonRpcResponse(None, e, req.id))
         except Exception as e:

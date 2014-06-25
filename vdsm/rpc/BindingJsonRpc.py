@@ -33,8 +33,8 @@ class BindingJsonRpc(object):
         self._server = JsonRpcServer(bridge, _simpleThreadFactory)
         self._reactors = []
 
-    def add_socket(self, reactor, client_socket, socket_address):
-        reactor.createListener(client_socket, socket_address, self._onAccept)
+    def add_socket(self, reactor, client_socket):
+        reactor.createListener(client_socket, self._onAccept)
 
     def _onAccept(self, listener, client):
         client.setMessageHandler(self._server.queueRequest)

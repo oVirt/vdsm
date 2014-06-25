@@ -140,6 +140,9 @@ class StompServer(object):
     def close(self):
         self._stompConn.close()
 
+    def get_local_address(self):
+        return self._socket.getsockname()[0]
+
 
 class StompClient(object):
     log = logging.getLogger("jsonrpc.AsyncoreClient")
@@ -259,7 +262,7 @@ class StompReactor(object):
         self._isRunning = False
         self._wakeupEvent = _AsyncoreEvent(self._map)
 
-    def createListener(self, connected_socket, address, acceptHandler):
+    def createListener(self, connected_socket, acceptHandler):
         listener = StompListener(self, acceptHandler, connected_socket)
         self.wakeup()
         return listener
@@ -301,6 +304,5 @@ class StompDetector():
         return data.startswith(stomp.COMMANDS)
 
     def handleSocket(self, client_socket, socket_address):
-        self.json_binding.add_socket(self._reactor, client_socket,
-                                     socket_address)
+        self.json_binding.add_socket(self._reactor, client_socket)
         self.log.debug("Stomp detected from %s", socket_address)

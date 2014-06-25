@@ -57,6 +57,12 @@ class _DummyBridge(object):
     def ping(self):
         return None
 
+    def register_server_address(self, server_address):
+        self.server_address = server_address
+
+    def unregister_server_address(self):
+        self.server_address = None
+
 
 def getInstance():
     return FakeClientIf()
