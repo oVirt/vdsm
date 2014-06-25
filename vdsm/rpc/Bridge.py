@@ -17,11 +17,14 @@ from functools import partial
 
 import inspect
 import logging
+import threading
 import types
 
 import API
 import vdsmapi
 import yajsonrpc
+
+from vdsm.netinfo import getDeviceByIP
 
 try:
     import gluster.apiwrapper as gapi
@@ -51,6 +54,13 @@ class InvalidCall(Exception):
 class DynamicBridge(object):
     def __init__(self):
         self.api = vdsmapi.get_api()
+        self._threadLocal = threading.local()
+
+    def register_server_address(self, server_address):
+        self._threadLocal.server = server_address
+
+    def unregister_server_address(self):
+        self._threadLocal.server = None
 
     def dispatch(self, name, argobj):
         methodName = name.replace('.', '_')
@@ -260,13 +270,25 @@ class DynamicBridge(object):
 
         retfield = command_info.get(cmd, {}).get('ret')
         if isinstance(retfield, types.FunctionType):
-            ret = retfield(result)
+            if cmd == 'Host_getCapabilities':
+                ret = retfield(self._threadLocal.server, result)
+            else:
+                ret = retfield(result)
         elif _glusterEnabled and className.startswith('Gluster'):
             ret = dict([(key, value) for key, value in result.items()
                         if key is not 'status'])
         else:
             ret = self._getResult(result, retfield)
         return self._fixupRet(className, methodName, ret)
+
+
+def Host_getCapabilities_Ret(server_address, ret):
+    """
+    We need to add additional information to getCaps as it is done for xmlrpc.
+    """
+    ret['info']['lastClientIface'] = getDeviceByIP(server_address)
+
+    return ret['info']
 
 
 def Host_getStorageRepoStats_Ret(ret):
@@ -354,7 +376,7 @@ command_info = {
     'Host_fenceNode': {'ret': 'power'},
     'Host_getAllTasksInfo': {'ret': 'allTasksInfo'},
     'Host_getAllTasksStatuses': {'ret': 'allTasksStatus'},
-    'Host_getCapabilities': {'ret': 'info'},
+    'Host_getCapabilities': {'ret': Host_getCapabilities_Ret},
     'Host_getConnectedStoragePools': {'ret': 'poollist'},
     'Host_getDeviceList': {'ret': 'devList'},
     'Host_getDevicesVisibility': {'ret': 'visibility'},

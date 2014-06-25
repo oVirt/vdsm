@@ -46,7 +46,7 @@ class Host():
 
     def getCapabilities(self):
         return {'status': {'code': 0, 'message': 'Done'},
-                'info': 'My capabilites'}
+                'info': {'My caps': 'My capabilites'}}
 
 
 def createFakeAPI():
@@ -105,4 +105,6 @@ class BridgeTests(TestCaseBase):
         mangledMethod = obj.get("method").replace(".", "_")
         params = obj.get('params', [])
         method = getattr(bridge, mangledMethod)
-        self.assertEquals(method(**params), 'My capabilites')
+        bridge.register_server_address('127.0.0.1')
+        self.assertEquals(method(**params)['My caps'], 'My capabilites')
+        bridge.unregister_server_address()
