@@ -27,6 +27,7 @@ import signal
 
 from multiprocessing import Process
 from binascii import unhexlify
+from itertools import izip_longest
 from subprocess import Popen, check_call, PIPE
 import fcntl
 import struct
@@ -205,20 +206,71 @@ class TestQdisc(TestCaseBase):
 
 
 class TestFilters(TestCaseBase):
-    def test_filters(self):
+    def test_filter_objs(self):
         dirName = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dirName, "tc_filter_show.out")
         out = file(path).read()
         PARSED_FILTERS = (
-            tc.Filter(prio='49149', handle='803::800',
+            tc.Filter(prio=49149, handle='803::800',
                       actions=[tc.MirredAction(target='tap1')]),
-            tc.Filter(prio='49150', handle='802::800',
+            tc.Filter(prio=49150, handle='802::800',
                       actions=[tc.MirredAction(target='tap2')]),
-            tc.Filter(prio='49152', handle='800::800',
+            tc.Filter(prio=49152, handle='800::800',
                       actions=[tc.MirredAction(target='target'),
                                tc.MirredAction(target='target2')]))
         self.assertEqual(tuple(tc.filters('bridge', 'parent', out=out)),
                          PARSED_FILTERS)
+
+    def test_filters(self):
+        filters = (
+            {'protocol': 'ip', 'pref': 49149, 'kind': 'u32', 'u32': {}},
+            {'protocol': 'ip', 'pref': 49149, 'kind': 'u32', 'u32': {
+                'fh': '803:', 'ht_divisor': 1}},
+            {'protocol': 'ip', 'pref': 49149, 'kind': 'u32', 'u32': {
+                'fh': '803::800', 'order': 2048, 'key_ht': 0x803,
+                'key_bkt': 0x0, 'terminal': True, 'match': {
+                    'value': 0x0, 'mask': 0x0, 'offset': 0x0},
+                'actions': [
+                    {'order': 1, 'kind': 'mirred', 'action': 'egress_mirror',
+                     'target': 'tap1', 'op': 'pipe', 'index': 18, 'ref': 1,
+                     'bind': 1}]}},
+
+            {'protocol': 'ip', 'pref': 49150, 'kind': 'u32', 'u32': {}},
+            {'protocol': 'ip', 'pref': 49150, 'kind': 'u32', 'u32': {
+                'fh': '802:', 'ht_divisor': 1}},
+            {'protocol': 'ip', 'pref': 49150, 'kind': 'u32', 'u32': {
+                'fh': '802::800', 'order': 2048, 'key_ht': 0x802,
+                'key_bkt': 0x0, 'terminal': True, 'match': {
+                    'value': 0x0, 'mask': 0x0, 'offset': 0x0},
+                'actions': [
+                    {'order': 33, 'kind': 'mirred', 'action': 'egress_mirror',
+                     'target': 'tap2', 'op': 'pipe', 'index': 17, 'ref': 1,
+                     'bind': 1}]}},
+
+            {'protocol': 'ip', 'pref': 49152, 'kind': 'u32', 'u32': {}},
+            {'protocol': 'ip', 'pref': 49152, 'kind': 'u32', 'u32': {
+                'fh': '800:', 'ht_divisor': 1}},
+            {'protocol': 'ip', 'pref': 49152, 'kind': 'u32', 'u32': {
+                'fh': '800::800', 'order': 2048, 'key_ht': 0x800,
+                'key_bkt': 0x0, 'terminal': True, 'match': {
+                    'value': 0x0, 'mask': 0x0, 'offset': 0x0},
+                'actions': [
+                    {'order': 1, 'kind': 'mirred', 'action': 'egress_mirror',
+                     'target': 'target', 'op': 'pipe', 'index': 60, 'ref': 1,
+                     'bind': 1},
+                    {'order': 2, 'kind': 'mirred', 'action': 'egress_mirror',
+                     'target': 'target2', 'op': 'pipe', 'index': 61, 'ref': 1,
+                     'bind': 1},
+                ]}},
+        )
+        dirName = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.join(dirName, "tc_filter_show.out")
+        with open(path) as tc_filter_show:
+            data = tc_filter_show.read()
+
+        for parsed, correct in izip_longest(tc._filters(None, out=data),
+                                            filters):
+            self.assertEqual(parsed, correct)
 
 
 class TestPortMirror(TestCaseBase):

@@ -20,26 +20,21 @@
 
 from collections import namedtuple
 from contextlib import closing
+from functools import partial
 import ctypes
 import fcntl
 import socket
 
 import ethtool
 
-from vdsm.constants import EXT_TC
-from vdsm.utils import execCmd
+from . import filter as tc_filter
+from . import _parser
+from . import _wrapper
+from ._wrapper import TrafficControlException
 
 ERR_DEV_NOEXIST = 2
 
 QDISC_INGRESS = 'ffff:'
-
-
-class TrafficControlException(Exception):
-    def __init__(self, errCode, message, command):
-        self.errCode = errCode
-        self.message = message
-        self.command = command
-        Exception.__init__(self, self.errCode, self.message, self.command)
 
 
 def _addTarget(network, parent, target):
@@ -98,17 +93,10 @@ def unsetPortMirroring(network, target):
         set_promisc(network, False)
 
 
-def _process_request(command):
-    retcode, out, err = execCmd(command, raw=True)
-    if retcode != 0:
-        raise TrafficControlException(retcode, err, command)
-    return out
-
-
 def qdisc_replace_ingress(dev):
-    command = [EXT_TC, 'qdisc', 'add', 'dev', dev, 'ingress']
+    command = ['qdisc', 'add', 'dev', dev, 'ingress']
     try:
-        _process_request(command)
+        _wrapper.process_request(command)
     except TrafficControlException as e:
         if e.message == 'RTNETLINK answers: File exists\n':
             pass
@@ -117,34 +105,33 @@ def qdisc_replace_ingress(dev):
 
 
 def filter_del(dev, target, parent, prio):
-    command = [EXT_TC, 'filter', 'del', 'dev', dev, 'parent', parent,
-               'prio', prio]
-    _process_request(command)
+    command = ['filter', 'del', 'dev', dev, 'parent', parent, 'prio',
+               str(prio)]
+    _wrapper.process_request(command)
 
 
 def filter_replace(dev, parent, filt):
-    command = [EXT_TC, 'filter', 'replace', 'dev', dev, 'parent', parent]
+    command = ['filter', 'replace', 'dev', dev, 'parent', parent]
     if filt.prio:
-        command.extend(['prio', filt.prio])
+        command.extend(['prio', str(filt.prio)])
         command.extend(['handle', filt.handle])
     command.extend(['protocol', 'ip', 'u32', 'match', 'u8', '0', '0'])
     for a in filt.actions:
         command.extend(['action', 'mirred', 'egress', 'mirror',
                         'dev', a.target])
-    _process_request(command)
+    _wrapper.process_request(command)
 
 
 def qdisc_replace_prio(dev):
-    command = [EXT_TC, 'qdisc', 'replace', 'dev', dev,
-               'parent', 'root', 'prio']
-    _process_request(command)
+    command = ['qdisc', 'replace', 'dev', dev, 'parent', 'root', 'prio']
+    _wrapper.process_request(command)
 
 
 def _qdiscs_of_device(dev):
     "Return an iterator of qdisc_ids associated with dev"
 
-    command = [EXT_TC, 'qdisc', 'show', 'dev', dev]
-    out = _process_request(command)
+    command = ['qdisc', 'show', 'dev', dev]
+    out = _wrapper.process_request(command)
 
     for line in out.splitlines():
         yield line.split(' ')[2]
@@ -152,8 +139,8 @@ def _qdiscs_of_device(dev):
 
 def qdisc_del(dev, queue):
     try:
-        command = [EXT_TC, 'qdisc', 'del', 'dev', dev, queue]
-        _process_request(command)
+        command = ['qdisc', 'del', 'dev', dev, queue]
+        _wrapper.process_request(command)
     except TrafficControlException as e:
         if e.errCode != ERR_DEV_NOEXIST:
             raise
@@ -194,31 +181,31 @@ MirredAction = namedtuple('MirredAction', 'target')
 
 def filters(dev, parent, out=None):
     """
-    Return a (very) limitted information about tc filters on dev
+    Return a (very) limitted information about tc filters with mirred actions
+    on dev.
 
     Function returns a generator of Filter objects.
     """
+    for filt in _filters(dev, parent=parent, out=out):
+        if 'u32' in filt and 'actions' in filt['u32']:
+            yield Filter(
+                filt['pref'], filt['u32']['fh'],
+                [MirredAction(action['target']) for action in
+                 filt['u32']['actions']])
 
+
+def _iterate(module, dev, out=None, **kwargs):
+    """
+    Generates information dictionaries for a device or on a specific
+    output.
+    """
     if out is None:
-        out = _process_request([EXT_TC, 'filter', 'show', 'dev', dev,
-                               'parent', parent])
+        out = module.show(dev, **kwargs)
 
-    HEADER = 'filter protocol ip pref '
-    prio = handle = None
-    actions = []
-    prevline = ' '
-    for line in out.splitlines() + [HEADER + 'X']:
-        if line.startswith(HEADER):
-            if prevline == ' ' and prio and handle and actions:
-                yield Filter(prio, handle, actions)
-                prio = handle = None
-                actions = []
-            else:
-                elems = line.split()
-                if len(elems) > 7:
-                    prio = elems[4]
-                    handle = elems[7]
-        elif line.startswith('\taction order '):
-            elems = line.split()
-            if elems[3] == 'mirred' and elems[4] == '(Egress':
-                actions.append(MirredAction(elems[-2][:-1]))
+    for line in _parser.linearize(out.splitlines()):
+        tokens = iter(line)
+        _parser.consume(tokens, 'qdisc', 'class', 'filter')
+        yield module.parse(tokens)
+
+
+_filters = partial(_iterate, tc_filter)  # kwargs: parent and pref

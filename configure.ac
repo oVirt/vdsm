@@ -274,6 +274,7 @@ AC_OUTPUT([
 	vdsm/gluster/Makefile
 	vdsm/network/Makefile
 	vdsm/network/configurators/Makefile
+	vdsm/network/tc/Makefile
 	vdsm/rpc/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/Makefile

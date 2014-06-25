@@ -910,6 +910,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/network
 %dir %{_datadir}/%{vdsm_name}/network/configurators
+%dir %{_datadir}/%{vdsm_name}/network/tc
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
@@ -979,12 +980,15 @@ exit 0
 %{_datadir}/%{vdsm_name}/network/models.py*
 %{_datadir}/%{vdsm_name}/network/sourceroute.py*
 %{_datadir}/%{vdsm_name}/network/sourceroutethread.py*
-%{_datadir}/%{vdsm_name}/network/tc.py*
 %{_datadir}/%{vdsm_name}/network/configurators/__init__.py*
 %{_datadir}/%{vdsm_name}/network/configurators/dhclient.py*
 %{_datadir}/%{vdsm_name}/network/configurators/ifcfg.py*
 %{_datadir}/%{vdsm_name}/network/configurators/libvirt.py*
 %{_datadir}/%{vdsm_name}/network/configurators/iproute2.py*
+%{_datadir}/%{vdsm_name}/network/tc/__init__.py*
+%{_datadir}/%{vdsm_name}/network/tc/_parser.py*
+%{_datadir}/%{vdsm_name}/network/tc/_wrapper.py*
+%{_datadir}/%{vdsm_name}/network/tc/filter.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*

@@ -64,11 +64,14 @@
 ./usr/share/vdsm/network/models.py
 ./usr/share/vdsm/network/sourceroute.py
 ./usr/share/vdsm/network/sourceroutethread.py
-./usr/share/vdsm/network/tc.py
 ./usr/share/vdsm/network/configurators/__init__.py
 ./usr/share/vdsm/network/configurators/ifcfg.py
 ./usr/share/vdsm/network/configurators/iproute2.py
 ./usr/share/vdsm/network/configurators/libvirt.py
+./usr/share/vdsm/network/tc/__init__.py
+./usr/share/vdsm/network/tc/_parser.py
+./usr/share/vdsm/network/tc/_wrapper.py
+./usr/share/vdsm/network/tc/filter.py
 ./usr/share/vdsm/numaUtils.py
 ./usr/share/vdsm/parted_utils.py
 ./usr/share/vdsm/ppc64HardwareInfo.py

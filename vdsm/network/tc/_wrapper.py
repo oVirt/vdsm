@@ -1,4 +1,3 @@
-#
 # Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,17 +16,21 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from vdsm.constants import EXT_TC
+from vdsm.utils import execCmd
 
-SUBDIRS = configurators tc
 
-include $(top_srcdir)/build-aux/Makefile.subs
+def process_request(command):
+    command.insert(0, EXT_TC)
+    retcode, out, err = execCmd(command, raw=True)
+    if retcode != 0:
+        raise TrafficControlException(retcode, err, command)
+    return out
 
-vdsmnetworkdir = $(vdsmdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	models.py \
-	sourceroute.py \
-	sourceroutethread.py \
-	$(NULL)
+
+class TrafficControlException(Exception):
+    def __init__(self, errCode, message, command):
+        self.errCode = errCode
+        self.message = message
+        self.command = command
+        Exception.__init__(self, self.errCode, self.message, self.command)
