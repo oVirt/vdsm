@@ -20,6 +20,11 @@
 # touch configure.ac or Makefile.am.
 %{!?enable_autotools:%define enable_autotools 0}
 
+# Skips check since rhel default repos lack pep8 and pyflakes
+%if ! 0%{?rhel}
+%global with_check 1
+%endif
+
 # Required paths
 %if 0%{?fedora} >= 18
 %global _polkitdir %{_datadir}/polkit-1/rules.d
@@ -93,7 +98,7 @@ BuildRequires: gettext-devel
 BuildRequires: libtool
 %endif
 
-%if !0%{?rhel}
+%if 0%{?with_check}
 BuildRequires: pyflakes
 BuildRequires: python-pep8
 %endif
@@ -687,7 +692,9 @@ install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
 %endif
 
 %check
+%if 0%{?with_check}
 make check
+%endif
 
 %clean
 rm -rf %{buildroot}
