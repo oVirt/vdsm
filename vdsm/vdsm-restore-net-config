@@ -22,6 +22,7 @@ import logging
 import logging.config
 
 from vdsm.config import config
+from vdsm import netinfo
 
 # Ifcfg persistence restoration
 from network.configurators import ifcfg
@@ -61,11 +62,49 @@ def unified_restoration():
         configurator_cls().flush()
 
     persistentConfig = PersistentConfig()
-    nets = persistentConfig.networks
-    bonds = persistentConfig.bonds
+    nets, bonds = _filter_nets_bonds(persistentConfig.networks,
+                                     persistentConfig.bonds)
     logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
                   nets, bonds)
     setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
+
+
+def _filter_nets_bonds(nets, bonds):
+    """Returns only nets and bonds that can be configured with the devices
+    present in the system"""
+    available_nets, available_bonds = {}, {}
+    available_nics = netinfo.nics()
+    for bond, attrs in bonds.iteritems():
+        available_bond_nics = [nic for nic in attrs['nics'] if
+                               nic in available_nics]
+        if available_bond_nics:
+            available_bonds[bond] = attrs.copy()
+            available_bonds[bond]['nics'] = available_bond_nics
+
+    for net, attrs in nets.iteritems():
+        bond = attrs.get('bonding')
+        if bond is not None:
+            if bond not in available_bonds:
+                logging.error('Some of the nics required by bond "%s" (%s) '
+                              'are missing. Network "%s" will not be '
+                              'configured as a consequence', bond,
+                              bonds[bond]['nics'], net)
+            else:
+                available_nets[net] = attrs
+            continue  # Regardless of availability, the net is processed
+
+        nic = attrs.get('nic')
+        if nic is not None:
+            if nic not in available_nics:
+                logging.error('Nic "%s" required by network %s is missing. '
+                              'The network will not be configured', nic, net)
+            else:
+                available_nets[net] = attrs
+            continue  # Regardless of availability, the net is processed
+
+        # Bridge-only nics
+        available_nets[net] = attrs
+    return available_nets, available_bonds
 
 
 def _get_all_configurators():
