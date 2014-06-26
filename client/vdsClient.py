@@ -1165,7 +1165,6 @@ class service:
         return 0, ''
 
     def getFileStats(self, args):
-        assert args
         validateArgTypes(args, [str, str])
         response = self.s.getFileStats(*args)
         if response['status']['code']:
@@ -1538,8 +1537,8 @@ class service:
         return 0, ''
 
     def do_setLogLevel(self, args):
-        level = int(args[0])
-        assert len(args) == 1
+        validateArgTypes(args, [int], requiredArgsNumber=1)
+        level = args[0]
         stats = self.s.setLogLevel(level)
         if stats['status']['code']:
             return stats['status']['code'], stats['status']['message']
@@ -1563,9 +1562,9 @@ class service:
         return 0, ''
 
     def do_setHaMaintenanceMode(self, args):
-        assert len(args) == 2
+        validateArgTypes(args, [str, utils.tobool], requiredArgsNumber=2)
         mode = args[0]
-        enabled = utils.tobool(args[1])
+        enabled = args[1]
         stats = self.s.setHaMaintenanceMode(mode, enabled)
         if stats['status']['code']:
             return stats['status']['code'], stats['status']['message']
