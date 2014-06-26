@@ -1,184 +1,100 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 #
-# Copyright 2008 Red Hat, Inc. and/or its affiliates.
+# Copyright (C) 2008-2014 Red Hat, Inc.
 #
 # Licensed to you under the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.  See the files README and
 # LICENSE_GPL_v2 which accompany this distribution.
 #
-
-import errno
-import sys
-import os
 import logging
-import logging.config
-from time import strftime
-from config import config
-import deployUtil
-from ovirtnode.install import Install
+import subprocess
+import sys
+import time
 
-VDSM_REG_CONF_FILE = '/etc/vdsm-reg/vdsm-reg.conf'
-VDSM_CONF_FILE = '/etc/vdsm/vdsm.conf'
-log_filename = '/var/log/vdsm-reg/vds_bootstrap_upgrade.'+strftime("%Y%m%d_%H%M%S")+'.log'
+from xml.sax import saxutils
 
-try:
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(levelname)-8s %(message)s',
-                        datefmt='%a, %d %b %Y %H:%M:%S',
-                        filename=log_filename,
-                        filemode='w')
-except:
-    log_filename = '/var/log/vds_bootstrap_upgrade.'+strftime("%Y%m%d_%H%M%S")+'.log'
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(levelname)-8s %(message)s',
-                        datefmt='%a, %d %b %Y %H:%M:%S',
-                        filename=log_filename,
-                        filemode='w')
+_log_file = '/var/log/vdsm-reg/vds_bootstrap_upgrade.%s.log' % \
+    time.strftime("%Y%m%d_%H%M%S")
 
-def setMountPoint(config):
-    strFile = config.get('vars', 'upgrade_iso_file')
-    strMountPoint = config.get('vars', 'upgrade_mount_point')
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)-8s %(message)s',
+    datefmt='%a, %d %b %Y %H:%M:%S',
+    filename=_log_file,
+    filemode='w'
+)
 
-    try:
-        fOK = True
-        ret = None
-        err = ""
-        out = None
 
-        #First look for the upgrade file
-        if not os.path.exists(strFile):
-           fOK = False
-           msg = "<BSTRAP component='setMountPoint' status='FAIL' message='Upgrade file not found'/>"
-           logging.error(msg)
-           print (msg)
+def _output(component, message=None, success=True):
+    """
+    Encapsulate the message into XML for Engine
 
-        #Now, check if we need to create a mount-point dir.
-        if fOK and not os.path.exists(strMountPoint):
-           try: os.mkdir(strMountPoint)
-           except OSError as err:
-               if err.errno != errno.EEXIST:
-                   fOK = False
+    Args:
+    success: True (OK) or False (FAIL)
+    component: OK, FAIL or RHEV_INSTALL
+    message: message to be encapsulate into XML format or None to omit
+    """
 
-        #Now, loop-mount the upgrade iso file.
-        if not fOK:
-           msg = "<BSTRAP component='setMountPoint' status='FAIL' message='Failed to create mount point: " + deployUtil.escapeXML(str(err)) + "'/>"
-           print (msg)
-           logging.error(msg)
-        else:
-           out, err, ret = deployUtil._logExec(["/bin/mount", "-o", "loop", strFile, strMountPoint])
-           fOK = (ret != None and ret == 0)
+    msg = "<BSTRAP component=%s status=%s %s/>\n" % (
+        saxutils.quoteattr(component),
+        saxutils.quoteattr("OK" if success else "FAIL"),
+        "" if message is None else "message=%s" % saxutils.quoteattr(message)
+    )
 
-        msg = ""
-        if fOK:
-           msg = "<BSTRAP component='setMountPoint' status='OK' message='Mount succeeded.'/>"
-           logging.debug(msg)
-        else:
-           msg = "<BSTRAP component='setMountPoint' status='FAIL' message='Failed to mount ISO file: " + deployUtil.escapeXML(str(err)) + "'/>"
-           logging.error(msg)
-        print msg
-    except Exception as e:
-        fOK = False
-        msg = "<BSTRAP component='setMountPoint' status='FAIL' message='setMountPoint exception: " + deployUtil.escapeXML(str(e)) + "'/>"
-        logging.error(msg)
-        print (msg)
-
-    return fOK
-
-def doUpgrade(config):
-    fReturn = True
-
-    install = Install()
-    if install.ovirt_boot_setup(reboot="Y"):
-        msg = "<BSTRAP component='doUpgrade' status='OK' message='Upgrade Succeeded. Rebooting'/>"
-        print (msg)
-        logging.debug(msg)
-    else:
-        msg = "<BSTRAP component='doUpgrade' status='FAIL' message='Upgrade Failed!'/>"
-        print (msg)
-        logging.error(msg)
-        fReturn = False
-
-    return fReturn
-
-def umount(config, shouldReport=True):
-    out = None
-    err = None
-    ret = None
-    fReturn = True
-
-    strMountPoint = config.get('vars', 'upgrade_mount_point')
-
-    if os.path.exists(strMountPoint):
-        out, err, ret = deployUtil._logExec(["/bin/umount", strMountPoint])
-        fReturn = (ret != None and ret == 0)
-
-    if fReturn:
-        msg = "<BSTRAP component='umount' status='OK' message='umount Succeeded'/>"
-    else:
-        msg = "<BSTRAP component='umount' status='FAIL' message=' " + deployUtil.escapeXML(str(err)) + "'/>"
-
-    if shouldReport:
-        print (msg)
-
+    sys.stdout.write(msg)
+    sys.stdout.flush()
     logging.debug(msg)
-    return fReturn
+
 
 def main():
-    """Usage: vdsm-upgrade """
-    fOK = True
-    fMounted = False
+    upgrade_tool = subprocess.Popen(
+        [
+            "ovirt-node-upgrade",
+            "--iso=/data/updates/ovirt-node-image.iso",
+            "--reboot=1"
+        ],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        shell=False
+    )
 
-    # Checking the current status of vdsm
-    out, err, ret = deployUtil.setService('vdsmd', 'status')
-    if ret == 0:
-       # Stop vdsm to avoid communication with Engine before the reboot happens
-        out, err, ret = deployUtil.setService('vdsmd', 'stop')
-        if ret != 0:
-            msg = "<BSTRAP component='RHEL_INSTALL' status='FAIL'" \
-                      " message='Cannot stop vdsm daemon before we" \
-                      " start the upgrade, please verify!'/>"
-        else:
-            msg = "<BSTRAP component='RHEL_INSTALL' status='OK'" \
-                      " message='vdsm daemon stopped for upgrade process!'/>"
+    # ovirt-upgrade uses logger to display the messages during the
+    # upgrade process which by default is stderr.
+    # To get the messages async we should read stderr when triggering
+    # the upgrade since the tool uses subprocess.Popen() that waits
+    # the command terminates.
+    while upgrade_tool.poll() is None:
+        line = upgrade_tool.stdout.readline()
+        if line:
+            _output(
+                component='ovirt-node-upgrade',
+                message=line
+            )
 
+    if upgrade_tool.returncode == 0:
+        _output(
+            component='ovirt-node-upgrade',
+            message='Upgraded Succeeded. Rebooting'
+        )
+
+        _output(
+            component='RHEV_INSTALL'
+        )
     else:
-        msg = "<BSTRAP component='RHEL_INSTALL' status='WARN'" \
-                  " message='vdsm daemon is already down before we" \
-                  " stop it for upgrade.'/>"
+        _output(
+            component='ovirt-node-upgrade',
+            message='Upgraded Failed',
+            success=False
+        )
 
-    logging.debug(msg)
-    print(msg)
+        _output(
+            component='RHEV_INSTALL',
+            success=False
+        )
 
-    try:
-        config.read(VDSM_REG_CONF_FILE)
-
-        #First, quietly try to clean any previous problems.
-        umount(config, False)
-
-        #Now: Try mounting
-        fOK = setMountPoint(config)
-        if fOK:
-            fMounted = True
-            fOK = doUpgrade(config)
-
-        #Finally, is possible umount current upgrade file.
-        if fMounted:
-            umount(config) #cleanup, may fail in some cases- device busy.
-    except:
-        fOK = False
-
-    if not fOK:
-        msg = "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
-        logging.error("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
-    else:
-        msg = "<BSTRAP component='RHEV_INSTALL' status='OK'/>"
-        logging.debug("<BSTRAP component='RHEV_INSTALL' status='OK'/>")
-    print (msg)
-
-    sys.stdout.flush()
-    return fOK
+    return upgrade_tool.returncode
 
 if __name__ == "__main__":
-    sys.exit(not main())
-
+    sys.exit(main())
