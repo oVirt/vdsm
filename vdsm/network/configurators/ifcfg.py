@@ -543,8 +543,7 @@ class ConfigWriter(object):
     def _createConfFile(self, conf, name, ipconfig, mtu=None, **kwargs):
         """ Create ifcfg-* file with proper fields per device """
 
-        cfg = """DEVICE=%s\nONBOOT=%s\n""" % (
-            pipes.quote(name), 'no' if self.unifiedPersistence else 'yes')
+        cfg = """DEVICE=%s\n""" % pipes.quote(name)
         cfg += conf
         if ipconfig.ipaddr:
             cfg = cfg + 'IPADDR=%s\n' % pipes.quote(ipconfig.ipaddr)
@@ -599,6 +598,10 @@ class ConfigWriter(object):
         if bridge.stp is not None:
             conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
         ipconfig = bridge.ipConfig
+        if not self.unifiedPersistence or ipconfig.defaultRoute:
+            conf += 'ONBOOT=%s\n' % 'yes'
+        else:
+            conf += 'ONBOOT=%s\n' % 'no'
         defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
         ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
 
@@ -612,6 +615,10 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if vlan.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
+        if not self.unifiedPersistence or vlan.serving_default_route:
+            conf += 'ONBOOT=%s\n' % 'yes'
+        else:
+            conf += 'ONBOOT=%s\n' % 'no'
         ipconfig = vlan.ipConfig
         defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
         ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
@@ -623,6 +630,10 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bond.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
+        if not self.unifiedPersistence or bond.serving_default_route:
+            conf += 'ONBOOT=%s\n' % 'yes'
+        else:
+            conf += 'ONBOOT=%s\n' % 'no'
 
         ipconfig, mtu = self._getIfaceConfValues(bond)
         self._createConfFile(conf, bond.name, ipconfig, mtu, **opts)
@@ -645,6 +656,10 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(nic.bridge.name)
         if nic.bond:
             conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(nic.bond.name)
+        if not self.unifiedPersistence or nic.serving_default_route:
+            conf += 'ONBOOT=%s\n' % 'yes'
+        else:
+            conf += 'ONBOOT=%s\n' % 'no'
 
         ethtool_opts = getEthtoolOpts(nic.name)
         if ethtool_opts:
