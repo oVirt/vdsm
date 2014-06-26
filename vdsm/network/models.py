@@ -71,6 +71,15 @@ class NetDevice(object):
             return self.master
         return None
 
+    @property
+    def serving_default_route(self):
+        device = self
+        while device:
+            if device.ipConfig.defaultRoute:
+                return True
+            device = device.master
+        return False
+
 
 class Nic(NetDevice):
     def __init__(self, name, configurator, ipconfig=None, mtu=None,
