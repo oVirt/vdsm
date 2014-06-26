@@ -681,7 +681,7 @@ class NotifyingVirDomain:
         return f
 
 
-class VmDevice(object):
+class VmDevice(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
                  'conf', 'log', '_deviceXML', 'type', 'custom')
 
@@ -702,29 +702,6 @@ class VmDevice(object):
         attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)
                  if not a.startswith('__')]
         return ' '.join(attrs)
-
-    def createXmlElem(self, elemType, deviceType, attributes=()):
-        """
-        Create domxml device element according to passed in params
-        """
-        elemAttrs = {}
-        element = vmxml.Element(elemType)
-
-        if deviceType:
-            elemAttrs['type'] = deviceType
-
-        for attrName in attributes:
-            if not hasattr(self, attrName):
-                continue
-
-            attr = getattr(self, attrName)
-            if isinstance(attr, dict):
-                element.appendChildWithArgs(attrName, **attr)
-            else:
-                elemAttrs[attrName] = attr
-
-        element.setAttrs(**elemAttrs)
-        return element
 
 
 class GeneralDevice(VmDevice):

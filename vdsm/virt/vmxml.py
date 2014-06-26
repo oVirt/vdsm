@@ -76,6 +76,35 @@ def filter_devices_with_alias(devices):
             yield deviceXML, alias
 
 
+class Device(object):
+    # since we're inheriting all VM devices from this class, __slots__ must
+    # be initialized here in order to avoid __dict__ creation
+    __slots__ = ()
+
+    def createXmlElem(self, elemType, deviceType, attributes=()):
+        """
+        Create domxml device element according to passed in params
+        """
+        elemAttrs = {}
+        element = Element(elemType)
+
+        if deviceType:
+            elemAttrs['type'] = deviceType
+
+        for attrName in attributes:
+            if not hasattr(self, attrName):
+                continue
+
+            attr = getattr(self, attrName)
+            if isinstance(attr, dict):
+                element.appendChildWithArgs(attrName, **attr)
+            else:
+                elemAttrs[attrName] = attr
+
+        element.setAttrs(**elemAttrs)
+        return element
+
+
 class Element(object):
 
     def __init__(self, tagName, text=None, **attrs):
