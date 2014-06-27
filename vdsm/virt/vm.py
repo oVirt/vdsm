@@ -2384,6 +2384,8 @@ class Vm(object):
                     drive['truesize'] = str(d.truesize)
                     drive['apparentsize'] = str(d.apparentsize)
 
+        toSave['_blockJobs'] = deepcopy(self.conf.get('_blockJobs', {}))
+
         with tempfile.NamedTemporaryFile(dir=constants.P_VDSM_RUN,
                                          delete=False) as f:
             pickle.dump(toSave, f)
