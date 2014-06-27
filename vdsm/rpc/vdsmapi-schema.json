@@ -7192,21 +7192,25 @@
 #
 # Extends the virtual size of a volume.
 #
-# @spUUID:   The Storage Pool associated with the Volume
+# @storagepoolID:     The Storage Pool associated with the Volume
 #
-# @sdUUID:   The Storage Domain associated with the Volume
+# @storagedomainID:   The Storage Domain associated with the Volume
 #
-# @imgUUID:  The Image associated with the Volume
+# @imageID:           The Image associated with the Volume
 #
-# @volUUID:  The UUID of the Volume
+# @volumeID:          The UUID of the Volume
 #
-# @newSize:  The new desired size (in bytes)
+# @newSize:           The new desired size (in bytes)
+#
+# Returns:
+# A task UUID
 #
 # Since: 4.12.0
 ##
 {'command': {'class': 'Volume', 'name': 'extendSize'},
- 'data': {'spUUID': 'UUID', 'sdUUID': 'UUID', 'imgUUID': 'UUID',
-          'volUUID': 'UUID', 'newSize': 'str'}}
+ 'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
+          'imageID': 'UUID', 'volumeID': 'UUID', 'newSize': 'str'},
+ 'returns': 'UUID'}
 
 ##
 # @VolumeLegality:
