@@ -415,6 +415,7 @@ command_info = {
     'Volume_getInfo': {'ret': 'info'},
     'Volume_getPath': {'ret': 'path'},
     'Volume_getSize': {'ret': Volume_getsize_Ret},
+    'Volume_extendSize': {'ret': 'uuid'},
     'Host_getAllTasks': {'ret': 'tasks'},
 }
 
