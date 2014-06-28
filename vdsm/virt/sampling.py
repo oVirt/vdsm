@@ -442,8 +442,6 @@ class HostStatsThread(threading.Thread):
         self._stopEvent = threading.Event()
         self._samples = []
         self._updateIfidsIfrates()
-        # in bytes-per-second
-        self._lineRate = (sum(self._ifrates) or 1000) * (10 ** 6) / 8
         self._lastSampleTime = time.time()
 
         self._pid = os.getpid()
@@ -623,8 +621,10 @@ class HostStatsThread(threading.Thread):
             tx += thisTx
             rxDropped += hs1.interfaces[ifid].rxDropped
             txDropped += hs1.interfaces[ifid].txDropped
-        stats['rxRate'] = 100.0 * rx / interval / self._lineRate
-        stats['txRate'] = 100.0 * tx / interval / self._lineRate
+
+        total_bytes_per_sec = (sum(self._ifrates) or 1000) * (10 ** 6) / 8
+        stats['rxRate'] = 100.0 * rx / interval / total_bytes_per_sec
+        stats['txRate'] = 100.0 * tx / interval / total_bytes_per_sec
         if stats['txRate'] > 100 or stats['rxRate'] > 100:
             stats['txRate'] = min(stats['txRate'], 100.0)
             stats['rxRate'] = min(stats['rxRate'], 100.0)
