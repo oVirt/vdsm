@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2013 Red Hat, Inc.
+# Copyright 2008-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -97,7 +97,8 @@ class InterfaceSample:
             return '0'
         return 'up' if flags & ethtool.IFF_RUNNING else 'down'
 
-    def __init__(self, ifid):
+    def __init__(self, link):
+        ifid = link.name
         self.rx = self.readIfaceStat(ifid, 'rx_bytes')
         self.tx = self.readIfaceStat(ifid, 'tx_bytes')
         self.rxDropped = self.readIfaceStat(ifid, 'rx_dropped')
@@ -105,6 +106,7 @@ class InterfaceSample:
         self.rxErrors = self.readIfaceStat(ifid, 'rx_errors')
         self.txErrors = self.readIfaceStat(ifid, 'tx_errors')
         self.operstate = self.readIfaceOperstate(ifid)
+        self.speed = _getLinkSpeed(link)
 
     _LOGGED_ATTRS = ('operstate', 'speed')
 
@@ -172,19 +174,16 @@ class HostSample(TimedSample):
             d[p] = {'free': str(free)}
         return d
 
-    def __init__(self, pid, ifids):
+    def __init__(self, pid):
         """
         Initialize a HostSample.
 
         :param pid: The PID of this vdsm host.
         :type pid: int
-        :param ifids: The IDs of the interfaces you want to sample.
-        :type: list
         """
         TimedSample.__init__(self)
-        self.interfaces = {}
-        for ifid in ifids:
-            self.interfaces[ifid] = InterfaceSample(ifid)
+        self.interfaces = dict(
+            (link.name, InterfaceSample(link)) for link in getLinks())
         self.pidcpu = PidCpuSample(pid)
         self.totcpu = TotalCpuSample()
         meminfo = utils.readMemInfo()
@@ -399,7 +398,6 @@ class HostStatsThread(threading.Thread):
         self._log = log
         self._stopEvent = threading.Event()
         self._samples = []
-        self._updateIfidsIfrates()
         self._lastSampleTime = time.time()
 
         self._pid = os.getpid()
@@ -408,22 +406,8 @@ class HostStatsThread(threading.Thread):
     def stop(self):
         self._stopEvent.set()
 
-    def _updateIfidsIfrates(self):
-        devices = getLinks()
-        self._ifids = [dev.name for dev in devices]
-        self._ifrates = []
-        for dev in devices:
-            if dev.isNIC():
-                speed = netinfo.nicSpeed(dev.name)
-            elif dev.isBOND():
-                speed = netinfo.bondSpeed(dev.name)
-            else:
-                speed = 0
-            self._ifrates.append(speed)
-
     def sample(self):
-        self._updateIfidsIfrates()
-        hs = HostSample(self._pid, self._ifids)
+        hs = HostSample(self._pid)
         return hs
 
     def run(self):
@@ -502,12 +486,13 @@ class HostStatsThread(threading.Thread):
 
         rx = tx = rxDropped = txDropped = 0
         stats['network'] = {}
-        for ifid, ifrate in zip(self._ifids, self._ifrates):
+        total_rate = 0
+        for ifid in hs1.interfaces:
             # it skips hot-plugged devices if we haven't enough information
             # to count stats from it
             if not ifid in hs0.interfaces:
                 continue
-            ifrate = ifrate or 1000
+            ifrate = hs1.interfaces[ifid].speed or 1000
             Mbps2Bps = (10 ** 6) / 8
             thisRx = (hs1.interfaces[ifid].rx - hs0.interfaces[ifid].rx) % \
                 (2 ** 32)
@@ -538,8 +523,9 @@ class HostStatsThread(threading.Thread):
             tx += thisTx
             rxDropped += hs1.interfaces[ifid].rxDropped
             txDropped += hs1.interfaces[ifid].txDropped
+            total_rate += ifrate
 
-        total_bytes_per_sec = (sum(self._ifrates) or 1000) * (10 ** 6) / 8
+        total_bytes_per_sec = (total_rate or 1000) * (10 ** 6) / 8
         stats['rxRate'] = 100.0 * rx / interval / total_bytes_per_sec
         stats['txRate'] = 100.0 * tx / interval / total_bytes_per_sec
         if stats['txRate'] > 100 or stats['rxRate'] > 100:
@@ -550,3 +536,15 @@ class HostStatsThread(threading.Thread):
         stats['txDropped'] = txDropped
 
         return stats
+
+
+def _getLinkSpeed(dev):
+    if dev.isNIC():
+        speed = netinfo.nicSpeed(dev.name)
+    elif dev.isBOND():
+        speed = netinfo.bondSpeed(dev.name)
+    elif dev.isVLAN():
+        speed = netinfo.vlanSpeed(dev.name)
+    else:
+        speed = 0
+    return speed
