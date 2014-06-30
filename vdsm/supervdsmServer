@@ -31,6 +31,7 @@ import resource
 import signal
 import logging
 import logging.config
+from vdsm.infra import sigutils
 
 import numaUtils
 
@@ -436,6 +437,7 @@ def main(sockfile, pidfile=None):
     log = logging.getLogger("SuperVdsm.Server")
     if not config.getboolean('vars', 'core_dump_enable'):
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+    sigutils.register()
 
     def bind(func):
         def wrapper(_SuperVdsm, *args, **kwargs):
@@ -485,7 +487,7 @@ def main(sockfile, pidfile=None):
             sourceroutethread.start()
 
             while _running:
-                signal.pause()
+                sigutils.wait_for_signal()
 
             log.debug("Terminated normally")
         finally:

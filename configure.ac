@@ -356,6 +356,7 @@ AC_OUTPUT([
 	lib/yajsonrpc/Makefile
 	lib/vdsm/infra/Makefile
 	lib/vdsm/infra/filecontrol/Makefile
+	lib/vdsm/infra/sigutils/Makefile
 	lib/vdsm/infra/zombiereaper/Makefile
 	tests/Makefile
 	tests/functional/Makefile

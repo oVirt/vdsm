@@ -39,6 +39,7 @@ from vdsm import profile
 from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 
+from vdsm.infra import sigutils
 import vdsm.infra.zombiereaper as zombiereaper
 import dsaversion
 
@@ -71,6 +72,7 @@ def serve_clients(log):
             irs.spmStop(
                 irs.getConnectedStoragePoolsList()['poollist'][0])
 
+    sigutils.register()
     signal.signal(signal.SIGTERM, sigtermHandler)
     signal.signal(signal.SIGUSR1, sigusr1Handler)
     zombiereaper.registerSignalHandler()
@@ -90,7 +92,7 @@ def serve_clients(log):
     cif.start()
     try:
         while running[0]:
-            signal.pause()
+            sigutils.wait_for_signal()
 
         profile.stop()
     finally:

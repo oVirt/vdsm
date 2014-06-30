@@ -19,5 +19,6 @@
 #
 __all__ = [
     "filecontrol",
+    "sigutils",
     "zombiereaper",
 ]

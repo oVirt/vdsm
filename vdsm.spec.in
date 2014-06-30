@@ -1604,6 +1604,7 @@ exit 0
 
 %files infra
 %{python_sitelib}/%{vdsm_name}/infra/filecontrol/__init__.py*
+%{python_sitelib}/%{vdsm_name}/infra/sigutils/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/zombiereaper/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/__init__.py*
 
