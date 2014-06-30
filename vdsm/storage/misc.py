@@ -46,7 +46,6 @@ import struct
 import threading
 import types
 import weakref
-import fcntl
 import inspect
 
 from vdsm import constants
@@ -1072,11 +1071,3 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
 def deprecated(f):
     """Used to mark exported methods as deprecated"""
     return f
-
-
-def setNonBlocking(fd):
-    if hasattr(fd, "fileno"):
-        fd = fd.fileno()
-
-    fl = fcntl.fcntl(fd, fcntl.F_GETFL)
-    fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)

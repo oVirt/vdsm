@@ -126,8 +126,8 @@ class CrabRPCProxy(object):
     def __init__(self, myRead, myWrite):
         self._myWrite = myWrite
         self._myRead = myRead
-        misc.setNonBlocking(self._myWrite)
-        misc.setNonBlocking(self._myRead)
+        utils.set_non_blocking(self._myWrite)
+        utils.set_non_blocking(self._myRead)
         self._poller = select.poll()
 
     @contextmanager

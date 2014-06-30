@@ -19,7 +19,6 @@
 #
 
 import errno
-import fcntl
 import logging
 import os
 import select
@@ -69,9 +68,9 @@ class MultiProtocolAcceptor:
         self._port = port
 
         self._read_fd, self._write_fd = os.pipe()
-        self._set_non_blocking(self._read_fd)
+        utils.set_non_blocking(self._read_fd)
         utils.closeOnExec(self._read_fd)
-        self._set_non_blocking(self._write_fd)
+        utils.set_non_blocking(self._write_fd)
         utils.closeOnExec(self._write_fd)
 
         self._socket = self._create_socket(host, port)
@@ -82,11 +81,6 @@ class MultiProtocolAcceptor:
         self._handlers = []
         self._next_cleanup = 0
         self._required_size = None
-
-    def _set_non_blocking(self, fd):
-        flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)
-        flags = flags | os.O_NONBLOCK
-        fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
     @traceback(on=log.name)
     def serve_forever(self):

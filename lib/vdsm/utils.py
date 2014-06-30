@@ -1127,3 +1127,9 @@ def running(runnable):
         yield runnable
     finally:
         runnable.stop()
+
+
+def set_non_blocking(fd):
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    flags |= os.O_NONBLOCK
+    fcntl.fcntl(fd, fcntl.F_SETFL, flags)
