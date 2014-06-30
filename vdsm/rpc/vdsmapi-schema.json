@@ -7485,6 +7485,8 @@
 #
 # Set the vCpu quota tune parameter to the VM
 #
+# @vmID:    The UUID of the VM
+#
 # @quota: a number representing the quota to be set
 # Returns:
 # Status code
@@ -7492,14 +7494,16 @@
 # Since: 4.15.0
 ##
 {'command': {'class': 'VM', 'name': 'setCpuTuneQuota'},
- 'data': {'quota': 'int'},
- 'returns': 'TasksStatus'}
+ 'data': {'vmID': 'UUID', 'quota': 'int'},
+ 'returns': 'TaskStatus'}
 
 
 ##
 # @VM.setCpuTunePeriod:
 #
 # Set the vCpu period tune parameter to the VM
+#
+# @vmID:    The UUID of the VM
 #
 # @period: a number representing the period to be set
 # Returns:
@@ -7508,8 +7512,8 @@
 # Since: 4.15.0
 ##
 {'command': {'class': 'VM', 'name': 'setCpuTunePeriod'},
- 'data': {'period': 'int'},
- 'returns': 'TasksStatus'}
+ 'data': {'vmID': 'UUID', 'period': 'int'},
+ 'returns': 'TaskStatus'}
 
 ##
 # @VM.updateVmPolicy:
