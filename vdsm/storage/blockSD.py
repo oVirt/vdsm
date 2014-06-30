@@ -1041,8 +1041,7 @@ class BlockStorageDomain(sd.StorageDomain):
         return rems
 
     def linkBCImage(self, imgPath, imgUUID):
-        dst = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
-                           imgUUID)
+        dst = self.getLinkBCImagePath(imgUUID)
         self.log.debug("Creating symlink from %s to %s", imgPath, dst)
         try:
             os.symlink(imgPath, dst)

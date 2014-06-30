@@ -25,6 +25,7 @@ import threading
 from collections import namedtuple
 import codecs
 
+import image
 import storage_exception as se
 import misc
 import resourceFactories
@@ -662,6 +663,10 @@ class StorageDomain(object):
 
         # If it has a repo we don't have multiple domains. Assume single pool
         return os.path.join(self.storage_repository, self.getPools()[0])
+
+    def getLinkBCImagePath(self, imgUUID):
+        return image.Image(self._getRepoPath()) \
+                    .getImageDir(self.sdUUID, imgUUID)
 
     def getIsoDomainImagesDir(self):
         """

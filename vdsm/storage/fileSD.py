@@ -452,8 +452,8 @@ class FileStorageDomain(sd.StorageDomain):
                     for k, v in volumes.iteritems())
 
     def linkBCImage(self, imgPath, imgUUID):
-        return os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
-                            imgUUID)
+        # Nothing to do here other than returning the path
+        return self.getLinkBCImagePath(imgUUID)
 
     def createImageLinks(self, srcImgPath, imgUUID):
         """
