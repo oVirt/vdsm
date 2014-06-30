@@ -135,19 +135,7 @@ class TimedSample:
         self.timestamp = time.time()
 
 
-class BaseSample(TimedSample):
-    """
-    A sample of the statistics for a process.
-    """
-    def __init__(self, pid, ifids):
-        TimedSample.__init__(self)
-        self.interfaces = {}
-        for ifid in ifids:
-            self.interfaces[ifid] = InterfaceSample(ifid)
-        self.pidcpu = PidCpuSample(pid)
-
-
-class HostSample(BaseSample):
+class HostSample(TimedSample):
     """
     A sample of host-related statistics.
 
@@ -176,7 +164,11 @@ class HostSample(BaseSample):
         :param ifids: The IDs of the interfaces you want to sample.
         :type: list
         """
-        BaseSample.__init__(self, pid, ifids)
+        TimedSample.__init__(self)
+        self.interfaces = {}
+        for ifid in ifids:
+            self.interfaces[ifid] = InterfaceSample(ifid)
+        self.pidcpu = PidCpuSample(pid)
         self.totcpu = TotalCpuSample()
         meminfo = utils.readMemInfo()
         freeOrCached = (meminfo['MemFree'] +
