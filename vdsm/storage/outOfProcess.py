@@ -18,12 +18,14 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import errno
+import grp
 import logging
 import os
 import stat
 import sys
 import types
 
+from vdsm import constants
 from vdsm.config import config
 import threading
 from functools import partial
@@ -175,6 +177,17 @@ class _IOProcessFileUtils(object):
 
     def pathExists(self, filename, writable=False):
         return self._iop.pathExists(filename, writable)
+
+    def validateQemuReadable(self, targetPath):
+        """
+        Validate that qemu process can read file
+        """
+        gids = (grp.getgrnam(constants.DISKIMAGE_GROUP).gr_gid,
+                grp.getgrnam(constants.METADATA_GROUP).gr_gid)
+        st = _IOProcessOs(self._iop).stat(targetPath)
+        if not (st.st_gid in gids and st.st_mode & stat.S_IRGRP or
+                st.st_mode & stat.S_IROTH):
+            raise OSError(errno.EACCES, os.strerror(errno.EACCES))
 
 
 class _IOProcessOs(object):
