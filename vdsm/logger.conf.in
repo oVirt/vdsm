@@ -1,8 +1,8 @@
 [loggers]
-keys=root,vds,Storage,metadata,ovirt_hosted_engine_ha
+keys=root,vds,Storage,metadata,ovirt_hosted_engine_ha,connectivity
 
 [handlers]
-keys=console,syslog,logfile,metadata
+keys=console,syslog,logfile,metadata,connlogfile
 
 [formatters]
 keys=long,simple,none,sysform
@@ -36,6 +36,12 @@ handlers=
 qualname=ovirt_hosted_engine_ha
 propagate=1
 
+[logger_connectivity]
+level=DEBUG
+handlers=connlogfile
+qualname=connectivity
+propagate=0
+
 [handler_syslog]
 level=WARNING
 class=handlers.SysLogHandler
@@ -55,13 +61,20 @@ args=('@VDSMLOGDIR@/metadata.log',)
 level=WARNING
 formatter=long
 
+[handler_connlogfile]
+class=logging.handlers.WatchedFileHandler
+args=('@VDSMLOGDIR@/connectivity.log',)
+filters=storage.misc.TracebackRepeatFilter
+level=DEBUG
+formatter=simple
+
 [handler_console]
 class: StreamHandler
 args: []
 formatter: none
 
 [formatter_simple]
-format: %(name)s:%(levelname)s:  %(message)s
+format: %(asctime)s:%(levelname)s:%(message)s
 
 [formatter_none]
 format: %(message)s
@@ -72,8 +85,3 @@ format: %(threadName)s::%(levelname)s::%(asctime)s::%(module)s::%(lineno)d::%(na
 [formatter_sysform]
 format= vdsm %(name)s %(levelname)s %(message)s
 datefmt=
-
-
-
-
-

@@ -106,6 +106,23 @@ class InterfaceSample:
         self.txErrors = self.readIfaceStat(ifid, 'tx_errors')
         self.operstate = self.readIfaceOperstate(ifid)
 
+    _LOGGED_ATTRS = ('operstate', 'speed')
+
+    def _log_attrs(self, attrs):
+        return ' '.join(
+            '%s:%s' % (attr, getattr(self, attr)) for attr in attrs)
+
+    def to_connlog(self):
+        return self._log_attrs(self._LOGGED_ATTRS)
+
+    def connlog_diff(self, other):
+        """Return a textual description of the interesting stuff new to self
+        and missing in 'other'."""
+
+        return self._log_attrs(
+            attr for attr in self._LOGGED_ATTRS
+            if getattr(self, attr) != getattr(other, attr))
+
 
 class TotalCpuSample:
     """
@@ -186,6 +203,20 @@ class HostSample(TimedSample):
                 self.thpState = s[s.index('[') + 1:s.index(']')]
         except:
             self.thpState = 'never'
+
+    def to_connlog(self):
+        return ', '.join(
+            ('%s:(%s)' % (ifid, ifacesample.to_connlog()))
+            for (ifid, ifacesample) in self.interfaces.iteritems())
+
+    def connlog_diff(self, other):
+        text = ''
+        for ifid, sample in self.interfaces.iteritems():
+            if ifid in other.interfaces:
+                text += sample.connlog_diff(other.interfaces[ifid])
+            else:
+                text += 'new (%s) ' % sample.to_connlog()
+        return text
 
 
 class AdvancedStatsFunction(object):
@@ -356,6 +387,7 @@ class HostStatsThread(threading.Thread):
     """
     AVERAGING_WINDOW = 5
     SAMPLE_INTERVAL_SEC = 2
+    _CONNLOG = logging.getLogger('connectivity')
 
     def __init__(self, log):
         self.startTime = time.time()
@@ -401,6 +433,13 @@ class HostStatsThread(threading.Thread):
                 try:
                     sample = self.sample()
                     self._samples.append(sample)
+                    if len(self._samples) == 1:
+                        self._CONNLOG.debug('%s', sample.to_connlog())
+                    else:
+                        diff = sample.connlog_diff(self._samples[-2])
+                        if diff:
+                            self._CONNLOG.debug('%s', diff)
+
                     self._lastSampleTime = sample.timestamp
                     if len(self._samples) > self.AVERAGING_WINDOW:
                         self._samples.pop(0)
