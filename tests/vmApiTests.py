@@ -46,7 +46,8 @@ class TestSchemaCompliancyBase(TestCaseBase):
         for apiItem, apiType in ref.items():
             if apiItem[0] == '*':
                 # optional, may be absent and it is fine
-                self.assertTrue(stats.get(apiItem[1:], True))
+                if apiItem[1:] in stats:
+                    self.assertNotEqual(stats[apiItem[1:]], None)
             else:
                 # mandatory
                 self.assertIn(apiItem, stats)
