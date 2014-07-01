@@ -286,7 +286,13 @@ def _bondExists(bondName):
 
 def getLinks():
     """Returns a list of Link objects for each link in the system."""
-    return [Link.fromDict(data) for data in netlink.iter_links()]
+    links = []
+    for data in netlink.iter_links():
+        try:
+            links.append(Link.fromDict(data))
+        except IOError:  # If a link goes missing we just don't report it
+            continue
+    return links
 
 
 def getLink(dev):
