@@ -1034,7 +1034,7 @@ class StoragePool(APIBase):
     def destroy(self, hostID, deprecatedSCSIKey):
         return self._irs.destroyStoragePool(self._UUID, hostID)
 
-    def disconnect(self, hostID, deprecatedSCSIKey, remove):
+    def disconnect(self, hostID, deprecatedSCSIKey, remove=False):
         return self._irs.disconnectStoragePool(self._UUID, hostID, remove)
 
     def disconnectStorageServer(self, domainType, connectionParams):
