@@ -36,6 +36,18 @@ class VdsmError(Exception):
         self.message = message
 
 
+class InvalidCall(Exception):
+
+    def __init__(self, function, arguments, error):
+        self.function = function
+        self.arguments = arguments
+        self.error = error
+
+    def __str__(self):
+        return ("Attempt to call function: %s with arguments: %s error: %s" %
+                (self.function, self.arguments, self.error))
+
+
 class DynamicBridge(object):
     def __init__(self):
         self.api = vdsmapi.get_api()
@@ -236,7 +248,10 @@ class DynamicBridge(object):
             result = fn(api, argobj)
         else:
             fn = getattr(api, methodName)
-            result = fn(*methodArgs)
+            try:
+                result = fn(*methodArgs)
+            except TypeError as e:
+                raise InvalidCall(fn, methodArgs, e)
 
         if result['status']['code']:
             code = result['status']['code']
