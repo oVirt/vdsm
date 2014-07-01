@@ -22,6 +22,7 @@ import os
 import tempfile
 import shutil
 
+from vdsm import ipwrapper
 import virt.sampling as sampling
 
 from testrunner import VdsmTestCase as TestCaseBase
@@ -101,3 +102,12 @@ procs_blocked 0
         with MonkeyPatchScope([(sampling, '_PROC_STAT_PATH',
                                 self._extra_path)]):
             self.assertEquals(sampling.getBootTime(), 1395249141)
+
+
+class InterfaceSampleTests(TestCaseBase):
+    def testDiff(self):
+        lo = ipwrapper.getLink('lo')
+        s0 = sampling.InterfaceSample(lo)
+        s1 = sampling.InterfaceSample(lo)
+        s1.operstate = 'x'
+        self.assertEquals('operstate:x', s1.connlog_diff(s0))
