@@ -3571,7 +3571,7 @@ class HSM(object):
         repoStats = {}
         statsGenTime = time.time()
 
-        for sdUUID, domStatus in domainMonitor.getMonitoredDomainsStatus():
+        for sdUUID, domStatus in domainMonitor.getDomainsStatus():
             if domStatus.error is None:
                 code = 0
             elif isinstance(domStatus.error, se.StorageException):

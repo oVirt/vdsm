@@ -77,48 +77,48 @@ class DomainMonitor(object):
     log = logging.getLogger('Storage.DomainMonitor')
 
     def __init__(self, interval):
-        self._domains = {}
+        self._monitors = {}
         self._interval = interval
         self.onDomainStateChange = misc.Event(
             "Storage.DomainMonitor.onDomainStateChange")
 
     @property
-    def monitoredDomains(self):
-        return self._domains.keys()
+    def domains(self):
+        return self._monitors.keys()
 
     @property
-    def poolMonitoredDomains(self):
-        return [sdUUID for sdUUID, monitor in self._domains.items()
+    def poolDomains(self):
+        return [sdUUID for sdUUID, monitor in self._monitors.items()
                 if monitor.poolDomain]
 
     def startMonitoring(self, sdUUID, hostId, poolDomain=True):
-        domainThread = self._domains.get(sdUUID)
+        monitor = self._monitors.get(sdUUID)
 
-        if domainThread is not None:
-            domainThread.poolDomain |= poolDomain
+        if monitor is not None:
+            monitor.poolDomain |= poolDomain
             return
 
         self.log.info("Start monitoring %s", sdUUID)
-        domainThread = DomainMonitorThread(weakref.proxy(self),
-                                           sdUUID, hostId, self._interval)
-        domainThread.poolDomain = poolDomain
-        domainThread.start()
+        monitor = DomainMonitorThread(weakref.proxy(self),
+                                      sdUUID, hostId, self._interval)
+        monitor.poolDomain = poolDomain
+        monitor.start()
         # The domain should be added only after it succesfully started
-        self._domains[sdUUID] = domainThread
+        self._monitors[sdUUID] = monitor
 
     def stopMonitoring(self, sdUUIDs):
         sdUUIDs = frozenset(sdUUIDs)
-        monitors = [monitor for monitor in self._domains.values()
+        monitors = [monitor for monitor in self._monitors.values()
                     if monitor.sdUUID in sdUUIDs]
         self._stopMonitors(monitors)
 
-    def getMonitoredDomainsStatus(self):
-        for sdUUID, monitor in self._domains.items():
+    def getDomainsStatus(self):
+        for sdUUID, monitor in self._monitors.items():
             yield sdUUID, monitor.getStatus()
 
     def close(self):
         self.log.info("Stopping all domain monitors")
-        self._stopMonitors(self._domains.values())
+        self._stopMonitors(self._monitors.values())
 
     def _stopMonitors(self, monitors):
         # The domain monitor issues events that might become raceful if
@@ -139,7 +139,7 @@ class DomainMonitor(object):
             self.log.debug("Waiting for monitor %s", monitor.sdUUID)
             monitor.join()
             try:
-                del self._domains[monitor.sdUUID]
+                del self._monitors[monitor.sdUUID]
             except KeyError:
                 self.log.warning("Montior for %s removed while stopping",
                                  monitor.sdUUID)
