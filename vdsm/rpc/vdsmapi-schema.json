@@ -5260,6 +5260,8 @@
 #
 # @storagepoolID:           The UUID of the Storage Pool
 #
+# @hostId:                  Host Id used by San lock.
+#
 # @name:                    A human-readable name for the Storage Pool
 #
 # @masterSdUUID:            The UUID of the Storage Domain that will be used as
@@ -5286,8 +5288,9 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'reconstructMaster'},
- 'data': {'storagepoolID': 'UUID', 'name': 'str', 'masterSdUUID': 'UUID',
-          'masterVersion': 'int', 'domainDict': 'StorageDomainStatusMap',
+ 'data': {'storagepoolID': 'UUID', 'hostId': 'int', 'name': 'str',
+          'masterSdUUID': 'UUID', 'masterVersion': 'int',
+          'domainDict': 'StorageDomainStatusMap',
           'lockRenewalIntervalSec': 'int', 'leaseTimeSec': 'int',
           'ioOpTimeoutSec': 'int', 'leaseRetries': 'int'}}}
 
