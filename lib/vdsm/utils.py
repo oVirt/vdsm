@@ -790,15 +790,6 @@ def listSplit(l, elem, maxSplits=None):
     return splits + [l]
 
 
-def listJoin(elem, *lists):
-    if lists == []:
-        return []
-    l = list(lists[0])
-    for i in lists[1:]:
-        l += [elem] + i
-    return l
-
-
 def closeOnExec(fd):
     old = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
     fcntl.fcntl(fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
@@ -861,52 +852,6 @@ class CommandPath(object):
 
     def __unicode__(self):
         return unicode(self.cmd)
-
-
-class PollEvent(object):
-    def __init__(self):
-        self._r, self._w = os.pipe()
-        self._lock = threading.Lock()
-        self._isSet = False
-
-    def fileno(self):
-        return self._r
-
-    def set(self):
-        with self._lock:
-            if self._isSet:
-                return
-
-            while True:
-                try:
-                    os.write(self._w, "a")
-                    break
-                except (OSError, IOError) as e:
-                    if e.errno not in (errno.EINTR, errno.EAGAIN):
-                        raise
-
-            self._isSet = True
-
-    def isSet(self):
-        return self._isSet
-
-    def clear(self):
-        with self._lock:
-            if not self._isSet:
-                return
-
-            while True:
-                try:
-                    os.read(self._r, 1)
-                    break
-                except (OSError, IOError) as e:
-                    if e.errno not in (errno.EINTR, errno.EAGAIN):
-                        raise
-            self._isSet = False
-
-    def __del__(self):
-        os.close(self._r)
-        os.close(self._w)
 
 
 def retry(func, expectedException=Exception, tries=None,
