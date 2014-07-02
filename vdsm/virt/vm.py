@@ -184,6 +184,15 @@ class VmStatsThread(sampling.AdvancedStatsThread):
     # minimum supported value is 2
     CPU_TUNE_SAMPLING_WINDOW = 2
 
+    # This flag will prevent excessive log flooding when running
+    # on libvirt with no support for metadata xml elements.
+    #
+    # The issue currently exists only on CentOS/RHEL 6.5 that
+    # ships libvirt-0.10.x.
+    #
+    # TODO: Remove as soon as there is a hard dependency we can use
+    _libvirt_metadata_supported = True
+
     def __init__(self, vm):
         sampling.AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
         self._vm = vm
@@ -312,11 +321,23 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         metadataCpuLimit = None
 
         try:
-            metadataCpuLimit = self._vm._dom.metadata(
-                libvirt.VIR_DOMAIN_METADATA_ELEMENT, METADATA_VM_TUNE_URI, 0)
+            if VmStatsThread._libvirt_metadata_supported:
+                metadataCpuLimit = self._vm._dom.metadata(
+                    libvirt.VIR_DOMAIN_METADATA_ELEMENT,
+                    METADATA_VM_TUNE_URI, 0)
         except libvirt.libvirtError as e:
-            if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
-                self._log.exception("Failed to retrieve QoS metadata")
+            if e.get_error_code() == libvirt.VIR_ERR_ARGUMENT_UNSUPPORTED:
+                VmStatsThread._libvirt_metadata_supported = False
+                self._log.error("libvirt does not support metadata")
+
+            elif (e.get_error_code()
+                  not in (libvirt.VIR_ERR_NO_DOMAIN,
+                          libvirt.VIR_ERR_NO_DOMAIN_METADATA)):
+                # Non-existing VM and no metadata block are expected
+                # conditions and no reasons for concern here.
+                # All other errors should be reported.
+                self._log.warn("Failed to retrieve QoS metadata because of %s",
+                               e)
 
         if metadataCpuLimit:
             metadataCpuLimitXML = _domParseStr(metadataCpuLimit)
