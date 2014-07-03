@@ -4043,11 +4043,14 @@ class Vm(object):
 
             disk = XMLElement('disk', name=vmDev, snapshot='external',
                               type=sourceType)
+            # Libvirt versions before 1.2.2 do not understand 'type' and treat
+            # all snapshots as if they are type='file'.  In order to ensure
+            # proper handling of block snapshots in modern libvirt versions,
+            # we specify type='block' and dev=path for block volumes but we
+            # always speficy the file=path for backwards compatibility.
+            args = {'type': sourceType, 'file': newPath}
             if sourceType == 'block':
-                args = {'dev': newPath}
-            elif sourceType == 'file':
-                args = {'file': newPath}
-            args['type'] = sourceType
+                args['dev'] = newPath
             disk.appendChildWithArgs('source', **args)
             return disk
 
