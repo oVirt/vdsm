@@ -82,7 +82,6 @@ class MultiProtocolAcceptor:
         self._handlers = []
         self._next_cleanup = 0
         self._required_size = None
-        self._is_running = False
 
     def _set_non_blocking(self, fd):
         flags = fcntl.fcntl(fd, fcntl.F_GETFL, 0)
@@ -94,12 +93,13 @@ class MultiProtocolAcceptor:
         self.log.debug("Acceptor running")
         self._required_size = max(h.REQUIRED_SIZE for h in self._handlers)
         self.log.debug("Using required_size=%d", self._required_size)
-        self._is_running = True
         self._next_cleanup = time.time() + self.CLEANUP_INTERVAL
         try:
-            while self._is_running:
+            while True:
                 try:
                     self._process_events()
+                except _Stopped:
+                    break
                 except Exception:
                     self.log.exception("Unhandled exception")
         finally:
@@ -112,7 +112,7 @@ class MultiProtocolAcceptor:
         for fd, event in events:
             if event & (select.POLLIN | select.POLLPRI):
                 if fd is self._read_fd:
-                    self._cleanup_wakeup_pipe()
+                    self._maybe_stop()
                 elif fd is self._socket.fileno():
                     self._accept_connection()
                 else:
@@ -156,21 +156,22 @@ class MultiProtocolAcceptor:
 
     def stop(self):
         self.log.debug("Stopping Acceptor")
-        self._is_running = False
-        self.wakeup()
+        while True:
+            try:
+                os.write(self._write_fd, "1")
+            except OSError as e:
+                if e.errno in (errno.EPIPE, errno.EBADF):
+                    # Detector already stopped
+                    return
+                if e.errno != errno.EINTR:
+                    raise
+            else:
+                break
 
-    def wakeup(self):
+    def _maybe_stop(self):
         try:
-            os.write(self._write_fd, '1')
-        except OSError as e:
-            if e.errno == errno.EINTR:
-                self.wakeup()
-            elif e.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
-                raise
-
-    def _cleanup_wakeup_pipe(self):
-        try:
-            os.read(self._read_fd, 128)
+            if os.read(self._read_fd, 1) == '1':
+                raise _Stopped()
         except OSError as e:
             if e.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
                 raise
@@ -244,4 +245,8 @@ class MultiProtocolAcceptor:
 
 
 class _CannotDetectProtocol(Exception):
+    pass
+
+
+class _Stopped(Exception):
     pass
