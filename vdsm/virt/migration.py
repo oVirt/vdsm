@@ -62,7 +62,10 @@ class SourceThread(threading.Thread):
         self._vm = vm
         self._dst = dst
         self._mode = mode
-        self._method = method
+        if method != METHOD_ONLINE:
+            self.log.warning(
+                'migration method %s is deprecated, forced to "online"',
+                method)
         self._dstparams = dstparams
         self._machineParams = {}
         self._tunneled = utils.tobool(tunneled)
@@ -176,7 +179,7 @@ class SourceThread(threading.Thread):
             except Exception:
                 self.log.error("Failed to destroy remote VM", exc_info=True)
         # if the guest was stopped before migration, we need to cont it
-        if self.hibernating or self._method != METHOD_ONLINE:
+        if self.hibernating:
             self._vm.cont()
         # either way, migration has finished
         self._vm.lastStatus = vmstatus.UP
@@ -250,7 +253,7 @@ class SourceThread(threading.Thread):
                 self._vm.conf['_migrationParams'] = {
                     'dst': self._dst,
                     'mode': self._mode,
-                    'method': self._method,
+                    'method': METHOD_ONLINE,
                     'dstparams': self._dstparams,
                     'dstqemu': self._dstqemu}
                 self._vm.saveState()
