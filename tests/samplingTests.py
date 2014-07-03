@@ -23,6 +23,7 @@ import os
 import tempfile
 import random
 import shutil
+import threading
 
 from vdsm import ipwrapper
 import virt.sampling as sampling
@@ -204,3 +205,34 @@ class AdvancedStatsFunctionTests(TestCaseBase):
         for val in values:
             stat(val)
         self.assertEqual(stat.getLastSample(), values[-1])
+
+
+class HostStatsThread(TestCaseBase):
+    FAILED_SAMPLE = 3  # random 'small' value
+    STOP_SAMPLE = 6  # ditto
+
+    def setUp(self):
+        self._hs = None
+        self._sampleCount = 0
+        self._samplingDone = threading.Event()
+
+    def testContinueWithErrors(self):
+        """
+        bz1113948: do not give up on errors != TimeoutError
+        """
+        def WrapHostSample(pid):
+            self._sampleCount += 1
+            if self._sampleCount == self.FAILED_SAMPLE:
+                raise ValueError
+            if self._sampleCount == self.STOP_SAMPLE:
+                self._hs.stop()
+                self._samplingDone.set()
+            return None  # sampling.HostSample(pid)
+
+        with MonkeyPatchScope([(sampling, 'HostSample', WrapHostSample),
+                               (sampling.HostStatsThread,
+                                   'SAMPLE_INTERVAL_SEC', 0.1)]):
+            self._hs = sampling.HostStatsThread(self.log)
+            self._hs.start()
+            self._samplingDone.wait()
+            self.assertTrue(self._sampleCount >= self.STOP_SAMPLE)
