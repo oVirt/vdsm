@@ -372,13 +372,6 @@ def getIpInfo(dev, ipaddrs):
     return ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
 
 
-def getipv6addrs(dev):
-    """Return a list of IPv6 addresses in the format of 'address/prefixlen'."""
-    dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
-    ipv6addrs = dev_info_list[0].get_ipv6_addresses()
-    return [addr.address + '/' + str(addr.netmask) for addr in ipv6addrs]
-
-
 def gethwaddr(dev):
     return file('/sys/class/net/%s/address' % dev).read().strip()
 
