@@ -392,17 +392,6 @@ def getVlanBondingNic(bridge):
     return vlan, bonding, nics
 
 
-def intToAddress(ip_num):
-    "Convert an integer to the corresponding ip address in the dot-notation"
-    ip_address = []
-
-    for i in xrange(4):
-        ip_num, ip_val = divmod(ip_num, 256)
-        ip_address.append(str(ip_val))
-
-    return '.'.join(ip_address)
-
-
 def getIfaceCfg(iface):
     ifaceCfg = {}
     try:

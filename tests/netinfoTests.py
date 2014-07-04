@@ -69,13 +69,6 @@ class TestNetinfo(TestCaseBase):
             self.assertFalse(s < 0)
             self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
 
-    def testIntToAddress(self):
-        num = [0, 1, 16777344, 16777408, 4294967295]
-        ip = ["0.0.0.0", "1.0.0.0", "128.0.0.1",
-              "192.0.0.1", "255.255.255.255"]
-        for n, addr in zip(num, ip):
-            self.assertEqual(addr, netinfo.intToAddress(n))
-
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
     @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
