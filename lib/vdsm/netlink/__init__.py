@@ -103,7 +103,9 @@ def _af_to_str(af_num):
 def _scope_to_str(scope_num):
     """Returns the textual scope representation of the numerical id"""
     scope = (c_char * CHARBUFFSIZE)()
-    return _rtnl_scope2str(scope_num, scope, sizeof(scope))
+    scope = _rtnl_scope2str(scope_num, scope, sizeof(scope))
+    # libnl1 reports 'universe' instead of 'global'
+    return 'global' if scope == 'universe' else scope
 
 # C function prototypes
 # http://docs.python.org/2/library/ctypes.html#function-prototypes
