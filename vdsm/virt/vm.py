@@ -5752,7 +5752,7 @@ def _getNetworkIp(network):
     try:
         nets = netinfo.networks()
         device = nets[network].get('iface', network)
-        ip = netinfo.getaddr(device)
+        ip, _, _, _ = netinfo.getIpInfo(device)
     except (libvirt.libvirtError, KeyError, IndexError):
         ip = config.get('addresses', 'guests_gateway_ip')
         if ip == '':

@@ -43,7 +43,7 @@ from .ipwrapper import getLink, getLinks, Link
 from .ipwrapper import IPRoute2Error
 from .ipwrapper import Route
 from .ipwrapper import routeGet
-from .ipwrapper import routeShowGateways, routeShowAllDefaultGateways
+from .ipwrapper import routeShowGateways
 from . import libvirtconnection
 from .netconfpersistence import RunningConfig
 from .utils import execCmd, memoized, CommandPath
@@ -327,14 +327,6 @@ def bondSpeed(bondName):
     return 0
 
 
-def getaddr(dev):
-    dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
-    addr = dev_info_list[0].ipv4_address
-    if addr is None:
-        addr = ''
-    return addr
-
-
 def prefix2netmask(prefix):
     if not 0 <= prefix <= 32:
         raise ValueError('%s is not a valid prefix value. It must be between '
@@ -343,22 +335,15 @@ def prefix2netmask(prefix):
         struct.pack("!I", int('1' * prefix + '0' * (32 - prefix), 2)))
 
 
-def getnetmask(dev):
-    dev_info_list = ethtool.get_interfaces_info(dev.encode('utf8'))
-    netmask = dev_info_list[0].ipv4_netmask
-    if netmask == 0:
-        return ''
-    return prefix2netmask(netmask)
-
-
 def getDefaultGateway():
     output = routeShowGateways('main')
     return Route.fromText(output[0]) if output else None
 
 
-def getIpInfo(dev, ipaddrs):
-    ipv4addr = ''
-    ipv4netmask = ''
+def getIpInfo(dev, ipaddrs=None):
+    if ipaddrs is None:
+        ipaddrs = _getIpAddrs()
+    ipv4addr = ipv4netmask = ''
     ipv4addrs = []
     ipv6addrs = []
     for addr in ipaddrs[dev]:
@@ -821,8 +806,9 @@ def getVlanID(vlan):
 
 
 def getIpAddresses():
-    "Return a list of the host's IP addresses"
-    return filter(None, [getaddr(i) for i in ethtool.get_active_devices()])
+    "Return a list of the host's IPv4 addresses"
+    return [addr['address'] for addr in nl_addr.iter_addrs() if
+            addr['family'] == 'inet']
 
 
 def IPv4toMapped(ip):

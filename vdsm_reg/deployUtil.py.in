@@ -463,10 +463,10 @@ def getMGTIP(vdsmDir, vdcHostName):
     strIface = _getMGTIface(vdcHostName)
 
     if strIface is not None:
-        strReturn = netinfo.getaddr(strIface)
+        ipv4addr, _, _, _ = netinfo.getIpInfo(strIface)
 
-    logging.debug("getMGTIP: Host MGT IP=" + strReturn)
-    return strReturn
+    logging.debug("getMGTIP: Host MGT IP=", ipv4addr)
+    return ipv4addr
 
 
 def preventDuplicate(bridgeName=None):
