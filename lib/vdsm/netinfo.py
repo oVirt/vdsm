@@ -924,12 +924,6 @@ class NetInfo(object):
             if not netdict['bridged']:
                 yield network
 
-    def getBridgelessNetworkForIface(self, iface):
-        """ Return the bridgeless network attached to nic/bond """
-        for network, netdict in self.networks.iteritems():
-            if not netdict['bridged'] and iface == netdict['iface']:
-                return network
-
     def getBridgedNetworkForIface(self, iface):
         """ Return all bridged networks attached to nic/bond """
         for bridge, netdict in self.networks.iteritems():
