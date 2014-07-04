@@ -936,17 +936,13 @@ class NetInfo(object):
             if netdict['bridged'] and iface in netdict['ports']:
                 return bridge
 
-    def getBondingsForNic(self, nic):
-        for b, bdict in self.bondings.iteritems():
-            if nic in bdict['slaves']:
-                yield b
-
     def getNicsForBonding(self, bond):
         bondAttrs = self.bondings[bond]
         return bondAttrs['slaves']
 
     def getBondingForNic(self, nic):
-        bondings = list(self.getBondingsForNic(nic))
+        bondings = [b for (b, attrs) in self.bondings.iteritems() if
+                    nic in attrs['slaves']]
         if bondings:
             assert len(bondings) == 1, \
                 "Unexpected configuration: More than one bonding per nic"
