@@ -33,8 +33,6 @@ import string
 import struct
 from xml.dom import minidom
 
-import ethtool
-
 from .config import config
 from . import constants
 from .ipwrapper import drv_name
@@ -832,17 +830,14 @@ def getRouteDeviceTo(destinationIP):
 def getDeviceByIP(ip):
     """
     Get network device by IP address
-    :param ip: String representing IPv4 or IPv6, but not link-local IPv6
+    :param ip: String representing IPv4 or IPv6
     """
-    for info in ethtool.get_interfaces_info(ethtool.get_active_devices()):
-        for ipv4addr in info.get_ipv4_addresses():
-            if ip in (ipv4addr.address, IPv4toMapped(ipv4addr.address)):
-                return info.device
-
-        for ipv6addr in info.get_ipv6_addresses():
-            if ip == ipv6addr.address:
-                return info.device
-
+    for addr in nl_addr.iter_addrs():
+        address = addr['address'].split('/')[0]
+        if ((addr['family'] == 'inet' and
+             ip in (address, IPv4toMapped(address))) or (
+                 addr['family'] == 'inet6' and ip == address)):
+            return addr['label']
     return ''
 
 
