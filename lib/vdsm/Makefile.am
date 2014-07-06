@@ -35,6 +35,7 @@ dist_vdsmpylib_PYTHON = \
 	password.py \
 	profile.py \
 	qemuimg.py \
+	schedule.py \
 	SecureXMLRPCServer.py \
 	sslutils.py \
 	sysctl.py \
