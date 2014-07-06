@@ -32,6 +32,7 @@ dist_vdsmpylib_PYTHON = \
 	netinfo.py \
 	profile.py \
 	qemuimg.py \
+	schedule.py \
 	sslutils.py \
 	sysctl.py \
 	utils.py \
