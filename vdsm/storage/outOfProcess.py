@@ -248,12 +248,26 @@ class _IOProcessOs(object):
             self._iop = iop
 
         def isdir(self, path):
-            res = self._iop.stat(path)
-            return stat.S_ISDIR(res.st_mode)
+            try:
+                res = self._iop.stat(path)
+            except OSError as e:
+                if e.errno == errno.ENOENT:
+                    return False
+                else:
+                    raise
+            else:
+                return stat.S_ISDIR(res.st_mode)
 
         def islink(self, path):
-            res = self._iop.stat(path)
-            return stat.S_ISLNK(res.st_mode)
+            try:
+                res = self._iop.stat(path)
+            except OSError as e:
+                if e.errno == errno.ENOENT:
+                    return False
+                else:
+                    raise
+            else:
+                return stat.S_ISLNK(res.st_mode)
 
         def lexists(self, path):
             return self._iop.lexists(path)
