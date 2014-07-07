@@ -4,7 +4,6 @@
 ./etc/init/supervdsmd.conf
 ./etc/init/vdsm-tmpfiles.conf
 ./etc/init/vdsmd.conf
-./etc/logrotate.d/vdsm
 ./etc/ovirt-config-boot.d/vdsm-config
 ./etc/pki/vdsm/keys/libvirt_password
 ./etc/rwtab.d/vdsm
@@ -12,6 +11,7 @@
 ./etc/sudoers.d/50_vdsm
 ./etc/sysctl.d/vdsm.conf
 ./etc/vdsm/logger.conf
+./etc/vdsm/logrotate/vdsm
 ./etc/vdsm/mom.conf
 ./etc/vdsm/mom.d/00-defines.policy
 ./etc/vdsm/mom.d/01-parameters.policy

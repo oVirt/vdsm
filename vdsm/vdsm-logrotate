@@ -1,6 +1,6 @@
 #!/bin/sh
 
-/usr/sbin/logrotate /etc/logrotate.d/vdsm
+/usr/sbin/logrotate /etc/vdsm/logrotate/vdsm
 
 EXITVALUE=$?
 if [ $EXITVALUE != 0 ]; then
