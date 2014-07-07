@@ -288,9 +288,11 @@ class HostSample(TimedSample):
         text = ''
         for ifid, sample in self.interfaces.iteritems():
             if ifid in other.interfaces:
-                text += sample.connlog_diff(other.interfaces[ifid])
+                diff = sample.connlog_diff(other.interfaces[ifid])
+                if diff:
+                    text += '%s:(%s) ' % (ifid, diff)
             else:
-                text += 'new (%s) ' % sample.to_connlog()
+                text += 'new %s:(%s) ' % (ifid, sample.to_connlog())
         return text
 
 
