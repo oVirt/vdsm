@@ -815,3 +815,38 @@ class CommandStreamTests(TestCaseBase):
             retcode = c.wait()
 
         self.assertEqual(retcode, expected_retcode)
+
+
+class FakeLogger(object):
+
+    def __init__(self, level):
+        self.level = level
+        self.messages = []
+
+    def debug(self, fmt, *args):
+        # Will fail bad logging call with mismatched fmt and args
+        self.messages.append(fmt % args)
+
+    def isEnabledFor(self, level):
+        return self.level <= level
+
+
+class StopwatchTests(TestCaseBase):
+
+    def test_notset(self):
+        log = FakeLogger(logging.NOTSET)
+        with utils.stopwatch("message", log=log):
+            pass
+        self.assertNotEqual(log.messages, [])
+
+    def test_debug(self):
+        log = FakeLogger(logging.DEBUG)
+        with utils.stopwatch("message", log=log):
+            pass
+        self.assertNotEqual(log.messages, [])
+
+    def test_info(self):
+        log = FakeLogger(logging.INFO)
+        with utils.stopwatch("message", log=log):
+            pass
+        self.assertEqual(log.messages, [])

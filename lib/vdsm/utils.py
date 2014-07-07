@@ -1296,3 +1296,14 @@ def create_connected_socket(host, port, sslctx=None, timeout=None):
     sock.settimeout(timeout)
     sock.connect((host, port))
     return sock
+
+
+@contextmanager
+def stopwatch(message, log=logging.getLogger('vds.stopwatch')):
+    if log.isEnabledFor(logging.DEBUG):
+        start = monotonic_time()
+        yield
+        elapsed = monotonic_time() - start
+        log.debug("%s: %.2f seconds", message, elapsed)
+    else:
+        yield
