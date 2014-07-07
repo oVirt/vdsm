@@ -33,7 +33,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
  */
 public class JsonRpcClient {
     private static final int TRACKING_TIMEOUT = 1000;
-    private static final int MAX_FAILED_CONNECTIONS = 5;
+    private static final int MAX_FAILED_CONNECTIONS = 0;
     private static Log log = LogFactory.getLog(JsonRpcClient.class);
     private final ReactorClient client;
     private final ObjectMapper objectMapper;

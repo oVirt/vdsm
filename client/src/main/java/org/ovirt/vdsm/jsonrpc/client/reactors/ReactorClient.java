@@ -117,7 +117,7 @@ public abstract class ReactorClient {
         }
     }
 
-    public Future<Void> close() {
+    public final Future<Void> disconnect() {
         final Callable<Void> callable = new Callable<Void>() {
             @Override
             public Void call() {
@@ -126,6 +126,10 @@ public abstract class ReactorClient {
             }
         };
         return scheduleTask(callable);
+    }
+
+    public Future<Void> close() {
+        return disconnect();
     }
 
     protected <T> FutureTask<T> scheduleTask(Callable<T> callable) {

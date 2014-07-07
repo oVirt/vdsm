@@ -82,7 +82,7 @@ public abstract class Reactor extends Thread {
                     client.process();
                 } catch (IOException | ClientConnectionException ex) {
                     LOG.error("Unable to process messages", ex);
-                    client.close();
+                    client.disconnect();
                 }
             }
 
