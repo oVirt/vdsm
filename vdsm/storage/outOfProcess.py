@@ -201,6 +201,9 @@ class _IOProcessOs(object):
     def chmod(self, path, mode):
         self._iop.chmod(path, mode)
 
+    def link(self, src, dst):
+        self._iop.link(src, dst)
+
     def mkdir(self, path, mode=None):
         if mode is not None:
             self._iop.mkdir(path, mode)
@@ -276,6 +279,42 @@ class _IOProcessOs(object):
             return self._iop.pathExists(path, False)
 
 
+class _IOProcessUtils(object):
+    def __init__(self, iop):
+        self._iop = iop
+
+    def forceLink(self, src, dst):
+        """ Makes or replaces a hard link.
+
+        Like os.link() but replaces the link if it exists.
+        """
+        try:
+            _IOProcessOs(self._iop).link(src, dst)
+        except OSError as e:
+            if e.errno == errno.EEXIST:
+                self.rmFile(dst)
+                _IOProcessOs(self._iop).link(src, dst)
+            else:
+                log.error("Linking file: %s to %s failed", src, dst,
+                          exc_info=True)
+                raise
+
+    def rmFile(self, path):
+        """
+        Try to remove a file.
+
+        If the file doesn't exist it's assumed that it was already removed.
+        """
+        try:
+            _IOProcessOs(self._iop).unlink(path)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                log.warning("File: %s already removed", path)
+            else:
+                log.error("Removing file: %s failed", path, exc_info=True)
+                raise
+
+
 def directTouch(ioproc, path, mode=0o777):
     flags = os.O_CREAT | os.O_DIRECT
     ioproc.touch(path, flags, mode)
@@ -322,6 +361,7 @@ class _IOProcWrapper(types.ModuleType):
         self.glob = _IOProcessGlob(ioproc)
         self.fileUtils = _IOProcessFileUtils(ioproc)
         self.os = _IOProcessOs(ioproc)
+        self.utils = _IOProcessUtils(ioproc)
 
         self.directReadLines = partial(directReadLines, ioproc)
         self.readLines = partial(readLines, ioproc)
