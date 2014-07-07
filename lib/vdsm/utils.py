@@ -27,6 +27,7 @@ plentifuly around vdsm.
     Contains a reverse dictionary pointing from error string to its error code.
 """
 from collections import namedtuple, deque
+from contextlib import contextmanager
 from fnmatch import fnmatch
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
@@ -1356,3 +1357,32 @@ def picklecopy(obj):
     https://docs.python.org/2/library/pickle.html
     """
     return pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))
+
+
+def monotonic_time():
+    """
+    Return the amount of time, in secs, elapsed since a fixed
+    arbitrary point in time in the past.
+    This function is useful if the client just
+    needs to use the difference between two given time points.
+
+    With repect to time.time():
+    * The resolution of this function is lower. On Linux,
+      the resolution is 1/_SC_CLK_TCK, which in turn depend on
+      the value of HZ configured in the kernel. A commonly
+      found resolution is 10 (ten) ms.
+    * This functions is resilient with respect to system clock
+      adjustments.
+    """
+    return os.times()[4]
+
+
+@contextmanager
+def stopwatch(message, log=logging.getLogger('vds.stopwatch')):
+    if log.isEnabledFor(logging.DEBUG):
+        start = monotonic_time()
+        yield
+        elapsed = monotonic_time() - start
+        log.debug("%s: %.2f seconds", message, elapsed)
+    else:
+        yield
