@@ -48,6 +48,10 @@ class Command:
     RECEIPT = "RECEIPT"
 
 
+COMMANDS = tuple([command for command in dir(Command)
+                  if not command.startswith('_')])
+
+
 class AckMode:
     AUTO = "auto"
 

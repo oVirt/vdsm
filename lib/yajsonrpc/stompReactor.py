@@ -295,14 +295,14 @@ class StompReactor(object):
 class StompDetector():
     log = logging.getLogger("protocoldetector.StompDetector")
     NAME = "stomp"
-    REQUIRED_SIZE = 7
+    REQUIRED_SIZE = max(len(s) for s in stomp.COMMANDS)
 
     def __init__(self, json_binding):
         self.json_binding = json_binding
         self._reactor = self.json_binding.createStompReactor()
 
     def detect(self, data):
-        return data.startswith("CONNECT") or data.startswith("SEND")
+        return data.startswith(stomp.COMMANDS)
 
     def handleSocket(self, client_socket, socket_address):
         self.json_binding.add_socket(self._reactor, client_socket,
