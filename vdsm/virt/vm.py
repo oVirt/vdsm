@@ -561,7 +561,7 @@ class VmStatsThread(AdvancedStatsThread):
                 try:
                     dLatency = _avgLatencyCalc(sInfo[dName], eInfo[dName])
                 except (KeyError, TypeError):
-                    self._log.exception("Disk %s latency not available", dName)
+                    self._log.warning("Disk %s latency not available", dName)
 
             stats[dName].update(dLatency)
 
