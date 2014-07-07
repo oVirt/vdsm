@@ -279,8 +279,7 @@ class Vm(object):
         """
         self._dom = None
         self.recovering = recover
-        self.conf = {'pid': '0'}
-        self.conf['_blockJobs'] = {}
+        self.conf = {'pid': '0', '_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
         if 'smp' not in self .conf:
             self.conf['smp'] = '1'
@@ -292,7 +291,6 @@ class Vm(object):
         self._recoveryFile = constants.P_VDSM_RUN + \
             str(self.conf['vmId']) + '.recovery'
         self._monitorResponse = 0
-        self.conf['clientIp'] = ''
         self.memCommitted = 0
         self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
         self._confLock = threading.Lock()
