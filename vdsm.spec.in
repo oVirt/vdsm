@@ -61,6 +61,7 @@ BuildRequires: python-devel
 BuildRequires: python-nose
 BuildRequires: python-netaddr
 BuildRequires: rpm-build
+BuildRequires: cyrus-sasl-lib
 
 # BuildRequires needed by the tests during the build
 BuildRequires: dosfstools
