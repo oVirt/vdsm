@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -121,10 +121,13 @@ def _resolveLoopDevice(path):
     loopdir = os.path.join(_SYS_DEV_BLOCK_PATH,
                            '%d:%d' % (major, minor),
                            'loop')
-    if os.path.exists(loopdir):
+    try:
         with open(loopdir + "/backing_file", "r") as f:
             # Remove trailing newline
             return f.read()[:-1]
+    except IOError as e:
+        if e.errno != errno.ENOENT:
+            raise
 
     # Old kernels might not have the sysfs entry, this is a bit slower and does
     # not work on hosts that do support the above method.
