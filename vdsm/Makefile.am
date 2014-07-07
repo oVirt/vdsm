@@ -195,9 +195,9 @@ uninstall-data-rwtab:
 	$(RM) $(DESTDIR)$(sysconfdir)/rwtab.d/vdsm
 
 install-data-logrotate:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/logrotate.d
+	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/logrotate
 	$(INSTALL_DATA) $(builddir)/vdsm-logrotate.conf \
-		$(DESTDIR)$(sysconfdir)/logrotate.d/vdsm
+		$(DESTDIR)$(vdsmconfdir)/logrotate/vdsm
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.hourly
 	$(INSTALL_SCRIPT) $(srcdir)/vdsm-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
@@ -206,7 +206,7 @@ install-data-logrotate:
 		$(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
 
 uninstall-data-logrotate:
-	$(RM) $(DESTDIR)$(sysconfdir)/logrotate.d/vdsm
+	$(RM) $(DESTDIR)$(vdsmconfdir)/logrotate/vdsm
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
 
