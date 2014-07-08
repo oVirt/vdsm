@@ -4247,8 +4247,8 @@ class Vm(object):
                 else:
                     fileUtils.padToBlockSize(memoryVolPath)
 
-        snap = xml.dom.minidom.Element('domainsnapshot')
-        disks = xml.dom.minidom.Element('disks')
+        snap = vmxml.Element('domainsnapshot')
+        disks = vmxml.Element('disks')
         newDrives = {}
         snapTypes = {}
 
