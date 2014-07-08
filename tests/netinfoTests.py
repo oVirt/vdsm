@@ -111,43 +111,35 @@ class TestNetinfo(TestCaseBase):
         physical nics: em, me, me0, me1, hid0 and hideous
         dummies: fake and fake0
         bonds: jbond (over me0 and me1)"""
-        lines = ('2: em: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
-                 '  link/ether f0:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0 \\    nic ',
-                 '3: me: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
-                 '  link/ether ff:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0 \\    nic ',
-                 '4: hid0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
-                 '  link/ether ff:de:fa:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0 \\    nic ',
-                 '5: hideous: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc'
-                 ' pfifo_fast state UP mode DEFAULT group default qlen 1000\\ '
-                 '   link/ether ff:de:11:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0 \\    nic ',
-                 '6: me0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast master jbond state UP mode DEFAULT group default '
-                 'qlen 1000\\    link/ether 66:de:f1:da:aa:e7 brd '
-                 'ff:ff:ff:ff:ff:ff promiscuity 0 \\    nic ',
-                 '7: me1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast master jbond state UP mode DEFAULT group default '
-                 'qlen 1000\\    link/ether 66:de:f1:da:aa:e7 brd '
-                 'ff:ff:ff:ff:ff:ff promiscuity 0 \\    nic ',
-                 '34: fake0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
-                 '  link/ether ff:aa:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0  \\    dummy ',
-                 '35: fake: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc '
-                 'pfifo_fast state UP mode DEFAULT group default qlen 1000\\  '
-                 '  link/ether ff:aa:f1:da:bb:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 0  \\    dummy ',
-                 '419: jbond: <BROADCAST,MULTICAST,MASTER,UP,LOWER_UP> mtu '
-                 '1500 qdisc noqueue state UP mode DEFAULT group default \\   '
-                 ' link/ether 66:de:f1:da:aa:e7 brd ff:ff:ff:ff:ff:ff '
-                 'promiscuity 1 \\    bond')
-        return [ipwrapper.Link.fromText(line) for line in lines]
+        return [ipwrapper.Link(address='f0:de:f1:da:aa:e7', index=2,
+                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                               name='em', qdisc='pfifo_fast', state='up'),
+                ipwrapper.Link(address='ff:de:f1:da:aa:e7', index=3,
+                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                               name='me', qdisc='pfifo_fast', state='up'),
+                ipwrapper.Link(address='ff:de:fa:da:aa:e7', index=4,
+                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                               name='hid0', qdisc='pfifo_fast', state='up'),
+                ipwrapper.Link(address='ff:de:11:da:aa:e7', index=5,
+                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                               name='hideous', qdisc='pfifo_fast', state='up'),
+                ipwrapper.Link(address='66:de:f1:da:aa:e7', index=6,
+                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                               name='me0', qdisc='pfifo_fast', state='up',
+                               master='jbond'),
+                ipwrapper.Link(address='66:de:f1:da:aa:e7', index=7,
+                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                               name='me1', qdisc='pfifo_fast', state='up',
+                               master='jbond'),
+                ipwrapper.Link(address='ff:aa:f1:da:aa:e7', index=34,
+                               linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
+                               name='fake0', qdisc='pfifo_fast', state='up'),
+                ipwrapper.Link(address='ff:aa:f1:da:bb:e7', index=35,
+                               linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
+                               name='fake', qdisc='pfifo_fast', state='up'),
+                ipwrapper.Link(address='66:de:f1:da:aa:e7', index=419,
+                               linkType=ipwrapper.LinkType.BOND, mtu=1500,
+                               name='jbond', qdisc='pfifo_fast', state='up')]
 
     def testNics(self):
         """

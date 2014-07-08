@@ -148,22 +148,6 @@ class Link(object):
         data['linkType'] = cls._detectType(data['name'])
         return cls(**data)
 
-    @classmethod
-    def fromText(cls, text):
-        """Creates a Link object from the textual representation from
-        iproute2's "ip -o -d link show" command."""
-        attrs = _parseLinkLine(text)
-        if 'linkType' not in attrs:
-            attrs['linkType'] = cls._detectType(attrs['name'])
-        if attrs['linkType'] in (LinkType.VLAN, LinkType.MACVLAN):
-            name, device = attrs['name'].split('@')
-            attrs['name'] = name
-            attrs['device'] = device
-        if 'vlanid' in attrs:
-            attrs['vlanid'] = int(attrs['vlanid'])
-        attrs['mtu'] = int(attrs['mtu'])
-        return cls(**attrs)
-
     @staticmethod
     def _detectType(name):
         """Returns the LinkType for the specified device."""
