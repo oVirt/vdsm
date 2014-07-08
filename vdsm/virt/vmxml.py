@@ -19,7 +19,25 @@
 #
 
 import sys
+import xml.dom
 import xml.dom.minidom
+
+
+def all_devices(domXML):
+    domObj = xml.dom.minidom.parseString(domXML)
+    devices = domObj.childNodes[0].getElementsByTagName('devices')[0]
+
+    for deviceXML in devices.childNodes:
+        if deviceXML.nodeType == xml.dom.Node.ELEMENT_NODE:
+            yield deviceXML
+
+
+def filter_devices_with_alias(devices):
+    for deviceXML in devices:
+        aliasElement = deviceXML.getElementsByTagName('alias')
+        if aliasElement:
+            alias = aliasElement[0].getAttribute('name')
+            yield deviceXML, alias
 
 
 class Element(object):

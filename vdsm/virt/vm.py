@@ -23,7 +23,6 @@
 from contextlib import contextmanager
 from copy import deepcopy
 from operator import itemgetter
-from xml.dom import Node
 from xml.dom.minidom import parseString as _domParseStr
 import logging
 import os
@@ -5554,19 +5553,9 @@ class Vm(object):
                                    "during migration at destination host" %
                                    devType)
 
-        devices = _domParseStr(xml).childNodes[0]. \
-            getElementsByTagName('devices')[0]
-
-        for deviceXML in devices.childNodes:
-            if deviceXML.nodeType != Node.ELEMENT_NODE:
-                continue
-
-            aliasElement = deviceXML.getElementsByTagName('alias')
-            if aliasElement:
-                alias = aliasElement[0].getAttribute('name')
-
-                if alias in aliasToDevice:
-                    aliasToDevice[alias]._deviceXML = deviceXML.toxml()
+        for deviceXML, alias in _devicesWithAlias(xml):
+            if alias in aliasToDevice:
+                aliasToDevice[alias]._deviceXML = deviceXML.toxml()
 
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""
@@ -5749,19 +5738,9 @@ class Vm(object):
 
     def _lookupDeviceXMLByAlias(self, targetAlias):
         domXML = self._getUnderlyingVmInfo()
-        devices = _domParseStr(domXML).childNodes[0]. \
-            getElementsByTagName('devices')[0]
-
-        for deviceXML in devices.childNodes:
-            if deviceXML.nodeType != Node.ELEMENT_NODE:
-                continue
-
-            aliasElement = deviceXML.getElementsByTagName('alias')
-            if aliasElement:
-                alias = aliasElement[0].getAttribute('name')
-
-                if alias == targetAlias:
-                    return deviceXML
+        for deviceXML, alias in _devicesWithAlias(domXML):
+            if alias == targetAlias:
+                return deviceXML
         return None
 
     def _driveGetActualVolumeChain(self, drive):
@@ -5894,6 +5873,10 @@ class Vm(object):
         for dev in self.conf['devices']:
             if dev['type'] == BALLOON_DEVICES:
                 yield dev
+
+
+def _devicesWithAlias(domXML):
+    return vmxml.filter_devices_with_alias(vmxml.all_devices(domXML))
 
 
 def _getNetworkIp(network):
