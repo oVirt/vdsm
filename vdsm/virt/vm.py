@@ -4227,10 +4227,9 @@ class Vm(object):
         def _memorySnapshot(memoryVolumePath):
             """Libvirt snapshot XML"""
 
-            memory = xml.dom.minidom.Element('memory')
-            memory.setAttribute('snapshot', 'external')
-            memory.setAttribute('file', memoryVolumePath)
-            return memory
+            return vmxml.Element('memory',
+                                 snapshot='external',
+                                 file=memoryVolumePath)
 
         def _vmConfForMemorySnapshot():
             """Returns the needed vm configuration with the memory snapshot"""
