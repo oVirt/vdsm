@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import sys
 import xml.dom.minidom
 
 
@@ -47,3 +48,45 @@ class Element(object):
         child = Element(childName, text, **attrs)
         self._elem.appendChild(child)
         return child
+
+
+if sys.version_info[:2] == (2, 6):
+    # A little unrelated hack to make xml.dom.minidom.Document.toprettyxml()
+    # not wrap Text node with whitespace.
+    # reported upstream in http://bugs.python.org/issue4147
+    # fixed in python 2.7 and python >= 3.2
+    def __hacked_writexml(self, writer, indent="", addindent="", newl=""):
+
+        # copied from xml.dom.minidom.Element.writexml and hacked not to wrap
+        # Text nodes with whitespace.
+
+        # indent = current indentation
+        # addindent = indentation to add to higher levels
+        # newl = newline string
+        writer.write(indent + "<" + self.tagName)
+
+        attrs = self._get_attributes()
+        a_names = attrs.keys()
+        a_names.sort()
+
+        for a_name in a_names:
+            writer.write(" %s=\"" % a_name)
+            # _write_data(writer, attrs[a_name].value) # replaced
+            xml.dom.minidom._write_data(writer, attrs[a_name].value)
+            writer.write("\"")
+        if self.childNodes:
+            # added special handling of Text nodes
+            if (len(self.childNodes) == 1 and
+                    isinstance(self.childNodes[0], xml.dom.minidom.Text)):
+                writer.write(">")
+                self.childNodes[0].writexml(writer)
+                writer.write("</%s>%s" % (self.tagName, newl))
+            else:
+                writer.write(">%s" % (newl))
+                for node in self.childNodes:
+                    node.writexml(writer, indent + addindent, addindent, newl)
+                writer.write("%s</%s>%s" % (indent, self.tagName, newl))
+        else:
+            writer.write("/>%s" % (newl))
+
+    xml.dom.minidom.Element.writexml = __hacked_writexml
