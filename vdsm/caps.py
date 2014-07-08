@@ -29,6 +29,7 @@ import time
 import linecache
 import glob
 import re
+from distutils.version import LooseVersion
 
 import libvirt
 import rpm
@@ -599,7 +600,19 @@ def get():
     caps['reservedMem'] = str(config.getint('vars', 'host_mem_reserve') +
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
-    caps['rngSources'] = _getRngSources()
+
+    # Verify that our libvirt supports virtio RNG (since 10.0.2-31)
+    libvirtVer = LooseVersion(
+        '-'.join((caps['packages2']['libvirt']['version'],
+                  caps['packages2']['libvirt']['release'])))
+    requiredVer = LooseVersion('0.10.2-31')
+
+    if libvirtVer >= requiredVer:
+        caps['rngSources'] = _getRngSources()
+    else:
+        logging.debug('VirtioRNG DISABLED: libvirt version %s required >= %s',
+                      libvirtVer, requiredVer)
+
     caps['numaNodes'] = getNumaTopology()
     caps['numaNodeDistance'] = getNumaNodeDistance()
     caps['autoNumaBalancing'] = getAutoNumaBalancingInfo()
