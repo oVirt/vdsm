@@ -506,10 +506,6 @@ def routeShowGateways(table):
     return _execCmd(command)
 
 
-def routeShowAllDefaultGateways():
-    return routeShowGateways('all')
-
-
 def routeShowTable(table):
     command = [_IP_BINARY.cmd, 'route', 'show', 'table', table]
     return _execCmd(command)
@@ -568,21 +564,6 @@ def ruleDel(rule):
 def ruleExists(rule):
     return rule in _getValidEntries(constructor=Rule.fromText,
                                     iterable=ruleList())
-
-
-def linkShowDev(dev):
-    command = [_IP_BINARY.cmd, '-d', 'link', 'show', 'dev', dev]
-    return _execCmd(command)
-
-
-def linksShowDetailed(dev=None):
-    """Returns a list of detailed link information (each device output
-    collapsed into a single line). If a device is specified, only that link
-    output will be returned (if present)."""
-    command = [_IP_BINARY.cmd, '-d', '-o', 'link']
-    if dev:
-        command += ['show', 'dev', dev]
-    return _execCmd(command)
 
 
 def addrAdd(dev, ipaddr, netmask, family=4):
@@ -682,7 +663,3 @@ class Monitor(object):
     @classmethod
     def _parse(cls, text):
         return [cls._parseLine(line) for line in text.splitlines()]
-
-
-def _dev_sysfs_exists(devName):
-    return os.path.exists(os.path.join(NET_SYSFS, devName))
