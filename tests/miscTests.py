@@ -36,7 +36,7 @@ from vdsm import utils
 import storage.outOfProcess as oop
 import storage.misc as misc
 import storage.fileUtils as fileUtils
-from testValidation import checkSudo
+from testValidation import brokentest, checkSudo
 
 EXT_CHMOD = "/bin/chmod"
 EXT_CHOWN = "/bin/chown"
@@ -888,6 +888,7 @@ class CleanUpDir(TestCaseBase):
 
 
 class ReadFile(TestCaseBase):
+    @brokentest('newish kernel/dd fail to read unaligned block size')
     def testValidInput(self):
         """
         Test if method works when given a valid file.
