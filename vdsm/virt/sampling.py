@@ -110,8 +110,9 @@ class InterfaceSample:
         self.txErrors = self.readIfaceStat(ifid, 'tx_errors')
         self.operstate = self.readIfaceOperstate(ifid)
         self.speed = _getLinkSpeed(link)
+        self.duplex = _getDuplex(ifid)
 
-    _LOGGED_ATTRS = ('operstate', 'speed')
+    _LOGGED_ATTRS = ('operstate', 'speed', 'duplex')
 
     def _log_attrs(self, attrs):
         return ' '.join(
@@ -670,3 +671,13 @@ def _getLinkSpeed(dev):
     else:
         speed = 0
     return speed
+
+
+def _getDuplex(ifid):
+    """Return whether a device is connected in full-duplex. Return 'unknown' if
+    duplex state is not known"""
+    try:
+        with open('/sys/class/net/%s/duplex' % ifid) as src:
+            return src.read().strip()
+    except IOError:
+        return 'unknown'
