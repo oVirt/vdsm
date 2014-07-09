@@ -37,7 +37,7 @@ import re
 from vdsm import utils
 from vdsm import netinfo
 from vdsm.ipwrapper import getLinks
-from vdsm.constants import P_VDSM_RUN
+from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 
 import caps
 
@@ -279,11 +279,16 @@ class HostSample(TimedSample):
             self.thpState = 'never'
         self.cpuCores = CpuCoreSample()
         self.numaNodeMem = NumaNodeMemorySample()
+        ENGINE_DEFAULT_POLL_INTERVAL = 15
+        self.recentClient = (
+            self.timestamp - os.stat(P_VDSM_CLIENT_LOG).st_mtime <
+            2 * ENGINE_DEFAULT_POLL_INTERVAL)
 
     def to_connlog(self):
-        return ', '.join(
+        text = ', '.join(
             ('%s:(%s)' % (ifid, ifacesample.to_connlog()))
             for (ifid, ifacesample) in self.interfaces.iteritems())
+        return ('recent_client:%s, ' % self.recentClient) + text
 
     def connlog_diff(self, other):
         text = ''
@@ -294,6 +299,10 @@ class HostSample(TimedSample):
                     text += '%s:(%s) ' % (ifid, diff)
             else:
                 text += 'new %s:(%s) ' % (ifid, sample.to_connlog())
+
+        if self.recentClient != other.recentClient:
+            text += 'recent_client:%s' % self.recentClient
+
         return text
 
 
