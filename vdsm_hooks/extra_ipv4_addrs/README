@@ -1,0 +1,17 @@
+extra_ipv4_addrs vdsm hook
+=================================
+This hook allows the user to set extra ipv4 addresses for vdsm networks.
+
+Requirements:
+* oVirt-3.5
+
+Usage:
+Configure the engine to enable setting the ipv4_addrs custom property by doing:
+
+    $ engine-config -s 'UserDefinedNetworkCustomProperties=ipv4_addrs=.*' \
+      --cver='3.5'
+
+In the oVirt UI edit custom network properties and, for the key 'ipv4_addrs'
+set the extra addresses in the following format:
+
+    'addr/prefix, addr2/prefix2, ..., addrN/prefixN'

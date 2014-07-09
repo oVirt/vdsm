@@ -377,6 +377,7 @@ AC_OUTPUT([
 	vdsm_hooks/diskunmap/Makefile
 	vdsm_hooks/ethtool_options/Makefile
 	vdsm_hooks/extnet/Makefile
+	vdsm_hooks/extra_ipv4_addrs/Makefile
 	vdsm_hooks/fakesriov/Makefile
 	vdsm_hooks/fakevmstats/Makefile
 	vdsm_hooks/faqemu/Makefile

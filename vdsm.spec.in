@@ -385,6 +385,13 @@ Requires:       %{name} = %{version}-%{release}
 VDSM hook used for applying custom network properties that define ethtool
 options for vdsm network nics
 
+%package hook-extra-ipv4-addrs
+Summary:        Set extra ipv4 addresses for vdsm networks.
+
+%description hook-extra-ipv4-addrs
+This hook allows the user to set extra ipv4
+addresses for vdsm networks.
+
 %if 0%{?with_vhostmd}
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
@@ -1317,6 +1324,10 @@ exit 0
 %files hook-checkimages
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
+
+%files hook-extra-ipv4-addrs
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/40_extra_ipv4_addrs
 
 %files hook-diskunmap
 %defattr(-, root, root, -)

@@ -38,6 +38,7 @@ SUBDIRS += \
 	checkimages \
 	diskunmap \
 	extnet \
+	extra_ipv4_addrs \
 	fileinject \
 	fakesriov \
 	fakevmstats \
