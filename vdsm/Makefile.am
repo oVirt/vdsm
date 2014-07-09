@@ -36,7 +36,6 @@ dist_vdsm_PYTHON = \
 	ksm.py \
 	logUtils.py \
 	lsblk.py \
-	md_utils.py \
 	mkimage.py \
 	momIF.py \
 	numaUtils.py \

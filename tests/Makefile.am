@@ -47,7 +47,6 @@ test_modules = \
 	lsblkTests.py \
 	lvmTests.py \
 	main.py \
-	md_utils_tests.py \
 	miscTests.py \
 	mkimageTests.py \
 	monkeypatchTests.py \
