@@ -40,10 +40,15 @@ include $(top_srcdir)/build-aux/Makefile.subs
 # This is an *exception*, we ship also vdsm.spec so it's possible to build the
 # rpm from the tarball.
 EXTRA_DIST = \
+	.gitignore \
+	autobuild.sh \
+	autogen.sh \
 	build-aux/pkg-version \
 	contrib/profile-stats \
+	pylintrc \
 	vdsm.spec \
-	vdsm.spec.in
+	vdsm.spec.in \
+	$(NULL)
 
 CLEANFILES = \
 	vdsm.spec \
