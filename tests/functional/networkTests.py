@@ -238,7 +238,7 @@ class NetworkTest(TestCaseBase):
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            with RollbackContext() as rollback:
+            with RollbackContext(on_exception_only=True) as rollback:
                 rollback.prependDefer(args[0].vdsm_net.restoreNetConfig)
                 func(*args, **kwargs)
         return wrapper
@@ -1945,6 +1945,7 @@ class NetworkTest(TestCaseBase):
                 addrFlush(nic)
 
     @permutations([[False], [True]])
+    @cleanupNet
     def testBrokenNetworkReplacement(self, bridged):
         with dummyIf(1) as nics:
             nic, = nics

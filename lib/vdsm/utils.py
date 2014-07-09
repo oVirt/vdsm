@@ -1119,8 +1119,9 @@ class RollbackContext(object):
 
     More examples see tests/utilsTests.py
     '''
-    def __init__(self, *args):
+    def __init__(self, on_exception_only=False):
         self._finally = []
+        self._on_exception_only = on_exception_only
 
     def __enter__(self):
         return self
@@ -1131,6 +1132,9 @@ class RollbackContext(object):
         exception), python re-raises the original exception once this
         function is finished.
         """
+        if self._on_exception_only and exc_type is None and exc_value is None:
+            return
+
         undoExcInfo = None
         for undo, args, kwargs in self._finally:
             try:
