@@ -1,0 +1,40 @@
+diskunmap vdsm hook:
+==================
+This hook goes through all of the VM's disks and manipulate its XML
+file acccording to the input. This can be used to enable UNMAP feature
+to discard unused blocks for better use of thin provisioned storage
+devices.
+
+Syntax:
+    diskunmap=(off|on)
+
+Where:
+    'on' is unmap enabled and off (default) is unmap disabled.
+
+Example:
+    diskunmap=on
+
+Installation:
+    - Use the engine-config to append the proper custom property:
+        $ sudo engine-config -s UserDefinedVMProperties='diskunmap=^(off|on)$'
+    - Verify that the macbind custom property was properly added:
+        $ sudo engine-config -g UserDefinedVMProperties
+
+Usage:
+    In the VM configuration window, open the custom properites tab, select
+    diskmap and select 'on', activating disk UNMAP for all disks and LUNs.
+    Only devices using IDE or VirtIO-SCSI interface will be affected. UNMAP is
+    not available for VirtIO interface.
+
+Expected Result:
+    For every DISK or LUN device, this configuration will include
+    "discard=unmap" to disk driver xml:
+
+    <disk device="disk" snapshot="no" type="block">
+        ...
+        <driver cache="none" discard="unmap" ...  />
+    </disk>
+
+    This option will be translated to qemu as bellow:
+
+    ... -drive file=<file>,discard=unmap,...

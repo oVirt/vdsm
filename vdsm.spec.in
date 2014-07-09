@@ -359,6 +359,14 @@ Requires:       %{name}
 VDSM hook used to perform consistency check on a qcow2 format disk image
 using the QEMU disk image utility.
 
+%package hook-diskunmap
+Summary:        Activate UNMAP for disk/lun devices
+BuildArch:      noarch
+Requires:       qemu-kvm >= 1.5
+
+%description hook-diskunmap
+VDSM hooks which allow to activate disk UNMAP.
+
 %package hook-ethtool-options
 Summary:        Allow setting custom ethtool options for vdsm controlled nics
 Requires:       %{name} = %{version}-%{release}
@@ -1343,6 +1351,10 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_directlun
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_directlun
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_directlun
+
+%files hook-diskunmap
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_diskunmap
 
 %files hook-fakevmstats
 %defattr(-, root, root, -)
