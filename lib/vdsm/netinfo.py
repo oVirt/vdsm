@@ -836,7 +836,7 @@ def getDeviceByIP(ip):
         address = addr['address'].split('/')[0]
         if ((addr['family'] == 'inet' and
              ip in (address, IPv4toMapped(address))) or (
-                 addr['family'] == 'inet6' and ip == address)):
+                addr['family'] == 'inet6' and ip == address)):
             return addr['label']
     return ''
 
