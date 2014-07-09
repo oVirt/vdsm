@@ -301,7 +301,7 @@ class AsyncProcTests(TestCaseBase):
         self.log.info("Written data reading")
         self.assertEquals(p.stdout.read(len(data)), data)
 
-    def writeLargeData(self):
+    def testWriteLargeData(self):
         data = """The Doctor: Davros, if you had created a virus in your
                               laboratory, something contagious and infectious
                               that killed on contact, a virus that would
@@ -321,8 +321,7 @@ class AsyncProcTests(TestCaseBase):
                           Daleks, I shall have that power! """
         # (C) BBC - Doctor Who
 
-        data = data * ((4096 / len(data)) * 2)
-        self.assertTrue(data > 4096)
+        data = data * 100
         p = utils.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data)
