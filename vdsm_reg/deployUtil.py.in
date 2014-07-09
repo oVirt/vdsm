@@ -465,7 +465,7 @@ def getMGTIP(vdsmDir, vdcHostName):
     if strIface is not None:
         ipv4addr, _, _, _ = netinfo.getIpInfo(strIface)
 
-    logging.debug("getMGTIP: Host MGT IP=", ipv4addr)
+    logging.debug("getMGTIP: Host MGT IP=%s", ipv4addr)
     return ipv4addr
 
 
