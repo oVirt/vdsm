@@ -784,8 +784,6 @@ class SPM_MailMonitor:
                 try:
                     self._checkForMail()
                 except:
-                    if (self._inLock.locked()):
-                        self._inLock.release()
                     self.log.error("Error checking for mail", exc_info=True)
                 time.sleep(self._monitorInterval)
         finally:
