@@ -644,7 +644,8 @@ class HostStatsThread(threading.Thread):
                                 interval, thisRx, thisTx,
                                 [(hs.timestamp, hs.interfaces[ifid].rx,
                                  hs.interfaces[ifid].tx)
-                                 for hs in self._samples])
+                                 for hs in self._samples if
+                                 ifid in hs.interfaces])
             iface = hs1.interfaces[ifid]
             stats['network'][ifid] = {'name': ifid, 'speed': str(ifrate),
                                       'rxDropped': str(iface.rxDropped),
