@@ -591,21 +591,19 @@ class SPM_MailMonitor:
         return self._numHosts
 
     def setMaxHostID(self, newMaxId):
-        self._inLock.acquire()
-        self._outLock.acquire()
-        diff = newMaxId - self._numHosts
-        if diff > 0:
-            delta = MAILBOX_SIZE * diff * "\0"
-            self._outgoingMail += delta
-            self._incomingMail += delta
-        elif diff < 0:
-            delta = MAILBOX_SIZE * diff
-            self._outgoingMail = self._outgoingMail[:-delta]
-            self._incomingMail = self._incomingMail[:-delta]
-        self._numHosts = newMaxId
-        self._outMailLen = MAILBOX_SIZE * self._numHosts
-        self._outLock.release()
-        self._inLock.release()
+        with self._inLock:
+            with self._outLock:
+                diff = newMaxId - self._numHosts
+                if diff > 0:
+                    delta = MAILBOX_SIZE * diff * "\0"
+                    self._outgoingMail += delta
+                    self._incomingMail += delta
+                elif diff < 0:
+                    delta = MAILBOX_SIZE * diff
+                    self._outgoingMail = self._outgoingMail[:-delta]
+                    self._incomingMail = self._incomingMail[:-delta]
+                self._numHosts = newMaxId
+                self._outMailLen = MAILBOX_SIZE * self._numHosts
 
     def _validateMailbox(self, mailbox, mailboxIndex):
         chkStart = MAILBOX_SIZE - CHECKSUM_BYTES
