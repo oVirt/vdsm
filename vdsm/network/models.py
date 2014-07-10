@@ -387,8 +387,8 @@ class IPv6(object):
             if gateway:
                 self.validateGateway(gateway)
         elif gateway:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified prefixlen '
-                                     'or gateway but not ip address.')
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified gateway but '
+                                     'not ip address.')
         self.address = address
         self.gateway = gateway
         self.defaultRoute = defaultRoute

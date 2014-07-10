@@ -24,7 +24,7 @@ import os
 from vdsm import netinfo
 
 from network import errors
-from network.models import Bond, Bridge, IPv4, Nic, Vlan
+from network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from network.models import _nicSort
 
 from testrunner import VdsmTestCase as TestCaseBase
@@ -120,6 +120,18 @@ class TestNetmodels(TestCaseBase):
 
         for mask in masks:
             self.assertEqual(IPv4.validateNetmask(mask), None)
+
+    def testIsIpv6Valid(self):
+        addresses = ('::', '::1', 'fe80::83b1:447f:fe2a:3dbd', 'fe80::/16')
+        badAddresses = ('::abcd::', 'ff:abcde::1', 'fe80::/132')
+
+        for address in badAddresses:
+            with self.assertRaises(errors.ConfigNetworkError) as cneContext:
+                IPv6.validateAddress(address)
+            self.assertEqual(cneContext.exception.errCode, errors.ERR_BAD_ADDR)
+
+        for address in addresses:
+            self.assertEqual(IPv6.validateAddress(address), None)
 
     @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
     @MonkeyPatch(Bond, 'validateOptions', lambda *x: 0)
