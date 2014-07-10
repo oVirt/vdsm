@@ -129,7 +129,7 @@ class StompServer(object):
         self.check_read()
 
     def check_read(self):
-        if isinstance(self._socket, SSLSocket) and self._socket.pending() > 0:
+        if hasattr(self._socket, 'pending') and self._socket.pending() > 0:
             self._stompConn._dispatcher.handle_read()
 
     def send(self, message):
