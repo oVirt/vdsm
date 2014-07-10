@@ -36,6 +36,7 @@ import task
 from threadPool import ThreadPool
 from storage_exception import InvalidParameterException
 from vdsm import constants
+from vdsm import utils
 
 __author__ = "ayalb"
 __date__ = "$Mar 9, 2009 5:25:07 PM$"
@@ -425,6 +426,8 @@ class HSM_MailMonitor(threading.Thread):
                         MESSAGES_PER_MAILBOX,
                         repr(self._outgoingMail[start:end])))
 
+    @utils.traceback(on=log.name,
+                     msg="Unhandled exception in HSM_MailMonitor thread")
     def run(self):
         try:
             failures = 0
@@ -776,6 +779,8 @@ class SPM_MailMonitor:
         finally:
             self._outLock.release()
 
+    @utils.traceback(on=log.name,
+                     msg="Unhandled exception in SPM_MailMonitor thread")
     def run(self, *args):
         try:
             while not self._stop:
