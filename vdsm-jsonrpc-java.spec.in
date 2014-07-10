@@ -20,10 +20,24 @@
 %global		package_version @PACKAGE_VERSION@
 %global		package_maven_version @PACKAGE_MAVEN_VERSION@
 # Version 1.9 of jackson currently no available for rhel or centos
-%global		jackson_deps_available 0
 
+%if 0%{?fedora:1}
+%global	_use_maven 1
+%global	_use_mockito 1
+%global	jackson_deps_available 1
+%endif
 %if 0%{?rhel:1}
-%global		maven2brewrepodir %{_javadir}/repository.jboss.com/maven2-brew/dummy
+%if %{rhel} >= 7
+%global	_mvn_opts -Pno-test
+%global	_use_maven 1
+%global	_use_mockito 0
+%global	jackson_deps_available 1
+%else
+%global	_use_maven 0
+%global	_use_repolib 1
+%global	maven2brewrepodir %{_javadir}/repository.jboss.com/maven2-brew/dummy
+%global	jackson_deps_available 0
+%endif
 %endif
 
 Summary:	oVirt JsonRpc java client (%{name})
@@ -43,11 +57,10 @@ BuildRequires:	java-devel
 Requires:	java
 
 
-%if 0%{?fedora:1}
+%if %{_use_maven}
 BuildRequires:	apache-commons-logging
 BuildRequires:	jackson
 BuildRequires:	junit
-BuildRequires:	mockito
 BuildRequires:	maven-compiler-plugin
 BuildRequires:	maven-enforcer-plugin
 BuildRequires:	maven-install-plugin
@@ -56,26 +69,29 @@ BuildRequires:	maven-javadoc-plugin
 BuildRequires:	maven-local
 BuildRequires:	maven-source-plugin
 BuildRequires:	maven-surefire-provider-junit4
+%if %{_use_mockito}
+BuildRequires:	mockito
+%endif
 Requires:	apache-commons-logging
 Requires:	jackson
 %else
-BuildRequires:	codehaus-jackson-core-asl
-BuildRequires:	codehaus-jackson-mapper-asl
 BuildRequires:	jakarta-commons-logging
 BuildRequires:	java-1.7.0-openjdk-devel >= 1:1.7
 BuildRequires:	junit4
 # Package not in rhel. it is only build time, at this point (until rhel-7) we can accept that
 # BuildRequires:	mockito
-Requires:	jakarta-commons-logging
 %if %{jackson_deps_available}
+BuildRequires:	codehaus-jackson-core-asl
+BuildRequires:	codehaus-jackson-mapper-asl
 Requires:	jackson >= 1.9
 %endif
+Requires:	jakarta-commons-logging
 %endif
 
 %description
 vdsm jsonrpc java
 
-%if 0%{?fedora:1}
+%if %{_use_maven}
 %package javadoc
 Summary:	Javadocs for %{name}
 Group:		Documentation
@@ -84,7 +100,7 @@ Group:		Documentation
 This package contains the API documentation for %{name}.
 %endif
 
-%if 0%{?rhel:1}
+%if 0%{?_use_repolib:1}
 %package repolib
 Summary:	%{name} maven repo
 %description repolib
@@ -95,7 +111,7 @@ Summary:	%{name} maven repo
 %setup -q -n %{name}-%{package_version}
 
 %build
-%if 0%{?fedora:1}
+%if %{_use_maven}
 %global conf --with-maven --disable-java-build
 %else
 %if !%{jackson_deps_available}
@@ -113,17 +129,17 @@ Summary:	%{name} maven repo
 %configure %{?conf}
 make %{?_smp_mflags}
 
-%if 0%{?fedora:1}
-%mvn_build
+%if %{_use_maven}
+%mvn_build -- %{?_mvn_opts}
 %endif
 
 %install
-%if 0%{?rhel:1}
+%if 0%{?_use_repolib:1}
 rm -rf "%{buildroot}"
 %endif
 make %{?_smp_mflags} install DESTDIR="%{buildroot}"
 
-%if 0%{?fedora:1}
+%if %{_use_maven}
 %mvn_install
 %else
 install -d "%{buildroot}%{_javadir}/%{name}"
@@ -131,7 +147,7 @@ install target/%{name}-client-%{package_maven_version}.jar %{buildroot}%{_javadi
 ln -s %{name}-client-%{package_maven_version}.jar %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
-%if 0%{?rhel:1}
+%if 0%{?_use_repolib:1}
 install -d "%{buildroot}%{maven2brewrepodir}/root"
 install -d "%{buildroot}%{maven2brewrepodir}/%{name}"
 cp pom.xml "%{buildroot}%{maven2brewrepodir}/root/root-%{package_maven_version}.pom"
@@ -139,7 +155,7 @@ cp "%{buildroot}%{_javadir}/%{name}/%{name}-client.jar" "%{buildroot}%{maven2bre
 cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{package_maven_version}.pom"
 %endif
 
-%if 0%{?fedora:1}
+%if %{_use_maven}
 %files -f .mfiles
 %dir %{_javadir}/%{name}
 %else
@@ -148,11 +164,11 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %{_javadir}/%{name}/%{name}*.jar
 %endif
 
-%if 0%{?fedora:1}
+%if %{_use_maven}
 %files javadoc -f .mfiles-javadoc
 %endif
 
-%if 0%{?rhel:1}
+%if 0%{?_use_repolib:1}
 %files repolib
 %{maven2brewrepodir}/
 %endif
