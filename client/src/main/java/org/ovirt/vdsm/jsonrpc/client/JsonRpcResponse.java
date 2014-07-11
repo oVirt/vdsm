@@ -1,12 +1,17 @@
 package org.ovirt.vdsm.jsonrpc.client;
 
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.jsonToByteArray;
+
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ObjectNode;
 
 /**
  * Java bean representing response object.
  *
  */
 public final class JsonRpcResponse {
+    private final static ObjectMapper MAPPER = new ObjectMapper();
     private JsonNode result;
     private JsonNode error;
     private JsonNode id;
@@ -71,5 +76,25 @@ public final class JsonRpcResponse {
         }
 
         return new JsonRpcResponse(node.get("result"), node.get("error"), id);
+    }
+
+    /**
+     * @return Byte array representation of this {@link JsonRpcResponse}.
+     */
+    public byte[] toByteArray() {
+        ObjectNode node = MAPPER.createObjectNode();
+        node.put("jsonrpc", "2.0");
+        if (getError() != null) {
+            node.put("error", getError());
+        }
+        if (getResult() != null) {
+            node.put("result", getResult());
+        }
+        if (getId() == null) {
+            node.putNull("id");
+        } else {
+            node.put("id", getId());
+        }
+        return jsonToByteArray(node, MAPPER);
     }
 }

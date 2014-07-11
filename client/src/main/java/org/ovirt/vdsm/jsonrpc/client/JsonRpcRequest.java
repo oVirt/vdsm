@@ -1,5 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client;
 
+import java.io.IOException;
+
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
@@ -88,6 +90,21 @@ public class JsonRpcRequest {
 
         return new JsonRpcRequest(method, node.get("params"), node.get("id"));
     }
+
+    /**
+     * @see JsonRpcRequest#fromJsonNode(JsonNode)
+     *
+     * @param message - byte array representation of the request.
+     * @return Request object.
+     */
+    public static JsonRpcRequest fromByteArray(byte[] message) {
+        try {
+            return fromJsonNode(MAPPER.readTree(message));
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
 
     /**
      * @return Content of this bean as {@link JsonNode}.
