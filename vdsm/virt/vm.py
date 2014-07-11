@@ -65,8 +65,8 @@ from . import migration
 from . import sampling
 from . import vmexitreason
 from . import vmstatus
-from .vmtune import updateIoTuneDom, collectInnerElements
-from .vmtune import ioTuneValuesToDom, ioTuneDomToValues
+from .vmtune import update_io_tune_dom, collect_inner_elements
+from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
 
 from .utils import isVdsmImage, XMLElement
 from vmpowerdown import VmShutdown, VmReboot
@@ -3818,7 +3818,7 @@ class Vm(object):
                 qos.appendChild(ioTuneElement)
                 metadata_modified = True
 
-            if updateIoTuneDom(ioTuneList[0], params["ioTune"]) > 0:
+            if update_io_tune_dom(ioTuneList[0], params["ioTune"]) > 0:
                 metadata_modified = True
 
             del params['ioTune']
@@ -3890,7 +3890,7 @@ class Vm(object):
             return []
 
         for device in ioTuneList[0].getElementsByTagName("device"):
-            tunables.append(ioTuneDomToValues(device))
+            tunables.append(io_tune_dom_to_values(device))
 
         return tunables
 
@@ -3913,7 +3913,7 @@ class Vm(object):
             io_dom_list = dom.getElementsByTagName("iotune")
             old_io_tune = {}
             if io_dom_list:
-                collectInnerElements(io_dom_list[0], old_io_tune)
+                collect_inner_elements(io_dom_list[0], old_io_tune)
                 old_io_tune.update(io_tune)
                 io_tune = old_io_tune
 
@@ -3942,7 +3942,7 @@ class Vm(object):
             if io_dom_list:
                 dom.removeChild(io_dom_list[0])
             io_dom = XMLElement("iotune")
-            ioTuneValuesToDom(io_tune, io_dom)
+            io_tune_values_to_dom(io_tune, io_dom)
             dom.appendChild(io_dom)
             found_device.specParams['ioTune'] = io_tune
 
