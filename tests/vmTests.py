@@ -26,6 +26,7 @@ import shutil
 import tempfile
 import threading
 import time
+import xml.dom.minidom
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -99,7 +100,8 @@ class FakeDomain(object):
         return -1
 
     def metadata(self, type, uri, flags):
-        return None
+        self._failIfRequested()
+        return '<qos></qos>'
 
     def schedulerParameters(self):
         return {'vcpu_quota': vm._NO_CPU_QUOTA,
@@ -891,6 +893,24 @@ class TestVm(TestCaseBase):
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLinePPC64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
+
+    def testGetVmPolicySucceded(self):
+        with FakeVM() as fake:
+            fake._dom = FakeDomain()
+            self.assertTrue(isinstance(fake._getVmPolicy(),
+                                       xml.dom.minidom.Element))
+
+    def testGetVmPolicyEmptyOnNoMetadata(self):
+        with FakeVM() as fake:
+            fake._dom = FakeDomain(
+                virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA)
+            self.assertTrue(isinstance(fake._getVmPolicy(),
+                                       xml.dom.minidom.Element))
+
+    def testGetVmPolicyFailOnNoDomain(self):
+        with FakeVM() as fake:
+            fake._dom = FakeDomain(virtError=libvirt.VIR_ERR_NO_DOMAIN)
+            self.assertEqual(fake._getVmPolicy(), None)
 
 
 class FakeGuestAgent(object):
