@@ -24,7 +24,6 @@ from itertools import product
 import re
 import shutil
 import tempfile
-import xml.dom.minidom
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -62,7 +61,7 @@ class FakeDomain:
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
-            err =  libvirt.libvirtError(defmsg='')
+            err = libvirt.libvirtError(defmsg='')
             err.err = [self._virtError]
             raise err
 
@@ -879,15 +878,13 @@ class TestVm(TestCaseBase):
     def testGetVmPolicySucceded(self):
         with FakeVM() as fake:
             fake._dom = FakeDomain()
-            self.assertTrue(isinstance(fake._getVmPolicy(),
-                                       xml.dom.minidom.Element))
+            self.assertXML(fake._getVmPolicy(), '<qos/>')
 
     def testGetVmPolicyEmptyOnNoMetadata(self):
         with FakeVM() as fake:
             fake._dom = FakeDomain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA)
-            self.assertTrue(isinstance(fake._getVmPolicy(),
-                                       xml.dom.minidom.Element))
+            self.assertXML(fake._getVmPolicy(), '<qos/>')
 
     def testGetVmPolicyFailOnNoDomain(self):
         with FakeVM() as fake:
