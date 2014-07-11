@@ -3689,8 +3689,10 @@ class Vm(object):
 
         #
         # Get the current QoS block
-        qos = self._getVmPolicy()
         metadata_modified = False
+        qos = self._getVmPolicy()
+        if qos is None:
+            return self._reportError(key='updateVmPolicyErr')
 
         #
         # Process provided properties, remove property after it is processed
@@ -3752,8 +3754,8 @@ class Vm(object):
                 METADATA_VM_TUNE_URI, 0)
         except libvirt.libvirtError as e:
             if e.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN_METADATA:
-                return self._reportException(key='updateVmPolicyErr',
-                                             msg=e.message)
+                self.log.exception("getVmPolicy failed")
+                return None
 
         metadata = xml.dom.minidom.parseString(metadata_xml)
         return metadata.getElementsByTagName("qos")[0]
