@@ -30,7 +30,7 @@ import libvirt
 
 from virt import vm
 from virt import vmexitreason
-from virt.vmtune import ioTuneMerge, ioTuneDomToValues, ioTuneToDom
+from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from vdsm import constants
 from vdsm import define
 from testrunner import VdsmTestCase as TestCaseBase
@@ -1013,8 +1013,8 @@ class TestVm(TestCaseBase):
                 }
             }
 
-            dom = ioTuneToDom(ioTuneValues)
-            parsed = ioTuneDomToValues(dom)
+            dom = io_tune_to_dom(ioTuneValues)
+            parsed = io_tune_dom_to_values(dom)
 
             self.assertEqual(ioTuneValues, parsed)
 
@@ -1066,7 +1066,7 @@ class TestVm(TestCaseBase):
                 }
             }
 
-            ioTuneMerged = ioTuneMerge(ioTuneValues1, ioTuneValues2)
+            ioTuneMerged = io_tune_merge(ioTuneValues1, ioTuneValues2)
 
             self.assertEqual(ioTuneMerged, ioTuneExpectedValues)
 

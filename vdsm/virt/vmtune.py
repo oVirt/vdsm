@@ -27,7 +27,7 @@ from .utils import XMLElement
 log = logging.getLogger(__name__)
 
 
-def ioTuneValuesToDom(values, dom):
+def io_tune_values_to_dom(values, dom):
     """
     Create a DOM representation of the passed iotune values and
     attach it to the dom object in the form of nodes.
@@ -46,7 +46,7 @@ def ioTuneValuesToDom(values, dom):
             dom.appendChild(el)
 
 
-def collectInnerElements(el, d):
+def collect_inner_elements(el, d):
     """
     This helper method collects all nodes in el and adds them
     to dictionary d.
@@ -64,7 +64,7 @@ def collectInnerElements(el, d):
             log.exception("Invalid value for %s", chel.localName)
 
 
-def ioTuneDomToValues(dom):
+def io_tune_dom_to_values(dom):
     """
     This method converts the VmDiskDeviceTuneLimits structure from its
     XML representation to the dictionary representation.
@@ -83,18 +83,18 @@ def ioTuneDomToValues(dom):
     els = dom.getElementsByTagName("guaranteed")
     if els:
         values["guaranteed"] = {}
-        collectInnerElements(els[0], values["guaranteed"])
+        collect_inner_elements(els[0], values["guaranteed"])
 
     els = dom.getElementsByTagName("maximum")
     if els:
         values["maximum"] = {}
         for chel in els[0].childNodes:
-            collectInnerElements(els[0], values["maximum"])
+            collect_inner_elements(els[0], values["maximum"])
 
     return values
 
 
-def ioTuneToDom(tune):
+def io_tune_to_dom(tune):
     """
     This method converts the VmDiskDeviceTuneLimits structure from the
     dictionary representation to the XML representation.
@@ -113,17 +113,17 @@ def ioTuneToDom(tune):
     if "maximum" in tune:
         maximum = XMLElement("maximum")
         device.appendChild(maximum)
-        ioTuneValuesToDom(tune["maximum"], maximum)
+        io_tune_values_to_dom(tune["maximum"], maximum)
 
     if "guaranteed" in tune:
         guaranteed = XMLElement("guaranteed")
         device.appendChild(guaranteed)
-        ioTuneValuesToDom(tune["guaranteed"], guaranteed)
+        io_tune_values_to_dom(tune["guaranteed"], guaranteed)
 
     return device
 
 
-def ioTuneMerge(old, new):
+def io_tune_merge(old, new):
     """
     Merge two VmDiskDeviceTuneLimits structures in their dictionary form
     and return the new iotune setting.
@@ -152,7 +152,7 @@ def ioTuneMerge(old, new):
     return result
 
 
-def createDeviceIndex(ioTune):
+def create_device_index(ioTune):
     """
     Create by name / by path dictionaries from the XML representation.
     Returns a tuple (by_name, by_path) where the items are the respective
@@ -176,7 +176,7 @@ def createDeviceIndex(ioTune):
     return ioTuneByName, ioTuneByPath
 
 
-def updateIoTuneDom(ioTune, tunables):
+def update_io_tune_dom(ioTune, tunables):
     """
     This method takes a list of VmDiskDeviceTuneLimits objects and applies
     the changes to the XML element representing the current iotune settings,
@@ -191,7 +191,7 @@ def updateIoTuneDom(ioTune, tunables):
     count = 0
 
     # Get all existing ioTune records and create name/path index
-    ioTuneByName, ioTuneByPath = createDeviceIndex(ioTune)
+    ioTuneByName, ioTuneByPath = create_device_index(ioTune)
 
     for limit_object in tunables:
         old_tune = None
@@ -205,10 +205,10 @@ def updateIoTuneDom(ioTune, tunables):
             ioTune.removeChild(old_tune)
 
         if old_tune is not None:
-            old_object = ioTuneDomToValues(old_tune)
-            limit_object = ioTuneMerge(old_object, limit_object)
+            old_object = io_tune_dom_to_values(old_tune)
+            limit_object = io_tune_merge(old_object, limit_object)
 
-        new_tune = ioTuneToDom(limit_object)
+        new_tune = io_tune_to_dom(limit_object)
         ioTune.appendChild(new_tune)
         count += 1
 
