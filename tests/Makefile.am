@@ -31,6 +31,7 @@ test_modules = \
 	clientifTests.py \
 	cmdutilsTests.py \
 	configNetworkTests.py \
+	executorTests.py \
 	fileVolumeTests.py \
 	fileUtilTests.py \
 	fuserTests.py \
