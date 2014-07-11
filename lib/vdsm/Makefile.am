@@ -27,6 +27,7 @@ dist_vdsmpylib_PYTHON = \
 	compat.py \
 	define.py \
 	exception.py \
+	executor.py \
 	ipwrapper.py \
 	libvirtconnection.py \
 	netconfpersistence.py \
