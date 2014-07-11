@@ -564,46 +564,18 @@ class VmStatsThread(AdvancedStatsThread):
     def _getDiskLatency(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleDiskLatency.getStats()
 
-        def _avgLatencyCalc(sData, eData):
-            readLatency = (0 if not (eData['rd_operations'] -
-                                     sData['rd_operations'])
-                           else (eData['rd_total_times'] -
-                                 sData['rd_total_times']) /
-                                (eData['rd_operations'] -
-                                 sData['rd_operations']))
-            writeLatency = (0 if not (eData['wr_operations'] -
-                                      sData['wr_operations'])
-                            else (eData['wr_total_times'] -
-                                  sData['wr_total_times']) /
-                                 (eData['wr_operations'] -
-                                  sData['wr_operations']))
-            flushLatency = (0 if not (eData['flush_operations'] -
-                                      sData['flush_operations'])
-                            else (eData['flush_total_times'] -
-                                  sData['flush_total_times']) /
-                                 (eData['flush_operations'] -
-                                  sData['flush_operations']))
-            return {
-                'readLatency': str(readLatency),
-                'writeLatency': str(writeLatency),
-                'flushLatency': str(flushLatency)}
-
         for vmDrive in self._vm.getDiskDevices():
-            dName = vmDrive.name
-            dLatency = {'readLatency': '0',
-                        'writeLatency': '0',
-                        'flushLatency': '0'}
+            dStats = {'readLatency': '0', 'writeLatency': '0',
+                      'flushLatency': '0'}
+            try:
+                if (sInfo and vmDrive.name in sInfo and
+                   eInfo and vmDrive.name in eInfo):
+                    dStats = _calcDiskLatency(vmDrive, sInfo, eInfo)
+            except (KeyError, TypeError):
+                self._log.exception("Disk %s latency not available",
+                                    vmDrive.name)
 
-            if (sInfo and dName in sInfo and eInfo and dName in eInfo):
-                # will be None if sampled during recovery
-                # in case of hotplugged disk, start samples will
-                # be missed until the sampling code catches up.
-                try:
-                    dLatency = _avgLatencyCalc(sInfo[dName], eInfo[dName])
-                except TypeError:
-                    self._log.warning("Disk %s latency not available", dName)
-
-            stats[dName].update(dLatency)
+            stats[vmDrive.name].update(dStats)
 
     def _getVmJobs(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleVmJobs.getStats()
@@ -652,6 +624,23 @@ class VmStatsThread(AdvancedStatsThread):
             return False
 
         return True
+
+
+def _calcDiskLatency(vmDrive, sInfo, eInfo):
+    dname = vmDrive.name
+
+    def compute_latency(ltype):
+        ops = ltype + '_operations'
+        operations = eInfo[dname][ops] - sInfo[dname][ops]
+        if not operations:
+            return 0
+        times = ltype + '_total_times'
+        elapsed_time = eInfo[dname][times] - sInfo[dname][times]
+        return elapsed_time / operations
+
+    return {'readLatency': str(compute_latency('rd')),
+            'writeLatency': str(compute_latency('wr')),
+            'flushLatency': str(compute_latency('flush'))}
 
 
 class TimeoutError(libvirt.libvirtError):
