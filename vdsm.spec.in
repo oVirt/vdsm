@@ -113,6 +113,7 @@ Requires: python-netaddr
 Requires: python-inotify
 Requires: python-argparse
 Requires: python-cpopen >= 1.3
+Requires: python-pthreading >= 0.1.3-3
 Requires: python-ethtool >= 0.6-3
 Requires: %{name}-python-zombiereaper = %{version}-%{release}
 Requires: rpm-python
@@ -166,7 +167,6 @@ Requires: fence-agents-all
 Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
-Requires: python-pthreading >= 0.1.2
 Requires: qemu-kvm
 Requires: qemu-img
 Requires: selinux-policy-targeted
@@ -182,14 +182,12 @@ Requires: kernel >= 2.6.32-279.9.1
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: policycoreutils >= 2.0.83-19.30
 Requires: policycoreutils-python >= 2.0.83-19.30
-Requires: python-pthreading
 Requires: selinux-policy-targeted >= 3.7.19-195.el6_4.13
 Requires: lvm2 >= 2.02.95-10.el6_3.2
 Requires: logrotate < 3.8.0
 %endif
 %else
 %if 0%{?fedora} >= 19
-Requires: python-pthreading >= 0.1.2
 Requires: fence-agents-all
 Requires: kernel >= 3.11.3-201
 %else
