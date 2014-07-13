@@ -691,12 +691,13 @@ def configure(*args):
     sys.stdout.write("\nChecking configuration status...\n\n")
     for c in __configurers:
         if c.getName() in args.modules:
-            override = args.force and (c.isconfigured != CONFIGURED)
+            isconfigured = c.isconfigured() != CONFIGURED
+            override = args.force and isconfigured
             if not override and not c.validate():
                 raise InvalidConfig(
                     "Configuration of %s is invalid" % c.getName()
                 )
-            if override:
+            if override or isconfigured:
                 configurer_to_trigger.append(c)
 
     services = []
