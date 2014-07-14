@@ -607,9 +607,6 @@ class clientIF(object):
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
                 action, = args[:-1]
                 v._onWatchdogEvent(action)
-            elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_BLOCK_JOB:
-                path, jobType, status = args[:-1]
-                v._onBlockJobEvent(path, jobType, status)
             else:
                 v.log.warning('unknown eventid %s args %s', eventid, args)
         except:
