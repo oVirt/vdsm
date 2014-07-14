@@ -83,7 +83,7 @@ ConfiguratorClass = _getConfiguratorClass()
 persistence = _getPersistenceModule()
 
 
-def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
+def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
                         bondingOptions=None, nics=None, mtu=None, ipaddr=None,
                         netmask=None, gateway=None, bootproto=None,
                         ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
@@ -95,7 +95,8 @@ def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     that is passed in the parameters.
 
     :param bridge: name of the bridge.
-    :param vlan: vlan tag id.
+    :param vlan: vlan device name.
+    :param vlan_id: vlan tag id.
     :param bonding: name of the bond.
     :param bondingOptions: bonding options separated by spaces.
     :param nics: list of nic names.
@@ -148,7 +149,10 @@ def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                                          'enslaved to %s' % (nic, bond))
             topNetDev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
     if vlan is not None:
-        topNetDev = Vlan(topNetDev, vlan, configurator, mtu=mtu)
+        tag = netinfo.getVlanID(vlan) if vlan_id is None else vlan_id
+        topNetDev = Vlan(topNetDev, tag, configurator, mtu=mtu, name=vlan)
+    elif vlan_id is not None:
+        topNetDev = Vlan(topNetDev, vlan_id, configurator, mtu=mtu)
     if bridge is not None:
         stp = None
         if 'stp' in opts:
@@ -299,7 +303,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     bootproto = options.pop('bootproto', None)
 
     net_ent = _objectivizeNetwork(
-        bridge=network if bridged else None, vlan=vlan, bonding=bonding,
+        bridge=network if bridged else None, vlan_id=vlan, bonding=bonding,
         bondingOptions=bondingOptions, nics=nics, mtu=mtu, ipaddr=ipaddr,
         netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
         blockingdhcp=blockingdhcp, ipv6addr=ipv6addr, ipv6gateway=ipv6gateway,
@@ -332,7 +336,7 @@ def assertBridgeClean(bridge, vlan, bonding, nics):
     ports = set(netinfo.ports(bridge))
     ifaces = set(nics)
     if vlan is not None:
-        ifaces.add('%s.%s' % ((bonding or nics[0]), vlan))
+        ifaces.add(vlan)
     else:
         ifaces.add(bonding)
 
@@ -352,7 +356,8 @@ def showNetwork(network):
     bridged = _netinfo.networks[network]['bridged']
     print("Network %s(Bridged: %s):" % (network, bridged))
 
-    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
+    nics, vlan, vlan_id, bonding = _netinfo.getNicsVlanAndBondingForNetwork(
+        network)
 
     if bridged:
         ipaddr = _netinfo.networks[network]['addr']
@@ -365,7 +370,7 @@ def showNetwork(network):
         netmask = _netinfo.nics[iface]['netmask']
         print("ipaddr=%s, netmask=%s" % (ipaddr, netmask))
 
-    print("vlan=%s, bonding=%s, nics=%s" % (vlan, bonding, nics))
+    print("vlan=%s, bonding=%s, nics=%s" % (vlan_id, bonding, nics))
 
 
 def listNetworks():
@@ -411,8 +416,8 @@ def _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo):
 
 def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
     if network in netinfo.bridges():
-        net_ent = _objectivizeNetwork(bridge=network, vlan=vlan,
-                                      bonding=bonding,  nics=nics,
+        net_ent = _objectivizeNetwork(bridge=network, vlan_id=vlan,
+                                      bonding=bonding, nics=nics,
                                       _netinfo=_netinfo,
                                       configurator=configurator,
                                       implicitBonding=False)
@@ -444,7 +449,8 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                            configurator)
         return
 
-    nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
+    nics, vlan, vlan_id, bonding = _netinfo.getNicsVlanAndBondingForNetwork(
+        network)
     bridged = _netinfo.networks[network]['bridged']
 
     logging.info("Removing network %s with vlan=%s, bonding=%s, nics=%s,"
@@ -455,8 +461,9 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
 
     net_ent = _objectivizeNetwork(bridge=network if bridged else None,
-                                  vlan=vlan, bonding=bonding, nics=nics,
-                                  _netinfo=_netinfo, configurator=configurator,
+                                  vlan=vlan, vlan_id=vlan_id, bonding=bonding,
+                                  nics=nics, _netinfo=_netinfo,
+                                  configurator=configurator,
                                   implicitBonding=implicitBonding)
     net_ent.ipv4.bootproto = (
         'dhcp' if _netinfo.networks[network]['dhcpv4'] else 'none')

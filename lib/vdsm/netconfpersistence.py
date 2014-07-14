@@ -211,11 +211,12 @@ class KernelConfig(BaseConfig):
             yield bond, self._translate_netinfo_bond(bond_attr)
 
     def _translate_netinfo_net(self, net, net_attr):
-        nics, vlan, bond = self._netinfo.getNicsVlanAndBondingForNetwork(net)
+        nics, _, vlan_id, bond = \
+            self._netinfo.getNicsVlanAndBondingForNetwork(net)
         attributes = {}
         self._translate_bridged(attributes, net_attr)
         self._translate_mtu(attributes, net_attr)
-        self._translate_vlan(attributes, vlan)
+        self._translate_vlan(attributes, vlan_id)
         if bond:
             self._translate_bonding(attributes, bond)
         elif nics:

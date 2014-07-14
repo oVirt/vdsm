@@ -114,7 +114,7 @@ class Vlan(NetDevice):
     MAX_ID = 4094
 
     def __init__(self, device, tag, configurator, ipv4=None, ipv6=None,
-                 blockingdhcp=False, mtu=None):
+                 blockingdhcp=False, mtu=None, name=None):
         self.validateTag(tag)
         if device is None:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required vlan'
@@ -122,8 +122,10 @@ class Vlan(NetDevice):
         device.master = self
         self.device = device
         self.tag = tag
-        super(Vlan, self).__init__('%s.%s' % (device.name, tag), configurator,
-                                   ipv4, ipv6, blockingdhcp, mtu)
+        # control for arbitrary vlan names
+        name = '%s.%s' % (device.name, tag) if name is None else name
+        super(Vlan, self).__init__(name, configurator, ipv4, ipv6,
+                                   blockingdhcp, mtu)
 
     def __iter__(self):
         yield self

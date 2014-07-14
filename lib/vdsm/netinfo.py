@@ -895,6 +895,7 @@ class NetInfo(object):
 
     def getNicsVlanAndBondingForNetwork(self, network):
         vlan = None
+        vlanid = None
         bonding = None
         lnics = []
 
@@ -909,7 +910,8 @@ class NetInfo(object):
             if port in self.vlans:
                 assert vlan is None
                 nic = getVlanDevice(port)
-                vlan = getVlanID(port)
+                vlanid = getVlanID(port)
+                vlan = port  # vlan devices can have an arbitrary name
                 assert self.vlans[port]['iface'] == nic
                 port = nic
             if port in self.bondings:
@@ -919,7 +921,7 @@ class NetInfo(object):
             elif port in self.nics:
                 lnics.append(port)
 
-        return lnics, vlan, bonding
+        return lnics, vlan, vlanid, bonding
 
     @staticmethod
     def getDefaultMtu():

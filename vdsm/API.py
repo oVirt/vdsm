@@ -1567,7 +1567,7 @@ class Global(APIBase):
 
             try:
                 try:
-                    _, _, bonding = \
+                    _, _, _, bonding = \
                         _netinfo.getNicsVlanAndBondingForNetwork(network)
                 except KeyError:
                     bonding = None
