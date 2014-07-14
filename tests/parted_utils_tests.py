@@ -23,7 +23,7 @@ import os
 import time
 
 import testValidation
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
 
 from vdsm import utils

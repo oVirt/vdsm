@@ -34,7 +34,7 @@ from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
 
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from testrunner import VdsmTestCase as TestCaseBase, namedTemporaryDir
+from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot
 
 # speeds defined in ethtool

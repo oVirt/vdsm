@@ -22,7 +22,7 @@
 import collections
 from storage import blockSD
 from vdsm import constants
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 # Make it easy to test the values we care about
 VG = collections.namedtuple("VG", ['vg_mda_size', 'vg_mda_free'])

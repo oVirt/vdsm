@@ -23,7 +23,7 @@ from collections import namedtuple
 from virt import guestagent
 import json
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 _MSG_TYPES = ['heartbeat', 'host-name', 'os-version',
               'network-interfaces', 'applications', 'disks-usage']

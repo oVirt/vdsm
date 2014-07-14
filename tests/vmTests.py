@@ -33,8 +33,8 @@ from virt import vmexitreason
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from vdsm import constants
 from vdsm import define
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import permutations, expandPermutations, namedTemporaryDir
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import permutations, expandPermutations, namedTemporaryDir
 import caps
 from vdsm import utils
 from vdsm import libvirtconnection

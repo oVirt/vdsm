@@ -20,8 +20,8 @@
 
 import logging
 import os.path
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import temporaryPath
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import temporaryPath
 from monkeypatch import MonkeyPatch
 from virt.vm import VolumeError
 import clientIF

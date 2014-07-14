@@ -25,7 +25,7 @@ from gluster import exception as gluster_exception
 from storage import storage_exception
 from vdsm.utils import GeneralException
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 
 class TestStorageExceptions(TestCaseBase):

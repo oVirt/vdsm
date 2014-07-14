@@ -22,8 +22,8 @@ import os.path
 import json
 
 from hookValidation import ValidatesHook
-from testrunner import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
-                        expandPermutations, permutations)
+from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
+                     expandPermutations, permutations)
 from testValidation import (brokentest, RequireDummyMod, RequireVethMod,
                             ValidateRunningAsRoot)
 

@@ -19,7 +19,7 @@
 #
 
 from storage.securable import secured, SecureError, unsecured
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 
 @secured

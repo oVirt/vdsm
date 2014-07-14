@@ -25,8 +25,8 @@ import os
 
 from nose.plugins.skip import SkipTest
 
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import namedTemporaryDir
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import namedTemporaryDir
 from storage.misc import execCmd
 import storage.mount as mount
 from testValidation import checkSudo

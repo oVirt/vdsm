@@ -71,7 +71,7 @@ test_modules = \
 	sslTests.py \
 	storageMailboxTests.py \
 	tcTests.py \
-	testrunnerTests.py \
+	testlibTests.py \
 	toolTests.py \
 	transportWrapperTests.py \
 	utilsTests.py \
@@ -140,6 +140,7 @@ dist_vdsmtests_PYTHON = \
 	apiData.py \
 	hookValidation.py \
 	monkeypatch.py \
+	testlib.py \
 	testrunner.py \
 	testValidation.py \
 	$(NULL)

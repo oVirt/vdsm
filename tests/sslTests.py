@@ -32,7 +32,7 @@ import xmlrpclib
 from contextlib import contextmanager
 from M2Crypto import SSL
 from sslhelper import KEY_FILE, CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from vdsm.sslutils import SSLServerSocket
 from vdsm.sslutils import VerifyingSafeTransport
 

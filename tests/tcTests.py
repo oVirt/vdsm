@@ -32,7 +32,7 @@ import fcntl
 import struct
 import ethtool
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 
 from vdsm.constants import EXT_BRCTL, EXT_TC

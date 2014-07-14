@@ -30,7 +30,7 @@ from vdsm import config
 
 from monkeypatch import MonkeyPatch
 from nose.plugins.skip import SkipTest
-from testrunner import VdsmTestCase
+from testlib import VdsmTestCase
 
 yappi = None
 try:

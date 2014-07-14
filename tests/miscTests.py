@@ -26,10 +26,10 @@ import select
 import signal
 import fcntl
 import errno
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import temporaryPath
-from testrunner import namedTemporaryDir
-from testrunner import TEMPDIR
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import temporaryPath
+from testlib import namedTemporaryDir
+from testlib import TEMPDIR
 import inspect
 from multiprocessing import Process
 from vdsm import utils

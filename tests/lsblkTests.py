@@ -20,7 +20,7 @@
 
 import lsblk
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 output = """\
 KNAME="sda" FSTYPE="" UUID=""

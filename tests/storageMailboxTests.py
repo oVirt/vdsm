@@ -23,7 +23,7 @@ import threading
 import os
 import shutil
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 import storage.storage_mailbox as sm
 from storage.sd import DOMAIN_META_DATA

@@ -25,7 +25,7 @@ import shutil
 from vdsm import ipwrapper
 import virt.sampling as sampling
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
 
 

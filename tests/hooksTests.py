@@ -25,8 +25,8 @@ import tempfile
 import os
 import os.path
 from contextlib import contextmanager
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import namedTemporaryDir
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import namedTemporaryDir
 
 import hooks
 

@@ -27,9 +27,9 @@ from functools import partial, wraps
 
 from nose.plugins.skip import SkipTest
 
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import permutations, expandPermutations
-from testrunner import temporaryPath
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import permutations, expandPermutations
+from testlib import temporaryPath
 
 from vdsm.utils import CommandPath, RollbackContext
 import storageTests as storage

@@ -22,7 +22,7 @@ import imp
 import json
 import sys
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 apiWhitelist = ('StorageDomain.Classes', 'StorageDomain.Types',
                 'Volume.Formats', 'Volume.Types', 'Volume.Roles',

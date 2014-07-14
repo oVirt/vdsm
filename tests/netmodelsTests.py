@@ -27,7 +27,7 @@ from network import errors
 from network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from network.models import _nicSort
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 from nose.plugins.skip import SkipTest
 

@@ -25,8 +25,8 @@ import logging
 import sys
 import threading
 
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import permutations, expandPermutations
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import permutations, expandPermutations
 from testValidation import checkSudo
 from testValidation import stresstest
 from vdsm import utils

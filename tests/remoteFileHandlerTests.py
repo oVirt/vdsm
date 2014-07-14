@@ -22,7 +22,7 @@ import string
 import tempfile
 from vdsm import utils
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 import storage.remoteFileHandler as rhandler
 
 HANDLERS_NUM = 10

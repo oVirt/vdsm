@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from testrunner import VdsmTestCase
+from testlib import VdsmTestCase
 
 import monkeypatch
 

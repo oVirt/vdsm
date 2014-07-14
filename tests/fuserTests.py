@@ -22,7 +22,7 @@ import os
 from tempfile import NamedTemporaryFile
 from storage import fuser
 
-from testrunner import VdsmTestCase
+from testlib import VdsmTestCase
 
 
 class TestFuser(VdsmTestCase):

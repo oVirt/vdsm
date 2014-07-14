@@ -2,7 +2,7 @@ import threading
 import time
 from contextlib import contextmanager
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 from storage import iscsi
 

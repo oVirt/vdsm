@@ -20,7 +20,7 @@
 
 import os
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from vdsm.config import config
 import storage.fileVolume as fileVolume
 

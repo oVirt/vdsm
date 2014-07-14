@@ -21,7 +21,7 @@
 
 
 import os
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 import storage.blockSD
 import storage.fileSD

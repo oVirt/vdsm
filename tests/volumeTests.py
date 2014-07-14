@@ -22,7 +22,7 @@ import shutil
 import tempfile
 import uuid
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 from storage import outOfProcess, fileSD
 

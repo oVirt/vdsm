@@ -32,7 +32,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from nose.plugins.skip import SkipTest
-from testrunner import VdsmTestCase, permutations, expandPermutations
+from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 
 from vdsm.utils import execCmd

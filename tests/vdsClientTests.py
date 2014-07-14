@@ -22,7 +22,7 @@ import os
 from tempfile import mkstemp
 from contextlib import contextmanager
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 import vdsClient
 

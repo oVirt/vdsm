@@ -27,7 +27,7 @@ import types
 from resource import getrlimit, RLIMIT_NPROC
 
 import storage.resourceManager as resourceManager
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from testValidation import slowtest, stresstest
 
 

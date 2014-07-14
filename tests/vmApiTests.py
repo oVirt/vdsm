@@ -24,7 +24,7 @@ import os.path
 
 from virt import vmexitreason
 from vdsm import define
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from vdsm import utils
 from rpc import vdsmapi
 

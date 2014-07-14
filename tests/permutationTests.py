@@ -23,8 +23,8 @@ This isn't really integral to the way VDSM works this is just an example on how
 to do permutations.
 """
 
-from testrunner import permutations, expandPermutations
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import permutations, expandPermutations
+from testlib import VdsmTestCase as TestCaseBase
 
 
 def recSum(lst):

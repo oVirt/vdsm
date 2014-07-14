@@ -34,7 +34,7 @@ from network.configurators import ifcfg, libvirt
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
 from nose.plugins.skip import SkipTest
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 
 class ifcfgConfigWriterTests(TestCaseBase):

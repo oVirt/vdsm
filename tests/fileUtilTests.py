@@ -21,8 +21,8 @@ import os
 
 import storage.fileUtils as fileUtils
 import testValidation
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import temporaryPath
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import temporaryPath
 
 
 class DirectFileTests(TestCaseBase):

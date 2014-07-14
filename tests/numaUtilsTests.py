@@ -21,7 +21,7 @@
 
 from xml.dom import minidom
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
 import caps

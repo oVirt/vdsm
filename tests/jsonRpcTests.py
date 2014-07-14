@@ -22,7 +22,7 @@ from clientIF import clientIF
 from contextlib import contextmanager
 from monkeypatch import MonkeyPatch
 
-from testrunner import VdsmTestCase as TestCaseBase, \
+from testlib import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
     permutations, \
     dummyTextGenerator

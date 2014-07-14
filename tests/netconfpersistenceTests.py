@@ -26,7 +26,7 @@ import tempfile
 from vdsm.netconfpersistence import Config
 from vdsm.utils import rmFile
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 
 NETWORK = 'luke'

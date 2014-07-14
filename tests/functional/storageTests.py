@@ -29,9 +29,9 @@ from functools import partial
 
 from nose.plugins.skip import SkipTest
 
-from testrunner import VdsmTestCase as TestCaseBase
-from testrunner import permutations, expandPermutations
-from testrunner import TEMPDIR
+from testlib import VdsmTestCase as TestCaseBase
+from testlib import permutations, expandPermutations
+from testlib import TEMPDIR
 try:
     import rtslib
 except ImportError:

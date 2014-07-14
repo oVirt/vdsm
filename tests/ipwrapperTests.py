@@ -31,7 +31,7 @@ from vdsm.ipwrapper import Rule
 from monkeypatch import MonkeyPatch
 import tcTests
 
-from testrunner import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase
 
 
 def _fakeTypeDetection(cls, devname):
