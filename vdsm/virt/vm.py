@@ -3183,13 +3183,6 @@ class Vm(object):
                         supervdsm.getProxy().setPortMirroring(network,
                                                               nic.name)
 
-        # Scan all drives backed by vdsm images for volume chain
-        # inconsistencies.  This can happen if a live merge completed while
-        # vdsm was not running to catch the event.
-        for drive in self._devices[DISK_DEVICES]:
-            if drive['device'] == 'disk' and isVdsmImage(drive):
-                self._syncVolumeChain(drive)
-
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
