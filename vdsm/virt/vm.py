@@ -234,11 +234,6 @@ class VmStatsThread(AdvancedStatsThread):
                 self._sampleDisk,
                 config.getint('vars', 'vm_sample_disk_interval'),
                 config.getint('vars', 'vm_sample_disk_window')))
-        self.sampleDiskLatency = (
-            AdvancedStatsFunction(
-                self._sampleDiskLatency,
-                config.getint('vars', 'vm_sample_disk_latency_interval'),
-                config.getint('vars', 'vm_sample_disk_latency_window')))
         self.sampleNet = (
             AdvancedStatsFunction(
                 self._sampleNet,
@@ -267,9 +262,8 @@ class VmStatsThread(AdvancedStatsThread):
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
-            self.sampleDisk, self.sampleDiskLatency, self.sampleNet,
-            self.sampleBalloon, self.sampleVmJobs, self.sampleVcpuPinning,
-            self.sampleCpuTune)
+            self.sampleDisk, self.sampleNet, self.sampleBalloon,
+            self.sampleVmJobs, self.sampleVcpuPinning, self.sampleCpuTune)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -296,23 +290,10 @@ class VmStatsThread(AdvancedStatsThread):
 
         diskSamples = {}
         for vmDrive in self._vm.getDiskDevices():
-            diskSamples[vmDrive.name] = self._vm._dom.blockStats(vmDrive.name)
+            diskSamples[vmDrive.name] = self._vm._dom.blockStatsFlags(
+                vmDrive.name, flags=libvirt.VIR_TYPED_PARAM_STRING_OKAY)
 
         return diskSamples
-
-    def _sampleDiskLatency(self):
-        if not self._vm.isDisksStatsCollectionEnabled():
-            # Avoid queries from storage during recovery process
-            return
-        # {'wr_total_times': 0L, 'rd_operations': 9638L,
-        # 'flush_total_times': 0L,'rd_total_times': 7622718001L,
-        # 'rd_bytes': 85172430L, 'flush_operations': 0L,
-        # 'wr_operations': 0L, 'wr_bytes': 0L}
-        diskLatency = {}
-        for vmDrive in self._vm.getDiskDevices():
-            diskLatency[vmDrive.name] = self._vm._dom.blockStatsFlags(
-                vmDrive.name, flags=libvirt.VIR_TYPED_PARAM_STRING_OKAY)
-        return diskLatency
 
     def _sampleNet(self):
         netSamples = {}
@@ -534,7 +515,10 @@ class VmStatsThread(AdvancedStatsThread):
             dStats = {}
             try:
                 dStats = {'truesize': str(vmDrive.truesize),
-                          'apparentsize': str(vmDrive.apparentsize)}
+                          'apparentsize': str(vmDrive.apparentsize),
+                          'readLatency': '0',
+                          'writeLatency': '0',
+                          'flushLatency': '0'}
                 if isVdsmImage(vmDrive):
                     dStats['imageID'] = vmDrive.imageID
                 elif "GUID" in vmDrive:
@@ -544,27 +528,13 @@ class VmStatsThread(AdvancedStatsThread):
                     # will be None if sampled during recovery
                     dStats.update(_calcDiskRate(vmDrive, sInfo, eInfo,
                                                 sampleInterval))
+                    dStats.update(_calcDiskLatency(vmDrive, sInfo, eInfo))
+
             except (AttributeError, TypeError, ZeroDivisionError):
                 self._log.exception("Disk %s stats not available",
                                     vmDrive.name)
 
             stats[vmDrive.name] = dStats
-
-    def _getDiskLatency(self, stats):
-        sInfo, eInfo, sampleInterval = self.sampleDiskLatency.getStats()
-
-        for vmDrive in self._vm.getDiskDevices():
-            dStats = {'readLatency': '0', 'writeLatency': '0',
-                      'flushLatency': '0'}
-            try:
-                if (sInfo and vmDrive.name in sInfo and
-                   eInfo and vmDrive.name in eInfo):
-                    dStats = _calcDiskLatency(vmDrive, sInfo, eInfo)
-            except (KeyError, TypeError):
-                self._log.exception("Disk %s latency not available",
-                                    vmDrive.name)
-
-            stats[vmDrive.name].update(dStats)
 
     def _getVmJobs(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleVmJobs.getStats()
@@ -588,7 +558,6 @@ class VmStatsThread(AdvancedStatsThread):
         self._getCpuStats(stats)
         self._getNetworkStats(stats)
         self._getDiskStats(stats)
-        self._getDiskLatency(stats)
         self._getBalloonStats(stats)
         self._getVmJobs(stats)
 
@@ -618,12 +587,12 @@ class VmStatsThread(AdvancedStatsThread):
 def _calcDiskRate(vmDrive, sInfo, eInfo, sampleInterval):
     return {
         'readRate': (
-            (eInfo[vmDrive.name][1] -
-             sInfo[vmDrive.name][1])
+            (eInfo[vmDrive.name]['rd_bytes'] -
+             sInfo[vmDrive.name]['rd_bytes'])
             / sampleInterval),
         'writeRate': (
-            (eInfo[vmDrive.name][3] -
-             sInfo[vmDrive.name][3])
+            (eInfo[vmDrive.name]['wr_bytes'] -
+             sInfo[vmDrive.name]['wr_bytes'])
             / sampleInterval)}
 
 
