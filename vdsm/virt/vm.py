@@ -2444,6 +2444,9 @@ class Vm(object):
         ret = {}
         watermarks = self._getMergeWriteWatermarks()
         for job in self.conf['_blockJobs'].values():
+            if 'done' in job:
+                # Skip active layer commits that are in the cleanup phase
+                continue
             drive = self._findDriveByUUIDs(job['disk'])
             if not drive.blockDev or drive.format != 'cow':
                 continue
@@ -5487,6 +5490,15 @@ class Vm(object):
         self.saveState()
         return True
 
+    def _activeLayerCommitReady(self, jobInfo):
+        try:
+            pivot = libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_ACTIVE_COMMIT
+        except AttributeError:
+            return False
+        if (jobInfo['cur'] == jobInfo['end'] and jobInfo['type'] == pivot):
+            return True
+        return False
+
     def queryBlockJobs(self):
         def startCleanup(job, drive):
             t = LiveMergeCleanupThread(self, job['jobID'], drive)
@@ -5527,6 +5539,12 @@ class Vm(object):
                     entry['bandwidth'] = liveInfo['bandwidth']
                     entry['cur'] = str(liveInfo['cur'])
                     entry['end'] = str(liveInfo['end'])
+                    if self._activeLayerCommitReady(liveInfo):
+                        try:
+                            self.handleBlockJobEvent(jobID, drive, 'pivot')
+                        except Exception:
+                            # Just log it.  We will retry next time
+                            self.log.error("Pivot failed for job %s", jobID)
                 else:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
@@ -5595,6 +5613,14 @@ class Vm(object):
         # backing files.  This is necessary to ensure that a volume chain is
         # visible from any host even if the mountpoint is different.
         flags = libvirt.VIR_DOMAIN_BLOCK_COMMIT_RELATIVE
+
+        if topVolUUID == drive.volumeID:
+            # Pass a flag to libvirt to indicate that we expect a two phase
+            # block job.  In the first phase, data is copied to base.  Once
+            # completed, an event is raised to indicate that the job has
+            # transitioned to the second phase.  We must then tell libvirt to
+            # pivot to the new active layer (baseVolUUID).
+            flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
 
         # Take the jobs lock here to protect the new job we are tracking from
         # being cleaned up by queryBlockJobs() since it won't exist right away
@@ -5724,6 +5750,11 @@ class Vm(object):
         if mode == 'finished':
             self.log.info("Live merge job completed (job %s)", jobID)
             self._syncVolumeChain(drive)
+        elif mode == 'pivot':
+            self.log.info("Requesting pivot to complete active layer commit "
+                          "(job %s)", jobID)
+            flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
+            self._dom.blockJobAbort(drive.name, flags)
         else:
             raise RuntimeError("Invalid mode: '%s'" % mode)
 
