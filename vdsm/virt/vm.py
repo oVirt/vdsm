@@ -539,11 +539,12 @@ class VmStatsThread(AdvancedStatsThread):
                     dStats['imageID'] = vmDrive.imageID
                 elif "GUID" in vmDrive:
                     dStats['lunGUID'] = vmDrive.GUID
-                if sInfo is not None:
+                if sInfo is not None and (
+                        vmDrive.name in sInfo and vmDrive.name in eInfo):
                     # will be None if sampled during recovery
                     dStats.update(self._calcDiskRate(vmDrive, sInfo, eInfo,
                                                      sampleInterval))
-            except (AttributeError, KeyError, TypeError, ZeroDivisionError):
+            except (AttributeError, TypeError, ZeroDivisionError):
                 self._log.exception("Disk %s stats not available",
                                     vmDrive.name)
 
@@ -593,11 +594,13 @@ class VmStatsThread(AdvancedStatsThread):
                         'writeLatency': '0',
                         'flushLatency': '0'}
 
-            if sInfo is not None:
+            if sInfo is not None and (dName in sInfo and dName in eInfo):
                 # will be None if sampled during recovery
+                # in case of hotplugged disk, start samples will
+                # be missed until the sampling code catches up.
                 try:
                     dLatency = _avgLatencyCalc(sInfo[dName], eInfo[dName])
-                except (KeyError, TypeError):
+                except TypeError:
                     self._log.warning("Disk %s latency not available", dName)
 
             stats[dName].update(dLatency)
