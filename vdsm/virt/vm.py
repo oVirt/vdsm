@@ -5467,9 +5467,9 @@ class Vm(object):
                           'chain': self._driveGetActualVolumeChain(drive)}
                 self.conf['_blockJobs'][jobID] = newJob
             else:
-                self.log.error("A block job with id %s already exists for vm "
-                               "disk with image id: %s" %
-                               (job['jobID'], drive['imageID']))
+                self.log.error("Cannot add block job %s.  A block job with id "
+                               "%s already exists for image %s", jobID,
+                               job['jobID'], drive['imageID'])
                 raise BlockJobExistsError()
         self.saveState()
 
@@ -5490,8 +5490,7 @@ class Vm(object):
             drive = self._findDriveByUUIDs(job['disk'])
             ret = self._dom.blockJobInfo(drive.name, 0)
             if not ret:
-                self.log.debug("Block Job for vm:%s, img:%s has ended",
-                               self.conf['vmId'], job['disk']['imageID'])
+                self.log.info("Block Job %s has ended", jobID)
                 jobs[jobID] = None
                 continue
 
@@ -5567,7 +5566,7 @@ class Vm(object):
         except BlockJobExistsError:
             self.log.error("Another block job is already active on this disk")
             return errCode['mergeErr']
-        self.log.debug("Starting merge with jobUUID='%s'", jobUUID)
+        self.log.info("Starting merge with jobUUID='%s'", jobUUID)
 
         flags = 0
         # Indicate that we expect libvirt to maintain the relative paths of
@@ -5585,8 +5584,7 @@ class Vm(object):
             if ret != 0:
                 raise RuntimeError("blockCommit operation failed rc:%i", ret)
         except (RuntimeError, libvirt.libvirtError):
-            self.log.error("Live merge failed for '%s'", drive.path,
-                           exc_info=True)
+            self.log.exception("Live merge failed (job: %s)", jobUUID)
             self.untrackBlockJob(jobUUID)
             return errCode['mergeErr']
 
@@ -5694,12 +5692,13 @@ class Vm(object):
         device['volumeChain'] = drive.volumeChain = newChain
 
     def _onBlockJobEvent(self, path, blockJobType, status):
+        self.log.debug("Received block job event for path:%s, type:%s, "
+                       "status:%s", path, blockJobType, status)
         if blockJobType != libvirt.VIR_DOMAIN_BLOCK_JOB_TYPE_COMMIT:
             self.log.warning("Ignoring unrecognized block job type: '%s'",
                              blockJobType)
             return
 
-        self.log.info("Live merge completed for path '%s'", path)
         drive = self._lookupDeviceByPath(path)
         try:
             jobID = self.getBlockJob(drive)['jobID']
@@ -5709,10 +5708,11 @@ class Vm(object):
             return
 
         if status == libvirt.VIR_DOMAIN_BLOCK_JOB_COMPLETED:
+            self.log.info("Live merge completed (job:%s)", jobID)
             self._syncVolumeChain(drive)
         else:
-            self.log.warning("Block job '%s' did not complete successfully "
-                             "(status:%i)", path, status)
+            self.log.warning("Block job %s did not complete successfully "
+                             "(status:%i)", jobID, status)
         self.untrackBlockJob(jobID)
 
     def _initLegacyConf(self):
