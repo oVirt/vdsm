@@ -453,8 +453,6 @@ class VmStatsThread(AdvancedStatsThread):
         if 'vcpuLimit' in eInfo:
             value = eInfo['vcpuLimit']
             stats['vcpuUserLimit'] = value
-        else:
-            self._log.debug('Domain Metadata is not set')
 
     @classmethod
     def _getNicStats(cls, name, model, mac,
