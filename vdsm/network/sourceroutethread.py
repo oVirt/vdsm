@@ -35,8 +35,7 @@ configurator = Iproute2()
 
 class DHClientEventHandler(pyinotify.ProcessEvent):
     def process_IN_CLOSE_WRITE_filePath(self, sourceRouteFilePath):
-        logging.debug("Responding to DHCP response in %s" %
-                      sourceRouteFilePath)
+        logging.debug("Responding to DHCP response in %s", sourceRouteFilePath)
         with open(sourceRouteFilePath, 'r') as sourceRouteFile:
             sourceRouteContents = sourceRouteFile.read().split()
             action = sourceRouteContents[0]
@@ -52,7 +51,7 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
                 else:
                     sourceRoute.remove()
             else:
-                logging.info("interface %s is not a libvirt interface" %
+                logging.info("interface %s is not a libvirt interface",
                              sourceRoute.device)
 
             DynamicSourceRoute.removeInterfaceTracking(device)
