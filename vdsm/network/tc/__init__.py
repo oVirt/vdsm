@@ -31,6 +31,7 @@ import ethtool
 from . import filter as tc_filter
 from . import _parser
 from . import _wrapper
+from . import cls
 from . import qdisc
 from ._wrapper import TrafficControlException
 
@@ -206,3 +207,4 @@ def _iterate(module, dev, out=None, **kwargs):
 
 _filters = partial(_iterate, tc_filter)  # kwargs: parent and pref
 _qdiscs = partial(_iterate, qdisc)  # kwargs: dev
+_classes = partial(_iterate, cls)  # kwargs: parent and classid

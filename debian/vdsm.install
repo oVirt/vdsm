@@ -72,6 +72,7 @@
 ./usr/share/vdsm/network/tc/__init__.py
 ./usr/share/vdsm/network/tc/_parser.py
 ./usr/share/vdsm/network/tc/_wrapper.py
+./usr/share/vdsm/network/tc/cls.py
 ./usr/share/vdsm/network/tc/filter.py
 ./usr/share/vdsm/network/tc/qdisc.py
 ./usr/share/vdsm/numaUtils.py

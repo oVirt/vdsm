@@ -37,6 +37,25 @@ def parse_skip_line(tokens):
             break
 
 
+def parse_rate(tokens):
+    """Returns a numerical bit representation of the textual rate in tokens"""
+    rate = next(tokens)
+    if rate[-5:] == 'Gibit':
+        return float(rate[:-5]) * 1024 ** 3
+    elif rate[-5:] == 'Mibit':
+        return float(rate[:-5]) * 1024 ** 2
+    elif rate[-5:] == 'Kibit':
+        return float(rate[:-5]) * 1024
+    elif rate[-4:] == 'Gbit':
+        return float(rate[:-4]) * 1000 ** 3
+    elif rate[-4:] == 'Mbit':
+        return float(rate[:-4]) * 1000 ** 2
+    elif rate[-4:] == 'Kbit':
+        return float(rate[:-4]) * 1000
+    else:
+        return float(rate[:-3])
+
+
 def parse_size(tokens):
     """Returns a numerical byte representation of the textual size in tokens"""
     size = next(tokens)

@@ -25,6 +25,7 @@ dist_vdsmnetworktc_PYTHON = \
 	__init__.py \
 	_parser.py \
 	_wrapper.py \
+	cls.py \
 	filter.py \
 	qdisc.py \
 	$(NULL)

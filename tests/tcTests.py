@@ -289,7 +289,7 @@ class TestFilters(TestCaseBase):
             '1 2 2 2 1 2 0 0 1 1 1 1 1 1 1 1',  # end of previous line
             'qdisc fq_codel 801e: root refcnt 2 limit 132p flows 15 quantum '
             '400 target 5.0ms interval 150.0ms ecn',  # end of previous line
-            ))
+        ))
         qdiscs = (
             {'kind': 'hfsc', 'root': True, 'handle': '1:', 'refcnt': 2,
              'hfsc': {'default': 0x5000}},
@@ -317,9 +317,38 @@ class TestFilters(TestCaseBase):
              'fq_codel': {'limit': 132, 'flows': 15, 'quantum': 400,
                           'target': 5000.0, 'interval': 150000.0,
                           'ecn': True}},
-            )
+        )
         for parsed, correct in izip_longest(tc._qdiscs(None, out=data),
                                             qdiscs):
+            self.assertEqual(parsed, correct)
+
+    def test_classes(self):
+        data = '\n'.join((
+            'class hfsc 1: root',
+            'class hfsc 1:10 parent 1: leaf 10: sc m1 0bit d 0us m2 3200Kbit',
+            'class hfsc 1:20 parent 1: leaf 20: ls m1 6400Kibit d 150us m2 '
+            '3200Kbit ul m1 0bit d 0us m2 30000Kbit',  # end of previous line
+            'class hfsc 1:30 parent 1: leaf 40: sc m1 0bit d 0us m2 3500bit',
+            'class hfsc 1:5000 parent 1: leaf 5000: ls m1 0bit d 0us '
+            'm2 40000Kbit',  # end of previous line
+        ))
+        classes = (
+            {'kind': 'hfsc', 'root': True, 'handle': '1:'},
+            {'kind': 'hfsc', 'handle': '1:10', 'parent': '1:', 'leaf': '10:',
+             'hfsc': {'ls': {'m1': 0, 'd': 0, 'm2': 3200 * 1000},
+                      'rt': {'m1': 0, 'd': 0, 'm2': 3200 * 1000}}},
+            {'kind': 'hfsc', 'handle': '1:20', 'parent': '1:', 'leaf': '20:',
+             'hfsc': {'ls': {'m1': 6400 * 1024, 'd': 150, 'm2': 3200 * 1000},
+                      'ul': {'m1': 0, 'd': 0, 'm2': 30000 * 1000}}},
+            {'kind': 'hfsc', 'handle': '1:30', 'parent': '1:', 'leaf': '40:',
+             'hfsc': {'ls': {'m1': 0, 'd': 0, 'm2': 3500},
+                      'rt': {'m1': 0, 'd': 0, 'm2': 3500}}},
+            {'kind': 'hfsc', 'handle': '1:5000', 'parent': '1:',
+             'leaf': '5000:', 'hfsc': {'ls': {'m1': 0, 'd': 0,
+                                              'm2': 40000 * 1000}}},
+        )
+        for parsed, correct in izip_longest(tc._classes(None, out=data),
+                                            classes):
             self.assertEqual(parsed, correct)
 
 
