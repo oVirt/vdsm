@@ -1001,6 +1001,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/network/tc/_parser.py*
 %{_datadir}/%{vdsm_name}/network/tc/_wrapper.py*
 %{_datadir}/%{vdsm_name}/network/tc/filter.py*
+%{_datadir}/%{vdsm_name}/network/tc/qdisc.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*

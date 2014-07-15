@@ -272,6 +272,56 @@ class TestFilters(TestCaseBase):
                                             filters):
             self.assertEqual(parsed, correct)
 
+    def test_qdiscs(self):
+        data = '\n'.join((
+            'qdisc hfsc 1: root refcnt 2 default 5000',
+            'qdisc sfq 10: parent 1:10 limit 127p quantum 1514b',
+            'qdisc sfq 20: parent 1:20 limit 127p quantum 1514b',
+            'qdisc sfq 30: parent 1:30 limit 127p quantum 30Kb perturb 3sec',
+            'qdisc sfq 40: parent 1:40 limit 127p quantum 20Mb perturb 5sec',
+            'qdisc ingress ffff: parent ffff:fff1 ----------------',
+            'qdisc mq 0: dev wlp3s0 root',
+            'qdisc ingress ffff: dev vdsmtest-Z2TMO parent ffff:fff1 '
+            '----------------',  # end of previous line
+            'qdisc pfifo_fast 0: dev em1 root refcnt 2 bands 3 priomap  '
+            '1 2 2 2 1 2 0 0 1 1 1 1 1 1 1 1',  # end of previous line
+            'qdisc pfifo_fast 0: dev wlp3s0 parent :1 bands 3 priomap  '
+            '1 2 2 2 1 2 0 0 1 1 1 1 1 1 1 1',  # end of previous line
+            'qdisc fq_codel 801e: root refcnt 2 limit 132p flows 15 quantum '
+            '400 target 5.0ms interval 150.0ms ecn',  # end of previous line
+            ))
+        qdiscs = (
+            {'kind': 'hfsc', 'root': True, 'handle': '1:', 'refcnt': 2,
+             'hfsc': {'default': 0x5000}},
+            {'kind': 'sfq', 'handle': '10:', 'parent': '1:10',
+             'sfq': {'limit': 127, 'quantum': 1514}},
+            {'kind': 'sfq', 'handle': '20:', 'parent': '1:20',
+             'sfq': {'limit': 127, 'quantum': 1514}},
+            {'kind': 'sfq', 'handle': '30:', 'parent': '1:30',
+             'sfq': {'limit': 127, 'quantum': 30 * 1024, 'perturb': 3}},
+            {'kind': 'sfq', 'handle': '40:', 'parent': '1:40',
+             'sfq': {'limit': 127, 'quantum': 20 * 1024 ** 2, 'perturb': 5}},
+            {'kind': 'ingress', 'handle': 'ffff:', 'parent': 'ffff:fff1'},
+            {'kind': 'mq', 'handle': '0:', 'dev': 'wlp3s0', 'root': True},
+            {'kind': 'ingress', 'handle': 'ffff:', 'dev': 'vdsmtest-Z2TMO',
+             'parent': 'ffff:fff1'},
+            {'kind': 'pfifo_fast', 'handle': '0:', 'dev': 'em1',
+             'root': True, 'refcnt': 2, 'pfifo_fast': {
+                 'bands': 3,
+                 'priomap': [1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1]}},
+            {'kind': 'pfifo_fast', 'handle': '0:', 'dev': 'wlp3s0',
+             'parent': ':1', 'pfifo_fast': {
+                 'bands': 3,
+                 'priomap': [1, 2, 2, 2, 1, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1]}},
+            {'kind': 'fq_codel', 'handle': '801e:', 'root': True, 'refcnt': 2,
+             'fq_codel': {'limit': 132, 'flows': 15, 'quantum': 400,
+                          'target': 5000.0, 'interval': 150000.0,
+                          'ecn': True}},
+            )
+        for parsed, correct in izip_longest(tc._qdiscs(None, out=data),
+                                            qdiscs):
+            self.assertEqual(parsed, correct)
+
 
 class TestPortMirror(TestCaseBase):
 

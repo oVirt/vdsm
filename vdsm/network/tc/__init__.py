@@ -30,6 +30,7 @@ import ethtool
 from . import filter as tc_filter
 from . import _parser
 from . import _wrapper
+from . import qdisc
 from ._wrapper import TrafficControlException
 
 ERR_DEV_NOEXIST = 2
@@ -129,12 +130,8 @@ def qdisc_replace_prio(dev):
 
 def _qdiscs_of_device(dev):
     "Return an iterator of qdisc_ids associated with dev"
-
-    command = ['qdisc', 'show', 'dev', dev]
-    out = _wrapper.process_request(command)
-
-    for line in out.splitlines():
-        yield line.split(' ')[2]
+    for qdisc_data in _qdiscs(dev):
+        yield qdisc_data['handle']
 
 
 def qdisc_del(dev, queue):
@@ -209,3 +206,4 @@ def _iterate(module, dev, out=None, **kwargs):
 
 
 _filters = partial(_iterate, tc_filter)  # kwargs: parent and pref
+_qdiscs = partial(_iterate, qdisc)  # kwargs: dev
