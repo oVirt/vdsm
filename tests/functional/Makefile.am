@@ -31,6 +31,7 @@ dist_vdsmfunctests_PYTHON = \
 	supervdsmFuncTests.py \
 	utils.py \
 	virtTests.py \
+	vmQosTests.py \
 	vmRecoveryTests.py \
 	storageTests.py \
 	veth.py \

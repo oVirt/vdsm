@@ -131,7 +131,7 @@ Requires: m2crypto
 Requires: libnl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
-Requires: mom >= 0.4.1
+Requires: mom >= 0.4.2
 Requires: numactl
 
 %ifarch x86_64
