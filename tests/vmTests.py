@@ -82,6 +82,7 @@ class FakeDomain(object):
         self._io_tune = {}
         self._domState = domState
         self._vmId = vmId
+        self.calls = {}
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
@@ -124,6 +125,10 @@ class FakeDomain(object):
     def setBlockIoTune(self, name, io_tune, flags):
         self._io_tune[name] = io_tune
         return 1
+
+    def setMemory(self, target):
+        self._failIfRequested()
+        self.calls['setMemory'] = (target,)
 
 
 class TestVm(TestCaseBase):
@@ -1847,3 +1852,34 @@ class TestVmStatusTransitions(TestCaseBase):
                 self.assertEqual(vm.status()['status'], vmstatus.SAVING_STATE)
                 # state must not change even after we are sure the event was
                 # handled
+
+
+class TestVmBalloon(TestCaseBase):
+    def assertAPIFailed(self, res, specificErr=None):
+        if specificErr is None:
+            self.assertNotEqual(res['status']['code'], 0)
+        else:
+            self.assertEqual(res['status']['code'],
+                             define.errCode[specificErr]['status']['code'])
+
+    def testSucceed(self):
+        with FakeVM() as vm:
+            vm._dom = FakeDomain()
+            target = 256
+            self.assertEqual(vm.setBalloonTarget(target)['status']['code'], 0)
+            self.assertEqual(vm._dom.calls['setMemory'][0], target)
+
+    def testVmWithoutDom(self):
+        with FakeVM() as vm:
+            self.assertTrue(vm._dom is None)
+            self.assertAPIFailed(vm.setBalloonTarget(128))
+
+    def testTargetValueNotInteger(self):
+        with FakeVM() as vm:
+            self.assertAPIFailed(vm.setBalloonTarget('foobar'))
+
+    def testLibvirtFailure(self):
+        with FakeVM() as vm:
+            vm._dom = FakeDomain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
+            # we don't care about the error code as long as is != NO_DOMAIN
+            self.assertAPIFailed(vm.setBalloonTarget(256), 'balloonErr')
