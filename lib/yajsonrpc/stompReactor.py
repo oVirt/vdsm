@@ -53,7 +53,6 @@ class StompAdapterImpl(object):
             res = stomp.Frame(stomp.Command.CONNECTED, {"version": "1.2"})
 
         dispatcher.send_raw(res)
-        self.log.info("CONNECT response queued")
         self._reactor.wakeup()
 
     def _cmd_subscribe(self, dispatcher, frame):
@@ -63,7 +62,6 @@ class StompAdapterImpl(object):
         self.log.debug("Unsubscribe command ignored")
 
     def _cmd_send(self, dispatcher, frame):
-        self.log.debug("Passing incoming message")
         self._messageHandler(self, frame.body)
 
     def handle_frame(self, dispatcher, frame):
@@ -121,7 +119,6 @@ class StompServer(object):
 
     def _handleMessage(self, impl, data):
         if self._messageHandler is not None:
-            self.log.debug("Processing incoming message")
             self._messageHandler((self, data))
 
     def setMessageHandler(self, msgHandler):
@@ -167,7 +164,6 @@ class StompClient(object):
 
     def handle_message(self, impl, frame):
         if self._messageHandler is not None:
-            self.log.debug("Queueing incoming message")
             self._messageHandler((self, frame.body))
 
     def setMessageHandler(self, msgHandler):
@@ -179,10 +175,10 @@ class StompClient(object):
             self._stompConn._dispatcher.handle_read()
 
     def send(self, message):
+        self.log.debug("Sending response")
         self._aclient.send(self._stompConn, _DEFAULT_REQUEST_DESTINATION,
                            message,
                            {"content-type": "application/json"})
-        self.log.debug("Message queued for delivery")
 
     def close(self):
         self._stompConn.close()

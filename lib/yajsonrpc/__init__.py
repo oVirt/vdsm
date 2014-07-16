@@ -454,7 +454,6 @@ class JsonRpcServer(object):
         self._threadFactory = threadFactory
 
     def queueRequest(self, req):
-        self.log.debug("Queueing request")
         self._workQueue.put_nowait(req)
 
     def _serveRequest(self, ctx, req):
@@ -495,12 +494,10 @@ class JsonRpcServer(object):
         while True:
             self.log.debug("Waiting for request")
             obj = self._workQueue.get()
-            self.log.debug("Popped request")
             if obj is None:
                 break
 
             client, msg = obj
-            self.log.debug("Parsing message")
             self._parseMessage(client, msg)
 
     def _parseMessage(self, client, msg):
