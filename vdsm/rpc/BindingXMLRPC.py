@@ -356,6 +356,7 @@ class BindingXMLRPC(object):
         return vm.create(vmParams)
 
     def getVMList(self, fullStatus=False, vmList=()):
+        API.updateTimestamp()  # required for editNetwork flow
         api = API.Global()
         return api.getVMList(fullStatus, vmList)
 

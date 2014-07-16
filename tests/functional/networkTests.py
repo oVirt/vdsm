@@ -2080,3 +2080,11 @@ class NetworkTest(TestCaseBase):
             # cleanup
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
+
+    @cleanupNet
+    def testSetupNetworksConnectivityCheck(self):
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'bridged': True}}, {},
+            {'connectivityCheck': True, 'connectivityTimeout': 0.1})
+        self.assertEqual(status, errors.ERR_LOST_CONNECTION)
+        self.assertNetworkDoesntExist(NETWORK_NAME)

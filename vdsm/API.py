@@ -65,7 +65,7 @@ except ImportError:
 USER_SHUTDOWN_MESSAGE = 'System going down'
 
 
-def _updateTimestamp():
+def updateTimestamp():
     # The setup+editNetwork API uses this log file to
     # determine if this host is still accessible.  We use a
     # file (rather than an event) because setup+editNetwork is
@@ -1192,7 +1192,7 @@ class Global(APIBase):
 
     def ping(self):
         "Ping the server. Useful for tests"
-        _updateTimestamp()
+        updateTimestamp()
         return {'status': doneCode}
 
     def getCapabilities(self):
@@ -1200,7 +1200,7 @@ class Global(APIBase):
         Report host capabilities.
         """
         hooks.before_get_caps()
-        _updateTimestamp()  # required for some ovirt-3.0.z Engines
+        updateTimestamp()  # required for some ovirt-3.0.z Engines
         c = caps.get()
         c['netConfigDirty'] = str(self._cif._netConfigDirty)
         c = hooks.after_get_caps(c)
@@ -1310,8 +1310,6 @@ class Global(APIBase):
                 return d
             else:
                 return {'vmId': d['vmId'], 'status': d['status']}
-
-        _updateTimestamp()  # required for editNetwork flow
 
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
