@@ -54,13 +54,16 @@ class ConnectionMock:
         return []
 
 
-class FakeDomain:
-    def __init__(self, xml='', virtError=libvirt.VIR_ERR_OK):
+class FakeDomain(object):
+    def __init__(self, xml='',
+                 virtError=libvirt.VIR_ERR_OK,
+                 domState=libvirt.VIR_DOMAIN_RUNNING):
         self._xml = xml
         self.devXml = ''
         self._virtError = virtError
         self._metadata = ""
         self._io_tune = {}
+        self._domState = domState
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
@@ -69,7 +72,8 @@ class FakeDomain:
             raise err
 
     def info(self):
-        raise libvirt.libvirtError(defmsg='')
+        self._failIfRequested()
+        return (self._domState, )
 
     def XMLDesc(self, unused):
         return self._xml
@@ -1412,6 +1416,21 @@ class TestVmOperations(TestCaseBase):
                 'existingConnAction': 'disconnect'})
             self.assertEquals(fake._dom.devXml, devXml)
 
+    def testDomainNotRunningWithoutDomain(self):
+        with FakeVM() as fake:
+            self.assertEqual(fake._dom, None)
+            self.assertFalse(fake._isDomainRunning())
+
+    def testDomainNotRunningByState(self):
+        with FakeVM() as fake:
+            fake._dom = FakeDomain(domState=libvirt.VIR_DOMAIN_SHUTDOWN)
+            self.assertFalse(fake._isDomainRunning())
+
+    def testDomainIsRunning(self):
+        with FakeVM() as fake:
+            fake._dom = FakeDomain(domState=libvirt.VIR_DOMAIN_RUNNING)
+            self.assertTrue(fake._isDomainRunning())
+
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),
                  vmexitreason.exitReasons.keys()))
@@ -1485,7 +1504,8 @@ class TestVmStatsThread(TestCaseBase):
     def testGetStatsDomInfoFail(self):
         # bz1073478 - extra case
         with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
-            fake._dom = FakeDomain()
+            fake._dom = FakeDomain(
+                virtError=libvirt.VIR_ERR_NO_DOMAIN)
             mock_stats_thread = vm.VmStatsThread(fake)
             res = {}
             mock_stats_thread._getBalloonStats(res)
