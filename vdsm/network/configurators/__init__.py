@@ -102,13 +102,10 @@ class Configurator(object):
     def removeSourceRoute(self, routes, rules, device):
         raise NotImplementedError
 
-    def configureLibvirtNetwork(self, network, iface, qosInbound=None,
-                                qosOutbound=None):
+    def configureLibvirtNetwork(self, network, iface):
         self.configApplier.createLibvirtNetwork(network,
                                                 isinstance(iface, Bridge),
-                                                iface.name,
-                                                qosInbound=qosInbound,
-                                                qosOutbound=qosOutbound)
+                                                iface.name)
         self._libvirtAdded.add(network)
 
     def removeLibvirtNetwork(self, network):

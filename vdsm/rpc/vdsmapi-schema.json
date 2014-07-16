@@ -63,8 +63,6 @@
 #
 # @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
 #
-# @qosInbound:      #optional BandwidthParams for incoming traffic.
-#
 # @qosOutbound:     #optional BandwidthParams for outgoing traffic.
 #
 # Since: 4.10.0
@@ -72,7 +70,7 @@
 {'type': 'NetworkOptions',
  'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
           '*bootproto': 'str', '*bondingOptions', 'str',
-          '*blockingdhcp': 'bool', '*qosInbound': 'BandwidthParams',
+          '*blockingdhcp': 'bool',
           '*qosOutbound': 'BandwidthParams'}}
 
 ##
@@ -164,8 +162,6 @@
 #
 # @remove:        #optional If True, remove existing network only
 #
-# @qosInbound:    #optional BandwidthParams for incoming traffic.
-#
 # @qosOutbound:   #optional BandwidthParams for outgoing traffic.
 #
 # @defaultRoute:  #optional boolean - Is this network's gateway the host's
@@ -180,7 +176,6 @@
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
           '*remove': 'bool',
-          '*qosInbound': 'BandwidthParams',
           '*qosOutbound': 'BandwidthParams',
           '*defaultRoute': 'bool',
           '*custom': 'StringMap'}}
@@ -658,8 +653,6 @@
 # @bridged:     Always True to distinguish this type from
 #               @NetInfoBridgelessNetwork
 #
-# @qosInbound:  #optional BandwidthParams for incoming traffic.
-#
 # @qosOutbound: #optional BandwidthParams for outgoing traffic.
 #
 # @opts:        A map containing information about the bridge specific options.
@@ -673,8 +666,7 @@
           'netmask': 'str', 'gateway': 'str', 'ipv4addrs': ['str'],
           'ipv6addrs': ['str'], 'ipv6gateway': 'str', 'mtu': 'uint',
           'cfg': 'StringMap', 'bridged': 'bool',
-          '*qosInbound': 'BandwidthParams', '*qosOutbound': 'BandwidthParams',
-          'opts': 'StringMap'}}
+          '*qosOutbound': 'BandwidthParams', 'opts': 'StringMap'}}
 
 ##
 # @NetInfoBridgelessNetwork:

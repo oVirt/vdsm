@@ -148,24 +148,3 @@ class ifcfgConfigWriterTests(TestCaseBase):
                                              iface=iface)
 
         self.assertEqualXml(expectedDoc, actualDoc)
-
-    def testCreateNetXmlBridgedQos(self):
-        inbound = {'average': '1024', 'burst': '5000'}
-        outbound = {'average': '666', 'burst': '666',
-                    'peak': '400'}
-        expectedDoc = ("""<network>
-                            <name>vdsm-awesome_net</name>
-                            <forward mode='bridge'/>
-                            <bridge name='awesome_net'/>
-                            <bandwidth>
-                                <inbound average='%s' burst='%s' />
-                                <outbound average='%s' burst='%s' peak='%s' />
-                            </bandwidth>
-                          </network>"""
-                       % (inbound['average'], inbound['burst'],
-                          outbound['average'], outbound['burst'],
-                          outbound['peak']))
-        actualDoc = libvirt.createNetworkDef('awesome_net', qosInbound=inbound,
-                                             qosOutbound=outbound)
-
-        self.assertEqualXml(expectedDoc, actualDoc)

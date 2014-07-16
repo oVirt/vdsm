@@ -594,39 +594,10 @@ class NetworkTest(TestCaseBase):
                                                    opts={'bridged': bridged})
             self.assertEquals(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
-            qosInbound, qosOutbound = self.vdsm_net.networkQos(NETWORK_NAME)
             status, msg = self.vdsm_net.delNetwork(NETWORK_NAME, vlan=vlan_id,
                                                    bond=BONDING_NAME,
                                                    nics=nics)
-            self.assertEqual({}, qosInbound)
-            self.assertEqual({}, qosOutbound)
             self.assertEqual(status, SUCCESS, msg)
-
-    @cleanupNet
-    @RequireDummyMod
-    @ValidateRunningAsRoot
-    def testQosNetwork(self):
-        def testNetQoS(qos):
-            status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, nics=nics,
-                                                   opts=qos)
-            self.assertEqual(status, SUCCESS, msg)
-
-            qosInbound, qosOutbound = self.vdsm_net.networkQos(NETWORK_NAME)
-            self.assertEqual(qos.get('qosInbound', {}), qosInbound)
-            self.assertEqual(qos.get('qosOutbound', {}), qosOutbound)
-
-            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME)
-            self.assertEqual(status, SUCCESS, msg)
-
-        with dummyIf(1) as nics:
-            qosComplete = {'qosInbound': {'average': 1024, 'burst': 2048,
-                                          'peak': 42},
-                           'qosOutbound': {'average': 2400, 'burst': 2048,
-                                           'peak': 100}}
-            testNetQoS(qosComplete)
-
-            qosInbOnly = {'qosInbound': {'average': 1024}}
-            testNetQoS(qosInbOnly)
 
     @cleanupNet
     @permutations([[True], [False]])

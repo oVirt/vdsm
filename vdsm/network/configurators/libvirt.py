@@ -51,8 +51,7 @@ def getNetworkDef(network):
         raise
 
 
-def createNetworkDef(network, bridged=True, iface=None,
-                     qosInbound=None, qosOutbound=None):
+def createNetworkDef(network, bridged=True, iface=None):
     """
     Creates Network Xml e.g.:
     <network>
@@ -60,18 +59,12 @@ def createNetworkDef(network, bridged=True, iface=None,
 
         <forward mode='bridge'/><bridge name='awesome_net'/> ||
         <forward mode='passthrough'><interface dev='incredible'/></forward>
-
-        [<bandwidth>]
-            [<inbound average='1000' [peak='5000'] [burst='1024']/>]
-            [<outbound average='1000' [burst='1024']/>]
-        [</bandwidth>]
     </network>
 
     Forward mode can be either bridge or passthrough,
     according to net if bridged or bridgeless this
     determines respectively the presence of bridge element
-    or interface subelement. Inbound or outbound element
-    can be optionally defined.
+    or interface subelement.
     """
 
     netName = netinfo.LIBVIRT_NET_PREFIX + network
@@ -96,16 +89,6 @@ def createNetworkDef(network, bridged=True, iface=None,
         root.appendChild(XmlElement('bridge', name=network))
     else:
         forwardElem.appendChild(XmlElement('interface', dev=iface))
-
-    if qosInbound or qosOutbound:
-        bandwidthElem = XmlElement('bandwidth')
-        if qosInbound:
-            bandwidthElem.appendChild(XmlElement('inbound', **qosInbound))
-        if qosOutbound:
-            bandwidthElem.appendChild(XmlElement('outbound',
-                                                 **qosOutbound))
-        root.appendChild(bandwidthElem)
-
     return root.toxml()
 
 
