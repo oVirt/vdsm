@@ -2322,7 +2322,6 @@ class Vm(object):
                     'exitMessage', ''))
             self.recovering = False
         except MigrationError:
-            # cannot happen during recovery
             self.log.exception("Failed to start a migration destination vm")
             self.setDownStatus(ERROR, vmexitreason.MIGRATION_FAILED)
         except Exception as e:
@@ -3146,8 +3145,10 @@ class Vm(object):
         try:
             status = self._dom.info()
         except AttributeError:
-            # self._dom may be set to None asynchronously. see _onQemuDeath.
-            # If so, the VM is shutting down or already shut down.
+            # Known reasons for this:
+            # * on migration destination, and migration not yet completed.
+            # * self._dom may be set to None asynchronously (_onQemuDeath).
+            #   If so, the VM is shutting down or already shut down.
             return False
         else:
             return status[0] == libvirt.VIR_DOMAIN_RUNNING
@@ -3301,15 +3302,20 @@ class Vm(object):
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
 
-        if self.conf.get('migrationDest'):
-            return
-        if not self.recovering:
+        initDomain = 'migrationDest' not in self.conf
+        # we need to complete the initialization, including
+        # domDependentInit, after the migration is completed.
+
+        if not self.recovering and initDomain:
             domxml = hooks.before_vm_start(self._buildCmdLine(), self.conf)
             self.log.debug(domxml)
+
         if self.recovering:
             self._dom = NotifyingVirDomain(
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
+        elif 'migrationDest' in self.conf:
+            pass  # self._dom will be None until migration ends.
         elif 'restoreState' in self.conf:
             fromSnapshot = self.conf.get('restoreFromSnapshot', False)
             srcDomXML = self.conf.pop('_srcDomXML')
@@ -3344,7 +3350,8 @@ class Vm(object):
                 hooks.after_device_create(dev._deviceXML, self.conf,
                                           dev.custom)
 
-        self._domDependentInit()
+        if initDomain:
+            self._domDependentInit()
 
     def _updateDevices(self, devices):
         """
@@ -3956,9 +3963,20 @@ class Vm(object):
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
                                        {'FROM_SNAPSHOT': fromSnapshot})
         elif 'migrationDest' in self.conf:
-            usedTimeout = self._waitForUnderlyingMigration()
-            self._attachLibvirtDomainAfterMigration(
-                self._incomingMigrationFinished.isSet(), usedTimeout)
+            waitMigration = True
+            if self.recovering:
+                try:
+                    if self._isDomainRunning():
+                        waitMigration = False
+                        self.log.info('migration completed while recovering!')
+                except libvirt.libvirtError:
+                    self.log.exception('migration failed while recovering!')
+                    raise MigrationError()
+            if waitMigration:
+                usedTimeout = self._waitForUnderlyingMigration()
+                self._attachLibvirtDomainAfterMigration(
+                    self._incomingMigrationFinished.isSet(), usedTimeout)
+            # else domain connection already established earlier
             self._domDependentInit()
             del self.conf['migrationDest']
             hooks.after_vm_migrate_destination(self._dom.XMLDesc(0), self.conf)
