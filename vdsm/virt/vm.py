@@ -1446,7 +1446,10 @@ class StorageUnavailableError(Exception):
 
 
 class MissingLibvirtDomainError(Exception):
-    pass
+    def __init__(self, reason=vmexitreason.LIBVIRT_DOMAIN_MISSING):
+        super(Exception, self).__init__(
+            self, vmexitreason.exitReasons.get(reason, 'Missing VM'))
+        self.reason = reason
 
 
 class Vm(object):
@@ -1894,9 +1897,13 @@ class Vm(object):
                     # behaviors on VM start/destroy, because the tuning can be
                     # done automatically according to its statistical data.
                     self.cif.ksmMonitor.adjust()
+            except MissingLibvirtDomainError:
+                # we cannot continue without a libvirt domain object,
+                # not even on recovery, to avoid state desync or worse
+                # split-brain scenarios.
+                raise
             except Exception as e:
-                # we cannot continue without a libvirt domain object
-                # to avoid state desync or worse split-brain scenarios.
+                # as above
                 if isinstance(e, libvirt.libvirtError) and \
                    e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     raise MissingLibvirtDomainError()
@@ -1926,13 +1933,13 @@ class Vm(object):
 
             self.recovering = False
             self.saveState()
-        except MissingLibvirtDomainError:
+        except MissingLibvirtDomainError as e:
             # we cannot ever deal with this error, not even on recovery.
             self.setDownStatus(
                 self.conf.get(
                     'exitCode', ERROR),
                 self.conf.get(
-                    'exitReason', vmexitreason.LIBVIRT_DOMAIN_MISSING),
+                    'exitReason', e.reason),
                 self.conf.get(
                     'exitMessage', ''))
             self.recovering = False
@@ -2843,6 +2850,9 @@ class Vm(object):
                 pass
             raise Exception('destroy() called before Vm started')
 
+        if self._dom is None:
+            raise MissingLibvirtDomainError(vmexitreason.LIBVIRT_START_FAILED)
+
         self._getUnderlyingVmInfo()
         self._getUnderlyingVmDevicesInfo()
         self._updateAgentChannels()
@@ -2960,9 +2970,6 @@ class Vm(object):
                 hooks.after_device_create(dev._deviceXML, self.conf,
                                           dev.custom)
 
-        if not self._dom:
-            self.setDownStatus(ERROR, vmexitreason.LIBVIRT_START_FAILED)
-            return
         self._domDependentInit()
 
     def _updateDevices(self, devices):
