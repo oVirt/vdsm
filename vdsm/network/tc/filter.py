@@ -20,12 +20,49 @@ from . import _parser
 from . import _wrapper
 
 
+def delete(dev, pref, parent=None, protocol=None):
+    command = ['filter', 'del', 'dev', dev, 'pref', str(pref)]
+    if parent is not None:
+        command += ['parent', parent]
+    if protocol is not None:
+        command += ['protocol', protocol]
+    _wrapper.process_request(command)
+
+
+def replace(dev, root=False, parent=None, handle=None, pref=None,
+            protocol=None, estimator=None, actions=(), **opts):
+    """Replaces a filter. actions should be an iterable of lists of action
+    definition tokens. opts should be used for the matches (such as u32)"""
+    command = ['filter', 'replace', 'dev', dev]
+    if protocol is not None:
+        command += ['protocol', protocol]
+    if root:
+        command += ['root']
+    elif parent is not None:
+        command += ['parent', parent]
+    if handle is not None:
+        command += ['handle', handle]
+    if pref is not None:
+        command += ['pref', str(pref)]
+    if estimator is not None:
+        command += ['estimator', estimator]
+    for key, value in opts.items():
+        if isinstance(value, str):
+            command += [key, value]
+        else:
+            command.append(key)
+            command += value
+    for action in actions:
+        command += action
+    _wrapper.process_request(command)
+
+
 def show(dev, parent=None, pref=None):
     command = ['filter', 'show', 'dev', dev]
     if parent is not None:
         command += ['parent', parent]
     if pref is not None:
-        command += ['pref', pref]
+        command += ['pref', str(pref)]
     return _wrapper.process_request(command)
 
 

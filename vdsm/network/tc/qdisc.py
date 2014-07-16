@@ -24,6 +24,52 @@ from . import _wrapper
 _TC_PRIO_MAX = 15
 
 
+def add(dev, kind, parent=None, handle=None, **opts):
+    command = ['qdisc', 'add', 'dev', dev]
+    if kind != 'ingress':
+        if parent is None:
+            command.append('root')
+        else:
+            command += ['parent', parent]
+    if handle is not None:
+        command += ['handle', handle]
+    command.append(kind)
+    for key, value in opts.items():
+        command += [key, value]
+    _wrapper.process_request(command)
+
+
+def delete(dev, kind=None, parent=None, handle=None, **opts):
+    command = ['qdisc', 'del', 'dev', dev]
+    if kind != 'ingress':
+        if parent is None:
+            command.append('root')
+        else:
+            command += ['parent', parent]
+    if handle is not None:
+        command += ['handle', handle]
+    if kind is not None:
+        command.append(kind)
+    for key, value in opts.items():
+        command += [key, value]
+    _wrapper.process_request(command)
+
+
+def replace(dev, kind, parent=None, handle=None, **opts):
+    command = ['qdisc', 'replace', 'dev', dev]
+    if kind != 'ingress':
+        if parent is None:
+            command.append('root')
+        else:
+            command += ['parent', parent]
+    if handle is not None:
+        command += ['handle', handle]
+    command.append(kind)
+    for key, value in opts.items():
+        command += [key, value]
+    _wrapper.process_request(command)
+
+
 def show(dev=None):
     command = ['qdisc', 'show']
     if dev:

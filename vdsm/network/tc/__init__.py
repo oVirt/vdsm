@@ -26,7 +26,6 @@ from vdsm import ipwrapper
 
 from . import filter as tc_filter
 from . import _parser
-from . import _wrapper
 from . import cls
 from . import qdisc
 from ._wrapper import TrafficControlException
@@ -41,7 +40,7 @@ def _addTarget(network, parent, target):
     else:
         filt = Filter(prio=None, handle=None, actions=[])
     filt.actions.append(MirredAction(target))
-    filter_replace(network, parent, filt)
+    _filter_replace(network, parent, filt)
 
 
 def _delTarget(network, parent, target):
@@ -57,17 +56,17 @@ def _delTarget(network, parent, target):
 
     if acts:
         filt = Filter(prio=filt.prio, handle=filt.handle, actions=acts)
-        filter_replace(network, parent, filt)
+        _filter_replace(network, parent, filt)
     else:
-        filter_del(network, target, parent, filt.prio)
+        tc_filter.delete(network, filt.prio, parent=parent)
     return acts
 
 
 def setPortMirroring(network, target):
-    qdisc_replace_ingress(network)
+    _qdisc_replace_ingress(network)
     _addTarget(network, QDISC_INGRESS, target)
 
-    qdisc_replace_prio(network)
+    qdisc.replace(network, 'prio', parent=None)
     qdisc_id = _qdiscs_of_device(network).next()
     _addTarget(network, qdisc_id, target)
     ipwrapper.getLink(network).promisc = True
@@ -84,15 +83,14 @@ def unsetPortMirroring(network, target):
         pass
 
     if not acts:
-        qdisc_del(network, 'root')
-        qdisc_del(network, 'ingress')
+        _qdisc_del(network)
+        _qdisc_del(network, kind='ingress')
         ipwrapper.getLink(network).promisc = False
 
 
-def qdisc_replace_ingress(dev):
-    command = ['qdisc', 'add', 'dev', dev, 'ingress']
+def _qdisc_replace_ingress(dev):
     try:
-        _wrapper.process_request(command)
+        qdisc.add(dev, 'ingress')
     except TrafficControlException as e:
         if e.errCode == errno.EEXIST:
             pass
@@ -100,27 +98,17 @@ def qdisc_replace_ingress(dev):
             raise
 
 
-def filter_del(dev, target, parent, prio):
-    command = ['filter', 'del', 'dev', dev, 'parent', parent, 'prio',
-               str(prio)]
-    _wrapper.process_request(command)
-
-
-def filter_replace(dev, parent, filt):
-    command = ['filter', 'replace', 'dev', dev, 'parent', parent]
+def _filter_replace(dev, parent, filt):
     if filt.prio:
-        command.extend(['prio', str(filt.prio)])
-        command.extend(['handle', filt.handle])
-    command.extend(['protocol', 'ip', 'u32', 'match', 'u8', '0', '0'])
+        kwargs = {'pref': filt.prio, 'handle': filt.handle}
+    else:
+        kwargs = {}
+    actions = []
     for a in filt.actions:
-        command.extend(['action', 'mirred', 'egress', 'mirror',
+        actions.append(['action', 'mirred', 'egress', 'mirror',
                         'dev', a.target])
-    _wrapper.process_request(command)
-
-
-def qdisc_replace_prio(dev):
-    command = ['qdisc', 'replace', 'dev', dev, 'parent', 'root', 'prio']
-    _wrapper.process_request(command)
+    tc_filter.replace(dev, parent=parent, protocol='ip',
+                      u32=['match', 'u8', '0', '0'], actions=actions, **kwargs)
 
 
 def _qdiscs_of_device(dev):
@@ -129,10 +117,9 @@ def _qdiscs_of_device(dev):
         yield qdisc_data['handle']
 
 
-def qdisc_del(dev, queue):
+def _qdisc_del(*args, **kwargs):
     try:
-        command = ['qdisc', 'del', 'dev', dev, queue]
-        _wrapper.process_request(command)
+        qdisc.delete(*args, **kwargs)
     except TrafficControlException as e:
         if e.errCode != errno.ENOENT:
             raise

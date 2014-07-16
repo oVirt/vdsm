@@ -170,12 +170,12 @@ class TestQdisc(TestCaseBase):
         return popen.stdout.read()
 
     def _addIngress(self):
-        tc.qdisc_replace_ingress(self._bridge.devName)
+        tc._qdisc_replace_ingress(self._bridge.devName)
         self.assertIn("qdisc ingress", self._showQdisc())
 
     def testToggleIngress(self):
         self._addIngress()
-        tc.qdisc_del(self._bridge.devName, 'ingress')
+        tc._qdisc_del(self._bridge.devName, 'ingress')
         self.assertNotIn("qdisc ingress", self._showQdisc())
 
     def testQdiscsOfDevice(self):
@@ -185,11 +185,11 @@ class TestQdisc(TestCaseBase):
 
     def testReplacePrio(self):
         self._addIngress()
-        tc.qdisc_replace_prio(self._bridge.devName)
+        tc.qdisc.replace(self._bridge.devName, 'prio', parent=None)
         self.assertIn("root", self._showQdisc())
 
     def testException(self):
-        self.assertRaises(tc.TrafficControlException, tc.qdisc_del,
+        self.assertRaises(tc.TrafficControlException, tc._qdisc_del,
                           self._bridge.devName + "A", 'ingress')
 
 

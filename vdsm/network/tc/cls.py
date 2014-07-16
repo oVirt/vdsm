@@ -21,6 +21,28 @@ from . import _wrapper
 _TC_PRIO_MAX = 15
 
 
+def add(dev, kind, parent, classid, **opts):
+    """Adds a class to a device. Opts should be used with list values for
+    complex inputs, e.g. {'ls': ['rate', '400kbps']}"""
+    command = ['class', 'add', 'dev', dev, 'parent', parent,
+               'classid', classid]
+    command.append(kind)
+    for key, value in opts.items():
+        if isinstance(value, str):
+            command += [key, value]
+        else:
+            command.append(key)
+            command += value
+    _wrapper.process_request(command)
+
+
+def delete(dev, classid, parent=None):
+    command = ['class', 'del', 'dev', dev, 'classid', classid]
+    if parent is not None:
+        command += ['parent', parent]
+    _wrapper.process_request(command)
+
+
 def show(dev, parent=None, classid=None):
     command = ['class', 'show', 'dev', dev]
     if parent is not None:
