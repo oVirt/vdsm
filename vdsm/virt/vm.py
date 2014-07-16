@@ -3135,9 +3135,18 @@ class Vm(object):
         utils.rmFile(self._recoveryFile)
         self._guestSockCleanup(self._qemuguestSocketFile)
 
+    def _isDomainRunning(self):
+        try:
+            status = self._dom.info()
+        except AttributeError:
+            # self._dom may be set to None asynchronously. see _onQemuDeath.
+            # If so, the VM is shutting down or already shut down.
+            return False
+        else:
+            return status[0] == libvirt.VIR_DOMAIN_RUNNING
+
     def updateGuestCpuRunning(self):
-        self._guestCpuRunning = (self._dom.info()[0] ==
-                                 libvirt.VIR_DOMAIN_RUNNING)
+        self._guestCpuRunning = self._isDomainRunning()
 
     def _getUnderlyingVmDevicesInfo(self):
         """
