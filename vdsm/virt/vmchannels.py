@@ -51,7 +51,7 @@ class Listener(threading.Thread):
         """ Handle an epoll event occurred on a specific file descriptor. """
         reconnect = False
         if (event & (select.EPOLLHUP | select.EPOLLERR)):
-            self.log.error("Received %.08X on fileno %d", event, fileno)
+            self.log.info("Received %.08X on fileno %d", event, fileno)
             if fileno in self._channels:
                 reconnect = True
             else:
