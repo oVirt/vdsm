@@ -16,7 +16,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from collections import namedtuple
 from contextlib import contextmanager
 from functools import wraps
 import socket
@@ -33,7 +32,6 @@ import supervdsm
 
 
 SUCCESS = 0
-Qos = namedtuple('Qos', 'inbound outbound')
 
 
 def cleanupRules(func):
@@ -192,10 +190,6 @@ class VdsProxy(object):
             raise
         finally:
             done = True
-
-    def networkQos(self, networkName):
-        network = self.netinfo.networks[networkName]
-        return network.get('qosInbound', {}), network.get('qosOutbound', {})
 
     def getVdsStats(self):
         result = self.vdscli.getVdsStats()

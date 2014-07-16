@@ -285,11 +285,8 @@ class ConfigWriter(object):
         logging.debug("Removed file %s", filename)
 
     def createLibvirtNetwork(self, network, bridged=True, iface=None,
-                             skipBackup=False, qosInbound=None,
-                             qosOutbound=None):
-        netXml = libvirt.createNetworkDef(network, bridged, iface,
-                                          qosInbound=qosInbound,
-                                          qosOutbound=qosOutbound)
+                             skipBackup=False):
+        netXml = libvirt.createNetworkDef(network, bridged, iface)
         if not skipBackup:
             self._networkBackup(network)
         libvirt.createNetwork(netXml)

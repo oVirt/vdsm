@@ -22,7 +22,6 @@ import os
 from datetime import datetime
 from functools import partial
 import time
-from xml.dom import minidom
 
 from vdsm import ipwrapper
 from vdsm import netconfpersistence
@@ -181,23 +180,6 @@ class TestNetinfo(TestCaseBase):
             self.assertFalse(hiddens.intersection(nics), 'Some of hidden '
                              'devices %s is shown in nics %s' % (hiddens,
                                                                  nics))
-
-    def testGetBandwidthQos(self):
-        notEmptyDoc = minidom.parseString("""<bandwidth>
-                            <inbound average='4500' burst='5400' />
-                            <outbound average='4500' burst='5400' peak='101' />
-                          </bandwidth>""")
-        expectedQosNotEmpty = netinfo._Qos(inbound={'average': 4500,
-                                                    'burst': 5400},
-                                           outbound={'average': 4500,
-                                                     'burst': 5400,
-                                                     'peak': 101})
-        emptyDoc = minidom.parseString("<whatever></whatever>")
-
-        self.assertEqual(expectedQosNotEmpty,
-                         netinfo._parseBandwidthQos(notEmptyDoc))
-        self.assertEqual(netinfo._Qos({}, {}),
-                         netinfo._parseBandwidthQos(emptyDoc))
 
     def testGetBootProtocolIfcfg(self):
         deviceName = "___This_could_never_be_a_device_name___"

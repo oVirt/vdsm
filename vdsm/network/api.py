@@ -268,8 +268,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
                ipv6addr=None, ipv6gateway=None, ipv6autoconf=None, force=False,
                configurator=None, bondingOptions=None, bridged=True,
-               _netinfo=None, qosInbound=None, qosOutbound=None,
-               defaultRoute=None, blockingdhcp=False, **options):
+               _netinfo=None, qosOutbound=None, defaultRoute=None,
+               blockingdhcp=False, **options):
     nics = nics or ()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
@@ -336,9 +336,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         _netinfo=_netinfo, configurator=configurator, opts=options)
 
     netEnt.configure(**options)
-    configurator.configureLibvirtNetwork(network, netEnt,
-                                         qosInbound=qosInbound,
-                                         qosOutbound=qosOutbound)
+    configurator.configureLibvirtNetwork(network, netEnt)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):

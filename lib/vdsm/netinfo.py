@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import errno
 from glob import iglob
 from datetime import datetime
@@ -81,8 +81,6 @@ _TEE_BINARY = CommandPath('tee', constants.EXT_TEE)
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DEFAULT_MTU = '1500'
 
-_Qos = namedtuple('Qos', 'inbound outbound')
-
 OPERSTATE_UP = 'up'
 DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 
@@ -106,11 +104,8 @@ def networks():
 
     :returns: dict of networkname={properties}
     :rtype: dict of dict
-            { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True,
-                            'qosInbound': {'average': 1024, 'peak': 4096},
-                            'qosOutbound': {'average': 1024, 'burst': 2048}},
-              'red': { 'iface': 'red', 'bridged': False
-                       'qosOutbound': {'average': 1024, 'burst': 2048}}}
+            { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True}
+              'red': { 'iface': 'red', 'bridged': False}}
     """
     nets = {}
     conn = libvirtconnection.get()
@@ -120,11 +115,6 @@ def networks():
             netname = netname[len(LIBVIRT_NET_PREFIX):]
             nets[netname] = {}
             xml = minidom.parseString(net.XMLDesc(0))
-            qos = _parseBandwidthQos(xml)
-            if qos.inbound:
-                nets[netname]['qosInbound'] = qos.inbound
-            if qos.outbound:
-                nets[netname]['qosOutbound'] = qos.outbound
             interfaces = xml.getElementsByTagName('interface')
             if len(interfaces) > 0:
                 nets[netname]['iface'] = interfaces[0].getAttribute('dev')
@@ -134,35 +124,6 @@ def networks():
                     xml.getElementsByTagName('bridge')[0].getAttribute('name')
                 nets[netname]['bridged'] = True
     return nets
-
-
-def _parseBandwidthQos(networkXml):
-    """
-    Extract the Qos information
-    :param networkXml: instance of xml.dom.minidom.Document
-    :return: _Qos namedtuple containing inbound and outbound qos dicts.
-    """
-
-    qos = _Qos({}, {})
-
-    def extractQos(bandWidthElem, trafficType):
-        qos = {}
-        elem = bandWidthElem.getElementsByTagName(trafficType)
-        if elem:
-            qos['average'] = int(elem[0].getAttribute('average'))
-            if elem[0].hasAttribute('burst'):  # libvirt XML optional field
-                qos['burst'] = int(elem[0].getAttribute('burst'))
-            if elem[0].hasAttribute('peak'):  # libvirt XML optional field
-                qos['peak'] = int(elem[0].getAttribute('peak'))
-        return qos
-
-    bandwidthElem = networkXml.getElementsByTagName('bandwidth')
-    if bandwidthElem:
-        inbound = extractQos(bandwidthElem[0], "inbound")
-        outbound = extractQos(bandwidthElem[0], "outbound")
-        qos = _Qos(inbound, outbound)
-
-    return qos
 
 
 def slaves(bonding):
@@ -522,8 +483,7 @@ def _bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def _getNetInfo(iface, dhcp4, bridged, routes, ipaddrs, qosInbound,
-                qosOutbound):
+def _getNetInfo(iface, dhcp4, bridged, routes, ipaddrs):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -547,10 +507,6 @@ def _getNetInfo(iface, dhcp4, bridged, routes, ipaddrs, qosInbound,
                      'gateway': _get_gateway(routes, iface),
                      'ipv6gateway': _get_gateway(routes, iface, family=6),
                      'mtu': str(getMtu(iface))})
-        if qosInbound:
-            data['qosInbound'] = qosInbound
-        if qosOutbound:
-            data['qosOutbound'] = qosOutbound
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)
@@ -726,9 +682,7 @@ def _libvirtNets2vdsm(nets, dhcp4=None, routes=None, ipAddrs=None):
         try:
             d[net] = _getNetInfo(netAttr.get('iface', net),
                                  dhcp4,
-                                 netAttr['bridged'], routes, ipAddrs,
-                                 netAttr.get('qosInbound'),
-                                 netAttr.get('qosOutbound'))
+                                 netAttr['bridged'], routes, ipAddrs)
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
