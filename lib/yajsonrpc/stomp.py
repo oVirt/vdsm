@@ -467,7 +467,6 @@ class AsyncClient(object):
         return self._error
 
     def handle_connect(self, dispatcher):
-        self.log.debug("Sending CONNECT frame...")
         hostname = self._hostname
         frame = Frame(
             Command.CONNECT,
@@ -485,7 +484,7 @@ class AsyncClient(object):
         if hasattr(frameHandler, "handle_connect"):
             frameHandler.handle_connect(self, frame)
 
-        self.log.debug("Stomp connection astablished")
+        self.log.debug("Stomp connection established")
 
     def _process_message(self, frame, dispatcher):
         frameHandler = self._frameHandler
@@ -494,7 +493,7 @@ class AsyncClient(object):
             frameHandler.handle_message(self, frame)
 
     def _process_receipt(self, frame, dispatcher):
-        self.log.warning("Reciept frame recieved and ignored")
+        self.log.warning("Receipt frame received and ignored")
 
     def _process_error(self, frame, dispatcher):
         raise StompError(frame)
