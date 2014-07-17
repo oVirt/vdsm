@@ -70,7 +70,7 @@ def updateTimestamp():
     # determine if this host is still accessible.  We use a
     # file (rather than an event) because setup+editNetwork is
     # performed by a separate, root process.
-    file(constants.P_VDSM_CLIENT_LOG, 'w')
+    utils.touchFile(constants.P_VDSM_CLIENT_LOG)
 
 
 class APIBase(object):
