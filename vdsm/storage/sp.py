@@ -1217,6 +1217,7 @@ class StoragePool(object):
 
         # Cleanup old trash from the pool
         for oldie in oldLinks:
+            self.log.debug('collecting stale storage domain link %s', oldie)
             try:
                 os.remove(oldie)
             except OSError as e:
