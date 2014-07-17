@@ -1,5 +1,6 @@
 package org.ovirt.vdsm.jsonrpc.client;
 
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.JsonNode;
@@ -34,8 +35,31 @@ public class ResponseBuilder {
     }
 
     /**
+     * Adds result <code>String</code> to the response.
+     * @param result
+     *            <code>String</code> with response data.
+     * @return {@link ResponseBuilder} to let add more parameters.
+     */
+    public ResponseBuilder withResult(String result) {
+        this.result = OBJECT_MAPPER.valueToTree(result);
+        return this;
+    }
+
+    /**
+     * Adds result <code>List</code> to the response.
+     * @param result
+     *            <code>List</code> with response data.
+     * @return {@link ResponseBuilder} to let add more parameters.
+     */
+    public ResponseBuilder withResult(List<Object> result) {
+        this.result = OBJECT_MAPPER.valueToTree(result);
+        return this;
+    }
+
+    /**
      * Adds error <code>Map</code> to the response.
-     * @param error <code>Map</code> with error data.
+     * @param error
+     *            <code>Map</code> with error data.
      * @return {@link ResponseBuilder} to let add more parameters.
      */
     public ResponseBuilder withError(Map<String, Object> error) {
