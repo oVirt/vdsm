@@ -55,7 +55,7 @@
 # @gateway:         #optional IP address of the network gateway
 #
 # @bootproto:       #optional Interface autoconfiguration protocol (typically
-#                   'dhcp' or 'static')
+#                   'dhcp' or 'none')
 #
 # @blockingdhcp:    #optional whether ifaces that have 'dhcp' as bootproto
 #                   should wait to get an address before returning creation
@@ -160,7 +160,7 @@
 # @gateway:       #optional Assign this gateway to the network
 #
 # @bootproto:     #optional Interface autoconfiguration protocol (typically 'dhcp'
-#                 or 'static')
+#                 or 'none')
 #
 # @remove:        #optional If True, remove existing network only
 #

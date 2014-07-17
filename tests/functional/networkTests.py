@@ -1769,10 +1769,10 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             networks = {
                 NETWORK_NAME + '1':
-                {'nic': nic, 'bootproto': 'static', 'ipv6addr': IPv6_ADDRESS,
+                {'nic': nic, 'bootproto': 'none', 'ipv6addr': IPv6_ADDRESS,
                  'ipv6gateway': IPv6_GATEWAY},
                 NETWORK_NAME + '2':
-                {'nic': nic, 'bootproto': 'static', 'ipv6addr': IPv6_ADDRESS,
+                {'nic': nic, 'bootproto': 'none', 'ipv6addr': IPv6_ADDRESS,
                  'ipv6gateway': IPv6_GATEWAY, 'ipaddr': IP_ADDRESS,
                  'gateway': IP_GATEWAY,
                  'netmask': prefix2netmask(int(IP_CIDR))}}
