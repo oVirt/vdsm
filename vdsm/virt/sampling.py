@@ -300,6 +300,10 @@ class HostSample(TimedSample):
             else:
                 text += 'new %s:(%s) ' % (ifid, sample.to_connlog())
 
+        for ifid, sample in other.interfaces.iteritems():
+            if ifid not in self.interfaces:
+                text += 'dropped %s:(%s) ' % (ifid, sample.to_connlog())
+
         if self.recentClient != other.recentClient:
             text += 'recent_client:%s' % self.recentClient
 
