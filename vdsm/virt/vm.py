@@ -2935,7 +2935,14 @@ class Vm(object):
         except Exception:
             self.log.error("Error fetching vm stats", exc_info=True)
         for var in decStats:
-            if type(decStats[var]) is not dict:
+            if var == "ioTune":
+                # Convert ioTune numbers to strings to avoid xml-rpc issue
+                # with numbers bigger than int32_t
+                for ioTune in decStats["ioTune"]:
+                    ioTune["ioTune"] = dict((k, utils.convertToStr(v)) for k, v
+                                            in ioTune["ioTune"].iteritems())
+                stats[var] = decStats[var]
+            elif type(decStats[var]) is not dict:
                 stats[var] = utils.convertToStr(decStats[var])
             elif var in ('network', 'balloonInfo', 'vmJobs',
                          'vNodeRuntimeInfo'):
