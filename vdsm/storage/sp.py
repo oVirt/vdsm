@@ -1126,7 +1126,9 @@ class StoragePool(object):
                                exc_info=True)
                 return
         else:
-            if current == linkName:
+            if current == src:
+                self.log.debug('link already present skipping creation '
+                               'for %s', linkName)
                 return  # Nothing to do
         # Rebuild the link
         tmp_link_name = os.path.join(self.storage_repository,
