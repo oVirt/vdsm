@@ -55,7 +55,6 @@
 ./usr/share/vdsm/kaxmlrpclib.py
 ./usr/share/vdsm/ksm.py
 ./usr/share/vdsm/logUtils.py
-./usr/share/vdsm/lsblk.py
 ./usr/share/vdsm/mk_sysprep_floppy
 ./usr/share/vdsm/mkimage.py
 ./usr/share/vdsm/momIF.py

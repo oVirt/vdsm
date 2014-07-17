@@ -923,7 +923,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
-%{_datadir}/%{vdsm_name}/lsblk.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*

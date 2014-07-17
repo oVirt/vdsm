@@ -55,7 +55,6 @@ from vdsm import utils
 from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
-from lsblk import getLsBlk as _getLsBlk
 from network import sourceroutethread
 from network.api import (addNetwork, delNetwork, editNetwork, setupNetworks,
                          setSafeNetworkConfig)
@@ -138,10 +137,6 @@ class _SuperVdsm(object):
     @logDecorator
     def getDevicePartedInfo(self, *args, **kwargs):
         return _getDevicePartedInfo(*args, **kwargs)
-
-    @logDecorator
-    def getLsBlk(self, *args, **kwargs):
-        return _getLsBlk(*args, **kwargs)
 
     @logDecorator
     def readMultipathConf(self):

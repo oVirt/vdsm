@@ -35,7 +35,6 @@ dist_vdsm_PYTHON = \
 	kaxmlrpclib.py \
 	ksm.py \
 	logUtils.py \
-	lsblk.py \
 	mkimage.py \
 	momIF.py \
 	numaUtils.py \
