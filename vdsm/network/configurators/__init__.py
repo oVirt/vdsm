@@ -27,6 +27,7 @@ from vdsm.netconfpersistence import RunningConfig
 from . import libvirt
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
+from . import qos
 from ..models import Bond, Bridge
 from ..sourceroute import StaticSourceRoute
 
@@ -112,6 +113,12 @@ class Configurator(object):
 
     def removeLibvirtNetwork(self, network):
         self.configApplier.removeLibvirtNetwork(network)
+
+    def configureQoS(self, qosOutbound, top_device):
+        qos.configure_outbound(qosOutbound, top_device)
+
+    def removeQoS(self, top_device):
+        qos.remove_outbound(top_device)
 
     def _addSourceRoute(self, netEnt):
         ip = netEnt.ipConfig

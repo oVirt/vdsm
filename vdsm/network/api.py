@@ -179,7 +179,7 @@ def _stpBooleanize(value):
         raise ValueError('Invalid value for bridge stp')
 
 
-def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
+def _validateInterNetworkCompatibility(ni, vlan, iface, bridged, qosOutbound):
     """
     Verify network compatibility with other networks on iface (bond/nic).
 
@@ -187,6 +187,7 @@ def _validateInterNetworkCompatibility(ni, vlan, iface, bridged):
         - single non-VLANed bridged network
         - multiple VLANed networks (bridged/bridgeless) with only one
           non-VLANed bridgeless network
+        - QoSed networks can't coexist with non-QoSed nets
     """
     def _validateNoDirectNet(ifaces):
         # validate that none of the ifaces
@@ -304,11 +305,11 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                      'Network already exists')
         if bonding:
             _validateInterNetworkCompatibility(_netinfo, vlan, bonding,
-                                               bridged)
+                                               bridged, qosOutbound)
         else:
             for nic in nics:
                 _validateInterNetworkCompatibility(_netinfo, vlan, nic,
-                                                   bridged)
+                                                   bridged, qosOutbound)
 
     # defaultRoute is set either explicitly by the client, OR if we're adding
     # the management network.
@@ -337,6 +338,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     netEnt.configure(**options)
     configurator.configureLibvirtNetwork(network, netEnt)
+    if qosOutbound is not None:
+        configurator.configureQoS(qosOutbound, netEnt)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):

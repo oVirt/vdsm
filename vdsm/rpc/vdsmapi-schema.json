@@ -71,7 +71,7 @@
  'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
           '*bootproto': 'str', '*bondingOptions', 'str',
           '*blockingdhcp': 'bool',
-          '*qosOutbound': 'BandwidthParams'}}
+          '*qosOutbound': 'HostBandwidthParams'}}
 
 ##
 # @Host.addNetwork:
@@ -162,7 +162,7 @@
 #
 # @remove:        #optional If True, remove existing network only
 #
-# @qosOutbound:   #optional BandwidthParams for outgoing traffic.
+# @qosOutbound:   #optional HostBandwidthParams for outgoing traffic.
 #
 # @defaultRoute:  #optional boolean - Is this network's gateway the host's
 #                 default gateway?
@@ -635,7 +635,7 @@
 # @bridged:     Always True to distinguish this type from
 #               @NetInfoBridgelessNetwork
 #
-# @qosOutbound: #optional BandwidthParams for outgoing traffic.
+# @qosOutbound: #optional HostBandwidthParams for outgoing traffic.
 #
 # @opts:        A map containing information about the bridge specific options.
 #               (new in version 4.15.0)
@@ -648,7 +648,7 @@
           'netmask': 'str', 'gateway': 'str', 'ipv4addrs': ['str'],
           'ipv6addrs': ['str'], 'ipv6gateway': 'str', 'mtu': 'uint',
           'cfg': 'StringMap', 'bridged': 'bool',
-          '*qosOutbound': 'BandwidthParams', 'opts': 'StringMap'}}
+          '*qosOutbound': 'HostBandwidthParams', 'opts': 'StringMap'}}
 
 ##
 # @NetInfoBridgelessNetwork:
@@ -2573,6 +2573,45 @@
 ##
 {'type': 'BandwidthParams',
  'data': {'average': 'uint', '*burst': 'uint', '*peak': 'uint'}}
+
+
+##
+# @HostBandwidthParams:
+#
+# Host Bandwidth traffic shape parameters for Host networking QoS.
+#
+# @ls: Link sharing curve, establishes a sharing proportion with other traffic
+#      classes over the same device.
+#
+# @ul: #optional upper limit curve, puts an absolute cap to the traffic class
+#      traffic.
+#
+# @rt: #optional Real time curve, can steal traffic from other curves to
+#      'guarantee' a kind of minimum traffic. Use with caution.
+#
+# Since: 4.17.0
+##
+{'type': 'HostBandwidthParams',
+ 'data': {'ls': 'BandwidthCurve', '*rt': 'BandwidthCurve',
+          '*ul': 'BandwidthCurve'}}
+
+
+##
+# @BandwidthCurve:
+#
+# Bandwidth traffic shaping curve parameters for Host networking QoS.
+#
+# @m1:      #optional Burst rate in bits per second.
+#
+# @d:       #optional Amount of microseconds the burst can be applied.
+#
+# @m2:      Average rate in bits per second.
+#
+# Since: 4.17.0
+##
+{'type': 'BandwidthCurve',
+ 'data': {'*m1': 'float', '*d': 'uint', 'm2': 'float'}}
+
 
 ##
 # @VmInterfaceDeviceSpecParams:

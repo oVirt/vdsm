@@ -23,6 +23,7 @@
 import itertools
 import os
 import platform
+from collections import defaultdict
 from xml.dom import minidom
 import logging
 import time
@@ -41,6 +42,8 @@ from vdsm import netinfo
 import hooks
 from vdsm import utils
 import storage.hba
+from network.configurators import qos
+from network import tc
 
 # For debian systems we can use python-apt if available
 try:
@@ -99,6 +102,42 @@ def _report_legacy_bondings(caps):
                     'mtu': '1500',
                     'netmask': '',
                     'slaves': []}
+
+
+def _report_network_qos(caps):
+    """Augment netinfo information with QoS data for the engine"""
+    qdiscs = defaultdict(list)
+    for qdisc in tc._qdiscs(dev=None):  # None -> all dev qdiscs
+        qdiscs[qdisc['dev']].append(qdisc)
+    for net, attrs in caps['networks'].iteritems():
+        iface = attrs['iface']
+        if iface in caps['bridges']:
+            host_ports = [port for port in attrs['ports'] if
+                          not port.startswith('vnet')]
+            if not host_ports:  # Port-less bridge
+                continue
+            iface, = host_ports
+        if iface in caps['vlans']:
+            vlan_id = caps['vlans'][iface]['vlanid']
+            iface = caps['vlans'][iface]['iface']
+            iface_qdiscs = qdiscs.get(iface)
+            if iface_qdiscs is None:
+                continue
+            class_id = (qos._root_qdisc(iface_qdiscs)['handle'] + '%x' %
+                        vlan_id)
+        else:
+            iface_qdiscs = qdiscs.get(iface)
+            if iface_qdiscs is None:
+                continue
+            class_id = (qos._root_qdisc(iface_qdiscs)['handle'] +
+                        qos._DEFAULT_CLASSID)
+
+        # Now that iface is either a bond or a nic, let's get the QoS info
+        classes = [cls for cls in tc._classes(iface, classid=class_id) if
+                   cls['kind'] == 'hfsc']
+        if classes:
+            cls, = classes
+            attrs['qosOutbound'] = cls['hfsc']
 
 
 class Architecture:
@@ -614,6 +653,7 @@ def get():
     caps.update(_getVersionInfo())
     caps.update(netinfo.get())
     _report_legacy_bondings(caps)
+    _report_network_qos(caps)
 
     try:
         caps['hooks'] = hooks.installed()
