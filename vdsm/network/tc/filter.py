@@ -34,11 +34,11 @@ def parse(tokens):
     data = {}
     for token in tokens:
         if token == 'root':
-            data['root'] = True
+            data['root'] = _parser.parse_true(tokens)
         elif token == 'pref':
-            data[token] = int(next(tokens))
+            data[token] = _parser.parse_int(tokens)
         elif token in ('dev', 'parent', 'protocol'):
-            data[token] = next(tokens)
+            data[token] = _parser.parse_str(tokens)
         elif token in _CLASSES:
             data['kind'] = token
             break
@@ -55,29 +55,29 @@ def _parse_u32(tokens):
     data = {}
     for token in tokens:
         if token in ('fh', 'link'):
-            data[token] = next(tokens)
+            data[token] = _parser.parse_str(tokens)
         elif token == 'order':
-            data[token] = int(next(tokens))
+            data[token] = _parser.parse_int(tokens)
         elif token in ('*flowid', 'flowid'):
-            data['flowid'] = next(tokens)
+            data['flowid'] = _parser.parse_str(tokens)
         elif token == 'terminal':
-            data['terminal'] = True
+            data['terminal'] = _parser.parse_true(tokens)
             _parser.consume(tokens, 'flowid')
             _parser.consume(tokens, '???')
         elif token == 'ht':
             _parser.consume(tokens, 'divisor')
-            data['ht_divisor'] = int(next(tokens))
+            data['ht_divisor'] = _parser.parse_int(tokens)
         elif token == 'key':
             _parser.consume(tokens, 'ht')
-            data['key_ht'] = int(next(tokens), 16)
+            data['key_ht'] = _parser.parse_int(tokens, 16)
             _parser.consume(tokens, 'bkt')
-            data['key_bkt'] = int(next(tokens), 16)
+            data['key_bkt'] = _parser.parse_int(tokens, 16)
         elif token == '???':
             continue
-        elif token == 0:  # line break
+        elif token == _parser.LINE_DELIMITER:  # line break
             continue
         elif token == 'match':
-            match_first = next(tokens)
+            match_first = _parser.parse_str(tokens)
             if match_first.lower() == 'ip':
                 data['match'] = _parse_match_ip(tokens)  # To implement
             else:
@@ -102,7 +102,7 @@ def _parse_match_raw(val_mask, tokens):
     value = int(value, 16)
     mask = int(mask, 16)
     _parser.consume(tokens, 'at')
-    offset = int(next(tokens))
+    offset = _parser.parse_int(tokens)
     return {'value': value, 'mask': mask, 'offset': offset}
 
 
@@ -114,8 +114,8 @@ def _parse_action(tokens):
         if token == 0:
             continue
         if token == 'order':
-            data[token] = int(next(tokens)[:-1])  # without trailing ':'
-            data['kind'] = next(tokens)
+            data[token] = _parse_action_order(tokens)
+            data['kind'] = _parser.parse_str(tokens)
             action_opt_parse = _ACTIONS.get(data['kind'])
             if action_opt_parse is not None:
                 data.update(action_opt_parse(tokens))
@@ -126,19 +126,21 @@ def _parse_action(tokens):
 def _parse_mirred(tokens):
     """Parses the tokens of a mirred action into a data dictionary"""
     data = {}
-    action = next(tokens)[1:]  # Get the first token without the opening paren
+    # Get the first token without the opening paren
+    action = _parser.parse_str(tokens)[1:]
     if action == 'unkown':
         data['action'] = action
     else:
-        data['action'] = '%s_%s' % (action.lower(), next(tokens).lower())
+        data['action'] = '%s_%s' % (action.lower(),
+                                    _parser.parse_str(tokens).lower())
     _parser.consume(tokens, 'to')
     _parser.consume(tokens, 'device')
-    data['target'] = next(tokens)[:-1]
-    data['op'] = next(tokens)
+    data['target'] = _parser.parse_str(tokens)[:-1]
+    data['op'] = _parser.parse_str(tokens)
     _parser.consume(tokens, _parser.LINE_DELIMITER)
     for token in tokens:
         if token in ('index', 'ref', 'bind'):
-            data[token] = int(next(tokens))
+            data[token] = _parser.parse_int(tokens)
         elif token == 0:
             break
         else:
@@ -147,6 +149,11 @@ def _parse_mirred(tokens):
             # stop parsing
             break
     return data
+
+
+def _parse_action_order(tokens):
+    """Return the int part or an action order, removing the training ':'"""
+    return int(next(tokens)[:-1])
 
 
 _ACTIONS = {'csum': None, 'gact': None, 'ipt': None, 'mirred': _parse_mirred,
