@@ -67,6 +67,7 @@
 ./usr/share/vdsm/network/configurators/__init__.py
 ./usr/share/vdsm/network/configurators/ifcfg.py
 ./usr/share/vdsm/network/configurators/iproute2.py
+./usr/share/vdsm/network/configurators/pyroute_two.py
 ./usr/share/vdsm/network/configurators/libvirt.py
 ./usr/share/vdsm/network/tc/__init__.py
 ./usr/share/vdsm/network/tc/_parser.py

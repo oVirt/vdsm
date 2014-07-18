@@ -44,6 +44,16 @@ def _getConfiguratorClass():
     if configurator == 'iproute2':
         from .configurators.iproute2 import Iproute2
         return Iproute2
+    elif configurator == 'pyroute2':
+        try:
+            from .configurators.pyroute_two import PyrouteTwo
+            return PyrouteTwo
+        except ImportError:
+            logging.error('pyroute2 library for %s configurator is missing. '
+                          'Use ifcfg instead.', configurator)
+            from .configurator.ifcfg import Ifcfg
+            return Ifcfg
+
     else:
         if configurator != 'ifcfg':
             logging.warn('Invalid config for network configurator: %s. '

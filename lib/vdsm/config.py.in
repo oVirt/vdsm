@@ -56,8 +56,9 @@ parameters = [
             'be shown to vdsm.'),
 
         ('net_configurator', 'ifcfg',
-            'Whether to use "ifcfg" or "iproute2" to configure networks. '
-            'iproute2 configurator is not ready yet for genral usage.'),
+            'Whether to use "ifcfg", "pyroute2" or "iproute2" to configure '
+            'networks. pyroute2 and iproute2 configurators are not ready '
+            'yet for general usage.'),
 
         ('net_persistence', 'unified',
             'Whether to use "ifcfg" or "unified" persistence for networks.'),
