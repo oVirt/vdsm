@@ -16,14 +16,22 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import errno
+import os
+
 from vdsm.constants import EXT_TC
 from vdsm.utils import execCmd
+
+_TC_ERR_PREFIX = 'RTNETLINK answers: '
+_errno_trans = dict(((os.strerror(code), code) for code in errno.errorcode))
 
 
 def process_request(command):
     command.insert(0, EXT_TC)
     retcode, out, err = execCmd(command, raw=True)
     if retcode != 0:
+        if retcode == 2:
+            retcode = _errno_trans.get(err[len(_TC_ERR_PREFIX):].strip())
         raise TrafficControlException(retcode, err, command)
     return out
 

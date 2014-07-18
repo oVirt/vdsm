@@ -22,6 +22,7 @@ from collections import namedtuple
 from contextlib import closing
 from functools import partial
 import ctypes
+import errno
 import fcntl
 import socket
 
@@ -32,8 +33,6 @@ from . import _parser
 from . import _wrapper
 from . import qdisc
 from ._wrapper import TrafficControlException
-
-ERR_DEV_NOEXIST = 2
 
 QDISC_INGRESS = 'ffff:'
 
@@ -99,7 +98,7 @@ def qdisc_replace_ingress(dev):
     try:
         _wrapper.process_request(command)
     except TrafficControlException as e:
-        if e.message == 'RTNETLINK answers: File exists\n':
+        if e.errCode == errno.EEXIST:
             pass
         else:
             raise
@@ -139,7 +138,7 @@ def qdisc_del(dev, queue):
         command = ['qdisc', 'del', 'dev', dev, queue]
         _wrapper.process_request(command)
     except TrafficControlException as e:
-        if e.errCode != ERR_DEV_NOEXIST:
+        if e.errCode != errno.ENOENT:
             raise
 
 
