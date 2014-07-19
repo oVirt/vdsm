@@ -113,9 +113,8 @@ class ConfigApplier(object):
             self.ip.create(kind='bond', ifname=bond.name).commit()
 
     def removeBond(self, bond):
-        if bond.name not in netinfo.REQUIRED_BONDINGS:
-            with self.ip.interfaces[bond.name] as i:
-                i.remove()
+        with self.ip.interfaces[bond.name] as i:
+            i.remove()
 
     def addBondSlave(self, bond, slave):
         self.ifdown(slave)
