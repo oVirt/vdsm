@@ -285,6 +285,14 @@ class NetworkTest(TestCaseBase):
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testSetupNetworksAddBondWithManyVlans(self, bridged):
+        def assertDevStatsReported():
+            status, msg, hostStats = self.vdsm_net.getVdsStats()
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertIn('network', hostStats)
+            for tag in range(VLAN_COUNT):
+                self.assertIn(
+                    BONDING_NAME + '.' + str(tag), hostStats['network'])
+
         VLAN_COUNT = 5
         network_names = [NETWORK_NAME + str(tag) for tag in range(VLAN_COUNT)]
         with dummyIf(2) as nics:
@@ -302,6 +310,9 @@ class NetworkTest(TestCaseBase):
                 self.assertBondExists(BONDING_NAME, nics)
                 self.assertVlanExists(BONDING_NAME + '.' +
                                       networks[vlan_net]['vlan'])
+
+            # Vdsm scans for new devices every 15 seconds
+            self.retryAssert(assertDevStatsReported, timeout=20)
 
             for vlan_net in network_names:
                 status, msg = self.vdsm_net.setupNetworks(
