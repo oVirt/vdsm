@@ -8,6 +8,6 @@ import java.io.IOException;
  */
 public class DefaultClientRetryPolicy extends RetryPolicy {
     public DefaultClientRetryPolicy() {
-        super(180000, 0, IOException.class);
+        super(180000, 0, 10000, IOException.class);
     }
 }

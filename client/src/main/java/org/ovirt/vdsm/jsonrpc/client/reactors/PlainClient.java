@@ -29,7 +29,7 @@ public abstract class PlainClient extends StompCommonClient {
         this.selector = selector;
 
         channel = socketChannel;
-        postConnect(null);
+        postConnect(getPostConnectCallback());
     }
 
     @Override

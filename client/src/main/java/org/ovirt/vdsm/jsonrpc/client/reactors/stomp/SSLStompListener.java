@@ -63,7 +63,7 @@ public class SSLStompListener extends SSLStompClient implements Sender {
     @Override
     protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
         try {
-            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(false), callback);
+            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(false), callback, this);
             this.nioEngine.beginHandshake();
 
             int interestedOps = SelectionKey.OP_READ;

@@ -52,6 +52,7 @@ public abstract class StompCommonClient extends ReactorClient {
 
     void processMessage(Message message) {
         if (Command.CONNECTED.toString().equals(message.getCommand())) {
+            // TODO add heart beat interval handling
             this.connected.countDown();
         } else if (Command.ACK.toString().equals(message.getCommand())) {
             String headerId = message.getHeaders().get(HEADER_ID);
@@ -87,7 +88,13 @@ public abstract class StompCommonClient extends ReactorClient {
             if (read <= 0) {
                 return;
             }
+            updateLastHeartbeat();
+
             this.message = getMessage(headerBuffer, read);
+            if (this.message == null) {
+                clean();
+                return;
+            }
             int contentLength = this.message.getContentLength();
             if (contentLength == -1) {
                 // only for control messages, all other have the header
@@ -128,11 +135,15 @@ public abstract class StompCommonClient extends ReactorClient {
         return Message.parse(array);
     }
 
-    protected void emitOnMessageReceived(Message message) {
-        message.trimEndOfMessage();
+    private void clean() {
         headerBuffer = ByteBuffer.allocate(BUFFER_SIZE);
         this.ibuff = null;
         this.message = null;
+    }
+
+    protected void emitOnMessageReceived(Message message) {
+        message.trimEndOfMessage();
+        clean();
         processMessage(message);
     }
 

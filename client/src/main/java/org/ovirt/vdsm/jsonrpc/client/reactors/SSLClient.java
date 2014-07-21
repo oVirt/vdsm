@@ -63,7 +63,7 @@ public abstract class SSLClient extends StompCommonClient {
         }
     }
 
-    private Runnable pendingOperations() throws IOException {
+    private Runnable pendingOperations() throws IOException, ClientConnectionException {
         if (this.nioEngine == null) {
             return null;
         }
@@ -119,7 +119,7 @@ public abstract class SSLClient extends StompCommonClient {
     @Override
     protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
         try {
-            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(this.client), callback);
+            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(this.client), callback, this);
             this.nioEngine.beginHandshake();
 
             int interestedOps = SelectionKey.OP_READ;

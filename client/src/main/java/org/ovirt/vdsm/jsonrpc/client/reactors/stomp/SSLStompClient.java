@@ -3,7 +3,9 @@ package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ACCEPT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ACK;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.nio.channels.Selector;
 import java.util.UUID;
@@ -30,7 +32,8 @@ public class SSLStompClient extends SSLClient {
                 subscribed = new CountDownLatch(1);
             }
 
-            send(new Message().connect().withHeader(HEADER_ACCEPT, "1.2").build());
+            send(new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HEART_BEAT,
+                    0 + "," + reduceGracePeriod(policy.getHeartbeat())).build());
 
             subscribtionId = UUID.randomUUID().toString();
             send(new Message().subscribe().withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
@@ -42,8 +45,7 @@ public class SSLStompClient extends SSLClient {
     public SSLStompClient(Reactor reactor, Selector selector, String hostname, int port, SSLContext sslContext)
             throws ClientConnectionException {
         super(reactor, selector, hostname, port, sslContext);
-        this.connected = new CountDownLatch(1);
-        this.subscribed = new CountDownLatch(1);
+        setWaitForConnect();
     }
 
     @Override
@@ -58,7 +60,19 @@ public class SSLStompClient extends SSLClient {
 
     @Override
     protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
-        super.postConnect(this.callback);
+        super.postConnect(getPostConnectCallback());
+    }
+
+    @Override
+    protected OneTimeCallback getPostConnectCallback() {
+        this.callback.resetExecution();
+        setWaitForConnect();
+        return this.callback;
+    }
+
+    private void setWaitForConnect() {
+        this.connected = new CountDownLatch(1);
+        this.subscribed = new CountDownLatch(1);
     }
 
     private void waitForConnect() {

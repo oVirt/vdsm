@@ -39,7 +39,8 @@ public class JsonRpcClientConnectivityTestCase {
     private final static int CONNECTION_RETRY = 1;
     private final static int TIMEOUT = 1000;
     private final static int TIMEOUT_SEC = 3;
-    
+    private final static int HEART_BEAT = 1000;
+
     private Reactor getReactor() throws ClientConnectionException {
         return ReactorFactory.getReactor(null, ReactorType.STOMP);
     }
@@ -49,7 +50,7 @@ public class JsonRpcClientConnectivityTestCase {
         // Given
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, 3333);
-        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, IOException.class));
+        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class));
         ResponseWorker worker = ReactorFactory.getWorker();
         JsonRpcClient jsonClient = worker.register(client);
         JsonRpcRequest request = mock(JsonRpcRequest.class);
@@ -92,10 +93,10 @@ public class JsonRpcClientConnectivityTestCase {
 
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT);
-        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, IOException.class));
+        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class));
         ResponseWorker worker = ReactorFactory.getWorker();
         JsonRpcClient jsonClient = worker.register(client);
-        jsonClient.setRetryPolicy(new RetryPolicy(TIMEOUT, 2));
+        jsonClient.setRetryPolicy(new RetryPolicy(TIMEOUT, 2, HEART_BEAT));
         JsonRpcRequest request = mock(JsonRpcRequest.class);
         when(request.getId()).thenReturn(mock(JsonNode.class));
 
@@ -142,10 +143,10 @@ public class JsonRpcClientConnectivityTestCase {
 
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT + 1);
-        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, IOException.class));
+        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class));
         ResponseWorker worker = ReactorFactory.getWorker();
         JsonRpcClient jsonClient = worker.register(client);
-        jsonClient.setRetryPolicy(new RetryPolicy(TIMEOUT, 2));
+        jsonClient.setRetryPolicy(new RetryPolicy(TIMEOUT, 2, HEART_BEAT));
 
         final JsonNode params = jsonFromString("{\"text\": \"Hello World\"}");
         final JsonNode id1 = jsonFromString("123");

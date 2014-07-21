@@ -111,7 +111,7 @@ public class TestReactor {
                         queue.add(message);
                     }
                 });
-                client.setRetryPolicy(new RetryPolicy(2000, 10, IOException.class));
+                client.setRetryPolicy(new RetryPolicy(2000, 10, 10000, IOException.class));
                 client.connect();
                 return client;
             }

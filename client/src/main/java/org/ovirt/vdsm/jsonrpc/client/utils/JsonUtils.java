@@ -82,4 +82,8 @@ public class JsonUtils {
     public static boolean isEmpty(String value) {
         return value == null || "".equals(value.trim());
     }
+
+    public static int reduceGracePeriod(int interval) {
+        return interval - (int)(interval * 0.1);
+    }
 }

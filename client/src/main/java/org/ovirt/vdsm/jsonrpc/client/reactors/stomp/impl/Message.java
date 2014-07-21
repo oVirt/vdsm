@@ -8,6 +8,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 public class Message {
     public enum Command {
         SEND,
@@ -35,8 +38,10 @@ public class Message {
     public static final String HEADER_RECEIPT_ID = "receipt-id";
     public static final String HEADER_CONTENT_LENGTH = "content-length";
     public static final String HEADER_CONTENT_TYPE = "content-type";
+    public static final String HEADER_HEART_BEAT = "heart-beat";
     public static final String END_OF_MESSAGE = "\000";
     private static final String CHARSET = ";charset=";
+    private static final Log LOG = LogFactory.getLog(Message.class);
     private String command;
     private Map<String, String> headers = new HashMap<>();
     private byte[] content = new byte[0];
@@ -176,7 +181,13 @@ public class Message {
 
     public static Message parse(byte[] array) {
         String[] message = new String(array, UTF8).split("\n");
+        // let us see stomp control messages
+        LOG.debug(new String(array, UTF8));
         Message result = new Message();
+        if (message.length < 2) {
+            // heart-beat
+            return null;
+        }
         Command parsedCommand = Command.valueOf(message[0]);
         result.setCommand(parsedCommand.toString());
 

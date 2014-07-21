@@ -10,6 +10,7 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 
+import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 
 /**
@@ -24,12 +25,14 @@ public class SSLEngineNioHelper {
     private final ByteBuffer packetBuffer;
     private final ByteBuffer appPeerBuffer;
     private final ByteBuffer packatPeerBuffer;
+    private final SSLClient client;
     private OneTimeCallback callback;
 
-    public SSLEngineNioHelper(SocketChannel channel, SSLEngine engine, OneTimeCallback callback) {
+    public SSLEngineNioHelper(SocketChannel channel, SSLEngine engine, OneTimeCallback callback, SSLClient client) {
         this.channel = channel;
         this.engine = engine;
         this.callback = callback;
+        this.client = client;
         SSLSession session = engine.getSession();
 
         this.appBuffer = ByteBuffer.allocate(session.getApplicationBufferSize());
@@ -80,7 +83,7 @@ public class SSLEngineNioHelper {
     }
 
     @SuppressWarnings("incomplete-switch")
-    public Runnable process() throws IOException {
+    public Runnable process() throws IOException, ClientConnectionException {
         if (!handshakeInProgress()) {
             if (this.callback != null) {
                 this.callback.checkAndExecute();
@@ -92,6 +95,7 @@ public class SSLEngineNioHelper {
         switch (hs) {
         case NEED_UNWRAP:
             this.read(appPeerBuffer);
+            this.client.updateLastHeartbeat();
             return null;
         case NEED_WRAP:
             this.write(appBuffer);

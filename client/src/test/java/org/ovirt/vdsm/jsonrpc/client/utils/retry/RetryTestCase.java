@@ -22,7 +22,7 @@ public class RetryTestCase {
     public void testRetry() throws Exception {
         // Given
         Callable<Object> callable = mock(Callable.class);
-        RetryPolicy policy = new RetryPolicy(5, 3);
+        RetryPolicy policy = new RetryPolicy(5, 3, 10);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
 
         // When
@@ -37,7 +37,7 @@ public class RetryTestCase {
     public void testRetryWithException() throws Exception {
         // Given
         Callable<Object> callable = mock(Callable.class);
-        RetryPolicy policy = new RetryPolicy(5, 3, IOException.class);
+        RetryPolicy policy = new RetryPolicy(5, 3, 10, IOException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
         stub(callable.call())
                 .toThrow(new IOException())
@@ -56,7 +56,7 @@ public class RetryTestCase {
     public void testRetryWithNoSuccess() throws Exception {
         // Given
         Callable<Object> callable = mock(Callable.class);
-        RetryPolicy policy = new RetryPolicy(5, 3, IOException.class);
+        RetryPolicy policy = new RetryPolicy(5, 3, 10, IOException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
         stub(callable.call())
                 .toThrow(new ConnectException())
@@ -72,7 +72,7 @@ public class RetryTestCase {
     public void testRetryWithDifferentException() throws Exception {
         // Given
         Callable<Object> callable = mock(Callable.class);
-        RetryPolicy policy = new RetryPolicy(5, 3, IllegalArgumentException.class);
+        RetryPolicy policy = new RetryPolicy(5, 3, 10, IllegalArgumentException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
         stub(callable.call()).toThrow(new IOException());
 
@@ -86,7 +86,7 @@ public class RetryTestCase {
         // Given
         String value = "Hello World!";
         Callable<String> callable = mock(Callable.class);
-        RetryPolicy policy = new RetryPolicy(5, 3, IOException.class);
+        RetryPolicy policy = new RetryPolicy(5, 3, 10, IOException.class);
         Retryable<String> retryable = new Retryable<>(callable, policy);
         when(callable.call()).thenReturn(value);
 
@@ -103,7 +103,7 @@ public class RetryTestCase {
     public void testRetryWithInfiniteNumberOfRetries() throws Exception {
         // Given
         Callable<Object> callable = mock(Callable.class);
-        RetryPolicy policy = new RetryPolicy(5, 0, IOException.class);
+        RetryPolicy policy = new RetryPolicy(5, 0, 10, IOException.class);
         Retryable<Object> retryable = new Retryable<>(callable, policy);
         stub(callable.call())
                 .toThrow(new IOException());

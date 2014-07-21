@@ -39,6 +39,7 @@ public abstract class ReactorClient {
     private final String hostname;
     private final int port;
     private final Lock lock;
+    private long lastHeartbeat = 0;
     protected RetryPolicy policy = new DefaultConnectionRetryPolicy();
     protected final List<MessageListener> eventListeners;
     protected final Reactor reactor;
@@ -85,11 +86,13 @@ public abstract class ReactorClient {
 
                             socketChannel.connect(addr);
                             socketChannel.configureBlocking(false);
+                            updateLastHeartbeat();
+
                             return socketChannel;
                         }
                     }, this.policy));
             this.channel = task.get();
-            postConnect(null);
+            postConnect(getPostConnectCallback());
         } catch (InterruptedException | ExecutionException e) {
             log.error("Exception during connection", e);
             throw new ClientConnectionException(e);
@@ -140,6 +143,7 @@ public abstract class ReactorClient {
 
     public void process() throws IOException, ClientConnectionException {
         processIncoming();
+        processHeartbeat();
         processOutgoing();
     }
 
@@ -150,6 +154,17 @@ public abstract class ReactorClient {
      * @throws ClientConnectionException  Thrown when issues with connection.
      */
     protected abstract void processIncoming() throws IOException, ClientConnectionException;
+
+    private void processHeartbeat() {
+        if (this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
+            log.debug("Heartbeat exeeded. Closing channel");
+            this.closeChannel();
+        }
+    }
+
+    protected void updateLastHeartbeat() {
+        this.lastHeartbeat = System.currentTimeMillis();
+    }
 
     protected void processOutgoing() throws IOException, ClientConnectionException {
         final ByteBuffer buff = outbox.peekLast();
@@ -168,7 +183,9 @@ public abstract class ReactorClient {
 
     private void closeChannel() {
         try {
-            this.channel.close();
+            if (this.channel != null) {
+                this.channel.close();
+            }
         } catch (IOException e) {
             // Ignore
         } finally {
@@ -236,4 +253,10 @@ public abstract class ReactorClient {
      *             when issues with connection.
      */
     public abstract void updateInterestedOps() throws ClientConnectionException;
+
+    /**
+     * @return Client specific {@link OneTimeCallback} or null. The callback is executed
+     * after the connection is established.
+     */
+    protected abstract OneTimeCallback getPostConnectCallback();
 }
