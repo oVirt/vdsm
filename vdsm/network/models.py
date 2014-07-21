@@ -447,7 +447,7 @@ class IpConfig(object):
         self.inet4 = inet4
         self.inet6 = inet6
         self.bootproto = bootproto
-        self.async = bootproto == 'dhcp' and not blocking
+        self.async = (bootproto == 'dhcp' or dhcpv6) and not blocking
         self.ipv6autoconf = ipv6autoconf
         self.dhcpv6 = dhcpv6
 

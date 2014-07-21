@@ -39,6 +39,7 @@ class DhcpClient(object):
 
     def __init__(self, iface, family=4):
         self.iface = iface
+        self.family = family
         self.pidFile = self.PID_FILE % (family, self.iface)
         if not os.path.exists(self.LEASE_DIR):
             os.mkdir(self.LEASE_DIR)
@@ -48,9 +49,9 @@ class DhcpClient(object):
         # Ask dhclient to stop any dhclient running for the device
         if os.path.exists(os.path.join(netinfo.NET_PATH, self.iface)):
             kill_dhclient(self.iface)
-        rc, out, err = execCmd([self.DHCLIENT.cmd, '-1', '-pf',
-                                self.pidFile, '-lf', self.leaseFile,
-                                self.iface])
+        rc, out, err = execCmd([self.DHCLIENT.cmd, '-%s' % self.family,
+                                '-1', '-pf', self.pidFile,
+                                '-lf', self.leaseFile, self.iface])
         return rc, out, err
 
     def start(self, async):

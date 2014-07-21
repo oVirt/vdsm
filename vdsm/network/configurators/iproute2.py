@@ -250,13 +250,19 @@ class ConfigApplier(object):
     def setBondingMtu(self, iface, mtu):
         self.setIfaceMtu(iface, mtu)
 
+    def _runDhclient(self, iface, family=4):
+        dhclient = DhcpClient(iface.name, family)
+        rc = dhclient.start(iface.ipConfig.async)
+        if not iface.ipConfig.async and rc:
+            raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed',
+                                     family)
+
     def ifup(self, iface):
         ipwrapper.linkSet(iface.name, ['up'])
         if iface.ipConfig.bootproto == 'dhcp':
-            dhclient = DhcpClient(iface.name)
-            rc = dhclient.start(iface.ipConfig.async)
-            if not iface.ipConfig.async and rc:
-                raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient failed')
+            self._runDhclient(iface)
+        if iface.ipConfig.dhcpv6:
+            self._runDhclient(iface, 6)
 
     def ifdown(self, iface):
         ipwrapper.linkSet(iface.name, ['down'])

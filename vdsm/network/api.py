@@ -265,7 +265,7 @@ def _alterRunningConfig(func):
 
 @_alterRunningConfig
 def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
-               netmask=None, prefix=None, mtu=None, gateway=None,
+               netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
                ipv6addr=None, ipv6gateway=None, ipv6autoconf=None, force=False,
                configurator=None, bondingOptions=None, bridged=True,
                _netinfo=None, qosInbound=None, qosOutbound=None,
@@ -274,6 +274,8 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
     bridged = utils.tobool(bridged)
+    if dhcpv6 is not None:
+        dhcpv6 = utils.tobool(dhcpv6)
     if ipv6autoconf is not None:
         ipv6autoconf = utils.tobool(ipv6autoconf)
     vlan = _vlanToInternalRepresentation(vlan)
@@ -328,7 +330,7 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     netEnt = objectivizeNetwork(
         bridge=network if bridged else None, vlan=vlan, bonding=bonding,
         bondingOptions=bondingOptions, nics=nics, mtu=mtu, ipaddr=ipaddr,
-        netmask=netmask, gateway=gateway, bootproto=bootproto,
+        netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
         blockingdhcp=blockingdhcp, ipv6addr=ipv6addr, ipv6gateway=ipv6gateway,
         ipv6autoconf=ipv6autoconf, defaultRoute=defaultRoute,
         _netinfo=_netinfo, configurator=configurator, opts=options)
