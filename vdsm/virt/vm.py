@@ -544,6 +544,11 @@ class VmStatsThread(AdvancedStatsThread):
 
             stats[vmDrive.name] = dStats
 
+    def _getNumaStats(self, stats):
+        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
+        if vmNumaNodeRuntimeMap:
+            stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
+
     def _getVmJobs(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleVmJobs.getStats()
 
@@ -568,11 +573,7 @@ class VmStatsThread(AdvancedStatsThread):
         self._getDiskStats(stats)
         self._getBalloonStats(stats)
         self._getVmJobs(stats)
-
-        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
-        if vmNumaNodeRuntimeMap:
-            stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
-
+        self._getNumaStats(stats)
         self._getCpuTuneInfo(stats)
         self._getCpuCount(stats)
         self._getUserCpuTuneInfo(stats)
