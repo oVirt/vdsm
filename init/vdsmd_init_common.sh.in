@@ -34,6 +34,7 @@ task_configure_coredump() {
 
 task_configure_vdsm_logs() {
     local vdsm_logs="
+        @VDSMLOGDIR@/connectivity.log
         @VDSMLOGDIR@/metadata.log
         @VDSMLOGDIR@/mom.log
         @VDSMLOGDIR@/vdsm.log
