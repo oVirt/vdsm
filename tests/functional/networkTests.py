@@ -1714,21 +1714,26 @@ class NetworkTest(TestCaseBase):
                 {BONDING_NAME: {'remove': True}},
                 NOCHK)
 
-    @permutations([[True], [False]])
+    @permutations([[(True, (4,))], [(True, (6,))], [(True, (4, 6))],
+                   [(False, (4,))], [(False, (6,))], [(False, (4, 6))]])
     @cleanupNet
     @RequireVethMod
-    def testSetupNetworksAddDelDhcp(self, bridged):
+    def testSetupNetworksAddDelDhcp(self, (bridged, families)):
         el6 = _system_is_el6()
+        if el6 and 6 in families:
+            raise SkipTest("el6's dnsmasq does not support DHCPv6")
 
         with vethIf() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             veth.setLinkUp(left)
             with dnsmasqDhcp(left, el6):
-                dhcpv4 = True
-                bootproto = 'dhcp'
+                dhcpv4 = 4 in families
+                dhcpv6 = 6 in families
+                bootproto = 'dhcp' if dhcpv4 else 'none'
                 network = {NETWORK_NAME: {'nic': right, 'bridged': bridged,
                                           'bootproto': bootproto,
+                                          'dhcpv6': dhcpv6,
                                           'blockingdhcp': True}}
                 try:
                     status, msg = self.vdsm_net.setupNetworks(network, {},
@@ -1738,6 +1743,7 @@ class NetworkTest(TestCaseBase):
 
                     test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
                     self.assertEqual(test_net['dhcpv4'], dhcpv4)
+                    self.assertEqual(test_net['dhcpv6'], dhcpv6)
 
                     if bridged:
                         self.assertEqual(test_net['cfg']['BOOTPROTO'],
@@ -1748,6 +1754,7 @@ class NetworkTest(TestCaseBase):
                         self.assertEqual(
                             devs[NETWORK_NAME]['cfg']['BOOTPROTO'], bootproto)
                         self.assertEqual(devs[NETWORK_NAME]['dhcpv4'], dhcpv4)
+                        self.assertEqual(devs[NETWORK_NAME]['dhcpv6'], dhcpv6)
                         device_name = NETWORK_NAME
 
                     else:
@@ -1756,9 +1763,11 @@ class NetworkTest(TestCaseBase):
                         self.assertEqual(devs[right]['cfg']['BOOTPROTO'],
                                          bootproto)
                         self.assertEqual(devs[right]['dhcpv4'], dhcpv4)
+                        self.assertEqual(devs[right]['dhcpv6'], dhcpv6)
                         device_name = right
 
                     if dhcpv4:
+                        # TODO: source routing not ready for IPv6
                         ip_addr = test_net['addr']
                         self.assertSourceRoutingConfiguration(device_name,
                                                               ip_addr)
@@ -1781,7 +1790,7 @@ class NetworkTest(TestCaseBase):
                             self.assertRuleDoesNotExist(rule)
                 finally:
                     dhcp.delete_dhclient_leases(
-                        NETWORK_NAME if bridged else right, dhcpv4)
+                        NETWORK_NAME if bridged else right, dhcpv4, dhcpv6)
 
     @permutations([[(4, 'default')], [(4, 'local')], [(6, 'not applicable')]])
     @cleanupNet
