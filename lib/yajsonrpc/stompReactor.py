@@ -31,6 +31,25 @@ _DEFAULT_RESPONSE_DESTINATIOM = "/queue/_local/vdsm/reponses"
 _DEFAULT_REQUEST_DESTINATION = "/queue/_local/vdsm/requests"
 
 
+def parseHeartBeatHeader(v):
+    try:
+        x, y = v.split(",", 1)
+    except ValueError:
+        x, y = (0, 0)
+
+    try:
+        x = int(x)
+    except ValueError:
+        x = 0
+
+    try:
+        y = int(y)
+    except ValueError:
+        y = 0
+
+    return (x, y)
+
+
 class StompAdapterImpl(object):
     log = logging.getLogger("Broker.StompAdapter")
 
@@ -48,9 +67,20 @@ class StompAdapterImpl(object):
         version = frame.headers.get("accept-version", None)
         if version != "1.2":
             res = stomp.Frame(stomp.Command.ERROR, None, "Version unsupported")
-
         else:
             res = stomp.Frame(stomp.Command.CONNECTED, {"version": "1.2"})
+            cx, cy = parseHeartBeatHeader(
+                frame.headers.get("heart-beat", "0,0")
+            )
+
+            # Make sure the heart-beat interval is sane
+            if cy != 0:
+                cy = max(cy, 1000)
+
+            # The server can send a heart-beat every cy ms and doesn't want
+            # to receive any heart-beat from the client.
+            res.headers["heart-beat"] = "%d,0" % (cy,)
+            dispatcher.setHeartBeat(cy)
 
         dispatcher.send_raw(res)
         self._reactor.wakeup()
@@ -273,7 +303,7 @@ class StompReactor(object):
     def process_requests(self):
         self._isRunning = True
         while self._isRunning:
-            asyncore.loop(use_poll=True, map=self._map, count=1)
+            asyncore.loop(use_poll=True, map=self._map, count=1, timeout=.5)
 
         for key, dispatcher in self._map.items():
             del self._map[key]

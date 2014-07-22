@@ -61,6 +61,14 @@ class StompError(RuntimeError):
         RuntimeError.__init__(self, frame.body)
 
 
+class _HeartBeatFrame(object):
+    def encode(self):
+        return "\n"
+
+# There is no reason to have multiple instances
+_heartBeatFrame = _HeartBeatFrame()
+
+
 class Frame(object):
     def __init__(self, command="", headers=None, body=None):
         self.command = command
@@ -376,6 +384,7 @@ class AsyncDispatcher(object):
         self._parser = Parser()
         self._outbox = deque()
         self._outbuf = None
+        self._outgoingHeartBeat = 0
 
     def _queueFrame(self, frame):
         self._outbox.append(frame)
@@ -387,6 +396,13 @@ class AsyncDispatcher(object):
             n += 1
 
         return n
+
+    def setHeartBeat(self, outgoing, incoming=0):
+        if incoming != 0:
+            raise ValueError("incoming heart-beat not supported")
+
+        self._lastOutgoingTimeStamp = self._milis()
+        self._outgoingHeartBeat = outgoing
 
     def handle_connect(self, dispatcher):
         self._frameHandler.handle_connect(self)
@@ -430,6 +446,7 @@ class AsyncDispatcher(object):
 
         data = self._outbuf
         numSent = dispatcher.send(data)
+        self._lastOutgoingTimeStamp = self._milis()
         if numSent == len(data):
             self._outbuf = None
         else:
@@ -439,10 +456,22 @@ class AsyncDispatcher(object):
         self._queueFrame(frame)
 
     def writable(self, dispatcher):
-        return len(self._outbox) > 0 or self._outbuf is not None
+        if len(self._outbox) > 0 or self._outbuf is not None:
+            return True
+
+        if (self._outgoingHeartBeat > 0
+            and ((self._milis() - self._lastOutgoingTimeStamp)
+                 > self._outgoingHeartBeat)):
+            self._queueFrame(_heartBeatFrame)
+            return True
+
+        return False
 
     def readable(self, dispatcher):
         return True
+
+    def _milis(self):
+        return int(round(time.time() * 1000))
 
 
 class AsyncClient(object):
