@@ -31,6 +31,7 @@ import dhcp
 import dummy
 import firewall
 import veth
+from nose import with_setup
 from nose.plugins.skip import SkipTest
 from utils import SUCCESS, VdsProxy, cleanupRules
 
@@ -623,6 +624,29 @@ class NetworkTest(TestCaseBase):
             self.assertEqual({}, qosInbound)
             self.assertEqual({}, qosOutbound)
             self.assertEqual(status, SUCCESS, msg)
+
+    def _setup_overExistingBridge():
+        rc, _, err = execCmd([EXT_BRCTL, 'addbr', NETWORK_NAME])
+        if rc != 0:
+            raise errors.ConfigNetworkError(errors.ERR_FAILED_IFUP, err)
+
+    def _teardown_overExistingBridge():
+        if os.path.exists('/sys/class/net/%s/bridge' % NETWORK_NAME):
+            rc, _, err = execCmd([EXT_BRCTL, 'delbr', NETWORK_NAME])
+            if rc != 0:
+                raise errors.ConfigNetworkError(errors.ERR_FAILED_IFDOWN, err)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    @with_setup(_setup_overExistingBridge, _teardown_overExistingBridge)
+    def testSetupNetworksOverExistingBridge(self):
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'bridged': True}}, {}, NOCHK)
+        self.assertEqual(status, SUCCESS, msg)
+        self.assertNetworkExists(NETWORK_NAME, True)
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
+        self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @RequireDummyMod
