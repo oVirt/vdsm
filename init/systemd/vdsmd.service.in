@@ -2,6 +2,8 @@
 Description=Virtual Desktop Server Manager
 Requires=multipathd.service libvirtd.service time-sync.target \
          iscsid.service rpcbind.service supervdsmd.service sanlock.service
+After=multipathd.service libvirtd.service iscsid.service rpcbind.service \
+      supervdsmd.service sanlock.service
 Conflicts=libvirt-guests.service ksmtuned.service
 
 [Service]
