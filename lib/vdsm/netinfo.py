@@ -790,13 +790,13 @@ def _libvirtNets2vdsm(nets, gateways=None, ipv6routes=None,
 def _cfgBootprotoCompat(netsAndDevices):
     """Set network 'cfg' 'BOOTPROTO' for backwards engine compatibility."""
     for netAttrs in netsAndDevices['networks'].itervalues():
-        if netAttrs['bridged']:
+        if netAttrs['bridged'] and 'BOOTPROTO' not in netAttrs['cfg']:
             netAttrs['cfg']['BOOTPROTO'] = netAttrs['bootproto4']
 
         for devType in ('bondings', 'bridges', 'nics', 'vlans'):
             dev = netsAndDevices[devType].get(netAttrs['iface'])
 
-            if dev:
+            if dev and 'BOOTPROTO' not in dev['cfg']:
                 dev['cfg']['BOOTPROTO'] = netAttrs['bootproto4']
                 break
 
