@@ -18,13 +18,16 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import os
 import signal
 import threading
 
+from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
+from vdsm.utils import pgrep
 from vdsm.utils import rmFile
 
 
@@ -69,15 +72,42 @@ class DhcpClient(object):
             else:
                 raise
         else:
-            try:
-                os.kill(pid, signal.SIGTERM)
-            except OSError as e:
-                if e.errno == os.errno.ESRCH:
-                    pass
-                else:
-                    raise
-            rmFile(self.pidFile)
+            _kill_and_rm_pid(pid, self.pidFile)
 
 
 def kill_dhclient(device_name):
-    execCmd([DhcpClient.DHCLIENT.cmd, '-x', device_name])
+    for pid in pgrep('dhclient'):
+        try:
+            with open('/proc/%s/cmdline' % pid) as cmdline:
+                args = cmdline.read().strip('\0').split('\0')
+        except IOError as ioe:
+            if ioe.errno == errno.ENOENT:  # exited before we read cmdline
+                continue
+        if args[-1] != device_name:  # dhclient of another device
+            continue
+        tokens = iter(args)
+        pid_file = '/var/run/dhclient.pid'  # Default client pid location
+        for token in tokens:
+            if token == '-pf':
+                pid_file = next(tokens)
+            elif token == '--no-pid':
+                pid_file = None
+
+        _kill_and_rm_pid(pid, pid_file)
+
+    #  In order to be able to configure the device with dhclient again. It is
+    #  necessary that dhclient does not find it configured with any IP address
+    #  (except 0.0.0.0 which is fine).
+    ipwrapper.addrFlush(device_name)
+
+
+def _kill_and_rm_pid(pid, pid_file):
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as e:
+        if e.errno == os.errno.ESRCH:  # Already exited
+            pass
+        else:
+            raise
+    if pid_file is not None:
+        rmFile(pid_file)

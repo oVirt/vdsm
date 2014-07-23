@@ -2077,6 +2077,17 @@ class NetworkTest(TestCaseBase):
                             NOCHK)
                         self.assertEquals(status, SUCCESS, msg)
                         self.assertNetworkExists(NETWORK_NAME)
+
+                        # Verify that dhclient is running for the device
+                        pids = pgrep('dhclient')
+                        ifaces = [open('/proc/%s/cmdline' % pid).read().
+                                  strip('\0').split('\0')[-1] for pid in pids]
+                        vdsm_dhclient = [iface for iface in ifaces if
+                                         iface == client]
+                        self.assertEqual(len(vdsm_dhclient), 1,
+                                         'There should be one and only one '
+                                         'running dhclient for the device')
+
             # cleanup
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
