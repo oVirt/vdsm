@@ -38,6 +38,7 @@ test_modules = \
 	glusterTestData.py \
 	guestagentTests.py \
 	hooksTests.py \
+	iproute2Tests.py \
 	ipwrapperTests.py \
 	iscsiTests.py \
 	jsonRpcHelper.py \

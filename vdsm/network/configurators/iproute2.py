@@ -43,6 +43,8 @@ _ETHTOOL_BINARY = CommandPath(
     '/sbin/ethtool',  # EL6, ubuntu and Debian
     '/usr/bin/ethtool',  # Arch
 )
+_BRCTL_DEV_EXISTS = ("device %s already exists; can't create bridge with the "
+                     "same name")
 
 
 class Iproute2(Configurator):
@@ -267,7 +269,10 @@ class ConfigApplier(object):
     def addBridge(self, bridge):
         rc, _, err = execCmd([EXT_BRCTL, 'addbr', bridge.name])
         if rc != 0:
-            raise ConfigNetworkError(ERR_FAILED_IFUP, err)
+            err_used_bridge = (_BRCTL_DEV_EXISTS % bridge.name == err[0]
+                               if err else False)
+            if not err_used_bridge:
+                raise ConfigNetworkError(ERR_FAILED_IFUP, err)
         if bridge.stp:
             with open(netinfo.BRIDGING_OPT %
                       (bridge.name, 'stp_state'), 'w') as bridge_stp:
