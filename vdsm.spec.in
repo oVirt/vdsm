@@ -705,7 +705,7 @@ export LC_ALL=C
 /usr/sbin/usermod -a -G %{cdrom_group} %{qemu_user}
 
 %post
-%{_bindir}/vdsm-tool configure --module sanlock --force
+%{_bindir}/vdsm-tool configure --module sanlock --force >/dev/null
 %{_bindir}/vdsm-tool sebool-config || :
 # set the vdsm "secret" password for libvirt
 %{_bindir}/vdsm-tool set-saslpasswd
