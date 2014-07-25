@@ -714,6 +714,14 @@ if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add supervdsmd
 fi
 %else
+# multipath.conf does not exists after multipath install, causing multipathd to
+# exit silently when started as vdsmd required service.  This creates default
+# configuration blacklisting all devices, simulating the behavior of multipathd
+# on EL6 when configuration file is missing.
+# See https://bugzilla.redhat.com/1120209
+if [ ! -f "/etc/multipath.conf" ]; then
+    /usr/sbin/mpathconf --disable
+fi
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
