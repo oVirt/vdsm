@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import dmidecode
 from vdsm import utils
 
 
@@ -38,6 +37,8 @@ def __leafDict(d):
 
 @utils.memoized
 def getAllDmidecodeInfo():
+    import dmidecode
+
     myLeafDict = {}
     for k in ('system', 'bios', 'cache', 'processor', 'chassis', 'memory'):
         myLeafDict[k] = __leafDict(getattr(dmidecode, k)())
