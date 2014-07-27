@@ -78,9 +78,6 @@ BuildRequires: libvirt-python
 BuildRequires: genisoimage
 BuildRequires: openssl
 BuildRequires: m2crypto
-%ifarch x86_64
-BuildRequires: python-dmidecode
-%endif
 %if 0%{?rhel} == 6
 BuildRequires: python-argparse
 BuildRequires: python-ordereddict
