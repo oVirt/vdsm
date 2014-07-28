@@ -1122,7 +1122,7 @@ class Global(APIBase):
 
     # General Host functions
     def fenceNode(self, addr, port, agent, username, password, action,
-                  secure=False, options=''):
+                  secure=False, options='', policy=None):
         """Send a fencing command to a remote node.
 
            agent is one of (rsa, ilo, drac5, ipmilan, etc)
@@ -1148,12 +1148,48 @@ class Global(APIBase):
                 cleantext += line
             return cleantext
 
+        def should_fence(policy):
+            # skip fence execution if map of storage domains with host id is
+            # entered and at least one storage domain connection from host is
+            # alive
+            if policy is None:
+                self.log.debug('No policy specified')
+                return True
+
+            hostIdMap = policy.get('storageDomainHostIdMap')
+            if not hostIdMap:
+                self.log.warning('Invalid policy specified')
+                return True
+
+            result = self._irs.getHostLeaseStatus(hostIdMap)
+            if result['status']['code'] != 0:
+                self.log.error(
+                    "Error getting host lease status, error code '%s'",
+                    result['status']['code'])
+                return True
+
+            # HOST_STATUS_LIVE means that host renewed its lease in last 80
+            # seconds. If so, we consider the host Up and we won't execute
+            # fencing, even when it's unreachable from engine
+            for sd, status in result['domains'].iteritems():
+                if status == storage.clusterlock.HOST_STATUS_LIVE:
+                    self.log.debug("Host has live lease on '%s'", sd)
+                    return False
+
+            self.log.debug("Host doesn't have any live lease")
+            return True
+
         self.log.debug('fenceNode(addr=%s,port=%s,agent=%s,user=%s,passwd=%s,'
-                       'action=%s,secure=%s,options=%s)', addr, port, agent,
-                       username, 'XXXX', action, secure, options)
+                       'action=%s,secure=%s,options=%s,policy=%s)',
+                       addr, port, agent, username, 'XXXX', action, secure,
+                       options, policy)
 
         if action not in ('status', 'on', 'off', 'reboot'):
             raise ValueError('illegal action ' + action)
+
+        if action != 'status' and not should_fence(policy):
+            self.log.debug("Skipping execution of action '%s'", action)
+            return {'status': doneCode, 'operationStatus': 'skipped'}
 
         script = constants.EXT_FENCE_PREFIX + agent
 
@@ -1188,7 +1224,8 @@ class Global(APIBase):
             return {'status': {'code': 0, 'message': message},
                     'power': power}
         threading.Thread(target=fence, args=(script, inp)).start()
-        return {'status': doneCode, 'power': 'unknown'}
+        return {'status': doneCode, 'power': 'unknown',
+                'operationStatus': 'initiated'}
 
     def ping(self):
         "Ping the server. Useful for tests"

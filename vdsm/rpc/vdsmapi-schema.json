@@ -276,9 +276,9 @@
 {'enum': 'FenceNodeAction', 'data': ['status', 'on', 'off', 'reboot']}
 
 ##
-# @FenceNodePowerStatus:
+# @FenceNodeResult:
 #
-# Indicates the power state of a remote host.
+# For 'status' action, the result is the power status of the host
 #
 # @on:       The remote host is powered on
 #
@@ -287,8 +287,45 @@
 # @unknown:  The power status is not known
 #
 # Since: 4.10.0
+#
+# For 'on', 'off' and 'reboot', the result is status of fence script execution
+#
+# @initiated:   Fence script was executed
+#
+# @skipped:     Fence script was not executed due to entered fencing policy
+#
+# Since: 4.16.0
 ##
-{'enum': 'FenceNodePowerStatus', 'data': ['on', 'off', 'unknown']}
+{'enum': 'FenceNodeResult', 'data': ['on', 'off', 'unknown', 'initiated',
+                                     'skipped']}
+
+##
+# @HostIdMap:
+#
+# A mapping of hostId indexed by domain UUID.
+#
+# Since: 4.16.0
+##
+{'map': 'HostIdMap',
+ 'key': 'UUID', 'value': 'int'}
+
+##
+# @FencingPolicy:
+#
+# Additional options for fenceNode logic.
+#
+# @storageDomainHostIdMap:   #optional map of storage domains and host ids.
+#                            It is used to check status of host lease on
+#                            specified storage. If host has live lease on
+#                            at least one storage domain, then fence actions
+#                            'on', 'off' and 'reboot' will not be executed.
+#                            The 'status' action execution is unaffected by
+#                            content of the map.
+#
+# Since: 4.16.0
+##
+{'type': 'FencingPolicy',
+ 'data': {'*storageDomainHostIdMap': 'HostIdMap'}}
 
 ##
 # @Host.fenceNode:
@@ -313,16 +350,19 @@
 # @options:   #optional Additional agent-specific parameters in space-separated
 #             <var>=<val> pairs
 #
+# @policy:    #optional Additional options needed in fenceNode logic
+#             (new in version 4.16.0)
+#
 # Returns:
-# The new power status of the remote node
+# Result of specified fence action
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'fenceNode'},
  'data': {'addr': 'str', 'port': 'int', 'agent': 'str', 'username': 'str',
           'password': 'str', 'action': 'FenceNodeAction', '*secure': 'bool',
-          '*options': 'str'},
- 'returns': 'FenceNodePowerStatus'}
+          '*options': 'str', '*policy': 'FencingPolicy'},
+ 'returns': 'FenceNodeResult'}
 
 ##
 # @TaskInfo:
