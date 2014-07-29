@@ -20,6 +20,7 @@ from contextlib import contextmanager
 from functools import wraps
 import os.path
 import json
+import signal
 
 from hookValidation import ValidatesHook
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
@@ -153,6 +154,30 @@ def vethIf():
         yield (left, right)
     finally:
         veth.remove(left)
+
+
+class Alarm(Exception):
+    pass
+
+
+def _waitForKnownOperstate(device, timeout=1):
+
+    def _alarmHandler(signum, frame):
+        raise Alarm
+
+    monitor = ipwrapper.Monitor()
+    monitor.start()
+    try:
+        state = operstate(device).upper()
+        if state == 'UNKNOWN':
+            signal.signal(signal.SIGALRM, _alarmHandler)
+            signal.alarm(timeout)
+            for event in monitor:
+                if event.device == device and event.state != 'UNKNOWN':
+                    break
+            signal.alarm(0)
+    finally:
+        monitor.stop()
 
 
 class OperStateChangedError(ValueError):
@@ -365,6 +390,7 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondExists(BONDING_NAME, nics)
 
+            _waitForKnownOperstate(BONDING_NAME)
             with nonChangingOperstate(BONDING_NAME):
                 status, msg = self.vdsm_net.setupNetworks(
                     {NETWORK_NAME:
@@ -407,6 +433,7 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BONDING_NAME, nics)
             self.assertMtu(NETB_DICT['mtu'], BONDING_NAME)
 
+            _waitForKnownOperstate(BONDING_NAME)
             with nonChangingOperstate(BONDING_NAME):
                 status, msg = self.vdsm_net.setupNetworks(
                     {NETB_NAME: {'remove': True}}, {}, NOCHK)
@@ -555,6 +582,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.addNetwork(firstVlan, vlan=firstVlanId,
                                                    nics=nics, opts=opts)
             self.assertEquals(status, SUCCESS, msg)
+            # _waitForKnownOperstate() not used due to the bug #1133159
             with nonChangingOperstate(nics[0]):
                 for netVlan, vlanId in NET_VLANS[1:]:
                     status, msg = self.vdsm_net.addNetwork(netVlan,
@@ -603,6 +631,7 @@ class NetworkTest(TestCaseBase):
                                                    bond=BONDING_NAME,
                                                    nics=nics, opts=opts)
             self.assertEquals(status, SUCCESS, msg)
+            _waitForKnownOperstate(BONDING_NAME)
             with nonChangingOperstate(BONDING_NAME):
                 for netVlan, vlanId in NET_VLANS[1:]:
                     status, msg = self.vdsm_net.addNetwork(netVlan,
@@ -1120,6 +1149,7 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BONDING_NAME, nics)
 
             # Reduce bond size and create Network on detached NIC
+            _waitForKnownOperstate(BONDING_NAME)
             with nonChangingOperstate(BONDING_NAME):
                 netName = NETWORK_NAME + '-2'
                 networks = {netName: dict(nic=nics[0],
@@ -1262,6 +1292,7 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BONDING_NAME, nics[:2])
 
             # Increase bond size
+            _waitForKnownOperstate(BONDING_NAME)
             with nonChangingOperstate(BONDING_NAME):
                 status, msg = self.vdsm_net.setupNetworks(
                     {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
@@ -1306,6 +1337,7 @@ class NetworkTest(TestCaseBase):
                                               'options': 'mode=3 miimon=250'},
                                               bridged)
 
+                _waitForKnownOperstate(BONDING_NAME)
                 with nonChangingOperstate(BONDING_NAME):
                     # Add additional vlanned net over the bond
                     self._createBondedNetAndCheck(1,
@@ -1328,6 +1360,7 @@ class NetworkTest(TestCaseBase):
 
                 # Add a network changing bond options
                 with self.assertRaises(OperStateChangedError):
+                    _waitForKnownOperstate(BONDING_NAME)
                     with nonChangingOperstate(BONDING_NAME):
                         self._createBondedNetAndCheck(4,
                                                       {'nics': nics[1:],
@@ -1357,6 +1390,7 @@ class NetworkTest(TestCaseBase):
                 self.assertEquals('1500',
                                   self.vdsm_net.getMtu(BONDING_NAME))
 
+                _waitForKnownOperstate(BONDING_NAME)
                 with nonChangingOperstate(BONDING_NAME):
                     # Add a network with MTU smaller than existing network
                     self._createBondedNetAndCheck(1, {'nics': nics},
