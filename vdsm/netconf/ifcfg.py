@@ -686,6 +686,7 @@ class ConfigWriter(object):
             hwlines = [line for line in nicFile if line.startswith('HWADDR=')]
         l = [self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
              'MTU=%s\n' % netinfo.DEFAULT_MTU] + hwlines
+        l += 'NM_CONTROLLED=no\n'
         with open(cf, 'w') as nicFile:
             nicFile.writelines(l)
 
