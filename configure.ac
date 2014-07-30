@@ -145,6 +145,15 @@ AC_SUBST([vdsmupgradedir], ['/data/updates'])
 # VDSM service
 AC_SUBST([SERVICE_STOP_TIMEOUT], ['10'])
 
+# Network
+AC_ARG_WITH(
+    [reg-bridge-name],
+    [AS_HELP_STRING([--with-reg-bridge-name=NAME],
+                    [name of bridge vdsm_reg will use @<:@default=ovirtmgmt@:>@])],
+    [VDSM_REG_BRIDGE="${withval}"],
+    [VDSM_REG_BRIDGE="ovirtmgmt"])
+AC_SUBST([VDSM_REG_BRIDGE])
+
 # Engine Name
 AC_ARG_WITH(
     [engine-name],
