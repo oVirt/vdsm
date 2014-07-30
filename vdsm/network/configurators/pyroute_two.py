@@ -22,7 +22,6 @@ import logging
 from vdsm import netinfo
 from vdsm import ipwrapper
 from vdsm.netconfpersistence import RunningConfig
-from vdsm.utils import CommandPath
 from . import libvirt
 from .dhclient import DhcpClient
 from pyroute2 import IPDB
