@@ -201,12 +201,23 @@ class Image:
                 self.log.error("There is no leaf in the image %s", imgUUID)
                 raise se.ImageIsNotLegalChain(imgUUID)
 
+        # We have seen corrupted chains that cause endless loops here.
+        # https://bugzilla.redhat.com/1125197
+        seen = set()
+
         # Build up the sorted parent -> child chain
         while not srcVol.isShared():
             chain.insert(0, srcVol)
+            seen.add(srcVol.volUUID)
 
-            if srcVol.getParent() == volume.BLANK_UUID:
+            parentUUID = srcVol.getParent()
+            if parentUUID == volume.BLANK_UUID:
                 break
+
+            if parentUUID in seen:
+                self.log.error("Image %s volume %s has invalid parent UUID %s",
+                               imgUUID, srcVol.volUUID, parentUUID)
+                raise se.ImageIsNotLegalChain(imgUUID)
 
             srcVol = srcVol.getParentVolume()
 
