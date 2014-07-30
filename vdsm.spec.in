@@ -49,6 +49,12 @@
 %global with_tmpfiles_macro 1
 %endif
 
+%if 0%{?rhel} == 6
+%global _udevrulesdir /lib/udev/rules.d/
+%else
+%global _udevrulesdir /usr/lib/udev/rules.d/
+%endif
+
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
@@ -643,18 +649,18 @@ install -Dm 0755 init/sysvinit/respawn \
 
 # Install the lvm rules
 install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
-                 %{buildroot}/lib/udev/rules.d/12-vdsm-lvm.rules
+                 %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
 
 install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
 
 %if 0%{?with_systemd}
-install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/lib/systemd/systemd-vdsmd
+install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/usr/lib/systemd/systemd-vdsmd
 install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
 install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
 
 install -Dm 0755 vdsm_reg/vdsm-reg.init \
-                 %{buildroot}/lib/systemd/systemd-vdsm-reg
+                 %{buildroot}/usr/lib/systemd/systemd-vdsm-reg
 install -Dm 0644 vdsm_reg/vdsm-reg.service \
                  %{buildroot}%{_unitdir}/vdsm-reg.service
 install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
@@ -822,7 +828,7 @@ if [ "$1" -ge 1 ]; then
             # fallback to vdsmd reconfigure api - This change may be removed
             # when vdsm won't support any downgrade\upgrade to versions that
             # don't include vdsm-tool configure api (vdsm <= 3.3)
-            for f in '/lib/systemd/systemd-vdsmd' '/etc/init.d/vdsmd'; do
+            for f in '/usr/lib/systemd/systemd-vdsmd' '/etc/init.d/vdsmd'; do
                 if [ -f "${f}" ]; then
                     "${f}" reconfigure >/dev/null 2>&1 || :
                 fi
@@ -894,7 +900,7 @@ exit 0
 %defattr(-, root, root, -)
 %doc COPYING README lib/vdsm/vdsm.conf.sample
 %if 0%{?with_systemd}
-/lib/systemd/systemd-vdsmd
+/usr/lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
 %{_unitdir}/supervdsmd.service
 %else
@@ -1118,7 +1124,7 @@ exit 0
 %exclude %{_datadir}/%{vdsm_name}/gluster/*
 %endif
 %{python_sitelib}/sos/plugins/vdsm.py*
-/lib/udev/rules.d/12-vdsm-lvm.rules
+%{_udevrulesdir}/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}
@@ -1452,7 +1458,7 @@ exit 0
 %ghost %dir /data
 %ghost %dir %attr(0775, root, root) /data/updates
 %if 0%{?with_systemd}
-/lib/systemd/systemd-vdsm-reg
+/usr/lib/systemd/systemd-vdsm-reg
 %{_unitdir}/vdsm-reg.service
 %else
 %{_initrddir}/vdsm-reg
