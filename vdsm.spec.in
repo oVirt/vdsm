@@ -665,7 +665,7 @@ install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
 %endif
 
 %check
-make check
+make check PEP8=true PYFLAKES=true
 
 %clean
 rm -rf %{buildroot}
