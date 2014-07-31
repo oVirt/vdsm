@@ -149,9 +149,8 @@ class DomainMonitorThread(object):
     log = logging.getLogger('Storage.DomainMonitorThread')
 
     def __init__(self, domainMonitor, sdUUID, hostId, interval):
-        self.thread = threading.Thread(target=self._monitorLoop)
+        self.thread = threading.Thread(target=self._run)
         self.thread.setDaemon(True)
-
         self.domainMonitor = domainMonitor
         self.stopEvent = threading.Event()
         self.domain = None
@@ -180,9 +179,23 @@ class DomainMonitorThread(object):
         return self.status.copy()
 
     @utils.traceback(on=log.name)
-    def _monitorLoop(self):
+    def _run(self):
         self.log.debug("Starting domain monitor for %s", self.sdUUID)
+        try:
+            self._monitorLoop()
+        finally:
+            self.log.debug("Stopping domain monitor for %s", self.sdUUID)
+            # If this is an ISO domain we didn't acquire the host id and
+            # releasing it is superfluous.
+            if self.domain and not self.isIsoDomain:
+                try:
+                    self.domain.releaseHostId(self.hostId, unused=True)
+                except:
+                    self.log.debug("Unable to release the host id %s for "
+                                   "domain %s", self.hostId, self.sdUUID,
+                                   exc_info=True)
 
+    def _monitorLoop(self):
         while not self.stopEvent.is_set():
             try:
                 self._monitorDomain()
@@ -190,17 +203,6 @@ class DomainMonitorThread(object):
                 self.log.error("The domain monitor for %s failed unexpectedly",
                                self.sdUUID, exc_info=True)
             self.stopEvent.wait(self.interval)
-
-        self.log.debug("Stopping domain monitor for %s", self.sdUUID)
-
-        # If this is an ISO domain we didn't acquire the host id and releasing
-        # it is superfluous.
-        if self.domain and not self.isIsoDomain:
-            try:
-                self.domain.releaseHostId(self.hostId, unused=True)
-            except:
-                self.log.debug("Unable to release the host id %s for domain "
-                               "%s", self.hostId, self.sdUUID, exc_info=True)
 
     def _monitorDomain(self):
         self.nextStatus.clear()
