@@ -35,7 +35,7 @@ from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
-from testValidation import ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot, RequireBondingMod
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -305,6 +305,7 @@ class TestNetinfo(TestCaseBase):
         self.assertNotIn('expired2', dhcp4)
 
     @ValidateRunningAsRoot
+    @RequireBondingMod
     def testGetBondingOptions(self):
         INTERVAL = '12345'
         bondName = _randomIfaceName()
