@@ -116,12 +116,11 @@ public abstract class StompCommonClient extends ReactorClient {
         }
 
         readBuffer(this.ibuff);
-        byte[] additionalContent = this.ibuff.array();
-        int length = this.message.getContent().length + additionalContent.length;
+        int length = this.message.getContent().length + this.ibuff.position();
         if (this.message.getContentLength() != length - 1) {
             return;
         }
-        this.message.withAdditionalContent(additionalContent);
+        this.message.withAdditionalContent(this.ibuff.array());
         emitOnMessageReceived(this.message);
     }
 

@@ -6,6 +6,7 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -26,10 +27,9 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
 
 public class SSLStompClientTestCase {
+    private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
     private final static int TIMEOUT_SEC = 6;
     private final static String HOSTNAME = "localhost";
-    private final static int PORT = 61625;
-    private final static String MESSAGE = "Hello world!";
     private final static String KEYSTORE_NAME = "keystore";
     private final static String TRUSTSTORE_NAME = "truststore";
     private final static String PASSWORD = "mypass";
@@ -57,10 +57,30 @@ public class SSLStompClientTestCase {
     }
 
     @Test
-    public void testEcho() throws InterruptedException, ExecutionException, ClientConnectionException {
+    public void testShortMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
+        testEcho(generateRandomMessage(16), 60625);
+    }
+
+    @Test
+    public void testLondMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
+        testEcho(generateRandomMessage(524288), 60626);
+    }
+
+    private String generateRandomMessage(int length) {
+        Random random = new Random();
+        StringBuffer randStr = new StringBuffer();
+        for(int i=0; i< length; i++){
+            int number = random.nextInt(CHAR_LIST.length());
+            char ch = CHAR_LIST.charAt(number);
+            randStr.append(ch);
+        }
+        return randStr.toString();
+    }
+
+    public void testEcho(String message, int port) throws InterruptedException, ExecutionException, ClientConnectionException {
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(5);
         Future<ReactorListener> futureListener =
-                this.listeningReactor.createListener(HOSTNAME, PORT, new EventListener() {
+                this.listeningReactor.createListener(HOSTNAME, port, new EventListener() {
 
                     @Override
                     public void onAcccept(final ReactorClient client) {
@@ -76,7 +96,7 @@ public class SSLStompClientTestCase {
         ReactorListener listener = futureListener.get();
         assertNotNull(listener);
 
-        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, PORT);
+        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, port);
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override
@@ -86,17 +106,20 @@ public class SSLStompClientTestCase {
         });
         client.connect();
 
-        client.sendMessage(MESSAGE.getBytes());
-        byte[] message = queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
+        client.sendMessage(message.getBytes());
+        byte[] response = queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
 
-        client.sendMessage(MESSAGE.getBytes());
-        message = queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
+        assertNotNull(response);
+        assertEquals(message, new String(response, UTF8));
+
+        client.sendMessage(message.getBytes());
+        response = queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
 
         client.close();
         listener.close();
 
-        assertNotNull(message);
-        assertEquals(MESSAGE, new String(message, UTF8));
+        assertNotNull(response);
+        assertEquals(message, new String(response, UTF8));
     }
 
 }

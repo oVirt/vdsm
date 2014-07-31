@@ -47,15 +47,34 @@ public class SSLEngineNioHelper {
 
     public int read(ByteBuffer buff) throws IOException {
         int read = 0;
-        if (this.appPeerBuffer.position() < buff.limit()) {
+        if (this.appPeerBuffer.position() == 0) {
             this.channel.read(this.packatPeerBuffer);
-
+            if (this.packatPeerBuffer.position() == 0) {
+                return read;
+            }
             this.packatPeerBuffer.flip();
+            boolean retry = true;
 
-            SSLEngineResult result = this.engine.unwrap(this.packatPeerBuffer, this.appPeerBuffer);
-            read = result.bytesProduced();
+            while (retry) {
+                SSLEngineResult result = this.engine.unwrap(this.packatPeerBuffer, this.appPeerBuffer);
+                switch (result.getStatus()) {
+                case BUFFER_OVERFLOW:
+                    putBuffer(buff);
+                    read += result.bytesProduced();
+                    break;
+                default:
+                    retry = false;
+                    read += result.bytesProduced();
+                }
+                ;
+            }
             this.packatPeerBuffer.compact();
         }
+        putBuffer(buff);
+        return read;
+    }
+
+    private void putBuffer(ByteBuffer buff) {
         this.appPeerBuffer.flip();
         final ByteBuffer slice = this.appPeerBuffer.slice();
         if (slice.limit() > buff.remaining()) {
@@ -65,12 +84,17 @@ public class SSLEngineNioHelper {
         buff.put(slice);
         this.appPeerBuffer.position(this.appPeerBuffer.position() + slice.limit());
         this.appPeerBuffer.compact();
-        return read;
     }
 
     public void write(ByteBuffer buff) throws IOException {
         if (buff != this.appBuffer) {
-            this.appBuffer.put(buff);
+            while (buff.hasRemaining()) {
+                this.engine.wrap(buff, this.packetBuffer);
+                this.packetBuffer.flip();
+                this.channel.write(this.packetBuffer);
+                this.packetBuffer.clear();
+            }
+            return;
         }
         this.appBuffer.flip();
         this.engine.wrap(this.appBuffer, this.packetBuffer);
