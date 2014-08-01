@@ -26,6 +26,7 @@ import select
 import signal
 import fcntl
 import errno
+from testlib import AssertingLock
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
 from testlib import namedTemporaryDir
@@ -1155,7 +1156,7 @@ class SamplingMethodTests(TestCaseBase):
 
     def setUp(self):
         # Will raise if more then one thread try to enter the sampling method
-        self.single_thread_allowed = threading.BoundedSemaphore(1)
+        self.single_thread_allowed = AssertingLock()
         self.entered_sampling_method = threading.Event()
         self.results = ['result-1', 'result-2']
 

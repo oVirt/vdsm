@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from testlib import AssertingLock
 from testlib import VdsmTestCase
 
 
@@ -42,3 +43,18 @@ class AssertNotRaisesTests(VdsmTestCase):
         def func():
             pass
         self.assertNotRaises(func)
+
+
+class AssertingLockTests(VdsmTestCase):
+
+    def test_free(self):
+        lock = AssertingLock()
+        with lock:
+            pass
+
+    def test_locked(self):
+        lock = AssertingLock()
+        with self.assertRaises(AssertionError):
+            with lock:
+                with lock:
+                    pass

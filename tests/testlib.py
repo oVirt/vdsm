@@ -26,6 +26,7 @@ import re
 import shutil
 import sys
 import tempfile
+import threading
 from contextlib import contextmanager
 
 from nose import config
@@ -333,6 +334,22 @@ def safe_repr(obj, short=False):
     if not short or len(result) < _MAX_LENGTH:
         return result
     return result[:_MAX_LENGTH] + ' [truncated]...'
+
+
+class AssertingLock(object):
+    """
+    Lock that raises when trying to acquire a locked lock.
+    """
+    def __init__(self):
+        self._lock = threading.Lock()
+
+    def __enter__(self):
+        if not self._lock.acquire(False):
+            raise AssertionError("Lock is already locked")
+        return self
+
+    def __exit__(self, *args):
+        self._lock.release()
 
 
 class VdsmTestRunner(core.TextTestRunner):
