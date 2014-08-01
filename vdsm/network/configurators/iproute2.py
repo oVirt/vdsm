@@ -47,6 +47,10 @@ _BRCTL_DEV_EXISTS = ("device %s already exists; can't create bridge with the "
                      "same name")
 
 
+def is_available():
+    return True
+
+
 class Iproute2(Configurator):
     def __init__(self, inRollback=False):
         super(Iproute2, self).__init__(ConfigApplier(), inRollback)

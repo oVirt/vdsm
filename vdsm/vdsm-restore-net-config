@@ -20,6 +20,7 @@
 #
 import logging
 import logging.config
+import sys
 
 from vdsm.config import config
 from vdsm import netinfo
@@ -115,7 +116,8 @@ def _get_all_configurators():
         __import__(moduleName, fromlist="_")
 
     for cls in configurators.Configurator.__subclasses__():
-        yield cls
+        if sys.modules[cls.__module__].is_available():
+            yield cls
 
 
 def restore():

@@ -47,6 +47,10 @@ from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 import dsaversion  # TODO: Make parent package import when vdsm is a package
 
 
+def is_available():
+    return True
+
+
 def _hwaddr_required():
     return config.get('vars', 'hwaddr_in_ifcfg') == 'always'
 

@@ -24,8 +24,18 @@ from vdsm import ipwrapper
 from vdsm.netconfpersistence import RunningConfig
 from . import libvirt
 from .dhclient import DhcpClient
-from pyroute2 import IPDB
 from .iproute2 import Iproute2
+
+try:
+    from pyroute2 import IPDB
+except ImportError as ie:
+    _OPTIONAL_AVAILABLE = False
+else:
+    _OPTIONAL_AVAILABLE = True
+
+
+def is_available():
+    return _OPTIONAL_AVAILABLE
 
 
 class PyrouteTwo(Iproute2):
