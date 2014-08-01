@@ -65,7 +65,9 @@ public final class ResponseWorker extends Thread {
                 if (context.getClient() == null) {
                     break;
                 }
-                log.info("Message received :" + new String(context.getMessage(), UTF8));
+                if (log.isDebugEnabled()) {
+                    log.debug("Message received: " + new String(context.getMessage(), UTF8));
+                }
                 JsonNode rootNode = mapper.readTree(context.getMessage());
                 if (!rootNode.isArray()) {
                     processIncomingObject(context.getClient(), rootNode);

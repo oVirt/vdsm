@@ -130,4 +130,8 @@ public class JsonRpcRequest {
         return node;
     }
 
+    @Override
+    public String toString() {
+        return "<JsonRpcRequest id: " + this.getId() + ", method: " + this.getMethod() + ", params: " + this.getParams().toString() +  ">";
+    }
 }

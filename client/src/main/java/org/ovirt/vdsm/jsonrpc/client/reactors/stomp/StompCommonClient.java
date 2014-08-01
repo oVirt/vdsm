@@ -38,7 +38,9 @@ public abstract class StompCommonClient extends ReactorClient {
 
     public void send(byte[] message) {
         outbox.addFirst(ByteBuffer.wrap(message));
-        LOG.info("Message sent: " + new String(message, UTF8));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Message sent: " + new String(message, UTF8));
+        }
 
         final ReactorClient client = this;
         scheduleTask(new Callable<Void>() {

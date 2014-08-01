@@ -97,4 +97,10 @@ public final class JsonRpcResponse {
         }
         return jsonToByteArray(node);
     }
+
+    @Override
+    public String toString() {
+        String response = this.getResult() != null ? " result: " + this.getResult().toString() : " error: " + this.getError().toString();
+        return "<JsonRpcResponse id: " + this.getId() + response +  ">";
+    }
 }
