@@ -57,6 +57,8 @@ FILE_SPECIAL_VOLUME_SIZES_MIB.update({
 # Specific stat(2) block size as defined in the man page
 ST_BYTES_PER_BLOCK = 512
 
+_MOUNTLIST_IGNORE = ('/' + sd.BLOCKSD_DIR, '/' + sd.GLUSTERSD_DIR)
+
 getProcPool = oop.getGlobalProcPool
 
 
@@ -640,13 +642,23 @@ class FileStorageDomain(sd.StorageDomain):
 
 
 def getMountsList(pattern="*"):
-    finalPat = os.path.join(sd.StorageDomain.storage_repository,
-                            sd.DOMAIN_MNT_POINT, pattern)
-    mntList = glob.glob(finalPat)
+    fileDomPattern = os.path.join(
+        sd.StorageDomain.storage_repository, sd.DOMAIN_MNT_POINT,
+        pattern)
+
     # For pattern='*' in mixed pool (block and file domains)
-    # glob will return sd.BLOCKSD_DIR among of real mount points.
-    # Remove sd.BLOCKSD_DIR from glob results.
-    return [mnt for mnt in mntList if not mnt.endswith('/' + sd.BLOCKSD_DIR)]
+    # glob will return sd.BLOCKSD_DIR and sd.GLUSTERSD_DIR among
+    # real mount points. Remove these directories from glob results.
+    mntList = [mnt for mnt in glob.iglob(fileDomPattern)
+               if not mnt.endswith(_MOUNTLIST_IGNORE)]
+
+    glusterDomPattern = os.path.join(
+        sd.StorageDomain.storage_repository, sd.DOMAIN_MNT_POINT,
+        sd.GLUSTERSD_DIR, pattern)
+
+    mntList.extend(glob.glob(glusterDomPattern))
+
+    return mntList
 
 
 def scanDomains(pattern="*"):
