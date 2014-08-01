@@ -458,8 +458,13 @@ class JsonRpcServer(object):
 
     def _serveRequest(self, ctx, req):
         mangledMethod = req.method.replace(".", "_")
-        self.log.debug("Looking for method '%s' in bridge",
-                       mangledMethod)
+        logLevel = logging.DEBUG
+        if mangledMethod in ('Host_getVMList', 'Host_getAllVmStats',
+                             'Host_getStats', 'StorageDomain_getStats',
+                             'VM_getStats', 'Host_fenceNode'):
+            logLevel = logging.TRACE
+        self.log.log(logLevel, "Calling '%s' in bridge with %s",
+                     req.method, req.params)
         try:
             method = getattr(self._bridge, mangledMethod)
         except AttributeError:
@@ -489,7 +494,8 @@ class JsonRpcServer(object):
                                             req.id))
         else:
             res = True if res is None else res
-
+            self.log.log(logLevel, "Return '%s' in bridge with %s",
+                         req.method, res)
             ctx.requestDone(JsonRpcResponse(res, None, req.id))
 
     @traceback(on=log.name)
