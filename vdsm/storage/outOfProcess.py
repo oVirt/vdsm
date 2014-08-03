@@ -25,6 +25,7 @@ import stat
 import sys
 import types
 from warnings import warn
+import weakref
 
 from vdsm import constants
 from vdsm.config import config
@@ -46,10 +47,16 @@ GLOBAL = 'Global'
 _oopImpl = RFH
 
 DEFAULT_TIMEOUT = config.getint("irs", "process_pool_timeout")
+IOPROC_IDLE_TIME = config.getint("irs", "max_ioprocess_idle_time")
 HELPERS_PER_DOMAIN = config.getint("irs", "process_pool_max_slots_per_domain")
+MAX_QUEUED = config.getint("irs", "process_pool_max_queued_slots_per_domain")
 
-_procLock = threading.Lock()
-_proc = {}
+_procPoolLock = threading.Lock()
+_procPool = {}
+_refProcPool = {}
+_rfhPool = {}
+
+elapsed_time = lambda: os.times()[4]
 
 log = logging.getLogger('Storage.oop')
 
@@ -62,20 +69,44 @@ def setDefaultImpl(impl):
         _oopImpl = RFH
 
 
-def getProcessPool(clientName):
-    try:
-        return _proc[clientName]
-    except KeyError:
-        with _procLock:
-            if _oopImpl == IOPROC:
-                if GLOBAL not in _proc:
-                    _proc[GLOBAL] = _OopWrapper(IOProcess(DEFAULT_TIMEOUT))
-                _proc[clientName] = _proc[GLOBAL]
-            else:
-                _proc[clientName] = _OopWrapper(
-                    RemoteFileHandlerPool(HELPERS_PER_DOMAIN))
+def cleanIdleIOProcesses(clientName):
+    now = elapsed_time()
+    for name, (eol, proc) in _procPool.items():
+        if (eol < now and name != clientName):
+            del _procPool[name]
 
-            return _proc[clientName]
+
+def _getRfhPool(clientName):
+    with _procPoolLock:
+        try:
+            return _rfhPool[clientName]
+        except KeyError:
+            _rfhPool[clientName] = _OopWrapper(
+                RemoteFileHandlerPool(HELPERS_PER_DOMAIN))
+
+            return _rfhPool[clientName]
+
+
+def _getIOProcessPool(clientName):
+    with _procPoolLock:
+        cleanIdleIOProcesses(clientName)
+
+        proc = _refProcPool.get(clientName, lambda: None)()
+        if proc is None:
+            proc = _OopWrapper(IOProcess(max_threads=HELPERS_PER_DOMAIN,
+                                         timeout=DEFAULT_TIMEOUT,
+                                         max_queued_requests=MAX_QUEUED))
+            _refProcPool[clientName] = weakref.ref(proc)
+
+        _procPool[clientName] = (elapsed_time() + IOPROC_IDLE_TIME, proc)
+        return proc
+
+
+def getProcessPool(clientName):
+    if _oopImpl == IOPROC:
+        return _getIOProcessPool(clientName)
+    else:
+        return _getRfhPool(clientName)
 
 
 def getGlobalProcPool():

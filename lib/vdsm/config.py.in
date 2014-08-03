@@ -296,7 +296,12 @@ parameters = [
 
         ('process_pool_timeout', '60', None),
 
+        ('max_ioprocess_idle_time', '60',
+            'TTL of an unused IOProcess instance'),
+
         ('process_pool_max_slots_per_domain', '10', None),
+
+        ('process_pool_max_queued_slots_per_domain', '10', None),
 
         ('iscsi_default_ifaces', 'default',
             'Comma seperated ifaces to connect with. '
