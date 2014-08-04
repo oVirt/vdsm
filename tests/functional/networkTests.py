@@ -218,6 +218,10 @@ class NetworkTest(TestCaseBase):
         if self.vdsm_net.config is not None:
             self.assertNotIn(networkName, self.vdsm_net.config.networks)
 
+    def assertBridgeDoesntExist(self, bridgeName):
+        netinfo = self.vdsm_net.netinfo
+        self.assertNotIn(bridgeName, netinfo.bridges)
+
     def assertBondExists(self, bondName, nics=None, options=None):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
