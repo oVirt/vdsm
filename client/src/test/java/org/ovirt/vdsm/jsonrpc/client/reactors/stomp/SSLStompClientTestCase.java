@@ -25,6 +25,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
+import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class SSLStompClientTestCase {
     private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -66,7 +67,7 @@ public class SSLStompClientTestCase {
         testEcho(generateRandomMessage(524288), 60626);
     }
 
-    private String generateRandomMessage(int length) {
+    public static String generateRandomMessage(int length) {
         Random random = new Random();
         StringBuffer randStr = new StringBuffer();
         for(int i=0; i< length; i++){
@@ -97,6 +98,7 @@ public class SSLStompClientTestCase {
         assertNotNull(listener);
 
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, port);
+        client.setRetryPolicy(new RetryPolicy(180000, 0, 1000000));
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override
