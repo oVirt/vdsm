@@ -1115,25 +1115,25 @@ class StoragePool(object):
         self.updateMonitoringThreads()
 
     @unsecured
-    def _linkStorageDomain(self, src, linkName):
-        self.log.info("Linking %s to %s", src, linkName)
+    def _linkStorageDomain(self, linkTarget, linkName):
+        self.log.info("Linking %s to %s", linkTarget, linkName)
         try:
-            current = os.readlink(linkName)
+            currentLinkTarget = os.readlink(linkName)
         except OSError as e:
             if e.errno != errno.ENOENT:
-                self.log.error("Can't link SD %s to %s", src, linkName,
+                self.log.error("Can't link SD %s to %s", linkTarget, linkName,
                                exc_info=True)
                 return
         else:
-            if current == src:
+            if currentLinkTarget == linkTarget:
                 self.log.debug('link already present skipping creation '
                                'for %s', linkName)
                 return  # Nothing to do
         # Rebuild the link
         tmp_link_name = os.path.join(self.storage_repository,
                                      str(uuid.uuid4()))
-        os.symlink(src, tmp_link_name)     # make tmp_link
-        self.log.debug("Creating symlink from %s to %s", src, linkName)
+        os.symlink(linkTarget, tmp_link_name)  # make tmp_link
+        self.log.debug("Creating symlink from %s to %s", linkTarget, linkName)
         os.rename(tmp_link_name, linkName)
 
     @unsecured
