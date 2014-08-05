@@ -29,7 +29,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class SSLStompClientTestCase {
     private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-    private final static int TIMEOUT_SEC = 6;
+    private final static int TIMEOUT_SEC = 20;
     private final static String HOSTNAME = "localhost";
     private final static String KEYSTORE_NAME = "keystore";
     private final static String TRUSTSTORE_NAME = "truststore";
@@ -63,7 +63,7 @@ public class SSLStompClientTestCase {
     }
 
     @Test
-    public void testLondMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
+    public void testLongMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
         testEcho(generateRandomMessage(524288), 60626);
     }
 

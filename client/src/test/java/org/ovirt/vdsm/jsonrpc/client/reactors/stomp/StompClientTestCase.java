@@ -23,7 +23,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class StompClientTestCase {
-    private final static int TIMEOUT_SEC = 6;
+    private final static int TIMEOUT_SEC = 20;
     private final static String HOSTNAME = "localhost";
     private StompReactor listeningReactor;
     private StompReactor sendingReactor;
