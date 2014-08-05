@@ -25,8 +25,9 @@ from vdsm import netinfo
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
-from network import api, configurators
+from network import api
 from network import errors
+from network.configurators import ifcfg
 from network.models import Bond, Bridge, Nic, Vlan
 
 
@@ -51,10 +52,8 @@ class TestConfigNetwork(TestCaseBase):
     @MonkeyPatch(netinfo, 'networks', _fakeNetworks)
     @MonkeyPatch(netinfo, 'getMaxMtu', lambda *x: 1500)
     @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
-    @MonkeyPatch(configurators.ifcfg, 'ifdown', lambda *x:
-                 _raiseInvalidOpException())
-    @MonkeyPatch(configurators.ifcfg, '_exec_ifup',
-                 lambda *x: _raiseInvalidOpException())
+    @MonkeyPatch(ifcfg, 'ifdown', lambda *x: _raiseInvalidOpException())
+    @MonkeyPatch(ifcfg, '_exec_ifup', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Bond, 'configure', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Bridge, 'configure', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Nic, 'configure', lambda *x: _raiseInvalidOpException())
