@@ -4,7 +4,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -85,5 +87,9 @@ public class JsonUtils {
 
     public static int reduceGracePeriod(int interval) {
         return interval - (int)(interval * 0.1);
+    }
+
+    public static long getTimeout(int timeout, TimeUnit unit) {
+        return new Date().getTime() + TimeUnit.MILLISECONDS.convert(timeout, unit);
     }
 }

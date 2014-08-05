@@ -22,10 +22,18 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorFactory;
  */
 public final class ResponseWorker extends Thread {
     private final LinkedBlockingQueue<MessageContext> queue;
+    private ResponseTracker tracker;
     private static Log log = LogFactory.getLog(ResponseWorker.class);
 
     public ResponseWorker() {
         this.queue = new LinkedBlockingQueue<>();
+        this.tracker = new ResponseTracker();
+
+        Thread trackerThread = new Thread(this.tracker);
+        trackerThread.setName("Response tracker");
+        trackerThread.setDaemon(true);
+        trackerThread.start();
+
         setName("ResponseWorker");
         setDaemon(true);
         start();
@@ -37,7 +45,7 @@ public final class ResponseWorker extends Thread {
      * @return Client wrapper.
      */
     public JsonRpcClient register(ReactorClient client) {
-        final JsonRpcClient jsonRpcClient = new JsonRpcClient(client);
+        final JsonRpcClient jsonRpcClient = new JsonRpcClient(client, this.tracker);
         client.addEventListener(new MessageListener() {
 
             @Override
@@ -88,6 +96,7 @@ public final class ResponseWorker extends Thread {
 
     public void close() {
         this.queue.add(new MessageContext(null, null));
+        this.tracker.close();
     }
 
 }

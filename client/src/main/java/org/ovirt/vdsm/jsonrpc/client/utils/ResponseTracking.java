@@ -2,6 +2,7 @@ package org.ovirt.vdsm.jsonrpc.client.utils;
 
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.internal.JsonRpcCall;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
 
 public class ResponseTracking {
@@ -10,12 +11,14 @@ public class ResponseTracking {
     private long timeout;
     private JsonRpcCall call;
     private RetryContext context;
+    private ReactorClient client;
 
-    public ResponseTracking(JsonRpcRequest request, JsonRpcCall call, RetryContext context, long timeout) {
+    public ResponseTracking(JsonRpcRequest request, JsonRpcCall call, RetryContext context, long timeout, ReactorClient client) {
         this.request = request;
         this.timeout = timeout;
         this.call = call;
         this.context = context;
+        this.client = client;
     }
 
     public JsonRpcRequest getRequest() {
@@ -36,5 +39,9 @@ public class ResponseTracking {
 
     public RetryContext getContext() {
         return this.context;
+    }
+
+    public ReactorClient getClient() {
+        return client;
     }
 }

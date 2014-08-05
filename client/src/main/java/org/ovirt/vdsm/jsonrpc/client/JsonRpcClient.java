@@ -1,24 +1,16 @@
 package org.ovirt.vdsm.jsonrpc.client;
 
-import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.buildFailedResponse;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.getTimeout;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.jsonToByteArray;
 
-import java.util.Date;
 import java.util.List;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ovirt.vdsm.jsonrpc.client.internal.BatchCall;
 import org.ovirt.vdsm.jsonrpc.client.internal.Call;
 import org.ovirt.vdsm.jsonrpc.client.internal.JsonRpcCall;
+import org.ovirt.vdsm.jsonrpc.client.internal.ResponseTracker;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.ResponseTracking;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.DefaultClientRetryPolicy;
@@ -32,27 +24,20 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
  *
  */
 public class JsonRpcClient {
-    private static final int TRACKING_TIMEOUT = 1000;
-    private static final int MAX_FAILED_CONNECTIONS = 0;
-    private static Log log = LogFactory.getLog(JsonRpcClient.class);
     private final ReactorClient client;
     private final ObjectMapper objectMapper;
-    private final ConcurrentMap<JsonNode, JsonRpcCall> runningCalls;
     private RetryPolicy policy = new DefaultClientRetryPolicy();
-    private ConcurrentMap<JsonNode, ResponseTracking> map = new ConcurrentHashMap<>();
-    private Queue<JsonNode> queue = new ConcurrentLinkedQueue<>();
-    private boolean isTracking;
+    private ResponseTracker tracker;
 
     /**
      * Wraps {@link ReactorClient} to hide response update details.
      *
      * @param client - used communicate.
      */
-    public JsonRpcClient(ReactorClient client) {
+    public JsonRpcClient(ReactorClient client, ResponseTracker tracker) {
         this.client = client;
         this.objectMapper = new ObjectMapper();
-        this.runningCalls = new ConcurrentHashMap<>();
-        this.isTracking = true;
+        this.tracker = tracker;
     }
 
     public void setRetryPolicy(RetryPolicy policy) {
@@ -70,9 +55,7 @@ public class JsonRpcClient {
      */
     public Future<JsonRpcResponse> call(JsonRpcRequest req) throws ClientConnectionException {
         final Call call = new Call(req);
-        if (this.runningCalls.putIfAbsent(req.getId(), call) != null) {
-            throw new RequestAlreadySentException();
-        }
+        this.tracker.registerCall(req, call);
         this.getClient().sendMessage(jsonToByteArray(req.toJson(), objectMapper));
         retryCall(req, call);
         return call;
@@ -81,13 +64,8 @@ public class JsonRpcClient {
     private void retryCall(final JsonRpcRequest request, final JsonRpcCall call) throws ClientConnectionException {
         ResponseTracking tracking =
                 new ResponseTracking(request, call, new RetryContext(policy), getTimeout(this.policy.getRetryTimeOut(),
-                        this.policy.getTimeUnit()));
-        this.map.put(request.getId(), tracking);
-        this.queue.add(request.getId());
-    }
-
-    private long getTimeout(int timeout, TimeUnit unit) {
-        return new Date().getTime() + TimeUnit.MILLISECONDS.convert(timeout, unit);
+                        this.policy.getTimeUnit()), client);
+        this.tracker.registerTrackingRequest(request, tracking);
     }
 
     /**
@@ -102,9 +80,7 @@ public class JsonRpcClient {
     public Future<List<JsonRpcResponse>> batchCall(List<JsonRpcRequest> requests) throws ClientConnectionException {
         final BatchCall call = new BatchCall(requests);
         for (final JsonRpcRequest request : requests) {
-            if (this.runningCalls.putIfAbsent(request.getId(), call) != null) {
-                throw new RequestAlreadySentException();
-            }
+            this.tracker.registerCall(request, call);
         }
         this.getClient().sendMessage(jsonToByteArray(requests, objectMapper));
         retryBatchCall(requests, call);
@@ -123,13 +99,11 @@ public class JsonRpcClient {
             return this.client;
         }
         this.client.connect();
-        ResponseTracker tracker = new ResponseTracker();
-        tracker.start();
         return this.client;
     }
 
     public void processResponse(JsonRpcResponse response) {
-        JsonRpcCall call = this.runningCalls.remove(response.getId());
+        JsonRpcCall call = this.tracker.removeCall(response.getId());
         if (call == null) {
             return;
         }
@@ -138,75 +112,9 @@ public class JsonRpcClient {
 
     public void close() {
         this.client.close();
-        this.isTracking = false;
     }
 
     public boolean isClosed() {
         return client.isOpen();
-    }
-
-    /**
-     * Response tracker thread is responsible for tracking and retrying requests.
-     * For each connection there is single instance of the thread.
-     *
-     */
-    private class ResponseTracker extends Thread {
-        private int failedConnections = 0;
-
-        public ResponseTracker() {
-            setName("Response tracker for " + client.getHostname());
-        }
-
-        private void removeRequestFromTracking(JsonNode id) {
-            queue.remove(id);
-            map.remove(id);
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (isTracking) {
-                    TimeUnit.MILLISECONDS.sleep(TRACKING_TIMEOUT);
-                    for (JsonNode id : queue) {
-                        if (!runningCalls.containsKey(id)) {
-                            removeRequestFromTracking(id);
-                            this.failedConnections = 0;
-                            continue;
-                        }
-                        ResponseTracking tracking = map.get(id);
-                        if (System.currentTimeMillis() >= tracking.getTimeout()) {
-                            RetryContext context = tracking.getContext();
-                            context.decreaseAttempts();
-                            if (context.getNumberOfAttempts() <= 0) {
-                                handleFailure(tracking, id);
-                                continue;
-                            }
-                            try {
-                                getClient().sendMessage(jsonToByteArray(tracking.getRequest().toJson(), objectMapper));
-                                tracking.setTimeout(getTimeout(context.getTimeout(), context.getTimeUnit()));
-                            } catch (ClientConnectionException e) {
-                                log.error("Retry failed", e);
-                                handleFailure(tracking, id);
-                            }
-                        }
-                    }
-                }
-            } catch (InterruptedException e) {
-                log.warn("Tracker thread intrreupted");
-            }
-        }
-
-        private void handleFailure(ResponseTracking tracking, JsonNode id) {
-            runningCalls.remove(id);
-            removeRequestFromTracking(id);
-            tracking.getCall().addResponse(buildFailedResponse(tracking.getRequest()));
-
-            if (this.failedConnections < MAX_FAILED_CONNECTIONS) {
-                this.failedConnections++;
-            } else {
-                this.failedConnections = 0;
-                client.close();
-            }
-        }
     }
 }
