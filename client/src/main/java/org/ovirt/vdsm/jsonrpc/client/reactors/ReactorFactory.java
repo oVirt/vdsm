@@ -32,7 +32,7 @@ public class ReactorFactory {
         if (ReactorType.STOMP.equals(type)) {
             return getStompReactor(provider);
         } else {
-            return null;
+            throw new ClientConnectionException("Unrecognized reactor type");
         }
     }
 
