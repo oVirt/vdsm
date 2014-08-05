@@ -556,8 +556,18 @@ def addrAdd(dev, ipaddr, netmask, family=4):
     _execCmd(command)
 
 
-def addrFlush(dev):
-    command = [_IP_BINARY.cmd, 'addr', 'flush', 'dev', dev]
+def addrFlush(dev, family='both'):
+    """
+    Remove IP addresses from the interface, optionally by protocol family.
+
+    If the 'family' parameter is different than 4 or 6, flush all addresses.
+    If it is 6, remove only globally-routable addresses to preserve
+    a link-local address necessary for DHCPv6 functionality.
+    """
+    family = ['-%s' % family] if family in (4, 6) else []
+    command = [_IP_BINARY.cmd] + family + ['addr', 'flush', 'dev', dev]
+    if family == 6:
+        command += ['scope', 'global']
     _execCmd(command)
 
 
