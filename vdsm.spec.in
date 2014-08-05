@@ -330,6 +330,7 @@ Requires:       %{name}-python-zombiereaper = %{version}-%{release}
 Requires:       python-cpopen >= 1.2.3-5
 Requires:       m2crypto
 Requires:       python-ioprocess >= 0.5-1
+BuildArch:      noarch
 
 %description python
 Shared libraries between the various VDSM packages.
