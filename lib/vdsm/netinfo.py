@@ -57,10 +57,8 @@ NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 
 # possible names of dhclient's lease files (e.g. as NetworkManager's slave)
 _DHCLIENT_LEASES_GLOBS = [
-    '/var/lib/dhclient/dhclient-*.lease',   # Fedora 20 legacy network service
-    '/var/lib/dhclient/dhclient-*.leases',  # RHEL 6.5 network service
+    '/var/lib/dhclient/dhclient*.lease*',  # iproute2 configurator, initscripts
     '/var/lib/NetworkManager/dhclient-*.lease',  # NetworkManager
-    '/var/lib/dhclient/dhclient.leases',  # default
 ]
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
