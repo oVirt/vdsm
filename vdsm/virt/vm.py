@@ -190,7 +190,8 @@ class UpdatePortMirroringError(Exception):
     pass
 
 
-VolumeChainEntry = namedtuple('VolumeChainEntry', ['uuid', 'path'])
+VolumeChainEntry = namedtuple('VolumeChainEntry',
+                              ['uuid', 'path', 'allocation'])
 
 
 class VmStatsThread(AdvancedStatsThread):
@@ -2079,18 +2080,34 @@ class Vm(object):
             self.conf['timeOffset'] = newTimeOffset
 
     def _getMergeWriteWatermarks(self):
-        # TODO: Adopt the future libvirt API when the following RFE is done
-        # https://bugzilla.redhat.com/show_bug.cgi?id=1041569
-        return {}
+        drives = [drive for drive in self.getDiskDevices()
+                  if isVdsmImage(drive) and drive.blockDev]
+        allChains = self._driveGetActualVolumeChain(drives).values()
+        return dict((entry.uuid, entry.allocation)
+                    for chain in allChains
+                    for entry in chain)
 
     def _getLiveMergeExtendCandidates(self):
         ret = {}
-        watermarks = self._getMergeWriteWatermarks()
+
+        # The common case is that there are no active jobs.
+        if not self.conf['_blockJobs'].values():
+            return ret
+
+        try:
+            watermarks = self._getMergeWriteWatermarks()
+        except LookupError:
+            self.log.warning("Failed to look up watermark information")
+            return ret
+
         for job in self.conf['_blockJobs'].values():
-            if 'done' in job:
-                # Skip active layer commits that are in the cleanup phase
+            try:
+                drive = self._findDriveByUUIDs(job['disk'])
+            except LookupError:
+                # After an active layer merge completes the vdsm metadata will
+                # be out of sync for a brief period.  If we cannot find the old
+                # disk then it's safe to skip it.
                 continue
-            drive = self._findDriveByUUIDs(job['disk'])
             if not drive.blockDev or drive.format != 'cow':
                 continue
 
@@ -5481,13 +5498,21 @@ class Vm(object):
                 break
             sourceAttr = ('file', 'dev')[drive.blockDev]
             path = sourceXML.getAttribute(sourceAttr)
-            entry = VolumeChainEntry(pathToVolID(drive, path), path)
+            alloc = None
+            if drive.blockDev:
+                allocXML = find_element_by_name(diskXML, 'allocation')
+                if not allocXML:
+                    self.log.debug("<allocation/> missing from backing "
+                                   "chain for block device %s", drive.name)
+                    break
+                alloc = int(allocXML.firstChild.nodeValue)
             bsXML = find_element_by_name(diskXML, 'backingStore')
             if not bsXML:
                 self.log.warning("<backingStore/> missing from backing "
                                  "chain for drive %s", drive.name)
                 break
             diskXML = bsXML
+            entry = VolumeChainEntry(pathToVolID(drive, path), path, alloc)
             volChain.insert(0, entry)
         return volChain or None
 
