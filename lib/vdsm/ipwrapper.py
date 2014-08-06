@@ -181,7 +181,7 @@ class Link(object):
             else:
                 raise  # Reraise other errors like ENODEV
         if driver in (LinkType.BRIDGE, LinkType.MACVLAN, LinkType.TUN,
-                      LinkType.OVS, LinkType.TEAM):
+                      LinkType.OVS, LinkType.TEAM, LinkType.VETH):
             detectedType = driver
         elif driver == 'bonding':
             detectedType = LinkType.BOND

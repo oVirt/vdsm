@@ -32,6 +32,7 @@ from vdsm import netinfo
 from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
                           BONDING_OPT, _randomIfaceName, _getBondingOptions)
 
+from functional import dummy, veth
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testrunner import VdsmTestCase as TestCaseBase, namedTemporaryDir
@@ -190,6 +191,29 @@ class TestNetinfo(TestCaseBase):
                                ]):
             self.assertEqual(set(netinfo.nics()),
                              set(['em', 'me', 'fake', 'fake0']))
+
+    @ValidateRunningAsRoot
+    def testFakeNics(self):
+        with MonkeyPatchScope([(ipwrapper.Link, '_fakeNics', ['veth_*',
+                                                              'dummy_*'])]):
+            d1 = dummy.create()
+            d2 = dummy.create(prefix='mehd_')
+            v1a, v1b = veth.create()
+            v2a, v2b = veth.create(prefix='mehv_')
+
+            fakes = set([d1, v1a, v1b])
+            hiddens = set([d2, v2a, v2b])
+            nics = netinfo.nics()
+            dummy.remove(d1)
+            dummy.remove(d2)
+            veth.remove(v1a)
+            veth.remove(v2a)
+
+            self.assertTrue(fakes.issubset(nics), 'Fake devices %s are not '
+                            'listed in nics %s' % (fakes, nics))
+            self.assertFalse(hiddens.intersection(nics), 'Some of hidden '
+                             'devices %s is shown in nics %s' % (hiddens,
+                                                                 nics))
 
     def testGetBandwidthQos(self):
         notEmptyDoc = minidom.parseString("""<bandwidth>
