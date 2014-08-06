@@ -173,7 +173,7 @@ Requires: iscsi-initiator-utils
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
 %endif
 
-Requires: sanlock >= 2.8, sanlock-python
+Requires: sanlock >= 2.8-2, sanlock-python
 
 %if 0%{?rhel}
 %if 0%{?centos}
