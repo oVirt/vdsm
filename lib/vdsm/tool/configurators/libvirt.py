@@ -340,14 +340,6 @@ class Libvirt(ModuleConfigure):
                         'auth_unix_rw': '"sasl"',
                         'host_uuid': '"' + str(uuid.uuid4()) + '"',
                         'keepalive_interval': -1,
-                        # FIXME until we are confident with libvirt
-                        #  integration, let us have a verbose log
-                        'log_outputs': (
-                            '"1:file:/var/log/libvirt/libvirtd.log"'),
-                        'log_filters': (
-                            '"3:virobject 3:virfile 2:virnetlink '
-                            '3:cgroup 3:event 3:json 1:libvirt '
-                            '1:util 1:qemu"'),
                     },
                 },
                 {
