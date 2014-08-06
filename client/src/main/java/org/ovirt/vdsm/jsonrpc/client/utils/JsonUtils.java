@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonEncoding;
+import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -25,11 +26,12 @@ public class JsonUtils {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     private static Log log = LogFactory.getLog(JsonUtils.class);
     private static ObjectMapper mapper = new ObjectMapper();
+    private static JsonFactory factory = mapper.getJsonFactory();
 
-    public static byte[] jsonToByteArray(JsonNode json, ObjectMapper mapper) {
+    public static byte[] jsonToByteArray(JsonNode json) {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
-            try (JsonGenerator gen = mapper.getJsonFactory().createJsonGenerator(os, JsonEncoding.UTF8)) {
+            try (JsonGenerator gen = factory.createJsonGenerator(os, JsonEncoding.UTF8)) {
                 gen.writeTree(json);
             }
         } catch (IOException e) {
@@ -38,10 +40,10 @@ public class JsonUtils {
         return os.toByteArray();
     }
 
-    public static byte[] jsonToByteArray(List<JsonRpcRequest> requests, ObjectMapper mapper) {
+    public static byte[] jsonToByteArray(List<JsonRpcRequest> requests) {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
         try {
-            try (JsonGenerator gen = mapper.getJsonFactory().createJsonGenerator(os, JsonEncoding.UTF8)) {
+            try (JsonGenerator gen = factory.createJsonGenerator(os, JsonEncoding.UTF8)) {
                 gen.writeStartArray();
                 for (final JsonRpcRequest request : requests) {
                     gen.writeTree(request.toJson());

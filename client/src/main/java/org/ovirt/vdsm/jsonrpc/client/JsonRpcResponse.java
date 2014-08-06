@@ -95,6 +95,6 @@ public final class JsonRpcResponse {
         } else {
             node.put("id", getId());
         }
-        return jsonToByteArray(node, MAPPER);
+        return jsonToByteArray(node);
     }
 }

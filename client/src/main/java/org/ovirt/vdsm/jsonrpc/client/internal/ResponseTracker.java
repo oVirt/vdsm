@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.RequestAlreadySentException;
 import org.ovirt.vdsm.jsonrpc.client.utils.ResponseTracking;
@@ -29,7 +28,6 @@ public class ResponseTracker implements Runnable {
     private static Log log = LogFactory.getLog(ResponseTracker.class);
     private static final int TRACKING_TIMEOUT = 500;
     private static final int MAX_FAILED_CONNECTIONS = 0;
-    private final ObjectMapper objectMapper;
     private int failedConnections = 0;
     private AtomicBoolean isTracking;
     private final ConcurrentMap<JsonNode, JsonRpcCall> runningCalls = new ConcurrentHashMap<>();
@@ -37,7 +35,6 @@ public class ResponseTracker implements Runnable {
     private Queue<JsonNode> queue = new ConcurrentLinkedQueue<>();
 
     public ResponseTracker() {
-        this.objectMapper = new ObjectMapper();
         this.isTracking = new AtomicBoolean(true);
     }
 
@@ -80,7 +77,7 @@ public class ResponseTracker implements Runnable {
                             handleFailure(tracking, id);
                             continue;
                         }
-                        tracking.getClient().sendMessage(jsonToByteArray(tracking.getRequest().toJson(), objectMapper));
+                        tracking.getClient().sendMessage(jsonToByteArray(tracking.getRequest().toJson()));
                         tracking.setTimeout(getTimeout(context.getTimeout(), context.getTimeUnit()));
                     }
                 }

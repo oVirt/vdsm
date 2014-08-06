@@ -63,7 +63,7 @@ public class Worker extends Thread {
                 } else {
                     result = process(rootNode);
                 }
-                dataEvent.server.send(dataEvent.socket, jsonToByteArray(result, mapper));
+                dataEvent.server.send(dataEvent.socket, jsonToByteArray(result));
             } catch (Exception e) {
                 fail();
             }

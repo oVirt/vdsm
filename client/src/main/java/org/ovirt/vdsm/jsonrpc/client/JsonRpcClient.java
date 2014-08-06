@@ -6,7 +6,6 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.jsonToByteArray;
 import java.util.List;
 import java.util.concurrent.Future;
 
-import org.codehaus.jackson.map.ObjectMapper;
 import org.ovirt.vdsm.jsonrpc.client.internal.BatchCall;
 import org.ovirt.vdsm.jsonrpc.client.internal.Call;
 import org.ovirt.vdsm.jsonrpc.client.internal.JsonRpcCall;
@@ -25,7 +24,6 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
  */
 public class JsonRpcClient {
     private final ReactorClient client;
-    private final ObjectMapper objectMapper;
     private RetryPolicy policy = new DefaultClientRetryPolicy();
     private ResponseTracker tracker;
 
@@ -36,7 +34,6 @@ public class JsonRpcClient {
      */
     public JsonRpcClient(ReactorClient client, ResponseTracker tracker) {
         this.client = client;
-        this.objectMapper = new ObjectMapper();
         this.tracker = tracker;
     }
 
@@ -56,7 +53,7 @@ public class JsonRpcClient {
     public Future<JsonRpcResponse> call(JsonRpcRequest req) throws ClientConnectionException {
         final Call call = new Call(req);
         this.tracker.registerCall(req, call);
-        this.getClient().sendMessage(jsonToByteArray(req.toJson(), objectMapper));
+        this.getClient().sendMessage(jsonToByteArray(req.toJson()));
         retryCall(req, call);
         return call;
     }
@@ -82,7 +79,7 @@ public class JsonRpcClient {
         for (final JsonRpcRequest request : requests) {
             this.tracker.registerCall(request, call);
         }
-        this.getClient().sendMessage(jsonToByteArray(requests, objectMapper));
+        this.getClient().sendMessage(jsonToByteArray(requests));
         retryBatchCall(requests, call);
         return call;
     }
