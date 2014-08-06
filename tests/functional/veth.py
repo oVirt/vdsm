@@ -24,15 +24,15 @@ import dummy
 from vdsm.ipwrapper import linkAdd, IPRoute2Error
 
 
-def create():
+def create(prefix='veth_'):
     """
     Creates a veth interface with a pseudo-random name for both endpoints (e.g.
     veth_85 and veth_31 in the format veth_Number). Assumes root privileges.
     """
 
     deviceNumbers = random.sample(range(100), 2)
-    leftPoint = 'veth_%s' % deviceNumbers[0]
-    rightPoint = 'veth_%s' % deviceNumbers[1]
+    leftPoint = '%s%s' % (prefix, deviceNumbers[0])
+    rightPoint = '%s%s' % (prefix, deviceNumbers[1])
     try:
         linkAdd(leftPoint, linkType='veth', args=('peer', 'name', rightPoint))
     except IPRoute2Error:

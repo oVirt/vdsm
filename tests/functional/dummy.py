@@ -23,7 +23,7 @@ from nose.plugins.skip import SkipTest
 from vdsm.ipwrapper import linkAdd, linkDel, addrAdd, linkSet, IPRoute2Error
 
 
-def create():
+def create(prefix='dummy_'):
     """
     Creates a dummy interface, in a fixed number of attempts (100).
     The dummy interface created has a pseudo-random name (e.g. dummy_85
@@ -31,7 +31,7 @@ def create():
     """
 
     for i in random.sample(range(100), 100):
-        dummy_name = 'dummy_%s' % i
+        dummy_name = '%s%s' % (prefix, i)
         try:
             linkAdd(dummy_name, linkType='dummy')
         except IPRoute2Error:
