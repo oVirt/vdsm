@@ -286,11 +286,34 @@ class TestPortMirror(TestCaseBase):
     when it is attached to an active device.
     """
 
-    # just an echo request from 192.168.0.52 to 192.168.0.3
-    _ICMP = unhexlify("001cc0d044dc00215c4d4275080045000054000040004001b921c0a"
-                      "80034c0a800030800dd200c1400016b52085000000000d754050000"
-                      "000000101112131415161718191a1b1c1d1e1f20212223242526272"
-                      "8292a2b2c2d2e2f3031323334353637")
+    #   ###[ Ethernet ]###
+    #     dst       = 00:1c:c0:d0:44:dc
+    #     src       = 00:21:5c:4d:42:75
+    #     type      = IPv4
+    #   ###[ IP ]###
+    #        version   = 4L
+    #        ihl       = 5L
+    #        tos       = 0x0
+    #        len       = 28
+    #        id        = 1
+    #        flags     =
+    #        frag      = 0L
+    #        ttl       = 64
+    #        proto     = icmp
+    #        chksum    = 0xf726
+    #        src       = 192.168.0.52
+    #        dst       = 192.168.0.3
+    #        \options   \
+    #   ###[ ICMP ]###
+    #           type      = echo-request
+    #           code      = 0
+    #           chksum    = 0xf7ff
+    #           id        = 0x0
+    #           seq       = 0x0
+    _ICMP = unhexlify(
+        '001cc0d044dc''00215c4d4275''0800'  # Ethernet
+        '4500001c000100004001f726''c0a80034''c0a80003'  # IP
+        '0800f7ff00000000')  # ICMP
 
     _tap0 = _Tap()
     _tap1 = _Tap()
