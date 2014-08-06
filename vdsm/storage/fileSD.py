@@ -641,7 +641,7 @@ class FileStorageDomain(sd.StorageDomain):
                 self.oop.utils.forceLink(tVol, tLink)
 
 
-def getMountsList(pattern="*"):
+def _getMountsList(pattern="*"):
     fileDomPattern = os.path.join(
         sd.StorageDomain.storage_repository, sd.DOMAIN_MNT_POINT,
         pattern)
@@ -664,7 +664,7 @@ def getMountsList(pattern="*"):
 def scanDomains(pattern="*"):
     log = logging.getLogger("Storage.scanDomains")
 
-    mntList = getMountsList(pattern)
+    mntList = _getMountsList(pattern)
 
     def collectMetaFiles(possibleDomain):
         try:
