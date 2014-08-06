@@ -274,26 +274,15 @@ class SANLock(object):
                 return False
 
     def getHostStatus(self, hostId):
-        # Note: get_hosts has off-by-one bug when asking for particular host
-        # id, so get all hosts info and filter.
-        # See https://bugzilla.redhat.com/1111210
         try:
-            hosts = sanlock.get_hosts(self._sdUUID)
+            hosts = sanlock.get_hosts(self._sdUUID, hostId)
         except sanlock.SanlockException as e:
             self.log.debug("Unable to get host %d status in lockspace %s: %s",
                            hostId, self._sdUUID, e)
             return HOST_STATUS_UNAVAILABLE
-
-        for info in hosts:
-            if info['host_id'] == hostId:
-                status = info['flags']
-                return self.STATUS_NAME[status]
-
-        # get_hosts with host_id=0 returns only hosts with timestamp != 0,
-        # which means that no host is using this host id now. If there a
-        # timestamp, sanlock will return HOST_UNKNOWN and then HOST_LIVE or
-        # HOST_FAIL.
-        return HOST_STATUS_FREE
+        else:
+            status = hosts[0]['flags']
+            return self.STATUS_NAME[status]
 
     # The hostId parameter is maintained here only for compatibility with
     # ClusterLock. We could consider to remove it in the future but keeping it
