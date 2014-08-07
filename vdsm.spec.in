@@ -157,7 +157,6 @@ Requires: sanlock >= 2.8, sanlock-python
 %if 0%{?rhel}
 Requires: python-ethtool >= 0.6-3
 %if 0%{?rhel} >= 7
-ExclusiveArch:  x86_64
 Requires: device-mapper-multipath
 Requires: e2fsprogs
 Requires: fence-agents-all
