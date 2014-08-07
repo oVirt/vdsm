@@ -173,14 +173,14 @@ Requires: fence-agents-all
 Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
-Requires: qemu-kvm
-Requires: qemu-img
+Requires: qemu-kvm-rhev
+Requires: qemu-img-rhev
 Requires: selinux-policy-targeted
 %else
 Requires: python
-# Update the qemu-kvm requires when block_stream will be included
-Requires: qemu-kvm >= 2:0.12.1.2-2.295.el6_3.4
-Requires: qemu-img >= 2:0.12.1.2-2.295.el6_3.4
+# Update the qemu-kvm-rhev requires when block_stream will be included
+Requires: qemu-kvm-rhev >= 2:0.12.1.2-2.415.el6_5.3
+Requires: qemu-img-rhev >= 2:0.12.1.2-2.415.el6_5.3
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 Requires: fence-agents
