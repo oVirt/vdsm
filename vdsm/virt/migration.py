@@ -90,7 +90,7 @@ class SourceThread(threading.Thread):
         # This assumes xmlrpc
         hostPort = vdscli.cannonizeHostPort(
             self._dst,
-            config.getint('addresses', 'management_port'))
+            config.get('addresses', 'management_port'))
         self.remoteHost, _ = hostPort.rsplit(':', 1)
 
         if config.getboolean('vars', 'ssl'):
