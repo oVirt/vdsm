@@ -1927,7 +1927,6 @@ if __name__ == '__main__':
                     # 'want to reserve with the machine'
                     'o   acpiEnable : If present will remove the default '
                     '-no-acpi switch',
-                    'o   qgaEnable : use qemu-ga as guest agent',
                     'o   spiceSecureChannels : comma-separated list of '
                     'spice channel that will be encrypted',
                     'o   spiceMonitors : number of emulated screen heads',

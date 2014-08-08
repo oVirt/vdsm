@@ -2713,17 +2713,10 @@ class Vm(object):
 
         domxml.appendNumaTune()
 
-        if utils.tobool(self.conf.get('vmchannel', 'true')):
-            domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
-                                      _VMCHANNEL_DEVICE_NAME)
-        else:
-            self.log.warning('detected disabled vmchannel.'
-                             ' This should be done ONLY for debug purposes'
-                             ' and never in production environments')
-        if utils.tobool(self.conf.get('qgaEnable', 'true')):
-            domxml._appendAgentDevice(
-                self._qemuguestSocketFile.decode('utf-8'),
-                _QEMU_GA_DEVICE_NAME)
+        domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
+                                  _VMCHANNEL_DEVICE_NAME)
+        domxml._appendAgentDevice(self._qemuguestSocketFile.decode('utf-8'),
+                                  _QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
 
         if self.arch == caps.Architecture.PPC64:
@@ -2869,11 +2862,10 @@ class Vm(object):
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
         self._initVmStats()
-        if utils.tobool(self.conf.get('vmchannel', 'true')):
-            try:
-                self.guestAgent.connect()
-            except Exception:
-                self.log.exception("Failed to connect to guest agent channel")
+        try:
+            self.guestAgent.connect()
+        except Exception:
+            self.log.exception("Failed to connect to guest agent channel")
 
         self._guestCpuRunning = self._isDomainRunning()
         if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
@@ -4051,9 +4043,7 @@ class Vm(object):
             snap.appendChild(_memorySnapshot(memoryVolPath))
         else:
             snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
-
-            if utils.tobool(self.conf.get('qgaEnable', 'true')):
-                snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
+            snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
 
         snapxml = snap.toprettyxml()
         self.log.debug(snapxml)
