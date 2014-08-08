@@ -215,7 +215,7 @@ class UpdatePortMirroringError(Exception):
     pass
 
 
-VolumeChainEntry = namedtuple('VolumeChainEntry', ['uuid'])
+VolumeChainEntry = namedtuple('VolumeChainEntry', ['uuid', 'path'])
 
 
 class VmStatsThread(sampling.AdvancedStatsThread):
@@ -5785,7 +5785,7 @@ class Vm(object):
                 break
             sourceAttr = ('file', 'dev')[drive.blockDev]
             path = sourceXML.getAttribute(sourceAttr)
-            entry = VolumeChainEntry(pathToVolID(drive, path))
+            entry = VolumeChainEntry(pathToVolID(drive, path), path)
             volChain.insert(0, entry)
             bsXML = findElement(diskXML, 'backingStore')
             if not bsXML:
@@ -5812,6 +5812,7 @@ class Vm(object):
             return
 
         volumes = [entry.uuid for entry in chain]
+        activePath = chain[-1].path
         self.log.debug("vdsm chain: %s, libvirt chain: %s", curVols, volumes)
 
         # Ask the storage to sync metadata according to the new chain
@@ -5829,9 +5830,13 @@ class Vm(object):
             # If the active layer changed:
             #  Update the disk path, volumeID, and volumeInfo members
             volInfo = getVolumeInfo(device, volumeID)
-            device['path'] = drive.path = volInfo['path']
+            # Path must be set with the value being used by libvirt
+            device['path'] = drive.path = volInfo['path'] = activePath
             device['volumeID'] = drive.volumeID = volumeID
             device['volumeInfo'] = drive.volumeInfo = volInfo
+            for v in device['volumeChain']:
+                if v['volumeID'] == volumeID:
+                    v['path'] = activePath
 
         # Remove any components of the volumeChain which are no longer present
         newChain = [x for x in device['volumeChain']
