@@ -92,6 +92,43 @@ def isVdsmImage(drive):
     return all(k in drive for k in required)
 
 
+def _has_channel(domXML, name):
+    domObj = _domParseStr(domXML)
+    devices = domObj.getElementsByTagName('devices')
+
+    if len(devices) == 1:
+        for chan in devices[0].getElementsByTagName('channel'):
+            targets = chan.getElementsByTagName('target')
+            if len(targets) == 1:
+                if targets[0].getAttribute('name') == name:
+                    return True
+
+    return False
+
+
+def _listDomains():
+    libvirtCon = libvirtconnection.get()
+    for domId in libvirtCon.listDomainsID():
+        try:
+            vm = libvirtCon.lookupByID(domId)
+            xmlDom = vm.XMLDesc(0)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                logging.exception("domId: %s is dead", domId)
+            else:
+                raise
+        else:
+            yield vm, xmlDom
+
+
+def getVDSMDomains():
+    """
+    Return a list of Domains created by VDSM.
+    """
+    return [vm for vm, xmlDom in _listDomains()
+            if _has_channel(xmlDom, _VMCHANNEL_DEVICE_NAME)]
+
+
 def _filterSnappableDiskDevices(diskDeviceXmlElements):
         return filter(lambda(x): not(x.getAttribute('device')) or
                       x.getAttribute('device') in ['disk', 'lun'],
@@ -2987,6 +3024,10 @@ class Vm(object):
         if utils.tobool(self.conf.get('vmchannel', 'true')):
             domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
                                       _VMCHANNEL_DEVICE_NAME)
+        else:
+            self.log.warning('detected disabled vmchannel.'
+                             ' This should be done ONLY for debug purposes'
+                             ' and never in production environments')
         if utils.tobool(self.conf.get('qgaEnable', 'true')):
             domxml._appendAgentDevice(
                 self._qemuguestSocketFile.decode('utf-8'),
