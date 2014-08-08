@@ -40,6 +40,7 @@ from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
+from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 
 
 class ConnectionMock:
@@ -53,10 +54,14 @@ class ConnectionMock:
         return []
 
 
-class FakeDomain:
-    def __init__(self, xml=''):
+class FakeDomain(object):
+    def __init__(self, xml='',  vmId=''):
         self._xml = xml
         self.devXml = ''
+        self._vmId = vmId
+
+    def UUIDString(self):
+        return self._vmId
 
     def info(self):
         raise libvirt.libvirtError(defmsg='')
@@ -884,13 +889,15 @@ class FakeGuestAgent(object):
 
 
 @contextmanager
-def FakeVM(params=None, devices=None, runCpu=False):
+def FakeVM(params=None, devices=None, runCpu=False,
+           arch=caps.Architecture.X86_64):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get', ConnectionMock)]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
             fake = vm.Vm(None, vmParams)
+            fake.arch = arch
             fake.guestAgent = FakeGuestAgent()
             fake.conf['devices'] = [] if devices is None else devices
             fake._guestCpuRunning = runCpu
@@ -1239,3 +1246,40 @@ class TestVmDevices(TestCaseBase):
                    {'type': 'graphics', 'device': devType}]
         with FakeVM(self.conf, devices) as fake:
             self.assertRaises(ValueError, fake.buildConfDevices)
+
+
+@expandPermutations
+class TestVmFunctions(TestCaseBase):
+
+    _CONFS = {
+        caps.Architecture.X86_64: CONF_TO_DOMXML_X86_64,
+        caps.Architecture.PPC64: CONF_TO_DOMXML_PPC64,
+        'novdsm': CONF_TO_DOMXML_NO_VDSM}
+
+    def _buildAllDomains(self, arch):
+        for conf, _ in self._CONFS[arch]:
+            with FakeVM(conf, arch=arch) as v:
+                domXml = v._buildCmdLine()
+                yield FakeDomain(domXml, vmId=v.id), domXml
+
+    def _getAllDomains(self, arch):
+        for conf, rawXml in self._CONFS[arch]:
+            domXml = rawXml % conf
+            yield FakeDomain(domXml, vmId=conf['vmId']), domXml
+
+    def _getAllDomainIds(self, arch):
+        return [conf['vmId'] for conf, _ in self._CONFS[arch]]
+
+    @permutations([[caps.Architecture.X86_64], [caps.Architecture.PPC64]])
+    def testGetVDSMDomains(self, arch):
+        with MonkeyPatchScope([(vm, '_listDomains',
+                                lambda: self._buildAllDomains(arch))]):
+            self.assertEqual([v.UUIDString() for v in vm.getVDSMDomains()],
+                             self._getAllDomainIds(arch))
+
+    # VDSM (of course) builds correct config, so we need static examples
+    # of incorrect/not-compliant data
+    def testSkipNotVDSMDomains(self):
+        with MonkeyPatchScope([(vm, '_listDomains',
+                                lambda: self._getAllDomains('novdsm'))]):
+            self.assertFalse(vm.getVDSMDomains())

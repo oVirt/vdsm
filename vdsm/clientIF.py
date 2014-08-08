@@ -22,7 +22,6 @@ import os
 import os.path
 import time
 import threading
-from xml.dom import minidom
 import uuid
 
 import alignmentScan
@@ -45,7 +44,7 @@ from virt import migration
 from virt import sampling
 from virt import vm
 from virt import vmstatus
-from virt.vm import Vm
+from virt.vm import Vm, getVDSMDomains
 from virt.vmchannels import Listener
 try:
     import gluster.api as gapi
@@ -420,9 +419,8 @@ class clientIF(object):
                       caps.CpuTopology().cores())
             migration.SourceThread.setMaxOutgoingMigrations(mog)
 
-            vdsmVms = self._getVDSMVms()
             # Recover
-            for v in vdsmVms:
+            for v in getVDSMDomains():
                 vmId = v.UUIDString()
                 if not self._recoverVm(vmId):
                     # RH qemu proc without recovery
@@ -476,55 +474,6 @@ class clientIF(object):
         except:
             self.log.error("Vm's recovery failed", exc_info=True)
             raise
-
-    def isVDSMVm(self, vm):
-        """
-        Return True if vm seems as if it was created by vdsm.
-        """
-        try:
-            vmdom = minidom.parseString(vm.XMLDesc(0))
-            sysinfo = vmdom.getElementsByTagName("sysinfo")[0]
-        except libvirt.libvirtError as e:
-            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                self.log.error("domId: %s is dead", vm.UUIDString())
-            else:
-                raise
-        except IndexError:
-            pass  # no sysinfo in xml
-        else:
-            systype = sysinfo.getAttribute("type")
-            if systype == "smbios":
-                entries = sysinfo.getElementsByTagName("entry")
-                for entry in entries:
-                    if entry.getAttribute("name") == "product":
-                        prod = entry.firstChild.data
-                        if prod in (caps.OSName.RHEL, caps.OSName.OVIRT,
-                                    caps.OSName.RHEVH, caps.OSName.FEDORA,
-                                    caps.OSName.DEBIAN):
-                            return True
-        return False
-
-    def _getVDSMVms(self):
-        """
-        Return a list of vdsm created VM's.
-        """
-        libvirtCon = libvirtconnection.get()
-        domIds = libvirtCon.listDomainsID()
-        vms = []
-        for domId in domIds:
-            try:
-                vm = libvirtCon.lookupByID(domId)
-            except libvirt.libvirtError as e:
-                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    self.log.error("domId: %s is dead", domId, exc_info=True)
-                else:
-                    self.log.error("Can't look for domId: %s, code: %s",
-                                   domId, e.get_error_code(), exc_info=True)
-                    raise
-            else:
-                if self.isVDSMVm(vm):
-                    vms.append(vm)
-        return vms
 
     def _getVDSMVmsFromRecovery(self):
         vms = []
