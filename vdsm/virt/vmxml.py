@@ -29,6 +29,20 @@ from vdsm import utils
 import caps
 
 
+def has_channel(domXML, name):
+    domObj = xml.dom.minidom.parseString(domXML)
+    devices = domObj.getElementsByTagName('devices')
+
+    if len(devices) == 1:
+        for chan in devices[0].getElementsByTagName('channel'):
+            targets = chan.getElementsByTagName('target')
+            if len(targets) == 1:
+                if targets[0].getAttribute('name') == name:
+                    return True
+
+    return False
+
+
 def all_devices(domXML):
     domObj = xml.dom.minidom.parseString(domXML)
     devices = domObj.childNodes[0].getElementsByTagName('devices')[0]
