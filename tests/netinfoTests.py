@@ -72,6 +72,7 @@ class TestNetinfo(TestCaseBase):
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
     @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
+    @MonkeyPatch(netinfo, '_getBondingOptions', lambda x: {})
     def testGetNonExistantBridgeInfo(self):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
