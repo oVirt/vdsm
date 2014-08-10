@@ -46,9 +46,6 @@ class Sanlock(ModuleConfigure):
         """
         Configure sanlock process groups
         """
-        if os.getuid() != 0:
-            raise NotRootError()
-
         rc, out, err = utils.execCmd(
             (
                 '/usr/sbin/usermod',
