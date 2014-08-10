@@ -159,7 +159,7 @@ class ConfigFile(object):
 
     def _writeEntries(self, f, oldentries):
         f.write(self._start())
-        for key, val in self._entries.iteritems():
+        for key, val in sorted(self._entries.items()):
             if key not in oldentries:
                 f.write("{k}={v}\n".format(k=key, v=val))
         f.write(self._end())
