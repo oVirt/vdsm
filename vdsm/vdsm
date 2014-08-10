@@ -39,7 +39,7 @@ from vdsm import profile
 from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 
-import zombiereaper
+import vdsm.infra.zombiereaper as zombiereaper
 import dsaversion
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'

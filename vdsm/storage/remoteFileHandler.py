@@ -45,7 +45,7 @@ else:
 
 import misc
 import fileUtils
-import zombiereaper
+import vdsm.infra.zombiereaper as zombiereaper
 from vdsm.compat import pickle
 from vdsm import utils
 

@@ -133,6 +133,7 @@ AC_SUBST([vdsmhooksdir], ['${vdsmexecdir}/hooks'])
 AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
 AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pythondir}/vdsm'])
+AC_SUBST([vdsminfradir], ['${vdsmpylibdir}/infra'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 AC_SUBST([configuratorsdir], ['${vdsmtooldir}/configurators'])
 AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
@@ -322,7 +323,8 @@ AC_OUTPUT([
 	lib/vdsm/tool/Makefile
 	lib/vdsm/tool/configurators/Makefile
 	lib/yajsonrpc/Makefile
-	lib/zombiereaper/Makefile
+	lib/vdsm/infra/Makefile
+	lib/vdsm/infra/zombiereaper/Makefile
 	tests/Makefile
 	tests/functional/Makefile
 	vds_bootstrap/Makefile

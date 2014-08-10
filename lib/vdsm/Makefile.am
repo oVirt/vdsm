@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=netlink tool
+SUBDIRS=netlink tool infra
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \

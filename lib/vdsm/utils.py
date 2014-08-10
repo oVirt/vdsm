@@ -48,7 +48,7 @@ import signal
 import stat
 import threading
 import time
-import zombiereaper
+import vdsm.infra.zombiereaper as zombiereaper
 
 from cpopen import CPopen
 from . import constants

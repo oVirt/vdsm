@@ -130,7 +130,7 @@ Requires: python-argparse
 Requires: python-cpopen >= 1.3
 Requires: python-ioprocess >= 0.12
 Requires: python-pthreading >= 0.1.3-3
-Requires: %{name}-python-zombiereaper = %{version}-%{release}
+Requires: %{name}-infra = %{version}-%{release}
 Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
@@ -320,14 +320,15 @@ Requires:       python >= 2.6
 %description yajsonrpc
 A JSON RPC server and client implementation.
 
-%package python-zombiereaper
-Summary:        Collects zombie processes automatically
+%package infra
+Summary:        Utilities and libraries for vdsm
 BuildArch:      noarch
 
 Requires:       python >= 2.6
+Obsoletes:      python-zombiereaper
 
-%description python-zombiereaper
-Collects zombie processes automatically so you don't have to
+%description infra
+Utilities and libraries for vdsm.
 
 %package bootstrap
 Summary:        VDSM bootstrapping package
@@ -357,7 +358,7 @@ Manager.
 
 %package python
 Summary:        VDSM python libraries
-Requires:       %{name}-python-zombiereaper = %{version}-%{release}
+Requires:       %{name}-infra = %{version}-%{release}
 Requires:       python-cpopen >= 1.2.3-5
 Requires:       m2crypto
 Requires:       python-ioprocess >= 0.12
@@ -1508,8 +1509,9 @@ exit 0
 %{python_sitelib}/yajsonrpc/stomp.py*
 %{python_sitelib}/yajsonrpc/stompReactor.py*
 
-%files python-zombiereaper
-%{python_sitelib}/zombiereaper/__init__.py*
+%files infra
+%{python_sitelib}/%{vdsm_name}/infra/zombiereaper/__init__.py*
+%{python_sitelib}/%{vdsm_name}/infra/__init__.py*
 
 %files bootstrap
 %defattr(-, root, root, -)

@@ -33,7 +33,7 @@ warnings.simplefilter("always")
 logging.captureWarnings(True)
 
 
-import zombiereaper
+import vdsm.infra.zombiereaper as zombiereaper
 zombiereaper.registerSignalHandler()
 
 from vdsm import utils
