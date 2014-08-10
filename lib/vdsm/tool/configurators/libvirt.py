@@ -61,9 +61,6 @@ class Libvirt(ModuleConfigure):
         return ["vdsmd", "supervdsmd", "libvirtd"]
 
     def configure(self):
-        if os.getuid() != 0:
-            raise NotRootError()
-
         self._sysvToUpstart()
 
         if utils.isOvirtNode():

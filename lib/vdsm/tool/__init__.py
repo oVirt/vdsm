@@ -16,6 +16,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import functools
+import os
 
 
 class expose(object):
@@ -25,6 +27,15 @@ class expose(object):
     def __call__(self, fun):
         fun._vdsm_tool = {"name": self.name}
         return fun
+
+
+def requiresRoot(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        if os.getuid() != 0:
+            raise NotRootError()
+        func(*args, **kwargs)
+    return wrapper
 
 
 class UsageError(RuntimeError):

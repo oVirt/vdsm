@@ -22,7 +22,11 @@ import argparse
 import sys
 import traceback
 
-from . import service, expose, UsageError
+from . import \
+    service, \
+    expose, \
+    UsageError, \
+    requiresRoot
 from .configurators import \
     certificates, \
     CONFIGURED, \
@@ -41,6 +45,7 @@ _CONFIGURATORS = dict((m.getName(), m) for m in (
 
 
 @expose("configure")
+@requiresRoot
 def configure(*args):
     """
     configure [-h|...]
@@ -87,6 +92,7 @@ def configure(*args):
 
 
 @expose("is-configured")
+@requiresRoot
 def isconfigured(*args):
     """
     is-configured [-h|...]
@@ -122,6 +128,7 @@ afterwards automatically to load the new configuration.)
 
 
 @expose("validate-config")
+@requiresRoot
 def validate_config(*args):
     """
     validate-config [-h|...]
@@ -144,6 +151,7 @@ def validate_config(*args):
 
 
 @expose("remove-config")
+@requiresRoot
 def remove_config(*args):
     """
     Remove vdsm configuration from conf files
