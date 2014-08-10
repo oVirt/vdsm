@@ -19,10 +19,12 @@
 #
 
 import os
+import sys
 from tempfile import mkstemp
 from contextlib import contextmanager
 
 from testlib import VdsmTestCase as TestCaseBase
+from monkeypatch import MonkeyPatch
 
 import vdsClient
 
@@ -39,21 +41,67 @@ def configFile(args):
         os.unlink(path)
 
 
+@contextmanager
+def passFile(password):
+    fd, path = mkstemp()
+    with os.fdopen(fd, "w") as f:
+        f.write(password)
+
+    try:
+        yield path
+    finally:
+        os.unlink(path)
+
+
 class fakeXMLRPCServer(object):
+
+    def __init__(self, testCase):
+        self.testCase = testCase
+
     def create(self, params):
         return params
+
+    def discoverSendTargets(self, params):
+        return {'status':
+                {'code': 1, 'message': params}}
+
+    def connectStorageServer(self, serverType, spUUID, conList):
+        return {'status':
+                {'code': 1, 'message': conList}}
+
+    def setVmTicket(self, vmId, otp64, secs, connAct, params):
+        return {'status':
+                {'code': 0, 'message': otp64}}
+
+    def validateStorageServerConnection(self, domainType, spUUID,
+                                        connectionParams):
+        return {'status':
+                {'code': 1, 'message': connectionParams}}
+
+    def disconnectStorageServer(self, serverType, spUUID, conList):
+        return {'status':
+                {'code': 1, 'message': conList}}
+
+    def desktopLogin(self, vmId, domain, user, password):
+        self.testCase.assertEquals(password, 'password')
+        return {'status': {'code': 0, 'message': ''}}
 
 
 def fakeExecAndExit(response, parameterName=None):
     return response
 
 
+def createFakeService(testCase):
+    serv = vdsClient.service()
+    fakeServer = fakeXMLRPCServer(testCase)
+    serv.s = fakeServer
+    serv.ExecAndExit = fakeExecAndExit
+    return serv
+
+
 class vdsClientTest(TestCaseBase):
     def testCreateArgumentParsing(self):
-        serv = vdsClient.service()
-        fakeServer = fakeXMLRPCServer()
-        serv.s = fakeServer
-        serv.ExecAndExit = fakeExecAndExit
+        serv = createFakeService(self)
 
         plainArgs = ['vmId=209b27e4-aed3-11e1-a547-00247edb4743', 'vmType=kvm',
                      'kvmEnable=true', 'memSize=1024',
@@ -132,6 +180,347 @@ class vdsClientTest(TestCaseBase):
         allArgs[-2] = 'numaTune={mode:strict,nodeset:1}'
         r4 = serv.do_create(['/dev/null'] + allArgs)
         self.assertNotEquals(r4, expectResult)
+
+    def testFileDiscoverST(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        with passFile(password) as filename:
+            args = ['localhost:7777', 'username', '-', 'auth=file:' + filename]
+            result = serv.discoverST(args)
+            self.assertEqual(result[1]['password'], password)
+
+    @MonkeyPatch(os, 'environ', {'my_password': 'password'})
+    def testEnvDiscoverST(self):
+        serv = createFakeService(self)
+
+        args = ['localhost:7777', 'username', '-', 'auth=env:my_password']
+        result = serv.discoverST(args)
+        self.assertEqual(result[1]['password'], 'password')
+
+    def testOldDiscoverST(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = ['localhost:7777', 'username', password]
+        result = serv.discoverST(args)
+        self.assertEqual(result[1]['password'], password)
+
+    def testPassDiscoverST(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = ['localhost:7777', 'username', '-', 'auth=pass:' + password]
+        result = serv.discoverST(args)
+        self.assertEqual(result[1]['password'], password)
+
+    def testOldDiscoverSTExtraParams(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = ['localhost:7777', 'username', password, 'foo=bar']
+        result = serv.discoverST(args)
+        self.assertEqual(result[1]['password'], password)
+
+    def testFileConnectStorageServer(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        with passFile(password) as filename:
+            args = [1, '00000000-0000-0000-0000-000000000000',
+                    ('id=null,connection=192.168.1.10:/export/data,'
+                     'portal=null,port=2049,iqn=null,user=username,'
+                     'auth=file:') + filename]
+            result = serv.connectStorageServer(args)
+            self.assertEqual(result[1][0]['password'], password)
+
+    def testOldConnectStorageServer(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'password=') + password]
+        result = serv.connectStorageServer(args)
+        self.assertEqual(result[1][0]['password'], password)
+
+    @MonkeyPatch(os, 'environ', {'my_password': 'password'})
+    def testEnvConnectStorageServer(self):
+        serv = createFakeService(self)
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'auth=env:my_password')]
+        result = serv.connectStorageServer(args)
+        self.assertEqual(result[1][0]['password'], 'password')
+
+    def testPassConnectStorageServer(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'auth=pass:') + password]
+        result = serv.connectStorageServer(args)
+        self.assertEqual(result[1][0]['password'], password)
+
+    def testFileSetVmTicket(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        with passFile(password) as filename:
+            args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390',
+                    '-', '120', 'keep', '--', 'auth=file:' + filename]
+            result = serv.do_setVmTicket(args)
+            self.assertEqual(result['status']['message'], password)
+
+    @MonkeyPatch(os, 'environ', {'my_password': 'password'})
+    def testEnvSetVmTicket(self):
+        serv = createFakeService(self)
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390',
+                '120', 'keep', '--', 'auth=env:my_password']
+        result = serv.do_setVmTicket(args)
+        self.assertEqual(result['status']['message'], 'password')
+
+    def testOldSetVmTicket(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', password, '120',
+                'keep']
+        result = serv.do_setVmTicket(args)
+        self.assertEqual(result['status']['message'], password)
+
+    def testOldSetVmTicketExtraParams(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', password, '120',
+                'keep', '--', 'foo=bar']
+        result = serv.do_setVmTicket(args)
+        self.assertEqual(result['status']['message'], password)
+
+    def testPassSetVmTicket(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390',
+                '-', '120', 'keep', '--', 'auth=pass:' + password]
+        result = serv.do_setVmTicket(args)
+        self.assertEqual(result['status']['message'], password)
+
+    def testFailingFileSetVmTicket(self):
+        serv = createFakeService(self)
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'password', '120',
+                'keep', '--', 'auth=file:/i/do/not/exist']
+        with self.assertRaises(IOError):
+            serv.do_setVmTicket(args)
+
+    def testFailingNoSuchMethodSetVmTicket(self):
+        serv = createFakeService(self)
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'password', '120',
+                'keep', '--', 'auth=foo:bar']
+        with self.assertRaises(RuntimeError):
+            serv.do_setVmTicket(args)
+
+    def testFailingNoColonSetVmTicket(self):
+        serv = createFakeService(self)
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'password', '120',
+                'keep', '--', 'auth=foobar']
+        with self.assertRaises(RuntimeError):
+            serv.do_setVmTicket(args)
+
+    @MonkeyPatch(os, 'environ', {})
+    def testFailingEnvSetVmTicket(self):
+        serv = createFakeService(self)
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'password', '120',
+                'keep', '--', 'auth=env:NOVAR']
+        with self.assertRaises(RuntimeError):
+            serv.do_setVmTicket(args)
+
+    def testFileValidateStorageServerConnection(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        with passFile(password) as filename:
+            args = [1, '00000000-0000-0000-0000-000000000000',
+                    ('id=null,connection=192.168.1.10:/export/data,'
+                     'portal=null,port=2049,iqn=null,user=username,'
+                     'auth=file:') + filename]
+            result = serv.validateStorageServerConnection(args)
+            self.assertEqual(result[1][0]['password'], password)
+
+    @MonkeyPatch(os, 'environ', {'my_password': 'password'})
+    def testEnvValidateStorageServerConnection(self):
+        serv = createFakeService(self)
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'auth=env:my_password')]
+        result = serv.validateStorageServerConnection(args)
+        self.assertEqual(result[1][0]['password'], 'password')
+
+    def testOldValidateStorageServerConnection(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'password=') + password]
+        result = serv.validateStorageServerConnection(args)
+        self.assertEqual(result[1][0]['password'], password)
+
+    def testPassAndOldValidateStorageServerConnection(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'password=wrong_password,auth=pass:' + password)]
+        result = serv.validateStorageServerConnection(args)
+        self.assertEqual(result[1][0]['password'], password)
+
+    def testPassValidateStorageServerConnection(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'auth=pass:' + password)]
+        result = serv.validateStorageServerConnection(args)
+        self.assertEqual(result[1][0]['password'], password)
+
+    def testFileDisconnectStorageServer(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        with passFile(password) as filename:
+            args = [1, '00000000-0000-0000-0000-000000000000',
+                    ('id=null,connection=192.168.1.10:/export/data,'
+                     'portal=null,port=2049,iqn=null,user=username,'
+                     'auth=file:') + filename]
+            result = serv.disconnectStorageServer(args)
+            self.assertEqual(result[1][0]['password'], password)
+
+    @MonkeyPatch(os, 'environ', {'my_password': 'password'})
+    def testEnvDisconnectStorageServer(self):
+        serv = createFakeService(self)
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'auth=env:my_password')]
+        result = serv.disconnectStorageServer(args)
+        self.assertEqual(result[1][0]['password'], 'password')
+
+    def testOldDisconnectStorageServer(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'password=') + password]
+        result = serv.disconnectStorageServer(args)
+        self.assertEqual(result[1][0]['password'], password)
+
+    def testPassDisconnectStorageServer(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        args = [1, '00000000-0000-0000-0000-000000000000',
+                ('id=null,connection=192.168.1.10:/export/data,'
+                 'portal=null,port=2049,iqn=null,user=username,'
+                 'auth=pass:') + password]
+        result = serv.disconnectStorageServer(args)
+        self.assertEqual(result[1][0]['password'], password)
+
+    @MonkeyPatch(sys, 'exit', lambda *y, **x: FakeExit())
+    def testFileDesktopLogin(self):
+        serv = createFakeService(self)
+        password = 'password'
+
+        with passFile(password) as filename:
+            args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'internal',
+                    'username', '-', 'auth=file:' + filename]
+            serv.desktopLogin(args)
+
+    @MonkeyPatch(os, 'environ', {'my_password': 'password'})
+    @MonkeyPatch(sys, 'exit', lambda *y, **x: FakeExit())
+    def testEnvDesktopLogin(self):
+        serv = createFakeService(self)
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'internal',
+                'username', '-', 'auth=env:my_password']
+        serv.desktopLogin(args)
+
+    @MonkeyPatch(sys, 'exit', lambda *y, **x: FakeExit())
+    def testOldDesktopLogin(self):
+        serv = createFakeService(self)
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'internal',
+                'username', 'password']
+        serv.desktopLogin(args)
+
+    @MonkeyPatch(sys, 'exit', lambda *y, **x: FakeExit())
+    def testOldDesktopLoginExtraParams(self):
+        serv = createFakeService(self)
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'internal',
+                'username', 'password', 'foo=bar']
+        serv.desktopLogin(args)
+
+    @MonkeyPatch(sys, 'exit', lambda *y, **x: FakeExit())
+    def testPassDesktopLogin(self):
+        serv = createFakeService(self)
+
+        args = ['25ec8c1f-38fa-404c-a59a-84eba1f0a390', 'internal',
+                'username', '-', 'auth=pass:password']
+        serv.desktopLogin(args)
+
+    def testPlainParseArgs(self):
+        fixture = "key1=val1,key2=val2,key3=val3"
+        args = vdsClient.parseArgs(fixture)
+        self.assertEquals(args, {'key1': 'val1', 'key2': 'val2',
+                                 'key3': 'val3'})
+
+    def testQuotedParseArgs(self):
+        fixture = "key1=\"val1\",'key2'=val2,key3='val3'"
+        args = vdsClient.parseArgs(fixture)
+        self.assertEquals(args, {'key1': 'val1', 'key2': 'val2',
+                                 'key3': 'val3'})
+
+    def testQuotedCommasParseArgs(self):
+        fixture = "key1=val1,\"k,e,y,2\"=val2,key3='v,a,l,3'"
+        args = vdsClient.parseArgs(fixture)
+        self.assertEquals(args, {'key1': 'val1', 'k,e,y,2': 'val2',
+                                 'key3': 'v,a,l,3'})
+
+    def testEscapedQuotesParseArgs(self):
+        fixture = "k\\\'ey1=v\\\"al1,key2=\"va\\\"l2\",key3=val3"
+        args = vdsClient.parseArgs(fixture)
+        self.assertEquals(args, {'k\'ey1': 'v"al1', 'key2': 'va"l2',
+                                 'key3': 'val3'})
+
+    def testEscapedCommasParseArgs(self):
+        fixture = "key1=val1,key2=v\\,al2,key3=val3"
+        args = vdsClient.parseArgs(fixture)
+        self.assertEquals(args, {'key1': 'val1', 'key2': 'v,al2',
+                                 'key3': 'val3'})
+
+
+class FakeExit():
+    def exit(self, code):
+        pass
 
 
 class _FakePopen():

@@ -22,8 +22,11 @@ import ast
 import getopt
 import traceback
 import xmlrpclib
+import os
 import re
+import shlex
 import socket
+import string
 import pprint as pp
 
 from vdsm import utils, vdscli
@@ -86,6 +89,11 @@ def usage(cmd, full=True):
     print "-s [--truststore path]\tConnect to server with SSL."
     print "-o, --oneliner\tShow the key-val information in one line."
     print "\tIf truststore path is not specified, use defaults."
+    print
+    print "Password can be provided as command line argument, path to"
+    print "file with password or environment variable by providing"
+    print "auth=file:path or auth=env:name or auth=pass:password"
+
     print "\nCommands"
     verbs = cmd.keys()
     verbs.sort()
@@ -124,6 +132,49 @@ def printDict(dict, pretty=True):
 def printStats(list):
     for conf in list:
         printConf(conf)
+
+
+def parseArgs(args):
+    lexer = shlex.shlex(args, posix=True)
+    lexer.wordchars = filter(lambda x: x not in list('=,\\"\''),
+                             string.printable)
+    results = list(lexer)
+    args = dict(zip(results[0::4], results[2::4]))
+    return args
+
+
+def parseConList(args):
+    args = parseArgs(args)
+    if 'auth' in args:
+        args['password'] = getPassword(args['auth'])
+        del args['auth']
+    return args
+
+
+def getAuthFromArgs(args, default=None):
+    if 'auth' in args:
+        return getPassword(args['auth'])
+    return default
+
+
+def getPassword(string):
+    ret = None
+    try:
+        (method, value) = string.split(':', 1)
+    except ValueError:
+        raise RuntimeError('auth does not contain valid format: method:value')
+    if method == 'file':
+        with open(value) as f:
+            ret = f.readline()
+    elif method == 'env':
+        ret = os.environ.get(value)
+    elif method == 'pass':
+        ret = value
+    else:
+        raise RuntimeError("unknown method %s for parameter 'auth'" % method)
+    if ret is None:
+        raise RuntimeError("Missing password")
+    return ret
 
 
 class service:
@@ -369,6 +420,11 @@ class service:
         sys.exit(response['status']['code'])
 
     def do_setVmTicket(self, args):
+        extra_args = []
+        if '--' in args:
+            extra_args = args[args.index('--') + 1:]
+            args = args[:args.index('--')]
+
         if len(args) == 3:
             vmId, otp64, secs = args[:3]
             connAct = 'disconnect'
@@ -379,6 +435,10 @@ class service:
 
         if (len(args) > 4):
             params = self._parseDriveSpec(args[4])
+
+        if extra_args:
+            parsed_args = parseArgs(extra_args[0])
+            otp64 = getAuthFromArgs(parsed_args, otp64)
 
         return self.ExecAndExit(self.s.setVmTicket(vmId, otp64, secs, connAct,
                                 params))
@@ -462,7 +522,10 @@ class service:
         return self.ExecAndExit(self.s.getAllVmStats())
 
     def desktopLogin(self, args):
-        vmId, domain, user, password = tuple(args)
+        vmId, domain, user, password = tuple(args[:4])
+        if len(args) > 4:
+            extra_args = parseArgs(args[4])
+            password = getAuthFromArgs(extra_args, password)
         response = self.s.desktopLogin(vmId, domain, user, password)
         print response['status']['message']
         sys.exit(response['status']['code'])
@@ -707,6 +770,9 @@ class service:
         else:
             username = args[1]
             password = args[2]
+            if len(args) > 3:
+                extra_args = parseArgs(args[3])
+                password = getAuthFromArgs(extra_args, password)
 
         con = dict(id="", connection=ip, port=port, iqn="", portal="",
                    user=username, password=password)
@@ -730,13 +796,7 @@ class service:
     def connectStorageServer(self, args):
         serverType = int(args[0])
         spUUID = args[1]
-        params = args[2].split(',')
-        conList = []
-        con = {}
-        for item in params:
-            key, value = item.split('=')
-            con[key] = value
-        conList.append(con)
+        conList = [parseConList(args[2])]
         res = self.s.connectStorageServer(serverType, spUUID, conList)
         if res['status']['code']:
             return res['status']['code'], res['status']['message']
@@ -745,13 +805,7 @@ class service:
     def validateStorageServerConnection(self, args):
         serverType = int(args[0])
         spUUID = args[1]
-        params = args[2].split(',')
-        conList = []
-        con = {}
-        for item in params:
-            key, value = item.split('=')
-            con[key] = value
-        conList.append(con)
+        conList = [parseConList(args[2])]
         res = self.s.validateStorageServerConnection(serverType,
                                                      spUUID, conList)
         if res['status']['code']:
@@ -764,13 +818,7 @@ class service:
     def disconnectStorageServer(self, args):
         serverType = int(args[0])
         spUUID = args[1]
-        params = args[2].split(',')
-        conList = []
-        con = {}
-        for item in params:
-            key, value = item.split('=')
-            con[key] = value
-        conList.append(con)
+        conList = [parseConList(args[2])]
         res = self.s.disconnectStorageServer(serverType, spUUID, conList)
         if res['status']['code']:
             return res['status']['code'], res['status']['message']
@@ -2026,13 +2074,17 @@ if __name__ == '__main__':
                    )),
         'setVmTicket': (serv.do_setVmTicket,
                         ('<vmId> <password> <sec> [disconnect|keep|fail], '
-                            '[params={}]',
+                            '[params={}] [-- auth=]',
                          'Set the password to the vm display for the next '
                          '<sec> seconds.',
                          'Optional argument instructs spice regarding '
                          'currently-connected client.',
                          'Optional additional parameters in dictionary format,'
-                         ' name:value,name:value'
+                         ' name:value,name:value',
+                         'These parameters can only be passed after --:',
+                         'auth=',
+                         'If auth argument is provided, password will be '
+                         'ignored (yet has to be specified, ie -)'
                          )),
         'migrate': (serv.do_migrate,
                     ('vmId=<id> method=<offline|online> src=<host[:port]> '
@@ -2114,9 +2166,11 @@ if __name__ == '__main__':
                                  ' devlist (list of dev GUIDs)'
                                  )),
         'discoverST': (serv.discoverST,
-                       ('ip[:port] [username password]',
+                       ('ip[:port] [[username password] [auth=]]',
                         'Discover the available iSCSI targetnames on a '
-                        'specified iSCSI portal'
+                        'specified iSCSI portal',
+                        'If auth argument is provided, password will be '
+                        'ignored (yet has to be specified, ie -)'
                         )),
         'cleanupUnusedConnections': (serv.cleanupUnusedConnections,
                                      ('',
@@ -2126,25 +2180,34 @@ if __name__ == '__main__':
         'connectStorageServer': (serv.connectStorageServer,
                                  ('<server type> <spUUID> <conList (id=...,'
                                   'connection=server:/export_path,portal=...,'
-                                  'port=...,iqn=...,user=...,password=...'
+                                  'port=...,iqn=...,user=...,'
+                                  'password|auth=...'
                                   '[,initiatorName=...])>',
                                   'Connect to a storage low level entity '
-                                  '(server)'
+                                  '(server)',
+                                  'password= can be omitted if auth= is '
+                                  'specified, if both specified, auth= takes '
+                                  'precedence.'
                                   )),
         'validateStorageServerConnection':
         (serv.validateStorageServerConnection,
          ('<server type> <spUUID> <conList (id=...,'
           'connection=server:/export_path,portal=...,port=...,iqn=...,'
-          'user=...,password=...[,initiatorName=...])>',
-          'Validate that we can connect to a storage server'
+          'user=...,password|auth=...[,initiatorName=...])>',
+          'Validate that we can connect to a storage server',
+          'password= can be omitted if auth= is specified, if both specified, '
+          'auth= takes precedence.'
           )),
         'disconnectStorageServer': (serv.disconnectStorageServer,
                                     ('<server type> <spUUID> <conList (id=...,'
                                      'connection=server:/export_path,'
                                      'portal=...,port=...,iqn=...,user=...,'
-                                     'password=...[,initiatorName=...])>',
+                                     'password|auth=...[,initiatorName=...])>',
                                      'Disconnect from a storage low level '
-                                     'entity (server)'
+                                     'entity (server)',
+                                     'password= can be omitted if auth= is '
+                                     'specified, if both specified, auth= '
+                                     'takes precedence.'
                                      )),
         'spmStart': (serv.spmStart,
                      ('<spUUID> <prevID> <prevLVER> <recoveryMode> '
@@ -2490,9 +2553,11 @@ if __name__ == '__main__':
                             'ancestor chain'
                             )),
         'desktopLogin': (serv.desktopLogin,
-                         ('<vmId> <domain> <user> <password>',
+                         ('<vmId> <domain> <user> <password> [auth=]',
                           'Login to vmId desktop using the supplied '
-                          'credentials'
+                          'credentials',
+                          'If auth argument is provided, password will be '
+                          'ignored (yet has to be specified, ie -)'
                           )),
         'desktopLogoff': (serv.desktopLogoff,
                           ('<vmId> <force>',
