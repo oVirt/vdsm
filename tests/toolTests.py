@@ -350,6 +350,25 @@ class ConfigFileTests(TestCase):
                                        "key3=val3\n"
                                        "# end conf-3.4.4\n")
 
+    def testSort(self):
+        self._writeConf("")
+        with ConfigFile(self.tname,
+                        version='3.4.4',
+                        sectionStart="# start conf",
+                        sectionEnd="# end conf") as conf:
+            conf.addEntry("key3", "val")
+            conf.addEntry("key2", "val")
+            conf.addEntry("key1", "val")
+            conf.addEntry("key4", "val")
+
+        with open(self.tname, 'r') as f:
+            self.assertEqual(f.read(), "# start conf-3.4.4\n"
+                                       "key1=val\n"
+                                       "key2=val\n"
+                                       "key3=val\n"
+                                       "key4=val\n"
+                                       "# end conf-3.4.4\n")
+
     def testPrefixAndPrepend(self):
         self._writeConf("/var/log/libvirt/libvirtd.log {\n"
                         "        weekly\n"
