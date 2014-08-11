@@ -20,6 +20,7 @@
 
 
 # stdlib imports
+from collections import namedtuple
 from contextlib import contextmanager
 from copy import deepcopy
 from xml.dom.minidom import parseString as _domParseStr
@@ -187,6 +188,9 @@ class SetLinkAndNetworkError(Exception):
 
 class UpdatePortMirroringError(Exception):
     pass
+
+
+VolumeChainEntry = namedtuple('VolumeChainEntry', ['uuid'])
 
 
 class VmStatsThread(AdvancedStatsThread):
@@ -5300,8 +5304,7 @@ class Vm(object):
             except LookupError:
                 newJob = {'jobID': jobID, 'disk': driveSpec,
                           'baseVolume': base, 'topVolume': top,
-                          'strategy': strategy, 'blockJobType': 'commit',
-                          'chain': self._driveGetActualVolumeChain(drive)}
+                          'strategy': strategy, 'blockJobType': 'commit'}
                 self.conf['_blockJobs'][jobID] = newJob
             else:
                 self.log.error("Cannot add block job %s.  A block job with id "
@@ -5410,7 +5413,8 @@ class Vm(object):
             return errCode['imageErr']
 
         # Check that libvirt exposes full volume chain information
-        if self._driveGetActualVolumeChain(drive) is None:
+        chain = self._driveGetActualVolumeChain(drive)
+        if chain is None:
             self.log.error("merge: libvirt does not support volume chain "
                            "monitoring.  Unable to perform live merge.")
             return errCode['mergeErr']
@@ -5516,7 +5520,8 @@ class Vm(object):
                 break
             sourceAttr = ('file', 'dev')[drive.blockDev]
             path = sourceXML.getAttribute(sourceAttr)
-            volChain.insert(0, pathToVolID(drive, path))
+            entry = VolumeChainEntry(pathToVolID(drive, path))
+            volChain.insert(0, entry)
             bsXML = findElement(diskXML, 'backingStore')
             if not bsXML:
                 break
@@ -5535,12 +5540,13 @@ class Vm(object):
             return
 
         curVols = [x['volumeID'] for x in drive.volumeChain]
-        volumes = self._driveGetActualVolumeChain(drive)
-        if volumes is None:
+        chain = self._driveGetActualVolumeChain(drive)
+        if chain is None:
             self.log.debug("Unable to determine volume chain. Skipping volume "
                            "chain synchronization for drive %s", drive.name)
             return
 
+        volumes = [entry.uuid for entry in chain]
         self.log.debug("vdsm chain: %s, libvirt chain: %s", curVols, volumes)
 
         # Ask the storage to sync metadata according to the new chain
