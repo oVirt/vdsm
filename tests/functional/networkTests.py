@@ -52,7 +52,7 @@ from network import errors
 
 NETWORK_NAME = 'test-network'
 VLAN_ID = '27'
-BONDING_NAME = 'bond0'
+BONDING_NAME = 'bond11'
 IP_ADDRESS = '240.0.0.1'
 IP_NETWORK = '240.0.0.0'
 IP_ADDRESS_IN_NETWORK = '240.0.0.50'
