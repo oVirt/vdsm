@@ -4663,6 +4663,9 @@ class Vm(object):
 
         return self.releaseVm()
 
+    def acpiShutdown(self):
+        self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
+
     def setBalloonTarget(self, target):
 
         if self._dom is None:

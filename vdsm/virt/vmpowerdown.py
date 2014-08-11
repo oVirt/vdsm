@@ -88,7 +88,7 @@ class VmShutdown(VmPowerDown):
         return self.event.wait(self.delay + self.timeout)
 
     def acpiCallback(self):
-        self.vm._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
+        self.vm.acpiShutdown()
         return self.event.wait(self.timeout)
 
     def forceCallback(self):
