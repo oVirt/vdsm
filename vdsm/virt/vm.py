@@ -5931,11 +5931,25 @@ class LiveMergeCleanupThread(threading.Thread):
                                              self.drive.imageID,
                                              self.drive['volumeID'], newVols)
 
+        # A pivot changes the top volume being used for the VM Disk.  Until
+        # we can correct our metadata following the pivot we should not
+        # attempt to collect disk stats.
+        # TODO: Stop collection only for the live merge disk
+        self.vm.stopDisksStatsCollection()
+
         self.vm.log.info("Requesting pivot to complete active layer commit "
                          "(job %s)", self.jobId)
-        flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
-        if self.vm._dom.blockJobAbort(self.drive.name, flags) != 0:
-            raise RuntimeError("pivot failed")
+        try:
+            flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
+            ret = self.vm._dom.blockJobAbort(self.drive.name, flags)
+        except:
+            self.vm.startDisksStatsCollection()
+            raise
+        else:
+            if ret != 0:
+                self.vm.log.error("Pivot failed for job %s (rc=%i)",
+                                  self.jobId, ret)
+                raise RuntimeError("pivot failed")
         self.vm.log.info("Pivot completed (job %s)", self.jobId)
 
     @utils.traceback()
@@ -5945,6 +5959,8 @@ class LiveMergeCleanupThread(threading.Thread):
         self.vm.log.info("Synchronizing volume chain after live merge "
                          "(job %s)", self.jobId)
         self.vm._syncVolumeChain(self.drive)
+        if self.doPivot:
+            self.vm.startDisksStatsCollection()
         self.success = True
         self.vm.log.info("Synchronization completed (job %s)", self.jobId)
 
