@@ -1512,7 +1512,7 @@ class Vm(object):
         self._initLegacyConf()  # restore placeholders for BC sake
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
-        self.destroyed = False
+        self._destroyed = False
         self._recoveryFile = constants.P_VDSM_RUN + \
             str(self.conf['vmId']) + '.recovery'
         self._monitorResponse = 0
@@ -1973,7 +1973,7 @@ class Vm(object):
         domains = []
         for drive in drives:
             with self._volPrepareLock:
-                if self.destroyed:
+                if self._destroyed:
                     # A destroy request has been issued, exit early
                     break
                 drive['path'] = self.cif.prepareVolumePath(drive, self.id)
@@ -2023,7 +2023,7 @@ class Vm(object):
             pass
 
     def _saveStateInternal(self):
-        if self.destroyed:
+        if self._destroyed:
             return
         with self._confLock:
             toSave = deepcopy(self.status())
@@ -2837,7 +2837,7 @@ class Vm(object):
                                    uuidPath, name)
 
     def _domDependentInit(self):
-        if self.destroyed:
+        if self._destroyed:
             # reaching here means that Vm.destroy() was called before we could
             # handle it. We must handle it now
             try:
@@ -4658,7 +4658,7 @@ class Vm(object):
 
         hooks.before_vm_destroy(self._lastXMLDesc, self.conf)
         self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
-        self.destroyed = True
+        self._destroyed = True
 
         return self.releaseVm()
 
