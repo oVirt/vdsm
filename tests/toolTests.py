@@ -17,8 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from vdsm.tool import configurator
-from vdsm.tool.configfile import ConfigFile, ParserWrapper
+from vdsm.tool.configurators import NOT_CONFIGURED, NOT_SURE
+from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
+from vdsm.tool.configurators.libvirt import Libvirt
 from vdsm.tool import upgrade
 from vdsm import utils
 import monkeypatch
@@ -52,7 +53,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
         for key, val in self.test_env.items():
-            configurator.LibvirtModuleConfigure.FILES[key]['path'] = val
+            Libvirt.FILES[key]['path'] = val
 
         self._setConfig(
             ('QLCONF', 'libvirtd'),
@@ -66,12 +67,12 @@ class LibvirtModuleConfigureTests(TestCase):
                 lambda: 0
             ),
             (
-                configurator.LibvirtModuleConfigure,
+                Libvirt,
                 '_getFile',
                 lambda _, x: self.test_env[x]
             ),
             (
-                configurator.LibvirtModuleConfigure,
+                Libvirt,
                 '_sysvToUpstart',
                 lambda _: True
             ),
@@ -97,7 +98,7 @@ class LibvirtModuleConfigureTests(TestCase):
             )
 
     def testValidatePositive(self):
-        libvirtConfigure = configurator.LibvirtModuleConfigure()
+        libvirtConfigure = Libvirt()
 
         self._setConfig(
             ('VDSM_CONF', 'vdsm_ssl'),
@@ -108,7 +109,7 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertTrue(libvirtConfigure.validate())
 
     def testValidateNegative(self):
-        libvirtConfigure = configurator.LibvirtModuleConfigure()
+        libvirtConfigure = Libvirt()
 
         self._setConfig(
             ('VDSM_CONF', 'vdsm_no_ssl'),
@@ -119,7 +120,7 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertFalse(libvirtConfigure.validate())
 
     def testIsConfiguredPositive(self):
-        libvirtConfigure = configurator.LibvirtModuleConfigure()
+        libvirtConfigure = Libvirt()
 
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
@@ -129,11 +130,11 @@ class LibvirtModuleConfigureTests(TestCase):
         )
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            configurator.NOT_SURE
+            NOT_SURE
         )
 
     def testIsConfiguredNegative(self):
-        libvirtConfigure = configurator.LibvirtModuleConfigure()
+        libvirtConfigure = Libvirt()
 
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
@@ -142,11 +143,11 @@ class LibvirtModuleConfigureTests(TestCase):
         )
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            configurator.NOT_CONFIGURED
+            NOT_CONFIGURED
         )
 
     def testLibvirtConfigureToSSLTrue(self):
-        libvirtConfigure = configurator.LibvirtModuleConfigure()
+        libvirtConfigure = Libvirt()
 
         self._setConfig((
             'LCONF', 'empty'),
@@ -157,18 +158,18 @@ class LibvirtModuleConfigureTests(TestCase):
 
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            configurator.NOT_CONFIGURED
+            NOT_CONFIGURED
         )
 
         libvirtConfigure.configure()
 
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            configurator.NOT_SURE
+            NOT_SURE
         )
 
     def testLibvirtConfigureToSSLFalse(self):
-        libvirtConfigure = configurator.LibvirtModuleConfigure()
+        libvirtConfigure = Libvirt()
         self._setConfig(
             ('LCONF', 'empty'),
             ('VDSM_CONF', 'vdsm_no_ssl'),
@@ -177,14 +178,14 @@ class LibvirtModuleConfigureTests(TestCase):
         )
         self.assertEquals(
             libvirtConfigure.isconfigured(),
-            configurator.NOT_CONFIGURED
+            NOT_CONFIGURED
         )
 
         libvirtConfigure.configure()
 
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            configurator.NOT_SURE
+            NOT_SURE
         )
 
 
