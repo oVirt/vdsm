@@ -241,9 +241,13 @@ class NetworkTest(TestCaseBase):
     def assertBondDoesntExist(self, bondName, nics=None):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
-        self.assertTrue(bondName not in netinfo.bondings or (set(nics) !=
-                        set(netinfo.bondings[bondName]['slaves'])),
-                        '%s found unexpectedly' % bondName)
+        if nics is None:
+            self.assertNotIn(bondName, netinfo.bondings,
+                             '%s found unexpectedly' % bondName)
+        else:
+            self.assertTrue(bondName not in netinfo.bondings or (set(nics) !=
+                            set(netinfo.bondings[bondName]['slaves'])),
+                            '%s found unexpectedly' % bondName)
         if config is not None:
             self.assertTrue(bondName not in config.bonds or (set(nics) !=
                             set(config.bonds[bondName].get('nics'))),
