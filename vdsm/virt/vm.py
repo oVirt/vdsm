@@ -5384,8 +5384,8 @@ class Vm(object):
             return errCode['imageErr']
 
         # Check that libvirt exposes full volume chain information
-        chain = self._driveGetActualVolumeChain(drive)
-        if chain is None:
+        chains = self._driveGetActualVolumeChain([drive])
+        if drive['alias'] not in chains:
             self.log.error("merge: libvirt does not support volume chain "
                            "monitoring.  Unable to perform live merge.")
             return errCode['mergeErr']
@@ -5461,43 +5461,53 @@ class Vm(object):
 
         return {'status': doneCode}
 
-    def _lookupDeviceXMLByAlias(self, targetAlias):
-        domXML = self._getUnderlyingVmInfo()
-        for deviceXML, alias in _devicesWithAlias(domXML):
-            if alias == targetAlias:
-                return deviceXML
-        return None
+    def _diskXMLGetVolumeChainInfo(self, diskXML, drive):
+        def find_element_by_name(doc, name):
+            for child in doc.childNodes:
+                if child.nodeName == name:
+                    return child
+            return None
 
-    def _driveGetActualVolumeChain(self, drive):
         def pathToVolID(drive, path):
             for vol in drive.volumeChain:
                 if os.path.realpath(vol['path']) == os.path.realpath(path):
                     return vol['volumeID']
             raise LookupError("Unable to find VolumeID for path '%s'", path)
 
-        def findElement(doc, name):
-            for child in doc.childNodes:
-                if child.nodeName == name:
-                    return child
-            return None
-
-        diskXML = self._lookupDeviceXMLByAlias(drive['alias'])
-        if not diskXML:
-            return None
         volChain = []
         while True:
-            sourceXML = findElement(diskXML, 'source')
+            sourceXML = find_element_by_name(diskXML, 'source')
             if not sourceXML:
                 break
             sourceAttr = ('file', 'dev')[drive.blockDev]
             path = sourceXML.getAttribute(sourceAttr)
             entry = VolumeChainEntry(pathToVolID(drive, path), path)
-            volChain.insert(0, entry)
-            bsXML = findElement(diskXML, 'backingStore')
+            bsXML = find_element_by_name(diskXML, 'backingStore')
             if not bsXML:
+                self.log.warning("<backingStore/> missing from backing "
+                                 "chain for drive %s", drive.name)
                 break
             diskXML = bsXML
-        return volChain
+            volChain.insert(0, entry)
+        return volChain or None
+
+    def _driveGetActualVolumeChain(self, drives):
+        def lookupDeviceXMLByAlias(domXML, targetAlias):
+            for deviceXML, alias in _devicesWithAlias(domXML):
+                if alias == targetAlias:
+                    return deviceXML
+            raise LookupError("Unable to find matching XML for device %s",
+                              targetAlias)
+
+        ret = {}
+        domXML = self._getUnderlyingVmInfo()
+        for drive in drives:
+            alias = drive['alias']
+            diskXML = lookupDeviceXMLByAlias(domXML, alias)
+            volChain = self._diskXMLGetVolumeChainInfo(diskXML, drive)
+            if volChain:
+                ret[alias] = volChain
+        return ret
 
     def _syncVolumeChain(self, drive):
         def getVolumeInfo(device, volumeID):
@@ -5511,8 +5521,10 @@ class Vm(object):
             return
 
         curVols = [x['volumeID'] for x in drive.volumeChain]
-        chain = self._driveGetActualVolumeChain(drive)
-        if chain is None:
+        chains = self._driveGetActualVolumeChain([drive])
+        try:
+            chain = chains[drive['alias']]
+        except KeyError:
             self.log.debug("Unable to determine volume chain. Skipping volume "
                            "chain synchronization for drive %s", drive.name)
             return
