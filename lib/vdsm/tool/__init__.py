@@ -32,7 +32,7 @@ class expose(object):
 def requiresRoot(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if os.getuid() != 0:
+        if os.geteuid() != 0:
             raise NotRootError()
         func(*args, **kwargs)
     return wrapper
