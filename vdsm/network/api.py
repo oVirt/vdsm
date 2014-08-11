@@ -604,6 +604,31 @@ def _buildSetupHookDict(req_networks, req_bondings, req_options):
     return hook_dict
 
 
+def _emergencyNetworkCleanup(network, networkAttrs, configurator):
+    """Remove all leftovers after failed setupNetwork"""
+    _netinfo = netinfo.NetInfo()
+
+    topNetDev = None
+    if 'bonding' in networkAttrs:
+        if networkAttrs['bonding'] in _netinfo.bondings:
+            topNetDev = Bond.objectivize(networkAttrs['bonding'], configurator,
+                                         None, None, None, _netinfo, True)
+    elif 'nic' in networkAttrs:
+        if networkAttrs['nic'] in _netinfo.nics:
+            topNetDev = Nic(networkAttrs['nic'], configurator,
+                            _netinfo=_netinfo)
+    if 'vlan' in networkAttrs and topNetDev:
+        vlan_name = '%s.%s' % (topNetDev.name, networkAttrs['vlan'])
+        if vlan_name in _netinfo.vlans:
+            topNetDev = Vlan(topNetDev, networkAttrs['vlan'], configurator)
+    if networkAttrs['bridged']:
+        if network in _netinfo.bridges:
+            topNetDev = Bridge(network, configurator, port=topNetDev)
+
+    if topNetDev:
+        topNetDev.remove()
+
+
 def setupNetworks(networks, bondings, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -714,8 +739,17 @@ def setupNetworks(networks, bondings, **options):
             d['force'] = force
 
             logger.debug("Adding network %r", network)
-            addNetwork(network, configurator=configurator,
-                       implicitBonding=True, _netinfo=_netinfo, **d)
+            try:
+                addNetwork(network, configurator=configurator,
+                           implicitBonding=True, _netinfo=_netinfo, **d)
+            except ConfigNetworkError as cne:
+                if cne.errCode == ne.ERR_FAILED_IFUP:
+                    logger.debug("Adding network %r failed. Running "
+                                 "orphan-devices cleanup", network)
+                    _emergencyNetworkCleanup(network, networkAttrs,
+                                             configurator)
+                raise
+
             _netinfo.updateDevices()  # Things like a bond mtu can change
 
         if utils.tobool(options.get('connectivityCheck', True)):

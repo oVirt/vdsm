@@ -25,8 +25,8 @@ import signal
 from hookValidation import ValidatesHook
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
-from testValidation import (brokentest, RequireDummyMod, RequireVethMod,
-                            ValidateRunningAsRoot)
+from testValidation import (brokentest, slowtest, RequireDummyMod,
+                            RequireVethMod, ValidateRunningAsRoot)
 
 import dhcp
 import dummy
@@ -257,6 +257,10 @@ class NetworkTest(TestCaseBase):
         self.assertNotIn(networkName, self.vdsm_net.netinfo.networks)
         if self.vdsm_net.config is not None:
             self.assertNotIn(networkName, self.vdsm_net.config.networks)
+
+    def assertBridgeExists(self, bridgeName):
+        netinfo = self.vdsm_net.netinfo
+        self.assertIn(bridgeName, netinfo.bridges)
 
     def assertBridgeDoesntExist(self, bridgeName):
         netinfo = self.vdsm_net.netinfo
@@ -2145,6 +2149,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.setupNetworks(networks, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
 
+    @slowtest
     @cleanupNet
     @ValidateRunningAsRoot
     def testHonorBlockingDhcp(self):
@@ -2155,6 +2160,62 @@ class NetworkTest(TestCaseBase):
         # reporting success before knowing if dhclient succeeded. With blocking
         # it must not report success
         self.assertNotEqual(status, SUCCESS, msg)
+        self.assertBridgeDoesntExist(NETWORK_NAME)
+
+    @slowtest
+    @permutations([[True], [False]])
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksEmergencyDevicesCleanupVlanOverwrite(self, bridged):
+        with dummyIf(1) as nics:
+            nic, = nics
+            network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': bridged,
+                                      'nic': nic}}
+            status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+
+            network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': True,
+                                      'bonding': BONDING_NAME,
+                                      'bootproto': 'dhcp',
+                                      'blockingdhcp': True}}
+            bonding = {BONDING_NAME: {'nics': nics}}
+            status, msg = self.vdsm_net.setupNetworks(network, bonding, NOCHK)
+            self.assertNotEqual(status, SUCCESS, msg)
+            if bridged:
+                self.assertBridgeExists(NETWORK_NAME)
+            else:
+                self.assertBridgeDoesntExist(NETWORK_NAME)
+            self.assertVlanExists(nic + '.' + VLAN_ID)
+            self.assertBondDoesntExist(BONDING_NAME)
+
+    @slowtest
+    @permutations([[True], [False]])
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksEmergencyDevicesCleanupBondOverwrite(self, bridged):
+        with dummyIf(1) as nics:
+            nic, = nics
+            network = {NETWORK_NAME: {'bridged': bridged,
+                                      'bonding': BONDING_NAME}}
+            bonding = {BONDING_NAME: {'nics': nics}}
+            status, msg = self.vdsm_net.setupNetworks(network, bonding, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+
+            network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': True,
+                                      'bonding': BONDING_NAME,
+                                      'bootproto': 'dhcp',
+                                      'blockingdhcp': True}}
+            bonding = {BONDING_NAME: {'nics': nics}}
+            status, msg = self.vdsm_net.setupNetworks(network, bonding, NOCHK)
+            self.assertNotEqual(status, SUCCESS, msg)
+            if bridged:
+                self.assertBridgeExists(NETWORK_NAME)
+            else:
+                self.assertBridgeDoesntExist(NETWORK_NAME)
+            self.assertVlanDoesntExist(NETWORK_NAME + '.' + VLAN_ID)
+            self.assertBondExists(BONDING_NAME, nics)
 
     @cleanupNet
     @ValidateRunningAsRoot
