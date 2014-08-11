@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Hat, Inc.
+# Copyright 2014 Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,49 +17,11 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-SUBDIRS=configurators
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-toolfilesdir=$(pkgdatadir)/tool
-
-dist_toolfiles_DATA= \
-    libvirtd.logrotate \
-    $(NULL)
-
-EXTRA_DIST = \
-	load_needed_modules.py.in \
-	validate_ovirt_certs.py.in \
-	$(NULL)
-
-nodist_vdsmtool_PYTHON = \
-	load_needed_modules.py \
-	validate_ovirt_certs.py \
-	$(NULL)
-
-dist_vdsmtool_PYTHON = \
+dist_configurators_PYTHON = \
 	__init__.py \
-	dummybr.py \
-	nwfilter.py \
-	configurator.py \
-	passwd.py \
-	restore_nets.py \
-	seboolsetup.py \
-	service.py \
-	transient.py \
-	unified_persistence.py \
-	upgrade.py \
-	upgrade_300_networks.py \
-	vdsm-id.py \
-	$(NULL)
-
-CLEANFILES = \
-	config.log \
-	$(nodist_vdsmtool_PYTHON) \
-	$(nodist_vdsmexec_SCRIPTS) \
-	$(NULL)
-
-all-local: \
-	$(nodist_vdsmtool_PYTHON) \
-	$(nodist_vdsmexec_SCRIPTS) \
+	configfile.py \
+	libvirt.py \
+	sanlock.py \
 	$(NULL)

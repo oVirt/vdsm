@@ -25,7 +25,7 @@ import re
 import selinux
 import io
 
-from .. import utils
+from ... import utils
 if utils.isOvirtNode():
     from ovirt.node.utils.fs import Config as NodeCfg
 

@@ -133,6 +133,7 @@ AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
 AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pyexecdir}/vdsm'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
+AC_SUBST([configuratorsdir], ['${vdsmtooldir}/configurators'])
 AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
 
 # VDSM registration default paths
@@ -319,6 +320,7 @@ AC_OUTPUT([
 	lib/vdsm/Makefile
 	lib/vdsm/netlink/Makefile
 	lib/vdsm/tool/Makefile
+	lib/vdsm/tool/configurators/Makefile
 	lib/yajsonrpc/Makefile
 	lib/zombiereaper/Makefile
 	tests/Makefile
