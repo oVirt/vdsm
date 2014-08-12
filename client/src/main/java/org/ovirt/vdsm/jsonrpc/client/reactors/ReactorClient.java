@@ -120,19 +120,20 @@ public abstract class ReactorClient {
         }
     }
 
-    public final Future<Void> disconnect() {
+    public final void disconnect() {
+        clearBuff();
+        closeChannel();
+    }
+
+    public Future<Void> close() {
         final Callable<Void> callable = new Callable<Void>() {
             @Override
             public Void call() {
-                closeChannel();
+                disconnect();
                 return null;
             }
         };
         return scheduleTask(callable);
-    }
-
-    public Future<Void> close() {
-        return disconnect();
     }
 
     protected <T> FutureTask<T> scheduleTask(Callable<T> callable) {
@@ -259,4 +260,9 @@ public abstract class ReactorClient {
      * after the connection is established.
      */
     protected abstract OneTimeCallback getPostConnectCallback();
+
+    /**
+     * Cleans buffer content before reconnect.
+     */
+    public abstract void clearBuff();
 }

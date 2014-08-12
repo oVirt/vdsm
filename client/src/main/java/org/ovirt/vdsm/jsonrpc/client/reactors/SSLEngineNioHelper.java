@@ -139,4 +139,8 @@ public class SSLEngineNioHelper {
 
         return !handshakeEndStates.contains(hs);
     }
+
+    public void clearBuff() {
+        this.packetBuffer.clear();
+    }
 }

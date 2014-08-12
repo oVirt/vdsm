@@ -100,7 +100,7 @@ public class ResponseTracker implements Runnable {
             this.failedConnections++;
         } else {
             this.failedConnections = 0;
-            tracking.getClient().close();
+            tracking.getClient().disconnect();
         }
     }
 }

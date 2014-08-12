@@ -130,4 +130,10 @@ public abstract class SSLClient extends StompCommonClient {
             throw new ClientConnectionException(e);
         }
     }
+
+    @Override
+    public void clearBuff() {
+        this.nioEngine.clearBuff();
+        outbox.clear();
+    }
 }

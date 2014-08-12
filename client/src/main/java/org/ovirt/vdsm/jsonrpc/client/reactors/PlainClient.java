@@ -61,4 +61,9 @@ public abstract class PlainClient extends StompCommonClient {
             throw new ClientConnectionException(e);
         }
     }
+
+    @Override
+    public void clearBuff() {
+        outbox.clear();
+    }
 }
