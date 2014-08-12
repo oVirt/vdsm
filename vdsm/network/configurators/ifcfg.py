@@ -533,7 +533,10 @@ class ConfigWriter(object):
             confFile.write(configuration)
         os.chmod(fileName, 0o664)
         try:
-            selinux.restorecon(fileName)
+            # filname can be of 'unicode' type. restorecon calls into a C API
+            # that needs a char *. Thus, it is necessary to encode unicode to
+            # a utf-8 string.
+            selinux.restorecon(fileName.encode('utf-8'))
         except:
             logging.debug('ignoring restorecon error in case '
                           'SElinux is disabled', exc_info=True)
