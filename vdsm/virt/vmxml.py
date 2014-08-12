@@ -434,6 +434,10 @@ class Domain(object):
 
         self._devices.appendChild(emulator)
 
+    def appendDeviceXML(self, deviceXML):
+        self._devices.appendChild(
+            xml.dom.minidom.parseString(deviceXML).firstChild)
+
     def toxml(self):
         return self.doc.toprettyxml(encoding='utf-8')
 

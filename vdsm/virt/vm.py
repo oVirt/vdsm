@@ -2672,8 +2672,7 @@ class Vm(object):
                         deviceXML, self.conf, dev.custom)
 
                 dev._deviceXML = deviceXML
-                domxml._devices.appendChild(
-                    xml.dom.minidom.parseString(deviceXML).firstChild)
+                domxml.appendDeviceXML(deviceXML)
 
     def _buildCmdLine(self):
         domxml = vmxml.Domain(self.conf, self.log, self.arch)
