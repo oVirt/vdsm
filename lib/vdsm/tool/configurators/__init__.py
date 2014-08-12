@@ -64,3 +64,6 @@ class ModuleConfigure(object):
 
     def removeConf(self):
         pass
+
+    def getRequires(self):
+        return set()

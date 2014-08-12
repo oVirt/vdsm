@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from collections import deque
 import argparse
 import sys
 import traceback
@@ -31,12 +32,13 @@ from .configurators import \
     sanlock
 
 
-__configurers = {
-    m.getName(): m for m in (
-        libvirt.Libvirt(),
-        sanlock.Sanlock()
-    )
-}
+def _getConfigurers():
+    return {
+        m.getName(): m for m in (
+            libvirt.Libvirt(),
+            sanlock.Sanlock()
+        )
+    }
 
 
 @expose("configure")
@@ -167,20 +169,64 @@ def remove_config(*args):
         raise InvalidRun("Remove configuration failed")
 
 
+def _add_dependencies(modulesNames):
+    queue = deque(modulesNames)
+    retNames = set(queue)
+
+    while queue:
+        next_ = queue.popleft()
+        try:
+            requiredNames = _getConfigurers()[next_].getRequires()
+        except KeyError:
+            raise KeyError(
+                "error: argument --module: "
+                "invalid choice: %s (choose from %s)\n" % (next_, modulesNames)
+            )
+
+        for requiredName in requiredNames:
+            if requiredName not in retNames:
+                retNames.add(requiredName)
+                queue.append(requiredName)
+
+    return retNames
+
+
+def _sort_modules(modulesNames):
+    # Greedy topological sort algorithm(Dijkstra).
+    # At each step go over all tasks and find a task that can be executed
+    # before all others. If at any point there is none, there is a circle!
+    # Note: there's an improved performance variant, but this is good enough.
+    modulesNames = set(modulesNames)
+    sortedModules = []
+    while modulesNames:
+
+        for c in modulesNames:
+            requires = _getConfigurers()[c].getRequires()
+            if requires.issubset(set(sortedModules)):
+                modulesNames.remove(c)
+                sortedModules.append(c)
+                break
+
+        else:
+            raise RuntimeError("Dependency circle found!")
+
+    return sortedModules
+
+
 def _parse_args(action, *args):
     parser = argparse.ArgumentParser('vdsm-tool %s' % (action))
     parser.add_argument(
         '--module',
         dest='modules',
-        choices=__configurers.keys(),
         default=[],
         metavar='STRING',
         action='append',
         help=(
             'Specify the module to run the action on '
-            '(e.g %(choices)s).\n'
+            '(e.g %s).\n'
             'If non is specified, operation will run for '
             'all related modules.'
+            % _getConfigurers().keys()
         ),
     )
     if action == "configure":
@@ -191,8 +237,13 @@ def _parse_args(action, *args):
             action='store_true',
             help='Force configuration, trigger services restart',
         )
+
     args = parser.parse_args(args)
     if not args.modules:
-        args.modules = __configurers.keys()
-    args.modules = [__configurers[cName] for cName in args.modules]
+        args.modules = _getConfigurers().keys()
+
+    args.modules = _sort_modules(_add_dependencies(args.modules))
+
+    args.modules = [_getConfigurers()[cName] for cName in args.modules]
+
     return args

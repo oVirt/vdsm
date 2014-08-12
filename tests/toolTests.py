@@ -17,7 +17,11 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from vdsm.tool.configurators import NOT_CONFIGURED, NOT_SURE
+from vdsm.tool import configurator
+from vdsm.tool.configurators import \
+    ModuleConfigure, \
+    NOT_CONFIGURED,\
+    NOT_SURE
 from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators.libvirt import Libvirt
 from vdsm.tool import upgrade
@@ -29,6 +33,129 @@ import os
 import shutil
 
 dirName = os.path.dirname(os.path.realpath(__file__))
+
+
+class MockModuleConfigurator(ModuleConfigure):
+
+    def __init__(self, name, dependencies):
+        self._name = name
+        self._dependencies = dependencies
+
+    def __repr__(self):
+        return "name: %s, dependencies: %s" % (self._name, self._dependencies)
+
+    def getName(self):
+        return self._name
+
+    def getRequires(self):
+        return self._dependencies
+
+
+class ConfiguratorTests(TestCase):
+
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_getConfigurers',
+        lambda:  {
+            'a': MockModuleConfigurator('a', set('b')),
+            'b': MockModuleConfigurator('b', set('a'))
+        }
+    )
+    def testDependencyCircle(self):
+        self.assertRaises(
+            RuntimeError,
+            configurator._parse_args,
+            'validate-config'
+        )
+
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_getConfigurers',
+        lambda:  {
+            'a': MockModuleConfigurator('a', {'b', 'd'}),
+            'b': MockModuleConfigurator('b', {'c'}),
+            'c': MockModuleConfigurator('c', {'e', 'd'}),
+            'd': MockModuleConfigurator('d', {'e', 'e'}),
+            'e': MockModuleConfigurator('e', set()),
+            'f': MockModuleConfigurator('f', set()),
+
+        }
+    )
+    def testNormalDependencies(self):
+        modules = configurator._parse_args('validate-config').modules
+        # make sure this is indeed a topological sort.
+        before_m = set()
+        for m in modules:
+            for n in m.getRequires():
+                self.assertIn(n, before_m)
+            before_m.add(m.getName())
+
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_getConfigurers',
+        lambda:  {
+            'a': MockModuleConfigurator('a', set()),
+            'b': MockModuleConfigurator('b', set()),
+            'c': MockModuleConfigurator('c', set())
+        }
+    )
+    def testNoDependencies(self):
+        configurator._parse_args('validate-config').modules
+
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_getConfigurers',
+        lambda: {
+            'a': MockModuleConfigurator('a', {'b', 'c'}),
+            'b': MockModuleConfigurator('b', set()),
+            'c': MockModuleConfigurator('c', set())
+        }
+    )
+    def testDependenciesAdditionPositive(self):
+        modules = configurator._parse_args(
+            'validate-config',
+            '--module=a'
+        ).modules
+        modulesNames = [m.getName() for m in modules]
+        self.assertTrue('a' in modulesNames)
+        self.assertTrue('b' in modulesNames)
+        self.assertTrue('c' in modulesNames)
+
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_getConfigurers',
+        lambda:  {
+            'a': MockModuleConfigurator('a', set()),
+            'b': MockModuleConfigurator('b', set()),
+            'c': MockModuleConfigurator('c', set())
+        }
+    )
+    def testDependenciesAdditionNegative(self):
+
+        modules = configurator._parse_args(
+            'validate-config',
+            '--module=a'
+        ).modules
+        moduleNames = [m.getName() for m in modules]
+        self.assertTrue('a' in moduleNames)
+        self.assertFalse('b' in moduleNames)
+        self.assertFalse('c' in moduleNames)
+
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_getConfigurers',
+        lambda:  {
+            'a': MockModuleConfigurator('a', set()),
+        }
+    )
+    def testNonExistentModule(self):
+
+        self.assertRaises(
+            SystemExit,
+            configurator._parse_args,
+            'validate-config',
+            '--module=b'
+        )
 
 
 class LibvirtModuleConfigureTests(TestCase):
