@@ -28,7 +28,6 @@ import os
 import tempfile
 import threading
 import time
-import xml.dom.minidom
 import uuid
 
 # 3rd party libs imports
@@ -3444,7 +3443,7 @@ class Vm(object):
                 self.log.exception("getVmPolicy failed")
                 return None
 
-        metadata = xml.dom.minidom.parseString(metadata_xml)
+        metadata = _domParseStr(metadata_xml)
         return metadata.getElementsByTagName("qos")[0]
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
