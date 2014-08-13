@@ -31,7 +31,9 @@ def process_request(command):
     retcode, out, err = execCmd(command, raw=True)
     if retcode != 0:
         if retcode == 2:
-            retcode = _errno_trans.get(err[len(_TC_ERR_PREFIX):].strip())
+            if err:
+                err = err.splitlines()[0]  # There may be extra lines
+                retcode = _errno_trans.get(err[len(_TC_ERR_PREFIX):].strip())
         raise TrafficControlException(retcode, err, command)
     return out
 
