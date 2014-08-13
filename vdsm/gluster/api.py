@@ -205,8 +205,8 @@ class GlusterApi(object):
                                                       replicaCount)
 
     def _computeVolumeStats(self, data):
-        total = (data.f_blocks - (data.f_bfree - data.f_bavail)) * data.f_bsize
-        free = data.f_bavail * data.f_bsize
+        total = data.f_blocks * data.f_bsize
+        free = data.f_bfree * data.f_bsize
         used = total - free
         return {'sizeTotal': str(total),
                 'sizeFree': str(free),
