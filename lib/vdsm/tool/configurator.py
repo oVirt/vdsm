@@ -31,10 +31,12 @@ from .configurators import \
     sanlock
 
 
-__configurers = (
-    libvirt.Libvirt(),
-    sanlock.Sanlock(),
-)
+__configurers = {
+    m.getName(): m for m in (
+        libvirt.Libvirt(),
+        sanlock.Sanlock()
+    )
+}
 
 
 @expose("configure")
@@ -48,16 +50,15 @@ def configure(*args):
     configurer_to_trigger = []
 
     sys.stdout.write("\nChecking configuration status...\n\n")
-    for c in __configurers:
-        if c.getName() in args.modules:
-            isconfigured = c.isconfigured()
-            override = args.force and isconfigured != CONFIGURED
-            if not override and not c.validate():
-                raise InvalidConfig(
-                    "Configuration of %s is invalid" % c.getName()
-                )
-            if override or isconfigured == NOT_CONFIGURED:
-                configurer_to_trigger.append(c)
+    for c in args.modules:
+        isconfigured = c.isconfigured()
+        override = args.force and isconfigured != CONFIGURED
+        if not override and not c.validate():
+            raise InvalidConfig(
+                "Configuration of %s is invalid" % c.getName()
+            )
+        if override or isconfigured == NOT_CONFIGURED:
+            configurer_to_trigger.append(c)
 
     services = []
     for c in configurer_to_trigger:
@@ -94,10 +95,7 @@ def isconfigured(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [
-        c.getName() for c in __configurers
-        if c.getName() in args.modules and c.isconfigured() == NOT_CONFIGURED
-    ]
+    m = [c for c in args.modules if c.isconfigured() == NOT_CONFIGURED]
 
     if m:
         sys.stdout.write(
@@ -131,10 +129,7 @@ def validate_config(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [
-        c.getName() for c in __configurers
-        if c.getName() in args.modules and not c.validate()
-    ]
+    m = [c for c in args.modules if not c.validate()]
 
     if m:
         sys.stdout.write(
@@ -153,33 +148,31 @@ def remove_config(*args):
     """
     args = _parse_args(*args)
     failed = False
-    for c in __configurers:
-        if c.getName() in args.modules:
-            try:
-                c.removeConf()
-                sys.stderr.write(
-                    "removed configuration of module %s successfully\n" %
-                    c.getName()
-                )
+    for c in args.modules:
+        try:
+            c.removeConf()
+            sys.stderr.write(
+                "removed configuration of module %s successfully\n" %
+                c.getName()
+            )
 
-            except Exception:
-                sys.stderr.write(
-                    "can't remove configuration of module %s\n" %
-                    c.getName()
-                )
-                traceback.print_exc(file=sys.stderr)
-                failed = True
+        except Exception:
+            sys.stderr.write(
+                "can't remove configuration of module %s\n" %
+                c.getName()
+            )
+            traceback.print_exc(file=sys.stderr)
+            failed = True
     if failed:
         raise InvalidRun("Remove configuration failed")
 
 
 def _parse_args(action, *args):
     parser = argparse.ArgumentParser('vdsm-tool %s' % (action))
-    allModules = [n.getName() for n in __configurers]
     parser.add_argument(
         '--module',
         dest='modules',
-        choices=allModules,
+        choices=__configurers.keys(),
         default=[],
         metavar='STRING',
         action='append',
@@ -200,5 +193,6 @@ def _parse_args(action, *args):
         )
     args = parser.parse_args(args)
     if not args.modules:
-        args.modules = allModules
+        args.modules = __configurers.keys()
+    args.modules = [__configurers[cName] for cName in args.modules]
     return args
