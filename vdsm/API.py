@@ -28,6 +28,7 @@ import copy
 import time
 import threading
 import logging
+import errno
 
 from network.errors import ConfigNetworkError
 from network.errors import ERR_BAD_NIC
@@ -1691,6 +1692,17 @@ class Global(APIBase):
                     i['active'] = stats[host_id]['live-data']
                     i['score'] = stats[host_id]['score']
                     i['localMaintenance'] = stats[host_id]['maintenance']
+            except IOError as ex:
+                if ex.errno == errno.ENOENT:
+                    self.log.error(
+                        ("failed to retrieve Hosted Engine HA score '{0}'"
+                         "Is the Hosted Engine setup finished?")
+                        .format(str(ex))
+                    )
+                else:
+                    self.log.exception(
+                        "failed to retrieve Hosted Engine HA score"
+                    )
             except Exception:
                 self.log.exception("failed to retrieve Hosted Engine HA info")
         return i
