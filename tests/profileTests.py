@@ -266,6 +266,7 @@ class ThreadsProfileTests(ProfileTests):
     def setUp(self):
         self.thread = None
         self.ready = threading.Event()
+        self.resume = threading.Event()
 
     @MonkeyPatch(profile, 'config', make_config(enable='false'))
     def test_new_threads(self):
@@ -299,30 +300,30 @@ class ThreadsProfileTests(ProfileTests):
     @profile.profile(FILENAME, format="ystat", threads=True)
     def new_threads(self):
         self.start_thread()
-        self.ready.set()
         self.join_thread()
 
     @profile.profile(FILENAME, format="ystat", threads=True)
     def running_threads(self):
-        self.ready.set()
         self.join_thread()
 
     @profile.profile(FILENAME, format="ystat", threads=False)
     def without_threads(self):
         self.start_thread()
-        self.ready.set()
         self.join_thread()
 
     def start_thread(self):
         self.thread = threading.Thread(target=self.worker)
         self.thread.daemon = True
         self.thread.start()
+        self.ready.wait()
 
     def join_thread(self):
+        self.resume.set()
         self.thread.join()
 
     def worker(self):
-        self.ready.wait()
+        self.ready.set()
+        self.resume.wait()
         self.worker_function()
 
     def worker_function(self):
