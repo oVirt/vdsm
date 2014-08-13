@@ -20,6 +20,8 @@ import errno
 import os
 from distutils.version import StrictVersion
 
+from vdsm import netinfo
+
 from .. import tc
 from .. import models
 _NON_VLANNED_ID = 5000
@@ -48,7 +50,45 @@ def configure_outbound(qosOutbound, top_device):
 def remove_outbound(top_device):
     """Removes the qosOutbound configuration from the device and restores
     pfifo_fast if it was the last QoSed network on the device"""
-    raise NotImplementedError
+    vlan_tag = models.hierarchy_vlan_tag(top_device)
+    device = models.hierarchy_backing_device(top_device).name
+    class_id = '%x' % (_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
+    try:
+        tc.filter.delete(
+            device, pref=_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
+    except tc.TrafficControlException as tce:
+        if tce.errCode not in (errno.EINVAL, errno.ENOENT):  # No filter exists
+            raise
+
+    device_qdiscs = list(tc._qdiscs(device))
+    if not device_qdiscs:
+        return
+    root_qdisc_handle = _root_qdisc(device_qdiscs)['handle']
+    try:
+        tc.cls.delete(device, classid=root_qdisc_handle + class_id)
+    except tc.TrafficControlException as tce:
+        if tce.errCode not in (errno.EINVAL, errno.ENOENT):  # No class exists
+            raise
+
+    if not _uses_classes(device, root_qdisc_handle=root_qdisc_handle):
+        try:
+            tc._qdisc_del(device)
+            tc._qdisc_del(device, kind='ingress')
+        except tc.TrafficControlException as tce:
+            if tce.errCode not in (errno.EINVAL, errno.ENOENT):  # No qdisc
+                raise
+
+
+def _uses_classes(device, root_qdisc_handle=None):
+    """Returns true iff there's traffic classes in the device, ignoring the
+    root class and a default unused class"""
+    if root_qdisc_handle is None:
+        root_qdisc_handle = _root_qdisc(tc._qdiscs(device))['handle']
+    classes = [cls for cls in tc._classes(device, parent=root_qdisc_handle) if
+               not cls.get('root')]
+    return (classes and
+            not(len(classes) == 1 and not netinfo.ifaceUsed(device) and
+                classes[0]['handle'] == root_qdisc_handle + _DEFAULT_CLASSID))
 
 
 def _fresh_qdisc_conf_out(dev, vlan_tag, class_id, qos):

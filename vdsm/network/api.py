@@ -35,6 +35,7 @@ from .configurators import libvirt
 from .errors import ConfigNetworkError
 from . import errors as ne
 from .models import Bond, Bridge, IPv4, IPv6, IpConfig, Nic, Vlan
+from .models import hierarchy_backing_device
 import hooks  # TODO: Turn into parent package import when vdsm is a package
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
@@ -471,6 +472,12 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     # it still has users and thus does not allow its removal
     configurator.removeLibvirtNetwork(network)
     netEnt.remove()
+    # We must remove the QoS last so that no devices nor networks mark the
+    # QoS as used
+    backing_device = hierarchy_backing_device(netEnt)
+    if (backing_device is not None and
+            os.path.exists(netinfo.NET_PATH + '/' + backing_device.name)):
+        configurator.removeQoS(netEnt)
 
 
 def clientSeen(timeout):
