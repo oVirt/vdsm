@@ -78,6 +78,7 @@ test_modules = \
 	vmApiTests.py \
 	vmTestsData.py \
 	vmTests.py \
+	vmXmlTests.py \
 	volumeTests.py \
 	$(NULL)
 

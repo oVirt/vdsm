@@ -43,6 +43,22 @@ def has_channel(domXML, name):
     return False
 
 
+def all_channels(domXML):
+    domObj = xml.dom.minidom.parseString(domXML)
+    for channel in domObj.childNodes[0]. \
+            getElementsByTagName('devices')[0]. \
+            getElementsByTagName('channel'):
+        try:
+            name = channel.getElementsByTagName('target')[0].\
+                getAttribute('name')
+            path = channel.getElementsByTagName('source')[0].\
+                getAttribute('path')
+        except IndexError:
+            continue
+        else:
+            yield name, path
+
+
 def all_devices(domXML):
     domObj = xml.dom.minidom.parseString(domXML)
     devices = domObj.childNodes[0].getElementsByTagName('devices')[0]

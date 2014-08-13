@@ -2801,18 +2801,7 @@ class Vm(object):
         This is necessary to prevent incoming migrations, restoring of VMs and
         the upgrade of VDSM with running VMs to fail on this.
         """
-        agentChannelXml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
-            getElementsByTagName('devices')[0]. \
-            getElementsByTagName('channel')
-        for channel in agentChannelXml:
-            try:
-                name = channel.getElementsByTagName('target')[0].\
-                    getAttribute('name')
-                path = channel.getElementsByTagName('source')[0].\
-                    getAttribute('path')
-            except IndexError:
-                continue
-
+        for name, path in vmxml.all_channels(self._lastXMLDesc):
             if name not in _AGENT_CHANNEL_DEVICES:
                 continue
 
