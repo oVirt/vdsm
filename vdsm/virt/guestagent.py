@@ -120,6 +120,7 @@ class GuestAgent ():
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._stopped = True
         self.guestStatus = None
+        self.guestDiskMapping = {}
         self.guestInfo = {
             'username': user,
             'memUsage': 0,
@@ -303,6 +304,7 @@ class GuestAgent ():
                 disk['used'] = str(disk['used'])
                 disks.append(disk)
             self.guestInfo['disksUsage'] = disks
+            self.guestDiskMapping = args.get('mapping', {})
         elif message == 'number-of-cpus':
             self.guestInfo['guestCPUCount'] = int(args['count'])
         else:
