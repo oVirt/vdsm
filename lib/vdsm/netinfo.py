@@ -541,7 +541,8 @@ def _getNetInfo(iface, dhcp4, bridged, routes, ipaddrs, qosInbound,
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'bootproto4': 'dhcp' if iface in dhcp4 else 'none',
+                     'bootproto4': ('dhcp' if ipv4addr and iface in dhcp4
+                                    else 'none'),
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
                      'gateway': _get_gateway(routes, iface),
@@ -596,7 +597,8 @@ def _devinfo(link, routes, ipaddrs, dhcp4):
             'ipv6addrs': ipv6addrs,
             'gateway': _get_gateway(routes, link.name),
             'ipv6gateway': _get_gateway(routes, link.name, family=6),
-            'bootproto4': 'dhcp' if link.name in dhcp4 else 'none',
+            'bootproto4': ('dhcp' if ipv4addr and link.name in dhcp4
+                           else 'none'),
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}
     if 'BOOTPROTO' not in info['cfg']:
