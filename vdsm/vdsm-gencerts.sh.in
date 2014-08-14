@@ -19,10 +19,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-VDSM_PKI="@TRUSTSTORE@"
-VDSM_KEY="$VDSM_PKI/keys/vdsmkey.pem"
-VDSM_CRT="$VDSM_PKI/certs/vdsmcert.pem"
-VDSM_CA="$VDSM_PKI/certs/cacert.pem"
+VDSM_CA="$1"
+VDSM_KEY="$2"
+VDSM_CRT="$3"
 
 VDSM_TEMPLATE="$(mktemp)"
 
@@ -32,10 +31,6 @@ VDSM_FQDN=`hostname -f`
 VDSM_PERMS="@VDSMUSER@:@VDSMGROUP@"
 
 umask 077
-
-if [ "$1" = "--check" ]; then
-    [ -s "$VDSM_KEY" -a -s "$VDSM_CA" -a -s "$VDSM_CRT" ] && exit 0 || exit 1
-fi
 
 if [ ! -f "$VDSM_KEY" ]; then
     /usr/bin/certtool --generate-privkey --outfile "$VDSM_KEY" 2> /dev/null

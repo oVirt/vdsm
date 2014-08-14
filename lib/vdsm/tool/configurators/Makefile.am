@@ -21,6 +21,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 dist_configurators_PYTHON = \
 	__init__.py \
+	certificates.py \
 	configfile.py \
 	libvirt.py \
 	sanlock.py \

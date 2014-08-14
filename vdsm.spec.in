@@ -1202,6 +1202,7 @@ exit 0
 %{python_sitearch}/%{vdsm_name}/tool/configurator.py*
 %{python_sitearch}/%{vdsm_name}/tool/configurators/__init__*
 %{python_sitearch}/%{vdsm_name}/tool/configurators/configfile.py*
+%{python_sitearch}/%{vdsm_name}/tool/configurators/certificates.py*
 %{python_sitearch}/%{vdsm_name}/tool/configurators/libvirt.py*
 %{python_sitearch}/%{vdsm_name}/tool/configurators/sanlock.py*
 %{python_sitearch}/%{vdsm_name}/tool/passwd.py*
