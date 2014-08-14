@@ -367,7 +367,8 @@ def run(confFile, daemonize):
             log.handlers.append(logging.StreamHandler())
 
         log.info("After daemonize - My pid is %d", os.getpid())
-        file(pidfile, 'w').write(str(os.getpid()) + "\n")
+        with open(pidfile, 'w') as f:
+            f.write(str(os.getpid()) + "\n")
         os.chmod(pidfile, 0o664)
 
         itr = 0

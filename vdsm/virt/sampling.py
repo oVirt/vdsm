@@ -70,7 +70,8 @@ class InterfaceSample:
         while tries:
             tries -= 1
             try:
-                s = file(f).read()
+                with open(f) as fi:
+                    s = fi.read()
             except IOError as e:
                 # silently ignore missing wifi stats
                 if e.errno != errno.ENOENT:
@@ -185,8 +186,9 @@ class PidCpuSample:
     The sample is taken at initialization time and can't be updated.
     """
     def __init__(self, pid):
-        self.user, self.sys = \
-            map(int, file('/proc/%s/stat' % pid).read().split()[13:15])
+        with open('/proc/%s/stat' % pid) as stat:
+            self.user, self.sys = \
+                map(int, stat.read().split()[13:15])
 
 
 class TimedSample:
@@ -253,7 +255,8 @@ class HostSample(TimedSample):
         self.memUsed = 100 - int(100.0 * (freeOrCached) / meminfo['MemTotal'])
         self.anonHugePages = meminfo.get('AnonHugePages', 0) / 1024
         try:
-            self.cpuLoad = file('/proc/loadavg').read().split()[1]
+            with open('/proc/loadavg') as loadavg:
+                self.cpuLoad = loadavg.read().split()[1]
         except:
             self.cpuLoad = '0.0'
         self.diskStats = self._getDiskStats()

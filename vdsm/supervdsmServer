@@ -165,7 +165,8 @@ class _SuperVdsm(object):
     @logDecorator
     def getVmPid(self, vmName):
         pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
-        return open(pidFile).read()
+        with open(pidFile) as pid:
+            return pid.read()
 
     @logDecorator
     def getVcpuNumaMemoryMapping(self, vmName):

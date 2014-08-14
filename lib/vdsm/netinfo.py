@@ -126,7 +126,8 @@ def networks():
 
 
 def slaves(bonding):
-    return open(BONDING_SLAVES % bonding).readline().split()
+    with open(BONDING_SLAVES % bonding) as f:
+        return f.readline().split()
 
 
 def bondOpts(bond, keys=None):
@@ -177,7 +178,8 @@ def ports(bridge):
 
 
 def getMtu(iface):
-    mtu = open('/sys/class/net/%s/mtu' % iface).readline().rstrip()
+    with open('/sys/class/net/%s/mtu' % iface) as f:
+        mtu = f.readline().rstrip()
     return int(mtu)
 
 
@@ -315,7 +317,8 @@ def getIpInfo(dev, ipaddrs=None):
 
 
 def gethwaddr(dev):
-    return file('/sys/class/net/%s/address' % dev).read().strip()
+    with open('/sys/class/net/%s/address' % dev) as addr:
+        return addr.read().strip()
 
 
 def graph():

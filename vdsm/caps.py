@@ -412,8 +412,8 @@ def _getEmulatedMachines(arch, capabilities=None):
 
 
 def _getAllCpuModels():
-    cpu_map = minidom.parseString(
-        file('/usr/share/libvirt/cpu_map.xml').read())
+    with open('/usr/share/libvirt/cpu_map.xml') as xml:
+        cpu_map = minidom.parseString(xml.read())
 
     arch = platform.machine()
 

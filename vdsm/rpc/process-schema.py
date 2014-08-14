@@ -289,46 +289,46 @@ def write_symbol(f, s):
 
 
 def create_doc(api, filename):
-    f = open(filename, 'w')
+    with open(filename, 'w') as f:
 
-    header = """
-    <html>
-      <head>
-        <title>VDSM API Schema</title>
-        <style type="text/css">
-          table {
-            margin: 10px 0px 10px 10px;
-            border-top: 1px solid black;
-            border-bottom: 1px solid black;
-          }
-          td {
-            padding:2px 15px 2px 2px;
-            vertical-align: top;
-          }
-          caption {
-            text-align:left;
-          }
-        </style>
-      </head>
-      <body>
-    """
-    footer = """
-      </body>
-    </html>
-    """
-    f.write(header)
+        header = """
+        <html>
+          <head>
+            <title>VDSM API Schema</title>
+            <style type="text/css">
+              table {
+                margin: 10px 0px 10px 10px;
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+              }
+              td {
+                padding:2px 15px 2px 2px;
+                vertical-align: top;
+              }
+              caption {
+                text-align:left;
+              }
+            </style>
+          </head>
+          <body>
+        """
+        footer = """
+          </body>
+        </html>
+        """
+        f.write(header)
 
-    # First, write out commands in sorted order
-    for ns in sorted(api['commands'].iterkeys()):
-        for cmd in sorted(api['commands'][ns].iterkeys()):
-            write_symbol(f, api['commands'][ns][cmd])
+        # First, write out commands in sorted order
+        for ns in sorted(api['commands'].iterkeys()):
+            for cmd in sorted(api['commands'][ns].iterkeys()):
+                write_symbol(f, api['commands'][ns][cmd])
 
-    # Write out the data types
-    for sType in ('aliases', 'types', 'maps', 'enums'):
-        for name in sorted(api[sType].iterkeys()):
-            write_symbol(f, api[sType][name])
+        # Write out the data types
+        for sType in ('aliases', 'types', 'maps', 'enums'):
+            for name in sorted(api[sType].iterkeys()):
+                write_symbol(f, api[sType][name])
 
-    f.write(footer)
+        f.write(footer)
 
 
 def verify_symbols(symbols):

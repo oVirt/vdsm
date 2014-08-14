@@ -371,7 +371,8 @@ class ConfigWriter(object):
 
         if filename not in self._backups:
             try:
-                self._backups[filename] = open(filename).read()
+                with open(filename) as f:
+                    self._backups[filename] = f.read()
                 logging.debug("Backed up %s", filename)
             except IOError as e:
                 if e.errno == os.errno.ENOENT:
@@ -410,7 +411,8 @@ class ConfigWriter(object):
             if not confFile.startswith(netinfo.NET_CONF_PREF):
                 continue
             try:
-                content = file(confFile).read()
+                with open(confFile) as f:
+                    content = f.read()
             except IOError as e:
                 if e.errno == os.errno.ENOENT:
                     continue
@@ -443,11 +445,15 @@ class ConfigWriter(object):
             logging.debug("unmounted %s using ovirt", filename)
 
         (dummy, basename) = os.path.split(filename)
-        if os.path.exists(filename):
-            content = open(filename).read()
-        else:
-            # For non-exists ifcfg-* file use predefined header
-            content = cls.DELETED_HEADER + '\n'
+        try:
+            with open(filename) as f:
+                content = f.read()
+        except IOError as e:
+            if e.errno == os.errno.ENOENT:
+                # For non-exists ifcfg-* file use predefined header
+                content = cls.DELETED_HEADER + '\n'
+            else:
+                raise
         logging.debug("backing up %s: %s", basename, content)
 
         cls.writeBackupFile(netinfo.NET_CONF_BACK_DIR, basename, content)
@@ -464,7 +470,8 @@ class ConfigWriter(object):
             if not os.path.isfile(fpath):
                 continue
 
-            content = open(fpath).read()
+            with open(fpath) as f:
+                content = f.read()
             if content.startswith(self.DELETED_HEADER):
                 content = None
 
@@ -643,7 +650,9 @@ class ConfigWriter(object):
         self._createConfFile(conf, bond.name, ipconfig, mtu, **opts)
 
         # create the bonding device to avoid initscripts noise
-        if bond.name not in open(netinfo.BONDING_MASTERS).read().split():
+        with open(netinfo.BONDING_MASTERS) as info:
+            names = info.read().split()
+        if bond.name not in names:
             with open(netinfo.BONDING_MASTERS, 'w') as bondingMasters:
                 bondingMasters.write('+%s\n' % bond.name)
 

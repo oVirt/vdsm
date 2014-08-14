@@ -736,8 +736,8 @@ class StorageDomain(object):
         misc.rotateFiles(self.mdBackupDir, self.sdUUID, self.mdBackupVersions)
         oldMd = ["%s=%s\n" % (key, value)
                  for key, value in self.getMetadata().copy().iteritems()]
-        open(os.path.join(self.mdBackupDir, self.sdUUID),
-             "w").writelines(oldMd)
+        with open(os.path.join(self.mdBackupDir, self.sdUUID), "w") as f:
+            f.writelines(oldMd)
 
         with self._metadata.transaction():
             self._metadata.clear()

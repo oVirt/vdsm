@@ -81,13 +81,15 @@ class TestCaps(TestCaseBase):
         dirName = os.path.split(testPath)[0]
         # PPC64 1 socket, 4 cores, 4 threads per core
         path = os.path.join(dirName, "caps_lscpu_ppc64_1_4_4.out")
-        t = caps.CpuTopology(open(path).read())
+        with open(path) as p:
+            t = caps.CpuTopology(p.read())
         self.assertEqual(t.threads(), 16)
         self.assertEqual(t.cores(), 4)
         self.assertEqual(t.sockets(), 4)
         # PPC64 2 sockets, 8 cores, 8 threads per core
         path = os.path.join(dirName, "caps_lscpu_ppc64_2_4_8.out")
-        t = caps.CpuTopology(open(path).read())
+        with open(path) as p:
+            t = caps.CpuTopology(p.read())
         self.assertEqual(t.threads(), 64)
         self.assertEqual(t.cores(), 8)
         self.assertEqual(t.sockets(), 2)
@@ -98,19 +100,22 @@ class TestCaps(TestCaseBase):
         dirName = os.path.split(testPath)[0]
         # 2 x Intel E5649 (with Hyperthreading)
         path = os.path.join(dirName, "caps_libvirt_intel_E5649.out")
-        t = caps.CpuTopology(file(path).read())
+        with open(path) as p:
+            t = caps.CpuTopology(p.read())
         self.assertEqual(t.threads(), 24)
         self.assertEqual(t.cores(), 12)
         self.assertEqual(t.sockets(), 2)
         # 2 x AMD 6272 (with Modules)
         path = os.path.join(dirName, "caps_libvirt_amd_6274.out")
-        t = caps.CpuTopology(file(path).read())
+        with open(path) as p:
+            t = caps.CpuTopology(p.read())
         self.assertEqual(t.threads(), 32)
         self.assertEqual(t.cores(), 16)
         self.assertEqual(t.sockets(), 2)
         # 1 x Intel E31220 (normal Multi-core)
         path = os.path.join(dirName, "caps_libvirt_intel_E31220.out")
-        t = caps.CpuTopology(file(path).read())
+        with open(path) as p:
+            t = caps.CpuTopology(p.read())
         self.assertEqual(t.threads(), 4)
         self.assertEqual(t.cores(), 4)
         self.assertEqual(t.sockets(), 1)

@@ -281,7 +281,8 @@ def handle_ssh_key(host, port, engine_ssh_key):
     strKey = None
 
     try:
-        strKey = file(engine_ssh_key).read()
+        with open(engine_ssh_key) as key:
+            strKey = key.read()
     except:
         logging.error(traceback.format_exc())
 

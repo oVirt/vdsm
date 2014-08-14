@@ -873,7 +873,8 @@ class Deploy:
                 self.rc = False
         else:
             try:
-                strKey = file(engine_ssh_key).read()
+                with open(engine_ssh_key) as key:
+                    strKey = key.read()
             except Exception as e:
                 self.message = "Failed to read SSH key file " + str(e)
                 self.rc = False
@@ -894,7 +895,8 @@ class Deploy:
         self.st = 'OK'
 
         try:
-            rules = file(firewallRulesFile).read()
+            with open(firewallRulesFile) as fwRules:
+                rules = fwRules.read()
             _safeWrite(__SYSCONFIG_IPTABLES__, rules)
         except Exception as e:
             self.message = str(e)

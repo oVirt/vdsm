@@ -98,5 +98,6 @@ class RemoteFileHandlerTruncateTests(TestCaseBase):
         self.checkData(data)
 
     def checkData(self, expected):
-        actual = open(self.path).read()
+        with open(self.path) as path:
+            actual = path.read()
         self.assertEquals(expected, actual)

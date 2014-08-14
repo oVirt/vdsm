@@ -333,15 +333,18 @@ class Bond(NetDevice):
     def _validationBond(bonding):
         bond_created = False
         try:
-            bonding = open(netinfo.BONDING_MASTERS, 'r').read().split()[0]
+            with open(netinfo.BONDING_MASTERS, 'r') as info:
+                bonding = info.read().split()[0]
         except IndexError:
-            open(netinfo.BONDING_MASTERS, 'w').write('+%s\n' % bonding)
+            with open(netinfo.BONDING_MASTERS, 'w') as info:
+                info.write('+%s\n' % bonding)
             bond_created = True
         try:
             yield bonding
         finally:
             if bond_created:
-                open(netinfo.BONDING_MASTERS, 'w').write('-%s\n' % bonding)
+                with open(netinfo.BONDING_MASTERS, 'w') as info:
+                    info.write('-%s\n' % bonding)
 
     @staticmethod
     def _reorderOptions(options):

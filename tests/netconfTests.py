@@ -44,12 +44,14 @@ class ifcfgConfigWriterTests(TestCaseBase):
     def _createFiles(self):
         for fn, content, _ in self._files:
             if content is not None:
-                file(fn, 'w').write(content)
+                with open(fn, 'w') as f:
+                    f.write(content)
 
     def _makeFilesDirty(self):
         for fn, _, makeDirty in self._files:
             if makeDirty:
-                file(fn, 'w').write(self.SOME_GARBAGE)
+                with open(fn, 'w') as f:
+                    f.write(self.SOME_GARBAGE)
 
     def _assertFilesRestored(self):
         for fn, content, _ in self._files:

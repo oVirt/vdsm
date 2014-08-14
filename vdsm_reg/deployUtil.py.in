@@ -396,7 +396,8 @@ def getHostID():
     if os.path.exists(P_VDSM_NODE_ID):
         if isOvirt():
             ovirtfunctions.ovirt_store_config(P_VDSM_NODE_ID)
-        strReturn = open(P_VDSM_NODE_ID).readline().replace("\n", "")
+        with open(P_VDSM_NODE_ID) as f:
+            strReturn = f.readline().replace("\n", "")
     else:
         strReturn = getMachineUUID()
 
@@ -727,10 +728,12 @@ def addSSHKey(path, strKey):
     if isOvirt():
         # No problem to write to the original file here, since until it is not
         # persisted the old values are in place
-        open(path, 'w').write(''.join(resKeys))
+        with open(path, 'w') as p:
+            p.write(''.join(resKeys))
     else:
         tmpFilePath = path + '.tmp'
-        open(tmpFilePath, 'w').write(''.join(resKeys))
+        with open(tmpFilePath, 'w') as p:
+            p.write(''.join(resKeys))
         os.rename(tmpFilePath, path)
 
 
@@ -1431,7 +1434,8 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey):
 
     req_conffile = _WORK_DIR + '/req_' + random_num + '.conf'
     cert_reqfile = _WORK_DIR + '/cert_' + random_num + '.req'
-    open(req_conffile, "w").write(template)
+    with open(req_conffile, "w") as f:
+        f.write(template)
 
     if not os.path.exists(tsDir + "/keys"):
         os.mkdir(tsDir + "/keys")

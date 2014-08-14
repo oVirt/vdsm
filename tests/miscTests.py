@@ -379,7 +379,8 @@ class DdWatchCopy(TestCaseBase):
                                                 None, len(data))
 
                 # Get copied data
-                readData = open(dstPath).read()
+                with open(dstPath) as dp:
+                    readData = dp.read()
 
         # Compare
         self.assertEquals(readData, data)
@@ -471,7 +472,8 @@ class DdWatchCopy(TestCaseBase):
                                                 None, len(data))
 
                 # Get copied data
-                readData = open(dstPath).read()
+                with open(dstPath) as f:
+                    readData = f.read()
 
         # Comapre
         self.assertEquals(readData, data)
@@ -633,7 +635,8 @@ class Checksum(TestCaseBase):
         Test if when given the same input in different times the user will get
         the same checksum.
         """
-        data = open("/dev/urandom", "rb").read(50)
+        with open("/dev/urandom", "rb") as f:
+            data = f.read(50)
         self.assertEquals(misc.checksum(data, 16), misc.checksum(data, 16))
 
 

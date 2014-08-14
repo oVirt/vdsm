@@ -238,9 +238,10 @@ class ConfigFile(object):
         """
         Notice this method can be called out of context since it is read only
         """
-        for line in open(self._filename, 'r'):
-            if line == self._start():
-                return True
+        with open(self._filename, 'r') as f:
+            for line in f:
+                if line == self._start():
+                    return True
         return False
 
 
