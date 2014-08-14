@@ -26,6 +26,7 @@ plentifuly around vdsm.
 
     Contains a reverse dictionary pointing from error string to its error code.
 """
+from collections import deque
 import threading
 import os
 import time
@@ -315,13 +316,12 @@ class AdvancedStatsFunction(object):
     """
     def __init__(self, function, interval=1, window=0, timefn=time.time):
         self._function = function
-        self._window = window
         self._timefn = timefn
-        self._sample = []
 
         if not isinstance(interval, int) or interval < 1:
             raise ValueError("interval must be int and greater than 0")
 
+        self._samples = deque(maxlen=window)
         self._interval = interval
 
     @property
@@ -335,11 +335,7 @@ class AdvancedStatsFunction(object):
     def __call__(self, *args, **kwargs):
         retValue = self._function(*args, **kwargs)
         retTime = self._timefn()
-
-        if self._window > 0:
-            self._sample.append((retTime, retValue))
-            del self._sample[:-self._window]
-
+        self._samples.append((retTime, retValue))
         return retValue
 
     def getStats(self):
@@ -348,11 +344,11 @@ class AdvancedStatsFunction(object):
         the first and the last return value in the defined 'window' and the
         time difference.
         """
-        if len(self._sample) < 2:
+        if len(self._samples) < 2:
             return None, None, None
 
-        bgn_time, bgn_sample = self._sample[0]
-        end_time, end_sample = self._sample[-1]
+        bgn_time, bgn_sample = self._samples[0]
+        end_time, end_sample = self._samples[-1]
 
         return bgn_sample, end_sample, (end_time - bgn_time)
 
@@ -360,9 +356,9 @@ class AdvancedStatsFunction(object):
         """
         Return the last collected sample.
         """
-        if not self._sample:
+        if not self._samples:
             return None
-        last_time, last_sample = self._sample[-1]
+        last_time, last_sample = self._samples[-1]
         return last_sample
 
 
