@@ -24,6 +24,7 @@ import traceback
 
 from . import service, expose
 from .configurators import \
+    certificates, \
     CONFIGURED, \
     InvalidConfig, \
     InvalidRun, \
@@ -35,8 +36,9 @@ from .configurators import \
 def _getConfigurers():
     return {
         m.getName(): m for m in (
+            certificates.Certificates(),
             libvirt.Libvirt(),
-            sanlock.Sanlock()
+            sanlock.Sanlock(),
         )
     }
 

@@ -54,15 +54,6 @@ task_run_init_hooks(){
 }
 
 
-task_gencerts(){
-    if ! "@LIBEXECDIR@/vdsm-gencerts.sh" --check; then
-        printf "Configuring a self-signed VDSM host certificate"
-        "@LIBEXECDIR@/vdsm-gencerts.sh" || return 1
-    fi
-    return 0
-}
-
-
 task_check_is_configured() {
     "$VDSM_TOOL" is-configured
 }
@@ -242,7 +233,6 @@ case "$1" in
             configure_coredump \
             configure_vdsm_logs \
             run_init_hooks \
-            gencerts \
             check_is_configured \
             validate_configuration \
             prepare_transient_repository \

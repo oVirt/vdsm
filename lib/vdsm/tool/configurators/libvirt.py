@@ -38,6 +38,10 @@ from . import \
 from . configfile import \
     ConfigFile, \
     ParserWrapper
+from . certificates import \
+    CA_FILE, \
+    CERT_FILE, \
+    KEY_FILE
 from ... import utils
 from ... import constants
 
@@ -73,11 +77,6 @@ class Libvirt(ModuleConfigure):
 
         config.read(self._getFile('VDSM_CONF'))
         vdsmConfiguration = {
-            'certs_exist': all(os.path.isfile(f) for f in [
-                self.CA_FILE,
-                self.CERT_FILE,
-                self.KEY_FILE
-            ]),
             'ssl_enabled': config.getboolean('vars', 'ssl'),
             'sanlock_enabled': constants.SANLOCK_ENABLED,
             'libvirt_selinux': constants.LIBVIRT_SELINUX
@@ -111,6 +110,9 @@ class Libvirt(ModuleConfigure):
     def removeConf(self):
         for cfile, content in Libvirt.FILES.items():
             content['removeConf'](self, content['path'])
+
+    def getRequires(self):
+        return {'certificates'}
 
     def _getPersistedFiles(self):
         """
@@ -304,9 +306,6 @@ class Libvirt(ModuleConfigure):
     CONF_VERSION = '4.13.0'
 
     PKI_DIR = os.path.join(constants.SYSCONF_PATH, 'pki/vdsm')
-    CA_FILE = os.path.join(PKI_DIR, 'certs/cacert.pem')
-    CERT_FILE = os.path.join(PKI_DIR, 'certs/vdsmcert.pem')
-    KEY_FILE = os.path.join(PKI_DIR, 'keys/vdsmkey.pem')
     LS_CERT_DIR = os.path.join(PKI_DIR, 'libvirt-spice')
 
     # be sure to update CONF_VERSION accordingly when updating FILES.
@@ -365,7 +364,6 @@ class Libvirt(ModuleConfigure):
                 {
                     'conditions': {
                         "ssl_enabled": True,
-                        "certs_exist": True,
                     },
                     'content': {
                         'ca_file': '\"' + CA_FILE + '\"',
@@ -374,18 +372,6 @@ class Libvirt(ModuleConfigure):
                     },
 
                 },
-                {
-                    'conditions': {
-                        "ssl_enabled": True,
-                        "certs_exist": False,
-                    },
-                    'content': {
-                        'auth_tcp': '"none"',
-                        'listen_tcp': 1,
-                        'listen_tls': 0,
-                    },
-
-                }
             ]
         },
 
@@ -424,15 +410,6 @@ class Libvirt(ModuleConfigure):
                     },
                     'content': {
                         'spice_tls': 1,
-                    },
-
-                },
-                {
-                    'conditions': {
-                        "ssl_enabled": True,
-                        "certs_exist": True,
-                    },
-                    'content': {
                         'spice_tls_x509_cert_dir': '\"' + LS_CERT_DIR + '\"',
                     },
 
