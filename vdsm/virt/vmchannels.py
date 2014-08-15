@@ -134,7 +134,6 @@ class Listener(threading.Thread):
         """
         now = time.time()
         for (fileno, obj) in self._unconnected.items():
-            self.log.debug("Trying to connect fileno %d.", fileno)
             if obj.get('cooldown'):
                 if (now - obj['cooldown_time']) >= self._timeout:
                     obj['cooldown'] = False
