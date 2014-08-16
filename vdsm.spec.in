@@ -730,6 +730,12 @@ export LC_ALL=C
 /usr/sbin/usermod -a -G %{qemu_group},%{snlk_group} %{vdsm_user}
 /usr/sbin/usermod -a -G %{cdrom_group} %{qemu_user}
 
+# We keep the previous rpm version number in a file for managing upgrade flow
+# in vdsmd_init_script upgraded_version_check task
+if [ "$1" -gt 1 ]; then
+    rpm -q %{vdsm_name} > "%{_localstatedir}/lib/%{vdsm_name}/upgraded_version"
+fi
+
 %post
 %{_bindir}/vdsm-tool configure --module sanlock --force >/dev/null
 %{_bindir}/vdsm-tool sebool-config || :

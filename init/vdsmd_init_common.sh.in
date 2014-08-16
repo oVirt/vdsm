@@ -197,6 +197,20 @@ task_unified_network_persistence_upgrade(){
 task_upgrade_300_nets(){
     "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-3.0.0-networks
 }
+
+task_upgraded_version_check(){
+    local upgraded_ver_file="@VDSMLIBDIR@/upgraded_version"
+    if [ -f "${upgraded_ver_file}" ]; then
+        local ret=0
+        if grep -q '^vdsm-4\.10\.' "${upgraded_ver_file}"; then
+             # We need to treat the upgrade from 4.10.x specifically
+             # by running manual configure command
+             "$VDSM_TOOL" configure --force
+             ret=$?
+        fi
+        [ "${ret}" -eq 0 ] && rm -f "${upgraded_ver_file}"
+    fi
+}
 #### pre-start tasks end ####
 
 
@@ -233,6 +247,7 @@ case "$1" in
             configure_coredump \
             configure_vdsm_logs \
             run_init_hooks \
+            upgraded_version_check \
             check_is_configured \
             validate_configuration \
             prepare_transient_repository \
