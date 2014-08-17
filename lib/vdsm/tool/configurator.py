@@ -30,15 +30,7 @@ import traceback
 import uuid
 
 from configfile import ConfigFile, ParserWrapper
-from ..constants import \
-    LIBVIRT_SELINUX, \
-    P_VDSM, \
-    P_VDSM_CERT, \
-    QEMU_PROCESS_GROUP, \
-    SANLOCK_ENABLED, \
-    SANLOCK_USER, \
-    SYSCONF_PATH, \
-    VDSM_GROUP
+from .. import constants
 from . import NotRootError, UsageError
 from . import service, expose, validate_ovirt_certs
 from .. import utils
@@ -111,7 +103,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
         self._sysvToUpstart()
 
         if utils.isOvirtNode():
-            if not os.path.exists(P_VDSM_CERT):
+            if not os.path.exists(constants.P_VDSM_CERT):
                 raise InvalidRun(
                     "vdsm: Missing certificate, vdsm not registered")
             validate_ovirt_certs.validate_ovirt_certs()
@@ -127,8 +119,8 @@ class LibvirtModuleConfigure(_ModuleConfigure):
                 self.KEY_FILE
             ]),
             'ssl_enabled': config.getboolean('vars', 'ssl'),
-            'sanlock_enabled': SANLOCK_ENABLED,
-            'libvirt_selinux': LIBVIRT_SELINUX
+            'sanlock_enabled': constants.SANLOCK_ENABLED,
+            'libvirt_selinux': constants.LIBVIRT_SELINUX
         }
 
         # write configuration
@@ -193,7 +185,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         INITCTL = '/sbin/initctl'
         LIBVIRTD_UPSTART = 'libvirtd.upstart'
-        TARGET = os.path.join(SYSCONF_PATH, "init/libvirtd.conf")
+        TARGET = os.path.join(constants.SYSCONF_PATH, "init/libvirtd.conf")
 
         if os.path.isfile(INITCTL) and os.access(INITCTL, os.X_OK):
             # libvirtd package does not provide libvirtd.upstart,
@@ -351,7 +343,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
     # details.
     CONF_VERSION = '4.13.0'
 
-    PKI_DIR = os.path.join(SYSCONF_PATH, 'pki/vdsm')
+    PKI_DIR = os.path.join(constants.SYSCONF_PATH, 'pki/vdsm')
     CA_FILE = os.path.join(PKI_DIR, 'certs/cacert.pem')
     CERT_FILE = os.path.join(PKI_DIR, 'certs/vdsmcert.pem')
     KEY_FILE = os.path.join(PKI_DIR, 'keys/vdsmkey.pem')
@@ -362,7 +354,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'VDSM_CONF': {
             'path': os.path.join(
-                SYSCONF_PATH,
+                constants.SYSCONF_PATH,
                 'vdsm/vdsm.conf'
             ),
             'configure': lambda x, y, z: True,
@@ -372,7 +364,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'LCONF': {
             'path': os.path.join(
-                SYSCONF_PATH,
+                constants.SYSCONF_PATH,
                 'libvirt/libvirtd.conf'
             ),
             'configure': _addSection,
@@ -383,7 +375,8 @@ class LibvirtModuleConfigure(_ModuleConfigure):
                     'conditions': {},
                     'content': {
                         'listen_addr': '"0.0.0.0"',
-                        'unix_sock_group': '"' + QEMU_PROCESS_GROUP + '"',
+                        'unix_sock_group': '"' + constants.QEMU_PROCESS_GROUP +
+                        '"',
                         'unix_sock_rw_perms': '"0770"',
                         'auth_unix_rw': '"sasl"',
                         'host_uuid': '"' + str(uuid.uuid4()) + '"',
@@ -438,7 +431,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'QCONF': {
             'path': os.path.join(
-                SYSCONF_PATH,
+                constants.SYSCONF_PATH,
                 'libvirt/qemu.conf',
             ),
             'configure': _addSection,
@@ -508,7 +501,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'LDCONF': {
             'path': os.path.join(
-                SYSCONF_PATH,
+                constants.SYSCONF_PATH,
                 'sysconfig/libvirtd',
             ),
             'configure': _addSection,
@@ -527,7 +520,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'QLCONF': {
             'path': os.path.join(
-                SYSCONF_PATH,
+                constants.SYSCONF_PATH,
                 'libvirt/qemu-sanlock.conf',
             ),
             'configure': _addSection,
@@ -557,7 +550,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'LRCONF': {
             'path': os.path.join(
-                SYSCONF_PATH,
+                constants.SYSCONF_PATH,
                 'logrotate.d/libvirtd',
             ),
             'configure': _prefixAndPrepend,
@@ -568,7 +561,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'LRCONF_EXAMPLE': {
             'path': os.path.join(
-                P_VDSM,
+                constants.P_VDSM,
                 'tool',
                 'libvirtd.logrotate',
             ),
@@ -580,7 +573,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
         'QNETWORK': {
             'path': os.path.join(
-                SYSCONF_PATH,
+                constants.SYSCONF_PATH,
                 'libvirt/qemu/networks/autostart/default.xml',
             ),
             'configure': _removeFile,
@@ -592,7 +585,7 @@ class LibvirtModuleConfigure(_ModuleConfigure):
 
 class SanlockModuleConfigure(_ModuleConfigure):
 
-    SANLOCK_GROUPS = (QEMU_PROCESS_GROUP, VDSM_GROUP)
+    SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
 
     def __init__(self):
         super(SanlockModuleConfigure, self).__init__()
@@ -616,7 +609,7 @@ class SanlockModuleConfigure(_ModuleConfigure):
                 '-a',
                 '-G',
                 ','.join(self.SANLOCK_GROUPS),
-                SANLOCK_USER
+                constants.SANLOCK_USER
             ),
             raw=True,
         )
@@ -632,8 +625,8 @@ class SanlockModuleConfigure(_ModuleConfigure):
         """
         configured = NOT_CONFIGURED
         groups = [g.gr_name for g in grp.getgrall()
-                  if SANLOCK_USER in g.gr_mem]
-        gid = pwd.getpwnam(SANLOCK_USER).pw_gid
+                  if constants.SANLOCK_USER in g.gr_mem]
+        gid = pwd.getpwnam(constants.SANLOCK_USER).pw_gid
         groups.append(grp.getgrgid(gid).gr_name)
         if all(group in groups for group in self.SANLOCK_GROUPS):
             configured = NOT_SURE
