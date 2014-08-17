@@ -46,7 +46,7 @@ Version:	@PACKAGE_RPM_VERSION@
 Release:	@PACKAGE_RPM_RELEASE@%{?release_suffix}%{?dist}
 License:	LGPLv2+
 URL:		http://www.ovirt.org
-Source:		http://resources.ovirt.org/releases/3.4/src/%{name}-%{package_version}.tar.gz
+Source:		http://resources.ovirt.org/pub/ovirt-3.5-snapshot/src/%{name}/%{name}-%{package_version}.tar.gz
 Group:		Development/Libraries
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -174,6 +174,18 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
+* Tue Aug 26 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.3
+- Fix numerous races in package
+* Mon Aug 18 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.2
+- Log json message without logging stomp part of a frame
+- json serialization optimization
+- single tracking thread
+- test: Mitigate test failures on loaded machines
+- coverity fix
+- build: update version for mvn as well
+- Junit fail on heavy loaded machines
+- Buffer overflow in ssl
+
 * Tue Jun 24 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.1
 - Make jackson dependency conditional for rhel and centos
 
