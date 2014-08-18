@@ -81,7 +81,13 @@ public class SSLStompClient extends SSLClient {
             // TODO wait for the mini broker to be finished
             // this.subscribed.await();
         } catch (InterruptedException e) {
+            disconnect();
             throw new IllegalStateException("Communication interrupted");
         }
+    }
+
+    @Override
+    public boolean isInInit() {
+        return this.nioEngine != null && this.nioEngine.handshakeInProgress();
     }
 }

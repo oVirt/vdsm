@@ -42,19 +42,19 @@ public class StompClientTestCase {
 
     @Test
     public void testHelloWrold() throws InterruptedException, ExecutionException, ClientConnectionException {
-        testEchoMessage(generateRandomMessage(16), 61626);
+        testEchoMessage(generateRandomMessage(16));
     }
 
     @Test
     public void testLongMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
-        testEchoMessage(generateRandomMessage(524288), 61627);
+        testEchoMessage(generateRandomMessage(524288));
     }
 
-    private void testEchoMessage(String message, int port) throws ClientConnectionException, InterruptedException,
+    private void testEchoMessage(String message) throws ClientConnectionException, InterruptedException,
             ExecutionException {
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         Future<ReactorListener> futureListener =
-                this.listeningReactor.createListener(HOSTNAME, port, new EventListener() {
+                this.listeningReactor.createListener(HOSTNAME, 0, new EventListener() {
 
                     @Override
                     public void onAcccept(final ReactorClient client) {
@@ -70,7 +70,7 @@ public class StompClientTestCase {
         ReactorListener listener = futureListener.get();
         assertNotNull(listener);
 
-        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, port);
+        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
         client.setRetryPolicy(new RetryPolicy(180000, 0, 1000000));
         client.addEventListener(new ReactorClient.MessageListener() {
 

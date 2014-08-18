@@ -54,7 +54,11 @@ public abstract class Reactor extends Thread {
         this.isRunning = true;
         while (this.isRunning) {
             select();
-            this.scheduler.performPendingOperations();
+            try {
+                this.scheduler.performPendingOperations();
+            } catch (Exception e) {
+                LOG.error("Exception occured during running scheduled task", e);
+            }
             processChannels();
         }
     }

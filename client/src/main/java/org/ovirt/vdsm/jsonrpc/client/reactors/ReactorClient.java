@@ -95,14 +95,12 @@ public abstract class ReactorClient {
             postConnect(getPostConnectCallback());
         } catch (InterruptedException | ExecutionException e) {
             log.error("Exception during connection", e);
+            disconnect();
             throw new ClientConnectionException(e);
         }
     }
 
-    public SelectionKey getSelectionKey() throws ClientConnectionException {
-        if (this.key == null) {
-            connect();
-        }
+    public SelectionKey getSelectionKey() {
         return this.key;
     }
 
@@ -157,7 +155,7 @@ public abstract class ReactorClient {
     protected abstract void processIncoming() throws IOException, ClientConnectionException;
 
     private void processHeartbeat() {
-        if (this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
+        if (!this.isInInit() && this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
             log.debug("Heartbeat exeeded. Closing channel");
             this.closeChannel();
         }
@@ -249,11 +247,8 @@ public abstract class ReactorClient {
 
     /**
      * Updates selection key's operation set.
-     *
-     * @throws ClientConnectionException
-     *             when issues with connection.
      */
-    public abstract void updateInterestedOps() throws ClientConnectionException;
+    public abstract void updateInterestedOps();
 
     /**
      * @return Client specific {@link OneTimeCallback} or null. The callback is executed
@@ -265,4 +260,10 @@ public abstract class ReactorClient {
      * Cleans buffer content before reconnect.
      */
     public abstract void clearBuff();
+
+    /**
+     * @return <code>true</code> when connection initialization is in progress like
+     *         SSL hand shake. <code>false</code> when connection is initialized.
+     */
+    public abstract boolean isInInit();
 }

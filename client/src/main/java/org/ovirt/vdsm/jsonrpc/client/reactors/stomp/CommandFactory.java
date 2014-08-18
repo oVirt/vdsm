@@ -96,6 +96,9 @@ public class CommandFactory {
                         return new Message().error().withHeader(HEADER_MESSAGE, "Missing required header");
                     }
                     String destination = destinations.remove(idHeader);
+                    if (destination == null) {
+                        return new Message().error().withHeader(HEADER_MESSAGE, "Subscription id not available");
+                    }
                     listeners.remove(destination);
                     if (!JsonUtils.isEmpty(headers.get(HEADER_ACK))) {
                         return new Message().ack().withHeader(HEADER_ID, idHeader);

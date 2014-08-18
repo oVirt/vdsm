@@ -17,8 +17,11 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.Command;
+import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
 
 public class StompClient implements Reciever {
     private StompTransport transport;
@@ -29,10 +32,11 @@ public class StompClient implements Reciever {
     private Map<String, String> destinations = new ConcurrentHashMap<>();
     private String id;
     private String transactionId;
+    private Lock lock = new ReentrantLock();
 
     public StompClient(String host, int port) throws IOException {
-        this.transport = new StompTransport(host, port, this);
-        this.key = this.transport.connect();
+        this.transport = new StompTransport(host, this);
+        this.key = this.transport.connect(port);
         this.transport.send(new Message().connect().withHeader(HEADER_ACCEPT, "1.2").build(), key);
         try {
             // TODO use connection timeout
@@ -43,22 +47,25 @@ public class StompClient implements Reciever {
     }
 
     public void subscribe(String channel, Listener listener) {
-        if (this.listener.get(channel) != null) {
-            throw new IllegalArgumentException("Already subscribed to channel: " + channel);
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (this.listener.get(channel) != null) {
+                throw new IllegalArgumentException("Already subscribed to channel: " + channel);
+            }
+            this.listener.put(channel, listener);
+            String id = UUID.randomUUID().toString();
+            this.destinations.put(channel, id);
+            this.transport.send(new Message().subscribe().withHeader(HEADER_DESTINATION, channel)
+                    .withHeader(HEADER_ID, id)
+                    .build(), this.key);
         }
-        this.listener.put(channel, listener);
-        String id = UUID.randomUUID().toString();
-        this.destinations.put(channel, id);
-        this.transport.send(new Message().subscribe()
-                .withHeader(HEADER_DESTINATION, channel)
-                .withHeader(HEADER_ID, id)
-                .build(), this.key);
     }
 
     public void send(String content, String channel) {
         Map<String, String> headers = new HashMap<>();
-        if (!isEmpty(this.transactionId)) {
-            headers.put(HEADER_TRANSACTION, this.transactionId);
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (!isEmpty(this.transactionId)) {
+                headers.put(HEADER_TRANSACTION, this.transactionId);
+            }
         }
         headers.put(HEADER_DESTINATION, channel);
         this.transport.send(new Message().send().withContent(content.getBytes(UTF8)).withHeaders(headers).build(),
@@ -66,9 +73,12 @@ public class StompClient implements Reciever {
     }
 
     public void unsubscribe(String channel) {
-        String id = this.destinations.remove(channel);
-        this.transport.send(new Message().unsubscribe().withHeader(HEADER_ID, id).build(), key);
-        this.listener.remove(channel);
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            String id = this.destinations.remove(channel);
+            this.listener.remove(channel);
+            this.transport.send(new Message().unsubscribe().withHeader(HEADER_ID, id).build(), key);
+        }
+
     }
 
     public void disconnect() throws IOException {
@@ -89,27 +99,33 @@ public class StompClient implements Reciever {
     }
 
     public void begin() {
-        if (!isEmpty(this.transactionId)) {
-            throw new IllegalStateException("Already opened transaction");
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (!isEmpty(this.transactionId)) {
+                throw new IllegalStateException("Already opened transaction");
+            }
+            this.transactionId = UUID.randomUUID().toString();
+            this.transport.send(new Message().begin().withHeader(HEADER_TRANSACTION, this.transactionId).build(), key);
         }
-        this.transactionId = UUID.randomUUID().toString();
-        this.transport.send(new Message().begin().withHeader(HEADER_TRANSACTION, this.transactionId).build(), key);
     }
 
     public void commit() {
-        if (isEmpty(this.transactionId)) {
-            throw new IllegalStateException("No running transaction");
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (isEmpty(this.transactionId)) {
+                throw new IllegalStateException("No running transaction");
+            }
+            this.transport.send(new Message().commit().withHeader(HEADER_TRANSACTION, this.transactionId).build(), key);
+            this.transactionId = null;
         }
-        this.transport.send(new Message().commit().withHeader(HEADER_TRANSACTION, this.transactionId).build(), key);
-        this.transactionId = null;
     }
 
     public void abort() {
-        if (isEmpty(this.transactionId)) {
-            throw new IllegalStateException("No running transaction");
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (isEmpty(this.transactionId)) {
+                throw new IllegalStateException("No running transaction");
+            }
+            this.transport.send(new Message().abort().withHeader(HEADER_TRANSACTION, this.transactionId).build(), key);
+            this.transactionId = null;
         }
-        this.transport.send(new Message().abort().withHeader(HEADER_TRANSACTION, this.transactionId).build(), key);
-        this.transactionId = null;
     }
 
     @Override
@@ -117,10 +133,12 @@ public class StompClient implements Reciever {
         if (Command.CONNECTED.toString().equals(message.getCommand())) {
             this.connected.countDown();
         } else if (Command.MESSAGE.toString().equals(message.getCommand())) {
-            String destination = message.getHeaders().get(HEADER_DESTINATION);
-            Listener listener = this.listener.get(destination);
-            if (listener != null) {
-                listener.update(new String(message.getContent(), UTF8));
+            try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+                String destination = message.getHeaders().get(HEADER_DESTINATION);
+                Listener listener = this.listener.get(destination);
+                if (listener != null) {
+                    listener.update(new String(message.getContent(), UTF8));
+                }
             }
         } else if (Command.ERROR.toString().equals(message.getCommand())) {
             String destination = message.getHeaders().get(HEADER_DESTINATION);

@@ -29,13 +29,16 @@ public class StompClient extends PlainClient {
 
                 send(new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HEART_BEAT,
                         0 + "," + reduceGracePeriod(policy.getHeartbeat())).build());
-                connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
+
                 subscribtionId = UUID.randomUUID().toString();
                 send(new Message().subscribe().withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
                         .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "client").build());
+
+                connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
                 // TODO wait for the mini broker to be finished
-                // this.subscribed.await();
+                // subscribed.await();
             } catch (InterruptedException e) {
+                disconnect();
                 throw new ClientConnectionException("Timeout during connection", e);
             }
         }
@@ -65,5 +68,10 @@ public class StompClient extends PlainClient {
     protected OneTimeCallback getPostConnectCallback() {
         this.callback.resetExecution();
         return this.callback;
+    }
+
+    @Override
+    public boolean isInInit() {
+        return false;
     }
 }

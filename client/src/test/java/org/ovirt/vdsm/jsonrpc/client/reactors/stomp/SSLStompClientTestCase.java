@@ -2,6 +2,7 @@ package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
 import java.io.IOException;
@@ -59,27 +60,35 @@ public class SSLStompClientTestCase {
 
     @Test
     public void testShortMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
-        testEcho(generateRandomMessage(16), 60625);
+        testEcho(generateRandomMessage(16));
     }
 
     @Test
     public void testLongMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
-        testEcho(generateRandomMessage(524288), 60626);
+        testEcho(generateRandomMessage(524288));
     }
 
-    public static String generateRandomMessage(int length) {
-        Random random = new Random();
-        StringBuffer randStr = new StringBuffer();
-        for(int i=0; i< length; i++){
-            int number = random.nextInt(CHAR_LIST.length());
-            char ch = CHAR_LIST.charAt(number);
-            randStr.append(ch);
-        }
-        return randStr.toString();
-    }
-
-    public void testEcho(String message, int port) throws InterruptedException, ExecutionException, ClientConnectionException {
+    @Test
+    public void testConnectionRefused() throws ClientConnectionException, InterruptedException, ExecutionException {
+        String message = generateRandomMessage(16);
+        int port = 60627;
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(5);
+        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, port);
+        client.setRetryPolicy(new RetryPolicy(180000, 0, 1000000));
+        client.addEventListener(new ReactorClient.MessageListener() {
+
+            @Override
+            public void onMessageReceived(byte[] message) {
+                queue.add(message);
+            }
+        });
+        try {
+            client.connect();
+            fail();
+        } catch (ClientConnectionException e) {
+            // OK
+        }
+
         Future<ReactorListener> futureListener =
                 this.listeningReactor.createListener(HOSTNAME, port, new EventListener() {
 
@@ -96,8 +105,47 @@ public class SSLStompClientTestCase {
 
         ReactorListener listener = futureListener.get();
         assertNotNull(listener);
+        client.connect();
 
-        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, port);
+        client.sendMessage(message.getBytes());
+        byte[] response = queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertNotNull(response);
+        assertEquals(message, new String(response, UTF8));
+
+    }
+
+    public static String generateRandomMessage(int length) {
+        Random random = new Random();
+        StringBuffer randStr = new StringBuffer();
+        for(int i=0; i< length; i++){
+            int number = random.nextInt(CHAR_LIST.length());
+            char ch = CHAR_LIST.charAt(number);
+            randStr.append(ch);
+        }
+        return randStr.toString();
+    }
+
+    public void testEcho(String message) throws InterruptedException, ExecutionException, ClientConnectionException {
+        final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(5);
+        Future<ReactorListener> futureListener =
+                this.listeningReactor.createListener(HOSTNAME, 0, new EventListener() {
+
+                    @Override
+                    public void onAcccept(final ReactorClient client) {
+                        client.addEventListener(new MessageListener() {
+                            @Override
+                            public void onMessageReceived(byte[] message) {
+                                client.sendMessage(message);
+                            }
+                        });
+                    }
+                });
+
+        ReactorListener listener = futureListener.get();
+        assertNotNull(listener);
+
+        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
         client.setRetryPolicy(new RetryPolicy(180000, 0, 1000000));
         client.addEventListener(new ReactorClient.MessageListener() {
 

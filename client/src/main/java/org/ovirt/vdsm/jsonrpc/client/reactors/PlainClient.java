@@ -6,10 +6,14 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
+import org.ovirt.vdsm.jsonrpc.client.utils.retry.Retryable;
 
 /**
  * <code>ReactorClient</code> implementation to provide not encrypted communication.
@@ -33,7 +37,7 @@ public abstract class PlainClient extends StompCommonClient {
     }
 
     @Override
-    public void updateInterestedOps() throws ClientConnectionException {
+    public void updateInterestedOps() {
         if (outbox.isEmpty()) {
             getSelectionKey().interestOps(SelectionKey.OP_READ);
         } else {
@@ -54,11 +58,22 @@ public abstract class PlainClient extends StompCommonClient {
     @Override
     protected void postConnect(OneTimeCallback callback) throws ClientConnectionException {
         try {
-            int interestedOps = SelectionKey.OP_READ;
-            reactor.wakeup();
-            key = this.channel.register(selector, interestedOps, this);
-        } catch (ClosedChannelException e) {
+            final ReactorClient client = this;
+            final FutureTask<SelectionKey> task = scheduleTask(new Retryable<SelectionKey>(
+                    new Callable<SelectionKey>() {
+
+                        @Override
+                        public SelectionKey call() throws ClosedChannelException {
+                            return channel.register(selector, SelectionKey.OP_READ, client);
+                        }
+                    }, this.policy));
+
+            key = task.get();
+        } catch (InterruptedException | ExecutionException e) {
             throw new ClientConnectionException(e);
+        }
+        if (key == null) {
+            throw new ClientConnectionException("Connection issue during post connect");
         }
     }
 

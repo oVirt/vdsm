@@ -1,5 +1,6 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.END_OF_MESSAGE;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_MESSAGE;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_RECEIPT;
@@ -100,7 +101,12 @@ public abstract class StompCommonClient extends ReactorClient {
             int contentLength = this.message.getContentLength();
             if (contentLength == -1) {
                 // only for control messages, all other have the header
-                emitOnMessageReceived(this.message);
+                // according to stomp spec: The commands and headers are encoded in UTF-8
+                String[] messages = new String(headerBuffer.array(), UTF8).split(END_OF_MESSAGE);
+                for (String message : messages) {
+                    message = message + END_OF_MESSAGE;
+                    emitOnMessageReceived(Message.parse(message.getBytes(UTF8)));
+                }
                 return;
             }
             int length = this.message.getContent().length;
@@ -118,6 +124,7 @@ public abstract class StompCommonClient extends ReactorClient {
         }
 
         readBuffer(this.ibuff);
+        updateLastHeartbeat();
         int length = this.message.getContent().length + this.ibuff.position();
         if (this.message.getContentLength() != length - 1) {
             return;

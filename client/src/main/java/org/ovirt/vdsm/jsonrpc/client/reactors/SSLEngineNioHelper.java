@@ -92,7 +92,7 @@ public class SSLEngineNioHelper {
                 this.engine.wrap(buff, this.packetBuffer);
                 this.packetBuffer.flip();
                 this.channel.write(this.packetBuffer);
-                this.packetBuffer.clear();
+                this.packetBuffer.compact();
             }
             return;
         }
@@ -130,7 +130,7 @@ public class SSLEngineNioHelper {
         return null;
     }
 
-    boolean handshakeInProgress() {
+    public boolean handshakeInProgress() {
         final SSLEngineResult.HandshakeStatus hs = this.engine.getHandshakeStatus();
 
         final EnumSet<SSLEngineResult.HandshakeStatus> handshakeEndStates =

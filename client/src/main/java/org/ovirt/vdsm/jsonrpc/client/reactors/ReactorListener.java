@@ -63,6 +63,10 @@ public final class ReactorListener {
 
     }
 
+    public int getPort() {
+        return this.channel.socket().getLocalPort();
+    }
+
     public ReactorClient accept() {
         ReactorClient client = null;
         try {

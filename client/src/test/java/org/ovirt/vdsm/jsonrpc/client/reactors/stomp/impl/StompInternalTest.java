@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Map;
@@ -12,13 +13,13 @@ import org.junit.Test;
 public class StompInternalTest {
 
     private final static String HOSTNAME = "localhost";
-    private final static int PORT = 61620;
+    private final static int TIMEOUT = 10;
 
     @Test
     public void testConnection() throws IOException, InterruptedException {
         final CountDownLatch messages = new CountDownLatch(1);
-        StompServer server = new StompServer(HOSTNAME, PORT);
-        StompClient clientSubscriber = new StompClient(HOSTNAME, PORT);
+        StompServer server = new StompServer(HOSTNAME, 0);
+        StompClient clientSubscriber = new StompClient(HOSTNAME, server.getPort());
         clientSubscriber.subscribe("/queue/a", new Listener() {
 
             @Override
@@ -28,11 +29,12 @@ public class StompInternalTest {
 
             @Override
             public void error(Map<String, String> error) {
+                fail();
             }
         });
-        StompClient clientSender = new StompClient(HOSTNAME, PORT);
+        StompClient clientSender = new StompClient(HOSTNAME, server.getPort());
         clientSender.send("Hello World!", "/queue/a");
-        messages.await(1, TimeUnit.SECONDS);
+        messages.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals(0, messages.getCount());
 
         clientSubscriber.unsubscribe("/queue/a");
@@ -56,19 +58,20 @@ public class StompInternalTest {
 
             @Override
             public void error(Map<String, String> error) {
+                fail();
             }
         };
-        StompServer server = new StompServer(HOSTNAME, PORT -1);
-        StompClient clientSubscriber1 = new StompClient(HOSTNAME, PORT - 1);
-        StompClient clientSubscriber2 = new StompClient(HOSTNAME, PORT - 1);
-        StompClient clientSubscriber3 = new StompClient(HOSTNAME, PORT - 1);
+        StompServer server = new StompServer(HOSTNAME, 0);
+        StompClient clientSubscriber1 = new StompClient(HOSTNAME, server.getPort());
+        StompClient clientSubscriber2 = new StompClient(HOSTNAME, server.getPort());
+        StompClient clientSubscriber3 = new StompClient(HOSTNAME, server.getPort());
         clientSubscriber1.subscribe("/queue/a", listener);
         clientSubscriber2.subscribe("/queue/a", listener);
         clientSubscriber3.subscribe("/queue/a", listener);
 
-        StompClient clientSender = new StompClient(HOSTNAME, PORT - 1);
+        StompClient clientSender = new StompClient(HOSTNAME, server.getPort());
         clientSender.send("Hello World!", "/queue/a");
-        messages.await(1, TimeUnit.SECONDS);
+        messages.await(TIMEOUT, TimeUnit.SECONDS);
         assertEquals(0, messages.getCount());
 
         clientSubscriber1.unsubscribe("/queue/a");
@@ -97,25 +100,26 @@ public class StompInternalTest {
 
             @Override
             public void error(Map<String, String> error) {
+                fail();
             }
         };
-        StompServer server = new StompServer(HOSTNAME, PORT - 2);
-        StompClient clientSubscriber1 = new StompClient(HOSTNAME, PORT - 2);
-        StompClient clientSubscriber2 = new StompClient(HOSTNAME, PORT - 2);
-        StompClient clientSubscriber3 = new StompClient(HOSTNAME, PORT - 2);
+        StompServer server = new StompServer(HOSTNAME, 0);
+        StompClient clientSubscriber1 = new StompClient(HOSTNAME, server.getPort());
+        StompClient clientSubscriber2 = new StompClient(HOSTNAME, server.getPort());
+        StompClient clientSubscriber3 = new StompClient(HOSTNAME, server.getPort());
         clientSubscriber1.subscribe("/queue/a", listener);
         clientSubscriber2.subscribe("/queue/b", listener);
         clientSubscriber3.subscribe("/queue/c", listener);
 
-        StompClient clientSender = new StompClient(HOSTNAME, PORT - 2);
+        StompClient clientSender = new StompClient(HOSTNAME, server.getPort());
         clientSender.begin();
         clientSender.send("Hello World!", "/queue/a");
         clientSender.send("Hello World!", "/queue/b");
         clientSender.send("Hello World!", "/queue/c");
         clientSender.commit();
-        messages.await(3, TimeUnit.SECONDS);
+        messages.await(TIMEOUT, TimeUnit.SECONDS);
 
-        assertEquals(3, messages.getCount());
+        assertEquals(0, messages.getCount());
         clientSubscriber1.unsubscribe("/queue/a");
         clientSubscriber2.unsubscribe("/queue/b");
         clientSubscriber3.unsubscribe("/queue/c");

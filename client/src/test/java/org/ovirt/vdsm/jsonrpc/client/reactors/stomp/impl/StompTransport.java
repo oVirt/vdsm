@@ -1,5 +1,8 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl;
 
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.END_OF_MESSAGE;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -20,15 +23,14 @@ public class StompTransport extends Thread implements TestSender {
     private boolean isRunning = true;
     private Reciever reciever;
 
-    public StompTransport(String host, int port, Reciever reciever) throws IOException {
+    public StompTransport(String host, Reciever reciever) throws IOException {
         this.selector = SelectorProvider.provider().openSelector();
         this.reciever = reciever;
         this.host = host;
-        this.port = port;
     }
 
-    public SelectionKey connect() throws IOException {
-        final InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(this.host), this.port);
+    public SelectionKey connect(int port) throws IOException {
+        final InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(this.host), port);
         SocketChannel socketChannel = SocketChannel.open();
 
         socketChannel.connect(addr);
@@ -47,7 +49,9 @@ public class StompTransport extends Thread implements TestSender {
         serverSocketChannel.configureBlocking(false);
 
         serverSocketChannel.register(this.selector, SelectionKey.OP_ACCEPT, new ConcurrentLinkedDeque<>());
-        serverSocketChannel.bind(new InetSocketAddress(this.host, this.port));
+        serverSocketChannel.bind(new InetSocketAddress(this.host, 0));
+
+        this.port = serverSocketChannel.socket().getLocalPort();
 
         setDaemon(true);
         start();
@@ -79,7 +83,7 @@ public class StompTransport extends Thread implements TestSender {
                     continue;
                 }
                 for (final SelectionKey key : this.selector.selectedKeys()) {
-                    if (key.isAcceptable()) {
+                    if (key.isValid() && key.isAcceptable()) {
                         ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
                         SocketChannel socketChannel = serverSocketChannel.accept();
                         if (socketChannel != null) {
@@ -98,8 +102,11 @@ public class StompTransport extends Thread implements TestSender {
                             this.readBuffer.rewind();
                             this.readBuffer.get(msgBuff);
                             this.readBuffer.clear();
-                            Message message = Message.parse(msgBuff);
-                            this.reciever.recieve(message, key);
+                            String[] messages = new String(msgBuff, UTF8).split(END_OF_MESSAGE);
+                            for (String message : messages) {
+                                message = message + END_OF_MESSAGE;
+                                this.reciever.recieve(Message.parse(message.getBytes(UTF8)), key);
+                            }
                         }
                     }
                     if (key.isValid() && key.isWritable()) {
@@ -131,5 +138,9 @@ public class StompTransport extends Thread implements TestSender {
         } else {
             key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
         }
+    }
+
+    public int getPort() {
+        return port;
     }
 }
