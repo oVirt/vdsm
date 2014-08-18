@@ -1743,6 +1743,28 @@ class StoragePool(object):
             image.Image(self.poolPath).multiMove(
                 srcDomUUID, dstDomUUID, imgDict, vmUUID, force)
 
+    def reconcileVolumeChain(self, sdUUID, imgUUID, leafVolUUID):
+        """
+        Determines the actual volume chain for an offline image and returns it.
+        If the actual chain differs from storage metadata, the metadata is
+        corrected to reflect the actual chain.
+
+        :param sdUUID: The UUID of the storage domain that contains the image.
+        :type sdUUID: UUID
+        :param imgUUID: The UUID of the image to be checked.
+        :type imgUUID: UUID
+        :param leafVolUUID: The UUID of the last known leaf volume.
+        :type leafVolUUID: UUID
+        :returns: A dict with a list of volume UUIDs in the corrected chain
+        :rtype: dict
+        """
+        imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
+        with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
+                                      rm.LockType.exclusive):
+            img = image.Image(self.poolPath)
+            chain = img.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
+        return dict(volumes=chain)
+
     def mergeSnapshots(self, sdUUID, vmUUID, imgUUID, ancestor, successor,
                        postZero):
         """

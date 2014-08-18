@@ -397,6 +397,7 @@ command_info = {
     'Image_download': {'ret': 'uuid'},
     'Image_mergeSnapshots': {'ret': 'uuid'},
     'Image_move': {'ret': 'uuid'},
+    'Image_reconcileVolumeChain': {'ret': 'volumes'},
     'ISCSIConnection_discoverSendTargets': {'ret': 'fullTargets'},
     'LVMVolumeGroup_create': {'ret': 'uuid'},
     'LVMVolumeGroup_getInfo': {'ret': 'info'},

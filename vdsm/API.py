@@ -906,6 +906,10 @@ class Image(APIBase):
             methodArgs, callback, self._spUUID, self._sdUUID, self._UUID,
             volUUID)
 
+    def reconcileVolumeChain(self, leafVolUUID):
+        return self._irs.reconcileVolumeChain(self._spUUID, self._sdUUID,
+                                              self._UUID, leafVolUUID)
+
 
 class LVMVolumeGroup(APIBase):
     ctorArgs = ['lvmvolumegroupID']

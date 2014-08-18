@@ -1125,6 +1125,78 @@ class Image:
 
         return accumulatedChainSize, chain
 
+    def syncVolumeChain(self, sdUUID, imgUUID, volUUID, actualChain):
+        """
+        Fix volume metadata to reflect the given actual chain.  This function
+        is used to correct the volume chain linkage after a live merge.
+        """
+        curChain = self.getChain(sdUUID, imgUUID, volUUID)
+        subChain = []
+        for vol in curChain:
+            if vol.volUUID not in actualChain:
+                subChain.insert(0, vol.volUUID)
+            elif len(subChain) > 0:
+                break
+        if len(subChain) == 0:
+            return
+        self.log.debug("unlinking subchain: %s" % subChain)
+
+        sdDom = sdCache.produce(sdUUID=sdUUID)
+        dstParent = sdDom.produceVolume(imgUUID, subChain[0]).getParent()
+        subChainTailVol = sdDom.produceVolume(imgUUID, subChain[-1])
+        if subChainTailVol.isLeaf():
+            self.log.debug("Leaf volume is being removed from the chain. "
+                           "Marking it ILLEGAL to prevent data corruption")
+            subChainTailVol.setLegality(volume.ILLEGAL_VOL)
+        else:
+            for childID in subChainTailVol.getChildren():
+                self.log.debug("Setting parent of volume %s to %s",
+                               childID, dstParent)
+                sdDom.produceVolume(imgUUID, childID). \
+                    setParentMeta(dstParent)
+
+    def reconcileVolumeChain(self, sdUUID, imgUUID, leafVolUUID):
+        """
+        Discover and return the actual volume chain of an offline image
+        according to the qemu-img info command and synchronize volume metadata.
+        """
+        # Prepare volumes
+        dom = sdCache.produce(sdUUID)
+        allVols = dom.getAllVolumes()
+        imgVolumes = sd.getVolsOfImage(allVols, imgUUID).keys()
+        dom.activateVolumes(imgUUID, imgVolumes)
+
+        # Walk the volume chain using qemu-img.  Not safe for running VMs
+        actualVolumes = []
+        volUUID = leafVolUUID
+        while volUUID is not None:
+            actualVolumes.insert(0, volUUID)
+            vol = dom.produceVolume(imgUUID, volUUID)
+            qemuImgFormat = volume.fmt2str(vol.getFormat())
+            imgInfo = qemuimg.info(vol.volumePath, qemuImgFormat)
+            backingFile = imgInfo.get('backingfile')
+            if backingFile is not None:
+                volUUID = os.path.basename(backingFile)
+            else:
+                volUUID = None
+
+        # A merge of the active layer has copy and pivot phases.
+        # During copy, data is copied from the leaf into its parent.  Writes
+        # are mirrored to both volumes.  So even after copying is complete the
+        # volumes will remain consistent.  Finally, the VM is pivoted from the
+        # old leaf to the new leaf and mirroring to the old leaf ceases. During
+        # mirroring and before pivoting, we mark the old leaf ILLEGAL so we
+        # know it's safe to delete in case the operation is interrupted.
+        vol = dom.produceVolume(imgUUID, leafVolUUID)
+        if vol.getLegality() == volume.ILLEGAL_VOL:
+            actualVolumes.remove(leafVolUUID)
+
+        # Now that we know the correct volume chain, sync the storge metadata
+        self.syncVolumeChain(sdUUID, imgUUID, actualVolumes[-1], actualVolumes)
+
+        dom.deactivateImage(imgUUID)
+        return actualVolumes
+
     def merge(self, sdUUID, vmUUID, imgUUID, ancestor, successor, postZero):
         """Merge source volume to the destination volume.
             'successor' - source volume UUID
