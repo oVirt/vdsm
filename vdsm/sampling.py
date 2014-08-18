@@ -205,9 +205,15 @@ class HostSample(TimedSample):
             self.thpState = 'never'
 
         ENGINE_DEFAULT_POLL_INTERVAL = 15
-        self.recentClient = (
-            self.timestamp - os.stat(P_VDSM_CLIENT_LOG).st_mtime <
-            2 * ENGINE_DEFAULT_POLL_INTERVAL)
+        try:
+            self.recentClient = (
+                self.timestamp - os.stat(P_VDSM_CLIENT_LOG).st_mtime <
+                2 * ENGINE_DEFAULT_POLL_INTERVAL)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                self.recentClient = False
+            else:
+                raise
 
     def to_connlog(self):
         text = ', '.join(
