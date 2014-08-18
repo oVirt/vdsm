@@ -18,6 +18,7 @@
 #
 
 from functools import wraps
+import errno
 import inspect
 import sys
 import os
@@ -472,8 +473,14 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
 def clientSeen(timeout):
     start = time.time()
     while timeout >= 0:
-        if os.stat(constants.P_VDSM_CLIENT_LOG).st_mtime > start:
-            return True
+        try:
+            if os.stat(constants.P_VDSM_CLIENT_LOG).st_mtime > start:
+                return True
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                pass  # P_VDSM_CLIENT_LOG is not yet there
+            else:
+                raise
         time.sleep(1)
         timeout -= 1
     return False
