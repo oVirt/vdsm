@@ -4267,6 +4267,29 @@
  'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
           'imageID': 'UUID', '*volumeID': 'UUID'}}
 
+##
+# @Image.reconcileVolumeChain:
+#
+# Reconcile an image volume chain and return the current chain.
+#
+# @storagepoolID:    The UUID of the Storage Pool associated with the Image
+#
+# @storagedomainID:  The UUID of the Storage Domain associated with the Image
+#
+# @imageID:          The UUID of the Image
+#
+# @leafVolID:        The UUID of the original leaf volume
+#
+# Returns:
+# A list of volume UUIDs representing the current volume chain
+#
+# Since: 4.16.0
+##
+{'command': {'class': 'Image', 'name': 'reconcileVolumeChain'},
+ 'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
+          'imageID': 'UUID', 'leafVolID': 'UUID'}
+ 'returns': ['UUID']}
+
 ## Category: @LVMVolumeGroup ###################################################
 ##
 # @LVMVolumeGroup:

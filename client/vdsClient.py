@@ -1374,6 +1374,17 @@ class service:
 
         return ret['status']['code'], ret['status']['message']
 
+    def reconcileVolumeChain(self, args):
+        if len(args) != 4:
+            raise ValueError('Wrong number of parameters')
+
+        ret = self.s.reconcileVolumeChain(*args)
+        if 'volumes' in ret:
+            for v in ret['volumes']:
+                print v
+            return 0, ''
+        return ret['status']['code'], ret['status']['message']
+
     def moveMultiImage(self, args):
         spUUID = args[0]
         srcDomUUID = args[1]
@@ -2464,6 +2475,10 @@ if __name__ == '__main__':
         'teardownImage': (serv.teardownImage, (
             '<spUUID> <sdUUID> <imgUUID> [<volUUID>]',
             'Teardown an image, releasing the prepared volumes.'
+        )),
+        'reconcileVolumeChain': (serv.reconcileVolumeChain, (
+            '<spUUID> <sdUUID> <imgUUID> <leafVolUUID>',
+            'Reconcile an image volume chain and return the current chain.'
         )),
         'moveMultiImage': (serv.moveMultiImage,
                            ('<spUUID> <srcDomUUID> <dstDomUUID> '

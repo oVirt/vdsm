@@ -1812,36 +1812,34 @@ class HSM(object):
         volumes.  In this case we update the chain in the metadata LV only.
         The LV tag will be fixed when the unlinked volume is deleted by an SPM.
         """
+        argsStr = ("sdUUID=%s, imgUUID=%s, volUUID=%s, newChain=%s" %
+                   (sdUUID, imgUUID, volUUID, newChain))
+        vars.task.setDefaultException(se.StorageException("%s" % argsStr))
         sdDom = sdCache.produce(sdUUID=sdUUID)
         repoPath = os.path.join(self.storage_repository, sdDom.getPools()[0])
-        img = image.Image(repoPath)
 
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
         with rmanager.acquireResource(imageResourcesNamespace, imgUUID,
                                       rm.LockType.shared):
-            curChain = img.getChain(sdUUID, imgUUID, volUUID)
-            subChain = []
-            for vol in curChain:
-                if vol.volUUID not in newChain:
-                    subChain.insert(0, vol.volUUID)
-                elif len(subChain) > 0:
-                    break
-            self.log.debug("unlinking subchain: %s" % subChain)
-            if len(subChain) == 0:
-                return
+            image.Image(repoPath).syncVolumeChain(sdUUID, imgUUID, volUUID,
+                                                  newChain)
 
-            dstParent = sdDom.produceVolume(imgUUID, subChain[0]).getParent()
-            subChainTailVol = sdDom.produceVolume(imgUUID, subChain[-1])
-            if subChainTailVol.isLeaf():
-                self.log.debug("Leaf volume is being removed from the chain. "
-                               "Marking it ILLEGAL to prevent data corruption")
-                subChainTailVol.setLegality(volume.ILLEGAL_VOL)
-            else:
-                for childID in subChainTailVol.getChildren():
-                    self.log.debug("Setting parent of volume %s to %s",
-                                   childID, dstParent)
-                    sdDom.produceVolume(imgUUID, childID). \
-                        setParentMeta(dstParent)
+    @public
+    def reconcileVolumeChain(self, spUUID, sdUUID, imgUUID, leafVolUUID):
+        """
+        In some situations (such as when a live merge is interrupted), the
+        vdsm volume chain could become out of sync with the actual chain as
+        understood by qemu.  This API uses qemu-img to determine the correct
+        chain and synchronizes vdsm metadata accordingly.  Returns the correct
+        volume chain.  NOT for use on images of running VMs.
+        """
+        argsStr = ("spUUID=%s, sdUUID=%s, imgUUID=%s, leafVolUUID=%s" %
+                   (spUUID, sdUUID, imgUUID, leafVolUUID))
+        vars.task.setDefaultException(se.StorageException("%s" % argsStr))
+        pool = self.getPool(spUUID)
+        sdCache.produce(sdUUID=sdUUID)
+        vars.task.getSharedLock(STORAGE, sdUUID)
+        return pool.reconcileVolumeChain(sdUUID, imgUUID, leafVolUUID)
 
     @public
     def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor,
