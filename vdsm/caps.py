@@ -594,8 +594,8 @@ def get():
                 'model_qemu32,model_coreduo,model_core2duo,model_n270,' \
                 'model_Conroe,model_Penryn,model_Nehalem,model_Opteron_G1'
         elif targetArch == Architecture.PPC64:
-            caps['cpuModel'] = 'POWER 7 (fake)'
-            caps['cpuFlags'] = 'powernv,model_POWER7_v2.3'
+            caps['cpuModel'] = 'POWER 8 (fake)'
+            caps['cpuFlags'] = 'powernv,model_power8'
         else:
             raise RuntimeError('Unsupported architecture: %s' % targetArch)
     else:
