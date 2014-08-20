@@ -2282,6 +2282,7 @@ class Vm(object):
             self._underlyingCont()
             self._setGuestCpuRunning(self._isDomainRunning(),
                                      guestCpuLocked=True)
+            self._logGuestCpuStatus('continue')
             self._lastStatus = afterState
             try:
                 with self._confLock:
@@ -2303,6 +2304,7 @@ class Vm(object):
             self._underlyingPause()
             self._setGuestCpuRunning(self._isDomainRunning(),
                                      guestCpuLocked=True)
+            self._logGuestCpuStatus('pause')
             self._lastStatus = afterState
             return {'status': doneCode, 'output': ['']}
         finally:
@@ -2826,6 +2828,7 @@ class Vm(object):
             self.log.exception("Failed to connect to guest agent channel")
 
         self._guestCpuRunning = self._isDomainRunning()
+        self._logGuestCpuStatus('domain initialization')
         if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
                                    vmstatus.RESTORING_STATE):
             self._initTimePauseCode = self._readPauseCode(0)
@@ -4460,6 +4463,7 @@ class Vm(object):
                           blockDevAlias, err)
             self.conf['pauseCode'] = err.upper()
             self._setGuestCpuRunning(False)
+            self._logGuestCpuStatus('onIOError')
             if err.upper() == 'ENOSPC':
                 if not self.extendDrivesIfNeeded():
                     self.log.info("No VM drives were extended")
@@ -5169,6 +5173,7 @@ class Vm(object):
                 self._onQemuDeath()
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             self._setGuestCpuRunning(False)
+            self._logGuestCpuStatus('onSuspend')
             if detail == libvirt.VIR_DOMAIN_EVENT_SUSPENDED_PAUSED:
                 # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
                 # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
@@ -5184,6 +5189,7 @@ class Vm(object):
 
         elif event == libvirt.VIR_DOMAIN_EVENT_RESUMED:
             self._setGuestCpuRunning(True)
+            self._logGuestCpuStatus('onResume')
             if detail == libvirt.VIR_DOMAIN_EVENT_RESUMED_UNPAUSED:
                 # This is not a real solution however the safest way to handle
                 # this for now. Ultimately we need to change the way how we are
@@ -5606,6 +5612,11 @@ class Vm(object):
         """
         return set(device.domainID for device in self._devices[DISK_DEVICES]
                    if device['device'] == 'disk' and isVdsmImage(device))
+
+    def _logGuestCpuStatus(self, reason):
+        self.log.debug('CPU %s: %s',
+                       'running' if self._guestCpuRunning else 'stopped',
+                       reason)
 
 
 class LiveMergeCleanupThread(threading.Thread):
