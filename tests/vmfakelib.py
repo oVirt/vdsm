@@ -112,6 +112,9 @@ class Domain(object):
 
 
 class GuestAgent(object):
+    def __init__(self):
+        self.guestDiskMapping = {}
+
     def getGuestInfo(self):
         return {
             'username': 'Unknown',
