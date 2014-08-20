@@ -112,7 +112,7 @@ class Libvirt(ModuleConfigure):
             content['removeConf'](self, content['path'])
 
     def getRequires(self):
-        return {'certificates'}
+        return set(['certificates'])
 
     def _getPersistedFiles(self):
         """
