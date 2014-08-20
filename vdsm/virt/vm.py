@@ -1500,7 +1500,7 @@ class Vm(object):
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log)
         self._lastXMLDesc = '<domain><uuid>%s</uuid></domain>' % self.id
-        self._devXmlHash = '0'
+        self._devXmlHash = 0
         self._released = False
         self._releaseLock = threading.Lock()
         self.saveState()
@@ -2516,7 +2516,8 @@ class Vm(object):
                                    exc_info=True)
 
         stats.update(self._getGraphicsStats())
-        stats['hash'] = self._devXmlHash
+        stats['hash'] = str(hash((self._devXmlHash,
+                                  self.guestAgent.diskMappingHash)))
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
         return stats
@@ -4491,7 +4492,7 @@ class Vm(object):
         self._lastXMLDesc = self._dom.XMLDesc(0)
         devxml = _domParseStr(self._lastXMLDesc).childNodes[0]. \
             getElementsByTagName('devices')[0]
-        self._devXmlHash = str(hash(devxml.toxml()))
+        self._devXmlHash = hash(devxml.toxml())
 
         return self._lastXMLDesc
 

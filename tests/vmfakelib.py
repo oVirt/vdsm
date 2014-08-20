@@ -114,6 +114,7 @@ class Domain(object):
 class GuestAgent(object):
     def __init__(self):
         self.guestDiskMapping = {}
+        self.diskMappingHash = 0
 
     def getGuestInfo(self):
         return {

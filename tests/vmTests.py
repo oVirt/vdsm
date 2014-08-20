@@ -1525,6 +1525,13 @@ class TestVmStatsThread(TestCaseBase):
                 self.assertIn(statsDev['type'], confDev['device'])
                 self.assertIn('port', statsDev)
 
+    def testDiskMappingHashInStatsHash(self):
+        with fake.VM(self.VM_PARAMS) as testvm:
+            res = testvm.getStats()
+            testvm.guestAgent.diskMappingHash += 1
+            self.assertNotEquals(res['hash'],
+                                 testvm.getStats()['hash'])
+
 
 class TestLibVirtCallbacks(TestCaseBase):
     FAKE_ERROR = 'EFAKERROR'
