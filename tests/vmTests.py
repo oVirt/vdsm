@@ -896,6 +896,7 @@ class TestVm(TestCaseBase):
 class FakeGuestAgent(object):
     def __init__(self):
         self.guestDiskMapping = {}
+        self.diskMappingHash = 0
 
     def getGuestInfo(self):
         return {
@@ -1139,6 +1140,13 @@ class TestVmStatsThread(TestCaseBase):
             for statsDev, confDev in zip(res['displayInfo'], devices):
                 self.assertIn(statsDev['type'], confDev['device'])
                 self.assertIn('port', statsDev)
+
+    def testDiskMappingHashInStatsHash(self):
+        with FakeVM(self.VM_PARAMS) as fake:
+            res = fake.getStats()
+            fake.guestAgent.diskMappingHash += 1
+            self.assertNotEquals(res['hash'],
+                                 fake.getStats()['hash'])
 
 
 class TestLibVirtCallbacks(TestCaseBase):

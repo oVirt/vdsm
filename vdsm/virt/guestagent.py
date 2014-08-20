@@ -121,6 +121,7 @@ class GuestAgent ():
         self._stopped = True
         self.guestStatus = None
         self.guestDiskMapping = {}
+        self.diskMappingHash = 0
         self.guestInfo = {
             'username': user,
             'memUsage': 0,
@@ -305,6 +306,8 @@ class GuestAgent ():
                 disks.append(disk)
             self.guestInfo['disksUsage'] = disks
             self.guestDiskMapping = args.get('mapping', {})
+            self.diskMappingHash = hash(json.dumps(self.guestDiskMapping,
+                                                   sort_keys=True))
         elif message == 'number-of-cpus':
             self.guestInfo['guestCPUCount'] = int(args['count'])
         else:
