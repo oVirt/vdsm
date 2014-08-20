@@ -894,6 +894,9 @@ class TestVm(TestCaseBase):
 
 
 class FakeGuestAgent(object):
+    def __init__(self):
+        self.guestDiskMapping = {}
+
     def getGuestInfo(self):
         return {
             'username': 'Unknown',

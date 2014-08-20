@@ -3448,6 +3448,29 @@
  'returns': ['UUID']}
 
 ##
+# @GuestDiskMappingInfo:
+#
+# disk mapping information indexed by property name.
+#
+# @name:                  device logical name within the guest.
+#
+# Since: 4.16.8
+##
+{'type': 'GuestDiskMappingInfo',
+ 'data': {'name': 'str'}}
+
+
+##
+# @GuestDisksMappingMap:
+#
+# guest disks mapping information indexed by serial.
+#
+# Since: 4.16.8
+##
+{'map': 'GuestDisksMappingMap',
+ 'key': 'str', 'value': 'GuestDiskMappingInfo'}
+
+##
 # @VMFullInfo:
 #
 # Full information about VM.
@@ -3513,6 +3536,11 @@
 #
 # @guestIPs:              A space separated string of assigned IPv4 addresses
 #
+# @guestDiskMapping:      A dictionary containing information about the disk
+#                         mapping within the guest. The key is the device
+#                         serial and the value is the mapping information.
+#                         (New in version 4.16.8.)
+#
 # @smartcardEnable:       Info whether smartcard is enabled.
 #
 # @nicModel:              The type of device that is exposed to the VM operating system
@@ -3535,9 +3563,10 @@
           'username': 'str', 'emulatedMachine': 'str', 'pid': 'uint',
           'spiceSslCipherSuite': 'str', 'cpuType': 'str', 'pauseCode': 'str',
           'guestFQDN': 'str', 'displayIp': 'str', 'keyboardLayout': 'str',
-          'displayPort': 'uint', 'guestIPs': 'str', 'smartcardEnable': 'bool',
-          'nicModel': 'VmInterfaceDeviceModel', 'pitReinjection': 'bool',
-          'status': 'str', 'clientIp': 'str'}}
+          'displayPort': 'uint', 'guestIPs': 'str',
+          'guestDiskMapping': 'GuestDisksMappingMap',
+          'smartcardEnable': 'bool', 'nicModel': 'VmInterfaceDeviceModel',
+          'pitReinjection': 'bool', 'status': 'str', 'clientIp': 'str'}}
 
 ##
 # @Host.getVMFullList:

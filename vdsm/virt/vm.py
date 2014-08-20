@@ -2850,8 +2850,11 @@ class Vm(object):
         # used by API.Global.getVMList
         self.conf['status'] = self.lastStatus
         # Filter out any internal keys
-        return dict((k, v) for k, v in self.conf.iteritems()
-                    if not k.startswith("_"))
+        status = dict((k, v) for k, v in self.conf.iteritems()
+                      if not k.startswith("_"))
+        status['guestDiskMapping'] = (self.guestAgent.guestDiskMapping
+                                      if self.guestAgent is not None else {})
+        return status
 
     def getStats(self):
         """
