@@ -1831,9 +1831,17 @@ class HSM(object):
                 return
 
             dstParent = sdDom.produceVolume(imgUUID, subChain[0]).getParent()
-            children = sdDom.produceVolume(imgUUID, subChain[-1]).getChildren()
-            for childID in children:
-                sdDom.produceVolume(imgUUID, childID).setParentMeta(dstParent)
+            subChainTailVol = sdDom.produceVolume(imgUUID, subChain[-1])
+            if subChainTailVol.isLeaf():
+                self.log.debug("Leaf volume is being removed from the chain. "
+                               "Marking it ILLEGAL to prevent data corruption")
+                subChainTailVol.setLegality(volume.ILLEGAL_VOL)
+            else:
+                for childID in subChainTailVol.getChildren():
+                    self.log.debug("Setting parent of volume %s to %s",
+                                   childID, dstParent)
+                    sdDom.produceVolume(imgUUID, childID). \
+                        setParentMeta(dstParent)
 
     @public
     def mergeSnapshots(self, sdUUID, spUUID, vmUUID, imgUUID, ancestor,
