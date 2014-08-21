@@ -58,8 +58,8 @@ class ConfiguratorTests(TestCase):
         configurator,
         '_getConfigurers',
         lambda:  {
-            'a': MockModuleConfigurator('a', set('b')),
-            'b': MockModuleConfigurator('b', set('a'))
+            'a': MockModuleConfigurator('a', set(['b'])),
+            'b': MockModuleConfigurator('b', set(['a']))
         }
     )
     def testDependencyCircle(self):
@@ -73,10 +73,10 @@ class ConfiguratorTests(TestCase):
         configurator,
         '_getConfigurers',
         lambda:  {
-            'a': MockModuleConfigurator('a', {'b', 'd'}),
-            'b': MockModuleConfigurator('b', {'c'}),
-            'c': MockModuleConfigurator('c', {'e', 'd'}),
-            'd': MockModuleConfigurator('d', {'e', 'e'}),
+            'a': MockModuleConfigurator('a', set(['b', 'd'])),
+            'b': MockModuleConfigurator('b', set(['c'])),
+            'c': MockModuleConfigurator('c', set(['e', 'd'])),
+            'd': MockModuleConfigurator('d', set(['e', 'e'])),
             'e': MockModuleConfigurator('e', set()),
             'f': MockModuleConfigurator('f', set()),
 
@@ -107,7 +107,7 @@ class ConfiguratorTests(TestCase):
         configurator,
         '_getConfigurers',
         lambda: {
-            'a': MockModuleConfigurator('a', {'b', 'c'}),
+            'a': MockModuleConfigurator('a', set(['b', 'c'])),
             'b': MockModuleConfigurator('b', set()),
             'c': MockModuleConfigurator('c', set())
         }
