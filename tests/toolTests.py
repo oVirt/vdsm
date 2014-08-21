@@ -24,6 +24,7 @@ from vdsm.tool.configurators import \
     NOT_SURE
 from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators.libvirt import Libvirt
+from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import utils
 import monkeypatch
@@ -151,7 +152,7 @@ class ConfiguratorTests(TestCase):
     def testNonExistentModule(self):
 
         self.assertRaises(
-            SystemExit,
+            UsageError,
             configurator._parse_args,
             'validate-config',
             '--module=b'
