@@ -50,14 +50,20 @@ if utils.isOvirtNode():
 
 class Libvirt(ModuleConfigure):
 
-    def getName(self):
+    @property
+    def name(self):
         return 'libvirt'
+
+    @property
+    def requires(self):
+        return frozenset(('certificates',))
+
+    @property
+    def services(self):
+        return ("vdsmd", "supervdsmd", "libvirtd")
 
     def _getFile(self, fname):
         return self.FILES[fname]['path']
-
-    def getServices(self):
-        return ["vdsmd", "supervdsmd", "libvirtd"]
 
     def configure(self):
         self._sysvToUpstart()
@@ -106,9 +112,6 @@ class Libvirt(ModuleConfigure):
     def removeConf(self):
         for cfile, content in Libvirt.FILES.items():
             content['removeConf'](self, content['path'])
-
-    def getRequires(self):
-        return set(['certificates'])
 
     def _getPersistedFiles(self):
         """

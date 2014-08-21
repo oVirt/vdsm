@@ -39,18 +39,20 @@ dirName = os.path.dirname(os.path.realpath(__file__))
 
 class MockModuleConfigurator(ModuleConfigure):
 
-    def __init__(self, name, dependencies):
+    def __init__(self, name, requires):
         self._name = name
-        self._dependencies = dependencies
+        self._requires = requires
 
-    def __repr__(self):
-        return "name: %s, dependencies: %s" % (self._name, self._dependencies)
-
-    def getName(self):
+    @property
+    def name(self):
         return self._name
 
-    def getRequires(self):
-        return self._dependencies
+    @property
+    def requires(self):
+        return self._requires
+
+    def __repr__(self):
+        return "name: %s, requires: %s" % (self._name, self._requires)
 
 
 class ConfiguratorTests(VdsmTestCase):
@@ -88,9 +90,9 @@ class ConfiguratorTests(VdsmTestCase):
         # make sure this is indeed a topological sort.
         before_m = set()
         for m in modules:
-            for n in m.getRequires():
+            for n in m.requires:
                 self.assertIn(n, before_m)
-            before_m.add(m.getName())
+            before_m.add(m.name)
 
     @monkeypatch.MonkeyPatch(
         configurator,
@@ -118,7 +120,7 @@ class ConfiguratorTests(VdsmTestCase):
             'validate-config',
             '--module=a'
         ).modules
-        modulesNames = [m.getName() for m in modules]
+        modulesNames = [m.name for m in modules]
         self.assertTrue('a' in modulesNames)
         self.assertTrue('b' in modulesNames)
         self.assertTrue('c' in modulesNames)
@@ -138,7 +140,7 @@ class ConfiguratorTests(VdsmTestCase):
             'validate-config',
             '--module=a'
         ).modules
-        moduleNames = [m.getName() for m in modules]
+        moduleNames = [m.name for m in modules]
         self.assertTrue('a' in moduleNames)
         self.assertFalse('b' in moduleNames)
         self.assertFalse('c' in moduleNames)

@@ -44,8 +44,9 @@ class Certificates(ModuleConfigure):
     Responsible for rolling out self signed certificates if vdsm's
     configuration is ssl_enabled and no certificates exist.
     """
-    # Todo: validate_ovirt_certs.py
-    def getName(self):
+
+    @property
+    def name(self):
         return 'certificates'
 
     def validate(self):

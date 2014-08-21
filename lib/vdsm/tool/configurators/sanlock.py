@@ -35,11 +35,13 @@ class Sanlock(ModuleConfigure):
 
     SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
 
-    def getName(self):
+    @property
+    def name(self):
         return 'sanlock'
 
-    def getServices(self):
-        return ['sanlock']
+    @property
+    def services(self):
+        return ('sanlock',)
 
     def configure(self):
         """

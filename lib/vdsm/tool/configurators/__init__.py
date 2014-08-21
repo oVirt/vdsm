@@ -44,11 +44,34 @@ CONFIGURED, NOT_CONFIGURED, NOT_SURE = range(3)
 
 class ModuleConfigure(object):
 
-    def getName(self):
-        return None
+    @property
+    def name(self):
+        """
+        The module name to be used with the --module option.
 
-    def getServices(self):
-        return []
+        Must be overriden by subclass.
+        """
+        raise NotImplementedError()
+
+    @property
+    def requires(self):
+        """
+        Names of other modules required by this module.
+
+        May be overriden by subclass.
+        """
+        return frozenset()
+
+    @property
+    def services(self):
+        """
+        Services that must not run when this module is configured. The
+        specified services will be stopped before this configurator is called,
+        and will be started in reversed order when the configurator is done.
+
+        May be overriden by subclass.
+        """
+        return ()
 
     def validate(self):
         return True
@@ -61,6 +84,3 @@ class ModuleConfigure(object):
 
     def removeConf(self):
         pass
-
-    def getRequires(self):
-        return set()

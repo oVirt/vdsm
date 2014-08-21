@@ -37,7 +37,7 @@ from .configurators import \
     sanlock
 
 
-_CONFIGURATORS = dict((m.getName(), m) for m in (
+_CONFIGURATORS = dict((m.name, m) for m in (
     certificates.Certificates(),
     libvirt.Libvirt(),
     sanlock.Sanlock(),
@@ -61,14 +61,14 @@ def configure(*args):
         override = args.force and isconfigured != CONFIGURED
         if not override and not c.validate():
             raise InvalidConfig(
-                "Configuration of %s is invalid" % c.getName()
+                "Configuration of %s is invalid" % c.name
             )
         if override or isconfigured == NOT_CONFIGURED:
             configurer_to_trigger.append(c)
 
     services = []
     for c in configurer_to_trigger:
-        for s in c.getServices():
+        for s in c.services:
             if service.service_status(s, False) == 0:
                 if not args.force:
                     raise InvalidRun(
@@ -84,7 +84,7 @@ def configure(*args):
     sys.stdout.write("\nRunning configure...\n")
     for c in configurer_to_trigger:
         c.configure()
-        sys.stdout.write("Reconfiguration of %s is done.\n" % (c.getName(),))
+        sys.stdout.write("Reconfiguration of %s is done.\n" % (c.name,))
 
     for s in reversed(services):
         service.service_start(s)
@@ -102,8 +102,7 @@ def isconfigured(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c.getName() for c in args.modules
-         if c.isconfigured() == NOT_CONFIGURED]
+    m = [c.name for c in args.modules if c.isconfigured() == NOT_CONFIGURED]
 
     if m:
         sys.stdout.write(
@@ -138,7 +137,7 @@ def validate_config(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c.getName() for c in args.modules if not c.validate()]
+    m = [c.name for c in args.modules if not c.validate()]
 
     if m:
         sys.stdout.write(
@@ -163,13 +162,13 @@ def remove_config(*args):
             c.removeConf()
             sys.stdout.write(
                 "removed configuration of module %s successfully\n" %
-                c.getName()
+                c.name
             )
 
         except Exception:
             sys.stderr.write(
                 "can't remove configuration of module %s\n" %
-                c.getName()
+                c.name
             )
             traceback.print_exc(file=sys.stderr)
             failed = True
@@ -184,7 +183,7 @@ def _add_dependencies(modulesNames):
     while queue:
         next_ = queue.popleft()
         try:
-            requiredNames = _CONFIGURATORS[next_].getRequires()
+            requiredNames = _CONFIGURATORS[next_].requires
         except KeyError:
             available = ', '.join(sorted(_CONFIGURATORS))
             raise UsageError(
@@ -210,7 +209,7 @@ def _sort_modules(modulesNames):
     while modulesNames:
 
         for c in modulesNames:
-            requires = _CONFIGURATORS[c].getRequires()
+            requires = _CONFIGURATORS[c].requires
             if requires.issubset(set(sortedModules)):
                 modulesNames.remove(c)
                 sortedModules.append(c)
