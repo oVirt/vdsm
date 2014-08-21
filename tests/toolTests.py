@@ -146,7 +146,8 @@ class ConfiguratorTests(TestCase):
         configurator,
         '_getConfigurers',
         lambda:  {
-            'a': MockModuleConfigurator('a', set()),
+            'libvirt': MockModuleConfigurator('libvirt', set()),
+            'sanlock': MockModuleConfigurator('sanlock', set()),
         }
     )
     def testNonExistentModule(self):
@@ -155,7 +156,7 @@ class ConfiguratorTests(TestCase):
             UsageError,
             configurator._parse_args,
             'validate-config',
-            '--module=b'
+            '--module=multipath'
         )
 
 

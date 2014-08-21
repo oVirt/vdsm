@@ -180,9 +180,10 @@ def _add_dependencies(modulesNames):
         try:
             requiredNames = _getConfigurers()[next_].getRequires()
         except KeyError:
+            available = ', '.join(sorted(_getConfigurers()))
             raise UsageError(
-                "error: argument --module: "
-                "invalid choice: %s (choose from %s)\n" % (next_, modulesNames)
+                "error: argument --module: invalid choice: %s\n"
+                "(available: %s)\n" % (next_, available)
             )
 
         for requiredName in requiredNames:
