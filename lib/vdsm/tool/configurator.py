@@ -22,7 +22,7 @@ import argparse
 import sys
 import traceback
 
-from . import service, expose
+from . import service, expose, UsageError
 from .configurators import \
     certificates, \
     CONFIGURED, \
@@ -180,7 +180,7 @@ def _add_dependencies(modulesNames):
         try:
             requiredNames = _getConfigurers()[next_].getRequires()
         except KeyError:
-            raise KeyError(
+            raise UsageError(
                 "error: argument --module: "
                 "invalid choice: %s (choose from %s)\n" % (next_, modulesNames)
             )
