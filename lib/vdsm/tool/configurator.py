@@ -111,7 +111,7 @@ def isconfigured(*args):
 
 One of the modules is not configured to work with VDSM.
 To configure the module use the following:
-'vdsm-tool configure [module_name]'.
+'vdsm-tool configure [--module module-name]'.
 
 If all modules are not configured try to use:
 'vdsm-tool configure --force'
