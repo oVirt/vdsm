@@ -97,7 +97,8 @@ def isconfigured(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c for c in args.modules if c.isconfigured() == NOT_CONFIGURED]
+    m = [c.getName() for c in args.modules
+         if c.isconfigured() == NOT_CONFIGURED]
 
     if m:
         sys.stdout.write(
@@ -131,7 +132,7 @@ def validate_config(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c for c in args.modules if not c.validate()]
+    m = [c.getName() for c in args.modules if not c.validate()]
 
     if m:
         sys.stdout.write(
