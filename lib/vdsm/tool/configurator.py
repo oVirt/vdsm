@@ -101,7 +101,7 @@ def isconfigured(*args):
 
     if m:
         sys.stdout.write(
-            "Modules %s are not configured\n " % ','.join(m),
+            "Modules %s are not configured\n " % ', '.join(m),
         )
         ret = False
 
@@ -135,7 +135,7 @@ def validate_config(*args):
 
     if m:
         sys.stdout.write(
-            "Modules %s contains invalid configuration\n " % ','.join(m),
+            "Modules %s contains invalid configuration\n " % ', '.join(m),
         )
         ret = False
 
