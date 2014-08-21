@@ -43,9 +43,9 @@ dirName = os.path.dirname(os.path.realpath(__file__))
 
 class MockModuleConfigurator(ModuleConfigure):
 
-    def __init__(self, name, requires, false_mock=False):
+    def __init__(self, name, requires=(), false_mock=False):
         self._name = name
-        self._requires = requires
+        self._requires = frozenset(requires)
         self._false_mock = false_mock
 
     @property
@@ -88,8 +88,8 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', set(['b'])),
-            'b': MockModuleConfigurator('b', set(['a']))
+            'a': MockModuleConfigurator('a', ('b',)),
+            'b': MockModuleConfigurator('b', ('a',))
         }
     )
     def testDependencyCircle(self):
@@ -103,13 +103,12 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', set(['b', 'd'])),
-            'b': MockModuleConfigurator('b', set(['c'])),
-            'c': MockModuleConfigurator('c', set(['e', 'd'])),
-            'd': MockModuleConfigurator('d', set(['e', 'e'])),
-            'e': MockModuleConfigurator('e', set()),
-            'f': MockModuleConfigurator('f', set()),
-
+            'a': MockModuleConfigurator('a', ('b', 'd')),
+            'b': MockModuleConfigurator('b', ('c',)),
+            'c': MockModuleConfigurator('c', ('e', 'd')),
+            'd': MockModuleConfigurator('d', ('e', 'e')),
+            'e': MockModuleConfigurator('e'),
+            'f': MockModuleConfigurator('f'),
         }
     )
     def testNormalDependencies(self):
@@ -125,9 +124,9 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', set()),
-            'b': MockModuleConfigurator('b', set()),
-            'c': MockModuleConfigurator('c', set())
+            'a': MockModuleConfigurator('a'),
+            'b': MockModuleConfigurator('b'),
+            'c': MockModuleConfigurator('c')
         }
     )
     def testNoDependencies(self):
@@ -137,9 +136,9 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', set(['b', 'c'])),
-            'b': MockModuleConfigurator('b', set()),
-            'c': MockModuleConfigurator('c', set())
+            'a': MockModuleConfigurator('a', ('b', 'c')),
+            'b': MockModuleConfigurator('b'),
+            'c': MockModuleConfigurator('c')
         }
     )
     def testDependenciesAdditionPositive(self):
@@ -156,9 +155,9 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', set()),
-            'b': MockModuleConfigurator('b', set()),
-            'c': MockModuleConfigurator('c', set())
+            'a': MockModuleConfigurator('a'),
+            'b': MockModuleConfigurator('b'),
+            'c': MockModuleConfigurator('c')
         }
     )
     def testDependenciesAdditionNegative(self):
@@ -176,8 +175,8 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'libvirt': MockModuleConfigurator('libvirt', set()),
-            'sanlock': MockModuleConfigurator('sanlock', set()),
+            'libvirt': MockModuleConfigurator('libvirt'),
+            'sanlock': MockModuleConfigurator('sanlock'),
         }
     )
     def testNonExistentModule(self):
@@ -194,8 +193,8 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', set(), True),
-            'b': MockModuleConfigurator('b', set(), True),
+            'a': MockModuleConfigurator('a', false_mock=True),
+            'b': MockModuleConfigurator('b', false_mock=True),
         }
     )
     def testFailuresOnExposedFuncs(self):
@@ -227,8 +226,8 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', set()),
-            'b': MockModuleConfigurator('b', set()),
+            'a': MockModuleConfigurator('a'),
+            'b': MockModuleConfigurator('b'),
         }
     )
     def testValidFlowOnExposedFuncs(self):
