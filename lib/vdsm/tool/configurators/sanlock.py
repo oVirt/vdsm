@@ -36,9 +36,6 @@ class Sanlock(ModuleConfigure):
 
     SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
 
-    def __init__(self):
-        super(Sanlock, self).__init__()
-
     def getName(self):
         return 'sanlock'
 

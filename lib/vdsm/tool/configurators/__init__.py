@@ -44,9 +44,6 @@ CONFIGURED, NOT_CONFIGURED, NOT_SURE = range(3)
 
 class ModuleConfigure(object):
 
-    def __init__(self):
-        pass
-
     def getName(self):
         return None
 
