@@ -34,13 +34,11 @@ from .configurators import \
 
 
 def _getConfigurers():
-    return {
-        m.getName(): m for m in (
-            certificates.Certificates(),
-            libvirt.Libvirt(),
-            sanlock.Sanlock(),
-        )
-    }
+    return dict((m.getName(), m) for m in (
+        certificates.Certificates(),
+        libvirt.Libvirt(),
+        sanlock.Sanlock(),
+    ))
 
 
 @expose("configure")
