@@ -33,12 +33,11 @@ from .configurators import \
     sanlock
 
 
-def _getConfigurers():
-    return dict((m.getName(), m) for m in (
-        certificates.Certificates(),
-        libvirt.Libvirt(),
-        sanlock.Sanlock(),
-    ))
+_CONFIGURATORS = dict((m.getName(), m) for m in (
+    certificates.Certificates(),
+    libvirt.Libvirt(),
+    sanlock.Sanlock(),
+))
 
 
 @expose("configure")
@@ -177,9 +176,9 @@ def _add_dependencies(modulesNames):
     while queue:
         next_ = queue.popleft()
         try:
-            requiredNames = _getConfigurers()[next_].getRequires()
+            requiredNames = _CONFIGURATORS[next_].getRequires()
         except KeyError:
-            available = ', '.join(sorted(_getConfigurers()))
+            available = ', '.join(sorted(_CONFIGURATORS))
             raise UsageError(
                 "error: argument --module: invalid choice: %s\n"
                 "(available: %s)\n" % (next_, available)
@@ -203,7 +202,7 @@ def _sort_modules(modulesNames):
     while modulesNames:
 
         for c in modulesNames:
-            requires = _getConfigurers()[c].getRequires()
+            requires = _CONFIGURATORS[c].getRequires()
             if requires.issubset(set(sortedModules)):
                 modulesNames.remove(c)
                 sortedModules.append(c)
@@ -228,7 +227,7 @@ def _parse_args(action, *args):
             '(e.g %s).\n'
             'If non is specified, operation will run for '
             'all related modules.'
-            % _getConfigurers().keys()
+            % _CONFIGURATORS.keys()
         ),
     )
     if action == "configure":
@@ -242,10 +241,10 @@ def _parse_args(action, *args):
 
     args = parser.parse_args(args)
     if not args.modules:
-        args.modules = _getConfigurers().keys()
+        args.modules = _CONFIGURATORS.keys()
 
     args.modules = _sort_modules(_add_dependencies(args.modules))
 
-    args.modules = [_getConfigurers()[cName] for cName in args.modules]
+    args.modules = [_CONFIGURATORS[cName] for cName in args.modules]
 
     return args

@@ -57,8 +57,8 @@ class ConfiguratorTests(VdsmTestCase):
 
     @monkeypatch.MonkeyPatch(
         configurator,
-        '_getConfigurers',
-        lambda:  {
+        '_CONFIGURATORS',
+        {
             'a': MockModuleConfigurator('a', set(['b'])),
             'b': MockModuleConfigurator('b', set(['a']))
         }
@@ -72,8 +72,8 @@ class ConfiguratorTests(VdsmTestCase):
 
     @monkeypatch.MonkeyPatch(
         configurator,
-        '_getConfigurers',
-        lambda:  {
+        '_CONFIGURATORS',
+        {
             'a': MockModuleConfigurator('a', set(['b', 'd'])),
             'b': MockModuleConfigurator('b', set(['c'])),
             'c': MockModuleConfigurator('c', set(['e', 'd'])),
@@ -94,8 +94,8 @@ class ConfiguratorTests(VdsmTestCase):
 
     @monkeypatch.MonkeyPatch(
         configurator,
-        '_getConfigurers',
-        lambda:  {
+        '_CONFIGURATORS',
+        {
             'a': MockModuleConfigurator('a', set()),
             'b': MockModuleConfigurator('b', set()),
             'c': MockModuleConfigurator('c', set())
@@ -106,8 +106,8 @@ class ConfiguratorTests(VdsmTestCase):
 
     @monkeypatch.MonkeyPatch(
         configurator,
-        '_getConfigurers',
-        lambda: {
+        '_CONFIGURATORS',
+        {
             'a': MockModuleConfigurator('a', set(['b', 'c'])),
             'b': MockModuleConfigurator('b', set()),
             'c': MockModuleConfigurator('c', set())
@@ -125,8 +125,8 @@ class ConfiguratorTests(VdsmTestCase):
 
     @monkeypatch.MonkeyPatch(
         configurator,
-        '_getConfigurers',
-        lambda:  {
+        '_CONFIGURATORS',
+        {
             'a': MockModuleConfigurator('a', set()),
             'b': MockModuleConfigurator('b', set()),
             'c': MockModuleConfigurator('c', set())
@@ -145,8 +145,8 @@ class ConfiguratorTests(VdsmTestCase):
 
     @monkeypatch.MonkeyPatch(
         configurator,
-        '_getConfigurers',
-        lambda:  {
+        '_CONFIGURATORS',
+        {
             'libvirt': MockModuleConfigurator('libvirt', set()),
             'sanlock': MockModuleConfigurator('sanlock', set()),
         }
