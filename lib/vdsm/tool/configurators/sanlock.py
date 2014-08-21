@@ -31,7 +31,7 @@ from ... import utils
 from ... import constants
 
 
-class Sanlock(ModuleConfigure):
+class Configurator(ModuleConfigure):
 
     SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
 

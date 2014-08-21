@@ -39,7 +39,7 @@ CERT_FILE = os.path.join(PKI_DIR, 'certs/vdsmcert.pem')
 KEY_FILE = os.path.join(PKI_DIR, 'keys/vdsmkey.pem')
 
 
-class Certificates(ModuleConfigure):
+class Configurator(ModuleConfigure):
     """
     Responsible for rolling out self signed certificates if vdsm's
     configuration is ssl_enabled and no certificates exist.

@@ -48,7 +48,7 @@ if utils.isOvirtNode():
     from ovirt.node.utils.fs import Config as NodeCfg
 
 
-class Libvirt(ModuleConfigure):
+class Configurator(ModuleConfigure):
 
     @property
     def name(self):
@@ -110,7 +110,7 @@ class Libvirt(ModuleConfigure):
         return ret
 
     def removeConf(self):
-        for cfile, content in Libvirt.FILES.items():
+        for cfile, content in self.FILES.items():
             content['removeConf'](self, content['path'])
 
     def _getPersistedFiles(self):

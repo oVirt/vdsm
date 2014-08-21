@@ -38,9 +38,9 @@ from .configurators import \
 
 
 _CONFIGURATORS = dict((m.name, m) for m in (
-    certificates.Certificates(),
-    libvirt.Libvirt(),
-    sanlock.Sanlock(),
+    certificates.Configurator(),
+    libvirt.Configurator(),
+    sanlock.Configurator(),
 ))
 
 

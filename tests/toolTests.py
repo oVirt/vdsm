@@ -26,7 +26,7 @@ from vdsm.tool.configurators import \
     InvalidConfig,\
     InvalidRun
 from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
-from vdsm.tool.configurators.libvirt import Libvirt
+from vdsm.tool.configurators import libvirt
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import utils
@@ -268,7 +268,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
         for key, val in self.test_env.items():
-            Libvirt.FILES[key]['path'] = val
+            libvirt.Configurator.FILES[key]['path'] = val
 
         self._setConfig(
             ('QLCONF', 'libvirtd'),
@@ -282,12 +282,12 @@ class LibvirtModuleConfigureTests(TestCase):
                 lambda: 0
             ),
             (
-                Libvirt,
+                libvirt.Configurator,
                 '_getFile',
                 lambda _, x: self.test_env[x]
             ),
             (
-                Libvirt,
+                libvirt.Configurator,
                 '_sysvToUpstart',
                 lambda _: True
             ),
@@ -313,7 +313,7 @@ class LibvirtModuleConfigureTests(TestCase):
             )
 
     def testValidatePositive(self):
-        libvirtConfigure = Libvirt()
+        libvirtConfigure = libvirt.Configurator()
 
         self._setConfig(
             ('VDSM_CONF', 'vdsm_ssl'),
@@ -324,7 +324,7 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertTrue(libvirtConfigure.validate())
 
     def testValidateNegative(self):
-        libvirtConfigure = Libvirt()
+        libvirtConfigure = libvirt.Configurator()
 
         self._setConfig(
             ('VDSM_CONF', 'vdsm_no_ssl'),
@@ -335,7 +335,7 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertFalse(libvirtConfigure.validate())
 
     def testIsConfiguredPositive(self):
-        libvirtConfigure = Libvirt()
+        libvirtConfigure = libvirt.Configurator()
 
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
@@ -349,7 +349,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     def testIsConfiguredNegative(self):
-        libvirtConfigure = Libvirt()
+        libvirtConfigure = libvirt.Configurator()
 
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
@@ -362,7 +362,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     def testLibvirtConfigureToSSLTrue(self):
-        libvirtConfigure = Libvirt()
+        libvirtConfigure = libvirt.Configurator()
 
         self._setConfig((
             'LCONF', 'empty'),
@@ -384,7 +384,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     def testLibvirtConfigureToSSLFalse(self):
-        libvirtConfigure = Libvirt()
+        libvirtConfigure = libvirt.Configurator()
         self._setConfig(
             ('LCONF', 'empty'),
             ('VDSM_CONF', 'vdsm_no_ssl'),
