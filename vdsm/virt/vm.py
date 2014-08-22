@@ -873,6 +873,7 @@ class Vm(object):
 
         self._powerDownEvent = threading.Event()
         self._liveMergeCleanupThreads = {}
+        self._shutdownLock = threading.Lock()
         self._shutdownReason = None
 
     def _get_lastStatus(self):
@@ -1293,10 +1294,12 @@ class Vm(object):
         # state
         response = self.releaseVm()
         if not response['status']['code']:
-            if self._shutdownReason is None:
+            with self._shutdownLock:
+                reason = self._shutdownReason
+            if reason is None:
                 self.setDownStatus(ERROR, vmexitreason.LOST_QEMU_CONNECTION)
             else:
-                self.setDownStatus(NORMAL, self._shutdownReason)
+                self.setDownStatus(NORMAL, reason)
         self._powerDownEvent.set()
 
     def _loadCorrectedTimeout(self, base, doubler=20, load=None):
@@ -3953,13 +3956,15 @@ class Vm(object):
                                         dev.custom)
 
         hooks.before_vm_destroy(self._domain.xml, self.conf)
-        self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
+        with self._shutdownLock:
+            self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         self._destroyed = True
 
         return self.releaseVm()
 
     def acpiShutdown(self):
-        self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
+        with self._shutdownLock:
+            self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
 
     def setBalloonTarget(self, target):
@@ -4476,9 +4481,10 @@ class Vm(object):
                 hooks.after_vm_hibernate(self._domain.xml, self.conf)
             else:
                 if detail == libvirt.VIR_DOMAIN_EVENT_STOPPED_SHUTDOWN:
-                    if self._shutdownReason is None:
-                        # do not overwrite admin shutdown, if present
-                        self._shutdownReason = vmexitreason.USER_SHUTDOWN
+                    with self._shutdownLock:
+                        if self._shutdownReason is None:
+                            # do not overwrite admin shutdown, if present
+                            self._shutdownReason = vmexitreason.USER_SHUTDOWN
                 self._onQemuDeath()
         elif event == libvirt.VIR_DOMAIN_EVENT_SUSPENDED:
             self._setGuestCpuRunning(False)
