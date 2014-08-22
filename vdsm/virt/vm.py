@@ -5606,8 +5606,8 @@ class Vm(object):
         return False
 
     def queryBlockJobs(self):
-        def startCleanup(job, drive):
-            t = LiveMergeCleanupThread(self, job['jobID'], drive)
+        def startCleanup(job, drive, needPivot):
+            t = LiveMergeCleanupThread(self, job['jobID'], drive, needPivot)
             t.start()
             self._liveMergeCleanupThreads[job['jobID']] = t
 
@@ -5620,9 +5620,9 @@ class Vm(object):
                 jobID = storedJob['jobID']
                 cleanThread = self._liveMergeCleanupThreads.get(jobID)
                 if cleanThread and cleanThread.isSuccessful():
-                    # Handle successfully cleaned jobs early because the job
-                    # just needs to be untracked and the stored disk info might
-                    # be stale anyway (ie. after active layer commit).
+                    # Handle successful jobs early because the job just needs
+                    # to be untracked and the stored disk info might be stale
+                    # anyway (ie. after active layer commit).
                     self.untrackBlockJob(jobID)
                     continue
 
@@ -5645,28 +5645,25 @@ class Vm(object):
                     entry['bandwidth'] = liveInfo['bandwidth']
                     entry['cur'] = str(liveInfo['cur'])
                     entry['end'] = str(liveInfo['end'])
-                    if self._activeLayerCommitReady(liveInfo):
-                        try:
-                            self.handleBlockJobEvent(jobID, drive, 'pivot')
-                        except Exception:
-                            # Just log it.  We will retry next time
-                            self.log.error("Pivot failed for job %s", jobID)
+                    doPivot = self._activeLayerCommitReady(liveInfo)
                 else:
                     # Libvirt has stopped reporting this job so we know it will
                     # never report it again.
+                    doPivot = False
                     storedJob['gone'] = True
+                if not liveInfo or doPivot:
                     if not cleanThread:
                         # There is no cleanup thread so the job must have just
                         # ended.  Spawn an async cleanup.
-                        startCleanup(storedJob, drive)
+                        startCleanup(storedJob, drive, doPivot)
                     elif cleanThread.isAlive():
                         # Let previously started cleanup thread continue
                         self.log.debug("Still waiting for block job %s to be "
-                                       "cleaned up", jobID)
+                                       "synchronized", jobID)
                     elif not cleanThread.isSuccessful():
                         # At this point we know the thread is not alive and the
                         # cleanup failed.  Retry it with a new thread.
-                        startCleanup(storedJob, drive)
+                        startCleanup(storedJob, drive, doPivot)
                 jobsRet[jobID] = entry
         return jobsRet
 
@@ -5876,18 +5873,6 @@ class Vm(object):
                     if x['volumeID'] in volumes]
         device['volumeChain'] = drive.volumeChain = newChain
 
-    def handleBlockJobEvent(self, jobID, drive, mode):
-        if mode == 'finished':
-            self.log.info("Live merge job completed (job %s)", jobID)
-            self._syncVolumeChain(drive)
-        elif mode == 'pivot':
-            self.log.info("Requesting pivot to complete active layer commit "
-                          "(job %s)", jobID)
-            flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
-            self._dom.blockJobAbort(drive.name, flags)
-        else:
-            raise RuntimeError("Invalid mode: '%s'" % mode)
-
     def _initLegacyConf(self):
         self.conf['displayPort'] = GraphicsDevice.LIBVIRT_PORT_AUTOSELECT
         self.conf['displaySecurePort'] = \
@@ -5925,30 +5910,48 @@ class Vm(object):
 
 
 class LiveMergeCleanupThread(threading.Thread):
-    def __init__(self, vm, jobId, drive):
+    def __init__(self, vm, jobId, drive, doPivot):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.vm = vm
         self.jobId = jobId
         self.drive = drive
+        self.doPivot = doPivot
         self.success = False
+
+    def tryPivot(self):
+        # We call imageSyncVolumeChain which will mark the current leaf
+        # ILLEGAL.  We do this before requesting a pivot so that we can
+        # properly recover the VM in case we crash.  At this point the
+        # active layer contains the same data as its parent so the ILLEGAL
+        # flag indicates that the VM should be restarted using the parent.
+        newVols = [vol['volumeID'] for vol in self.drive.volumeChain
+                   if vol['volumeID'] != self.drive.volumeID]
+        self.vm.cif.irs.imageSyncVolumeChain(self.drive.domainID,
+                                             self.drive.imageID,
+                                             self.drive['volumeID'], newVols)
+
+        self.vm.log.info("Requesting pivot to complete active layer commit "
+                         "(job %s)", self.jobId)
+        flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
+        if self.vm._dom.blockJobAbort(self.drive.name, flags) != 0:
+            raise RuntimeError("pivot failed")
+        self.vm.log.info("Pivot completed (job %s)", self.jobId)
 
     @utils.traceback()
     def run(self):
-        self.vm.log.info("Starting live merge cleanup for job %s",
-                         self.jobId)
-        try:
-            self.vm.handleBlockJobEvent(self.jobId, self.drive, 'finished')
-        except Exception:
-            self.vm.log.warning("Cleanup failed for live merge job %s",
-                                self.jobId)
-            raise
-        else:
-            self.success = True
-            self.vm.log.info("Cleanup completed for live merge job %s",
-                             self.jobId)
+        if self.doPivot:
+            self.tryPivot()
+        self.vm.log.info("Synchronizing volume chain after live merge "
+                         "(job %s)", self.jobId)
+        self.vm._syncVolumeChain(self.drive)
+        self.success = True
+        self.vm.log.info("Synchronization completed (job %s)", self.jobId)
 
     def isSuccessful(self):
+        """
+        Returns True if this phase completed successfully.
+        """
         return self.success
 
 
