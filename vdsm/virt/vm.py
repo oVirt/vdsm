@@ -3937,7 +3937,7 @@ class Vm(object):
         snap = vmxml.Element('domainsnapshot')
         disks = vmxml.Element('disks')
         newDrives = {}
-        snapTypes = {}
+        vmDrives = {}
 
         if self.isMigrating():
             return errCode['migInProgress']
@@ -3977,7 +3977,10 @@ class Vm(object):
             newDrives[vmDevName]["poolID"] = vmDrive.poolID
             newDrives[vmDevName]["name"] = vmDevName
             newDrives[vmDevName]["format"] = "cow"
-            snapTypes[vmDevName] = ('file', 'block')[vmDrive.blockDev]
+
+            # We need to keep track of the drive object because we cannot
+            # safely access the blockDev property until after prepareVolumePath
+            vmDrives[vmDevName] = vmDrive
 
         # If all the drives are the current ones, return success
         if len(newDrives) == 0:
@@ -4000,8 +4003,9 @@ class Vm(object):
                 _rollbackDrives(preparedDrives)
                 return errCode['snapshotErr']
 
+            snapType = 'block' if vmDrives[vmDevName].blockDev else 'file'
             snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"],
-                                     snapTypes[vmDevName])
+                                     snapType)
             disks.appendChild(snapelem)
 
         snap.appendChild(disks)
