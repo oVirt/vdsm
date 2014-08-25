@@ -21,7 +21,10 @@ from vdsm.tool import configurator
 from vdsm.tool.configurators import \
     ModuleConfigure, \
     NOT_CONFIGURED,\
-    NOT_SURE
+    NOT_SURE,\
+    CONFIGURED,\
+    InvalidConfig,\
+    InvalidRun
 from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators.libvirt import Libvirt
 from vdsm.tool import UsageError
@@ -29,6 +32,7 @@ from vdsm.tool import upgrade
 from vdsm import utils
 import monkeypatch
 from testlib import VdsmTestCase
+from testValidation import ValidateRunningAsRoot
 from unittest import TestCase
 import tempfile
 import os
@@ -39,9 +43,10 @@ dirName = os.path.dirname(os.path.realpath(__file__))
 
 class MockModuleConfigurator(ModuleConfigure):
 
-    def __init__(self, name, requires):
+    def __init__(self, name, requires, false_mock=False):
         self._name = name
         self._requires = requires
+        self._false_mock = false_mock
 
     @property
     def name(self):
@@ -53,6 +58,28 @@ class MockModuleConfigurator(ModuleConfigure):
 
     def __repr__(self):
         return "name: %s, requires: %s" % (self._name, self._requires)
+
+    def getServices(self):
+        return []
+
+    def validate(self):
+        if self._false_mock:
+            return False
+        print 'valid'
+        return True
+
+    def isconfigured(self):
+        if self._false_mock:
+            return NOT_CONFIGURED
+        return CONFIGURED
+
+    def configure(self):
+        if self._false_mock:
+            raise InvalidRun('mock for invalid configure')
+
+    def removeConf(self):
+        if self._false_mock:
+            raise Exception('mock invalid remove conf')
 
 
 class ConfiguratorTests(VdsmTestCase):
@@ -160,6 +187,62 @@ class ConfiguratorTests(VdsmTestCase):
             configurator._parse_args,
             'validate-config',
             '--module=multipath'
+        )
+
+    @ValidateRunningAsRoot
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_CONFIGURATORS',
+        {
+            'a': MockModuleConfigurator('a', set(), True),
+            'b': MockModuleConfigurator('b', set(), True),
+        }
+    )
+    def testFailuresOnExposedFuncs(self):
+        self.assertRaises(
+            InvalidConfig,
+            configurator.validate_config,
+            'validate-config',
+        )
+        self.assertRaises(
+            InvalidRun,
+            configurator.isconfigured,
+            'is-configured',
+        )
+        # running configure with force flag to avoid validate check
+        self.assertRaises(
+            InvalidRun,
+            configurator.configure,
+            'configure',
+            '--force',
+        )
+        self.assertRaises(
+            InvalidRun,
+            configurator.remove_config,
+            'remove-config'
+        )
+
+    @ValidateRunningAsRoot
+    @monkeypatch.MonkeyPatch(
+        configurator,
+        '_CONFIGURATORS',
+        {
+            'a': MockModuleConfigurator('a', set()),
+            'b': MockModuleConfigurator('b', set()),
+        }
+    )
+    def testValidFlowOnExposedFuncs(self):
+        configurator.validate_config(
+            'validate-config',
+        )
+        configurator.isconfigured(
+            'is-configured',
+        )
+        configurator.configure(
+            'configure',
+        )
+        configurator.remove_config(
+            'remove-config',
         )
 
 
