@@ -153,7 +153,7 @@ def remove_config(*args):
     for c in args.modules:
         try:
             c.removeConf()
-            sys.stderr.write(
+            sys.stdout.write(
                 "removed configuration of module %s successfully\n" %
                 c.getName()
             )
