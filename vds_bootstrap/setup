@@ -26,7 +26,6 @@ import subprocess
 import logging
 import logging.config
 import traceback
-import string
 import re
 import tempfile
 from time import strftime
@@ -190,7 +189,7 @@ def runInstaller(bootstrap_interface_version, remote_nfs, orgName, systime,
                     execfn += [random_num]
                 execfn.append(str(int(rebootAfterInstallation)))
             logging.debug("trying to run %s script cmd = '%s'",
-                          script, string.join(execfn, " "))
+                          script, ' '.join(execfn))
             proc = subprocess.Popen(execfn)
             proc.communicate()
             if proc.returncode == 0:
