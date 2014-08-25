@@ -3208,6 +3208,10 @@ class HSM(object):
         allVols = dom.getAllVolumes()
         # Filter volumes related to this image
         imgVolumes = sd.getVolsOfImage(allVols, imgUUID).keys()
+
+        if leafUUID not in imgVolumes:
+            raise se.VolumeDoesNotExist(leafUUID)
+
         imgPath = dom.activateVolumes(imgUUID, imgVolumes)
         if spUUID and spUUID != sd.BLANK_UUID:
             runImgPath = dom.linkBCImage(imgPath, imgUUID)
