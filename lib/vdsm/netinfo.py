@@ -438,8 +438,7 @@ def permAddr():
             if line.startswith('Slave Interface: '):
                 slave = line[len('Slave Interface: '):-1]
             if line.startswith('Permanent HW addr: '):
-                addr = line[len('Permanent HW addr: '):-1]
-                paddr[slave] = addr.upper()
+                paddr[slave] = line[len('Permanent HW addr: '):-1]
     return paddr
 
 
