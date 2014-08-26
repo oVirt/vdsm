@@ -638,6 +638,7 @@ class Monitor(object):
 
     def stop(self):
         self.proc.kill()
+        self.proc.wait()
 
     @classmethod
     def _parseLine(cls, line):
