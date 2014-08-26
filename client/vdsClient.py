@@ -2101,10 +2101,11 @@ if __name__ == '__main__':
                          )),
         'migrate': (serv.do_migrate,
                     ('vmId=<id> method=<offline|online> src=<host[:port]> '
-                     'dst=<host[:port]>  dstqemu=<host>',
+                     'dst=<host[:port]>  dstqemu=<host> [autoConverge:bool]',
                      'Migrate a desktop from src machine to dst host using '
                      'the specified ports and an optional address for '
-                     'migration data traffic.'
+                     'migration data traffic.',
+                     'o autoConverge: force convergence during migration'
                      )),
         'migrateStatus': (serv.do_mStat,
                           ('<vmId>',

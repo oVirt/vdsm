@@ -709,29 +709,35 @@ def get():
     return caps
 
 
-@utils.memoized
-def _getVersionInfo():
-    # commit bbeb165e42673cddc87495c3d12c4a7f7572013c
-    # added default abort of the VM migration on EIO.
-    # libvirt 1.0.5.8 found in Fedora 19 does not export
-    # that flag, even though it should be present since 1.0.1.
-    if hasattr(libvirt, 'VIR_MIGRATE_ABORT_ON_ERROR'):
-        return dsaversion.version_info
-
-    logging.error('VIR_MIGRATE_ABORT_ON_ERROR not found in libvirt,'
-                  ' support for clusterLevel >= 3.4 is disabled.'
-                  ' For Fedora 19 users, please consider upgrading'
-                  ' libvirt from the virt-preview repository')
+def _dropVersion(vstring, logMessage):
+    logging.error(logMessage)
 
     from distutils.version import StrictVersion
-    # Workaround: we drop the cluster 3.4+
-    # compatibility when we run on top of
-    # a libvirt without this flag.
+    # Drop cluster supported version to be strictly less than given vstring.
     info = dsaversion.version_info.copy()
-    maxVer = StrictVersion('3.4')
+    maxVer = StrictVersion(vstring)
     info['clusterLevels'] = [ver for ver in info['clusterLevels']
                              if StrictVersion(ver) < maxVer]
     return info
+
+
+@utils.memoized
+def _getVersionInfo():
+    if not hasattr(libvirt, 'VIR_MIGRATE_ABORT_ON_ERROR'):
+        return _dropVersion('3.4',
+                            'VIR_MIGRATE_ABORT_ON_ERROR not found in libvirt,'
+                            ' support for clusterLevel >= 3.4 is disabled.'
+                            ' For Fedora 19 users, please consider upgrading'
+                            ' libvirt from the virt-preview repository')
+
+    if not hasattr(libvirt, 'VIR_MIGRATE_AUTO_CONVERGE'):
+        return _dropVersion('3.6',
+                            'VIR_MIGRATE_AUTO_CONVERGE not found in libvirt,'
+                            ' support for clusterLevel >= 3.6 is disabled.'
+                            ' For Fedora 20 users, please consider upgrading'
+                            ' libvirt from the virt-preview repository')
+
+    return dsaversion.version_info
 
 
 def _getKeyPackages():

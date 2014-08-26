@@ -6956,12 +6956,16 @@
 #
 # @dstqemu:    #optional The destination's host address dedicated for migration.
 #
+# @autoConverge: #optional Force convergence during live migration.
+#                (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'MigrateParams',
  'data': {'vmId': 'UUID', 'dst': 'str', 'dstparams': 'str',
           '*mode': 'MigrateMode', '*method': 'MigrateMethod',
-          '*tunneled': 'bool', '*abortOnError': 'bool', 'dstqemu': 'str'}}
+          '*tunneled': 'bool', '*abortOnError': 'bool', 'dstqemu': 'str',
+          '*autoConverge': 'bool'}}
 
 ##
 # @VM.migrate:

@@ -155,7 +155,7 @@ Requires: libguestfs-tools-c >= 1:1.26.7-2
 %endif
 
 %if 0%{?rhel} >= 7 || 0%{?fedora} >= 18
-Requires: libvirt-daemon >= 1.0.2-1
+Requires: libvirt-daemon >= 1.2.3
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-daemon-driver-network
 Requires: libvirt-daemon-driver-nwfilter
@@ -164,7 +164,7 @@ Requires: libvirt-daemon-driver-qemu
 %if 0%{?rhel}
 Requires: libvirt >= 0.10.2-29.el6_5.4
 %else
-Requires: libvirt >= 1.0.2-1
+Requires: libvirt >= 1.2.3
 %endif
 %endif
 Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client

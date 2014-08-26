@@ -506,6 +506,7 @@ class VM(APIBase):
             *method* - ``online``
             *downtime* - allowed down time during online migration
             *dstqemu* - remote host address dedicated for migration
+            *autoConverge* - force convergence during live migration
         """
         params['vmId'] = self._UUID
         self.log.debug(params)
