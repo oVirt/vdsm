@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2013 Red Hat, Inc.
+# Copyright 2009-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import errno
 import os
 from nose.plugins.skip import SkipTest
 from functools import wraps
@@ -165,9 +166,16 @@ def stresstest(f):
 
 
 def checkSudo(cmd):
-    p = subprocess.Popen(['sudo', '-l', '-n'] + cmd,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE)
+    try:
+        p = subprocess.Popen(['sudo', '-l', '-n'] + cmd,
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            raise SkipTest("Test requires SUDO executable (%s)" % e)
+        else:
+            raise
+
     out, err = p.communicate()
 
     if p.returncode != 0:
