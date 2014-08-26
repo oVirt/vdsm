@@ -6956,6 +6956,9 @@
 #
 # @dstqemu:    #optional The destination's host address dedicated for migration.
 #
+# @compressed: #optional Compress repeated pages during live migration.
+#              (new in version 4.17.0)
+#
 # @autoConverge: #optional Force convergence during live migration.
 #                (new in version 4.17.0)
 #
@@ -6965,7 +6968,7 @@
  'data': {'vmId': 'UUID', 'dst': 'str', 'dstparams': 'str',
           '*mode': 'MigrateMode', '*method': 'MigrateMethod',
           '*tunneled': 'bool', '*abortOnError': 'bool', 'dstqemu': 'str',
-          '*autoConverge': 'bool'}}
+          '*compressed': 'bool', '*autoConverge': 'bool'}}
 
 ##
 # @VM.migrate:

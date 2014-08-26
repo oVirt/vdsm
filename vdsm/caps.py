@@ -737,6 +737,13 @@ def _getVersionInfo():
                             ' For Fedora 20 users, please consider upgrading'
                             ' libvirt from the virt-preview repository')
 
+    if not hasattr(libvirt, 'VIR_MIGRATE_COMPRESSED'):
+        return _dropVersion('3.6',
+                            'VIR_MIGRATE_COMPRESSED not found in libvirt,'
+                            ' support for clusterLevel >= 3.6 is disabled.'
+                            ' For Fedora 20 users, please consider upgrading'
+                            ' libvirt from the virt-preview repository')
+
     return dsaversion.version_info
 
 

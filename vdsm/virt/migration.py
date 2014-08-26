@@ -58,7 +58,7 @@ class SourceThread(threading.Thread):
     def __init__(self, vm, dst='', dstparams='',
                  mode=MODE_REMOTE, method=METHOD_ONLINE,
                  tunneled=False, dstqemu='', abortOnError=False,
-                 autoConverge=False, **kwargs):
+                 compressed=False, autoConverge=False, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dst = dst
@@ -75,6 +75,7 @@ class SourceThread(threading.Thread):
         self._downtime = kwargs.get('downtime') or \
             config.get('vars', 'migration_downtime')
         self._autoConverge = autoConverge
+        self._compressed = compressed
         self.status = {
             'status': {
                 'code': 0,
@@ -341,6 +342,8 @@ class SourceThread(threading.Thread):
                     self._tunneled else 0) |
                 (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
                     self._abortOnError else 0) |
+                (libvirt.VIR_MIGRATE_COMPRESSED if
+                    self._compressed else 0) |
                 (libvirt.VIR_MIGRATE_AUTO_CONVERGE if
                     self._autoConverge else 0),
                 None, maxBandwidth)
