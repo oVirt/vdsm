@@ -28,6 +28,7 @@ from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import utils
 import monkeypatch
+from testrunner import VdsmTestCase
 from unittest import TestCase
 import tempfile
 import os
@@ -52,7 +53,7 @@ class MockModuleConfigurator(ModuleConfigure):
         return self._dependencies
 
 
-class ConfiguratorTests(TestCase):
+class ConfiguratorTests(VdsmTestCase):
 
     @monkeypatch.MonkeyPatch(
         configurator,
