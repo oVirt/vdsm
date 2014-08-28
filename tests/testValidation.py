@@ -186,7 +186,7 @@ def checkSudo(cmd):
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
     except OSError as e:
-        if e.errno == errno.ENONET:
+        if e.errno == errno.ENOENT:
             raise SkipTest("Test requires SUDO executable (%s)" % e)
         else:
             raise
