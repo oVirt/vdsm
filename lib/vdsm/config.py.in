@@ -352,6 +352,9 @@ parameters = [
         ('memory_profile_port', '9090',
             'Port on which the dowser Web UI will be reachable.'),
 
+        ('manhole_enable', 'false',
+            'Enable manhole debugging service (requires manhole package).'),
+
     ]),
 
 ]

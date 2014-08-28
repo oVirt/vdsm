@@ -91,6 +91,9 @@ def serve_clients(log):
 
     from clientIF import clientIF  # must import after config is read
     cif = clientIF.getInstance(irs, log)
+
+    install_manhole({'irs': irs, 'cif': cif})
+
     cif.start()
     periodic.start(cif)
     try:
@@ -176,6 +179,29 @@ def parse_args():
         sys.exit(1)
 
     return argDict
+
+
+def install_manhole(locals):
+    if not config.getboolean('devel', 'manhole_enable'):
+        return
+
+    import manhole
+
+    # locals:             Set the locals in the manhole shell
+    # socket_path:        Set to create secure and easy to use manhole socket,
+    #                     instead of /tmp/manhole-<vdsm-pid>.
+    # daemon_connection:  Enable to ensure that manhole connection thread will
+    #                     not block shutdown.
+    # patch_fork:         Disable to avoid creation of a manhole thread in the
+    #                     child process after fork.
+    # sigmask:            Disable to avoid pointless modification of the
+    #                     process signal mask if signlfd module is available.
+    # redirect_stderr:    Disable since Python prints ignored exepctions to
+    #                     stderr.
+
+    path = os.path.join(constants.P_VDSM_RUN, 'vdsmd.manhole')
+    manhole.install(locals=locals, socket_path=path, daemon_connection=True,
+                    patch_fork=False, sigmask=None, redirect_stderr=False)
 
 
 def __assertLogPermission():
