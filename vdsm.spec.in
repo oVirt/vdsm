@@ -61,6 +61,7 @@ Url:            http://www.ovirt.org/wiki/Vdsm
 Source0:        %{vdsm_name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+ExclusiveArch: x86_64 ppc64
 BuildRequires: gcc
 BuildRequires: python
 BuildRequires: python-devel
