@@ -502,6 +502,10 @@ class service:
         print response['status']['message']
         sys.exit(response['status']['code'])
 
+    def do_getRoute(self, args):
+        ip = args[0]
+        return self.ExecAndExit(self.s.getRoute(ip))
+
     def do_getCap(self, args):
         return self.ExecAndExit(self.s.getVdsCapabilities())
 
@@ -2124,6 +2128,10 @@ if __name__ == '__main__':
         'sendkeys': (serv.do_sendkeys,
                      ('<vmId> <key1> ...... <keyN>',
                       'Send the key sequence to the vm'
+                      )),
+        'getRoute': (serv.do_getRoute,
+                     ('<ip>',
+                      'Get route assigned on IP'
                       )),
         'getVdsCapabilities': (serv.do_getCap,
                                ('',

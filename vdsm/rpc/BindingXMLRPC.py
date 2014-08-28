@@ -459,6 +459,10 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.setBalloonTarget(target)
 
+    def getRoute(self, ip):
+        api = API.Global()
+        return api.getRoute(ip)
+
     def getCapabilities(self):
         api = API.Global()
         ret = api.getCapabilities()
@@ -993,6 +997,7 @@ class BindingXMLRPC(object):
                 (self.vmMigrate, 'migrate'),
                 (self.vmGetMigrationStatus, 'migrateStatus'),
                 (self.vmMigrationCancel, 'migrateCancel'),
+                (self.getRoute, 'getRoute'),
                 (self.getCapabilities, 'getVdsCapabilities'),
                 (self.getHardwareInfo, 'getVdsHardwareInfo'),
                 (self.diskGetAlignment, 'getDiskAlignment'),

@@ -456,6 +456,34 @@
           'taskResult': 'TaskResult', 'message': 'str', 'code': 'int'}}
 
 ##
+# @RouteDetails:
+#
+# A collection of information about a route.
+#
+# @device:  Name of the device.
+#
+# Since: 4.17
+##
+{'type': 'RouteDetails',
+ 'data': {'device': 'str'}}
+
+##
+# @Host.getRoute:
+#
+# Get route assigned to given IP address.
+#
+# @ip:  IP address
+#
+# Returns:
+# A collection of information about the route.
+#
+# Since: 4.17
+##
+{'command': {'class': 'Host', 'name': 'getRoute'},
+ 'data': {'ip': 'str'},
+ 'returns': 'RouteDetails'}
+
+##
 # @TasksStatus:
 #
 # A mapping of Task statuses indexed by Task UUID.

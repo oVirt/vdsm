@@ -1254,6 +1254,14 @@ class Global(APIBase):
         updateTimestamp()
         return {'status': doneCode}
 
+    def getRoute(self, ip):
+        """
+        Return the name of the device leading to destination IP or the empty
+        string if none is found
+        """
+        device = netinfo.getRouteDeviceTo(ip)
+        return {'status': doneCode, 'info': {'device': device}}
+
     def getCapabilities(self):
         """
         Report host capabilities.

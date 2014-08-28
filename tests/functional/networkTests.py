@@ -1967,6 +1967,9 @@ class NetworkTest(TestCaseBase):
             try:
                 dummy.setLinkUp(nic)
                 self.assertEqual(getRouteDeviceTo(IP_ADDRESS_IN_NETWORK), nic)
+                # test getRoute verb
+                _, _, info = self.vdsm_net.getRoute(IP_ADDRESS_IN_NETWORK)
+                self.assertEqual(info['device'], nic)
             finally:
                 addrFlush(nic)
 
@@ -1976,6 +1979,9 @@ class NetworkTest(TestCaseBase):
                 dummy.setLinkUp(nic)
                 self.assertEqual(getRouteDeviceTo(IPv6_ADDRESS_IN_NETWORK),
                                  nic)
+                # test getRoute verb
+                _, _, info = self.vdsm_net.getRoute(IPv6_ADDRESS_IN_NETWORK)
+                self.assertEqual(info['device'], nic)
             finally:
                 addrFlush(nic)
 
