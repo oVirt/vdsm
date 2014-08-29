@@ -3654,7 +3654,7 @@ class Vm(object):
         # QMP interface.
         # libvirt: https://bugzilla.redhat.com/show_bug.cgi?id=1067414
         # qemu: https://bugs.launchpad.net/qemu/+bug/1284090
-        self.log.warning('_readPauseCode unsupported by libvirt vm')
+        self.log.debug('_readPauseCode unsupported by libvirt vm')
         return 'NOERR'
 
     def _timeoutExperienced(self, timeout):
