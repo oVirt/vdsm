@@ -354,34 +354,37 @@ class TestPortMirror(TestCaseBase):
     when it is attached to an active device.
     """
 
-    #   ###[ Ethernet ]###
-    #     dst       = 00:1c:c0:d0:44:dc
-    #     src       = 00:21:5c:4d:42:75
-    #     type      = IPv4
-    #   ###[ IP ]###
-    #        version   = 4L
-    #        ihl       = 5L
-    #        tos       = 0x0
-    #        len       = 28
-    #        id        = 1
-    #        flags     =
-    #        frag      = 0L
-    #        ttl       = 64
-    #        proto     = icmp
-    #        chksum    = 0xf726
-    #        src       = 192.168.0.52
-    #        dst       = 192.168.0.3
-    #        \options   \
-    #   ###[ ICMP ]###
-    #           type      = echo-request
-    #           code      = 0
-    #           chksum    = 0xf7ff
-    #           id        = 0x0
-    #           seq       = 0x0
+    ####[ Ethernet ]###
+    #  dst       = 00:1c:c0:d0:44:dc
+    #  src       = 00:21:5c:4d:42:75
+    #  type      = IPv4
+    ####[ IP ]###
+    #     version   = 4L
+    #     ihl       = 5L
+    #     tos       = 0x0
+    #     len       = 33
+    #     id        = 1
+    #     flags     =
+    #     frag      = 0L
+    #     ttl       = 64
+    #     proto     = icmp
+    #     chksum    = 0xf953
+    #     src       = 192.168.0.52
+    #     dst       = 192.168.0.3
+    #     \options   \
+    ####[ ICMP ]###
+    #        type      = echo-request
+    #        code      = 0
+    #        chksum    = 0x2875
+    #        id        = 0x0
+    #        seq       = 0x0
+    ####[ Raw ]###
+    #           load      = '\x01#Eg\x89'
     _ICMP = unhexlify(
         '001cc0d044dc''00215c4d4275''0800'  # Ethernet
-        '4500001c000100004001f726''c0a80034''c0a80003'  # IP
-        '0800f7ff00000000')  # ICMP
+        '45000021000100004001f953''c0a80034''c0a80003'  # IP
+        '080028750000000'  # ICMP
+        '00123456789')  # Payload
 
     _tap0 = _Tap()
     _tap1 = _Tap()
