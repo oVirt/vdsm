@@ -27,7 +27,6 @@ import sys
 from vdsm.config import config
 
 from .. import \
-    NotRootError, \
     service, \
     validate_ovirt_certs
 from . import \
