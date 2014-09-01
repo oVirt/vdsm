@@ -21,7 +21,6 @@ import sys
 import grp
 import pwd
 
-from .. import NotRootError
 from .import \
     CONFIGURED, \
     InvalidConfig, \
