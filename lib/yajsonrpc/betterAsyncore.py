@@ -18,6 +18,7 @@
 # while enabling compositing instead of inheritance.
 import asyncore
 import socket
+from errno import EWOULDBLOCK
 from sys import py3kwarning
 from warnings import filterwarnings, catch_warnings
 from threading import Lock
@@ -296,5 +297,20 @@ class Dispatcher(asyncore.dispatcher):
             if why.args[0] in asyncore._DISCONNECTED:
                 self.handle_close()
                 return ''
+            else:
+                raise
+
+    def send(self, data):
+        try:
+            result = self.socket.send(data)
+            if result == -1:
+                return 0
+            return result
+        except socket.error, why:
+            if why.args[0] == EWOULDBLOCK:
+                return 0
+            elif why.args[0] in asyncore._DISCONNECTED:
+                self.handle_close()
+                return 0
             else:
                 raise
