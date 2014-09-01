@@ -376,7 +376,7 @@ class VmStatsThread(AdvancedStatsThread):
         """
         ioTuneInfo = []
 
-        for disk in self._vm._devices[DISK_DEVICES]:
+        for disk in self._vm.getDiskDevices():
             if "ioTune" in disk.specParams:
                 ioTuneInfo.append({
                     "name": disk.name,
