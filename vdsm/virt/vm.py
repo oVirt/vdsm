@@ -59,6 +59,7 @@ import numaUtils
 # local package imports
 from . import guestagent
 from . import migration
+from . import vmdevices
 from . import vmexitreason
 from . import vmstatus
 from .vmtune import update_io_tune_dom, collect_inner_elements
@@ -682,30 +683,7 @@ class NotifyingVirDomain:
         return f
 
 
-class VmDevice(vmxml.Device):
-    __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
-                 'conf', 'log', '_deviceXML', 'type', 'custom')
-
-    def __init__(self, conf, log, **kwargs):
-        self.conf = conf
-        self.log = log
-        self.specParams = {}
-        self.custom = kwargs.pop('custom', {})
-        for attr, value in kwargs.iteritems():
-            try:
-                setattr(self, attr, value)
-            except AttributeError:  # skip read-only properties
-                self.log.debug('Ignoring param (%s, %s) in %s', attr, value,
-                               self.__class__.__name__)
-        self._deviceXML = None
-
-    def __str__(self):
-        attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)
-                 if not a.startswith('__')]
-        return ' '.join(attrs)
-
-
-class GeneralDevice(VmDevice):
+class GeneralDevice(vmdevices.Base):
 
     def getXML(self):
         """
@@ -714,7 +692,7 @@ class GeneralDevice(VmDevice):
         return self.createXmlElem(self.type, self.device, ['address'])
 
 
-class ControllerDevice(VmDevice):
+class ControllerDevice(vmdevices.Base):
     __slots__ = ('address', 'model', 'index', 'master')
 
     def getXML(self):
@@ -729,7 +707,7 @@ class ControllerDevice(VmDevice):
         return ctrl
 
 
-class VideoDevice(VmDevice):
+class VideoDevice(vmdevices.Base):
     __slots__ = ('address',)
 
     def getXML(self):
@@ -746,7 +724,7 @@ class VideoDevice(VmDevice):
         return video
 
 
-class SoundDevice(VmDevice):
+class SoundDevice(vmdevices.Base):
     __slots__ = ('address', 'alias')
 
     def getXML(self):
@@ -758,7 +736,7 @@ class SoundDevice(VmDevice):
         return sound
 
 
-class NetworkInterfaceDevice(VmDevice):
+class NetworkInterfaceDevice(vmdevices.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter',
                  'sndbufParam', 'driver', 'name')
@@ -772,7 +750,7 @@ class NetworkInterfaceDevice(VmDevice):
                 kwargs[attr] = 'virtio'
             elif attr == 'network' and value == '':
                 kwargs[attr] = DUMMY_BRIDGE
-        VmDevice.__init__(self, conf, log, **kwargs)
+        vmdevices.Base.__init__(self, conf, log, **kwargs)
         self.sndbufParam = False
         self._customize()
 
@@ -871,7 +849,7 @@ class NetworkInterfaceDevice(VmDevice):
         return bandwidth
 
 
-class Drive(VmDevice):
+class Drive(vmdevices.Base):
     __slots__ = ('iface', 'path', 'readonly', 'bootOrder', 'domainID',
                  'poolID', 'imageID', 'UUID', 'volumeID', 'format',
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
@@ -886,7 +864,7 @@ class Drive(VmDevice):
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
-        VmDevice.__init__(self, conf, log, **kwargs)
+        vmdevices.Base.__init__(self, conf, log, **kwargs)
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
@@ -1176,7 +1154,7 @@ class Drive(VmDevice):
         return diskelem
 
 
-class GraphicsDevice(VmDevice):
+class GraphicsDevice(vmdevices.Base):
     __slots__ = ('device', 'port', 'tlsPort')
 
     LIBVIRT_PORT_AUTOSELECT = '-1'
@@ -1281,7 +1259,7 @@ class GraphicsDevice(VmDevice):
         return graphics
 
 
-class BalloonDevice(VmDevice):
+class BalloonDevice(vmdevices.Base):
     __slots__ = ('address',)
 
     def getXML(self):
@@ -1298,7 +1276,7 @@ class BalloonDevice(VmDevice):
         return m
 
 
-class WatchdogDevice(VmDevice):
+class WatchdogDevice(vmdevices.Base):
     __slots__ = ('address',)
 
     def __init__(self, *args, **kwargs):
@@ -1322,7 +1300,7 @@ class WatchdogDevice(VmDevice):
         return m
 
 
-class SmartCardDevice(VmDevice):
+class SmartCardDevice(vmdevices.Base):
     __slots__ = ('address',)
 
     def getXML(self):
@@ -1341,7 +1319,7 @@ class SmartCardDevice(VmDevice):
         return card
 
 
-class TpmDevice(VmDevice):
+class TpmDevice(vmdevices.Base):
     __slots__ = ()
 
     def getXML(self):
@@ -1363,7 +1341,7 @@ class TpmDevice(VmDevice):
         return tpm
 
 
-class RedirDevice(VmDevice):
+class RedirDevice(vmdevices.Base):
     __slots__ = ('address',)
 
     def getXML(self):
@@ -1377,7 +1355,7 @@ class RedirDevice(VmDevice):
         return self.createXmlElem('redirdev', self.device, ['bus', 'address'])
 
 
-class RngDevice(VmDevice):
+class RngDevice(vmdevices.Base):
     def getXML(self):
         """
         <rng model='virtio'>
@@ -1403,7 +1381,7 @@ class RngDevice(VmDevice):
         return rng
 
 
-class ConsoleDevice(VmDevice):
+class ConsoleDevice(vmdevices.Base):
     __slots__ = ()
 
     def getXML(self):

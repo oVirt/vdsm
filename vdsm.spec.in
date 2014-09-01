@@ -955,6 +955,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/guestagent.py*
 %{_datadir}/%{vdsm_name}/virt/migration.py*
 %{_datadir}/%{vdsm_name}/virt/vmchannels.py*
+%{_datadir}/%{vdsm_name}/virt/vmdevices.py*
 %{_datadir}/%{vdsm_name}/virt/vmstatus.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*

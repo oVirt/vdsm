@@ -149,6 +149,7 @@
 ./usr/share/vdsm/virt/sampling.py
 ./usr/share/vdsm/virt/vm.py
 ./usr/share/vdsm/virt/vmchannels.py
+./usr/share/vdsm/virt/vmdevices.py
 ./usr/share/vdsm/virt/vmexitreason.py
 ./usr/share/vdsm/virt/vmpowerdown.py
 ./usr/share/vdsm/virt/vmstatus.py

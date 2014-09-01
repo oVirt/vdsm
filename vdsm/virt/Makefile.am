@@ -28,6 +28,7 @@ dist_vdsm_virt_PYTHON = \
 	sampling.py \
 	vm.py \
 	vmchannels.py \
+	vmdevices.py \
 	vmexitreason.py \
 	vmpowerdown.py \
 	vmstatus.py \
