@@ -528,7 +528,7 @@ class TestVm(TestCaseBase):
     def testSoundXML(self):
         soundXML = '<sound model="ac97"/>'
         dev = {'device': 'ac97'}
-        sound = vm.SoundDevice(self.conf, self.log, **dev)
+        sound = vmdevices.Sound(self.conf, self.log, **dev)
         self.assertXML(sound.getXML(), soundXML)
 
     def testVideoXML(self):

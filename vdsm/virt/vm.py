@@ -647,18 +647,6 @@ class NotifyingVirDomain:
         return f
 
 
-class SoundDevice(vmdevices.Base):
-    __slots__ = ('address', 'alias')
-
-    def getXML(self):
-        """
-        Create domxml for sound device
-        """
-        sound = self.createXmlElem('sound', None, ['address'])
-        sound.setAttrs(model=self.device)
-        return sound
-
-
 class NetworkInterfaceDevice(vmdevices.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter',
@@ -1348,7 +1336,7 @@ class Vm(object):
     _ongoingCreations = threading.BoundedSemaphore(4)
     DeviceMapping = ((DISK_DEVICES, Drive),
                      (NIC_DEVICES, NetworkInterfaceDevice),
-                     (SOUND_DEVICES, SoundDevice),
+                     (SOUND_DEVICES, vmdevices.Sound),
                      (VIDEO_DEVICES, vmdevices.VideoDevice),
                      (GRAPHICS_DEVICES, GraphicsDevice),
                      (CONTROLLER_DEVICES, vmdevices.Controller),

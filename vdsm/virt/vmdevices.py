@@ -69,6 +69,18 @@ class Controller(Base):
         return ctrl
 
 
+class Sound(Base):
+    __slots__ = ('address', 'alias')
+
+    def getXML(self):
+        """
+        Create domxml for sound device
+        """
+        sound = self.createXmlElem('sound', None, ['address'])
+        sound.setAttrs(model=self.device)
+        return sound
+
+
 class VideoDevice(Base):
     __slots__ = ('address',)
 
