@@ -686,15 +686,6 @@ class NotifyingVirDomain:
         return f
 
 
-class GeneralDevice(vmdevices.Base):
-
-    def getXML(self):
-        """
-        Create domxml for general device
-        """
-        return self.createXmlElem(self.type, self.device, ['address'])
-
-
 class ControllerDevice(vmdevices.Base):
     __slots__ = ('address', 'model', 'index', 'master')
 
@@ -1415,7 +1406,7 @@ class Vm(object):
                      (VIDEO_DEVICES, vmdevices.VideoDevice),
                      (GRAPHICS_DEVICES, GraphicsDevice),
                      (CONTROLLER_DEVICES, ControllerDevice),
-                     (GENERAL_DEVICES, GeneralDevice),
+                     (GENERAL_DEVICES, vmdevices.Generic),
                      (BALLOON_DEVICES, BalloonDevice),
                      (WATCHDOG_DEVICES, WatchdogDevice),
                      (CONSOLE_DEVICES, ConsoleDevice),

@@ -45,6 +45,15 @@ class Base(vmxml.Device):
         return ' '.join(attrs)
 
 
+class Generic(Base):
+
+    def getXML(self):
+        """
+        Create domxml for general device
+        """
+        return self.createXmlElem(self.type, self.device, ['address'])
+
+
 class VideoDevice(Base):
     __slots__ = ('address',)
 
