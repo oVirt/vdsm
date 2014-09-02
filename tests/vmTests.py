@@ -31,6 +31,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 from virt import vm
+from virt import vmdevices
 from virt import vmexitreason
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from virt import vmxml
@@ -612,7 +613,7 @@ class TestVm(TestCaseBase):
 
         dev = {'device': 'vga', 'specParams': {'vram': '32768',
                'heads': '2'}}
-        video = vm.VideoDevice(self.conf, self.log, **dev)
+        video = vmdevices.VideoDevice(self.conf, self.log, **dev)
         self.assertXML(video.getXML(), videoXML)
 
     def testInterfaceXML(self):

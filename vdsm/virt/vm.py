@@ -707,23 +707,6 @@ class ControllerDevice(vmdevices.Base):
         return ctrl
 
 
-class VideoDevice(vmdevices.Base):
-    __slots__ = ('address',)
-
-    def getXML(self):
-        """
-        Create domxml for video device
-        """
-        video = self.createXmlElem('video', None, ['address'])
-        sourceAttrs = {'vram': self.specParams.get('vram', '32768'),
-                       'heads': self.specParams.get('heads', '1')}
-        if 'ram' in self.specParams:
-            sourceAttrs['ram'] = self.specParams['ram']
-
-        video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
-        return video
-
-
 class SoundDevice(vmdevices.Base):
     __slots__ = ('address', 'alias')
 
@@ -1426,7 +1409,7 @@ class Vm(object):
     DeviceMapping = ((DISK_DEVICES, Drive),
                      (NIC_DEVICES, NetworkInterfaceDevice),
                      (SOUND_DEVICES, SoundDevice),
-                     (VIDEO_DEVICES, VideoDevice),
+                     (VIDEO_DEVICES, vmdevices.VideoDevice),
                      (GRAPHICS_DEVICES, GraphicsDevice),
                      (CONTROLLER_DEVICES, ControllerDevice),
                      (GENERAL_DEVICES, GeneralDevice),

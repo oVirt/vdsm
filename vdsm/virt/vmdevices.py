@@ -43,3 +43,20 @@ class Base(vmxml.Device):
         attrs = [':'.join((a, str(getattr(self, a, None)))) for a in dir(self)
                  if not a.startswith('__')]
         return ' '.join(attrs)
+
+
+class VideoDevice(Base):
+    __slots__ = ('address',)
+
+    def getXML(self):
+        """
+        Create domxml for video device
+        """
+        video = self.createXmlElem('video', None, ['address'])
+        sourceAttrs = {'vram': self.specParams.get('vram', '32768'),
+                       'heads': self.specParams.get('heads', '1')}
+        if 'ram' in self.specParams:
+            sourceAttrs['ram'] = self.specParams['ram']
+
+        video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
+        return video
