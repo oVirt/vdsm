@@ -117,16 +117,31 @@ def printConf(conf):
             print "\t%s = %s" % (element, conf[element])
 
 
-def printDict(dict, pretty=True):
+def printDict(dict, pretty=True, depth=0):
     keys = dict.keys()
     keys.sort()
     for element in keys:
         if pretty:
             representation = pp.pformat(dict[element]).replace(
-                '\n', '\n\t' + ' ' * len(element + ' = '))
+                '\n', '\n\t' + ' ' * len(element + ' = ') + '\t' * depth)
         else:
             representation = dict[element]
-        print "\t%s = %s" % (element, representation)
+        print '\t' * depth + '\t%s = %s' % (element, representation)
+
+
+def printDevices(devices, roots=None, pretty=True, depth=1):
+    if roots is None:
+        roots = [deviceName for deviceName in devices if
+                 devices[deviceName]['params'].get('parent', None)
+                 not in devices]
+
+    for root in roots:
+        printDict({root: devices[root]}, pretty, depth)
+        printDevices(devices,
+                     [deviceName for deviceName in devices if
+                      devices[deviceName]['params'].get('parent', None) ==
+                      root],
+                     pretty, depth + 1)
 
 
 def printStats(list):
@@ -199,6 +214,8 @@ class service:
                     printStats(response['statsList'])
             elif 'info' in response:
                 printDict(response['info'], self.pretty)
+            elif 'deviceList' in response:
+                printDevices(response['deviceList'], pretty=self.pretty)
             else:
                 printDict(response['status'], self.pretty)
         sys.exit(response['status']['code'])
@@ -524,6 +541,9 @@ class service:
 
     def do_getAllVmStats(self, args):
         return self.ExecAndExit(self.s.getAllVmStats())
+
+    def do_hostdevListByCaps(self, args):
+        return self.ExecAndExit(self.s.hostdevListByCaps(args))
 
     def desktopLogin(self, args):
         vmId, domain, user, password = tuple(args[:4])
@@ -2149,6 +2169,12 @@ if __name__ == '__main__':
                           ('',
                            'Get Statistics info for all existing VMs'
                            )),
+        'hostdevListByCaps': (serv.do_hostdevListByCaps,
+                              ('[<caps>]',
+                               'Get available devices on host with given '
+                               'capability. Leave caps empty to list all '
+                               'devices.'
+                               )),
         'getVGList': (serv.getVGList,
                       ('storageType',
                        'List of all VGs.'
