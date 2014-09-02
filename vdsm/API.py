@@ -50,6 +50,7 @@ from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
 import hooks
+import hostdev
 from caps import PAGE_SIZE_BYTES
 
 import supervdsm
@@ -1293,6 +1294,10 @@ class Global(APIBase):
                 statsList.append(response['statsList'][0])
         statsList = hooks.after_get_all_vm_stats(statsList)
         return {'status': doneCode, 'statsList': statsList}
+
+    def hostdevListByCaps(self, caps):
+        devices = hostdev.list_by_caps(self._cif.vmContainer, caps)
+        return {'status': doneCode, 'deviceList': devices}
 
     def getStats(self):
         """

@@ -3723,6 +3723,77 @@
  'returns': ['VmStats']}
 
 ##
+# @HostDeviceParams:
+#
+# A host device parameters
+#
+# @capability:      The capability of the device (ussualy pci,
+#                   usb_device, scsi)
+#
+# @iommu_group:     The iommu group which the device belongs to
+#
+# @parent:          Name of the parent device
+#
+# @product_id:      Hexadecimal representation of the product
+#                   specified by vendor
+#
+# @product:         String representation of the product specified
+#                   by vendor
+#
+# @vendor_id:       Hexadecimal representation of the vendor
+#
+# @vendor:          String representation of the vendor
+#
+# Since: 4.17.0
+##
+{'type': 'HostDeviceParams',
+ 'data': {'capability': 'str', 'iommu_group': 'uint',
+          'parent': 'str', 'product_id': 'str', 'product': 'str',
+          'vendor_id': 'str', 'vendor': 'str'}}
+
+##
+# @HostDevice:
+#
+# Assignment of the device to VM
+#
+# @vmId:            The VM UUID
+#
+# @params:          Properties of the device
+#
+# Since: 4.17.0
+##
+{'type': 'HostDevice',
+ 'data': {'vmId': 'UUID', 'params': 'HostDeviceParams'}}
+
+##
+# @HostDevices:
+#
+# Mapping of devices to their assignments
+#
+# @deviceName:      Name of the device
+#
+# Since: 4.17.0
+##
+{'type': 'HostDevices',
+ 'data': {'deviceName': 'HostDevice'}}
+
+##
+# @Host.hostdevListByCaps:
+#
+# Refresh and get information about devices available on the host
+#
+# @caps:            List of capabilities of devices to fetch
+#
+# Returns:
+# A list of devices on the host
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'hostdevListByCaps'},
+ 'data': {'caps': ['str']},
+ 'returns': ['HostDevices']}
+
+##
 # @Host.ping:
 #
 # Test connectivity to vdsm.

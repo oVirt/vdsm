@@ -32,6 +32,7 @@ dist_vdsm_PYTHON = \
 	dmidecodeUtil.py \
 	hooking.py \
 	hooks.py \
+	hostdev.py \
 	kaxmlrpclib.py \
 	logUtils.py \
 	mkimage.py \

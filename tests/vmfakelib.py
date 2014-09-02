@@ -19,6 +19,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import xml.etree.ElementTree as etree
 from contextlib import contextmanager
 
 import libvirt
@@ -128,6 +129,36 @@ class GuestAgent(object):
             'netIfaces': [],
             'memoryStats': {},
             'guestCPUCount': -1}
+
+
+class VirNodeDeviceStub(object):
+
+    def __init__(self, xml):
+        self.xml = xml
+        self._name = etree.fromstring(self.XMLDesc(0)).find('name').text
+
+    def XMLDesc(self, flags=0):
+        return self.xml
+
+    def name(self):
+        return self._name
+
+    # unfortunately, in real environment these are the most problematic calls
+    # but in order to test them, we would put host in danger of removing
+    # device needed to run properly (such as nic)
+
+    # the name dettach is defined like *this* in libvirt API, known mistake
+    def dettach(self):
+        pass
+
+    def reAttach(self):
+        pass
+
+
+class ConfStub(object):
+
+    def __init__(self, conf):
+        self.conf = conf
 
 
 @contextmanager

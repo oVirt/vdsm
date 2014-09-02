@@ -53,6 +53,7 @@
 ./usr/share/vdsm/gluster/hostname.py
 ./usr/share/vdsm/hooking.py
 ./usr/share/vdsm/hooks.py
+./usr/share/vdsm/hostdev.py
 ./usr/share/vdsm/kaxmlrpclib.py
 ./usr/share/vdsm/logUtils.py
 ./usr/share/vdsm/mk_sysprep_floppy

@@ -403,6 +403,7 @@ command_info = {
     'Host_getStats': {'ret': 'info'},
     'Host_getStorageDomains': {'ret': 'domlist'},
     'Host_getStorageRepoStats': {'ret': Host_getStorageRepoStats_Ret},
+    'Host_hostdevListByCaps': {'ret': 'deviceList'},
     'Host_startMonitoringDomain': {},
     'Host_stopMonitoringDomain': {},
     'Host_getVMList': {'call': Host_getVMList_Call, 'ret': Host_getVMList_Ret},
