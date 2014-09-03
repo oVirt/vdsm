@@ -35,6 +35,13 @@ from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 @expandPermutations
 class TestVmXmlFunctions(TestCaseBase):
 
+    @permutations([[caps.Architecture.X86_64],
+                   [caps.Architecture.PPC64]])
+    def test_has_channel(self, arch):
+        for _, dom_xml in self._build_domain_xml(arch):
+            self.assertEqual(True, vmxml.has_channel(
+                dom_xml, vm._VMCHANNEL_DEVICE_NAME))
+
     @permutations([[caps.Architecture.X86_64], [caps.Architecture.PPC64]])
     def test_all_channels_vdsm_domain(self, arch):
         for _, dom_xml in self._build_domain_xml(arch):

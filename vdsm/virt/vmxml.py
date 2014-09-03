@@ -22,6 +22,7 @@ import sys
 from operator import itemgetter
 import xml.dom
 import xml.dom.minidom
+import xml.etree.ElementTree as etree
 
 from vdsm import constants
 from vdsm import utils
@@ -30,14 +31,14 @@ import caps
 
 
 def has_channel(domXML, name):
-    domObj = xml.dom.minidom.parseString(domXML)
-    devices = domObj.getElementsByTagName('devices')
+    domObj = etree.fromstring(domXML)
+    devices = domObj.findall('devices')
 
     if len(devices) == 1:
-        for chan in devices[0].getElementsByTagName('channel'):
-            targets = chan.getElementsByTagName('target')
+        for chan in devices[0].findall('channel'):
+            targets = chan.findall('target')
             if len(targets) == 1:
-                if targets[0].getAttribute('name') == name:
+                if targets[0].attrib['name'] == name:
                     return True
 
     return False
