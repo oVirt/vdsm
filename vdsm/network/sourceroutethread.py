@@ -47,7 +47,11 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
                     ip = sourceRouteContents[1]
                     mask = sourceRouteContents[2]
                     gateway = sourceRouteContents[3]
-                    sourceRoute.configure(ip, mask, gateway)
+                    if gateway in (None, '0.0.0.0') or not ip or not mask:
+                        logging.error('invalid DHCP response %s',
+                                      sourceRouteContents)
+                    else:
+                        sourceRoute.configure(ip, mask, gateway)
                 else:
                     sourceRoute.remove()
             else:

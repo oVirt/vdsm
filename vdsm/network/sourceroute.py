@@ -65,10 +65,6 @@ class StaticSourceRoute(object):
                      srcDevice=self.device)]
 
     def configure(self, ipaddr, mask, gateway):
-        if gateway in (None, '0.0.0.0') or not ipaddr or not mask:
-            logging.error("ipaddr, mask or gateway not received")
-            return
-
         self.ipaddr = ipaddr
         self.mask = mask
         self.gateway = gateway
