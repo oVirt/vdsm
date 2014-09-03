@@ -850,7 +850,7 @@ class Drive(vmdevices.Base):
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
-        vmdevices.Base.__init__(self, conf, log, **kwargs)
+        super(Drive, self).__init__(conf, log, **kwargs)
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
