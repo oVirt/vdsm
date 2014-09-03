@@ -122,3 +122,10 @@ def detach_detachable(device_name):
         libvirt_device.detachFlags(None)
 
     return device_params
+
+
+def reattach_detachable(device_name):
+    libvirt_device, device_params = _get_device_ref_and_params(device_name)
+
+    if device_params['capability'] in _DETACH_REQUIRING_CAPS:
+        libvirt_device.reAttach()
