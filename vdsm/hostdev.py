@@ -23,6 +23,9 @@ import xml.etree.ElementTree as etree
 from vdsm import libvirtconnection
 
 
+_DETACH_REQUIRING_CAPS = ('usb_device', 'pci')
+
+
 def _parse_device_params(device_xml):
     """
     Process device_xml and return dict of found known parameters
@@ -50,6 +53,12 @@ def _parse_device_params(device_xml):
         params['iommu_group'] = iommu_group.attrib['number']
 
     return params
+
+
+def _get_device_ref_and_params(device_name):
+    libvirt_device = libvirtconnection.get().\
+        nodeDeviceLookupByName(device_name)
+    return libvirt_device, _parse_device_params(libvirt_device.XMLDesc(0))
 
 
 def _get_devices_from_vms(vmContainer):
@@ -104,3 +113,12 @@ def list_by_caps(vmContainer, caps=None):
             devices[devName]['vmId'] = device_to_vm[devName]
 
     return devices
+
+
+def detach_detachable(device_name):
+    libvirt_device, device_params = _get_device_ref_and_params(device_name)
+
+    if device_params['capability'] in _DETACH_REQUIRING_CAPS:
+        libvirt_device.detachFlags(None)
+
+    return device_params
