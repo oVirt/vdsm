@@ -2870,6 +2870,10 @@ class Vm(object):
             for drive in devices[DISK_DEVICES]:
                 if drive['device'] == 'disk' and isVdsmImage(drive):
                     self.sdIds.append(drive['domainID'])
+            # Note that we do not start disk stats collection here since
+            # in the recovery flow irs may not be ready yet.
+            # Disk stats collection is started from clientIF at the end
+            # of the recovery process.
 
         for devType, devClass in self.DeviceMapping:
             for dev in devices[devType]:
