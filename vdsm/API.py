@@ -467,11 +467,11 @@ class VM(APIBase):
 
         return curVm.hotunplugDisk(params)
 
-    def setNumberOfCpus(self, vmId, numberOfCpus):
+    def setNumberOfCpus(self, numberOfCpus):
 
-        if vmId is None or numberOfCpus is None:
+        if self._UUID is None or numberOfCpus is None:
             self.log.error('Missing one of required parameters: \
-            vmId: (%s), numberOfCpus: (%s)', vmId, numberOfCpus)
+            vmId: (%s), numberOfCpus: (%s)', self._UUID, numberOfCpus)
             return {'status': {'code': errCode['MissParam']['status']['code'],
                                'message': 'Missing one of required '
                                           'parameters: vmId, numberOfCpus'}}

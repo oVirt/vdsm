@@ -428,7 +428,7 @@ class BindingXMLRPC(object):
 
     def vmSetNumberOfCpus(self, vmId, numberOfCpus):
         vm = API.VM(vmId)
-        return vm.setNumberOfCpus(vmId, numberOfCpus)
+        return vm.setNumberOfCpus(numberOfCpus)
 
     def vmUpdateVmPolicy(self, params):
         vm = API.VM(params['vmId'])
