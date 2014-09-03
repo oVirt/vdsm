@@ -736,7 +736,7 @@ class NetworkInterfaceDevice(vmdevices.Base):
                 kwargs[attr] = 'virtio'
             elif attr == 'network' and value == '':
                 kwargs[attr] = DUMMY_BRIDGE
-        vmdevices.Base.__init__(self, conf, log, **kwargs)
+        super(NetworkInterfaceDevice, self).__init__(conf, log, **kwargs)
         self.sndbufParam = False
         self._customize()
 
