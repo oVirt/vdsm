@@ -21,7 +21,7 @@ from functools import partial
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import _ethtool_uses_libnl3, LIBNL_ROUTE, _nl_geterror, _pool
+from . import LIBNL, LIBNL_ROUTE, _nl_geterror, _pool
 from . import _addr_to_str, _af_to_str, _scope_to_str, CHARBUFFSIZE
 from .link import _nl_link_cache, _link_index_to_name
 
@@ -64,7 +64,7 @@ def _addr_flags(addr):
 # This helps ctypes know the calling conventions it should use to communicate
 # with the binary interface of libnl and which types it should allocate and
 # cast. Without it ctypes fails when not running on the main thread.
-if _ethtool_uses_libnl3():
+if LIBNL != LIBNL_ROUTE:
     _addr_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_void_p)(
         ('rtnl_addr_alloc_cache', LIBNL_ROUTE))
 

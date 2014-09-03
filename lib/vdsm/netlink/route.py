@@ -22,7 +22,7 @@ from socket import AF_UNSPEC
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_proto, _void_proto
-from . import _ethtool_uses_libnl3, LIBNL_ROUTE, _nl_geterror, _pool
+from . import LIBNL, LIBNL_ROUTE, _nl_geterror, _pool
 from . import _addr_to_str, _af_to_str, _scope_to_str
 from .link import _nl_link_cache, _link_index_to_name
 
@@ -53,11 +53,11 @@ def _route_info(link_cache, route):
     if oif_index > 0:
         data['oif'] = _link_index_to_name(link_cache, oif_index)
     table = _rtnl_route_get_table(route)
-    if _ethtool_uses_libnl3() or table != _RT_TABLE_COMPAT:
+    if LIBNL != LIBNL_ROUTE or table != _RT_TABLE_COMPAT:
         data['table'] = table
     return data
 
-if _ethtool_uses_libnl3():
+if LIBNL != LIBNL_ROUTE:
     _route_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_int, c_void_p)(
         ('rtnl_route_alloc_cache', LIBNL_ROUTE))
     _route_get_nnexthops = _int_proto(('rtnl_route_get_nnexthops',

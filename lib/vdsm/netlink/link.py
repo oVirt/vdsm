@@ -24,7 +24,7 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import _ethtool_uses_libnl3, LIBNL_ROUTE, _nl_geterror, _pool
+from . import LIBNL, LIBNL_ROUTE, _nl_geterror, _pool
 from . import _addr_to_str, CHARBUFFSIZE
 
 
@@ -64,7 +64,7 @@ def _link_info(cache, link):
     # libnl-1 has a bug when getting type information.
     # https://github.com/tgraf/libnl-1.1-stable/issues/1
     # TODO: Add for libnl1 if the bug is fixed
-    if _ethtool_uses_libnl3():
+    if LIBNL != LIBNL_ROUTE:
         link_type = _rtnl_link_get_type(link)
         if link_type is not None:
             info['type'] = link_type
@@ -102,7 +102,7 @@ def _link_state(link):
 # This helps ctypes know the calling conventions it should use to communicate
 # with the binary interface of libnl and which types it should allocate and
 # cast. Without it ctypes fails when not running on the main thread.
-if _ethtool_uses_libnl3():
+if LIBNL != LIBNL_ROUTE:
     _link_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)(
         ('rtnl_link_alloc_cache', LIBNL_ROUTE))
     _link_is_vlan = _int_proto(('rtnl_link_is_vlan', LIBNL_ROUTE))

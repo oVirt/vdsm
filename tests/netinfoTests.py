@@ -24,13 +24,12 @@ from functools import partial
 import time
 from xml.dom import minidom
 
-import ethtool
-
 from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
 from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
                           BONDING_OPT, _randomIfaceName, _getBondingOptions)
+from vdsm.netlink import addr as nl_addr
 
 from functional import dummy, veth
 from ipwrapperTests import _fakeTypeDetection
@@ -95,18 +94,16 @@ class TestNetinfo(TestCaseBase):
         self.assertEqual('::ffff:127.0.0.1', netinfo.IPv4toMapped('127.0.0.1'))
 
     def testGetDeviceByIP(self):
-        for dev in ethtool.get_interfaces_info(ethtool.get_active_devices()):
+        for addr in nl_addr.iter_addrs():
             # Link-local IPv6 addresses are generated from the MAC address,
             # which is shared between a nic and its bridge. Since We don't
             # support having the same IP address on two different NICs, and
             # link-local IPv6 addresses aren't interesting for 'getDeviceByIP'
             # then ignore them in the test
-            ipaddrs = [ipv6.address for ipv6 in dev.get_ipv6_addresses()
-                       if ipv6.scope != 'link']
-            if dev.ipv4_address is not None:
-                ipaddrs.append(dev.ipv4_address)
-            for ip in ipaddrs:
-                self.assertEqual(dev.device, netinfo.getDeviceByIP(ip))
+            if addr['scope'] != 'link':
+                self.assertEqual(
+                    addr['label'],
+                    netinfo.getDeviceByIP(addr['address'].split('/')[0]))
 
     def _testNics(self):
         """Creates a test fixture so that nics() reports:

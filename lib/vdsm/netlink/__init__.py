@@ -20,11 +20,8 @@
 from contextlib import contextmanager
 from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, get_errno, sizeof)
-from distutils.version import StrictVersion
 from Queue import Empty, Queue
 from threading import BoundedSemaphore
-
-import ethtool
 
 _POOL_SIZE = 5
 _NETLINK_ROUTE = 0
@@ -119,19 +116,14 @@ _void_proto = CFUNCTYPE(c_void_p, c_void_p)
 _none_proto = CFUNCTYPE(None, c_void_p)
 
 
-def _ethtool_uses_libnl3():
-    """Returns whether ethtool uses libnl3."""
-    return (StrictVersion('0.9') <=
-            StrictVersion(ethtool.version.split()[1].lstrip('v')))
-
-if _ethtool_uses_libnl3():
+try:
     LIBNL = CDLL('libnl-3.so.200',  use_errno=True)
     LIBNL_ROUTE = CDLL('libnl-route-3.so.200',  use_errno=True)
 
     _nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', LIBNL))
     _nl_socket_free = _none_proto(('nl_socket_free', LIBNL))
 
-else:  # libnl-1
+except OSError:  # CDLL failed to load libnl3, assume libnl-1
     # Change from handle to socket as it is now more accurately called in
     # libnl-3
     LIBNL_ROUTE = LIBNL = CDLL('libnl.so.1', use_errno=True)
