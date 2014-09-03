@@ -203,3 +203,12 @@ class TestDrvinfo(TestCaseBase):
     def testBridgeEthtoolDrvinfo(self):
         self.assertEqual(ipwrapper.drv_name(self._bridge.devName),
                          ipwrapper.LinkType.BRIDGE)
+
+    def testTogglePromisc(self):
+        ipwrapper.getLink(self._bridge.devName).promisc = True
+        self.assertTrue(ipwrapper.getLink(self._bridge.devName).promisc,
+                        "Could not enable promiscuous mode.")
+
+        ipwrapper.getLink(self._bridge.devName).promisc = False
+        self.assertFalse(ipwrapper.getLink(self._bridge.devName).promisc,
+                         "Could not disable promiscuous mode.")

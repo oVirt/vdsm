@@ -19,14 +19,10 @@
 #
 
 from collections import namedtuple
-from contextlib import closing
 from functools import partial
-import ctypes
 import errno
-import fcntl
-import socket
 
-import ethtool
+from vdsm import ipwrapper
 
 from . import filter as tc_filter
 from . import _parser
@@ -55,7 +51,7 @@ def _delTarget(network, parent, target):
     else:
         return []
 
-    devices = set(ethtool.get_devices())
+    devices = set(link.name for link in ipwrapper.getLinks())
     acts = [act for act in filt.actions
             if act.target in devices and act.target != target]
 
@@ -74,8 +70,7 @@ def setPortMirroring(network, target):
     qdisc_replace_prio(network)
     qdisc_id = _qdiscs_of_device(network).next()
     _addTarget(network, qdisc_id, target)
-
-    set_promisc(network, True)
+    ipwrapper.getLink(network).promisc = True
 
 
 def unsetPortMirroring(network, target):
@@ -91,7 +86,7 @@ def unsetPortMirroring(network, target):
     if not acts:
         qdisc_del(network, 'root')
         qdisc_del(network, 'ingress')
-        set_promisc(network, False)
+        ipwrapper.getLink(network).promisc = False
 
 
 def qdisc_replace_ingress(dev):
@@ -141,35 +136,6 @@ def qdisc_del(dev, queue):
     except TrafficControlException as e:
         if e.errCode != errno.ENOENT:
             raise
-
-
-def set_flags(dev, flags):
-    "Set device flags. We need this local definition until ethtool has it"
-
-    SIOCSIFFLAGS = 0x8914
-
-    class ifreq(ctypes.Structure):
-        _fields_ = [("ifr_ifrn", ctypes.c_char * 16),
-                    ("ifr_flags", ctypes.c_short)]
-
-    with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as s:
-        ifr = ifreq()
-        ifr.ifr_ifrn = dev
-        ifr.ifr_flags = flags
-
-        fcntl.ioctl(s.fileno(), SIOCSIFFLAGS, ifr)
-
-
-def set_promisc(dev, on=True):
-    flags = ethtool.get_flags(dev)
-
-    if bool(flags & ethtool.IFF_PROMISC) != on:
-        if on:
-            flags |= ethtool.IFF_PROMISC
-        else:
-            flags &= ~ethtool.IFF_PROMISC
-
-        set_flags(dev, flags)
 
 
 Filter = namedtuple('Filter', 'prio handle actions')

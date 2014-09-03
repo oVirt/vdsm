@@ -21,6 +21,7 @@ from collections import namedtuple
 from contextlib import closing
 from glob import iglob
 import array
+import ctypes
 import errno
 import fcntl
 import os
@@ -116,6 +117,7 @@ class Link(object):
     _hiddenNics = config.get('vars', 'hidden_nics').split(',')
     _hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
     IFF_RUNNING = 1 << 6
+    IFF_PROMISC = 1 << 8
 
     def __init__(self, address, index, linkType, mtu, name, qdisc, state,
                  vlanid=None, vlanprotocol=None, master=None, device=None,
@@ -242,6 +244,35 @@ class Link(object):
     @property
     def oper_up(self):
         return bool(self.flags & self.IFF_RUNNING)
+
+    @property
+    def promisc(self):
+        return bool(self.flags & self.IFF_PROMISC)
+
+    @promisc.setter
+    def promisc(self, value):
+        """Takes a boolean to enable/disable Link promiscuity"""
+        if value:
+            self.flags |= self.IFF_PROMISC
+        else:
+            self.flags &= ~self.IFF_PROMISC
+        self.set_flags(self.flags)
+
+    def set_flags(self, flags):
+        "Set device flags. We need this local definition until ethtool has it"
+
+        SIOCSIFFLAGS = 0x8914
+
+        class ifreq(ctypes.Structure):
+            _fields_ = [("ifr_ifrn", ctypes.c_char * 16),
+                        ("ifr_flags", ctypes.c_short)]
+
+        with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as s:
+            ifr = ifreq()
+            ifr.ifr_ifrn = self.name
+            ifr.ifr_flags = flags
+
+            fcntl.ioctl(s.fileno(), SIOCSIFFLAGS, ifr)
 
 
 def drv_name(devName):

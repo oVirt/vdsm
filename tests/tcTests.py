@@ -31,7 +31,6 @@ from itertools import izip_longest
 from subprocess import Popen, check_call, PIPE
 import fcntl
 import struct
-import ethtool
 
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
@@ -188,17 +187,6 @@ class TestQdisc(TestCaseBase):
         self._addIngress()
         tc.qdisc_replace_prio(self._bridge.devName)
         self.assertIn("root", self._showQdisc())
-
-    def testTogglePromisc(self):
-        tc.set_promisc(self._bridge.devName, True)
-        self.assertTrue(ethtool.get_flags(self._bridge.devName) &
-                        ethtool.IFF_PROMISC,
-                        "Could not enable promiscuous mode.")
-
-        tc.set_promisc(self._bridge.devName, False)
-        self.assertFalse(ethtool.get_flags(self._bridge.devName) &
-                         ethtool.IFF_PROMISC,
-                         "Could not disable promiscuous mode.")
 
     def testException(self):
         self.assertRaises(tc.TrafficControlException, tc.qdisc_del,
