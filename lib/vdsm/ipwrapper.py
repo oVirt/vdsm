@@ -115,6 +115,7 @@ class Link(object):
     _hiddenBonds = config.get('vars', 'hidden_bonds').split(',')
     _hiddenNics = config.get('vars', 'hidden_nics').split(',')
     _hiddenVlans = config.get('vars', 'hidden_vlans').split(',')
+    IFF_RUNNING = 1 << 6
 
     def __init__(self, address, index, linkType, mtu, name, qdisc, state,
                  vlanid=None, vlanprotocol=None, master=None, device=None,
@@ -237,6 +238,10 @@ class Link(object):
                     self._detectType(dev) == LinkType.MACVLAN):
                 return True
         return False
+
+    @property
+    def oper_up(self):
+        return bool(self.flags & self.IFF_RUNNING)
 
 
 def drv_name(devName):

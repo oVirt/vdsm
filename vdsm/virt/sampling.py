@@ -31,7 +31,6 @@ import os
 import time
 import logging
 import errno
-import ethtool
 import re
 
 from vdsm import utils
@@ -87,19 +86,6 @@ class InterfaceSample:
                 if not tries:
                     raise
 
-    def readIfaceOperstate(self, ifid):
-        """
-        Return the operational state of the interface.
-
-        :returns: ``'up'`` if interface is up. ``'down'`` or ``0`` id it's
-                  down.
-        """
-        try:
-            flags = ethtool.get_flags(ifid)
-        except IOError:
-            return '0'
-        return 'up' if flags & ethtool.IFF_RUNNING else 'down'
-
     def __init__(self, link):
         ifid = link.name
         self.rx = self.readIfaceStat(ifid, 'rx_bytes')
@@ -108,7 +94,7 @@ class InterfaceSample:
         self.txDropped = self.readIfaceStat(ifid, 'tx_dropped')
         self.rxErrors = self.readIfaceStat(ifid, 'rx_errors')
         self.txErrors = self.readIfaceStat(ifid, 'tx_errors')
-        self.operstate = self.readIfaceOperstate(ifid)
+        self.operstate = 'up' if link.oper_up else 'down'
         self.speed = _getLinkSpeed(link)
         self.duplex = _getDuplex(ifid)
 
