@@ -32,7 +32,13 @@ ETHTOOL_BINARY = CommandPath(
     '/usr/bin/ethtool',  # Arch
 )
 
+ALL_SLAVES = '*'  # wildcard to make the hook resolve the nics to modify
+
 Subcommand = namedtuple('Subcommand', ('name', 'device', 'flags'))
+
+
+class EthtoolError(Exception):
+    pass
 
 
 def _test_cmd_with_nics(nics, ethtool_opts):
@@ -40,17 +46,25 @@ def _test_cmd_with_nics(nics, ethtool_opts):
                  'custom': ethtool_opts,
                  'bootproto': 'dhcp', 'STP': 'no', 'bridged': 'true'}
 
-    _validate_dev_ownership(nics, 'test_net',
-                            (item for item in
-                             net_attrs['custom']['ethtool_opts'].split(' ') if
-                             item))
+    for subcommand in _parse_into_subcommands(
+            net_attrs['custom']['ethtool_opts'].split(' ')):
+        _validate_dev_ownership(nics, 'test_net', subcommand)
 
 
 def test():
     opts = {'ethtool_opts':
-            '--coalesce em1 rx-usecs 14 sample_interval 3 '
+            '--coalesce em1 rx-usecs 14 sample-interval 3 '
             '--offload em2 rx on lro on tso off '
             '--change em1 speed 1000 duplex half'}
+    # Test subcmd split
+    print(opts['ethtool_opts'])
+    print('splits into: ')
+    for subcmd in _parse_into_subcommands(opts['ethtool_opts'].split()):
+        command = ([ETHTOOL_BINARY.cmd] + [subcmd.name, subcmd.device] +
+                   subcmd.flags)
+        print('    '),
+        print(command)
+
     # Test with the correct nics
     nics = ('em1', 'em2')
     try:
@@ -87,9 +101,19 @@ def _process_network(network, attrs):
     """Applies ethtool_options to the network if necessary"""
     options = attrs['custom'].get('ethtool_opts')
     if options is not None:
-        tokens = options.split(' ')
-        _validate_dev_ownership(_net_nics(attrs), network, tokens)
-        _set_ethtool_opts(network, tokens)
+        nics = _net_nics(attrs)
+        for subcmd in _parse_into_subcommands(options.split()):
+            if subcmd.device == ALL_SLAVES:
+                expanded_nics = nics
+            else:
+                _validate_dev_ownership(nics, network, subcmd)
+                expanded_nics = (subcmd.device,)
+            for nic in expanded_nics:
+                try:
+                    _set_ethtool_opts(network,
+                                      [subcmd.name, nic] + subcmd.flags)
+                except EthtoolError as ee:
+                    hooking.log(ee.message)
 
 
 def _net_nics(attrs):
@@ -99,27 +123,26 @@ def _net_nics(attrs):
         return [attrs.pop('nic')] if 'nic' in attrs else ()
 
 
-def _validate_dev_ownership(nics, name, tokens):
-    """Generator that takes ethtool cmdline arguments and raises an exception
-    if there is a device that does not belong to the network"""
+def _validate_dev_ownership(nics, name, subcommand):
+    """Takes ethtool subcommands and raises an exception if there is a device
+    that does not belong to the network"""
     if not nics:
         raise RuntimeError('Network %s has no nics.' % name)
 
-    for cmd in _parse_into_subcommands(tokens):
-        if cmd.device not in nics:
-            raise RuntimeError('Trying to apply ethtool opts for dev: %s, not '
-                               'in the net nics: %s' % (cmd.device, nics))
+    if subcommand.device not in nics:
+        raise RuntimeError('Trying to apply ethtool opts for dev: %s, not in '
+                           '%s nics: %s' % (subcommand.device, name, nics))
 
 
 def _parse_into_subcommands(tokens):
     current = []
     for token in tokens:
         if token.startswith('-') and current:
-            yield Subcommand(current[0], current[1], current[1:])
+            yield Subcommand(current[0], current[1], current[2:])
             current = []
         current.append(token)
     if current:
-        yield Subcommand(current[0], current[1], ' '.join(current[1:]))
+        yield Subcommand(current[0], current[1], current[2:])
 
 
 def _set_ethtool_opts(network, options):
@@ -128,8 +151,8 @@ def _set_ethtool_opts(network, options):
     command = [ETHTOOL_BINARY.cmd] + options
     rc, _, err = hooking.execCmd(command, sudo=True)
     if rc != 0:
-        raise RuntimeError('Failed to set ethtool opts (%s) for network %s' %
-                           (' '.join(options), network))
+        raise EthtoolError('Failed to set ethtool opts (%s) for network %s. '
+                           'Err: %s' % (' '.join(options), network, err))
 
 
 if __name__ == '__main__':
