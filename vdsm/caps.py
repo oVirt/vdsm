@@ -64,6 +64,7 @@ class OSName:
     FEDORA = 'Fedora'
     RHEVH = 'RHEV Hypervisor'
     DEBIAN = 'Debian'
+    POWERKVM = 'PowerKVM'
 
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
@@ -287,6 +288,8 @@ def getos():
         return OSName.RHEL
     elif os.path.exists('/etc/debian_version'):
         return OSName.DEBIAN
+    elif os.path.exists('/etc/ibm-powerkvm-release'):
+        return OSName.POWERKVM
     else:
         return OSName.UNKNOWN
 
@@ -305,8 +308,13 @@ def osversion():
             version = linecache.getline('/etc/debian_version', 1).strip("\n")
             release = ""  # Debian just has a version entry
         else:
+            if osname == OSName.POWERKVM:
+                release_path = '/etc/ibm_powerkvm-release'
+            else:
+                release_path = '/etc/redhat-release'
+
             ts = rpm.TransactionSet()
-            for er in ts.dbMatch('basenames', '/etc/redhat-release'):
+            for er in ts.dbMatch('basenames', release_path):
                 version = er['version']
                 release = er['release']
     except:
