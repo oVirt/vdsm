@@ -1132,7 +1132,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/curlImgWrap.py*
 %{_datadir}/%{vdsm_name}/storage/devicemapper.py*
 %{_datadir}/%{vdsm_name}/storage/dispatcher.py*
-%{_datadir}/%{vdsm_name}/storage/domainMonitor.py*
+%{_datadir}/%{vdsm_name}/storage/monitor.py*
 %{_datadir}/%{vdsm_name}/storage/fileSD.py*
 %{_datadir}/%{vdsm_name}/storage/fileUtils.py*
 %{_datadir}/%{vdsm_name}/storage/fileVolume.py*

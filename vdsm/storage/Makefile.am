@@ -31,7 +31,6 @@ dist_vdsmstorage_PYTHON = \
 	curlImgWrap.py \
 	devicemapper.py \
 	dispatcher.py \
-	domainMonitor.py \
 	fileSD.py \
 	fileUtils.py \
 	fileVolume.py \
@@ -47,6 +46,7 @@ dist_vdsmstorage_PYTHON = \
 	localFsSD.py \
 	lvm.py \
 	misc.py \
+	monitor.py \
 	mount.py \
 	multipath.py \
 	nfsSD.py \

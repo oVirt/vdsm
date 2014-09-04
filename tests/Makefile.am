@@ -30,7 +30,6 @@ test_modules = \
 	capsTests.py \
 	clientifTests.py \
 	configNetworkTests.py \
-	domainMonitorTests.py \
 	domainDescriptorTests.py \
 	fileSDTests.py \
 	fileVolumeTests.py \
@@ -78,6 +77,7 @@ test_modules = \
 	sslhelper.py \
 	sslTests.py \
 	storageMailboxTests.py \
+	storageMonitorTests.py \
 	storageServerTests.py \
 	tcTests.py \
 	testlibTests.py \

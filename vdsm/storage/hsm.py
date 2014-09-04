@@ -43,7 +43,7 @@ import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
 from spbackends import StoragePoolDiskBackend
 from spbackends import StoragePoolMemoryBackend
-import domainMonitor
+import monitor
 import sd
 import blockSD
 import nfsSD
@@ -412,7 +412,7 @@ class HSM(object):
         storageRefreshThread.start()
 
         monitorInterval = config.getint('irs', 'sd_health_check_delay')
-        self.domainMonitor = domainMonitor.DomainMonitor(monitorInterval)
+        self.domainMonitor = monitor.DomainMonitor(monitorInterval)
 
     @property
     def ready(self):

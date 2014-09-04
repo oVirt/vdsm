@@ -18,15 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from storage import domainMonitor
+from storage import monitor
 from testlib import VdsmTestCase
 
 
 class FrozenStatusTests(VdsmTestCase):
 
     def setUp(self):
-        self.status = domainMonitor.DomainMonitorStatus()
-        self.frozen = domainMonitor.FrozenStatus(self.status)
+        self.status = monitor.DomainMonitorStatus()
+        self.frozen = monitor.FrozenStatus(self.status)
 
     def test_copy_attributes(self):
         for name in self.status.__slots__:
