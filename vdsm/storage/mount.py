@@ -86,6 +86,7 @@ _loopFsSpecsTimestamp = None
 
 
 def _getLoopFsSpecs():
+    global _loopFsSpecsTimestamp
     with _loopFsSpecsLock:
         mtabTimestamp = os.stat(_ETC_MTAB_PATH).st_mtime
         if _loopFsSpecsTimestamp != mtabTimestamp:
@@ -95,7 +96,6 @@ def _getLoopFsSpecs():
                 for opt in entry.fs_mntops:
                     if opt.startswith('loop='):
                         _loopFsSpecs[opt[len('loop='):]] = entry.fs_spec
-            global _loopFsSpecsTimestamp
             _loopFsSpecsTimestamp = mtabTimestamp
     return _loopFsSpecs
 
