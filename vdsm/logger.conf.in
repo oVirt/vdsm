@@ -8,18 +8,18 @@ keys=console,syslog,logfile,connlogfile
 keys=long,simple,none,sysform
 
 [logger_root]
-level=DEBUG
+level=INFO
 handlers=syslog,logfile
 propagate=0
 
 [logger_vds]
-level=DEBUG
+level=INFO
 handlers=syslog,logfile
 qualname=vds
 propagate=0
 
 [logger_Storage]
-level=DEBUG
+level=INFO
 handlers=logfile
 qualname=Storage
 propagate=0
@@ -43,13 +43,13 @@ qualname=IOProcess
 propagate=0
 
 [logger_connectivity]
-level=DEBUG
+level=INFO
 handlers=connlogfile
 qualname=connectivity
 propagate=0
 
 [logger_virt]
-level=DEBUG
+level=INFO
 handlers=logfile
 qualname=virt
 propagate=0
