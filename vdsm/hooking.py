@@ -69,6 +69,10 @@ def write_json(data):
         f.write(json.dumps(data))
 
 
+def log(message):
+    sys.stderr.write(message + '\n')
+
+
 def exit_hook(message, return_code=2):
     """
     Exit the hook with a given message, which will be printed to the standard
