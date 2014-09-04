@@ -31,7 +31,7 @@ from . import misc
 from .sdc import sdCache
 
 
-class DomainMonitorStatus(object):
+class Status(object):
     __slots__ = (
         "error", "checkTime", "valid", "readDelay", "masterMounted",
         "masterValid", "diskUtilization", "vgMdUtilization",
@@ -62,7 +62,7 @@ class DomainMonitorStatus(object):
         self.version = -1
 
 
-class FrozenStatus(DomainMonitorStatus):
+class FrozenStatus(Status):
 
     def __init__(self, other):
         for name in other.__slots__:
@@ -76,7 +76,7 @@ class FrozenStatus(DomainMonitorStatus):
 
 
 class DomainMonitor(object):
-    log = logging.getLogger('Storage.DomainMonitor')
+    log = logging.getLogger('Storage.Monitor')
 
     def __init__(self, interval):
         self._monitors = {}
@@ -101,8 +101,8 @@ class DomainMonitor(object):
             return
 
         self.log.info("Start monitoring %s", sdUUID)
-        monitor = DomainMonitorThread(weakref.proxy(self),
-                                      sdUUID, hostId, self._interval)
+        monitor = MonitorThread(weakref.proxy(self), sdUUID, hostId,
+                                self._interval)
         monitor.poolDomain = poolDomain
         monitor.start()
         # The domain should be added only after it succesfully started
@@ -158,8 +158,8 @@ class DomainMonitor(object):
                                  monitor.sdUUID)
 
 
-class DomainMonitorThread(object):
-    log = logging.getLogger('Storage.DomainMonitorThread')
+class MonitorThread(object):
+    log = logging.getLogger('Storage.Monitor')
 
     def __init__(self, domainMonitor, sdUUID, hostId, interval):
         self.thread = threading.Thread(target=self._run)
@@ -171,7 +171,7 @@ class DomainMonitorThread(object):
         self.hostId = hostId
         self.interval = interval
         self.firstChange = True
-        self.nextStatus = DomainMonitorStatus()
+        self.nextStatus = Status()
         self.status = FrozenStatus(self.nextStatus)
         self.isIsoDomain = None
         self.isoPrefix = None
@@ -222,7 +222,7 @@ class DomainMonitorThread(object):
             self.stopEvent.wait(self.interval)
 
     def _monitorDomain(self):
-        self.nextStatus = DomainMonitorStatus()
+        self.nextStatus = Status()
 
         # Pick up changes in the domain, for example, domain upgrade.
         if self._shouldRefreshDomain():

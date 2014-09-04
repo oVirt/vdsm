@@ -25,7 +25,7 @@ from testlib import VdsmTestCase
 class FrozenStatusTests(VdsmTestCase):
 
     def setUp(self):
-        self.status = monitor.DomainMonitorStatus()
+        self.status = monitor.Status()
         self.frozen = monitor.FrozenStatus(self.status)
 
     def test_copy_attributes(self):
