@@ -130,7 +130,7 @@ class DomainMonitor(object):
         return status
 
     def close(self):
-        self.log.info("Stopping all domain monitors")
+        self.log.info("Stop monitoring all domains")
         self._stopMonitors(self._monitors.values())
 
     def _stopMonitors(self, monitors):
@@ -202,11 +202,11 @@ class DomainMonitorThread(object):
 
     @utils.traceback(on=log.name)
     def _run(self):
-        self.log.debug("Starting domain monitor for %s", self.sdUUID)
+        self.log.debug("Domain monitor for %s started", self.sdUUID)
         try:
             self._monitorLoop()
         finally:
-            self.log.debug("Stopping domain monitor for %s", self.sdUUID)
+            self.log.debug("Domain monitor for %s stopped", self.sdUUID)
             if self._shouldReleaseHostId():
                 self._releaseHostId()
 
@@ -215,11 +215,10 @@ class DomainMonitorThread(object):
             try:
                 self._monitorDomain()
             except utils.Canceled:
-                self.log.debug("Canceled domain monitor for %s", self.sdUUID)
+                self.log.debug("Domain monitor for %s canceled", self.sdUUID)
                 return
             except:
-                self.log.error("The domain monitor for %s failed unexpectedly",
-                               self.sdUUID, exc_info=True)
+                self.log.exception("Domain monitor for %s failed", self.sdUUID)
             self.stopEvent.wait(self.interval)
 
     def _monitorDomain(self):
@@ -248,8 +247,7 @@ class DomainMonitorThread(object):
             self._checkReadDelay()
             self._collectStatistics()
         except Exception as e:
-            self.log.error("Error while collecting domain %s monitoring "
-                           "information", self.sdUUID, exc_info=True)
+            self.log.exception("Error monitoring domain %s", self.sdUUID)
             self.nextStatus.error = e
 
         self.nextStatus.checkTime = time.time()
@@ -271,14 +269,14 @@ class DomainMonitorThread(object):
 
     @utils.cancelpoint
     def _notifyStatusChanges(self):
-        self.log.debug("Domain %s changed its status to %s", self.sdUUID,
-                       "Valid" if self.nextStatus.valid else "Invalid")
+        self.log.info("Domain %s became %s", self.sdUUID,
+                      "VALID" if self.nextStatus.valid else "INVALID")
         try:
             self.domainMonitor.onDomainStateChange.emit(
                 self.sdUUID, self.nextStatus.valid)
         except:
-            self.log.warn("Could not emit domain state change event",
-                          exc_info=True)
+            self.log.exception("Error notifying state change for domain %s",
+                               self.sdUUID)
 
     # Refreshing domain
 
@@ -295,12 +293,14 @@ class DomainMonitorThread(object):
 
     @utils.cancelpoint
     def _produceDomain(self):
+        self.log.debug("Producing domain %s", self.sdUUID)
         self.domain = sdCache.produce(self.sdUUID)
 
     @utils.cancelpoint
     def _setIsoDomainInfo(self):
         isIsoDomain = self.domain.isISO()
         if isIsoDomain:
+            self.log.debug("Domain %s is an ISO domain", self.sdUUID)
             self.isoPrefix = self.domain.getIsoDomainImagesDir()
         self.isIsoDomain = isIsoDomain
 
@@ -355,13 +355,12 @@ class DomainMonitorThread(object):
         try:
             self.domain.acquireHostId(self.hostId, async=True)
         except:
-            self.log.debug("Unable to issue the acquire host id %s "
-                           "request for domain %s", self.hostId,
-                           self.sdUUID, exc_info=True)
+            self.log.exception("Error acquiring host id %s for domain %s",
+                               self.hostId, self.sdUUID)
 
     def _releaseHostId(self):
         try:
             self.domain.releaseHostId(self.hostId, unused=True)
         except:
-            self.log.debug("Unable to release the host id %s for domain "
-                           "%s", self.hostId, self.sdUUID, exc_info=True)
+            self.log.exception("Error releasing host id %s for domain %s",
+                               self.hostId, self.sdUUID)
