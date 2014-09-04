@@ -3226,6 +3226,11 @@ class HSM(object):
         :param imgUUID: The UUID of the image contained on the volume.
         :type imgUUID: UUID
         """
+        # If the pool is not blank we should make sure that we are connected
+        # to the pool.
+        if spUUID != sd.BLANK_UUID:
+            self.getPool(spUUID)
+
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         imgVolumesInfo = []
