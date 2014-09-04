@@ -62,7 +62,8 @@ class ConfigApplier(object):
             with self.ip.interfaces[iface.name] as i:
                 i.add_ip('%s/%s' % (ipConfig.ipaddr, ipConfig.netmask))
             if ipConfig.gateway and ipConfig.defaultRoute:
-                ipwrapper.routeAdd(['default', 'via', ipConfig.gateway])
+                self.ip.routes.add({'dst': 'default',
+                                    'gateway': ipConfig.gateway}).commit()
 
     def removeIpConfig(self, iface):
         ipwrapper.addrFlush(iface.name)
