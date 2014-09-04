@@ -240,11 +240,6 @@ class VM(APIBase):
                                                        vmParams['vmId'])
                 vmParams['volatileFloppy'] = True
 
-            if caps.osversion()['name'] == caps.OSName.UNKNOWN:
-                return {'status': {'code': errCode['createErr']
-                                                  ['status']['code'],
-                                   'message': 'Unknown host operating system'}}
-
             if 'sysprepInf' in vmParams:
                 if not self._createSysprepFloppyFromInf(vmParams['sysprepInf'],
                                                         vmParams['floppy']):
