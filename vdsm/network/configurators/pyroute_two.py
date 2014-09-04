@@ -22,7 +22,8 @@ import logging
 from vdsm import netinfo
 from vdsm import ipwrapper
 from vdsm.netconfpersistence import RunningConfig
-from . import libvirt
+
+from . import libvirt, runDhclient
 from .dhclient import DhcpClient
 from .iproute2 import Iproute2
 
@@ -77,8 +78,9 @@ class ConfigApplier(object):
         with self.ip.interfaces[iface.name] as i:
             i.up()
         if iface.ipConfig.bootproto == 'dhcp':
-            dhclient = DhcpClient(iface.name)
-            dhclient.start(iface.ipConfig.async)
+            runDhclient(iface)
+        if iface.ipConfig.dhcpv6:
+            runDhclient(iface, 6)
 
     def ifdown(self, iface):
         with self.ip.interfaces[iface.name] as i:
