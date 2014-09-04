@@ -311,10 +311,11 @@ class TestNetinfo(TestCaseBase):
             bonds.flush()
 
             try:
-                self.assertEqual(_getBondingOptions(bondName), {})
+                with self.assertNotRaises():
+                    self.assertEqual(_getBondingOptions(bondName), {})
 
-                with open(BONDING_OPT % (bondName, 'miimon'), 'w') as opt:
-                    opt.write(INTERVAL)
+                    with open(BONDING_OPT % (bondName, 'miimon'), 'w') as opt:
+                        opt.write(INTERVAL)
 
                 self.assertEqual(_getBondingOptions(bondName),
                                  {'miimon': INTERVAL})

@@ -434,6 +434,10 @@ def _getAllDefaultBondingOptions():
             mode = str(mode)
             rc, _, err = execCmd([teeCmd, BONDING_OPT % (bondName, 'mode')],
                                  data=mode, sudo=True)
+            if rc:
+                raise RuntimeError('Changing the mode of the reference bond '
+                                   'failed. Is NetworkManager running?',
+                                   '\n'.join(err))
 
             # only read non-empty options
             opts[mode] = dict(((opt, val) for (opt, val) in
