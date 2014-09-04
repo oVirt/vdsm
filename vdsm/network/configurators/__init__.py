@@ -25,6 +25,8 @@ from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
 
 from . import libvirt
+from .dhclient import DhcpClient
+from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Bond, Bridge
 from ..sourceroute import StaticSourceRoute
 
@@ -156,3 +158,11 @@ def getEthtoolOpts(name):
     except ConfigParser.NoOptionError:
         opts = config.get('vars', 'ethtool_opts')
     return opts
+
+
+def runDhclient(iface, family=4):
+    dhclient = DhcpClient(iface.name, family)
+    rc = dhclient.start(iface.ipConfig.async)
+    if not iface.ipConfig.async and rc:
+        raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed',
+                                 family)

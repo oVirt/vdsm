@@ -30,7 +30,7 @@ from vdsm.netconfpersistence import RunningConfig
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
 
-from . import Configurator, getEthtoolOpts, libvirt
+from . import Configurator, runDhclient, getEthtoolOpts, libvirt
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
@@ -250,19 +250,12 @@ class ConfigApplier(object):
     def setBondingMtu(self, iface, mtu):
         self.setIfaceMtu(iface, mtu)
 
-    def _runDhclient(self, iface, family=4):
-        dhclient = DhcpClient(iface.name, family)
-        rc = dhclient.start(iface.ipConfig.async)
-        if not iface.ipConfig.async and rc:
-            raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed',
-                                     family)
-
     def ifup(self, iface):
         ipwrapper.linkSet(iface.name, ['up'])
         if iface.ipConfig.bootproto == 'dhcp':
-            self._runDhclient(iface)
+            runDhclient(iface)
         if iface.ipConfig.dhcpv6:
-            self._runDhclient(iface, 6)
+            runDhclient(iface, 6)
 
     def ifdown(self, iface):
         ipwrapper.linkSet(iface.name, ['down'])
