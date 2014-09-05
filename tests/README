@@ -17,6 +17,25 @@ Individual files or test cases can be specified:
     ./run_tests.sh cPopenTests.py
     ./run_tests.sh cPopenTests.py:TestCPopen.testEcho
 
+Enabling slow tests:
+-------------------
+
+Some tests are too slow to run on each build. these are marked in the source
+with the @slowtest decorator and are disabled by default.
+
+To enable slow tests:
+     NOSE_SLOW_TESTS=1 ./run_tests_local.sh filenme [...]
+
+Enabling stress tests:
+---------------------
+
+Some tests stress the resources of the system running the tests. These tests
+are too slow to run on each build, and may fail on overloaded system or when
+running tests in parrallel. These tests are marked in the source with the
+@stresstest decorator and are disabled by default.
+
+To enable stress tests:
+     NOSE_STRESS_TESTS=1 ./run_tests_local.sh filename [...]
 
 Functional test suite:
 ----------------------

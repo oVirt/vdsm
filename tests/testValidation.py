@@ -34,60 +34,65 @@ modprobe = utils.CommandPath("modprobe",
 
 
 class SlowTestsPlugin(Plugin):
-    """Skips tests that might be too slow to be run for quick iteration
-    builds"""
+    """
+    Tests that might be too slow to run on every build are marked with the
+    @slowtest plugin, and disable by default. Use this plugin to enable these
+    tests.
+    """
     name = 'slowtests'
     enabled = False
 
     def add_options(self, parser, env=os.environ):
-        env_opt = 'NOSE_SKIP_SLOW_TESTS'
+        env_opt = 'NOSE_SLOW_TESTS'
         if env is None:
             default = False
         else:
             default = env.get(env_opt)
 
-        parser.add_option('--without-slow-tests',
+        parser.add_option('--enable-slow-tests',
                           action='store_true',
                           default=default,
-                          dest='disable_slow_tests',
+                          dest='enable_slow_tests',
                           help='Some tests might take a long time to run, ' +
-                               'use this to skip slow tests automatically.' +
+                               'use this to enable slow tests.' +
                                '  [%s]' % env_opt)
 
     def configure(self, options, conf):
         Plugin.configure(self, options, conf)
-        if options.disable_slow_tests:
+        if options.enable_slow_tests:
             SlowTestsPlugin.enabled = True
 
 
 class StressTestsPlugin(Plugin):
     """
-    Denotes a test which stresses the resources of the system under test. Such
-    tests should probably not be run in parallel.  This plugin provides a
-    mechanism for parallel testing applications to skip stress tests.
+    Tests that stress the resources of the machine, are too slow to run on each
+    build and may fail on overloaded machines or machines with unpreditable
+    resources.
+
+    These tests are mark with @stresstest decorator and are diabled by default.
+    Use this plugin to enable these tests.
     """
-    name = 'nonparalleltests'
+    name = 'stresstests'
     enabled = False
 
     def add_options(self, parser, env=os.environ):
-        env_opt = 'NOSE_SKIP_STRESS_TESTS'
+        env_opt = 'NOSE_STRESS_TESTS'
         if env is None:
             default = False
         else:
             default = env.get(env_opt)
 
-        parser.add_option('--without-stress-tests',
+        parser.add_option('--enable-stress-tests',
                           action='store_true',
                           default=default,
-                          dest='disable_stress_tests',
+                          dest='enable_stress_tests',
                           help='Some tests stress the resources of the ' +
-                               'system under test.  Use this option to skip' +
-                               'these tests (eg. when doing parallel' +
-                               'testing [%s]' % env_opt)
+                               'system running the tests. Use this to ' +
+                               'enable stress tests [%s]' % env_opt)
 
     def configure(self, options, conf):
         Plugin.configure(self, options, conf)
-        if options.disable_stress_tests:
+        if options.enable_stress_tests:
             StressTestsPlugin.enabled = True
 
 
@@ -148,8 +153,8 @@ def RequireVethMod(f):
 def slowtest(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if SlowTestsPlugin.enabled:
-            raise SkipTest("Slow tests have been disabled")
+        if not SlowTestsPlugin.enabled:
+            raise SkipTest("Slow tests are disabled")
 
         return f(*args, **kwargs)
 
@@ -172,8 +177,8 @@ def brokentest(msg="Test failed but it is known to be broken"):
 def stresstest(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if StressTestsPlugin.enabled:
-            raise SkipTest("Stress tests have been disabled")
+        if not StressTestsPlugin.enabled:
+            raise SkipTest("Stress tests are disabled")
 
         return f(*args, **kwargs)
 
