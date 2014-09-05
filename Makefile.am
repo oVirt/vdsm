@@ -80,27 +80,38 @@ PEP8_WHITELIST = \
 	$(NULL)
 
 
-SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
-	'lv' from line .*"
-
-check-local:
-	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
-	find . -path './.git' -prune -type f -o \
-		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES) | \
-		grep -w -v $(SKIP_PYFLAKES_ERR) | \
-		while read LINE; do echo "$$LINE"; false; done
-	$(PEP8) --version
-	for x in $(PEP8_BLACKLIST); do \
-	    exclude="$${exclude},$${x}" ; \
-	done ; \
-	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' .
-	$(PEP8) $(PEP8_WHITELIST)
+.PHONY: gitignore
+gitignore:
+	@echo "Checking that .in files are ignored..."
 	@if test -f .gitignore; then \
 	  for i in `git ls-files \*.in`; do \
 	    if ! grep -q -x $${i%%.in} .gitignore; then \
 	      echo "Missing $${i%%.in} in .gitignore"; exit 1; fi; \
 	  done; \
 	fi;
+
+SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
+	'lv' from line .*"
+
+.PHONY: pyflakes
+pyflakes:
+	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
+	find . -path './.git' -prune -type f -o \
+		-name '*.py' -o -name '*.py.in'  | xargs $(PYFLAKES) | \
+		grep -w -v $(SKIP_PYFLAKES_ERR) | \
+		while read LINE; do echo "$$LINE"; false; done
+
+.PHONY: pep8
+pep8:
+	$(PEP8) --version
+	for x in $(PEP8_BLACKLIST); do \
+	    exclude="$${exclude},$${x}" ; \
+	done ; \
+	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' .
+	$(PEP8) $(PEP8_WHITELIST)
+
+# Note: dependencies ordered by time needed to run them
+check-recursive: gitignore pyflakes pep8
 
 all-local: \
 	vdsm.spec
