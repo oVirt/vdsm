@@ -32,8 +32,11 @@ public class SSLStompClient extends SSLClient {
                 subscribed = new CountDownLatch(1);
             }
 
-            send(new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HEART_BEAT,
-                    0 + "," + reduceGracePeriod(policy.getHeartbeat())).build());
+            Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2");
+            if (policy.isHeartbeat()) {
+                message.withHeader(HEADER_HEART_BEAT, 0 + "," + reduceGracePeriod(policy.getHeartbeat()));
+            }
+            send(message.build());
 
             subscribtionId = UUID.randomUUID().toString();
             send(new Message().subscribe().withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)

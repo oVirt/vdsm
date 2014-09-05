@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Immutable java bean which provide information how retry logic should work.
@@ -16,6 +17,7 @@ public class RetryPolicy {
     private final int heartbeat;
     private List<Class<? extends Exception>> exceptions;
     private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
+    private AtomicBoolean isHeartbeat = new AtomicBoolean(true);
 
     /**
      * Create policy using provided values.
@@ -62,5 +64,13 @@ public class RetryPolicy {
 
     public void setTimeUnit(TimeUnit timeUnit) {
         this.timeUnit = timeUnit;
+    }
+
+    public boolean isHeartbeat() {
+        return this.isHeartbeat.get();
+    }
+
+    public void setHeartbeat(boolean isHeartbeat) {
+        this.isHeartbeat.set(isHeartbeat);
     }
 }

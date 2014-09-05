@@ -63,6 +63,13 @@ public abstract class ReactorClient {
 
     public void setRetryPolicy(RetryPolicy policy) {
         this.policy = policy;
+        if (isOpen()) {
+            disconnect();
+        }
+    }
+
+    public RetryPolicy getRetryPolicy() {
+        return this.policy;
     }
 
     public void connect() throws ClientConnectionException {
@@ -155,7 +162,7 @@ public abstract class ReactorClient {
     protected abstract void processIncoming() throws IOException, ClientConnectionException;
 
     private void processHeartbeat() {
-        if (!this.isInInit() && this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
+        if (!this.isInInit() && this.policy.isHeartbeat() && this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
             log.debug("Heartbeat exeeded. Closing channel");
             this.closeChannel();
         }
