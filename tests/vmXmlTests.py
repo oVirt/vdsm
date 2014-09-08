@@ -25,7 +25,7 @@ import caps
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 
-from vmTests import FakeDomain
+import vmfakelib as fake
 
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
@@ -57,4 +57,4 @@ class TestVmXmlFunctions(TestCaseBase):
     def _build_domain_xml(self, arch):
         for conf, rawXml in self._CONFS[arch]:
             domXml = rawXml % conf
-            yield FakeDomain(domXml, vmId=conf['vmId']), domXml
+            yield fake.Domain(domXml, vmId=conf['vmId']), domXml

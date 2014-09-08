@@ -28,7 +28,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from vdsm import utils
 from rpc import vdsmapi
 
-from vmTests import FakeVM
+import vmfakelib as fake
 
 
 class TestSchemaCompliancyBase(TestCaseBase):
@@ -65,10 +65,10 @@ def ensureVmStats(vm):
 
 class TestVmStats(TestSchemaCompliancyBase):
     def testDownStats(self):
-        with FakeVM() as fake:
-            fake.setDownStatus(define.ERROR, vmexitreason.GENERIC_ERROR)
+        with fake.VM() as testvm:
+            testvm.setDownStatus(define.ERROR, vmexitreason.GENERIC_ERROR)
             self.assertVmStatsSchemaCompliancy('ExitedVmStats',
-                                               fake.getStats())
+                                               testvm.getStats())
 
     def testRunningStats(self):
         vmParams = {
@@ -77,7 +77,7 @@ class TestVmStats(TestSchemaCompliancyBase):
             'memSize': 1024,
             # HACKs
             'pauseCode': 'NOERR'}
-        with FakeVM(vmParams) as fake:
-            with ensureVmStats(fake):
+        with fake.VM(vmParams) as testvm:
+            with ensureVmStats(testvm):
                 self.assertVmStatsSchemaCompliancy('RunningVmStats',
-                                                   fake.getStats())
+                                                   testvm.getStats())

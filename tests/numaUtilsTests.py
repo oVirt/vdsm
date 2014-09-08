@@ -27,7 +27,7 @@ from monkeypatch import MonkeyPatch
 import caps
 import numaUtils
 
-import vmTests
+import vmfakelib as fake
 
 
 _VM_RUN_FILE_CONTENT = """
@@ -97,8 +97,8 @@ class TestNumaUtils(TestCaseBase):
                                         {'cpus': '2,3',
                                          'memory': '1024',
                                          'nodeIndex': 1}]}
-        with vmTests.FakeVM(VM_PARAMS) as fake:
-            fake._vmStats = FakeVmStatsThread(fake)
+        with fake.VM(VM_PARAMS) as testvm:
+            testvm._vmStats = FakeVmStatsThread(testvm)
             expectedResult = {'0': [0, 1], '1': [0, 1]}
-            vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(fake)
+            vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(testvm)
             self.assertEqual(expectedResult, vmNumaNodeRuntimeMap)

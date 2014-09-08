@@ -19,7 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from contextlib import contextmanager
 from itertools import product
 import re
 import shutil
@@ -40,7 +39,7 @@ from virt import vmstatus
 from vdsm import constants
 from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import permutations, expandPermutations, namedTemporaryDir
+from testlib import permutations, expandPermutations
 import caps
 import hooks
 from vdsm import utils
@@ -49,86 +48,9 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
+import vmfakelib as fake
 
 from testValidation import slowtest
-
-
-class ConnectionMock:
-    def __init__(self, *args):
-        pass
-
-    def domainEventRegisterAny(self, *arg):
-        pass
-
-    def listAllNetworks(self, *args):
-        return []
-
-
-class FakeClientIF(object):
-    def __init__(self, *args, **kwargs):
-        self.channelListener = None
-        self.vmContainer = {}
-
-
-class FakeDomain(object):
-    def __init__(self, xml='',
-                 virtError=libvirt.VIR_ERR_OK,
-                 domState=libvirt.VIR_DOMAIN_RUNNING,
-                 vmId=''):
-        self._xml = xml
-        self.devXml = ''
-        self._virtError = virtError
-        self._metadata = ""
-        self._io_tune = {}
-        self._domState = domState
-        self._vmId = vmId
-        self.calls = {}
-
-    def _failIfRequested(self):
-        if self._virtError != libvirt.VIR_ERR_OK:
-            err = libvirt.libvirtError(defmsg='')
-            err.err = [self._virtError]
-            raise err
-
-    def UUIDString(self):
-        return self._vmId
-
-    def info(self):
-        self._failIfRequested()
-        return (self._domState, )
-
-    def XMLDesc(self, unused):
-        return self._xml
-
-    def updateDeviceFlags(self, devXml, unused):
-        self.devXml = devXml
-
-    def vcpusFlags(self, flags):
-        return -1
-
-    def metadata(self, type, uri, flags):
-        self._failIfRequested()
-
-        if not self._metadata:
-            e = libvirt.libvirtError("No metadata")
-            e.err = [libvirt.VIR_ERR_NO_DOMAIN_METADATA]
-            raise e
-        return self._metadata
-
-    def setMetadata(self, type, xml, prefix, uri, flags):
-        self._metadata = xml
-
-    def schedulerParameters(self):
-        return {'vcpu_quota': vm._NO_CPU_QUOTA,
-                'vcpu_period': vm._NO_CPU_PERIOD}
-
-    def setBlockIoTune(self, name, io_tune, flags):
-        self._io_tune[name] = io_tune
-        return 1
-
-    def setMemory(self, target):
-        self._failIfRequested()
-        self.calls['setMemory'] = (target,)
 
 
 class TestVm(TestCaseBase):
@@ -565,8 +487,8 @@ class TestVm(TestCaseBase):
             </channel>"""
 
         vmConf.update(self.conf)
-        with FakeVM(vmConf) as fake:
-            dev = (fake.getConfGraphics() if isLegacy
+        with fake.VM(vmConf) as testvm:
+            dev = (testvm.getConfGraphics() if isLegacy
                    else vmConf['devices'])[0]
             graph = vm.GraphicsDevice(vmConf, self.log, **dev)
             self.assertXML(graph.getXML(), xml)
@@ -890,7 +812,7 @@ class TestVm(TestCaseBase):
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
     @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
-    @MonkeyPatch(libvirtconnection, 'get', ConnectionMock)
+    @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
     @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLineX86_64(self):
@@ -899,34 +821,34 @@ class TestVm(TestCaseBase):
     @MonkeyPatch(caps, 'getTargetArch', lambda: caps.Architecture.PPC64)
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
-    @MonkeyPatch(libvirtconnection, 'get', ConnectionMock)
+    @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
     @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     def testBuildCmdLinePPC64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
 
     def testGetVmPolicySucceded(self):
-        with FakeVM() as fake:
-            fake._dom = FakeDomain()
-            self.assertXML(fake._getVmPolicy(), '<qos/>')
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            self.assertXML(testvm._getVmPolicy(), '<qos/>')
 
     def testGetVmPolicyEmptyOnNoMetadata(self):
-        with FakeVM() as fake:
-            fake._dom = FakeDomain(
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA)
-            self.assertXML(fake._getVmPolicy(), '<qos/>')
+            self.assertXML(testvm._getVmPolicy(), '<qos/>')
 
     def testGetVmPolicyFailOnNoDomain(self):
-        with FakeVM() as fake:
-            fake._dom = FakeDomain(virtError=libvirt.VIR_ERR_NO_DOMAIN)
-            self.assertEqual(fake._getVmPolicy(), None)
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_NO_DOMAIN)
+            self.assertEqual(testvm._getVmPolicy(), None)
 
     def _xml_sanitizer(self, text):
         return re.sub(">[\t\n ]+<", "><", text).strip()
 
     def testUpdateVmPolicy(self):
-        with FakeVM() as machine:
-            dom = FakeDomain()
+        with fake.VM() as machine:
+            dom = fake.Domain()
             machine._dom = dom
 
             policy = {
@@ -1009,8 +931,8 @@ class TestVm(TestCaseBase):
             self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
 
     def testIoTuneParser(self):
-        with FakeVM() as machine:
-            dom = FakeDomain()
+        with fake.VM() as machine:
+            dom = fake.Domain()
             machine._dom = dom
 
             ioTuneValues = {
@@ -1034,8 +956,8 @@ class TestVm(TestCaseBase):
             self.assertEqual(ioTuneValues, parsed)
 
     def testIoTuneMerge(self):
-        with FakeVM() as machine:
-            dom = FakeDomain()
+        with fake.VM() as machine:
+            dom = fake.Domain()
             machine._dom = dom
 
             ioTuneValues1 = {
@@ -1086,8 +1008,8 @@ class TestVm(TestCaseBase):
             self.assertEqual(ioTuneMerged, ioTuneExpectedValues)
 
     def testUpdateExistingVmPolicy(self):
-        with FakeVM() as machine:
-            dom = FakeDomain()
+        with fake.VM() as machine:
+            dom = fake.Domain()
             dom._metadata = """
             <qos>
                 <vcpuLimit>999</vcpuLimit>
@@ -1195,8 +1117,8 @@ class TestVm(TestCaseBase):
             self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
 
     def testGetIoTune(self):
-        with FakeVM() as machine:
-            dom = FakeDomain()
+        with fake.VM() as machine:
+            dom = fake.Domain()
             dom._metadata = """
             <qos>
                 <vcpuLimit>999</vcpuLimit>
@@ -1283,8 +1205,8 @@ class TestVm(TestCaseBase):
                 </iotune>
             </disk>"""
 
-        with FakeVM() as machine:
-            dom = FakeDomain()
+        with fake.VM() as machine:
+            dom = fake.Domain()
             machine._dom = dom
             for drive in drives:
                 machine._devices[drive.type].append(drive)
@@ -1344,7 +1266,7 @@ class TestVm(TestCaseBase):
             )
         ]
 
-        with FakeVM() as machine:
+        with fake.VM() as machine:
             for drive in drives:
                 machine._devices[drive.type].append(drive)
 
@@ -1364,58 +1286,24 @@ class TestVm(TestCaseBase):
             </graphics>
          </devices>
         </domain>""" % (port, tlsPort)
-        with FakeVM() as fake:
+        with fake.VM() as testvm:
             graphConf = {
                 'type': vm.GRAPHICS_DEVICES, 'device': 'spice',
                 'port': '-1', 'tlsPort': '-1'}
             graphDev = vm.GraphicsDevice(
-                fake.conf, fake.log, device='spice', port='-1', tlsPort='-1')
+                testvm.conf, testvm.log,
+                device='spice', port='-1', tlsPort='-1')
 
-            fake.conf['devices'] = [graphConf]
-            fake._devices = {vm.GRAPHICS_DEVICES: [graphDev]}
-            fake._lastXMLDesc = graphicsXML
+            testvm.conf['devices'] = [graphConf]
+            testvm._devices = {vm.GRAPHICS_DEVICES: [graphDev]}
+            testvm._lastXMLDesc = graphicsXML
 
-            fake._getUnderlyingGraphicsDeviceInfo()
+            testvm._getUnderlyingGraphicsDeviceInfo()
 
             self.assertEqual(graphDev.port, port)
             self.assertEqual(graphDev.tlsPort, tlsPort)
             self.assertEqual(graphDev.port, graphConf['port'])
             self.assertEqual(graphDev.tlsPort, graphConf['tlsPort'])
-
-
-class FakeGuestAgent(object):
-    def getGuestInfo(self):
-        return {
-            'username': 'Unknown',
-            'session': 'Unknown',
-            'memUsage': 0,
-            'appsList': [],
-            'guestIPs': '',
-            'guestFQDN': '',
-            'disksUsage': [],
-            'netIfaces': [],
-            'memoryStats': {},
-            'guestCPUCount': -1}
-
-
-@contextmanager
-def FakeVM(params=None, devices=None, runCpu=False,
-           arch=caps.Architecture.X86_64, status=None):
-    with namedTemporaryDir() as tmpDir:
-        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
-                               (libvirtconnection, 'get', ConnectionMock)]):
-            vmParams = {'vmId': 'TESTING'}
-            vmParams.update({} if params is None else params)
-            cif = FakeClientIF()
-            fake = vm.Vm(cif, vmParams)
-            cif.vmContainer[fake.id] = fake
-            fake.arch = arch
-            fake.guestAgent = FakeGuestAgent()
-            fake.conf['devices'] = [] if devices is None else devices
-            fake._guestCpuRunning = runCpu
-            if status is not None:
-                fake._lastStatus = status
-            yield fake
 
 
 @expandPermutations
@@ -1427,56 +1315,56 @@ class TestVmOperations(TestCaseBase):
     GRAPHIC_DEVICES = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
                        {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
 
-    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetNotPresentByDefault(self, exitCode):
-        with FakeVM() as fake:
-            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertFalse('timeOffset' in fake.getStats())
+        with fake.VM() as testvm:
+            testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
+            self.assertFalse('timeOffset' in testvm.getStats())
 
-    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetRoundtrip(self, exitCode):
-        with FakeVM({'timeOffset': self.BASE_OFFSET}) as fake:
-            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertEqual(fake.getStats()['timeOffset'],
+        with fake.VM({'timeOffset': self.BASE_OFFSET}) as testvm:
+            testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
+            self.assertEqual(testvm.getStats()['timeOffset'],
                              self.BASE_OFFSET)
 
-    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetRoundtriupAcrossInstances(self, exitCode):
         # bz956741
         lastOffset = 0
         for offset in self.UPDATE_OFFSETS:
-            with FakeVM({'timeOffset': lastOffset}) as fake:
-                fake._rtcUpdate(offset)
-                fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-                vmOffset = fake.getStats()['timeOffset']
+            with fake.VM({'timeOffset': lastOffset}) as testvm:
+                testvm._rtcUpdate(offset)
+                testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
+                vmOffset = testvm.getStats()['timeOffset']
                 self.assertEqual(vmOffset, str(lastOffset + offset))
                 # the field in getStats is str, not int
                 lastOffset = int(vmOffset)
 
-    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetUpdateIfAbsent(self, exitCode):
         # bz956741 (-like, simpler case)
-        with FakeVM() as fake:
+        with fake.VM() as testvm:
             for offset in self.UPDATE_OFFSETS:
-                fake._rtcUpdate(offset)
+                testvm._rtcUpdate(offset)
             # beware of type change!
-            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertEqual(fake.getStats()['timeOffset'],
+            testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
+            self.assertEqual(testvm.getStats()['timeOffset'],
                              str(self.UPDATE_OFFSETS[-1]))
 
-    @MonkeyPatch(libvirtconnection, 'get', lambda x: ConnectionMock())
+    @MonkeyPatch(libvirtconnection, 'get', lambda x: fake.Connection())
     @permutations([[define.NORMAL], [define.ERROR]])
     def testTimeOffsetUpdateIfPresent(self, exitCode):
-        with FakeVM({'timeOffset': self.BASE_OFFSET}) as fake:
+        with fake.VM({'timeOffset': self.BASE_OFFSET}) as testvm:
             for offset in self.UPDATE_OFFSETS:
-                fake._rtcUpdate(offset)
+                testvm._rtcUpdate(offset)
             # beware of type change!
-            fake.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
-            self.assertEqual(fake.getStats()['timeOffset'],
+            testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
+            self.assertEqual(testvm.getStats()['timeOffset'],
                              str(self.BASE_OFFSET + self.UPDATE_OFFSETS[-1]))
 
     def testUpdateSingleDeviceGraphics(self):
@@ -1515,31 +1403,31 @@ class TestVmOperations(TestCaseBase):
 
         with MonkeyPatchScope([(hooks, 'before_vm_set_ticket',
                                 _check_ticket_params)]):
-            with FakeVM(devices=allDevices) as fake:
-                fake._dom = FakeDomain(domXml)
-                fake.updateDevice({
+            with fake.VM(devices=allDevices) as testvm:
+                testvm._dom = fake.Domain(domXml)
+                testvm.updateDevice({
                     'deviceType': 'graphics',
                     'graphicsType': device['device'],
                     'password': '***',
                     'ttl': 0,
                     'existingConnAction': 'disconnect',
                     'params': TICKET_PARAMS})
-                self.assertEquals(fake._dom.devXml, devXml)
+                self.assertEquals(testvm._dom.devXml, devXml)
 
     def testDomainNotRunningWithoutDomain(self):
-        with FakeVM() as fake:
-            self.assertEqual(fake._dom, None)
-            self.assertFalse(fake._isDomainRunning())
+        with fake.VM() as testvm:
+            self.assertEqual(testvm._dom, None)
+            self.assertFalse(testvm._isDomainRunning())
 
     def testDomainNotRunningByState(self):
-        with FakeVM() as fake:
-            fake._dom = FakeDomain(domState=libvirt.VIR_DOMAIN_SHUTDOWN)
-            self.assertFalse(fake._isDomainRunning())
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_SHUTDOWN)
+            self.assertFalse(testvm._isDomainRunning())
 
     def testDomainIsRunning(self):
-        with FakeVM() as fake:
-            fake._dom = FakeDomain(domState=libvirt.VIR_DOMAIN_RUNNING)
-            self.assertTrue(fake._isDomainRunning())
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
+            self.assertTrue(testvm._isDomainRunning())
 
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),
@@ -1555,9 +1443,9 @@ class TestVmExit(TestCaseBase):
         exitReason round trip;
         error message is constructed correctly automatically
         """
-        with FakeVM() as fake:
-            fake.setDownStatus(exitCode, exitReason)
-            stats = fake.getStats()
+        with fake.VM() as testvm:
+            testvm.setDownStatus(exitCode, exitReason)
+            stats = testvm.getStats()
             self.assertEqual(stats['exitReason'], exitReason)
             self.assertEqual(stats['exitMessage'],
                              vmexitreason.exitReasons.get(exitReason))
@@ -1569,10 +1457,10 @@ class TestVmExit(TestCaseBase):
         exitReason round trip;
         error message can be overridden explicitely
         """
-        with FakeVM() as fake:
+        with fake.VM() as testvm:
             msg = "test custom error message"
-            fake.setDownStatus(exitCode, exitReason, msg)
-            stats = fake.getStats()
+            testvm.setDownStatus(exitCode, exitReason, msg)
+            stats = testvm.getStats()
             self.assertEqual(stats['exitReason'], exitReason)
             self.assertEqual(stats['exitMessage'], msg)
 
@@ -1587,8 +1475,8 @@ class TestVmStatsThread(TestCaseBase):
     def testGetNicStats(self):
         GBPS = 10 ** 9 / 8
         MAC = '52:54:00:59:F5:3F'
-        with FakeVM() as fake:
-            mock_stats_thread = vm.VmStatsThread(fake)
+        with fake.VM() as testvm:
+            mock_stats_thread = vm.VmStatsThread(testvm)
             res = mock_stats_thread._getNicStats(
                 name='vnettest', model='virtio', mac=MAC,
                 start_sample=(2 ** 64 - 15 * GBPS, 1, 2, 3, 0, 4, 5, 6),
@@ -1603,9 +1491,9 @@ class TestVmStatsThread(TestCaseBase):
 
     def testGetStatsNoDom(self):
         # bz1073478 - main case
-        with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
-            self.assertEqual(fake._dom, None)
-            mock_stats_thread = vm.VmStatsThread(fake)
+        with fake.VM(self.VM_PARAMS, self.DEV_BALLOON) as testvm:
+            self.assertEqual(testvm._dom, None)
+            mock_stats_thread = vm.VmStatsThread(testvm)
             res = {}
             mock_stats_thread._getBalloonStats(res)
             self.assertIn('balloonInfo', res)
@@ -1613,10 +1501,10 @@ class TestVmStatsThread(TestCaseBase):
 
     def testGetStatsDomInfoFail(self):
         # bz1073478 - extra case
-        with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
-            fake._dom = FakeDomain(
+        with fake.VM(self.VM_PARAMS, self.DEV_BALLOON) as testvm:
+            testvm._dom = fake.Domain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN)
-            mock_stats_thread = vm.VmStatsThread(fake)
+            mock_stats_thread = vm.VmStatsThread(testvm)
             res = {}
             mock_stats_thread._getBalloonStats(res)
             self.assertIn('balloonInfo', res)
@@ -1626,9 +1514,9 @@ class TestVmStatsThread(TestCaseBase):
         devices = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
                    {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
 
-        with FakeVM(self.VM_PARAMS, devices) as fake:
-            fake._updateDevices(fake.buildConfDevices())
-            res = fake.getStats()
+        with fake.VM(self.VM_PARAMS, devices) as testvm:
+            testvm._updateDevices(testvm.buildConfDevices())
+            res = testvm.getStats()
             self.assertIn('displayPort', res)
             self.assertEqual(res['displayType'],
                              'qxl' if devices[0]['device'] == 'spice' else
@@ -1642,29 +1530,29 @@ class TestLibVirtCallbacks(TestCaseBase):
     FAKE_ERROR = 'EFAKERROR'
 
     def test_onIOErrorPause(self):
-        with FakeVM(runCpu=True) as fake:
-            self.assertTrue(fake._guestCpuRunning)
-            fake._onIOError('fakedev', self.FAKE_ERROR,
-                            libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
-            self.assertFalse(fake._guestCpuRunning)
-            self.assertEqual(fake.conf.get('pauseCode'), self.FAKE_ERROR)
+        with fake.VM(runCpu=True) as testvm:
+            self.assertTrue(testvm._guestCpuRunning)
+            testvm._onIOError('fakedev', self.FAKE_ERROR,
+                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
+            self.assertFalse(testvm._guestCpuRunning)
+            self.assertEqual(testvm.conf.get('pauseCode'), self.FAKE_ERROR)
 
     def test_onIOErrorReport(self):
-        with FakeVM(runCpu=True) as fake:
-            self.assertTrue(fake._guestCpuRunning)
-            fake._onIOError('fakedev', self.FAKE_ERROR,
-                            libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
-            self.assertTrue(fake._guestCpuRunning)
-            self.assertNotEquals(fake.conf.get('pauseCode'), self.FAKE_ERROR)
+        with fake.VM(runCpu=True) as testvm:
+            self.assertTrue(testvm._guestCpuRunning)
+            testvm._onIOError('fakedev', self.FAKE_ERROR,
+                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
+            self.assertTrue(testvm._guestCpuRunning)
+            self.assertNotEquals(testvm.conf.get('pauseCode'), self.FAKE_ERROR)
 
     def test_onIOErrorNotSupported(self):
         """action not explicitely handled, must be skipped"""
-        with FakeVM(runCpu=True) as fake:
-            self.assertTrue(fake._guestCpuRunning)
-            fake._onIOError('fakedev', self.FAKE_ERROR,
-                            libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
-            self.assertTrue(fake._guestCpuRunning)
-            self.assertNotIn('pauseCode', fake.conf)  # no error recorded
+        with fake.VM(runCpu=True) as testvm:
+            self.assertTrue(testvm._guestCpuRunning)
+            testvm._onIOError('fakedev', self.FAKE_ERROR,
+                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
+            self.assertTrue(testvm._guestCpuRunning)
+            self.assertNotIn('pauseCode', testvm.conf)  # no error recorded
 
 
 @expandPermutations
@@ -1712,14 +1600,14 @@ class TestVmDevices(TestCaseBase):
     def testGraphicsDeviceLegacy(self):
         for conf in self.confDisplay:
             conf.update(self.conf)
-            with FakeVM(conf) as fake:
-                devs = fake.buildConfDevices()
+            with fake.VM(conf) as testvm:
+                devs = testvm.buildConfDevices()
                 self.assertTrue(devs['graphics'])
 
     def testGraphicsDevice(self):
         for dev in self.confDeviceGraphics:
-            with FakeVM(self.conf, dev) as fake:
-                devs = fake.buildConfDevices()
+            with fake.VM(self.conf, dev) as testvm:
+                devs = testvm.buildConfDevices()
                 self.assertTrue(devs['graphics'])
 
     def testGraphicsDeviceMixed(self):
@@ -1730,8 +1618,8 @@ class TestVmDevices(TestCaseBase):
         for conf in self.confDisplay:
             conf.update(self.conf)
             for dev in self.confDeviceGraphics:
-                with FakeVM(self.conf, dev) as fake:
-                    devs = fake.buildConfDevices()
+                with fake.VM(self.conf, dev) as testvm:
+                    devs = testvm.buildConfDevices()
                     self.assertEqual(len(devs['graphics']), 1)
                     self.assertEqual(devs['graphics'][0]['device'],
                                      dev[0]['device'])
@@ -1755,37 +1643,37 @@ class TestVmDevices(TestCaseBase):
     def testHasSpiceLegacy(self):
         for conf in self.confDisplaySpice:
             conf.update(self.conf)
-            with FakeVM(conf) as fake:
-                self.assertTrue(fake.hasSpice)
+            with fake.VM(conf) as testvm:
+                self.assertTrue(testvm.hasSpice)
 
         for conf in self.confDisplayVnc:
             conf.update(self.conf)
-            with FakeVM(conf) as fake:
-                self.assertFalse(fake.hasSpice)
+            with fake.VM(conf) as testvm:
+                self.assertFalse(testvm.hasSpice)
 
     def testHasSpice(self):
         for dev in self.confDeviceGraphicsSpice:
-            with FakeVM(self.conf, dev) as fake:
-                self.assertTrue(fake.hasSpice)
+            with fake.VM(self.conf, dev) as testvm:
+                self.assertTrue(testvm.hasSpice)
 
         for dev in self.confDeviceGraphicsVnc:
-            with FakeVM(self.conf, dev) as fake:
-                self.assertFalse(fake.hasSpice)
+            with fake.VM(self.conf, dev) as testvm:
+                self.assertFalse(testvm.hasSpice)
 
     @permutations([['vnc', 'spice'], ['spice', 'vnc']])
     def testGraphicsDeviceMultiple(self, primary, secondary):
         devices = [{'type': 'graphics', 'device': primary},
                    {'type': 'graphics', 'device': secondary}]
-        with FakeVM(self.conf, devices) as fake:
-            devs = fake.buildConfDevices()
+        with fake.VM(self.conf, devices) as testvm:
+            devs = testvm.buildConfDevices()
             self.assertTrue(len(devs['graphics']) == 2)
 
     @permutations([['vnc'], ['spice']])
     def testGraphicsDeviceDuplicated(self, devType):
         devices = [{'type': 'graphics', 'device': devType},
                    {'type': 'graphics', 'device': devType}]
-        with FakeVM(self.conf, devices) as fake:
-            self.assertRaises(ValueError, fake.buildConfDevices)
+        with fake.VM(self.conf, devices) as testvm:
+            self.assertRaises(ValueError, testvm.buildConfDevices)
 
 
 @expandPermutations
@@ -1798,14 +1686,14 @@ class TestVmFunctions(TestCaseBase):
 
     def _buildAllDomains(self, arch):
         for conf, _ in self._CONFS[arch]:
-            with FakeVM(conf, arch=arch) as v:
+            with fake.VM(conf, arch=arch) as v:
                 domXml = v._buildDomainXML()
-                yield FakeDomain(domXml, vmId=v.id), domXml
+                yield fake.Domain(domXml, vmId=v.id), domXml
 
     def _getAllDomains(self, arch):
         for conf, rawXml in self._CONFS[arch]:
             domXml = rawXml % conf
-            yield FakeDomain(domXml, vmId=conf['vmId']), domXml
+            yield fake.Domain(domXml, vmId=conf['vmId']), domXml
 
     def _getAllDomainIds(self, arch):
         return [conf['vmId'] for conf, _ in self._CONFS[arch]]
@@ -1828,11 +1716,11 @@ class TestVmFunctions(TestCaseBase):
 class TestVmStatusTransitions(TestCaseBase):
     @slowtest
     def testSavingState(self):
-        with FakeVM(runCpu=True, status=vmstatus.UP) as vm:
-            vm._dom = FakeDomain(domState=libvirt.VIR_DOMAIN_RUNNING)
+        with fake.VM(runCpu=True, status=vmstatus.UP) as testvm:
+            testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
 
             def _asyncEvent():
-                vm._onLibvirtLifecycleEvent(
+                testvm._onLibvirtLifecycleEvent(
                     libvirt.VIR_DOMAIN_EVENT_SUSPENDED,
                     -1, -1)
 
@@ -1844,12 +1732,15 @@ class TestVmStatusTransitions(TestCaseBase):
                 time.sleep(0.5)
                 # pause the main thread to let the event one run
 
-            with MonkeyPatchScope([(vm, '_underlyingPause', _fireAsyncEvent)]):
-                self.assertEqual(vm.status()['status'], vmstatus.UP)
-                vm.pause(vmstatus.SAVING_STATE)
-                self.assertEqual(vm.status()['status'], vmstatus.SAVING_STATE)
+            with MonkeyPatchScope([(testvm, '_underlyingPause',
+                                    _fireAsyncEvent)]):
+                self.assertEqual(testvm.status()['status'], vmstatus.UP)
+                testvm.pause(vmstatus.SAVING_STATE)
+                self.assertEqual(testvm.status()['status'],
+                                 vmstatus.SAVING_STATE)
                 t.join()
-                self.assertEqual(vm.status()['status'], vmstatus.SAVING_STATE)
+                self.assertEqual(testvm.status()['status'],
+                                 vmstatus.SAVING_STATE)
                 # state must not change even after we are sure the event was
                 # handled
 
@@ -1863,23 +1754,24 @@ class TestVmBalloon(TestCaseBase):
                              define.errCode[specificErr]['status']['code'])
 
     def testSucceed(self):
-        with FakeVM() as vm:
-            vm._dom = FakeDomain()
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
             target = 256
-            self.assertEqual(vm.setBalloonTarget(target)['status']['code'], 0)
-            self.assertEqual(vm._dom.calls['setMemory'][0], target)
+            res = testvm.setBalloonTarget(target)  # just to fit in 80 cols
+            self.assertEqual(res['status']['code'], 0)
+            self.assertEqual(testvm._dom.calls['setMemory'][0], target)
 
     def testVmWithoutDom(self):
-        with FakeVM() as vm:
-            self.assertTrue(vm._dom is None)
-            self.assertAPIFailed(vm.setBalloonTarget(128))
+        with fake.VM() as testvm:
+            self.assertTrue(testvm._dom is None)
+            self.assertAPIFailed(testvm.setBalloonTarget(128))
 
     def testTargetValueNotInteger(self):
-        with FakeVM() as vm:
-            self.assertAPIFailed(vm.setBalloonTarget('foobar'))
+        with fake.VM() as testvm:
+            self.assertAPIFailed(testvm.setBalloonTarget('foobar'))
 
     def testLibvirtFailure(self):
-        with FakeVM() as vm:
-            vm._dom = FakeDomain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
             # we don't care about the error code as long as is != NO_DOMAIN
-            self.assertAPIFailed(vm.setBalloonTarget(256), 'balloonErr')
+            self.assertAPIFailed(testvm.setBalloonTarget(256), 'balloonErr')
