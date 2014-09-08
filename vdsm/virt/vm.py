@@ -646,21 +646,6 @@ class NotifyingVirDomain:
         return f
 
 
-class ControllerDevice(vmdevices.Base):
-    __slots__ = ('address', 'model', 'index', 'master')
-
-    def getXML(self):
-        """
-        Create domxml for controller device
-        """
-        ctrl = self.createXmlElem('controller', self.device,
-                                  ['index', 'model', 'master', 'address'])
-        if self.device == 'virtio-serial':
-            ctrl.setAttrs(index='0', ports='16')
-
-        return ctrl
-
-
 class SoundDevice(vmdevices.Base):
     __slots__ = ('address', 'alias')
 
@@ -1365,7 +1350,7 @@ class Vm(object):
                      (SOUND_DEVICES, SoundDevice),
                      (VIDEO_DEVICES, vmdevices.VideoDevice),
                      (GRAPHICS_DEVICES, GraphicsDevice),
-                     (CONTROLLER_DEVICES, ControllerDevice),
+                     (CONTROLLER_DEVICES, vmdevices.Controller),
                      (GENERAL_DEVICES, vmdevices.Generic),
                      (BALLOON_DEVICES, BalloonDevice),
                      (WATCHDOG_DEVICES, WatchdogDevice),

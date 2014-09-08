@@ -632,7 +632,7 @@ class TestVm(TestCaseBase):
             </controller>"""]
 
         for devConf, xml in zip(devConfs, expectedXMLs):
-            dev = vm.ControllerDevice(self.conf, self.log, **devConf)
+            dev = vmdevices.Controller(self.conf, self.log, **devConf)
             self.assertXML(dev.getXML(), xml % self.PCI_ADDR)
 
     def testRedirXML(self):
