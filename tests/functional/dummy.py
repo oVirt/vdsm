@@ -54,9 +54,9 @@ def remove(dummyName):
                        (dummyName, e))
 
 
-def setIP(dummyName, ipaddr, netmask):
+def setIP(dummyName, ipaddr, netmask, family=4):
     try:
-        addrAdd(dummyName, ipaddr, netmask)
+        addrAdd(dummyName, ipaddr, netmask, family)
     except IPRoute2Error:
         raise SkipTest('Failed to set device ip')
 
