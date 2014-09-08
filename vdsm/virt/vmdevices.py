@@ -82,8 +82,6 @@ class Sound(Base):
 
 
 class VideoDevice(Base):
-    __slots__ = ('address',)
-
     def getXML(self):
         """
         Create domxml for video device
@@ -96,3 +94,16 @@ class VideoDevice(Base):
 
         video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
         return video
+
+
+class Redir(Base):
+    __slots__ = ('address',)
+
+    def getXML(self):
+        """
+        Create domxml for a redir device.
+        <redirdev bus='usb' type='spicevmc'>
+          <address type='usb' bus='0' port='1'/>
+        </redirdev>
+        """
+        return self.createXmlElem('redirdev', self.device, ['bus', 'address'])

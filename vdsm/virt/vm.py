@@ -1252,20 +1252,6 @@ class TpmDevice(vmdevices.Base):
         return tpm
 
 
-class RedirDevice(vmdevices.Base):
-    __slots__ = ('address',)
-
-    def getXML(self):
-        """
-        Create domxml for a redir device.
-
-        <redirdev bus='usb' type='spicevmc'>
-          <address type='usb' bus='0' port='1'/>
-        </redirdev>
-        """
-        return self.createXmlElem('redirdev', self.device, ['bus', 'address'])
-
-
 class RngDevice(vmdevices.Base):
     def getXML(self):
         """
@@ -1344,7 +1330,7 @@ class Vm(object):
                      (BALLOON_DEVICES, BalloonDevice),
                      (WATCHDOG_DEVICES, WatchdogDevice),
                      (CONSOLE_DEVICES, ConsoleDevice),
-                     (REDIR_DEVICES, RedirDevice),
+                     (REDIR_DEVICES, vmdevices.Redir),
                      (RNG_DEVICES, RngDevice),
                      (SMARTCARD_DEVICES, SmartCardDevice),
                      (TPM_DEVICES, TpmDevice))

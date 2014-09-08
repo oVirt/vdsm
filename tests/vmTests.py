@@ -644,7 +644,7 @@ class TestVm(TestCaseBase):
 
         dev = {'device': 'spicevmc', 'address': self.PCI_ADDR_DICT}
 
-        redir = vm.RedirDevice(self.conf, self.log, **dev)
+        redir = vmdevices.Redir(self.conf, self.log, **dev)
         self.assertXML(redir.getXML(), redirXML)
 
     def testDriveSharedStatus(self):
