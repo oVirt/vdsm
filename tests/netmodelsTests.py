@@ -25,6 +25,7 @@ from vdsm import netinfo
 
 from network import errors
 from network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
+from network.models import hierarchy_backing_device, hierarchy_vlan_tag
 from network.models import _nicSort
 
 from testlib import VdsmTestCase as TestCaseBase
@@ -169,3 +170,67 @@ class TestNetmodels(TestCaseBase):
 
         inverted = Bond._reorderOptions('miimon=250 mode=4')
         self.assertEqual(inverted, 'mode=4 miimon=250')
+
+    @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
+    @MonkeyPatch(Bond, 'validateOptions', lambda *x: 0)
+    def testIterNetworkHierarchy(self):
+        _netinfo = {'networks': {}, 'vlans': {},
+                    'nics': ['testnic1', 'testnic2'],
+                    'bondings': {}, 'bridges': {}}
+        fakeInfo = netinfo.NetInfo(_netinfo)
+        # Vlanned and bonded VM network
+        nic1 = Nic('testnic1', configurator=None, _netinfo=fakeInfo)
+        nic2 = Nic('testnic2', configurator=None, _netinfo=fakeInfo)
+        bond1 = Bond('bond42', configurator=None, slaves=(nic1, nic2))
+        vlan1 = Vlan(bond1, 4, configurator=None)
+        bridge1 = Bridge('testbridge', configurator=None, port=vlan1)
+
+        self.assertEqual([dev for dev in bridge1],
+                         [bridge1, vlan1, bond1, nic1, nic2])
+        self.assertEqual(bond1, hierarchy_backing_device(bridge1))
+        self.assertEqual(4, hierarchy_vlan_tag(bridge1))
+
+        # Nic-less VM net
+        bridge2 = Bridge('testbridge', configurator=None, port=None)
+        self.assertEqual([dev for dev in bridge2], [bridge2])
+        self.assertEqual(None, hierarchy_backing_device(bridge2))
+        self.assertEqual(None, hierarchy_vlan_tag(bridge2))
+
+        # vlan-less VM net
+        bridge3 = Bridge('testbridge', configurator=None, port=bond1)
+        self.assertEqual([dev for dev in bridge3],
+                         [bridge3, bond1, nic1, nic2])
+        self.assertEqual(bond1, hierarchy_backing_device(bridge3))
+        self.assertEqual(None, hierarchy_vlan_tag(bridge3))
+
+        # Bond-less VM net
+        bridge4 = Bridge('testbridge', configurator=None, port=nic1)
+        self.assertEqual([dev for dev in bridge4],
+                         [bridge4, nic1])
+        self.assertEqual(nic1, hierarchy_backing_device(bridge4))
+        self.assertEqual(None, hierarchy_vlan_tag(bridge4))
+
+        # vlanned and bonded non-VM net
+        self.assertEqual([dev for dev in vlan1],
+                         [vlan1, bond1, nic1, nic2])
+        self.assertEqual(bond1, hierarchy_backing_device(vlan1))
+        self.assertEqual(4, hierarchy_vlan_tag(vlan1))
+
+        # vlanned, bond-less non-VM net
+        vlan2 = Vlan(nic1, 5, configurator=None)
+        self.assertEqual([dev for dev in vlan2],
+                         [vlan2, nic1])
+        self.assertEqual(nic1, hierarchy_backing_device(vlan2))
+        self.assertEqual(5, hierarchy_vlan_tag(vlan2))
+
+        # non-vlanned and bonded non-VM net
+        self.assertEqual([dev for dev in bond1],
+                         [bond1, nic1, nic2])
+        self.assertEqual(bond1, hierarchy_backing_device(bond1))
+        self.assertEqual(None, hierarchy_vlan_tag(bond1))
+
+        # non-vlanned and bond-less non-VM net
+        self.assertEqual([dev for dev in nic2],
+                         [nic2])
+        self.assertEqual(nic2, hierarchy_backing_device(nic2))
+        self.assertEqual(None, hierarchy_vlan_tag(nic2))

@@ -38,6 +38,9 @@ class NetDevice(object):
         self.configurator = configurator
         self.master = None
 
+    def __iter__(self):
+        raise NotImplementedError
+
     def __str__(self):
         return self.name
 
@@ -80,6 +83,10 @@ class NetDevice(object):
             device = device.master
         return False
 
+    @property
+    def backing_device(self):
+        return False
+
 
 class Nic(NetDevice):
     def __init__(self, name, configurator, ipconfig=None, mtu=None,
@@ -108,6 +115,14 @@ class Nic(NetDevice):
     def remove(self):
         self.configurator.removeNic(self)
 
+    @property
+    def backing_device(self):
+        return True
+
+    def __iter__(self):
+        yield self
+        raise StopIteration
+
     def __repr__(self):
         return 'Nic(%s)' % self.name
 
@@ -125,6 +140,11 @@ class Vlan(NetDevice):
         self.tag = tag
         super(Vlan, self).__init__('%s.%s' % (device.name, tag), configurator,
                                    ipconfig, mtu)
+
+    def __iter__(self):
+        yield self
+        for dev in self.device:
+            yield dev
 
     def __repr__(self):
         return 'Vlan(%s: %r)' % (self.name, self.device)
@@ -162,6 +182,13 @@ class Bridge(NetDevice):
         self.stp = stp
         super(Bridge, self).__init__(name, configurator, ipconfig, mtu)
 
+    def __iter__(self):
+        yield self
+        if self.port is None:
+            raise StopIteration
+        for dev in self.port:
+            yield dev
+
     def __repr__(self):
         return 'Bridge(%s: %r)' % (self.name, self.port)
 
@@ -195,6 +222,13 @@ class Bond(NetDevice):
             self.options = self._reorderOptions(options)
         self.destroyOnMasterRemoval = destroyOnMasterRemoval
         super(Bond, self).__init__(name, configurator, ipconfig, mtu)
+
+    def __iter__(self):
+        yield self
+        for slave in self.slaves:
+            for dev in slave:
+                yield dev
+        raise StopIteration
 
     def __repr__(self):
         return 'Bond(%s: %r)' % (self.name, self.slaves)
@@ -323,6 +357,10 @@ class Bond(NetDevice):
             opts.insert(0, ('mode', mode))
 
         return ' '.join((opt + '=' + val for (opt, val) in opts))
+
+    @property
+    def backing_device(self):
+        return True
 
 
 class IPv4(object):
@@ -498,3 +536,22 @@ def _nicSort(nics):
         nicsList.append((prefix, intidx, stridx + postfix))
 
     return [x + z for x, y, z in sorted(nicsList)]
+
+
+def hierarchy_vlan_tag(device):
+    """Returns the vlan tag of the network hierarchy if any"""
+    vlan_tag = None
+    for dev in device:
+        vlan_tag = getattr(dev, 'tag', None)
+        if vlan_tag is not None:
+            break
+    return vlan_tag
+
+
+def hierarchy_backing_device(device):
+    """Returns the backing device of a network hierarchy, i.e., a bond if
+    the network is bonded, a nic otherwise (an no nic-less net)"""
+    for dev in device:
+        if dev.backing_device:
+            return dev
+    return None
