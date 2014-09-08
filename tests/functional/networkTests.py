@@ -67,6 +67,7 @@ DHCP_RANGE_TO = '240.0.0.100'
 CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
 
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
+IPv6_ADDRESS_IN_NETWORK = 'fdb3:84e5:4ff4:55e3:0:ffff:ffff:0'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ff'
 
 dummyPool = set()
@@ -1976,10 +1977,20 @@ class NetworkTest(TestCaseBase):
     def testGetRouteDeviceTo(self):
         with dummyIf(1) as nics:
             nic, = nics
+
             dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
             try:
                 dummy.setLinkUp(nic)
                 self.assertEqual(getRouteDeviceTo(IP_ADDRESS_IN_NETWORK), nic)
+            finally:
+                addrFlush(nic)
+
+            ipv6_addr, ipv6_netmask = IPv6_ADDRESS.split('/')
+            dummy.setIP(nic, ipv6_addr, ipv6_netmask, family=6)
+            try:
+                dummy.setLinkUp(nic)
+                self.assertEqual(getRouteDeviceTo(IPv6_ADDRESS_IN_NETWORK),
+                                 nic)
             finally:
                 addrFlush(nic)
 
