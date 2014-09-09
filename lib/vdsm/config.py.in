@@ -29,19 +29,6 @@ parameters = [
         ('core_dump_enable', 'true',
             'Enable core dump.'),
 
-        ('profile_enable', 'false',
-            'Enable whole process profiling (requires yappi profiler).'),
-
-        ('profile_format', 'pstat',
-            'Profile file format (pstat, callgrind, ystat)'),
-
-        ('profile_builtins', 'false',
-            'Profile builtin functions used by standard Python modules. '
-            'false by default.'),
-
-        ('profile_clock', 'cpu',
-            'Sets the underlying clock type (cpu, wall)'),
-
         ('host_mem_reserve', '256',
             'Reserves memory for the host to prevent VMs from using all the '
             'physical pages. The values are in Mbytes.'),
@@ -349,6 +336,25 @@ parameters = [
         ('guests_gateway_ip', '', None),
 
     ]),
+
+    # Section: [devel]
+    ('devel', [
+
+        ('profile_enable', 'false',
+            'Enable whole process profiling (requires yappi profiler).'),
+
+        ('profile_format', 'pstat',
+            'Profile file format (pstat, callgrind, ystat)'),
+
+        ('profile_builtins', 'false',
+            'Profile builtin functions used by standard Python modules. '
+            'false by default.'),
+
+        ('profile_clock', 'cpu',
+            'Sets the underlying clock type (cpu, wall)'),
+
+    ]),
+
 ]
 
 

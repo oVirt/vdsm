@@ -36,9 +36,9 @@ yappi = None
 # Defaults
 
 _FILENAME = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
-_FORMAT = config.get('vars', 'profile_format')
-_BUILTINS = config.getboolean('vars', 'profile_builtins')
-_CLOCK = config.get('vars', 'profile_clock')
+_FORMAT = config.get('devel', 'profile_format')
+_BUILTINS = config.getboolean('devel', 'profile_builtins')
+_CLOCK = config.get('devel', 'profile_clock')
 _THREADS = True
 
 _lock = threading.Lock()
@@ -61,7 +61,7 @@ def stop():
 
 
 def is_enabled():
-    return config.getboolean('vars', 'profile_enable')
+    return config.getboolean('devel', 'profile_enable')
 
 
 def is_running():

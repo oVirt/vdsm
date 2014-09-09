@@ -44,7 +44,7 @@ FILENAME = __file__ + '.prof'
 def make_config(enable='false'):
     cfg = ConfigParser.ConfigParser()
     config.set_defaults(cfg)
-    cfg.set('vars', 'profile_enable', enable)
+    cfg.set('devel', 'profile_enable', enable)
     return cfg
 
 
