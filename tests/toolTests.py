@@ -43,10 +43,10 @@ dirName = os.path.dirname(os.path.realpath(__file__))
 
 class MockModuleConfigurator(ModuleConfigure):
 
-    def __init__(self, name, requires=(), false_mock=False):
+    def __init__(self, name, requires=(), should_fail=False):
         self._name = name
         self._requires = frozenset(requires)
-        self._false_mock = false_mock
+        self._should_fail = should_fail
 
     @property
     def name(self):
@@ -60,22 +60,22 @@ class MockModuleConfigurator(ModuleConfigure):
         return "name: %s, requires: %s" % (self._name, self._requires)
 
     def validate(self):
-        if self._false_mock:
+        if self._should_fail:
             return False
         print 'valid'
         return True
 
     def isconfigured(self):
-        if self._false_mock:
+        if self._should_fail:
             return NOT_CONFIGURED
         return CONFIGURED
 
     def configure(self):
-        if self._false_mock:
+        if self._should_fail:
             raise InvalidRun('mock for invalid configure')
 
     def removeConf(self):
-        if self._false_mock:
+        if self._should_fail:
             raise Exception('mock invalid remove conf')
 
 
@@ -190,8 +190,8 @@ class ConfiguratorTests(VdsmTestCase):
         configurator,
         '_CONFIGURATORS',
         {
-            'a': MockModuleConfigurator('a', false_mock=True),
-            'b': MockModuleConfigurator('b', false_mock=True),
+            'a': MockModuleConfigurator('a', should_fail=True),
+            'b': MockModuleConfigurator('b', should_fail=True),
         }
     )
     def testFailuresOnExposedFuncs(self):
