@@ -126,7 +126,7 @@ public abstract class ReactorClient {
     }
 
     public final void disconnect() {
-        clearBuff();
+        postDisconnect();
         closeChannel();
     }
 
@@ -264,9 +264,9 @@ public abstract class ReactorClient {
     protected abstract OneTimeCallback getPostConnectCallback();
 
     /**
-     * Cleans buffer content before reconnect.
+     * Cleans resources after disconnect.
      */
-    public abstract void clearBuff();
+    public abstract void postDisconnect();
 
     /**
      * @return <code>true</code> when connection initialization is in progress like

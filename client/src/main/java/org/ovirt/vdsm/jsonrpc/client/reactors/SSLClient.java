@@ -142,10 +142,11 @@ public abstract class SSLClient extends StompCommonClient {
     }
 
     @Override
-    public void clearBuff() {
+    public void postDisconnect() {
         if (this.nioEngine != null) {
             this.nioEngine.clearBuff();
         }
         outbox.clear();
+        this.nioEngine = null;
     }
 }

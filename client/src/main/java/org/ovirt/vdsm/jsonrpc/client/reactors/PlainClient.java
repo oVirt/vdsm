@@ -78,7 +78,7 @@ public abstract class PlainClient extends StompCommonClient {
     }
 
     @Override
-    public void clearBuff() {
+    public void postDisconnect() {
         outbox.clear();
     }
 }

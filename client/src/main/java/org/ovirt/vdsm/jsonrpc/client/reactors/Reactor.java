@@ -80,7 +80,7 @@ public abstract class Reactor extends Thread {
                 }
             }
 
-            if (key.isReadable() || key.isWritable()) {
+            if (key.isValid() && (key.isReadable() || key.isWritable())) {
                 final ReactorClient client = (ReactorClient) key.attachment();
                 try {
                     client.process();
