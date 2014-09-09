@@ -1222,19 +1222,19 @@ class Global(APIBase):
             inp += 'secure=yes\n'
         inp += options
 
+        try:
+            rc, out, err = fence(script, inp)
+        except OSError as e:
+            if e.errno == os.errno.ENOENT:
+                return errCode['fenceAgent']
+            raise
+        self.log.debug('rc %s in %s out %s err %s', rc,
+                       hidePasswd(inp), out, err)
+        if not 0 <= rc <= 2:
+            return {'status': {'code': 1,
+                               'message': out + err}}
+        message = doneCode['message']
         if action == 'status':
-            try:
-                rc, out, err = fence(script, inp)
-            except OSError as e:
-                if e.errno == os.errno.ENOENT:
-                    return errCode['fenceAgent']
-                raise
-            self.log.debug('rc %s in %s out %s err %s', rc,
-                           hidePasswd(inp), out, err)
-            if not 0 <= rc <= 2:
-                return {'status': {'code': 1,
-                                   'message': out + err}}
-            message = doneCode['message']
             if rc == 0:
                 power = 'on'
             elif rc == 2:
@@ -1244,9 +1244,10 @@ class Global(APIBase):
                 message = out + err
             return {'status': {'code': 0, 'message': message},
                     'power': power}
-        threading.Thread(target=fence, args=(script, inp)).start()
-
-        return {'status': doneCode, 'operationStatus': 'initiated'}
+        if rc != 0:
+            message = out + err
+        return {'status': {'code': rc, 'message': message},
+                'power': 'unknown', 'operationStatus': 'initiated'}
 
     def ping(self):
         "Ping the server. Useful for tests"
