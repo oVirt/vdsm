@@ -113,6 +113,10 @@ pep8:
 # Note: dependencies ordered by time needed to run them
 check-recursive: gitignore pyflakes pep8
 
+.PHONY: check-all
+check-all:
+	$(MAKE) check NOSE_STRESS_TESTS=1 NOSE_SLOW_TESTS=1
+
 all-local: \
 	vdsm.spec
 
