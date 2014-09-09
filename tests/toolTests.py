@@ -59,9 +59,6 @@ class MockModuleConfigurator(ModuleConfigure):
     def __repr__(self):
         return "name: %s, requires: %s" % (self._name, self._requires)
 
-    def getServices(self):
-        return []
-
     def validate(self):
         if self._false_mock:
             return False
