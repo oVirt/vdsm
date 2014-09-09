@@ -21,6 +21,8 @@
 
 import logging
 
+import libvirt
+
 from .. import libvirtconnection
 from . import expose, ExtraArgsError
 
@@ -56,6 +58,14 @@ class NwFilter(object):
         """
         define vdsm network filter on libvirt to control VM traffic
         """
+
+        try:
+            conn.nwfilterLookupByName(self.filterName).undefine()
+        except libvirt.libvirtError:
+            # Ignore failure if filter isn't exists or if failed to remove.
+            # Failure might occur when attempting to remove a filter which
+            # is being used by running VMs
+            pass
 
         nwFilter = conn.nwfilterDefineXML(self.buildFilterXml())
         logging.debug("Filter %s was defined", nwFilter.name())
