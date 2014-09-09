@@ -303,10 +303,12 @@ class LibvirtModuleConfigureTests(TestCase):
     # helpers
     def _setConfig(self, *configurations):
         for file_, type_ in configurations:
-            shutil.copyfile(
-                os.path.join(dirName, 'toolTests_' + type_ + '.conf'),
-                self.test_env[file_]
-            )
+            with open(os.path.join(dirName,
+                                   'toolTests_%s.conf' % type_)) as template:
+                data = template.read()
+                data = data % {'LATEST_CONF_VERSION': Libvirt.CONF_VERSION}
+            with open(self.test_env[file_], 'w') as testConf:
+                testConf.write(data)
 
     def testValidatePositive(self):
         libvirtConfigure = libvirt.Configurator()
