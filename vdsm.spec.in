@@ -137,6 +137,9 @@ Requires: libvirt-daemon-driver-qemu
 Requires: libvirt >= 0.10.2-29.el6_5.4
 %else
 Requires: libvirt >= 1.0.2-1
+# Remove once the following bug is solved
+# https://bugzilla.redhat.com/show_bug.cgi?id=1138340
+Conflicts: libvirt >= 1.2.8-1
 %endif
 %endif
 Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
