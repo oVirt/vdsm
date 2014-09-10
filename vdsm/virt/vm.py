@@ -721,9 +721,6 @@ class _DomXML:
             <vcpu current='smp'>160</vcpu>
             <devices>
             </devices>
-            <memtune>
-                <min_guarantee>0</min_guarantee>
-            </memtune>
         </domain>
 
         """
@@ -759,16 +756,6 @@ class _DomXML:
         self.dom.appendChildWithArgs('currentMemory', text=memSizeKB)
         vcpu = self.dom.appendChildWithArgs('vcpu', text=self._getMaxVCpus())
         vcpu.setAttrs(**{'current': self._getSmp()})
-
-        memSizeGuaranteedKB = str(1024 * int(
-            self.conf.get('memGuaranteedSize', '0')
-        ))
-
-        memtune = XMLElement('memtune')
-        self.dom.appendChild(memtune)
-
-        memtune.appendChildWithArgs('min_guarantee',
-                                    text=memSizeGuaranteedKB)
 
         self._devices = XMLElement('devices')
         self.dom.appendChild(self._devices)
