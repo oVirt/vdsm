@@ -214,9 +214,6 @@ class TestVm(TestCaseBase):
               <memory>1048576</memory>
               <currentMemory>1048576</currentMemory>
               <vcpu current="8">160</vcpu>
-              <memtune>
-                  <min_guarantee>524288</min_guarantee>
-              </memtune>
               <devices/>
            </domain>"""
 

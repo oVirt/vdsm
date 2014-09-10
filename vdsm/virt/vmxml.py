@@ -147,9 +147,6 @@ class Domain(object):
             <vcpu current='smp'>160</vcpu>
             <devices>
             </devices>
-            <memtune>
-                <min_guarantee>0</min_guarantee>
-            </memtune>
         </domain>
 
         """
@@ -185,16 +182,6 @@ class Domain(object):
         self.dom.appendChildWithArgs('currentMemory', text=memSizeKB)
         vcpu = self.dom.appendChildWithArgs('vcpu', text=self._getMaxVCpus())
         vcpu.setAttrs(**{'current': self._getSmp()})
-
-        memSizeGuaranteedKB = str(1024 * int(
-            self.conf.get('memGuaranteedSize', '0')
-        ))
-
-        memtune = Element('memtune')
-        self.dom.appendChild(memtune)
-
-        memtune.appendChildWithArgs('min_guarantee',
-                                    text=memSizeGuaranteedKB)
 
         self._devices = Element('devices')
         self.dom.appendChild(self._devices)

@@ -38,9 +38,6 @@ CONF_TO_DOMXML_X86_64 = [({
             <memory>1048576</memory>
             <currentMemory>1048576</currentMemory>
             <vcpu current="1">160</vcpu>
-            <memtune>
-                <min_guarantee>524288</min_guarantee>
-            </memtune>
             <devices>
                 <channel type="unix">
                     <target name="com.redhat.rhevm.vdsm" type="virtio"/>
@@ -106,9 +103,6 @@ CONF_TO_DOMXML_PPC64 = [({
             <memory>1048576</memory>
             <currentMemory>1048576</currentMemory>
             <vcpu current="1">160</vcpu>
-            <memtune>
-                <min_guarantee>524288</min_guarantee>
-            </memtune>
             <devices>
                 <channel type="unix">
                     <target name="com.redhat.rhevm.vdsm" type="virtio"/>
@@ -153,9 +147,6 @@ CONF_TO_DOMXML_NO_VDSM = [({
         <memory>65536</memory>
         <currentMemory>65536</currentMemory>
         <vcpu current="1">160</vcpu>
-        <memtune>
-            <min_guarantee>16384</min_guarantee>
-        </memtune>
         <devices>
             <channel type="unix">
                 <target name="org.qemu.guest_agent.0" type="virtio"/>
