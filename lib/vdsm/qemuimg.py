@@ -35,6 +35,12 @@ class FORMAT:
     RAW = "raw"
     VMDK = "vmdk"
 
+
+# Recent qemu-img supports two incompatible qcow2 versions. We use 0.10 format
+# so hosts with older qemu can consume images created by newer versions.
+# See https://bugzilla.redhat.com/1139707
+QCOW2_COMPAT = '0.10'
+
 __iregex = {
     'format': re.compile("^file format: (?P<value>\w+)$"),
     'virtualsize': re.compile("^virtual size: "
@@ -109,6 +115,8 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
 
     if format:
         cmd.extend(("-f", format))
+        if format == FORMAT.QCOW2 and _supports_qcow2_compat():
+            cmd.extend(('-o', 'compat=' + QCOW2_COMPAT))
 
     if backing:
         if not os.path.isabs(backing):
@@ -127,6 +135,24 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
 
     if rc != 0:
         raise QImgError(rc, out, err)
+
+
+def _supports_qcow2_compat():
+    """
+    TODO: Remove this when qemu versions providing the "compat" option are
+    available on all platforms.
+    """
+    cmd = [_qemuimg.cmd, "create", "-f", FORMAT.QCOW2, "-o", "?", "/dev/null"]
+
+    rc, out, err = utils.execCmd(cmd, raw=True)
+
+    if rc != 0:
+        raise QImgError(rc, out, err)
+
+    # Supported options:
+    # compat           Compatibility level (0.10 or 1.1)
+
+    return '\ncompat ' in out
 
 
 def check(image, format=None):

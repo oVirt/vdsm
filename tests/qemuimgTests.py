@@ -114,3 +114,63 @@ class qemuimgTests(TestCaseBase):
     def testQemu2BackingNoCluster(self):
         info = qemuimg.info('unused')
         self.assertEquals('base.img', info['backingfile'])
+
+
+class FakeExecCmd(object):
+
+    def __init__(self, *calls):
+        self.calls = list(calls)
+        self.saved = None
+
+    def __call__(self, cmd, **kw):
+        call = self.calls.pop(0)
+        return call(cmd, **kw)
+
+    def __enter__(self):
+        self.saved = utils.execCmd
+        utils.execCmd = self
+
+    def __exit__(self, t=None, v=None, tb=None):
+        utils.execCmd = self.saved
+
+
+class QemuimgCreateTests(TestCaseBase):
+
+    def test_no_format(self):
+
+        def create_no_format(cmd, **kw):
+            assert cmd == [qemuimg._qemuimg.cmd, 'create', 'image']
+            return 0, '', ''
+
+        with FakeExecCmd(create_no_format):
+            qemuimg.create('image')
+
+    def test_qcow2_compat_not_supported(self):
+
+        def qcow2_compat_not_supported(cmd, **kw):
+            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2', '-o',
+                           '?', '/dev/null']
+            return 0, 'Supported options:\nsize ...\n', ''
+
+        def create_qcow2_no_compat(cmd, **kw):
+            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2',
+                           'image']
+            return 0, '', ''
+
+        with FakeExecCmd(qcow2_compat_not_supported, create_qcow2_no_compat):
+            qemuimg.create('image', format='qcow2')
+
+    def test_qcow2_compat_supported(self):
+
+        def qcow2_compat_supported(cmd, **kw):
+            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2', '-o',
+                           '?', '/dev/null']
+            return 0, 'Supported options:\ncompat ...\n', ''
+
+        def create_qcow2_compat(cmd, **kw):
+            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2', '-o',
+                           'compat=0.10', 'image']
+            return 0, '', ''
+
+        with FakeExecCmd(qcow2_compat_supported, create_qcow2_compat):
+            qemuimg.create('image', format='qcow2')
