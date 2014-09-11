@@ -198,7 +198,7 @@ class TestVm(TestCaseBase):
 
                 testVm = vm.Vm(self, conf)
 
-                output = testVm._buildCmdLine()
+                output = testVm._buildDomainXML()
 
                 self.assertEqual(re.sub('\n\s*', ' ', output.strip(' ')),
                                  re.sub('\n\s*', ' ', expectedXML.strip(' ')))
@@ -1742,7 +1742,7 @@ class TestVmFunctions(TestCaseBase):
     def _buildAllDomains(self, arch):
         for conf, _ in self._CONFS[arch]:
             with FakeVM(conf, arch=arch) as v:
-                domXml = v._buildCmdLine()
+                domXml = v._buildDomainXML()
                 yield FakeDomain(domXml, vmId=v.id), domXml
 
     def _getAllDomains(self, arch):

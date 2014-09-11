@@ -2665,7 +2665,7 @@ class Vm(object):
                 dev._deviceXML = deviceXML
                 domxml.appendDeviceXML(deviceXML)
 
-    def _buildCmdLine(self):
+    def _buildDomainXML(self):
         domxml = vmxml.Domain(self.conf, self.log, self.arch)
         domxml.appendOs()
 
@@ -2891,7 +2891,7 @@ class Vm(object):
         # domDependentInit, after the migration is completed.
 
         if not self.recovering and initDomain:
-            domxml = hooks.before_vm_start(self._buildCmdLine(), self.conf)
+            domxml = hooks.before_vm_start(self._buildDomainXML(), self.conf)
             self.log.debug(domxml)
 
         if self.recovering:
