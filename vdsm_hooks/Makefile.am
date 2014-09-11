@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = ethtool_options faqemu vhostmd qemucmdline openstacknet
+SUBDIRS = ethtool_options faqemu vhostmd qemucmdline openstacknet macspoof
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -35,7 +35,6 @@ SUBDIRS += \
 	hugepages \
 	isolatedprivatevlan \
 	macbind \
-	macspoof \
 	nestedvt \
 	numa \
 	pincpu \
