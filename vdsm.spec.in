@@ -1248,6 +1248,12 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_openstacknet
 %{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/openstacknet_utils.py*
 
+%files hook-macspoof
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_macspoof
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_macspoof
+
 %if 0%{?with_vhostmd}
 %files hook-vhostmd
 %defattr(-, root, root, -)
@@ -1321,12 +1327,6 @@ exit 0
 %files hook-macbind
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macbind
-
-%files hook-macspoof
-%defattr(-, root, root, -)
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_macspoof
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_macspoof
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_macspoof
 
 %files hook-extnet
 %defattr(-, root, root, -)
