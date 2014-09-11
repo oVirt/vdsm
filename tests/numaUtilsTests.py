@@ -43,38 +43,6 @@ _VM_RUN_FILE_CONTENT = """
     </domstatus>"""
 
 
-class FakeSuperVdsm:
-    def __init__(self):
-        pass
-
-    def getProxy(self):
-        return self
-
-    def getVcpuNumaMemoryMapping(self, vmName):
-        return {0: [0, 1], 1: [0, 1], 2: [0, 1], 3: [0, 1]}
-
-
-class FakeAdvancedStatsFunction:
-    def __init__(self):
-        self._samples = [(0, 1, 19590000000L, 1),
-                         (1, 1, 10710000000L, 1),
-                         (2, 1, 19590000000L, 0),
-                         (3, 1, 19590000000L, 2)]
-        pass
-
-    def getStats(self):
-        return [], self._samples, 15
-
-    def getLastSample(self):
-        return self._samples
-
-
-class FakeVmStatsThread:
-    def __init__(self, vm):
-        self._vm = vm
-        self.sampleVcpuPinning = FakeAdvancedStatsFunction()
-
-
 class TestNumaUtils(TestCaseBase):
 
     @MonkeyPatch(minidom, 'parse',
@@ -87,7 +55,7 @@ class TestNumaUtils(TestCaseBase):
                             3: '12269'}
         self.assertEqual(vcpuPids, expectedVcpuPids)
 
-    @MonkeyPatch(numaUtils, 'supervdsm', FakeSuperVdsm())
+    @MonkeyPatch(numaUtils, 'supervdsm', fake.SuperVdsm())
     @MonkeyPatch(caps,
                  'getNumaTopology',
                  lambda: {'0': {'cpus': [0, 1, 2, 3],
@@ -102,7 +70,7 @@ class TestNumaUtils(TestCaseBase):
                                          'memory': '1024',
                                          'nodeIndex': 1}]}
         with fake.VM(VM_PARAMS) as testvm:
-            testvm._vmStats = FakeVmStatsThread(testvm)
+            testvm._vmStats = fake.VmStatsThread(testvm)
             expectedResult = {'0': [0, 1], '1': [0, 1]}
             vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(testvm)
             self.assertEqual(expectedResult, vmNumaNodeRuntimeMap)

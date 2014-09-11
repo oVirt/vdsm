@@ -179,3 +179,34 @@ def VM(params=None, devices=None, runCpu=False,
             if status is not None:
                 fake._lastStatus = status
             yield fake
+
+
+class SuperVdsm:
+    def __init__(self):
+        pass
+
+    def getProxy(self):
+        return self
+
+    def getVcpuNumaMemoryMapping(self, vmName):
+        return {0: [0, 1], 1: [0, 1], 2: [0, 1], 3: [0, 1]}
+
+
+class AdvancedStatsFunction:
+    def __init__(self):
+        self._samples = [(0, 1, 19590000000L, 1),
+                         (1, 1, 10710000000L, 1),
+                         (2, 1, 19590000000L, 0),
+                         (3, 1, 19590000000L, 2)]
+
+    def getStats(self):
+        return [], self._samples, 15
+
+    def getLastSample(self):
+        return self._samples
+
+
+class VmStatsThread:
+    def __init__(self, vm):
+        self._vm = vm
+        self.sampleVcpuPinning = AdvancedStatsFunction()
