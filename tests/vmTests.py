@@ -1784,3 +1784,15 @@ class TestVmBalloon(TestCaseBase):
             testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_INTERNAL_ERROR)
             # we don't care about the error code as long as is != NO_DOMAIN
             self.assertAPIFailed(testvm.setBalloonTarget(256), 'balloonErr')
+
+
+@expandPermutations
+class TestVmSanity(TestCaseBase):
+    def testSmpPresentIfNotSpecified(self):
+        with fake.VM() as testvm:
+            self.assertEqual(int(testvm.conf['smp']), 1)
+
+    @permutations([[1], [2], [4]])
+    def testSmpByParameters(self, cpus):
+        with fake.VM({'smp': cpus}) as testvm:
+            self.assertEqual(int(testvm.conf['smp']), cpus)

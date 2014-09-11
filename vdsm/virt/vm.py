@@ -1388,6 +1388,8 @@ class Vm(object):
         self.conf = {'pid': '0'}
         self.conf['_blockJobs'] = {}
         self.conf.update(params)
+        if 'smp' not in self .conf:
+            self.conf['smp'] = '1'
         self._initLegacyConf()  # restore placeholders for BC sake
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
@@ -2787,7 +2789,6 @@ class Vm(object):
 
     def _run(self):
         self.log.info("VM wrapper has started")
-        self.conf['smp'] = self.conf.get('smp', '1')
         devices = self.buildConfDevices()
 
         # recovery flow note:
