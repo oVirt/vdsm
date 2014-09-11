@@ -49,7 +49,6 @@ pyparted	python-parted
 python >= 2.7.3	python
 python-devel	python-dev
 python-dmidecode	python-dmidecode
-python-ethtool >= 0.8-1	python-ethtool
 python-inotify	python-pyinotify
 python-libguestfs	python-libguestfs
 python-magic	python-magic

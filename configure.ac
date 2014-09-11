@@ -235,7 +235,6 @@ fi
 # Checking for python modules (sorted, please keep in order)
 AX_PYTHON_MODULE([argparse], [fatal])
 AX_PYTHON_MODULE([cpopen], [fatal])
-AX_PYTHON_MODULE([ethtool], [fatal])
 AX_PYTHON_MODULE([libvirt], [fatal])
 AX_PYTHON_MODULE([netaddr], [fatal])
 AX_PYTHON_MODULE([pthreading], [fatal])
