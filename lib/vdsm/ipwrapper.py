@@ -305,14 +305,12 @@ def _bondExists(bondName):
 
 
 def getLinks():
-    """Returns a list of Link objects for each link in the system."""
-    links = []
+    """Return an iterator of Link objects, each per a link in the system."""
     for data in link.iter_links():
         try:
-            links.append(Link.fromDict(data))
+            yield Link.fromDict(data)
         except IOError:  # If a link goes missing we just don't report it
             continue
-    return links
 
 
 def getLink(dev):
