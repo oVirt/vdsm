@@ -276,10 +276,11 @@ ovirt-engine and vdsClient.
 Summary:        VDSM API Server
 BuildArch:      noarch
 
-Requires: %{name}-python = %{version}-%{release}
-Requires: %{name}-yajsonrpc = %{version}-%{release}
+Requires:       %{name}-python = %{version}-%{release}
+Requires:       %{name}-yajsonrpc = %{version}-%{release}
+Obsoletes:      vdsm-api < 4.16
 %if 0%{?rhel} == 6
-Requires: python-ordereddict
+Requires:       python-ordereddict
 %endif
 
 %description jsonrpc
