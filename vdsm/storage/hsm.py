@@ -147,7 +147,7 @@ CON_TYPE_ID_2_CON_TYPE = {
     sd.GLUSTERFS_DOMAIN: 'glusterfs'}
 
 
-def _resolveIscsiIface(ifaceName, initiatorName):
+def _resolveIscsiIface(ifaceName, initiatorName, netIfaceName):
     if not ifaceName:
         return iscsi.IscsiInterface('default')
 
@@ -155,7 +155,8 @@ def _resolveIscsiIface(ifaceName, initiatorName):
         if iface.name == ifaceName:
             return iface
 
-    iface = iscsi.IscsiInterface(ifaceName, initiatorName=initiatorName)
+    iface = iscsi.IscsiInterface(ifaceName, initiatorName=initiatorName,
+                                 netIfaceName=netIfaceName)
     iface.create()
     return iface
 
@@ -231,7 +232,8 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
         target = iscsi.IscsiTarget(portal, tpgt, conDict.get('iqn', None))
 
         iface = _resolveIscsiIface(conDict.get('ifaceName', None),
-                                   conDict.get('initiatorName', None))
+                                   conDict.get('initiatorName', None),
+                                   conDict.get('netIfaceName', None))
 
         cred = None
         username = conDict.get('user', None)

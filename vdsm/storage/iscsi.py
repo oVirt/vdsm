@@ -96,9 +96,28 @@ def getIscsiConnectionPath(sessionId):
                         "connection%d:0" % sessionId)
 
 
+def getIscsiHostPath(sessionID):
+    """
+    Report the iSCSI host path of the given iSCSI session to be further
+    used to retrieve iface.net_ifacename (netdev) in use for the session.
+    Arguments:
+        sessionID - the iSCSI session ID.
+    Returns:
+        - iSCSI host path - e.g. '/sys/class/iscsi_host/host17/'
+    """
+
+    pattern = '/sys/devices/platform/host*/session%s' % sessionID
+    for path in glob.iglob(pattern):
+        host = os.path.basename(os.path.dirname(path))
+        return '/sys/class/iscsi_host/' + host
+
+    raise OSError(errno.ENOENT, "No iscsi_host for session [%s]" % sessionID)
+
+
 def readSessionInfo(sessionID):
     iscsi_session = getIscsiSessionPath(sessionID)
     iscsi_connection = getIscsiConnectionPath(sessionID)
+    iscsi_host = getIscsiHostPath(sessionID)
 
     if not os.path.isdir(iscsi_session) or not os.path.isdir(iscsi_connection):
         raise OSError(errno.ENOENT, "No such session")
@@ -113,15 +132,17 @@ def readSessionInfo(sessionID):
     paddr = os.path.join(iscsi_connection, "persistent_address")
     pport = os.path.join(iscsi_connection, "persistent_port")
 
+    netdev = os.path.join(iscsi_host, "netdev")
+
     res = []
-    for fname in (targetname, tpgt, user, passwd, paddr, pport, iface):
+    for fname in (targetname, iface, tpgt, user, passwd, paddr, pport, netdev):
         try:
             with open(fname, "r") as f:
                 res.append(f.read().strip())
         except (OSError, IOError):
             res.append("")
 
-    iqn, tpgt, username, password, ip, port, iface = res
+    iqn, iface, tpgt, username, password, ip, port, netdev = res
     port = int(port)
     tpgt = int(tpgt)
 
@@ -132,7 +153,10 @@ def readSessionInfo(sessionID):
     if password in ["<NULL>", "(null)"]:
         password = None
 
-    iface = IscsiInterface(iface)
+    if netdev in ["<NULL>", "(null)"]:
+        netdev = None
+
+    iface = IscsiInterface(iface, netIfaceName=netdev)
     portal = IscsiPortal(ip, port)
     target = IscsiTarget(portal, tpgt, iqn)
     cred = None
@@ -277,7 +301,8 @@ class IscsiInterface(object):
         'transport': ("iface.transport_name", 'r'),
         'hardwareAddress': ("iface.hwaddress", 'rw'),
         'ipAddress': ('iface.ipaddress', 'rw'),
-        'initiatorName': ('iface.initiatorname', 'rw')
+        'initiatorName': ('iface.initiatorname', 'rw'),
+        'netIfaceName': ('iface.net_ifacename', 'rw')
     }
 
     def __getattr__(self, name):
@@ -318,10 +343,11 @@ class IscsiInterface(object):
         self._conf[key] = value
 
     def __init__(self, name, hardwareAddress=None, ipAddress=None,
-                 initiatorName=None):
+                 initiatorName=None, netIfaceName=None):
 
         # Only new tcp interfaces are supported for now
         self._conf = {'iface.transport_name': 'tcp'}
+        self._conf['iface.net_ifacename'] = netIfaceName
 
         self.name = name
         self._loaded = False
@@ -357,7 +383,7 @@ class IscsiInterface(object):
         # If this fails mid operation we get a partially updated interface.
         # Suggestions are welcome.
         for key, value in self._conf.iteritems():
-            if key == 'iface.iscsi_ifacename':
+            if value is None or key == 'iface.iscsi_ifacename':
                 continue
 
             iscsiadm.iface_update(self.name, key, value)
@@ -371,8 +397,8 @@ class IscsiInterface(object):
         self._conf = conf
 
     def __repr__(self):
-        return "<IscsiInterface name='%s' transport='%s'>" % (self.name,
-                                                              self.transport)
+        return "<IscsiInterface name='%s' transport='%s' netIfaceName='%s'>" \
+            % (self.name, self.transport, self.netIfaceName)
 
 
 def iterateIscsiInterfaces():
