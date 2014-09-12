@@ -224,6 +224,8 @@ class DynamicBridge(object):
                 argType = argType[0]
             if argType not in self.api['types']:
                 continue
+            if val is None:
+                continue
             self._typeFixup(argName, argType, val)
 
     def _fixupRet(self, className, methodName, result):
