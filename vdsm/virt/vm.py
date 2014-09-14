@@ -1505,7 +1505,6 @@ class Vm(object):
         self._releaseLock = threading.Lock()
         self.saveState()
         self._watchdogEvent = {}
-        self.sdIds = []
         self.arch = caps.getTargetArch()
 
         if (self.arch not in ['ppc64', 'x86_64']):
@@ -1912,17 +1911,14 @@ class Vm(object):
         return self._volumesPrepared
 
     def preparePaths(self, drives):
-        domains = []
         for drive in drives:
             with self._volPrepareLock:
                 if self._destroyed:
                     # A destroy request has been issued, exit early
                     break
                 drive['path'] = self.cif.prepareVolumePath(drive, self.id)
-            if drive['device'] == 'disk' and isVdsmImage(drive):
-                domains.append(drive['domainID'])
+
         else:
-            self.sdIds.extend(domains)
             # Now we got all the resources we needed
             self.startDisksStatsCollection()
 
@@ -2858,6 +2854,11 @@ class Vm(object):
         self.conf['smp'] = self.conf.get('smp', '1')
         devices = self.buildConfDevices()
 
+        # recovery flow note:
+        # we do not start disk stats collection here since
+        # in the recovery flow irs may not be ready yet.
+        # Disk stats collection is started from clientIF at the end
+        # of the recovery process.
         if not self.recovering:
             self.preparePaths(devices[DISK_DEVICES])
             self._prepareTransientDisks(devices[DISK_DEVICES])
@@ -2869,14 +2870,6 @@ class Vm(object):
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
             self.saveState()
-        else:
-            for drive in devices[DISK_DEVICES]:
-                if drive['device'] == 'disk' and isVdsmImage(drive):
-                    self.sdIds.append(drive['domainID'])
-            # Note that we do not start disk stats collection here since
-            # in the recovery flow irs may not be ready yet.
-            # Disk stats collection is started from clientIF at the end
-            # of the recovery process.
 
         for devType, devClass in self.DeviceMapping:
             for dev in devices[devType]:
@@ -3547,9 +3540,8 @@ class Vm(object):
 
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
-        vdsmImg = isVdsmImage(diskParams)
 
-        if vdsmImg:
+        if isVdsmImage(diskParams):
             self._normalizeVdsmImg(diskParams)
             self._createTransientDisk(diskParams)
 
@@ -3581,8 +3573,7 @@ class Vm(object):
             # we will gather almost all needed info about this drive from
             # the libvirt during recovery process.
             self._devices[DISK_DEVICES].append(drive)
-            if vdsmImg:
-                self.sdIds.append(diskParams['domainID'])
+
             with self._confLock:
                 self.conf['devices'].append(diskParams)
             self.saveState()
@@ -3614,9 +3605,7 @@ class Vm(object):
 
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotunplug disk xml: %s", driveXml)
-        # Remove found disk from vm's drives list
-        if isVdsmImage(drive):
-            self.sdIds.remove(drive.domainID)
+
         self._devices[DISK_DEVICES].remove(drive)
         # Find and remove disk device from vm's conf
         diskDev = None
@@ -4247,9 +4236,6 @@ class Vm(object):
                 self.log.error("Unable to teardown the previous chain: %s",
                                diskToTeardown, exc_info=True)
             self.updateDriveParameters(dstDiskCopy)
-            if "domainID" in srcDisk:
-                self.sdIds.append(dstDiskCopy['domainID'])
-                self.sdIds.remove(srcDisk['domainID'])
         finally:
             self._delDiskReplica(srcDrive)
             self.startDisksStatsCollection()
@@ -5602,6 +5588,14 @@ class Vm(object):
         for dev in self.conf['devices']:
             if dev['type'] == BALLOON_DEVICES:
                 yield dev
+
+    @property
+    def sdIds(self):
+        """
+        Returns a list of the ids of the storage domains in use by the VM.
+        """
+        return set(device.domainID for device in self._devices[DISK_DEVICES]
+                   if device['device'] == 'disk' and isVdsmImage(device))
 
 
 class LiveMergeCleanupThread(threading.Thread):

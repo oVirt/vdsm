@@ -27,6 +27,7 @@ import tempfile
 import threading
 import time
 import xml.etree.ElementTree as ET
+import uuid
 
 import libvirt
 
@@ -1292,6 +1293,57 @@ class TestVm(TestCaseBase):
                              expected_io_tune[drives[0].name])
             self.assertEqual(self._xml_sanitizer(drives[0]._deviceXML),
                              self._xml_sanitizer(expected_xml))
+
+    def testSdIds(self):
+        """
+        Tests that VM storage domains in use list is in sync with the vm
+        devices in use
+        """
+        domainID = uuid.uuid4()
+        drives = [
+            vm.Drive(
+                {
+                    "specParams": {
+                        "ioTune": {
+                            "total_bytes_sec": 9999,
+                            "total_iops_sec": 9999
+                        }
+                    }
+                },
+                log=self.log,
+                index=0,
+                device="hdd",
+                path="/dev/dummy",
+                type=vm.DISK_DEVICES,
+                iface="ide",
+                domainID=domainID,
+                imageID=uuid.uuid4(),
+                poolID=uuid.uuid4(),
+                volumeID=uuid.uuid4()
+            ),
+            vm.Drive(
+                {
+                    "specParams": {
+                        "ioTune": {
+                            "total_bytes_sec": 9999,
+                            "total_iops_sec": 9999
+                        }
+                    }
+                },
+                log=self.log,
+                index=0,
+                device="hdd2",
+                path="/dev/dummy2",
+                type=vm.DISK_DEVICES,
+                iface="ide",
+            )
+        ]
+
+        with FakeVM() as machine:
+            for drive in drives:
+                machine._devices[drive.type].append(drive)
+
+            self.assertEqual(machine.sdId, set([domainID]))
 
     def testGetUnderlyingGraphicsDeviceInfo(self):
         port = '6000'
