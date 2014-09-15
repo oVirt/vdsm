@@ -32,3 +32,7 @@ dist_vdsm_virt_PYTHON = \
 	vmpowerdown.py \
 	vmstatus.py \
 	$(NULL)
+
+EXTRA_DIST = \
+	libvirt-hook.sh \
+	$(NULL)
