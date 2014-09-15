@@ -377,6 +377,16 @@ class NetworkTest(TestCaseBase):
             # be reported to legacy Engines.
             self.assertIn(b, self.vdsm_net.netinfo.bondings)
 
+    def assert_active_slave_exists(self, bondName, nics):
+        netinfo = self.vdsm_net.netinfo
+        self.assertIn(bondName, netinfo.bondings)
+        self.assertIn(netinfo.bondings[bondName]['active_slave'], nics)
+
+    def assert_active_slave_doesnt_exist(self, bondName):
+        netinfo = self.vdsm_net.netinfo
+        self.assertIn(bondName, netinfo.bondings)
+        self.assertEqual(netinfo.bondings[bondName]['active_slave'], '')
+
     @cleanupNet
     @permutations([[True], [False]])
     @RequireDummyMod
@@ -2141,4 +2151,22 @@ class NetworkTest(TestCaseBase):
             # deletion.
             self.assertEqual(0, len(list(tc._qdiscs(nic))),
                              'Failed to cleanup tc hfsc and ingress qdiscs')
+            self.assertEqual(status, SUCCESS, msg)
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksActiveSlave(self):
+        def create_bond_with_mode(nics, mode):
+            bonding = {BONDING_NAME: {'nics': nics}}
+            bonding[BONDING_NAME]['options'] = 'mode=%s' % mode
+            status, msg = self.vdsm_net.setupNetworks({}, bonding, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+        with dummyIf(2) as nics:
+            create_bond_with_mode(nics, 1)
+            self.assert_active_slave_exists(BONDING_NAME, nics)
+            create_bond_with_mode(nics, 4)
+            self.assert_active_slave_doesnt_exist(BONDING_NAME)
+            status, msg = self.vdsm_net.setupNetworks(
+                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)

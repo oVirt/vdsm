@@ -63,6 +63,7 @@ PROC_NET_VLAN = '/proc/net/vlan/'
 NET_PATH = '/sys/class/net'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
+BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_DEFAULTS = constants.P_VDSM_LIB + 'bonding-defaults.json'
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
@@ -126,6 +127,15 @@ def networks():
 def slaves(bonding):
     with open(BONDING_SLAVES % bonding) as f:
         return f.readline().split()
+
+
+def active_slave(bonding):
+    """
+    :param bonding:
+    :return: active slave when one exists or '' otherwise
+    """
+    with open(BONDING_ACTIVE_SLAVE % bonding) as f:
+        return f.readline().rstrip()
 
 
 def bondOpts(bond, keys=None):
@@ -458,6 +468,7 @@ def _nicinfo(link, paddr):
 
 def _bondinfo(link):
     return {'hwaddr': link.address, 'slaves': slaves(link.name),
+            'active_slave': active_slave(link.name),
             'opts': _getBondingOptions(link.name)}
 
 

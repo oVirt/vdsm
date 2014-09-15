@@ -770,6 +770,8 @@
 #
 # @slaves:      A list of devices that are enslaved to the bond device
 #
+# @active_slave:Active slave of the bond if exists, '' otherwise
+#
 # @bootproto4:  The protocol used to set up the network. Reported values are
 #               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
 #               (Added in version 4.16.0.)
@@ -796,10 +798,10 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoBond',
- 'data': {'slaves': ['str'], 'bootproto4': 'str', 'addr': 'str',
-          'netmask': 'str', 'ipv4addrs': ['str'], 'ipv6addrs': ['str'],
-          'hwaddr': 'str', 'cfg': 'StringMap', 'mtu': 'uint',
-          'opts': 'StringMap'}}
+ 'data': {'slaves': ['str'], 'active_slave': 'str','bootproto4': 'str',
+          'addr': 'str', 'netmask': 'str', 'ipv4addrs': ['str'],
+          'ipv6addrs': ['str'], 'hwaddr': 'str', 'cfg': 'StringMap',
+          'mtu': 'uint', 'opts': 'StringMap'}}
 
 ##
 # @NetInfoVlan:
