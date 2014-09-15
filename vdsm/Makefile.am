@@ -106,6 +106,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	dsaversion.py.in \
 	dumpStorageTable.py.in \
+	libvirt-hook.sh \
 	libvirt_password \
 	limits.conf \
 	logger.conf.in \
