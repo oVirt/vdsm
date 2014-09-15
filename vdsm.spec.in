@@ -701,6 +701,12 @@ install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
                  %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.pkla
 %endif
 
+# Install the libvirt hook for cleaning up the XML
+%if 0%{?fedora} || 0%{?rhel} >= 7
+install -Dm 0755 vdsm/virt/libvirt-hook.sh \
+                 %{buildroot}%{_sysconfdir}/libvirt/hooks/qemu
+%endif
+
 %check
 %if 0%{?with_check}
 make check
@@ -986,6 +992,7 @@ exit 0
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/cron.d/vdsm-libvirt-logrotate
+%{_sysconfdir}/libvirt/hooks/qemu
 %{_datadir}/%{vdsm_name}/logUtils.py*
 %{_datadir}/%{vdsm_name}/dsaversion.py*
 %{_libexecdir}/%{vdsm_name}/curl-img-wrap

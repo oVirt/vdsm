@@ -36,3 +36,7 @@ dist_vdsm_virt_PYTHON = \
 	vmxml.py \
 	utils.py \
 	$(NULL)
+
+EXTRA_DIST = \
+	libvirt-hook.sh \
+	$(NULL)
