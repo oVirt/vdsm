@@ -90,7 +90,7 @@ class BridgeTests(TestCaseBase):
         params = obj.get('params', [])
 
         method = getattr(bridge, mangledMethod)
-        self.assertEquals(method(**params), 'on')
+        self.assertEquals(method(**params), {'power': 'on'})
 
     def testMethodWithNoParams(self):
         createFakeAPI()

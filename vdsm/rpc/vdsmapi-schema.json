@@ -276,9 +276,9 @@
 {'enum': 'FenceNodeAction', 'data': ['status', 'on', 'off', 'reboot']}
 
 ##
-# @FenceNodeResult:
+# @FenceNodePowerStatusResult:
 #
-# For 'status' action, the result is the power status of the host
+# The host power status as a result of 'status' action.
 #
 # @on:       The remote host is powered on
 #
@@ -287,8 +287,14 @@
 # @unknown:  The power status is not known
 #
 # Since: 4.10.0
+##
+{'enum': 'FenceNodePowerStatusResult', 'data': ['on', 'off', 'unknown']}
+
+##
+# @FenceNodeOperationStatusResult:
 #
-# For 'on', 'off' and 'reboot', the result is status of fence script execution
+# Status of fence script execution as a result of 'on', 'off' and 'reboot'
+# actions.
 #
 # @initiated:   Fence script was executed
 #
@@ -296,8 +302,24 @@
 #
 # Since: 4.16.0
 ##
-{'enum': 'FenceNodeResult', 'data': ['on', 'off', 'unknown', 'initiated',
-                                     'skipped']}
+{'enum': 'FenceNodeOperationStatusResult', 'data': ['initiated', 'skipped']}
+
+##
+# @FenceNodeResult:
+#
+# Result of fenceNode command.
+#
+# @power:           #optional power status of host as a result of 'status'
+#                   action
+# Since: 4.10.0
+#
+# @operationStatus: #optional status of fence action executions for 'on',
+#                   'off' and 'reboot' actions
+# Since: 4.16.0
+##
+{'type': 'FenceNodeResult',
+ 'data': {'*power': 'FenceNodePowerStatusResult',
+          '*operationStatus': 'FenceNodeOperationStatusResult'}}
 
 ##
 # @HostIdMap:
