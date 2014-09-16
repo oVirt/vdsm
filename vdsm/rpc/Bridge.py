@@ -286,6 +286,19 @@ class DynamicBridge(object):
         return self._fixupRet(className, methodName, ret)
 
 
+def Host_fenceNode_Ret(ret):
+    """
+    Only 'power' and 'operationStatus' should be part of return value if they
+    are not None
+    """
+    result = {}
+    for key in ('power', 'operationStatus'):
+        val = ret.get(key)
+        if val is not None:
+            result[key] = val
+    return result
+
+
 def Host_getCapabilities_Ret(server_address, ret):
     """
     We need to add additional information to getCaps as it is done for xmlrpc.
@@ -377,7 +390,7 @@ command_info = {
     'ConnectionRefs_acquire': {'ret': 'results'},
     'ConnectionRefs_release': {'ret': 'results'},
     'ConnectionRefs_statuses': {'ret': 'connectionslist'},
-    'Host_fenceNode': {'ret': 'power'},
+    'Host_fenceNode': {'ret': Host_fenceNode_Ret},
     'Host_getAllTasksInfo': {'ret': 'allTasksInfo'},
     'Host_getAllTasksStatuses': {'ret': 'allTasksStatus'},
     'Host_getCapabilities': {'ret': Host_getCapabilities_Ret},
