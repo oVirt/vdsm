@@ -150,7 +150,9 @@ class DynamicBridge(object):
         # Determine the method arguments by subtraction
         methodArgs = []
         for arg in allArgs:
-            if arg not in ctorArgs:
+            name = self._symNameFilter(arg)
+
+            if name not in ctorArgs:
                 methodArgs.append(arg)
 
         return self._getArgs(argObj, methodArgs, defaultArgs)
