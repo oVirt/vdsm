@@ -25,6 +25,8 @@ import select
 import socket
 import time
 
+from M2Crypto import SSL
+
 from vdsm.sslutils import SSLServerSocket
 from vdsm.utils import traceback
 from vdsm import utils
@@ -171,8 +173,12 @@ class MultiProtocolAcceptor:
                 raise
 
     def _accept_connection(self):
-        client_socket, _ = self._socket.accept()
-        self._add_connection(client_socket)
+        try:
+            client_socket, _ = self._socket.accept()
+        except SSL.SSLError as e:
+            self.log.warning("Unable to accept connection due to %s", e)
+        else:
+            self._add_connection(client_socket)
 
     def _add_connection(self, socket):
         host, port = socket.getpeername()
