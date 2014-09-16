@@ -51,6 +51,7 @@ from vdsm.config import config
 import hooks
 import hostdev
 from caps import PAGE_SIZE_BYTES
+import v2v
 
 import supervdsm
 
@@ -1386,6 +1387,19 @@ class Global(APIBase):
                 'vmList': [reportedStatus(v, fullStatus)
                            for v in self._cif.vmContainer.values()
                            if not vmSet or v.id in vmSet]}
+
+    def getExternalVMs(self, uri, username, password):
+        """
+        Return information about the not-KVM virtual machines:
+        getExternalVMs returns list of VMs with subsection of  properties
+        that returns from getVmsList (with the same keys ie vmName for name)
+        currently v2v returns the following information:
+            vm: vmName, vmId, state, memSize, smp, disks and network list,
+            disk: dev, alias
+            network: type, macAddr, bridge, dev
+        """
+        vms = v2v.get_external_vms(uri, username, password)
+        return {'status': doneCode, 'vmList': vms}
 
     # Networking-related functions
     def setupNetworks(self, networks, bondings, options):

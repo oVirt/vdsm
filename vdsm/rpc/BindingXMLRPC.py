@@ -360,6 +360,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getVMList(fullStatus, vmList)
 
+    def getExternalVMs(self, uri, username, password):
+        api = API.Global()
+        return api.getExternalVMs(uri, username, password)
+
     def vmPause(self, vmId):
         vm = API.VM(vmId)
         return vm.pause()
@@ -1035,7 +1039,8 @@ class BindingXMLRPC(object):
                 (self.merge, 'merge'),
                 (self.vmUpdateVmPolicy, 'updateVmPolicy'),
                 (self.vmSetIoTune, 'setIoTune'),
-                (self.vmGetIoTunePolicy, 'getIoTunePolicy'))
+                (self.vmGetIoTunePolicy, 'getIoTunePolicy'),
+                (self.getExternalVMs, 'getExternalVMs'))
 
     def getIrsMethods(self):
         return ((self.domainActivate, 'activateStorageDomain'),
@@ -1139,6 +1144,9 @@ def wrapApiMethod(f):
                 assert 'password' not in kwargs
                 if len(args) > 3:
                     displayArgs = args[:3] + ('****',) + args[4:]
+            elif f.__name__ == 'getExternalVMs':
+                if len(args) == 3:
+                    displayArgs = args[:2] + ('****',)
 
             # Logging current call
             logStr = 'client [%s]::call %s with %s %s' % \

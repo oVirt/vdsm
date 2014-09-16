@@ -87,6 +87,7 @@ test_modules = \
 	vmTests.py \
 	vmXmlTests.py \
 	volumeTests.py \
+	v2vTests.py \
 	$(NULL)
 
 nodist_vdsmtests_PYTHON = \

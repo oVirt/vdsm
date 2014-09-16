@@ -42,6 +42,7 @@ dist_vdsm_PYTHON = \
 	ppc64HardwareInfo.py \
 	protocoldetector.py \
 	supervdsm.py \
+	v2v.py \
 	vdsmDebugPlugin.py \
 	$(NULL)
 

@@ -1898,6 +1898,20 @@ class service:
 
         return status['status']['code'], status['status']['message']
 
+    def getExternalVMs(self, args):
+        if len(args) != 3:
+            raise ValueError('Wrong number of arguments')
+        uri, username, password = args
+        status = self.s.getExternalVMs(uri, username, password)
+        if status['status']['code'] == 0:
+            vmList = status['vmList']
+            for vm in vmList:
+                for key, val in vm.iteritems():
+                    print key + ': ' + str(val)
+
+        return status['status']['code'], status['status']['message']
+
+
 if __name__ == '__main__':
     if _glusterEnabled:
         serv = ge.GlusterService()
@@ -2740,6 +2754,11 @@ if __name__ == '__main__':
             serv.updateVmPolicy, (
                 '<vmId> <vcpuLimit>',
                 'set SLA parameter for a VM'
+            )),
+        'externalVMList': (
+            serv.getExternalVMs, (
+                '<uri> <username> <password>',
+                'get VMs from external hypervisor'
             )),
     }
     if _glusterEnabled:

@@ -402,6 +402,7 @@ command_info = {
     'Host_getConnectedStoragePools': {'ret': 'poollist'},
     'Host_getDeviceList': {'ret': 'devList'},
     'Host_getDevicesVisibility': {'ret': 'visible'},
+    'Host_getExternalVMs': {'ret': 'vmList'},
     'Host_getHardwareInfo': {'ret': 'info'},
     'Host_getLVMVolumeGroups': {'ret': 'vglist'},
     'Host_getRoute': {'ret': 'info'},

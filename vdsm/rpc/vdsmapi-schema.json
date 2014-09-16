@@ -3600,7 +3600,6 @@
 {'type': 'GuestDiskMappingInfo',
  'data': {'name': 'str'}}
 
-
 ##
 # @GuestDisksMappingMap:
 #
@@ -3610,6 +3609,84 @@
 ##
 {'map': 'GuestDisksMappingMap',
  'key': 'str', 'value': 'GuestDiskMappingInfo'}
+
+##
+# @ExternalDiskInfo:
+#
+# Disk information from external source
+#
+# @dev:      #optional guest device name (sda, sdb, etc)
+#
+# @alias:    #optional device path (file path)
+#
+# Since: 4.17.0
+##
+{'type': 'ExternalDiskInfo',
+ 'data': {'*dev': 'str', '*alias': 'str'}}
+
+##
+# @ExternalNetworkInfo:
+#
+# Network information from external source
+#
+# @type:     network type (bridge, network)
+#
+# @bridge:   #optional bridge name
+#
+# @dev:      #optional network name
+#
+# @macAddr:  #optional phisical address
+#
+# Since: 4.17.0
+##
+{'type': 'ExternalNetworkInfo',
+ 'data': {'type': 'str', '*bridge': 'str', '*dev': 'str', '*macAddr': 'str'}}
+
+##
+# @ExternalVmInfo:
+#
+# map of VM properties
+#
+# @vmName:    The name of the VM
+#
+# @status:    The current VM status
+#
+# @vmId:      The VM uuid
+#
+# @smp:       number of cpu
+#
+# @memSize:   size of actual memory in MB
+#
+# @disks:     #optional list of disk devices
+#
+# @networks:  #optional list of network devices
+#
+# Since: 4.17.0
+##
+{'type': 'ExternalVmInfo',
+ 'data': {'vmName': 'str', 'status': 'VmStatus', 'vmId': 'UUID', 'smp': 'uint',
+          'memSize': 'uint', '*disks': ['ExternalDiskInfo'],
+          '*networks': ['ExternalNetworkInfo']}}
+
+##
+# @Host.getExternalVMs:
+#
+# Get information about the not-KVM virtual machines.
+#
+# @uri:       libvirt connection uri
+#
+# @username:  libvirt connection user name
+#
+# @password:  libvirt connection password
+#
+# Returns:
+# A list of VMs (List of ExternalVmInfo)
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'getExternalVMs'},
+  'data': {'uri': 'str', 'username': 'str', 'password': 'str'},
+  'returns': ['ExternalVmInfo']}
 
 ##
 # @VMFullInfo:
