@@ -1317,7 +1317,7 @@ class TestVm(TestCaseBase):
                 },
                 log=self.log,
                 index=0,
-                device="hdd",
+                device="disk",
                 path="/dev/dummy",
                 type=vm.DISK_DEVICES,
                 iface="ide",
@@ -1348,7 +1348,7 @@ class TestVm(TestCaseBase):
             for drive in drives:
                 machine._devices[drive.type].append(drive)
 
-            self.assertEqual(machine.sdId, set([domainID]))
+            self.assertEqual(machine.sdIds, set([domainID]))
 
     def testGetUnderlyingGraphicsDeviceInfo(self):
         port = '6000'
