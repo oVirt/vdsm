@@ -190,7 +190,7 @@ def _load_api_info(schema):
     info_key = schema
     if schema is None:
         schema = find_schema()
-        gluster_schema = find_schema(schema_name='gluster/vdsmapi-gluster',
+        gluster_schema = find_schema(schema_name='vdsmapi-gluster',
                                      raiseOnError=False)
 
     with open(schema) as f:
