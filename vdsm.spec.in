@@ -1480,7 +1480,8 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/gluster
 %doc COPYING
 %{_datadir}/%{vdsm_name}/gluster/api.py*
-%{_datadir}/%{vdsm_name}/gluster/vdsmapi-gluster-schema.json
+%{_datadir}/%{vdsm_name}/gluster/apiwrapper.py*
+%{_datadir}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
 %{_datadir}/%{vdsm_name}/gluster/gfapi.py*
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*
 %{_datadir}/%{vdsm_name}/gluster/services.py*

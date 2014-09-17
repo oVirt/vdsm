@@ -29,16 +29,13 @@ nodist_vdsmgluster_PYTHON = \
 dist_vdsmgluster_PYTHON = \
 	__init__.py \
 	api.py \
+	apiwrapper.py \
 	cli.py \
 	exception.py \
 	gfapi.py \
 	hooks.py \
 	services.py \
 	tasks.py \
-	$(NULL)
-
-dist_vdsmgluster_DATA = \
-	vdsmapi-gluster-schema.json \
 	$(NULL)
 
 EXTRA_DIST = \

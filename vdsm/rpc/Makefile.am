@@ -16,6 +16,7 @@ dist_vdsmrpc_PYTHON = \
 	$(NULL)
 
 dist_vdsmrpc_DATA = \
+	vdsmapi-gluster-schema.json \
 	vdsmapi-schema.json \
 	$(NULL)
 
