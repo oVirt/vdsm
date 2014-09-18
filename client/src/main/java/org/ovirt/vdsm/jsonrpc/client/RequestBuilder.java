@@ -63,7 +63,7 @@ public class RequestBuilder {
      */
     @SuppressWarnings("rawtypes")
     public RequestBuilder withOptionalParameterAsList(String name, List value) {
-        if (value != null && value.isEmpty()) {
+        if (value != null && !value.isEmpty()) {
             return withParameter(name, value);
         }
         return this;
@@ -80,7 +80,7 @@ public class RequestBuilder {
      */
     @SuppressWarnings("rawtypes")
     public RequestBuilder withOptionalParameterAsMap(String name, Map value) {
-        if (value != null && value.keySet().isEmpty()) {
+        if (value != null && !value.isEmpty()) {
             return withParameter(name, value);
         }
         return this;
