@@ -314,14 +314,12 @@ class SourceThread(threading.Thread):
             self._vm.log.debug('starting migration to %s '
                                'with miguri %s', duri, muri)
 
-            t = DowntimeThread(self._vm, int(self._downtime))
-            t.start()
+            downtimeThread = DowntimeThread(self._vm, int(self._downtime))
             self._monitorThread = MonitorThread(self._vm, startTime)
-            with utils.running(self._monitorThread):
-                try:
+            with utils.running(downtimeThread):
+                with utils.running(self._monitorThread):
+                    # we need to support python 2.6, so two nested with-s.
                     self._perform_migration(duri, muri)
-                finally:
-                    t.stop()
 
     def _perform_migration(self, duri, muri):
         if self._vm.hasSpice and self._vm.conf.get('clientIp'):
