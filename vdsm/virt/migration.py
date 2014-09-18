@@ -315,6 +315,7 @@ class SourceThread(threading.Thread):
                                'with miguri %s', duri, muri)
 
             t = DowntimeThread(self._vm, int(self._downtime))
+            t.start()
             self._monitorThread = MonitorThread(self._vm, startTime)
             with utils.running(self._monitorThread):
                 try:
@@ -375,7 +376,6 @@ class DowntimeThread(threading.Thread):
         self._wait = (delay_per_gib * max(memSize, 2048) + 1023) / 1024
 
         self.daemon = True
-        self.start()
 
     def run(self):
         self._vm.log.debug('migration downtime thread started')
