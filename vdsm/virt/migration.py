@@ -320,7 +320,7 @@ class SourceThread(threading.Thread):
                 try:
                     self._perform_migration(duri, muri)
                 finally:
-                    t.cancel()
+                    t.stop()
 
     def _perform_migration(self, duri, muri):
         if self._vm.hasSpice and self._vm.conf.get('clientIp'):
@@ -392,8 +392,8 @@ class DowntimeThread(threading.Thread):
 
         self._vm.log.debug('migration downtime thread exiting')
 
-    def cancel(self):
-        self._vm.log.debug('canceling migration downtime thread')
+    def stop(self):
+        self._vm.log.debug('stopping migration downtime thread')
         self._stop.set()
 
 
