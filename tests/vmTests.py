@@ -1708,7 +1708,8 @@ class TestVmFunctions(TestCaseBase):
     @permutations([[caps.Architecture.X86_64], [caps.Architecture.PPC64]])
     def testGetVDSMDomains(self, arch):
         with MonkeyPatchScope([(vm, '_listDomains',
-                                lambda: self._buildAllDomains(arch))]):
+                                lambda: self._buildAllDomains(arch)),
+                               (caps, 'getTargetArch', lambda: arch)]):
             self.assertEqual([v.UUIDString() for v in vm.getVDSMDomains()],
                              self._getAllDomainIds(arch))
 
