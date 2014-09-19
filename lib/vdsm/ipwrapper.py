@@ -245,18 +245,18 @@ class Link(object):
     def oper_up(self):
         return bool(self.flags & self.IFF_RUNNING)
 
-    @property
-    def promisc(self):
+    def get_promisc(self):
         return bool(self.flags & self.IFF_PROMISC)
 
-    @promisc.setter
-    def promisc(self, value):
+    def set_promisc(self, value):
         """Takes a boolean to enable/disable Link promiscuity"""
         if value:
             self.flags |= self.IFF_PROMISC
         else:
             self.flags &= ~self.IFF_PROMISC
         self.set_flags(self.flags)
+
+    promisc = property(get_promisc, set_promisc, None, 'Link promiscuity flag')
 
     def set_flags(self, flags):
         "Set device flags. We need this local definition until ethtool has it"
