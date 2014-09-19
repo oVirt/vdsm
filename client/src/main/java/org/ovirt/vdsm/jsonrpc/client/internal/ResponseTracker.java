@@ -27,8 +27,6 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
 public class ResponseTracker implements Runnable {
     private static Log log = LogFactory.getLog(ResponseTracker.class);
     private static final int TRACKING_TIMEOUT = 500;
-    private static final int MAX_FAILED_CONNECTIONS = 0;
-    private int failedConnections = 0;
     private AtomicBoolean isTracking;
     private final ConcurrentMap<JsonNode, JsonRpcCall> runningCalls = new ConcurrentHashMap<>();
     private ConcurrentMap<JsonNode, ResponseTracking> map = new ConcurrentHashMap<>();
@@ -61,15 +59,14 @@ public class ResponseTracker implements Runnable {
     @Override
     public void run() {
         try {
-            while (isTracking.get()) {
+            while (this.isTracking.get()) {
                 TimeUnit.MILLISECONDS.sleep(TRACKING_TIMEOUT);
                 for (JsonNode id : queue) {
-                    if (!runningCalls.containsKey(id)) {
+                    if (!this.runningCalls.containsKey(id)) {
                         removeRequestFromTracking(id);
-                        this.failedConnections = 0;
                         continue;
                     }
-                    ResponseTracking tracking = map.get(id);
+                    ResponseTracking tracking = this.map.get(id);
                     if (System.currentTimeMillis() >= tracking.getTimeout()) {
                         RetryContext context = tracking.getContext();
                         context.decreaseAttempts();
@@ -92,15 +89,8 @@ public class ResponseTracker implements Runnable {
     }
 
     private void handleFailure(ResponseTracking tracking, JsonNode id) {
-        runningCalls.remove(id);
+        this.runningCalls.remove(id);
         removeRequestFromTracking(id);
         tracking.getCall().addResponse(buildFailedResponse(tracking.getRequest()));
-
-        if (this.failedConnections < MAX_FAILED_CONNECTIONS) {
-            this.failedConnections++;
-        } else {
-            this.failedConnections = 0;
-            tracking.getClient().disconnect();
-        }
     }
 }
