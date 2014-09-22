@@ -50,7 +50,7 @@ HELPERS_PER_DOMAIN = config.getint("irs", "process_pool_max_slots_per_domain")
 _procLock = threading.Lock()
 _proc = {}
 
-log = logging.getLogger('oop')
+log = logging.getLogger('Storage.oop')
 
 
 def setDefaultImpl(impl):
