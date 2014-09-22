@@ -207,11 +207,12 @@ def nonChangingOperstate(device):
 
 
 def _cleanup_qos_definition(qos):
-    for curve, attrs in qos.items():
-        if float(attrs.get('m1')) == 0.0:
-            del attrs['m1']
-        if attrs.get('d') == 0:
-            del attrs['d']
+    for key, value in qos.items():
+        for curve, attrs in value.items():
+            if float(attrs.get('m1')) == 0.0:
+                del attrs['m1']
+            if attrs.get('d') == 0:
+                del attrs['d']
 
 
 @expandPermutations
@@ -235,7 +236,7 @@ class NetworkTest(TestCaseBase):
         return wrapper
 
     def assertNetworkExists(self, networkName, bridged=None, bridgeOpts=None,
-                            qosOutbound=None):
+                            hostQos=None):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
         self.assertIn(networkName, netinfo.networks)
@@ -245,10 +246,10 @@ class NetworkTest(TestCaseBase):
             appliedOpts = netinfo.bridges[networkName]['opts']
             for opt, value in bridgeOpts.iteritems():
                 self.assertEqual(value, appliedOpts[opt])
-        if qosOutbound is not None:
-            reported_qos = netinfo.networks[networkName]['qosOutbound']
+        if hostQos is not None:
+            reported_qos = netinfo.networks[networkName]['hostQos']
             _cleanup_qos_definition(reported_qos)
-            self.assertEqual(reported_qos, qosOutbound)
+            self.assertEqual(reported_qos, hostQos)
         if config is not None:
             self.assertIn(networkName, config.networks)
             if bridged is not None:
@@ -2101,22 +2102,23 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @ValidateRunningAsRoot
     def testSetupNetworkOutboundQos(self, bridged):
-        shape = {
-            'ls': {
-                'm1': 4.0 * 1000 ** 2,  # 4Mbit/s
-                'd': 100 * 1000,  # 100 microseconds
-                'm2': 3.0 * 1000 ** 2},  # 3Mbit/s
-            'ul': {
-                'm2': 8 * 1000 ** 2}}  # 8Mbit/s
+        hostQos = {
+            'out': {
+                'ls': {
+                    'm1': 4.0 * 1000 ** 2,  # 4Mbit/s
+                    'd': 100 * 1000,  # 100 microseconds
+                    'm2': 3.0 * 1000 ** 2},  # 3Mbit/s
+                'ul': {
+                    'm2': 8 * 1000 ** 2}}}  # 8Mbit/s
         with dummyIf(1) as nics:
             nic, = nics
             attrs = {'vlan': VLAN_ID, 'nic': nic, 'bridged': bridged,
-                     'qosOutbound': shape}
+                     'hostQos': hostQos}
             status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
                                                        attrs}, {}, NOCHK)
 
             self.assertEqual(status, SUCCESS, msg)
-            self.assertNetworkExists(NETWORK_NAME, qosOutbound=shape)
+            self.assertNetworkExists(NETWORK_NAME, hostQos=hostQos)
 
             # Cleanup
             status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:

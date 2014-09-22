@@ -137,7 +137,7 @@ def _report_network_qos(caps):
                    cls['kind'] == 'hfsc']
         if classes:
             cls, = classes
-            attrs['qosOutbound'] = cls['hfsc']
+            attrs['hostQos'] = {'out': cls['hfsc']}
 
 
 class Architecture:

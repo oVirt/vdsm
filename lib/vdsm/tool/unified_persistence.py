@@ -29,7 +29,7 @@ from .upgrade import apply_upgrade
 
 UPGRADE_NAME = 'upgrade-unified-persistence'
 NET_ATTR_WHITELIST = {'mtu': lambda value: int(value),
-                      'qosOutbound': lambda value: value,
+                      'hostQos': lambda value: value,
                       'stp': lambda value: utils.tobool(value)}
 
 # TODO: Upgrade currently gets bootproto from ifcfg files,

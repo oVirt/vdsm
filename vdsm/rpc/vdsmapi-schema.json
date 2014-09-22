@@ -63,7 +63,7 @@
 #
 # @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
 #
-# @qosOutbound:     #optional BandwidthParams for outgoing traffic.
+# @hostQos:         #optional Host networking QoS params.
 #
 # Since: 4.10.0
 ##
@@ -71,7 +71,7 @@
  'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
           '*bootproto': 'str', '*bondingOptions', 'str',
           '*blockingdhcp': 'bool',
-          '*qosOutbound': 'HostBandwidthParams'}}
+          '*hostQos': 'HostQoSParams'}}
 
 ##
 # @Host.addNetwork:
@@ -162,7 +162,7 @@
 #
 # @remove:        #optional If True, remove existing network only
 #
-# @qosOutbound:   #optional HostBandwidthParams for outgoing traffic.
+# @hostQos:       #optional host traffic QoS params.
 #
 # @defaultRoute:  #optional boolean - Is this network's gateway the host's
 #                 default gateway?
@@ -176,7 +176,7 @@
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
           '*remove': 'bool',
-          '*qosOutbound': 'BandwidthParams',
+          '*hostQos': 'HostQoSParams',
           '*defaultRoute': 'bool',
           '*custom': 'StringMap'}}
 ##
@@ -685,7 +685,7 @@
 # @bridged:     Always True to distinguish this type from
 #               @NetInfoBridgelessNetwork
 #
-# @qosOutbound: #optional HostBandwidthParams for outgoing traffic.
+# @hostQos:     #optional host traffic QoS params.
 #
 # @opts:        A map containing information about the bridge specific options.
 #               (new in version 4.15.0)
@@ -697,8 +697,8 @@
  'data': {'ports': ['str'], 'stp': 'bool', 'bootproto4': 'str', 'addr': 'str',
           'netmask': 'str', 'gateway': 'str', 'ipv4addrs': ['str'],
           'ipv6addrs': ['str'], 'ipv6gateway': 'str', 'mtu': 'uint',
-          'cfg': 'StringMap', 'bridged': 'bool',
-          '*qosOutbound': 'HostBandwidthParams', 'opts': 'StringMap'}}
+          'cfg': 'StringMap', 'bridged': 'bool', '*hostQos': 'HostQoSParams',
+          'opts': 'StringMap'}}
 
 ##
 # @NetInfoBridgelessNetwork:
@@ -2627,6 +2627,19 @@
 {'type': 'BandwidthParams',
  'data': {'average': 'uint', '*burst': 'uint', '*peak': 'uint'}}
 
+
+##
+# @HostQoSParams:
+#
+# Host networking QoS parameters. Outbound only for now
+#
+# @out: #optional upper limit curve, puts an absolute cap to the traffic class
+#      traffic.
+#
+# Since: 4.17.0
+##
+{'type': 'HostQoSParams',
+ 'data': {'*out': 'HostBandwidthParams'}}
 
 ##
 # @HostBandwidthParams:

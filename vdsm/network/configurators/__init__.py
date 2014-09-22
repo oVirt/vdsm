@@ -114,8 +114,10 @@ class Configurator(object):
     def removeLibvirtNetwork(self, network):
         self.configApplier.removeLibvirtNetwork(network)
 
-    def configureQoS(self, qosOutbound, top_device):
-        qos.configure_outbound(qosOutbound, top_device)
+    def configureQoS(self, hostQos, top_device):
+        out = hostQos.get('out')
+        if out is not None:
+            qos.configure_outbound(out, top_device)
 
     def removeQoS(self, top_device):
         qos.remove_outbound(top_device)
