@@ -430,21 +430,27 @@ class Image:
                 try:
                     dstVol = destDom.produceVolume(imgUUID=imgUUID,
                                                    volUUID=srcVol.volUUID)
-                    srcFmt = srcVol.getFormat()
-                    if srcFmt == volume.RAW_FORMAT:
-                        srcFmtStr = volume.fmt2str(srcFmt)
-                        dstFmtStr = volume.fmt2str(dstVol.getFormat())
-                        self.log.debug("start qemu convert")
-                        qemuimg.convert(srcVol.getVolumePath(),
-                                        dstVol.getVolumePath(),
-                                        vars.task.aborting,
-                                        srcFmtStr, dstFmtStr)
+                    srcFormat = volume.fmt2str(srcVol.getFormat())
+                    dstFormat = volume.fmt2str(dstVol.getFormat())
+
+                    parentVol = dstVol.getParentVolume()
+
+                    if parentVol is not None:
+                        backing = volume.getBackingVolumePath(
+                            imgUUID, parentVol.volUUID)
+                        backingFormat = volume.fmt2str(parentVol.getFormat())
                     else:
-                        srcSize = srcVol.getVolumeSize(bs=1)
-                        misc.ddWatchCopy(srcVol.getVolumePath(),
-                                         dstVol.getVolumePath(),
-                                         vars.task.aborting,
-                                         size=srcSize)
+                        backing = None
+                        backingFormat = None
+
+                    self.log.debug("start qemu convert")
+                    qemuimg.convert(srcVol.getVolumePath(),
+                                    dstVol.getVolumePath(),
+                                    vars.task.aborting,
+                                    srcFormat=srcFormat,
+                                    dstFormat=dstFormat,
+                                    backing=backing,
+                                    backingFormat=backingFormat)
                 except ActionStopped:
                     raise
                 except se.StorageException:
