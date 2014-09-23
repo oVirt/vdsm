@@ -115,7 +115,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
 
     if format:
         cmd.extend(("-f", format))
-        if format == FORMAT.QCOW2 and _supports_qcow2_compat():
+        if format == FORMAT.QCOW2 and _supports_qcow2_compat('create'):
             cmd.extend(('-o', 'compat=' + QCOW2_COMPAT))
 
     if backing:
@@ -137,12 +137,24 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
         raise QImgError(rc, out, err)
 
 
-def _supports_qcow2_compat():
+def _supports_qcow2_compat(command):
     """
+    qemu-img "create" and "convert" commands support a "compat" option in
+    recent versions. This will run the specified command using the "-o ?"
+    option to find if "compat" option is available.
+
+    Raises KeyError if called with another command.
+
     TODO: Remove this when qemu versions providing the "compat" option are
     available on all platforms.
     """
-    cmd = [_qemuimg.cmd, "create", "-f", FORMAT.QCOW2, "-o", "?", "/dev/null"]
+    # Older qemu-img requires all filenames although unneeded
+    args = {"create": ("-f", ("/dev/null",)),
+            "convert": ("-O", ("/dev/null", "/dev/null"))}
+    flag, dummy_files = args[command]
+
+    cmd = [_qemuimg.cmd, command, flag, FORMAT.QCOW2, "-o", "?"]
+    cmd.extend(dummy_files)
 
     rc, out, err = utils.execCmd(cmd, raw=True)
 
@@ -188,6 +200,8 @@ def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None):
 
     if dstFormat:
         cmd.extend(("-O", dstFormat))
+        if dstFormat == FORMAT.QCOW2 and _supports_qcow2_compat('convert'):
+            cmd.extend(('-o', 'compat=' + QCOW2_COMPAT))
 
     cmd.append(dstImage)
 
