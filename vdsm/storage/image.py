@@ -93,6 +93,7 @@ class Image:
     """
     log = logging.getLogger('Storage.Image')
     _fakeTemplateLock = threading.Lock()
+    _QEMU_LOGGING_INTERVAL = 60.0
 
     @classmethod
     def createImageRollback(cls, taskObj, imageDir):
@@ -109,6 +110,17 @@ class Image:
 
     def __init__(self, repoPath):
         self.repoPath = repoPath
+
+    def _wait_for_qemuimg_operation(self, operation):
+        self.log.debug('waiting for qemu-img operation to complete')
+
+        with vars.task.abort_callback(operation.abort):
+            while not operation.finished:
+                operation.wait(self._QEMU_LOGGING_INTERVAL)
+                self.log.debug('qemu-img operation progress: %s%%',
+                               operation.progress)
+
+        self.log.debug('qemu-img operation has completed')
 
     def create(self, sdUUID, imgUUID):
         """Create placeholder for image's volumes
@@ -443,14 +455,14 @@ class Image:
                         backing = None
                         backingFormat = None
 
-                    self.log.debug("start qemu convert")
-                    qemuimg.convert(srcVol.getVolumePath(),
-                                    dstVol.getVolumePath(),
-                                    vars.task.aborting,
-                                    srcFormat=srcFormat,
-                                    dstFormat=dstFormat,
-                                    backing=backing,
-                                    backingFormat=backingFormat)
+                    operation = qemuimg.convert(
+                        srcVol.getVolumePath(),
+                        dstVol.getVolumePath(),
+                        srcFormat=srcFormat,
+                        dstFormat=dstFormat,
+                        backing=backing,
+                        backingFormat=backingFormat)
+                    self._wait_for_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
                 except se.StorageException:
@@ -830,10 +842,12 @@ class Image:
                 dstVol.prepare(rw=True, setrw=True)
 
                 try:
-                    qemuimg.convert(volParams['path'], dstPath,
-                                    vars.task.aborting,
-                                    volume.fmt2str(volParams['volFormat']),
-                                    volume.fmt2str(dstVolFormat))
+                    operation = qemuimg.convert(
+                        volParams['path'],
+                        dstPath,
+                        srcFormat=volume.fmt2str(volParams['volFormat']),
+                        dstFormat=volume.fmt2str(dstVolFormat))
+                    self._wait_for_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
                 except qemuimg.QImgError as e:
@@ -1071,11 +1085,12 @@ class Image:
                 # Step 2: Convert successor to new volume
                 #   qemu-img convert -f qcow2 successor -O raw newUUID
                 try:
-                    qemuimg.convert(srcVolParams['path'],
-                                    newVol.getVolumePath(),
-                                    vars.task.aborting,
-                                    volume.fmt2str(srcVolParams['volFormat']),
-                                    volume.fmt2str(volParams['volFormat']))
+                    operation = qemuimg.convert(
+                        srcVolParams['path'],
+                        newVol.getVolumePath(),
+                        srcFormat=volume.fmt2str(srcVolParams['volFormat']),
+                        dstFormat=volume.fmt2str(volParams['volFormat']))
+                    self._wait_for_qemuimg_operation(operation)
                 except qemuimg.QImgError:
                     self.log.exception('conversion failure for volume %s',
                                        srcVol.volUUID)

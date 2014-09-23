@@ -19,14 +19,20 @@
 #
 
 from __future__ import absolute_import
+import logging
 import os
 import re
 import signal
 
+from cpopen import CPopen
+
 from . import utils
+from . import cmdutils
 
 _qemuimg = utils.CommandPath("qemu-img",
                              "/usr/bin/qemu-img",)  # Fedora, EL6
+
+_log = logging.getLogger("QemuImg")
 
 
 class FORMAT:
@@ -168,9 +174,9 @@ def check(image, format=None):
     raise QImgError(rc, out, err, "unable to parse qemu-img check output")
 
 
-def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None,
+def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
             backing=None, backingFormat=None):
-    cmd = [_qemuimg.cmd, "convert", "-t", "none"]
+    cmd = [_qemuimg.cmd, "convert", "-p", "-t", "none"]
     options = []
     cwdPath = None
 
@@ -201,14 +207,85 @@ def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None,
 
     cmd.append(dstImage)
 
-    (rc, out, err) = utils.watchCmd(
-        cmd, cwd=cwdPath, stop=stop, nice=utils.NICENESS.HIGH,
-        ioclass=utils.IOCLASS.IDLE)
+    return QemuImgOperation(cmd, cwd=cwdPath)
 
-    if rc != 0:
-        raise QImgError(rc, out, err)
 
-    return (rc, out, err)
+class QemuImgOperation(object):
+    REGEXPR = re.compile(r'\s*\(([\d.]+)/100%\)\s*')
+
+    def __init__(self, cmd, cwd=None):
+        self._aborted = False
+        self._progress = 0.0
+
+        self._stdout = bytearray()
+        self._stderr = bytearray()
+
+        cmd = cmdutils.wrap_command(cmd, with_nice=utils.NICENESS.HIGH,
+                                    with_ioclass=utils.IOCLASS.IDLE)
+        _log.debug(cmdutils.command_log_line(cmd, cwd=cwd))
+        self._command = CPopen(cmd, cwd=cwd, deathSignal=signal.SIGKILL)
+        self._stream = utils.CommandStream(
+            self._command, self._recvstdout, self._recvstderr)
+
+    def _recvstderr(self, buffer):
+        self._stderr += buffer
+
+    def _recvstdout(self, buffer):
+        self._stdout += buffer
+
+        # Checking the presence of '\r' before splitting will prevent
+        # generating the array when it's not needed.
+        try:
+            idx = self._stdout.rindex('\r')
+        except ValueError:
+            return
+
+        # qemu-img updates progress by printing \r (0.00/100%) to standard out.
+        # The output could end with a partial progress so we must discard
+        # everything after the last \r and then try to parse a progress record.
+        valid_progress = self._stdout[:idx]
+        last_progress = valid_progress.rsplit('\r', 1)[-1]
+
+        # No need to keep old progress information around
+        del self._stdout[:idx + 1]
+
+        m = self.REGEXPR.match(last_progress)
+        if m is None:
+            raise ValueError('Unable to parse: "%r"' % last_progress)
+
+        self._progress = float(m.group(1))
+
+    @property
+    def progress(self):
+        return self._progress
+
+    @property
+    def error(self):
+        return str(self._stderr)
+
+    @property
+    def finished(self):
+        return self._command.poll() is not None
+
+    def wait(self, timeout=None):
+        self._stream.receive(timeout=timeout)
+
+        if not self._stream.closed:
+            return
+
+        self._command.wait()
+
+        if self._aborted:
+            raise utils.ActionStopped()
+
+        cmdutils.retcode_log_line(self._command.returncode, self.error)
+        if self._command.returncode != 0:
+            raise QImgError(self._command.returncode, "", self.error)
+
+    def abort(self):
+        if self._command.poll() is None:
+            self._aborted = True
+            self._command.terminate()
 
 
 def resize(image, newSize, format=None):
