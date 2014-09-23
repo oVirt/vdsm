@@ -160,8 +160,11 @@ def check(image, format=None):
     return check
 
 
-def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None):
+def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None,
+            backing=None, backingFormat=None):
     cmd = [_qemuimg.cmd, "convert", "-t", "none"]
+    options = []
+    cwdPath = None
 
     if srcFormat:
         cmd.extend(("-f", srcFormat))
@@ -171,12 +174,25 @@ def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None):
     if dstFormat:
         cmd.extend(("-O", dstFormat))
         if dstFormat == FORMAT.QCOW2 and _supports_qcow2_compat('convert'):
-            cmd.extend(('-o', 'compat=' + QCOW2_COMPAT))
+            options.append('compat=' + QCOW2_COMPAT)
+
+    if backing:
+        if not os.path.isabs(backing):
+            cwdPath = os.path.dirname(srcImage)
+
+        options.append('backing_file=' + str(backing))
+
+        if backingFormat:
+            options.append('backing_fmt=' + str(backingFormat))
+
+    if options:
+        cmd.extend(('-o', ','.join(options)))
 
     cmd.append(dstImage)
 
     (rc, out, err) = utils.watchCmd(
-        cmd, stop=stop, nice=utils.NICENESS.HIGH, ioclass=utils.IOCLASS.IDLE)
+        cmd, cwd=cwdPath, stop=stop, nice=utils.NICENESS.HIGH,
+        ioclass=utils.IOCLASS.IDLE)
 
     if rc != 0:
         raise QImgError(rc, out, err)
