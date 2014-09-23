@@ -795,10 +795,6 @@ class Volume(APIBase):
         return self._irs.getVolumeInfo(self._sdUUID, self._spUUID,
                                        self._imgUUID, self._UUID)
 
-    def getPath(self):
-        return self._irs.getVolumePath(self._sdUUID, self._spUUID,
-                                       self._imgUUID, self._UUID)
-
     def getSize(self):
         return self._irs.getVolumeSize(self._sdUUID, self._spUUID,
                                        self._imgUUID, self._UUID)

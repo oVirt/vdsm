@@ -3156,34 +3156,6 @@ class HSM(object):
         return dict(info=info)
 
     @public
-    def getVolumePath(self, sdUUID, spUUID, imgUUID, volUUID, options=None):
-        """
-        Gets the path to a volume.
-
-        .. warning::
-            This method is obsolete and is kept only for testing purposes;
-            use prepareImage instead.
-
-        :param sdUUID: The UUID of the storage domain that owns the volume.
-        :type sdUUID: UUID
-        :param spUUID: The UUID of the storage pool that owns the volume.
-        :type spUUID: UUID
-        :param imgUUID: The UUID of the image contained on the volume.
-        :type imgUUID: UUID
-        :param volUUID: The UUID of the volume you want to get it's path.
-        :type volUUID: UUID
-        :param options: ?
-
-        :returns: a dict with the path to the volume.
-        :rtype: dict
-        """
-        vars.task.getSharedLock(STORAGE, sdUUID)
-        path = sdCache.produce(
-            sdUUID=sdUUID).produceVolume(imgUUID=imgUUID,
-                                         volUUID=volUUID).getVolumePath()
-        return dict(path=path)
-
-    @public
     def appropriateDevice(self, guid, thiefId):
         """
         Change ownership of the guid device to vdsm:qemu

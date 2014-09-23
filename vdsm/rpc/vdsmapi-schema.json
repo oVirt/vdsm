@@ -7592,29 +7592,6 @@
  'returns': 'VolumeInfo'}
 
 ##
-# @Volume.getPath:
-#
-# Get the path to the Volume in the host's storage repository.
-#
-# @volumeID:         The UUID of the Volume
-#
-# @storagepoolID:    The Storage Pool associated with the Volume
-#
-# @storagedomainID:  The Storage Domain associated with the Volume
-#
-# @imageID:          The Image associated with the Volume
-#
-# Returns:
-# The Volume's storage repository path
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'Volume', 'name': 'getPath'},
- 'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
-          'storagedomainID': 'UUID', 'imageID': 'UUID'},
- 'returns': 'str'}
-
-##
 # @VolumeSizeInfo:
 #
 # Volume size information:

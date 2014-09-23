@@ -10,7 +10,6 @@ Device
 
 Volume
 ------
-.. automethod:: vdsm.storage.hsm.HSM.getVolumePath
 .. automethod:: vdsm.storage.hsm.HSM.getVolumeSize
 .. automethod:: vdsm.storage.hsm.HSM.prepareVolume
 .. automethod:: vdsm.storage.hsm.HSM.teardownVolume

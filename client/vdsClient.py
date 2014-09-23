@@ -1051,16 +1051,6 @@ class service:
             print "\t%s = %s" % (element, info['info'][element])
         return 0, ''
 
-    def getVolumePath(self, args):
-        sdUUID = args[0]
-        spUUID = args[1]
-        imgUUID = args[2]
-        uuid = args[3]
-        info = self.s.getVolumePath(sdUUID, spUUID, imgUUID, uuid)
-        if info['status']['code']:
-            return info['status']['code'], info['status']['message']
-        return 0, info['path']
-
     def getVolumeSize(self, args):
         sdUUID = args[0]
         spUUID = args[1]
@@ -2398,10 +2388,6 @@ if __name__ == '__main__':
             '<spUUID> <sdUUID> <imgUUID> <volUUID> <newSize>',
             'Extend the volume size (virtual disk size seen by the guest).',
         )),
-        'getVolumePath': (serv.getVolumePath,
-                          ('<sdUUID> <spUUID> <imgUUID> <volume uuid>',
-                           'Returns the path to the requested uuid'
-                           )),
         'setVolumeDescription': (serv.setVolumeDescription,
                                  ('<sdUUID> <spUUID> <imgUUID> <volUUID> '
                                   '<Description>',

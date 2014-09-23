@@ -862,10 +862,6 @@ class BindingXMLRPC(object):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.getInfo()
 
-    def volumeGetPath(self, sdUUID, spUUID, imgUUID, volUUID):
-        volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
-        return volume.getPath()
-
     def volumeGetSize(self, sdUUID, spUUID, imgUUID, volUUID):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.getSize()
@@ -1099,7 +1095,6 @@ class BindingXMLRPC(object):
                 (self.volumeCreate, 'createVolume'),
                 (self.volumeExtendSize, 'extendVolumeSize'),
                 (self.volumeGetInfo, 'getVolumeInfo'),
-                (self.volumeGetPath, 'getVolumePath'),
                 (self.volumeGetSize, 'getVolumeSize'),
                 (self.volumeSetSize, 'volumeSetSize'),
                 (self.volumeRefresh, 'refreshVolume'),
