@@ -434,8 +434,7 @@ class Volume(object):
                                      preallocate, volParent, srcImgUUID,
                                      srcVolUUID, volPath)
             except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume) as e:
-                cls.log.error("Failed to create volume: %s, volume already "
-                              "exists", volPath)
+                cls.log.error("Failed to create volume %s: %s", volPath, e)
                 vars.task.popRecovery()
                 raise e
             # When the volume format is raw what the guest sees is the apparent
