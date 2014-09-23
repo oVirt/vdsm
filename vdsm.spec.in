@@ -1430,6 +1430,9 @@ exit 0
 %{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{python_sitelib}/vdsmapi.py*
 %{python_sitelib}/yajsonrpc/__init__.py*
+%if ! 0%{?with_gluster}
+%exclude %{_datadir}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
+%endif
 
 %files yajsonrpc
 %dir %{python_sitelib}/yajsonrpc
