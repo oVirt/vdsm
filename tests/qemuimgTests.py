@@ -19,36 +19,38 @@
 #
 
 from testlib import VdsmTestCase as TestCaseBase
+import monkeypatch
 from vdsm import qemuimg
 from vdsm import utils
 
+QEMU_IMG = qemuimg._qemuimg.cmd
 
-class FakeExecCmd(object):
 
-    def __init__(self, *calls):
+class FakeCmd(object):
+
+    def __init__(self, module, name, *calls):
+        self.patch = monkeypatch.Patch([(module, name, self)])
         self.calls = list(calls)
-        self.saved = None
 
     def __call__(self, cmd, **kw):
         call = self.calls.pop(0)
         return call(cmd, **kw)
 
     def __enter__(self):
-        self.saved = utils.execCmd
-        utils.execCmd = self
+        self.patch.apply()
 
     def __exit__(self, t=None, v=None, tb=None):
-        utils.execCmd = self.saved
+        self.patch.revert()
 
 
-class QemuimgTests(TestCaseBase):
+class InfoTests(TestCaseBase):
 
     def test_parse_error(self):
         def call(cmd, **kw):
             out = ["image: leaf.img", "invalid file format line"]
             return 0, out, []
 
-        with FakeExecCmd(call):
+        with FakeCmd(utils, 'execCmd', call):
             self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
 
     def test_qemu1_no_backing_file(self):
@@ -60,7 +62,7 @@ class QemuimgTests(TestCaseBase):
                    "cluster_size: 65536"]
             return 0, out, []
 
-        with FakeExecCmd(call):
+        with FakeCmd(utils, 'execCmd', call):
             info = qemuimg.info('leaf.img')
             self.assertNotIn('backingfile', info)
 
@@ -74,7 +76,7 @@ class QemuimgTests(TestCaseBase):
                    "backing file: base.img (actual path: /tmp/base.img)"]
             return 0, out, []
 
-        with FakeExecCmd(call):
+        with FakeCmd(utils, 'execCmd', call):
             info = qemuimg.info('leaf.img')
             self.assertEquals('base.img', info['backingfile'])
 
@@ -90,7 +92,7 @@ class QemuimgTests(TestCaseBase):
                    "    lazy refcounts: false"]
             return 0, out, []
 
-        with FakeExecCmd(call):
+        with FakeCmd(utils, 'execCmd', call):
             info = qemuimg.info('leaf.img')
             self.assertEquals('qcow2', info['format'])
             self.assertEquals(1073741824, info['virtualsize'])
@@ -109,48 +111,96 @@ class QemuimgTests(TestCaseBase):
                    "    lazy refcounts: false"]
             return 0, out, []
 
-        with FakeExecCmd(call):
+        with FakeCmd(utils, 'execCmd', call):
             info = qemuimg.info('leaf.img')
             self.assertEquals('base.img', info['backingfile'])
 
 
-class QemuimgCreateTests(TestCaseBase):
+class CreateTests(TestCaseBase):
 
     def test_no_format(self):
-
-        def create_no_format(cmd, **kw):
-            assert cmd == [qemuimg._qemuimg.cmd, 'create', 'image']
+        def create(cmd, **kw):
+            expected = [QEMU_IMG, 'create', 'image']
+            self.assertEqual(cmd, expected)
             return 0, '', ''
 
-        with FakeExecCmd(create_no_format):
+        with FakeCmd(utils, 'execCmd', create):
             qemuimg.create('image')
 
-    def test_qcow2_compat_not_supported(self):
-
-        def qcow2_compat_not_supported(cmd, **kw):
-            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2', '-o',
-                           '?', '/dev/null']
+    def test_qcow2_compat_unsupported(self):
+        def qcow2_compat_unsupported(cmd, **kw):
+            self.check_supports_qcow2_compat(cmd, **kw)
             return 0, 'Supported options:\nsize ...\n', ''
 
-        def create_qcow2_no_compat(cmd, **kw):
-            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2',
-                           'image']
+        def create(cmd, **kw):
+            expected = [QEMU_IMG, 'create', '-f', 'qcow2', 'image']
+            self.assertEqual(cmd, expected)
             return 0, '', ''
 
-        with FakeExecCmd(qcow2_compat_not_supported, create_qcow2_no_compat):
+        with FakeCmd(utils, 'execCmd', qcow2_compat_unsupported, create):
             qemuimg.create('image', format='qcow2')
 
     def test_qcow2_compat_supported(self):
-
         def qcow2_compat_supported(cmd, **kw):
-            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2', '-o',
-                           '?', '/dev/null']
+            self.check_supports_qcow2_compat(cmd, **kw)
             return 0, 'Supported options:\ncompat ...\n', ''
 
-        def create_qcow2_compat(cmd, **kw):
-            assert cmd == [qemuimg._qemuimg.cmd, 'create', '-f', 'qcow2', '-o',
-                           'compat=0.10', 'image']
+        def create(cmd, **kw):
+            expected = [QEMU_IMG, 'create', '-f', 'qcow2', '-o', 'compat=0.10',
+                        'image']
+            self.assertEqual(cmd, expected)
             return 0, '', ''
 
-        with FakeExecCmd(qcow2_compat_supported, create_qcow2_compat):
+        with FakeCmd(utils, 'execCmd', qcow2_compat_supported, create):
             qemuimg.create('image', format='qcow2')
+
+    def check_supports_qcow2_compat(self, cmd, **kw):
+        expected = [QEMU_IMG, 'create', '-f', 'qcow2', '-o', '?', '/dev/null']
+        self.assertEqual(cmd, expected)
+
+
+class ConvertTests(TestCaseBase):
+
+    def test_no_format(self):
+        def convert(cmd, **kw):
+            expected = [QEMU_IMG, 'convert', '-t', 'none', 'src', 'dst']
+            self.assertEqual(cmd, expected)
+            return 0, '', ''
+
+        with FakeCmd(utils, 'watchCmd', convert):
+            qemuimg.convert('src', 'dst', True)
+
+    def test_qcow2_compat_unsupported(self):
+        def qcow2_compat_unsupported(cmd, **kw):
+            self.check_supports_qcow2_compat(cmd, **kw)
+            return 0, 'Supported options:\nsize ...\n', ''
+
+        def convert(cmd, **kw):
+            expected = [QEMU_IMG, 'convert', '-t', 'none', 'src', '-O',
+                        'qcow2', 'dst']
+            self.assertEqual(cmd, expected)
+            return 0, '', ''
+
+        with FakeCmd(utils, 'execCmd', qcow2_compat_unsupported):
+            with FakeCmd(utils, 'watchCmd', convert):
+                qemuimg.convert('src', 'dst', True, dstFormat='qcow2')
+
+    def test_qcow2_compat_supported(self):
+        def qcow2_compat_supported(cmd, **kw):
+            self.check_supports_qcow2_compat(cmd, **kw)
+            return 0, 'Supported options:\ncompat ...\n', ''
+
+        def convert(cmd, **kw):
+            expected = [QEMU_IMG, 'convert', '-t', 'none', 'src', '-O',
+                        'qcow2', '-o', 'compat=0.10', 'dst']
+            self.assertEqual(cmd, expected)
+            return 0, '', ''
+
+        with FakeCmd(utils, 'execCmd', qcow2_compat_supported):
+            with FakeCmd(utils, 'watchCmd', convert):
+                qemuimg.convert('src', 'dst', True, dstFormat='qcow2')
+
+    def check_supports_qcow2_compat(self, cmd, **kw):
+        expected = [QEMU_IMG, 'convert', '-O', 'qcow2', '-o', '?', '/dev/null',
+                    '/dev/null']
+        self.assertEqual(cmd, expected)
