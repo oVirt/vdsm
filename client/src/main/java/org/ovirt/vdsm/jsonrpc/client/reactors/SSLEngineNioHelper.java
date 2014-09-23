@@ -19,6 +19,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
  */
 public class SSLEngineNioHelper {
 
+    private final static int MAX_ATTEMPTS = 10;
     private final SocketChannel channel;
     private final SSLEngine engine;
     private final ByteBuffer appBuffer;
@@ -88,10 +89,19 @@ public class SSLEngineNioHelper {
 
     public void write(ByteBuffer buff) throws IOException {
         if (buff != this.appBuffer) {
+            int attempts = 0;
             while (buff.hasRemaining()) {
-                this.engine.wrap(buff, this.packetBuffer);
+                SSLEngineResult result = this.engine.wrap(buff, this.packetBuffer);
                 this.packetBuffer.flip();
-                this.channel.write(this.packetBuffer);
+                int written = this.channel.write(this.packetBuffer);
+                if (result.bytesConsumed() == 0 && written == 0) {
+                    attempts++;
+                    if (attempts > MAX_ATTEMPTS) {
+                        // looks like network issue we let higher logic handle timeout
+                        this.packetBuffer.clear();
+                    }
+                }
+
                 this.packetBuffer.compact();
             }
             return;

@@ -1,11 +1,14 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors;
 
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.getTimeout;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.rmi.ConnectException;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -91,8 +94,16 @@ public abstract class ReactorClient {
                             final InetSocketAddress addr = new InetSocketAddress(address, port);
                             final SocketChannel socketChannel = SocketChannel.open();
 
-                            socketChannel.connect(addr);
                             socketChannel.configureBlocking(false);
+                            socketChannel.connect(addr);
+
+                            long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
+                            while(!socketChannel.finishConnect() ){
+                                if (System.currentTimeMillis() >= timeout) {
+                                    throw new ConnectException("Connection timeout");
+                                }
+                            }
+
                             updateLastHeartbeat();
 
                             return socketChannel;
