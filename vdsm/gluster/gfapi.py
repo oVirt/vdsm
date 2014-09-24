@@ -82,9 +82,9 @@ def glfsFini(fs, volumeId):
 
 
 @makePublic
-def volumeStatvfs(volumeId, host=GLUSTER_VOL_HOST,
-                  port=GLUSTER_VOL_PORT,
-                  protocol=GLUSTER_VOL_PROTOCAL):
+def volumeStatvfsGet(volumeId, host=GLUSTER_VOL_HOST,
+                     port=GLUSTER_VOL_PORT,
+                     protocol=GLUSTER_VOL_PROTOCAL):
     statvfsdata = StatVfsStruct()
 
     fs = glfsInit(volumeId, host, port, protocol)
@@ -134,3 +134,78 @@ _glfs_statvfs = ctypes.CFUNCTYPE(ctypes.c_int,
                                  ctypes.c_void_p,
                                  ctypes.c_char_p,
                                  ctypes.c_void_p)(('glfs_statvfs', _lib))
+
+
+# This is a workaround for memory leak caused by the
+# libgfapi(BZ:1093594) used to get volume statistics.
+# Memory accumulates every time the api is invoked to
+# avoid that, this file is executed as script.This is
+# a temporary fix for BZ:1142647. This can be reverted
+# back once the memory leak issue is fixed in libgfapi.
+
+import sys
+import json
+import argparse
+
+from vdsm import constants
+from vdsm import utils
+
+
+@makePublic
+def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
+                  port=GLUSTER_VOL_PORT,
+                  protocol=GLUSTER_VOL_PROTOCAL):
+    module = "gluster.gfapi"
+    command = [constants.EXT_PYTHON, '-m', module, '-v', volumeName,
+               '-p', str(port), '-H', host, '-t', protocol]
+
+    # to include /usr/share/vdsm in python path
+    env = os.environ.copy()
+    env['PYTHONPATH'] = "%s:%s" % (
+        env.get("PYTHONPATH", ""), constants.P_VDSM)
+    env['PYTHONPATH'] = ":".join(map(os.path.abspath,
+                                     env['PYTHONPATH'].split(":")))
+
+    rc, out, err = utils.execCmd(command, raw=True, env=env)
+    if rc != 0:
+        raise ge.GlfsStatvfsException(rc, [out], [err])
+    res = json.loads(out)
+    return os.statvfs_result((res['f_bsize'],
+                              res['f_frsize'],
+                              res['f_blocks'],
+                              res['f_bfree'],
+                              res['f_bavail'],
+                              res['f_files'],
+                              res['f_ffree'],
+                              res['f_favail'],
+                              res['f_flag'],
+                              res['f_namemax']))
+
+
+# This file is modified to act as a script which can retrive
+# volume statistics using libgfapi. This can be reverted
+# after the memory leak issue is resolved in libgfapi.
+def parse_cmdargs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--volume", action="store", type=str,
+                        help="volumeName")
+    parser.add_argument("-H", "--host", action="store", type=str,
+                        default=GLUSTER_VOL_HOST, help="host name")
+    parser.add_argument("-p", "--port", action="store", type=str,
+                        default=str(GLUSTER_VOL_PORT), help="port number")
+    parser.add_argument("-t", "--protocol", action="store", type=str,
+                        default=GLUSTER_VOL_PROTOCAL, help="protocol")
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == '__main__':
+    args = parse_cmdargs()
+    res = volumeStatvfsGet(args.volume, args.host,
+                           int(args.port), args.protocol)
+    json.dump({'f_blocks': res.f_blocks, 'f_bfree': res.f_bfree,
+               'f_bsize': res.f_bsize, 'f_frsize': res.f_frsize,
+               'f_bavail': res.f_bavail, 'f_files': res.f_files,
+               'f_ffree': res.f_ffree, 'f_favail': res.f_favail,
+               'f_flag': res.f_flag, 'f_namemax': res.f_namemax},
+              sys.stdout)
