@@ -175,7 +175,7 @@ public abstract class ReactorClient {
     private void processHeartbeat() {
         if (!this.isInInit() && this.policy.isHeartbeat() && this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
             log.debug("Heartbeat exeeded. Closing channel");
-            this.closeChannel();
+            this.disconnect();
         }
     }
 

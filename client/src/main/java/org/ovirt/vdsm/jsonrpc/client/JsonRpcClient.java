@@ -24,6 +24,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 public class JsonRpcClient {
     private final ReactorClient client;
     private ResponseTracker tracker;
+    private RetryPolicy policy;
 
     /**
      * Wraps {@link ReactorClient} to hide response update details.
@@ -35,12 +36,20 @@ public class JsonRpcClient {
         this.tracker = tracker;
     }
 
-    public void setRetryPolicy(RetryPolicy policy) {
+    public void setClientRetryPolicy(RetryPolicy policy) {
         this.client.setRetryPolicy(policy);
     }
 
-    public RetryPolicy getRetryPolicy() {
+    public void setRetryPolicy(RetryPolicy policy) {
+        this.policy = policy;
+    }
+
+    public RetryPolicy getClientRetryPolicy() {
         return this.client.getRetryPolicy();
+    }
+
+    public RetryPolicy getRetryPolicy() {
+        return this.policy;
     }
 
     /**
@@ -61,10 +70,9 @@ public class JsonRpcClient {
     }
 
     private void retryCall(final JsonRpcRequest request, final JsonRpcCall call) throws ClientConnectionException {
-        RetryPolicy policy = this.client.getRetryPolicy();
         ResponseTracking tracking =
-                new ResponseTracking(request, call, new RetryContext(policy), getTimeout(policy.getRetryTimeOut(),
-                        policy.getTimeUnit()), this.client);
+                new ResponseTracking(request, call, new RetryContext(policy), getTimeout(this.policy.getRetryTimeOut(),
+                        this.policy.getTimeUnit()), this.client);
         this.tracker.registerTrackingRequest(request, tracking);
     }
 
