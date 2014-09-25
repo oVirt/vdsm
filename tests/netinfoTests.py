@@ -23,6 +23,7 @@ import os
 from datetime import datetime
 from functools import partial
 import io
+import netaddr
 import time
 
 from vdsm import ipwrapper
@@ -336,3 +337,59 @@ class TestNetinfo(TestCaseBase):
         self.assertEqual(gateway, '12.34.56.1')
         gateway = netinfo._get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
         self.assertEqual(gateway, '12.34.56.1')
+
+    @ValidateRunningAsRoot
+    def test_ip_info(self):
+        def get_ip_info(*a, **kw):
+            """filter away ipv6 link local addresses that may or may not exist
+            on the device depending on OS configuration"""
+            ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = \
+                netinfo.getIpInfo(*a, **kw)
+            ipv6addrs = [
+                addr for addr in ipv6addrs
+                if not netaddr.IPAddress(addr.split('/')[0]).is_link_local()]
+            return ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
+
+        IP_ADDR = '192.0.2.2'
+        IP_ADDR_SECOND = '192.0.2.3'
+        IP_ADDR_GW = '192.0.2.1'
+        IP_ADDR2 = '198.51.100.9'
+        IP_ADDR3 = '198.51.100.11'
+        IP_ADDR2_GW = '198.51.100.1'
+        IPV6_ADDR = '2607:f0d0:1002:51::4'
+        NET_MASK = '255.255.255.0'
+        PREFIX_LENGTH = 24
+        IPV6_PREFIX_LENGTH = 64
+        IP_ADDR_CIDR = self._cidr_form(IP_ADDR, PREFIX_LENGTH)
+        IP_ADDR_SECOND_CIDR = self._cidr_form(IP_ADDR_SECOND, PREFIX_LENGTH)
+        IP_ADDR2_CIDR = self._cidr_form(IP_ADDR2, PREFIX_LENGTH)
+        IP_ADDR3_CIDR = self._cidr_form(IP_ADDR3, 32)
+        IPV6_ADDR_CIDR = self._cidr_form(IPV6_ADDR, IPV6_PREFIX_LENGTH)
+        with dummy.device() as device:
+            ipwrapper.addrAdd(device, IP_ADDR, PREFIX_LENGTH)
+            ipwrapper.addrAdd(device, IP_ADDR_SECOND, PREFIX_LENGTH)
+            ipwrapper.addrAdd(device, IP_ADDR2, PREFIX_LENGTH)
+            ipwrapper.addrAdd(device, IPV6_ADDR, IPV6_PREFIX_LENGTH, family=6)
+            # 32 bit addresses are reported slashless by netlink
+            ipwrapper.addrAdd(device, IP_ADDR3, 32)
+            self.assertEqual(
+                get_ip_info(device),
+                (IP_ADDR, NET_MASK,
+                 [IP_ADDR_CIDR, IP_ADDR2_CIDR, IP_ADDR3_CIDR,
+                  IP_ADDR_SECOND_CIDR],
+                 [IPV6_ADDR_CIDR]))
+            self.assertEqual(
+                get_ip_info(device, ipv4_gateway=IP_ADDR_GW),
+                (IP_ADDR, NET_MASK,
+                 [IP_ADDR_CIDR, IP_ADDR2_CIDR, IP_ADDR3_CIDR,
+                  IP_ADDR_SECOND_CIDR],
+                 [IPV6_ADDR_CIDR]))
+            self.assertEqual(
+                get_ip_info(device, ipv4_gateway=IP_ADDR2_GW),
+                (IP_ADDR2, NET_MASK,
+                 [IP_ADDR_CIDR, IP_ADDR2_CIDR, IP_ADDR3_CIDR,
+                  IP_ADDR_SECOND_CIDR],
+                 [IPV6_ADDR_CIDR]))
+
+    def _cidr_form(self, ip_addr, prefix_length):
+        return '{}/{}'.format(ip_addr, prefix_length)

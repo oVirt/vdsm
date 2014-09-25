@@ -27,6 +27,7 @@ from functools import partial
 from itertools import chain
 import json
 import logging
+from netaddr import IPNetwork
 import os
 import shlex
 import socket
@@ -320,20 +321,41 @@ def getDefaultGateway():
     return Route.fromText(output[0]) if output else None
 
 
-def getIpInfo(dev, ipaddrs=None):
+def getIpInfo(dev, ipaddrs=None, ipv4_gateway=None):
+    """Report IP addresses of a device. if there are multiple primary IP
+    addresses, report in ipv4addr the one that is in the same subnet of
+    ipv4_gateway, if it is supplied."""
+    # TODO: support same logic for ipv6
+
     if ipaddrs is None:
         ipaddrs = _getIpAddrs()
     ipv4addr = ipv4netmask = ''
     ipv4addrs = []
     ipv6addrs = []
+
+    def addr_in_gw_net(address, prefix, ipv4_gw):
+        addr_net = IPNetwork('{}/{}'.format(address, prefix))
+        gw_net = IPNetwork('{}/{}'.format(ipv4_gw, prefix))
+        return addr_net in gw_net
+
     for addr in ipaddrs[dev]:
-        if addr['family'] == 'inet':
-            ipv4addrs.append(addr['address'])
-            if 'secondary' not in addr['flags']:
-                ipv4addr = addr['address'].split('/')[0]
-                ipv4netmask = prefix2netmask(addr['prefixlen'])
-        else:
-            ipv6addrs.append(addr['address'])
+        address_cidr = nl_addr.cidr_form(addr)  # x.y.z.t/N
+        if addr['family'] == 'inet':  # ipv4
+            ipv4addrs.append(address_cidr)
+            if nl_addr.is_primary(addr) and ipv4_gateway and ipv4addr == '':
+                address, prefix = nl_addr.split(addr)
+                if addr_in_gw_net(address, prefix, ipv4_gateway):
+                    ipv4addr = address
+                    ipv4netmask = str(IPNetwork(address_cidr).netmask)
+        else:  # ipv6
+            ipv6addrs.append(address_cidr)
+    if ipv4addrs and ipv4addr == '':
+        # If we didn't find an address in the gateway subnet (which is
+        # legal if there is another route that takes us to the gateway) we
+        # choose to report the first address
+        ipv4addr = ipv4addrs[0].split('/')[0]
+        ipv4netmask = str(IPNetwork(ipv4addrs[0]).netmask)
+
     return ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
 
 
@@ -466,7 +488,9 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
             # comment when the version is no longer supported.
             data['interface'] = iface
 
-        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
+        gateway = _get_gateway(routes, iface)
+        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
+            iface, ipaddrs, gateway)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
                      'dhcpv4': _dhcp_used(iface, dhcpv4_ifaces, net_attrs),
@@ -474,7 +498,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
                                           family=6),
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
-                     'gateway': _get_gateway(routes, iface),
+                     'gateway': gateway,
                      'ipv6gateway': _get_gateway(routes, iface, family=6),
                      'mtu': str(getMtu(iface))})
     except (IOError, OSError) as e:
@@ -525,12 +549,14 @@ def _vlaninfo(link):
 
 
 def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
-    ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(link.name, ipaddrs)
+    gateway = _get_gateway(routes, link.name)
+    ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
+        link.name, ipaddrs, gateway)
     info = {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
             'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
-            'gateway': _get_gateway(routes, link.name),
+            'gateway': gateway,
             'ipv6gateway': _get_gateway(routes, link.name, family=6),
             'dhcpv4': link.name in dhcpv4_ifaces,
             'dhcpv6': link.name in dhcpv6_ifaces,

@@ -57,6 +57,20 @@ def _addr_info(addr, link_cache=None):
     return data
 
 
+def split(addr):
+    """Split an addr dict from iter_addrs"""
+    # for 32bits address, the address field is slashless
+    return addr['address'].split('/')[0], addr['prefixlen']
+
+
+def cidr_form(addr):
+    return '{}/{}'.format(*split(addr))
+
+
+def is_primary(addr):
+    return 'secondary' not in addr['flags']
+
+
 def _addr_flags(addr):
     """Returns the textual representation of the address flags"""
     flags = (c_char * (CHARBUFFSIZE * 2))()
