@@ -26,25 +26,20 @@
 %endif
 
 # Required paths
-%if 0%{?fedora} >= 18
+%if 0%{?fedora}
 %global _polkitdir %{_datadir}/polkit-1/rules.d
 %else
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
-%if 0%{?fedora} >= 18 || 0%{?rhel} >= 6
 %global with_gluster 1
-%endif
 
 %if ! 0%{?rhel}
 %global with_vhostmd 1
 %endif
 
-%if 0%{?fedora} >= 15 || 0%{?rhel} >= 7
+%if 0%{?fedora} || 0%{?rhel} >= 7
 %global with_systemd 1
-%endif
-
-%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 %global with_systemd_macros 1
 %global with_tmpfiles_macro 1
 %endif
@@ -154,7 +149,7 @@ Requires: libguestfs-tools-c >= 1:1.20.11-10
 Requires: libguestfs-tools-c >= 1:1.26.7-2
 %endif
 
-%if 0%{?rhel} >= 7 || 0%{?fedora} >= 18
+%if 0%{?rhel} >= 7 || 0%{?fedora}
 Requires: libvirt-daemon >= 1.1.1
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-daemon-driver-network
@@ -594,7 +589,7 @@ such as: vendor, version, date and release
 
 %package hook-sriov
 Summary:        sr-iov support for VDSM
-%if 0%{?rhel} >= 7 || 0%{?fedora} >= 18
+%if 0%{?rhel} >= 7 || 0%{?fedora}
 Requires:       libvirt-daemon-driver-nodedev
 %endif
 BuildArch:      noarch
@@ -721,7 +716,7 @@ install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
 %endif
 
 # Install the polkit for libvirt
-%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
+%if 0%{?fedora} || 0%{?rhel} >= 7
 install -Dm 0644 vdsm/vdsm-libvirt-access.rules \
                  %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.rules
 %else
@@ -1186,7 +1181,7 @@ exit 0
 %if 0%{?rhel}
 %dir %{_localstatedir}/log/core
 %endif
-%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
+%if 0%{?fedora} || 0%{?rhel} >= 7
 %{_polkitdir}/10-vdsm-libvirt-access.rules
 %else
 %{_polkitdir}/10-vdsm-libvirt-access.pkla
