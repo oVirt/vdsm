@@ -180,14 +180,9 @@ Requires: fence-agents-all
 Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
-Requires: qemu-kvm-rhev
-Requires: qemu-img-rhev
 Requires: selinux-policy-targeted
 %else
 Requires: python
-# Update the qemu-kvm-rhev requires when block_stream will be included
-Requires: qemu-kvm-rhev >= 2:0.12.1.2-2.415.el6_5.3
-Requires: qemu-img-rhev >= 2:0.12.1.2-2.415.el6_5.3
 Requires: device-mapper-multipath >= 0.4.9-52
 Requires: e2fsprogs >= 1.41.12-11
 Requires: fence-agents
@@ -204,8 +199,6 @@ Requires: fence-agents-all
 Requires: kernel >= 3.11.3-201
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
-Requires: qemu-kvm >= 2:0.15.0-4
-Requires: qemu-img >= 2:0.15.0-4
 Requires: python-ethtool >= 0.8-1
 Requires: initscripts >= 9.42.2-1
 Requires: device-mapper-multipath >= 0.4.9-18
@@ -219,6 +212,19 @@ Requires: selinux-policy-targeted >= 3.12.1-71
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-55
 Requires: systemd >= 197-1.fc18.2
+%endif
+
+%if 0%{?rhel}
+%if 0%{?rhel} >= 7
+Requires: qemu-kvm-rhev
+Requires: qemu-img-rhev
+%else
+Requires: qemu-kvm-rhev >= 2:0.12.1.2-2.415.el6_5.3
+Requires: qemu-img-rhev >= 2:0.12.1.2-2.415.el6_5.3
+%endif
+%else
+Requires: qemu-kvm >= 2:0.15.0-4
+Requires: qemu-img >= 2:0.15.0-4
 %endif
 
 # GlusterFS client-side RPMs needed for Gluster SD
