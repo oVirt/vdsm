@@ -214,13 +214,17 @@ Requires: policycoreutils >= 2.1.13-55
 Requires: systemd >= 197-1.fc18.2
 %endif
 
+%if !%{fedora_koji_build}
+%global rhev_suffix -rhev
+%endif
+
 %if 0%{?rhel}
 %if 0%{?rhel} >= 7
-Requires: qemu-kvm-rhev
-Requires: qemu-img-rhev
+Requires: qemu-kvm%{?rhev_suffix}
+Requires: qemu-img%{?rhev_suffix}
 %else
-Requires: qemu-kvm-rhev >= 2:0.12.1.2-2.415.el6_5.3
-Requires: qemu-img-rhev >= 2:0.12.1.2-2.415.el6_5.3
+Requires: qemu-kvm%{?rhev_suffix} >= 2:0.12.1.2-2.415.el6_5.3
+Requires: qemu-img%{?rhev_suffix} >= 2:0.12.1.2-2.415.el6_5.3
 %endif
 %else
 Requires: qemu-kvm >= 2:0.15.0-4
