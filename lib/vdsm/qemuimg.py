@@ -137,36 +137,6 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
         raise QImgError(rc, out, err)
 
 
-def _supports_qcow2_compat(command):
-    """
-    qemu-img "create" and "convert" commands support a "compat" option in
-    recent versions. This will run the specified command using the "-o ?"
-    option to find if "compat" option is available.
-
-    Raises KeyError if called with another command.
-
-    TODO: Remove this when qemu versions providing the "compat" option are
-    available on all platforms.
-    """
-    # Older qemu-img requires all filenames although unneeded
-    args = {"create": ("-f", ("/dev/null",)),
-            "convert": ("-O", ("/dev/null", "/dev/null"))}
-    flag, dummy_files = args[command]
-
-    cmd = [_qemuimg.cmd, command, flag, FORMAT.QCOW2, "-o", "?"]
-    cmd.extend(dummy_files)
-
-    rc, out, err = utils.execCmd(cmd, raw=True)
-
-    if rc != 0:
-        raise QImgError(rc, out, err)
-
-    # Supported options:
-    # compat           Compatibility level (0.10 or 1.1)
-
-    return '\ncompat ' in out
-
-
 def check(image, format=None):
     cmd = [_qemuimg.cmd, "check"]
 
@@ -249,3 +219,33 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
 
     if rc != 0:
         raise QImgError(rc, out, err)
+
+
+def _supports_qcow2_compat(command):
+    """
+    qemu-img "create" and "convert" commands support a "compat" option in
+    recent versions. This will run the specified command using the "-o ?"
+    option to find if "compat" option is available.
+
+    Raises KeyError if called with another command.
+
+    TODO: Remove this when qemu versions providing the "compat" option are
+    available on all platforms.
+    """
+    # Older qemu-img requires all filenames although unneeded
+    args = {"create": ("-f", ("/dev/null",)),
+            "convert": ("-O", ("/dev/null", "/dev/null"))}
+    flag, dummy_files = args[command]
+
+    cmd = [_qemuimg.cmd, command, flag, FORMAT.QCOW2, "-o", "?"]
+    cmd.extend(dummy_files)
+
+    rc, out, err = utils.execCmd(cmd, raw=True)
+
+    if rc != 0:
+        raise QImgError(rc, out, err)
+
+    # Supported options:
+    # compat           Compatibility level (0.10 or 1.1)
+
+    return '\ncompat ' in out
