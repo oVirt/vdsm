@@ -40,8 +40,6 @@
 
 %if 0%{?fedora} || 0%{?rhel} >= 7
 %global with_systemd 1
-%global with_systemd_macros 1
-%global with_tmpfiles_macro 1
 %endif
 
 %if 0%{?rhel} == 6
@@ -704,7 +702,7 @@ install -Dm 0755 init/sysvinit/supervdsmd.init %{buildroot}%{_initrddir}/supervd
 install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
 %endif
 
-%if 0%{?with_tmpfiles_macro}
+%if 0%{?with_systemd}
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
 %endif
@@ -834,7 +832,7 @@ then
     fi
 fi
 %else
-%if 0%{?with_systemd_macros}
+%if 0%{?with_systemd}
 %systemd_preun vdsmd.service
 %systemd_preun supervdsmd.service
 %else
@@ -909,7 +907,7 @@ if [ "$1" -eq 1 ] ; then
     /sbin/chkconfig --add vdsm-reg
 fi
 %else
-%if 0%{?with_systemd_macros}
+%if 0%{?with_systemd}
 %systemd_post vdsm-reg.service
 %else
 if [ "$1" -eq 1 ] ; then
@@ -928,7 +926,7 @@ then
     /sbin/chkconfig --del vdsm-reg
 fi
 %else
-%if 0%{?with_systemd_macros}
+%if 0%{?with_systemd}
 %systemd_preun vdsm-reg.service
 %else
 if [ "$1" -eq 0 ]; then
@@ -1016,7 +1014,7 @@ exit 0
 %if 0%{?with_systemd}
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
 %endif
-%if 0%{?with_tmpfiles_macro}
+%if 0%{?with_systemd}
 %config(noreplace) %{_tmpfilesdir}/%{vdsm_name}.conf
 %endif
 %{_sysconfdir}/dhcp/dhclient.d/sourceRoute.sh
