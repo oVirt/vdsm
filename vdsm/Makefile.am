@@ -94,6 +94,7 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
+	bonding-defaults.json \
 	dsaversion.py.in \
 	dumpStorageTable.py.in \
 	libvirt_password \
@@ -133,6 +134,7 @@ install-data-hook:
 	chmod 775 $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 install-data-local: \
+		install-data-bonding-defaults \
 		install-data-dhclient-hooks \
 		install-data-libvirtpass \
 		install-data-logger \
@@ -159,6 +161,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(localstatedir)/lib/libvirt/qemu/channels
 
 uninstall-local: \
+		uninstall-data-bonding-defaults \
 		uninstall-data-dhclient-hooks \
 		uninstall-data-libvirtpass \
 		uninstall-data-logger \
@@ -185,6 +188,15 @@ install-data-libvirtpass:
 
 uninstall-data-libvirtpass:
 	$(RM) $(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
+
+# lib/vdsm does not exist yet
+install-data-bonding-defaults:
+	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)
+	$(INSTALL_DATA) -m 600 $(srcdir)/bonding-defaults.json \
+		$(DESTDIR)$(vdsmlibdir)/bonding-defaults.json
+
+uninstall-data-bonding-defaults:
+	$(RM) $(DESTDIR)$(vdsmlibdir)/bonding-defaults.json
 
 install-data-rwtab:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d

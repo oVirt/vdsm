@@ -1167,6 +1167,7 @@ exit 0
 %dir %{_sysconfdir}/pki/%{vdsm_name}/certs
 %dir %{_sysconfdir}/pki/%{vdsm_name}/libvirt-spice
 %config(noreplace) %{_sysconfdir}/pki/%{vdsm_name}/keys/libvirt_password
+%{_localstatedir}/lib/%{vdsm_name}/bonding-defaults.json
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/lib/%{vdsm_name}/persistence
@@ -1208,6 +1209,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/load_needed_modules.py*
 %endif
 %{python_sitelib}/%{vdsm_name}/tool/dummybr.py*
+%{python_sitelib}/%{vdsm_name}/tool/dump_bonding_defaults.py*
 %{python_sitelib}/%{vdsm_name}/tool/nwfilter.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurator.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/__init__*

@@ -17,6 +17,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/sslutils.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/dummybr.py
+./usr/lib/python2.7/dist-packages/vdsm/tool/dump_bonding_defaults.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/configurator.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/load_needed_modules.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/nwfilter.py

@@ -32,10 +32,7 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
     @SERVICE_PATH@ vdsmd *, \
     @REBOOT_PATH@ -f
-Cmnd_Alias VDSM_NETWORK = \
-    @TEE_PATH@ /sys/class/net/bonding_masters, \
-    @TEE_PATH@ /sys/class/net/*/bonding/mode
 
-vdsm  ALL=(ALL) NOPASSWD: VDSM_LIFECYCLE, VDSM_STORAGE, VDSM_NETWORK
+vdsm  ALL=(ALL) NOPASSWD: VDSM_LIFECYCLE, VDSM_STORAGE
 Defaults:vdsm !requiretty
 Defaults:vdsm !syslog
