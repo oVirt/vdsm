@@ -1,0 +1,422 @@
+{
+    "0": {
+        "ad_select": [
+            "stable",
+            "0"
+        ],
+        "all_slaves_active": [
+            "0"
+        ],
+        "arp_interval": [
+            "0"
+        ],
+        "arp_validate": [
+            "none",
+            "0"
+        ],
+        "downdelay": [
+            "0"
+        ],
+        "fail_over_mac": [
+            "none",
+            "0"
+        ],
+        "lacp_rate": [
+            "slow",
+            "0"
+        ],
+        "miimon": [
+            "0"
+        ],
+        "min_links": [
+            "0"
+        ],
+        "mode": [
+            "balance-rr",
+            "0"
+        ],
+        "num_grat_arp": [
+            "1"
+        ],
+        "num_unsol_na": [
+            "1"
+        ],
+        "primary_reselect": [
+            "always",
+            "0"
+        ],
+        "resend_igmp": [
+            "1"
+        ],
+        "updelay": [
+            "0"
+        ],
+        "use_carrier": [
+            "1"
+        ],
+        "xmit_hash_policy": [
+            "layer2",
+            "0"
+        ]
+    },
+    "1": {
+        "ad_select": [
+            "stable",
+            "0"
+        ],
+        "all_slaves_active": [
+            "0"
+        ],
+        "arp_interval": [
+            "0"
+        ],
+        "arp_validate": [
+            "none",
+            "0"
+        ],
+        "downdelay": [
+            "0"
+        ],
+        "fail_over_mac": [
+            "none",
+            "0"
+        ],
+        "lacp_rate": [
+            "slow",
+            "0"
+        ],
+        "miimon": [
+            "0"
+        ],
+        "min_links": [
+            "0"
+        ],
+        "mode": [
+            "balance-rr",
+            "0"
+        ],
+        "num_grat_arp": [
+            "1"
+        ],
+        "num_unsol_na": [
+            "1"
+        ],
+        "primary_reselect": [
+            "always",
+            "0"
+        ],
+        "resend_igmp": [
+            "1"
+        ],
+        "updelay": [
+            "0"
+        ],
+        "use_carrier": [
+            "1"
+        ],
+        "xmit_hash_policy": [
+            "layer2",
+            "0"
+        ]
+    },
+    "2": {
+        "ad_select": [
+            "stable",
+            "0"
+        ],
+        "all_slaves_active": [
+            "0"
+        ],
+        "arp_interval": [
+            "0"
+        ],
+        "arp_validate": [
+            "none",
+            "0"
+        ],
+        "downdelay": [
+            "0"
+        ],
+        "fail_over_mac": [
+            "none",
+            "0"
+        ],
+        "lacp_rate": [
+            "slow",
+            "0"
+        ],
+        "miimon": [
+            "0"
+        ],
+        "min_links": [
+            "0"
+        ],
+        "mode": [
+            "balance-rr",
+            "0"
+        ],
+        "num_grat_arp": [
+            "1"
+        ],
+        "num_unsol_na": [
+            "1"
+        ],
+        "primary_reselect": [
+            "always",
+            "0"
+        ],
+        "resend_igmp": [
+            "1"
+        ],
+        "updelay": [
+            "0"
+        ],
+        "use_carrier": [
+            "1"
+        ],
+        "xmit_hash_policy": [
+            "layer2",
+            "0"
+        ]
+    },
+    "3": {
+        "ad_select": [
+            "stable",
+            "0"
+        ],
+        "all_slaves_active": [
+            "0"
+        ],
+        "arp_interval": [
+            "0"
+        ],
+        "arp_validate": [
+            "none",
+            "0"
+        ],
+        "downdelay": [
+            "0"
+        ],
+        "fail_over_mac": [
+            "none",
+            "0"
+        ],
+        "lacp_rate": [
+            "slow",
+            "0"
+        ],
+        "miimon": [
+            "0"
+        ],
+        "min_links": [
+            "0"
+        ],
+        "mode": [
+            "balance-rr",
+            "0"
+        ],
+        "num_grat_arp": [
+            "1"
+        ],
+        "num_unsol_na": [
+            "1"
+        ],
+        "primary_reselect": [
+            "always",
+            "0"
+        ],
+        "resend_igmp": [
+            "1"
+        ],
+        "updelay": [
+            "0"
+        ],
+        "use_carrier": [
+            "1"
+        ],
+        "xmit_hash_policy": [
+            "layer2",
+            "0"
+        ]
+    },
+    "4": {
+        "ad_select": [
+            "stable",
+            "0"
+        ],
+        "all_slaves_active": [
+            "0"
+        ],
+        "arp_interval": [
+            "0"
+        ],
+        "arp_validate": [
+            "none",
+            "0"
+        ],
+        "downdelay": [
+            "0"
+        ],
+        "fail_over_mac": [
+            "none",
+            "0"
+        ],
+        "lacp_rate": [
+            "slow",
+            "0"
+        ],
+        "miimon": [
+            "0"
+        ],
+        "min_links": [
+            "0"
+        ],
+        "mode": [
+            "balance-rr",
+            "0"
+        ],
+        "num_grat_arp": [
+            "1"
+        ],
+        "num_unsol_na": [
+            "1"
+        ],
+        "primary_reselect": [
+            "always",
+            "0"
+        ],
+        "resend_igmp": [
+            "1"
+        ],
+        "updelay": [
+            "0"
+        ],
+        "use_carrier": [
+            "1"
+        ],
+        "xmit_hash_policy": [
+            "layer2",
+            "0"
+        ]
+    },
+    "5": {
+        "ad_select": [
+            "stable",
+            "0"
+        ],
+        "all_slaves_active": [
+            "0"
+        ],
+        "arp_interval": [
+            "0"
+        ],
+        "arp_validate": [
+            "none",
+            "0"
+        ],
+        "downdelay": [
+            "0"
+        ],
+        "fail_over_mac": [
+            "none",
+            "0"
+        ],
+        "lacp_rate": [
+            "slow",
+            "0"
+        ],
+        "miimon": [
+            "0"
+        ],
+        "min_links": [
+            "0"
+        ],
+        "mode": [
+            "balance-rr",
+            "0"
+        ],
+        "num_grat_arp": [
+            "1"
+        ],
+        "num_unsol_na": [
+            "1"
+        ],
+        "primary_reselect": [
+            "always",
+            "0"
+        ],
+        "resend_igmp": [
+            "1"
+        ],
+        "updelay": [
+            "0"
+        ],
+        "use_carrier": [
+            "1"
+        ],
+        "xmit_hash_policy": [
+            "layer2",
+            "0"
+        ]
+    },
+    "6": {
+        "ad_select": [
+            "stable",
+            "0"
+        ],
+        "all_slaves_active": [
+            "0"
+        ],
+        "arp_interval": [
+            "0"
+        ],
+        "arp_validate": [
+            "none",
+            "0"
+        ],
+        "downdelay": [
+            "0"
+        ],
+        "fail_over_mac": [
+            "none",
+            "0"
+        ],
+        "lacp_rate": [
+            "slow",
+            "0"
+        ],
+        "miimon": [
+            "0"
+        ],
+        "min_links": [
+            "0"
+        ],
+        "mode": [
+            "balance-rr",
+            "0"
+        ],
+        "num_grat_arp": [
+            "1"
+        ],
+        "num_unsol_na": [
+            "1"
+        ],
+        "primary_reselect": [
+            "always",
+            "0"
+        ],
+        "resend_igmp": [
+            "1"
+        ],
+        "updelay": [
+            "0"
+        ],
+        "use_carrier": [
+            "1"
+        ],
+        "xmit_hash_policy": [
+            "layer2",
+            "0"
+        ]
+    }
+}

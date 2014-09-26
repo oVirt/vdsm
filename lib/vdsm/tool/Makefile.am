@@ -40,6 +40,7 @@ nodist_vdsmtool_PYTHON = \
 dist_vdsmtool_PYTHON = \
 	__init__.py \
 	dummybr.py \
+	dump_bonding_defaults.py \
 	nwfilter.py \
 	configurator.py \
 	passwd.py \

@@ -27,8 +27,9 @@ from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
 from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
-                          BONDING_OPT, _randomIfaceName, _getBondingOptions)
+                          BONDING_OPT, _getBondingOptions)
 from vdsm.netlink import addr as nl_addr
+from vdsm.tool.dump_bonding_defaults import _random_iface_name
 
 from functional import dummy, veth
 from ipwrapperTests import _fakeTypeDetection
@@ -304,7 +305,7 @@ class TestNetinfo(TestCaseBase):
     @RequireBondingMod
     def testGetBondingOptions(self):
         INTERVAL = '12345'
-        bondName = _randomIfaceName()
+        bondName = _random_iface_name()
 
         with open(BONDING_MASTERS, 'w') as bonds:
             bonds.write('+' + bondName)

@@ -24,12 +24,11 @@ from glob import iglob
 from datetime import datetime
 from functools import partial
 from itertools import chain
+import json
 import logging
 import os
-import random
 import shlex
 import socket
-import string
 import struct
 from xml.dom import minidom
 
@@ -44,7 +43,7 @@ from .ipwrapper import routeGet
 from .ipwrapper import routeShowGateways
 from . import libvirtconnection
 from .netconfpersistence import RunningConfig
-from .utils import execCmd, memoized, CommandPath
+from .utils import memoized
 from .netlink import link as nl_link
 from .netlink import addr as nl_addr
 from .netlink import route as nl_route
@@ -67,6 +66,7 @@ NET_PATH = '/sys/class/net'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
+BONDING_DEFAULTS = constants.P_VDSM_LIB + 'bonding-defaults.json'
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 _BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 _BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
@@ -76,7 +76,6 @@ _EXCLUDED_BONDING_ENTRIES = frozenset((
 ))
 _IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
-_TEE_BINARY = CommandPath('tee', constants.EXT_TEE)
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
 DEFAULT_MTU = '1500'
@@ -146,7 +145,7 @@ def bondOpts(bond, keys=None):
     return opts
 
 
-def _realBondOpts(bond):
+def realBondOpts(bond):
     """
     Return a dictionary in the same format as bondOpts(). Exclude entries that
     are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
@@ -403,51 +402,14 @@ def permAddr():
     return paddr
 
 
-def _randomIfaceName():
-    MAX_LENGTH = 15
-    CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
-
-    return ''.join(random.choice(CHARS) for _ in range(MAX_LENGTH))
-
-
 @memoized
 def _getAllDefaultBondingOptions():
     """
     Return default options per mode, in a dictionary of dictionaries. All keys
-    are strings.
+    are numeric modes stored as strings for coherence with 'mode' option value.
     """
-    teeCmd = _TEE_BINARY.cmd
-    MAX_MODE = 6
-
-    bondName = _randomIfaceName()
-    rc, _, err = execCmd([teeCmd, BONDING_MASTERS],
-                         data='+' + bondName, sudo=True)
-    if rc:
-        raise RuntimeError('Creating a reference bond failed', '\n'.join(err))
-
-    opts = {}
-    try:
-        defaultMode = bondOpts(bondName, keys=['mode'])['mode']
-
-        # read default values for all modes
-        for mode in range(0, MAX_MODE + 1):
-            mode = str(mode)
-            rc, _, err = execCmd([teeCmd, BONDING_OPT % (bondName, 'mode')],
-                                 data=mode, sudo=True)
-            if rc:
-                raise RuntimeError('Changing the mode of the reference bond '
-                                   'failed. Is NetworkManager running?',
-                                   '\n'.join(err))
-
-            # only read non-empty options
-            opts[mode] = dict(((opt, val) for (opt, val) in
-                               _realBondOpts(bondName).iteritems() if val))
-            opts[mode]['mode'] = defaultMode
-
-    finally:
-        execCmd([teeCmd, BONDING_MASTERS], data='-' + bondName, sudo=True)
-
-    return opts
+    with open(BONDING_DEFAULTS) as defaults:
+        return json.loads(defaults.read())
 
 
 @memoized
@@ -469,7 +431,7 @@ def _getBondingOptions(bond):
     Return non-empty options differing from defaults, excluding not actual or
     not applicable options, e.g. 'ad_num_ports' or 'slaves'.
     """
-    opts = _realBondOpts(bond)
+    opts = realBondOpts(bond)
     mode = opts['mode'][-1] if 'mode' in opts else None
     defaults = _getDefaultBondingOptions(mode)
 

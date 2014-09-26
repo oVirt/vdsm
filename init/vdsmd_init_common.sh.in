@@ -100,6 +100,11 @@ task_load_needed_modules(){
 }
 
 
+task_dump_bonding_defaults(){
+    "${VDSM_TOOL}" dump-bonding-defaults
+}
+
+
 task_tune_system(){
     "@SYSCTL_PATH@" -q -p "/etc/sysctl.d/vdsm.conf"
 }
@@ -228,6 +233,10 @@ run_tasks(){
 
 case "$1" in
     --pre-start)
+        # If dump_bonding_defaults is desired (for the uneliminable possibility
+        # of added bonding options or tweaked kernel defaults) it has to be run
+        # after load_needed_modules (modprobe bonding).
+        # NetworkManager must not crash on nmcli conn delete.
         run_tasks " \
             mkdirs \
             configure_coredump \
