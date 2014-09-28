@@ -76,7 +76,7 @@ public abstract class SSLClient extends StompCommonClient {
     }
 
     @Override
-    int read(ByteBuffer buff) throws IOException {
+    protected int read(ByteBuffer buff) throws IOException {
         if (this.nioEngine != null) {
             return this.nioEngine.read(buff);
         } else {

@@ -2,6 +2,7 @@ package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.SSLStompClientTestCase.generateRandomMessage;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
@@ -61,7 +62,11 @@ public class StompClientTestCase {
                         client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
-                                client.sendMessage(message);
+                                try {
+                                    client.sendMessage(message);
+                                } catch (ClientConnectionException e) {
+                                    fail();
+                                }
                             }
                         });
                     }

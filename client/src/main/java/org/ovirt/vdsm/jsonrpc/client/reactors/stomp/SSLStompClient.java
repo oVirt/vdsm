@@ -52,7 +52,7 @@ public class SSLStompClient extends SSLClient {
     }
 
     @Override
-    public void sendMessage(byte[] message) {
+    public void sendMessage(byte[] message) throws ClientConnectionException {
         waitForConnect();
 
         send(new Message().send()
@@ -78,7 +78,7 @@ public class SSLStompClient extends SSLClient {
         this.subscribed = new CountDownLatch(1);
     }
 
-    private void waitForConnect() {
+    private void waitForConnect() throws ClientConnectionException {
         try {
             this.connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
             // TODO wait for the mini broker to be finished
@@ -91,6 +91,6 @@ public class SSLStompClient extends SSLClient {
 
     @Override
     public boolean isInInit() {
-        return this.nioEngine != null && this.nioEngine.handshakeInProgress();
+        return this.nioEngine == null || this.nioEngine.handshakeInProgress();
     }
 }

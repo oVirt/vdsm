@@ -37,6 +37,13 @@ public abstract class ReactorClient {
     public interface MessageListener {
         public void onMessageReceived(byte[] message);
     }
+    final Callable<Void> disconnectCallable = new Callable<Void>() {
+        @Override
+        public Void call() {
+            disconnect();
+            return null;
+        }
+    };
     public static final int BUFFER_SIZE = 1024;
     private static Log log = LogFactory.getLog(ReactorClient.class);
     private final String hostname;
@@ -80,6 +87,9 @@ public abstract class ReactorClient {
             return;
         }
         try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (isOpen() && isInInit()) {
+                getPostConnectCallback().await();
+            }
             if (isOpen()) {
                 return;
             }
@@ -110,10 +120,13 @@ public abstract class ReactorClient {
                         }
                     }, this.policy));
             this.channel = task.get();
+            if (!isOpen()) {
+                throw new ClientConnectionException("Connection failed");
+            }
             postConnect(getPostConnectCallback());
         } catch (InterruptedException | ExecutionException e) {
             log.error("Exception during connection", e);
-            disconnect();
+            scheduleTask(this.disconnectCallable);
             throw new ClientConnectionException(e);
         }
     }
@@ -142,14 +155,7 @@ public abstract class ReactorClient {
     }
 
     public Future<Void> close() {
-        final Callable<Void> callable = new Callable<Void>() {
-            @Override
-            public Void call() {
-                disconnect();
-                return null;
-            }
-        };
-        return scheduleTask(callable);
+        return scheduleTask(this.disconnectCallable);
     }
 
     protected <T> FutureTask<T> scheduleTask(Callable<T> callable) {
@@ -190,7 +196,7 @@ public abstract class ReactorClient {
             return;
         }
 
-        writeBuffer(buff);
+        write(buff);
 
         if (!buff.hasRemaining()) {
             outbox.removeLast();
@@ -214,26 +220,12 @@ public abstract class ReactorClient {
         return channel != null && channel.isOpen();
     }
 
-    protected int readBuffer(ByteBuffer buff) throws IOException, ClientConnectionException {
-        if (!isOpen()) {
-            connect();
-        }
-        return read(buff);
-    }
-
-    protected void writeBuffer(ByteBuffer buff) throws IOException, ClientConnectionException {
-        if (!isOpen()) {
-            connect();
-        }
-        write(buff);
-    }
-
     /**
      * Sends message using provided byte array.
      *
      * @param message - content of the message to sent.
      */
-    public abstract void sendMessage(byte[] message);
+    public abstract void sendMessage(byte[] message) throws ClientConnectionException;
 
     /**
      * Reads provided buffer.
@@ -243,7 +235,7 @@ public abstract class ReactorClient {
      * @throws IOException
      *             when networking issue occurs.
      */
-    abstract int read(ByteBuffer buff) throws IOException;
+    protected abstract int read(ByteBuffer buff) throws IOException;
 
     /**
      * Writes provided buffer.

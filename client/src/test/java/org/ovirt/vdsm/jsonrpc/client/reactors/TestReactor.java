@@ -3,6 +3,7 @@ package org.ovirt.vdsm.jsonrpc.client.reactors;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -61,7 +62,11 @@ public class TestReactor {
                         client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
-                                client.sendMessage(message);
+                                try {
+                                    client.sendMessage(message);
+                                } catch (ClientConnectionException e) {
+                                    fail();
+                                }
                             }
                         });
                     }
@@ -95,7 +100,7 @@ public class TestReactor {
     }
 
     @Test
-    public void testRetryConnectionBetweenListenerAndClient() throws InterruptedException, ExecutionException {
+    public void testRetryConnectionBetweenListenerAndClient() throws InterruptedException, ExecutionException, ClientConnectionException {
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(1);
         final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -128,7 +133,11 @@ public class TestReactor {
                                 client.addEventListener(new MessageListener() {
                                     @Override
                                     public void onMessageReceived(byte[] message) {
-                                        client.sendMessage(message);
+                                        try {
+                                            client.sendMessage(message);
+                                        } catch (ClientConnectionException e) {
+                                            fail();
+                                        }
                                     }
                                 });
                             }
@@ -172,7 +181,11 @@ public class TestReactor {
                         client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
-                                client.sendMessage(message);
+                                try {
+                                    client.sendMessage(message);
+                                } catch (ClientConnectionException e) {
+                                    fail();
+                                }
                             }
                         });
                     }
@@ -201,7 +214,11 @@ public class TestReactor {
                         client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
-                                client.sendMessage(message);
+                                try {
+                                    client.sendMessage(message);
+                                } catch (ClientConnectionException e) {
+                                    fail();
+                                }
                             }
                         });
                     }

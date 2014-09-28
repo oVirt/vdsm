@@ -3,7 +3,6 @@ package org.ovirt.vdsm.jsonrpc.client.reactors;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.EnumSet;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -141,13 +140,7 @@ public class SSLEngineNioHelper {
     }
 
     public boolean handshakeInProgress() {
-        final SSLEngineResult.HandshakeStatus hs = this.engine.getHandshakeStatus();
-
-        final EnumSet<SSLEngineResult.HandshakeStatus> handshakeEndStates =
-                EnumSet.of(SSLEngineResult.HandshakeStatus.FINISHED,
-                        SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING);
-
-        return !handshakeEndStates.contains(hs);
+        return !SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING.equals(this.engine.getHandshakeStatus());
     }
 
     public void clearBuff() {

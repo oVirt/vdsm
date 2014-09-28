@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
+import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.RequestAlreadySentException;
 import org.ovirt.vdsm.jsonrpc.client.utils.ResponseTracking;
@@ -74,7 +75,11 @@ public class ResponseTracker implements Runnable {
                             handleFailure(tracking, id);
                             continue;
                         }
-                        tracking.getClient().sendMessage(jsonToByteArray(tracking.getRequest().toJson()));
+                        try {
+                            tracking.getClient().sendMessage(jsonToByteArray(tracking.getRequest().toJson()));
+                        } catch (ClientConnectionException e) {
+                            handleFailure(tracking, id);
+                        }
                         tracking.setTimeout(getTimeout(context.getTimeout(), context.getTimeUnit()));
                     }
                 }
@@ -92,5 +97,6 @@ public class ResponseTracker implements Runnable {
         this.runningCalls.remove(id);
         removeRequestFromTracking(id);
         tracking.getCall().addResponse(buildFailedResponse(tracking.getRequest()));
+        tracking.getClient().disconnect();
     }
 }

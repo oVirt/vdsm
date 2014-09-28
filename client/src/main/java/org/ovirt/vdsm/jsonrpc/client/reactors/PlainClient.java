@@ -46,7 +46,7 @@ public abstract class PlainClient extends StompCommonClient {
     }
 
     @Override
-    int read(ByteBuffer buff) throws IOException {
+    protected int read(ByteBuffer buff) throws IOException {
         return channel.read(buff);
     }
 

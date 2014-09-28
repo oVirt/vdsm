@@ -87,7 +87,7 @@ public abstract class StompCommonClient extends ReactorClient {
     @Override
     protected void processIncoming() throws IOException, ClientConnectionException {
         if (this.ibuff == null) {
-            int read = readBuffer(headerBuffer);
+            int read = read(headerBuffer);
             if (read <= 0) {
                 return;
             }
@@ -123,7 +123,7 @@ public abstract class StompCommonClient extends ReactorClient {
             }
         }
 
-        readBuffer(this.ibuff);
+        read(this.ibuff);
         updateLastHeartbeat();
         int length = this.message.getContent().length + this.ibuff.position();
         if (this.message.getContentLength() != length - 1) {

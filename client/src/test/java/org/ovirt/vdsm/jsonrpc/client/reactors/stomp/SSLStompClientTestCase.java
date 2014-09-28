@@ -97,7 +97,11 @@ public class SSLStompClientTestCase {
                         client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
-                                client.sendMessage(message);
+                                try {
+                                    client.sendMessage(message);
+                                } catch (ClientConnectionException e) {
+                                    fail();
+                                }
                             }
                         });
                     }
@@ -136,7 +140,11 @@ public class SSLStompClientTestCase {
                         client.addEventListener(new MessageListener() {
                             @Override
                             public void onMessageReceived(byte[] message) {
-                                client.sendMessage(message);
+                                try {
+                                    client.sendMessage(message);
+                                } catch (ClientConnectionException e) {
+                                    fail();
+                                }
                             }
                         });
                     }
