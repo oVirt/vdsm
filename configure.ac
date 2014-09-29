@@ -56,6 +56,17 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
 
 AC_ARG_ENABLE(
+    [chcon_hack],
+    [AS_HELP_STRING(
+        [--enable-chcon-hack],
+        [enable chcon hack for block devices @<:@default=no@:>@]
+    )],
+    ,
+    [enable_chcon_hack="no"]
+)
+AM_CONDITIONAL([CHCON_HACK], [test "${enable_chcon_hack}" = "yes"])
+
+AC_ARG_ENABLE(
     [libvirt-sanlock],
     [AS_HELP_STRING(
         [--disable-libvirt-sanlock],
@@ -110,6 +121,9 @@ AC_ARG_WITH(
     [with_libvirt_service_default="${sysconfdir}/sysconfig/libvirtd"]
 )
 AC_SUBST([LIBVIRT_SERVICE_DEFAULT], ["${with_libvirt_service_default}"])
+
+AC_SUBST([LIBVIRT_IMAGE_LABEL], ['svirt_image_t'])
+
 
 # Users and groups
 AC_SUBST([VDSMUSER], [vdsm])
@@ -191,6 +205,7 @@ AX_PYTHON_MODULE([selinux], [fatal])
 AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])
 AC_PATH_PROG([BRCTL_PATH], [brctl], [/usr/sbin/brctl])
 AC_PATH_PROG([CAT_PATH], [cat], [/bin/cat])
+AC_PATH_PROG([CHCON_PATH], [chcon], [/bin/chcon])
 AC_PATH_PROG([CHKCONFIG_PATH], [chkconfig], [/sbin/chkconfig])
 AC_PATH_PROG([CHMOD_PATH], [chmod], [/bin/chmod])
 AC_PATH_PROG([CHOWN_PATH], [chown], [/bin/chown])
@@ -281,7 +296,7 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
-	vdsm/storage/vdsm-lvm.rules
+	vdsm/storage/vdsm-lvm.rules.tpl
 	vdsm/virt/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/checkimages/Makefile
