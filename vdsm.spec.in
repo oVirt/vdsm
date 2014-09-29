@@ -91,6 +91,7 @@ BuildRequires: python-cpopen >= 1.3
 BuildRequires: python-inotify
 BuildRequires: python-ioprocess >= 0.12
 BuildRequires: python-pthreading
+BuildRequires: qemu-img
 BuildRequires: rpm-python
 %if 0%{?rhel} == 6
 BuildRequires: python-argparse
