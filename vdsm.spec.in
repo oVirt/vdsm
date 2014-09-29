@@ -70,28 +70,28 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 ExclusiveArch: x86_64 ppc64
 %endif
 
+BuildRequires: cyrus-sasl-lib
 BuildRequires: gcc
 BuildRequires: python
 BuildRequires: python-devel
-BuildRequires: python-nose
 BuildRequires: python-netaddr
+BuildRequires: python-nose
 BuildRequires: rpm-build
-BuildRequires: cyrus-sasl-lib
 
 # BuildRequires needed by the tests during the build
 BuildRequires: dosfstools
-BuildRequires: psmisc
-BuildRequires: python-inotify
-BuildRequires: python-pthreading
-BuildRequires: python-cpopen >= 1.3
-BuildRequires: python-ioprocess >= 0.12
-BuildRequires: rpm-python
+BuildRequires: genisoimage
 BuildRequires: libnl
 BuildRequires: libselinux-python
 BuildRequires: libvirt-python
-BuildRequires: genisoimage
-BuildRequires: openssl
 BuildRequires: m2crypto
+BuildRequires: openssl
+BuildRequires: psmisc
+BuildRequires: python-cpopen >= 1.3
+BuildRequires: python-inotify
+BuildRequires: python-ioprocess >= 0.12
+BuildRequires: python-pthreading
+BuildRequires: rpm-python
 %if 0%{?rhel} == 6
 BuildRequires: python-argparse
 BuildRequires: python-ordereddict
