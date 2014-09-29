@@ -52,6 +52,7 @@ P_ETC_INITD = '/etc/init.d/'
 P_LIB_SYSTEMD = '/lib/systemd/systemd-'
 P_ROOT_SSH = pwd.getpwnam('root').pw_dir + '/.ssh'
 P_ROOT_AUTH_KEYS = P_ROOT_SSH + '/authorized_keys'
+P_VDSM_CONF = '/etc/vdsm/vdsm.conf'
 P_VDSM_NODE_ID = '/etc/vdsm/vdsm.id'
 P_SBIN = '/sbin/'
 P_USR_BIN = '/usr/bin/'
@@ -85,6 +86,8 @@ HTTP_TIMEOUT = 30
 ERR_NO_ROUTE = 7
 SCRIPT_NAME_ADD = "addNetwork"
 SCRIPT_NAME_DEL = "delNetwork"
+SCRIPT_NAME_GET_CONFIG = "get-conf-item"
+SCRIPT_NAME_STORE_NET_CONFIG = "vdsm-store-net-config"
 IFACE_CONFIG = "/etc/sysconfig/network-scripts/ifcfg-"
 MGT_BRIDGE_NAME = "ovirtmgmt"
 REMOTE_SSH_KEY_FILE = ('/engine.ssh.key.txt',)
@@ -1109,8 +1112,24 @@ def makeBridge(vdcName, vdsmDir, bridgeName=None):
 
     # Save current config by removing the undo files:
     try:
-        if fReturn and not fIsOvirt:
-            setSafeVdsmNetworkConfig()
+        if fReturn:
+            if fIsOvirt:
+                out, err, ret = _logExec(
+                    [os.path.join(vdsmDir, SCRIPT_NAME_GET_CONFIG),
+                     P_VDSM_CONF, 'vars', 'net_persistence', 'ifcfg'])
+                if ret:
+                    raise Exception('Failed to retrieve vdsm persistence '
+                                    'mode. Stderr: %s' % err)
+
+                net_persistence = out.strip()
+                out, err, ret = _logExec(
+                    [os.path.join(vdsmDir, SCRIPT_NAME_STORE_NET_CONFIG),
+                     net_persistence])
+                if ret:
+                    raise Exception('Failed to persist vdsm networking '
+                                    'configuration. Stderr: %s' % err)
+            else:
+                setSafeVdsmNetworkConfig()
     except:
         logging.debug(traceback.format_exc())
 
