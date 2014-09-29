@@ -544,8 +544,8 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                     dStats['imageID'] = vmDrive.imageID
                 elif "GUID" in vmDrive:
                     dStats['lunGUID'] = vmDrive.GUID
-                if sInfo is not None and (
-                        vmDrive.name in sInfo and vmDrive.name in eInfo):
+                if (sInfo and vmDrive.name in sInfo and
+                   eInfo and vmDrive.name in eInfo):
                     # will be None if sampled during recovery
                     dStats['readRate'] = (
                         (eInfo[dName][1] - sInfo[dName][1]) / sampleInterval)
@@ -589,7 +589,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                         'writeLatency': '0',
                         'flushLatency': '0'}
 
-            if sInfo is not None and (dName in sInfo and dName in eInfo):
+            if (sInfo and dName in sInfo and eInfo and dName in eInfo):
                 # will be None if sampled during recovery
                 # in case of hotplugged disk, start samples will
                 # be missed until the sampling code catches up.
