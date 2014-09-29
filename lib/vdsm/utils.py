@@ -617,7 +617,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
         out = out.splitlines(False)
         err = err.splitlines(False)
 
-    return (p.returncode, out, err)
+    return p.returncode, out, err
 
 
 def stripNewLines(lines):
@@ -645,7 +645,7 @@ def watchCmd(command, stop, cwd=None, data=None, nice=None, ioclass=None,
                         [proc.returncode == 0],
                         repr(err), proc.returncode)
 
-    return (proc.returncode, out, err)
+    return proc.returncode, out, err
 
 
 def traceback(on="", msg="Unhandled exception"):
