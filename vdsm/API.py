@@ -26,7 +26,6 @@ import signal
 import sys
 import copy
 import time
-import threading
 import logging
 
 from network.errors import ConfigNetworkError
