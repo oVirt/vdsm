@@ -182,8 +182,6 @@ Options for the \fIvdsm-id\fP module:
 .B vdsm-id
 Prints the host UUID.
 .RE
-.SH AUTHOR
-<Author list>
 .SH BUGS
 Report bugs to <http://bugzilla.redhat.com>
 .SH COPYRIGHT
