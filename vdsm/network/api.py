@@ -752,6 +752,12 @@ def main():
         kwargs = _parseKwargs(sys.argv[3:])
         if 'nics' in kwargs:
             kwargs['nics'] = kwargs['nics'].split(',')
+        # Remove empty vlan and bonding so that they don't make it to
+        # _alterRunningConfig
+        if 'vlan' in kwargs and kwargs['vlan'] == '':
+            del kwargs['vlan']
+        if 'bonding' in kwargs and kwargs['bonding'] == '':
+            del kwargs['bonding']
         addNetwork(bridge, **kwargs)
     elif sys.argv[1] == 'del':
         bridge = sys.argv[2]
