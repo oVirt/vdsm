@@ -497,7 +497,7 @@ def getos():
         return OSName.RHEL
     elif os.path.exists('/etc/debian_version'):
         return OSName.DEBIAN
-    elif os.path.exists('/etc/ibm-powerkvm-release'):
+    elif os.path.exists('/etc/ibm_powerkvm-release'):
         return OSName.POWERKVM
     else:
         return OSName.UNKNOWN
