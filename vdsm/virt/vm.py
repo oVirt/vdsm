@@ -4380,7 +4380,9 @@ class Vm(object):
             return {'status': {'code': errCode['changeDisk']['status']['code'],
                                'message': errCode['changeDisk']['status']
                                                  ['message']}}
-        self.cif.teardownVolumePath(self.conf.get(vmDev))
+        if vmDev in self.conf:
+            self.cif.teardownVolumePath(self.conf[vmDev])
+
         self.conf[vmDev] = path
         return {'status': doneCode, 'vmList': self.status()}
 
