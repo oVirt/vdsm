@@ -83,6 +83,7 @@ BuildRequires: python-inotify
 BuildRequires: python-pthreading
 BuildRequires: python-cpopen >= 1.3
 BuildRequires: python-ioprocess >= 0.12
+BuildRequires: qemu-img
 BuildRequires: rpm-python
 BuildRequires: libnl
 BuildRequires: libselinux-python
