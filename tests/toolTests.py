@@ -306,7 +306,8 @@ class LibvirtModuleConfigureTests(TestCase):
             with open(os.path.join(dirName,
                                    'toolTests_%s.conf' % type_)) as template:
                 data = template.read()
-                data = data % {'LATEST_CONF_VERSION': Libvirt.CONF_VERSION}
+                data = data % {
+                    'LATEST_CONF_VERSION': libvirt.Configurator.CONF_VERSION}
             with open(self.test_env[file_], 'w') as testConf:
                 testConf.write(data)
 
