@@ -54,6 +54,7 @@ import time
 import vdsm.infra.zombiereaper as zombiereaper
 
 from cpopen import CPopen
+from . import cmdutils
 from . import constants
 
 try:
@@ -75,8 +76,6 @@ except ImportError:
 # you find this number to be a bottleneck in any way you are welcome to change
 # it
 BUFFSIZE = 1024
-
-SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -601,25 +600,22 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     finish, the new subprocess would die immediately.
     """
 
-    command = list(command)
-
     if ioclass is not None:
-        cmd = command
-        command = [constants.EXT_IONICE, '-c', str(ioclass)]
-        if ioclassdata is not None:
-            command.extend(("-n", str(ioclassdata)))
-
-        command = command + cmd
+        command = cmdutils.ionice(command, ioclass=ioclass,
+                                  ioclassdata=ioclassdata)
 
     if nice is not None:
-        command = [constants.EXT_NICE, '-n', str(nice)] + command
+        command = cmdutils.nice(command, nice=nice)
 
     if setsid:
-        command = [constants.EXT_SETSID] + command
+        command = cmdutils.setsid(command)
 
     if sudo:
-        if os.geteuid() != 0:
-            command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG] + command
+        command = cmdutils.sudo(command)
+
+    # Unsubscriptable objects (e.g. generators) need conversion
+    if not callable(getattr(command, '__getitem__', None)):
+        command = tuple(command)
 
     if not printable:
         printable = command

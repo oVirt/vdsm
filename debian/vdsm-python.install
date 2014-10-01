@@ -1,6 +1,7 @@
 ./etc/vdsm/vdsm.conf
 ./usr/bin/vdsm-tool
 ./usr/lib/python2.7/dist-packages/vdsm/__init__.py
+./usr/lib/python2.7/dist-packages/vdsm/cmdutils.py
 ./usr/lib/python2.7/dist-packages/vdsm/compat.py
 ./usr/lib/python2.7/dist-packages/vdsm/config.py
 ./usr/lib/python2.7/dist-packages/vdsm/constants.py
