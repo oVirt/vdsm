@@ -44,6 +44,8 @@ M2Crypto.threading.init()
 
 SecureXMLRPCRequestHandler = IPXMLRPCRequestHandler
 
+DEFAULT_ACCEPT_TIMEOUT = 5
+
 
 class SSLSocket(object):
     """SSL decorator for sockets.
@@ -118,6 +120,8 @@ class SSLServerSocket(SSLSocket):
         # Create the SSL connection:
         self.connection = SSL.Connection(self.context, sock=raw)
 
+        self.accept_timeout = DEFAULT_ACCEPT_TIMEOUT
+
     def accept(self):
         # First we need to call the accept method of the raw
         # socket and build a new SSL connection object with the
@@ -131,7 +135,9 @@ class SSLServerSocket(SSLSocket):
         try:
             client.setup_ssl()
             client.set_accept_state()
+            client.settimeout(self.accept_timeout)
             client.accept_ssl()
+            client.settimeout(None)
         except SSL.SSLError as e:
             raise SSL.SSLError("%s, client %s" % (e, address[0]))
 
