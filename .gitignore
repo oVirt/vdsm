@@ -59,6 +59,7 @@ vdsm/storage/protect/safelease
 vdsm/storage/lvm.env
 vdsm/storage/vdsm-chcon
 vdsm/storage/vdsm-lvm.rules
+vdsm/storage/vdsm-lvm.rules.tpl
 vdsm/sudoers.vdsm
 vdsm/svdsm.logger.conf
 vdsm/vdscli.py
