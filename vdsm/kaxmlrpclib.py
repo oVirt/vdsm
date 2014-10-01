@@ -37,7 +37,7 @@ import httplib
 import socket
 
 # It would have been nicer to make these server-specific and not module-wide
-# constants. But it is not really importat for it, so it should wait.
+# constants. But it is not really important for us, so it should wait.
 KEEPIDLE = 60
 KEEPINTVL = 10
 KEEPCNT = 6
