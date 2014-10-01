@@ -22,6 +22,9 @@ import socket
 from M2Crypto import SSL, X509
 
 
+DEFAULT_ACCEPT_TIMEOUT = 5
+
+
 class SSLSocket(object):
     def __init__(self, connection):
         self.connection = connection
@@ -98,6 +101,8 @@ class SSLServerSocket(SSLSocket):
 
         self.connection = SSL.Connection(self.context, sock=raw)
 
+        self.accept_timeout = DEFAULT_ACCEPT_TIMEOUT
+
     def fileno(self):
         return self.connection.socket.fileno()
 
@@ -109,7 +114,9 @@ class SSLServerSocket(SSLSocket):
         try:
             client.setup_ssl()
             client.set_accept_state()
+            client.settimeout(self.accept_timeout)
             client.accept_ssl()
+            client.settimeout(None)
         except SSL.SSLError as e:
             raise SSL.SSLError("%s, client %s" % (e, address[0]))
 
