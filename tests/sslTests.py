@@ -29,7 +29,7 @@ import tempfile
 import threading
 import xmlrpclib
 
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from M2Crypto import SSL
 from sslhelper import KEY_FILE, CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
 from testlib import VdsmTestCase as TestCaseBase
@@ -105,6 +105,27 @@ def verifyingclient(key_file, crt_file):
             client.close()
     finally:
         server.stop()
+
+
+class SocketTests(TestCaseBase):
+
+    def test_block_socket(self):
+        server = TestServer()
+        server.server.socket.accept_timeout = 1
+        timeout = server.server.socket.accept_timeout + 1
+        server.start()
+        try:
+            with closing(socket.socket(socket.AF_INET,
+                                       socket.SOCK_STREAM)) as client_socket:
+                client_socket.settimeout(timeout)
+                client_socket.connect((HOST, server.port))
+                # Wait for data that will never arrive.
+                # This will return successfuly if the other side closes the
+                # connection (as expected) or raise timeout (which means the
+                # test failed)
+                client_socket.recv(100)
+        finally:
+            server.stop()
 
 
 class VerifyingTransportTests(TestCaseBase):
