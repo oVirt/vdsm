@@ -168,4 +168,4 @@ class SSLContext(object):
 
     def wrapSocket(self, sock):
         context = self.context
-        return SSLSocket(SSL.Connection(context, sock=sock), self)
+        return SSLSocket(SSL.Connection(context, sock=sock))
