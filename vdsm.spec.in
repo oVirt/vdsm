@@ -55,8 +55,10 @@
 
 %if 0%{?rhel} == 6
 %global _udevrulesdir /lib/udev/rules.d/
+%global _udevexecdir /lib/udev/
 %else
 %global _udevrulesdir /usr/lib/udev/rules.d/
+%global _udevexecdir /usr/lib/udev/
 %endif
 
 Name:           %{vdsm_name}
@@ -688,6 +690,11 @@ install -Dm 0755 init/sysvinit/respawn \
 install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
 
+%if 0%{?with_chcon_hack}
+install -Dm 0755 vdsm/storage/vdsm-chcon \
+                 %{buildroot}%{_udevexecdir}/vdsm-chcon
+%endif
+
 install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
 
@@ -1174,6 +1181,9 @@ exit 0
 %endif
 %{python_sitelib}/sos/plugins/vdsm.py*
 %{_udevrulesdir}/12-vdsm-lvm.rules
+%if 0%{?with_chcon_hack}
+%{_udevexecdir}/vdsm-chcon
+%endif
 /etc/security/limits.d/99-vdsm.conf
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}

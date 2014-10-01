@@ -122,7 +122,10 @@ AC_ARG_WITH(
 )
 AC_SUBST([LIBVIRT_SERVICE_DEFAULT], ["${with_libvirt_service_default}"])
 
-AC_SUBST([LIBVIRT_IMAGE_LABEL], ['svirt_image_t'])
+
+# Selinux image label
+AC_SUBST([SVIRT_IMAGE_LABEL], ['svirt_image_t'])
+AC_SUBST([SVIRT_CONTENT_LABEL], ['svirt_content_t'])
 
 
 # Users and groups
@@ -281,6 +284,7 @@ AC_PATH_PROG([IONICE_PATH], [ionice], [/usr/bin/ionice])
 AC_PATH_PROG([IP_PATH], [ip], [/sbin/ip])
 AC_PATH_PROG([ISCSIADM_PATH], [iscsiadm], [/sbin/iscsiadm])
 AC_PATH_PROG([KILL_PATH], [kill], [/bin/kill])
+AC_PATH_PROG([LS_PATH], [ls], [/bin/ls])
 AC_PATH_PROG([LVM_PATH], [lvm], [/sbin/lvm])
 AC_PATH_PROG([MKFS_MSDOS_PATH], [mkfs.msdos], [/sbin/mkfs.msdos])
 AC_PATH_PROG([MKFS_PATH], [mkfs], [/sbin/mkfs])
@@ -351,6 +355,7 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
+	vdsm/storage/vdsm-chcon
 	vdsm/storage/vdsm-lvm.rules.tpl
 	vdsm/virt/Makefile
 	vdsm_hooks/Makefile
