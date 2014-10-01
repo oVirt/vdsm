@@ -35,7 +35,7 @@
 %global with_vhostmd 1
 %endif
 
-%if 0%{?rhel} >= 7
+%if 0%{?fedora} >= 19 || 0%{?rhel} >= 7
 %global with_chcon_hack 1
 %endif
 
