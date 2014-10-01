@@ -23,6 +23,7 @@ SUBDIRS=tool
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
+	cmdutils.py \
 	compat.py \
 	define.py \
 	exception.py \
