@@ -48,9 +48,10 @@ class StaticSourceRoute(object):
         self.routes = None
         self.rules = None
 
-    def _generateTableId(self):
+    @staticmethod
+    def generateTableId(ipaddr):
         # TODO: Future proof for IPv6
-        return netaddr.IPAddress(self.ipaddr).value
+        return netaddr.IPAddress(ipaddr).value
 
     def _buildRoutes(self):
         return [Route(network='0.0.0.0/0', via=self.gateway,
@@ -71,7 +72,7 @@ class StaticSourceRoute(object):
         self.ipaddr = ipaddr
         self.mask = mask
         self.gateway = gateway
-        self.table = self._generateTableId()
+        self.table = StaticSourceRoute.generateTableId(self.ipaddr)
         network = netaddr.IPNetwork(str(self.ipaddr) + '/' + str(self.mask))
         self.network = "%s/%s" % (network.network, network.prefixlen)
 
