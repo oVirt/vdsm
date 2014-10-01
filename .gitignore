@@ -57,6 +57,7 @@ vdsm/mom.conf
 vdsm/sos/vdsm.py
 vdsm/storage/protect/safelease
 vdsm/storage/lvm.env
+vdsm/storage/vdsm-chcon
 vdsm/storage/vdsm-lvm.rules
 vdsm/sudoers.vdsm
 vdsm/svdsm.logger.conf
