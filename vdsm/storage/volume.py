@@ -437,7 +437,7 @@ class Volume(object):
                 cls.log.error("Failed to create volume: %s, volume already "
                               "exists", volPath)
                 vars.task.popRecovery()
-                raise e
+                raise
             # When the volume format is raw what the guest sees is the apparent
             # size of the file/device therefore if the requested size doesn't
             # match the apparent size (eg: physical extent granularity in LVM)
