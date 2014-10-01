@@ -25,12 +25,12 @@ class DomainDescriptor(object):
     def __init__(self, xmlStr):
         self._xml = xmlStr
         self._dom = xml.dom.minidom.parseString(xmlStr)
-        self._devices = self._firstElementByTagName('devices')
-        self._devicesHash = hash(self._devices.toxml()
-                                 if self._devices is not None else '')
+        self._devices = self._first_element_by_tag_name('devices')
+        self._devices_hash = hash(self._devices.toxml()
+                                  if self._devices is not None else '')
 
     @classmethod
-    def fromId(cls, uuid):
+    def from_id(cls, uuid):
         return cls('<domain><uuid>%s</uuid></domain>' % uuid)
 
     @property
@@ -45,13 +45,13 @@ class DomainDescriptor(object):
     def devices(self):
         return self._devices
 
-    def getDeviceElements(self, tagName):
+    def get_device_elements(self, tagName):
         return self._devices.getElementsByTagName(tagName)
 
     @property
-    def devicesHash(self):
-        return self._devicesHash
+    def devices_hash(self):
+        return self._devices_hash
 
-    def _firstElementByTagName(self, tagName):
+    def _first_element_by_tag_name(self, tagName):
         elements = self._dom.childNodes[0].getElementsByTagName(tagName)
         return elements[0] if elements else None

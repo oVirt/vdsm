@@ -1295,7 +1295,7 @@ class Vm(object):
         self._qemuguestSocketFile = self._makeChannelPath(_QEMU_GA_DEVICE_NAME)
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log)
-        self._domain = DomainDescriptor.fromId(self.id)
+        self._domain = DomainDescriptor.from_id(self.id)
         self._released = False
         self._releaseLock = threading.Lock()
         self.saveState()
@@ -2261,7 +2261,7 @@ class Vm(object):
                     self.log.exception("Error setting vm disk stats")
 
         stats.update(self._getGraphicsStats())
-        stats['hash'] = str(hash((self._domain.devicesHash,
+        stats['hash'] = str(hash((self._domain.devices_hash,
                                   self.guestAgent.diskMappingHash)))
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
@@ -4477,7 +4477,7 @@ class Vm(object):
         """
         Obtain controller devices info from libvirt.
         """
-        for x in self._domain.getDeviceElements('controller'):
+        for x in self._domain.get_device_elements('controller'):
             # Ignore controller devices without address
             if not x.getElementsByTagName('address'):
                 continue
@@ -4521,7 +4521,7 @@ class Vm(object):
         """
         Obtain balloon device info from libvirt.
         """
-        for x in self._domain.getDeviceElements('memballoon'):
+        for x in self._domain.get_device_elements('memballoon'):
             # Ignore balloon devices without address.
             if not x.getElementsByTagName('address'):
                 address = None
@@ -4546,7 +4546,7 @@ class Vm(object):
         """
         Obtain the alias for the console device from libvirt
         """
-        for x in self._domain.getDeviceElements('console'):
+        for x in self._domain.get_device_elements('console'):
             # All we care about is the alias
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             for dev in self._devices[CONSOLE_DEVICES]:
@@ -4562,7 +4562,7 @@ class Vm(object):
         """
         Obtain smartcard device info from libvirt.
         """
-        for x in self._domain.getDeviceElements('smartcard'):
+        for x in self._domain.get_device_elements('smartcard'):
             if not x.getElementsByTagName('address'):
                 continue
 
@@ -4584,7 +4584,7 @@ class Vm(object):
         """
         Obtain watchdog device info from libvirt.
         """
-        for x in self._domain.getDeviceElements('watchdog'):
+        for x in self._domain.get_device_elements('watchdog'):
 
             # PCI watchdog has "address" different from ISA watchdog
             if x.getElementsByTagName('address'):
@@ -4606,7 +4606,7 @@ class Vm(object):
         """
         Obtain video devices info from libvirt.
         """
-        for x in self._domain.getDeviceElements('video'):
+        for x in self._domain.get_device_elements('video'):
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get video card address
             address = self._getUnderlyingDeviceAddress(x)
@@ -4632,7 +4632,7 @@ class Vm(object):
         """
         Obtain sound devices info from libvirt.
         """
-        for x in self._domain.getDeviceElements('sound'):
+        for x in self._domain.get_device_elements('sound'):
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get sound card address
             address = self._getUnderlyingDeviceAddress(x)
@@ -4674,7 +4674,7 @@ class Vm(object):
         # FIXME!  We need to gather as much info as possible from the libvirt.
         # In the future we can return this real data to management instead of
         # vm's conf
-        for x in self._domain.getDeviceElements('disk'):
+        for x in self._domain.get_device_elements('disk'):
             alias, devPath, name = self._getDriveIdentification(x)
             readonly = bool(x.getElementsByTagName('readonly'))
             boot = x.getElementsByTagName('boot')
@@ -4766,7 +4766,7 @@ class Vm(object):
         device of each type (sdl, vnc, spice) is supported
         """
 
-        for gxml in self._domain.getDeviceElements('graphics'):
+        for gxml in self._domain.get_device_elements('graphics'):
             port = gxml.getAttribute('port')
             tlsPort = gxml.getAttribute('tlsPort')
             graphicsType = gxml.getAttribute('type')
@@ -4795,7 +4795,7 @@ class Vm(object):
         """
         Obtain network interface info from libvirt.
         """
-        for x in self._domain.getDeviceElements('interface'):
+        for x in self._domain.get_device_elements('interface'):
             devType = x.getAttribute('type')
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')

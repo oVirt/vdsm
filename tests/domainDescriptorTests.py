@@ -61,19 +61,19 @@ class DevicesHashTests(VdsmTestCase):
     def test_no_devices(self):
         desc1 = DomainDescriptor(NO_DEVICES)
         desc2 = DomainDescriptor(EMPTY_DEVICES)
-        self.assertNotEqual(desc1.devicesHash, desc2.devicesHash)
+        self.assertNotEqual(desc1.devices_hash, desc2.devices_hash)
 
     def test_different_devices(self):
         desc1 = DomainDescriptor(EMPTY_DEVICES)
         desc2 = DomainDescriptor(SOME_DEVICES)
-        self.assertNotEqual(desc1.devicesHash, desc2.devicesHash)
+        self.assertNotEqual(desc1.devices_hash, desc2.devices_hash)
 
     def test_different_order(self):
         desc1 = DomainDescriptor(SOME_DEVICES)
         desc2 = DomainDescriptor(REORDERED_DEVICES)
-        self.assertNotEqual(desc1.devicesHash, desc2.devicesHash)
+        self.assertNotEqual(desc1.devices_hash, desc2.devices_hash)
 
     def test_stable_hash(self):
         desc1 = DomainDescriptor(SOME_DEVICES)
         desc2 = DomainDescriptor(SOME_DEVICES)
-        self.assertEqual(desc1.devicesHash, desc2.devicesHash)
+        self.assertEqual(desc1.devices_hash, desc2.devices_hash)
