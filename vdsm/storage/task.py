@@ -49,6 +49,7 @@ import os
 import logging
 import threading
 import types
+from contextlib import contextmanager
 from functools import wraps
 
 import storage_exception as se
@@ -487,6 +488,8 @@ class Task:
         self.error = se.TaskAborted("Unknown error encountered")
 
         self.mng = None
+        self._abort_lock = threading.Lock()
+        self._abort_callbacks = set()
         self._aborting = False
         self._forceAbort = False
         self.ref = 0
@@ -1205,6 +1208,35 @@ class Task:
         finally:
             self._decref()
 
+    @contextmanager
+    def abort_callback(self, callback):
+        with self._abort_lock:
+            if self.aborting():
+                aborting = True
+            else:
+                aborting = False
+                self._abort_callbacks.add(callback)
+
+        if aborting:
+            callback()
+
+        try:
+            yield
+        finally:
+            with self._abort_lock:
+                self._abort_callbacks.discard(callback)
+
+    def _execute_abort_callbacks(self):
+        with self._abort_lock:
+            self._aborting = True
+            abort_callbacks = list(self._abort_callbacks)
+
+        for callback in abort_callbacks:
+            try:
+                callback()
+            except Exception:
+                self.log.exception('failure running abort callback')
+
     def aborting(self):
         return (self._aborting or
                 self.state == State.aborting or
@@ -1225,7 +1257,7 @@ class Task:
                                "ignoring", self.state)
                 return
 
-            self._aborting = True
+            self._execute_abort_callbacks()
             self._forceAbort = force
         finally:
             self._decref(force)
