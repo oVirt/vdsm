@@ -27,9 +27,15 @@ import time
 
 from M2Crypto import SSL
 
-from vdsm.sslutils import SSLServerSocket
 from vdsm.utils import traceback
 from vdsm import utils
+
+
+def _is_handshaking(sock):
+    if not hasattr(sock, "is_handshaking"):
+        return False
+
+    return sock.is_handshaking
 
 
 class MultiProtocolAcceptor:
@@ -60,8 +66,11 @@ class MultiProtocolAcceptor:
     """
     log = logging.getLogger("vds.MultiProtocolAcceptor")
 
-    READ_ONLY_MASK = (select.POLLIN | select.POLLPRI | select.POLLHUP
-                      | select.POLLERR)
+    READ_ONLY_MASK = (select.POLLIN | select.POLLPRI | select.POLLHUP |
+                      select.POLLERR)
+
+    READ_WRITE_MASK = (select.POLLIN | select.POLLPRI |
+                       select.POLLOUT | select.POLLHUP | select.POLLERR)
     CLEANUP_INTERVAL = 30.0
 
     def __init__(self, host, port, sslctx=None):
@@ -113,8 +122,8 @@ class MultiProtocolAcceptor:
                     self._accept_connection()
                 else:
                     self._handle_connection_read(fd)
-            else:
-                pass
+            if event & (select.POLLOUT):
+                    self._handle_connection_write(fd)
 
         now = time.time()
         if now > self._next_cleanup:
@@ -173,12 +182,24 @@ class MultiProtocolAcceptor:
                 raise
 
     def _accept_connection(self):
-        try:
-            client_socket, _ = self._socket.accept()
-        except SSL.SSLError as e:
-            self.log.warning("Unable to accept connection due to %s", e)
-        else:
-            self._add_connection(client_socket)
+        client_socket, address = self._socket.accept()
+        if self._sslctx:
+            client_socket = self._sslctx.wrapSocket(client_socket)
+            # Older versions of M2Crypto ignore nbio and retry internally
+            # if timeout is set.
+            client_socket.settimeout(None)
+            client_socket.address = address
+            try:
+                client_socket.setup_ssl()
+                client_socket.set_accept_state()
+            except SSL.SSLError as e:
+                self.log.warning("Error setting up ssl: %s", e)
+                client_socket.close()
+                return
+
+            client_socket.is_handshaking = True
+
+        self._add_connection(client_socket)
 
     def _add_connection(self, socket):
         host, port = socket.getpeername()
@@ -186,7 +207,10 @@ class MultiProtocolAcceptor:
         socket.setblocking(0)
         self._pending_connections[socket.fileno()] = (time.time(),
                                                       socket)
-        self._poller.register(socket, self.READ_ONLY_MASK)
+        if _is_handshaking(socket):
+            self._poller.register(socket, self.READ_WRITE_MASK)
+        else:
+            self._poller.register(socket, self.READ_ONLY_MASK)
 
     def _remove_connection(self, socket):
         self._poller.unregister(socket)
@@ -195,8 +219,27 @@ class MultiProtocolAcceptor:
         host, port = socket.getpeername()
         self.log.debug("Connection removed from %s:%d", host, port)
 
+    def _process_handshake(self, socket):
+        try:
+            socket.is_handshaking = (socket.accept_ssl() == 0)
+        except Exception as e:
+            self.log.debug("Error during handshake: %s", e)
+            socket.close()
+        else:
+            if not socket.is_handshaking:
+                self._poller.modify(socket, self.READ_ONLY_MASK)
+
+    def _handle_connection_write(self, fd):
+        _, client_socket = self._pending_connections[fd]
+        if _is_handshaking(client_socket):
+            self._process_handshake(client_socket)
+
     def _handle_connection_read(self, fd):
         _, client_socket = self._pending_connections[fd]
+        if _is_handshaking(client_socket):
+            self._process_handshake(client_socket)
+            return
+
         try:
             data = client_socket.recv(self._required_size, socket.MSG_PEEK)
         except socket.error as e:
@@ -233,12 +276,6 @@ class MultiProtocolAcceptor:
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(addr[0][4])
         server_socket.listen(5)
-
-        if self._sslctx:
-            server_socket = SSLServerSocket(raw=server_socket,
-                                            certfile=self._sslctx.cert_file,
-                                            keyfile=self._sslctx.key_file,
-                                            ca_certs=self._sslctx.ca_cert)
 
         server_socket.setblocking(0)
         return server_socket
