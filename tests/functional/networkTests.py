@@ -21,8 +21,10 @@ from functools import wraps
 import os.path
 import json
 import signal
+import netaddr
 
 from hookValidation import ValidatesHook
+from network.sourceroute import StaticSourceRoute
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import (brokentest, slowtest, RequireDummyMod,
@@ -38,7 +40,7 @@ from utils import SUCCESS, VdsProxy, cleanupRules
 
 from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             ruleExists, Route, Rule, addrFlush, LinkType,
-                            getLinks)
+                            getLinks, routeShowTable)
 
 from vdsm.constants import EXT_BRCTL
 from vdsm.utils import RollbackContext, execCmd
@@ -61,8 +63,6 @@ IP_ADDRESS_IN_NETWORK = '240.0.0.50'
 IP_CIDR = '24'
 IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
 IP_GATEWAY = '240.0.0.254'
-# Current implementation converts ip to its 32 bit int representation
-IP_TABLE = '4026531841'
 DHCP_RANGE_FROM = '240.0.0.10'
 DHCP_RANGE_TO = '240.0.0.100'
 CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
@@ -98,7 +98,8 @@ def dnsmasqDhcp(interface):
     """Manages the life cycle of dnsmasq as a DHCP server."""
     dhcpServer = dhcp.Dnsmasq()
     try:
-        dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO)
+        dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                         router=IP_GATEWAY)
     except dhcp.DhcpError as e:
         raise SkipTest(e)
 
@@ -316,6 +317,40 @@ class NetworkTest(TestCaseBase):
             self.assertFalse(
                 self.vdsm_net._vlanInRunningConfig(devName, vlanId),
                 '%s found unexpectedly in running config' % vlanName)
+
+    def assertRouteExists(self, route, routing_table='all'):
+        if not routeExists(route):
+            raise self.failureException(
+                "routing rule [%s] wasn't found. existing rules: \n%s" % (
+                    route, routeShowTable(routing_table)))
+
+    def assertRouteDoesNotExist(self, route, routing_table='all'):
+        if routeExists(route):
+            raise self.failureException(
+                "routing rule [%s] found. existing rules: \n%s" % (
+                    route, routeShowTable(routing_table)))
+
+    def assertSourceRoutingConfiguration(self, deviceName, vdsm_net_name):
+        """assert that the IP rules and the routing tables pointed by them
+        are configured correctly in order to implement source routing"""
+        vdsm_net = self.vdsm_net.netinfo.networks[vdsm_net_name]
+        routing_table = str(StaticSourceRoute.generateTableId(
+            vdsm_net['addr']))
+
+        routes = [Route(network='0.0.0.0/0', via=IP_GATEWAY,
+                        device=deviceName, table=routing_table),
+                  Route(network=IP_NETWORK_AND_CIDR,
+                        via=str(netaddr.IPAddress(vdsm_net['addr'])),
+                        device=deviceName, table=routing_table)]
+        rules = [Rule(source=IP_NETWORK_AND_CIDR, table=routing_table),
+                 Rule(destination=IP_NETWORK_AND_CIDR, table=routing_table,
+                      srcDevice=deviceName)]
+
+        for route in routes:
+            self.assertRouteExists(route, routing_table)
+        for rule in rules:
+            self.assertTrue(ruleExists(rule))
+        return routes, rules
 
     def assertMtu(self, mtu, *elems):
         for elem in elems:
@@ -1593,10 +1628,11 @@ class NetworkTest(TestCaseBase):
             dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
             try:
                 dummy.setLinkUp(nic)
-
-                rules = [Rule(source=IP_NETWORK_AND_CIDR, table=IP_TABLE),
-                         Rule(destination=IP_NETWORK_AND_CIDR, table=IP_TABLE,
-                              srcDevice=nic)]
+                routing_table = str(StaticSourceRoute.generateTableId(
+                    IP_ADDRESS))
+                rules = [Rule(source=IP_NETWORK_AND_CIDR, table=routing_table),
+                         Rule(destination=IP_NETWORK_AND_CIDR,
+                              table=routing_table, srcDevice=nic)]
                 for rule in rules:
                     self.assertFalse(ruleExists(rule))
                     ruleAdd(rule)
@@ -1615,16 +1651,18 @@ class NetworkTest(TestCaseBase):
             try:
                 dummy.setLinkUp(nic)
 
+                routing_table = str(StaticSourceRoute.generateTableId(
+                    IP_ADDRESS))
                 routes = [Route(network='0.0.0.0/0', via=IP_GATEWAY,
-                                device=nic, table=IP_TABLE),
-                          Route(network=IP_NETWORK_AND_CIDR,
-                                via=IP_ADDRESS, device=nic, table=IP_TABLE)]
+                                device=nic, table=routing_table),
+                          Route(network=IP_NETWORK_AND_CIDR, via=IP_ADDRESS,
+                                device=nic, table=routing_table)]
                 for route in routes:
-                    self.assertFalse(routeExists(route))
+                    self.assertRouteDoesNotExist(route)
                     routeAdd(route)
                     self.assertTrue(routeExists(route))
                     routeDel(route)
-                    self.assertFalse(routeExists(route))
+                    self.assertRouteDoesNotExist(route)
             finally:
                 addrFlush(nic)
 
@@ -1645,20 +1683,8 @@ class NetworkTest(TestCaseBase):
 
             deviceName = NETWORK_NAME if bridged else nics[0]
 
-            # Assert that routes and rules exist
-            routes = [Route(network='0.0.0.0/0', via=IP_GATEWAY,
-                            device=deviceName, table=IP_TABLE),
-                      Route(network=IP_NETWORK_AND_CIDR,
-                            via=IP_ADDRESS, device=deviceName,
-                            table=IP_TABLE)]
-            rules = [Rule(source=IP_NETWORK_AND_CIDR, table=IP_TABLE),
-                     Rule(destination=IP_NETWORK_AND_CIDR, table=IP_TABLE,
-                          srcDevice=deviceName)]
-
-            for route in routes:
-                self.assertTrue(routeExists(route))
-            for rule in rules:
-                self.assertTrue(ruleExists(rule))
+            routes, rules = self.assertSourceRoutingConfiguration(
+                deviceName, NETWORK_NAME)
 
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
@@ -1667,7 +1693,7 @@ class NetworkTest(TestCaseBase):
 
             # Assert that routes and rules don't exist
             for route in routes:
-                self.assertFalse(routeExists(route))
+                self.assertRouteDoesNotExist(route)
             for rule in rules:
                 self.assertFalse(ruleExists(rule))
 
@@ -1919,26 +1945,36 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
 
-                net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                self.assertEqual(net['bootproto4'], 'dhcp')
+                vdsm_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                self.assertEqual(vdsm_net['bootproto4'], 'dhcp')
 
                 if bridged:
-                    self.assertEqual(net['cfg']['BOOTPROTO'], 'dhcp')
+                    self.assertEqual(vdsm_net['cfg']['BOOTPROTO'], 'dhcp')
 
                     devs = self.vdsm_net.netinfo.bridges
                     self.assertIn(NETWORK_NAME, devs)
                     self.assertEqual(devs[NETWORK_NAME]['cfg']['BOOTPROTO'],
                                      'dhcp')
+                    device_name = NETWORK_NAME
 
                 else:
                     devs = self.vdsm_net.netinfo.nics
                     self.assertIn(right, devs)
                     self.assertEqual(devs[right]['cfg']['BOOTPROTO'], 'dhcp')
+                    device_name = right
+
+                routes, rules = self.assertSourceRoutingConfiguration(
+                    device_name, NETWORK_NAME)
 
                 network = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkDoesntExist(NETWORK_NAME)
+                # Assert that routes and rules don't exist
+                for route in routes:
+                    self.assertRouteDoesNotExist(route)
+                for rule in rules:
+                    self.assertFalse(ruleExists(rule))
 
     @permutations([['default'], ['local']])
     @cleanupNet
