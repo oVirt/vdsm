@@ -207,9 +207,6 @@ class State:
     def canAbortRecovery(self):
         return self.state in self._moveto[self.raborting]
 
-    def canAbortRecover(self):
-        return self.state in self._moveto[self.raborting]
-
     def __str__(self):
         return self.state
 
@@ -936,7 +933,7 @@ class Task:
         try:
             try:
                 if (not self.state.canAbort() and
-                        (force and not self.state.canAbortRecover())):
+                        (force and not self.state.canAbortRecovery())):
                     self.log.warning("Task._doAbort %s: ignoring - "
                                      "at state %s", self, self.state)
                     return
