@@ -19,14 +19,10 @@
 #
 
 import socket
-from M2Crypto import SSL, X509, threading
+from M2Crypto import SSL, X509
 
 
 DEFAULT_ACCEPT_TIMEOUT = 5
-
-# M2Crypto.threading needs initialization.
-# See https://bugzilla.redhat.com/482420
-threading.init()
 
 
 class SSLSocket(object):
