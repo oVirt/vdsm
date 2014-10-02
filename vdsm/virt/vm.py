@@ -542,24 +542,13 @@ class VmStatsThread(AdvancedStatsThread):
                 if (sInfo and vmDrive.name in sInfo and
                    eInfo and vmDrive.name in eInfo):
                     # will be None if sampled during recovery
-                    dStats.update(self._calcDiskRate(vmDrive, sInfo, eInfo,
-                                                     sampleInterval))
+                    dStats.update(_calcDiskRate(vmDrive, sInfo, eInfo,
+                                                sampleInterval))
             except (AttributeError, TypeError, ZeroDivisionError):
                 self._log.exception("Disk %s stats not available",
                                     vmDrive.name)
 
             stats[vmDrive.name] = dStats
-
-    def _calcDiskRate(self, vmDrive, sInfo, eInfo, sampleInterval):
-        return {
-            'readRate': (
-                (eInfo[vmDrive.name][1] -
-                 sInfo[vmDrive.name][1])
-                / sampleInterval),
-            'writeRate': (
-                (eInfo[vmDrive.name][3] -
-                 sInfo[vmDrive.name][3])
-                / sampleInterval)}
 
     def _getDiskLatency(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleDiskLatency.getStats()
@@ -624,6 +613,18 @@ class VmStatsThread(AdvancedStatsThread):
             return False
 
         return True
+
+
+def _calcDiskRate(vmDrive, sInfo, eInfo, sampleInterval):
+    return {
+        'readRate': (
+            (eInfo[vmDrive.name][1] -
+             sInfo[vmDrive.name][1])
+            / sampleInterval),
+        'writeRate': (
+            (eInfo[vmDrive.name][3] -
+             sInfo[vmDrive.name][3])
+            / sampleInterval)}
 
 
 def _calcDiskLatency(vmDrive, sInfo, eInfo):
