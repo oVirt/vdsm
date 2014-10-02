@@ -79,7 +79,8 @@ __connectionLock = threading.Lock()
 
 def _open_qemu_connection():
     def req(credentials, user_data):
-        passwd = file(constants.P_VDSM_LIBVIRT_PASSWD).readline().rstrip("\n")
+        with open(constants.P_VDSM_LIBVIRT_PASSWD) as passwd_file:
+            passwd = passwd_file.readline().rstrip("\n")
         for cred in credentials:
             if cred[0] == libvirt.VIR_CRED_AUTHNAME:
                 cred[4] = constants.SASL_USERNAME

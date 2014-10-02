@@ -198,7 +198,8 @@ def getMaxMtu(devs, mtu):
 
 
 def bridge_stp_state(bridge):
-    stp = file('/sys/class/net/%s/bridge/stp_state' % bridge).readline()
+    with open('/sys/class/net/%s/bridge/stp_state' % bridge) as stp_file:
+        stp = stp_file.readline()
     if stp == '1\n':
         return 'on'
     else:

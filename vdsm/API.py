@@ -185,7 +185,7 @@ class VM(APIBase):
                     # parmas were stored.
                     fname = self._cif.prepareVolumePath(paramFilespec)
                     try:
-                        with file(fname) as f:
+                        with open(fname) as f:
                             pickledMachineParams = pickle.load(f)
 
                         if type(pickledMachineParams) == dict:

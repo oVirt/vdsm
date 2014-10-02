@@ -68,7 +68,7 @@ def getiSCSIInitiators():
     """
     hbas = []
     try:
-        with file(ISCSI_INITIATOR_NAME) as f:
+        with open(ISCSI_INITIATOR_NAME) as f:
             for line in f:
                 if line.startswith(INITIATOR_NAME):
                     hba = {'InitiatorName': line.split("=")[1].strip()}
@@ -90,8 +90,10 @@ def getModelDesc(fch, host):
         name_path = os.path.join(fch, "device", "scsi_host", host, name)
         desc_path = os.path.join(fch, "device", "scsi_host", host, desc)
         try:
-            model_name = file(name_path).read().strip()
-            model_desc = file(desc_path).read().strip()
+            with open(name_path) as name_file:
+                model_name = name_file.read().strip()
+            with open(desc_path) as desc_file:
+                model_desc = desc_file.read().strip()
         except IOError:
             pass   # retry
 
@@ -105,10 +107,12 @@ def getFCInitiators():
         host = os.path.basename(fch)
         # Get FC HBA port name
         portName = os.path.join(fch, PORT_NAME)
-        wwpn = file(portName).read().strip().lstrip("0x")
+        with open(portName) as port_file:
+            wwpn = port_file.read().strip().lstrip("0x")
         # Get FC HBA node name
         nodeName = os.path.join(fch, NODE_NAME)
-        wwnn = file(nodeName).read().strip().lstrip("0x")
+        with open(nodeName) as node_file:
+            wwnn = node_file.read().strip().lstrip("0x")
         # Get model name and description
         model = "%s - %s" % getModelDesc(fch, host)
         # Construct FC HBA descriptor

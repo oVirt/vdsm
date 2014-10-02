@@ -371,7 +371,7 @@ def after_get_caps(caps):
 
 def _getScriptInfo(path):
     try:
-        with file(path) as f:
+        with open(path) as f:
             md5 = hashlib.md5(f.read()).hexdigest()
     except:
         md5 = ''

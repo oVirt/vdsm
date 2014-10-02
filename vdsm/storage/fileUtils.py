@@ -375,7 +375,7 @@ def copyUserModeToGroup(path):
 
 
 def padToBlockSize(path):
-    with file(path, 'a') as f:
+    with open(path, 'a') as f:
         size = os.fstat(f.fileno()).st_size
         newSize = 512 * ((size + 511) / 512)
         log.debug("Truncating file %s to %d bytes", path, newSize)

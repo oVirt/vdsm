@@ -258,7 +258,7 @@ class HostSample(TimedSample):
             self.cpuLoad = '0.0'
         self.diskStats = self._getDiskStats()
         try:
-            with file(_THP_STATE_PATH) as f:
+            with open(_THP_STATE_PATH) as f:
                 s = f.read()
                 self.thpState = s[s.index('[') + 1:s.index(']')]
         except:
