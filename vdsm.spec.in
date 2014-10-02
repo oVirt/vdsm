@@ -1188,49 +1188,49 @@ exit 0
 %defattr(-, root, root, -)
 %{_mandir}/man1/vdsm-tool.1*
 %{_bindir}/vdsm-tool
-%dir %{python_sitearch}/%{vdsm_name}
-%dir %{python_sitearch}/%{vdsm_name}/tool
-%{python_sitearch}/%{vdsm_name}/__init__.py*
-%{python_sitearch}/%{vdsm_name}/compat.py*
-%{python_sitearch}/%{vdsm_name}/config.py*
-%{python_sitearch}/%{vdsm_name}/constants.py*
-%{python_sitearch}/%{vdsm_name}/define.py*
-%{python_sitearch}/%{vdsm_name}/exception.py*
-%{python_sitearch}/%{vdsm_name}/ipwrapper.py*
-%{python_sitearch}/%{vdsm_name}/libvirtconnection.py*
-%{python_sitearch}/%{vdsm_name}/netinfo.py*
-%{python_sitearch}/%{vdsm_name}/netlink.py*
-%{python_sitearch}/%{vdsm_name}/profile.py*
-%{python_sitearch}/%{vdsm_name}/qemuimg.py*
-%{python_sitearch}/%{vdsm_name}/SecureXMLRPCServer.py*
-%{python_sitearch}/%{vdsm_name}/netconfpersistence.py*
-%{python_sitearch}/%{vdsm_name}/sslutils.py*
-%{python_sitearch}/%{vdsm_name}/utils.py*
-%{python_sitearch}/%{vdsm_name}/vdscli.py*
-%{python_sitearch}/%{vdsm_name}/tool/__init__.py*
+%dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/tool
+%{python_sitelib}/%{vdsm_name}/__init__.py*
+%{python_sitelib}/%{vdsm_name}/compat.py*
+%{python_sitelib}/%{vdsm_name}/config.py*
+%{python_sitelib}/%{vdsm_name}/constants.py*
+%{python_sitelib}/%{vdsm_name}/define.py*
+%{python_sitelib}/%{vdsm_name}/exception.py*
+%{python_sitelib}/%{vdsm_name}/ipwrapper.py*
+%{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
+%{python_sitelib}/%{vdsm_name}/netinfo.py*
+%{python_sitelib}/%{vdsm_name}/netlink.py*
+%{python_sitelib}/%{vdsm_name}/profile.py*
+%{python_sitelib}/%{vdsm_name}/qemuimg.py*
+%{python_sitelib}/%{vdsm_name}/SecureXMLRPCServer.py*
+%{python_sitelib}/%{vdsm_name}/netconfpersistence.py*
+%{python_sitelib}/%{vdsm_name}/sslutils.py*
+%{python_sitelib}/%{vdsm_name}/utils.py*
+%{python_sitelib}/%{vdsm_name}/vdscli.py*
+%{python_sitelib}/%{vdsm_name}/tool/__init__.py*
 %if 0%{?with_systemd}
-%exclude %{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*
+%exclude %{python_sitelib}/%{vdsm_name}/tool/load_needed_modules.py*
 %else
-%{python_sitearch}/%{vdsm_name}/tool/load_needed_modules.py*
+%{python_sitelib}/%{vdsm_name}/tool/load_needed_modules.py*
 %endif
-%{python_sitearch}/%{vdsm_name}/tool/dummybr.py*
-%{python_sitearch}/%{vdsm_name}/tool/nwfilter.py*
-%{python_sitearch}/%{vdsm_name}/tool/configurator.py*
-%{python_sitearch}/%{vdsm_name}/tool/configurators/__init__*
-%{python_sitearch}/%{vdsm_name}/tool/configurators/configfile.py*
-%{python_sitearch}/%{vdsm_name}/tool/configurators/certificates.py*
-%{python_sitearch}/%{vdsm_name}/tool/configurators/libvirt.py*
-%{python_sitearch}/%{vdsm_name}/tool/configurators/sanlock.py*
-%{python_sitearch}/%{vdsm_name}/tool/passwd.py*
-%{python_sitearch}/%{vdsm_name}/tool/restore_nets.py*
-%{python_sitearch}/%{vdsm_name}/tool/seboolsetup.py*
-%{python_sitearch}/%{vdsm_name}/tool/service.py*
-%{python_sitearch}/%{vdsm_name}/tool/transient.py*
-%{python_sitearch}/%{vdsm_name}/tool/unified_persistence.py*
-%{python_sitearch}/%{vdsm_name}/tool/upgrade.py*
-%{python_sitearch}/%{vdsm_name}/tool/upgrade_300_networks.py*
-%{python_sitearch}/%{vdsm_name}/tool/validate_ovirt_certs.py*
-%{python_sitearch}/%{vdsm_name}/tool/vdsm-id.py*
+%{python_sitelib}/%{vdsm_name}/tool/dummybr.py*
+%{python_sitelib}/%{vdsm_name}/tool/nwfilter.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurator.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/__init__*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/configfile.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/certificates.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/libvirt.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
+%{python_sitelib}/%{vdsm_name}/tool/passwd.py*
+%{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
+%{python_sitelib}/%{vdsm_name}/tool/seboolsetup.py*
+%{python_sitelib}/%{vdsm_name}/tool/service.py*
+%{python_sitelib}/%{vdsm_name}/tool/transient.py*
+%{python_sitelib}/%{vdsm_name}/tool/unified_persistence.py*
+%{python_sitelib}/%{vdsm_name}/tool/upgrade.py*
+%{python_sitelib}/%{vdsm_name}/tool/upgrade_300_networks.py*
+%{python_sitelib}/%{vdsm_name}/tool/validate_ovirt_certs.py*
+%{python_sitelib}/%{vdsm_name}/tool/vdsm-id.py*
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
