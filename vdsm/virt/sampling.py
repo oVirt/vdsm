@@ -19,13 +19,9 @@
 #
 
 """
-A module containing miscellaneous functions and classes that are user
-plentifuly around vdsm.
-
-.. attribute:: utils.symbolerror
-
-    Contains a reverse dictionary pointing from error string to its error code.
+Support for VM and host statistics sampling.
 """
+
 from collections import deque
 import threading
 import os
