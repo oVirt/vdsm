@@ -301,6 +301,9 @@ class TestNetinfo(TestCaseBase):
         self.assertNotIn('expired', dhcp4)
         self.assertNotIn('expired2', dhcp4)
 
+    @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
+                 if os.path.exists(netinfo.BONDING_DEFAULTS)
+                 else '../vdsm/bonding-defaults.json')
     @ValidateRunningAsRoot
     @RequireBondingMod
     def testGetBondingOptions(self):
