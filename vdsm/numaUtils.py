@@ -92,9 +92,8 @@ def getVmNumaNodeRuntimeInfo(vm):
 def _getVcpuRuntimePinMap(vm):
     vCpuRuntimePinMap = {}
     if vm._vmStats:
-        sInfo, eInfo, sampleInterval = \
-            vm._vmStats.sampleVcpuPinning.getStats()
-        vCpuInfos = eInfo if eInfo is not None else []
+        sample = vm._vmStats.sampleVcpuPinning.getLastSample()
+        vCpuInfos = sample if sample is not None else []
         for vCpuInfo in vCpuInfos:
             vCpuRuntimePinMap[vCpuInfo[0]] = vCpuInfo[3]
     return vCpuRuntimePinMap

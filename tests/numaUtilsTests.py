@@ -56,13 +56,17 @@ class FakeSuperVdsm:
 
 class FakeAdvancedStatsFunction:
     def __init__(self):
+        self._samples = [(0, 1, 19590000000L, 1),
+                         (1, 1, 10710000000L, 1),
+                         (2, 1, 19590000000L, 0),
+                         (3, 1, 19590000000L, 2)]
         pass
 
     def getStats(self):
-        return [], [(0, 1, 19590000000L, 1),
-                    (1, 1, 10710000000L, 1),
-                    (2, 1, 19590000000L, 0),
-                    (3, 1, 19590000000L, 2)], 15
+        return [], self._samples, 15
+
+    def getLastSample(self):
+        return self._samples
 
 
 class FakeVmStatsThread:

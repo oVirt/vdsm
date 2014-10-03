@@ -198,10 +198,6 @@ VolumeChainEntry = namedtuple('VolumeChainEntry',
 class VmStatsThread(AdvancedStatsThread):
     MBPS_TO_BPS = 10 ** 6 / 8
 
-    # CPU tune sampling window
-    # minimum supported value is 2
-    CPU_TUNE_SAMPLING_WINDOW = 2
-
     # This flag will prevent excessive log flooding when running
     # on libvirt with no support for metadata xml elements.
     #
@@ -242,23 +238,19 @@ class VmStatsThread(AdvancedStatsThread):
         self.sampleBalloon = (
             AdvancedStatsFunction(
                 self._sampleBalloon,
-                config.getint('vars', 'vm_sample_balloon_interval'),
-                config.getint('vars', 'vm_sample_balloon_window')))
+                config.getint('vars', 'vm_sample_balloon_interval'), 1))
         self.sampleVmJobs = (
             AdvancedStatsFunction(
                 self._sampleVmJobs,
-                config.getint('vars', 'vm_sample_jobs_interval'),
-                config.getint('vars', 'vm_sample_jobs_window')))
+                config.getint('vars', 'vm_sample_jobs_interval'), 1))
         self.sampleVcpuPinning = (
             AdvancedStatsFunction(
                 self._sampleVcpuPinning,
-                config.getint('vars', 'vm_sample_vcpu_pin_interval'),
-                config.getint('vars', 'vm_sample_vcpu_pin_window')))
+                config.getint('vars', 'vm_sample_vcpu_pin_interval'), 1))
         self.sampleCpuTune = (
             AdvancedStatsFunction(
                 self._sampleCpuTune,
-                config.getint('vars', 'vm_sample_cpu_tune_interval'),
-                self.CPU_TUNE_SAMPLING_WINDOW))
+                config.getint('vars', 'vm_sample_cpu_tune_interval'), 1))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
@@ -410,7 +402,7 @@ class VmStatsThread(AdvancedStatsThread):
     def _getBalloonStats(self, stats):
         max_mem = int(self._vm.conf.get('memSize')) * 1024
 
-        sInfo, eInfo, sampleInterval = self.sampleBalloon.getStats()
+        sample = self.sampleBalloon.getLastSample()
 
         for dev in self._vm.getBalloonDevicesConf():
             if dev['specParams']['model'] != 'none':
@@ -423,52 +415,52 @@ class VmStatsThread(AdvancedStatsThread):
             'balloon_max': str(max_mem),
             'balloon_min': str(
                 int(self._vm.conf.get('memGuaranteedSize', '0')) * 1024),
-            'balloon_cur': str(sInfo) if sInfo is not None else '0',
+            'balloon_cur': str(sample) if sample is not None else '0',
             'balloon_target': str(balloon_target)}
 
     def _getCpuTuneInfo(self, stats):
 
-        sInfo, eInfo, sampleInterval = self.sampleCpuTune.getStats()
+        sample = self.sampleCpuTune.getLastSample()
 
         # Handling the case when not enough samples exist
-        if eInfo is None:
+        if sample is None:
             return
 
         # Handling the case where quota is not set, setting to 0.
         # According to libvirt API:"A quota with value 0 means no value."
         # The value does not have to be present in some transient cases
-        if eInfo.get('vcpu_quota', _NO_CPU_QUOTA) != _NO_CPU_QUOTA:
-            stats['vcpuQuota'] = str(eInfo['vcpu_quota'])
+        if sample.get('vcpu_quota', _NO_CPU_QUOTA) != _NO_CPU_QUOTA:
+            stats['vcpuQuota'] = str(sample['vcpu_quota'])
 
         # Handling the case where period is not set, setting to 0.
         # According to libvirt API:"A period with value 0 means no value."
         # The value does not have to be present in some transient cases
-        if eInfo.get('vcpu_period', _NO_CPU_PERIOD) != _NO_CPU_PERIOD:
-            stats['vcpuPeriod'] = eInfo['vcpu_period']
+        if sample.get('vcpu_period', _NO_CPU_PERIOD) != _NO_CPU_PERIOD:
+            stats['vcpuPeriod'] = sample['vcpu_period']
 
     def _getCpuCount(self, stats):
-        sInfo, eInfo, sampleInterval = self.sampleCpuTune.getStats()
+        sample = self.sampleCpuTune.getLastSample()
 
         # Handling the case when not enough samples exist
-        if eInfo is None:
+        if sample is None:
             return
 
-        if 'vcpuCount' in eInfo:
-            vcpuCount = eInfo['vcpuCount']
+        if 'vcpuCount' in sample:
+            vcpuCount = sample['vcpuCount']
             if vcpuCount != -1:
                 stats['vcpuCount'] = vcpuCount
             else:
                 self._log.error('Failed to get VM cpu count')
 
     def _getUserCpuTuneInfo(self, stats):
-        sInfo, eInfo, sampleInterval = self.sampleCpuTune.getStats()
+        sample = self.sampleCpuTune.getLastSample()
 
         # Handling the case when not enough samples exist
-        if eInfo is None:
+        if sample is None:
             return
 
-        if 'vcpuLimit' in eInfo:
-            value = eInfo['vcpuLimit']
+        if 'vcpuLimit' in sample:
+            value = sample['vcpuLimit']
             stats['vcpuUserLimit'] = value
 
     @classmethod

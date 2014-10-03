@@ -163,18 +163,11 @@ parameters = [
 
         ('vm_sample_balloon_interval', '15', None),
 
-        ('vm_sample_balloon_window', '2', None),
-
         ('vm_sample_jobs_interval', '15', None),
-
-        # TODO: Change this to 1 once AdvancedStatsFunction can support it
-        ('vm_sample_jobs_window', '2', None),
 
         ('vm_sample_vcpu_pin_interval', '15',
             'How often should we sample each vcpu runtime pinning to '
             'which physical cpu core.'),
-
-        ('vm_sample_vcpu_pin_window', '2', None),
 
         ('vm_sample_cpu_tune_interval', '15', None),
 
