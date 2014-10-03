@@ -144,13 +144,6 @@ class AdvancedStatsFunctionTests(TestCaseBase):
         ret = stat(value)
         self.assertEqual(ret, value)
 
-    def testWindowSizeZero(self):
-        value = 42
-        stat = sampling.AdvancedStatsFunction(
-            lambda x: x, interval=1, window=0)
-        stat(value)
-        self.assertEqual(stat.getStats(), (None, None, None))
-
     def testWindowSizeOne(self):
         value = 42
         stat = sampling.AdvancedStatsFunction(

@@ -303,6 +303,52 @@ class HostSample(TimedSample):
         return text
 
 
+_MINIMUM_SAMPLES = 1
+
+
+class SampleWindow(object):
+    """Keep sliding window of samples."""
+
+    def __init__(self, size, timefn=time.time):
+        if size < _MINIMUM_SAMPLES:
+            raise ValueError("window size must be not less than %i" %
+                             _MINIMUM_SAMPLES)
+
+        self._samples = deque(maxlen=size)
+        self._timefn = timefn
+
+    def append(self, value):
+        """
+        Record the current time and append new sample, removing the oldest
+        sample if needed.
+        """
+        timestamp = self._timefn()
+        self._samples.append((timestamp, value))
+
+    def stats(self):
+        """
+        Return a tuple in the format: (first, last, difftime), containing
+        the first and the last samples in the defined 'window' and the
+        time difference between them.
+        """
+        if len(self._samples) < 2:
+            return None, None, None
+
+        bgn_time, bgn_sample = self._samples[0]
+        end_time, end_sample = self._samples[-1]
+
+        return bgn_sample, end_sample, (end_time - bgn_time)
+
+    def last(self):
+        """
+        Return the last collected sample.
+        """
+        if not self._samples:
+            return None
+        last_time, last_sample = self._samples[-1]
+        return last_sample
+
+
 class AdvancedStatsFunction(object):
     """
     A wrapper for functions and methods that will be executed at regular
@@ -310,15 +356,15 @@ class AdvancedStatsFunction(object):
     It is possible to provide a custom time function 'timefn' that provides
     cached values to reduce system calls.
     """
-    def __init__(self, function, interval=1, window=0, timefn=time.time):
+    def __init__(self, function, interval=1, window=_MINIMUM_SAMPLES,
+                 timefn=time.time):
         self._function = function
-        self._timefn = timefn
 
         if not isinstance(interval, int) or interval < 1:
             raise ValueError("interval must be int and greater than 0")
 
-        self._samples = deque(maxlen=window)
         self._interval = interval
+        self._samples = SampleWindow(window, timefn)
 
     @property
     def interval(self):
@@ -329,33 +375,15 @@ class AdvancedStatsFunction(object):
             self._function.__name__, id(self._function.__name__))
 
     def __call__(self, *args, **kwargs):
-        retValue = self._function(*args, **kwargs)
-        retTime = self._timefn()
-        self._samples.append((retTime, retValue))
-        return retValue
+        value = self._function(*args, **kwargs)
+        self._samples.append(value)
+        return value
 
     def getStats(self):
-        """
-        Return a tuple in the format: (first, last, difftime), containing
-        the first and the last return value in the defined 'window' and the
-        time difference.
-        """
-        if len(self._samples) < 2:
-            return None, None, None
-
-        bgn_time, bgn_sample = self._samples[0]
-        end_time, end_sample = self._samples[-1]
-
-        return bgn_sample, end_sample, (end_time - bgn_time)
+        return self._samples.stats()
 
     def getLastSample(self):
-        """
-        Return the last collected sample.
-        """
-        if not self._samples:
-            return None
-        last_time, last_sample = self._samples[-1]
-        return last_sample
+        return self._samples.last()
 
 
 class AdvancedStatsThread(threading.Thread):
