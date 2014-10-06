@@ -41,6 +41,7 @@ from vdsm import constants
 from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
+from testlib import make_config
 import caps
 import hooks
 from vdsm import utils
@@ -1529,6 +1530,35 @@ class TestVmStatsThread(TestCaseBase):
             testvm.guestAgent.diskMappingHash += 1
             self.assertNotEquals(res['hash'],
                                  testvm.getStats()['hash'])
+
+    @MonkeyPatch(vm, 'config',
+                 make_config([('vars', 'vm_command_timeout', '10')]))
+    def testMonitorTimeoutResponsive(self):
+        with fake.VM(self.VM_PARAMS) as testvm:
+            self.assertFalse(testvm.isMigrating())
+            stats = {'monitorResponse': '0'}
+            testvm._setUnresponsiveIfTimeout(stats, 1)  # any value < timeout
+            self.assertEqual(stats['monitorResponse'], '0')
+
+    @MonkeyPatch(vm, 'config',
+                 make_config([('vars', 'vm_command_timeout', '1')]))
+    def testMonitorTimeoutUnresponsive(self):
+        with fake.VM(self.VM_PARAMS) as testvm:
+            self.assertEqual(testvm._monitorResponse, 0)
+            self.assertFalse(testvm.isMigrating())
+            stats = {'monitorResponse': '0'}
+            testvm._setUnresponsiveIfTimeout(stats, 10)  # any value > timeout
+            self.assertEqual(stats['monitorResponse'], '-1')
+
+    @MonkeyPatch(vm, 'config',
+                 make_config([('vars', 'vm_command_timeout', '10')]))
+    def testMonitorTimeoutOnAlreadyUnresponsive(self):
+        with fake.VM(self.VM_PARAMS) as testvm:
+            self._monitorResponse = -1
+            self.assertFalse(testvm.isMigrating())
+            stats = {'monitorResponse': '-1'}
+            testvm._setUnresponsiveIfTimeout(stats, 1)  # any value < timeout
+            self.assertEqual(stats['monitorResponse'], '-1')
 
 
 class TestLibVirtCallbacks(TestCaseBase):

@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import ConfigParser
 import logging
 import os
 import unittest
@@ -32,6 +33,8 @@ from contextlib import contextmanager
 from nose import config
 from nose import core
 from nose import result
+
+import vdsm
 
 from testValidation import SlowTestsPlugin, StressTestsPlugin
 
@@ -427,3 +430,15 @@ def run():
                             config=conf)
 
     sys.exit(not core.run(config=conf, testRunner=runner, argv=argv))
+
+
+def make_config(tunables):
+    """
+    Create a vdsm.config.config clone, modified by tunables
+    tunables is a list of (section, key, val) tuples
+    """
+    cfg = ConfigParser.ConfigParser()
+    vdsm.config.set_defaults(cfg)
+    for (section, key, value) in tunables:
+        cfg.set(section, key, value)
+    return cfg

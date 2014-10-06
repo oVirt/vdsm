@@ -2286,10 +2286,7 @@ class Vm(object):
         try:
             if self._vmStats:
                 decStats = self._vmStats.get()
-                if (not self.isMigrating()
-                    and decStats['statsAge'] >
-                        config.getint('vars', 'vm_command_timeout')):
-                    stats['monitorResponse'] = '-1'
+                self._setUnresponsiveIfTimeout(stats, decStats['statsAge'])
         except Exception:
             self.log.error("Error fetching vm stats", exc_info=True)
         for var in decStats:
@@ -5378,6 +5375,15 @@ class Vm(object):
         self.log.debug('CPU %s: %s',
                        'running' if self._guestCpuRunning else 'stopped',
                        reason)
+
+    def _setUnresponsiveIfTimeout(self, stats, statsAge):
+        if (not self.isMigrating()
+           and statsAge > config.getint('vars', 'vm_command_timeout')
+           and stats['monitorResponse'] != '-1'):
+            self.log.warning('monitor become unresponsive'
+                             ' (command timeout, age=%s)',
+                             statsAge)
+            stats['monitorResponse'] = '-1'
 
 
 class LiveMergeCleanupThread(threading.Thread):
