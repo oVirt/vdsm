@@ -160,7 +160,7 @@ class DynamicBridge(object):
     def _getDefaultArgs(self, api, className, methodName):
         result = []
         for class_name, class_obj in inspect.getmembers(api, inspect.isclass):
-            if class_name is className:
+            if class_name == className:
                 for method_name, method_obj in inspect.getmembers(
                         class_obj, inspect.ismethod):
                     if method_name == methodName:

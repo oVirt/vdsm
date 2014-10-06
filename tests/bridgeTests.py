@@ -49,10 +49,26 @@ class Host():
                 'info': {'My caps': 'My capabilites'}}
 
 
+class StorageDomain():
+    ctorArgs = ['storagedomainID']
+
+    def __init__(self, UUID):
+        self._UUID = UUID
+
+    def detach(self, spUUID, masterSdUUID=None, masterVersion=0, force=False):
+        if (spUUID == '00000002-0002-0002-0002-0000000000f6' and
+            masterSdUUID is None and masterVersion == 0 and
+                force is not False):
+            return {'status': {'code': 0, 'message': 'Done'}}
+        else:
+            return {'status': {'code': -1, 'message': 'Fail'}}
+
+
 def createFakeAPI():
     _newAPI = imp.new_module('API')
     _API = __import__('API', globals(), locals(), {}, -1)
     setattr(_newAPI, 'Global', Host)
+    setattr(_newAPI, 'StorageDomain', StorageDomain)
 
     # Apply the whitelist to our version of API
     for name in apiWhitelist:
@@ -108,3 +124,20 @@ class BridgeTests(TestCaseBase):
         bridge.register_server_address('127.0.0.1')
         self.assertEquals(method(**params)['My caps'], 'My capabilites')
         bridge.unregister_server_address()
+
+    def testDetach(self):
+        createFakeAPI()
+
+        from rpc import Bridge
+        bridge = Bridge.DynamicBridge()
+
+        msg = ('{"jsonrpc":"2.0","method":"StorageDomain.detach","params":{"st'
+               'oragepoolID":"00000002-0002-0002-0002-0000000000f6","force":'
+               '"True","storagedomainID": "773adfc7-10d4-4e60-b700-3272ee1871'
+               'f9"},"id":"505ebe58-4fd7-45c6-8195-61e3a6d1dce9"}')
+
+        obj = json.loads(msg, 'utf-8')
+        mangledMethod = obj.get("method").replace(".", "_")
+        params = obj.get('params', [])
+        method = getattr(bridge, mangledMethod)
+        self.assertIsNone(method(**params))
