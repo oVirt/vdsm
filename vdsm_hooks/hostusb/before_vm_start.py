@@ -48,15 +48,13 @@ def log_dev_owner(devpath, user, group):
         os.mkdir(os.path.dirname(HOOK_HOSTUSB_PATH))
 
     if os.path.isfile(HOOK_HOSTUSB_PATH):
-        f = file(HOOK_HOSTUSB_PATH, 'r')
-        for line in f:
-            if entry == line:
-                f.close()
-                return
+        with open(HOOK_HOSTUSB_PATH, 'r') as f:
+            for line in f:
+                if entry == line:
+                    return
 
-    f = file(HOOK_HOSTUSB_PATH, 'a')
-    f.writelines(entry)
-    f.close()
+    with open(HOOK_HOSTUSB_PATH, 'a') as f:
+        f.writelines(entry)
 
 
 # !TODO:

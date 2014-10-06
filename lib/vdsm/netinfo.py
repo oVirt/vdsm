@@ -398,11 +398,12 @@ def permAddr():
     paddr = {}
     for b in bondings():
         slave = ''
-        for line in file('/proc/net/bonding/' + b):
-            if line.startswith('Slave Interface: '):
-                slave = line[len('Slave Interface: '):-1]
-            if line.startswith('Permanent HW addr: '):
-                paddr[slave] = line[len('Permanent HW addr: '):-1]
+        with open('/proc/net/bonding/' + b) as f:
+            for line in f:
+                if line.startswith('Slave Interface: '):
+                    slave = line[len('Slave Interface: '):-1]
+                if line.startswith('Permanent HW addr: '):
+                    paddr[slave] = line[len('Permanent HW addr: '):-1]
     return paddr
 
 

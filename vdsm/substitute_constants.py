@@ -40,7 +40,7 @@ for fname in sys.argv[1:]:
     if fname == '-':
         f = sys.stdin
     else:
-        f = file(fname)
+        f = open(fname)
 
     s = f.read()
     r = re.sub('@[^@\n]*@', replacement, s)
@@ -48,6 +48,6 @@ for fname in sys.argv[1:]:
     if fname == '-':
         f = sys.stdout
     else:
-        f = file(fname, 'w')
+        f = open(fname, 'w')
 
     f.write(r)

@@ -352,8 +352,8 @@ def getMachineUUID():
     elif arch == "ppc64":
         if os.path.exists('/proc/device-tree/system-id'):
             # eg. output IBM,03061C14A
-            return file('/proc/device-tree/system-id').readline().\
-                rstrip('\0').replace(",", "")
+            with open('/proc/device-tree/system-id') as f:
+                return f.readline().rstrip('\0').replace(",", "")
 
     logging.error("getMachineUUID: Could not find machine's UUID.")
 
@@ -374,14 +374,15 @@ def getMacs():
 
     macs = []
     for b in glob.glob('/sys/class/net/*/device'):
-        mac = file(os.path.join(os.path.dirname(b), "address")). \
-            readline().replace("\n", "")
+        with open(os.path.join(os.path.dirname(b), "address")) as f:
+            mac = f.readline().replace("\n", "")
         macs.append(mac)
 
     for b in glob.glob('/proc/net/bonding/*'):
-        for line in file(b):
-            if line.startswith("Permanent HW addr: "):
-                macs.append(line.split(": ")[1].replace("\n", ""))
+        with open(b) as bond:
+            for line in bond:
+                if line.startswith("Permanent HW addr: "):
+                    macs.append(line.split(": ")[1].replace("\n", ""))
 
     return set(macs) - set(["", "00:00:00:00:00:00"])
 
@@ -421,13 +422,14 @@ def getHostID():
 
 def _getIfaceByIP(addr):
     remote = struct.unpack('I', socket.inet_aton(addr))[0]
-    for line in file('/proc/net/route').readlines()[1:]:
-        iface, dest, gateway, flags, refcnt, use, metric, \
-            mask, mtu, window, irtt = line.split()
-        dest = int(dest, 16)
-        mask = int(mask, 16)
-        if remote & mask == dest & mask:
-            return iface
+    with open('/proc/net/route') as f:
+        for line in f.readlines()[1:]:
+            iface, dest, gateway, flags, refcnt, use, metric, \
+                mask, mtu, window, irtt = line.split()
+            dest = int(dest, 16)
+            mask = int(mask, 16)
+            if remote & mask == dest & mask:
+                return iface
 
     return None  # Should never get here w/ default gw
 
@@ -713,12 +715,13 @@ def addSSHKey(path, strKey):
     resKeys = []
 
     try:
-        for key in file(path):
-            if not key.endswith('\n'):  # make sure we have complete lines
-                key += '\n'
-            if key != '\n' and not key.endswith(" ovirt-engine\n") or \
-                    key.startswith("#"):
-                resKeys.append(key)
+        with open(path) as f:
+            for key in f:
+                if not key.endswith('\n'):  # make sure we have complete lines
+                    key += '\n'
+                if key != '\n' and not key.endswith(" ovirt-engine\n") or \
+                        key.startswith("#"):
+                    resKeys.append(key)
     except IOError:
         logging.debug("Failed to read %s", path)
     if not strKey.endswith('\n'):
@@ -914,24 +917,25 @@ def _getBridgeParams(bridgeName):
     fileName = IFACE_CONFIG + bridgeName
 
     try:
-        for line in file(fileName):
-            line = line.strip()
-            if not line or line.startswith('#'):
-                continue
-            elif line.startswith("DEVICE=") or line.startswith("HWADDR="):
-                continue
-            elif line.startswith("NM_CONTROLLED="):
-                continue
-            elif line.startswith("TYPE="):
-                t = line.split("=", 1)[1].strip()
-                fIsBridgeDevice = (t == "Bridge")
-            else:
-                try:
-                    line = ''.join(shlex.split(line))
-                except:
-                    logging.warn("_getBridgeParams: failed to read parse line "
-                                 "%s", line)
-                lstReturn.append(line)
+        with open(fileName) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                elif line.startswith("DEVICE=") or line.startswith("HWADDR="):
+                    continue
+                elif line.startswith("NM_CONTROLLED="):
+                    continue
+                elif line.startswith("TYPE="):
+                    t = line.split("=", 1)[1].strip()
+                    fIsBridgeDevice = (t == "Bridge")
+                else:
+                    try:
+                        line = ''.join(shlex.split(line))
+                    except:
+                        logging.warn("_getBridgeParams: failed to read parse"
+                                     " line %s", line)
+                    lstReturn.append(line)
     except Exception as e:
         logging.error("_getBridgeParams: failed to read params of file " +
                       fileName + ".\n Error:" + str(e))
@@ -1465,18 +1469,18 @@ def createCSR(orgName, subject, random_num, tsDir, vdsmKey):
 
 
 def _cpuid(func):
-    f = file('/dev/cpu/0/cpuid')
-    f.seek(func)
-    return struct.unpack('IIII', f.read(16))
+    with open('/dev/cpu/0/cpuid') as f:
+        f.seek(func)
+        return struct.unpack('IIII', f.read(16))
 
 
 def _prdmsr(cpu, index):
-    f = file("/dev/cpu/%d/msr" % cpu)
-    f.seek(index)
-    try:
-        return struct.unpack('L', f.read(8))[0]
-    except:
-        return -1
+    with open("/dev/cpu/%d/msr" % cpu) as f:
+        f.seek(index)
+        try:
+            return struct.unpack('L', f.read(8))[0]
+        except:
+            return -1
 
 
 def _cpu_has_vmx_support():
@@ -1521,31 +1525,33 @@ def _svm_enabled_by_bios():
 
 
 def _check_kvm_support_on_power():
-    for line in file('/proc/cpuinfo').readlines():
-        if ':' in line:
-            k, v = line.split(':', 1)
-            k = k.strip()
-            v = v.strip()
-        if k == 'platform':
-            if 'powernv' in v.lower():
-                return 1
+    with open('/proc/cpuinfo') as info:
+        for line in info.readlines():
+            if ':' in line:
+                k, v = line.split(':', 1)
+                k = k.strip()
+                v = v.strip()
+            if k == 'platform':
+                if 'powernv' in v.lower():
+                    return 1
 
     return 0
 
 
 def cpuVendorID():
-    for line in file('/proc/cpuinfo').readlines():
-        if ':' in line:
-            k, v = line.split(':', 1)
-            k = k.strip()
-            v = v.strip()
-        if k == 'vendor_id' or k == 'cpu':
-            if v == 'GenuineIntel':
-                return v
-            elif v == 'AuthenticAMD':
-                return v
-            elif 'power' in v.lower():
-                return 'IBM_POWER'
+    with open('/proc/cpuinfo') as info:
+        for line in info.readlines():
+            if ':' in line:
+                k, v = line.split(':', 1)
+                k = k.strip()
+                v = v.strip()
+            if k == 'vendor_id' or k == 'cpu':
+                if v == 'GenuineIntel':
+                    return v
+                elif v == 'AuthenticAMD':
+                    return v
+                elif 'power' in v.lower():
+                    return 'IBM_POWER'
     return ''
 
 

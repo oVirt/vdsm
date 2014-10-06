@@ -30,17 +30,18 @@ def getHardwareInfoStructure():
                      'systemUUID': 'unavailable',
                      'systemManufacturer': 'unavailable'}
 
-    for line in file('/proc/cpuinfo'):
-        if line.strip() == '':
-            continue
-        key, value = map(str.strip, line.split(':', 1))
+    with open('/proc/cpuinfo') as info:
+        for line in info:
+            if line.strip() == '':
+                continue
+            key, value = map(str.strip, line.split(':', 1))
 
-        if key == 'platform':
-            infoStructure['systemFamily'] = value
-        elif key == 'model':
-            infoStructure['systemSerialNumber'] = value
-        elif key == 'machine':
-            infoStructure['systemVersion'] = value
+            if key == 'platform':
+                infoStructure['systemFamily'] = value
+            elif key == 'model':
+                infoStructure['systemSerialNumber'] = value
+            elif key == 'machine':
+                infoStructure['systemVersion'] = value
 
     if os.path.exists('/proc/device-tree/system-id'):
         with open('/proc/device-tree/system-id') as f:

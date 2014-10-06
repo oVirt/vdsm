@@ -728,14 +728,15 @@ def _getAllMacs():
 
     macs = []
     for b in glob.glob('/sys/class/net/*/device'):
-        mac = file(os.path.join(os.path.dirname(b), "address")). \
-            readline().replace("\n", "")
+        with open(os.path.join(os.path.dirname(b), "address")) as a:
+            mac = a.readline().replace("\n", "")
         macs.append(mac)
 
     for b in glob.glob('/proc/net/bonding/*'):
-        for line in file(b):
-            if line.startswith("Permanent HW addr: "):
-                macs.append(line.split(": ")[1].replace("\n", ""))
+        with open(b) as bond:
+            for line in bond:
+                if line.startswith("Permanent HW addr: "):
+                    macs.append(line.split(": ")[1].replace("\n", ""))
 
     return set(macs) - set(["", "00:00:00:00:00:00"])
 

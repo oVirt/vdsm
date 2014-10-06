@@ -152,15 +152,16 @@ class CpuInfo(object):
         p = {}
         self._arch = platform.machine()
 
-        for line in file(cpuinfo):
-            if line.strip() == '':
-                p = {}
-                continue
-            key, value = map(str.strip, line.split(':', 1))
-            if key == 'processor':
-                self._info[value] = p
-            else:
-                p[key] = value
+        with open(cpuinfo) as info:
+            for line in info:
+                if line.strip() == '':
+                    p = {}
+                    continue
+                key, value = map(str.strip, line.split(':', 1))
+                if key == 'processor':
+                    self._info[value] = p
+                else:
+                    p[key] = value
 
     def flags(self):
         if self._arch == Architecture.X86_64:
@@ -496,8 +497,8 @@ def _parseKeyVal(lines, delim='='):
 
 def _getIscsiIniName():
     try:
-        return _parseKeyVal(
-            file('/etc/iscsi/initiatorname.iscsi'))['InitiatorName']
+        with open('/etc/iscsi/initiatorname.iscsi') as f:
+            return _parseKeyVal(f)['InitiatorName']
     except:
         logging.error('reporting empty InitiatorName', exc_info=True)
     return ''

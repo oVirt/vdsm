@@ -58,7 +58,8 @@ class ifcfgConfigWriterTests(TestCaseBase):
             if content is None:
                 self.assertFalse(os.path.exists(fn))
             else:
-                restoredContent = file(fn).read()
+                with open(fn) as f:
+                    restoredContent = f.read()
                 self.assertEqual(content, restoredContent)
 
     def assertEqualXml(self, a, b, msg=None):

@@ -1628,8 +1628,8 @@ class Global(APIBase):
             if v.conf['pid'] == '0':
                 continue
             try:
-                statmfile = file('/proc/' + v.conf['pid'] + '/statm')
-                resident += int(statmfile.read().split()[1])
+                with open('/proc/' + v.conf['pid'] + '/statm') as statmfile:
+                    resident += int(statmfile.read().split()[1])
             except:
                 pass
         resident *= PAGE_SIZE_BYTES

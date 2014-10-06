@@ -109,7 +109,8 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
         if errorSeen and raiseError:
             raise HookError()
 
-        final_data = file(data_filename).read()
+        with open(data_filename) as f:
+            final_data = f.read()
     finally:
         os.unlink(data_filename)
     if hookType == _DOMXML_HOOK:

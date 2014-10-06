@@ -8,9 +8,8 @@ NUMBER_OF_HUGETPAGES = '/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages'
 
 
 def removeSysHugepages(pages):
-    f = file(NUMBER_OF_HUGETPAGES, 'r')
-    currPages = int(f.read())
-    f.close()
+    with open(NUMBER_OF_HUGETPAGES, 'r') as f:
+        currPages = int(f.read())
 
     totalPages = currPages - pages
     os.system('sudo sysctl vm.nr_hugepages=%d' % totalPages)

@@ -35,9 +35,8 @@ NUMBER_OF_HUGETPAGES = '/sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages'
 
 
 def addSysHugepages(pages):
-    f = file(NUMBER_OF_HUGETPAGES, 'r')
-    currPages = int(f.read())
-    f.close()
+    with open(NUMBER_OF_HUGETPAGES, 'r') as f:
+        currPages = int(f.read())
 
     totalPages = pages + currPages
     # command: sysctl vm.nr_hugepages=256
@@ -48,17 +47,15 @@ def addSysHugepages(pages):
                          (' '.join(command), err))
         sys.exit(2)
 
-    f = file(NUMBER_OF_HUGETPAGES, 'r')
-    newCurrPages = int(f.read())
-    f.close()
+    with open(NUMBER_OF_HUGETPAGES, 'r') as f:
+        newCurrPages = int(f.read())
 
     return (newCurrPages - currPages)
 
 
 def freeSysHugepages(pages):
-    f = file(NUMBER_OF_HUGETPAGES, 'r')
-    currPages = int(f.read())
-    f.close()
+    with open(NUMBER_OF_HUGETPAGES, 'r') as f:
+        currPages = int(f.read())
 
     if pages > 0:
         # command: sysctl vm.nr_hugepages=0

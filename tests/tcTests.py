@@ -197,7 +197,8 @@ class TestFilters(TestCaseBase):
     def test_filter_objs(self):
         dirName = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dirName, "tc_filter_show.out")
-        out = file(path).read()
+        with open(path) as f:
+            out = f.read()
         PARSED_FILTERS = (
             tc.Filter(prio=49149, handle='803::800',
                       actions=[tc.MirredAction(target='tap1')]),

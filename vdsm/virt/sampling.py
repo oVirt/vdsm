@@ -124,8 +124,9 @@ class TotalCpuSample:
     The sample is taken at initialization time and can't be updated.
     """
     def __init__(self):
-        self.user, userNice, self.sys, self.idle = \
-            map(int, file('/proc/stat').readline().split()[1:5])
+        with open('/proc/stat') as f:
+            self.user, userNice, self.sys, self.idle = \
+                map(int, f.readline().split()[1:5])
         self.user += userNice
 
 

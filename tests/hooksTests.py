@@ -114,9 +114,10 @@ echo "81212590184644762"
 import os
 import hooking
 
-domXMLFile = file(os.environ['_hook_domxml'], 'a')
+domXMLFile = open(os.environ['_hook_domxml'], 'a')
 customProperty = os.environ['customProperty']
 domXMLFile.write(customProperty)
+domXMLFile.close()
             """
                 f.write(code)
                 os.chmod(f.name, 0o775)

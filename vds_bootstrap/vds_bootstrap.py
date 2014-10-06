@@ -241,9 +241,10 @@ def _safeWrite(fname, s):
 
 
 def _constantTSC():
-    return all(' constant_tsc ' in line
-               for line in file('/proc/cpuinfo')
-               if line.startswith('flags\t'))
+    with open('/proc/cpuinfo') as info:
+        return all(' constant_tsc ' in line
+                   for line in info
+                   if line.startswith('flags\t'))
 
 
 class Deploy:

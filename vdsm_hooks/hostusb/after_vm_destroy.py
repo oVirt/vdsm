@@ -22,20 +22,18 @@ def get_owner(devpath):
     if not os.path.isfile(HOOK_HOSTUSB_PATH):
         return uid, pid
 
-    f = file(HOOK_HOSTUSB_PATH, 'r')
-    for line in f:
-        if len(line) > 0 and line.split(':')[0] == devpath:
-            entry = line.split(':')
-            uid = entry[1]
-            pid = entry[2]
-        elif len(line) > 0:
-            content += line + '\n'
+    with open(HOOK_HOSTUSB_PATH, 'r') as f:
+        for line in f:
+            if len(line) > 0 and line.split(':')[0] == devpath:
+                entry = line.split(':')
+                uid = entry[1]
+                pid = entry[2]
+            elif len(line) > 0:
+                content += line + '\n'
 
-    f.close()
     if uid != -1:
-        f = file(HOOK_HOSTUSB_PATH, 'w')
-        f.writelines(content)
-        f.close()
+        with open(HOOK_HOSTUSB_PATH, 'w') as f:
+            f.writelines(content)
 
     return uid, pid
 
