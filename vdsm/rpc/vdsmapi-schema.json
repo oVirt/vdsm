@@ -1183,7 +1183,9 @@
 #
 # @cpuCores:            The number of CPU cores present
 #
-# @cpuSockets:          The numbet of CPU sockets
+# @cpuSockets:          The number of CPU sockets
+#
+# @onlineCpus:          The list of online logical CPUs
 #
 # @cpuSpeed:            The speed of each CPU (in MHz)
 #
@@ -1266,7 +1268,8 @@
 ##
 {'type': 'VdsmCapabilities',
  'data': {'kvmEnabled': 'bool', 'cpuThreads': 'uint', 'cpuCores': 'uint',
-          'cpuSockets': 'uint', 'cpuSpeed': 'float', 'cpuModel': 'str',
+          'cpuSockets': 'uint', 'onlineCpus': 'str',
+          'cpuSpeed': 'float', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedENGINEs': ['str'],
           'supportedProtocols': ['str'], 'clusterLevels': ['str'],
