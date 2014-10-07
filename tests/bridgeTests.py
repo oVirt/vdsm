@@ -140,4 +140,4 @@ class BridgeTests(TestCaseBase):
         mangledMethod = obj.get("method").replace(".", "_")
         params = obj.get('params', [])
         method = getattr(bridge, mangledMethod)
-        self.assertIsNone(method(**params))
+        self.assertEqual(method(**params), None)
