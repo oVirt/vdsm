@@ -245,6 +245,17 @@ class VdsmTestCase(unittest.TestCase):
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
 
+    @contextmanager
+    def assertElapsed(self, expected, tolerance=0.5):
+        start = vdsm.utils.monotonic_time()
+
+        yield
+
+        elapsed = vdsm.utils.monotonic_time() - start
+
+        if abs(elapsed - expected) > tolerance:
+            raise AssertionError("Operation time: %s" % elapsed)
+
 
 class XMLTestCase(VdsmTestCase):
 
