@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.Log;
@@ -14,19 +16,39 @@ import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
+import org.ovirt.vdsm.jsonrpc.client.ResponseBuilder;
 
 /**
  * Utility class for json marshalling.
- * 
+ *
  */
 public class JsonUtils {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     private static Log log = LogFactory.getLog(JsonUtils.class);
     private static ObjectMapper mapper = new ObjectMapper();
     private static JsonFactory factory = mapper.getJsonFactory();
+    static {
+        mapper.configure(
+                DeserializationConfig.Feature.USE_JAVA_ARRAY_FOR_JSON_ARRAY,
+                true);
+    }
+
+    public static Map<String, Object> mapValues(JsonNode node) {
+        Map<String, Object> map = null;
+        try {
+            map = mapper.readValue(node,
+                    new TypeReference<HashMap<String, Object>>() {
+                    });
+        } catch (IOException e) {
+            log.debug("Exception thrown during marshalling json", e);
+        }
+        return map;
+    }
 
     public static byte[] jsonToByteArray(JsonNode json) {
         final ByteArrayOutputStream os = new ByteArrayOutputStream();
@@ -56,17 +78,17 @@ public class JsonUtils {
         return os.toByteArray();
     }
 
+    public static <T> JsonRpcResponse buildErrorResponse(JsonNode id, T code, String message) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("code", code);
+        error.put("message", message);
+        return new ResponseBuilder(id).withError(error).build();
+    }
+
     public static JsonRpcResponse buildFailedResponse(JsonRpcRequest request) {
-        String networkConnectivityIssueMessage =
-                "{\"jsonrpc\": \"2.0\", \"id\": \"" + request.getPlainId() + "\", \"error\": {\"message\":"
-                        + " \"Message timeout which can be caused by communication issues'\", \"code\": 5022}}";
-        JsonRpcResponse response = null;
-        try {
-            response = JsonRpcResponse.fromJsonNode(mapper.readTree(networkConnectivityIssueMessage));
-        } catch (IOException e) {
-            log.debug("Exception thrown during marshalling json", e);
-        }
-        return response;
+        return buildErrorResponse(request.getId(),
+                5022,
+                "Message timeout which can be caused by communication issues");
     }
 
     public static String getAddress(String host, int port) {
@@ -88,7 +110,7 @@ public class JsonUtils {
     }
 
     public static int reduceGracePeriod(int interval) {
-        return interval - (int)(interval * 0.1);
+        return interval - (int) (interval * 0.1);
     }
 
     public static long getTimeout(int timeout, TimeUnit unit) {

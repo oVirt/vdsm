@@ -41,7 +41,7 @@ public class StompClient extends PlainClient {
                 // TODO wait for the mini broker to be finished
                 // subscribed.await();
             } catch (InterruptedException e) {
-                disconnect();
+                disconnect("Waiting for connect interrupted");
                 throw new ClientConnectionException("Timeout during connection", e);
             }
         }

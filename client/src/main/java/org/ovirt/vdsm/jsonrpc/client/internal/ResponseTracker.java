@@ -1,28 +1,37 @@
 package org.ovirt.vdsm.jsonrpc.client.internal;
 
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.buildErrorResponse;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.buildFailedResponse;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.getTimeout;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.jsonToByteArray;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.mapValues;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
+import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 import org.ovirt.vdsm.jsonrpc.client.RequestAlreadySentException;
+import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
 import org.ovirt.vdsm.jsonrpc.client.utils.ResponseTracking;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
 
 /**
- * Response tracker thread is responsible for tracking and retrying requests.
- * For each connection there is single instance of the thread.
+ * Response tracker thread is responsible for tracking and retrying requests. For each connection there is single
+ * instance of the thread.
  *
  */
 public class ResponseTracker implements Runnable {
@@ -31,15 +40,21 @@ public class ResponseTracker implements Runnable {
     private AtomicBoolean isTracking;
     private final ConcurrentMap<JsonNode, JsonRpcCall> runningCalls = new ConcurrentHashMap<>();
     private ConcurrentMap<JsonNode, ResponseTracking> map = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, List<JsonNode>> hostToId = new ConcurrentHashMap<>();
     private Queue<JsonNode> queue = new ConcurrentLinkedQueue<>();
+    private final Lock lock = new ReentrantLock();
 
     public ResponseTracker() {
         this.isTracking = new AtomicBoolean(true);
     }
 
     private void removeRequestFromTracking(JsonNode id) {
-        this.queue.remove(id);
-        this.map.remove(id);
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            this.queue.remove(id);
+            ResponseTracking tracking = this.map.remove(id);
+            List<JsonNode> nodes = this.hostToId.get(tracking.getClient().getHostname());
+            nodes.remove(id);
+        }
     }
 
     public void registerCall(JsonRpcRequest req, JsonRpcCall call) {
@@ -53,8 +68,17 @@ public class ResponseTracker implements Runnable {
     }
 
     public void registerTrackingRequest(JsonRpcRequest req, ResponseTracking tracking) {
-        this.map.put(req.getId(), tracking);
-        this.queue.add(req.getId());
+        JsonNode id = req.getId();
+        List<JsonNode> nodes = new CopyOnWriteArrayList<>();
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            this.map.put(id, tracking);
+            this.queue.add(id);
+            nodes.add(id);
+            nodes = this.hostToId.putIfAbsent(tracking.getClient().getHostname(), nodes);
+            if (nodes != null) {
+                nodes.add(id);
+            }
+        }
     }
 
     @Override
@@ -94,9 +118,27 @@ public class ResponseTracker implements Runnable {
     }
 
     private void handleFailure(ResponseTracking tracking, JsonNode id) {
+        remove(tracking, id, buildFailedResponse(tracking.getRequest()));
+        tracking.getClient().disconnect("Vds timeout occured");
+    }
+
+    private void remove(ResponseTracking tracking, JsonNode id, JsonRpcResponse response) {
         this.runningCalls.remove(id);
         removeRequestFromTracking(id);
-        tracking.getCall().addResponse(buildFailedResponse(tracking.getRequest()));
-        tracking.getClient().disconnect();
+        tracking.getCall().addResponse(response);
+    }
+
+    public void processIssue(JsonRpcResponse response) {
+        JsonNode error = response.getError();
+        Map<String, Object> map = mapValues(error);
+        String hostname = (String) map.get("code");
+        JsonRpcResponse errorResponse = buildErrorResponse(null, 5022, (String) map.get("message"));
+
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            List<JsonNode> nodes = this.hostToId.get(hostname);
+            for (JsonNode id : nodes) {
+                remove(this.map.get(id), id, errorResponse);
+            }
+        }
     }
 }

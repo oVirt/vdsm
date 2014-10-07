@@ -89,6 +89,9 @@ public class SSLStompClientTestCase {
             // OK
         }
 
+        // get error message
+        queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
+
         Future<ReactorListener> futureListener =
                 this.listeningReactor.createListener(HOSTNAME, port, new EventListener() {
 

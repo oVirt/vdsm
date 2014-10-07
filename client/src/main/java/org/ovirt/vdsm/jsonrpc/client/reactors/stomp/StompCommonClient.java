@@ -5,6 +5,7 @@ import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_I
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_MESSAGE;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_RECEIPT;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.buildErrorResponse;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.isEmpty;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
@@ -153,6 +155,12 @@ public abstract class StompCommonClient extends ReactorClient {
         message.trimEndOfMessage();
         clean();
         processMessage(message);
+    }
+
+    @Override
+    protected byte[] buildNetworkResponse(String reason) {
+        JsonRpcResponse response = buildErrorResponse(null, getHostname(), reason);
+        return response.toByteArray();
     }
 
 }

@@ -6,6 +6,8 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.jsonToByteArray;
 import java.util.List;
 import java.util.concurrent.Future;
 
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.NullNode;
 import org.ovirt.vdsm.jsonrpc.client.internal.BatchCall;
 import org.ovirt.vdsm.jsonrpc.client.internal.Call;
 import org.ovirt.vdsm.jsonrpc.client.internal.JsonRpcCall;
@@ -111,6 +113,10 @@ public class JsonRpcClient {
     }
 
     public void processResponse(JsonRpcResponse response) {
+        JsonNode id = response.getId();
+        if (NullNode.class.isInstance(id)) {
+            this.tracker.processIssue(response);
+        }
         JsonRpcCall call = this.tracker.removeCall(response.getId());
         if (call == null) {
             return;

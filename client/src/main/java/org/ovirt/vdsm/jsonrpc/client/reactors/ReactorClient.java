@@ -37,13 +37,6 @@ public abstract class ReactorClient {
     public interface MessageListener {
         public void onMessageReceived(byte[] message);
     }
-    final Callable<Void> disconnectCallable = new Callable<Void>() {
-        @Override
-        public Void call() {
-            disconnect();
-            return null;
-        }
-    };
     public static final int BUFFER_SIZE = 1024;
     private static Log log = LogFactory.getLog(ReactorClient.class);
     private final String hostname;
@@ -74,7 +67,7 @@ public abstract class ReactorClient {
     public void setRetryPolicy(RetryPolicy policy) {
         this.policy = policy;
         if (isOpen()) {
-            disconnect();
+            disconnect("Policy reset");
         }
     }
 
@@ -126,7 +119,15 @@ public abstract class ReactorClient {
             postConnect(getPostConnectCallback());
         } catch (InterruptedException | ExecutionException e) {
             log.error("Exception during connection", e);
-            scheduleTask(this.disconnectCallable);
+            final String message = "Connection issue " + e.getMessage();
+            final Callable<Void> disconnectCallable = new Callable<Void>() {
+                @Override
+                public Void call() {
+                    disconnect(message);
+                    return null;
+                }
+            };
+            scheduleTask(disconnectCallable);
             throw new ClientConnectionException(e);
         }
     }
@@ -149,13 +150,22 @@ public abstract class ReactorClient {
         }
     }
 
-    public final void disconnect() {
+    public final void disconnect(String message) {
         postDisconnect();
         closeChannel();
+        emitOnMessageReceived(buildNetworkResponse(message));
     }
 
     public Future<Void> close() {
-        return scheduleTask(this.disconnectCallable);
+        final String message = "Client close";
+        final Callable<Void> disconnectCallable = new Callable<Void>() {
+            @Override
+            public Void call() {
+                disconnect(message);
+                return null;
+            }
+        };
+        return scheduleTask(disconnectCallable);
     }
 
     protected <T> FutureTask<T> scheduleTask(Callable<T> callable) {
@@ -181,7 +191,7 @@ public abstract class ReactorClient {
     private void processHeartbeat() {
         if (!this.isInInit() && this.policy.isHeartbeat() && this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
             log.debug("Heartbeat exeeded. Closing channel");
-            this.disconnect();
+            this.disconnect("Heartbeat exeeded");
         }
     }
 
@@ -276,4 +286,9 @@ public abstract class ReactorClient {
      *         SSL hand shake. <code>false</code> when connection is initialized.
      */
     public abstract boolean isInInit();
+
+    /**
+     * Builds network issue message for specific protocol.
+     */
+    protected abstract byte[] buildNetworkResponse(String reason);
 }

@@ -63,7 +63,7 @@ public class ResponseBuilder {
      * @return {@link ResponseBuilder} to let add more parameters.
      */
     public ResponseBuilder withError(Map<String, Object> error) {
-        this.result = OBJECT_MAPPER.valueToTree(error);
+        this.error = OBJECT_MAPPER.valueToTree(error);
         return this;
     }
 

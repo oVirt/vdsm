@@ -84,7 +84,7 @@ public class SSLStompClient extends SSLClient {
             // TODO wait for the mini broker to be finished
             // this.subscribed.await();
         } catch (InterruptedException e) {
-            disconnect();
+            disconnect("Waiting for connect interrupted");
             throw new IllegalStateException("Communication interrupted");
         }
     }
