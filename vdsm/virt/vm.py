@@ -3227,7 +3227,7 @@ class Vm(object):
                 # to an unexpected stop of VDSM therefore We're going to clean
                 # it up now
                 if os.path.islink(uuidPath):
-                    os.path.unlink(uuidPath)
+                    os.unlink(uuidPath)
 
                 # We don't want an exception to be thrown when the path already
                 # exists
