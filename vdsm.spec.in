@@ -35,10 +35,6 @@
 %global with_vhostmd 1
 %endif
 
-%if 0%{?fedora} >= 19 || 0%{?rhel} >= 7
-%global with_chcon_hack 1
-%endif
-
 %if 0%{?fedora} >= 15 || 0%{?rhel} >= 7
 %global with_systemd 1
 %endif
@@ -643,7 +639,7 @@ sed -i '/ su /d' vdsm/vdsm-logrotate.conf.in
 %if 0%{?enable_autotools}
 autoreconf -if
 %endif
-%configure %{?with_hooks:--enable-hooks} %{?with_chcon_hack:--enable-chcon-hack}
+%configure %{?with_hooks:--enable-hooks}
 make
 # Setting software_version and software_revision in dsaversion.py
 baserelease=`echo "%{release}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
@@ -669,11 +665,6 @@ install -Dm 0755 init/sysvinit/respawn \
 # Install the lvm rules
 install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
-
-%if 0%{?with_chcon_hack}
-install -Dm 0755 vdsm/storage/vdsm-chcon \
-                 %{buildroot}%{_udevexecdir}/vdsm-chcon
-%endif
 
 install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
@@ -1150,9 +1141,6 @@ exit 0
 %endif
 %{python_sitelib}/sos/plugins/vdsm.py*
 %{_udevrulesdir}/12-vdsm-lvm.rules
-%if 0%{?with_chcon_hack}
-%{_udevexecdir}/vdsm-chcon
-%endif
 /etc/security/limits.d/99-vdsm.conf
 %{_mandir}/man8/vdsmd.8*
 %if 0%{?rhel}

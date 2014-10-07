@@ -81,22 +81,3 @@ nodist_vdsmstorage_DATA = \
 EXTRA_DIST = \
 	lvm.env.in \
 	$(NULL)
-
-all-local: vdsm-lvm.rules
-
-vdsm-lvm.rules: vdsm-lvm.rules.tpl
-if CHCON_HACK
-	python -c '\
-		import sys, re; \
-		s = open(sys.argv[1]).read(); \
-		pat = re.compile(r"{{.+?}}\n?", re.S); \
-		s = pat.sub("", s); \
-		sys.stdout.write(s)' $< > $@;
-else
-	python -c '\
-		import sys, re; \
-		s = open(sys.argv[1]).read(); \
-		pat = re.compile(r"{{if chcon_hack}}\n?.+?{{endif}}\n?", re.S); \
-		s = pat.sub("", s); \
-		sys.stdout.write(s)' $< > $@;
-endif
