@@ -66,11 +66,6 @@ class MultiProtocolAcceptor:
     """
     log = logging.getLogger("vds.MultiProtocolAcceptor")
 
-    READ_ONLY_MASK = (select.POLLIN | select.POLLPRI | select.POLLHUP |
-                      select.POLLERR)
-
-    READ_WRITE_MASK = (select.POLLIN | select.POLLPRI |
-                       select.POLLOUT | select.POLLHUP | select.POLLERR)
     CLEANUP_INTERVAL = 30.0
 
     def __init__(self, host, port, sslctx=None):
@@ -86,8 +81,8 @@ class MultiProtocolAcceptor:
 
         self._socket = self._create_socket(host, port)
         self._poller = select.poll()
-        self._poller.register(self._socket, self.READ_ONLY_MASK)
-        self._poller.register(self._read_fd, self.READ_ONLY_MASK)
+        self._poller.register(self._socket, select.POLLIN)
+        self._poller.register(self._read_fd, select.POLLIN)
         self._pending_connections = {}
         self._handlers = []
         self._next_cleanup = 0
@@ -115,14 +110,14 @@ class MultiProtocolAcceptor:
         events = self._poller.poll(timeout)
 
         for fd, event in events:
-            if event & (select.POLLIN | select.POLLPRI):
+            if event & select.POLLIN:
                 if fd is self._read_fd:
                     self._maybe_stop()
                 elif fd is self._socket.fileno():
                     self._accept_connection()
                 else:
                     self._handle_connection_read(fd)
-            if event & (select.POLLOUT):
+            if event & select.POLLOUT:
                     self._handle_connection_write(fd)
 
         now = time.time()
@@ -208,9 +203,9 @@ class MultiProtocolAcceptor:
         self._pending_connections[socket.fileno()] = (time.time(),
                                                       socket)
         if _is_handshaking(socket):
-            self._poller.register(socket, self.READ_WRITE_MASK)
+            self._poller.register(socket, select.POLLIN | select.POLLOUT)
         else:
-            self._poller.register(socket, self.READ_ONLY_MASK)
+            self._poller.register(socket, select.POLLIN)
 
     def _remove_connection(self, socket):
         self._poller.unregister(socket)
@@ -227,7 +222,7 @@ class MultiProtocolAcceptor:
             socket.close()
         else:
             if not socket.is_handshaking:
-                self._poller.modify(socket, self.READ_ONLY_MASK)
+                self._poller.modify(socket, select.POLLIN)
 
     def _handle_connection_write(self, fd):
         _, client_socket = self._pending_connections[fd]
