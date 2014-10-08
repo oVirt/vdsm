@@ -139,9 +139,6 @@ def get(target=None, killOnFailure=True):
                                 os.kill(os.getpid(), signal.SIGTERM)
                             else:
                                 raise
-                log.debug('Unknown libvirterror: ecode: %d edom: %d '
-                          'level: %d message: %s', ecode, edom,
-                          e.get_error_level(), e.get_error_message())
                 raise
         return wrapper
 
