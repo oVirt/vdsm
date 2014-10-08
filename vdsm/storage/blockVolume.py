@@ -85,7 +85,7 @@ class BlockVolume(volume.Volume):
         try:
             lvm.getLV(self.sdUUID, self.volUUID)
         except se.LogicalVolumeDoesNotExistError:
-            raise se.VolumeDoesNotExist(self.volUUID)  # Fix me
+            raise se.VolumeDoesNotExist(self.volUUID)
         volume.Volume.validate(self)
 
     def refreshVolume(self):
