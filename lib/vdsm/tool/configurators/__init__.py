@@ -32,55 +32,88 @@ class InvalidRun(UsageError):
 
 # Declare state of configuration
 #
-# CONFIGURED     = Module is set properly without any required changes on
-#                  force.
-# NOT_CONFIGURED = Module is not set properly for VDSM and need to be
-#                  configured.
-# NOT_SURE       = VDSM configured module already but on force configure vdsm
-#                  will set configurations to defaults parameters.
+# CONFIGURED     = Module configured.
 #
+# NOT_CONFIGURED = Module not configured before.
+#
+# NOT_SURE       = Module configured before,
+#                  configuration validity could not be determined.
+#
+# See also --force at configurators.py.
 CONFIGURED, NOT_CONFIGURED, NOT_SURE = range(3)
 
 
 class ModuleConfigure(object):
+    """A ModuleConfigure handles an aspect of vdsm's configuration life cycle.
 
+    Including:
+    - Configure the machine to run vdsm after package installation.
+    - Cleanup configuration before package removal.
+    - Check configuration status and validity during init.
+    """
     @property
     def name(self):
-        """
-        The module name to be used with the --module option.
+        """Return module name to be used with the --module option.
 
-        Must be overriden by subclass.
+        Must be overridden by subclass.
         """
         raise NotImplementedError()
 
     @property
     def requires(self):
-        """
-        Names of other modules required by this module.
+        """Return a set of other modules names required by this module.
 
-        May be overriden by subclass.
+        Those modules will be included even if not provided in --module.
+
+        May be overridden by subclass.
         """
         return frozenset()
 
     @property
     def services(self):
-        """
-        Services that must not run when this module is configured. The
-        specified services will be stopped before this configurator is called,
+        """Return the names of services this module depend on.
+
+        These services will be stopped before this configurator is called,
         and will be started in reversed order when the configurator is done.
 
-        May be overriden by subclass.
+        May be overridden by subclass.
         """
         return ()
 
     def validate(self):
+        """Return True if this module's configuration is valid.
+
+        Note: Returning False will cause vdsm to abort during initialization.
+
+        May be overridden by subclass.
+        """
         return True
 
     def configure(self):
+        """Prepare this machine to run vdsm.
+
+        May be overridden by subclass.
+        """
         pass
 
     def isconfigured(self):
+        """Return the configuration status of this module.
+
+        see possible values above.
+
+        Note: returning NOT_CONFIGURED will cause vdsm to abort during
+        initialization.
+
+        Note: after configure isconfigured should return NOT_SURE or
+        CONFIGURED.
+
+        May be overridden by subclass.
+        """
         return NOT_CONFIGURED
 
     def removeConf(self):
+        """Cleanup vdsm's configuration.
+
+        May be overridden by subclass.
+        """
         pass
