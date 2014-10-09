@@ -129,8 +129,7 @@ class MultiProtocolAcceptor:
         self.log.debug("Cleaning Acceptor")
 
         for _, (_, client_socket) in self._pending_connections.items():
-            self._remove_connection(client_socket)
-            client_socket.close()
+            self._close_connection(client_socket)
 
         self._poller.unregister(self._socket)
         self._poller.unregister(self._read_fd)
@@ -141,8 +140,7 @@ class MultiProtocolAcceptor:
     def _cleanup_pending_connections(self):
         for _, (accepted, client_socket) in self._pending_connections.items():
             if time.time() - accepted > self.CLEANUP_INTERVAL:
-                self._remove_connection(client_socket)
-                client_socket.close()
+                self._close_connection(client_socket)
 
     def detect_protocol(self, data):
         for handler in self._handlers:
@@ -214,13 +212,16 @@ class MultiProtocolAcceptor:
         host, port = socket.getpeername()
         self.log.debug("Connection removed from %s:%d", host, port)
 
+    def _close_connection(self, socket):
+        self._remove_connection(socket)
+        socket.close()
+
     def _process_handshake(self, socket):
         try:
             socket.is_handshaking = (socket.accept_ssl() == 0)
         except Exception as e:
             self.log.debug("Error during handshake: %s", e)
-            self._remove_connection(socket)
-            socket.close()
+            self._close_connection(socket)
         else:
             if not socket.is_handshaking:
                 self._poller.modify(socket, select.POLLIN)
@@ -241,24 +242,23 @@ class MultiProtocolAcceptor:
         except socket.error as e:
             if e.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
                 self.log.warning("Unable to read data: %s", e)
-                self._remove_connection(client_socket)
-                client_socket.close()
+                self._close_connection(client_socket)
             return
 
         if data is None:
             # None is returned when ssl socket needs to read more data
             return
 
-        self._remove_connection(client_socket)
         try:
             handler = self.detect_protocol(data)
         except _CannotDetectProtocol:
             self.log.warning("Unrecognized protocol: %r", data)
-            client_socket.close()
+            self._close_connection(client_socket)
         else:
             host, port = client_socket.getpeername()
             self.log.debug("Detected protocol %s from %s:%d",
                            handler.NAME, host, port)
+            self._remove_connection(client_socket)
             handler.handleSocket(client_socket, (host, port))
 
     def _create_socket(self, host, port):
