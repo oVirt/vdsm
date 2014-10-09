@@ -288,6 +288,15 @@ class VmStatsThread(AdvancedStatsThread):
             # Avoid queries from storage during recovery process
             return
 
+        # The usage of the cryptic flag VIR_TYPED_PARAM_STRING_OKAY
+        # is will be dropped in a future patch, once we are sure the
+        # minimum supported libvirtd server we require is ok with that.
+        # Quoting libvirt.h:
+        # """Older servers lacked the ability to handle string typed
+        # parameters.[...] This flag is automatically set when needed,
+        # [...] however, manually setting the flag can be used to
+        # reject servers that cannot return typed strings [...]"""
+
         diskSamples = {}
         for vmDrive in self._vm.getDiskDevices():
             diskSamples[vmDrive.name] = self._vm._dom.blockStatsFlags(
