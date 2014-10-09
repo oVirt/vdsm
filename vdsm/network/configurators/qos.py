@@ -102,7 +102,8 @@ def _fresh_qdisc_conf_out(dev, vlan_tag, class_id, qos):
     try:
         tc.qdisc.delete(dev, kind='ingress')  # Deletes the ingress qdisc
     except tc.TrafficControlException as tce:
-        if tce.errCode != errno.EINVAL:  # No ingress exists
+        if tce.errCode not in (errno.EINVAL,
+                               errno.ENOENT):  # No ingress exists
             raise
 
     tc.qdisc.add(dev, _SHAPING_QDISC_KIND, handle='0x' + _ROOT_QDISC_HANDLE,
