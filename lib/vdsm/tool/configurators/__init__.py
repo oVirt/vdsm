@@ -27,7 +27,7 @@ class InvalidConfig(UsageError):
 
 
 class InvalidRun(UsageError):
-    """ raise when the environemnt is not valid to run the command """
+    """ raise when the environment is not valid to run the command """
     pass
 
 # Declare state of configuration
