@@ -34,6 +34,7 @@ import monkeypatch
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 from unittest import TestCase
+import functools
 import tempfile
 import os
 import shutil
@@ -76,15 +77,25 @@ class MockModuleConfigurator(ModuleConfigure):
             raise Exception('mock invalid remove conf')
 
 
+def patchConfigurators(mockConfigurers):
+    def decorator(f):
+        @functools.wraps(f)
+        def wrapper(*args, **kw):
+            monkeypatch.MonkeyPatch(
+                configurator,
+                '_CONFIGURATORS',
+                dict((m.name, m) for m in mockConfigurers))
+        return wrapper
+    return decorator
+
+
 class ConfiguratorTests(VdsmTestCase):
 
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'a': MockModuleConfigurator('a', ('b',)),
-            'b': MockModuleConfigurator('b', ('a',))
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('a', ('b',)),
+            MockModuleConfigurator('b', ('a',)),
+        )
     )
     def testDependencyCircle(self):
         self.assertRaises(
@@ -93,17 +104,15 @@ class ConfiguratorTests(VdsmTestCase):
             'validate-config'
         )
 
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'a': MockModuleConfigurator('a', ('b', 'd')),
-            'b': MockModuleConfigurator('b', ('c',)),
-            'c': MockModuleConfigurator('c', ('e', 'd')),
-            'd': MockModuleConfigurator('d', ('e', 'e')),
-            'e': MockModuleConfigurator('e'),
-            'f': MockModuleConfigurator('f'),
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('a', ('b', 'd')),
+            MockModuleConfigurator('b', ('c',)),
+            MockModuleConfigurator('c', ('e', 'd')),
+            MockModuleConfigurator('d', ('e', 'e')),
+            MockModuleConfigurator('e'),
+            MockModuleConfigurator('f'),
+        )
     )
     def testNormalDependencies(self):
         modules = configurator._parse_args('validate-config').modules
@@ -114,26 +123,22 @@ class ConfiguratorTests(VdsmTestCase):
                 self.assertIn(n, before_m)
             before_m.add(m.name)
 
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'a': MockModuleConfigurator('a'),
-            'b': MockModuleConfigurator('b'),
-            'c': MockModuleConfigurator('c')
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('a'),
+            MockModuleConfigurator('b'),
+            MockModuleConfigurator('c'),
+        )
     )
     def testNoDependencies(self):
         configurator._parse_args('validate-config').modules
 
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'a': MockModuleConfigurator('a', ('b', 'c')),
-            'b': MockModuleConfigurator('b'),
-            'c': MockModuleConfigurator('c')
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('a', ('b', 'c')),
+            MockModuleConfigurator('b'),
+            MockModuleConfigurator('c'),
+        )
     )
     def testDependenciesAdditionPositive(self):
         modules = configurator._parse_args(
@@ -145,14 +150,12 @@ class ConfiguratorTests(VdsmTestCase):
         self.assertTrue('b' in modulesNames)
         self.assertTrue('c' in modulesNames)
 
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'a': MockModuleConfigurator('a'),
-            'b': MockModuleConfigurator('b'),
-            'c': MockModuleConfigurator('c')
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('a'),
+            MockModuleConfigurator('b'),
+            MockModuleConfigurator('c'),
+        )
     )
     def testDependenciesAdditionNegative(self):
 
@@ -165,13 +168,11 @@ class ConfiguratorTests(VdsmTestCase):
         self.assertFalse('b' in moduleNames)
         self.assertFalse('c' in moduleNames)
 
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'libvirt': MockModuleConfigurator('libvirt'),
-            'sanlock': MockModuleConfigurator('sanlock'),
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('libvirt'),
+            MockModuleConfigurator('sanlock'),
+        )
     )
     def testNonExistentModule(self):
 
@@ -183,13 +184,12 @@ class ConfiguratorTests(VdsmTestCase):
         )
 
     @ValidateRunningAsRoot
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'a': MockModuleConfigurator('a', should_succeed=False),
-            'b': MockModuleConfigurator('b', should_succeed=False),
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('a', should_succeed=False),
+            MockModuleConfigurator('b', should_succeed=False),
+
+        )
     )
     def testFailuresOnExposedFuncs(self):
         self.assertRaises(
@@ -216,13 +216,11 @@ class ConfiguratorTests(VdsmTestCase):
         )
 
     @ValidateRunningAsRoot
-    @monkeypatch.MonkeyPatch(
-        configurator,
-        '_CONFIGURATORS',
-        {
-            'a': MockModuleConfigurator('a'),
-            'b': MockModuleConfigurator('b'),
-        }
+    @patchConfigurators(
+        (
+            MockModuleConfigurator('a'),
+            MockModuleConfigurator('b'),
+        )
     )
     def testValidFlowOnExposedFuncs(self):
         configurator.validate_config(
