@@ -117,8 +117,8 @@ class MultiProtocolAcceptor:
                     self._accept_connection()
                 else:
                     self._handle_connection_read(fd)
-            if event & select.POLLOUT:
-                    self._handle_connection_write(fd)
+            if fd in self._pending_connections and event & select.POLLOUT:
+                self._handle_connection_write(fd)
 
         now = time.time()
         if now > self._next_cleanup:
@@ -219,6 +219,7 @@ class MultiProtocolAcceptor:
             socket.is_handshaking = (socket.accept_ssl() == 0)
         except Exception as e:
             self.log.debug("Error during handshake: %s", e)
+            self._remove_connection(socket)
             socket.close()
         else:
             if not socket.is_handshaking:
