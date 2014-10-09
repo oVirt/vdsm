@@ -62,7 +62,6 @@ class MockModuleConfigurator(ModuleConfigure):
     def validate(self):
         if self._should_fail:
             return False
-        print 'valid'
         return True
 
     def isconfigured(self):
