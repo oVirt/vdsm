@@ -60,12 +60,18 @@ class NwFilter(object):
         """
 
         try:
-            conn.nwfilterLookupByName(self.filterName).undefine()
-        except libvirt.libvirtError:
-            # Ignore failure if filter isn't exists or if failed to remove.
-            # Failure might occur when attempting to remove a filter which
-            # is being used by running VMs
+            old_filter = conn.nwfilterLookupByName(self.filterName)
+        except libvirt.libvirtError:  # No filter, we can define it.
             pass
+        else:
+            try:
+                old_filter.undefine()
+            except libvirt.libvirtError:
+                # If the filter is in use it may fail to be removed. In that
+                # case we warn of it and consider the task done.
+                logging.warning('Failed to remove the old filter %s.',
+                                old_filter.name(), exc_info=True)
+                return
 
         nwFilter = conn.nwfilterDefineXML(self.buildFilterXml())
         logging.debug("Filter %s was defined", nwFilter.name())
