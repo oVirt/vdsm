@@ -69,7 +69,7 @@ from storage.iscsi import readSessionInfo as _readSessionInfo
 from supervdsm import _SuperVdsmManager
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
-from vdsm.constants import METADATA_GROUP, EXT_UDEVADM, \
+from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
@@ -289,8 +289,11 @@ class _SuperVdsm(object):
     @logDecorator
     def appropriateDevice(self, guid, thiefId):
         ruleFile = _UDEV_RULE_FILE_NAME % (guid, thiefId)
-        rule = 'SYMLINK=="mapper/%s", OWNER="%s", GROUP="%s"\n' % (
-            guid, DISKIMAGE_USER, DISKIMAGE_GROUP)
+        # WARNING: we cannot use USER, GROUP and MODE since using any of them
+        # will change the selinux label to the default, causing vms to pause.
+        # See https://bugzilla.redhat.com/1147910
+        rule = 'SYMLINK=="mapper/%s", RUN+="%s %s:%s $env{DEVNAME}"\n' % (
+            guid, EXT_CHOWN, DISKIMAGE_USER, DISKIMAGE_GROUP)
         with open(ruleFile, "w") as rf:
             self.log.debug("Creating rule %s: %r", ruleFile, rule)
             rf.write(rule)
