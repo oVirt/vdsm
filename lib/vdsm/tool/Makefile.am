@@ -42,6 +42,7 @@ dist_vdsmtool_PYTHON = \
 	dummybr.py \
 	dump_bonding_defaults.py \
 	nwfilter.py \
+	configfile.py \
 	configurator.py \
 	passwd.py \
 	restore_nets.py \

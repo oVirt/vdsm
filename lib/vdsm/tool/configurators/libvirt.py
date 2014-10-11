@@ -26,20 +26,23 @@ import sys
 
 from vdsm.config import config
 
-from .. import \
-    service, \
-    validate_ovirt_certs
 from . import \
     InvalidRun, \
     NO, \
     MAYBE
-from . configfile import \
-    ConfigFile, \
-    ParserWrapper
-from . certificates import \
-    CA_FILE, \
-    CERT_FILE, \
-    KEY_FILE
+from . certificates import (
+    CA_FILE,
+    CERT_FILE,
+    KEY_FILE,
+)
+from .. configfile import (
+    ConfigFile,
+    ParserWrapper,
+)
+from .. import (
+    service,
+    validate_ovirt_certs,
+)
 from ... import utils
 from ... import constants
 

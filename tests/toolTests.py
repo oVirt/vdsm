@@ -24,7 +24,7 @@ from vdsm.tool.configurators import \
     YES,\
     InvalidConfig,\
     InvalidRun
-from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
+from vdsm.tool.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators import libvirt
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
