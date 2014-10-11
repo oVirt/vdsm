@@ -20,9 +20,9 @@
 from vdsm.tool import configurator
 from vdsm.tool.configurators import \
     ModuleConfigure, \
-    NOT_CONFIGURED,\
-    NOT_SURE,\
-    CONFIGURED,\
+    NO,\
+    MAYBE,\
+    YES,\
     InvalidConfig,\
     InvalidRun
 from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
@@ -64,8 +64,8 @@ class MockModuleConfigurator(ModuleConfigure):
 
     def isconfigured(self):
         if self.should_succeed:
-            return CONFIGURED
-        return NOT_CONFIGURED
+            return YES
+        return NO
 
     def configure(self):
         if not self.should_succeed:
@@ -351,7 +351,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            NOT_SURE
+            MAYBE
         )
 
     def testIsConfiguredNegative(self):
@@ -364,7 +364,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            NOT_CONFIGURED
+            NO
         )
 
     def testLibvirtConfigureToSSLTrue(self):
@@ -379,14 +379,14 @@ class LibvirtModuleConfigureTests(TestCase):
 
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            NOT_CONFIGURED
+            NO
         )
 
         libvirtConfigure.configure()
 
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            NOT_SURE
+            MAYBE
         )
 
     def testLibvirtConfigureToSSLFalse(self):
@@ -399,14 +399,14 @@ class LibvirtModuleConfigureTests(TestCase):
         )
         self.assertEquals(
             libvirtConfigure.isconfigured(),
-            NOT_CONFIGURED
+            NO
         )
 
         libvirtConfigure.configure()
 
         self.assertEqual(
             libvirtConfigure.isconfigured(),
-            NOT_SURE
+            MAYBE
         )
 
 

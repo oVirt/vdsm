@@ -40,7 +40,7 @@ class InvalidRun(UsageError):
 #                  configuration validity could not be determined.
 #
 # See also --force at configurators.py.
-CONFIGURED, NOT_CONFIGURED, NOT_SURE = range(3)
+YES, NO, MAYBE = range(3)
 
 
 class ModuleConfigure(object):
@@ -71,7 +71,7 @@ class ModuleConfigure(object):
 
     @property
     def services(self):
-        """Return the names of services this module depend on.
+        """return the names of services to reload.
 
         These services will be stopped before this configurator is called,
         and will be started in reversed order when the configurator is done.
@@ -109,7 +109,7 @@ class ModuleConfigure(object):
 
         May be overridden by subclass.
         """
-        return NOT_CONFIGURED
+        return NO
 
     def removeConf(self):
         """Cleanup vdsm's configuration.

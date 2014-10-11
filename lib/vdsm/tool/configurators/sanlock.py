@@ -22,11 +22,11 @@ import grp
 import pwd
 
 from .import \
-    CONFIGURED, \
+    YES, \
     InvalidConfig, \
     ModuleConfigure, \
-    NOT_CONFIGURED, \
-    NOT_SURE
+    NO, \
+    MAYBE
 from ... import utils
 from ... import constants
 
@@ -67,15 +67,15 @@ class Configurator(ModuleConfigure):
         True if sanlock service is configured, False if sanlock service
         requires a restart to reload the relevant supplementary groups.
         """
-        configured = NOT_CONFIGURED
+        configured = NO
         groups = [g.gr_name for g in grp.getgrall()
                   if constants.SANLOCK_USER in g.gr_mem]
         gid = pwd.getpwnam(constants.SANLOCK_USER).pw_gid
         groups.append(grp.getgrgid(gid).gr_name)
         if all(group in groups for group in self.SANLOCK_GROUPS):
-            configured = NOT_SURE
+            configured = MAYBE
 
-        if configured == NOT_SURE:
+        if configured == MAYBE:
             try:
                 with open("/var/run/sanlock/sanlock.pid", "r") as f:
                     sanlock_pid = f.readline().strip()
@@ -98,11 +98,11 @@ class Configurator(ModuleConfigure):
                     if grp.getgrnam(g)[2] not in groups:
                         is_sanlock_groups_set = False
                 if is_sanlock_groups_set:
-                    configured = CONFIGURED
+                    configured = YES
 
             except IOError as e:
                 if e.errno == os.errno.ENOENT:
-                    configured = CONFIGURED
+                    configured = YES
                 else:
                     raise
 

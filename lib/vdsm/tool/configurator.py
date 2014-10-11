@@ -29,11 +29,11 @@ from . import \
     requiresRoot
 from .configurators import \
     certificates, \
-    CONFIGURED, \
+    YES, \
     InvalidConfig, \
     InvalidRun, \
     libvirt, \
-    NOT_CONFIGURED, \
+    NO, \
     sanlock, \
     sebool
 
@@ -60,12 +60,12 @@ def configure(*args):
     sys.stdout.write("\nChecking configuration status...\n\n")
     for c in args.modules:
         isconfigured = c.isconfigured()
-        override = args.force and isconfigured != CONFIGURED
+        override = args.force and isconfigured != YES
         if not override and not c.validate():
             raise InvalidConfig(
                 "Configuration of %s is invalid" % c.name
             )
-        if override or isconfigured == NOT_CONFIGURED:
+        if override or isconfigured == NO:
             configurer_to_trigger.append(c)
 
     services = []
@@ -104,7 +104,7 @@ def isconfigured(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c.name for c in args.modules if c.isconfigured() == NOT_CONFIGURED]
+    m = [c.name for c in args.modules if c.isconfigured() == NO]
 
     if m:
         sys.stdout.write(

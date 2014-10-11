@@ -32,8 +32,8 @@ from .. import \
 from . import \
     InvalidRun, \
     ModuleConfigure, \
-    NOT_CONFIGURED, \
-    NOT_SURE
+    NO, \
+    MAYBE
 from . configfile import \
     ConfigFile, \
     ParserWrapper
@@ -98,12 +98,12 @@ class Configurator(ModuleConfigure):
         """
         Check if libvirt is already configured for vdsm
         """
-        ret = NOT_SURE
+        ret = MAYBE
         for path in (self._getPersistedFiles()):
             if not self._openConfig(path).hasConf():
-                ret = NOT_CONFIGURED
+                ret = NO
 
-        if ret == NOT_SURE:
+        if ret == MAYBE:
             sys.stdout.write("libvirt is already configured for vdsm\n")
         else:
             sys.stdout.write("libvirt is not configured for vdsm yet\n")

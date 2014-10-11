@@ -22,9 +22,9 @@ import sys
 from vdsm.config import config
 
 from . import \
-    CONFIGURED, \
+    YES, \
     ModuleConfigure, \
-    NOT_CONFIGURED
+    NO
 from .. import validate_ovirt_certs
 from ...constants import \
     P_VDSM_EXEC, \
@@ -76,7 +76,7 @@ class Configurator(ModuleConfigure):
             validate_ovirt_certs.validate_ovirt_certs()
 
     def isconfigured(self):
-        return CONFIGURED if self._certsExist() else NOT_CONFIGURED
+        return YES if self._certsExist() else NO
 
     def _certsExist(self):
         config.read(

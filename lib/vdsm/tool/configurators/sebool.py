@@ -18,9 +18,9 @@
 #
 
 from .import \
-    CONFIGURED, \
+    YES, \
     ModuleConfigure, \
-    NOT_CONFIGURED
+    NO
 
 from ... import utils
 
@@ -70,14 +70,14 @@ class Configurator(ModuleConfigure):
         True all selinux booleans in the list above are set properly
         """
         import seobject
-        ret = CONFIGURED
+        ret = YES
 
         sebool_obj = seobject.booleanRecords()
         sebool_status = sebool_obj.get_all()
 
         for sebool_variable in VDSM_SEBOOL_LIST:
             if not all(sebool_status[sebool_variable]):
-                ret = NOT_CONFIGURED
+                ret = NO
 
         return ret
 
