@@ -24,7 +24,7 @@ from vdsm.config import config
 from . import \
     YES, \
     NO
-from .. import validate_ovirt_certs
+from ..validate_ovirt_certs import validate_ovirt_certs
 from ...constants import \
     P_VDSM_EXEC, \
     SYSCONF_PATH
@@ -66,7 +66,7 @@ def _exec_vdsm_gencerts():
 def configure():
     _exec_vdsm_gencerts()
     if isOvirtNode():
-        validate_ovirt_certs.validate_ovirt_certs()
+        validate_ovirt_certs()
 
 
 def isconfigured():

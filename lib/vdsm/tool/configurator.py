@@ -28,7 +28,9 @@ configurators interface is described below.
 
 
 from collections import deque
+from glob import iglob
 import argparse
+import os
 import sys
 import traceback
 
@@ -38,24 +40,35 @@ from . import \
     UsageError, \
     requiresRoot
 from .configurators import \
-    certificates, \
     YES, \
     InvalidConfig, \
     InvalidRun, \
-    libvirt, \
-    multipath, \
-    NO, \
-    sanlock, \
-    sebool
+    NO
 
 
-_CONFIGURATORS = dict((m.name, m) for m in (
-    certificates,
-    libvirt,
-    sanlock,
-    sebool,
-    multipath,
-))
+def _import_module(abspkg, mname):
+    """return imported module mname from abspkg."""
+    # TODO: use importlib once python version >= 2.7
+    pkg = "%s.%s" % (abspkg.__name__, mname)
+    return __import__(pkg, globals(), locals(), [mname], level=0)
+
+
+def _listmodules(pkg):
+    """Return base file names for all modules under pkg."""
+    path = os.path.join(os.path.abspath(pkg.__path__[0]), '')
+    getmname = lambda x: os.path.basename(os.path.splitext(x)[0])
+    filter_ = lambda x: not x.startswith('_')
+
+    return [
+        getmname(module)
+        for module in iglob("%s*.py" % path)
+        if filter_(getmname(module))
+    ]
+
+
+_CONFIGURATORS = {}
+for module in _listmodules(configurators):
+    _CONFIGURATORS[module] = _import_module(configurators, module)
 
 
 #

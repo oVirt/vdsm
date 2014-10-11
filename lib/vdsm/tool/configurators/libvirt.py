@@ -39,10 +39,8 @@ from .. configfile import (
     ConfigFile,
     ParserWrapper,
 )
-from .. import (
-    service,
-    validate_ovirt_certs,
-)
+from .. import service
+from .. validate_ovirt_certs import validate_ovirt_certs
 from ... import utils
 from ... import constants
 
@@ -68,7 +66,7 @@ def configure():
         if not os.path.exists(constants.P_VDSM_CERT):
             raise InvalidRun(
                 "vdsm: Missing certificate, vdsm not registered")
-        validate_ovirt_certs.validate_ovirt_certs()
+        validate_ovirt_certs()
 
     # Remove a previous configuration (if present)
     removeConf()
