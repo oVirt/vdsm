@@ -23,7 +23,6 @@ from vdsm.config import config
 
 from . import \
     YES, \
-    ModuleConfigure, \
     NO
 from .. import validate_ovirt_certs
 from ...constants import \
@@ -38,52 +37,48 @@ CA_FILE = os.path.join(PKI_DIR, 'certs/cacert.pem')
 CERT_FILE = os.path.join(PKI_DIR, 'certs/vdsmcert.pem')
 KEY_FILE = os.path.join(PKI_DIR, 'keys/vdsmkey.pem')
 
+name = "certificates"
 
-class Configurator(ModuleConfigure):
-    """
-    Responsible for rolling out self signed certificates if vdsm's
-    configuration is ssl_enabled and no certificates exist.
-    """
 
-    @property
-    def name(self):
-        return 'certificates'
+def validate():
+    return _certsExist()
 
-    def validate(self):
-        return self._certsExist()
 
-    def _exec_vdsm_gencerts(self):
-        rc, out, err = execCmd(
-            (
-                os.path.join(
-                    P_VDSM_EXEC,
-                    'vdsm-gencerts.sh'
-                ),
-                CA_FILE,
-                KEY_FILE,
-                CERT_FILE,
-            ),
-            raw=True,
-        )
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-        if rc != 0:
-            raise RuntimeError("Failed to perform vdsm-gencerts action.")
-
-    def configure(self):
-        self._exec_vdsm_gencerts()
-        if isOvirtNode():
-            validate_ovirt_certs.validate_ovirt_certs()
-
-    def isconfigured(self):
-        return YES if self._certsExist() else NO
-
-    def _certsExist(self):
-        config.read(
+def _exec_vdsm_gencerts():
+    rc, out, err = execCmd(
+        (
             os.path.join(
-                SYSCONF_PATH,
-                'vdsm/vdsm.conf'
-            )
+                P_VDSM_EXEC,
+                'vdsm-gencerts.sh'
+            ),
+            CA_FILE,
+            KEY_FILE,
+            CERT_FILE,
+        ),
+        raw=True,
+    )
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    if rc != 0:
+        raise RuntimeError("Failed to perform vdsm-gencerts action.")
+
+
+def configure():
+    _exec_vdsm_gencerts()
+    if isOvirtNode():
+        validate_ovirt_certs.validate_ovirt_certs()
+
+
+def isconfigured():
+    return YES if _certsExist() else NO
+
+
+def _certsExist():
+    config.read(
+        os.path.join(
+            SYSCONF_PATH,
+            'vdsm/vdsm.conf'
         )
-        return not config.getboolean('vars', 'ssl') or\
-            os.path.isfile(CERT_FILE)
+    )
+    return not config.getboolean('vars', 'ssl') or\
+        os.path.isfile(CERT_FILE)

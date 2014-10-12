@@ -19,7 +19,6 @@
 #
 from vdsm.tool import configurator
 from vdsm.tool.configurators import \
-    ModuleConfigure, \
     NO,\
     MAYBE,\
     YES,\
@@ -41,7 +40,7 @@ import shutil
 dirName = os.path.dirname(os.path.realpath(__file__))
 
 
-class MockModuleConfigurator(ModuleConfigure):
+class MockModuleConfigurator(object):
 
     def __init__(self, name, requires=(), should_succeed=True):
         self._name = name
@@ -271,7 +270,7 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
         for key, val in self.test_env.items():
-            libvirt.Configurator.FILES[key]['path'] = val
+            libvirt.FILES[key]['path'] = val
 
         self._setConfig(
             ('QLCONF', 'libvirtd'),
@@ -285,14 +284,14 @@ class LibvirtModuleConfigureTests(TestCase):
                 lambda: 0
             ),
             (
-                libvirt.Configurator,
+                libvirt,
                 '_getFile',
-                lambda _, x: self.test_env[x]
+                lambda x: self.test_env[x]
             ),
             (
-                libvirt.Configurator,
+                libvirt,
                 '_sysvToUpstart',
-                lambda _: True
+                lambda: True
             ),
             (
                 utils,
@@ -314,35 +313,29 @@ class LibvirtModuleConfigureTests(TestCase):
                                    'toolTests_%s.conf' % type_)) as template:
                 data = template.read()
                 data = data % {
-                    'LATEST_CONF_VERSION': libvirt.Configurator.CONF_VERSION}
+                    'LATEST_CONF_VERSION': libvirt.CONF_VERSION}
             with open(self.test_env[file_], 'w') as testConf:
                 testConf.write(data)
 
     def testValidatePositive(self):
-        libvirtConfigure = libvirt.Configurator()
-
         self._setConfig(
             ('VDSM_CONF', 'vdsm_ssl'),
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'qemu_ssl'),
         )
 
-        self.assertTrue(libvirtConfigure.validate())
+        self.assertTrue(libvirt.validate())
 
     def testValidateNegative(self):
-        libvirtConfigure = libvirt.Configurator()
-
         self._setConfig(
             ('VDSM_CONF', 'vdsm_no_ssl'),
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'qemu_ssl'),
         )
 
-        self.assertFalse(libvirtConfigure.validate())
+        self.assertFalse(libvirt.validate())
 
     def testIsConfiguredPositive(self):
-        libvirtConfigure = libvirt.Configurator()
-
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'qemu_ssl'),
@@ -350,26 +343,22 @@ class LibvirtModuleConfigureTests(TestCase):
 
         )
         self.assertEqual(
-            libvirtConfigure.isconfigured(),
+            libvirt.isconfigured(),
             MAYBE
         )
 
     def testIsConfiguredNegative(self):
-        libvirtConfigure = libvirt.Configurator()
-
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'empty'),
             ('LRCONF', 'empty'),
         )
         self.assertEqual(
-            libvirtConfigure.isconfigured(),
+            libvirt.isconfigured(),
             NO
         )
 
     def testLibvirtConfigureToSSLTrue(self):
-        libvirtConfigure = libvirt.Configurator()
-
         self._setConfig((
             'LCONF', 'empty'),
             ('VDSM_CONF', 'vdsm_ssl'),
@@ -378,19 +367,18 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
         self.assertEqual(
-            libvirtConfigure.isconfigured(),
+            libvirt.isconfigured(),
             NO
         )
 
-        libvirtConfigure.configure()
+        libvirt.configure()
 
         self.assertEqual(
-            libvirtConfigure.isconfigured(),
+            libvirt.isconfigured(),
             MAYBE
         )
 
     def testLibvirtConfigureToSSLFalse(self):
-        libvirtConfigure = libvirt.Configurator()
         self._setConfig(
             ('LCONF', 'empty'),
             ('VDSM_CONF', 'vdsm_no_ssl'),
@@ -398,14 +386,14 @@ class LibvirtModuleConfigureTests(TestCase):
             ('LRCONF', 'empty'),
         )
         self.assertEquals(
-            libvirtConfigure.isconfigured(),
+            libvirt.isconfigured(),
             NO
         )
 
-        libvirtConfigure.configure()
+        libvirt.configure()
 
         self.assertEqual(
-            libvirtConfigure.isconfigured(),
+            libvirt.isconfigured(),
             MAYBE
         )
 

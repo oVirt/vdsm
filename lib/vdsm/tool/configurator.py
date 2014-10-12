@@ -16,6 +16,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+"""I handle vdsm's configuration life cycle.
+
+This is achieved by utilizing modules from configurators package to:
+- Configure the machine to run vdsm after package installation.
+- Cleanup configuration before package removal.
+- Check configuration status and validity upon init.
+
+configurators interface is described below.
+"""
+
 
 from collections import deque
 import argparse
@@ -40,12 +50,63 @@ from .configurators import \
 
 
 _CONFIGURATORS = dict((m.name, m) for m in (
-    certificates.Configurator(),
-    libvirt.Configurator(),
-    sanlock.Configurator(),
-    sebool.Configurator(),
-    multipath.Configurator(),
+    certificates,
+    libvirt,
+    sanlock,
+    sebool,
+    multipath,
 ))
+
+
+#
+# Configurators Interface:
+# The only required attribute for modules is 'name'.
+# Default implementation of all other attributes/methods follows;
+#
+
+def _getrequires(module):
+    """Return a set of module names required by this module.
+
+    Those modules will be included even if not provided in --module.
+    """
+    return getattr(module, 'requires', frozenset())
+
+
+def _getservices(module):
+    """Return the names of services to reload.
+
+    These services will be stopped before this configurator is called,
+    and will be started in reversed order when the configurator is done.
+    """
+    return getattr(module, 'services', ())
+
+
+def _validate(module):
+    """Return True if this module's configuration is valid.
+
+    Note: Returning False will cause vdsm to abort during initialization.
+    """
+    return getattr(module, 'validate', lambda: True)()
+
+
+def _configure(module):
+    """Prepare this module to run vdsm."""
+    getattr(module, 'configure', lambda: None)()
+
+
+def _isconfigured(module):
+    """Return state of configuration. See configurators/__init__.py
+
+    Note: returning NO will cause vdsm to abort during initialization.
+
+    Note: after configure isconfigured should return MAYBE or YES.
+    """
+    return getattr(module, 'isconfigured', lambda: NO)()
+
+
+def _removeConf(module):
+    """Cleanup vdsm's configuration."""
+    getattr(module, 'removeConf', lambda: None)()
 
 
 @expose("configure")
@@ -61,9 +122,9 @@ def configure(*args):
 
     sys.stdout.write("\nChecking configuration status...\n\n")
     for c in args.modules:
-        isconfigured = c.isconfigured()
+        isconfigured = _isconfigured(c)
         override = args.force and isconfigured != YES
-        if not override and not c.validate():
+        if not override and not _validate(c):
             raise InvalidConfig(
                 "Configuration of %s is invalid" % c.name
             )
@@ -72,7 +133,7 @@ def configure(*args):
 
     services = []
     for c in configurer_to_trigger:
-        for s in c.services:
+        for s in _getservices(c):
             if service.service_status(s, False) == 0:
                 if not args.force:
                     raise InvalidRun(
@@ -87,7 +148,7 @@ def configure(*args):
 
     sys.stdout.write("\nRunning configure...\n")
     for c in configurer_to_trigger:
-        c.configure()
+        _configure(c)
         sys.stdout.write("Reconfiguration of %s is done.\n" % (c.name,))
 
     for s in reversed(services):
@@ -106,7 +167,7 @@ def isconfigured(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c.name for c in args.modules if c.isconfigured() == NO]
+    m = [c.name for c in args.modules if _isconfigured(c) == NO]
 
     if m:
         sys.stdout.write(
@@ -141,7 +202,7 @@ def validate_config(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c.name for c in args.modules if not c.validate()]
+    m = [c.name for c in args.modules if not _validate(c)]
 
     if m:
         sys.stdout.write(
@@ -163,7 +224,7 @@ def remove_config(*args):
     failed = False
     for c in args.modules:
         try:
-            c.removeConf()
+            _removeConf(c)
             sys.stdout.write(
                 "removed configuration of module %s successfully\n" %
                 c.name
@@ -187,7 +248,7 @@ def _add_dependencies(modulesNames):
     while queue:
         next_ = queue.popleft()
         try:
-            requiredNames = _CONFIGURATORS[next_].requires
+            requiredNames = _getrequires(_CONFIGURATORS[next_])
         except KeyError:
             available = ', '.join(sorted(_CONFIGURATORS))
             raise UsageError(
@@ -213,8 +274,7 @@ def _sort_modules(modulesNames):
     while modulesNames:
 
         for c in modulesNames:
-            requires = _CONFIGURATORS[c].requires
-            if requires.issubset(set(sortedModules)):
+            if _getrequires(_CONFIGURATORS[c]).issubset(set(sortedModules)):
                 modulesNames.remove(c)
                 sortedModules.append(c)
                 break

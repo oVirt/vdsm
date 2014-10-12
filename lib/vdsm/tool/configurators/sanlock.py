@@ -24,86 +24,80 @@ import pwd
 from .import \
     YES, \
     InvalidConfig, \
-    ModuleConfigure, \
     NO, \
     MAYBE
 from ... import utils
 from ... import constants
 
+SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
 
-class Configurator(ModuleConfigure):
+name = 'sanlock'
 
-    SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
+services = ('sanlock',)
 
-    @property
-    def name(self):
-        return 'sanlock'
 
-    @property
-    def services(self):
-        return ('sanlock',)
+def configure():
+    """
+    Configure sanlock process groups
+    """
+    rc, out, err = utils.execCmd(
+        (
+            '/usr/sbin/usermod',
+            '-a',
+            '-G',
+            ','.join(SANLOCK_GROUPS),
+            constants.SANLOCK_USER
+        ),
+        raw=True,
+    )
+    sys.stdout.write(out)
+    sys.stderr.write(err)
+    if rc != 0:
+        raise RuntimeError("Failed to perform sanlock config.")
 
-    def configure(self):
-        """
-        Configure sanlock process groups
-        """
-        rc, out, err = utils.execCmd(
-            (
-                '/usr/sbin/usermod',
-                '-a',
-                '-G',
-                ','.join(self.SANLOCK_GROUPS),
-                constants.SANLOCK_USER
-            ),
-            raw=True,
-        )
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-        if rc != 0:
-            raise RuntimeError("Failed to perform sanlock config.")
 
-    def isconfigured(self):
-        """
-        True if sanlock service is configured, False if sanlock service
-        requires a restart to reload the relevant supplementary groups.
-        """
-        configured = NO
-        groups = [g.gr_name for g in grp.getgrall()
-                  if constants.SANLOCK_USER in g.gr_mem]
-        gid = pwd.getpwnam(constants.SANLOCK_USER).pw_gid
-        groups.append(grp.getgrgid(gid).gr_name)
-        if all(group in groups for group in self.SANLOCK_GROUPS):
-            configured = MAYBE
+def isconfigured():
+    """
+    True if sanlock service is configured, False if sanlock service
+    requires a restart to reload the relevant supplementary groups.
+    """
+    configured = NO
+    groups = [g.gr_name for g in grp.getgrall()
+              if constants.SANLOCK_USER in g.gr_mem]
+    gid = pwd.getpwnam(constants.SANLOCK_USER).pw_gid
+    groups.append(grp.getgrgid(gid).gr_name)
+    if all(group in groups for group in SANLOCK_GROUPS):
+        configured = MAYBE
 
-        if configured == MAYBE:
-            try:
-                with open("/var/run/sanlock/sanlock.pid", "r") as f:
-                    sanlock_pid = f.readline().strip()
-                with open(os.path.join('/proc', sanlock_pid, 'status'),
-                          "r") as sanlock_status:
-                    proc_status_group_prefix = "Groups:\t"
-                    for status_line in sanlock_status:
-                        if status_line.startswith(proc_status_group_prefix):
-                            groups = [int(x) for x in status_line[
-                                len(proc_status_group_prefix):]
-                                .strip().split(" ")]
-                            break
-                    else:
-                        raise InvalidConfig(
-                            "Unable to find sanlock service groups"
-                        )
-
-                is_sanlock_groups_set = True
-                for g in self.SANLOCK_GROUPS:
-                    if grp.getgrnam(g)[2] not in groups:
-                        is_sanlock_groups_set = False
-                if is_sanlock_groups_set:
-                    configured = YES
-
-            except IOError as e:
-                if e.errno == os.errno.ENOENT:
-                    configured = YES
+    if configured == MAYBE:
+        try:
+            with open("/var/run/sanlock/sanlock.pid", "r") as f:
+                sanlock_pid = f.readline().strip()
+            with open(os.path.join('/proc', sanlock_pid, 'status'),
+                      "r") as sanlock_status:
+                proc_status_group_prefix = "Groups:\t"
+                for status_line in sanlock_status:
+                    if status_line.startswith(proc_status_group_prefix):
+                        groups = [int(x) for x in status_line[
+                            len(proc_status_group_prefix):]
+                            .strip().split(" ")]
+                        break
                 else:
-                    raise
+                    raise InvalidConfig(
+                        "Unable to find sanlock service groups"
+                    )
 
-        return configured
+            is_sanlock_groups_set = True
+            for g in SANLOCK_GROUPS:
+                if grp.getgrnam(g)[2] not in groups:
+                    is_sanlock_groups_set = False
+            if is_sanlock_groups_set:
+                configured = YES
+
+        except IOError as e:
+            if e.errno == os.errno.ENOENT:
+                configured = YES
+            else:
+                raise
+
+    return configured
