@@ -752,7 +752,8 @@ def _getKeyPackages():
 
     pkgs = {'kernel': kernelDict()}
 
-    if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL):
+    if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL,
+                   OSName.POWERKVM):
         KEY_PACKAGES = {'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev'),
                         'qemu-img': ('qemu-img', 'qemu-img-rhev'),
                         'vdsm': ('vdsm',),
