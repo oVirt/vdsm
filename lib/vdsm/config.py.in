@@ -351,6 +351,9 @@ parameters = [
         ('profile_clock', 'cpu',
             'Sets the underlying clock type (cpu, wall)'),
 
+        ('python_warnings_enable', 'false',
+            'Display python warnings in the log'),
+
     ]),
 
 ]

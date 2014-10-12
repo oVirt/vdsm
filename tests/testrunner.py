@@ -26,6 +26,13 @@ if sys.version_info[0] == 2:
     import pthreading
     pthreading.monkey_patch()
 
+import warnings
+import logging
+
+warnings.simplefilter("always")
+logging.captureWarnings(True)
+
+
 import zombiereaper
 zombiereaper.registerSignalHandler()
 

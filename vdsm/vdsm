@@ -28,6 +28,7 @@ import syslog
 import resource
 import tempfile
 from logging import config as lconfig
+import warnings
 
 from vdsm import constants
 from vdsm import utils
@@ -42,6 +43,10 @@ import zombiereaper
 import dsaversion
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
+
+if config.getboolean('devel', 'python_warnings_enable'):
+    warnings.simplefilter("always")
+    logging.captureWarnings(True)
 
 
 def usage():
