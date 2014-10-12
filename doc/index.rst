@@ -9,13 +9,8 @@ Welcome to VDSM's documentation!
 Contents:
 
 .. toctree::
-   :glob:
    :maxdepth: 2
 
-   vdsm/*
-   storage/*
-   misc/*
-   
 Indices and tables
 ==================
 
