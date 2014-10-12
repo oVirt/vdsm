@@ -380,6 +380,14 @@ BuildArch:      noarch
 %description tests
 A test suite for verifying the functionality of a running vdsm instance
 
+%package hook-allocate_net
+Summary:        random_network allocation hook for VDSM
+BuildArch:      noarch
+Requires:       %{name}
+
+%description hook-allocate_net
+VDSM hook used to allocate networks for vms in a random fashion
+
 %package hook-checkimages
 Summary:        Qcow2 disk image format check hook for VDSM
 BuildArch:      noarch
@@ -1346,6 +1354,10 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/30_ethtool_options
 
 %if 0%{?with_hooks}
+%files hook-allocate_net
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/10_allocate_net
+
 %files hook-checkimages
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages

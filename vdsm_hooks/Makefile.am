@@ -25,6 +25,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 # Additional hooks
 if HOOKS
 SUBDIRS += \
+	allocate_net \
 	checkimages \
 	directlun \
 	extnet \

@@ -342,6 +342,7 @@ AC_OUTPUT([
 	vdsm/storage/vdsm-lvm.rules
 	vdsm/virt/Makefile
 	vdsm_hooks/Makefile
+	vdsm_hooks/allocate_net/Makefile
 	vdsm_hooks/checkimages/Makefile
 	vdsm_hooks/directlun/Makefile
 	vdsm_hooks/ethtool_options/Makefile

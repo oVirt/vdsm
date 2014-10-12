@@ -1,0 +1,30 @@
+allocate_net vdsm hook
+=====================
+This hook allocates a random network to a VM when the VM is started.
+
+This hook is useful in cases where one has a set of equivalent networks, and
+wants to distribute VMs evenly among them, so the networks share the traffic
+load.
+The more VMs allocated with networks, the tendency of VMs to be evenly
+distributed among networks rise.
+
+Installation:
+* Use engine-config to set the appropriate custom properties as such:
+
+Custom property for a specific vNIC profile:
+    sudo engine-config -s CustomDeviceProperties="{type=interface;prop={equivnets=\s*(\S+)(\s*\S+)*}}"
+    sudo service ovirt-engine restart
+
+* Verify that the custom properties were added properly:
+    sudo engine-config -g CustomDeviceProperties
+
+Usage:
+Create a 'meta network'. Add to it a vNic profile that contains the extra
+property named 'equivnets' (as defined above) and input a whitespace separated
+list of network names as the network pool.
+
+If a VM is configured to use this network profile, it will be connected to a
+random network from the defined pool once powered on.
+
+# note that all the networks defined in the whitespace separated list should be
+configured on all the hosts on which VMs are planned run.
