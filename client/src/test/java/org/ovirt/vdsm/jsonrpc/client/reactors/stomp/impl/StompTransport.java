@@ -1,5 +1,6 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl;
 
+import static org.junit.Assert.fail;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.END_OF_MESSAGE;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
@@ -14,6 +15,9 @@ import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
+
+import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+
 
 public class StompTransport extends Thread implements TestSender {
     private String host;
@@ -105,7 +109,11 @@ public class StompTransport extends Thread implements TestSender {
                             String[] messages = new String(msgBuff, UTF8).split(END_OF_MESSAGE);
                             for (String message : messages) {
                                 message = message + END_OF_MESSAGE;
-                                this.reciever.recieve(Message.parse(message.getBytes(UTF8)), key);
+                                try {
+                                    this.reciever.recieve(Message.parse(message.getBytes(UTF8)), key);
+                                } catch (ClientConnectionException e) {
+                                    fail();
+                                }
                             }
                         }
                     }

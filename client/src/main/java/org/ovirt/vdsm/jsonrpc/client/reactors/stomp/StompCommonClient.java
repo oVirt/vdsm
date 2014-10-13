@@ -133,7 +133,7 @@ public abstract class StompCommonClient extends ReactorClient {
         emitOnMessageReceived(this.message);
     }
 
-    private Message getMessage(ByteBuffer buffer, int read) {
+    private Message getMessage(ByteBuffer buffer, int read) throws ClientConnectionException {
         if (read > BUFFER_SIZE) {
             read = BUFFER_SIZE;
         }

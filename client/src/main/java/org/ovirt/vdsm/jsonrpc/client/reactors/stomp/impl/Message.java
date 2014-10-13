@@ -10,6 +10,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 
 public class Message {
     public enum Command {
@@ -179,7 +180,7 @@ public class Message {
         return content;
     }
 
-    public static Message parse(byte[] array) {
+    public static Message parse(byte[] array) throws ClientConnectionException {
         String[] message = new String(array, UTF8).split("\n");
         // let us see stomp control messages
         LOG.debug(new String(array, UTF8));
@@ -188,8 +189,15 @@ public class Message {
             // heart-beat
             return null;
         }
-        Command parsedCommand = Command.valueOf(message[0]);
-        result.setCommand(parsedCommand.toString());
+        try {
+            Command parsedCommand = Command.valueOf(message[0]);
+            result.setCommand(parsedCommand.toString());
+        } catch (IllegalArgumentException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Message received: " + new String(array, UTF8));
+            }
+            throw new ClientConnectionException("Unrecognized message received ");
+        }
 
         Map<String, String> headers = new HashMap<>();
         int i = 1;
