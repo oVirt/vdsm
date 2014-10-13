@@ -133,18 +133,10 @@ def configure(*args):
     Invoke with -h for complete usage.
     """
     args = _parse_args(*args)
-    configurer_to_trigger = []
 
     sys.stdout.write("\nChecking configuration status...\n\n")
-    for c in args.modules:
-        isconfigured = _isconfigured(c)
-        override = args.force and isconfigured != configurators.YES
-        if not override and not _validate(c):
-            raise configurators.InvalidConfig(
-                "Configuration of %s is invalid" % c.name
-            )
-        if override or isconfigured == configurators.NO:
-            configurer_to_trigger.append(c)
+    configurer_to_trigger = [c for c in args.modules
+                             if _should_configure(c, args.force)]
 
     services = []
     for c in configurer_to_trigger:
@@ -336,3 +328,14 @@ def _parse_args(action, *args):
     args.modules = [_CONFIGURATORS[cName] for cName in args.modules]
 
     return args
+
+
+def _should_configure(c, force):
+    configured = _isconfigured(c)
+    configure_allowed = (configured == configurators.NO or
+                         (configured == configurators.MAYBE and force))
+    if not _validate(c) and not configure_allowed:
+        raise configurators.InvalidConfig(
+            "Configuration of %s is invalid" % c.name
+        )
+    return configure_allowed

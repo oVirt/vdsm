@@ -247,6 +247,39 @@ class ConfiguratorTests(VdsmTestCase):
             'remove-config',
         )
 
+    def testConfigureFiltering(self):
+        class Dummy(object):
+            pass
+        c, args = Dummy(), Dummy()
+        setattr(c, 'name', "Mock")
+
+        for (isconfigured, isvalid, force, expected) in (
+            (YES,          True,    True,  False),
+            (YES,          True,    False, False),
+            (YES,          False,   True,  InvalidConfig),
+            (YES,          False,   False, InvalidConfig),
+            (NO,           True,    True,  True),
+            (NO,           True,    False, True),
+            (NO,           False,   True,  True),
+            (NO,           False,   False, True),
+            (MAYBE,        True,    True,  True),
+            (MAYBE,        True,    False, False),
+            (MAYBE,        False,   True,  True),
+            (MAYBE,        False,   False, InvalidConfig),
+        ):
+            setattr(c, 'isconfigured', lambda: isconfigured)
+            setattr(c, 'validate', lambda: isvalid)
+            if isinstance(expected, bool):
+                self.assertEquals(
+                    configurator._should_configure(c, force),
+                    expected
+                )
+            else:
+                self.assertRaises(
+                    InvalidConfig,
+                    configurator._should_configure, c, force
+                )
+
 
 class LibvirtModuleConfigureTests(TestCase):
 
