@@ -117,7 +117,7 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
     return server
 
 if __name__ == '__main__':
-    print 'connecting to %s:%s ssl %s ts %s' % (d_addr, d_port,
-                                                d_useSSL, d_tsPath)
+    print('connecting to %s:%s ssl %s ts %s' % (d_addr, d_port,
+                                                d_useSSL, d_tsPath))
     server = connect()
-    print server.getVdsCapabilities()
+    print(server.getVdsCapabilities())

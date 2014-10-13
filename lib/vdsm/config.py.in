@@ -361,17 +361,17 @@ def set_defaults(config):
 def print_config():
     twp = textwrap.TextWrapper(initial_indent='# ', subsequent_indent='# ')
 
-    print twp.fill("VDSM Sample Configuration")
-    print
+    print(twp.fill("VDSM Sample Configuration"))
+    print('')
 
     for section, keylist in parameters:
-        print "[%s]\n" % section
+        print("[%s]\n" % section)
 
         for key, value, comment in keylist:
             if comment:
-                print twp.fill(comment)
-            print twp.fill("%s = %s" % (key, value))
-            print
+                print(twp.fill(comment))
+            print(twp.fill("%s = %s" % (key, value)))
+            print('')
 
 config = ConfigParser.ConfigParser()
 set_defaults(config)
