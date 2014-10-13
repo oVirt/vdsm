@@ -321,18 +321,6 @@ def gethwaddr(dev):
         return addr.read().strip()
 
 
-def graph():
-    for bridge in bridges():
-        print bridge
-        for iface in ports(bridge):
-            print '\t' + iface
-            if iface in vlans():
-                iface = getVlanDevice(iface)
-            if iface in bondings():
-                for slave in slaves(iface):
-                    print '\t\t' + slave
-
-
 def getVlanBondingNic(bridge):
     """Return the (vlan, bonding, nics) tupple that belongs to bridge."""
 
