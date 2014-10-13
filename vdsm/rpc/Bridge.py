@@ -16,7 +16,6 @@
 from functools import partial
 
 import inspect
-import logging
 import threading
 import types
 
@@ -209,7 +208,6 @@ class DynamicBridge(object):
 
         for item in itemList:
             if symTypeName in typefixups:
-                logging.warn("Fixing up type %s", symTypeName)
                 typefixups[symTypeName](item)
             for (k, v) in symbol.get('data', {}).items():
                 k = self._symNameFilter(k)
@@ -464,7 +462,6 @@ command_info = {
 
 
 def fieldClone(oldName, newName, obj):
-    logging.warning("fieldClone: %s -> %s", oldName, newName)
     if oldName in obj:
         obj[newName] = obj[oldName]
     elif newName in obj:
