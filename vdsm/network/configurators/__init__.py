@@ -134,13 +134,13 @@ class Configurator(object):
                                   netEnt.name, ip.ipaddr, ip.netmask,
                                   ip.gateway)
             else:
-                StaticSourceRoute(netEnt.name, self).\
-                    configure(ip.ipaddr, ip.netmask, ip.gateway)
+                StaticSourceRoute(netEnt.name, self, ip.ipaddr, ip.netmask,
+                                  ip.gateway).configure()
 
     def _removeSourceRoute(self, netEnt, sourceRouteClass):
         if netEnt.ipConfig.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s", netEnt.name)
-            sourceRouteClass(netEnt.name, self).remove()
+            sourceRouteClass(netEnt.name, self, None, None, None).remove()
 
     def _setNewMtu(self, iface, ifaceVlans):
         """

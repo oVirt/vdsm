@@ -40,9 +40,9 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
             sourceRouteContents = sourceRouteFile.read().split()
             action = sourceRouteContents[0]
             device = sourceRouteContents[-1]
-            sourceRoute = DynamicSourceRoute(device, configurator)
 
-            if sourceRoute.isVDSMInterface():
+            if DynamicSourceRoute(device, configurator, None, None, None).\
+                    isVDSMInterface():
                 if action == 'configure':
                     ip = sourceRouteContents[1]
                     mask = sourceRouteContents[2]
@@ -51,12 +51,13 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
                         logging.error('invalid DHCP response %s',
                                       sourceRouteContents)
                     else:
-                        sourceRoute.configure(ip, mask, gateway)
+                        DynamicSourceRoute(device, configurator,
+                                           ip, mask, gateway).configure()
                 else:
-                    sourceRoute.remove()
+                    DynamicSourceRoute(device, configurator,
+                                       None, None, None).remove()
             else:
-                logging.info("interface %s is not a libvirt interface",
-                             sourceRoute.device)
+                logging.info("interface %s is not a libvirt interface", device)
 
             DynamicSourceRoute.removeInterfaceTracking(device)
 

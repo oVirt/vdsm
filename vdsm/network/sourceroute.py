@@ -37,58 +37,53 @@ TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
 
 
 class StaticSourceRoute(object):
-    def __init__(self, device, configurator):
+    def __init__(self, device, configurator, ipaddr, mask, gateway):
         self.device = device
-        self.configurator = configurator
-        self.ipaddr = None
-        self.mask = None
-        self.gateway = None
-        self.table = None
-        self.network = None
-        self.routes = None
-        self.rules = None
+        self._configurator = configurator
+        self._ipaddr = ipaddr
+        self._mask = mask
+        self._gateway = gateway
+        self._table = str(self._generateTableId(ipaddr)) if ipaddr else None
+        self._network = self._parse_network(ipaddr, mask)
 
-    @staticmethod
-    def generateTableId(ipaddr):
+    def _parse_network(self, ipaddr, mask):
+        if not ipaddr or not mask:
+            return None
+        network = netaddr.IPNetwork('%s/%s' % (ipaddr, mask))
+        return "%s/%s" % (network.network, network.prefixlen)
+
+    def _generateTableId(self, ipaddr):
         # TODO: Future proof for IPv6
         return netaddr.IPAddress(ipaddr).value
 
     def _buildRoutes(self):
-        return [Route(network='0.0.0.0/0', via=self.gateway,
-                      device=self.device, table=self.table),
-                Route(network=self.network, via=self.ipaddr,
-                      device=self.device, table=self.table)]
+        return [Route(network='0.0.0.0/0', via=self._gateway,
+                      device=self.device, table=self._table),
+                Route(network=self._network, via=self._ipaddr,
+                      device=self.device, table=self._table)]
 
     def _buildRules(self):
-        return [Rule(source=self.network, table=self.table),
-                Rule(destination=self.network, table=self.table,
+        return [Rule(source=self._network, table=self._table),
+                Rule(destination=self._network, table=self._table,
                      srcDevice=self.device)]
 
-    def configure(self, ipaddr, mask, gateway):
-        self.ipaddr = ipaddr
-        self.mask = mask
-        self.gateway = gateway
-        self.table = StaticSourceRoute.generateTableId(self.ipaddr)
-        network = netaddr.IPNetwork(str(self.ipaddr) + '/' + str(self.mask))
-        self.network = "%s/%s" % (network.network, network.prefixlen)
-
+    def configure(self):
         logging.info(("Configuring gateway - ip: %s, network: %s, " +
                       "subnet: %s, gateway: %s, table: %s, device: %s") %
-                     (self.ipaddr, self.network, self.mask, self.gateway,
-                      self.table, self.device))
+                     (self._ipaddr, self._network, self._mask, self._gateway,
+                      self._table, self.device))
 
-        self.routes = self._buildRoutes()
-        self.rules = self._buildRules()
+        routes = self._buildRoutes()
+        rules = self._buildRules()
 
         try:
-            self.configurator.configureSourceRoute(self.routes, self.rules,
-                                                   self.device)
+            self._configurator.configureSourceRoute(routes, rules, self.device)
         except IPRoute2Error as e:
             logging.error('ip binary failed during source route configuration'
                           ': %s', e.message)
 
     def remove(self):
-        self.configurator.removeSourceRoute(None, None, self.device)
+        self._configurator.removeSourceRoute(None, None, self.device)
 
 
 class DynamicSourceRoute(StaticSourceRoute):
@@ -107,7 +102,7 @@ class DynamicSourceRoute(StaticSourceRoute):
         rmFile(DynamicSourceRoute.getTrackingFilePath(device))
 
     @staticmethod
-    def _getRoutes(table, device):
+    def _getRoutes(table):
         routes = []
         for entry in routeShowTable('all'):
             try:
@@ -170,8 +165,8 @@ class DynamicSourceRoute(StaticSourceRoute):
             table = self._getTable(rules)
             if table:
                 try:
-                    self.configurator.removeSourceRoute(
-                        self._getRoutes(table, self.device), rules,
+                    self._configurator.removeSourceRoute(
+                        self._getRoutes(table), rules,
                         self.device)
                 except IPRoute2Error as e:
                     logging.error('ip binary failed during source route '
