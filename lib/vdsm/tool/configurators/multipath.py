@@ -103,8 +103,6 @@ _scsi_id = utils.CommandPath("scsi_id",
                              "/lib/udev/scsi_id",  # EL6, Ubuntu
                              )
 
-name = 'multipath'
-
 # If multipathd is up, it will be reloaded after configuration,
 # or started before vdsm starts, so service should not be stopped
 # during configuration.

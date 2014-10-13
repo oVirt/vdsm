@@ -69,13 +69,14 @@ def _listmodules(pkg):
 _CONFIGURATORS = {}
 for module in _listmodules(configurators):
     _CONFIGURATORS[module] = _import_module(configurators, module)
+    if not hasattr(_CONFIGURATORS[module], 'name'):
+        setattr(_CONFIGURATORS[module], 'name', module)
 
 
 #
 # Configurators Interface:
 #
-# The only required attribute for modules is 'name'.
-# Default implementation of all other attributes/methods follows;
+# Default implementation follows;
 #
 
 def _getrequires(module):

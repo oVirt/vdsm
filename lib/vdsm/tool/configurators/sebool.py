@@ -39,9 +39,6 @@ VDSM_SEBOOL_LIST = (
 )
 
 
-name = 'sebool'
-
-
 def _setup_booleans(status):
     # loading seobject is slow. Deferring its loading can reduce VDSM
     # startings time, because most utilities are and will be moved

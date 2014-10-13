@@ -37,8 +37,6 @@ CA_FILE = os.path.join(PKI_DIR, 'certs/cacert.pem')
 CERT_FILE = os.path.join(PKI_DIR, 'certs/vdsmcert.pem')
 KEY_FILE = os.path.join(PKI_DIR, 'keys/vdsmkey.pem')
 
-name = "certificates"
-
 
 def validate():
     return _certsExist()

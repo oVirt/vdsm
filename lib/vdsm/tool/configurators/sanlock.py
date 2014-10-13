@@ -31,8 +31,6 @@ from ... import constants
 
 SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
 
-name = 'sanlock'
-
 services = ('sanlock',)
 
 

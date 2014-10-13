@@ -48,8 +48,6 @@ if utils.isOvirtNode():
     from ovirt.node.utils.fs import Config as NodeCfg
 
 
-name = 'libvirt'
-
 requires = frozenset(('certificates',))
 
 services = ("vdsmd", "supervdsmd", "libvirtd")
