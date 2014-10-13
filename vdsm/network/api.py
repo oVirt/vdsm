@@ -361,11 +361,11 @@ def assertBridgeClean(bridge, vlan, bonding, nics):
 def showNetwork(network):
     _netinfo = netinfo.NetInfo()
     if network not in _netinfo.networks:
-        print "Network %r doesn't exist" % network
+        print("Network %r doesn't exist" % network)
         return
 
     bridged = _netinfo.networks[network]['bridged']
-    print "Network %s(Bridged: %s):" % (network, bridged)
+    print("Network %s(Bridged: %s):" % (network, bridged))
 
     nics, vlan, bonding = _netinfo.getNicsVlanAndBondingForNetwork(network)
 
@@ -373,22 +373,22 @@ def showNetwork(network):
         ipaddr = _netinfo.networks[network]['addr']
         netmask = _netinfo.networks[network]['netmask']
         gateway = _netinfo.networks[network]['gateway']
-        print "ipaddr=%s, netmask=%s, gateway=%s" % (ipaddr, netmask, gateway)
+        print("ipaddr=%s, netmask=%s, gateway=%s" % (ipaddr, netmask, gateway))
     else:
         iface = _netinfo.networks[network]['iface']
         ipaddr = _netinfo.nics[iface]['addr']
         netmask = _netinfo.nics[iface]['netmask']
-        print "ipaddr=%s, netmask=%s" % (ipaddr, netmask)
+        print("ipaddr=%s, netmask=%s" % (ipaddr, netmask))
 
-    print "vlan=%s, bonding=%s, nics=%s" % (vlan, bonding, nics)
+    print("vlan=%s, bonding=%s, nics=%s" % (vlan, bonding, nics))
 
 
 def listNetworks():
     _netinfo = netinfo.NetInfo()
-    print "Networks:", _netinfo.networks.keys()
-    print "Vlans:", _netinfo.vlans.keys()
-    print "Nics:", _netinfo.nics.keys()
-    print "Bondings:", _netinfo.bondings.keys()
+    print("Networks:", _netinfo.networks.keys())
+    print("Vlans:", _netinfo.vlans.keys())
+    print("Nics:", _netinfo.nics.keys())
+    print("Bondings:", _netinfo.bondings.keys())
 
 
 def _delBrokenNetwork(network, netAttr, configurator):
@@ -786,7 +786,7 @@ def setSafeNetworkConfig():
 
 
 def usage():
-    print """Usage:
+    print("""Usage:
     ./api.py add Network <attributes> <options>
              edit oldNetwork newNetwork <attributes> <options>
              del Network <options>
@@ -795,7 +795,7 @@ def usage():
 
                        attributes = [vlan=...] [bonding=...] [nics=<nic1>,...]
                        options = [Force=<True|False>] [bridged=<True|False>]...
-    """
+    """)
 
 
 def _parseKwargs(args):
@@ -862,6 +862,6 @@ if __name__ == '__main__':
         main()
     except ConfigNetworkError as e:
         traceback.print_exc()
-        print e.message
+        print(e.message)
         sys.exit(e.errCode)
     sys.exit(0)
