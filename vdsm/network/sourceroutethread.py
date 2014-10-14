@@ -41,8 +41,7 @@ class DHClientEventHandler(pyinotify.ProcessEvent):
             action = sourceRouteContents[0]
             device = sourceRouteContents[-1]
 
-            if DynamicSourceRoute(device, configurator, None, None, None).\
-                    isVDSMInterface():
+            if DynamicSourceRoute.isVDSMInterface(device):
                 if action == 'configure':
                     ip = sourceRouteContents[1]
                     mask = sourceRouteContents[2]

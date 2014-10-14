@@ -172,14 +172,15 @@ class DynamicSourceRoute(StaticSourceRoute):
                     logging.error('ip binary failed during source route '
                                   'removal: %s' % e.message)
 
-    def _isLibvirtInterfaceFallback(self):
+    @staticmethod
+    def _isLibvirtInterfaceFallback(device):
         """
         Checks whether the device belongs to libvirt when libvirt is not yet
         running (network.service runs before libvirtd is started). To do so,
         it must check if there is an autostart network that uses the device.
         """
-        bridged_name = "bridge name='%s'" % self.device
-        bridgeless_name = "interface dev='%s'" % self.device
+        bridged_name = "bridge name='%s'" % device
+        bridgeless_name = "interface dev='%s'" % device
         for filename in iglob('/etc/libvirt/qemu/networks/autostart/'
                               'vdsm-*'):
             with open(filename, 'r') as xml_file:
@@ -189,21 +190,23 @@ class DynamicSourceRoute(StaticSourceRoute):
                     return True
         return False
 
-    def _isLibvirtInterface(self):
+    @staticmethod
+    def _isLibvirtInterface(device):
         try:
             networks = netinfo.networks()
         except libvirtError:  # libvirt might not be started or it just fails
             logging.error('Libvirt failed to answer. It might be the case that'
                           ' this script is being run before libvirt startup. '
                           ' Thus, check if vdsm owns %s an alternative way' %
-                          self.device)
-            return self._isLibvirtInterfaceFallback()
+                          device)
+            return DynamicSourceRoute._isLibvirtInterfaceFallback(device)
         trackedInterfaces = [network.get('bridge') or network.get('iface')
                              for network in networks.itervalues()]
-        return self.device in trackedInterfaces
+        return device in trackedInterfaces
 
-    def isVDSMInterface(self):
-        if os.path.exists(DynamicSourceRoute.getTrackingFilePath(self.device)):
+    @staticmethod
+    def isVDSMInterface(device):
+        if os.path.exists(DynamicSourceRoute.getTrackingFilePath(device)):
             return True
         else:
-            return self._isLibvirtInterface()
+            return DynamicSourceRoute._isLibvirtInterface(device)
