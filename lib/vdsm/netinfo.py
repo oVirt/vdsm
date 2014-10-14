@@ -325,7 +325,7 @@ def getIpInfo(dev, ipaddrs):
         if addr['family'] == 'inet':
             ipv4addrs.append(addr['address'])
             if 'secondary' not in addr['flags']:
-                ipv4addr, prefix = addr['address'].split('/')
+                ipv4addr = addr['address'].split('/')[0]
                 ipv4netmask = prefix2netmask(addr['prefixlen'])
         else:
             ipv6addrs.append(addr['address'])
