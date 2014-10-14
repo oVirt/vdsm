@@ -34,7 +34,6 @@ import monkeypatch
 from testlib import VdsmTestCase
 from testValidation import ValidateRunningAsRoot
 from unittest import TestCase
-import functools
 import tempfile
 import os
 import shutil
@@ -78,15 +77,28 @@ class MockModuleConfigurator(ModuleConfigure):
 
 
 def patchConfigurators(mockConfigurers):
-    def decorator(f):
-        @functools.wraps(f)
-        def wrapper(*args, **kw):
-            monkeypatch.MonkeyPatch(
-                configurator,
-                '_CONFIGURATORS',
-                dict((m.name, m) for m in mockConfigurers))
-        return wrapper
-    return decorator
+    return monkeypatch.MonkeyPatch(
+        configurator,
+        '_CONFIGURATORS',
+        dict((m.name, m) for m in mockConfigurers))
+
+
+class PatchConfiguratorsTests(VdsmTestCase):
+
+    def testPatch(self):
+        self.configurator = MockModuleConfigurator('a')
+        self.function_was_run = False
+
+        @patchConfigurators((self.configurator,))
+        def function():
+            self.function_was_run = True
+            conf = configurator._CONFIGURATORS[self.configurator.name]
+            self.assertTrue(conf is self.configurator)
+
+        self.assertFalse(self.configurator.name in configurator._CONFIGURATORS)
+        function()
+        self.assertTrue(self.function_was_run)
+        self.assertFalse(self.configurator.name in configurator._CONFIGURATORS)
 
 
 class ConfiguratorTests(VdsmTestCase):
