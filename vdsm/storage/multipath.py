@@ -32,6 +32,7 @@ from collections import namedtuple
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.config import config
 import misc
 import iscsi
 import supervdsm
@@ -104,7 +105,9 @@ def rescan():
 
     # First rescan iSCSI and FCP connections
     iscsi.rescan()
-    supervdsm.getProxy().hbaRescan()
+
+    if config.getboolean('irs', 'hba_rescan'):
+        supervdsm.getProxy().hbaRescan()
 
     # Now let multipath daemon pick up new devices
     misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
