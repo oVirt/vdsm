@@ -458,7 +458,7 @@ class VmStatsThread(AdvancedStatsThread):
         if metadataCpuLimit:
             metadataCpuLimitXML = _domParseStr(metadataCpuLimit)
             nodeList = \
-                metadataCpuLimitXML.getElementsByTagName('vcpulimit')
+                metadataCpuLimitXML.getElementsByTagName('vcpuLimit')
             infos['vcpuLimit'] = nodeList[0].childNodes[0].data
 
         return infos
