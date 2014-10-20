@@ -22,6 +22,7 @@
 import contextlib
 import os
 
+from vdsm import constants
 from vdsm import libvirtconnection
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
@@ -104,6 +105,7 @@ def run_libvirt_event_loop():
 
 class testLibvirtconnection(TestCaseBase):
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
+    @MonkeyPatch(constants, 'P_VDSM_LIBVIRT_PASSWD', '/dev/null')
     def testCallSucceeded(self):
         """Positive test - libvirtMock does not raise any errors"""
         with run_libvirt_event_loop():
@@ -114,6 +116,7 @@ class testLibvirtconnection(TestCaseBase):
 
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     @MonkeyPatch(os, 'kill', _kill)
+    @MonkeyPatch(constants, 'P_VDSM_LIBVIRT_PASSWD', '/dev/null')
     def testCallFailedConnectionUp(self):
         """
         libvirtMock will raise an error when nodeDeviceLookupByName is called.
@@ -131,6 +134,7 @@ class testLibvirtconnection(TestCaseBase):
 
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     @MonkeyPatch(os, 'kill', _kill)
+    @MonkeyPatch(constants, 'P_VDSM_LIBVIRT_PASSWD', '/dev/null')
     def testCallFailedConnectionDown(self):
         """
         libvirtMock will raise an error when nodeDeviceLookupByName is called.

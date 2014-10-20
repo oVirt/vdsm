@@ -77,13 +77,19 @@ __connections = {}
 __connectionLock = threading.Lock()
 
 
-def _open_qemu_connection():
+def _read_password():
+    with open(constants.P_VDSM_LIBVIRT_PASSWD) as passwd_file:
+        return passwd_file.readline().rstrip("\n")
+
+
+def open_connection(uri=None, username=None, passwd=None):
+    """ by calling this method you are getting a new and unwrapped connection
+        if you want to use wrapped and cached connection use the get() method
+    """
     def req(credentials, user_data):
-        with open(constants.P_VDSM_LIBVIRT_PASSWD) as passwd_file:
-            passwd = passwd_file.readline().rstrip("\n")
         for cred in credentials:
             if cred[0] == libvirt.VIR_CRED_AUTHNAME:
-                cred[4] = constants.SASL_USERNAME
+                cred[4] = username
             elif cred[0] == libvirt.VIR_CRED_PASSPHRASE:
                 cred[4] = passwd
         return 0
@@ -92,7 +98,7 @@ def _open_qemu_connection():
             req, None]
 
     libvirtOpen = functools.partial(
-        libvirt.openAuth, 'qemu:///system', auth, 0)
+        libvirt.openAuth, uri, auth, 0)
     return utils.retry(libvirtOpen, timeout=10, sleep=0.2)
 
 
@@ -146,7 +152,9 @@ def get(target=None, killOnFailure=True):
         conn = __connections.get(id(target))
         if not conn:
             log.debug('trying to connect libvirt')
-            conn = _open_qemu_connection()
+            passwd = _read_password()
+            conn = open_connection('qemu:///system', constants.SASL_USERNAME,
+                                   passwd)
             __connections[id(target)] = conn
 
             setattr(conn, 'pingLibvirt', getattr(conn, 'getLibVersion'))
