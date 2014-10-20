@@ -330,7 +330,7 @@ class TestVm(TestCaseBase):
                 <target port="0" type="virtio"/>
             </console>"""
         dev = {'device': 'console'}
-        console = vm.ConsoleDevice(self.conf, self.log, **dev)
+        console = vmdevices.Console(self.conf, self.log, **dev)
         self.assertXML(console.getXML(), consoleXML)
 
     def testClockXML(self):

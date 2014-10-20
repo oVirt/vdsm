@@ -54,6 +54,22 @@ class Generic(Base):
         return self.createXmlElem(self.type, self.device, ['address'])
 
 
+class Console(Base):
+    __slots__ = ()
+
+    def getXML(self):
+        """
+        Create domxml for a console device.
+
+        <console type='pty'>
+          <target type='virtio' port='0'/>
+        </console>
+        """
+        m = self.createXmlElem('console', 'pty')
+        m.appendChildWithArgs('target', type='virtio', port='0')
+        return m
+
+
 class Controller(Base):
     __slots__ = ('address', 'model', 'index', 'master')
 

@@ -1259,22 +1259,6 @@ class RngDevice(vmdevices.Base):
         return rng
 
 
-class ConsoleDevice(vmdevices.Base):
-    __slots__ = ()
-
-    def getXML(self):
-        """
-        Create domxml for a console device.
-
-        <console type='pty'>
-          <target type='virtio' port='0'/>
-        </console>
-        """
-        m = self.createXmlElem('console', 'pty')
-        m.appendChildWithArgs('target', type='virtio', port='0')
-        return m
-
-
 class MigrationError(Exception):
     pass
 
@@ -1310,7 +1294,7 @@ class Vm(object):
                      (GENERAL_DEVICES, vmdevices.Generic),
                      (BALLOON_DEVICES, BalloonDevice),
                      (WATCHDOG_DEVICES, WatchdogDevice),
-                     (CONSOLE_DEVICES, ConsoleDevice),
+                     (CONSOLE_DEVICES, vmdevices.Console),
                      (REDIR_DEVICES, vmdevices.Redir),
                      (RNG_DEVICES, RngDevice),
                      (SMARTCARD_DEVICES, vmdevices.Smartcard),
