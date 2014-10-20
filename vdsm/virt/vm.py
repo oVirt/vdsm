@@ -143,6 +143,14 @@ VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.UP, vmstatus.WAIT_FOR_LAUNCH)
 
 
+class ConsoleDisconnectAction:
+    NONE = 'NONE'
+    LOCK_SCREEN = 'LOCK_SCREEN'
+    SHUTDOWN = 'SHUTDOWN'
+    LOGOUT = 'LOGOUT'
+    REBOOT = 'REBOOT'
+
+
 # These strings are representing libvirt virDomainEventType values
 # http://libvirt.org/html/libvirt-libvirt.html#virDomainEventType
 _EVENT_STRINGS = ("Defined",
@@ -702,6 +710,7 @@ class Vm(object):
         self._monitorResponse = 0
         self.conf['clientIp'] = ''
         self.memCommitted = 0
+        self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
         self._confLock = threading.Lock()
         self._jobsLock = threading.Lock()
         self._statusLock = threading.Lock()
@@ -1263,7 +1272,21 @@ class Vm(object):
 
     def _timedDesktopLock(self):
         if not self.conf.get('clientIp', ''):
-            self.guestAgent.desktopLock()
+            delay = config.get('vars', 'user_shutdown_timeout')
+            timeout = config.getint('vars', 'sys_shutdown_timeout')
+            CDA = ConsoleDisconnectAction
+            if self._consoleDisconnectAction == CDA.LOCK_SCREEN:
+                self.guestAgent.desktopLock()
+            elif self._consoleDisconnectAction == CDA.LOGOUT:
+                self.guestAgent.desktopLogoff()
+            elif self._consoleDisconnectAction == CDA.REBOOT:
+                self.shutdown(delay=delay, reboot=True, timeout=timeout,
+                              message='Scheduled reboot on disconnect',
+                              force=True)
+            elif self._consoleDisconnectAction == CDA.SHUTDOWN:
+                self.shutdown(delay=delay, reboot=False, timeout=timeout,
+                              message='Scheduled shutdown on disconnect',
+                              force=True)
 
     def onDisconnect(self, detail=None):
         self.conf['clientIp'] = ''
@@ -3725,6 +3748,9 @@ class Vm(object):
         hooks.before_vm_set_ticket(self._domain.xml, self.conf, params)
         try:
             self._dom.updateDeviceFlags(graphics.toxml(), 0)
+            disconnectAction = params.get('disconnectAction',
+                                          ConsoleDisconnectAction.LOCK_SCREEN)
+            self._consoleDisconnectAction = disconnectAction
         except TimeoutError as tmo:
             res = response.error('ticketErr', unicode(tmo))
         else:
