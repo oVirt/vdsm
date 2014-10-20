@@ -16,27 +16,66 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+"""
+When importing a VM a thread start with a new process of virt-v2v.
+The way to feedback the information on the progress and the status of the
+process (ie job) is via getVdsStats() with the fields progress and status.
+progress is a number which represent percentage of a single disk copy,
+status is a way to feedback information on the job (init, error etc)
+"""
+
 from collections import namedtuple
-from contextlib import closing
+from contextlib import closing, contextmanager
+import errno
 import logging
+import os
 import re
+import threading
 import xml.etree.ElementTree as ET
 
 import libvirt
 
+from vdsm.constants import P_VDSM_RUN
 from vdsm.define import errCode, doneCode
 from vdsm import libvirtconnection
+from vdsm.infra import zombiereaper
+from vdsm.utils import traceback, CommandPath, execCmd
 
 import caps
 
+
+_lock = threading.Lock()
+_jobs = {}
+
+_V2V_DIR = os.path.join(P_VDSM_RUN, 'v2v')
+_VIRT_V2V = CommandPath('virt-v2v', '/usr/bin/virt-v2v')
 
 ImportProgress = namedtuple('ImportProgress',
                             ['current_disk', 'disk_count', 'description'])
 DiskProgress = namedtuple('DiskProgress', ['progress'])
 
 
+class STATUS:
+    '''
+    STARTING: request granted and starting the import process
+    COPYING_DISK: copying disk in progress
+    ABORTED: user initiated aborted
+    FAILED: error during import process
+    DONE: convert process successfully finished
+    '''
+    STARTING = 'starting'
+    COPYING_DISK = 'copying_disk'
+    ABORTED = 'aborted'
+    FAILED = 'error'
+    DONE = 'done'
+
+
 class V2VError(Exception):
     ''' Base class for v2v errors '''
+
+
+class ClientError(Exception):
+    ''' Base class for client error '''
 
 
 class InvalidVMConfiguration(ValueError):
@@ -45,6 +84,23 @@ class InvalidVMConfiguration(ValueError):
 
 class OutputParserError(V2VError):
     ''' Error while parsing virt-v2v output '''
+
+
+class JobExistsError(ClientError):
+    ''' Job already exists in _jobs collection '''
+    err_name = 'V2VJobExistsError'
+
+
+class VolumeError(ClientError):
+    ''' Error preparing volume '''
+
+
+class V2VProcessError(V2VError):
+    ''' virt-v2v process had error in execution '''
+
+
+class InvalidInputError(ClientError):
+    ''' Invalid input received '''
 
 
 def supported():
@@ -83,6 +139,258 @@ def get_external_vms(uri, username, password):
                 _add_disk_info(conn, disk)
             vms.append(params)
         return {'status': doneCode, 'vmList': vms}
+
+
+def convert_external_vm(uri, username, password, vminfo, job_id, irs):
+    job = ImportVm(uri, username, password, vminfo, job_id, irs)
+    job.start()
+    _add_job(job_id, job)
+    return {'status': doneCode}
+
+
+def get_jobs_status():
+    ret = {}
+    with _lock:
+        items = tuple(_jobs.items())
+    for job_id, job in items:
+        ret[job_id] = {
+            'status': job.status,
+            'description': job.description,
+            'progress': job.progress
+        }
+    return ret
+
+
+def _add_job(job_id, job):
+    with _lock:
+        if job_id in _jobs:
+            raise JobExistsError("Job %r exists" % job_id)
+        _jobs[job_id] = job
+
+
+def get_storage_domain_path(path):
+    '''
+    prepareImage returns /prefix/sdUUID/images/imgUUID/volUUID
+    we need storage domain absolute path so we go up 3 levels
+    '''
+    return path.rsplit(os.sep, 3)[0]
+
+
+@contextmanager
+def password_file(job_id, file_name, password):
+    fd = os.open(file_name, os.O_WRONLY | os.O_CREAT, 0600)
+    try:
+        os.write(fd, password)
+    finally:
+        os.close(fd)
+    try:
+        yield
+    finally:
+        try:
+            os.remove(file_name)
+        except Exception:
+            logging.exception("Job %r error removing passwd file: %s",
+                              job_id, file_name)
+
+
+class ImportVm(object):
+    TERM_DELAY = 30
+    PROC_WAIT_TIMEOUT = 30
+
+    def __init__(self, uri, username, password, vminfo, job_id, irs):
+        self._uri = uri
+        self._username = username
+        self._password = password
+        self._vminfo = vminfo
+        self._id = job_id
+        self._irs = irs
+        self._status = STATUS.STARTING
+        self._description = ''
+        self._disk_progress = 0
+        self._disk_count = 1
+        self._current_disk = 1
+        self._aborted = False
+        self._prepared_volumes = []
+        self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % job_id)
+
+    def start(self):
+        t = threading.Thread(target=self._run)
+        t.daemon = True
+        t.start()
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def status(self):
+        return self._status
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def progress(self):
+        '''
+        progress is part of multiple disk_progress its
+        flat and not 100% accurate - each disk take its
+        portion ie if we have 2 disks the first will take
+        0-50 and the second 50-100
+        '''
+        completed = (self._disk_count - 1) * 100
+        return (completed + self._disk_progress) / self._disk_count
+
+    @traceback(msg="Error importing vm")
+    def _run(self):
+        with password_file(self._id, self._passwd_file, self._password):
+            try:
+                self._import()
+            except Exception as ex:
+                if self._aborted:
+                    logging.debug("Job %r was aborted", self._id)
+                else:
+                    logging.exception("Job %r failed", self._id)
+                    self._status = STATUS.FAILED
+                    self._description = ex.message
+                    try:
+                        self._abort()
+                    except Exception as e:
+                        logging.exception('Job %r, error trying to abort: %r',
+                                          self._id, e)
+            finally:
+                self._teardown_volumes()
+
+    def _import(self):
+        # TODO: use the process handling http://gerrit.ovirt.org/#/c/33909/
+        self._prepare_volumes()
+        cmd = self._create_command()
+        logging.info('Job %r starting import', self._id)
+
+        self._proc = execCmd(cmd, sync=False, deathSignal=15,
+                             env={'LIBGUESTFS_BACKEND': 'direct'})
+
+        self._proc.blocking = True
+        self._watch_process_output()
+        self._wait_for_process()
+
+        if self._proc.returncode != 0:
+            raise V2VProcessError('Job %r process failed exit-code: %r'
+                                  ', stderr: %s' %
+                                  (self._id, self._proc.returncode,
+                                   self._proc.stderr.read(1024)))
+
+        logging.info('Job %r finished import successfully', self._id)
+        self._status = STATUS.DONE
+
+    def _wait_for_process(self):
+        if self._proc.returncode is not None:
+            return
+        logging.debug("Job %r waiting for virt-v2v process", self._id)
+        if not self._proc.wait(timeout=self.PROC_WAIT_TIMEOUT):
+            raise V2VProcessError("Job %r timeout waiting for process pid=%s",
+                                  self._id, self._proc.pid)
+
+    def _watch_process_output(self):
+        parser = OutputParser()
+        for event in parser.parse(self._proc.stdout):
+            if isinstance(event, ImportProgress):
+                self._status = STATUS.COPYING_DISK
+                logging.info("Job %r copying disk %d/%d",
+                             self._id, event.current_disk, event.disk_count)
+                self._disk_progress = 0
+                self._current_disk = event.current_disk
+                self._disk_count = event.disk_count
+                self._description = event.description
+            elif isinstance(event, DiskProgress):
+                self._disk_progress = event.progress
+                if event.progress % 10 == 0:
+                    logging.info("Job %r copy disk %d progress %d/100",
+                                 self._id, self._current_disk, event.progress)
+            else:
+                raise RuntimeError("Job %r got unexpected parser event: %s" %
+                                   (self._id, event))
+
+    def _create_command(self):
+        cmd = [_VIRT_V2V.cmd, '-ic', self._uri, '-o', 'vdsm', '-of', 'raw']
+        cmd.extend(self._generate_disk_parameters())
+        cmd.extend(['--password-file',
+                    self._passwd_file,
+                    '--vdsm-vm-uuid',
+                    self._id,
+                    '--vdsm-ovf-output',
+                    _V2V_DIR,
+                    '--machine-readable',
+                    '-os',
+                    get_storage_domain_path(self._prepared_volumes[0]['path']),
+                    self._vminfo['vmName']])
+        return cmd
+
+    def abort(self):
+        self._status = STATUS.ABORTED
+        logging.info('Job %r aborting...', self._id)
+        self._abort()
+
+    def _abort(self):
+        self._aborted = True
+        if self._proc.returncode is None:
+            logging.debug('Job %r killing virt-v2v process', self._id)
+            try:
+                self._proc.kill()
+            except OSError as e:
+                if e.errno != errno.ESRCH:
+                    raise
+                logging.debug('Job %r virt-v2v process not running',
+                              self._id)
+            else:
+                logging.debug('Job %r virt-v2v process was killed',
+                              self._id)
+            finally:
+                zombiereaper.autoReapPID(self._proc.pid)
+
+    def _generate_disk_parameters(self):
+        parameters = []
+        for disk in self._vminfo['disks']:
+            try:
+                parameters.append('--vdsm-image-uuid')
+                parameters.append(disk['imageID'])
+                parameters.append('--vdsm-vol-uuid')
+                parameters.append(disk['volumeID'])
+            except KeyError as e:
+                raise InvalidInputError('Job %r missing required property: %s'
+                                        % (self._id, e))
+        return parameters
+
+    def _prepare_volumes(self):
+        if len(self._vminfo['disks']) < 1:
+            raise InvalidInputError('Job %r cannot import vm with no disk',
+                                    self._id)
+
+        for disk in self._vminfo['disks']:
+            drive = {'poolID': self._vminfo['poolID'],
+                     'domainID': self._vminfo['domainID'],
+                     'volumeID': disk['volumeID'],
+                     'imageID': disk['imageID']}
+            res = self._irs.prepareImage(drive['domainID'],
+                                         drive['poolID'],
+                                         drive['imageID'],
+                                         drive['volumeID'])
+            if res['status']['code']:
+                raise VolumeError('Job %r bad volume specification: %s' %
+                                  (self._id, drive))
+
+            drive['path'] = res['path']
+            self._prepared_volumes.append(drive)
+
+    def _teardown_volumes(self):
+        for drive in self._prepared_volumes:
+            try:
+                self._irs.teardownImage(drive['domainID'],
+                                        drive['poolID'],
+                                        drive['imageID'])
+            except Exception as e:
+                logging.error('Job %r error tearing down drive: %s',
+                              self._id, e)
 
 
 class OutputParser(object):

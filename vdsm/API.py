@@ -1400,6 +1400,10 @@ class Global(APIBase):
         """
         return v2v.get_external_vms(uri, username, password)
 
+    def convertExternalVm(self, uri, username, password, vminfo, jobid):
+        return v2v.convert_external_vm(uri, username, password, vminfo, jobid,
+                                       self._cif.irs)
+
     # Networking-related functions
     def setupNetworks(self, networks, bondings, options):
         """Add a new network to this vds, replacing an old one."""

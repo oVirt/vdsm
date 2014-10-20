@@ -35,6 +35,7 @@ from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import utils
 from vdsm.config import config
+import v2v
 
 import caps
 
@@ -721,6 +722,8 @@ class HostStatsThread(threading.Thread):
 
         stats['numaNodeMemFree'] = hs1.numaNodeMem.nodesMemSample
         stats['cpuStatistics'] = self._getCpuCoresStats()
+
+        stats['v2vJobs'] = v2v.get_jobs_status()
         return stats
 
     def _getCpuCoresStats(self):

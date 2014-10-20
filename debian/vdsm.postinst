@@ -61,6 +61,7 @@ case "$1" in
         $INSTALLDIR /var/lib/vdsm/netconfback
         $INSTALLDIR /var/run/vdsm
         $INSTALLDIR /var/run/vdsm/payload
+        $INSTALLDIR /var/run/vdsm/v2v
         $INSTALLDIR /var/run/vdsm/sourceRoutes
         $INSTALLDIR /var/run/vdsm/trackedInterfaces
         $INSTALLDIR /var/log/vdsm

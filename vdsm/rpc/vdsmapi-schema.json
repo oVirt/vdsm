@@ -3802,6 +3802,28 @@
   'returns': ['ExternalVmInfo']}
 
 ##
+# @Host.convertExternalVm:
+#
+# Convert VM from external source to data domain
+#
+# @uri:          libvirt connection uri
+#
+# @username:     libvirt connection user name
+#
+# @password:     libvirt connection password
+#
+# @vminfo:       information of the VM such as name, id etc
+#
+# @jobid:        Assign a UUID to this operation which can be used
+#                to identify it in @HostStats
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'convertExternalVm'},
+  'data': {'uri': 'str', 'username': 'str', 'password': 'str',
+  'vminfo': 'ExternalVmInfo', 'jobid': 'UUID'}}
+
+##
 # @VMFullInfo:
 #
 # Full information about VM.

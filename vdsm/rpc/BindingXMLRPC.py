@@ -364,6 +364,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getExternalVMs(uri, username, password)
 
+    def convertExternalVm(self, uri, username, password, vminfo, jobid):
+        api = API.Global()
+        return api.convertExternalVm(uri, username, password, vminfo, jobid)
+
     def vmPause(self, vmId):
         vm = API.VM(vmId)
         return vm.pause()
@@ -1031,7 +1035,8 @@ class BindingXMLRPC(object):
                 (self.vmUpdateVmPolicy, 'updateVmPolicy'),
                 (self.vmSetIoTune, 'setIoTune'),
                 (self.vmGetIoTunePolicy, 'getIoTunePolicy'),
-                (self.getExternalVMs, 'getExternalVMs'))
+                (self.getExternalVMs, 'getExternalVMs'),
+                (self.convertExternalVm, 'convertExternalVm'))
 
     def getIrsMethods(self):
         return ((self.domainActivate, 'activateStorageDomain'),
