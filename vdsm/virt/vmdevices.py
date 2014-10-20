@@ -69,6 +69,25 @@ class Controller(Base):
         return ctrl
 
 
+class Smartcard(Base):
+    __slots__ = ('address',)
+
+    def getXML(self):
+        """
+        Add smartcard section to domain xml
+
+        <smartcard mode='passthrough' type='spicevmc'>
+          <address ... />
+        </smartcard>
+        """
+        card = self.createXmlElem(self.device, None, ['address'])
+        sourceAttrs = {'mode': self.specParams['mode']}
+        if sourceAttrs['mode'] != 'host':
+            sourceAttrs['type'] = self.specParams['type']
+        card.setAttrs(**sourceAttrs)
+        return card
+
+
 class Sound(Base):
     __slots__ = ('address', 'alias')
 

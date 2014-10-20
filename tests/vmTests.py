@@ -264,7 +264,7 @@ class TestVm(TestCaseBase):
         smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'
         dev = {'device': 'smartcard',
                'specParams': {'mode': 'passthrough', 'type': 'spicevmc'}}
-        smartcard = vm.SmartCardDevice(self.conf, self.log, **dev)
+        smartcard = vmdevices.Smartcard(self.conf, self.log, **dev)
         self.assertXML(smartcard.getXML(), smartcardXML)
 
     def testTpmXML(self):

@@ -1211,25 +1211,6 @@ class WatchdogDevice(vmdevices.Base):
         return m
 
 
-class SmartCardDevice(vmdevices.Base):
-    __slots__ = ('address',)
-
-    def getXML(self):
-        """
-        Add smartcard section to domain xml
-
-        <smartcard mode='passthrough' type='spicevmc'>
-          <address ... />
-        </smartcard>
-        """
-        card = self.createXmlElem(self.device, None, ['address'])
-        sourceAttrs = {'mode': self.specParams['mode']}
-        if sourceAttrs['mode'] != 'host':
-            sourceAttrs['type'] = self.specParams['type']
-        card.setAttrs(**sourceAttrs)
-        return card
-
-
 class TpmDevice(vmdevices.Base):
     __slots__ = ()
 
@@ -1332,7 +1313,7 @@ class Vm(object):
                      (CONSOLE_DEVICES, ConsoleDevice),
                      (REDIR_DEVICES, vmdevices.Redir),
                      (RNG_DEVICES, RngDevice),
-                     (SMARTCARD_DEVICES, SmartCardDevice),
+                     (SMARTCARD_DEVICES, vmdevices.Smartcard),
                      (TPM_DEVICES, TpmDevice))
 
     def _makeDeviceDict(self):
