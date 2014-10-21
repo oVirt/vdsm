@@ -90,7 +90,7 @@ class MultiProtocolAcceptor:
 
     @traceback(on=log.name)
     def serve_forever(self):
-        self.log.debug("Acceptor running")
+        self.log.debug("Running")
         self._required_size = max(h.REQUIRED_SIZE for h in self._handlers)
         self.log.debug("Using required_size=%d", self._required_size)
         self._next_cleanup = time.time() + self.CLEANUP_INTERVAL
@@ -126,7 +126,7 @@ class MultiProtocolAcceptor:
             self._cleanup_pending_connections()
 
     def _cleanup(self):
-        self.log.debug("Cleaning Acceptor")
+        self.log.debug("Cleaning up")
 
         for _, client_socket in self._pending_connections.values():
             self._close_connection(client_socket)
@@ -150,7 +150,7 @@ class MultiProtocolAcceptor:
         raise _CannotDetectProtocol()
 
     def add_detector(self, detector):
-        self.log.debug("adding detector: %s", detector)
+        self.log.debug("Adding detector %s", detector)
         self._handlers.append(detector)
 
     def stop(self):
@@ -197,7 +197,7 @@ class MultiProtocolAcceptor:
 
     def _add_connection(self, socket):
         host, port = socket.getpeername()
-        self.log.debug("Adding connection from %s:%d", host, port)
+        self.log.debug("Adding connection %s:%d", host, port)
         socket.setblocking(0)
         self._pending_connections[socket.fileno()] = (time.time(),
                                                       socket)
@@ -211,7 +211,7 @@ class MultiProtocolAcceptor:
         del self._pending_connections[socket.fileno()]
         socket.setblocking(1)
         host, port = socket.getpeername()
-        self.log.debug("Connection removed from %s:%d", host, port)
+        self.log.debug("Removing connection %s:%d", host, port)
 
     def _close_connection(self, socket):
         self._remove_connection(socket)
