@@ -26,6 +26,7 @@ import tempfile
 
 class OopWrapperTests(TestCaseBase):
     def setUp(self):
+        oop.setDefaultImpl(oop.IOPROC)
         self.pool = oop.getGlobalProcPool()
 
     def testEcho(self):
@@ -34,7 +35,7 @@ class OopWrapperTests(TestCaseBase):
                   real discretion."""
         # Henry Steele Commager
 
-        self.assertEquals(self.pool.echo(data), data)
+        self.assertEquals(self.pool._ioproc.echo(data), data)
 
     def testFileUtilsCall(self):
         """fileUtils is a custom module and calling it might break even though
@@ -45,9 +46,6 @@ class OopWrapperTests(TestCaseBase):
     def testSubModuleCall(self):
         path = "/dev/null"
         self.assertEquals(self.pool.os.path.exists(path), True)
-
-    def testModuleCall(self):
-        self.assertNotEquals(self.pool.os.getpid(), os.getpid())
 
     def testUtilsFuncs(self):
         tmpfd, tmpfile = tempfile.mkstemp()
