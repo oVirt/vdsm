@@ -128,7 +128,7 @@ class MultiProtocolAcceptor:
     def _cleanup(self):
         self.log.debug("Cleaning Acceptor")
 
-        for _, (_, client_socket) in self._pending_connections.items():
+        for _, client_socket in self._pending_connections.values():
             self._close_connection(client_socket)
 
         self._poller.unregister(self._socket)
@@ -138,7 +138,7 @@ class MultiProtocolAcceptor:
         os.close(self._write_fd)
 
     def _cleanup_pending_connections(self):
-        for _, (accepted, client_socket) in self._pending_connections.items():
+        for accepted, client_socket in self._pending_connections.values():
             if time.time() - accepted > self.CLEANUP_INTERVAL:
                 self._close_connection(client_socket)
 
