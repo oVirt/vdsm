@@ -515,7 +515,7 @@ class TestVm(TestCaseBase):
         dev = {'type': 'rng', 'model': 'virtio', 'specParams':
                {'period': '2000', 'bytes': '1234', 'source': 'random'}}
 
-        rng = vm.RngDevice(self.conf, self.log, **dev)
+        rng = vmdevices.Rng(self.conf, self.log, **dev)
         self.assertXML(rng.getXML(), rngXML)
 
     def testWatchdogXML(self):

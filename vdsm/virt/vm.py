@@ -1233,32 +1233,6 @@ class TpmDevice(vmdevices.Base):
         return tpm
 
 
-class RngDevice(vmdevices.Base):
-    def getXML(self):
-        """
-        <rng model='virtio'>
-            <rate period="2000" bytes="1234"/>
-            <backend model='random'>/dev/random</backend>
-        </rng>
-        """
-        rng = self.createXmlElem('rng', None, ['model'])
-
-        # <rate... /> element
-        if 'bytes' in self.specParams:
-            rateAttrs = {'bytes': self.specParams['bytes']}
-            if 'period' in self.specParams:
-                rateAttrs['period'] = self.specParams['period']
-
-            rng.appendChildWithArgs('rate', None, **rateAttrs)
-
-        # <backend... /> element
-        rng.appendChildWithArgs('backend',
-                                caps.RNG_SOURCES[self.specParams['source']],
-                                model='random')
-
-        return rng
-
-
 class MigrationError(Exception):
     pass
 
@@ -1296,7 +1270,7 @@ class Vm(object):
                      (WATCHDOG_DEVICES, WatchdogDevice),
                      (CONSOLE_DEVICES, vmdevices.Console),
                      (REDIR_DEVICES, vmdevices.Redir),
-                     (RNG_DEVICES, RngDevice),
+                     (RNG_DEVICES, vmdevices.Rng),
                      (SMARTCARD_DEVICES, vmdevices.Smartcard),
                      (TPM_DEVICES, TpmDevice))
 
