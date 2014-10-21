@@ -1,5 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors;
 
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
@@ -133,7 +135,7 @@ public abstract class SSLClient extends StompCommonClient {
             this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(this.client), callback, this);
             this.nioEngine.beginHandshake();
         } catch (SSLException | InterruptedException | ExecutionException e) {
-            log.error("Connection issues during ssl client creation", e);
+            logException(log, "Connection issues during ssl client creation", e);
             throw new ClientConnectionException(e);
         }
         if (key == null) {

@@ -1,5 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors;
 
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -43,7 +45,7 @@ public abstract class Reactor extends Thread {
         try {
             this.selector.select(TIMEOUT);
         } catch (IOException e) {
-            LOG.error("IOException occured", e);
+            logException(LOG, "IOException occured", e);
         }
     }
 
@@ -57,7 +59,7 @@ public abstract class Reactor extends Thread {
             try {
                 this.scheduler.performPendingOperations();
             } catch (Exception e) {
-                LOG.error("Exception occured during running scheduled task", e);
+                logException(LOG, "Exception occured during running scheduled task", e);
             }
             processChannels();
         }
@@ -85,10 +87,10 @@ public abstract class Reactor extends Thread {
                 try {
                     client.process();
                 } catch (IOException | ClientConnectionException ex) {
-                    LOG.error("Unable to process messages", ex);
+                    logException(LOG, "Unable to process messages", ex);
                     client.disconnect(ex.getMessage());
                 } catch (Throwable e) {
-                    LOG.error("Internal server error", e);
+                    logException(LOG, "Internal server error", e);
                     client.disconnect(e.getMessage());
                 }
             }

@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -70,7 +71,7 @@ public class SSLStompListener extends SSLStompClient implements Sender {
             reactor.wakeup();
             key = this.channel.register(selector, interestedOps |= SelectionKey.OP_WRITE, this);
         } catch (ClosedChannelException | SSLException e) {
-            log.error("Connection issues during ssl client creation", e);
+            logException(log, "Connection issues during ssl client creation", e);
             throw new ClientConnectionException(e);
         }
     }

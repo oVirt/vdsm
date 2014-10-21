@@ -116,4 +116,12 @@ public class JsonUtils {
     public static long getTimeout(int timeout, TimeUnit unit) {
         return new Date().getTime() + TimeUnit.MILLISECONDS.convert(timeout, unit);
     }
+
+    public static void logException(Log logger, String message, Throwable throwable) {
+        if (logger.isDebugEnabled()) {
+            logger.debug(message, throwable);
+        } else {
+            logger.error(message);
+        }
+    }
 }

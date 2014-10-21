@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors;
 
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.getTimeout;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -118,7 +119,7 @@ public abstract class ReactorClient {
             }
             postConnect(getPostConnectCallback());
         } catch (InterruptedException | ExecutionException e) {
-            log.error("Exception during connection", e);
+            logException(log, "Exception during connection", e);
             final String message = "Connection issue " + e.getMessage();
             final Callable<Void> disconnectCallable = new Callable<Void>() {
                 @Override
