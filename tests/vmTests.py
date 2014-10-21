@@ -502,7 +502,7 @@ class TestVm(TestCaseBase):
         balloonXML = '<memballoon model="virtio"/>'
         dev = {'device': 'memballoon', 'type': 'balloon',
                'specParams': {'model': 'virtio'}}
-        balloon = vm.BalloonDevice(self.conf, self.log, **dev)
+        balloon = vmdevices.Balloon(self.conf, self.log, **dev)
         self.assertXML(balloon.getXML(), balloonXML)
 
     def testRngXML(self):

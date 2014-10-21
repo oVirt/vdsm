@@ -55,6 +55,23 @@ class Generic(Base):
         return self.createXmlElem(self.type, self.device, ['address'])
 
 
+class Balloon(Base):
+    __slots__ = ('address',)
+
+    def getXML(self):
+        """
+        Create domxml for a memory balloon device.
+
+        <memballoon model='virtio'>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x04'
+           function='0x0'/>
+        </memballoon>
+        """
+        m = self.createXmlElem(self.device, None, ['address'])
+        m.setAttrs(model=self.specParams['model'])
+        return m
+
+
 class Console(Base):
     __slots__ = ()
 

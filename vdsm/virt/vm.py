@@ -1170,23 +1170,6 @@ class GraphicsDevice(vmdevices.Base):
         return graphics
 
 
-class BalloonDevice(vmdevices.Base):
-    __slots__ = ('address',)
-
-    def getXML(self):
-        """
-        Create domxml for a memory balloon device.
-
-        <memballoon model='virtio'>
-          <address type='pci' domain='0x0000' bus='0x00' slot='0x04'
-           function='0x0'/>
-        </memballoon>
-        """
-        m = self.createXmlElem(self.device, None, ['address'])
-        m.setAttrs(model=self.specParams['model'])
-        return m
-
-
 class MigrationError(Exception):
     pass
 
@@ -1220,7 +1203,7 @@ class Vm(object):
                      (GRAPHICS_DEVICES, GraphicsDevice),
                      (CONTROLLER_DEVICES, vmdevices.Controller),
                      (GENERAL_DEVICES, vmdevices.Generic),
-                     (BALLOON_DEVICES, BalloonDevice),
+                     (BALLOON_DEVICES, vmdevices.Balloon),
                      (WATCHDOG_DEVICES, vmdevices.Watchdog),
                      (CONSOLE_DEVICES, vmdevices.Console),
                      (REDIR_DEVICES, vmdevices.Redir),
