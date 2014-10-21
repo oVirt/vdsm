@@ -1211,28 +1211,6 @@ class WatchdogDevice(vmdevices.Base):
         return m
 
 
-class TpmDevice(vmdevices.Base):
-    __slots__ = ()
-
-    def getXML(self):
-        """
-        Add tpm section to domain xml
-
-        <tpm model='tpm-tis'>
-            <backend type='passthrough'>
-                <device path='/dev/tpm0'>
-            </backend>
-        </tpm>
-        """
-        tpm = self.createXmlElem(self.device, None)
-        tpm.setAttrs(model=self.specParams['model'])
-        backend = tpm.appendChildWithArgs('backend',
-                                          type=self.specParams['mode'])
-        backend.appendChildWithArgs('device',
-                                    path=self.specParams['path'])
-        return tpm
-
-
 class MigrationError(Exception):
     pass
 
@@ -1272,7 +1250,7 @@ class Vm(object):
                      (REDIR_DEVICES, vmdevices.Redir),
                      (RNG_DEVICES, vmdevices.Rng),
                      (SMARTCARD_DEVICES, vmdevices.Smartcard),
-                     (TPM_DEVICES, TpmDevice))
+                     (TPM_DEVICES, vmdevices.Tpm))
 
     def _makeDeviceDict(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)

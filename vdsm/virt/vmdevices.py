@@ -169,3 +169,25 @@ class Rng(Base):
                                 model='random')
 
         return rng
+
+
+class Tpm(Base):
+    __slots__ = ()
+
+    def getXML(self):
+        """
+        Add tpm section to domain xml
+
+        <tpm model='tpm-tis'>
+            <backend type='passthrough'>
+                <device path='/dev/tpm0'>
+            </backend>
+        </tpm>
+        """
+        tpm = self.createXmlElem(self.device, None)
+        tpm.setAttrs(model=self.specParams['model'])
+        backend = tpm.appendChildWithArgs('backend',
+                                          type=self.specParams['mode'])
+        backend.appendChildWithArgs('device',
+                                    path=self.specParams['path'])
+        return tpm

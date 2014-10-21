@@ -278,7 +278,7 @@ class TestVm(TestCaseBase):
         dev = {'device': 'tpm',
                'specParams': {'mode': 'passthrough',
                               'path': '/dev/tpm0', 'model': 'tpm-tis'}}
-        tpm = vm.TpmDevice(self.conf, self.log, **dev)
+        tpm = vmdevices.Tpm(self.conf, self.log, **dev)
         self.assertXML(tpm.getXML(), tpmXML)
 
     def testFeaturesXML(self):
