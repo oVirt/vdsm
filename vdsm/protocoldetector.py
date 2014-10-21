@@ -138,8 +138,9 @@ class MultiProtocolAcceptor:
         os.close(self._write_fd)
 
     def _cleanup_pending_connections(self):
+        now = time.time()
         for accepted, client_socket in self._pending_connections.values():
-            if time.time() - accepted > self.CLEANUP_INTERVAL:
+            if now - accepted > self.CLEANUP_INTERVAL:
                 self._close_connection(client_socket)
 
     def detect_protocol(self, data):
