@@ -522,7 +522,7 @@ class TestVm(TestCaseBase):
         watchdogXML = '<watchdog action="none" model="i6300esb"/>'
         dev = {'device': 'watchdog', 'type': 'watchdog',
                'specParams': {'model': 'i6300esb', 'action': 'none'}}
-        watchdog = vm.WatchdogDevice(self.conf, self.log, **dev)
+        watchdog = vmdevices.Watchdog(self.conf, self.log, **dev)
         self.assertXML(watchdog.getXML(), watchdogXML)
 
     def testSoundXML(self):

@@ -1187,30 +1187,6 @@ class BalloonDevice(vmdevices.Base):
         return m
 
 
-class WatchdogDevice(vmdevices.Base):
-    __slots__ = ('address',)
-
-    def __init__(self, *args, **kwargs):
-        super(WatchdogDevice, self).__init__(*args, **kwargs)
-
-        if not hasattr(self, 'specParams'):
-            self.specParams = {}
-
-    def getXML(self):
-        """
-        Create domxml for a watchdog device.
-
-        <watchdog model='i6300esb' action='reset'>
-          <address type='pci' domain='0x0000' bus='0x00' slot='0x05'
-           function='0x0'/>
-        </watchdog>
-        """
-        m = self.createXmlElem(self.type, None, ['address'])
-        m.setAttrs(model=self.specParams.get('model', 'i6300esb'),
-                   action=self.specParams.get('action', 'none'))
-        return m
-
-
 class MigrationError(Exception):
     pass
 
@@ -1245,7 +1221,7 @@ class Vm(object):
                      (CONTROLLER_DEVICES, vmdevices.Controller),
                      (GENERAL_DEVICES, vmdevices.Generic),
                      (BALLOON_DEVICES, BalloonDevice),
-                     (WATCHDOG_DEVICES, WatchdogDevice),
+                     (WATCHDOG_DEVICES, vmdevices.Watchdog),
                      (CONSOLE_DEVICES, vmdevices.Console),
                      (REDIR_DEVICES, vmdevices.Redir),
                      (RNG_DEVICES, vmdevices.Rng),

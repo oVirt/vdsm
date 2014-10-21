@@ -191,3 +191,27 @@ class Tpm(Base):
         backend.appendChildWithArgs('device',
                                     path=self.specParams['path'])
         return tpm
+
+
+class Watchdog(Base):
+    __slots__ = ('address',)
+
+    def __init__(self, *args, **kwargs):
+        super(Watchdog, self).__init__(*args, **kwargs)
+
+        if not hasattr(self, 'specParams'):
+            self.specParams = {}
+
+    def getXML(self):
+        """
+        Create domxml for a watchdog device.
+
+        <watchdog model='i6300esb' action='reset'>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x05'
+           function='0x0'/>
+        </watchdog>
+        """
+        m = self.createXmlElem(self.type, None, ['address'])
+        m.setAttrs(model=self.specParams.get('model', 'i6300esb'),
+                   action=self.specParams.get('action', 'none'))
+        return m
