@@ -25,9 +25,11 @@ public class Retryable<T> implements Callable<T> {
             try {
                 return this.callable.call();
             } catch (Exception e) {
-                log.warn("Retry failed", e);
+                log.warn("Retry failed");
+                if (log.isDebugEnabled()) {
+                    log.debug(e.getMessage(), e);
+                }
                 if (this.context.isExceptionRetryable(e)) {
-                    log.warn("Retry failed", e);
                     this.context.decreaseAttempts();
                     if (this.context.getNumberOfAttempts() <= 0) {
                         throw e;

@@ -1,5 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client;
 
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
+
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.HashMap;
@@ -56,7 +58,7 @@ public class ResponseDecomposer {
             }
             return t;
         } catch (IOException e) {
-            log.error("Response decomposition failed", e);
+            logException(log, "Response decomposition failed", e);
             return null;
         }
     }
@@ -96,7 +98,7 @@ public class ResponseDecomposer {
             map.put("status", status);
             return map;
         } catch (IOException e) {
-            log.error("Response decomposition failed", e);
+            logException(log, "Response decomposition failed", e);
             return new HashMap<String, Object>();
         }
     }

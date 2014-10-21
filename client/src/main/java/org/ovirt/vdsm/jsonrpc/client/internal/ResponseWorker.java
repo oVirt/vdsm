@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.internal;
 
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
 
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -79,7 +80,10 @@ public final class ResponseWorker extends Thread {
                     }
                 }
             } catch (Exception e) {
-                log.warn("Exception thrown during message processing", e);
+                log.warn("Exception thrown during message processing");
+                if (log.isDebugEnabled()) {
+                    log.debug(e.getMessage(), e);
+                }
                 continue;
             }
         }
@@ -90,7 +94,7 @@ public final class ResponseWorker extends Thread {
         try {
             response = JsonRpcResponse.fromJsonNode(node);
         } catch (IllegalArgumentException e) {
-            log.error("Recieved response is not correct", e);
+            logException(log, "Recieved response is not correct", e);
             return;
         }
         client.processResponse(response);
