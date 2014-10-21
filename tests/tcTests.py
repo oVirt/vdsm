@@ -354,11 +354,11 @@ class TestPortMirror(TestCaseBase):
     when it is attached to an active device.
     """
 
-    ####[ Ethernet ]###
+    #  [ Ethernet ]
     #  dst       = 00:1c:c0:d0:44:dc
     #  src       = 00:21:5c:4d:42:75
     #  type      = IPv4
-    ####[ IP ]###
+    #     [ IP ]
     #     version   = 4L
     #     ihl       = 5L
     #     tos       = 0x0
@@ -372,13 +372,13 @@ class TestPortMirror(TestCaseBase):
     #     src       = 192.168.0.52
     #     dst       = 192.168.0.3
     #     \options   \
-    ####[ ICMP ]###
+    #        [ ICMP ]
     #        type      = echo-request
     #        code      = 0
     #        chksum    = 0x2875
     #        id        = 0x0
     #        seq       = 0x0
-    ####[ Raw ]###
+    #           [ Raw ]
     #           load      = '\x01#Eg\x89'
     _ICMP = unhexlify(
         '001cc0d044dc''00215c4d4275''0800'  # Ethernet
