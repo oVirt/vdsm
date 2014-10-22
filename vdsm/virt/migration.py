@@ -311,8 +311,8 @@ class SourceThread(threading.Thread):
             else:
                 muri = 'tcp://%s' % self.remoteHost
 
-            self._vm.log.debug('starting migration to %s '
-                               'with miguri %s', duri, muri)
+            self._vm.log.info('starting migration to %s '
+                              'with miguri %s', duri, muri)
 
             downtimeThread = DowntimeThread(self._vm, int(self._downtime))
             self._monitorThread = MonitorThread(self._vm, startTime)
@@ -424,8 +424,8 @@ class MonitorThread(threading.Thread):
         if self.enabled:
             self.monitor_migration()
         else:
-            self._vm.log.debug('migration monitor thread disabled'
-                               ' (monitoring interval set to 0)')
+            self._vm.log.info('migration monitor thread disabled'
+                              ' (monitoring interval set to 0)')
 
     def monitor_migration(self):
         def update_progress(remaining, total):
