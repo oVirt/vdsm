@@ -133,7 +133,7 @@ class SSLServerSocket(SSLSocket):
 
 class SSLContext(object):
     def __init__(self, cert_file, key_file, ca_cert=None, session_id="SSL",
-                 protocol="sslv23"):
+                 protocol="tlsv1"):
         self.cert_file = cert_file
         self.key_file = key_file
         self.ca_cert = ca_cert

@@ -166,7 +166,9 @@ class clientIF(object):
             key_file = os.path.join(truststore_path, 'keys', 'vdsmkey.pem')
             cert_file = os.path.join(truststore_path, 'certs', 'vdsmcert.pem')
             ca_cert = os.path.join(truststore_path, 'certs', 'cacert.pem')
-            sslctx = SSLContext(cert_file, key_file, ca_cert)
+            protocol = config.get('vars', 'ssl_protocol')
+            sslctx = SSLContext(cert_file, key_file, ca_cert=ca_cert,
+                                protocol=protocol)
         return sslctx
 
     def _prepareXMLRPCBinding(self, port):

@@ -205,6 +205,9 @@ parameters = [
 
         ('transient_disks_repository', '@VDSMLIBDIR@/transient',
             'Local path to the transient disks repository.'),
+
+        ('ssl_protocol', 'sslv23',
+            'SSL protocol used by encrypted connection'),
     ]),
 
     # Section: [mom]
