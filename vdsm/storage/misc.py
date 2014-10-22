@@ -652,7 +652,9 @@ class DynamicBarrier(object):
 
     def exit(self):
         with self._cond:
-            assert self._busy, "Attempt to exit a barrier without entering"
+            if not self._busy:
+                raise AssertionError("Attempt to exit a barrier without "
+                                     "entering")
             self._busy = False
             self._cond.notifyAll()
 

@@ -1152,3 +1152,15 @@ class SamplingThread(object):
 
     def _run(self):
         self.result = self._func()
+
+
+class TestDynamicBarrier(TestCaseBase):
+
+    def test_exit_without_enter(self):
+        barrier = misc.DynamicBarrier()
+        self.assertRaises(AssertionError, barrier.exit)
+
+    def test_enter_and_exit(self):
+        barrier = misc.DynamicBarrier()
+        self.assertTrue(barrier.enter())
+        barrier.exit()
