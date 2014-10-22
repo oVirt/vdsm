@@ -51,7 +51,7 @@ class Listener(threading.Thread):
         """ Handle an epoll event occurred on a specific file descriptor. """
         reconnect = False
         if (event & (select.EPOLLHUP | select.EPOLLERR)):
-            self.log.info("Received %.08X on fileno %d", event, fileno)
+            self.log.debug("Received %.08X on fileno %d", event, fileno)
             if fileno in self._channels:
                 reconnect = True
             else:
@@ -175,7 +175,7 @@ class Listener(threading.Thread):
 
     def run(self):
         """ The listener thread's function. """
-        self.log.info("Starting VM channels listener thread.")
+        self.log.debug("Starting VM channels listener thread.")
         self._quit = False
         try:
             while not self._quit:
@@ -183,12 +183,13 @@ class Listener(threading.Thread):
         except:
             self.log.exception("Unhandled exception caught in vm channels "
                                "listener thread")
-        self.log.info("VM channels listener thread has ended.")
+        finally:
+            self.log.debug("VM channels listener thread has ended.")
 
     def stop(self):
         """" Stop the listener execution. """
         self._quit = True
-        self.log.info("VM channels listener was stopped.")
+        self.log.debug("VM channels listener was stopped.")
 
     def settimeout(self, seconds):
         """ Set the timeout value (in seconds) for all channels. """
