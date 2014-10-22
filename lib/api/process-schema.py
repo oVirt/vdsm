@@ -105,7 +105,8 @@ def read_symbol_comment(f, api):
                    'xxx': []})
 
     # Pop a blank line
-    assert('' == lines.pop(0))
+    line = lines.pop(0)
+    assert line == '', "Expected empty line: %r" % line
 
     # Grab the entity description.  It might span multiple lines.
     symbol['desc'] = lines.pop(0)
@@ -113,7 +114,8 @@ def read_symbol_comment(f, api):
         symbol['desc'] += lines.pop(0)
 
     # Pop a blank line
-    assert ('' == lines.pop(0))
+    line = lines.pop(0)
+    assert line == '', "Expected empty line: %r" % line
 
     # Populate the rest of the human-readable data.
     # First try to read the parameters/members information.  We are finished
