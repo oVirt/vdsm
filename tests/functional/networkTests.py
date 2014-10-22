@@ -43,7 +43,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
                             getLinks, routeShowTable)
 
 from vdsm.constants import EXT_BRCTL
-from vdsm.utils import RollbackContext, execCmd
+from vdsm.utils import RollbackContext, execCmd, running
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
                           getDhclientIfaces)
 from vdsm import ipwrapper
@@ -1821,9 +1821,13 @@ class NetworkTest(TestCaseBase):
                 with dnsmasqDhcp(server):
 
                     with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
-                        leaseFile = dhcp.runDhclient(client, dir, dateFormat)
-
-                        dhcp4 = getDhclientIfaces([leaseFile])
+                        dhclient_runner = dhcp.DhclientRunner(client, dir,
+                                                              dateFormat)
+                        try:
+                            with running(dhclient_runner) as dhc:
+                                dhcp4 = getDhclientIfaces([dhc.lease_file])
+                        except dhcp.ProcessCannotBeKilled:
+                            raise SkipTest('dhclient could not be killed')
 
         self.assertIn(client, dhcp4, 'Test iface not found in a lease file.')
 
@@ -2089,6 +2093,11 @@ class NetworkTest(TestCaseBase):
         """When asked to setupNetwork on top of an interface with a running
         dhclient process, Vdsm is expected to stop that dhclient and start
         owning the interface. BZ#1100264"""
+        def _get_dhclient_ifaces():
+            pids = pgrep('dhclient')
+            return [open('/proc/%s/cmdline' % pid).read().strip('\0')
+                    .split('\0')[-1] for pid in pids]
+
         with vethIf() as (server, client):
             with avoidAnotherDhclient(client):
                 veth.setIP(server, IP_ADDRESS, IP_CIDR)
@@ -2097,27 +2106,35 @@ class NetworkTest(TestCaseBase):
                     with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                         # Start a non-vdsm owned dhclient for the 'client'
                         # iface
-                        dhcp.runDhclient(client, dhdir, 'default')
-                        # Set up a network over it and wait for dhcp success
-                        status, msg = self.vdsm_net.setupNetworks(
-                            {NETWORK_NAME: {'nic': client, 'bridged': False,
-                             'bootproto': 'dhcp', 'blockingdhcp': True}}, {},
-                            NOCHK)
-                        self.assertEquals(status, SUCCESS, msg)
-                        self.assertNetworkExists(NETWORK_NAME)
+                        dhclient_runner = dhcp.DhclientRunner(client, dhdir,
+                                                              'default')
+                        with running(dhclient_runner):
+                            # Set up a network over it and wait for dhcp
+                            # success
+                            status, msg = self.vdsm_net.setupNetworks(
+                                {
+                                    NETWORK_NAME: {
+                                        'nic': client, 'bridged': False,
+                                        'bootproto': 'dhcp',
+                                        'blockingdhcp': True
+                                    }
+                                },
+                                {},
+                                NOCHK)
+                            self.assertEquals(status, SUCCESS, msg)
+                            self.assertNetworkExists(NETWORK_NAME)
 
-                        # Verify that dhclient is running for the device
-                        pids = pgrep('dhclient')
-                        ifaces = [open('/proc/%s/cmdline' % pid).read().
-                                  strip('\0').split('\0')[-1] for pid in pids]
-                        vdsm_dhclient = [iface for iface in ifaces if
-                                         iface == client]
-                        self.assertEqual(len(vdsm_dhclient), 1,
-                                         'There should be one and only one '
-                                         'running dhclient for the device')
+                            # Verify that dhclient is running for the device
+                            ifaces = _get_dhclient_ifaces()
+                            vdsm_dhclient = [iface for iface in ifaces if
+                                             iface == client]
+                            self.assertEqual(len(vdsm_dhclient), 1,
+                                             'There should be one and only '
+                                             'one running dhclient for the '
+                                             'device')
 
             # cleanup
-            status, msg = self.vdsm_net.setupNetworks(
+            self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
 
     @cleanupNet

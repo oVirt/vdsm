@@ -19,7 +19,9 @@
 
 import logging
 import os
-from time import sleep
+from signal import SIGKILL, SIGTERM
+from time import sleep, time
+from errno import ENOENT, ESRCH
 
 from nose.plugins.skip import SkipTest
 
@@ -32,6 +34,7 @@ _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
 _NM_CLI_BINARY = CommandPath('nmcli', '/usr/bin/nmcli')
 _START_CHECK_TIMEOUT = 0.5
 _DHCLIENT_TIMEOUT = 10
+_WAIT_FOR_STOP_TIMEOUT = 2
 
 
 class DhcpError(Exception):
@@ -65,29 +68,78 @@ class Dnsmasq():
         logging.debug(''.join(self.proc.stderr))
 
 
-def runDhclient(interface, tmpDir, dateFormat):
+class ProcessCannotBeKilled(Exception):
+    pass
+
+
+class DhclientRunner(object):
     """On the interface, dhclient is run to obtain a DHCP lease.
 
-    In the working directory (tmpDir), which is managed by the caller,
-    a lease file is created and a path to it is returned.
-    dhclient accepts the following dateFormats: 'default' and 'local'.
+    In the working directory (tmp_dir), which is managed by the caller.
+    dhclient accepts the following date_formats: 'default' and 'local'.
     """
-    confFile = os.path.join(tmpDir, 'test.conf')
-    pidFile = os.path.join(tmpDir, 'test.pid')
-    leaseFile = os.path.join(tmpDir, 'test.lease')
+    def __init__(self, interface, tmp_dir, date_format):
+        self._interface = interface
+        self._date_format = date_format
+        self._conf_file = os.path.join(tmp_dir, 'test.conf')
+        self._pid_file = os.path.join(tmp_dir, 'test.pid')
+        self.pid = None
+        self.lease_file = os.path.join(tmp_dir, 'test.lease')
+        self._cmd = (_DHCLIENT_BINARY.cmd, '-v', '-lf', self.lease_file, '-pf',
+                     self._pid_file, '-timeout', str(_DHCLIENT_TIMEOUT), '-1',
+                     '-cf', self._conf_file, self._interface)
 
-    with open(confFile, 'w') as f:
-        f.write('db-time-format {0};'.format(dateFormat))
+    def _create_conf(self):
+        with open(self._conf_file, 'w') as f:
+            f.write('db-time-format {0};'.format(self._date_format))
 
-    rc, out, err = execCmd([_DHCLIENT_BINARY.cmd, '-lf', leaseFile,
-                            '-pf', pidFile, '-timeout', str(_DHCLIENT_TIMEOUT),
-                            '-1', '-cf', confFile, interface])
+    def start(self):
+        self._create_conf()
+        rc, out, err = execCmd(self._cmd)
 
-    if rc:  # == 2
-        logging.debug(''.join(err))
-        raise DhcpError('dhclient failed to obtain a lease: %d', rc)
+        if rc:  # == 2
+            logging.debug(''.join(err))
+            raise DhcpError('dhclient failed to obtain a lease: %d', rc)
 
-    return leaseFile
+        with open(self._pid_file) as pid_file:
+            self.pid = int(pid_file.readline())
+
+    def stop(self):
+        if self._try_kill(SIGTERM):
+            return
+        if self._try_kill(SIGKILL):
+            return
+        raise ProcessCannotBeKilled('cmd=%s, pid=%s' % (' '.join(self._cmd),
+                                                        self.pid))
+
+    def _try_kill(self, signal, timeout=_WAIT_FOR_STOP_TIMEOUT):
+        now = time()
+        deadline = now + timeout
+        while now < deadline:
+            try:
+                os.kill(self.pid, signal)
+            except OSError as err:
+                if err.errno != ESRCH:
+                    raise
+                return True  # no such process
+
+            sleep(0.5)
+            if not self._is_running():
+                return True
+            now = time()
+
+        return False
+
+    def _is_running(self):
+        executable_link = '/proc/{0}/exe'.format(self.pid)
+        try:
+            executable = os.readlink(executable_link)
+        except OSError as err:
+            if err.errno == ENOENT:
+                return False  # no such pid
+            else:
+                raise
+        return executable == _DHCLIENT_BINARY.cmd
 
 
 def addNMplaceholderConnection(interface, connection):
