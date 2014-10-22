@@ -1132,7 +1132,9 @@ def wrapApiMethod(f):
                 logLevel = logging.TRACE
             displayArgs = args
             if f.__name__ == 'vmDesktopLogin':
-                assert 'password' not in kwargs
+                if 'password' in kwargs:
+                    raise TypeError("Got an unexpected keyword argument: "
+                                    "'password'")
                 if len(args) > 3:
                     displayArgs = args[:3] + ('****',) + args[4:]
             elif f.__name__ == 'getExternalVMs':
