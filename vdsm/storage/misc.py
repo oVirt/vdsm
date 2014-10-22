@@ -506,11 +506,6 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
                 pass
 
 
-def persistFile(name):
-    if utils.isOvirtNode():
-        execCmd([constants.EXT_PERSIST, name], sudo=True)
-
-
 def parseHumanReadableSize(size):
     # FIXME : Maybe use a regex -> ^(?P<num>\d+)(?P<sizeChar>[KkMmGgTt])$
     # FIXME : Why not support B and be done with it?

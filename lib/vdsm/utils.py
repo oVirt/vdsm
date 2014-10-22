@@ -143,6 +143,11 @@ def rmTree(directoryToRemove):
             raise
 
 
+def persistFile(name):
+    if isOvirtNode():
+        execCmd([constants.EXT_PERSIST, name], sudo=True)
+
+
 def _parseMemInfo(lines):
     """
     Parse the content of ``/proc/meminfo`` as list of strings
