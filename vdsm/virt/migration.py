@@ -125,7 +125,7 @@ class SourceThread(threading.Thread):
                 self.log.error("Machine already exists on the destination")
                 self.status = errCode['exist']
         except Exception:
-            self.log.error("Error initiating connection", exc_info=True)
+            self.log.exception("Error initiating connection")
             self.status = errCode['noConPeer']
 
     def _setupRemoteMachineParams(self):
@@ -180,7 +180,7 @@ class SourceThread(threading.Thread):
             try:
                 self.destServer.destroy(self._vm.id)
             except Exception:
-                self.log.error("Failed to destroy remote VM", exc_info=True)
+                self.log.exception("Failed to destroy remote VM")
         # if the guest was stopped before migration, we need to cont it
         if self.hibernating:
             self._vm.cont()
@@ -274,7 +274,7 @@ class SourceThread(threading.Thread):
                 SourceThread._ongoingMigrations.release()
         except Exception as e:
             self._recover(str(e))
-            self.log.error("Failed to migrate", exc_info=True)
+            self.log.exception("Failed to migrate")
 
     def _startUnderlyingMigration(self, startTime):
         if self.hibernating:

@@ -491,8 +491,8 @@ class AdvancedStatsThread(threading.Thread):
                         statsFunction()
                     except Exception as e:
                         if not self.handleStatsException(e):
-                            self._log.error("Stats function failed: %s",
-                                            statsFunction, exc_info=True)
+                            self._log.exception("Stats function failed: %s",
+                                                statsFunction)
 
             self._stopEvent.wait(waitInterval)
             intervalAccum = (intervalAccum + waitInterval) % maxInterval
@@ -546,12 +546,11 @@ class HostStatsThread(threading.Thread):
                     if len(self._samples) > self.AVERAGING_WINDOW:
                         self._samples.pop(0)
                 except vm.TimeoutError:
-                    self._log.error("Timeout while sampling stats",
-                                    exc_info=True)
+                    self._log.exception("Timeout while sampling stats")
                 self._stopEvent.wait(self.SAMPLE_INTERVAL_SEC)
         except:
             if not self._stopEvent.isSet():
-                self._log.error("Error while sampling stats", exc_info=True)
+                self._log.exception("Error while sampling stats")
 
     @utils.memoized
     def _boot_time(self):
@@ -560,7 +559,7 @@ class HostStatsThread(threading.Thread):
         try:
             return getBootTime()
         except (IOError, ValueError):
-            self._log.error('Failed to get boot time', exc_info=True)
+            self._log.exception('Failed to get boot time')
             return None
 
     def get(self):

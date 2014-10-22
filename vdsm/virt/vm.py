@@ -1687,7 +1687,7 @@ class Vm(object):
             if self.recovering:
                 self.log.info("Skipping errors on recovery", exc_info=True)
             else:
-                self.log.error("The vm start process failed", exc_info=True)
+                self.log.exception("The vm start process failed")
                 self.setDownStatus(ERROR, vmexitreason.GENERIC_ERROR, str(e))
 
     def _incomingMigrationPending(self):
@@ -1797,7 +1797,7 @@ class Vm(object):
                 self._ejectFloppy()
                 self.log.debug('ejected volatileFloppy')
         except Exception:
-            self.log.error("Reboot event failed", exc_info=True)
+            self.log.exception("Reboot event failed")
 
     def onConnect(self, clientIp=''):
         if clientIp:
@@ -2100,8 +2100,8 @@ class Vm(object):
                 try:
                     self.cif.teardownVolumePath(drive)
                 except Exception:
-                    self.log.error("Drive teardown failure for %s",
-                                   drive, exc_info=True)
+                    self.log.exception("Drive teardown failure for %s",
+                                       drive)
 
     def _cleanupFloppy(self):
         """
@@ -2230,7 +2230,7 @@ class Vm(object):
                 decStats = self._vmStats.get()
                 self._setUnresponsiveIfTimeout(stats, decStats['statsAge'])
         except Exception:
-            self.log.error("Error fetching vm stats", exc_info=True)
+            self.log.exception("Error fetching vm stats")
         for var in decStats:
             if var == "ioTune":
                 # Convert ioTune numbers to strings to avoid xml-rpc issue
@@ -2251,8 +2251,7 @@ class Vm(object):
                         stats['disks'][var][value] = \
                             utils.convertToStr(decStats[var][value])
                 except Exception:
-                    self.log.error("Error setting vm disk stats",
-                                   exc_info=True)
+                    self.log.exception("Error setting vm disk stats")
 
         stats.update(self._getGraphicsStats())
         stats['hash'] = str(hash((self._domain.devicesHash,
@@ -2744,7 +2743,7 @@ class Vm(object):
         try:
             self._dom.attachDevice(nicXml)
         except libvirt.libvirtError as e:
-            self.log.error("Hotplug failed", exc_info=True)
+            self.log.exception("Hotplug failed")
             nicXml = hooks.after_nic_hotplug_fail(
                 nicXml, self.conf, params=nic.custom)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
@@ -2775,8 +2774,8 @@ class Vm(object):
             # I am not sure that we'll get it for all traffic control errors.
             # In any case we need below rollback for all kind of failures.
             except Exception as e:
-                self.log.error("setPortMirroring for network %s failed",
-                               network, exc_info=True)
+                self.log.exception("setPortMirroring for network %s failed",
+                                   network)
                 nicParams['portMirroring'] = mirroredNetworks
                 self.hotunplugNic({'nic': nicParams})
                 return {'status':
@@ -2915,12 +2914,11 @@ class Vm(object):
                 mirroredNetworks.append(network)
             yield
         except Exception as e:
-            self.log.error(
+            self.log.exception(
                 "%s for network %s failed",
                 'setPortMirroring' if network in netsToAdd else
                 'unsetPortMirroring',
-                network,
-                exc_info=True)
+                network)
             # In case we fail, we rollback the Network mirroring.
             for network in mirroredNetworks:
                 supervdsm.getProxy().unsetPortMirroring(network, devName)
@@ -2995,7 +2993,7 @@ class Vm(object):
         try:
             self._dom.detachDevice(nicXml)
         except libvirt.libvirtError as e:
-            self.log.error("Hotunplug failed", exc_info=True)
+            self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             # Restore NIC device in vm's conf and _devices
@@ -3026,7 +3024,7 @@ class Vm(object):
             self._dom.setVcpusFlags(numberOfCpus,
                                     libvirt.VIR_DOMAIN_AFFECT_CURRENT)
         except libvirt.libvirtError as e:
-            self.log.error("setNumberOfCpus failed", exc_info=True)
+            self.log.exception("setNumberOfCpus failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             return {'status': {'code': errCode['setNumberOfCpusErr']
@@ -3260,8 +3258,8 @@ class Vm(object):
             os.fchmod(transientHandle, 0o660)
         except Exception:
             os.unlink(transientPath)  # Closing after deletion is correct
-            self.log.error("Failed to create the transient disk for "
-                           "volume %s", diskParams['volumeID'], exc_info=True)
+            self.log.exception("Failed to create the transient disk for "
+                               "volume %s", diskParams['volumeID'])
         finally:
             os.close(transientHandle)
 
@@ -3298,7 +3296,7 @@ class Vm(object):
         try:
             self._dom.attachDevice(driveXml)
         except libvirt.libvirtError as e:
-            self.log.error("Hotplug failed", exc_info=True)
+            self.log.exception("Hotplug failed")
             self.cif.teardownVolumePath(diskParams)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
@@ -3362,7 +3360,7 @@ class Vm(object):
         try:
             self._dom.detachDevice(driveXml)
         except libvirt.libvirtError as e:
-            self.log.error("Hotunplug failed", exc_info=True)
+            self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             self._devices[DISK_DEVICES].append(drive)
@@ -3615,8 +3613,8 @@ class Vm(object):
                 try:
                     self.cif.teardownVolumePath(drive)
                 except Exception:
-                    self.log.error("Unable to teardown drive: %s", vmDevName,
-                                   exc_info=True)
+                    self.log.exception("Unable to teardown drive: %s",
+                                       vmDevName)
 
         def _memorySnapshot(memoryVolumePath):
             """Libvirt snapshot XML"""
@@ -3768,7 +3766,7 @@ class Vm(object):
                 try:
                     self._dom.snapshotCreateXML(snapxml, snapFlags)
                 except Exception as e:
-                    self.log.error("Unable to take snapshot", exc_info=True)
+                    self.log.exception("Unable to take snapshot")
                     if memoryParams:
                         self.cif.teardownVolumePath(memoryVol)
                     return errCode['snapshotErr']
@@ -3788,8 +3786,8 @@ class Vm(object):
                     # Here it's too late to fail, the switch already happened
                     # and there's nothing we can do, we must to proceed anyway
                     # to report the live snapshot success.
-                    self.log.error("Failed to update drive information for "
-                                   "'%s'", drive, exc_info=True)
+                    self.log.exception("Failed to update drive information"
+                                       " for '%s'", drive)
         finally:
             self.startDisksStatsCollection()
             if memoryParams:
@@ -3877,13 +3875,13 @@ class Vm(object):
                     libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW
                 ))
             except Exception:
-                self.log.error("Unable to start the replication for %s to %s",
-                               srcDrive.name, dstDiskCopy, exc_info=True)
+                self.log.exception("Unable to start the replication"
+                                   " for %s to %s",
+                                   srcDrive.name, dstDiskCopy)
                 self.cif.teardownVolumePath(dstDiskCopy)
                 raise
         except Exception:
-            self.log.error("Cannot complete the disk replication process",
-                           exc_info=True)
+            self.log.exception("Cannot complete the disk replication process")
             self._delDiskReplica(srcDrive)
             return errCode['replicaErr']
 
@@ -3891,8 +3889,8 @@ class Vm(object):
             self.extendDriveVolume(srcDrive, srcDrive.volumeID,
                                    srcDrive.apparentsize)
         except Exception:
-            self.log.error("Initial extension request failed for %s",
-                           srcDrive.name, exc_info=True)
+            self.log.exception("Initial extension request failed for %s",
+                               srcDrive.name)
 
         return {'status': doneCode}
 
@@ -3957,22 +3955,22 @@ class Vm(object):
             # Stopping the replication
             self._dom.blockJobAbort(srcDrive.name, blockJobFlags)
         except Exception:
-            self.log.error("Unable to stop the replication for the drive: %s",
-                           srcDrive.name, exc_info=True)
+            self.log.exception("Unable to stop the replication for"
+                               " the drive: %s", srcDrive.name)
             try:
                 self.cif.teardownVolumePath(srcDrive.diskReplicate)
             except Exception:
                 # There is nothing we can do at this point other than logging
-                self.log.error("Unable to teardown the replication "
-                               "destination disk", exc_info=True)
+                self.log.exception("Unable to teardown the replication "
+                                   "destination disk")
             return errCode['changeDisk']  # Finally is evaluated
         else:
             try:
                 self.cif.teardownVolumePath(diskToTeardown)
             except Exception:
                 # There is nothing we can do at this point other than logging
-                self.log.error("Unable to teardown the previous chain: %s",
-                               diskToTeardown, exc_info=True)
+                self.log.exception("Unable to teardown the previous chain: %s",
+                                   diskToTeardown)
             self.updateDriveParameters(dstDiskCopy)
         finally:
             self._delDiskReplica(srcDrive)
@@ -4003,9 +4001,9 @@ class Vm(object):
             self._dom.blockResize(drive.name, newSizeBytes,
                                   libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
         except libvirt.libvirtError:
-            self.log.error(
+            self.log.exception(
                 "An error occurred while trying to extend the disk %s "
-                "to size %s", drive.name, newSizeBytes, exc_info=True)
+                "to size %s", drive.name, newSizeBytes)
             return errCode['updateDevice']
         finally:
             # In all cases we want to try and fix the size in the metadata.
@@ -4069,8 +4067,8 @@ class Vm(object):
             else:
                 return self._diskSizeExtendRaw(drive, newSizeBytes)
         except Exception:
-            self.log.error("Unable to extend disk %s to size %s",
-                           drive.name, newSizeBytes, exc_info=True)
+            self.log.exception("Unable to extend disk %s to size %s",
+                               drive.name, newSizeBytes)
 
         return errCode['updateDevice']
 
@@ -4326,8 +4324,7 @@ class Vm(object):
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.conf['vmId'], len(self.cif.vmContainer))
         except Exception:
-            self.log.error("Failed to delete VM %s", self.conf['vmId'],
-                           exc_info=True)
+            self.log.exception("Failed to delete VM %s", self.conf['vmId'])
 
     def destroy(self):
         self.log.debug('destroy Called')

@@ -363,7 +363,7 @@ class GuestAgent(object):
             self.log.debug("desktopLock called")
             self._forward("lock-screen")
         except:
-            self.log.error("desktopLock failed", exc_info=True)
+            self.log.exception("desktopLock failed")
 
     def desktopLogin(self, domain, user, password):
         try:
@@ -375,14 +375,14 @@ class GuestAgent(object):
             self._forward('login', {'username': username,
                                     "password": password})
         except:
-            self.log.error("desktopLogin failed", exc_info=True)
+            self.log.exception("desktopLogin failed")
 
     def desktopLogoff(self, force):
         try:
             self.log.debug("desktopLogoff called")
             self._forward('log-off')
         except:
-            self.log.error("desktopLogoff failed", exc_info=True)
+            self.log.exception("desktopLogoff failed")
 
     def desktopShutdown(self, timeout, msg, reboot):
         try:
@@ -390,14 +390,14 @@ class GuestAgent(object):
             self._forward('shutdown', {'timeout': timeout, 'message': msg,
                                        'reboot': str(reboot)})
         except:
-            self.log.error("desktopShutdown failed", exc_info=True)
+            self.log.exception("desktopShutdown failed")
 
     def sendHcCmdToDesktop(self, cmd):
         try:
             self.log.debug("sendHcCmdToDesktop('%s')" % (cmd))
             self._forward(str(cmd))
         except:
-            self.log.error("sendHcCmdToDesktop failed", exc_info=True)
+            self.log.exception("sendHcCmdToDesktop failed")
 
     def setNumberOfCPUs(self, count):
         self.log.debug("setNumberOfCPUs('%d') called", count)
