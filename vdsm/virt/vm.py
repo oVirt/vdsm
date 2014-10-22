@@ -2116,7 +2116,7 @@ class Vm(object):
         try:
             self.cont()
         except libvirt.libvirtError:
-            self.log.debug("VM %s can't be resumed", self.id, exc_info=True)
+            self.log.warn("VM %s can't be resumed", self.id, exc_info=True)
         self._setWriteWatermarks()
 
     def _acquireCpuLockWithTimeout(self):
@@ -3003,17 +3003,17 @@ class Vm(object):
                 self._dom.updateDeviceFlags(vnicStrXML,
                                             libvirt.VIR_DOMAIN_AFFECT_LIVE)
                 dev._deviceXML = vnicStrXML
-                self.log.debug("Nic has been updated:\n %s" % vnicStrXML)
+                self.log.info("Nic has been updated:\n %s" % vnicStrXML)
                 hooks.after_update_device(vnicStrXML, self.conf, custom)
             except Exception as e:
-                self.log.debug('Request failed: %s', vnicStrXML, exc_info=True)
+                self.log.warn('Request failed: %s', vnicStrXML, exc_info=True)
                 hooks.after_update_device_fail(vnicStrXML, self.conf, custom)
                 raise SetLinkAndNetworkError(e.message)
             yield
         except Exception:
             # Rollback link and network.
-            self.log.debug('Rolling back link and net for: %s', dev.alias,
-                           exc_info=True)
+            self.log.warn('Rolling back link and net for: %s', dev.alias,
+                          exc_info=True)
             self._dom.updateDeviceFlags(vnicXML.toxml(encoding='utf-8'),
                                         libvirt.VIR_DOMAIN_AFFECT_LIVE)
             raise
@@ -4868,7 +4868,7 @@ class Vm(object):
                            'readonly': str(readonly)}
                 if bootOrder:
                     diskDev['bootOrder'] = bootOrder
-                self.log.debug('Found unknown drive: %s', diskDev)
+                self.log.warn('Found unknown drive: %s', diskDev)
                 self.conf['devices'].append(diskDev)
 
     def _getUnderlyingGraphicsDeviceInfo(self):
