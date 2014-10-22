@@ -1909,7 +1909,7 @@ class Vm(object):
 
     def onReboot(self):
         try:
-            self.log.debug('reboot event')
+            self.log.info('reboot event')
             self._startTime = time.time()
             self._guestEventTime = self._startTime
             self._guestEvent = vmstatus.REBOOT_IN_PROGRESS
@@ -2262,8 +2262,8 @@ class Vm(object):
                 else:
                     self.conf['exitMessage'] = exitMessage
                 self.conf['exitReason'] = exitReasonCode
-            self.log.debug("Changed state to Down: %s (code=%i)",
-                           exitMessage, exitReasonCode)
+            self.log.info("Changed state to Down: %s (code=%i)",
+                          exitMessage, exitReasonCode)
         except DoubleDownError:
             pass
         try:
@@ -3564,7 +3564,7 @@ class Vm(object):
         if 'username' in self.conf:
             del self.conf['username']
         self.saveState()
-        self.log.debug("End of migration")
+        self.log.info("End of migration")
 
     def _waitForUnderlyingMigration(self):
         timeout = config.getint('vars', 'migration_destination_timeout')
@@ -5456,9 +5456,9 @@ class Vm(object):
                    if device['device'] == 'disk' and isVdsmImage(device))
 
     def _logGuestCpuStatus(self, reason):
-        self.log.debug('CPU %s: %s',
-                       'running' if self._guestCpuRunning else 'stopped',
-                       reason)
+        self.log.info('CPU %s: %s',
+                      'running' if self._guestCpuRunning else 'stopped',
+                      reason)
 
     def _setUnresponsiveIfTimeout(self, stats, statsAge):
         if (not self.isMigrating()
