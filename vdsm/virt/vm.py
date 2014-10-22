@@ -2739,7 +2739,9 @@ class Vm(object):
 
         if not self.recovering and initDomain:
             domxml = hooks.before_vm_start(self._buildDomainXML(), self.conf)
-            self.log.debug(domxml)
+            # TODO: this is debug information. For 3.6.x we still need to
+            # see the XML even with 'info' as default level.
+            self.log.info(domxml)
 
         if self.recovering:
             self._dom = NotifyingVirDomain(
@@ -2855,7 +2857,9 @@ class Vm(object):
         nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
                                           params=nic.custom)
         nic._deviceXML = nicXml
-        self.log.debug("Hotplug NIC xml: %s", nicXml)
+        # TODO: this is debug information. For 3.6.x we still need to
+        # see the XML even with 'info' as default level.
+        self.log.info("Hotplug NIC xml: %s", nicXml)
 
         try:
             self._dom.attachDevice(nicXml)
@@ -3085,7 +3089,9 @@ class Vm(object):
             nicXml = nic.getXML().toprettyxml(encoding='utf-8')
             hooks.before_nic_hotunplug(nicXml, self.conf,
                                        params=nic.custom)
-            self.log.debug("Hotunplug NIC xml: %s", nicXml)
+            # TODO: this is debug information. For 3.6.x we still need to
+            # see the XML even with 'info' as default level.
+            self.log.info("Hotunplug NIC xml: %s", nicXml)
         else:
             self.log.error("Hotunplug NIC failed - NIC not found: %s",
                            nicParams)
@@ -3348,8 +3354,10 @@ class Vm(object):
 
             # Make sure the cached XML representation is valid as well
             xml = found_device.getXML().toprettyxml(encoding='utf-8')
-            self.log.debug("New device XML for %s: %s",
-                           found_device.name, xml)
+            # TODO: this is debug information. For 3.6.x we still need to
+            # see the XML even with 'info' as default level.
+            self.log.info("New device XML for %s: %s",
+                          found_device.name, xml)
             found_device._deviceXML = xml
 
         return {'status': doneCode}
@@ -3406,7 +3414,9 @@ class Vm(object):
             return errCode['noimpl']
 
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
-        self.log.debug("Hotplug disk xml: %s" % (driveXml))
+        # TODO: this is debug information. For 3.6.x we still need to
+        # see the XML even with 'info' as default level.
+        self.log.info("Hotplug disk xml: %s" % (driveXml))
 
         driveXml = hooks.before_disk_hotplug(driveXml, self.conf,
                                              params=drive.custom)
@@ -3458,7 +3468,9 @@ class Vm(object):
             return errCode['noimpl']
 
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
-        self.log.debug("Hotunplug disk xml: %s", driveXml)
+        # TODO: this is debug information. For 3.6.x we still need to
+        # see the XML even with 'info' as default level.
+        self.log.info("Hotunplug disk xml: %s", driveXml)
 
         self._devices[hwclass.DISK].remove(drive)
         # Find and remove disk device from vm's conf
@@ -3859,7 +3871,9 @@ class Vm(object):
             snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
 
         snapxml = snap.toprettyxml()
-        self.log.debug(snapxml)
+        # TODO: this is debug information. For 3.6.x we still need to
+        # see the XML even with 'info' as default level.
+        self.log.info(snapxml)
 
         # We need to stop the collection of the stats for two reasons, one
         # is to prevent spurious libvirt errors about missing drive paths
