@@ -853,8 +853,6 @@ if [ "$1" -gt 1 ]; then
 fi
 
 %post
-%{_bindir}/vdsm-tool configure --module sanlock --force >/dev/null
-
 # After vdsm install we should create the logs files.
 # In the install session we create it but since we use
 # the ghost macro (in files session) the files are not included
