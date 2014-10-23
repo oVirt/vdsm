@@ -21,14 +21,21 @@ from vdsm import utils
 import os
 
 
+def _getFromDeviceTree(treeProperty):
+    path = '/proc/device-tree/%s' % treeProperty
+    if os.path.exists(path):
+        with open(path) as f:
+            value = f.readline().rstrip('\0').replace(',', '')
+            return value
+    else:
+        return 'unavailable'
+
+
 @utils.memoized
 def getHardwareInfoStructure():
-    infoStructure = {'systemProductName': 'unavailable',
-                     'systemSerialNumber': 'unavailable',
+    infoStructure = {'systemSerialNumber': 'unavailable',
                      'systemFamily': 'unavailable',
-                     'systemVersion': 'unavailable',
-                     'systemUUID': 'unavailable',
-                     'systemManufacturer': 'unavailable'}
+                     'systemVersion': 'unavailable'}
 
     with open('/proc/cpuinfo') as info:
         for line in info:
@@ -43,11 +50,11 @@ def getHardwareInfoStructure():
             elif key == 'machine':
                 infoStructure['systemVersion'] = value
 
-    if os.path.exists('/proc/device-tree/system-id'):
-        with open('/proc/device-tree/system-id') as f:
-            vdsmId = f.readline().rstrip('\0').replace(',', '')
+    infoStructure['systemUUID'] = _getFromDeviceTree('system-id')
 
-        infoStructure['systemUUID'] = vdsmId
+    infoStructure['systemProductName'] = _getFromDeviceTree('model-name')
+
+    infoStructure['systemManufacturer'] = _getFromDeviceTree('vendor')
 
     return infoStructure
 
