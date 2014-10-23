@@ -539,7 +539,7 @@ class TestVm(TestCaseBase):
 
         dev = {'device': 'vga', 'specParams': {'vram': '32768',
                'heads': '2'}}
-        video = vmdevices.VideoDevice(self.conf, self.log, **dev)
+        video = vmdevices.Video(self.conf, self.log, **dev)
         self.assertXML(video.getXML(), videoXML)
 
     def testInterfaceXML(self):

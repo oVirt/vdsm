@@ -134,21 +134,6 @@ class Sound(Base):
         return sound
 
 
-class VideoDevice(Base):
-    def getXML(self):
-        """
-        Create domxml for video device
-        """
-        video = self.createXmlElem('video', None, ['address'])
-        sourceAttrs = {'vram': self.specParams.get('vram', '32768'),
-                       'heads': self.specParams.get('heads', '1')}
-        if 'ram' in self.specParams:
-            sourceAttrs['ram'] = self.specParams['ram']
-
-        video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
-        return video
-
-
 class Redir(Base):
     __slots__ = ('address',)
 
@@ -208,6 +193,21 @@ class Tpm(Base):
         backend.appendChildWithArgs('device',
                                     path=self.specParams['path'])
         return tpm
+
+
+class Video(Base):
+    def getXML(self):
+        """
+        Create domxml for video device
+        """
+        video = self.createXmlElem('video', None, ['address'])
+        sourceAttrs = {'vram': self.specParams.get('vram', '32768'),
+                       'heads': self.specParams.get('heads', '1')}
+        if 'ram' in self.specParams:
+            sourceAttrs['ram'] = self.specParams['ram']
+
+        video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
+        return video
 
 
 class Watchdog(Base):

@@ -1199,7 +1199,7 @@ class Vm(object):
     DeviceMapping = ((DISK_DEVICES, Drive),
                      (NIC_DEVICES, NetworkInterfaceDevice),
                      (SOUND_DEVICES, vmdevices.Sound),
-                     (VIDEO_DEVICES, vmdevices.VideoDevice),
+                     (VIDEO_DEVICES, vmdevices.Video),
                      (GRAPHICS_DEVICES, GraphicsDevice),
                      (CONTROLLER_DEVICES, vmdevices.Controller),
                      (GENERAL_DEVICES, vmdevices.Generic),
