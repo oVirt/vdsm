@@ -2077,7 +2077,7 @@ class Vm(object):
         This is necessary to prevent incoming migrations, restoring of VMs and
         the upgrade of VDSM with running VMs to fail on this.
         """
-        for name, path in vmxml.all_channels(self._domain.xml):
+        for name, path in self._domain.all_channels():
             if name not in _AGENT_CHANNEL_DEVICES:
                 continue
 

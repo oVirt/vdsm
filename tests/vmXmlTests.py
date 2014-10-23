@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from virt import domain_descriptor
 from virt import vm
 from virt import vmxml
 import caps
@@ -32,29 +33,7 @@ from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 
 
-@expandPermutations
-class TestVmXmlFunctions(TestCaseBase):
-
-    @permutations([[caps.Architecture.X86_64],
-                   [caps.Architecture.PPC64]])
-    def test_has_channel(self, arch):
-        for _, dom_xml in self._build_domain_xml(arch):
-            self.assertEqual(True, vmxml.has_channel(
-                dom_xml, vm._VMCHANNEL_DEVICE_NAME))
-
-    @permutations([[caps.Architecture.X86_64], [caps.Architecture.PPC64]])
-    def test_all_channels_vdsm_domain(self, arch):
-        for _, dom_xml in self._build_domain_xml(arch):
-            channels = list(vmxml.all_channels(dom_xml))
-            self.assertTrue(len(channels) >= len(vm._AGENT_CHANNEL_DEVICES))
-            for name, path in channels:
-                self.assertIn(name, vm._AGENT_CHANNEL_DEVICES)
-
-    def test_all_channels_extra_domain(self):
-        for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
-            dom_xml = raw_xml % conf
-            self.assertNotEquals(sorted(vmxml.all_channels(dom_xml)),
-                                 sorted(vm._AGENT_CHANNEL_DEVICES))
+class VmXmlTestCase(TestCaseBase):
 
     _CONFS = {
         caps.Architecture.X86_64: CONF_TO_DOMXML_X86_64,
@@ -65,3 +44,33 @@ class TestVmXmlFunctions(TestCaseBase):
         for conf, rawXml in self._CONFS[arch]:
             domXml = rawXml % conf
             yield fake.Domain(domXml, vmId=conf['vmId']), domXml
+
+
+@expandPermutations
+class TestVmXmlFunctions(VmXmlTestCase):
+
+    @permutations([[caps.Architecture.X86_64],
+                   [caps.Architecture.PPC64]])
+    def test_has_channel(self, arch):
+        for _, dom_xml in self._build_domain_xml(arch):
+            self.assertEqual(True, vmxml.has_channel(
+                dom_xml, vm._VMCHANNEL_DEVICE_NAME))
+
+
+@expandPermutations
+class TestDomainDescriptor(VmXmlTestCase):
+
+    @permutations([[caps.Architecture.X86_64], [caps.Architecture.PPC64]])
+    def test_all_channels_vdsm_domain(self, arch):
+        for _, dom_xml in self._build_domain_xml(arch):
+            dom = domain_descriptor.DomainDescriptor(dom_xml)
+            channels = list(dom.all_channels())
+            self.assertTrue(len(channels) >= len(vm._AGENT_CHANNEL_DEVICES))
+            for name, path in channels:
+                self.assertIn(name, vm._AGENT_CHANNEL_DEVICES)
+
+    def test_all_channels_extra_domain(self):
+        for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
+            dom = domain_descriptor.DomainDescriptor(raw_xml % conf)
+            self.assertNotEquals(sorted(dom.all_channels()),
+                                 sorted(vm._AGENT_CHANNEL_DEVICES))

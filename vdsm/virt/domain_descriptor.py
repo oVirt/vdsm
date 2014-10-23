@@ -52,6 +52,18 @@ class DomainDescriptor(object):
     def devices_hash(self):
         return self._devices_hash
 
+    def all_channels(self):
+        for channel in self.get_device_elements('channel'):
+            try:
+                name = channel.getElementsByTagName('target')[0].\
+                    getAttribute('name')
+                path = channel.getElementsByTagName('source')[0].\
+                    getAttribute('path')
+            except IndexError:
+                continue
+            else:
+                yield name, path
+
     def _first_element_by_tag_name(self, tagName):
         elements = self._dom.childNodes[0].getElementsByTagName(tagName)
         return elements[0] if elements else None
