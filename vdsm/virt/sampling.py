@@ -334,10 +334,11 @@ class SampleWindow(object):
         if len(self._samples) < 2:
             return None, None, None
 
-        bgn_time, bgn_sample = self._samples[0]
-        end_time, end_sample = self._samples[-1]
+        first_timestamp, first_sample = self._samples[0]
+        last_timestamp, last_sample = self._samples[-1]
 
-        return bgn_sample, end_sample, (end_time - bgn_time)
+        elapsed_time = last_timestamp - first_timestamp
+        return first_sample, last_sample, elapsed_time
 
     def last(self):
         """
@@ -345,7 +346,7 @@ class SampleWindow(object):
         """
         if not self._samples:
             return None
-        last_time, last_sample = self._samples[-1]
+        _, last_sample = self._samples[-1]
         return last_sample
 
 
