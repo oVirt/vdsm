@@ -31,15 +31,12 @@ Where:
 '''
 
 import os
-import subprocess
 import sys
 import traceback
 from xml.dom import minidom
 
 import hooking
 from openstacknet_utils import DUMMY_BRIDGE
-from openstacknet_utils import EXT_BRCTL
-from openstacknet_utils import EXT_IP
 from openstacknet_utils import INTEGRATION_BRIDGE
 from openstacknet_utils import OPENSTACK_NET_PROVIDER_TYPE
 from openstacknet_utils import PLUGIN_TYPE_KEY
@@ -48,10 +45,8 @@ from openstacknet_utils import PT_BRIDGE
 from openstacknet_utils import PT_OVS
 from openstacknet_utils import SECURITY_GROUPS_KEY
 from openstacknet_utils import VNIC_ID_KEY
-from openstacknet_utils import deviceExists
 from openstacknet_utils import devName
-from openstacknet_utils import executeOrExit
-from openstacknet_utils import ovs_vsctl
+from openstacknet_utils import setUpSecurityGroupVnic
 
 HELP_ARG = "-h"
 TEST_ARG = "-t"
@@ -94,36 +89,11 @@ def addOvsVnic(domxml, iface, portId, hasSecurityGroups):
 
 
 def addOvsHybridVnic(domxml, iface, portId):
+    setUpSecurityGroupVnic(
+        iface.getElementsByTagName('mac')[0].getAttribute('address'),
+        portId)
+
     brName = devName("qbr", portId)
-
-    # TODO: Remove this check after bz 1045626 is fixed
-    if not deviceExists(brName):
-        executeOrExit([EXT_BRCTL, 'addbr', brName])
-        executeOrExit([EXT_BRCTL, 'setfd', brName, '0'])
-        executeOrExit([EXT_BRCTL, 'stp', brName, 'off'])
-
-    vethBr = devName("qvb", portId)
-    vethOvs = devName("qvo", portId)
-
-    # TODO: Remove this check after bz 1045626 is fixed
-    if not deviceExists(vethOvs):
-        executeOrExit([EXT_IP, 'link', 'add', vethBr, 'type', 'veth', 'peer',
-                      'name', vethOvs])
-        for dev in [vethBr, vethOvs]:
-            executeOrExit([EXT_IP, 'link', 'set', dev, 'up'])
-            executeOrExit([EXT_IP, 'link', 'set', dev, 'promisc', 'on'])
-
-        executeOrExit([EXT_IP, 'link', 'set', brName, 'up'])
-        executeOrExit([EXT_BRCTL, 'addif', brName, vethBr])
-
-        mac = iface.getElementsByTagName('mac')[0].getAttribute('address')
-        executeOrExit([ovs_vsctl.cmd, '--', '--may-exist', 'add-port',
-                       INTEGRATION_BRIDGE, vethOvs,
-                       '--', 'set', 'Interface', vethOvs,
-                       'external-ids:iface-id=%s' % portId,
-                       'external-ids:iface-status=active',
-                       'external-ids:attached-mac=%s' % mac])
-
     defineLinuxBridge(domxml, iface, portId, brName)
 
 
@@ -165,16 +135,6 @@ def main():
         hooking.write_domxml(domxml)
 
 
-def mockExecuteOrExit(command):
-    print("Mocking successful execution of: %s"
-          % subprocess.list2cmdline(command))
-    return (0, '', '')
-
-
-def mockDeviceExists(dev):
-    return False
-
-
 def test(ovs, withSecurityGroups):
     domxml = minidom.parseString("""<?xml version="1.0" encoding="utf-8"?>
     <interface type="bridge">
@@ -188,8 +148,9 @@ def test(ovs, withSecurityGroups):
     else:
         pluginType = PT_BRIDGE
 
-    globals()['executeOrExit'] = mockExecuteOrExit
-    globals()['deviceExists'] = mockDeviceExists
+    import openstacknet_utils
+    openstacknet_utils.executeOrExit = openstacknet_utils.mockExecuteOrExit
+    openstacknet_utils.deviceExists = openstacknet_utils.mockDeviceExists
     addOpenstackVnic(domxml,
                      pluginType,
                      'test_port_id',

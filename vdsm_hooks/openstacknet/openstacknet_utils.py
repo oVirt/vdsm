@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import hooking
+import subprocess
 from vdsm.netinfo import DUMMY_BRIDGE
 from vdsm.utils import CommandPath
 
@@ -36,6 +37,12 @@ def executeOrExit(command):
                            (command, err))
 
 
+def mockExecuteOrExit(command):
+    print("Mocking successful execution of: %s" %
+          subprocess.list2cmdline(command))
+    return (0, '', '')
+
+
 def devName(prefix, name):
     return (prefix + name)[:DEV_MAX_LENGTH]
 
@@ -44,3 +51,39 @@ def deviceExists(dev):
     command = [EXT_IP, 'link', 'show', 'dev', dev]
     retcode, out, err = hooking.execCmd(command, raw=True)
     return retcode == 0
+
+
+def mockDeviceExists(dev):
+    return False
+
+
+def setUpSecurityGroupVnic(macAddr, portId):
+    hooking.log('Setting up vNIC (portId %s) security groups' % portId)
+    brName = devName("qbr", portId)
+
+    # TODO: Remove this check after bz 1045626 is fixed
+    if not deviceExists(brName):
+        executeOrExit([EXT_BRCTL, 'addbr', brName])
+        executeOrExit([EXT_BRCTL, 'setfd', brName, '0'])
+        executeOrExit([EXT_BRCTL, 'stp', brName, 'off'])
+
+    vethBr = devName("qvb", portId)
+    vethOvs = devName("qvo", portId)
+
+    # TODO: Remove this check after bz 1045626 is fixed
+    if not deviceExists(vethOvs):
+        executeOrExit([EXT_IP, 'link', 'add', vethBr, 'type', 'veth', 'peer',
+                      'name', vethOvs])
+        for dev in [vethBr, vethOvs]:
+            executeOrExit([EXT_IP, 'link', 'set', dev, 'up'])
+            executeOrExit([EXT_IP, 'link', 'set', dev, 'promisc', 'on'])
+
+        executeOrExit([EXT_IP, 'link', 'set', brName, 'up'])
+        executeOrExit([EXT_BRCTL, 'addif', brName, vethBr])
+
+        executeOrExit([ovs_vsctl.cmd, '--', '--may-exist', 'add-port',
+                       INTEGRATION_BRIDGE, vethOvs,
+                       '--', 'set', 'Interface', vethOvs,
+                       'external-ids:iface-id=%s' % portId,
+                       'external-ids:iface-status=active',
+                       'external-ids:attached-mac=%s' % macAddr])
