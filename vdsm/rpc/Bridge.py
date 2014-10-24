@@ -453,6 +453,7 @@ command_info = {
     'VM_migrationCreate': {'ret': VM_migrationCreate_Ret},
     'VM_setNumberOfCpus': {'ret': 'vmList'},
     'VM_getIoTunePolicy': {'ret': 'ioTunePolicyList'},
+    'VM_updateDevice': {'ret': 'vmList'},
     'Volume_copy': {'ret': 'uuid'},
     'Volume_create': {'ret': 'uuid'},
     'Volume_delete': {'ret': 'uuid'},

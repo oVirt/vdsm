@@ -383,7 +383,7 @@ class VM(APIBase):
             response['status']['message'] = 'Hibernation process starting'
         return response
 
-    def vmUpdateDevice(self, params):
+    def updateDevice(self, params):
         if 'deviceType' not in params:
             self.log.error('Missing a required parameters: deviceType')
             return {'status': {'code': errCode['MissParam']['status']['code'],
