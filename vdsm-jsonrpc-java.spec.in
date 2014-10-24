@@ -174,7 +174,7 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
-* Wed Sep 10 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.9
+* Wed Oct 23 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.9
 - Events based on networking issues
 - handle unrecognized messages
 
