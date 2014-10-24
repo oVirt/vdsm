@@ -1134,3 +1134,24 @@ def set_non_blocking(fd):
     flags = fcntl.fcntl(fd, fcntl.F_GETFL)
     flags |= os.O_NONBLOCK
     fcntl.fcntl(fd, fcntl.F_SETFL, flags)
+
+
+def get_selinux_enforce_mode():
+    """
+    Returns the SELinux mode as reported by kernel.
+
+    1 = enforcing - SELinux security policy is enforced.
+    0 = permissive - SELinux prints warnings instead of enforcing.
+    -1 = disabled - No SELinux policy is loaded.
+    """
+    selinux_mnts = ['/sys/fs/selinux', '/selinux']
+    for mnt in selinux_mnts:
+        enforce_path = os.path.join(mnt, 'enforce')
+        if not os.path.exists(enforce_path):
+            continue
+
+        with open(enforce_path) as fileStream:
+            return int(fileStream.read().strip())
+
+    # Assume disabled if cannot find
+    return -1
