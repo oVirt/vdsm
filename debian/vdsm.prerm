@@ -37,7 +37,6 @@ case "$1" in
 
         # Restoring backuped logrotate.d/libvirtd
         sed -i -e 's/# VDSM backup//' /etc/logrotate.d/libvirtd
-        vdsm-tool sebool-unconfig || :
         saslpasswd2 -p -a libvirt -d vdsm@ovirt
     ;;
 

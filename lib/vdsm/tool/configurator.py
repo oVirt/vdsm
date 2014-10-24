@@ -34,13 +34,15 @@ from .configurators import \
     InvalidRun, \
     libvirt, \
     NOT_CONFIGURED, \
-    sanlock
+    sanlock, \
+    sebool
 
 
 _CONFIGURATORS = dict((m.name, m) for m in (
     certificates.Configurator(),
     libvirt.Configurator(),
     sanlock.Configurator(),
+    sebool.Configurator(),
 ))
 
 

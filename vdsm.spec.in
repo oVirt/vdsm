@@ -81,6 +81,7 @@ BuildRequires: libselinux-python
 BuildRequires: libvirt-python
 BuildRequires: m2crypto
 BuildRequires: openssl
+BuildRequires: policycoreutils-python
 BuildRequires: psmisc
 BuildRequires: python-cpopen >= 1.3
 BuildRequires: python-inotify
@@ -754,7 +755,6 @@ fi
 
 %post
 %{_bindir}/vdsm-tool configure --module sanlock --force >/dev/null
-%{_bindir}/vdsm-tool sebool-config || :
 # set the vdsm "secret" password for libvirt
 %{_bindir}/vdsm-tool set-saslpasswd
 
@@ -818,8 +818,6 @@ then
 
     /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
         /etc/sysctl.conf
-
-    %{_bindir}/vdsm-tool sebool-unconfig || :
 
     %{_bindir}/vdsm-tool remove-saslpasswd
 
@@ -1249,9 +1247,9 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/certificates.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/libvirt.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
-%{python_sitelib}/%{vdsm_name}/tool/seboolsetup.py*
 %{python_sitelib}/%{vdsm_name}/tool/service.py*
 %{python_sitelib}/%{vdsm_name}/tool/transient.py*
 %{python_sitelib}/%{vdsm_name}/tool/unified_persistence.py*

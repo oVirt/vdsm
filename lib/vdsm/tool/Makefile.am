@@ -45,7 +45,6 @@ dist_vdsmtool_PYTHON = \
 	configurator.py \
 	passwd.py \
 	restore_nets.py \
-	seboolsetup.py \
 	service.py \
 	transient.py \
 	unified_persistence.py \

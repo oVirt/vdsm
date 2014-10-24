@@ -100,16 +100,6 @@ Options for the \fIrestore_nets\fP module:
 Restores the networks to what was previously persisted via VDSM.
 .RE
 .TP
-Options for the \fIseboolsetup\fP module:
-.RS
-.TP
-.B sebool-config
-Enables the required SELinux booleans.
-.TP
-.B sebool-unconfig
-Disables the required SELinux booleans.
-.RE
-.TP
 Options for the \fIservice\fP module:
 .RS
 .TP
