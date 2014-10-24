@@ -25,4 +25,5 @@ dist_configurators_PYTHON = \
 	configfile.py \
 	libvirt.py \
 	sanlock.py \
+	sebool.py \
 	$(NULL)

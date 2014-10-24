@@ -68,7 +68,6 @@ case "$1" in
         chmod g+x /var/lib/libvirt/qemu
         chmod 644 /etc/iscsi/initiatorname.iscsi
 
-        vdsm-tool sebool-config || :
         sysctl -q -p /etc/sysctl.d/vdsm.conf
         vdsm-tool load-needed-modules
 
