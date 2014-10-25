@@ -30,7 +30,9 @@ import warnings
 import logging
 
 warnings.simplefilter("always")
-logging.captureWarnings(True)
+if hasattr(logging, 'captureWarnings'):
+    # Python 2.6 does not have captureWarnings, though luck
+    logging.captureWarnings(True)
 
 
 import vdsm.infra.zombiereaper as zombiereaper
