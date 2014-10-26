@@ -588,7 +588,7 @@ def getTargetArch():
 
 def _getSELinux():
     selinux = dict()
-    selinux['mode'] = str(utils.get_seLinux_enforce_mode())
+    selinux['mode'] = str(utils.get_selinux_enforce_mode())
 
     return selinux
 
