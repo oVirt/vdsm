@@ -187,7 +187,7 @@ class ConfigFile(object):
                 if self._oldmod != os.stat(self._filename).st_mode:
                     os.chmod(self._filename, self._oldmod)
 
-                if selinux.is_selinux_enabled:
+                if utils.get_selinux_enforce_mode() > -1:
                     try:
                         selinux.restorecon(self._filename)
                     except OSError:
