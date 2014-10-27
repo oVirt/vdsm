@@ -46,7 +46,9 @@ loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 
 if config.getboolean('devel', 'python_warnings_enable'):
     warnings.simplefilter("always")
-    logging.captureWarnings(True)
+    if hasattr(logging, 'captureWarnings'):
+        # Python 2.6 does not have captureWarnings
+        logging.captureWarnings(True)
 
 
 def usage():
