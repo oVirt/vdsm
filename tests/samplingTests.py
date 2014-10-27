@@ -27,6 +27,7 @@ import shutil
 from vdsm import ipwrapper
 import virt.sampling as sampling
 
+from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
 
@@ -115,23 +116,48 @@ class InterfaceSampleTests(TestCaseBase):
         self.assertEquals('operstate:x', s1.connlog_diff(s0))
 
 
+@expandPermutations
+class SampleWindowTests(TestCaseBase):
+    _VALUES = (19, 42, 23)  # throwaway values, no meaning
+
+    def setUp(self):
+        self._counter = itertools.count(0)
+        self.win = sampling.SampleWindow(
+            size=2, timefn=lambda: next(self._counter))
+
+    @permutations([[-1], [0]])
+    def test_window_size_bad_values(self, size):
+        self.assertRaises(
+            ValueError,
+            sampling.SampleWindow, size)
+
+    def test_last(self):
+        win = sampling.SampleWindow(size=2)
+        win.append(self._VALUES[0])
+        win.append(self._VALUES[1])
+        self.assertEqual(self._VALUES[1], win.last())
+
+    def test_stats_empty(self):
+        self.assertEqual(self.win.stats(), (None, None, None))
+
+    def test_stats_one_value(self):
+        self.win.append(self._VALUES[0])
+        self.assertEqual(self.win.stats(), (None, None, None))
+
+    def test_stats_two_values(self):
+        for val in self._VALUES:
+            self.win.append(val)
+        self.assertEqual(self.win.stats(),
+                         (self._VALUES[-2], self._VALUES[-1], 1))
+
+
+@expandPermutations
 class AdvancedStatsFunctionTests(TestCaseBase):
-    def testIntervalBadValues(self):
+    @permutations([[None], [-1], [0], [1.333], ['foo']])
+    def testIntervalBadValues(self, interval):
         self.assertRaises(
             ValueError,
-            sampling.AdvancedStatsFunction, random.randint, 0)
-        self.assertRaises(
-            ValueError,
-            sampling.AdvancedStatsFunction, random.randint, -1)
-        self.assertRaises(
-            ValueError,
-            sampling.AdvancedStatsFunction, random.randint, None)
-        self.assertRaises(
-            ValueError,
-            sampling.AdvancedStatsFunction, random.randint, 1.333)
-        self.assertRaises(
-            ValueError,
-            sampling.AdvancedStatsFunction, random.randint, 'foo')
+            sampling.AdvancedStatsFunction, lambda x: x, interval)
 
     def testIntervalGoodValue(self):
         interval = 42
@@ -152,7 +178,7 @@ class AdvancedStatsFunctionTests(TestCaseBase):
         self.assertEqual(stat.getStats(), (None, None, None))
         self.assertEqual(stat.getLastSample(), value)
 
-    def testWindowSizeTwo(self):
+    def testGetStats(self):
         values = range(42)
         stat = sampling.AdvancedStatsFunction(
             lambda x: x, interval=1, window=2)
