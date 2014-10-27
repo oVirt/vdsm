@@ -20,7 +20,8 @@
 from .import \
     CONFIGURED, \
     ModuleConfigure, \
-    NOT_CONFIGURED
+    NOT_CONFIGURED, \
+    NOT_SURE
 
 from ... import utils
 
@@ -69,7 +70,9 @@ class SEBool(ModuleConfigure):
         True all selinux booleans in the list above are set properly
         """
         ret = CONFIGURED
-        if utils.get_selinux_enforce_mode() > -1:
+        if utils.get_selinux_enforce_mode() == -1:
+            ret = NOT_SURE
+        else:
             import seobject
             sebool_obj = seobject.booleanRecords()
             sebool_status = sebool_obj.get_all()
