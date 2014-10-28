@@ -639,6 +639,15 @@ BuildArch:      noarch
 %description hook-vmdisk
 Hook adds additional disk image for a VM (raw or qcow2)
 
+%package hook-ipv6
+Summary:        Set IPv6 configuration through custom network properties
+BuildArch:      noarch
+Requires:       %{name} >= 4.16.7
+
+%description hook-ipv6
+VDSM hook used for applying IPv6 configuration through custom network
+properties
+
 %if 0%{?with_gluster}
 %package gluster
 Summary:        Gluster Plugin for VDSM
@@ -1354,6 +1363,10 @@ exit 0
 %files hook-ethtool-options
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup/30_ethtool_options
+
+%files hook-ipv6
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ipv6
 
 %if 0%{?with_hooks}
 %files hook-allocate_net

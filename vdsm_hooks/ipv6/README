@@ -1,0 +1,28 @@
+ipv6 vdsm hook
+=================================
+This hook allows the user to pass IPv6 configuration for networks to VDSM.
+
+Requirements:
+* oVirt-3.5 (started supporting custom properties)
+
+Preparation on a host:
+----------------------
+yum install vdsm-hook-ipv6
+
+Preparation on the engine side:
+-------------------------------
+PROPERTIES='ipv6addr=.*;ipv6gateway=.*;ipv6autoconf=.*;dhcpv6=.*'
+engine-config -s "UserDefinedNetworkCustomProperties=$PROPERTIES" --cver='3.5'
+
+Don't forget to include the names of other custom network properties you may
+want to use, such as 'ethtool_opts'.
+
+Usage:
+------
+In the oVirt UI open the 'Setup Host Networks' dialog. Proceed to editing
+a desired logical network's properties. Among them you will find 'ipv6addr'
+and 'ipv6gateway', which accept custom IPv6 addresses, plus 'ipv6autoconf'
+and 'dhcpv6', which accept '0', '1' or 'false', 'true'.
+
+You may be warned that the network is in use when confirming the 'Setup Host
+Networks' dialog. Make sure to stop any VMs that are using the network.

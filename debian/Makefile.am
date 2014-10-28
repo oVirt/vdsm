@@ -55,6 +55,8 @@ EXTRA_DIST = \
     vdsm-hook-hostusb.install \
     vdsm-hook-hugepages.docs \
     vdsm-hook-hugepages.install \
+    vdsm-hook-ipv6.docs \
+    vdsm-hook-ipv6.install \
     vdsm-hook-isolatedprivatevlan.docs \
     vdsm-hook-isolatedprivatevlan.install \
     vdsm-hook-macspoof.docs \

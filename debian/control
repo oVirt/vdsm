@@ -228,6 +228,13 @@ Description: Huge pages enable user to handle VM with 2048KB page files.
  Hook is getting number of huge pages reserve them for the VM,
  and enable user to handle VM with 2048KB page files.
 
+Package: vdsm-hook-ipv6
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
+Description: Set IPv6 configuration through custom network properties
+ VDSM hook used for applying IPv6 configuration through custom network
+ properties
+
 Package: vdsm-hook-isolatedprivatevlan
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})

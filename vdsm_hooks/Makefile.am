@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = ethtool_options faqemu vhostmd qemucmdline openstacknet macspoof
+SUBDIRS = ethtool_options faqemu ipv6 macspoof openstacknet qemucmdline vhostmd
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
