@@ -30,6 +30,7 @@ import uuid
 
 import libvirt
 
+from virt import hwclass
 from virt import vm
 from virt import vmdevices
 from virt import vmexitreason
@@ -1166,7 +1167,7 @@ class TestVm(TestCaseBase):
                 index=0,
                 device="hdd",
                 path="/dev/dummy",
-                type=vm.DISK_DEVICES,
+                type=hwclass.DISK,
                 iface="ide")
         ]
 
@@ -1243,7 +1244,7 @@ class TestVm(TestCaseBase):
                 index=0,
                 device="disk",
                 path="/dev/dummy",
-                type=vm.DISK_DEVICES,
+                type=hwclass.DISK,
                 iface="ide",
                 domainID=domainID,
                 imageID=uuid.uuid4(),
@@ -1263,7 +1264,7 @@ class TestVm(TestCaseBase):
                 index=0,
                 device="hdd2",
                 path="/dev/dummy2",
-                type=vm.DISK_DEVICES,
+                type=hwclass.DISK,
                 iface="ide",
             )
         ]
@@ -1290,14 +1291,14 @@ class TestVm(TestCaseBase):
         </domain>""" % (port, tlsPort)
         with fake.VM() as testvm:
             graphConf = {
-                'type': vm.GRAPHICS_DEVICES, 'device': 'spice',
+                'type': hwclass.GRAPHICS, 'device': 'spice',
                 'port': '-1', 'tlsPort': '-1'}
             graphDev = vm.GraphicsDevice(
                 testvm.conf, testvm.log,
                 device='spice', port='-1', tlsPort='-1')
 
             testvm.conf['devices'] = [graphConf]
-            testvm._devices = {vm.GRAPHICS_DEVICES: [graphDev]}
+            testvm._devices = {hwclass.GRAPHICS: [graphDev]}
             testvm._domain = DomainDescriptor(graphicsXML)
 
             testvm._getUnderlyingGraphicsDeviceInfo()

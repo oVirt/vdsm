@@ -41,6 +41,7 @@ import blkid
 import supervdsm
 from protocoldetector import MultiProtocolAcceptor
 
+from virt import hwclass
 from virt import migration
 from virt import sampling
 from virt import vm
@@ -452,7 +453,7 @@ class clientIF(object):
                     # Do not prepare volumes when system goes down
                     if self._enabled:
                         vmObj.preparePaths(
-                            vmObj.buildConfDevices()[vm.DISK_DEVICES])
+                            vmObj.buildConfDevices()[hwclass.DISK])
                 except:
                     self.log.error("Vm %s recovery failed",
                                    vmId, exc_info=True)

@@ -42,6 +42,7 @@ import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
+from virt import hwclass
 from virt import vm
 from virt import vmstatus
 from vdsm.compat import pickle
@@ -398,7 +399,7 @@ class VM(APIBase):
             self.log.warning("vm %s doesn't exist", self._UUID)
             return errCode['noVM']
 
-        if params['deviceType'] == vm.NIC_DEVICES:
+        if params['deviceType'] == hwclass.NIC:
             if 'alias' not in params:
                 self.log.error('Missing the required alias parameters.')
                 return {'status':

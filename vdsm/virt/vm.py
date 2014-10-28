@@ -58,6 +58,7 @@ import numaUtils
 # local package imports
 from .domain_descriptor import DomainDescriptor
 from . import guestagent
+from . import hwclass
 from . import migration
 from . import vmdevices
 from . import vmexitreason
@@ -77,21 +78,6 @@ _QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
 _AGENT_CHANNEL_DEVICES = (_VMCHANNEL_DEVICE_NAME, _QEMU_GA_DEVICE_NAME)
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
-
-DISK_DEVICES = 'disk'
-NIC_DEVICES = 'interface'
-VIDEO_DEVICES = 'video'
-GRAPHICS_DEVICES = 'graphics'
-SOUND_DEVICES = 'sound'
-CONTROLLER_DEVICES = 'controller'
-GENERAL_DEVICES = 'general'
-BALLOON_DEVICES = 'balloon'
-REDIR_DEVICES = 'redir'
-RNG_DEVICES = 'rng'
-WATCHDOG_DEVICES = 'watchdog'
-CONSOLE_DEVICES = 'console'
-SMARTCARD_DEVICES = 'smartcard'
-TPM_DEVICES = 'tpm'
 
 METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
 
@@ -1208,7 +1194,7 @@ class GraphicsDevice(vmdevices.Base):
         if vmParams.get('display') not in ('vnc', 'qxl', 'qxlnc'):
             return False
         for dev in vmParams.get('devices', ()):
-            if dev['type'] == GRAPHICS_DEVICES:
+            if dev['type'] == hwclass.GRAPHICS:
                 if dev['device'] not in ('spice', 'vnc'):
                     return False
         return True
@@ -1318,20 +1304,20 @@ class Vm(object):
     log = logging.getLogger("vm.Vm")
     # limit threads number until the libvirt lock will be fixed
     _ongoingCreations = threading.BoundedSemaphore(4)
-    DeviceMapping = ((DISK_DEVICES, Drive),
-                     (NIC_DEVICES, NetworkInterfaceDevice),
-                     (SOUND_DEVICES, vmdevices.Sound),
-                     (VIDEO_DEVICES, vmdevices.Video),
-                     (GRAPHICS_DEVICES, GraphicsDevice),
-                     (CONTROLLER_DEVICES, vmdevices.Controller),
-                     (GENERAL_DEVICES, vmdevices.Generic),
-                     (BALLOON_DEVICES, vmdevices.Balloon),
-                     (WATCHDOG_DEVICES, vmdevices.Watchdog),
-                     (CONSOLE_DEVICES, vmdevices.Console),
-                     (REDIR_DEVICES, vmdevices.Redir),
-                     (RNG_DEVICES, vmdevices.Rng),
-                     (SMARTCARD_DEVICES, vmdevices.Smartcard),
-                     (TPM_DEVICES, vmdevices.Tpm))
+    DeviceMapping = ((hwclass.DISK, Drive),
+                     (hwclass.NIC, NetworkInterfaceDevice),
+                     (hwclass.SOUND, vmdevices.Sound),
+                     (hwclass.VIDEO, vmdevices.Video),
+                     (hwclass.GRAPHICS, GraphicsDevice),
+                     (hwclass.CONTROLLER, vmdevices.Controller),
+                     (hwclass.GENERAL, vmdevices.Generic),
+                     (hwclass.BALLOON, vmdevices.Balloon),
+                     (hwclass.WATCHDOG, vmdevices.Watchdog),
+                     (hwclass.CONSOLE, vmdevices.Console),
+                     (hwclass.REDIR, vmdevices.Redir),
+                     (hwclass.RNG, vmdevices.Rng),
+                     (hwclass.SMARTCARD, vmdevices.Smartcard),
+                     (hwclass.TPM, vmdevices.Tpm))
 
     def _makeDeviceDict(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)
@@ -1490,14 +1476,15 @@ class Vm(object):
         for index, linuxName in DEVICE_SPEC:
             path = self.conf.get(linuxName)
             if path:
-                legacies.append({'type': DISK_DEVICES, 'device': 'disk',
-                                 'path': path, 'iface': 'ide', 'index': index,
+                legacies.append({'type': hwclass.DISK,
+                                 'device': 'disk', 'path': path,
+                                 'iface': 'ide', 'index': index,
                                  'truesize': 0})
         return legacies
 
     def __removableDrives(self):
         removables = [{
-            'type': DISK_DEVICES,
+            'type': hwclass.DISK,
             'device': 'cdrom',
             'iface': self._getDefaultDiskInterface(),
             'path': self.conf.get('cdrom', ''),
@@ -1506,7 +1493,7 @@ class Vm(object):
         floppyPath = self.conf.get('floppy')
         if floppyPath:
             removables.append({
-                'type': DISK_DEVICES,
+                'type': hwclass.DISK,
                 'device': 'floppy',
                 'path': floppyPath,
                 'iface': 'fdc',
@@ -1532,12 +1519,12 @@ class Vm(object):
                 devConf = utils.picklecopy(self.conf['devices'])
         except KeyError:
             # (very) old Engines do not send device configuration
-            devices[DISK_DEVICES] = self.getConfDrives()
-            devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
-            devices[SOUND_DEVICES] = self.getConfSound()
-            devices[VIDEO_DEVICES] = self.getConfVideo()
-            devices[GRAPHICS_DEVICES] = self.getConfGraphics()
-            devices[CONTROLLER_DEVICES] = self.getConfController()
+            devices[hwclass.DISK] = self.getConfDrives()
+            devices[hwclass.NIC] = self.getConfNetworkInterfaces()
+            devices[hwclass.SOUND] = self.getConfSound()
+            devices[hwclass.VIDEO] = self.getConfVideo()
+            devices[hwclass.GRAPHICS] = self.getConfGraphics()
+            devices[hwclass.CONTROLLER] = self.getConfController()
         else:
             for dev in devConf:
                 try:
@@ -1545,15 +1532,15 @@ class Vm(object):
                 except KeyError:
                     self.log.warn("Unknown type found, device: '%s' "
                                   "found", dev)
-                    devices[GENERAL_DEVICES].append(dev)
+                    devices[hwclass.GENERAL].append(dev)
 
-            if not devices[GRAPHICS_DEVICES]:
-                devices[GRAPHICS_DEVICES] = self.getConfGraphics()
+            if not devices[hwclass.GRAPHICS]:
+                devices[hwclass.GRAPHICS] = self.getConfGraphics()
 
         self._checkDeviceLimits(devices)
 
         # Normalize vdsm images
-        for drv in devices[DISK_DEVICES]:
+        for drv in devices[hwclass.DISK]:
             if isVdsmImage(drv):
                 try:
                     self._normalizeVdsmImg(drv)
@@ -1564,16 +1551,16 @@ class Vm(object):
                     if not self.recovering:
                         raise
 
-        self.normalizeDrivesIndices(devices[DISK_DEVICES])
+        self.normalizeDrivesIndices(devices[hwclass.DISK])
 
         # Preserve old behavior. Since libvirt add a memory balloon device
         # to all guests, we need to specifically request not to add it.
-        self._normalizeBalloonDevice(devices[BALLOON_DEVICES])
+        self._normalizeBalloonDevice(devices[hwclass.BALLOON])
 
         return devices
 
     def _normalizeBalloonDevice(self, balloonDevices):
-        EMPTY_BALLOON = {'type': BALLOON_DEVICES,
+        EMPTY_BALLOON = {'type': hwclass.BALLOON,
                          'device': 'memballoon',
                          'specParams': {
                              'model': 'none'}}
@@ -1588,12 +1575,12 @@ class Vm(object):
 
     def _checkDeviceLimits(self, devices):
         # libvirt only support one watchdog and one console device
-        for device in (WATCHDOG_DEVICES, CONSOLE_DEVICES):
+        for device in (hwclass.WATCHDOG, hwclass.CONSOLE):
             if len(devices[device]) > 1:
                 raise ValueError("only a single %s device is "
                                  "supported" % device)
         graphDevTypes = set()
-        for dev in devices[GRAPHICS_DEVICES]:
+        for dev in devices[hwclass.GRAPHICS]:
             if dev.get('device') not in graphDevTypes:
                 graphDevTypes.add(dev.get('device'))
             else:
@@ -1606,7 +1593,7 @@ class Vm(object):
         """
         controllers = []
         # For now we create by default only 'virtio-serial' controller
-        controllers.append({'type': CONTROLLER_DEVICES,
+        controllers.append({'type': hwclass.CONTROLLER,
                             'device': 'virtio-serial'})
         return controllers
 
@@ -1627,7 +1614,8 @@ class Vm(object):
         monitors = int(self.conf.get('spiceMonitors', '1'))
         vram = '65536' if (monitors <= 2) else '32768'
         for idx in range(monitors):
-            vcards.append({'type': VIDEO_DEVICES, 'specParams': {'vram': vram},
+            vcards.append({'type': hwclass.VIDEO,
+                           'specParams': {'vram': vram},
                            'device': devType})
 
         return vcards
@@ -1643,7 +1631,7 @@ class Vm(object):
                 if oldName in conf)
 
         return [{
-            'type': GRAPHICS_DEVICES,
+            'type': hwclass.GRAPHICS,
             'device': (
                 'spice'
                 if self.conf['display'] in ('qxl', 'qxlnc')
@@ -1656,7 +1644,7 @@ class Vm(object):
         """
         scards = []
         if self.conf.get('soundDevice'):
-            scards.append({'type': SOUND_DEVICES,
+            scards.append({'type': hwclass.SOUND,
                            'device': self.conf.get('soundDevice')})
 
         return scards
@@ -1687,7 +1675,8 @@ class Vm(object):
         for mac, model, bridge in zip(macs, models, bridges):
             if model == 'pv':
                 model = 'virtio'
-            nics.append({'type': NIC_DEVICES, 'macAddr': mac,
+            nics.append({'type': hwclass.NIC,
+                         'macAddr': mac,
                          'nicModel': model, 'network': bridge,
                          'device': 'bridge'})
         return nics
@@ -1705,7 +1694,7 @@ class Vm(object):
         confDrives.extend(self.__removableDrives())
 
         for drv in confDrives:
-            drv['type'] = DISK_DEVICES
+            drv['type'] = hwclass.DISK
             drv['format'] = drv.get('format') or 'raw'
             drv['propagateErrors'] = drv.get('propagateErrors') or 'off'
             drv['readonly'] = False
@@ -1893,7 +1882,7 @@ class Vm(object):
             if 'floppy' in toSave:
                 del toSave['floppy']
         for drive in toSave.get('drives', []):
-            for d in self._devices[DISK_DEVICES]:
+            for d in self._devices[hwclass.DISK]:
                 if isVdsmImage(d) and drive.get('volumeID') == d.volumeID:
                     drive['truesize'] = str(d.truesize)
                     drive['apparentsize'] = str(d.apparentsize)
@@ -1960,7 +1949,7 @@ class Vm(object):
         # FIXME: mergeCandidates should be a dictionary of candidate volumes
         # once libvirt starts reporting watermark information for all volumes.
         mergeCandidates = {}
-        for drive in self._devices[DISK_DEVICES]:
+        for drive in self._devices[hwclass.DISK]:
             if not drive.blockDev or drive.format != 'cow':
                 continue
 
@@ -2209,7 +2198,7 @@ class Vm(object):
         self._cleanupDrives(drive1, drive2, drive3)
         self._cleanupDrives(*drives_list)
         """
-        drives = drives or self._devices[DISK_DEVICES]
+        drives = drives or self._devices[hwclass.DISK]
         # clean them up
         with self._volPrepareLock:
             for drive in drives:
@@ -2425,7 +2414,7 @@ class Vm(object):
         return {
             'displayInfo': [getInfo(dev)
                             for dev in self.conf.get('devices', [])
-                            if dev['type'] == GRAPHICS_DEVICES],
+                            if dev['type'] == hwclass.GRAPHICS],
             'displayType': self.conf['display'],
             'displayPort': self.conf['displayPort'],
             'displaySecurePort': self.conf['displaySecurePort'],
@@ -2446,7 +2435,7 @@ class Vm(object):
         return self._migrationSourceThread.isAlive()
 
     def hasTransientDisks(self):
-        for drive in self._devices[DISK_DEVICES]:
+        for drive in self._devices[hwclass.DISK]:
             if drive.transientDisk:
                 return True
         return False
@@ -2556,12 +2545,12 @@ class Vm(object):
 
         self._appendDevices(domxml)
 
-        for graphDev in self._devices[GRAPHICS_DEVICES]:
+        for graphDev in self._devices[hwclass.GRAPHICS]:
             if graphDev.device == 'spice':
                 domxml._devices.appendChild(graphDev.getSpiceVmcChannelsXML())
                 break
 
-        for drive in self._devices[DISK_DEVICES][:]:
+        for drive in self._devices[hwclass.DISK][:]:
             for leaseElement in drive.getLeasesXML():
                 domxml._devices.appendChild(leaseElement)
 
@@ -2671,7 +2660,7 @@ class Vm(object):
 
         # Currently there is no protection agains mirroring a network twice,
         if not self.recovering:
-            for nic in self._devices[NIC_DEVICES]:
+            for nic in self._devices[hwclass.NIC]:
                 if hasattr(nic, 'portMirroring'):
                     for network in nic.portMirroring:
                         supervdsm.getProxy().setPortMirroring(network,
@@ -2720,8 +2709,8 @@ class Vm(object):
         # Disk stats collection is started from clientIF at the end
         # of the recovery process.
         if not self.recovering:
-            self.preparePaths(devices[DISK_DEVICES])
-            self._prepareTransientDisks(devices[DISK_DEVICES])
+            self.preparePaths(devices[hwclass.DISK])
+            self._prepareTransientDisks(devices[hwclass.DISK])
             self._updateDevices(devices)
             # We need to save conf here before we actually run VM.
             # It's not enough to save conf only on status changes as we did
@@ -2838,7 +2827,7 @@ class Vm(object):
         diskSerial = diskDeviceXmlElement. \
             getElementsByTagName('serial')[0].childNodes[0].nodeValue
 
-        for vmDrive in self._devices[DISK_DEVICES]:
+        for vmDrive in self._devices[hwclass.DISK]:
             if vmDrive.serial == diskSerial:
                 # update the type
                 diskDeviceXmlElement.setAttribute(
@@ -2883,7 +2872,7 @@ class Vm(object):
             # we sent command to libvirt and before save conf. In this case
             # we will gather almost all needed info about this NIC from
             # the libvirt during recovery process.
-            self._devices[NIC_DEVICES].append(nic)
+            self._devices[hwclass.NIC].append(nic)
             with self._confLock:
                 self.conf['devices'].append(nicParams)
             self.saveState()
@@ -2924,14 +2913,14 @@ class Vm(object):
 
     def _lookupConfByAlias(self, alias):
         for devConf in self.conf['devices'][:]:
-            if devConf['type'] == NIC_DEVICES and \
+            if devConf['type'] == hwclass.NIC and \
                     devConf['alias'] == alias:
                 return devConf
         raise LookupError('Configuration of device identified by alias %s not'
                           'found' % alias)
 
     def _lookupDeviceByPath(self, path):
-        for dev in self._devices[DISK_DEVICES][:]:
+        for dev in self._devices[hwclass.DISK][:]:
             try:
                 if dev.path == path:
                     return dev
@@ -2949,7 +2938,8 @@ class Vm(object):
 
     def _updateInterfaceDevice(self, params):
         try:
-            netDev = self._lookupDeviceByAlias(NIC_DEVICES, params['alias'])
+            netDev = self._lookupDeviceByAlias(hwclass.NIC,
+                                               params['alias'])
             netConf = self._lookupConfByAlias(params['alias'])
 
             linkValue = 'up' if utils.tobool(params.get('linkActive',
@@ -3067,9 +3057,9 @@ class Vm(object):
             return errCode['updateDevice']
 
     def updateDevice(self, params):
-        if params.get('deviceType') == NIC_DEVICES:
+        if params.get('deviceType') == hwclass.NIC:
             return self._updateInterfaceDevice(params)
-        elif params.get('deviceType') == GRAPHICS_DEVICES:
+        elif params.get('deviceType') == hwclass.GRAPHICS:
             return self._updateGraphicsDevice(params)
         else:
             return errCode['noimpl']
@@ -3082,7 +3072,7 @@ class Vm(object):
 
         # Find NIC object in vm's NICs list
         nic = None
-        for dev in self._devices[NIC_DEVICES][:]:
+        for dev in self._devices[hwclass.NIC][:]:
             if dev.macAddr.lower() == nicParams['macAddr'].lower():
                 nic = dev
                 break
@@ -3105,11 +3095,11 @@ class Vm(object):
 
         # Remove found NIC from vm's NICs list
         if nic:
-            self._devices[NIC_DEVICES].remove(nic)
+            self._devices[hwclass.NIC].remove(nic)
         # Find and remove NIC device from vm's conf
         nicDev = None
         for dev in self.conf['devices'][:]:
-            if (dev['type'] == NIC_DEVICES and
+            if (dev['type'] == hwclass.NIC and
                     dev['macAddr'].lower() == nicParams['macAddr'].lower()):
                 with self._confLock:
                     self.conf['devices'].remove(dev)
@@ -3129,7 +3119,7 @@ class Vm(object):
                 with self._confLock:
                     self.conf['devices'].append(nicDev)
             if nic:
-                self._devices[NIC_DEVICES].append(nic)
+                self._devices[hwclass.NIC].append(nic)
             self.saveState()
             hooks.after_nic_hotunplug_fail(nicXml, self.conf,
                                            params=nic.custom)
@@ -3284,7 +3274,7 @@ class Vm(object):
         return metadata.getElementsByTagName("qos")[0]
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
-        for device in self._devices[DISK_DEVICES]:
+        for device in self._devices[hwclass.DISK]:
             if ((device.name == device_name
                 or ("path" in device and device["path"] == device_path))
                     and isVdsmImage(device)):
@@ -3436,7 +3426,7 @@ class Vm(object):
             # we sent command to libvirt and before save conf. In this case
             # we will gather almost all needed info about this drive from
             # the libvirt during recovery process.
-            self._devices[DISK_DEVICES].append(drive)
+            self._devices[hwclass.DISK].append(drive)
 
             with self._confLock:
                 self.conf['devices'].append(diskParams)
@@ -3470,11 +3460,11 @@ class Vm(object):
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotunplug disk xml: %s", driveXml)
 
-        self._devices[DISK_DEVICES].remove(drive)
+        self._devices[hwclass.DISK].remove(drive)
         # Find and remove disk device from vm's conf
         diskDev = None
         for dev in self.conf['devices'][:]:
-            if (dev['type'] == DISK_DEVICES and
+            if (dev['type'] == hwclass.DISK and
                     dev['path'] == drive.path):
                 with self._confLock:
                     self.conf['devices'].remove(dev)
@@ -3491,7 +3481,7 @@ class Vm(object):
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            self._devices[DISK_DEVICES].append(drive)
+            self._devices[hwclass.DISK].append(drive)
             # Restore disk device in vm's conf and _devices
             if diskDev:
                 with self._confLock:
@@ -3612,7 +3602,7 @@ class Vm(object):
         self._dom.suspend()
 
     def _findDriveByName(self, name):
-        for device in self._devices[DISK_DEVICES][:]:
+        for device in self._devices[hwclass.DISK][:]:
             if device.name == name:
                 return device
         raise LookupError("No such drive: '%s'" % name)
@@ -3624,7 +3614,7 @@ class Vm(object):
             tgetDrv = (drive["domainID"], drive["imageID"],
                        drive["volumeID"])
 
-            for device in self._devices[DISK_DEVICES][:]:
+            for device in self._devices[hwclass.DISK][:]:
                 if not hasattr(device, "domainID"):
                     continue
                 if (device.domainID, device.imageID,
@@ -3632,14 +3622,14 @@ class Vm(object):
                     return device
 
         elif "GUID" in drive:
-            for device in self._devices[DISK_DEVICES][:]:
+            for device in self._devices[hwclass.DISK][:]:
                 if not hasattr(device, "GUID"):
                     continue
                 if device.GUID == drive["GUID"]:
                     return device
 
         elif "UUID" in drive:
-            for device in self._devices[DISK_DEVICES][:]:
+            for device in self._devices[hwclass.DISK][:]:
                 if not hasattr(device, "UUID"):
                     continue
                 if device.UUID == drive["UUID"]:
@@ -3669,7 +3659,7 @@ class Vm(object):
         """Update the drive with the new volume information"""
 
         # Updating the vmDrive object
-        for vmDrive in self._devices[DISK_DEVICES][:]:
+        for vmDrive in self._devices[hwclass.DISK][:]:
             if vmDrive.name == driveParams["name"]:
                 for k, v in driveParams.iteritems():
                     setattr(vmDrive, k, v)
@@ -3681,7 +3671,7 @@ class Vm(object):
 
         # Updating the VM configuration
         for vmDriveConfig in self.conf["devices"][:]:
-            if (vmDriveConfig['type'] == DISK_DEVICES and
+            if (vmDriveConfig['type'] == hwclass.DISK and
                     vmDriveConfig.get("name") == driveParams["name"]):
                 vmDriveConfig.update(driveParams)
                 break
@@ -3939,7 +3929,7 @@ class Vm(object):
                                "replication" % srcDrive.name)
 
         for device in self.conf["devices"]:
-            if (device['type'] == DISK_DEVICES
+            if (device['type'] == hwclass.DISK
                     and device.get("name") == srcDrive.name):
                 with self._confLock:
                     device['diskReplicate'] = dstDisk
@@ -3956,7 +3946,7 @@ class Vm(object):
         _setDiskReplica description for more information.
         """
         for device in self.conf["devices"]:
-            if (device['type'] == DISK_DEVICES
+            if (device['type'] == hwclass.DISK
                     and device.get("name") == srcDrive.name):
                 with self._confLock:
                     del device['diskReplicate']
@@ -4343,7 +4333,7 @@ class Vm(object):
         return (self.conf.get('display') == 'qxl' or
                 any(dev['device'] == 'spice'
                     for dev in self.conf.get('devices', [])
-                    if dev['type'] == GRAPHICS_DEVICES))
+                    if dev['type'] == hwclass.GRAPHICS))
 
     def _getPid(self):
         pid = '0'
@@ -4370,13 +4360,13 @@ class Vm(object):
 
         # unsetting mirror network will clear both mirroring
         # (on the same network).
-        for nic in self._devices[NIC_DEVICES]:
+        for nic in self._devices[hwclass.NIC]:
             if hasattr(nic, 'portMirroring'):
                 for network in nic.portMirroring:
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
         # delete the payload devices
-        for drive in self._devices[DISK_DEVICES]:
+        for drive in self._devices[hwclass.DISK]:
             if (hasattr(drive, 'specParams') and
                     'vmPayload' in drive.specParams):
                 supervdsm.getProxy().removeFs(drive.path)
@@ -4496,7 +4486,7 @@ class Vm(object):
             return self._reportException(key='balloonErr', msg=e.message)
         else:
             for dev in self.conf['devices']:
-                if dev['type'] == BALLOON_DEVICES and \
+                if dev['type'] == hwclass.BALLOON and \
                         dev['specParams']['model'] != 'none':
                     dev['target'] = target
             # persist the target value to make it consistent after recovery
@@ -4608,7 +4598,7 @@ class Vm(object):
 
             # In case the controller has index and/or model, they
             # are compared. Currently relevant for USB controllers.
-            for ctrl in self._devices[CONTROLLER_DEVICES]:
+            for ctrl in self._devices[hwclass.CONTROLLER]:
                 if ((ctrl.device == device) and
                         (not hasattr(ctrl, 'index') or ctrl.index == index) and
                         (not hasattr(ctrl, 'model') or ctrl.model == model)):
@@ -4619,7 +4609,7 @@ class Vm(object):
             # are compared. Currently relevant for USB controllers.
             knownDev = False
             for dev in self.conf['devices']:
-                if ((dev['type'] == CONTROLLER_DEVICES) and
+                if ((dev['type'] == hwclass.CONTROLLER) and
                         (dev['device'] == device) and
                         ('index' not in dev or dev['index'] == index) and
                         ('model' not in dev or dev['model'] == model)):
@@ -4628,10 +4618,11 @@ class Vm(object):
                     knownDev = True
             # Add unknown controller device to vm's conf
             if not knownDev:
-                self.conf['devices'].append({'type': CONTROLLER_DEVICES,
-                                             'device': device,
-                                             'address': address,
-                                             'alias': alias})
+                self.conf['devices'].append(
+                    {'type': hwclass.CONTROLLER,
+                     'device': device,
+                     'address': address,
+                     'alias': alias})
 
     def _getUnderlyingBalloonDeviceInfo(self):
         """
@@ -4645,14 +4636,14 @@ class Vm(object):
                 address = self._getUnderlyingDeviceAddress(x)
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
-            for dev in self._devices[BALLOON_DEVICES]:
+            for dev in self._devices[hwclass.BALLOON]:
                 if address and not hasattr(dev, 'address'):
                     dev.address = address
                 if not hasattr(dev, 'alias'):
                     dev.alias = alias
 
             for dev in self.conf['devices']:
-                if dev['type'] == BALLOON_DEVICES:
+                if dev['type'] == hwclass.BALLOON:
                     if address and not dev.get('address'):
                         dev['address'] = address
                     if not dev.get('alias'):
@@ -4665,12 +4656,12 @@ class Vm(object):
         for x in self._domain.get_device_elements('console'):
             # All we care about is the alias
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            for dev in self._devices[CONSOLE_DEVICES]:
+            for dev in self._devices[hwclass.CONSOLE]:
                 if not hasattr(dev, 'alias'):
                     dev.alias = alias
 
             for dev in self.conf['devices']:
-                if dev['device'] == CONSOLE_DEVICES and \
+                if dev['device'] == hwclass.CONSOLE and \
                         not dev.get('alias'):
                     dev['alias'] = alias
 
@@ -4685,13 +4676,13 @@ class Vm(object):
             address = self._getUnderlyingDeviceAddress(x)
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
-            for dev in self._devices[SMARTCARD_DEVICES]:
+            for dev in self._devices[hwclass.SMARTCARD]:
                 if not hasattr(dev, 'address'):
                     dev.address = address
                     dev.alias = alias
 
             for dev in self.conf['devices']:
-                if dev['device'] == SMARTCARD_DEVICES and \
+                if dev['device'] == hwclass.SMARTCARD and \
                         not dev.get('address'):
                     dev['address'] = address
                     dev['alias'] = alias
@@ -4707,13 +4698,13 @@ class Vm(object):
                 address = self._getUnderlyingDeviceAddress(x)
                 alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
-                for wd in self._devices[WATCHDOG_DEVICES]:
+                for wd in self._devices[hwclass.WATCHDOG]:
                     if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
                         wd.address = address
                         wd.alias = alias
 
                 for dev in self.conf['devices']:
-                    if ((dev['type'] == WATCHDOG_DEVICES) and
+                    if ((dev['type'] == hwclass.WATCHDOG) and
                             (not dev.get('address') or not dev.get('alias'))):
                         dev['address'] = address
                         dev['alias'] = alias
@@ -4731,14 +4722,14 @@ class Vm(object):
             # Video card device has not unique identifier, except the alias
             # (but backend not aware to device's aliases). So, for now
             # we can only assign the address according to devices order.
-            for vc in self._devices[VIDEO_DEVICES]:
+            for vc in self._devices[hwclass.VIDEO]:
                 if not hasattr(vc, 'address') or not hasattr(vc, 'alias'):
                     vc.alias = alias
                     vc.address = address
                     break
             # Update vm's conf with address
             for dev in self.conf['devices']:
-                if ((dev['type'] == VIDEO_DEVICES) and
+                if ((dev['type'] == hwclass.VIDEO) and
                         (not dev.get('address') or not dev.get('alias'))):
                     dev['address'] = address
                     dev['alias'] = alias
@@ -4757,14 +4748,14 @@ class Vm(object):
             # Sound device has not unique identifier, except the alias
             # (but backend not aware to device's aliases). So, for now
             # we can only assign the address according to devices order.
-            for sc in self._devices[SOUND_DEVICES]:
+            for sc in self._devices[hwclass.SOUND]:
                 if not hasattr(sc, 'address') or not hasattr(sc, 'alias'):
                     sc.alias = alias
                     sc.address = address
                     break
             # Update vm's conf with address
             for dev in self.conf['devices']:
-                if ((dev['type'] == SOUND_DEVICES) and
+                if ((dev['type'] == hwclass.SOUND) and
                         (not dev.get('address') or not dev.get('alias'))):
                     dev['address'] = address
                     dev['alias'] = alias
@@ -4817,7 +4808,7 @@ class Vm(object):
                             for k in deviceDef.iterkeys())
 
             self.log.debug('Looking for drive with attributes %s', deviceDict)
-            for d in self._devices[DISK_DEVICES]:
+            for d in self._devices[hwclass.DISK]:
                 # When we analyze a disk device that was already discovered in
                 # the past (generally as soon as the VM is created) we should
                 # verify that the cached path is the one used in libvirt.
@@ -4849,7 +4840,8 @@ class Vm(object):
                                      'to %s', dev['alias'], dev['path'],
                                      devPath)
                     dev['path'] = devPath
-                if dev['type'] == DISK_DEVICES and dev['path'] == devPath:
+                if (dev['type'] == hwclass.DISK and
+                        dev['path'] == devPath):
                     dev['name'] = name
                     dev['address'] = address
                     dev['alias'] = alias
@@ -4862,7 +4854,7 @@ class Vm(object):
             if not knownDev:
                 archIface = self._getDefaultDiskInterface()
                 iface = archIface if address['type'] == 'drive' else 'pci'
-                diskDev = {'type': DISK_DEVICES, 'device': devType,
+                diskDev = {'type': hwclass.DISK, 'device': devType,
                            'iface': iface, 'path': devPath, 'name': name,
                            'address': address, 'alias': alias,
                            'readonly': str(readonly)}
@@ -4887,7 +4879,7 @@ class Vm(object):
             tlsPort = gxml.getAttribute('tlsPort')
             graphicsType = gxml.getAttribute('type')
 
-            for d in self._devices[GRAPHICS_DEVICES]:
+            for d in self._devices[hwclass.GRAPHICS]:
                 if d.device == graphicsType:
                     if port:
                         d.port = port
@@ -4896,7 +4888,7 @@ class Vm(object):
                     break
 
             for dev in self.conf['devices']:
-                if (dev.get('type') == GRAPHICS_DEVICES and
+                if (dev.get('type') == hwclass.GRAPHICS and
                         dev.get('device') == graphicsType):
                     if port:
                         dev['port'] = port
@@ -4940,7 +4932,7 @@ class Vm(object):
 
             # Get nic address
             address = self._getUnderlyingDeviceAddress(x)
-            for nic in self._devices[NIC_DEVICES]:
+            for nic in self._devices[hwclass.NIC]:
                 if nic.macAddr.lower() == mac.lower():
                     nic.name = name
                     nic.alias = alias
@@ -4949,7 +4941,7 @@ class Vm(object):
             # Update vm's conf with address for known nic devices
             knownDev = False
             for dev in self.conf['devices']:
-                if (dev['type'] == NIC_DEVICES and
+                if (dev['type'] == hwclass.NIC and
                         dev['macAddr'].lower() == mac.lower()):
                     dev['address'] = address
                     dev['alias'] = alias
@@ -4958,7 +4950,7 @@ class Vm(object):
                     knownDev = True
             # Add unknown nic device to vm's conf
             if not knownDev:
-                nicDev = {'type': NIC_DEVICES,
+                nicDev = {'type': hwclass.NIC,
                           'device': devType,
                           'macAddr': mac,
                           'nicModel': model,
@@ -5057,10 +5049,10 @@ class Vm(object):
 
                 if alias in aliasToDevice:
                     aliasToDevice[alias]._deviceXML = deviceXML.toxml()
-            elif deviceXML.tagName == GRAPHICS_DEVICES:
+            elif deviceXML.tagName == hwclass.GRAPHICS:
                 # graphics device do not have aliases, must match by type
                 graphicsType = deviceXML.getAttribute('type')
-                for devObj in self._devices[GRAPHICS_DEVICES]:
+                for devObj in self._devices[hwclass.GRAPHICS]:
                     if devObj.device == graphicsType:
                         devObj._deviceXML = deviceXML.toxml()
 
@@ -5433,18 +5425,18 @@ class Vm(object):
 
     def _getFirstGraphicsDevice(self):
         for dev in self.conf.get('devices', ()):
-            if dev.get('type') == GRAPHICS_DEVICES:
+            if dev.get('type') == hwclass.GRAPHICS:
                 return dev
 
     def getDiskDevices(self):
-        return self._devices[DISK_DEVICES]
+        return self._devices[hwclass.DISK]
 
     def getNicDevices(self):
-        return self._devices[NIC_DEVICES]
+        return self._devices[hwclass.NIC]
 
     def getBalloonDevicesConf(self):
         for dev in self.conf['devices']:
-            if dev['type'] == BALLOON_DEVICES:
+            if dev['type'] == hwclass.BALLOON:
                 yield dev
 
     @property
@@ -5452,7 +5444,8 @@ class Vm(object):
         """
         Returns a list of the ids of the storage domains in use by the VM.
         """
-        return set(device.domainID for device in self._devices[DISK_DEVICES]
+        return set(device.domainID
+                   for device in self._devices[hwclass.DISK]
                    if device['device'] == 'disk' and isVdsmImage(device))
 
     def _logGuestCpuStatus(self, reason):

@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,27 +18,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsm_virtdir = $(vdsmdir)/virt
-dist_vdsm_virt_PYTHON = \
-	__init__.py \
-	domain_descriptor.py \
-	hwclass.py \
-	guestagent.py \
-	migration.py \
-	sampling.py \
-	vm.py \
-	vmchannels.py \
-	vmdevices.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstatus.py \
-	vmtune.py \
-	vmxml.py \
-	utils.py \
-	$(NULL)
-
-EXTRA_DIST = \
-	libvirt-hook.sh \
-	$(NULL)
+DISK = 'disk'
+NIC = 'interface'
+VIDEO = 'video'
+GRAPHICS = 'graphics'
+SOUND = 'sound'
+CONTROLLER = 'controller'
+GENERAL = 'general'
+BALLOON = 'balloon'
+REDIR = 'redir'
+RNG = 'rng'
+WATCHDOG = 'watchdog'
+CONSOLE = 'console'
+SMARTCARD = 'smartcard'
+TPM = 'tpm'
