@@ -1633,28 +1633,25 @@ class Vm(object):
         self.log.debug("Start")
         try:
             self.memCommit()
-            self._ongoingCreations.acquire()
-            self.log.debug("_ongoingCreations acquired")
-            self._vmCreationEvent.set()
-            try:
-                self._run()
-            except MissingLibvirtDomainError:
-                # we cannot continue without a libvirt domain object,
-                # not even on recovery, to avoid state desync or worse
-                # split-brain scenarios.
-                raise
-            except Exception as e:
-                # as above
-                if isinstance(e, libvirt.libvirtError) and \
-                   e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    raise MissingLibvirtDomainError()
-                elif not self.recovering:
+            with self._ongoingCreations:
+                self._vmCreationEvent.set()
+                try:
+                    self._run()
+                except MissingLibvirtDomainError:
+                    # we cannot continue without a libvirt domain object,
+                    # not even on recovery, to avoid state desync or worse
+                    # split-brain scenarios.
                     raise
-                else:
-                    self.log.info("Skipping errors on recovery", exc_info=True)
-            finally:
-                self._ongoingCreations.release()
-                self.log.debug("_ongoingCreations released")
+                except Exception as e:
+                    # as above
+                    if isinstance(e, libvirt.libvirtError) and \
+                       e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                        raise MissingLibvirtDomainError()
+                    elif not self.recovering:
+                        raise
+                    else:
+                        self.log.info("Skipping errors on recovery",
+                                      exc_info=True)
 
             if ('migrationDest' in self.conf or 'restoreState' in self.conf) \
                     and self.lastStatus != vmstatus.DOWN:
