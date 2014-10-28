@@ -180,45 +180,17 @@ def _stpBooleanize(value):
         raise ValueError('Invalid value for bridge stp')
 
 
-def _validateInterNetworkCompatibility(ni, vlan, iface, bridged, qosOutbound):
-    """
-    Verify network compatibility with other networks on iface (bond/nic).
+def _validateInterNetworkCompatibility(ni, vlan, iface):
+    iface_nets_by_vlans = dict((vlan, net)  # None is also a valid key
+                               for (net, vlan)
+                               in ni.getNetworksAndVlansForIface(iface))
 
-    Only following combinations allowed:
-        - single non-VLANed bridged network
-        - multiple VLANed networks (bridged/bridgeless) with only one
-          non-VLANed bridgeless network
-        - QoSed networks can't coexist with non-QoSed nets
-    """
-    def _validateNoDirectNet(ifaces):
-        # validate that none of the ifaces
-        # is a non-VLANed network over our iface
-        for (iface_net, iface_vlan) in ifaces:
-            if iface_vlan is None:
-                raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'interface %r '
-                                         'already member of network %r' %
-                                         (iface, iface_net))
-
-    ifaces_bridgeless = tuple(ni.getBridgelessNetworksAndVlansForIface(iface))
-    ifaces_bridged = tuple(ni.getBridgedNetworksAndVlansForIface(iface))
-
-    # If non-VLANed bridged network exists
-    # we can't add nothing else
-    _validateNoDirectNet(ifaces_bridged)
-
-    # Multiple VLANed networks (bridged/bridgeless) with only one
-    # non-VLANed bridgeless network permited
-    if vlan is None:
-        # Want to add non-VLANed bridgeless network,
-        # check whether interface already has such network.
-        # Only one non-VLANed bridgeless network permited
-        if not bridged:
-            _validateNoDirectNet(ifaces_bridgeless)
-        # Want to add non-VLANed bridged network,
-        # check whether interface is empty
-        elif ifaces_bridged or ifaces_bridgeless:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'interface %r already '
-                                     'has networks' % (iface))
+    if vlan in iface_nets_by_vlans:
+        raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
+                                 'interface %r cannot be defined with this '
+                                 'network since it is already defined with '
+                                 'network %s' % (iface,
+                                                 iface_nets_by_vlans[vlan]))
 
 
 def _alterRunningConfig(func):
@@ -305,12 +277,10 @@ def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
             raise ConfigNetworkError(ne.ERR_USED_BRIDGE,
                                      'Network already exists')
         if bonding:
-            _validateInterNetworkCompatibility(_netinfo, vlan, bonding,
-                                               bridged, qosOutbound)
+            _validateInterNetworkCompatibility(_netinfo, vlan, bonding)
         else:
             for nic in nics:
-                _validateInterNetworkCompatibility(_netinfo, vlan, nic,
-                                                   bridged, qosOutbound)
+                _validateInterNetworkCompatibility(_netinfo, vlan, nic)
 
     # defaultRoute is set either explicitly by the client, OR if we're adding
     # the management network.
