@@ -142,7 +142,7 @@ class AcceptorTests(VdsmTestCase):
         self.check_slow_client(use_ssl)
 
     @permutations(PERMUTATIONS)
-    def test_setect_slow_client_concurrency(self, use_ssl):
+    def test_detect_slow_client_concurrency(self, use_ssl):
         self.start_acceptor(use_ssl)
         self.check_concurrently(self.check_slow_client, use_ssl)
 
