@@ -516,6 +516,36 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeSnapshotCreate(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        snapName = params.get('snapName', '')
+        snapDescription = params.get('snapDescription', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterVolumeSnapshotCreate(volumeName,
+                                                    snapName,
+                                                    snapDescription,
+                                                    force)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterSnapshotDelete(self, args):
+        params = self._eqSplit(args)
+        snapName = params.get('snapName', '')
+
+        status = self.s.glusterSnapshotDelete(snapName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeSnapshotDeleteAll(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeSnapshotDeleteAll(volumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -881,5 +911,22 @@ def getGlusterCmdDict(serv):
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'resume the geo-replication session'
+              )),
+         'glusterVolumeSnapshotCreate': (
+             serv.do_glusterVolumeSnapshotCreate,
+             ('volumeName=<volume_name> snapName=<snap_name> '
+              '[snapDescription=<description of snapshot>] '
+              '[force={yes|no}]',
+              'create gluster volume snapshot'
+              )),
+         'glusterVolumeSnapshotDeleteAll': (
+             serv.do_glusterVolumeSnapshotDeleteAll,
+             ('volumeName=<volume name>',
+              'delete all snapshots for given volume'
+              )),
+         'glusterSnapshotDelete': (
+             serv.do_glusterSnapshotDelete,
+             ('snapName=<snap_name>',
+              'delete gluster volume snapshot'
               ))
          }

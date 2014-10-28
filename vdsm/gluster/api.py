@@ -384,6 +384,25 @@ class GlusterApi(object):
                                                          remoteVolumeName,
                                                          force)
 
+    @exportAsVerb
+    def volumeSnapshotCreate(self, volumeName, snapName,
+                             snapDescription=None, force=False,
+                             options=None):
+        return self.svdsmProxy.glusterSnapshotCreate(
+            volumeName,
+            snapName,
+            snapDescription,
+            force
+        )
+
+    @exportAsVerb
+    def volumeSnapshotDeleteAll(self, volumeName, options=None):
+        self.svdsmProxy.glusterSnapshotDelete(volumeName=volumeName)
+
+    @exportAsVerb
+    def snapshotDelete(self, snapName, options=None):
+        self.svdsmProxy.glusterSnapshotDelete(snapName=snapName)
+
 
 def getGlusterMethods(gluster):
     l = []

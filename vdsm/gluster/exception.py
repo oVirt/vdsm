@@ -537,3 +537,21 @@ class GlusterVolumeGeoRepSessionPauseFailedException(GlusterGeoRepException):
 class GlusterVolumeGeoRepSessionResumeFailedException(GlusterGeoRepException):
     code = 4205
     message = "Volume geo-replication session resume failed"
+
+
+# Volume Snapshot
+class GlusterSnapshotException(GlusterException):
+    code = 4700
+    message = "Gluster Volume Snapshot Exception"
+
+
+class GlusterSnapshotCreateFailedException(
+        GlusterSnapshotException):
+    code = 4701
+    message = "Snapshot create failed"
+
+
+class GlusterSnapshotDeleteFailedException(
+        GlusterSnapshotException):
+    code = 4702
+    message = "Snapshot delete failed"
