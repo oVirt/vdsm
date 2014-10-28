@@ -68,7 +68,7 @@ BuildRequires:	maven-jar-plugin
 BuildRequires:	maven-javadoc-plugin
 BuildRequires:	maven-local
 BuildRequires:	maven-source-plugin
-BuildRequires:	maven-surefire-provider-junit4
+BuildRequires:	maven-surefire-provider-junit
 %if %{_use_mockito}
 BuildRequires:	mockito
 %endif
