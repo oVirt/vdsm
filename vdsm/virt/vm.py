@@ -3737,8 +3737,7 @@ class Vm(object):
         setTicket defaults to the first graphic device.
         use updateDevice to select the device.
         """
-        graphics = _domParseStr(self._dom.XMLDesc(0)).childNodes[0]. \
-            getElementsByTagName('graphics')[0]
+        graphics = self._domain.get_device_elements('graphics')[0]
         return self._setTicketForGraphicDev(
             graphics, otp, seconds, connAct, params)
 
