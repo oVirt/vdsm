@@ -221,3 +221,20 @@ class GlusterVolume(GlusterApiBase):
                                                        remoteHost,
                                                        remoteVolumeName,
                                                        force)
+
+    def snapshotCreate(self, volumeName,
+                       snapName, snapDescription=None,
+                       force=False):
+        return self._gluster.volumeSnapshotCreate(volumeName, snapName,
+                                                  snapDescription, force)
+
+    def snapshotDeleteAll(self, volumeName):
+        return self._gluster.volumeSnapshotDeleteAll(volumeName)
+
+
+class GlusterSnapshot(GlusterApiBase):
+    def __init__(self):
+        GlusterApiBase.__init__(self)
+
+    def delete(self, snapName):
+        return self._gluster.snapshotDelete(snapName)

@@ -1503,3 +1503,68 @@
  'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
           '*force': 'bool'},
  'returns': 'bool'}
+
+##
+# @GlusterVolume.snapshotCreate:
+#
+# Create a Gluster volume snapshot
+#
+# @volumeName:      Gluster volume name
+#
+# @snapName:        Snapsot name
+#
+# @snapDescription: #optional Description for the snapshot
+#
+# @force:           #optional Force create snapshot
+#
+# Returns:
+# uuid of the snapshot
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'snapshotCreate'},
+ 'data': {'volumeName': 'str', 'snapName': 'str',
+          '*snapDescription': 'str', '*force': 'bool'},
+ 'returns': 'UUID'}
+
+##
+# @GlusterVolume.snapshotDeleteAll:
+#
+# Delete all the volume snapshot
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# success/failure
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'snapshotDeleteAll'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'bool'}
+
+## Category: @GlusterSnapshot ###############################################
+##
+# @GlusterSnapshot:
+#
+# Gluster snapshot object.
+#
+# Since: 4.17.0
+##
+{'class': 'GlusterSnapshot'}
+
+##
+# @GlusterSnapshot.delete:
+#
+# Delete the volume snapshot
+#
+# @snapName:    Gluster volume snapshot name
+#
+# Returns:
+# success/failure
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterSnapshot', 'name': 'delete'},
+ 'data': {'snapName': 'str'},
+ 'returns': 'bool'}

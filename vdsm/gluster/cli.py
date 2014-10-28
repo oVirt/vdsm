@@ -53,6 +53,10 @@ def _getGlusterVolGeoRepCmd():
     return _getGlusterVolCmd() + ["geo-replication"]
 
 
+def _getGlusterSnapshotCmd():
+    return [_glusterCommandPath.cmd, "--mode=script", "snapshot"]
+
+
 class BrickStatus:
     PAUSED = 'PAUSED'
     COMPLETED = 'COMPLETED'
@@ -1200,3 +1204,40 @@ def volumeGeoRepSessionResume(volumeName, remoteHost, remoteVolumeName,
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeGeoRepSessionResumeFailedException(rc=e.rc,
                                                                  err=e.err)
+
+
+@makePublic
+def snapshotCreate(volumeName, snapName,
+                   snapDescription=None,
+                   force=False):
+    command = _getGlusterSnapshotCmd() + ["create", snapName, volumeName]
+
+    if snapDescription:
+        command += ['description', snapDescription]
+    if force:
+        command.append('force')
+
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterSnapshotCreateFailedException(rc=e.rc, err=e.err)
+    try:
+        return {'uuid': xmltree.find('snapCreate/snapshot/uuid').text}
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+@makePublic
+def snapshotDelete(volumeName=None, snapName=None):
+    command = _getGlusterSnapshotCmd() + ["delete"]
+    if snapName:
+        command.append(snapName)
+    elif volumeName:
+        command += ["volume", volumeName]
+
+    # xml output not used because of BZ:1161416 in gluster cli
+    rc, out, err = _execGluster(command)
+    if rc:
+        raise ge.GlusterSnapshotDeleteFailedException(rc, out, err)
+    else:
+        return True
