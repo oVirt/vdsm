@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import socket
 import ssl
 import threading
@@ -165,10 +166,7 @@ class AcceptorTests(VdsmTestCase):
     def check_reject(self, use_ssl):
         with self.connect(use_ssl) as client:
             client.sendall("no such protocol\n")
-            if use_ssl:
-                self.assertEqual(client.recv(self.BUFSIZE), '')
-            else:
-                self.assertRaises(socket.error, client.recv, self.BUFSIZE)
+            self.check_disconnected(client)
 
     def check_slow_client(self, use_ssl):
         with self.connect(use_ssl) as client:
@@ -181,7 +179,15 @@ class AcceptorTests(VdsmTestCase):
         with self.connect(use_ssl) as client:
             time.sleep(self.acceptor.CLEANUP_INTERVAL * 2)
             client.sendall("echo too slow probably\n")
-            self.assertEqual(client.recv(self.BUFSIZE), '')
+            self.check_disconnected(client)
+
+    def check_disconnected(self, client):
+        try:
+            data = client.recv(self.BUFSIZE)
+        except socket.error as e:
+            self.assertEqual(e.errno, errno.ECONNRESET)
+        else:
+            self.assertEqual(data, '')
 
     # Helpers
 
