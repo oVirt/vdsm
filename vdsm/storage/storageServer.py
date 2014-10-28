@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from itertools import chain
 import errno
 import logging
 from os.path import normpath, basename, splitext
@@ -400,13 +399,6 @@ class IscsiConnection(object):
         return True
 
     def getSessionInfo(self):
-        sessions = iscsi.iterateIscsiSessions()
-        try:
-            info = iscsi.getSessionInfo(self._lastSessionId)
-            sessions = chain(info, sessions)
-        except Exception:
-            pass
-
         for session in iscsi.iterateIscsiSessions():
             if self.isSession(session):
                 self._lastSessionId = session.id
