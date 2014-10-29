@@ -78,9 +78,9 @@ class Configurator(ModuleConfigure):
             sebool_obj = seobject.booleanRecords()
             sebool_status = sebool_obj.get_all()
 
-        for sebool_variable in VDSM_SEBOOL_LIST:
-            if not all(sebool_status[sebool_variable]):
-                ret = NO
+            for sebool_variable in VDSM_SEBOOL_LIST:
+                if not all(sebool_status[sebool_variable]):
+                    ret = NO
 
         return ret
 
