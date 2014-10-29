@@ -31,6 +31,7 @@ test_modules = \
 	clientifTests.py \
 	configNetworkTests.py \
 	domainMonitorTests.py \
+	domainDescriptorTests.py \
 	fileVolumeTests.py \
 	fileUtilTests.py \
 	fuserTests.py \
