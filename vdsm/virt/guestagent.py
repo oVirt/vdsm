@@ -121,7 +121,6 @@ class GuestAgent(object):
         self._stopped = True
         self.guestStatus = None
         self.guestDiskMapping = {}
-        self.diskMappingHash = 0
         self.guestInfo = {
             'username': user,
             'memUsage': 0,
@@ -136,6 +135,19 @@ class GuestAgent(object):
         self._agentTimestamp = 0
         self._channelListener = channelListener
         self._messageState = MessageState.NORMAL
+
+    @property
+    def guestDiskMapping(self):
+        return self._guestDiskMapping
+
+    @guestDiskMapping.setter
+    def guestDiskMapping(self, value):
+        self._guestDiskMapping = value
+        self._diskMappingHash = hash(json.dumps(value, sort_keys=True))
+
+    @property
+    def diskMappingHash(self):
+        return self._diskMappingHash
 
     def connect(self):
         self._prepare_socket()
@@ -303,8 +315,6 @@ class GuestAgent(object):
                 disks.append(disk)
             self.guestInfo['disksUsage'] = disks
             self.guestDiskMapping = args.get('mapping', {})
-            self.diskMappingHash = hash(json.dumps(self.guestDiskMapping,
-                                                   sort_keys=True))
         elif message == 'number-of-cpus':
             self.guestInfo['guestCPUCount'] = int(args['count'])
         else:

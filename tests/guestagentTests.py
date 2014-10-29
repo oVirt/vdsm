@@ -193,3 +193,18 @@ class TestGuestIFHandleData(TestCaseBase):
                     # If the message size was within the allowed range
                     # the message should have been put into the guestInfo dict
                     self.assertEqual(self.fakeGuestAgent.guestInfo[k], v)
+
+
+class DiskMappingTests(TestCaseBase):
+
+    def setUp(self):
+        self.agent = guestagent.GuestAgent(None, None, None)
+
+    def test_init(self):
+        self.assertEqual(self.agent.guestDiskMapping, {})
+        self.assertTrue(isinstance(self.agent.diskMappingHash, int))
+
+    def test_change_disk_mapping(self):
+        old_hash = self.agent.diskMappingHash
+        self.agent.guestDiskMapping = {'/dev/vda': 'xxx'}
+        self.assertNotEqual(self.agent.diskMappingHash, old_hash)
