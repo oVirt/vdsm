@@ -27,7 +27,8 @@ class DomainDescriptor(object):
         self._dom = xml.dom.minidom.parseString(xmlStr)
         self._devices = self._firstElementByTagName('devices')
         # VDSM by default reports '0' as hash when it has no device list yet
-        self._devicesHash = hash(self._devices) if self._devices else 0
+        self._devicesHash = (hash(self._devices.toxml()) if self._devices
+                             else 0)
 
     @classmethod
     def fromId(cls, uuid):

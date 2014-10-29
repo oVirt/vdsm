@@ -21,7 +21,6 @@
 
 from virt.domain_descriptor import DomainDescriptor
 from testlib import VdsmTestCase
-from testValidation import brokentest
 
 NO_DEVICES = """
 <domain>
@@ -74,7 +73,6 @@ class DevicesHashTests(VdsmTestCase):
         desc2 = DomainDescriptor(REORDERED_DEVICES)
         self.assertNotEqual(desc1.devicesHash, desc2.devicesHash)
 
-    @brokentest("hashing is not stable")
     def test_stable_hash(self):
         desc1 = DomainDescriptor(SOME_DEVICES)
         desc2 = DomainDescriptor(SOME_DEVICES)
