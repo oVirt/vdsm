@@ -588,6 +588,23 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterSnapshotActivate(self, args):
+        params = self._eqSplit(args)
+        snapName = params.get('snapName', '')
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterSnapshotActivate(snapName, force)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterSnapshotDeactivate(self, args):
+        params = self._eqSplit(args)
+        snapName = params.get('snapName', '')
+
+        status = self.s.glusterSnapshotDeactivate(snapName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1000,5 +1017,16 @@ def getGlusterCmdDict(serv):
              serv.do_glusterSnapshotDelete,
              ('snapName=<snap_name>',
               'delete gluster volume snapshot'
+              )),
+         'glusterSnapshotActivate': (
+             serv.do_glusterSnapshotActivate,
+             ('snapName=<snap_name> '
+              '[force={yes|no}]',
+              'activate snapshot'
+              )),
+         'glusterSnapshotDeactivate': (
+             serv.do_glusterSnapshotDeactivate,
+             ('snapName=<snap_name>',
+              'de-activate snapshot'
               ))
          }

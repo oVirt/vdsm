@@ -255,3 +255,9 @@ class GlusterSnapshot(GlusterApiBase):
 
     def delete(self, snapName):
         return self._gluster.snapshotDelete(snapName)
+
+    def activate(self, snapName, force=False):
+        return self._gluster.snapshotActivate(snapName, force)
+
+    def deactivate(self, snapName):
+        return self._gluster.snapshotDeactivate(snapName)
