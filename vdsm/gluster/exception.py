@@ -560,3 +560,13 @@ class GlusterSnapshotDeleteFailedException(
         GlusterSnapshotException):
     code = 4702
     message = "Snapshot delete failed"
+
+
+class GlusterSnapshotActivateFailedException(GlusterSnapshotException):
+    code = 4703
+    message = "Snapshot activate failed"
+
+
+class GlusterSnapshotDeactivateFailedException(GlusterSnapshotException):
+    code = 4704
+    message = "Snapshot de-activate failed"

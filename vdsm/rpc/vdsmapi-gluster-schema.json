@@ -1655,3 +1655,37 @@
 {'command': {'class': 'GlusterSnapshot', 'name': 'delete'},
  'data': {'snapName': 'str'},
  'returns': 'bool'}
+
+##
+# @GlusterSnapshot.activate:
+#
+# Activate the volume snapshot
+#
+# @snapName: Gluster volume snapshot name
+#
+# @force:    #optional Force activate snapshot
+#
+# Returns:
+# success/failure
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterSnapshot', 'name': 'activate'},
+ 'data': {'snapName': 'str', '*force': 'bool'},
+ 'returns': 'bool'}
+
+##
+# @GlusterSnapshot.deactivate:
+#
+# De-activate the volume snapshot
+#
+# @snapName: Gluster volume snapshot name
+#
+# Returns:
+# success/failure
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterSnapshot', 'name': 'deactivate'},
+ 'data': {'snapName': 'str'},
+ 'returns': 'bool'}

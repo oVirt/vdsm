@@ -1277,3 +1277,28 @@ def snapshotDelete(volumeName=None, snapName=None):
         raise ge.GlusterSnapshotDeleteFailedException(rc, out, err)
     else:
         return True
+
+
+@makePublic
+def snapshotActivate(snapName, force=False):
+    command = _getGlusterSnapshotCmd() + ["activate", snapName]
+
+    if force:
+        command.append('force')
+
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterSnapshotActivateFailedException(rc=e.rc, err=e.err)
+
+
+@makePublic
+def snapshotDeactivate(snapName):
+    command = _getGlusterSnapshotCmd() + ["deactivate", snapName]
+
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterSnapshotDeactivateFailedException(rc=e.rc, err=e.err)

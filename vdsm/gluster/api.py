@@ -432,6 +432,14 @@ class GlusterApi(object):
     def snapshotDelete(self, snapName, options=None):
         self.svdsmProxy.glusterSnapshotDelete(snapName=snapName)
 
+    @exportAsVerb
+    def snapshotActivate(self, snapName, force=False, options=None):
+        self.svdsmProxy.glusterSnapshotActivate(snapName, force)
+
+    @exportAsVerb
+    def snapshotDeactivate(self, snapName, options=None):
+        self.svdsmProxy.glusterSnapshotDeactivate(snapName)
+
 
 def getGlusterMethods(gluster):
     l = []
