@@ -109,7 +109,7 @@ class GuestAgentUnsupportedMessage(Exception):
         Exception.__init__(self, message)
 
 
-class GuestAgent ():
+class GuestAgent(object):
     MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
 
     def __init__(self, socketName, channelListener, log, user='Unknown',
