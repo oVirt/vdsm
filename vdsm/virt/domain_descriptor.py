@@ -27,7 +27,7 @@ class DomainDescriptor(object):
         self._dom = xml.dom.minidom.parseString(xmlStr)
         self._devices = self._firstElementByTagName('devices')
         self._devicesHash = hash(self._devices.toxml()
-                                 if self._devices else '')
+                                 if self._devices is not None else '')
 
     @classmethod
     def fromId(cls, uuid):
