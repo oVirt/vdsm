@@ -22,12 +22,60 @@ from testlib import VdsmTestCase as TestCaseBase
 import storage.outOfProcess as oop
 import os
 import tempfile
+import time
+import re
+from weakref import ref
+
+from vdsm.config import config
 
 
 class OopWrapperTests(TestCaseBase):
+    IOPROC_IDLE_TIME = config.getint("irs", "max_ioprocess_idle_time")
+
     def setUp(self):
         oop.setDefaultImpl(oop.IOPROC)
         self.pool = oop.getGlobalProcPool()
+
+    def testSamePoolName(self):
+        poolA = "A"
+        pids = []
+        for pool in (poolA, poolA):
+            proc = oop.getProcessPool(pool)._ioproc
+            name = proc._commthread.getName()
+            pids.append(int(re.search(r'\d+', name).group()))
+
+        self.assertEquals(pids[0], pids[1])
+
+    def testDifferentPoolName(self):
+        poolA = "A"
+        poolB = "B"
+        pools = (poolA, poolB)
+        pids = []
+        for pool in pools:
+            proc = oop.getProcessPool(pool)._ioproc
+            name = proc._commthread.name
+            pids.append(int(re.search(r'\d+', name).group()))
+
+        self.assertNotEquals(pids[0], pids[1])
+
+    def testAmountOfInstancesPerPoolName(self):
+        poolA = "A"
+        poolB = "B"
+        wrapper = ref(oop.getProcessPool(poolA))
+        ioproc = ref(oop.getProcessPool(poolA)._ioproc)
+        oop.getProcessPool(poolA)
+        time.sleep(self.IOPROC_IDLE_TIME + 1)
+        oop.getProcessPool(poolB)
+        self.assertEquals(wrapper(), None)
+        import gc
+        gc.collect()
+        time.sleep(1)
+        gc.collect()
+        print "GARBAGE: ", gc.garbage
+        refs = gc.get_referrers(ioproc())
+        print refs
+        print gc.get_referrers(*refs)
+        self.assertEquals(ioproc(), None)
 
     def testEcho(self):
         data = """Censorship always defeats it own purpose, for it creates in
