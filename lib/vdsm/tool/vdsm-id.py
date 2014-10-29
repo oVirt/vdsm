@@ -34,5 +34,5 @@ def getUUID(*args):
     hostUUID = getHostUUID(False)
     if hostUUID is None:
         raise EnvironmentError('Cannot retrieve host UUID')
-    sys.stdout.write(hostUUID)
+    sys.stdout.write(hostUUID + '\n')
     return 0
