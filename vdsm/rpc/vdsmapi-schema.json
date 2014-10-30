@@ -3579,7 +3579,7 @@
 #
 # @name:                  device logical name within the guest.
 #
-# Since: 4.16.0
+# Since: 4.16.8
 ##
 {'type': 'GuestDiskMappingInfo',
  'data': {'name': 'str'}}
@@ -3590,7 +3590,7 @@
 #
 # guest disks mapping information indexed by serial.
 #
-# Since: 4.16.0
+# Since: 4.16.8
 ##
 {'map': 'GuestDisksMappingMap',
  'key': 'str', 'value': 'GuestDiskMappingInfo'}
@@ -3664,7 +3664,7 @@
 # @guestDiskMapping:      A dictionary containing information about the disk
 #                         mapping within the guest. The key is the device
 #                         serial and the value is the mapping information.
-#                         (New in version 4.16.0.)
+#                         (New in version 4.16.8.)
 #
 # @smartcardEnable:       Info whether smartcard is enabled.
 #
