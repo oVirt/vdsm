@@ -1329,6 +1329,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRebalanceStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRemoveBricksStatus.xml
+%{_datadir}/%{vdsm_name}/tests/glusterSnapshotRestore.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeTasks.xml
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
 %{_datadir}/%{vdsm_name}/tests/functional/*.policy

@@ -440,6 +440,11 @@ class GlusterApi(object):
     def snapshotDeactivate(self, snapName, options=None):
         self.svdsmProxy.glusterSnapshotDeactivate(snapName)
 
+    @exportAsVerb
+    def snapshotRestore(self, snapName, options=None):
+        status = self.svdsmProxy.glusterSnapshotRestore(snapName)
+        return {'snapRestore': status}
+
 
 def getGlusterMethods(gluster):
     l = []

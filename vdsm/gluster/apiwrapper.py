@@ -261,3 +261,6 @@ class GlusterSnapshot(GlusterApiBase):
 
     def deactivate(self, snapName):
         return self._gluster.snapshotDeactivate(snapName)
+
+    def restore(self, snapName):
+        return self._gluster.snapshotRestore(snapName)

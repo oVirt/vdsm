@@ -570,3 +570,8 @@ class GlusterSnapshotActivateFailedException(GlusterSnapshotException):
 class GlusterSnapshotDeactivateFailedException(GlusterSnapshotException):
     code = 4704
     message = "Snapshot de-activate failed"
+
+
+class GlusterSnapshotRestoreFailedException(GlusterSnapshotException):
+    code = 4705
+    message = "Snapshot restore failed"

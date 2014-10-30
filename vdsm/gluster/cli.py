@@ -1302,3 +1302,36 @@ def snapshotDeactivate(snapName):
         return True
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterSnapshotDeactivateFailedException(rc=e.rc, err=e.err)
+
+
+def _parseRestoredSnapshot(tree):
+    """
+    returns {'volumeName': 'vol1',
+             'volumeUuid': 'uuid',
+             'snapshotName': 'snap2',
+             'snapshotUuid': 'uuid'
+            }
+    """
+    snapshotRestore = {}
+    snapshotRestore['volumeName'] = tree.find('snapRestore/volume/name').text
+    snapshotRestore['volumeUuid'] = tree.find('snapRestore/volume/uuid').text
+    snapshotRestore['snapshotName'] = tree.find(
+        'snapRestore/snapshot/name').text
+    snapshotRestore['snapshotUuid'] = tree.find(
+        'snapRestore/snapshot/uuid').text
+
+    return snapshotRestore
+
+
+@makePublic
+def snapshotRestore(snapName):
+    command = _getGlusterSnapshotCmd() + ["restore", snapName]
+
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterSnapshotRestoreFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parseRestoredSnapshot(xmltree)
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
