@@ -56,6 +56,7 @@ test_modules = \
 	netconfpersistenceTests.py \
 	netconfTests.py \
 	netinfoTests.py \
+	netlinkTests.py \
 	netmodelsTests.py \
 	numaUtilsTests.py \
 	outOfProcessTests.py \

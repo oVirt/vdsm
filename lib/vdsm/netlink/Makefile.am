@@ -23,5 +23,6 @@ dist_vdsmnetlink_PYTHON = \
 	__init__.py \
 	addr.py \
 	link.py \
+	monitor.py \
 	route.py \
 	$(NULL)
