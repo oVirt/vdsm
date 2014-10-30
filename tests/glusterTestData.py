@@ -1119,3 +1119,10 @@ GLUSTER_GEOREP_CONFIG_LIST = {
         'volume_id': '67186261-91a7-4930-b681-9f127f485a0e'
     }
 }
+
+GLUSTER_SNAPSHOT_RESTORE = {
+    'snapshotName': 'snap1',
+    'snapshotUuid': 'ef4b5442-2d6e-498b-9e42-fd0e566ac74c',
+    'volumeName': 'snap-vol2',
+    'volumeUuid': '8558c40f-1581-414e-89d6-46854376ae3d'
+}

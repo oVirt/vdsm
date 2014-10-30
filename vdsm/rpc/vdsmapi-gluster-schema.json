@@ -1694,3 +1694,38 @@
 {'command': {'class': 'GlusterSnapshot', 'name': 'deactivate'},
  'data': {'snapName': 'str'},
  'returns': 'bool'}
+
+##
+# @SnapRestoreDetail:
+#
+# Restored snapshot detail
+#
+# @volumeName:   Name and of restored volume
+#
+# @volumeUuid:   Uuid of the restored volume
+#
+# @snapshotUuid: Uuid of the restored snapshot
+#
+# @snapshotName: Name of the restored snapshot
+#
+# Since: 4.17.0
+##
+{'type': 'SnapRestoreDetail',
+ 'data': {'volumeName': 'str', 'volumeUuid': 'UUID',
+          'snapshotName': 'str', 'snapshotUuid': 'UUID'}}
+
+##
+# @GlusterSnapshot.restore:
+#
+# Restore a snapshot
+#
+# @snapName: Gluster volume snapshot name
+#
+# Returns:
+# Volume snapshot pair
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterSnapshot', 'name': 'restore'},
+ 'data': {'snapName': 'str'},
+ 'returns': 'SnapRestoreDetail'}

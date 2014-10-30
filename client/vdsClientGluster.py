@@ -605,6 +605,14 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterSnapshotRestore(self, args):
+        params = self._eqSplit(args)
+        snapName = params.get('snapName', '')
+
+        status = self.s.glusterSnapshotRestore(snapName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1028,5 +1036,10 @@ def getGlusterCmdDict(serv):
              serv.do_glusterSnapshotDeactivate,
              ('snapName=<snap_name>',
               'de-activate snapshot'
+              )),
+         'glusterSnapshotRestore': (
+             serv.do_glusterSnapshotRestore,
+             ('snapName=snap_name',
+              'restore snapshot'
               ))
          }
