@@ -2354,7 +2354,7 @@ class Vm(object):
                     'port', GraphicsDevice.LIBVIRT_PORT_AUTOSELECT),
                 'tlsPort': dev.get(
                     'tlsPort', GraphicsDevice.LIBVIRT_PORT_AUTOSELECT),
-                'ipAddress': dev.get('specParams', {}).get('displayIp', 0)}
+                'ipAddress': dev.get('specParams', {}).get('displayIp', '0')}
 
         return {
             'displayInfo': [getInfo(dev)
