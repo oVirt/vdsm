@@ -22,7 +22,7 @@ from socket import AF_UNSPEC
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_proto, _void_proto
-from . import LIBNL, LIBNL_ROUTE, _nl_geterror, _pool
+from . import LIBNL_ROUTE, _nl_geterror, _pool
 from . import _addr_to_str, _af_to_str, _scope_to_str
 from .link import _nl_link_cache, _link_index_to_name
 
@@ -48,60 +48,54 @@ def _route_info(link_cache, route):
         'source': _addr_to_str(_rtnl_route_get_src(route)),
         'gateway': _addr_to_str(_rtnl_route_get_gateway(route)),  # via
         'family': _af_to_str(_rtnl_route_get_family(route)),
+        'table': _rtnl_route_get_table(route),
         'scope': _scope_to_str(_rtnl_route_get_scope(route))}
     oif_index = _rtnl_route_get_oif(route)
     if oif_index > 0:
         data['oif'] = _link_index_to_name(link_cache, oif_index)
-    table = _rtnl_route_get_table(route)
-    if LIBNL != LIBNL_ROUTE or table != _RT_TABLE_COMPAT:
-        data['table'] = table
     return data
 
-if LIBNL != LIBNL_ROUTE:
-    _route_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_int, c_void_p)(
-        ('rtnl_route_alloc_cache', LIBNL_ROUTE))
-    _route_get_nnexthops = _int_proto(('rtnl_route_get_nnexthops',
-                                       LIBNL_ROUTE))
-    _route_get_nexthop_n = CFUNCTYPE(c_void_p, c_void_p, c_int)(
-        ('rtnl_route_nexthop_n', LIBNL_ROUTE))
-    _hop_get_ifindex = _int_proto(('rtnl_route_nh_get_ifindex', LIBNL_ROUTE))
-    _hop_get_gateway = _void_proto(('rtnl_route_nh_get_gateway', LIBNL_ROUTE))
 
-    def _rtnl_route_alloc_cache(sock):
-        """Wraps the new addr alloc cache to expose the libnl1 signature"""
-        cache = c_void_p()
-        err = _route_alloc_cache(sock, AF_UNSPEC, 0, byref(cache))
-        if err:
-            raise IOError(-err, _nl_geterror())
-        return cache
+_route_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_int, c_void_p)(
+    ('rtnl_route_alloc_cache', LIBNL_ROUTE))
+_route_get_nnexthops = _int_proto(('rtnl_route_get_nnexthops',
+                                   LIBNL_ROUTE))
+_route_get_nexthop_n = CFUNCTYPE(c_void_p, c_void_p, c_int)(
+    ('rtnl_route_nexthop_n', LIBNL_ROUTE))
+_hop_get_ifindex = _int_proto(('rtnl_route_nh_get_ifindex', LIBNL_ROUTE))
+_hop_get_gateway = _void_proto(('rtnl_route_nh_get_gateway', LIBNL_ROUTE))
 
-    def _route_get_next_hop(route):
-        if _route_get_nnexthops(route) != 1:
-            return
-        return _route_get_nexthop_n(route, 0)
 
-    def _rtnl_route_get_oif(route):
-        hop = _route_get_next_hop(route)
-        if hop is None:
-            return -1
-        else:
-            return _hop_get_ifindex(hop)
+def _rtnl_route_alloc_cache(sock):
+    """Wraps the new addr alloc cache to expose the libnl1 signature"""
+    cache = c_void_p()
+    err = _route_alloc_cache(sock, AF_UNSPEC, 0, byref(cache))
+    if err:
+        raise IOError(-err, _nl_geterror())
+    return cache
 
-    def _rtnl_route_get_gateway(route):
-        hop = _route_get_next_hop(route)
-        if hop is None:
-            return None
-        else:
-            gw = _hop_get_gateway(hop)
-            return gw
 
-else:
-    from . import _alloc_cache
-    _route_alloc_cache = _void_proto(('rtnl_route_alloc_cache', LIBNL_ROUTE))
-    _rtnl_route_get_gateway = _void_proto(('rtnl_route_get_gateway',
-                                           LIBNL_ROUTE))
-    _rtnl_route_get_oif = _int_proto(('rtnl_route_get_oif', LIBNL_ROUTE))
-    _rtnl_route_alloc_cache = partial(_alloc_cache, _route_alloc_cache)
+def _route_get_next_hop(route):
+    if _route_get_nnexthops(route) != 1:
+        return
+    return _route_get_nexthop_n(route, 0)
+
+
+def _rtnl_route_get_oif(route):
+    hop = _route_get_next_hop(route)
+    if hop is None:
+        return -1
+    else:
+        return _hop_get_ifindex(hop)
+
+
+def _rtnl_route_get_gateway(route):
+    hop = _route_get_next_hop(route)
+    if hop is None:
+        return None
+    else:
+        gw = _hop_get_gateway(hop)
+        return gw
 
 
 _nl_route_cache = partial(_cache_manager, _rtnl_route_alloc_cache)

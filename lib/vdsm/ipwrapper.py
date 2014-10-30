@@ -145,10 +145,8 @@ class Link(object):
 
     @classmethod
     def fromDict(cls, data):
-        # TODO: Tune the following line to use in some cases the type when
-        # libnl1 type getting is fixed
-        # https://github.com/tgraf/libnl-1.1-stable/issues/1
-        data['linkType'] = cls._detectType(data['name'])
+        data['linkType'] = (data['type'] if 'type' in data else
+                            cls._detectType(data['name']))
         return cls(**data)
 
     @staticmethod

@@ -76,7 +76,7 @@ BuildRequires: rpm-build
 # BuildRequires needed by the tests during the build
 BuildRequires: dosfstools
 BuildRequires: genisoimage
-BuildRequires: libnl
+BuildRequires: libnl3
 BuildRequires: libselinux-python
 BuildRequires: libvirt-python
 BuildRequires: m2crypto
@@ -130,7 +130,7 @@ Requires: %{name}-infra = %{version}-%{release}
 Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
-Requires: libnl
+Requires: libnl3
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: mom >= 0.4.2

@@ -100,9 +100,7 @@ def _af_to_str(af_num):
 def _scope_to_str(scope_num):
     """Returns the textual scope representation of the numerical id"""
     scope = (c_char * CHARBUFFSIZE)()
-    scope = _rtnl_scope2str(scope_num, scope, sizeof(scope))
-    # libnl1 reports 'universe' instead of 'global'
-    return 'global' if scope == 'universe' else scope
+    return _rtnl_scope2str(scope_num, scope, sizeof(scope))
 
 # C function prototypes
 # http://docs.python.org/2/library/ctypes.html#function-prototypes
@@ -116,26 +114,11 @@ _void_proto = CFUNCTYPE(c_void_p, c_void_p)
 _none_proto = CFUNCTYPE(None, c_void_p)
 
 
-try:
-    LIBNL = CDLL('libnl-3.so.200',  use_errno=True)
-    LIBNL_ROUTE = CDLL('libnl-route-3.so.200',  use_errno=True)
+LIBNL = CDLL('libnl-3.so.200',  use_errno=True)
+LIBNL_ROUTE = CDLL('libnl-route-3.so.200',  use_errno=True)
 
-    _nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', LIBNL))
-    _nl_socket_free = _none_proto(('nl_socket_free', LIBNL))
-
-except OSError:  # CDLL failed to load libnl3, assume libnl-1
-    # Change from handle to socket as it is now more accurately called in
-    # libnl-3
-    LIBNL_ROUTE = LIBNL = CDLL('libnl.so.1', use_errno=True)
-
-    _nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_handle_alloc', LIBNL))
-    _nl_socket_free = _none_proto(('nl_handle_destroy', LIBNL))
-
-    def _alloc_cache(allocator, sock):
-        cache = allocator(sock)
-        if cache is None:
-            raise IOError(get_errno(), 'Failed to allocate the cache')
-        return cache
+_nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', LIBNL))
+_nl_socket_free = _none_proto(('nl_socket_free', LIBNL))
 
 _nl_connect = CFUNCTYPE(c_int, c_void_p, c_int)(('nl_connect', LIBNL))
 _nl_geterror = CFUNCTYPE(c_char_p)(('nl_geterror', LIBNL))

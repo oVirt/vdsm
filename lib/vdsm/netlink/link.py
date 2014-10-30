@@ -24,7 +24,7 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import LIBNL, LIBNL_ROUTE, _nl_geterror, _pool
+from . import LIBNL_ROUTE, _nl_geterror, _pool
 from . import _addr_to_str, CHARBUFFSIZE
 
 
@@ -61,13 +61,9 @@ def _link_info(cache, link):
     info['qdisc'] = _rtnl_link_get_qdisc(link)
     info['state'] = _link_state(link)
 
-    # libnl-1 has a bug when getting type information.
-    # https://github.com/tgraf/libnl-1.1-stable/issues/1
-    # TODO: Add for libnl1 if the bug is fixed
-    if LIBNL != LIBNL_ROUTE:
-        link_type = _rtnl_link_get_type(link)
-        if link_type is not None:
-            info['type'] = link_type
+    link_type = _rtnl_link_get_type(link)
+    if link_type is not None:
+        info['type'] = link_type
 
     underlying_device_index = _rtnl_link_get_link(link)
     if underlying_device_index > 0:
@@ -102,32 +98,28 @@ def _link_state(link):
 # This helps ctypes know the calling conventions it should use to communicate
 # with the binary interface of libnl and which types it should allocate and
 # cast. Without it ctypes fails when not running on the main thread.
-if LIBNL != LIBNL_ROUTE:
-    _link_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)(
-        ('rtnl_link_alloc_cache', LIBNL_ROUTE))
-    _link_is_vlan = _int_proto(('rtnl_link_is_vlan', LIBNL_ROUTE))
-    _vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL_ROUTE))
-    _rtnl_link_get_type = _char_proto(('rtnl_link_get_type', LIBNL_ROUTE))
+_link_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)(
+    ('rtnl_link_alloc_cache', LIBNL_ROUTE))
+_link_is_vlan = _int_proto(('rtnl_link_is_vlan', LIBNL_ROUTE))
+_vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL_ROUTE))
+_rtnl_link_get_type = _char_proto(('rtnl_link_get_type', LIBNL_ROUTE))
 
-    def _rtnl_link_alloc_cache(sock):
-        """Wraps the new link alloc cache to expose the libnl1 signature"""
-        cache = c_void_p()
-        err = _link_alloc_cache(sock, AF_UNSPEC, byref(cache))
-        if err:
-            raise IOError(-err, _nl_geterror())
-        return cache
 
-    def _rtnl_link_vlan_get_id(link):
-        """Wraps the new vlan id retrieval to expose the libnl1 signature"""
-        if _link_is_vlan(link):
-            return _vlan_get_id(link)
-        else:
-            return -1
-else:
-    from . import _alloc_cache
-    _link_alloc_cache = _void_proto(('rtnl_link_alloc_cache', LIBNL_ROUTE))
-    _rtnl_link_alloc_cache = partial(_alloc_cache, _link_alloc_cache)
-    _rtnl_link_vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL_ROUTE))
+def _rtnl_link_alloc_cache(sock):
+    """Wraps the new link alloc cache to expose the libnl1 signature"""
+    cache = c_void_p()
+    err = _link_alloc_cache(sock, AF_UNSPEC, byref(cache))
+    if err:
+        raise IOError(-err, _nl_geterror())
+    return cache
+
+
+def _rtnl_link_vlan_get_id(link):
+    """Wraps the new vlan id retrieval to expose the libnl1 signature"""
+    if _link_is_vlan(link):
+        return _vlan_get_id(link)
+    else:
+        return -1
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 
