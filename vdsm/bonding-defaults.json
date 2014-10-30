@@ -7,6 +7,10 @@
         "all_slaves_active": [
             "0"
         ],
+        "arp_all_targets": [
+            "any",
+            "0"
+        ],
         "arp_interval": [
             "0"
         ],
@@ -25,6 +29,9 @@
             "slow",
             "0"
         ],
+        "lp_interval": [
+            "1"
+        ],
         "miimon": [
             "0"
         ],
@@ -41,11 +48,17 @@
         "num_unsol_na": [
             "1"
         ],
+        "packets_per_slave": [
+            "1"
+        ],
         "primary_reselect": [
             "always",
             "0"
         ],
         "resend_igmp": [
+            "1"
+        ],
+        "tlb_dynamic_lb": [
             "1"
         ],
         "updelay": [
@@ -67,6 +80,10 @@
         "all_slaves_active": [
             "0"
         ],
+        "arp_all_targets": [
+            "any",
+            "0"
+        ],
         "arp_interval": [
             "0"
         ],
@@ -85,6 +102,9 @@
             "slow",
             "0"
         ],
+        "lp_interval": [
+            "1"
+        ],
         "miimon": [
             "0"
         ],
@@ -101,11 +121,17 @@
         "num_unsol_na": [
             "1"
         ],
+        "packets_per_slave": [
+            "1"
+        ],
         "primary_reselect": [
             "always",
             "0"
         ],
         "resend_igmp": [
+            "1"
+        ],
+        "tlb_dynamic_lb": [
             "1"
         ],
         "updelay": [
@@ -127,6 +153,10 @@
         "all_slaves_active": [
             "0"
         ],
+        "arp_all_targets": [
+            "any",
+            "0"
+        ],
         "arp_interval": [
             "0"
         ],
@@ -145,6 +175,9 @@
             "slow",
             "0"
         ],
+        "lp_interval": [
+            "1"
+        ],
         "miimon": [
             "0"
         ],
@@ -161,11 +194,17 @@
         "num_unsol_na": [
             "1"
         ],
+        "packets_per_slave": [
+            "1"
+        ],
         "primary_reselect": [
             "always",
             "0"
         ],
         "resend_igmp": [
+            "1"
+        ],
+        "tlb_dynamic_lb": [
             "1"
         ],
         "updelay": [
@@ -187,6 +226,10 @@
         "all_slaves_active": [
             "0"
         ],
+        "arp_all_targets": [
+            "any",
+            "0"
+        ],
         "arp_interval": [
             "0"
         ],
@@ -205,6 +248,9 @@
             "slow",
             "0"
         ],
+        "lp_interval": [
+            "1"
+        ],
         "miimon": [
             "0"
         ],
@@ -221,11 +267,17 @@
         "num_unsol_na": [
             "1"
         ],
+        "packets_per_slave": [
+            "1"
+        ],
         "primary_reselect": [
             "always",
             "0"
         ],
         "resend_igmp": [
+            "1"
+        ],
+        "tlb_dynamic_lb": [
             "1"
         ],
         "updelay": [
@@ -247,6 +299,10 @@
         "all_slaves_active": [
             "0"
         ],
+        "arp_all_targets": [
+            "any",
+            "0"
+        ],
         "arp_interval": [
             "0"
         ],
@@ -265,6 +321,9 @@
             "slow",
             "0"
         ],
+        "lp_interval": [
+            "1"
+        ],
         "miimon": [
             "0"
         ],
@@ -281,11 +340,17 @@
         "num_unsol_na": [
             "1"
         ],
+        "packets_per_slave": [
+            "1"
+        ],
         "primary_reselect": [
             "always",
             "0"
         ],
         "resend_igmp": [
+            "1"
+        ],
+        "tlb_dynamic_lb": [
             "1"
         ],
         "updelay": [
@@ -307,6 +372,10 @@
         "all_slaves_active": [
             "0"
         ],
+        "arp_all_targets": [
+            "any",
+            "0"
+        ],
         "arp_interval": [
             "0"
         ],
@@ -325,6 +394,9 @@
             "slow",
             "0"
         ],
+        "lp_interval": [
+            "1"
+        ],
         "miimon": [
             "0"
         ],
@@ -341,11 +413,17 @@
         "num_unsol_na": [
             "1"
         ],
+        "packets_per_slave": [
+            "1"
+        ],
         "primary_reselect": [
             "always",
             "0"
         ],
         "resend_igmp": [
+            "1"
+        ],
+        "tlb_dynamic_lb": [
             "1"
         ],
         "updelay": [
@@ -367,6 +445,10 @@
         "all_slaves_active": [
             "0"
         ],
+        "arp_all_targets": [
+            "any",
+            "0"
+        ],
         "arp_interval": [
             "0"
         ],
@@ -385,6 +467,9 @@
             "slow",
             "0"
         ],
+        "lp_interval": [
+            "1"
+        ],
         "miimon": [
             "0"
         ],
@@ -401,11 +486,17 @@
         "num_unsol_na": [
             "1"
         ],
+        "packets_per_slave": [
+            "1"
+        ],
         "primary_reselect": [
             "always",
             "0"
         ],
         "resend_igmp": [
+            "1"
+        ],
+        "tlb_dynamic_lb": [
             "1"
         ],
         "updelay": [
