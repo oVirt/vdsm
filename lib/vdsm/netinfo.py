@@ -246,19 +246,17 @@ def _ibHackedSpeed(nicName):
 
 
 def nicSpeed(nicName):
-    """Returns the nic speed if it is a legal value and nicName refers to a
-    nic, 0 otherwise."""
+    """Returns the nic speed if it is a legal value, nicName refers to a
+    nic and nic is UP, 0 otherwise."""
     try:
-        # if the device is not up we must report 0
-        if operstate(nicName) != OPERSTATE_UP:
-            return 0
-        with open('/sys/class/net/%s/speed' % nicName) as speedFile:
-            s = int(speedFile.read())
-        # the device may have been disabled/downed after checking
-        # so we validate the return value as sysfs may return
-        # special values to indicate the device is down/disabled
-        if s not in (2 ** 16 - 1, 2 ** 32 - 1) or s > 0:
-            return s
+        if operstate(nicName) == OPERSTATE_UP:
+            with open('/sys/class/net/%s/speed' % nicName) as speedFile:
+                s = int(speedFile.read())
+            # the device may have been disabled/downed after checking
+            # so we validate the return value as sysfs may return
+            # special values to indicate the device is down/disabled
+            if s not in (2 ** 16 - 1, 2 ** 32 - 1) and s > 0:
+                return s
     except IOError as ose:
         if ose.errno == errno.EINVAL:
             return _ibHackedSpeed(nicName)

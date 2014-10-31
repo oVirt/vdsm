@@ -18,9 +18,11 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import __builtin__
 import os
 from datetime import datetime
 from functools import partial
+import io
 import time
 
 import ethtool
@@ -29,7 +31,7 @@ from vdsm import ipwrapper
 from vdsm import netconfpersistence
 from vdsm import netinfo
 from vdsm.netinfo import (getBootProtocol, getDhclientIfaces, BONDING_MASTERS,
-                          BONDING_OPT, _getBondingOptions)
+                          BONDING_OPT, _getBondingOptions, OPERSTATE_UP)
 from vdsm.tool.dump_bonding_defaults import _random_iface_name
 
 from functional import dummy, veth
@@ -92,6 +94,23 @@ class TestNetinfo(TestCaseBase):
             'fe80::be30:5bbf:fec5:8446']
         for s, addr in zip(inputs, ip):
             self.assertEqual(addr, netinfo.ipv6StrToAddress(s))
+
+    def testValidNicSpeed(self):
+        values = ((0,           OPERSTATE_UP, 0),
+                  (-10,         OPERSTATE_UP, 0),
+                  (2 ** 16 - 1, OPERSTATE_UP, 0),
+                  (2 ** 32 - 1, OPERSTATE_UP, 0),
+                  (123,         OPERSTATE_UP, 123),
+                  ('',          OPERSTATE_UP, 0),
+                  ('',          'unknown',    0),
+                  (123,         'unknown',    0))
+
+        for passed, operstate, expected in values:
+            with MonkeyPatchScope([(__builtin__, 'open',
+                                    lambda x: io.BytesIO(str(passed))),
+                                   (netinfo, 'operstate',
+                                    lambda x: operstate)]):
+                self.assertEqual(netinfo.nicSpeed('fake_nic'), expected)
 
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
