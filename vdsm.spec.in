@@ -278,9 +278,6 @@ Requires(post): hostname
 Requires(post): /bin/hostname
 %endif
 
-Requires(post): policycoreutils-python
-Requires(preun): policycoreutils-python
-
 %description
 The VDSM service is required by a Virtualization Manager to manage the
 Linux hosts. VDSM manages and monitors the host's storage, memory and
