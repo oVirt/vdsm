@@ -1128,3 +1128,23 @@ GLUSTER_SNAPSHOT_RESTORE = {
     'volumeName': 'snap-vol2',
     'volumeUuid': '8558c40f-1581-414e-89d6-46854376ae3d'
 }
+
+GLUSTER_SNAPSHOT_CONFIG_LIST = {
+    'volume': {
+        'snap-vol': {
+            'snap-max-hard-limit': '256',
+            'snap-max-soft-limit': '232',
+            'effective-hard-limit': '255'
+        },
+        'snap-vol2': {
+            'snap-max-hard-limit': '254',
+            'snap-max-soft-limit': '231',
+            'effective-hard-limit': '254'
+        }
+    },
+    'system': {
+        'snap-max-hard-limit': '255',
+        'auto-delete': 'disable',
+        'snap-max-soft-limit': '91%'
+    }
+}

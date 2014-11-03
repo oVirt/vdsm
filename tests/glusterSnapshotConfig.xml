@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <snapConfig>
+    <systemConfig>
+      <hardLimit>255</hardLimit>
+      <softLimit>91%</softLimit>
+      <autoDelete>disable</autoDelete>
+    </systemConfig>
+    <volumeConfig>
+      <volume>
+        <name>snap-vol</name>
+        <hardLimit>256</hardLimit>
+        <effectiveHardLimit>255</effectiveHardLimit>
+        <softLimit>232</softLimit>
+      </volume>
+      <volume>
+        <name>snap-vol2</name>
+        <hardLimit>254</hardLimit>
+        <effectiveHardLimit>254</effectiveHardLimit>
+        <softLimit>231</softLimit>
+      </volume>
+    </volumeConfig>
+  </snapConfig>
+</cliOutput>

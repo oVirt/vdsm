@@ -248,6 +248,13 @@ class GlusterVolume(GlusterApiBase):
     def snapshotDeleteAll(self, volumeName):
         return self._gluster.volumeSnapshotDeleteAll(volumeName)
 
+    def snapshotConfigSet(self, volumeName, optionName, optionValue):
+        return self._gluster.volumeSnapshotConfigSet(volumeName, optionName,
+                                                     optionValue)
+
+    def snapshotConfigList(self, volumeName):
+        return self._gluster.volumeSnapshotConfigList(volumeName)
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):
@@ -264,3 +271,9 @@ class GlusterSnapshot(GlusterApiBase):
 
     def restore(self, snapName):
         return self._gluster.snapshotRestore(snapName)
+
+    def configList(self):
+        return self._gluster.snapshotConfigList()
+
+    def configSet(self, optionName, optionValue):
+        return self._gluster.snapshotConfigSet(optionName, optionValue)

@@ -445,6 +445,45 @@ class GlusterApi(object):
         status = self.svdsmProxy.glusterSnapshotRestore(snapName)
         return {'snapRestore': status}
 
+    @exportAsVerb
+    def snapshotConfigList(self, options=None):
+        try:
+            status = self.svdsmProxy.glusterSnapshotConfig()
+        except ge.GlusterSnapshotConfigFailedException as e:
+            raise ge.GlusterSnapshotConfigGetFailedException(rc=e.rc,
+                                                             err=e.err)
+        return {'snapshotConfig': status}
+
+    @exportAsVerb
+    def volumeSnapshotConfigList(self, volumeName, options=None):
+        try:
+            status = self.svdsmProxy.glusterSnapshotConfig(
+                volumeName=volumeName)
+        except ge.GlusterSnapshotConfigFailedException as e:
+            raise ge.GlusterSnapshotConfigGetFailedException(rc=e.rc,
+                                                             err=e.err)
+        return {'snapshotConfig': status}
+
+    @exportAsVerb
+    def volumeSnapshotConfigSet(self, volumeName, optionName, optionValue,
+                                options=None):
+        try:
+            self.svdsmProxy.glusterSnapshotConfig(volumeName=volumeName,
+                                                  optionName=optionName,
+                                                  optionValue=optionValue)
+        except ge.GlusterSnapshotConfigFailedException as e:
+            raise ge.GlusterSnapshotConfigSetFailedException(rc=e.rc,
+                                                             err=e.err)
+
+    @exportAsVerb
+    def snapshotConfigSet(self, optionName, optionValue, options=None):
+        try:
+            self.svdsmProxy.glusterSnapshotConfig(optionName=optionName,
+                                                  optionValue=optionValue)
+        except ge.GlusterSnapshotConfigFailedException as e:
+            raise ge.GlusterSnapshotConfigSetFailedException(rc=e.rc,
+                                                             err=e.err)
+
 
 def getGlusterMethods(gluster):
     l = []

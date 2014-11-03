@@ -1729,3 +1729,121 @@
 {'command': {'class': 'GlusterSnapshot', 'name': 'restore'},
  'data': {'snapName': 'str'},
  'returns': 'SnapRestoreDetail'}
+
+##
+#
+# @SystemSnapshotConfig:
+#
+# @snap-max-hard-limit: Snapshot max hard limit
+#
+# @snap-max-soft-limit: Soft limit percentage of snapshot max limit
+#
+# @auto-delete:         Auto delete enabled/disabled
+#
+# @Since: 4.17.0
+##
+{'type': 'SystemSnapshotConfig',
+ 'data': {'snap-max-hard-limit': 'str', 'snap-max-soft-limit': 'str',
+          'auto-delete': 'str'}}
+
+##
+#
+# @VolumeSnapConfig:
+#
+# @snap-max-hard-limit:  Snapshot max hard limit
+#
+# @effective-hard-limit: Effective snapshot Hard limit for that volume
+#
+# @snap-max-soft-limit:  Snapshot soft limit for that volume
+#
+# @Since: 4.17.0
+##
+{'type': 'VolumeSnapConfig',
+ 'data': {'snap-max-hard-limit': 'str', 'effective-hard-limit': 'str',
+          'snap-max-soft-limit': 'str'}}
+
+##
+#
+# @VolumeSnapshotConfigMap:
+#
+# A mapping of snapshot config indexed by volume name.
+#
+# @Since: 4.17.0
+##
+{'map': 'VolumeSnapshotConfigMap',
+ 'key': 'str', 'value': 'VolumeSnapConfig'}
+
+##
+# @SnapConfigDetail
+#
+# Snapshot configuration details
+#
+# @system: System level snapshot configuration
+#
+# @volume: Volume specific snapshot configuration
+#
+# Since: 4.17.0
+##
+{'type': 'SnapConfigDetail',
+ 'data': {'system': 'SystemSnapshotConfig',
+          'volume': 'VolumeSnapshotConfigMap'}}
+
+##
+# @GlusterSnapshot.configList:
+#
+# get the config values of snapshot
+#
+# Returns:
+# current configuration related to system and all volumes
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterSnapshot', 'name': 'configList'},
+ 'data': {},
+ 'returns': 'SnapConfigDetail'}
+
+##
+# @GlusterVolume.snapshotConfigList:
+#
+# get the config values of snapshot for a volume
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# current configuration related a gluster volume
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'snapshotConfigList'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'SnapConfigDetail'}
+
+##
+# @GlusterSnapshot.configSet:
+#
+# set gluster volume snapshot config
+#
+# @optionName:   Option name to be set
+#
+# @optionValue:  Value of the configration option
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterSnapshot', 'name': 'configSet'},
+ 'data': {'optionName': 'str', 'optionValue': 'str'}}
+
+##
+# @GlusterVolume.snapshotConfigSet:
+#
+# set gluster volume snapshot config
+#
+# @volumeName:     Gluster volume name
+#
+# @optionName:     Option name to be set
+#
+# @optionValue:    Value of the configration option
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'snapshotConfigSet'},
+ 'data': {'volumeName': 'str', 'optionName': 'str', 'optionValue': 'str'}}

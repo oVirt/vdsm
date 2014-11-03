@@ -1335,3 +1335,55 @@ def snapshotRestore(snapName):
         return _parseRestoredSnapshot(xmltree)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+def _parseSnapshotConfigList(tree):
+    """
+    returns {'system':{'snap-max-hard-limit': 'hardlimit',
+                       'snap-max-soft-limit': 'softLimit',
+                       'auto-delete': 'enable/disable'},
+             'volume':{'name' :
+                          {'snap-max-hard-limit: 'hardlimit',
+                           'effective-hard-limit: 'EffectiveHardlimit',
+                           'snap-max-soft-limit': 'softLimit'}
+                      }
+            }
+    """
+    systemConfig = {}
+    systemConfig['snap-max-hard-limit'] = tree.find(
+        'snapConfig/systemConfig/hardLimit').text
+    systemConfig['snap-max-soft-limit'] = tree.find(
+        'snapConfig/systemConfig/softLimit').text
+    systemConfig['auto-delete'] = tree.find(
+        'snapConfig/systemConfig/autoDelete').text
+
+    volumeConfig = {}
+    for el in tree.findall('snapConfig/volumeConfig/volume'):
+        config = {}
+        volumeName = el.find('name').text
+        config['snap-max-hard-limit'] = el.find('hardLimit').text
+        config['effective-hard-limit'] = el.find('effectiveHardLimit').text
+        config['snap-max-soft-limit'] = el.find('softLimit').text
+        volumeConfig[volumeName] = config
+
+    return {'system': systemConfig, 'volume': volumeConfig}
+
+
+@makePublic
+def snapshotConfig(volumeName=None, optionName=None, optionValue=None):
+    command = _getGlusterSnapshotCmd() + ["config"]
+    if volumeName:
+        command.append(volumeName)
+    if optionName and optionValue:
+        command += [optionName, optionValue]
+
+    try:
+        xmltree = _execGlusterXml(command)
+        if optionName and optionValue:
+            return
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterSnapshotConfigFailedException(rc=e.rc, err=e.err)
+    try:
+        return _parseSnapshotConfigList(xmltree)
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])

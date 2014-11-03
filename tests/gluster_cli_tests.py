@@ -1157,3 +1157,10 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         status = gcli._parseRestoredSnapshot(tree)
         self.assertEquals(status, glusterTestData.GLUSTER_SNAPSHOT_RESTORE)
+
+    def test_parseSnapshotConfigList(self):
+        with open("glusterSnapshotConfig.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        status = gcli._parseSnapshotConfigList(tree)
+        self.assertEquals(status, glusterTestData.GLUSTER_SNAPSHOT_CONFIG_LIST)
