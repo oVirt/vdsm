@@ -20,6 +20,8 @@
 
 from testlib import VdsmTestCase as TestCaseBase
 import storage.outOfProcess as oop
+import gc
+import logging
 import os
 import tempfile
 import time
@@ -30,11 +32,14 @@ from vdsm.config import config
 
 
 class OopWrapperTests(TestCaseBase):
-    IOPROC_IDLE_TIME = config.getint("irs", "max_ioprocess_idle_time")
 
     def setUp(self):
         oop.setDefaultImpl(oop.IOPROC)
         self.pool = oop.getGlobalProcPool()
+
+    def tearDown(self):
+        self.pool._ioproc.close()
+        oop._refProcPool = {}
 
     def testSamePoolName(self):
         poolA = "A"
@@ -59,23 +64,27 @@ class OopWrapperTests(TestCaseBase):
         self.assertNotEquals(pids[0], pids[1])
 
     def testAmountOfInstancesPerPoolName(self):
-        poolA = "A"
-        poolB = "B"
-        wrapper = ref(oop.getProcessPool(poolA))
-        ioproc = ref(oop.getProcessPool(poolA)._ioproc)
-        oop.getProcessPool(poolA)
-        time.sleep(self.IOPROC_IDLE_TIME + 1)
-        oop.getProcessPool(poolB)
-        self.assertEquals(wrapper(), None)
-        import gc
-        gc.collect()
-        time.sleep(1)
-        gc.collect()
-        print "GARBAGE: ", gc.garbage
-        refs = gc.get_referrers(ioproc())
-        print refs
-        print gc.get_referrers(*refs)
-        self.assertEquals(ioproc(), None)
+        idle = oop.IOPROC_IDLE_TIME
+        try:
+            oop.IOPROC_IDLE_TIME = 5
+            poolA = "A"
+            poolB = "B"
+            wrapper = ref(oop.getProcessPool(poolA))
+            ioproc = ref(oop.getProcessPool(poolA)._ioproc)
+            oop.getProcessPool(poolA)
+            time.sleep(oop.IOPROC_IDLE_TIME + 1)
+            oop.getProcessPool(poolB)
+            self.assertEquals(wrapper(), None)
+            gc.collect()
+            time.sleep(1)
+            gc.collect()
+            logging.info("GARBAGE: %s", gc.garbage)
+            refs = gc.get_referrers(ioproc())
+            logging.info(refs)
+            logging.info(gc.get_referrers(*refs))
+            self.assertEquals(ioproc(), None)
+        finally:
+            oop.IOPROC_IDLE_TIME = idle
 
     def testEcho(self):
         data = """Censorship always defeats it own purpose, for it creates in
