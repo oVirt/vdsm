@@ -613,6 +613,41 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeSnapshotConfigList(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeSnapshotConfigList(volumeName)
+
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterSnapshotConfigList(self, args):
+        status = self.s.glusterSnapshotConfigList()
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterVolumeSnapshotConfigSet(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+        optionName = params.get('optionName', '')
+        optionValue = params.get('optionValue', '')
+
+        status = self.s.glusterVolumeSnapshotConfigSet(volumeName,
+                                                       optionName,
+                                                       optionValue)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterSnapshotConfigSet(self, args):
+        params = self._eqSplit(args)
+        optionName = params.get('optionName', '')
+        optionValue = params.get('optionValue', '')
+
+        status = self.s.glusterSnapshotConfigSet(optionName, optionValue)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1021,6 +1056,18 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume name>',
               'delete all snapshots for given volume'
               )),
+         'glusterVolumeSnapshotConfigList': (
+             serv.do_glusterVolumeSnapshotConfigList,
+             ('volumeName=<volume_name>',
+              'get gluster volume snapshot configuration'
+              )),
+         'glusterVolumeSnapshotConfigSet': (
+             serv.do_glusterVolumeSnapshotConfigSet,
+             ('volumeName=<volume_name>'
+              'optionName=<option_name>'
+              'optionValue=<option_value>',
+              'Set gluster snapshot configuration at volume leval'
+              )),
          'glusterSnapshotDelete': (
              serv.do_glusterSnapshotDelete,
              ('snapName=<snap_name>',
@@ -1041,5 +1088,16 @@ def getGlusterCmdDict(serv):
              serv.do_glusterSnapshotRestore,
              ('snapName=snap_name',
               'restore snapshot'
+              )),
+         'glusterSnapshotConfigList': (
+             serv.do_glusterSnapshotConfigList,
+             ('',
+              'get gluster volume snapshot configuration'
+              )),
+         'glusterSnapshotConfigSet': (
+             serv.do_glusterSnapshotConfigSet,
+             ('optionName=<option_name>'
+              'optionValue=<option_value>',
+              'Set gluster snapshot configuration at cluster leval'
               ))
          }

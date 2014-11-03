@@ -575,3 +575,21 @@ class GlusterSnapshotDeactivateFailedException(GlusterSnapshotException):
 class GlusterSnapshotRestoreFailedException(GlusterSnapshotException):
     code = 4705
     message = "Snapshot restore failed"
+
+
+class GlusterSnapshotConfigFailedException(
+        GlusterSnapshotException):
+    code = 4706
+    message = "Snapshot config failed"
+
+
+class GlusterSnapshotConfigSetFailedException(
+        GlusterSnapshotException):
+    code = 4707
+    message = "Snapshot config set failed"
+
+
+class GlusterSnapshotConfigGetFailedException(
+        GlusterSnapshotException):
+    code = 4708
+    message = "Snapshot config get failed"
