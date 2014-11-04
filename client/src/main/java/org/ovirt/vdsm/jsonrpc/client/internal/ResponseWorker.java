@@ -9,6 +9,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcClient;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
@@ -23,8 +24,13 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorFactory;
  */
 public final class ResponseWorker extends Thread {
     private final LinkedBlockingQueue<MessageContext> queue;
+    private final static ObjectMapper MAPPER = new ObjectMapper();
     private ResponseTracker tracker;
     private static Log log = LogFactory.getLog(ResponseWorker.class);
+    static {
+        MAPPER.configure(JsonParser.Feature.INTERN_FIELD_NAMES, false);
+        MAPPER.configure(JsonParser.Feature.CANONICALIZE_FIELD_NAMES, false);
+    }
 
     public ResponseWorker() {
         this.queue = new LinkedBlockingQueue<>();
@@ -59,7 +65,6 @@ public final class ResponseWorker extends Thread {
 
     public void run() {
         MessageContext context = null;
-        ObjectMapper mapper = new ObjectMapper();
         while (true) {
             try {
                 context = this.queue.take();
@@ -69,7 +74,7 @@ public final class ResponseWorker extends Thread {
                 if (log.isDebugEnabled()) {
                     log.debug("Message received: " + new String(context.getMessage(), UTF8));
                 }
-                JsonNode rootNode = mapper.readTree(context.getMessage());
+                JsonNode rootNode = MAPPER.readTree(context.getMessage());
                 if (!rootNode.isArray()) {
                     processIncomingObject(context.getClient(), rootNode);
                 } else {
