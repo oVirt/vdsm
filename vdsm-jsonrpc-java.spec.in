@@ -53,8 +53,18 @@ BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
 
-BuildRequires:	java-devel
-Requires:	java
+%if 0%{?rhel}
+%if 0%{?rhel} >= 7
+BuildRequires:	java-devel >= 1.7.0
+%else
+BuildRequires:	java7-devel
+%endif
+%endif
+%if 0%{?fedora}
+BuildRequires:	java-devel >= 1.7.0
+%endif
+
+Requires:	java-1.7.0-openjdk
 
 
 %if %{_use_maven}
@@ -76,7 +86,6 @@ Requires:	apache-commons-logging
 Requires:	jackson
 %else
 BuildRequires:	jakarta-commons-logging
-BuildRequires:	java-1.7.0-openjdk-devel >= 1:1.7
 BuildRequires:	junit4
 # Package not in rhel. it is only build time, at this point (until rhel-7) we can accept that
 # BuildRequires:	mockito
