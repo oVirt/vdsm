@@ -1752,8 +1752,7 @@ class Vm(object):
     def _saveStateInternal(self):
         if self._destroyed:
             return
-        with self._confLock:
-            toSave = deepcopy(self.status())
+        toSave = self.status()
         toSave['startTime'] = self._startTime
         if self.lastStatus != vmstatus.DOWN and self._vmStats:
             toSave['username'] = self.guestAgent.guestInfo['username']
@@ -2210,11 +2209,12 @@ class Vm(object):
     def status(self):
         # used by API.Global.getVMList
         self.conf['status'] = self.lastStatus
-        # Filter out any internal keys
-        status = dict((k, v) for k, v in self.conf.iteritems()
-                      if not k.startswith("_"))
-        status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
-        return status
+        with self._confLock:
+            # Filter out any internal keys
+            status = dict((k, v) for k, v in self.conf.iteritems()
+                          if not k.startswith("_"))
+            status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
+            return deepcopy(status)
 
     def getStats(self):
         """
