@@ -209,7 +209,7 @@ def nonChangingOperstate(device):
 def _cleanup_qos_definition(qos):
     for key, value in qos.items():
         for curve, attrs in value.items():
-            if float(attrs.get('m1')) == 0.0:
+            if attrs.get('m1') == 0:
                 del attrs['m1']
             if attrs.get('d') == 0:
                 del attrs['d']
@@ -2105,9 +2105,9 @@ class NetworkTest(TestCaseBase):
         hostQos = {
             'out': {
                 'ls': {
-                    'm1': 4.0 * 1000 ** 2,  # 4Mbit/s
+                    'm1': 4 * 1000 ** 2,  # 4Mbit/s
                     'd': 100 * 1000,  # 100 microseconds
-                    'm2': 3.0 * 1000 ** 2},  # 3Mbit/s
+                    'm2': 3 * 1000 ** 2},  # 3Mbit/s
                 'ul': {
                     'm2': 8 * 1000 ** 2}}}  # 8Mbit/s
         with dummyIf(1) as nics:

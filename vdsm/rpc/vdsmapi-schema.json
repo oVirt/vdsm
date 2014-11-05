@@ -2676,7 +2676,7 @@
 # Since: 4.17.0
 ##
 {'type': 'BandwidthCurve',
- 'data': {'*m1': 'float', '*d': 'uint', 'm2': 'float'}}
+ 'data': {'*m1': 'int', '*d': 'uint', 'm2': 'int'}}
 
 
 ##
