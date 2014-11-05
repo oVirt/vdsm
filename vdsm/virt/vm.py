@@ -1395,7 +1395,14 @@ class Vm(object):
         # For BC we need to save previous behaviour for old type parameters.
         # The new/old type parameter will be distinguished
         # by existence/absence of the 'devices' key
-        if self.conf.get('devices') is None:
+
+        try:
+            # while this code is running, Vm is queryable for status(),
+            # thus we must fix devices in an atomic way, hence the deepcopy
+            with self._confLock:
+                devConf = deepcopy(self.conf['devices'])
+        except KeyError:
+            # (very) old Engines do not send device configuration
             devices[DISK_DEVICES] = self.getConfDrives()
             devices[NIC_DEVICES] = self.getConfNetworkInterfaces()
             devices[SOUND_DEVICES] = self.getConfSound()
@@ -1403,7 +1410,7 @@ class Vm(object):
             devices[GRAPHICS_DEVICES] = self.getConfGraphics()
             devices[CONTROLLER_DEVICES] = self.getConfController()
         else:
-            for dev in self.conf.get('devices'):
+            for dev in devConf:
                 try:
                     devices[dev['type']].append(dev)
                 except KeyError:
