@@ -410,14 +410,21 @@ class VmStatsThread(AdvancedStatsThread):
                 balloon_target = dev.get('target', max_mem)
                 break
         else:
-            balloon_target = 0
+            balloon_target = None
 
-        stats['balloonInfo'] = {
-            'balloon_max': str(max_mem),
-            'balloon_min': str(
-                int(self._vm.conf.get('memGuaranteedSize', '0')) * 1024),
-            'balloon_cur': str(sample) if sample is not None else '0',
-            'balloon_target': str(balloon_target)}
+        stats['balloonInfo'] = {}
+
+        # Do not return any balloon status info before we get all data
+        # MOM will ignore VMs with missing balloon information instead
+        # using incomplete data and computing wrong balloon targets
+        if balloon_target is not None and sample is not None:
+            stats['balloonInfo'].update({
+                'balloon_max': str(max_mem),
+                'balloon_min': str(
+                    int(self._vm.conf.get('memGuaranteedSize', '0')) * 1024),
+                'balloon_cur': str(sample),
+                'balloon_target': str(balloon_target)
+            })
 
     def _getCpuTuneInfo(self, stats):
 
