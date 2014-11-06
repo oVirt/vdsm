@@ -144,23 +144,6 @@ class TestConfigNetwork(TestCaseBase):
         self._addNetworkWithExc('test', dict(nics=['eth6'], _netinfo=fakeInfo),
                                 errors.ERR_USED_NIC)
 
-        # Test for adding a new VLANed bridged network when a non-VLANed
-        # bridged network exists
-        self._addNetworkWithExc('test', dict(vlan='2', bonding='bond00',
-                                nics=nics, _netinfo=fakeInfo),
-                                errors.ERR_BAD_PARAMS)
-
-        # Test for adding a new VLANed bridgeless network when a non-VLANed
-        # bridged network exists
-        self._addNetworkWithExc('test', dict(vlan='2', bonding='bond00',
-                                nics=nics, bridged=False, _netinfo=fakeInfo),
-                                errors.ERR_BAD_PARAMS)
-
-        # Test for adding a new VLANed bridged network when the interface is in
-        # use by any type of networks
-        self._addNetworkWithExc('test', dict(nics=['eth7'], _netinfo=fakeInfo),
-                                errors.ERR_BAD_PARAMS)
-
         # Test for adding a new non-VLANed bridgeless network when a non-VLANed
         # bridgeless network exists
         self._addNetworkWithExc('test', dict(nics=['eth8'], bridged=False,
