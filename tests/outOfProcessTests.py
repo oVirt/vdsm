@@ -28,8 +28,6 @@ import time
 import re
 from weakref import ref
 
-from vdsm.config import config
-
 
 class OopWrapperTests(TestCaseBase):
 
