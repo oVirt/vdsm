@@ -6138,21 +6138,22 @@
 ##
 # @BalloonInfo:
 #
-# Guest memory balloon information.
+# Guest memory balloon information. Values are present only when the
+# balloon is enabled and ready.
 #
-# @balloon_max:  The maximum amount of memory available to the guest (in KiB)
+# @balloon_max:  #optional The maximum amount of memory available to the guest (in KiB)
 #
-# @balloon_cur:  The current amount of memory available to the guest (in KiB)
+# @balloon_cur: #optional The current amount of memory available to the guest (in KiB)
 #
-# @balloon_min:  The minimum amount of memory guaranteed to the guest (in KiB)
+# @balloon_min:  #optional The minimum amount of memory guaranteed to the guest (in KiB)
 #
-# @balloon_target:  The amount of memory requested (in KiB)
+# @balloon_target: #optional The amount of memory requested (in KiB)
 #
 # Since: 4.10.0
 ##
 {'type': 'BalloonInfo',
- 'data': {'balloon_max': 'str', 'balloon_cur': 'str', 'balloon_min': 'str',
-          'balloon_target': 'str'}}
+ 'data': {'*balloon_max': 'str', '*balloon_cur': 'str', '*balloon_min': 'str',
+          '*balloon_target': 'str'}}
 
 ##
 # @VmDisplayInfo:

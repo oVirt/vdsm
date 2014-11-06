@@ -1520,10 +1520,9 @@ class TestVmStatsThread(TestCaseBase):
         with FakeVM(self.VM_PARAMS, self.DEV_BALLOON) as fake:
             self.assertEqual(fake._dom, None)
             mock_stats_thread = vm.VmStatsThread(fake)
-            res = {}
-            mock_stats_thread._getBalloonStats(res)
+            res = mock_stats_thread.get()
             self.assertIn('balloonInfo', res)
-            self.assertIn('balloon_cur', res['balloonInfo'])
+            self.assertNotIn('balloon_cur', res['balloonInfo'])
 
     def testGetStatsDomInfoFail(self):
         # bz1073478 - extra case
@@ -1531,10 +1530,8 @@ class TestVmStatsThread(TestCaseBase):
             fake._dom = FakeDomain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN)
             mock_stats_thread = vm.VmStatsThread(fake)
-            res = {}
-            mock_stats_thread._getBalloonStats(res)
+            res = mock_stats_thread.get()
             self.assertIn('balloonInfo', res)
-            self.assertIn('balloon_cur', res['balloonInfo'])
 
     def testMultipleGraphicDeviceStats(self):
         devices = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
