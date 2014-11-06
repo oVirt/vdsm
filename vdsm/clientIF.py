@@ -377,21 +377,12 @@ class clientIF(object):
 
     def createVm(self, vmParams, vmRecover=False):
         with self.vmContainerLock:
-            self.log.info("vmContainerLock acquired by vm %s",
-                          vmParams['vmId'])
-            try:
-                if not vmRecover:
-                    if vmParams['vmId'] in self.vmContainer:
-                        self.log.warning('vm %s already exists' %
-                                         vmParams['vmId'])
-                        return errCode['exist']
-                vm = Vm(self, vmParams, vmRecover)
-                self.vmContainer[vmParams['vmId']] = vm
-            finally:
-                container_len = len(self.vmContainer)
+            if not vmRecover:
+                if vmParams['vmId'] in self.vmContainer:
+                    return errCode['exist']
+            vm = Vm(self, vmParams, vmRecover)
+            self.vmContainer[vmParams['vmId']] = vm
         vm.run()
-        self.log.debug("Total desktops after creation of %s is %d" %
-                       (vmParams['vmId'], container_len))
         return {'status': doneCode, 'vmList': vm.status()}
 
     @utils.traceback()
