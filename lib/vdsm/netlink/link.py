@@ -66,12 +66,22 @@ def _link_info(link, cache=None):
 
     underlying_device_index = _rtnl_link_get_link(link)
     if underlying_device_index > 0:
-        info['device'] = _link_index_to_name(underlying_device_index,
-                                             cache=cache)
+        info['device_index'] = underlying_device_index
+        try:
+            info['device'] = _link_index_to_name(underlying_device_index,
+                                                 cache=cache)
+        except IOError as err:
+            if err.errno != errno.ENODEV:
+                raise
 
     master_index = _rtnl_link_get_master(link)
     if master_index > 0:
-        info['master'] = _link_index_to_name(master_index, cache=cache)
+        info['master_index'] = master_index
+        try:
+            info['master'] = _link_index_to_name(master_index, cache=cache)
+        except IOError as err:
+            if err.errno != errno.ENODEV:
+                raise
 
     vlanid = _rtnl_link_vlan_get_id(link)
     if vlanid >= 0:

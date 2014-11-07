@@ -18,6 +18,7 @@
 #
 from ctypes import (CFUNCTYPE, byref, c_char, c_int, c_void_p, sizeof)
 from functools import partial
+import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _int_char_proto, _int_proto, _void_proto
@@ -41,14 +42,18 @@ def iter_addrs():
 def _addr_info(addr, link_cache=None):
     """Returns a dictionary with the address information."""
     index = _rtnl_addr_get_ifindex(addr)
-    return {
-        'label': _link_index_to_name(index, cache=link_cache),
-        'index': index,
-        'family': _af_to_str(_rtnl_addr_get_family(addr)),
-        'prefixlen': _rtnl_addr_get_prefixlen(addr),
-        'scope': _scope_to_str(_rtnl_addr_get_scope(addr)),
-        'flags': _addr_flags(addr),
-        'address': _addr_to_str(_rtnl_addr_get_local(addr))}
+    data = {'index': index,
+            'family': _af_to_str(_rtnl_addr_get_family(addr)),
+            'prefixlen': _rtnl_addr_get_prefixlen(addr),
+            'scope': _scope_to_str(_rtnl_addr_get_scope(addr)),
+            'flags': _addr_flags(addr),
+            'address': _addr_to_str(_rtnl_addr_get_local(addr))}
+    try:
+        data['label'] = _link_index_to_name(index, cache=link_cache)
+    except IOError as err:
+        if err.errno != errno.ENODEV:
+            raise
+    return data
 
 
 def _addr_flags(addr):

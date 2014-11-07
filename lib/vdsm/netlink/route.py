@@ -19,6 +19,7 @@
 from ctypes import CFUNCTYPE, c_int, c_void_p, byref
 from functools import partial
 from socket import AF_UNSPEC
+import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_proto, _void_proto
@@ -52,7 +53,12 @@ def _route_info(route, link_cache=None):
         'scope': _scope_to_str(_rtnl_route_get_scope(route))}
     oif_index = _rtnl_route_get_oif(route)
     if oif_index > 0:
-        data['oif'] = _link_index_to_name(oif_index, cache=link_cache)
+        data['oif_index'] = oif_index
+        try:
+            data['oif'] = _link_index_to_name(oif_index, cache=link_cache)
+        except IOError as err:
+            if err.errno != errno.ENODEV:
+                raise
     return data
 
 
