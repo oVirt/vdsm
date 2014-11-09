@@ -371,18 +371,21 @@ def run(confFile, daemonize):
     pidfile = config.get('vars', 'pidfile')
     sleepTime = float(config.get('vars', 'reg_req_interval'))
 
-    loggerConf = config.get('vars', 'logger_conf')
-    logging.config.fileConfig(loggerConf, disable_existing_loggers=False)
-    log = logging.getLogger('')
-
-    _createUpgradeDir(os.path.dirname(config.get('vars', 'upgrade_iso_file')))
-
     try:
         if daemonize:
             createDaemon.createDaemon()
+
+        loggerConf = config.get('vars', 'logger_conf')
+        logging.config.fileConfig(loggerConf, disable_existing_loggers=False)
+        log = logging.getLogger('')
+
+        if daemonize:
             log = logging.getLogger('vdsRegistrator')
         else:
             log.handlers.append(logging.StreamHandler())
+
+        _createUpgradeDir(
+            os.path.dirname(config.get('vars', 'upgrade_iso_file')))
 
         log.info("After daemonize - My pid is %d", os.getpid())
         with open(pidfile, 'w') as f:
@@ -415,10 +418,10 @@ def run(confFile, daemonize):
                 itr,
                 sleepTime+nRandom
             )
+        log.info("Exiting ....")
     finally:
         if pidfile and os.path.exists(pidfile):
             os.unlink(pidfile)
-        log.info("Exiting ....")
 
 
 def usage():
