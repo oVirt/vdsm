@@ -167,11 +167,9 @@ class Configurator(ModuleConfigure):
                     if os.path.isfile(TARGET):
                         oldmod = os.stat(TARGET).st_mode
 
-                    if utils.isOvirtNode():
-                        NodeCfg().unpersist(TARGET)
+                    utils.unpersist(TARGET)
                     shutil.copyfile(packaged, TARGET)
-                    if utils.isOvirtNode():
-                        NodeCfg().persist(TARGET)
+                    utils.persist(TARGET)
 
                     if (oldmod is not None and
                             oldmod != os.stat(TARGET).st_mode):

@@ -26,8 +26,6 @@ import selinux
 import io
 
 from ... import utils
-if utils.isOvirtNode():
-    from ovirt.node.utils.fs import Config as NodeCfg
 
 (
     BEFORE,
@@ -178,11 +176,9 @@ class ConfigFile(object):
                     if self._entries:
                         self._writeEntries(f, oldentries)
 
-                if utils.isOvirtNode():
-                    NodeCfg().unpersist(self._filename)
+                utils.unpersist(self._filename)
                 os.rename(tname, self._filename)
-                if utils.isOvirtNode():
-                    NodeCfg().persist(self._filename)
+                utils.persist(self._filename)
 
                 if self._oldmod != os.stat(self._filename).st_mode:
                     os.chmod(self._filename, self._oldmod)

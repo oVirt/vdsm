@@ -23,7 +23,7 @@ import logging.config
 import os
 
 from ..constants import P_VDSM_LIB
-from ..utils import touchFile, isOvirtNode
+from .. import utils
 
 
 def _get_upgrade_log():
@@ -41,13 +41,11 @@ def _upgrade_needed(upgrade):
 def _upgrade_seal(upgrade):
     seal_file = _upgrade_seal_path(upgrade)
     try:
-        touchFile(seal_file)
+        utils.touchFile(seal_file)
     except (OSError, IOError):
         _get_upgrade_log().exception("Failed to seal upgrade %s", upgrade.name)
     else:
-        if isOvirtNode():
-            from ovirt.node.utils import fs
-            fs.Config().persist(seal_file)
+        utils.persist(seal_file)
         _get_upgrade_log().debug("Upgrade %s successfully performed",
                                  upgrade.name)
 
