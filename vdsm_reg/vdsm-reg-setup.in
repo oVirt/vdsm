@@ -30,10 +30,11 @@ from deployUtil import MGT_BRIDGE_NAME
 from ConfigParser import NoOptionError
 from ovirtnode import ovirtfunctions
 
-TICKET_RETRIES=3
-DEFAULT_CONFIG_FILE="/etc/vdsm-reg/vdsm-reg.conf"
-VDSM_CONF="/etc/vdsm/vdsm.conf"
-SCRIPT_NAME_SAVE="vdsm-store-net-config"
+TICKET_RETRIES = 3
+DEFAULT_CONFIG_FILE = "/etc/vdsm-reg/vdsm-reg.conf"
+VDSM_CONF = "/etc/vdsm/vdsm.conf"
+SCRIPT_NAME_SAVE = "vdsm-store-net-config"
+
 
 class Setup:
     """
@@ -54,8 +55,10 @@ class Setup:
         _, _, self.engineWebCACert = deployUtil.certPaths('')
 
         if self.vdcName != "None":
-            try: self.vdcURL = socket.gethostbyname(self.vdcName)
-            except: self.vdcURL = "None"
+            try:
+                self.vdcURL = socket.gethostbyname(self.vdcName)
+            except:
+                self.vdcURL = "None"
         else:
             self.vdcURL = config.get('vars', 'vdc_host_ip')
 
@@ -80,8 +83,11 @@ class Setup:
         logging.debug("validate start")
         fReturn = True
 
-        if self.ovirtURL == None or self.ovirtURL == "" or self.ovirtURL == "None" or \
-           self.ovirtName  == None or self.ovirtName == "" or self.ovirtName == "None":
+        if (
+                self.ovirtURL is None or self.ovirtURL == "" or
+                self.ovirtURL == "None" or self.ovirtName is None or
+                self.ovirtName == "" or self.ovirtName == "None"
+        ):
             fReturn = False
 
         logging.debug("validate end. return: %s", fReturn)
@@ -94,31 +100,38 @@ class Setup:
         logging.debug("renameBridge begin.")
         fReturn = True
 
-        #Rename existing bridge
+        # Rename existing bridge
         fReturn = deployUtil.makeBridge(self.vdcName, self.vdsmDir)
         if not fReturn:
             logging.error("renameBridge Failed to rename existing bridge!")
 
-        #Persist changes
+        # Persist changes
         if fReturn:
             try:
-                out, err, ret = deployUtil._logExec([os.path.join(self.vdsmDir, SCRIPT_NAME_SAVE)])
+                out, err, ret = deployUtil._logExec(
+                    [os.path.join(self.vdsmDir, SCRIPT_NAME_SAVE)])
                 if ret:
                     fReturn = False
                     logging.error("renameBridge Failed to persist %s "
-                            "bridge changes. out=%s\nerr=%s\nret=%d",
-                            MGT_BRIDGE_NAME,
-                            out, err,
-                            ret)
+                                  "bridge changes. out=%s\nerr=%s\nret=%d",
+                                  MGT_BRIDGE_NAME,
+                                  out, err,
+                                  ret)
             except:
                 fReturn = False
                 logging.error("renameBridge Failed to persist bridge changes. "
-                        "out=%s\nerr=%s\nret=%d", out, err, ret)
+                              "out=%s\nerr=%s\nret=%d", out, err, ret)
 
-        #Fix file permissions to relevant mask
+        # Fix file permissions to relevant mask
         if fReturn:
             try:
-                os.chmod("/config/etc/sysconfig/network-scripts/ifcfg-" + MGT_BRIDGE_NAME, 0o644)
+                os.chmod(
+                    (
+                        "/config/etc/sysconfig/network-scripts/ifcfg-" +
+                        MGT_BRIDGE_NAME
+                    ),
+                    0o644
+                )
             except:
                 fReturn = False
                 logging.error("renameBridge: failed to chmod bridge file")
@@ -129,17 +142,19 @@ class Setup:
     def registerVDS(self):
         logging.debug("registerVDS begin.")
         params = {
-                'vds_ip': self.ovirtURL,
-                'vds_name': self.ovirtName,
-                'vds_unique_id': self.ovirtUID,
-                'port': self.vdcRegPort,
-                '__VIEWSTATE': '',
-                'ticket': self.ticket if self.ticket else "",
+            'vds_ip': self.ovirtURL,
+            'vds_name': self.ovirtName,
+            'vds_unique_id': self.ovirtUID,
+            'port': self.vdcRegPort,
+            '__VIEWSTATE': '',
+            'ticket': self.ticket if self.ticket else "",
         }
         strFullURI = self.vdcURI + '?' + urllib.urlencode(params)
         logging.debug("registerVDS URI= %s\n", strFullURI)
-        if self.ovirtUID == "None" and "localhost.localdomain" in self.ovirtName:
-            logging.warn("WARNING! registering RHEV-H with no UUID and no unique host-name!")
+        if self.ovirtUID is "None" and \
+                "localhost.localdomain" in self.ovirtName:
+            logging.warn("WARNING! registering RHEV-H with "
+                         "no UUID and no unique host-name!")
 
         fReturn = True
         res = None
@@ -155,23 +170,24 @@ class Setup:
             conn.request("GET", strFullURI)
             res = conn.getresponse()
         except:
-           logging.debug("registerVDS failed in HTTPS. Retrying using HTTP.")
-           try:
+            logging.debug("registerVDS failed in HTTPS. Retrying using HTTP.")
+            try:
                 conn = None
                 conn = httplib.HTTPConnection(self.vdcURL + ":" + self.vdcPORT)
                 conn.request("GET", strFullURI)
                 res = conn.getresponse()
                 logging.debug("registerVDS succeeded using HTTP.")
-           except:
+            except:
                 fReturn = False
                 logging.error("registerVDS failed using HTTP!", exc_info=True)
 
         else:
             logging.debug("registerVDS status: %d reason: %s", res.status,
-                    res.reason)
+                          res.reason)
 
-        if res == None or res.status != 200:
-            if conn != None: conn.close()
+        if res is None or res.status != 200:
+            if conn is not None:
+                conn.close()
             fReturn = False
 
         if fReturn:
@@ -182,9 +198,10 @@ class Setup:
                 except:
                     fReturn = False
                     logging.error("registerVDS time read failed",
-                            exc_info=True)
+                                  exc_info=True)
             finally:
-                if conn != None: conn.close()
+                if conn is not None:
+                    conn.close()
 
         socket.setdefaulttimeout(old_timeout)
         logging.debug("registerVDS end.")
@@ -232,7 +249,8 @@ class Setup:
         self.registered = False
 
         if deployUtil.preventDuplicate():
-            logging.debug("execute: found existing management bridge. Skipping rename.")
+            logging.debug("execute: found existing management bridge. "
+                          "Skipping rename.")
         else:
             fOK = self.renameBridge()
             logging.debug("execute: after renameBridge: %s", fOK)
@@ -243,7 +261,7 @@ class Setup:
         # delete it if not.
         #
         if fOK and not self._compare_fingerprint(self.engineWebCACert) and \
-                    os.path.exists(self.engineWebCACert):
+                os.path.exists(self.engineWebCACert):
                 ovirtfunctions.ovirt_safe_delete_config(
                     self.engineWebCACert
                 )
@@ -316,12 +334,13 @@ class Setup:
         logging.debug("Registration status: %s", self.registered)
 
         # Utility settings. This will not fail the registration process.
-        if self.registered == True:
+        if self.registered is True:
             fOK = (fOK and deployUtil.setHostTime(self.VDCTime))
             if fOK:
                 logging.debug("Node time in sync with @ENGINENAME@ server")
             else:
-                logging.warning("Node time failed to sync with @ENGINENAME@ server. This may cause problems !")
+                logging.warning("Node time failed to sync with @ENGINENAME@ "
+                                "server. This may cause problems !")
 
 
 def _createUpgradeDir(upgradeDir):
@@ -412,21 +431,21 @@ if __name__ == "__main__":
     config_file = DEFAULT_CONFIG_FILE
     daemonize = True
     try:
-        opts,args = getopt.getopt(sys.argv[1:], "hc:l",["help"])
-        for o,v in opts:
+        opts, args = getopt.getopt(sys.argv[1:], "hc:l", ["help"])
+        for o, v in opts:
             if o == "-h" or o == "--help":
                 usage()
                 sys.exit(0)
             elif o == "-c":
                 config_file = v
                 if not os.path.exists(config_file):
-                    print "ERROR: file %s does not exist"%(config_file)
+                    print "ERROR: file %s does not exist" % (config_file)
                     usage()
                     sys.exit(1)
             elif o == "-l":
                 daemonize = False
     except getopt.GetoptError as e:
-        print "ERROR: '%s'"%(e.msg)
+        print "ERROR: '%s'" % (e.msg)
         usage()
         sys.exit(1)
     run(config_file, daemonize)
