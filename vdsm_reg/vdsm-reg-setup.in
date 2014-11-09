@@ -361,9 +361,8 @@ def run(confFile, daemonize):
     try:
         if daemonize:
             createDaemon.createDaemon()
-        if daemonize:
             log = logging.getLogger('vdsRegistrator')
-        if not daemonize:
+        else:
             log.handlers.append(logging.StreamHandler())
 
         log.info("After daemonize - My pid is %d", os.getpid())
