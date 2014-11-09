@@ -53,6 +53,18 @@ import vdsm.infra.zombiereaper as zombiereaper
 from cpopen import CPopen
 from . import constants
 
+try:
+    # If failing to import old code, then try importing the legacy code
+    from ovirtnode import ovirtfunctions
+    persistFile = ovirtfunctions.ovirt_store_config
+except ImportError:
+    try:
+        from ovirt.node.utils.fs import Config
+        persistFile = Config().persist
+    except ImportError:
+        persistFile = lambda name: None
+
+
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If
 # you find this number to be a bottleneck in any way you are welcome to change
 # it
@@ -141,11 +153,6 @@ def rmTree(directoryToRemove):
             logging.warning("Directory: %s already removed", directoryToRemove)
         else:
             raise
-
-
-def persistFile(name):
-    if isOvirtNode():
-        execCmd([constants.EXT_PERSIST, name], sudo=True)
 
 
 def _parseMemInfo(lines):
