@@ -22,8 +22,6 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @CAT_PATH@ /etc/multipath.conf, \
     @DD_PATH@ of=/sys/class/scsi_host/host*/scan, \
     @DD_PATH@, \
-    @PERSIST_PATH@ /etc/multipath.conf, \
-    @UNPERSIST_PATH@ /etc/multipath.conf, \
     @CP_PATH@ /etc/multipath.conf *, \
     @CP_PATH@ * /etc/multipath.conf, \
     @MULTIPATH_PATH@, \

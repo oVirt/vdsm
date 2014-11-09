@@ -480,10 +480,8 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
         newName = os.path.join(directory, fd[key]['new'])
         if utils.isOvirtNode() and persist and not cp:
             try:
-                execCmd([constants.EXT_UNPERSIST, oldName],
-                        sudo=True)
-                execCmd([constants.EXT_UNPERSIST, newName],
-                        sudo=True)
+                utils.unpersist(oldName)
+                utils.unpersist(newName)
             except:
                 pass
         try:
@@ -491,8 +489,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
                 execCmd([constants.EXT_CP, oldName, newName], sudo=True)
                 if (utils.isOvirtNode() and
                         persist and not os.path.exists(newName)):
-                    execCmd([constants.EXT_PERSIST, newName],
-                            sudo=True)
+                    utils.persist(newName)
 
             else:
                 os.rename(oldName, newName)
@@ -500,8 +497,7 @@ def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
             pass
         if utils.isOvirtNode() and persist and not cp:
             try:
-                execCmd([constants.EXT_PERSIST, newName],
-                        sudo=True)
+                utils.persist(newName)
             except:
                 pass
 
