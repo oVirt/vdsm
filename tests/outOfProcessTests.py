@@ -76,10 +76,11 @@ class OopWrapperTests(TestCaseBase):
             gc.collect()
             time.sleep(1)
             gc.collect()
-            logging.info("GARBAGE: %s", gc.garbage)
-            refs = gc.get_referrers(ioproc())
-            logging.info(refs)
-            logging.info(gc.get_referrers(*refs))
+            if ioproc() is not None:
+                logging.info("GARBAGE: %s", gc.garbage)
+                refs = gc.get_referrers(ioproc())
+                logging.info(refs)
+                logging.info(gc.get_referrers(*refs))
             self.assertEquals(ioproc(), None)
         finally:
             oop.IOPROC_IDLE_TIME = idle
