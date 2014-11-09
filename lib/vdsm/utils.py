@@ -56,13 +56,13 @@ from . import constants
 try:
     # If failing to import old code, then try importing the legacy code
     from ovirtnode import ovirtfunctions
-    persistFile = ovirtfunctions.ovirt_store_config
+    persist = ovirtfunctions.ovirt_store_config
 except ImportError:
     try:
         from ovirt.node.utils.fs import Config
-        persistFile = Config().persist
+        persist = Config().persist
     except ImportError:
-        persistFile = lambda name: None
+        persist = lambda name: None
 
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If

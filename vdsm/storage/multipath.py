@@ -172,7 +172,7 @@ def setupMultipath():
         rc = misc.execCmd(cmd, sudo=True)[0]
         if rc != 0:
             raise se.MultipathSetupError()
-    utils.persistFile(MPATH_CONF)
+    utils.persist(MPATH_CONF)
 
     # Flush all unused multipath device maps
     misc.execCmd([constants.EXT_MULTIPATH, "-F"], sudo=True)
