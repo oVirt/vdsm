@@ -31,6 +31,7 @@ from contextlib import contextmanager
 from fnmatch import fnmatch
 from StringIO import StringIO
 from weakref import proxy
+from .compat import pickle
 import errno
 import fcntl
 import functools
@@ -1170,3 +1171,31 @@ def get_selinux_enforce_mode():
 
     # Assume disabled if cannot find
     return -1
+
+
+def picklecopy(obj):
+    """
+    Returns a deep copy of argument,
+    like copy.deepcopy() does, but faster.
+
+    To be faster, this function leverages the pickle
+    module. The following types are safely handled:
+
+    * None, True, and False
+    * integers, long integers, floating point numbers,
+      complex numbers
+    * normal and Unicode strings
+    * tuples, lists, sets, and dictionaries containing
+      only picklable objects
+    * functions defined at the top level of a module
+    * built-in functions defined at the top level of a module
+    * classes that are defined at the top level of a module
+    * instances of such classes whose __dict__ or the
+      result of calling __getstate__() is picklable.
+
+    Attempts to pickle unpicklable objects will raise the
+    PicklingError exception;
+    For full documentation, see:
+    https://docs.python.org/2/library/pickle.html
+    """
+    return pickle.loads(pickle.dumps(obj, pickle.HIGHEST_PROTOCOL))

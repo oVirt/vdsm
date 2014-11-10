@@ -19,8 +19,9 @@
 #
 
 import itertools
-from copy import deepcopy
 import logging
+
+from vdsm import utils
 
 from . import vmxml
 
@@ -133,7 +134,7 @@ def io_tune_merge(old, new):
     :return: old + new (in this order) in the dict form
     """
 
-    result = deepcopy(old)
+    result = utils.picklecopy(old)
 
     if "name" in new:
         result["name"] = new["name"]

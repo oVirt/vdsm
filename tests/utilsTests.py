@@ -29,9 +29,12 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testValidation import checkSudo
 from testValidation import stresstest
+from vmTestsData import VM_STATUS_DUMP
 from vdsm import utils
 from vdsm import constants
+import copy
 import time
+import timeit
 
 EXT_SLEEP = "sleep"
 
@@ -634,3 +637,28 @@ class List2CmdlineeTests(TestCaseBase):
 
     def test_empty(self):
         self.assertEquals(utils._list2cmdline([]), "")
+
+
+class PickleCopyTests(TestCaseBase):
+    def test_picklecopy_exact(self):
+        self.assertEqual(utils.picklecopy(VM_STATUS_DUMP),
+                         copy.deepcopy(VM_STATUS_DUMP))
+
+    def test_picklecopy_faster(self):
+        setup = """
+import copy
+from vdsm import utils
+import vmTestsData
+"""
+        base = timeit.timeit('copy.deepcopy(vmTestsData.VM_STATUS_DUMP)',
+                             setup=setup,
+                             number=1000)
+        hack = timeit.timeit('utils.picklecopy(vmTestsData.VM_STATUS_DUMP)',
+                             setup=setup,
+                             number=1000)
+        # to justify this hack, it needs to be significantly faster, not
+        # just a bit faster, hence the divisor
+        # assertLess* requires python 2.7
+        self.assertTrue(
+            hack < base/2,
+            "picklecopy [%f] not faster than deepcopy [%f]" % (hack, base))

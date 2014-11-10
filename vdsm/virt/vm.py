@@ -22,7 +22,6 @@
 # stdlib imports
 from collections import namedtuple
 from contextlib import contextmanager
-from copy import deepcopy
 from xml.dom.minidom import parseString as _domParseStr
 import logging
 import os
@@ -548,7 +547,7 @@ class VmStatsThread(AdvancedStatsThread):
     def _getVmJobs(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleVmJobs.getStats()
 
-        info = deepcopy(eInfo)
+        info = utils.picklecopy(eInfo)
         if info is not None:
             # If we are unable to collect stats we must not return anything at
             # all since an empty dictionary would be interpreted as vm jobs
@@ -1405,9 +1404,9 @@ class Vm(object):
 
         try:
             # while this code is running, Vm is queryable for status(),
-            # thus we must fix devices in an atomic way, hence the deepcopy
+            # thus we must fix devices in an atomic way, hence the deep copy
             with self._confLock:
-                devConf = deepcopy(self.conf['devices'])
+                devConf = utils.picklecopy(self.conf['devices'])
         except KeyError:
             # (very) old Engines do not send device configuration
             devices[DISK_DEVICES] = self.getConfDrives()
@@ -1776,7 +1775,8 @@ class Vm(object):
                     drive['truesize'] = str(d.truesize)
                     drive['apparentsize'] = str(d.apparentsize)
 
-        toSave['_blockJobs'] = deepcopy(self.conf.get('_blockJobs', {}))
+        toSave['_blockJobs'] = utils.picklecopy(
+            self.conf.get('_blockJobs', {}))
 
         with tempfile.NamedTemporaryFile(dir=constants.P_VDSM_RUN,
                                          delete=False) as f:
@@ -2218,7 +2218,7 @@ class Vm(object):
             status = dict((k, v) for k, v in self.conf.iteritems()
                           if not k.startswith("_"))
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
-            return deepcopy(status)
+            return utils.picklecopy(status)
 
     def getStats(self):
         """
@@ -5282,7 +5282,7 @@ class Vm(object):
         def getVolumeInfo(device, volumeID):
             for info in device['volumeChain']:
                 if info['volumeID'] == volumeID:
-                    return deepcopy(info)
+                    return utils.picklecopy(info)
 
         if not isVdsmImage(drive):
             self.log.debug("Skipping drive '%s' which is not a vdsm image",
