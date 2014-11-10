@@ -401,7 +401,7 @@ command_info = {
     'Host_getCapabilities': {'ret': Host_getCapabilities_Ret},
     'Host_getConnectedStoragePools': {'ret': 'poollist'},
     'Host_getDeviceList': {'ret': 'devList'},
-    'Host_getDevicesVisibility': {'ret': 'visibility'},
+    'Host_getDevicesVisibility': {'ret': 'visible'},
     'Host_getHardwareInfo': {'ret': 'info'},
     'Host_getLVMVolumeGroups': {'ret': 'vglist'},
     'Host_getRoute': {'ret': 'info'},
