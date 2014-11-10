@@ -332,6 +332,15 @@ class NetworkTest(TestCaseBase):
                 "routing rule [%s] found. existing rules: \n%s" % (
                     route, routeShowTable(routing_table)))
 
+    def assertRuleExists(self, rule):
+        if not ruleExists(rule):
+            raise self.failureException("routing rule {0} not "
+                                        "found".format(rule))
+
+    def assertRuleDoesNotExist(self, rule):
+        if ruleExists(rule):
+            raise self.failureException("routing rule {0} found".format(rule))
+
     def getSourceRoutingRules(self, deviceName, ip_addr):
         return (StaticSourceRoute(deviceName, None, ip_addr,
                                   IP_MASK, IP_GATEWAY))._buildRules()
@@ -351,7 +360,7 @@ class NetworkTest(TestCaseBase):
         for route in self.getSourceRoutingRoutes(deviceName, ip_addr):
             self.assertRouteExists(route, table)
         for rule in self.getSourceRoutingRules(deviceName, ip_addr):
-            self.assertTrue(ruleExists(rule))
+            self.assertRuleExists(rule)
 
     def assertMtu(self, mtu, *elems):
         for elem in elems:
@@ -1478,7 +1487,7 @@ class NetworkTest(TestCaseBase):
             for route in self.getSourceRoutingRoutes(deviceName, ip_addr):
                 self.assertRouteDoesNotExist(route)
             for rule in self.getSourceRoutingRules(deviceName, ip_addr):
-                self.assertFalse(ruleExists(rule))
+                self.assertRuleDoesNotExist(rule)
 
     @cleanupNet
     @RequireDummyMod
@@ -1757,7 +1766,7 @@ class NetworkTest(TestCaseBase):
                 for route in self.getSourceRoutingRoutes(device_name, ip_addr):
                     self.assertRouteDoesNotExist(route)
                 for rule in self.getSourceRoutingRules(device_name, ip_addr):
-                    self.assertFalse(ruleExists(rule))
+                    self.assertRuleDoesNotExist(rule)
 
     @permutations([['default'], ['local']])
     @cleanupNet
