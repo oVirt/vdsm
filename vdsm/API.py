@@ -24,7 +24,6 @@ from contextlib import contextmanager
 import os
 import signal
 import sys
-import copy
 import time
 import logging
 import errno
@@ -336,7 +335,7 @@ class VM(APIBase):
             if not v:
                 return errCode['noVM']
             res = v.destroy()
-            status = copy.deepcopy(res)
+            status = utils.picklecopy(res)
             if status['status']['code'] == 0:
                 status['status']['message'] = "Machine destroyed"
             return status
