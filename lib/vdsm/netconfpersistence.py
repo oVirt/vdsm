@@ -146,7 +146,7 @@ class Config(BaseConfig):
             if errno.EEXIST != ose.errno:
                 raise
         with open(path, 'w') as configurationFile:
-            json.dump(config, configurationFile)
+            json.dump(config, configurationFile, indent=4)
 
     @staticmethod
     def _removeConfig(path):
