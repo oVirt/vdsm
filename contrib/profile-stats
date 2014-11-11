@@ -56,7 +56,6 @@ for that:
 
 import optparse
 import pstats
-import sys
 
 op = optparse.OptionParser(usage='%prog [options] file')
 op.add_option('-s', '--sort', dest='sort',

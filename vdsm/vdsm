@@ -111,6 +111,7 @@ def run(pidfile=None):
     # vdsmDebugPlugin.py should not exists
     try:
         import vdsmDebugPlugin
+        vdsmDebugPlugin.turnOnDebugPlugin()
     except ImportError:
         # This is OK, it just means the file isn't
         # there and we are not running in debug mode.

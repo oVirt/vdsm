@@ -36,7 +36,7 @@ class DebugInterpreter(object):
         exec(code)
 
 
-def __turnOnDebugPlugin():
+def turnOnDebugPlugin():
     log.warn("Starting Debug Interpreter. Tread lightly!")
     try:
         if os.path.exists(ADDRESS):
@@ -50,5 +50,3 @@ def __turnOnDebugPlugin():
         servThread.start()
     except:
         log.error("Could not start debug plugin", exc_info=True)
-
-__turnOnDebugPlugin()
