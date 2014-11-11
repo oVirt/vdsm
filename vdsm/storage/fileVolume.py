@@ -361,10 +361,10 @@ class FileVolume(volume.Volume):
     def getChildren(self):
         """ Return children volume UUIDs.
 
-        Children can be found in any image of the volume SD.
+        This API is not suitable for use with a template's base volume.
         """
         domPath = self.imagePath.split('images')[0]
-        metaPattern = os.path.join(domPath, 'images', '*', '*.meta')
+        metaPattern = os.path.join(domPath, 'images', self.imgUUID, '*.meta')
         metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
         pattern = "%s.*%s" % (volume.PUUID, self.volUUID)
         matches = grepCmd(pattern, metaPaths)
