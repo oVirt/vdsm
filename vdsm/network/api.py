@@ -435,7 +435,7 @@ def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                                 bonding=bonding, nics=nics, _netinfo=_netinfo,
                                 configurator=configurator,
                                 implicitBonding=implicitBonding)
-    netEnt.ip.bootproto = netinfo.getBootProtocol(netEnt.name)
+    netEnt.ip.bootproto = _netinfo.networks[network]['bootproto4']
 
     # We must first remove the libvirt network and then the network entity.
     # Otherwise if we first remove the network entity while the libvirt

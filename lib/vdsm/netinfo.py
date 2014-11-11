@@ -32,7 +32,6 @@ import socket
 import struct
 from xml.dom import minidom
 
-from .config import config
 from . import constants
 from .ipwrapper import drv_name
 from .ipwrapper import DUMMY_BRIDGE
@@ -42,7 +41,6 @@ from .ipwrapper import Route
 from .ipwrapper import routeGet
 from .ipwrapper import routeShowGateways
 from . import libvirtconnection
-from .netconfpersistence import RunningConfig
 from .utils import memoized
 from .netlink import link as nl_link
 from .netlink import addr as nl_addr
@@ -350,34 +348,6 @@ def getIfaceCfg(iface):
     except Exception:
         pass
     return ifaceCfg
-
-
-def getBootProtocol(iface, persistence=None):
-    if persistence is None:
-        persistence = config.get('vars', 'net_persistence')
-
-    if persistence == 'ifcfg':
-        return getIfaceCfg(iface).get('BOOTPROTO')
-    elif persistence == 'unified':
-        runningConfig = RunningConfig()
-
-        # If the network is bridged its iface name will be its network name
-        network = runningConfig.networks.get(iface)
-        if network is not None:
-            return network.get('bootproto')
-
-        # Otherwise we need to search if the iface is the device for a network
-        for network, attributes in runningConfig.networks.iteritems():
-            nic = attributes.get('nic')
-            bonding = attributes.get('bonding')
-            vlan = attributes.get('vlan')
-            if iface in (nic, bonding,
-                         "%s.%s" % (nic, vlan), "%s.%s" % (bonding, vlan)):
-                return attributes.get('bootproto')
-
-        return None
-    else:
-        raise NotImplementedError
 
 
 def permAddr():
