@@ -430,6 +430,11 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterStorageDevicesList(self, args):
+        status = self.s.glusterStorageDevicesList()
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -730,5 +735,10 @@ def getGlusterCmdDict(serv):
              serv.do_glusterVolumeStatsInfoGet,
              ('volumeName=<volume name>',
               'Returns total, free and used space(bytes) of gluster volume'
+              )),
+         'glusterStorageDevicesList': (
+             serv.do_glusterStorageDevicesList,
+             ('',
+              'list all disk info of the host'
               )),
          }

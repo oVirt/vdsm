@@ -35,6 +35,7 @@ dist_vdsmgluster_PYTHON = \
 	gfapi.py \
 	hooks.py \
 	services.py \
+	storagedev.py \
 	tasks.py \
 	$(NULL)
 

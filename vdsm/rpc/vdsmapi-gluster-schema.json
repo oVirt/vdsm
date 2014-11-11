@@ -1207,6 +1207,51 @@
  'returns': ['HostList']}
 
 ##
+# @StorageDevicesList:
+#
+# List of storage devices.
+#
+# @name:       The name of the device
+#
+# @size:       Device size
+#
+# @devPath:    Device path
+#
+# devUuid:     Device uuid
+#
+# bus:         Device bus
+#
+# model:       Device Model
+#
+# fsType:      File system type
+#
+# mountPoint:  Device mount point path
+#
+# uuid:        File system uuid
+#
+# createBrick: Has the device can be used for create brick or not
+#
+# Since: 4.17.0
+##
+{'type': 'StorageDevicesList':
+ 'data': {'name': 'str', 'size': 'int', 'devPath': 'str', 'devUuid': 'UUID',
+          'bus': 'str', 'model': 'str', 'fsType': 'str', 'mountPoint': 'str',
+          'uuid': 'UUID', 'createBrick': 'bool'}}
+
+##
+# @GlusterHost.storageDevicesList:
+#
+# List Gluster Storage Devices List
+#
+# Returns:
+# List of gluster storage devices list
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterHost', 'name': 'storageDevicesList'},
+ 'returns': ['StorageDevicesList']}
+
+##
 # @GlusterVolumeStatsInfo:
 #
 # Gluster Volumes disk usage statistics

@@ -22,7 +22,7 @@ import os
 import tempfile
 from functools import wraps
 
-MODULE_LIST = ('cli', 'hooks', 'services', 'tasks', 'gfapi')
+MODULE_LIST = ('cli', 'hooks', 'services', 'tasks', 'gfapi', 'storagedev')
 
 
 def makePublic(func):
