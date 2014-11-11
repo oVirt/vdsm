@@ -322,6 +322,11 @@ class GlusterApi(object):
         data = self.svdsmProxy.glusterVolumeStatvfs(volumeName)
         return self._computeVolumeStats(data)
 
+    @exportAsVerb
+    def storageDevicesList(self, options=None):
+        status = self.svdsmProxy.glusterStorageDevicesList()
+        return {'deviceInfo': status}
+
 
 def getGlusterMethods(gluster):
     l = []

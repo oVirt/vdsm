@@ -20,6 +20,7 @@
 
 from testlib import VdsmTestCase as TestCaseBase
 from gluster import cli as gcli
+from gluster.storagedev import _parseDevices as parseStorageDevices
 import xml.etree.cElementTree as etree
 import glusterTestData
 
@@ -1078,6 +1079,10 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         status = gcli._parseVolumeStatusMem(tree)
         self.assertEquals(status, ostatus)
+
+    def test_parseStorageDevices(self):
+        status = parseStorageDevices(glusterTestData.glusterStorageDevData())
+        self.assertEquals(status, glusterTestData.GLUSTER_STORAGE_DEVICES)
 
     def test_parseVolumeStatus(self):
         self._parseVolumeStatus_test()

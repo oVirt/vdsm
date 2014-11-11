@@ -809,3 +809,246 @@ GLUSTER_VOLUME_TASKS = {
         'bricks': ['bricknode1:/gfs/b3']
     }
 }
+
+
+GLUSTER_STORAGE_DEVICES = [{'createBrick': True,
+                            'devPath': '/dev/vdd',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': '',
+                            'model': 'disk',
+                            'mountPoint': '',
+                            'name': 'lvm1',
+                            'size': '3072.0',
+                            'uuid': ''},
+                           {'createBrick': False,
+                            'devPath': '/dev/vdc',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': 'multipath_member',
+                            'model': 'Virtio Block Device (disk)',
+                            'mountPoint': '',
+                            'name': 'vdc',
+                            'size': '1024.0',
+                            'uuid': ''},
+                           {'createBrick': False,
+                            'devPath': '/dev/vdc',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': '',
+                            'model': 'Virtio Block Device (disk)',
+                            'mountPoint': '',
+                            'name': 'vdc',
+                            'size': '1024.0',
+                            'uuid': ''},
+                           {'createBrick': False,
+                            'devPath': '/dev/vda5',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': 'xfs',
+                            'model': 'Virtio Block Device (partition)',
+                            'mountPoint': '/',
+                            'name': 'vda5',
+                            'size': '1024.0',
+                            'uuid': ''},
+                           {'createBrick': False,
+                            'devPath': '/dev/vda4',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': 'xfs',
+                            'model': 'Virtio Block Device (partition)',
+                            'mountPoint': '',
+                            'name': 'vda4',
+                            'size': '1024.0',
+                            'uuid': ''},
+                           {'createBrick': True,
+                            'devPath': '/dev/vda3',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': '',
+                            'model': 'Virtio Block Device (partition)',
+                            'mountPoint': '',
+                            'name': 'vda3',
+                            'size': '1024.0',
+                            'uuid': ''},
+                           {'createBrick': False,
+                            'devPath': '/dev/vda',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': '',
+                            'model': 'Virtio Block Device (disk)',
+                            'mountPoint': '',
+                            'name': 'vda',
+                            'size': '1024.0',
+                            'uuid': ''},
+                           {'createBrick': False,
+                            'devPath': '/dev/sr0',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': '',
+                            'model': 'QEMU_DVD-ROM (cdrom)',
+                            'mountPoint': '',
+                            'name': 'sr0',
+                            'size': '0',
+                            'uuid': ''},
+                           {'createBrick': False,
+                            'devPath': '/dev/mapper/testvg1',
+                            'devUuid': '',
+                            'bus': '',
+                            'fsType': '',
+                            'model': 'lvmvg',
+                            'mountPoint': '',
+                            'name': 'testvg1',
+                            'size': '3060',
+                            'uuid': ''}]
+
+
+def glusterStorageDevData():
+    class TestStorageDev(object):
+        {}
+
+    devices = []
+    # empty uuid, model, format.type
+    device = TestStorageDev()
+    device.name = 'lvm1'
+    device.size = 3072.0
+    device.path = '/dev/vdd'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 0
+    device.model = None
+    device.type = "disk"
+    device.format = TestStorageDev()
+    device.format.type = None
+    devices.append(device)
+
+    # Check model
+    device = TestStorageDev()
+    device.name = 'vdc'
+    device.size = 1024.0
+    device.path = '/dev/vdc'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 1
+    device.model = "Virtio Block Device"
+    device.type = "disk"
+    device.format = TestStorageDev()
+    device.format.type = 'multipath_member'
+    device.format.status = True
+    device.format.mountpoint = None
+    device.format.uuid = None
+    devices.append(device)
+
+    # check fstype
+    device = TestStorageDev()
+    device.name = 'vdc'
+    device.size = 1024.0
+    device.path = '/dev/vdc'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 1
+    device.model = "Virtio Block Device"
+    device.type = "disk"
+    device.format = TestStorageDev()
+    device.format.type = None
+    devices.append(device)
+
+    device = TestStorageDev()
+    device.name = 'vda5'
+    device.size = 1024.0
+    device.path = '/dev/vda5'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 0
+    device.model = "Virtio Block Device"
+    device.type = "partition"
+    device.format = TestStorageDev()
+    device.format.type = 'xfs'
+    device.format.mountpoint = '/'
+    device.format.uuid = 'ee18ca64-806a-4a84-b69e-1f939265fa68'
+    devices.append(device)
+
+    # check fstype, no mountpoint attribute
+    device = TestStorageDev()
+    device.name = 'vda4'
+    device.size = 1024.0
+    device.path = '/dev/vda4'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 0
+    device.model = "Virtio Block Device"
+    device.type = "partition"
+    device.format = TestStorageDev()
+    device.format.type = 'xfs'
+    device.format.uuid = None
+    devices.append(device)
+
+    # check empty mountpoint
+    device = TestStorageDev()
+    device.name = 'vda3'
+    device.size = 1024.0
+    device.path = '/dev/vda3'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 0
+    device.model = "Virtio Block Device"
+    device.type = "partition"
+    device.format = TestStorageDev()
+    device.format.type = None
+    device.format.uuid = None
+    devices.append(device)
+
+    # check kids > 0
+    device = TestStorageDev()
+    device.name = 'vda'
+    device.size = 1024.0
+    device.path = '/dev/vda'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 3
+    device.model = "Virtio Block Device"
+    device.type = "disk"
+    device.format = TestStorageDev()
+    device.format.type = None
+    devices.append(device)
+
+    # device type cd-rom
+    device = TestStorageDev()
+    device.name = 'sr0'
+    device.size = 0
+    device.path = '/dev/sr0'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 0
+    device.model = "QEMU_DVD-ROM"
+    device.type = "cdrom"
+    device.format = TestStorageDev()
+    device.format.uuid = None
+    device.format.type = None
+    devices.append(device)
+
+    # device type is lvmvg
+    device = TestStorageDev()
+    device.name = 'testvg1'
+    device.size = 3060
+    device.path = '/dev/mapper/testvg1'
+    device.uuid = None
+    device.parents = []
+    device.bus = ''
+    device.kids = 0
+    device.model = ''
+    device.type = 'lvmvg'
+    device.format = TestStorageDev()
+    device.format.type = None
+    device.format.uuid = None
+    device.format.type = None
+    devices.append(device)
+    return devices

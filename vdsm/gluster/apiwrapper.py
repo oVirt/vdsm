@@ -78,6 +78,9 @@ class GlusterHost(GlusterApiBase):
     def list(self):
         return self._gluster.hostsList()
 
+    def storageDevicesList(self, options=None):
+        return self._gluster.storageDevicesList()
+
 
 class GlusterService(GlusterApiBase):
     def __init__(self):

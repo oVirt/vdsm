@@ -138,6 +138,7 @@ BuildRequires: python-pep8
 BuildRequires: systemd-units
 %endif
 
+Requires: python-blivet
 Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
@@ -1649,6 +1650,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/gfapi.py*
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*
 %{_datadir}/%{vdsm_name}/gluster/services.py*
+%{_datadir}/%{vdsm_name}/gluster/storagedev.py*
 %{_datadir}/%{vdsm_name}/gluster/tasks.py*
 %endif
 
