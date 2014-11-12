@@ -168,6 +168,9 @@ class CpuTopology(object):
     def sockets(self):
         return self._topology['sockets']
 
+    def onlineCpus(self):
+        return self._topology['onlineCpus']
+
 
 class KdumpStatus(object):
     UNKNOWN = -1
@@ -188,17 +191,21 @@ def _getCpuTopology(capabilities):
     caps = minidom.parseString(capabilities)
     host = caps.getElementsByTagName('host')[0]
     cells = host.getElementsByTagName('cells')[0]
-    cpus = cells.getElementsByTagName('cpu').length
 
     sockets = set()
     siblings = set()
+    onlineCpus = []
+
     for cpu in cells.getElementsByTagName('cpu'):
-        sockets.add(cpu.getAttribute('socket_id'))
-        siblings.add(cpu.getAttribute('siblings'))
+        if cpu.hasAttribute('socket_id') and cpu.hasAttribute('siblings'):
+            onlineCpus.append(cpu.getAttribute('id'))
+            sockets.add(cpu.getAttribute('socket_id'))
+            siblings.add(cpu.getAttribute('siblings'))
 
     topology = {'sockets': len(sockets),
                 'cores': len(siblings),
-                'threads': cpus}
+                'threads': len(onlineCpus),
+                'onlineCpus': onlineCpus}
 
     return topology
 
@@ -564,6 +571,7 @@ def get():
 
     caps['cpuThreads'] = str(cpuTopology.threads())
     caps['cpuSockets'] = str(cpuTopology.sockets())
+    caps['onlineCpus'] = ','.join(cpuTopology.onlineCpus())
     caps['cpuSpeed'] = cpuInfo.mhz()
     if config.getboolean('vars', 'fake_kvm_support'):
         if targetArch == Architecture.X86_64:
