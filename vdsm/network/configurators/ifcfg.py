@@ -659,6 +659,8 @@ class ConfigWriter(object):
     def addNic(self, nic, **opts):
         """ Create ifcfg-* file with proper fields for NIC """
         conf = ''
+        if ipwrapper.Link._detectType(nic.name) == 'dummy':
+            opts['hotplug'] = 'no'
         if _hwaddr_required():
             _netinfo = netinfo.NetInfo()
             hwaddr = (_netinfo.nics[nic.name].get('permhwaddr') or
