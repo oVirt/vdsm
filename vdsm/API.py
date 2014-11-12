@@ -1442,7 +1442,7 @@ class Global(APIBase):
         finally:
             self._cif._networkSemaphore.release()
 
-    def delNetwork(self, bridge, vlan=None, bond=None, nics=None,
+    def delNetwork(self, network, vlan=None, bond=None, nics=None,
                    options=None):
         """Delete a network from this vds."""
         if options is None:
@@ -1454,11 +1454,11 @@ class Global(APIBase):
                 self.log.warn('concurrent network verb already executing')
                 return errCode['unavail']
 
+            _netinfo = netinfo.NetInfo()
             if vlan or bond or nics:
                 # Backwards compatibility
                 self.log.warn('Specifying vlan, '
                               'bond or nics to delNetwork is deprecated')
-                _netinfo = netinfo.NetInfo()
                 try:
                     if bond:
                         Bond.validateName(bond)
@@ -1480,7 +1480,16 @@ class Global(APIBase):
             self._cif._netConfigDirty = True
 
             try:
-                supervdsm.getProxy().delNetwork(bridge, options)
+                try:
+                    _, _, bonding = \
+                        _netinfo.getNicsVlanAndBondingForNetwork(network)
+                except KeyError:
+                    bonding = None
+
+                supervdsm.getProxy().setupNetworks(
+                    {network: {'remove': True}},
+                    {bonding: {'remove': True}} if bonding else {},
+                    {'connectivityCheck': False})
             except ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
