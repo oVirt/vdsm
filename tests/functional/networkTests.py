@@ -22,6 +22,7 @@ import os.path
 import json
 import signal
 import netaddr
+import time
 
 from hookValidation import ValidatesHook
 from network.sourceroute import StaticSourceRoute
@@ -42,10 +43,11 @@ from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable)
 
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
-from vdsm.utils import RollbackContext, execCmd, running
+from vdsm.utils import RollbackContext, execCmd, running, CommandPath
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
                           _get_dhclient_ifaces)
 from vdsm import ipwrapper
+from vdsm import sysctl
 from vdsm.utils import pgrep
 
 import caps
@@ -77,6 +79,8 @@ IPv6_CIDR = '64'
 IPv6_ADDRESS_AND_CIDR = IPv6_ADDRESS + '/' + IPv6_CIDR
 IPv6_ADDRESS_IN_NETWORK = 'fdb3:84e5:4ff4:55e3:0:ffff:ffff:0'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ff'
+
+_ARPPING_COMMAND = CommandPath('arping', '/usr/sbin/arping')
 
 dummyPool = set()
 DUMMY_POOL_SIZE = 5
@@ -411,6 +415,61 @@ class NetworkTest(TestCaseBase):
         netinfo = self.vdsm_net.netinfo
         self.assertIn(bondName, netinfo.bondings)
         self.assertEqual(netinfo.bondings[bondName]['active_slave'], '')
+
+    @cleanupNet
+    @RequireVethMod
+    @ValidateRunningAsRoot
+    def test_getVdsStats(self):
+        """This Test will send an ARP request on a created veth interface
+        and checks that the TX bytes is in range between 42 and 384 bytes
+        the range is set due to DHCP packets that may corrupt the statistics"""
+        # TODO disable DHCP service on the veth
+        ARP_REQUEST_SIZE = 42
+        DHCP_PACKET_SIZE = 342
+
+        def assertTestDevStatsReported():
+            status, msg, hostStats = self.vdsm_net.getVdsStats()
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertIn('network', hostStats)
+            self.assertIn(
+                left, hostStats['network'], 'could not find veth %s' % left)
+
+        def getTxStatsFromInterface(iface):
+            status, msg, hostStats = self.vdsm_net.getVdsStats()
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertIn('network', hostStats)
+            self.assertIn(iface, hostStats['network'])
+            self.assertIn('tx', hostStats['network'][iface])
+            self.assertIn('rx', hostStats['network'][iface])
+            return int(hostStats['network'][iface]['tx'])
+
+        def assertStatsInRange():
+            curTxStat = getTxStatsFromInterface(left)
+            diff = (curTxStat - prevTxStat)
+            self.assertTrue(ARP_REQUEST_SIZE <= diff
+                            <= (ARP_REQUEST_SIZE + DHCP_PACKET_SIZE),
+                            '%s is out of range' % diff)
+
+        with vethIf() as (left, right):
+            # disabling IPv6 on Interface for removal of Router Solicitation
+            sysctl.disable_ipv6(left)
+            sysctl.disable_ipv6(right)
+            veth.setLinkUp(left)
+            veth.setLinkUp(right)
+
+            # Vdsm scans for new devices every 15 seconds
+            self.retryAssert(
+                assertTestDevStatsReported, timeout=20)
+
+            prevTxStat = getTxStatsFromInterface(left)
+            # running ARP from the interface
+            rc, out, err = execCmd([_ARPPING_COMMAND.cmd, '-D', '-I', left,
+                                    '-c', '1', IP_ADDRESS_IN_NETWORK])
+            if rc != 0:
+                raise SkipTest('Could not run arping', out, err)
+
+            # wait for Vdsm to update statistics
+            self.retryAssert(assertStatsInRange, timeout=3)
 
     @cleanupNet
     @permutations([[True], [False]])

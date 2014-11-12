@@ -693,6 +693,8 @@ class HostStatsThread(threading.Thread):
                                       'state': iface.operstate,
                                       'rxRate': '%.1f' % rxRate,
                                       'txRate': '%.1f' % txRate,
+                                      'rx': str(iface.rx),
+                                      'tx': str(iface.tx),
                                       }
             rx += thisRx
             tx += thisTx

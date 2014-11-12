@@ -585,6 +585,9 @@ class VmStatsThread(AdvancedStatsThread):
         ifStats['rxRate'] = '%.1f' % ifRxBytes
         ifStats['txRate'] = '%.1f' % ifTxBytes
 
+        ifStats['rx'] = str(end_sample[0])
+        ifStats['tx'] = str(end_sample[4])
+
         return ifStats
 
     def _getNetworkStats(self, stats):
