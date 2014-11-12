@@ -1834,8 +1834,11 @@ class Vm(object):
             pass
         self.saveState()
 
-    def status(self):
+    def status(self, fullStatus=True):
         # used by API.Global.getVMList
+        if not fullStatus:
+            return {'vmId': self.id, 'status': self.lastStatus}
+
         self.conf['status'] = self.lastStatus
         with self._confLock:
             # Filter out any internal keys

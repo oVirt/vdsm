@@ -1383,18 +1383,10 @@ class Global(APIBase):
     # VM-related functions
     def getVMList(self, fullStatus=False, vmList=()):
         """ return a list of known VMs with full (or partial) config each """
-
-        def reportedStatus(v, full):
-            d = v.status()
-            if full:
-                return d
-            else:
-                return {'vmId': d['vmId'], 'status': d['status']}
-
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
         return {'status': doneCode,
-                'vmList': [reportedStatus(v, fullStatus)
+                'vmList': [v.status(fullStatus)
                            for v in self._cif.vmContainer.values()
                            if not vmSet or v.id in vmSet]}
 
