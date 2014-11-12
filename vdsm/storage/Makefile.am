@@ -72,7 +72,9 @@ dist_vdsmstorage_PYTHON = \
 	volume.py
 
 dist_vdsmexec_SCRIPTS = \
-	curl-img-wrap
+	curl-img-wrap \
+	fc-scan \
+	$(NULL)
 
 nodist_vdsmstorage_DATA = \
 	lvm.env \

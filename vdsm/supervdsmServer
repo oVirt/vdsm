@@ -60,7 +60,6 @@ from network import sourceroutethread
 from network.api import (addNetwork, delNetwork, editNetwork, setupNetworks,
                          setSafeNetworkConfig)
 
-from storage import hba
 from network.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
@@ -269,10 +268,6 @@ class _SuperVdsm(object):
     @logDecorator
     def setSafeNetworkConfig(self):
         return setSafeNetworkConfig()
-
-    @logDecorator
-    def hbaRescan(self):
-        return hba.rescan()
 
     @logDecorator
     def udevTrigger(self, guid):

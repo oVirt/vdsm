@@ -25,6 +25,7 @@
 ./usr/lib/python2.7/dist-packages/vdsmapi.py
 ./var/lib/vdsm/bonding-defaults.json
 ./usr/libexec/vdsm/curl-img-wrap
+./usr/libexec/vdsm/fc-scan
 ./usr/libexec/vdsm/ovirt_functions.sh
 ./usr/libexec/vdsm/persist-vdsm-hooks
 ./usr/libexec/vdsm/safelease

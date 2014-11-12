@@ -75,6 +75,7 @@ WHITELIST = \
 	vdsm/vdsm \
 	vdsm/vdsm-restore-net-config \
 	vdsm/storage/curl-img-wrap \
+	vdsm/storage/fc-scan \
 	vdsm-tool/vdsm-tool \
 	vds_bootstrap/setup \
 	vdsm_reg/vdsm-reg-setup.in \

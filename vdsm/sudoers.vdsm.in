@@ -15,6 +15,7 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @BINDIR@/vdsm-tool service-restart multipathd, \
     @BINDIR@/vdsm-tool service-reload multipathd, \
     @ISCSIADM_PATH@ *, \
+    @LIBEXECDIR@/fc-scan, \
     @LVM_PATH@, \
     @CAT_PATH@ /sys/block/*/device/../../*, \
     @CAT_PATH@ /sys/devices/platform/host*, \

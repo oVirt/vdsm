@@ -242,11 +242,6 @@ parameters = [
         ('vol_size_sample_interval', '60',
             'How often should the volume size be checked (seconds).'),
 
-        ('hba_rescan', 'false',
-            'Enable hba scanning when rescanning multipath. Required to '
-            'detect new or removed luns on FCP server. Disabled by default '
-            'since it may be disruptive.'),
-
         ('scsi_rescan_minimal_timeout', '2',
             'The minimum number of seconds to wait for scsi scan to return.'),
 
