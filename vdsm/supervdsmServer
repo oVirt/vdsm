@@ -58,8 +58,7 @@ from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
 from network import sourceroutethread
-from network.api import (addNetwork, delNetwork, editNetwork, setupNetworks,
-                         setSafeNetworkConfig)
+from network.api import (editNetwork, setupNetworks, setSafeNetworkConfig)
 
 from network.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
@@ -190,14 +189,6 @@ class _SuperVdsm(object):
     @logDecorator
     def restoreNetworks(self):
         return restore_nets.restore()
-
-    @logDecorator
-    def addNetwork(self, bridge, options):
-        return addNetwork(bridge, **options)
-
-    @logDecorator
-    def delNetwork(self, bridge, options):
-        return delNetwork(bridge, **options)
 
     @logDecorator
     def editNetwork(self, oldBridge, newBridge, options):

@@ -194,7 +194,7 @@ def _validateInterNetworkCompatibility(ni, vlan, iface):
 
 
 def _alterRunningConfig(func):
-    """Wrapper for addNetwork and delNetwork that abstracts away all current
+    """Wrapper for _addNetwork and _delNetwork that abstracts away all current
     configuration handling from the wrapped methods."""
     spec = inspect.getargspec(func)
 
@@ -211,7 +211,8 @@ def _alterRunningConfig(func):
         # Detect if we are running an isolated command, i.e., a command that is
         # not called as part of composed API operation like setupNetworks or
         # editNetwork, but rather as its own API verb. This is necessary in
-        # order to maintain behavior of the addNetwork and delNetwork API verbs
+        # order to maintain behavior of the addNetwork and delNetwork API
+        # verbs
         if isolatedCommand:
             attrs['configurator'] = configurator = ConfiguratorClass()
             configurator.begin()
@@ -227,7 +228,7 @@ def _alterRunningConfig(func):
             if nics:
                 attrs['nic'], = nics
 
-        if func.__name__ == 'delNetwork':
+        if func.__name__ == '_delNetwork':
             configurator.runningConfig.removeNetwork(attrs.pop('network'))
         else:
             configurator.runningConfig.setNetwork(attrs.pop('network'), attrs)
@@ -238,12 +239,12 @@ def _alterRunningConfig(func):
 
 
 @_alterRunningConfig
-def addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
-               netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
-               ipv6addr=None, ipv6gateway=None, ipv6autoconf=None, force=False,
-               configurator=None, bondingOptions=None, bridged=True,
-               _netinfo=None, hostQos=None, defaultRoute=None,
-               blockingdhcp=False, **options):
+def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
+                netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
+                ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
+                force=False, configurator=None, bondingOptions=None,
+                bridged=True, _netinfo=None, hostQos=None,
+                defaultRoute=None, blockingdhcp=False, **options):
     nics = nics or ()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
@@ -363,7 +364,7 @@ def listNetworks():
 
 def _delBrokenNetwork(network, netAttr, configurator):
     '''Adapts the network information of broken networks so that they can be
-    deleted via delNetwork.'''
+    deleted via _delNetwork.'''
     _netinfo = netinfo.NetInfo()
     _netinfo.networks[network] = netAttr
     if _netinfo.networks[network]['bridged']:
@@ -378,14 +379,14 @@ def _delBrokenNetwork(network, netAttr, configurator):
         libvirt.removeNetwork(network)
         configurator.runningConfig.removeNetwork(network)
         return
-    delNetwork(network, configurator=configurator, force=True,
-               implicitBonding=False, _netinfo=_netinfo)
+    _delNetwork(network, configurator=configurator, force=True,
+                implicitBonding=False, _netinfo=_netinfo)
 
 
 def _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo):
     if bonding:
         if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
-            raise ConfigNetworkError(ne.ERR_BAD_NIC, 'delNetwork: %s are '
+            raise ConfigNetworkError(ne.ERR_BAD_NIC, '_delNetwork: %s are '
                                      'not all nics enslaved to %s' %
                                      (nics, bonding))
     if bridged:
@@ -406,9 +407,9 @@ def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
 
 
 @_alterRunningConfig
-def delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
-               configurator=None, implicitBonding=True, _netinfo=None,
-               **options):
+def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
+                configurator=None, implicitBonding=True, _netinfo=None,
+                **options):
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
 
@@ -470,13 +471,13 @@ def clientSeen(timeout):
 def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
                 **options):
     with ConfiguratorClass() as configurator:
-        delNetwork(oldBridge, configurator=configurator, **options)
-        addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
-                   configurator=configurator, **options)
+        _delNetwork(oldBridge, configurator=configurator, **options)
+        _addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
+                    configurator=configurator, **options)
         if utils.tobool(options.get('connectivityCheck', False)):
             if not clientSeen(int(options.get('connectivityTimeout',
                                               CONNECTIVITY_TIMEOUT_DEFAULT))):
-                delNetwork(newBridge, force=True)
+                _delNetwork(newBridge, force=True)
                 raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                          'connectivity check failed')
 
@@ -621,8 +622,8 @@ def _add_missing_networks(configurator, networks, bondings, force, logger,
 
         logger.debug("Adding network %r", network)
         try:
-            addNetwork(network, configurator=configurator,
-                       implicitBonding=True, _netinfo=_netinfo, **d)
+            _addNetwork(network, configurator=configurator,
+                        implicitBonding=True, _netinfo=_netinfo, **d)
         except ConfigNetworkError as cne:
             if cne.errCode == ne.ERR_FAILED_IFUP:
                 logger.debug("Adding network %r failed. Running "
@@ -645,9 +646,9 @@ def _check_connectivity(connectivity_check_networks, networks, bondings,
                 # If the new added network was created on top of
                 # existing bond, we need to keep the bond on rollback
                 # flow, else we will break the new created bond.
-                delNetwork(network, force=True,
-                           implicitBonding=networks[network].
-                           get('bonding') in bondings)
+                _delNetwork(network, force=True,
+                            implicitBonding=networks[network].
+                            get('bonding') in bondings)
             raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                      'connectivity check failed')
 
@@ -728,8 +729,8 @@ def setupNetworks(networks, bondings, **options):
         for network, attrs in networks.items():
             if network in _netinfo.networks:
                 logger.debug("Removing network %r", network)
-                delNetwork(network, configurator=configurator, force=force,
-                           implicitBonding=False, _netinfo=_netinfo)
+                _delNetwork(network, configurator=configurator, force=force,
+                            implicitBonding=False, _netinfo=_netinfo)
                 _netinfo.updateDevices()
                 del _netinfo.networks[network]
             elif network in libvirt_nets:
@@ -816,13 +817,13 @@ def main():
             del kwargs['vlan']
         if 'bonding' in kwargs and kwargs['bonding'] == '':
             del kwargs['bonding']
-        addNetwork(bridge, **kwargs)
+        _addNetwork(bridge, **kwargs)
     elif sys.argv[1] == 'del':
         bridge = sys.argv[2]
         kwargs = _parseKwargs(sys.argv[3:])
         if 'nics' in kwargs:
             kwargs['nics'] = kwargs['nics'].split(',')
-        delNetwork(bridge, **kwargs)
+        _delNetwork(bridge, **kwargs)
     elif sys.argv[1] == 'edit':
         oldBridge = sys.argv[2]
         newBridge = sys.argv[3]
