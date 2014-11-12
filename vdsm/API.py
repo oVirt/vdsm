@@ -368,7 +368,6 @@ class VM(APIBase):
         if runHooks:
             hooks.before_get_vm_stats()
         stats = v.getStats().copy()
-        stats['vmId'] = self._UUID
         if runHooks:
             stats = hooks.after_get_vm_stats([stats])[0]
         return {'status': doneCode, 'statsList': [stats]}
@@ -1306,12 +1305,7 @@ class Global(APIBase):
         Get statistics of all running VMs.
         """
         hooks.before_get_all_vm_stats()
-        vms = self.getVMList()
-        statsList = []
-        for s in vms['vmList']:
-            response = VM(s['vmId'])._getStats(runHooks=False)
-            if response:
-                statsList.append(response['statsList'][0])
+        statsList = self._cif.getAllVmStats()
         statsList = hooks.after_get_all_vm_stats(statsList)
         return {'status': doneCode, 'statsList': statsList}
 

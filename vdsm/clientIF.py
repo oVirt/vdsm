@@ -389,6 +389,9 @@ class clientIF(object):
         vm.run()
         return {'status': doneCode, 'vmList': vm.status()}
 
+    def getAllVmStats(self):
+        return [v.getStats() for v in self.vmContainer.values()]
+
     @utils.traceback()
     def _recoverThread(self):
         # Trying to run recover process until it works. During that time vdsm

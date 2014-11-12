@@ -1770,6 +1770,7 @@ class Vm(object):
         but can change as result as interaction with libvirt (display*)
         """
         stats = {
+            'vmId': self.conf['vmId'],
             'pid': self.conf['pid'],
             'vmType': self.conf['vmType'],
             'kvmEnable': self._kvmEnable,
