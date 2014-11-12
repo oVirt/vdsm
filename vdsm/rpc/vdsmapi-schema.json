@@ -1186,6 +1186,7 @@
 # @cpuSockets:          The number of CPU sockets
 #
 # @onlineCpus:          The list of online logical CPUs
+#                       (new in version 4.16.7)
 #
 # @cpuSpeed:            The speed of each CPU (in MHz)
 #
