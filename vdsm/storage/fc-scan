@@ -1,0 +1,115 @@
+#!/usr/bin/python
+#
+# Copyright 2014 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+"""
+Usage: fc-scan [-v|-h]
+
+Perform SCSI scan on Fibre Channel scsi_hosts, adding new LUNs. This procedure
+will not remove existing LUNs. Must run as root.
+
+Options:
+  -v        enable verbose logging
+  -h        display this help and exit
+
+Exit codes:
+  0         found fc_hosts scanned successfully
+  1         scaning some hosts failed
+"""
+
+import glob
+import logging
+import os
+import sys
+import threading
+
+log = logging.getLogger("fc-scan")
+
+
+class Scan(object):
+
+    def __init__(self, host):
+        self.host = host
+        self.succeeded = False
+        self.thread = None
+
+    def start(self):
+        self.thread = threading.Thread(target=self.run)
+        self.thread.daemon = True
+        self.thread.start()
+
+    def wait(self):
+        self.thread.join()
+
+    def run(self):
+        try:
+            path = "/sys/class/scsi_host/%s/scan" % self.host
+            log.debug("Scanning %s", path)
+            start = monotonic_time()
+            fd = os.open(path, os.O_WRONLY)
+            try:
+                os.write(fd, "- - -")
+            finally:
+                os.close(fd)
+            self.succeeded = True
+            elapsed = monotonic_time() - start
+            log.debug("Scanned %s in %.2f seconds", path, elapsed)
+        except OSError as e:
+            log.error("Scanning %s failed: %s", path, e)
+        except Exception:
+            log.exception("Scanning %s failed", path)
+
+
+def main(args):
+    if '-h' in args:
+        print __doc__
+        return 0
+
+    logging.basicConfig(
+        level=logging.DEBUG if '-v' in args else logging.INFO,
+        format="%(name)s: %(message)s")
+
+    hosts = [os.path.basename(path)
+             for path in glob.glob("/sys/class/fc_host/host*")]
+
+    if not hosts:
+        log.debug("No fc_host found")
+        return 0
+
+    scans = []
+
+    for host in hosts:
+        s = Scan(host)
+        s.start()
+        scans.append(s)
+
+    for s in scans:
+        s.wait()
+
+    if not all(s.succeeded for s in scans):
+        return 1
+
+
+def monotonic_time():
+    return os.times()[4]
+
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
