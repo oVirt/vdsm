@@ -53,8 +53,9 @@ MPATH_CONF = "/etc/multipath.conf"
 OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
             "# RHEV REVISION 0.4", "# RHEV REVISION 0.5",
             "# RHEV REVISION 0.6", "# RHEV REVISION 0.7",
-            "# RHEV REVISION 0.8", "# RHEV REVISION 0.9"]
-MPATH_CONF_TAG = "# RHEV REVISION 1.0"
+            "# RHEV REVISION 0.8", "# RHEV REVISION 0.9",
+            "# RHEV REVISION 1.0"]
+MPATH_CONF_TAG = "# RHEV REVISION 1.1"
 MPATH_CONF_PRIVATE_TAG = "# RHEV PRIVATE"
 STRG_MPATH_CONF = (
     "\n\n"
@@ -80,6 +81,23 @@ STRG_MPATH_CONF = (
     "device {\n"
     "    vendor                  \"COMPELNT\"\n"
     "    product                 \"Compellent Vol\"\n"
+    "    no_path_retry           fail\n"
+    "}\n"
+    "device {\n"
+    "    # multipath.conf.default\n"
+    "    vendor                  \"DGC\"\n"
+    "    product                 \".*\"\n"
+    "    product_blacklist       \"LUNZ\"\n"
+    "    path_grouping_policy    \"group_by_prio\"\n"
+    "    path_checker            \"emc_clariion\"\n"
+    "    hardware_handler        \"1 emc\"\n"
+    "    prio                    \"emc\"\n"
+    "    failback                immediate\n"
+    "    rr_weight               \"uniform\"\n"
+    "    # vdsm required configuration\n"
+    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
+    "--replace-whitespace --device=/dev/%%n\"\n"
+    "    features                \"0\"\n"
     "    no_path_retry           fail\n"
     "}\n"
     "}"
