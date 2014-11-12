@@ -29,7 +29,7 @@ import logging
 import errno
 
 from network.errors import ConfigNetworkError
-from network.errors import ERR_BAD_NIC
+from network.errors import ERR_BAD_NIC, ERR_USED_BRIDGE
 from network.models import Bond, Vlan
 from network.configurators import RollbackIncomplete
 
@@ -1395,7 +1395,7 @@ class Global(APIBase):
         finally:
             self._cif._networkSemaphore.release()
 
-    def addNetwork(self, bridge, vlan=None, bond=None, nics=None,
+    def addNetwork(self, network, vlan=None, bond=None, nics=None,
                    options=None):
         """Add a new network to this vds.
 
@@ -1411,15 +1411,30 @@ class Global(APIBase):
             return errCode['unavail']
         try:
             self._cif._netConfigDirty = True
+
             if vlan:
                 options['vlan'] = vlan
+            bonds = {}
             if bond:
                 options['bonding'] = bond
-            if nics:
-                options['nics'] = list(nics)
+                bonds[bond] = {}
+                bond_opts = options.pop('bondingOptions', None)
+                if bond_opts is not None:
+                    bonds[bond]['options'] = bond_opts
+                bonds[bond]['nics'] = list(nics)
+            else:
+                nics = list(nics)
+                if nics:
+                    options['nic'], = nics
 
             try:
-                supervdsm.getProxy().addNetwork(bridge, options)
+                if network in netinfo.NetInfo().networks:
+                    raise ConfigNetworkError(ERR_USED_BRIDGE,
+                                             'Network already exists')
+                supervdsm.getProxy().setupNetworks(
+                    {network: options},
+                    bonds,
+                    {'connectivityCheck': False})
             except ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
