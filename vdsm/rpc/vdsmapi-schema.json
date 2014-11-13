@@ -5806,7 +5806,8 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'cont'},
- 'data': {'vmID': 'UUID'}}
+ 'data': {'vmID': 'UUID'},
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.create:
@@ -6826,7 +6827,8 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'pause'},
- 'data': {'vmID': 'UUID'}}
+ 'data': {'vmID': 'UUID'},
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.reset:

@@ -363,6 +363,13 @@ def VM_getInfo_Ret(ret):
     return ret['vmList'][0]
 
 
+def VM_running_state_change_Ret(ret):
+    """
+    The result will contain empty dict for vmList key.
+    """
+    return {'vmList': {}}
+
+
 def VM_migrationCreate_Ret(ret):
     """
     The result contains two data structures which must be merged
@@ -441,6 +448,7 @@ command_info = {
     'VM_changeCD': {'ret': 'vmList'},
     'VM_changeFloppy': {'ret': 'vmList'},
     'VM_create': {'ret': 'vmList'},
+    'VM_cont': {'ret': VM_running_state_change_Ret},
     'VM_diskSizeExtend': {'ret': 'size'},
     'VM_getInfo': {'call': VM_getInfo_Call, 'ret': VM_getInfo_Ret},
     'VM_getStats': {'ret': 'statsList'},
@@ -450,6 +458,7 @@ command_info = {
     'VM_hotunplugNic': {'ret': 'vmList'},
     'VM_mergeStatus': {'ret': 'mergeStatus'},
     'VM_migrationCreate': {'ret': VM_migrationCreate_Ret},
+    'VM_pause': {'ret': VM_running_state_change_Ret},
     'VM_setNumberOfCpus': {'ret': 'vmList'},
     'VM_updateDevice': {'ret': 'vmList'},
     'Volume_copy': {'ret': 'uuid'},
