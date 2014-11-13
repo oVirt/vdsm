@@ -104,7 +104,7 @@ class clientIF(object):
             self.threadLocal.client = ''
 
             host = config.get('addresses', 'management_ip')
-            port = config.getint('addresses', 'management_port')
+            port = config.get('addresses', 'management_port')
             self._createAcceptor(host, port)
             self._prepareXMLRPCBinding(port)
             self._prepareJSONRPCBinding()
