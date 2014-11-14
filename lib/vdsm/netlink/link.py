@@ -31,12 +31,11 @@ from . import _addr_to_str, CHARBUFFSIZE
 def get_link(name):
     """Returns the information dictionary of the name specified link."""
     with _pool.socket() as sock:
-        with _nl_link_cache(sock) as cache:
-            link = _rtnl_link_get_by_name(cache, name)
-            if not link:
-                raise IOError(errno.ENODEV, '%s is not present in the system' %
-                              name)
-            return _link_info(cache, link)
+        link = _get_link(name=name, sock=sock)
+        if not link:
+            raise IOError(errno.ENODEV, '%s is not present in the system' %
+                          name)
+        return _link_info(link)
 
 
 def iter_links():
@@ -46,11 +45,11 @@ def iter_links():
         with _nl_link_cache(sock) as cache:
             link = _nl_cache_get_first(cache)
             while link:
-                yield _link_info(cache, link)
+                yield _link_info(link, cache=cache)
                 link = _nl_cache_get_next(link)
 
 
-def _link_info(cache, link):
+def _link_info(link, cache=None):
     """Returns a dictionary with the information of the link object."""
     info = {}
     info['address'] = _addr_to_str(_rtnl_link_get_addr(link))
@@ -67,11 +66,12 @@ def _link_info(cache, link):
 
     underlying_device_index = _rtnl_link_get_link(link)
     if underlying_device_index > 0:
-        info['device'] = _link_index_to_name(cache, underlying_device_index)
+        info['device'] = _link_index_to_name(underlying_device_index,
+                                             cache=cache)
 
     master_index = _rtnl_link_get_master(link)
     if master_index > 0:
-        info['master'] = _link_index_to_name(cache, master_index)
+        info['master'] = _link_index_to_name(master_index, cache=cache)
 
     vlanid = _rtnl_link_vlan_get_id(link)
     if vlanid >= 0:
@@ -80,10 +80,18 @@ def _link_info(cache, link):
     return info
 
 
-def _link_index_to_name(cache, link_index):
+def _link_index_to_name(link_index, cache=None):
     """Returns the textual name of the link with index equal to link_index."""
     name = (c_char * CHARBUFFSIZE)()
-    return _rtnl_link_i2name(cache, link_index, name, sizeof(name))
+
+    if cache is None:
+        link = _get_link(index=link_index)
+        if link is None:
+            raise IOError(errno.ENODEV, 'Dev with index %s is not present in '
+                                        'the system' % link_index)
+        return _rtnl_link_get_name(link)
+    else:
+        return _rtnl_link_i2name(cache, link_index, name, sizeof(name))
 
 
 def _link_state(link):
@@ -103,6 +111,9 @@ _link_alloc_cache = CFUNCTYPE(c_int, c_void_p, c_int, c_void_p)(
 _link_is_vlan = _int_proto(('rtnl_link_is_vlan', LIBNL_ROUTE))
 _vlan_get_id = _int_proto(('rtnl_link_vlan_get_id', LIBNL_ROUTE))
 _rtnl_link_get_type = _char_proto(('rtnl_link_get_type', LIBNL_ROUTE))
+_rtnl_link_get_kernel = CFUNCTYPE(c_int, c_void_p, c_int, c_char_p,
+                                  c_void_p)(('rtnl_link_get_kernel',
+                                             LIBNL_ROUTE))
 
 
 def _rtnl_link_alloc_cache(sock):
@@ -120,6 +131,21 @@ def _rtnl_link_vlan_get_id(link):
         return _vlan_get_id(link)
     else:
         return -1
+
+
+def _get_link(name=None, index=0, sock=None):
+    """ If defined both name and index, index is primary """
+    if name is None and index == 0:
+        raise ValueError('Must specify either a name or an index')
+    link = c_void_p()
+    if sock is None:
+        with _pool.socket() as sock:
+            err = _rtnl_link_get_kernel(sock, index, name, byref(link))
+    else:
+        err = _rtnl_link_get_kernel(sock, index, name, byref(link))
+    if err:
+        raise IOError(-err, _nl_geterror())
+    return link
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 

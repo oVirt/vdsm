@@ -38,11 +38,11 @@ def iter_routes():
             with _nl_link_cache(sock) as link_cache:  # for index to label
                 route = _nl_cache_get_first(route_cache)
                 while route:
-                    yield _route_info(link_cache, route)
+                    yield _route_info(route, link_cache=link_cache)
                     route = _nl_cache_get_next(route)
 
 
-def _route_info(link_cache, route):
+def _route_info(route, link_cache=None):
     data = {
         'destination': _addr_to_str(_rtnl_route_get_dst(route)),  # network
         'source': _addr_to_str(_rtnl_route_get_src(route)),
@@ -52,7 +52,7 @@ def _route_info(link_cache, route):
         'scope': _scope_to_str(_rtnl_route_get_scope(route))}
     oif_index = _rtnl_route_get_oif(route)
     if oif_index > 0:
-        data['oif'] = _link_index_to_name(link_cache, oif_index)
+        data['oif'] = _link_index_to_name(oif_index, cache=link_cache)
     return data
 
 

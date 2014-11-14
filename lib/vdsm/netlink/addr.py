@@ -20,7 +20,7 @@ from ctypes import (CFUNCTYPE, byref, c_char, c_int, c_void_p, sizeof)
 from functools import partial
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
-from . import _char_proto, _int_char_proto, _int_proto, _void_proto
+from . import _int_char_proto, _int_proto, _void_proto
 from . import LIBNL_ROUTE, _nl_geterror, _pool
 from . import _addr_to_str, _af_to_str, _scope_to_str, CHARBUFFSIZE
 from .link import _nl_link_cache, _link_index_to_name
@@ -34,16 +34,15 @@ def iter_addrs():
             with _nl_link_cache(sock) as link_cache:  # for index to label
                 addr = _nl_cache_get_first(addr_cache)
                 while addr:
-                    yield _addr_info(link_cache, addr)
+                    yield _addr_info(addr, link_cache=link_cache)
                     addr = _nl_cache_get_next(addr)
 
 
-def _addr_info(link_cache, addr):
+def _addr_info(addr, link_cache=None):
     """Returns a dictionary with the address information."""
     index = _rtnl_addr_get_ifindex(addr)
     return {
-        'label': (_rtnl_addr_get_label(addr) or
-                  _link_index_to_name(link_cache, index)),
+        'label': _link_index_to_name(index, cache=link_cache),
         'index': index,
         'family': _af_to_str(_rtnl_addr_get_family(addr)),
         'prefixlen': _rtnl_addr_get_prefixlen(addr),
@@ -79,7 +78,6 @@ def _rtnl_addr_alloc_cache(sock):
 
 _nl_addr_cache = partial(_cache_manager, _rtnl_addr_alloc_cache)
 
-_rtnl_addr_get_label = _char_proto(('rtnl_addr_get_label', LIBNL_ROUTE))
 _rtnl_addr_get_ifindex = _int_proto(('rtnl_addr_get_ifindex', LIBNL_ROUTE))
 _rtnl_addr_get_family = _int_proto(('rtnl_addr_get_family', LIBNL_ROUTE))
 _rtnl_addr_get_prefixlen = _int_proto(('rtnl_addr_get_prefixlen', LIBNL_ROUTE))
