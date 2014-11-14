@@ -200,6 +200,47 @@ class VdsmTestCase(unittest.TestCase):
                                                        safe_repr(container))
             raise self.failureException(msg)
 
+    # FIXME: This is a forward port of the assertAlmostEqual from python
+    #        2.7, remove when no longer supporting earlier versions
+    # we need the 'delta' keyword argument, which was added in python 2.7
+    def assertAlmostEqual(self, first, second, places=None,
+                          msg=None, delta=None):
+        """Fail if the two objects are unequal as determined by their
+           difference rounded to the given number of decimal places
+           (default 7) and comparing to zero, or by comparing that the
+           between the two objects is more than the given delta.
+
+           Note that decimal places (from zero) are usually not the same
+           as significant digits (measured from the most signficant digit).
+
+           If the two objects compare equal then they will automatically
+           compare almost equal.
+        """
+        if first == second:
+            # shortcut
+            return
+        if delta is not None and places is not None:
+            raise TypeError("specify delta or places not both")
+
+        if delta is not None:
+            if abs(first - second) <= delta:
+                return
+
+            standardMsg = '%s != %s within %s delta' % (safe_repr(first),
+                                                        safe_repr(second),
+                                                        safe_repr(delta))
+        else:
+            if places is None:
+                places = 7
+
+            if round(abs(second-first), places) == 0:
+                return
+
+            standardMsg = '%s != %s within %r places' % (
+                safe_repr(first), safe_repr(second), places)
+        msg = self._formatMessage(msg, standardMsg)
+        raise self.failureException(msg)
+
 
 class VdsmTestResult(result.TextTestResult):
     def __init__(self, *args, **kwargs):
