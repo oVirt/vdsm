@@ -139,6 +139,9 @@ class SSLServerSocket(SSLSocket):
             client.accept_ssl()
             client.settimeout(None)
         except SSL.SSLError as e:
+            # when accept_ssl fails we need to close the socket
+            # and propagate the failure
+            client_socket.close()
             raise SSL.SSLError("%s, client %s" % (e, address[0]))
 
         # Finally wrap the connection so that it mimics a
