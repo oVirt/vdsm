@@ -106,8 +106,8 @@ class MultiProtocolAcceptor:
             self._cleanup()
 
     def _process_events(self):
-        timeout = max(self._next_cleanup - time.time(), 0)
-        events = self._poller.poll(timeout)
+        seconds = max(self._next_cleanup - time.time(), 0)
+        events = self._poller.poll(seconds * 1000)
 
         for fd, event in events:
             if event & select.POLLIN:
