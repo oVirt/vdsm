@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2008-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,7 +127,11 @@ class vdsm(Base):
             pool = line.strip()
             self.collectExtOutput(vdsclient + "getSpmStatus " + pool)
         self.collectExtOutput(
-            '/bin/su vdsm -s @PYTHON@ @VDSMDIR@/dumpStorageTable.pyc')
+            '/bin/su vdsm -s %s %s/dumpStorageTable.pyc' % (
+                '@PYTHON@',
+                '@VDSMDIR@',
+            )
+        )
 
     def _addVdsmRunDir(self):
         """Add everything under /var/run/vdsm except possibly confidential
