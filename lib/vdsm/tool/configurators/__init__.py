@@ -32,12 +32,12 @@ class InvalidRun(UsageError):
 
 # Declare state of configuration
 #
-# CONFIGURED     = Module configured.
+# YES   = Module configured.
 #
-# NOT_CONFIGURED = Module not configured before.
+# NO    = Module not configured before.
 #
-# NOT_SURE       = Module configured before,
-#                  configuration validity could not be determined.
+# MAYBE = Module configured before,
+#         configuration validity could not be determined.
 #
 # See also --force at configurators.py.
 YES, NO, MAYBE = range(3)
@@ -101,11 +101,11 @@ class ModuleConfigure(object):
 
         see possible values above.
 
-        Note: returning NOT_CONFIGURED will cause vdsm to abort during
+        Note: returning NO will cause vdsm to abort during
         initialization.
 
-        Note: after configure isconfigured should return NOT_SURE or
-        CONFIGURED.
+        Note: after configure isconfigured should return MAYBE or
+        YES.
 
         May be overridden by subclass.
         """
