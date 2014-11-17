@@ -441,6 +441,7 @@ command_info = {
     'VM_changeCD': {'ret': 'vmList'},
     'VM_changeFloppy': {'ret': 'vmList'},
     'VM_create': {'ret': 'vmList'},
+    'VM_diskSizeExtend': {'ret': 'size'},
     'VM_getInfo': {'call': VM_getInfo_Call, 'ret': VM_getInfo_Ret},
     'VM_getStats': {'ret': 'statsList'},
     'VM_hotplugDisk': {'ret': 'vmList'},
