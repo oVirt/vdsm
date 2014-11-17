@@ -43,10 +43,9 @@ except ImportError:
 
 
 class BindingXMLRPC(object):
-    def __init__(self, cif, log, port):
+    def __init__(self, cif, log):
         self.cif = cif
         self.log = log
-        self.serverPort = port
 
         self._enabled = False
         self.server = self._createXMLRPCServer()
