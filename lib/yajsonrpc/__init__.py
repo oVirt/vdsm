@@ -107,12 +107,16 @@ class JsonRpcRequest(object):
 
         return JsonRpcRequest(method, params, reqId)
 
-    def encode(self):
-        res = {'jsonrpc': '2.0',
-               'method': self.method,
-               'params': self.params,
-               'id': self.id}
+    def toDict(self):
+        return {
+            'jsonrpc': '2.0',
+            'method': self.method,
+            'params': self.params,
+            'id': self.id
+        }
 
+    def encode(self):
+        res = self.toDict()
         return json.dumps(res, 'utf-8')
 
     def isNotification(self):
