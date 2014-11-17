@@ -261,96 +261,6 @@ class _JsonRpcServeRequestContext(object):
         self.sendReply()
 
 
-class JsonRpcClientPool(object):
-    def __init__(self, reactor):
-        self.log = logging.getLogger("JsonRpcClientPool")
-        self._reactor = reactor
-        self._inbox = Queue()
-        self._clients = {}
-        self._eventcbs = []
-
-    def createClient(self, connected_socket):
-        transport = self._reactor.createClient(connected_socket)
-        transport.setMessageHandler(self._handleClientMessage)
-        client = JsonRpcClient(transport)
-        self._clients[transport] = client
-        return client
-
-    def _handleClientMessage(self, req):
-        self._inbox.put_nowait(req)
-
-    def registerEventCallback(self, eventcb):
-        self._eventcbs.append(ref(eventcb))
-
-    def unregisterEventCallback(self, eventcb):
-        for r in self._eventcbs[:]:
-            cb = r()
-            if cb is None or cb == eventcb:
-                try:
-                    self._eventcbs.remove(r)
-                except ValueError:
-                    # Double unregister, ignore.
-                    pass
-
-    def emit(self, client, event, params):
-        for r in self._eventcbs[:]:
-            cb = r()
-            if cb is None:
-                continue
-
-            cb(client, event, params)
-
-    def _processEvent(self, client, obj):
-        if isinstance(obj, list):
-            map(self._processEvent, obj)
-            return
-
-        req = JsonRpcRequest.fromRawObject(obj)
-        if not req.isNotification():
-            self.log.warning("Recieved non notification, ignoring")
-
-        self.emit(client, req.method, req.params)
-
-    def serve(self):
-        while True:
-            data = self._inbox.get()
-            if data is None:
-                return
-
-            transport, message = data
-            client = self._clients[transport]
-            try:
-                mobj = json.loads(message)
-                isResponse = self._isResponse(mobj)
-            except:
-                self.log.exception("Problem parsing message from client")
-                transport.close()
-                del self._clients[transport]
-                continue
-
-            if isResponse:
-                client._processIncomingResponse(mobj)
-            else:
-                self._processEvent(client, mobj)
-
-    def _isResponse(self, obj):
-            if isinstance(obj, list):
-                v = None
-                for res in map(self._isResponse, obj):
-                    if v is None:
-                        v = res
-
-                    if v != res:
-                        raise TypeError("batch is mixed")
-
-                return v
-            else:
-                return ("result" in obj or "error" in obj)
-
-    def close(self):
-        self._inbox.put(None)
-
-
 class JsonRpcCall(object):
     def __init__(self):
         self._ev = Event()
@@ -374,9 +284,11 @@ class JsonRpcCall(object):
 class JsonRpcClient(object):
     def __init__(self, transport):
         self.log = logging.getLogger("jsonrpc.JsonRpcClient")
+        transport.setMessageHandler(self._handleMessage)
         self._transport = transport
         self._runningRequests = {}
         self._lock = Lock()
+        self._eventcbs = []
 
     def setTimeout(self, timeout):
         self._transport.setTimeout(timeout)
@@ -416,20 +328,20 @@ class JsonRpcClient(object):
                     raise ValueError("Request id already in use %s", rid)
 
                 self._runningRequests[rid] = ctx
-                self._transport.send(ctx.encode())
+
+        self._transport.send(ctx.encode())
 
         # All notifications
         if ctx.isDone():
             self._finalizeCtx(ctx)
 
     def _finalizeCtx(self, ctx):
-        with self._lock:
-            if not ctx.isDone():
-                return
+        if not ctx.isDone():
+            return
 
-            cb = ctx.callback
-            if cb is not None:
-                cb(self, ctx.getResponses())
+        cb = ctx.callback
+        if cb is not None:
+            cb(self, ctx.getResponses())
 
     def _processIncomingResponse(self, resp):
         if isinstance(resp, list):
@@ -439,12 +351,72 @@ class JsonRpcClient(object):
         resp = JsonRpcResponse.fromRawObject(resp)
         with self._lock:
             ctx = self._runningRequests.pop(resp.id)
-            ctx.addResponse(resp)
+
+        ctx.addResponse(resp)
 
         self._finalizeCtx(ctx)
 
+    def _isResponse(self, obj):
+            if isinstance(obj, list):
+                v = None
+                for res in map(self._isResponse, obj):
+                    if v is None:
+                        v = res
+
+                    if v != res:
+                        raise TypeError("batch is mixed")
+
+                return v
+            else:
+                return ("result" in obj or "error" in obj)
+
+    def _handleMessage(self, req):
+        transport, message = req
+        try:
+            mobj = json.loads(message)
+            isResponse = self._isResponse(mobj)
+        except:
+            self.log.exception("Problem parsing message from client")
+
+        if isResponse:
+            self._processIncomingResponse(mobj)
+        else:
+            self._processEvent(mobj)
+
+    def _processEvent(self, obj):
+        if isinstance(obj, list):
+            map(self._processEvent, obj)
+            return
+
+        req = JsonRpcRequest.fromRawObject(obj)
+        if not req.isNotification():
+            self.log.warning("Recieved non notification, ignoring")
+
+        self.emit(req.method, req.params)
+
     def close(self):
         self._transport.close()
+
+    def registerEventCallback(self, eventcb):
+        self._eventcbs.append(ref(eventcb))
+
+    def unregisterEventCallback(self, eventcb):
+        for r in self._eventcbs[:]:
+            cb = r()
+            if cb is None or cb == eventcb:
+                try:
+                    self._eventcbs.remove(r)
+                except ValueError:
+                    # Double unregister, ignore.
+                    pass
+
+    def emit(self, event, params):
+        for r in self._eventcbs[:]:
+            cb = r()
+            if cb is None:
+                continue
+
+            cb(self, event, params)
 
 
 class JsonRpcServer(object):

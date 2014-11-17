@@ -29,7 +29,7 @@ from M2Crypto import SSL
 from rpc.BindingXMLRPC import BindingXMLRPC, XmlDetector
 from yajsonrpc.stompReactor import StompDetector
 from protocoldetector import MultiProtocolAcceptor
-from yajsonrpc import JsonRpcClientPool
+from yajsonrpc import JsonRpcClient
 from rpc.BindingJsonRpc import BindingJsonRpc
 from sslhelper import DEAFAULT_SSL_CONTEXT
 
@@ -103,11 +103,9 @@ def constructClient(log, bridge, ssl, type):
                     reactor = handler._reactor
 
         if not client:
-            cpool = JsonRpcClientPool(reactor)
-            t = threading.Thread(target=cpool.serve)
-            t.setDaemon(True)
-            t.start()
-            client = cpool.createClient
+            client = lambda client_socket: (
+                JsonRpcClient(reactor.createClient(client_socket))
+            )
 
         def clientFactory():
             return client(create_socket(
