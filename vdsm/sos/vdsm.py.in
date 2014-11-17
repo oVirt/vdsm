@@ -59,6 +59,7 @@ class vdsm(Base):
         addCopySpecLimit = Base.add_copy_spec_limit
         collectExtOutput = Base.add_cmd_output
         getOption = Base.get_option
+        addForbiddenPath = Base.add_forbidden_path
 
     def __addCopySpecLogLimit(self, path, logsize=None):
         """
@@ -74,6 +75,10 @@ class vdsm(Base):
 
     def setup(self):
         os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"
+        self.addForbiddenPath('/etc/pki/vdsm/keys/*')
+        self.addForbiddenPath('/etc/pki/vdsm/libvirt-spice/*-key.*')
+        self.addForbiddenPath('/etc/pki/libvirt/private/*')
+
         self.collectExtOutput("/etc/init.d/vdsmd status")
         self.addCopySpec("/tmp/vds_installer*")
         self.addCopySpec("/tmp/vds_bootstrap*")
