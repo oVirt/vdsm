@@ -451,6 +451,7 @@ command_info = {
     'VM_changeFloppy': {'ret': 'vmList'},
     'VM_create': {'ret': 'vmList'},
     'VM_cont': {'ret': VM_running_state_change_Ret},
+    'VM_diskSizeExtend': {'ret': 'size'},
     'VM_getInfo': {'call': VM_getInfo_Call, 'ret': VM_getInfo_Ret},
     'VM_getIoTunePolicy': {'ret': 'ioTunePolicyList'},
     'VM_getStats': {'ret': 'statsList'},
