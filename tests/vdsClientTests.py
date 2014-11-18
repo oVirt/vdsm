@@ -19,13 +19,16 @@
 #
 
 import os
+import socket
 import sys
 from tempfile import mkstemp
 from contextlib import contextmanager
 
 from testlib import VdsmTestCase as TestCaseBase
+from testValidation import brokentest
 from monkeypatch import MonkeyPatch
 
+from vdsm import vdscli
 import vdsClient
 
 
@@ -516,6 +519,125 @@ class vdsClientTest(TestCaseBase):
         args = vdsClient.parseArgs(fixture)
         self.assertEquals(args, {'key1': 'val1', 'key2': 'v,al2',
                                  'key3': 'val3'})
+
+
+class CannonizeHostPortTest(TestCaseBase):
+
+    def testNoArguments(self):
+        self._assertIsIpAddressWithPort(vdscli.cannonizeHostPort())
+
+    def testNoneArgument(self):
+        self._assertIsIpAddressWithPort(vdscli.cannonizeHostPort(None))
+
+    @brokentest
+    def testNoneArgumentAndPort(self):
+        port = 65432
+        res = vdscli.cannonizeHostPort(None, port)
+        self._assertIsIpAddressWithPort(res)
+        # address must include the given port
+        self.assertTrue(res.endswith(str(port)))
+
+    @brokentest
+    def testEmptyAddress(self):
+        # TODO: fix cannonizeHostPort to handle this error or to
+        # raise a more meaningful error
+        self.assertRaises(ValueError,
+                          vdscli.cannonizeHostPort,
+                          '')
+
+    def testAddressNoPort(self):
+        self._assertIsIpAddressWithPort(
+            vdscli.cannonizeHostPort('127.0.0.1'))
+
+    def testAddressWithPort(self):
+        address = "127.0.0.1:65432"
+        self.assertEqual(address, vdscli.cannonizeHostPort(address))
+
+    @brokentest
+    def testAddressWithPortParameter(self):
+        addr = '127.0.0.1'
+        port = 65432
+        res = vdscli.cannonizeHostPort(addr, port)
+        self._assertIsIpAddressWithPort(res)
+        # address must include the given port
+        self.assertTrue(res.endswith(str(port)))
+
+    @brokentest
+    def testAddressWithBadPortParameter(self):
+        addr = '127.0.0.1'
+        port = '65432'
+        self.assertRaises(TypeError,
+                          vdscli.cannonizeHostPort,
+                          addr, port)
+
+    def _assertIsIpAddressWithPort(self, addrWithPort):
+        try:
+            # to handle IPv6, we expect the \[ipv6\][:port] notation.
+            # this split also gracefully handle ipv4:port notation.
+            # details: http://tools.ietf.org/html/rfc5952#page-11
+            # the following will handle all IP families:
+            addr, port = addrWithPort.rsplit(':', 1)
+        except ValueError:
+            raise AssertionError('%s is not a valid IP address:' %
+                                 addrWithPort)
+        else:
+            self._assertValidAddress(addr)
+            self._assertValidPort(port)
+
+    def _assertValidAddress(self, addr):
+        if addr.count('.'):
+            if not _isIPv4Address(addr):
+                raise AssertionError('invalid IPv4 address: %s',
+                                     addr)
+        elif addr.count(':'):
+            if not addr.startswith('[') or not addr.endswith(']'):
+                raise AssertionError('malformed IPv6 address: %s',
+                                     addr)
+            if not _isIPv6Address(addr[1:-1]):
+                raise AssertionError('invalid IPv6 address: %s',
+                                     addr)
+        else:
+            raise AssertionError('unrecognized IP address family: %s',
+                                 addr)
+
+    def _assertValidPort(self, port_str):
+        try:
+            port = int(port_str)
+        except ValueError:
+            raise AssertionError('malformed port: %s' % port_str)
+        if port <= 0 or port >= 2**16:
+            raise AssertionError('malformed port: %s' % port_str)
+
+
+def _isIPv4Address(address):
+    try:
+        socket.inet_pton(socket.AF_INET, address)
+    except socket.error:
+        return False
+    else:
+        return True
+
+
+def _isIPv6Address(address):
+    addr = address.split('/', 1)
+    try:
+        socket.inet_pton(socket.AF_INET6, addr[0])
+    except socket.error:
+        return False
+    else:
+        if len(addr) == 2:
+            return _isValidPrefixLen(addr[1])
+        return True
+
+
+def _isValidPrefixLen(prefixlen):
+    try:
+        prefixlen = int(prefixlen)
+        if prefixlen < 0 or prefixlen > 127:
+            return False
+    except ValueError:
+        return False
+    return True
 
 
 class FakeExit():
