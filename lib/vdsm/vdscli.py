@@ -30,7 +30,7 @@ from . import sslutils
 _USE_SSL = False
 _TRUSTED_STORE_PATH = '/etc/pki/vdsm'
 _ADDRESS = '0'
-_PORT = '54321'
+_PORT = 54321
 
 
 def wrap_transport(transport):
@@ -67,7 +67,7 @@ def __guessDefaults():
         config.read(VDSM_CONF)
         _USE_SSL = config.getboolean('vars', 'ssl')
         _TRUSTED_STORE_PATH = config.get('vars', 'trust_store_path')
-        _PORT = config.get('addresses', 'management_port')
+        _PORT = config.getint('addresses', 'management_port')
         _ADDRESS = config.get('addresses', 'management_ip')
     except:
         pass
@@ -86,9 +86,10 @@ def cannonizeHostPort(hostPort=None, port=_PORT):
         # hostPort is in rfc3986 'host [ ":" port ]' format
         hostPort = re.match(r'(?P<Host>.+?)(:(?P<Port>\d+))?$', hostPort)
         addr = hostPort.group('Host')
-        port = hostPort.group('Port') or port
+        if hostPort.group('Port'):
+            port = int(hostPort.group('Port'))
 
-    return addr + ':' + port
+    return '%s:%i' % (addr, port)
 
 
 def connect(hostPort=None, useSSL=None, tsPath=None,

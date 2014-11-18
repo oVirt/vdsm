@@ -529,7 +529,6 @@ class CannonizeHostPortTest(TestCaseBase):
     def testNoneArgument(self):
         self._assertIsIpAddressWithPort(vdscli.cannonizeHostPort(None))
 
-    @brokentest
     def testNoneArgumentAndPort(self):
         port = 65432
         res = vdscli.cannonizeHostPort(None, port)
@@ -553,7 +552,6 @@ class CannonizeHostPortTest(TestCaseBase):
         address = "127.0.0.1:65432"
         self.assertEqual(address, vdscli.cannonizeHostPort(address))
 
-    @brokentest
     def testAddressWithPortParameter(self):
         addr = '127.0.0.1'
         port = 65432
@@ -562,7 +560,6 @@ class CannonizeHostPortTest(TestCaseBase):
         # address must include the given port
         self.assertTrue(res.endswith(str(port)))
 
-    @brokentest
     def testAddressWithBadPortParameter(self):
         addr = '127.0.0.1'
         port = '65432'
