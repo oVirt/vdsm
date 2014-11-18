@@ -27,10 +27,10 @@ from xml.parsers.expat import ExpatError
 from . import sslutils
 
 
-d_useSSL = False
-d_tsPath = '/etc/pki/vdsm'
-d_addr = '0'
-d_port = '54321'
+_USE_SSL = False
+_TRUSTED_STORE_PATH = '/etc/pki/vdsm'
+_ADDRESS = '0'
+_PORT = '54321'
 
 
 def wrap_transport(transport):
@@ -60,15 +60,15 @@ class SingleRequestTransport(xmlrpclib.Transport):
 
 
 def __guessDefaults():
-    global d_useSSL, d_tsPath, d_addr, d_port
+    global _USE_SSL, _TRUSTED_STORE_PATH, _ADDRESS, _PORT
     VDSM_CONF = '/etc/vdsm/vdsm.conf'
     try:
         from .config import config
         config.read(VDSM_CONF)
-        d_useSSL = config.getboolean('vars', 'ssl')
-        d_tsPath = config.get('vars', 'trust_store_path')
-        d_port = config.get('addresses', 'management_port')
-        d_addr = config.get('addresses', 'management_ip')
+        _USE_SSL = config.getboolean('vars', 'ssl')
+        _TRUSTED_STORE_PATH = config.get('vars', 'trust_store_path')
+        _PORT = config.get('addresses', 'management_port')
+        _ADDRESS = config.get('addresses', 'management_ip')
     except:
         pass
 
@@ -76,9 +76,9 @@ def __guessDefaults():
 __guessDefaults()
 
 
-def cannonizeHostPort(hostPort=None, port=d_port):
+def cannonizeHostPort(hostPort=None, port=_PORT):
     if hostPort is None or hostPort == '0':
-        addr = d_addr
+        addr = _ADDRESS
         if ':' in addr:
             # __guessDefaults() might set an IPv6 address, cannonize it
             addr = '[%s]' % addr
@@ -95,9 +95,9 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
             TransportClass=sslutils.VerifyingSafeTransport):
     hostPort = cannonizeHostPort(hostPort)
     if useSSL is None:
-        useSSL = d_useSSL
+        useSSL = _USE_SSL
     if tsPath is None:
-        tsPath = d_tsPath
+        tsPath = _TRUSTED_STORE_PATH
     if useSSL:
         KEYFILE = tsPath + '/keys/vdsmkey.pem'
         CERTFILE = tsPath + '/certs/vdsmcert.pem'
@@ -117,7 +117,7 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
     return server
 
 if __name__ == '__main__':
-    print('connecting to %s:%s ssl %s ts %s' % (d_addr, d_port,
-                                                d_useSSL, d_tsPath))
+    print('connecting to %s:%s ssl %s ts %s' % (
+        _ADDRESS, _PORT, _USE_SSL, _TRUSTED_STORE_PATH))
     server = connect()
     print(server.getVdsCapabilities())
