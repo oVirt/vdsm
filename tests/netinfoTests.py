@@ -333,12 +333,14 @@ class TestNetinfo(TestCaseBase):
             bonds.write('+' + bondName)
             bonds.flush()
 
-            try:
-                with self.assertNotRaises():
-                    self.assertEqual(_getBondingOptions(bondName), {})
+            try:  # no error is anticipated but let's make sure we can clean up
+                self.assertEqual(
+                    _getBondingOptions(bondName), {}, "This test fails when "
+                    "a new bonding option is added to the kernel. Please run "
+                    "`vdsm-tool dump-bonding-defaults` and retest.")
 
-                    with open(BONDING_OPT % (bondName, 'miimon'), 'w') as opt:
-                        opt.write(INTERVAL)
+                with open(BONDING_OPT % (bondName, 'miimon'), 'w') as opt:
+                    opt.write(INTERVAL)
 
                 self.assertEqual(_getBondingOptions(bondName),
                                  {'miimon': INTERVAL})
