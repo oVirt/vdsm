@@ -20,8 +20,7 @@
 
 import json
 
-from ..netinfo import (BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS,
-                       bondOpts, realBondOpts)
+from ..netinfo import BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS, bondOpts
 from ..utils import random_iface_name
 from . import expose, ExtraArgsError
 
@@ -49,7 +48,7 @@ def _get_default_bonding_options():
 
             # only read non-empty options
             opts[mode] = dict(((opt, val) for (opt, val) in
-                               realBondOpts(bond_name).iteritems() if val))
+                               bondOpts(bond_name).iteritems() if val))
             opts[mode]['mode'] = default_mode
 
     finally:

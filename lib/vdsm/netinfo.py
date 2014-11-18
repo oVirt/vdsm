@@ -138,7 +138,7 @@ def active_slave(bonding):
         return f.readline().rstrip()
 
 
-def bondOpts(bond, keys=None):
+def _bondOpts(bond, keys=None):
     """ Returns a dictionary of bond option name and a values iterable. E.g.,
     {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
     """
@@ -154,12 +154,12 @@ def bondOpts(bond, keys=None):
     return opts
 
 
-def realBondOpts(bond):
+def bondOpts(bond, keys=None):
     """
-    Return a dictionary in the same format as bondOpts(). Exclude entries that
+    Return a dictionary in the same format as _bondOpts(). Exclude entries that
     are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
     """
-    return dict(((opt, val) for (opt, val) in bondOpts(bond).iteritems()
+    return dict(((opt, val) for (opt, val) in _bondOpts(bond, keys).iteritems()
                  if opt not in _EXCLUDED_BONDING_ENTRIES))
 
 
@@ -278,7 +278,7 @@ def nicSpeed(nicName):
 
 def bondSpeed(bondName):
     """Returns the bond speed if bondName refers to a bond, 0 otherwise."""
-    opts = bondOpts(bondName, keys=['slaves', 'active_slave', 'mode'])
+    opts = _bondOpts(bondName, keys=['slaves', 'active_slave', 'mode'])
     try:
         if opts['slaves']:
             if opts['mode'][1] in _BONDING_FAILOVER_MODES:
@@ -402,7 +402,7 @@ def _getBondingOptions(bond):
     Return non-empty options differing from defaults, excluding not actual or
     not applicable options, e.g. 'ad_num_ports' or 'slaves'.
     """
-    opts = realBondOpts(bond)
+    opts = bondOpts(bond)
     mode = opts['mode'][-1] if 'mode' in opts else None
     defaults = _getDefaultBondingOptions(mode)
 
