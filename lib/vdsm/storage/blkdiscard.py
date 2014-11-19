@@ -1,3 +1,4 @@
+#
 # Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,26 +18,22 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-vdsmstoragedir = $(vdsmpylibdir)/storage
+import signal
 
-dist_vdsmstorage_PYTHON = \
-	__init__.py \
-	asyncevent.py \
-	blkdiscard.py \
-	clusterlock.py \
-	constants.py \
-	exception.py \
-	fileUtils.py \
-	fuser.py \
-	hba.py \
-	misc.py \
-	mount.py \
-	persistent.py \
-	rwlock.py \
-	securable.py \
-	sync.py \
-	threadlocal.py \
-	volumemetadata.py \
-	$(NULL)
+from vdsm import cmdutils
+from vdsm import commands
+from vdsm import utils
+
+_blkdiscard = utils.CommandPath("blkdiscard", "/sbin/blkdiscard")
+
+
+def blkdiscard(device):
+    cmd = [_blkdiscard.cmd]
+    cmd.append(device)
+
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
+
+    if rc != 0:
+        raise cmdutils.Error(cmd, rc, out, err)

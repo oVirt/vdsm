@@ -109,6 +109,7 @@ test_modules = \
 	stompAsyncClientTests.py \
 	stompAsyncDispatcherTests.py \
 	stompTests.py \
+	storage_blkdiscard_test.py \
 	storagefakelibTests.py \
 	storageMailboxTests.py \
 	storageServerTests.py \
@@ -222,6 +223,7 @@ blacklist_modules_python3 = \
 	storage_monitor_test.py \
 	storageServerTests.py \
 	storage_rwlock_test.py \
+	storage_blkdiscard_test.py \
 	storage_sdm_api_test.py \
 	storage_sdm_create_volume_test.py \
 	storage_volume_artifacts_test.py \

@@ -1237,6 +1237,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/profiling/profile.py*
 %{python_sitelib}/%{vdsm_name}/storage/__init__.py*
 %{python_sitelib}/%{vdsm_name}/storage/asyncevent.py*
+%{python_sitelib}/%{vdsm_name}/storage/blkdiscard.py*
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
