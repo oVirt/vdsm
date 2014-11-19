@@ -100,6 +100,7 @@ BuildRequires: m2crypto
 %if 0%{?rhel} == 6
 BuildRequires: python-argparse
 BuildRequires: python-ordereddict
+BuildRequires: python-simplejson >= 2.0.9
 %endif
 
 # Autotools BuildRequires
@@ -306,6 +307,7 @@ Requires:       %{name}-yajsonrpc = %{version}-%{release}
 Obsoletes:      vdsm-api < 4.16
 %if 0%{?rhel} == 6
 Requires:       python-ordereddict
+Requires:       python-simplejson >= 2.0.9
 %endif
 
 %description jsonrpc
