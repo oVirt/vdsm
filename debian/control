@@ -28,7 +28,6 @@ Build-Depends: debhelper (>= 8.0.0),
  python-rpm,
  python-selinux,
  sudo (>= 1.7.3)
- python-simplejson (>= 2.0.9)
 Standards-Version: 3.9.4
 Homepage: http://www.ovirt.org/wiki/Vdsm
 Vcs-Git: git://gerrit.ovirt.org/vdsm
@@ -36,7 +35,7 @@ Vcs-Browser: http://gerrit.ovirt.org/gitweb?p=vdsm.git
 
 Package: vdsm-yajsonrpc
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), python-simplejson (>= 2.0.9)
+Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3),
 Description: JSON RPC server and client implementation
  A JSON RPC server and client implementation.
 

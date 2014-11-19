@@ -97,7 +97,6 @@ BuildRequires: genisoimage
 BuildRequires: openssl
 BuildRequires: policycoreutils-python
 BuildRequires: m2crypto
-BuildRequires: python-simplejson >= 2.0.9
 %if 0%{?rhel} == 6
 BuildRequires: python-argparse
 BuildRequires: python-ordereddict
@@ -317,7 +316,6 @@ Summary:        JSON RPC server and client implementation
 BuildArch:      noarch
 
 Requires:       python >= 2.6
-Requires:       python-simplejson >= 2.0.9
 
 %description yajsonrpc
 A JSON RPC server and client implementation.
