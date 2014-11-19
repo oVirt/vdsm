@@ -18,7 +18,7 @@ from Queue import Queue
 from weakref import ref
 from threading import Lock, Event
 
-import simplejson as json
+from vdsm.compat import json
 
 from vdsm.utils import traceback
 

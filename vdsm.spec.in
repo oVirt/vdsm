@@ -89,8 +89,8 @@ BuildRequires: python-ioprocess >= 0.14
 BuildRequires: python-pthreading
 BuildRequires: qemu-img
 BuildRequires: rpm-python
-BuildRequires: python-simplejson >= 2.0.9
 %if 0%{?rhel} == 6
+BuildRequires: python-simplejson >= 2.0.9
 BuildRequires: policycoreutils-python > 2.0.83-19.47
 BuildRequires: python-argparse
 BuildRequires: python-ordereddict
@@ -302,6 +302,7 @@ Requires:       %{name}-yajsonrpc = %{version}-%{release}
 Obsoletes:      vdsm-api < 4.16
 %if 0%{?rhel} == 6
 Requires:       python-ordereddict
+Requires:       python-simplejson >= 2.0.9
 %endif
 
 %description jsonrpc
@@ -312,7 +313,6 @@ Summary:        JSON RPC server and client implementation
 BuildArch:      noarch
 
 Requires:       python >= 2.6
-Requires:       python-simplejson >= 2.0.9
 
 %description yajsonrpc
 A JSON RPC server and client implementation.

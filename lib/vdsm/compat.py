@@ -24,3 +24,16 @@ try:
 except ImportError:  # py3
     import pickle
     pickle  # yep, this is needed twice.
+
+try:
+    # on RHEL/Centos 6.x, the JSON module in the python standard
+    # library does not include significant speedups:
+    # stdlib is based on simplejson 1.9, speedups were added on 2.0.9.
+    # In general, speedups are first found on the
+    # simplejson package.
+    import simplejson as json
+    json  # make pyflakes happy
+except ImportError:
+    # no big deal, fallback to standard libary
+    import json
+    json  # yep, this is needed twice.
