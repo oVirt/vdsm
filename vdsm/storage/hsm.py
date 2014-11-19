@@ -364,8 +364,6 @@ class HSM(object):
 
         oop.setDefaultImpl(config.get('irs', 'oop_impl'))
 
-        self.domainStateChangeCallbacks = set()
-
         # cleanStorageRepoitory uses tasksDir value, this must be assigned
         # before calling it
         self.tasksDir = config.get('irs', 'hsm_tasks')
@@ -403,10 +401,9 @@ class HSM(object):
     @public
     def registerDomainStateChangeCallback(self, callbackFunc):
         """
-        Currently this method assumes that all registrations
-        are done *prior* to connecting to pool.
+        Register a state change callback function with the domain monitor.
         """
-        self.domainStateChangeCallbacks.add(callbackFunc)
+        self.domainMonitor.onDomainStateChange.register(callbackFunc)
 
     def _hsmSchedule(self, name, func, *args):
         self.taskMng.scheduleJob("hsm", None, vars.task, name, func, *args)
@@ -1076,12 +1073,6 @@ class HSM(object):
             else:
                 pool.setBackend(
                     StoragePoolMemoryBackend(pool, masterVersion, domainsMap))
-
-            # Must register domain state change callbacks *before* connecting
-            # the pool, which starts domain monitor threads. Otherwise we will
-            # miss the first event from the monitor thread.
-            for cb in self.domainStateChangeCallbacks:
-                pool.domainMonitor.onDomainStateChange.register(cb)
 
             res = pool.connect(hostID, msdUUID, masterVersion)
             if res:
