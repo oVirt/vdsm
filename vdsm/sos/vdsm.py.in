@@ -33,10 +33,9 @@ import os
 
 def _importVdsmPylibModule(modName):
     import imp
-    import os.path
     from distutils.sysconfig import get_python_lib
     modFile, modPath, modDesc = imp.find_module(
-        modName, [os.path.join(get_python_lib(True), "vdsm")])
+        modName, [os.path.join(get_python_lib(False), "vdsm")])
     mod = imp.load_module(modName, modFile, modPath, modDesc)
     return mod
 
