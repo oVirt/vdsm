@@ -137,7 +137,7 @@ Requires: m2crypto
 Requires: libnl3
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
-Requires: mom >= 0.4.2
+Requires: mom >= 0.4.3
 # Numactl is not available on s390[x] and ARM
 %ifnarch s390 s390x %{arm}
 Requires: numactl

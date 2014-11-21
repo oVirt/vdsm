@@ -108,9 +108,17 @@
 # If the balloon is disabled, only deflate the balloon when possible
 
 (defvar host_free_percent (/ (Host.StatAvg "mem_free") Host.mem_available))
-(if (and (< host_free_percent pressure_threshold) balloonEnabled)
-    (with Guests guest (shrink_guest guest))
-    (with Guests guest (grow_guest guest)))
+
+(def balloon_logic (g) {
+    (if (and (< host_free_percent pressure_threshold) balloonEnabled)
+        (shrink_guest g)
+        (grow_guest g))
+})
+
+(with Guests guest
+    (if (valid guest.balloon_cur (guest.StatAvg "mem_unused"))
+        (balloon_logic guest)
+        (debug "Memory information is missing, ballooning for" guest "disabled")))
 
 #
 # Balloon minimum guaranteed memory ruleset

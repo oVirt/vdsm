@@ -71,4 +71,4 @@ collectors: HostMemory, HostKSM, HostCpu
 
 [guest]
 # A comma-separated list of Collector plugins to use for Guest data collection.
-collectors: GuestQemuProc, GuestMemory, GuestBalloon, GuestCpuTune
+collectors: GuestQemuProc, GuestMemoryOptional, GuestBalloon, GuestCpuTune
