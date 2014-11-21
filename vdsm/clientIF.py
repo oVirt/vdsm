@@ -23,6 +23,8 @@ import os.path
 import time
 import threading
 import uuid
+from functools import partial
+from weakref import proxy
 
 import alignmentScan
 from vdsm.config import config
@@ -77,7 +79,8 @@ class clientIF(object):
         self._shutdownSemaphore = threading.Semaphore()
         self.irs = irs
         if self.irs:
-            self.irs.registerDomainStateChangeCallback(self.contEIOVms)
+            self._contEIOVmsCB = partial(clientIF.contEIOVms, proxy(self))
+            self.irs.registerDomainStateChangeCallback(self._contEIOVmsCB)
         self.log = log
         self._recovery = True
         self.channelListener = Listener(self.log)
