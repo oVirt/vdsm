@@ -26,6 +26,10 @@ import select
 import signal
 import fcntl
 import errno
+import weakref
+
+from functools import partial
+
 from testlib import AssertingLock
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
@@ -124,6 +128,37 @@ class EventTests(TestCaseBase):
         event.emit()
         ev.wait(5)
         self.assertTrue(ev.isSet())
+
+    def testInstanceMethod(self):
+        ev = threading.Event()
+        event = misc.Event("name", sync=True)
+        receiver = Receiver(event, ev)
+        print event._registrar
+        event.emit()
+        ev.wait(5)
+        self.assertTrue(ev.isSet())
+
+    def testInstanceMethodDead(self):
+        ev = threading.Event()
+        event = misc.Event("name", sync=True)
+        receiver = Receiver(event, ev)
+        print event._registrar
+        del receiver
+        print event._registrar
+        event.emit()
+        ev.wait(1)
+        self.assertFalse(ev.isSet())
+
+
+class Receiver(object):
+
+    def __init__(self, event, flag):
+        self._callback = partial(Receiver.callback, weakref.proxy(self))
+        event.register(self._callback)
+        self.flag = flag
+
+    def callback(self):
+        self.flag.set()
 
 
 class TMap(TestCaseBase):
