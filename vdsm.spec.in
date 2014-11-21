@@ -153,7 +153,7 @@ Requires: %{name}-jsonrpc = %{version}-%{release}
 %if %{rhev_build}
 Requires: mom >= 0.4.1-4
 %else
-Requires: mom >= 0.4.1
+Requires: mom >= 0.4.3
 %endif
 
 # Numactl is not available on s390[x] and ARM
