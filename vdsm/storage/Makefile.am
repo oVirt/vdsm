@@ -81,3 +81,8 @@ nodist_vdsmstorage_DATA = \
 EXTRA_DIST = \
 	lvm.env.in \
 	$(NULL)
+
+all: vdsm-lvm.rules
+
+vdsm-lvm.rules: vdsm_lvm_rules.template
+	python $< > $@
