@@ -56,6 +56,17 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
 
 AC_ARG_ENABLE(
+    [chown_hack],
+    [AS_HELP_STRING(
+        [--enable-chown-hack],
+        [enable chown hack for lvm udev rules @<:@default=no@:>@]
+    )],
+    ,
+    [enable_chown_hack="no"]
+)
+AC_SUBST([CHOWN_HACK], ["${enable_chown_hack}"])
+
+AC_ARG_ENABLE(
     [libvirt-sanlock],
     [AS_HELP_STRING(
         [--disable-libvirt-sanlock],
@@ -282,7 +293,7 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
-	vdsm/storage/vdsm-lvm.rules
+	vdsm/storage/vdsm_lvm_rules.template
 	vdsm/virt/Makefile
 	vdsm_hooks/Makefile
 	vdsm_hooks/checkimages/Makefile

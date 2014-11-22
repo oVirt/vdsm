@@ -49,6 +49,10 @@
 %global with_tmpfiles_macro 1
 %endif
 
+%if 0%{?fedora} || 0%{?rhel} >= 7
+%global with_chown_hack 1
+%endif
+
 %if 0%{?rhel} == 6
 %global _udevrulesdir /lib/udev/rules.d/
 %global _udevexecdir /lib/udev/
@@ -648,7 +652,7 @@ sed -i '/ su /d' vdsm/vdsm-logrotate.conf.in
 %if 0%{?enable_autotools}
 autoreconf -if
 %endif
-%configure %{?with_hooks:--enable-hooks}
+%configure %{?with_hooks:--enable-hooks} %{?with_chown_hack:--enable-chown-hack}
 make
 # Setting software_version and software_revision in dsaversion.py
 baserelease=`echo "%{release}" | sed 's/\([0-9]\+\(\.[0-9]\+\)\?\).*/\1/'`
