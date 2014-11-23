@@ -62,7 +62,6 @@ class SuperVdsmProxy(object):
     _log = logging.getLogger("SuperVdsmProxy")
 
     def __init__(self):
-        self.proxyLock = threading.Lock()
         self._manager = None
         self._svdsm = None
         self._connect()
