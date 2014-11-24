@@ -41,13 +41,13 @@ import blkid
 import supervdsm
 from protocoldetector import MultiProtocolAcceptor
 
-from virt import hwclass
 from virt import migration
 from virt import sampling
 from virt import vm
 from virt import vmstatus
 from virt.vm import Vm, getVDSMDomains
 from virt.vmchannels import Listener
+from virt.vmdevices import hwclass
 from virt.utils import isVdsmImage
 try:
     import gluster.api as gapi

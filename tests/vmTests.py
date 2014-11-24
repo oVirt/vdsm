@@ -30,11 +30,11 @@ import uuid
 
 import libvirt
 
-from virt import hwclass
 from virt import vm
 from virt import vmdevices
 from virt import vmexitreason
 from virt.domain_descriptor import DomainDescriptor
+from virt.vmdevices import hwclass
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from virt import vmxml
 from virt import vmstatus
@@ -264,7 +264,7 @@ class TestVm(TestCaseBase):
         smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'
         dev = {'device': 'smartcard',
                'specParams': {'mode': 'passthrough', 'type': 'spicevmc'}}
-        smartcard = vmdevices.Smartcard(self.conf, self.log, **dev)
+        smartcard = vmdevices.core.Smartcard(self.conf, self.log, **dev)
         self.assertXML(smartcard.getXML(), smartcardXML)
 
     def testTpmXML(self):
@@ -278,7 +278,7 @@ class TestVm(TestCaseBase):
         dev = {'device': 'tpm',
                'specParams': {'mode': 'passthrough',
                               'path': '/dev/tpm0', 'model': 'tpm-tis'}}
-        tpm = vmdevices.Tpm(self.conf, self.log, **dev)
+        tpm = vmdevices.core.Tpm(self.conf, self.log, **dev)
         self.assertXML(tpm.getXML(), tpmXML)
 
     def testFeaturesXML(self):
@@ -330,7 +330,7 @@ class TestVm(TestCaseBase):
                 <target port="0" type="virtio"/>
             </console>"""
         dev = {'device': 'console'}
-        console = vmdevices.Console(self.conf, self.log, **dev)
+        console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXML(console.getXML(), consoleXML)
 
     def testClockXML(self):
@@ -502,7 +502,7 @@ class TestVm(TestCaseBase):
         balloonXML = '<memballoon model="virtio"/>'
         dev = {'device': 'memballoon', 'type': 'balloon',
                'specParams': {'model': 'virtio'}}
-        balloon = vmdevices.Balloon(self.conf, self.log, **dev)
+        balloon = vmdevices.core.Balloon(self.conf, self.log, **dev)
         self.assertXML(balloon.getXML(), balloonXML)
 
     def testRngXML(self):
@@ -515,20 +515,20 @@ class TestVm(TestCaseBase):
         dev = {'type': 'rng', 'model': 'virtio', 'specParams':
                {'period': '2000', 'bytes': '1234', 'source': 'random'}}
 
-        rng = vmdevices.Rng(self.conf, self.log, **dev)
+        rng = vmdevices.core.Rng(self.conf, self.log, **dev)
         self.assertXML(rng.getXML(), rngXML)
 
     def testWatchdogXML(self):
         watchdogXML = '<watchdog action="none" model="i6300esb"/>'
         dev = {'device': 'watchdog', 'type': 'watchdog',
                'specParams': {'model': 'i6300esb', 'action': 'none'}}
-        watchdog = vmdevices.Watchdog(self.conf, self.log, **dev)
+        watchdog = vmdevices.core.Watchdog(self.conf, self.log, **dev)
         self.assertXML(watchdog.getXML(), watchdogXML)
 
     def testSoundXML(self):
         soundXML = '<sound model="ac97"/>'
         dev = {'device': 'ac97'}
-        sound = vmdevices.Sound(self.conf, self.log, **dev)
+        sound = vmdevices.core.Sound(self.conf, self.log, **dev)
         self.assertXML(sound.getXML(), soundXML)
 
     def testVideoXML(self):
@@ -539,7 +539,7 @@ class TestVm(TestCaseBase):
 
         dev = {'device': 'vga', 'specParams': {'vram': '32768',
                'heads': '2'}}
-        video = vmdevices.Video(self.conf, self.log, **dev)
+        video = vmdevices.core.Video(self.conf, self.log, **dev)
         self.assertXML(video.getXML(), videoXML)
 
     def testInterfaceXML(self):
@@ -633,7 +633,7 @@ class TestVm(TestCaseBase):
             </controller>"""]
 
         for devConf, xml in zip(devConfs, expectedXMLs):
-            dev = vmdevices.Controller(self.conf, self.log, **devConf)
+            dev = vmdevices.core.Controller(self.conf, self.log, **devConf)
             self.assertXML(dev.getXML(), xml % self.PCI_ADDR)
 
     def testRedirXML(self):
@@ -644,7 +644,7 @@ class TestVm(TestCaseBase):
 
         dev = {'device': 'spicevmc', 'address': self.PCI_ADDR_DICT}
 
-        redir = vmdevices.Redir(self.conf, self.log, **dev)
+        redir = vmdevices.core.Redir(self.conf, self.log, **dev)
         self.assertXML(redir.getXML(), redirXML)
 
     def testDriveSharedStatus(self):

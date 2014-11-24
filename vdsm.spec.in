@@ -1046,18 +1046,19 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/domain_descriptor.py*
 %{_datadir}/%{vdsm_name}/virt/guestagent.py*
-%{_datadir}/%{vdsm_name}/virt/hwclass.py*
 %{_datadir}/%{vdsm_name}/virt/migration.py*
+%{_datadir}/%{vdsm_name}/virt/sampling.py*
 %{_datadir}/%{vdsm_name}/virt/vmchannels.py*
-%{_datadir}/%{vdsm_name}/virt/vmdevices.py*
 %{_datadir}/%{vdsm_name}/virt/vmstatus.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
 %{_datadir}/%{vdsm_name}/virt/vmexitreason.py*
 %{_datadir}/%{vdsm_name}/virt/vmpowerdown.py*
 %{_datadir}/%{vdsm_name}/virt/vmxml.py*
-%{_datadir}/%{vdsm_name}/virt/sampling.py*
 %{_datadir}/%{vdsm_name}/virt/utils.py*
+%{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
+%{_datadir}/%{vdsm_name}/virt/vmdevices/core.py*
+%{_datadir}/%{vdsm_name}/virt/vmdevices/hwclass.py*
 %{_datadir}/%{vdsm_name}/tool
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf

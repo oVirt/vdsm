@@ -20,7 +20,7 @@
 
 import caps
 
-from . import vmxml
+from .. import vmxml
 
 
 class Base(vmxml.Device):

@@ -58,11 +58,11 @@ import numaUtils
 # local package imports
 from .domain_descriptor import DomainDescriptor
 from . import guestagent
-from . import hwclass
 from . import migration
 from . import vmdevices
 from . import vmexitreason
 from . import vmstatus
+from .vmdevices import hwclass
 from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
 from . import vmxml
@@ -754,7 +754,7 @@ class NotifyingVirDomain:
         return f
 
 
-class NetworkInterfaceDevice(vmdevices.Base):
+class NetworkInterfaceDevice(vmdevices.core.Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter',
                  'sndbufParam', 'driver', 'name')
@@ -867,7 +867,7 @@ class NetworkInterfaceDevice(vmdevices.Base):
         return bandwidth
 
 
-class Drive(vmdevices.Base):
+class Drive(vmdevices.core.Base):
     __slots__ = ('iface', 'path', 'readonly', 'bootOrder', 'domainID',
                  'poolID', 'imageID', 'UUID', 'volumeID', 'format',
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
@@ -1173,7 +1173,7 @@ class Drive(vmdevices.Base):
         return diskelem
 
 
-class GraphicsDevice(vmdevices.Base):
+class GraphicsDevice(vmdevices.core.Base):
     __slots__ = ('device', 'port', 'tlsPort')
 
     LIBVIRT_PORT_AUTOSELECT = '-1'
@@ -1306,18 +1306,18 @@ class Vm(object):
     _ongoingCreations = threading.BoundedSemaphore(4)
     DeviceMapping = ((hwclass.DISK, Drive),
                      (hwclass.NIC, NetworkInterfaceDevice),
-                     (hwclass.SOUND, vmdevices.Sound),
-                     (hwclass.VIDEO, vmdevices.Video),
+                     (hwclass.SOUND, vmdevices.core.Sound),
+                     (hwclass.VIDEO, vmdevices.core.Video),
                      (hwclass.GRAPHICS, GraphicsDevice),
-                     (hwclass.CONTROLLER, vmdevices.Controller),
-                     (hwclass.GENERAL, vmdevices.Generic),
-                     (hwclass.BALLOON, vmdevices.Balloon),
-                     (hwclass.WATCHDOG, vmdevices.Watchdog),
-                     (hwclass.CONSOLE, vmdevices.Console),
-                     (hwclass.REDIR, vmdevices.Redir),
-                     (hwclass.RNG, vmdevices.Rng),
-                     (hwclass.SMARTCARD, vmdevices.Smartcard),
-                     (hwclass.TPM, vmdevices.Tpm))
+                     (hwclass.CONTROLLER, vmdevices.core.Controller),
+                     (hwclass.GENERAL, vmdevices.core.Generic),
+                     (hwclass.BALLOON, vmdevices.core.Balloon),
+                     (hwclass.WATCHDOG, vmdevices.core.Watchdog),
+                     (hwclass.CONSOLE, vmdevices.core.Console),
+                     (hwclass.REDIR, vmdevices.core.Redir),
+                     (hwclass.RNG, vmdevices.core.Rng),
+                     (hwclass.SMARTCARD, vmdevices.core.Smartcard),
+                     (hwclass.TPM, vmdevices.core.Tpm))
 
     def _makeDeviceDict(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)

@@ -42,9 +42,9 @@ import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
-from virt import hwclass
 from virt import vm
 from virt import vmstatus
+from virt.vmdevices import hwclass
 from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
