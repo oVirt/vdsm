@@ -20,8 +20,9 @@
 
 from . import core
 from . import hwclass
+from . import graphics
 from . import network
 from . import storage
 
 # Silence pyflakes
-core, hwclass, network, storage
+core, graphics, hwclass, network, storage

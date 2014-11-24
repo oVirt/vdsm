@@ -489,7 +489,7 @@ class TestVm(TestCaseBase):
         with fake.VM(vmConf) as testvm:
             dev = (testvm.getConfGraphics() if isLegacy
                    else vmConf['devices'])[0]
-            graph = vm.GraphicsDevice(vmConf, self.log, **dev)
+            graph = vmdevices.graphics.Graphics(vmConf, self.log, **dev)
             self.assertXMLEqual(graph.getXML(), xml)
 
             if graph.device == 'spice':
@@ -1289,7 +1289,7 @@ class TestVm(TestCaseBase):
             graphConf = {
                 'type': hwclass.GRAPHICS, 'device': 'spice',
                 'port': '-1', 'tlsPort': '-1'}
-            graphDev = vm.GraphicsDevice(
+            graphDev = vmdevices.graphics.Graphics(
                 testvm.conf, testvm.log,
                 device='spice', port='-1', tlsPort='-1')
 
@@ -1659,18 +1659,18 @@ class TestVmDevices(TestCaseBase):
     def testGraphicsDeviceSanityLegacy(self):
         for conf in self.confDisplay:
             conf.update(self.conf)
-            self.assertTrue(vm.GraphicsDevice.isSupportedDisplayType(conf))
+            self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
 
     def testGraphicsDeviceSanity(self):
         for dev in self.confDeviceGraphics:
             conf = {'display': 'qxl', 'devices': list(dev)}
             conf.update(self.conf)
-            self.assertTrue(vm.GraphicsDevice.isSupportedDisplayType(conf))
+            self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
 
     def testGraphicDeviceUnsupported(self):
         conf = {'display': 'rdp'}
         conf.update(self.conf)
-        self.assertFalse(vm.GraphicsDevice.isSupportedDisplayType(conf))
+        self.assertFalse(vmdevices.graphics.isSupportedDisplayType(conf))
 
     def testHasSpiceLegacy(self):
         for conf in self.confDisplaySpice:

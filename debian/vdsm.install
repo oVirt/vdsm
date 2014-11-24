@@ -160,6 +160,7 @@
 ./usr/share/vdsm/virt/utils.py
 ./usr/share/vdsm/virt/vmdevices/__init__.py
 ./usr/share/vdsm/virt/vmdevices/core.py
+./usr/share/vdsm/virt/vmdevices/graphics.py
 ./usr/share/vdsm/virt/vmdevices/hwclass.py
 ./usr/share/vdsm/virt/vmdevices/network.py
 ./usr/share/vdsm/virt/vmdevices/storage.py

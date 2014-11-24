@@ -42,8 +42,8 @@ import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
-from virt import vm
 from virt import vmstatus
+from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
@@ -252,7 +252,7 @@ class VM(APIBase):
                                                   'No space on /tmp?'}}
                     return errCode['createErr']
 
-            if not vm.GraphicsDevice.isSupportedDisplayType(vmParams):
+            if not graphics.isSupportedDisplayType(vmParams):
                 return {'status': {'code': errCode['createErr']
                                                   ['status']['code'],
                                    'message': 'Unknown display type %s' %
