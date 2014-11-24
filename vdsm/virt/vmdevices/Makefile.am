@@ -23,4 +23,5 @@ dist_vmdevices_PYTHON = \
 	__init__.py \
 	core.py \
 	hwclass.py \
+	storage.py \
 	$(NULL)

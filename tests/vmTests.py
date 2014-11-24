@@ -672,14 +672,14 @@ class TestVm(TestCaseBase):
 
         for driveInput, driveOutput in zip(sharedConfigs, expectedStates):
             driveInput.update(driveConfig)
-            drive = vm.Drive({}, self.log, **driveInput)
+            drive = vmdevices.storage.Drive({}, self.log, **driveInput)
             self.assertEqual(drive.extSharedState, driveOutput)
 
         # Negative flow, unsupported value
         driveInput.update({'shared': 'UNKNOWN-VALUE'})
 
         with self.assertRaises(ValueError):
-            drive = vm.Drive({}, self.log, **driveInput)
+            drive = vmdevices.storage.Drive({}, self.log, **driveInput)
 
     def testDriveXML(self):
         SERIAL = '54-a672-23e5b495a9ea'
@@ -767,7 +767,7 @@ class TestVm(TestCaseBase):
 
         for (devConf, xml, blockDev, vmConf) in \
                 zip(devConfs, expectedXMLs, blockDevs, vmConfs):
-            drive = vm.Drive(vmConf, self.log, **devConf)
+            drive = vmdevices.storage.Drive(vmConf, self.log, **devConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = blockDev
             self.assertXML(drive.getXML(), xml % SERIAL)
@@ -799,7 +799,7 @@ class TestVm(TestCaseBase):
 
         for (devConf, exceptionMsg) in \
                 zip(devConfs, expectedExceptMsgs):
-            drive = vm.Drive(vmConf, self.log, **devConf)
+            drive = vmdevices.storage.Drive(vmConf, self.log, **devConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = False
 
@@ -1155,7 +1155,7 @@ class TestVm(TestCaseBase):
     def testSetIoTune(self):
 
         drives = [
-            vm.Drive({
+            vmdevices.storage.Drive({
                 "specParams": {
                     "ioTune": {
                         "total_bytes_sec": 9999,
@@ -1229,7 +1229,7 @@ class TestVm(TestCaseBase):
         """
         domainID = uuid.uuid4()
         drives = [
-            vm.Drive(
+            vmdevices.storage.Drive(
                 {
                     "specParams": {
                         "ioTune": {
@@ -1249,7 +1249,7 @@ class TestVm(TestCaseBase):
                 poolID=uuid.uuid4(),
                 volumeID=uuid.uuid4()
             ),
-            vm.Drive(
+            vmdevices.storage.Drive(
                 {
                     "specParams": {
                         "ioTune": {

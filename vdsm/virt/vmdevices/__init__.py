@@ -20,3 +20,4 @@
 
 from . import core
 from . import hwclass
+from . import storage

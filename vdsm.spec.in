@@ -1059,6 +1059,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/core.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/hwclass.py*
+%{_datadir}/%{vdsm_name}/virt/vmdevices/storage.py*
 %{_datadir}/%{vdsm_name}/tool
 
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf

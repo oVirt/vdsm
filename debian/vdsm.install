@@ -161,4 +161,5 @@
 ./usr/share/vdsm/virt/vmdevices/__init__.py
 ./usr/share/vdsm/virt/vmdevices/core.py
 ./usr/share/vdsm/virt/vmdevices/hwclass.py
+./usr/share/vdsm/virt/vmdevices/storage.py
 ./var/lib/polkit-1/localauthority/10-vendor.d/10-vdsm-libvirt-access.pkla
