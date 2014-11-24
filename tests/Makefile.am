@@ -65,11 +65,13 @@ test_modules = \
 	profileTests.py \
 	protocoldetectorTests.py \
 	qemuimgTests.py \
+	qosTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
 	samplingTests.py \
 	schemaTests.py \
 	securableTests.py \
+	sourceroutingTests.py \
 	sslhelper.py \
 	sslTests.py \
 	storageMailboxTests.py \
@@ -126,6 +128,7 @@ dist_vdsmtests_DATA = \
 	glusterVolumeRebalanceStatus.xml \
 	glusterVolumeRemoveBricksStatus.xml \
 	glusterVolumeTasks.xml \
+	ip_route_show_table_all.out \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	mem_info.out \
 	netmaskconversions \
