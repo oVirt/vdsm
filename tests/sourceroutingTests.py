@@ -38,7 +38,7 @@ def _routeShowTableAll(table):
 class TestFilters(TestCaseBase):
     @MonkeyPatch(sourceroute, 'routeShowTable', _routeShowTableAll)
     def test_source_route_retrieval(self):
-        routes = sourceroute.DynamicSourceRoute._getRoutes(TABLE, DEVICE)
+        routes = sourceroute.DynamicSourceRoute._getRoutes(TABLE)
         self.assertEqual(len(routes), 2)
         for route in routes:
             self.assertEqual(route.table, TABLE)
