@@ -570,7 +570,7 @@ class TestVm(TestCaseBase):
                'custom': {'queues': '7'}}
 
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
-        iface = vm.NetworkInterfaceDevice(self.conf, self.log, **dev)
+        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         self.assertXML(iface.getXML(), interfaceXML)
 
     def testInterfaceXMLBandwidthUpdate(self):
@@ -596,7 +596,7 @@ class TestVm(TestCaseBase):
                               'outbound': {'average': 128, 'burst': 256}},
                'custom': {'queues': '7'}}
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
-        iface = vm.NetworkInterfaceDevice(self.conf, self.log, **dev)
+        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         originalBandwidth = iface.getXML().getElementsByTagName('bandwidth')[0]
         self.assertXML(originalBandwidth, originalBwidthXML)
         self.assertXML(iface.paramsToBandwidthXML(NEW_OUT, originalBandwidth),

@@ -20,4 +20,5 @@
 
 from . import core
 from . import hwclass
+from . import network
 from . import storage
