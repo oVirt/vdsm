@@ -2469,69 +2469,12 @@ class Vm(object):
         with self._confLock:
             self.conf['timeOffset'] = newTimeOffset
 
-    def _getMergeWriteWatermarks(self):
-        drives = [drive for drive in self.getDiskDevices()
-                  if isVdsmImage(drive) and drive.blockDev]
-        allChains = self._driveGetActualVolumeChain(drives).values()
-        return dict((entry.uuid, entry.allocation)
-                    for chain in allChains
-                    for entry in chain)
-
-    def _getLiveMergeExtendCandidates(self):
-        ret = {}
-
-        # The common case is that there are no active jobs.
-        if not self.conf['_blockJobs'].values():
-            return ret
-
-        try:
-            watermarks = self._getMergeWriteWatermarks()
-        except LookupError:
-            self.log.warning("Failed to look up watermark information")
-            return ret
-
-        for job in self.conf['_blockJobs'].values():
-            try:
-                drive = self._findDriveByUUIDs(job['disk'])
-            except LookupError:
-                # After an active layer merge completes the vdsm metadata will
-                # be out of sync for a brief period.  If we cannot find the old
-                # disk then it's safe to skip it.
-                continue
-            if not drive.blockDev or drive.format != 'cow':
-                continue
-
-            if job['strategy'] == 'commit':
-                volumeID = job['baseVolume']
-            else:
-                self.log.debug("Unrecognized merge strategy '%s'",
-                               job['strategy'])
-                continue
-            volSize = self.cif.irs.getVolumeSize(drive.domainID, drive.poolID,
-                                                 drive.imageID, volumeID)
-            if volSize['status']['code'] != 0:
-                self.log.error("Unable to get the size of volume %s (domain: "
-                               "%s image: %s)", volumeID, drive.domainID,
-                               drive.imageID)
-                continue
-
-            if volumeID in watermarks:
-                self.log.debug("Adding live merge extension candidate: "
-                               "volume=%s", volumeID)
-                ret[drive.imageID] = {
-                    'alloc': watermarks[volumeID],
-                    'physical': int(volSize['truesize']),
-                    'capacity': drive.apparentsize,
-                    'volumeID': volumeID}
-            else:
-                self.log.warning("No watermark info available for %s",
-                                 volumeID)
-        return ret
-
     def _getExtendCandidates(self):
         ret = []
 
-        mergeCandidates = self._getLiveMergeExtendCandidates()
+        # FIXME: mergeCandidates should be a dictionary of candidate volumes
+        # once libvirt starts reporting watermark information for all volumes.
+        mergeCandidates = {}
         for drive in self._devices[DISK_DEVICES]:
             if not drive.blockDev or drive.format != 'cow':
                 continue
@@ -5871,7 +5814,6 @@ class Vm(object):
         if res['info']['voltype'] == 'SHARED':
             self.log.error("merge: Refusing to merge into a shared volume")
             return errCode['mergeErr']
-        baseSize = int(res['info']['apparentsize'])
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files.  This is necessary to ensure that a volume chain is
@@ -5885,6 +5827,19 @@ class Vm(object):
             # transitioned to the second phase.  We must then tell libvirt to
             # pivot to the new active layer (baseVolUUID).
             flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
+
+            # If top is the active layer, it's allocated size is stored in
+            # drive.apparantsize.
+            topSize = drive.apparentsize
+        else:
+            # If top is an internal volume, we must call getVolumeInfo
+            res = self.cif.irs.getVolumeInfo(drive.domainID, drive.poolID,
+                                             drive.imageID, topVolUUID)
+            if res['status']['code'] != 0:
+                self.log.error("Unable to get volume info for '%s'",
+                               topVolUUID)
+                return errCode['mergeErr']
+            topSize = int(res['info']['apparentsize'])
 
         # Take the jobs lock here to protect the new job we are tracking from
         # being cleaned up by queryBlockJobs() since it won't exist right away
@@ -5909,9 +5864,13 @@ class Vm(object):
 
         # blockCommit will cause data to be written into the base volume.
         # Perform an initial extension to ensure there is enough space to
-        # start copying.  The normal monitoring code will take care of any
-        # future internal volume extensions that may be necessary
-        self.extendDriveVolume(drive, baseVolUUID, baseSize)
+        # copy all the required data.  Normally we'd use monitoring to extend
+        # the volume on-demand but internal watermark information is not being
+        # reported by libvirt so we must do the full extension up front.  In
+        # the worst case, we'll need to extend 'base' to the same size as 'top'
+        # plus a bit more to accomodate additional writes to 'top' during the
+        # live merge operation.
+        self.extendDriveVolume(drive, baseVolUUID, topSize)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
@@ -5939,14 +5898,10 @@ class Vm(object):
                 break
             sourceAttr = ('file', 'dev')[drive.blockDev]
             path = sourceXML.getAttribute(sourceAttr)
+
+            # TODO: Allocation information is not available in the XML.  Switch
+            # to the new interface once it becomes available in libvirt.
             alloc = None
-            if drive.blockDev:
-                allocXML = find_element_by_name(diskXML, 'allocation')
-                if not allocXML:
-                    self.log.debug("<allocation/> missing from backing "
-                                   "chain for block device %s", drive.name)
-                    break
-                alloc = int(allocXML.firstChild.nodeValue)
             bsXML = find_element_by_name(diskXML, 'backingStore')
             if not bsXML:
                 self.log.warning("<backingStore/> missing from backing "
