@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -191,18 +192,27 @@ class TestLinks(TestCaseBase):
 
 class TestDrvinfo(TestCaseBase):
     _bridge = tcTests._Bridge()
+    _unicode_bridge = tcTests._Bridge()
 
     @ValidateRunningAsRoot
     def setUp(self):
         tcTests._checkDependencies()
         self._bridge.addDevice()
+        self._unicode_bridge.devName = 'test-トトロ'
+        self._unicode_bridge.addDevice()
 
     def tearDown(self):
         self._bridge.delDevice()
+        self._unicode_bridge.delDevice()
 
     def testBridgeEthtoolDrvinfo(self):
         self.assertEqual(ipwrapper.drv_name(self._bridge.devName),
                          ipwrapper.LinkType.BRIDGE)
+
+    def testUtf8BridgeEthtoolDrvinfo(self):
+        self.assertEqual(
+            ipwrapper.drv_name(self._unicode_bridge.devName.decode('utf8')),
+            ipwrapper.LinkType.BRIDGE)
 
     def testTogglePromisc(self):
         ipwrapper.getLink(self._bridge.devName).promisc = True

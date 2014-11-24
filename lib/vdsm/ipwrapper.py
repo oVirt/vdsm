@@ -277,6 +277,7 @@ def drv_name(devName):
     """Returns the driver used by a device.
     Throws IOError ENODEV for non existing devices.
     Throws IOError EOPNOTSUPP for non supported devices, i.g., loopback."""
+    encoded_name = devName.encode('utf-8')
     ETHTOOL_GDRVINFO = 0x00000003  # ETHTOOL Get driver info command
     SIOCETHTOOL = 0x8946  # Ethtool interface
     DRVINFO_FORMAT = '= I 32s 32s 32s 32s 32s 12s 5I'
@@ -284,7 +285,7 @@ def drv_name(devName):
     buff = array.array('c', b'\0' * struct.calcsize(DRVINFO_FORMAT))
     cmd = struct.pack('= I', ETHTOOL_GDRVINFO)
     buff[0:len(cmd)] = array.array('c', cmd)
-    data = struct.pack(IFREQ_FORMAT, devName, *buff.buffer_info())
+    data = struct.pack(IFREQ_FORMAT, encoded_name, *buff.buffer_info())
     with closing(socket.socket(socket.AF_INET, socket.SOCK_DGRAM)) as sock:
         fcntl.ioctl(sock, SIOCETHTOOL, data)
     (cmd, driver, version, fw_version, businfo, _, _, n_priv_flags, n_stats,
