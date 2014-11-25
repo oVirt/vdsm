@@ -464,6 +464,7 @@ command_info = {
     'VM_setCpuTunePeriod': {'ret': 'taskStatus'},
     'VM_setCpuTuneQuota': {'ret': 'taskStatus'},
     'VM_setNumberOfCpus': {'ret': 'vmList'},
+    'VM_setIoTune': {'ret': 'taskStatus'},
     'VM_updateDevice': {'ret': 'vmList'},
     'Volume_copy': {'ret': 'uuid'},
     'Volume_create': {'ret': 'uuid'},
