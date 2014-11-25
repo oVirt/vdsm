@@ -218,15 +218,18 @@ class KdumpStatus(object):
     ENABLED = 1
 
 
-@utils.memoized
-def _getCapsXMLStr():
+def _getFreshCapsXMLStr():
     return libvirtconnection.get().getCapabilities()
 
 
 @utils.memoized
+def _getCapsXMLStr():
+    return _getFreshCapsXMLStr()
+
+
 def _getCpuTopology(capabilities):
     if capabilities is None:
-        capabilities = _getCapsXMLStr()
+        capabilities = _getFreshCapsXMLStr()
 
     caps = minidom.parseString(capabilities)
     host = caps.getElementsByTagName('host')[0]
