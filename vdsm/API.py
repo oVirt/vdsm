@@ -971,8 +971,8 @@ class StorageDomain(APIBase):
         APIBase.__init__(self)
         self._UUID = UUID
 
-    def activate(self, spUUID):
-        return self._irs.activateStorageDomain(self._UUID, spUUID)
+    def activate(self, storagepoolID):
+        return self._irs.activateStorageDomain(self._UUID, storagepoolID)
 
     def attach(self, spUUID):
         return self._irs.attachStorageDomain(self._UUID, spUUID)
