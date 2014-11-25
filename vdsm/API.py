@@ -1069,8 +1069,8 @@ class StoragePool(APIBase):
         lastLver = None   # Unused
         return self._irs.fenceSpmStorage(self._UUID, lastOwner, lastLver)
 
-    def getBackedUpVmsInfo(self, sdUUID, vmList):
-        return self._irs.getVmsInfo(self._UUID, sdUUID, vmList)
+    def getBackedUpVmsInfo(self, storagedomainID, vmList):
+        return self._irs.getVmsInfo(self._UUID, storagedomainID, vmList)
 
     def getBackedUpVmsList(self, sdUUID):
         return self._irs.getVmsList(self._UUID, sdUUID)
