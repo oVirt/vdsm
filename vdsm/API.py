@@ -687,14 +687,14 @@ class VM(APIBase):
                  imageID=paramImageID, volumeID=paramVolumeID,
                  device='disk')
 
-    def snapshot(self, snapDrives, snapMemVolHandle=None):
+    def snapshot(self, snapDrives, snapMemory=None):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
         memoryParams = {}
-        if snapMemVolHandle:
+        if snapMemory:
             memoryParams['dst'], memoryParams['dstparams'] = \
-                self._getHibernationPaths(snapMemVolHandle)
+                self._getHibernationPaths(snapMemory)
         return v.snapshot(snapDrives, memoryParams)
 
     def setBalloonTarget(self, target):
