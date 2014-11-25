@@ -414,7 +414,6 @@ command_info = {
     'Host_getVMList': {'call': Host_getVMList_Call, 'ret': Host_getVMList_Ret},
     'Host_getVMFullList': {'call': Host_getVMFullList_Call, 'ret': 'vmList'},
     'Host_getAllVmStats': {'ret': 'statsList'},
-    'Host_setupNetworks': {'ret': 'status'},
     'Image_cloneStructure': {'ret': 'uuid'},
     'Image_delete': {'ret': 'uuid'},
     'Image_deleteVolumes': {'ret': 'uuid'},
