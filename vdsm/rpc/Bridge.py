@@ -423,6 +423,7 @@ command_info = {
     'Image_move': {'ret': 'uuid'},
     'Image_reconcileVolumeChain': {'ret': 'volumes'},
     'Image_syncData': {'ret': 'uuid'},
+    'Image_upload': {'ret': 'uuid'},
     'ISCSIConnection_discoverSendTargets': {'ret': 'fullTargets'},
     'LVMVolumeGroup_create': {'ret': 'uuid'},
     'LVMVolumeGroup_getInfo': {'ret': 'info'},
