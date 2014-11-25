@@ -1032,10 +1032,11 @@ class StoragePool(APIBase):
         APIBase.__init__(self)
         self._UUID = UUID
 
-    def connect(self, hostID, deprecatedSCSIKey, masterSdUUID, masterVersion,
-                domainsMap=None):
+    # scsiKey not used
+    def connect(self, hostID, scsiKey, masterSdUUID, masterVersion,
+                domainDict=None):
         return self._irs.connectStoragePool(
-            self._UUID, hostID, masterSdUUID, masterVersion, domainsMap)
+            self._UUID, hostID, masterSdUUID, masterVersion, domainDict)
 
     def connectStorageServer(self, domainType, connectionParams):
         return self._irs.connectStorageServer(domainType, self._UUID,
