@@ -27,8 +27,9 @@ except ImportError:
     import sos.plugintools
     Base = sos.plugintools.PluginBase
 
-import subprocess
 import os
+import stat
+import subprocess
 
 
 def _importVdsmPylibModule(modName):
@@ -139,11 +140,12 @@ class vdsm(Base):
 
     def _addVdsmRunDir(self):
         """Add everything under /var/run/vdsm except possibly confidential
-        sysprep vfds """
+        sysprep vfds and sockets"""
 
         import glob
 
         for f in glob.glob("@VDSMRUNDIR@/*"):
             if not f.endswith('.vfd') and not f.endswith('/isoUploader') \
-                    and not f.endswith('/storage'):
+                    and not f.endswith('/storage') \
+                    and not stat.S_ISSOCK(os.stat(f).st_mode):
                 self.addCopySpec(f)
