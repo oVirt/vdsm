@@ -133,16 +133,32 @@ def _rtnl_link_vlan_get_id(link):
         return -1
 
 
+# workaround for el6
+def _rtnl_link_get_kernel_workaround(sock, name):
+    with _nl_link_cache(sock) as cache:
+        return _rtnl_link_get_by_name(cache, name)
+
+
 def _get_link(name=None, index=0, sock=None):
     """ If defined both name and index, index is primary """
+    NLE_SUCCESS = 0
+    NLE_INVAL = 7
+    NLE_OPNOTSUPP = 10
+
     if name is None and index == 0:
         raise ValueError('Must specify either a name or an index')
     link = c_void_p()
     if sock is None:
         with _pool.socket() as sock:
             err = _rtnl_link_get_kernel(sock, index, name, byref(link))
+            if -err in (NLE_INVAL, NLE_OPNOTSUPP) and index == 0:
+                link = _rtnl_link_get_kernel_workaround(sock, name)
+                err = NLE_SUCCESS
     else:
         err = _rtnl_link_get_kernel(sock, index, name, byref(link))
+        if -err in (NLE_INVAL, NLE_OPNOTSUPP) and index == 0:
+            link = _rtnl_link_get_kernel_workaround(sock, name)
+            err = NLE_SUCCESS
     if err:
         raise IOError(-err, _nl_geterror())
     return link
