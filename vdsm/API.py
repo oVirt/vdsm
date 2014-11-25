@@ -1015,8 +1015,8 @@ class StorageDomain(APIBase):
     def getStats(self):
         return self._irs.getStorageDomainStats(self._UUID)
 
-    def getVolumes(self, spUUID, imgUUID=Image.BLANK_UUID):
-        return self._irs.getVolumesList(self._UUID, spUUID, imgUUID)
+    def getVolumes(self, storagepoolID, imageID=Image.BLANK_UUID):
+        return self._irs.getVolumesList(self._UUID, storagepoolID, imageID)
 
     def setDescription(self, description):
         return self._irs.setStorageDomainDescription(self._UUID, description)
