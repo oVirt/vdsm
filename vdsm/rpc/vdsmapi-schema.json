@@ -3575,16 +3575,18 @@
 #
 # Get information about the current virtual machines.
 #
+# @fullStatus:  #optional When set to False return limited info
+#
 # @vmList:      #optional Filter the results by a list of UUIDs
 #
 # Returns:
-# A list of VM UUIDs
+# A list of VmInfos
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getVMList'},
- 'data': {'*vmList': ['UUID']},
- 'returns': ['UUID']}
+ 'data': {'*fullStatus': 'bool','*vmList': ['UUID']},
+ 'returns': ['VmInfo']}
 
 ##
 # @GuestDiskMappingInfo:
