@@ -880,9 +880,9 @@ class Image(APIBase):
         return self._irs.uploadImage(
             methodArgs, self._spUUID, self._sdUUID, self._UUID, volUUID)
 
-    def download(self, methodArgs, volUUID=None):
+    def download(self, methodArgs, volumeID=None):
         return self._irs.downloadImage(
-            methodArgs, self._spUUID, self._sdUUID, self._UUID, volUUID)
+            methodArgs, self._spUUID, self._sdUUID, self._UUID, volumeID)
 
     def prepare(self, volUUID=None):
         return self._irs.prepareImage(
