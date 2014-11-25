@@ -727,10 +727,10 @@ class VM(APIBase):
             return errCode['noVM']
         return v.setCpuTunePeriod(period)
 
-    def getDiskAlignment(self, drive):
+    def getDiskAlignment(self, disk):
         if self._UUID != VM.BLANK_UUID:
             return errCode['noimpl']
-        return self._cif.getDiskAlignment(drive)
+        return self._cif.getDiskAlignment(disk)
 
     def merge(self, drive, baseVolUUID, topVolUUID, bandwidth=0, jobUUID=None):
         v = self._cif.vmContainer.get(self._UUID)
