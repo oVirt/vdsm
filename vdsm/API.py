@@ -352,10 +352,13 @@ class VM(APIBase):
             return errCode['noVM']
         return v.migrateStatus()
 
-    def getStats(self, runHooks=True):
+    def getStats(self):
         """
         Obtain statistics of the specified VM
         """
+        return self._getStats()
+
+    def _getStats(self, runHooks=True):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
@@ -1295,7 +1298,7 @@ class Global(APIBase):
         vms = self.getVMList()
         statsList = []
         for s in vms['vmList']:
-            response = VM(s['vmId']).getStats(runHooks=False)
+            response = VM(s['vmId'])._getStats(runHooks=False)
             if response:
                 statsList.append(response['statsList'][0])
         statsList = hooks.after_get_all_vm_stats(statsList)
