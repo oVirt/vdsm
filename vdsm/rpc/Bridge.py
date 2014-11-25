@@ -229,10 +229,13 @@ class DynamicBridge(object):
             self._typeFixup(argName, argType, val)
 
     def _fixupRet(self, className, methodName, result):
-        retType = self.api['commands'][className][methodName].get('returns')
+        retType = self._getRetList(className, methodName)
         if retType is not None:
             self._typeFixup('return', retType, result)
         return result
+
+    def _getRetList(self, className, methodName):
+        return self.api['commands'][className][methodName].get('returns')
 
     def _nameArgs(self, args, kwargs, arglist):
         kwargs = kwargs.copy()

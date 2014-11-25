@@ -20,8 +20,9 @@
 #
 import imp
 import json
-import sys
 
+from rpc.Bridge import DynamicBridge
+from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 
 apiWhitelist = ('StorageDomain.Classes', 'StorageDomain.Types',
@@ -37,7 +38,7 @@ class Host():
     ctorArgs = []
 
     def fenceNode(self, addr, port, agent, username, password, action,
-                  secure=False, options=''):
+                  secure=False, options='', policy=None):
         if options == 'port=15':
             return {'status': {'code': 0, 'message': 'Done'},
                     'power': 'on'}
@@ -64,7 +65,7 @@ class StorageDomain():
             return {'status': {'code': -1, 'message': 'Fail'}}
 
 
-def createFakeAPI():
+def getFakeAPI():
     _newAPI = imp.new_module('API')
     _API = __import__('API', globals(), locals(), {}, -1)
     setattr(_newAPI, 'Global', Host)
@@ -83,17 +84,23 @@ def createFakeAPI():
                 dstObj = getattr(dstObj, obj)
             except AttributeError:
                 setattr(dstObj, obj, srcObj)
-    # Install our fake API into the module table for use by the whole program
-    sys.modules['API'] = _newAPI
+    return _newAPI
+
+
+def _getApiInstance(self, className, argObj):
+    className = self._convertClassName(className)
+
+    apiObj = getattr(getFakeAPI(), className)
+
+    ctorArgs = self._getArgs(argObj, apiObj.ctorArgs, [])
+    return apiObj(*ctorArgs)
 
 
 class BridgeTests(TestCaseBase):
 
+    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
     def testMethodWithManyOptionalAttributes(self):
-        createFakeAPI()
-
-        from rpc import Bridge
-        bridge = Bridge.DynamicBridge()
+        bridge = DynamicBridge()
 
         msg = ('{"jsonrpc":"2.0","method":"Host.fenceNode","params":{"addr":"r'
                'ack05-pdu01-lab4.tlv.redhat.com","port":"","agent":"apc_snmp",'
@@ -108,11 +115,9 @@ class BridgeTests(TestCaseBase):
         method = getattr(bridge, mangledMethod)
         self.assertEquals(method(**params), {'power': 'on'})
 
+    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
     def testMethodWithNoParams(self):
-        createFakeAPI()
-
-        from rpc import Bridge
-        bridge = Bridge.DynamicBridge()
+        bridge = DynamicBridge()
 
         msg = ('{"jsonrpc":"2.0","method":"Host.getCapabilities","params":{},"'
                'id":"505ebe58-4fd7-45c6-8195-61e3a6d1dce9"}')
@@ -125,11 +130,9 @@ class BridgeTests(TestCaseBase):
         self.assertEquals(method(**params)['My caps'], 'My capabilites')
         bridge.unregister_server_address()
 
+    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
     def testDetach(self):
-        createFakeAPI()
-
-        from rpc import Bridge
-        bridge = Bridge.DynamicBridge()
+        bridge = DynamicBridge()
 
         msg = ('{"jsonrpc":"2.0","method":"StorageDomain.detach","params":{"st'
                'oragepoolID":"00000002-0002-0002-0002-0000000000f6","force":'

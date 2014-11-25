@@ -70,6 +70,7 @@ test_modules = \
 	resourceManagerTests.py \
 	samplingTests.py \
 	schemaTests.py \
+	schemaValidationTest.py \
 	securableTests.py \
 	sourceroutingTests.py \
 	sslhelper.py \
