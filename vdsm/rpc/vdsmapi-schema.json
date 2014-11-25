@@ -2149,7 +2149,7 @@
 #
 # Stop SD monitoring with hostID
 #
-# @SdUUID:        The Storage Domain UUID
+# @sdUUID:        The Storage Domain UUID
 #
 # Returns:
 # None
@@ -2157,8 +2157,7 @@
 # Since: 4.14.0
 ##
 {'command': {'class': 'Host', 'name': 'stopMonitoringDomain'},
- 'data': {'SdUUID': 'UUID' }
- 'returns': ''}
+ 'data': {'sdUUID': 'UUID' }}
 
 ##
 # @VmStatus:
