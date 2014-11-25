@@ -79,7 +79,7 @@ class vdsm(Base):
         self.addForbiddenPath('/etc/pki/vdsm/libvirt-spice/*-key.*')
         self.addForbiddenPath('/etc/pki/libvirt/private/*')
 
-        self.collectExtOutput("/etc/init.d/vdsmd status")
+        self.collectExtOutput("service vdsmd status")
         self.addCopySpec("/tmp/vds_installer*")
         self.addCopySpec("/tmp/vds_bootstrap*")
         self.addCopySpec("/etc/vdsm/*")
