@@ -4589,11 +4589,13 @@
 #
 # Create a new Volume Group.
 #
-# @name:     The new Volume Group UUID
+# @lvmvolumegroupID:  #optional The UUID of the LVM Volume Group
 #
-# @devlist:  An array of device names to include in the Volume Group
+# @name:              The new Volume Group UUID
 #
-# @force:    #optional Force the operation and do not perform any validation
+# @devlist:           An array of device names to include in the Volume Group
+#
+# @force:             #optional Force the operation and do not perform any validation
 #
 # Returns:
 # The uuid of the created Volume Group
@@ -4604,7 +4606,8 @@
 #         Volume Group.
 ##
 {'command': {'class': 'LVMVolumeGroup', 'name': 'create'},
- 'data': {'name': 'UUID', 'devlist': ['str'], '*force': 'bool'},
+ 'data': {'*lvmvolumegroupID': 'UUID', 'name': 'UUID',
+          'devlist': ['str'], '*force': 'bool'},
  'returns': 'UUID'}
 
 ##

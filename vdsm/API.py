@@ -913,9 +913,9 @@ class Image(APIBase):
 class LVMVolumeGroup(APIBase):
     ctorArgs = ['lvmvolumegroupID']
 
-    def __init__(self, UUID=None):
+    def __init__(self, lvmvolumegroupID=None):
         APIBase.__init__(self)
-        self._UUID = UUID
+        self._UUID = lvmvolumegroupID
 
     def create(self, name, devlist, force=False):
         return self._irs.createVG(name, devlist, force)
