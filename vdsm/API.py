@@ -1052,7 +1052,8 @@ class StoragePool(APIBase):
             masterVersion, lockPolicy, lockRenewalIntervalSec, leaseTimeSec,
             ioOpTimeoutSec, leaseRetries)
 
-    def destroy(self, hostID, deprecatedSCSIKey):
+    # scsiKey not used
+    def destroy(self, hostID, scsiKey):
         return self._irs.destroyStoragePool(self._UUID, hostID)
 
     def disconnect(self, hostID, deprecatedSCSIKey, remove=False):
