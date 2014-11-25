@@ -1133,8 +1133,8 @@ class StoragePool(APIBase):
     def updateVMs(self, vmList, sdUUID):
         return self._irs.updateVM(self._UUID, vmList, sdUUID)
 
-    def removeVM(self, vmUUID, sdUUID):
-        return self._irs.removeVM(self._UUID, vmUUID, sdUUID)
+    def removeVM(self, vmUUID, storagedomainID=None):
+        return self._irs.removeVM(self._UUID, vmUUID, storagedomainID)
 
 
 class Global(APIBase):
