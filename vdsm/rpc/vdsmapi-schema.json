@@ -7909,11 +7909,7 @@
 #             the changes that are to be applied to the current
 #             QoS policy.
 #
-# Returns:
-# The VM definition, as updated
-#
 # Since: 4.15.0
 ##
 {'command': {'class': 'VM', 'name': 'updateVmPolicy'},
- 'data': {'vmID': 'UUID', 'params': 'UpdateVmPolicyParams'},
- 'returns': 'TaskStatus'}
+ 'data': {'vmID': 'UUID', 'params': 'UpdateVmPolicyParams'}}
