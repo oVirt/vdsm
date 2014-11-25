@@ -1072,8 +1072,8 @@ class StoragePool(APIBase):
     def getBackedUpVmsInfo(self, storagedomainID, vmList):
         return self._irs.getVmsInfo(self._UUID, storagedomainID, vmList)
 
-    def getBackedUpVmsList(self, sdUUID):
-        return self._irs.getVmsList(self._UUID, sdUUID)
+    def getBackedUpVmsList(self, storagedomainID):
+        return self._irs.getVmsList(self._UUID, storagedomainID)
 
     def getFloppyList(self):
         return self._irs.getFloppyList(self._UUID)
