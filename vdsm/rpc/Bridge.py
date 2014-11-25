@@ -461,6 +461,7 @@ command_info = {
     'VM_mergeStatus': {'ret': 'mergeStatus'},
     'VM_migrationCreate': {'ret': VM_migrationCreate_Ret},
     'VM_pause': {'ret': VM_running_state_change_Ret},
+    'VM_setCpuTunePeriod': {'ret': 'taskStatus'},
     'VM_setNumberOfCpus': {'ret': 'vmList'},
     'VM_updateDevice': {'ret': 'vmList'},
     'Volume_copy': {'ret': 'uuid'},
