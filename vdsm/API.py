@@ -1563,9 +1563,9 @@ class Global(APIBase):
             self._cif._networkSemaphore.release()
 
     # Top-level storage functions
-    def getStorageDomains(self, spUUID=None, domainClass=None,
+    def getStorageDomains(self, storagepoolID=None, domainClass=None,
                           storageType=None, remotePath=None):
-        return self._irs.getStorageDomainsList(spUUID, domainClass,
+        return self._irs.getStorageDomainsList(storagepoolID, domainClass,
                                                storageType, remotePath)
 
     def getConnectedStoragePools(self):
