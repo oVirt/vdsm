@@ -987,11 +987,13 @@ class StorageDomain(APIBase):
         return self._irs.deactivateStorageDomain(self._UUID, storagepoolID,
                                                  masterSdUUID, masterVersion)
 
-    def detach(self, spUUID, masterSdUUID=None, masterVersion=0, force=False):
+    def detach(self, storagepoolID, masterSdUUID=None, masterVersion=0,
+               force=False):
         if force:
-            return self._irs.forcedDetachStorageDomain(self._UUID, spUUID)
+            return self._irs.forcedDetachStorageDomain(self._UUID,
+                                                       storagepoolID)
         else:
-            return self._irs.detachStorageDomain(self._UUID, spUUID,
+            return self._irs.detachStorageDomain(self._UUID, storagepoolID,
                                                  masterSdUUID, masterVersion)
 
     def extend(self, spUUID, devlist, force=False):
