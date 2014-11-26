@@ -550,7 +550,7 @@ class VmStatsThread(AdvancedStatsThread):
             stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
 
     def _getVmJobs(self, stats):
-        info = utils.picklecopy(self.sampleVmJobs.getLastSample())
+        info = self.sampleVmJobs.getLastSample()
         if info is not None:
             # If we are unable to collect stats we must not return anything at
             # all since an empty dictionary would be interpreted as vm jobs
