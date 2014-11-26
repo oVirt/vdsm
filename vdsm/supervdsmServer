@@ -27,6 +27,7 @@ from functools import wraps
 import threading
 import re
 import getopt
+import resource
 import signal
 import logging
 import logging.config
@@ -403,6 +404,8 @@ def terminate(signo, frame):
 def main(sockfile, pidfile=None):
     log = logging.getLogger("SuperVdsm.Server")
     zombiereaper.registerSignalHandler()
+    if not config.getboolean('vars', 'core_dump_enable'):
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
     def bind(func):
         def wrapper(_SuperVdsm, *args, **kwargs):
