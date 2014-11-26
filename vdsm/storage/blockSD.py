@@ -22,7 +22,6 @@ import os
 import threading
 import logging
 import signal
-import select
 import errno
 import re
 from StringIO import StringIO
@@ -32,6 +31,7 @@ from collections import namedtuple
 from contextlib import contextmanager
 from operator import itemgetter
 
+from vdsm import concurrent
 from vdsm.config import config
 from vdsm import constants
 from vdsm import exception
@@ -43,6 +43,7 @@ from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage.persistent import PersistentDict, DictValidator
+from vdsm.storage.threadlocal import vars
 import vdsm.supervdsm as svdsm
 
 import sd
@@ -206,80 +207,43 @@ def deleteVolumes(sdUUID, vols):
     lvm.removeLVs(sdUUID, vols)
 
 
-def _zeroVolume(sdUUID, volUUID):
-    """Fill a block volume.
-
-    This function requires an active LV.
-    """
-    dm = lvm.lvDmDev(sdUUID, volUUID)
-    size = multipath.getDeviceSize(dm)  # Bytes
-    # TODO: Change for zero 128 M chuncks and log.
-    # 128 M is the vdsm extent size default
-    BS = constants.MEGAB  # 1024 ** 2 = 1 MiB
-    count = size / BS
-    cmd = [constants.EXT_DD, "oflag=%s" % misc.DIRECTFLAG, "if=/dev/zero",
-           "of=%s" % lvm.lvPath(sdUUID, volUUID), "bs=%s" % BS,
-           "count=%s" % count]
-    p = misc.execCmd(cmd, sync=False, nice=utils.NICENESS.HIGH,
-                     ioclass=utils.IOCLASS.IDLE, deathSignal=signal.SIGKILL)
-    return p
-
-
 def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
-    ProcVol = namedtuple("ProcVol", "proc, vol")
-    # Put a sensible value for dd zeroing a 128 M or 1 G chunk and lvremove
-    # spent time.
-    ZEROING_TIMEOUT = 60000  # [miliseconds]
-    log.debug("sd: %s, LVs: %s, img: %s", sdUUID, volUUIDs, imgUUID)
-    # Following call to changelv is separate since setting rw permission on an
-    # LV fails if the LV is already set to the same value, hence we would not
-    # be able to differentiate between a real failure of deltag/addtag and one
-    # we would like to ignore (permission is the same)
+    taskid = vars.task.id
+    aborting = vars.task.aborting
+
     try:
         lvm.changelv(sdUUID, volUUIDs, ("--permission", "rw"))
     except se.StorageException as e:
-        # Hope this only means that some volumes were already writable.
-        log.debug("Ignoring failed permission change: %s", e)
-    # blank the volumes.
-    zerofds = {}
-    poller = select.poll()
-    for volUUID in volUUIDs:
-        proc = _zeroVolume(sdUUID, volUUID)
-        fd = proc.stderr.fileno()
-        zerofds[fd] = ProcVol(proc, volUUID)
-        poller.register(fd, select.POLLIN)
+        # We ignore the failure hoping that the volumes were
+        # already writable.
+        log.debug('Ignoring failed permission change: %s', e)
 
-    # Wait until all the asyncs procs return
-    # Yes, this is a potentially infinite loop. Kill the vdsm task.
-    while zerofds:
-        fdevents = poller.poll(ZEROING_TIMEOUT)  # [(fd, event)]
-        toDelete = []
-        for fd, event in fdevents:
-            proc, vol = zerofds[fd]
-            if not proc.wait(0):
-                continue
-            else:
-                poller.unregister(fd)
-                zerofds.pop(fd)
-                if proc.returncode != 0:
-                    log.error("zeroing %s/%s failed. Zero and remove this "
-                              "volume manually. rc=%s %s", sdUUID, vol,
-                              proc.returncode, proc.stderr.read(1000))
-                else:
-                    log.debug("%s/%s was zeroed and will be deleted",
-                              sdUUID, vol)
-                    toDelete.append(vol)
-        if toDelete:
-            try:
-                deleteVolumes(sdUUID, toDelete)
-            except se.CannotRemoveLogicalVolume:
-                # TODO: Add the list of removed fail volumes to the exception.
-                log.error("Remove failed for some of VG: %s zeroed volumes: "
-                          "%s", sdUUID, toDelete, exc_info=True)
+    def zeroVolume(volUUID):
+        log.debug('Zero volume thread started for '
+                  'volume %s task %s', volUUID, taskid)
+        path = lvm.lvPath(sdUUID, volUUID)
+        size = multipath.getDeviceSize(lvm.lvDmDev(sdUUID, volUUID))
 
-    log.debug("finished with VG:%s LVs: %s, img: %s", sdUUID, volUUIDs,
-              imgUUID)
-    return
+        try:
+            misc.ddWatchCopy("/dev/zero", path, aborting, size)
+            log.debug('Zero volume %s task %s completed', volUUID, taskid)
+        except Exception:
+            log.exception('Zero volume %s task %s failed', volUUID, taskid)
+
+        try:
+            log.debug('Removing volume %s task %s', volUUID, taskid)
+            deleteVolumes(sdUUID, volUUID)
+        except se.CannotRemoveLogicalVolume:
+            log.exception("Removing volume %s task %s failed", volUUID, taskid)
+
+        log.debug('Zero volume thread finished for '
+                  'volume %s task %s', volUUID, taskid)
+
+    log.debug('Starting to zero image %s', imgUUID)
+    results = concurrent.tmap(zeroVolume, volUUIDs)
+    errors = [str(res.value) for res in results if not res.succeeded]
+    if errors:
+        raise se.VolumesZeroingError(errors)
 
 
 class VGTagMetadataRW(object):
