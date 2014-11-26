@@ -65,6 +65,7 @@ from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
 from supervdsm import _SuperVdsmManager
+from storage import hba
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
@@ -353,6 +354,10 @@ class _SuperVdsm(object):
     @logDecorator
     def fuser(self, *args, **kwargs):
         return fuser.fuser(*args, **kwargs)
+
+    @logDecorator
+    def hbaRescan(self):
+        return hba._rescan()
 
     def __udevReloadRules(self, guid):
         if self.__udevOperationReload():

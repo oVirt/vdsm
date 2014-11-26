@@ -31,6 +31,7 @@ from vdsm.config import config
 from vdsm.infra import zombiereaper
 
 import misc
+import supervdsm
 
 log = logging.getLogger("Storage.HBA")
 
@@ -43,27 +44,41 @@ PORT_NAME = "port_name"
 NODE_NAME = "node_name"
 
 
+class Error(Exception):
+    """ hba operation failed """
+
+
 @misc.samplingmethod
 def rescan():
     """
     Rescan HBAs discovering new devices.
     """
+    log.debug("Starting scan")
+    try:
+        supervdsm.getProxy().hbaRescan()
+    except Error as e:
+        log.error("Scan failed: %s", e)
+    else:
+        log.debug("Scan finished")
+
+
+def _rescan():
+    """
+    Called from supervdsm to perform rescan as root.
+    """
     timeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
 
-    log.debug("Starting scan")
-    proc = utils.execCmd([constants.EXT_FC_SCAN], sync=False, sudo=True,
+    proc = utils.execCmd([constants.EXT_FC_SCAN], sync=False,
                          execCmdLogger=log)
     try:
         proc.wait(timeout)
     finally:
         if proc.returncode is None:
-            log.warning("Timeout scanning")
             zombiereaper.autoReapPID(proc.pid)
+            raise Error("Timeout scanning (pid=%s)" % proc.pid)
         elif proc.returncode != 0:
             stderr = proc.stderr.read(512)
-            log.error("Scan failed: %r", stderr)
-        else:
-            log.debug("Scan finished")
+            raise Error("Scan failed: %r" % stderr)
 
 
 def getiSCSIInitiators():
