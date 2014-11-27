@@ -343,6 +343,17 @@ class NFSConnection(object):
 
 
 class IscsiConnection(object):
+    log = logging.getLogger("Storage.Server.ISCSI")
+
+    class Mismatch(Exception):
+
+        def __init__(self, fmt, *args):
+            self.fmt = fmt
+            self.args
+
+        def __str__(self):
+            return self.fmt % self.args
+
     @property
     def target(self):
         return self._target
@@ -365,7 +376,7 @@ class IscsiConnection(object):
     def connect(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
 
-    def isSession(self, session):
+    def match(self, session):
         target = session.target
         portal = target.portal
         iface = session.iface
@@ -376,34 +387,44 @@ class IscsiConnection(object):
             try:
                 ip = socket.gethostbyname(host)
                 if ip != portal.hostname:
-                    return False
+                    raise self.Mismatch("target.portal.hostname mismatch: "
+                                        "%r != %r", ip, portal.hostname)
 
             except socket.gaierror:
-                return False
+                raise self.Mismatch("target.portal.hostname mismatch: "
+                                    "%r != %r", host, portal.hostname)
 
         if self._target.portal.port != portal.port:
-            return False
+            raise self.Mismatch("target.portal.port mismatch: %r != %r",
+                                self._target.portal.port, portal.portal)
 
         if self._target.tpgt is not None and self._target.tpgt != target.tpgt:
-            return False
+            raise self.Mismatch("target.tpgt mismatch: %r != %r",
+                                self._target.tpgt, target.tpgt)
 
         if self._target.iqn != target.iqn:
-            return False
+            raise self.Mismatch("target.iqn mismatch: %r != %r",
+                                self._target.iqn, target.iqn)
 
         if self._iface.name != iface.name:
-            return False
+            raise self.Mismatch("iface.name mismatch: %r != %r",
+                                self._iface.name, iface.name)
 
         if self._cred != cred:
-            return False
-
-        return True
+            raise self.Mismatch("cred mismatch")
 
     def getSessionInfo(self):
+        errors = []
         for session in iscsi.iterateIscsiSessions():
-            if self.isSession(session):
+            try:
+                self.match(session)
+            except self.Mismatch as e:
+                errors.append(e)
+            else:
                 self._lastSessionId = session.id
                 return session
 
+        self.log.debug("Session mismatch: %s", [str(e) for e in errors])
         raise OSError(errno.ENOENT, "Session not found")
 
     def isConnected(self):
@@ -416,10 +437,12 @@ class IscsiConnection(object):
             raise
 
     def disconnect(self):
+        self.log.info("disconnecting")
         try:
             sid = self.getSessionInfo().id
         except OSError as e:
             if e.errno == errno.ENOENT:
+                self.log.debug("not connected")
                 return
             raise
 
