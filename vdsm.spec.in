@@ -25,7 +25,9 @@
 
 # Skips check since rhel default repos lack pep8 and pyflakes
 %if ! 0%{?rhel}
-%global with_check 1
+%{!?with_check:%global with_check 1}
+%else
+%{!?with_check:%global with_check 0}
 %endif
 
 # Required paths
