@@ -669,12 +669,12 @@ def setupNetworks(networks, bondings, **options):
     logger.debug("Applying...")
     with ConfiguratorClass(options.get('_inRollback', False)) as configurator:
         # Remove edited networks and networks with 'remove' attribute
-        for network, networkAttrs in networks.items():
+        for network, attrs in networks.items():
             if network in _netinfo.networks:
                 logger.debug("Removing network %r", network)
                 delNetwork(network, configurator=configurator, force=force,
                            implicitBonding=False, _netinfo=_netinfo)
-                if 'remove' in networkAttrs:
+                if 'remove' in attrs:
                     del networks[network]
                     del libvirt_nets[network]
                 _netinfo.updateDevices()
@@ -686,11 +686,11 @@ def setupNetworks(networks, bondings, **options):
                 logger.debug('Removing broken network %r', network)
                 _delBrokenNetwork(network, libvirt_nets[network],
                                   configurator=configurator)
-                if 'remove' in networkAttrs:
+                if 'remove' in attrs:
                     del networks[network]
                     del libvirt_nets[network]
                 _netinfo.updateDevices()
-            elif 'remove' in networkAttrs:
+            elif 'remove' in attrs:
                 raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
                                          "network %r: It doesn't exist in the "
                                          "system" % network)
@@ -701,8 +701,8 @@ def setupNetworks(networks, bondings, **options):
 
         # We need to use the newest host info
         _netinfo.updateDevices()
-        for network, networkAttrs in networks.iteritems():
-            d = dict(networkAttrs)
+        for network, attrs in networks.iteritems():
+            d = dict(attrs)
             if 'bonding' in d:
                 d.update(_buildBondOptions(d['bonding'], bondings, _netinfo))
             else:
@@ -717,7 +717,7 @@ def setupNetworks(networks, bondings, **options):
                 if cne.errCode == ne.ERR_FAILED_IFUP:
                     logger.debug("Adding network %r failed. Running "
                                  "orphan-devices cleanup", network)
-                    _emergencyNetworkCleanup(network, networkAttrs,
+                    _emergencyNetworkCleanup(network, attrs,
                                              configurator)
                 raise
 
