@@ -43,8 +43,11 @@ def getDevicePartedInfo(devPath):
                                region.length, freeBytes))
     partitions = {}
     for partition in partedDisk.partitions:
+        partitionFlags = [flagname for (flag, flagname)
+                          in parted.partition.partitionFlag.items()
+                          if partition.getFlag(flag)]
         partitions.update({partition.path:
-                           (partition.getFlagsAsString().split(),
+                           (partitionFlags,
                             partition.geometry.start,
                             partition.geometry.end)})
 
