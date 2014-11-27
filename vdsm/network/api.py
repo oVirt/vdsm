@@ -730,8 +730,6 @@ def setupNetworks(networks, bondings, **options):
                 logger.debug("Removing network %r", network)
                 delNetwork(network, configurator=configurator, force=force,
                            implicitBonding=False, _netinfo=_netinfo)
-                if 'remove' in attrs:
-                    del libvirt_nets[network]
                 _netinfo.updateDevices()
                 del _netinfo.networks[network]
             elif network in libvirt_nets:
@@ -741,8 +739,6 @@ def setupNetworks(networks, bondings, **options):
                 logger.debug('Removing broken network %r', network)
                 _delBrokenNetwork(network, libvirt_nets[network],
                                   configurator=configurator)
-                if 'remove' in attrs:
-                    del libvirt_nets[network]
                 _netinfo.updateDevices()
             elif 'remove' in attrs:
                 raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
