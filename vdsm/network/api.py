@@ -600,6 +600,58 @@ def _emergencyNetworkCleanup(network, networkAttrs, configurator):
         topNetDev.remove()
 
 
+def _add_missing_networks(configurator, networks, bondings, force, logger,
+                          _netinfo=None):
+    # We need to use the newest host info
+    if _netinfo is None:
+        _netinfo = netinfo.NetInfo()
+    else:
+        _netinfo.updateDevices()
+
+    for network, attrs in networks.iteritems():
+        if 'remove' in attrs:
+            continue
+
+        d = dict(attrs)
+        if 'bonding' in d:
+            d.update(_buildBondOptions(d['bonding'], bondings, _netinfo))
+        else:
+            d['nics'] = [d.pop('nic')] if 'nic' in d else []
+        d['force'] = force
+
+        logger.debug("Adding network %r", network)
+        try:
+            addNetwork(network, configurator=configurator,
+                       implicitBonding=True, _netinfo=_netinfo, **d)
+        except ConfigNetworkError as cne:
+            if cne.errCode == ne.ERR_FAILED_IFUP:
+                logger.debug("Adding network %r failed. Running "
+                             "orphan-devices cleanup", network)
+                _emergencyNetworkCleanup(network, attrs,
+                                         configurator)
+            raise
+
+        _netinfo.updateDevices()  # Things like a bond mtu can change
+
+
+def _check_connectivity(connectivity_check_networks, networks, bondings,
+                        options, logger):
+    if utils.tobool(options.get('connectivityCheck', True)):
+        logger.debug('Checking connectivity...')
+        if not clientSeen(int(options.get('connectivityTimeout',
+                                          CONNECTIVITY_TIMEOUT_DEFAULT))):
+            logger.info('Connectivity check failed, rolling back')
+            for network in connectivity_check_networks:
+                # If the new added network was created on top of
+                # existing bond, we need to keep the bond on rollback
+                # flow, else we will break the new created bond.
+                delNetwork(network, force=True,
+                           implicitBonding=networks[network].
+                           get('bonding') in bondings)
+            raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
+                                     'connectivity check failed')
+
+
 def setupNetworks(networks, bondings, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -697,47 +749,11 @@ def setupNetworks(networks, bondings, **options):
 
         _handleBondings(bondings, configurator)
 
-        # We need to use the newest host info
-        _netinfo.updateDevices()
-        for network, attrs in networks.iteritems():
-            if 'remove' in attrs:
-                continue
+        _add_missing_networks(configurator, networks, bondings, force,
+                              logger, _netinfo)
 
-            d = dict(attrs)
-            if 'bonding' in d:
-                d.update(_buildBondOptions(d['bonding'], bondings, _netinfo))
-            else:
-                d['nics'] = [d.pop('nic')] if 'nic' in d else []
-            d['force'] = force
-
-            logger.debug("Adding network %r", network)
-            try:
-                addNetwork(network, configurator=configurator,
-                           implicitBonding=True, _netinfo=_netinfo, **d)
-            except ConfigNetworkError as cne:
-                if cne.errCode == ne.ERR_FAILED_IFUP:
-                    logger.debug("Adding network %r failed. Running "
-                                 "orphan-devices cleanup", network)
-                    _emergencyNetworkCleanup(network, attrs,
-                                             configurator)
-                raise
-
-            _netinfo.updateDevices()  # Things like a bond mtu can change
-
-        if utils.tobool(options.get('connectivityCheck', True)):
-            logger.debug('Checking connectivity...')
-            if not clientSeen(int(options.get('connectivityTimeout',
-                                  CONNECTIVITY_TIMEOUT_DEFAULT))):
-                logger.info('Connectivity check failed, rolling back')
-                for network in connectivity_check_networks:
-                    # If the new added network was created on top of
-                    # existing bond, we need to keep the bond on rollback
-                    # flow, else we will break the new created bond.
-                    delNetwork(network, force=True,
-                               implicitBonding=networks[network].
-                               get('bonding') in bondings)
-                raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
-                                         'connectivity check failed')
+        _check_connectivity(connectivity_check_networks, networks, bondings,
+                            options, logger)
 
     hooks.after_network_setup(_buildSetupHookDict(networks, bondings, options))
 
