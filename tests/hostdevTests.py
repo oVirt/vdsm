@@ -319,7 +319,11 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'product_id': '0x1c20',
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
-                                        'capability': 'pci'},
+                                        'capability': 'pci',
+                                        'address': {'slot': '27',
+                                                    'bus': '0',
+                                                    'domain': '0',
+                                                    'function': '0'}},
                   u'scsi_0_0_0_0': {'capability': 'scsi',
                                     'parent': 'scsi_target0_0_0'},
                   u'pci_0000_00_1a_0': {'product': '6 Series/C200 Series '
@@ -329,7 +333,11 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'product_id': '0x1c2d',
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
-                                        'capability': 'pci'},
+                                        'capability': 'pci',
+                                        'address': {'slot': '26',
+                                                    'bus': '0',
+                                                    'domain': '0',
+                                                    'function': '0'}},
                   u'pci_0000_00_1f_2': {'product': '6 Series/C200 Series '
                                         'Chipset Family 6 port SATA AHCI '
                                         'Controller',
@@ -337,7 +345,11 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'product_id': '0x1c03',
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
-                                        'capability': 'pci'},
+                                        'capability': 'pci',
+                                        'address': {'slot': '31',
+                                                    'bus': '0',
+                                                    'domain': '0',
+                                                    'function': '2'}},
                   u'scsi_target0_0_0': {'capability': 'scsi_target',
                                         'parent': 'scsi_host0'},
                   u'pci_0000_00_02_0': {'product': '2nd Generation Core '
@@ -347,7 +359,11 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'product_id': '0x0126',
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
-                                        'capability': 'pci'},
+                                        'capability': 'pci',
+                                        'address': {'slot': '2',
+                                                    'bus': '0',
+                                                    'domain': '0',
+                                                    'function': '0'}},
                   u'scsi_host0': {'capability': 'scsi_host',
                                   'parent': 'pci_0000_00_1f_2'},
                   u'pci_0000_00_19_0': {'product': '82579LM Gigabit '
@@ -356,7 +372,11 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'product_id': '0x1502',
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
-                                        'capability': 'pci'},
+                                        'capability': 'pci',
+                                        'address': {'slot': '25',
+                                                    'bus': '0',
+                                                    'domain': '0',
+                                                    'function': '0'}},
                   u'usb_1_1_4': {'product': 'Broadcom Bluetooth Device',
                                  'vendor': 'Broadcom Corp',
                                  'product_id': '0x217f',
@@ -379,7 +399,11 @@ ADDITIONAL_DEVICE_PARSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                             'product_id': '0x3410',
                             'parent': 'computer',
                             'iommu_group': '4',
-                            'vendor_id': '0x8086', 'capability': 'pci'}
+                            'vendor_id': '0x8086', 'capability': 'pci',
+                            'address': {'slot': '9',
+                                        'bus': '0',
+                                        'domain': '0',
+                                        'function': '0'}}
 
 _NET_DEVICE_PARSED = {
     'parent': 'pci_0000_00_19_0',
@@ -388,6 +412,10 @@ _NET_DEVICE_PARSED = {
 }
 
 _SRIOV_PF_PARSED = {'capability': 'pci',
+                    'address': {'slot': '0',
+                                'bus': '5',
+                                'domain': '0',
+                                'function': '1'},
                     'iommu_group': '15',
                     'parent': 'pci_0000_00_09_0',
                     'product': '82576 Gigabit Network Connection',
@@ -397,6 +425,10 @@ _SRIOV_PF_PARSED = {'capability': 'pci',
                     'vendor_id': '0x8086'}
 
 _SRIOV_VF_PARSED = {'capability': 'pci',
+                    'address': {'slot': '16',
+                                'bus': '5',
+                                'domain': '0',
+                                'function': '7'},
                     'iommu_group': '25',
                     'parent': 'pci_0000_00_09_0',
                     'physfn': 'pci_0000_05_00_1',

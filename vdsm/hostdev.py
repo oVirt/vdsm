@@ -48,11 +48,25 @@ def _sriov_totalvfs(device_name):
         return int(f.read())
 
 
+def _parse_address(caps, children):
+    params = {}
+    for cap in children:
+        params[cap] = caps.find(cap).text
+
+    return params
+
+
+def _parse_pci_address(caps):
+    return _parse_address(caps, ('domain', 'bus', 'slot', 'function'))
+
+
 def _parse_device_params(device_xml):
     """
     Process device_xml and return dict of found known parameters,
     also doing sysfs lookups for sr-iov related information
     """
+    address_parser = {'pci': _parse_pci_address}
+
     params = {}
 
     devXML = etree.fromstring(device_xml)
@@ -85,6 +99,13 @@ def _parse_device_params(device_xml):
         params['totalvfs'] = _sriov_totalvfs(name)
     except IOError:
         # Device does not support sriov, we can safely go on
+        pass
+
+    try:
+        params['address'] = address_parser[params['capability']](caps)
+    except KeyError:
+        # We can somewhat safely ignore missing address as that means we're
+        # dealing with device that is not yet supported
         pass
 
     return params
