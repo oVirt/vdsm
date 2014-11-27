@@ -664,7 +664,7 @@ def setupNetworks(networks, bondings, **options):
     libvirt_nets = netinfo.networks()
     _netinfo = netinfo.NetInfo(_netinfo=netinfo.get(
         netinfo._libvirtNets2vdsm(libvirt_nets)))
-    networksAdded = set()
+    connectivity_check_networks = set()
 
     logger.debug("Applying...")
     with ConfiguratorClass(options.get('_inRollback', False)) as configurator:
@@ -695,7 +695,7 @@ def setupNetworks(networks, bondings, **options):
                                          "network %r: It doesn't exist in the "
                                          "system" % network)
             else:
-                networksAdded.add(network)
+                connectivity_check_networks.add(network)
 
         _handleBondings(bondings, configurator)
 
@@ -728,7 +728,7 @@ def setupNetworks(networks, bondings, **options):
             if not clientSeen(int(options.get('connectivityTimeout',
                                   CONNECTIVITY_TIMEOUT_DEFAULT))):
                 logger.info('Connectivity check failed, rolling back')
-                for network in networksAdded:
+                for network in connectivity_check_networks:
                     # If the new added network was created on top of
                     # existing bond, we need to keep the bond on rollback
                     # flow, else we will break the new created bond.
