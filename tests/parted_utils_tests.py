@@ -104,7 +104,7 @@ class PartedUtilsTests(TestCaseBase):
         partName = '%sp1' % self.devPath
         partInfo = info['partitions'].get(partName)
         self.assertTrue(partInfo)
-        self.assertEquals(partInfo[0], ['boot'])
+        self.assertIn(partInfo[0], (['boot'], ['boot', 'esp']))
         self.assertTrue(partInfo[1] >= 0)
         self.assertTrue((partInfo[2] * info['sectorSize']) >= PART_END_SIZE)
 
