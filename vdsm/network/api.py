@@ -643,11 +643,6 @@ def setupNetworks(networks, bondings, **options):
     """
     logger = logging.getLogger("setupNetworks")
 
-    libvirt_nets = netinfo.networks()
-    _netinfo = netinfo.NetInfo(_netinfo=netinfo.get(
-        netinfo._libvirtNets2vdsm(libvirt_nets)))
-    networksAdded = set()
-
     logger.debug("Setting up network according to configuration: "
                  "networks:%r, bondings:%r, options:%r" % (networks,
                                                            bondings, options))
@@ -665,6 +660,11 @@ def setupNetworks(networks, bondings, **options):
     networks = results['request']['networks']
     bondings = results['request']['bondings']
     options = results['request']['options']
+
+    libvirt_nets = netinfo.networks()
+    _netinfo = netinfo.NetInfo(_netinfo=netinfo.get(
+        netinfo._libvirtNets2vdsm(libvirt_nets)))
+    networksAdded = set()
 
     logger.debug("Applying...")
     with ConfiguratorClass(options.get('_inRollback', False)) as configurator:
