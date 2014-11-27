@@ -702,7 +702,7 @@ def setupNetworks(networks, bondings, **options):
     force = options.get('force', False)
     if not utils.tobool(force):
         logging.debug("Validating configuration")
-        _validateNetworkSetup(dict(networks), dict(bondings))
+        _validateNetworkSetup(networks, bondings)
 
     results = hooks.before_network_setup(_buildSetupHookDict(networks,
                                                              bondings,
