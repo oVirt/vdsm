@@ -59,6 +59,10 @@ if HOOKS
 WITH_HOOKS = --define="with_hooks 1"
 endif
 
+if RHEV
+RHEV_BUILD = --define="rhev_build 1"
+endif
+
 PEP8_BLACKLIST = \
 	config.py \
 	constants.py \
@@ -131,7 +135,7 @@ srpm: dist
 
 rpm: dist
 	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
-				$(WITH_HOOKS) $(DIST_ARCHIVES)
+				$(WITH_HOOKS) $(RHEV_BUILD) $(DIST_ARCHIVES)
 
 dist-hook: gen-VERSION gen-ChangeLog
 .PHONY: gen-VERSION gen-ChangeLog

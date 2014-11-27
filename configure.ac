@@ -54,6 +54,7 @@ AC_ARG_ENABLE(
     [enable_hooks="no"]
 )
 AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
+AM_CONDITIONAL([RHEV], [test "${enable_rhev}" = "yes"])
 
 AC_ARG_ENABLE(
     [chown_hack],
