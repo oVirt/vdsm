@@ -675,7 +675,6 @@ def setupNetworks(networks, bondings, **options):
                 delNetwork(network, configurator=configurator, force=force,
                            implicitBonding=False, _netinfo=_netinfo)
                 if 'remove' in attrs:
-                    del networks[network]
                     del libvirt_nets[network]
                 _netinfo.updateDevices()
                 del _netinfo.networks[network]
@@ -687,7 +686,6 @@ def setupNetworks(networks, bondings, **options):
                 _delBrokenNetwork(network, libvirt_nets[network],
                                   configurator=configurator)
                 if 'remove' in attrs:
-                    del networks[network]
                     del libvirt_nets[network]
                 _netinfo.updateDevices()
             elif 'remove' in attrs:
@@ -702,6 +700,9 @@ def setupNetworks(networks, bondings, **options):
         # We need to use the newest host info
         _netinfo.updateDevices()
         for network, attrs in networks.iteritems():
+            if 'remove' in attrs:
+                continue
+
             d = dict(attrs)
             if 'bonding' in d:
                 d.update(_buildBondOptions(d['bonding'], bondings, _netinfo))
