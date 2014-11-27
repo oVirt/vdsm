@@ -15,6 +15,9 @@
 # Fedora official build
 %global fedora_koji_build 0
 
+# RHEV official build
+%global rhev_build 0
+
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
@@ -146,7 +149,13 @@ Requires: libguestfs-tools-c
 Requires: libnl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
+
+%if %{rhev_build}
+Requires: mom >= 0.4.1-4
+%else
 Requires: mom >= 0.4.1
+%endif
+
 # Numactl is not available on s390[x] and ARM
 %ifnarch s390 s390x %{arm}
 Requires: numactl
