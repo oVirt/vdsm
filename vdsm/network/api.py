@@ -652,6 +652,17 @@ def _check_connectivity(connectivity_check_networks, networks, bondings,
                                      'connectivity check failed')
 
 
+def _apply_hook(bondings, networks, options):
+    results = hooks.before_network_setup(_buildSetupHookDict(networks,
+                                                             bondings,
+                                                             options))
+    # gather any changes that could have been done by the hook scripts
+    networks = results['request']['networks']
+    bondings = results['request']['bondings']
+    options = results['request']['options']
+    return bondings, networks, options
+
+
 def setupNetworks(networks, bondings, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -704,14 +715,7 @@ def setupNetworks(networks, bondings, **options):
         logging.debug("Validating configuration")
         _validateNetworkSetup(networks, bondings)
 
-    results = hooks.before_network_setup(_buildSetupHookDict(networks,
-                                                             bondings,
-                                                             options))
-
-    # gather any changes that could have been done by the hook scripts
-    networks = results['request']['networks']
-    bondings = results['request']['bondings']
-    options = results['request']['options']
+    bondings, networks, options = _apply_hook(bondings, networks, options)
 
     libvirt_nets = netinfo.networks()
     _netinfo = netinfo.NetInfo(_netinfo=netinfo.get(
