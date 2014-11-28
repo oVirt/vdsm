@@ -78,16 +78,20 @@ class DhclientRunner(object):
     In the working directory (tmp_dir), which is managed by the caller.
     dhclient accepts the following date_formats: 'default' and 'local'.
     """
-    def __init__(self, interface, tmp_dir, date_format):
+    def __init__(self, interface, tmp_dir, date_format, default_route=False):
         self._interface = interface
         self._date_format = date_format
         self._conf_file = os.path.join(tmp_dir, 'test.conf')
         self._pid_file = os.path.join(tmp_dir, 'test.pid')
         self.pid = None
         self.lease_file = os.path.join(tmp_dir, 'test.lease')
-        self._cmd = (_DHCLIENT_BINARY.cmd, '-v', '-lf', self.lease_file, '-pf',
-                     self._pid_file, '-timeout', str(_DHCLIENT_TIMEOUT), '-1',
-                     '-cf', self._conf_file, self._interface)
+        cmd = [_DHCLIENT_BINARY.cmd, '-v', '-lf', self.lease_file, '-pf',
+               self._pid_file, '-timeout', str(_DHCLIENT_TIMEOUT), '-1',
+               '-cf', self._conf_file]
+        if not default_route:
+            # Instruct Fedora/EL's dhclient-script not to set gateway on iface
+            cmd += ['-e', 'DEFROUTE=no']
+        self._cmd = cmd + [self._interface]
 
     def _create_conf(self):
         with open(self._conf_file, 'w') as f:
