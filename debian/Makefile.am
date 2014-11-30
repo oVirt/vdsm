@@ -63,6 +63,8 @@ EXTRA_DIST = \
     vdsm-hook-macspoof.install \
     vdsm-hook-nestedvt.docs \
     vdsm-hook-nestedvt.install \
+    vdsm-hook-noipspoof.docs \
+    vdsm-hook-noipspoof.install \
     vdsm-hook-numa.docs \
     vdsm-hook-numa.install \
     vdsm-hook-openstacknet.docs \
