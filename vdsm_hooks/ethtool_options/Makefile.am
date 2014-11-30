@@ -28,11 +28,3 @@ install-data-local:
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_network_setup/30_ethtool_options
-
-install-data-sudoers:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
-	$(INSTALL_DATA) $(srcdir)/sudoers \
-		$(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_ethtool_options
-
-uninstall-data-sudoers:
-	$(RM) $(DESTDIR)$(sysconfdir)/sudoers.d/50_vdsm_hook_ethtool_options

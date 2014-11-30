@@ -149,7 +149,7 @@ def _set_ethtool_opts(network, options):
     """Takes an iterable of the tokenized ethtool command line arguments and
     applies them to the network devices"""
     command = [ETHTOOL_BINARY.cmd] + options
-    rc, _, err = hooking.execCmd(command, sudo=True)
+    rc, _, err = hooking.execCmd(command)
     if rc != 0:
         raise EthtoolError('Failed to set ethtool opts (%s) for network %s. '
                            'Err: %s' % (' '.join(options), network, err))
