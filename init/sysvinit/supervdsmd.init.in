@@ -35,7 +35,8 @@ RETVAL=0
 start(){
         test_already_running && return 0
 
-        "@VDSMDIR@/daemonAdapter" -0 /dev/null -1 /dev/null -2 /dev/null \
+        DAEMON_COREFILE_LIMIT=unlimited daemon \
+            "@VDSMDIR@/daemonAdapter" -0 /dev/null -1 /dev/null -2 /dev/null \
             "@VDSMDIR@/respawn" --minlifetime 10 --daemon \
             --masterpid "${RESPAWNPIDFILE}" "${SUPERVDSM_BIN}" \
             --sockfile "${SOCKFILE}" --pidfile "${PIDFILE}"

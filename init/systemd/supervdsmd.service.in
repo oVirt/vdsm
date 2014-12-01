@@ -4,6 +4,7 @@ Requires=libvirtd.service
 
 [Service]
 Type=simple
+LimitCORE=infinity
 EnvironmentFile=-/etc/sysconfig/supervdsmd
 ExecStart=@VDSMDIR@/daemonAdapter "@VDSMDIR@/supervdsmServer" --sockfile "@VDSMRUNDIR@/svdsm.sock"
 Restart=on-abort
