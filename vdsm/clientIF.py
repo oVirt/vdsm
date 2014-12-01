@@ -121,6 +121,14 @@ class clientIF(object):
                 self.mom.stop()
             raise
 
+    def getVMs(self):
+        """
+        Get a snapshot of the currently registered VMs.
+        Return value will be a dict of {vmUUID: VM_object}
+        """
+        with self.vmContainerLock:
+            return self.vmContainer.copy()
+
     @property
     def ready(self):
         return (self.irs is None or self.irs.ready) and not self._recovery

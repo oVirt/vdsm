@@ -196,3 +196,19 @@ class ClientIFTests(TestCaseBase):
         self.assertRaises(RuntimeError,
                           self.cif.prepareVolumePath,
                           fakePayloadDrive())
+
+
+class getVMsTests(TestCaseBase):
+
+    def test_empty(self):
+        cif = fake.ClientIF()
+        self.assertFalse(cif.getVMs())
+
+    def test_with_vms(self):
+        cif = fake.ClientIF()
+        with fake.VM(params={'vmId': 'testvm1'}, cif=cif) as testvm1:
+            with fake.VM(params={'vmId': 'testvm2'}, cif=cif) as testvm2:
+                vms = cif.getVMs()
+                self.assertEqual(len(vms), 2)
+                self.assertIn(testvm1.id, vms)
+                self.assertIn(testvm2.id, vms)

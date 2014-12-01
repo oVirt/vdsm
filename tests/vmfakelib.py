@@ -21,6 +21,7 @@
 
 from contextlib import contextmanager
 import logging
+import threading
 import xml.etree.ElementTree as etree
 
 import libvirt
@@ -53,6 +54,7 @@ class ClientIF(clientIF.clientIF):
         self.irs = None  # just to make sure nothing ever happens
         self.log = logging.getLogger('fake.ClientIF')
         self.channelListener = None
+        self.vmContainerLock = threading.Lock()
         self.vmContainer = {}
 
 
