@@ -402,9 +402,8 @@ class IscsiInterface(object):
 
 
 def iterateIscsiInterfaces():
-    names = iscsiadm.iface_list()
-    for name in names:
-        yield IscsiInterface(name)
+    for iface in iscsiadm.iface_list():
+        yield IscsiInterface(iface.ifacename, netIfaceName=iface.net_ifacename)
 
 
 @misc.samplingmethod

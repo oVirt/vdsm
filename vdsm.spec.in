@@ -1317,6 +1317,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
 %{_datadir}/%{vdsm_name}/tests/glob_1c60971a-8647-44ac-ae33-6520887f8843.out
 %{_datadir}/%{vdsm_name}/tests/ip_route_show_table_all.out
+%{_datadir}/%{vdsm_name}/tests/iscsiadm_-m_iface.out
 %{_datadir}/%{vdsm_name}/tests/lvs_3386c6f2-926f-42c4-839c-38287fac8998.out
 %{_datadir}/%{vdsm_name}/tests/mem_info.out
 %{_datadir}/%{vdsm_name}/tests/netmaskconversions

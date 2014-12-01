@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 from contextlib import contextmanager
@@ -78,3 +79,20 @@ class RescanTimeoutTests(TestCaseBase):
         self._timeout = 60
         with self.assertMaxDuration(3):
             iscsi.rescan(1, 2)
+
+
+class IscsiAdmTests(TestCaseBase):
+    def testIfaceList(self):
+        dirName = os.path.dirname(os.path.realpath(__file__))
+        path = os.path.join(dirName, "iscsiadm_-m_iface.out")
+        with open(path) as f:
+            out = f.read().splitlines()
+
+        Iface = iscsi.iscsiadm.Iface
+
+        res = (Iface('default', 'tcp', None, None, None, None),
+               Iface('iser', 'iser', None, None, None, None),
+               Iface('eth1', 'tcp', None, None, 'SAN1', None),
+               Iface('eth2', 'tcp', None, None, 'eth2', None))
+
+        self.assertEqual(tuple(iscsi.iscsiadm.iface_list(out=out)), res)
