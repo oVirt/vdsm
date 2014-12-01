@@ -868,8 +868,9 @@ class Drive(vmdevices.Base):
         to be extended.  For the leaf volume curSize == self.apparentsize.
         For internal volumes it is discovered by calling irs.getVolumeSize().
         """
-        return (self.volExtensionChunk +
-                ((curSize + constants.MEGAB - 1) / constants.MEGAB))
+        nextSize = (self.volExtensionChunk +
+                    ((curSize + constants.MEGAB - 1) / constants.MEGAB))
+        return min(nextSize, self.truesize)
 
     @property
     def networkDev(self):
