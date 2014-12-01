@@ -216,10 +216,6 @@ task_upgraded_version_check(){
         [ "${ret}" -eq 0 ] && rm -f "${upgraded_ver_file}"
     fi
 }
-
-task_set_sasl_password() {
-    "$VDSM_TOOL" set-saslpasswd
-}
 #### pre-start tasks end ####
 
 
@@ -256,7 +252,6 @@ case "$1" in
         # after load_needed_modules (modprobe bonding).
         # NetworkManager must not crash on nmcli conn delete.
         run_tasks " \
-            set_sasl_password \
             mkdirs \
             configure_coredump \
             configure_vdsm_logs \

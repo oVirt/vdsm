@@ -759,6 +759,11 @@ fi
 
 %post
 %{_bindir}/vdsm-tool configure --module sanlock --force >/dev/null
+# update the vdsm "secret" password for libvirt
+if [ -f /etc/pki/vdsm/keys/libvirt_password ]; then
+    @SASLPASSWD2_PATH@ -p -a libvirt vdsm@ovirt < \
+            /etc/pki/vdsm/keys/libvirt_password
+fi
 
 # After vdsm install we should create the logs files.
 # In the install session we create it but since we use
