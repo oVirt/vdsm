@@ -101,8 +101,7 @@ CONF_TO_DOMXML_PPC64 = [({
 
     """<?xml version="1.0" encoding="utf-8"?>
         <domain type="kvm"
-        xmlns:ovirt="http://ovirt.org/vm/tune/1.0"
-        xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
+        xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
             <name>testVm</name>
             <uuid>%(vmId)s</uuid>
             <memory>1048576</memory>
@@ -137,10 +136,6 @@ CONF_TO_DOMXML_PPC64 = [({
                     <topology cores="1" sockets="160" threads="1"/>
                     <numa/>
                 </cpu>
-                <qemu:commandline>
-                    <qemu:arg value="-usbdevice"/>
-                    <qemu:arg value="keyboard"/>
-                </qemu:commandline>
             </domain>
 """, )]
 
