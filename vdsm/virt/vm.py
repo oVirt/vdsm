@@ -1626,9 +1626,6 @@ class Vm(object):
             for leaseElement in drive.getLeasesXML():
                 domxml._devices.appendChild(leaseElement)
 
-        if self.arch == caps.Architecture.PPC64:
-            domxml.appendKeyboardDevice()
-
         return domxml.toxml()
 
     def _cleanup(self):

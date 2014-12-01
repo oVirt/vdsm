@@ -159,14 +159,6 @@ class Domain(object):
 
         domainAttrs = {'type': domainType}
 
-        # Hack around libvirt issue BZ#988070, this is going to be removed as
-        # soon as the domain XML format supports the specification of USB
-        # keyboards
-
-        if self.arch == caps.Architecture.PPC64:
-            domainAttrs['xmlns:qemu'] = \
-                'http://libvirt.org/schemas/domain/qemu/1.0'
-
         self.dom = Element('domain', **domainAttrs)
         self.doc.appendChild(self.dom)
 
@@ -474,29 +466,12 @@ class Domain(object):
         """
         if utils.tobool(self.conf.get('tabletEnable')):
             inputAttrs = {'type': 'tablet', 'bus': 'usb'}
+        elif self.arch == caps.Architecture.X86_64:
+            inputAttrs = {'type': 'mouse', 'bus': 'ps2'}
         else:
-            if self.arch == caps.Architecture.PPC64:
-                mouseBus = 'usb'
-            else:
-                mouseBus = 'ps2'
+            inputAttrs = {'type': 'mouse', 'bus': 'usb'}
 
-            inputAttrs = {'type': 'mouse', 'bus': mouseBus}
         self._devices.appendChildWithArgs('input', **inputAttrs)
-
-    def appendKeyboardDevice(self):
-        """
-        Add keyboard device for ppc64 using a QEMU argument directly.
-        This is a workaround to the issue BZ#988070 in libvirt
-
-            <qemu:commandline>
-                <qemu:arg value='-usbdevice'/>
-                <qemu:arg value='keyboard'/>
-            </qemu:commandline>
-        """
-        commandLine = Element('qemu:commandline')
-        commandLine.appendChildWithArgs('qemu:arg', value='-usbdevice')
-        commandLine.appendChildWithArgs('qemu:arg', value='keyboard')
-        self.dom.appendChild(commandLine)
 
     def appendEmulator(self):
         emulatorPath = '/usr/bin/qemu-system-' + self.arch
