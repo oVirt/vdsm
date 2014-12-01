@@ -20,12 +20,9 @@
 
 try:
     from sos.plugins import Plugin, RedHatPlugin
-
-    class Base(Plugin, RedHatPlugin):
-        pass
 except ImportError:
     import sos.plugintools
-    Base = sos.plugintools.PluginBase
+    Plugin = RedHatPlugin = sos.plugintools.PluginBase
 
 import os
 import stat
@@ -47,7 +44,7 @@ def _importVdsmPylibModule(modName):
 config = _importVdsmPylibModule('config').config
 
 
-class vdsm(Base):
+class vdsm(Plugin, RedHatPlugin):
     """VDSM server related information
     """
 
@@ -55,12 +52,12 @@ class vdsm(Base):
                    False)]
 
     # Make compatible com sos version >= 3
-    if not hasattr(Base, 'addCopySpec'):
-        addCopySpec = Base.add_copy_spec
-        addCopySpecLimit = Base.add_copy_spec_limit
-        collectExtOutput = Base.add_cmd_output
-        getOption = Base.get_option
-        addForbiddenPath = Base.add_forbidden_path
+    if not hasattr(Plugin, 'addCopySpec'):
+        addCopySpec = Plugin.add_copy_spec
+        addCopySpecLimit = Plugin.add_copy_spec_limit
+        collectExtOutput = Plugin.add_cmd_output
+        getOption = Plugin.get_option
+        addForbiddenPath = Plugin.add_forbidden_path
 
     def __addCopySpecLogLimit(self, path, logsize=None):
         """
