@@ -28,6 +28,7 @@ import threading
 from vdsm import ipwrapper
 import virt.sampling as sampling
 
+from testValidation import brokentest
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
@@ -216,6 +217,7 @@ class HostStatsThread(TestCaseBase):
         self._sampleCount = 0
         self._samplingDone = threading.Event()
 
+    @brokentest
     def testContinueWithErrors(self):
         """
         bz1113948: do not give up on errors != TimeoutError
@@ -227,12 +229,13 @@ class HostStatsThread(TestCaseBase):
             if self._sampleCount == self.STOP_SAMPLE:
                 self._hs.stop()
                 self._samplingDone.set()
-            return None  # sampling.HostSample(pid)
+            return sampling.HostSample(1)
 
         with MonkeyPatchScope([(sampling, 'HostSample', WrapHostSample),
                                (sampling.HostStatsThread,
                                    'SAMPLE_INTERVAL_SEC', 0.1)]):
             self._hs = sampling.HostStatsThread(self.log)
             self._hs.start()
-            self._samplingDone.wait()
+            self._samplingDone.wait(3.0)
+            self.assertTrue(self._samplingDone.is_set())
             self.assertTrue(self._sampleCount >= self.STOP_SAMPLE)
