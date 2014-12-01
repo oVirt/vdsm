@@ -759,8 +759,6 @@ fi
 
 %post
 %{_bindir}/vdsm-tool configure --module sanlock --force >/dev/null
-# set the vdsm "secret" password for libvirt
-%{_bindir}/vdsm-tool set-saslpasswd
 
 # After vdsm install we should create the logs files.
 # In the install session we create it but since we use
