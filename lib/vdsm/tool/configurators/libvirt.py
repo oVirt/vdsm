@@ -482,7 +482,7 @@ class Configurator(ModuleConfigure):
             'configure': _prefixAndPrepend,
             'prependFile': 'LRCONF_EXAMPLE',
             'removeConf': _unprefixAndRemoveSection,
-            'persisted': True,
+            'persisted': False,
         },
 
         'LRCONF_EXAMPLE': {
