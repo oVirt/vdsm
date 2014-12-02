@@ -15,6 +15,9 @@
 # Fedora official build
 %global fedora_koji_build 0
 
+# RHEV build - overridable using rpmbuild --define "rhev_build 1"
+%{!?rhev_build: %global rhev_build 0}
+
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
 # touch configure.ac or Makefile.am.
