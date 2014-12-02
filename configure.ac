@@ -54,6 +54,16 @@ AC_ARG_ENABLE(
     [enable_hooks="no"]
 )
 AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
+
+AC_ARG_ENABLE(
+    [rhev],
+    [AS_HELP_STRING(
+        [--enable-rhev],
+        [build RHEV version @<:@default=no@:>@]
+    )],
+    ,
+    [enable_rhev="no"]
+)
 AM_CONDITIONAL([RHEV], [test "${enable_rhev}" = "yes"])
 
 AC_ARG_ENABLE(
