@@ -142,7 +142,6 @@ EXT_RSYNC = '@RSYNC_PATH@'
 
 EXT_SASLPASSWD2 = '@SASLPASSWD2_PATH@'
 
-EXT_SERVICE = '@SERVICE_PATH@'
 EXT_SETSID = '@SETSID_PATH@'
 EXT_SH = '/bin/sh'  # The shell path is invariable
 EXT_SU = '@SU_PATH@'
