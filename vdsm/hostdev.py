@@ -65,13 +65,18 @@ def _parse_scsi_address(caps):
     return _parse_address(caps, ('host', 'bus', 'target', 'lun'))
 
 
+def _parse_usb_address(caps):
+    return _parse_address(caps, ('bus', 'device'))
+
+
 def _parse_device_params(device_xml):
     """
     Process device_xml and return dict of found known parameters,
     also doing sysfs lookups for sr-iov related information
     """
     address_parser = {'pci': _parse_pci_address,
-                      'scsi': _parse_scsi_address}
+                      'scsi': _parse_scsi_address,
+                      'usb_device': _parse_usb_address}
 
     params = {}
 

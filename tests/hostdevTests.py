@@ -384,13 +384,16 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                  'product_id': '0x217f',
                                  'parent': 'usb_1_1',
                                  'vendor_id': '0x0a5c',
+                                 'address': {'bus': '1', 'device': '10'},
                                  'capability': 'usb_device'},
                   u'usb_1_1': {'product_id': '0x0024', 'parent':
                                'usb_usb1', 'vendor_id': '0x8087',
+                               'address': {'bus': '1', 'device': '2'},
                                'capability': 'usb_device'},
                   u'usb_usb1': {'product': 'EHCI Host Controller',
                                 'vendor': 'Linux 3.10.0-123.6.3.el7.x86_64 '
                                 'ehci_hcd', 'product_id': '0x0002',
+                                'address': {'bus': '1', 'device': '1'},
                                 'parent': 'pci_0000_00_1a_0',
                                 'vendor_id': '0x1d6b',
                                 'capability': 'usb_device'}}
