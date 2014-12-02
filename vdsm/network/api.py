@@ -300,7 +300,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     bootproto = options.pop('bootproto', None)
 
-    netEnt = objectivizeNetwork(
+    net_ent = objectivizeNetwork(
         bridge=network if bridged else None, vlan=vlan, bonding=bonding,
         bondingOptions=bondingOptions, nics=nics, mtu=mtu, ipaddr=ipaddr,
         netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
@@ -308,10 +308,10 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         ipv6autoconf=ipv6autoconf, defaultRoute=defaultRoute,
         _netinfo=_netinfo, configurator=configurator, opts=options)
 
-    netEnt.configure(**options)
-    configurator.configureLibvirtNetwork(network, netEnt)
+    net_ent.configure(**options)
+    configurator.configureLibvirtNetwork(network, net_ent)
     if hostQos is not None:
-        configurator.configureQoS(hostQos, netEnt)
+        configurator.configureQoS(hostQos, net_ent)
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
@@ -395,11 +395,12 @@ def _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo):
 
 def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
     if network in netinfo.bridges():
-        netEnt = objectivizeNetwork(bridge=network, vlan=vlan, bonding=bonding,
-                                    nics=nics, _netinfo=_netinfo,
-                                    configurator=configurator,
-                                    implicitBonding=False)
-        netEnt.remove()
+        net_ent = objectivizeNetwork(bridge=network, vlan=vlan,
+                                     bonding=bonding,  nics=nics,
+                                     _netinfo=_netinfo,
+                                     configurator=configurator,
+                                     implicitBonding=False)
+        net_ent.remove()
     else:
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network"
                                  " %r: It doesn't exist in the system" %
@@ -432,24 +433,24 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if not utils.tobool(force):
         _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
 
-    netEnt = objectivizeNetwork(bridge=network if bridged else None, vlan=vlan,
-                                bonding=bonding, nics=nics, _netinfo=_netinfo,
-                                configurator=configurator,
-                                implicitBonding=implicitBonding)
-    netEnt.ip.bootproto = _netinfo.networks[network]['bootproto4']
+    net_ent = objectivizeNetwork(bridge=network if bridged else None,
+                                 vlan=vlan,  bonding=bonding, nics=nics,
+                                 _netinfo=_netinfo, configurator=configurator,
+                                 implicitBonding=implicitBonding)
+    net_ent.ip.bootproto = _netinfo.networks[network]['bootproto4']
 
     # We must first remove the libvirt network and then the network entity.
     # Otherwise if we first remove the network entity while the libvirt
     # network is still up, the network entity (In some flows) thinks that
     # it still has users and thus does not allow its removal
     configurator.removeLibvirtNetwork(network)
-    netEnt.remove()
+    net_ent.remove()
     # We must remove the QoS last so that no devices nor networks mark the
     # QoS as used
-    backing_device = hierarchy_backing_device(netEnt)
+    backing_device = hierarchy_backing_device(net_ent)
     if (backing_device is not None and
             os.path.exists(netinfo.NET_PATH + '/' + backing_device.name)):
-        configurator.removeQoS(netEnt)
+        configurator.removeQoS(net_ent)
 
 
 def clientSeen(timeout):
