@@ -86,20 +86,12 @@ class TestCaps(TestCaseBase):
     def testCpuTopologyPPC64(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
-        # PPC64 1 socket, 4 cores, 4 threads per core
-        path = os.path.join(dirName, "caps_lscpu_ppc64_1_4_4.out")
-        with open(path) as p:
-            t = caps.CpuTopology(p.read())
-        self.assertEqual(t.threads(), 16)
-        self.assertEqual(t.cores(), 4)
+        # PPC64 4 sockets, 5 cores, 1 threads per core
+        path = os.path.join(dirName, "caps_libvirt_ibm_S822L.out")
+        t = caps.CpuTopology(open(path).read())
+        self.assertEqual(t.threads(), 20)
+        self.assertEqual(t.cores(), 20)
         self.assertEqual(t.sockets(), 4)
-        # PPC64 2 sockets, 8 cores, 8 threads per core
-        path = os.path.join(dirName, "caps_lscpu_ppc64_2_4_8.out")
-        with open(path) as p:
-            t = caps.CpuTopology(p.read())
-        self.assertEqual(t.threads(), 64)
-        self.assertEqual(t.cores(), 8)
-        self.assertEqual(t.sockets(), 2)
 
     @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.X86_64)
     def testCpuTopologyX86_64(self):

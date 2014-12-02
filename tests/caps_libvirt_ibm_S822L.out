@@ -1,0 +1,184 @@
+<capabilities>
+
+  <host>
+    <uuid>00001111-0000-2222-0000-888800009999</uuid>
+    <cpu>
+      <arch>ppc64</arch>
+      <model>power8</model>
+      <vendor>IBM</vendor>
+      <topology sockets='1' cores='160' threads='1'/>
+    </cpu>
+    <power_management>
+      <suspend_disk/>
+      <suspend_hybrid/>
+    </power_management>
+    <migration_features>
+      <live/>
+      <uri_transports>
+        <uri_transport>tcp</uri_transport>
+      </uri_transports>
+    </migration_features>
+    <topology>
+      <cells num='4'>
+        <cell id='0'>
+          <memory unit='KiB'>67108864</memory>
+          <cpus num='5'>
+            <cpu id='0' socket_id='0' core_id='32' siblings='0'/>
+            <cpu id='8' socket_id='0' core_id='40' siblings='8'/>
+            <cpu id='16' socket_id='0' core_id='48' siblings='16'/>
+            <cpu id='24' socket_id='0' core_id='96' siblings='24'/>
+            <cpu id='32' socket_id='0' core_id='112' siblings='32'/>
+          </cpus>
+        </cell>
+        <cell id='1'>
+          <cpus num='5'>
+            <cpu id='40' socket_id='1' core_id='168' siblings='40'/>
+            <cpu id='48' socket_id='1' core_id='176' siblings='48'/>
+            <cpu id='56' socket_id='1' core_id='224' siblings='56'/>
+            <cpu id='64' socket_id='1' core_id='232' siblings='64'/>
+            <cpu id='72' socket_id='1' core_id='240' siblings='72'/>
+          </cpus>
+        </cell>
+        <cell id='16'>
+          <memory unit='KiB'>67108864</memory>
+          <cpus num='5'>
+            <cpu id='80' socket_id='16' core_id='2080' siblings='80'/>
+            <cpu id='88' socket_id='16' core_id='2096' siblings='88'/>
+            <cpu id='96' socket_id='16' core_id='2144' siblings='96'/>
+            <cpu id='104' socket_id='16' core_id='2152' siblings='104'/>
+            <cpu id='112' socket_id='16' core_id='2160' siblings='112'/>
+          </cpus>
+        </cell>
+        <cell id='17'>
+          <cpus num='5'>
+            <cpu id='120' socket_id='17' core_id='2216' siblings='120'/>
+            <cpu id='128' socket_id='17' core_id='2224' siblings='128'/>
+            <cpu id='136' socket_id='17' core_id='2272' siblings='136'/>
+            <cpu id='144' socket_id='17' core_id='2280' siblings='144'/>
+            <cpu id='152' socket_id='17' core_id='2288' siblings='152'/>
+          </cpus>
+        </cell>
+      </cells>
+    </topology>
+    <secmodel>
+      <model>selinux</model>
+      <doi>0</doi>
+    </secmodel>
+    <secmodel>
+      <model>dac</model>
+      <doi>0</doi>
+    </secmodel>
+  </host>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='i686'>
+      <wordsize>32</wordsize>
+      <emulator>/usr/bin/qemu-system-i386</emulator>
+      <machine canonical='pc-i440fx-1.6' maxCpus='255'>pc</machine>
+      <machine maxCpus='255'>pc-q35-1.4</machine>
+      <machine maxCpus='255'>pc-q35-1.5</machine>
+      <machine canonical='pc-q35-1.6' maxCpus='255'>q35</machine>
+      <machine maxCpus='1'>isapc</machine>
+      <machine maxCpus='255'>pc-0.10</machine>
+      <machine maxCpus='255'>pc-0.11</machine>
+      <machine maxCpus='255'>pc-0.12</machine>
+      <machine maxCpus='255'>pc-0.13</machine>
+      <machine maxCpus='255'>pc-0.14</machine>
+      <machine maxCpus='255'>pc-0.15</machine>
+      <machine maxCpus='255'>pc-1.0</machine>
+      <machine maxCpus='255'>pc-1.1</machine>
+      <machine maxCpus='255'>pc-1.2</machine>
+      <machine maxCpus='255'>pc-1.3</machine>
+      <machine maxCpus='255'>pc-i440fx-1.4</machine>
+      <machine maxCpus='255'>pc-i440fx-1.5</machine>
+      <machine maxCpus='1'>none</machine>
+      <domain type='qemu'>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <acpi default='on' toggle='yes'/>
+      <apic default='on' toggle='no'/>
+      <pae/>
+      <nonpae/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='ppc64'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/bin/qemu-system-ppc64</emulator>
+      <machine maxCpus='255'>pseries</machine>
+      <machine maxCpus='1'>virtex-ml507</machine>
+      <machine maxCpus='1'>prep</machine>
+      <machine maxCpus='1'>bamboo</machine>
+      <machine maxCpus='1'>taihu</machine>
+      <machine maxCpus='1'>ref405ep</machine>
+      <machine maxCpus='15'>mpc8544ds</machine>
+      <machine maxCpus='1'>g3beige</machine>
+      <machine maxCpus='1'>mac99</machine>
+      <machine maxCpus='32'>ppce500</machine>
+      <machine maxCpus='1'>none</machine>
+      <domain type='qemu'>
+      </domain>
+      <domain type='kvm'>
+        <emulator>/usr/bin/qemu-kvm</emulator>
+        <machine maxCpus='255'>pseries</machine>
+        <machine maxCpus='1'>virtex-ml507</machine>
+        <machine maxCpus='1'>prep</machine>
+        <machine maxCpus='1'>bamboo</machine>
+        <machine maxCpus='1'>taihu</machine>
+        <machine maxCpus='1'>ref405ep</machine>
+        <machine maxCpus='15'>mpc8544ds</machine>
+        <machine maxCpus='1'>g3beige</machine>
+        <machine maxCpus='1'>mac99</machine>
+        <machine maxCpus='32'>ppce500</machine>
+        <machine maxCpus='1'>none</machine>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='x86_64'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/bin/qemu-system-x86_64</emulator>
+      <machine canonical='pc-i440fx-1.6' maxCpus='255'>pc</machine>
+      <machine maxCpus='255'>pc-q35-1.4</machine>
+      <machine maxCpus='255'>pc-q35-1.5</machine>
+      <machine canonical='pc-q35-1.6' maxCpus='255'>q35</machine>
+      <machine maxCpus='1'>isapc</machine>
+      <machine maxCpus='255'>pc-0.10</machine>
+      <machine maxCpus='255'>pc-0.11</machine>
+      <machine maxCpus='255'>pc-0.12</machine>
+      <machine maxCpus='255'>pc-0.13</machine>
+      <machine maxCpus='255'>pc-0.14</machine>
+      <machine maxCpus='255'>pc-0.15</machine>
+      <machine maxCpus='255'>pc-1.0</machine>
+      <machine maxCpus='255'>pc-1.1</machine>
+      <machine maxCpus='255'>pc-1.2</machine>
+      <machine maxCpus='255'>pc-1.3</machine>
+      <machine maxCpus='255'>pc-i440fx-1.4</machine>
+      <machine maxCpus='255'>pc-i440fx-1.5</machine>
+      <machine maxCpus='1'>none</machine>
+      <domain type='qemu'>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <acpi default='on' toggle='yes'/>
+      <apic default='on' toggle='no'/>
+    </features>
+  </guest>
+
+</capabilities>
+
+
