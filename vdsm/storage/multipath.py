@@ -25,7 +25,6 @@ daemon and maintaining its state
 import os
 import errno
 from glob import glob
-import tempfile
 import logging
 import re
 from collections import namedtuple
@@ -38,71 +37,11 @@ import iscsi
 import supervdsm
 import devicemapper
 
-import storage_exception as se
-
 DEV_ISCSI = "iSCSI"
 DEV_FCP = "FCP"
 DEV_MIXED = "MIXED"
 
-MAX_CONF_COPIES = 5
-
 TOXIC_CHARS = '()*+?|^$.\\'
-
-MPATH_CONF = "/etc/multipath.conf"
-
-OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
-            "# RHEV REVISION 0.4", "# RHEV REVISION 0.5",
-            "# RHEV REVISION 0.6", "# RHEV REVISION 0.7",
-            "# RHEV REVISION 0.8", "# RHEV REVISION 0.9",
-            "# RHEV REVISION 1.0"]
-MPATH_CONF_TAG = "# RHEV REVISION 1.1"
-MPATH_CONF_PRIVATE_TAG = "# RHEV PRIVATE"
-STRG_MPATH_CONF = (
-    "\n\n"
-    "defaults {\n"
-    "    polling_interval        5\n"
-    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
-    "--replace-whitespace --device=/dev/%%n\"\n"
-    "    no_path_retry           fail\n"
-    "    user_friendly_names     no\n"
-    "    flush_on_last_del       yes\n"
-    "    fast_io_fail_tmo        5\n"
-    "    dev_loss_tmo            30\n"
-    "    max_fds                 4096\n"
-    "}\n"
-    "\n"
-    "devices {\n"
-    "device {\n"
-    "    vendor                  \"HITACHI\"\n"
-    "    product                 \"DF.*\"\n"
-    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
-    "--replace-whitespace --device=/dev/%%n\"\n"
-    "}\n"
-    "device {\n"
-    "    vendor                  \"COMPELNT\"\n"
-    "    product                 \"Compellent Vol\"\n"
-    "    no_path_retry           fail\n"
-    "}\n"
-    "device {\n"
-    "    # multipath.conf.default\n"
-    "    vendor                  \"DGC\"\n"
-    "    product                 \".*\"\n"
-    "    product_blacklist       \"LUNZ\"\n"
-    "    path_grouping_policy    \"group_by_prio\"\n"
-    "    path_checker            \"emc_clariion\"\n"
-    "    hardware_handler        \"1 emc\"\n"
-    "    prio                    \"emc\"\n"
-    "    failback                immediate\n"
-    "    rr_weight               \"uniform\"\n"
-    "    # vdsm required configuration\n"
-    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
-    "--replace-whitespace --device=/dev/%%n\"\n"
-    "    features                \"0\"\n"
-    "    no_path_retry           fail\n"
-    "}\n"
-    "}"
-)
-MPATH_CONF_TEMPLATE = MPATH_CONF_TAG + STRG_MPATH_CONF
 
 log = logging.getLogger("Storage.Multipath")
 
@@ -126,76 +65,6 @@ def rescan():
 
     # Now let multipath daemon pick up new devices
     misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
-
-
-def isEnabled():
-    """
-    Check the multipath daemon configuration. The configuration file
-    /etc/multipath.conf should contain private tag in form
-    "RHEV REVISION X.Y" for this check to succeed.
-    If the tag above is followed by tag "RHEV PRIVATE" the configuration
-    should be preserved at all cost.
-
-    """
-    if os.path.exists(MPATH_CONF):
-        first = second = ''
-        svdsm = supervdsm.getProxy()
-        mpathconf = svdsm.readMultipathConf()
-        try:
-            first = mpathconf[0]
-            second = mpathconf[1]
-        except IndexError:
-            pass
-        if MPATH_CONF_PRIVATE_TAG in second:
-            log.info("Manual override for multipath.conf detected - "
-                     "preserving current configuration")
-            if MPATH_CONF_TAG not in first:
-                log.warning("This manual override for multipath.conf "
-                            "was based on downrevved template. "
-                            "You are strongly advised to "
-                            "contact your support representatives")
-            return True
-
-        if MPATH_CONF_TAG in first:
-            log.debug("Current revision of multipath.conf detected, "
-                      "preserving")
-            return True
-
-        for tag in OLD_TAGS:
-            if tag in first:
-                log.info("Downrev multipath.conf detected, upgrade required")
-                return False
-
-    log.debug("multipath Defaulting to False")
-    return False
-
-
-def setupMultipath():
-    """
-    Set up the multipath daemon configuration to the known and
-    supported state. The original configuration, if any, is saved
-    """
-    if os.path.exists(MPATH_CONF):
-        misc.rotateFiles(
-            os.path.dirname(MPATH_CONF),
-            os.path.basename(MPATH_CONF), MAX_CONF_COPIES,
-            cp=True, persist=True)
-    with tempfile.NamedTemporaryFile() as f:
-        f.write(MPATH_CONF_TEMPLATE % {'scsi_id_path': _scsi_id.cmd})
-        f.flush()
-        cmd = [constants.EXT_CP, f.name, MPATH_CONF]
-        rc = misc.execCmd(cmd, sudo=True)[0]
-        if rc != 0:
-            raise se.MultipathSetupError()
-    utils.persist(MPATH_CONF)
-
-    # Flush all unused multipath device maps
-    misc.execCmd([constants.EXT_MULTIPATH, "-F"], sudo=True)
-
-    cmd = [constants.EXT_VDSM_TOOL, "service-reload", "multipathd"]
-    rc = misc.execCmd(cmd, sudo=True)[0]
-    if rc != 0:
-        raise se.MultipathReloadError()
 
 
 def deduceType(a, b):

@@ -1287,6 +1287,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/libvirt.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
 %{python_sitelib}/%{vdsm_name}/tool/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
 %{python_sitelib}/%{vdsm_name}/tool/service.py*

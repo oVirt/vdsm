@@ -73,7 +73,6 @@ from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
 import mkimage
-from storage.multipath import MPATH_CONF
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -137,11 +136,6 @@ class _SuperVdsm(object):
     @logDecorator
     def getDevicePartedInfo(self, *args, **kwargs):
         return _getDevicePartedInfo(*args, **kwargs)
-
-    @logDecorator
-    def readMultipathConf(self):
-        with open(MPATH_CONF) as f:
-            return [x.strip("\n") for x in f.readlines()]
 
     @logDecorator
     def getScsiSerial(self, *args, **kwargs):

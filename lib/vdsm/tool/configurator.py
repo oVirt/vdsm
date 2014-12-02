@@ -33,6 +33,7 @@ from .configurators import \
     InvalidConfig, \
     InvalidRun, \
     libvirt, \
+    multipath, \
     NO, \
     sanlock, \
     sebool
@@ -43,6 +44,7 @@ _CONFIGURATORS = dict((m.name, m) for m in (
     libvirt.Configurator(),
     sanlock.Configurator(),
     sebool.Configurator(),
+    multipath.Configurator(),
 ))
 
 

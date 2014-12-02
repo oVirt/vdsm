@@ -24,6 +24,7 @@ dist_configurators_PYTHON = \
 	certificates.py \
 	configfile.py \
 	libvirt.py \
+	multipath.py \
 	sanlock.py \
 	sebool.py \
 	$(NULL)

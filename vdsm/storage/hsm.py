@@ -357,9 +357,6 @@ class HSM(object):
 
         self._preparedVolumes = defaultdict(list)
 
-        if not multipath.isEnabled():
-            multipath.setupMultipath()
-
         self.__validateLvmLockingType()
 
         oop.setDefaultImpl(config.get('irs', 'oop_impl'))
