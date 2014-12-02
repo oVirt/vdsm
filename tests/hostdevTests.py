@@ -325,7 +325,9 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                                     'domain': '0',
                                                     'function': '0'}},
                   u'scsi_0_0_0_0': {'capability': 'scsi',
-                                    'parent': 'scsi_target0_0_0'},
+                                    'parent': 'scsi_target0_0_0',
+                                    'address': {'bus': '0', 'host': '0',
+                                                'lun': '0', 'target': '0'}},
                   u'pci_0000_00_1a_0': {'product': '6 Series/C200 Series '
                                         'Chipset Family USB Enhanced Host '
                                         'Controller #2',
