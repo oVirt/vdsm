@@ -642,8 +642,8 @@ def get(vdsmnets=None):
     routes = _get_routes()
 
     if vdsmnets is None:
-        nets = networks()
-        d['networks'] = _libvirtNets2vdsm(nets, dhcp4, routes, ipaddrs)
+        libvirt_nets = networks()
+        d['networks'] = _libvirtNets2vdsm(libvirt_nets, dhcp4, routes, ipaddrs)
     else:
         d['networks'] = vdsmnets
 
