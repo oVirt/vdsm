@@ -3760,12 +3760,15 @@
 #
 # @vendor:          String representation of the vendor
 #
+# @totalvfs:        #optional Number of available virtual functions
+#                   (if sriov capable)
+#
 # Since: 4.17.0
 ##
 {'type': 'HostDeviceParams',
  'data': {'capability': 'str', 'iommu_group': 'uint',
           'parent': 'str', 'product_id': 'str', 'product': 'str',
-          'vendor_id': 'str', 'vendor': 'str'}}
+          'vendor_id': 'str', 'vendor': 'str', 'totalvfs': 'uint'}}
 
 ##
 # @HostDevice:

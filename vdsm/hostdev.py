@@ -26,9 +26,20 @@ from vdsm import libvirtconnection
 _DETACH_REQUIRING_CAPS = ('usb_device', 'pci')
 
 
+def _name_to_pci_path(device_name):
+    return device_name[4:].replace('_', '.').replace('.', ':', 2)
+
+
+def _sriov_totalvfs(device_name):
+    with open('/sys/bus/pci/devices/{}/sriov_totalvfs'.format(
+            _name_to_pci_path(device_name))) as f:
+        return int(f.read())
+
+
 def _parse_device_params(device_xml):
     """
-    Process device_xml and return dict of found known parameters
+    Process device_xml and return dict of found known parameters,
+    also doing sysfs lookups for sr-iov related information
     """
     params = {}
 
@@ -51,6 +62,12 @@ def _parse_device_params(device_xml):
     iommu_group = caps.find('iommuGroup')
     if iommu_group is not None:
         params['iommu_group'] = iommu_group.attrib['number']
+
+    try:
+        params['totalvfs'] = _sriov_totalvfs(name)
+    except IOError:
+        # Device does not support sriov, we can safely go on
+        pass
 
     return params
 

@@ -286,6 +286,7 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'product_id': '0x1502',
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
+                                        'totalvfs': 7,
                                         'capability': 'pci'},
                   u'usb_1_1_4': {'product': 'Broadcom Bluetooth Device',
                                  'vendor': 'Broadcom Corp',
@@ -373,8 +374,16 @@ class Connection(fake.Connection):
         return self._virNodeDevices
 
 
+def _fake_totalvfs(device_name):
+    if device_name == 'pci_0000_00_19_0':
+        return 7
+
+    raise IOError
+
+
 @expandPermutations
 @MonkeyClass(libvirtconnection, 'get', Connection)
+@MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
 class HostdevTests(TestCaseBase):
 
     def testParseDeviceParams(self):
