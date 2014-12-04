@@ -881,7 +881,7 @@ class NetworkTest(TestCaseBase):
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testSetupNetworksConvertVlanNetBridgeness(self):
-        "Convert a bridged networks to a bridgeless one and viceversa"
+        """Convert a bridged networks to a bridgeless one and viceversa"""
 
         def setupNetworkBridged(nic, bridged):
             networks = {NETWORK_NAME: dict(vlan=VLAN_ID,
