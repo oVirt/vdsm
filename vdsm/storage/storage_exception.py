@@ -575,7 +575,7 @@ class ImageNotOnTargetDomain(StorageException):
 
 class VMPathNotExists(StorageException):
     code = 322
-    message = "Cannot found VMs directory"
+    message = "Cannot find VMs directory"
 
 
 class CannotConnectMultiplePools(StorageException):
