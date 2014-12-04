@@ -1304,7 +1304,7 @@ class Global(APIBase):
         statsList = hooks.after_get_all_vm_stats(statsList)
         return {'status': doneCode, 'statsList': statsList}
 
-    def hostdevListByCaps(self, caps):
+    def hostdevListByCaps(self, caps=None):
         devices = hostdev.list_by_caps(self._cif.vmContainer, caps)
         return {'status': doneCode, 'deviceList': devices}
 

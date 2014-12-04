@@ -486,7 +486,7 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getAllVmStats()
 
-    def hostdevListByCaps(self, caps):
+    def hostdevListByCaps(self, caps=None):
         api = API.Global()
         return api.hostdevListByCaps(caps)
 

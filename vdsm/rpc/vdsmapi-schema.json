@@ -3796,7 +3796,9 @@
 #
 # Refresh and get information about devices available on the host
 #
-# @caps:            List of capabilities of devices to fetch
+# @caps:            @optional List of capabilities. Devices of given
+#                   capabilities will be fetched. Omitting or sending
+#                   empty list returns all devices.
 #
 # Returns:
 # A list of devices on the host
@@ -3804,7 +3806,7 @@
 # Since: 4.17.0
 ##
 {'command': {'class': 'Host', 'name': 'hostdevListByCaps'},
- 'data': {'caps': ['str']},
+ 'data': {'*caps': ['str']},
  'returns': ['HostDevices']}
 
 ##
