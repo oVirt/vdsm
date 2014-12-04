@@ -608,7 +608,7 @@ def _get_routes():
     return routes
 
 
-def _libvirtNets2vdsm(nets, dhcp4=None, routes=None, ipAddrs=None):
+def libvirtNets2vdsm(nets, dhcp4=None, routes=None, ipAddrs=None):
     if dhcp4 is None:
         dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
     if routes is None:
@@ -643,7 +643,7 @@ def get(vdsmnets=None):
 
     if vdsmnets is None:
         libvirt_nets = networks()
-        d['networks'] = _libvirtNets2vdsm(libvirt_nets, dhcp4, routes, ipaddrs)
+        d['networks'] = libvirtNets2vdsm(libvirt_nets, dhcp4, routes, ipaddrs)
     else:
         d['networks'] = vdsmnets
 

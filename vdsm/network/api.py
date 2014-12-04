@@ -721,7 +721,7 @@ def setupNetworks(networks, bondings, **options):
 
     libvirt_nets = netinfo.networks()
     _netinfo = netinfo.NetInfo(_netinfo=netinfo.get(
-        netinfo._libvirtNets2vdsm(libvirt_nets)))
+        netinfo.libvirtNets2vdsm(libvirt_nets)))
     connectivity_check_networks = set()
 
     logger.debug("Applying...")
