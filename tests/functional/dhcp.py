@@ -54,7 +54,7 @@ class Dnsmasq():
             _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
             '-p', '0', '--dhcp-range=' + dhcpRangeFrom + ',' +
             dhcpRangeTo + ',2m',
-            '--dhcp-option=3' + ',%s' % (router,) if router else '',
+            '--dhcp-option=3' + (',{0}'.format(router) if router else ''),
             '-O', '6',
             '-i', interface, '-I', 'lo', '-d',
             '--bind-interfaces'], sync=False)
