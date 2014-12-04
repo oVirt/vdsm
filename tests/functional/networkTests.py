@@ -246,6 +246,10 @@ class NetworkTest(TestCaseBase):
         self.assertIn(networkName, netinfo.networks)
         if bridged is not None:
             self.assertEqual(bridged, netinfo.networks[networkName]['bridged'])
+            if bridged:
+                self.assertIn(networkName, netinfo.bridges)
+            else:
+                self.assertNotIn(networkName, netinfo.bridges)
         if bridgeOpts is not None and netinfo.networks[networkName]['bridged']:
             appliedOpts = netinfo.bridges[networkName]['opts']
             for opt, value in bridgeOpts.iteritems():
@@ -261,7 +265,9 @@ class NetworkTest(TestCaseBase):
                                  bridged)
 
     def assertNetworkDoesntExist(self, networkName):
-        self.assertNotIn(networkName, self.vdsm_net.netinfo.networks)
+        netinfo = self.vdsm_net.netinfo
+        self.assertNotIn(networkName, netinfo.networks)
+        self.assertNotIn(networkName, netinfo.bridges)
         if self.vdsm_net.config is not None:
             self.assertNotIn(networkName, self.vdsm_net.config.networks)
 
