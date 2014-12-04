@@ -864,10 +864,10 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME, bridged)
 
-        with dummyIf(1) as nics:
-            setupNetworkBridged(nics[0], True)
-            setupNetworkBridged(nics[0], False)
-            setupNetworkBridged(nics[0], True)
+        with dummyIf(1) as (nic, ):
+            setupNetworkBridged(nic, True)
+            setupNetworkBridged(nic, False)
+            setupNetworkBridged(nic, True)
 
             status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME:
                                                        dict(remove=True)},
