@@ -68,7 +68,9 @@ DHCP_RANGE_FROM = '240.0.0.10'
 DHCP_RANGE_TO = '240.0.0.100'
 CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
 
-IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
+IPv6_CIDR = '64'
+IPv6_ADDRESS_AND_CIDR = IPv6_ADDRESS + '/' + IPv6_CIDR
 IPv6_ADDRESS_IN_NETWORK = 'fdb3:84e5:4ff4:55e3:0:ffff:ffff:0'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ff'
 
@@ -1664,11 +1666,11 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             networks = {
                 NETWORK_NAME + '1':
-                {'nic': nic, 'bootproto': 'none', 'ipv6addr': IPv6_ADDRESS,
-                 'ipv6gateway': IPv6_GATEWAY},
+                {'nic': nic, 'bootproto': 'none', 'ipv6gateway': IPv6_GATEWAY,
+                 'ipv6addr': IPv6_ADDRESS_AND_CIDR},
                 NETWORK_NAME + '2':
-                {'nic': nic, 'bootproto': 'none', 'ipv6addr': IPv6_ADDRESS,
-                 'ipv6gateway': IPv6_GATEWAY, 'ipaddr': IP_ADDRESS,
+                {'nic': nic, 'bootproto': 'none', 'ipv6gateway': IPv6_GATEWAY,
+                 'ipv6addr': IPv6_ADDRESS_AND_CIDR, 'ipaddr': IP_ADDRESS,
                  'gateway': IP_GATEWAY,
                  'netmask': prefix2netmask(int(IP_CIDR))}}
             for network, netdict in networks.iteritems():
@@ -1678,7 +1680,7 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(status, SUCCESS, msg)
                     self.assertNetworkExists(network)
                     self.assertIn(
-                        IPv6_ADDRESS,
+                        IPv6_ADDRESS_AND_CIDR,
                         self.vdsm_net.netinfo.networks[network]['ipv6addrs'])
                     self.assertEqual(
                         IPv6_GATEWAY,
@@ -1819,8 +1821,7 @@ class NetworkTest(TestCaseBase):
             finally:
                 addrFlush(nic)
 
-            ipv6_addr, ipv6_netmask = IPv6_ADDRESS.split('/')
-            dummy.setIP(nic, ipv6_addr, ipv6_netmask, family=6)
+            dummy.setIP(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
             try:
                 dummy.setLinkUp(nic)
                 self.assertEqual(getRouteDeviceTo(IPv6_ADDRESS_IN_NETWORK),
