@@ -702,6 +702,16 @@ def _apply_hook(bondings, networks, options):
     return bondings, networks, options
 
 
+def _should_keep_bridge(marked_for_removal, currently_bridged,
+                        should_be_bridged):
+    if marked_for_removal:
+        return False
+    if currently_bridged and not should_be_bridged:
+        return False
+
+    return True
+
+
 def setupNetworks(networks, bondings, **options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -767,8 +777,14 @@ def setupNetworks(networks, bondings, **options):
         for network, attrs in networks.items():
             if network in _netinfo.networks:
                 logger.debug("Removing network %r", network)
+                keep_bridge = _should_keep_bridge(
+                    marked_for_removal='remove' in attrs,
+                    currently_bridged=_netinfo.networks[network]['bridged'],
+                    should_be_bridged=attrs.get('bridged'))
+
                 _delNetwork(network, configurator=configurator, force=force,
-                            implicitBonding=False, _netinfo=_netinfo)
+                            implicitBonding=False, _netinfo=_netinfo,
+                            keep_bridge=keep_bridge)
                 _netinfo.updateDevices()
                 del _netinfo.networks[network]
             elif network in libvirt_nets:

@@ -41,7 +41,7 @@ from utils import SUCCESS, VdsProxy
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable)
 
-from vdsm.constants import EXT_BRCTL
+from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm.utils import RollbackContext, execCmd, running
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
                           getDhclientIfaces)
@@ -51,6 +51,8 @@ from vdsm.utils import pgrep
 import caps
 from network import errors
 from network import tc
+from network import api
+from network.configurators.ifcfg import Ifcfg
 
 
 NETWORK_NAME = 'test-network'
@@ -973,6 +975,44 @@ class NetworkTest(TestCaseBase):
 
             for net in nets_to_clean:
                 self.assertNetworkDoesntExist(net)
+
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testSetupNetworksDoesNotDeleteTheBridge(self):
+        def get_bridge_index():
+            link = ipwrapper.getLink(NETWORK_NAME)
+            return link.index
+
+        with dummyIf(2) as nics:
+            first, second = nics
+            STANDARD = 1500
+            first_net = {NETWORK_NAME: dict(bridged=True, nic=first,
+                                            mtu=STANDARD)}
+            status, msg = self.vdsm_net.setupNetworks(first_net, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            self.assertMtu(STANDARD, NETWORK_NAME, first)
+            bridge_index = get_bridge_index()
+
+            BIG = 2000
+            second_net = {NETWORK_NAME: dict(bridged=True, nic=second,
+                                             mtu=BIG)}
+            status, msg = self.vdsm_net.setupNetworks(second_net, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            self.assertEquals(bridge_index, get_bridge_index())
+            # the kernel bridge driver automatically updates the bridge to the
+            # new minimum MTU of all of its connected interfaces
+            self.assertMtu(BIG, NETWORK_NAME, second)
+
+            if api.ConfiguratorClass == Ifcfg:
+                # verify that the ifcfg configuration files are also updated
+                # with the new MTU
+                rc, _, _ = execCmd([EXT_IFDOWN, NETWORK_NAME])
+                self.assertEquals(rc, 0, 'ifdown failed: rc=%s' % (rc,))
+                rc, _, _ = execCmd([EXT_IFUP, NETWORK_NAME])
+                self.assertEquals(rc, 0, 'ifup failed: rc=%s' % (rc,))
+                self.vdsm_net.refreshNetinfo()
+                self.assertMtu(BIG, NETWORK_NAME, second)
 
     @cleanupNet
     @permutations([[True], [False]])
