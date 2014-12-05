@@ -1750,11 +1750,11 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
 
-                vdsm_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                self.assertEqual(vdsm_net['bootproto4'], dhcpv4)
+                test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                self.assertEqual(test_net['bootproto4'], dhcpv4)
 
                 if bridged:
-                    self.assertEqual(vdsm_net['cfg']['BOOTPROTO'], dhcpv4)
+                    self.assertEqual(test_net['cfg']['BOOTPROTO'], dhcpv4)
 
                     devs = self.vdsm_net.netinfo.bridges
                     self.assertIn(NETWORK_NAME, devs)
@@ -1770,7 +1770,7 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(devs[right]['bootproto4'], dhcpv4)
                     device_name = right
 
-                ip_addr = vdsm_net['addr']
+                ip_addr = test_net['addr']
                 self.assertSourceRoutingConfiguration(device_name, ip_addr)
 
                 network = {NETWORK_NAME: {'remove': True}}
