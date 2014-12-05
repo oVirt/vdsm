@@ -1881,6 +1881,7 @@ class Vm(object):
         self.memCommitted = 0
         self._confLock = threading.Lock()
         self._jobsLock = threading.Lock()
+        self._statusLock = threading.Lock()
         self._creationThread = threading.Thread(target=self._startUnderlyingVm)
         if 'migrationDest' in self.conf:
             self._lastStatus = vmstatus.MIGRATION_DESTINATION
@@ -1934,25 +1935,31 @@ class Vm(object):
         self._shutdownReason = None
 
     def _get_lastStatus(self):
+        # note that we don't use _statusLock here. One of the reasons is the
+        # non-obvious recursive locking in the following flow:
+        # _set_lastStatus() -> saveState() -> status() -> _get_lastStatus().
         PAUSED_STATES = (vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
                          vmstatus.UP)
-        if not self._guestCpuRunning and self._lastStatus in PAUSED_STATES:
+        status = self._lastStatus
+        if not self._guestCpuRunning and status in PAUSED_STATES:
             return vmstatus.PAUSED
-        return self._lastStatus
+        return status
 
     def _set_lastStatus(self, value):
-        if self._lastStatus == vmstatus.DOWN:
-            self.log.warning('trying to set state to %s when already Down',
-                             value)
-            if value == vmstatus.DOWN:
-                raise DoubleDownError
-            else:
-                return
-        if value not in VALID_STATES:
-            self.log.error('setting state to %s', value)
-        if self._lastStatus != value:
-            self.saveState()
-            self._lastStatus = value
+        with self._statusLock:
+            if self._lastStatus == vmstatus.DOWN:
+                self.log.warning(
+                    'trying to set state to %s when already Down',
+                    value)
+                if value == vmstatus.DOWN:
+                    raise DoubleDownError
+                else:
+                    return
+            if value not in VALID_STATES:
+                self.log.error('setting state to %s', value)
+            if self._lastStatus != value:
+                self.saveState()
+                self._lastStatus = value
 
     lastStatus = property(_get_lastStatus, _set_lastStatus)
 
