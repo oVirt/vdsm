@@ -141,9 +141,11 @@ def _rtnl_link_get_kernel_workaround(sock, name):
 
 def _get_link(name=None, index=0, sock=None):
     """ If defined both name and index, index is primary """
-    NLE_SUCCESS = 0
+    # libnl/incluede/netlink/errno.h
     NLE_INVAL = 7
+    NLE_NODEV = 31
     NLE_OPNOTSUPP = 10
+    NLE_SUCCESS = 0
 
     if name is None and index == 0:
         raise ValueError('Must specify either a name or an index')
@@ -160,7 +162,10 @@ def _get_link(name=None, index=0, sock=None):
             link = _rtnl_link_get_kernel_workaround(sock, name)
             err = NLE_SUCCESS
     if err:
-        raise IOError(-err, _nl_geterror())
+        if -err == NLE_NODEV:
+            link = None
+        else:
+            raise IOError(-err, _nl_geterror())
     return link
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
