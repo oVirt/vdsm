@@ -18,7 +18,10 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from threading import Timer
 from time import sleep
+import logging
+import sys
 
 from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
@@ -166,22 +169,35 @@ class TestMonitor(TestCaseBase):
         tcTests._checkDependencies()
         mon = Monitor()
         mon.start()
-        # FIXME: sometimes mon.start() is returned before properly started,
-        # in this case, iterator doesn't catch the first created bridge and
-        # stuck forever. Remove this sleep() when new netlink-based event
-        # monitor will be available.
-        sleep(0.5)
-        iterator = iter(mon)
+        try:
+            def _timeout():
+                mon.stop()
+                err_msg = 'test omitted: waiting too long for a monitor event'
+                logging.error(err_msg)
+                sys.stderr.write(err_msg + '\n')
+            timer = Timer(3, _timeout)
+            timer.start()
+            try:
+                # FIXME: sometimes mon.start() is returned before properly
+                # started, in this case, iterator doesn't catch the first
+                # created bridge and stuck forever. Remove this sleep() when
+                # new netlink-based event monitor will be available.
+                sleep(0.5)
+                iterator = iter(mon)
 
-        bridge.addDevice()  # Generate an event to avoid blocking
-        iterator.next()
+                # Generate events to avoid blocking
+                bridge.addDevice()
+                iterator.next()
 
-        bridge.delDevice()
-        iterator.next()  # Generate an event to avoid blocking
-
-        # Stop the monitor and check that eventually StopIteration is raised.
-        # There might be other system link events so we loop to exhaust them.
-        mon.stop()
+                bridge.delDevice()
+                iterator.next()
+            finally:
+                timer.cancel()
+        finally:
+            # Stop the monitor and check that eventually StopIteration is
+            # raised.  There might be other system link events so we loop to
+            # exhaust them.
+            mon.stop()
         with self.assertRaises(StopIteration):
             while True:
                 iterator.next()
