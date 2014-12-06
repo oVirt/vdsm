@@ -48,10 +48,9 @@ def allowDhcp(veth):
             _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
                             '--change-interface=' + veth])
         else:
-            raise SkipTest('No firewall service detected.')
+            logging.info('No firewall service detected.')
     except FirewallError as e:
-        raise SkipTest('Failed to allow dhcp traffic in firewall because of '
-                       '%s' % e)
+        raise SkipTest('Failed to allow DHCP traffic in firewall: %s' % e)
 
 
 def stopAllowingDhcp(veth):
@@ -73,7 +72,7 @@ def stopAllowingDhcp(veth):
         _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
                         '--remove-interface=' + veth])
     else:
-        logging.error('The firewall service is gone.')
+        logging.warning('No firewall service detected.')
 
 
 def _serviceRunning(name):
