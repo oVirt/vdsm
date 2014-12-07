@@ -253,6 +253,9 @@ class Parser(object):
         if ndata < (cl + 1):
             return False
 
+        if buf[cl] != "\0":
+            raise RuntimeError("Frame end is missing \\0")
+
         remainingBytes = 0
         self._flush()
         body = buf
