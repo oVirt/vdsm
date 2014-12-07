@@ -256,15 +256,12 @@ class Parser(object):
         if buf[cl] != "\0":
             raise RuntimeError("Frame end is missing \\0")
 
-        remainingBytes = 0
         self._flush()
-        body = buf
-        self._write_buffer(body[cl + 1:])
-        body = body[:cl]
+        self._write_buffer(buf[cl + 1:])
+        body = buf[:cl]
 
-        if remainingBytes == 0:
-            self._tmpFrame.body = body
-            self._pushFrame()
+        self._tmpFrame.body = body
+        self._pushFrame()
 
         return True
 
