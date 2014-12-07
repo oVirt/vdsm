@@ -298,6 +298,19 @@ Port 9</product>
     </device>
     """
 
+_NET_DEVICE = """
+<device>
+  <name>net_em1_28_d2_44_55_66_88</name>
+  <path>/sys/devices/pci0000:00/0000:00:19.0/net/em1</path>
+  <parent>pci_0000_00_19_0</parent>
+  <capability type='net'>
+    <interface>em1</interface>
+    <address>28:d2:44:55:66:88</address>
+    <link state='down'/>
+    <capability type='80203'/>
+  </capability>
+</device>
+"""
 
 DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'Chipset Family High Definition '
@@ -367,6 +380,12 @@ ADDITIONAL_DEVICE_PARSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                             'parent': 'computer',
                             'iommu_group': '4',
                             'vendor_id': '0x8086', 'capability': 'pci'}
+
+_NET_DEVICE_PARSED = {
+    'parent': 'pci_0000_00_19_0',
+    'capability': 'net',
+    'interface': 'em1',
+}
 
 _SRIOV_PF_PARSED = {'capability': 'pci',
                     'iommu_group': '15',
@@ -475,6 +494,11 @@ class HostdevTests(TestCaseBase):
         deviceXML = hostdev._parse_device_params(_SRIOV_VF_XML)
 
         self.assertEquals(_SRIOV_VF_PARSED, deviceXML)
+
+    def testParseNetDeviceParams(self):
+        deviceXML = hostdev._parse_device_params(_NET_DEVICE)
+
+        self.assertEquals(_NET_DEVICE_PARSED, deviceXML)
 
     def testGetDevicesFromLibvirt(self):
         libvirt_devices = hostdev._get_devices_from_libvirt()

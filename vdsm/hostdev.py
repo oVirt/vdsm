@@ -63,7 +63,7 @@ def _parse_device_params(device_xml):
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
 
-    for element in ('vendor', 'product'):
+    for element in ('vendor', 'product', 'interface'):
         elementXML = caps.find(element)
         if elementXML is not None:
             if 'id' in elementXML.attrib:
