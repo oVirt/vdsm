@@ -582,7 +582,19 @@ class JsonRpcServer(object):
         if self._threadFactory is None:
             self._serveRequest(ctx, request)
         else:
-            self._threadFactory(partial(self._serveRequest, ctx, request))
+            try:
+                self._threadFactory(partial(self._serveRequest, ctx, request))
+            except Exception as e:
+                self.log.exception("could not allocate request thread")
+                ctx.requestDone(
+                    JsonRpcResponse(
+                        None,
+                        JsonRpcInternalError(
+                            str(e)
+                        ),
+                        request.id
+                    )
+                )
 
     def stop(self):
         self.log.info("Stopping JsonRPC Server")
