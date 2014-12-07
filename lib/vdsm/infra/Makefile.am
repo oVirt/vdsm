@@ -19,7 +19,10 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = zombiereaper
+SUBDIRS = \
+	filecontrol  \
+	zombiereaper \
+	$(NULL)
 
 dist_vdsminfra_PYTHON = \
 	__init__.py \

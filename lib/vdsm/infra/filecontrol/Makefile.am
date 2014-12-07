@@ -17,7 +17,18 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-__all__ = [
-    "filecontrol",
-    "zombiereaper",
-]
+
+include $(top_srcdir)/build-aux/Makefile.subs
+
+filecontroldir = $(vdsminfradir)/filecontrol
+
+dist_filecontrol_PYTHON = \
+	__init__.py \
+	$(NULL)
+
+dist_noinst_PYTHON = \
+	tests.py \
+	$(NULL)
+
+check-local:
+	nosetests tests.py
