@@ -30,6 +30,7 @@ from vdsm.config import config
 from vdsm import constants
 from vdsm import netinfo
 from vdsm import utils
+from vdsm import ipwrapper
 
 from .configurators import libvirt
 from .errors import ConfigNetworkError
@@ -238,6 +239,11 @@ def _alterRunningConfig(func):
     return wrapped
 
 
+def _update_bridge_ports_mtu(bridge, mtu):
+    for port in netinfo.ports(bridge):
+        ipwrapper.linkSet(port, ['mtu', str(mtu)])
+
+
 @_alterRunningConfig
 def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                 netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
@@ -308,7 +314,22 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         ipv6autoconf=ipv6autoconf, defaultRoute=defaultRoute,
         _netinfo=_netinfo, configurator=configurator, opts=options)
 
-    net_ent.configure(**options)
+    if bridged and network in _netinfo.bridges:
+        net_ent_to_configure = net_ent.port
+        logging.info("Bridge %s already exists.", network)
+        # The bridge already exists and we attach a new underlying device to
+        # it. We need to make sure that the bridge MTU configuration is
+        # updated.
+        configurator.configApplier.setIfaceMtu(network, mtu)
+        # We must also update the vms` tap devices (the bridge ports in this
+        # case) so that their MTU is synced with the bridge
+        _update_bridge_ports_mtu(net_ent.name, mtu)
+    else:
+        net_ent_to_configure = net_ent
+
+    if net_ent_to_configure is not None:
+        logging.info("Configuring device %s", net_ent_to_configure)
+        net_ent_to_configure.configure(**options)
     configurator.configureLibvirtNetwork(network, net_ent)
     if hostQos is not None:
         configurator.configureQoS(hostQos, net_ent)
