@@ -440,10 +440,8 @@ class AsyncDispatcher(object):
         if data is not None:
             parser.parse(data)
 
-        frameHandler = self._frameHandler
-        if hasattr(frameHandler, "handle_frame"):
-            while parser.pending > 0:
-                frameHandler.handle_frame(self, parser.popFrame())
+        while parser.pending > 0:
+            self._frameHandler.handle_frame(self, parser.popFrame())
 
     def popFrame(self):
         return self._parser.popFrame()
