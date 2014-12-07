@@ -28,7 +28,7 @@ import time
 from M2Crypto import SSL
 
 from vdsm.utils import traceback
-from vdsm import utils
+import vdsm.infra.filecontrol as filecontrol
 
 
 def _is_handshaking(sock):
@@ -74,10 +74,10 @@ class MultiProtocolAcceptor:
         self._port = port
 
         self._read_fd, self._write_fd = os.pipe()
-        utils.set_non_blocking(self._read_fd)
-        utils.closeOnExec(self._read_fd)
-        utils.set_non_blocking(self._write_fd)
-        utils.closeOnExec(self._write_fd)
+        filecontrol.set_non_blocking(self._read_fd)
+        filecontrol.set_close_on_exec(self._read_fd)
+        filecontrol.set_non_blocking(self._write_fd)
+        filecontrol.set_close_on_exec(self._write_fd)
 
         self._socket = self._create_socket(host, port)
         self._poller = select.poll()
@@ -269,7 +269,7 @@ class MultiProtocolAcceptor:
             raise Exception("Could not translate address '%s:%s'"
                             % (self._host, str(self._port)))
         server_socket = socket.socket(addr[0][0], addr[0][1], addr[0][2])
-        utils.closeOnExec(server_socket.fileno())
+        filecontrol.set_close_on_exec(server_socket.fileno())
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(addr[0][4])
         server_socket.listen(5)

@@ -46,6 +46,7 @@ else:
 import misc
 import fileUtils
 import vdsm.infra.zombiereaper as zombiereaper
+import vdsm.infra.filecontrol as filecontrol
 from vdsm.compat import pickle
 from vdsm import utils
 
@@ -126,8 +127,8 @@ class CrabRPCProxy(object):
     def __init__(self, myRead, myWrite):
         self._myWrite = myWrite
         self._myRead = myRead
-        utils.set_non_blocking(self._myWrite)
-        utils.set_non_blocking(self._myRead)
+        filecontrol.set_non_blocking(self._myWrite)
+        filecontrol.set_non_blocking(self._myRead)
         self._poller = select.poll()
 
     @contextmanager

@@ -34,7 +34,6 @@ from weakref import proxy
 from .compat import pickle
 import distutils.spawn
 import errno
-import fcntl
 import functools
 import glob
 import io
@@ -842,11 +841,6 @@ def listSplit(l, elem, maxSplits=None):
     return splits + [l]
 
 
-def closeOnExec(fd):
-    old = fcntl.fcntl(fd, fcntl.F_GETFD, 0)
-    fcntl.fcntl(fd, fcntl.F_SETFD, old | fcntl.FD_CLOEXEC)
-
-
 class memoized(object):
     """
     Decorator that caches a function's return value each time it is called.
@@ -1152,12 +1146,6 @@ def running(runnable):
         yield runnable
     finally:
         runnable.stop()
-
-
-def set_non_blocking(fd):
-    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-    flags |= os.O_NONBLOCK
-    fcntl.fcntl(fd, fcntl.F_SETFL, flags)
 
 
 def get_selinux_enforce_mode():
