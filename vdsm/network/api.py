@@ -410,7 +410,7 @@ def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
 @_alterRunningConfig
 def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                 configurator=None, implicitBonding=True, _netinfo=None,
-                **options):
+                keep_bridge=False, **options):
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
 
@@ -428,7 +428,8 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     bridged = _netinfo.networks[network]['bridged']
 
     logging.info("Removing network %s with vlan=%s, bonding=%s, nics=%s,"
-                 "options=%s" % (network, vlan, bonding, nics, options))
+                 "keep_bridge=%s options=%s", network, vlan, bonding,
+                 nics, keep_bridge, options)
 
     if not utils.tobool(force):
         _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
@@ -439,12 +440,27 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                                  implicitBonding=implicitBonding)
     net_ent.ip.bootproto = _netinfo.networks[network]['bootproto4']
 
+    if bridged and keep_bridge:
+        # we now leave the bridge intact but delete everything underneath it
+        net_ent_to_remove = net_ent.port
+        if net_ent_to_remove is not None:
+            # the configurator will not allow us to remove a bridge interface
+            # (be it vlan, bond or nic) unless it is not used anymore. Since
+            # we are interested to leave the bridge here, we have to disconnect
+            # it from the device so that the configurator will allow its
+            # removal.
+            ipwrapper.linkSet(net_ent_to_remove.name, ['nomaster'])
+    else:
+        net_ent_to_remove = net_ent
+
     # We must first remove the libvirt network and then the network entity.
     # Otherwise if we first remove the network entity while the libvirt
     # network is still up, the network entity (In some flows) thinks that
     # it still has users and thus does not allow its removal
     configurator.removeLibvirtNetwork(network)
-    net_ent.remove()
+    if net_ent_to_remove is not None:
+        logging.info('Removing network entity %s', net_ent_to_remove)
+        net_ent_to_remove.remove()
     # We must remove the QoS last so that no devices nor networks mark the
     # QoS as used
     backing_device = hierarchy_backing_device(net_ent)
