@@ -200,8 +200,7 @@ class Parser(object):
         # the first header entry SHOULD be used as the value of header entry.
         # Subsequent values are only used to maintain a history of state
         # changes of the header and MAY be ignored.
-        if key not in headers:
-            headers[key] = value
+        headers.setdefault(key, value)
 
         return True
 
