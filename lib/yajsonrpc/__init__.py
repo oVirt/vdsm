@@ -304,17 +304,14 @@ class JsonRpcClient(object):
         self._transport.connect()
 
     def callMethod(self, methodName, params=[], rid=None):
-        return self.call(JsonRpcRequest(methodName, params, rid))
-
-    def call(self, req):
-        resp = self.call_batch([req])[0]
-        if "error" in resp:
+        resp = self.call(JsonRpcRequest(methodName, params, rid))[0]
+        if resp.error:
             raise JsonRpcError(resp.error['code'], resp.error['message'])
 
         return resp.result
 
-    def call_batch(self, *reqs):
-        call = self.call_async(reqs)
+    def call(self, *reqs):
+        call = self.call_async(*reqs)
         call.wait()
         return call.responses
 
