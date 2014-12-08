@@ -1767,17 +1767,20 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(devs[right]['cfg']['BOOTPROTO'], 'dhcp')
                     device_name = right
 
-                ip_addr = self.vdsm_net.netinfo.networks[NETWORK_NAME]['addr']
+                ip_addr = vdsm_net['addr']
                 self.assertSourceRoutingConfiguration(device_name, ip_addr)
 
                 network = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkDoesntExist(NETWORK_NAME)
+
                 # Assert that routes and rules don't exist
-                for route in self.getSourceRoutingRoutes(device_name, ip_addr):
+                routes = self.getSourceRoutingRoutes(device_name, ip_addr)
+                for route in routes:
                     self.assertRouteDoesNotExist(route)
-                for rule in self.getSourceRoutingRules(device_name, ip_addr):
+                rules = self.getSourceRoutingRules(device_name, ip_addr)
+                for rule in rules:
                     self.assertRuleDoesNotExist(rule)
 
     @permutations([['default'], ['local']])
