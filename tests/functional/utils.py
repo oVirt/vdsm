@@ -72,8 +72,7 @@ class VdsProxy(object):
 
     def start(self):
         self.vdscli = vdscli.connect()
-        self.netinfo = \
-            netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
+        self.netinfo = self._get_netinfo()
         if config.get('vars', 'net_persistence') == 'unified':
             self.config = RunningConfig()
         else:
@@ -89,7 +88,7 @@ class VdsProxy(object):
         if hasattr(self.vdscli, attr):
             def wrapper(*args, **kwargs):
                 result = getattr(self.vdscli, attr)(*args, **kwargs)
-                return result['status']['code'], result['status']['message']
+                return _parse_result(result)
             return wrapper
 
         raise AttributeError(attr)
@@ -100,12 +99,19 @@ class VdsProxy(object):
         @wraps(func)
         def call_and_update(self, *args, **kwargs):
             ret = func(self, *args, **kwargs)
-            self.netinfo = \
-                netinfo.NetInfo(self.vdscli.getVdsCapabilities()['info'])
+            self.netinfo = self._get_netinfo()
             if self.config is not None:
                 self.config = RunningConfig()
             return ret
         return call_and_update
+
+    def _get_netinfo(self):
+        response = self.getVdsCapabilities()
+        try:
+            return netinfo.NetInfo(response[2])
+        except IndexError:
+            raise Exception('VdsProxy: getVdsCapabilities failed. '
+                            'code:%s msg:%s' % (response[0], response[1]))
 
     def _get_net_args(self, vlan, bond, nics, opts):
         if vlan is None:
@@ -134,14 +140,14 @@ class VdsProxy(object):
         result = self.vdscli.addNetwork(bridge,
                                         *self._get_net_args(vlan, bond, nics,
                                                             opts))
-        return result['status']['code'], result['status']['message']
+        return _parse_result(result)
 
     @netinfo_altering
     def delNetwork(self, bridge, vlan=None, bond=None, nics=None, opts=None):
         result = self.vdscli.delNetwork(bridge,
                                         *self._get_net_args(vlan, bond, nics,
                                                             opts))
-        return result['status']['code'], result['status']['message']
+        return _parse_result(result)
 
     @netinfo_altering
     def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
@@ -149,14 +155,14 @@ class VdsProxy(object):
         result = self.vdscli.editNetwork(oldBridge, newBridge,
                                          *self._get_net_args(vlan, bond, nics,
                                                              opts))
-        return result['status']['code'], result['status']['message']
+        return _parse_result(result)
 
     @netinfo_altering
     def setupNetworks(self, networks, bonds, options):
         stack = inspect.stack()
         options['_caller'] = stack[2][3]  # add calling method for logs
         result = self.vdscli.setupNetworks(networks, bonds, options)
-        return result['status']['code'], result['status']['message']
+        return _parse_result(result)
 
     def _vlanInRunningConfig(self, devName, vlanId):
         for net, attrs in self.config.networks.iteritems():
@@ -196,37 +202,44 @@ class VdsProxy(object):
 
     def getVdsStats(self):
         result = self.vdscli.getVdsStats()
-        return result['status']['code'], result['status']['message'],\
-            result['info']
+        return _parse_result(result, 'info')
 
     def getAllVmStats(self):
         result = self.vdscli.getAllVmStats()
-        return result['status']['code'], result['status']['message'],\
-            result['statsList']
+        return _parse_result(result, 'statsList')
 
     def getRoute(self, ip):
         result = self.vdscli.getRoute(ip)
-        return result['status']['code'], result['status']['message'],\
-            result['info']
+        return _parse_result(result, 'info')
 
     def getVmStats(self, vmId):
         result = self.vdscli.getVmStats(vmId)
         if 'statsList' in result:
-            return result['status']['code'], result['status']['message'],\
-                result['statsList'][0]
+            code, msg, stats = _parse_result(result, 'statsList')
+            return code, msg, stats[0]
         else:
-            return result['status']['code'], result['status']['message']
+            return _parse_result(result)
 
     def getVmList(self, vmId):
         result = self.vdscli.list('true', [vmId])
-        return result['status']['code'], result['status']['message'],\
-            result['vmList'][0]
+        code, msg, vm_list = _parse_result(result, 'vmList')
+        return code, msg, vm_list[0]
 
     def getVdsCapabilities(self):
         result = self.vdscli.getVdsCapabilities()
-        return result['status']['code'], result['status']['message'],\
-            result['info']
+        return _parse_result(result, 'info')
 
     def updateVmPolicy(self, vmId, vcpuLimit):
         result = self.vdscli.updateVmPolicy([vmId, vcpuLimit])
-        return result['status']['code'], result['status']['message']
+        return _parse_result(result)
+
+
+def _parse_result(result, return_value=None):
+    status = result['status']
+    code = status['code']
+    msg = status['message']
+
+    if code == SUCCESS and return_value is not None:
+        return code, msg, result[return_value]
+    else:
+        return code, msg
