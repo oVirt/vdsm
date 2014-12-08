@@ -44,6 +44,21 @@ _IP_BINARY = CommandPath('ip', '/sbin/ip')
 
 NET_SYSFS = '/sys/class/net'
 DUMMY_BRIDGE = ';vdsmdummy;'
+_ROUTE_FLAGS = frozenset((
+    # copied from iproute2's rtnl_rtntype_n2a()
+    'unicast',
+    'local',
+    'broadcast',
+    'anycast',
+    'multicast',
+    'blackhole',
+    'unreachable',
+    'prohibit',
+    'throw',
+    'nat',
+    'xresolve',
+    'Deleted',  # copied from iproute.c
+))
 
 
 def _isValid(ip, verifier):
@@ -343,14 +358,16 @@ class Route(object):
         """
         route = text.split()
 
-        network = route[0]
-        if network == 'local':
-            params = route[2:]
-        else:
-            params = route[1:]
+        flags = {}
+        while route[0] in _ROUTE_FLAGS:
+            flags[route[0]] = True
+            route = route[1:]
 
-        data = dict(params[i:i + 2] for i in range(0, len(params), 2))
+        network = route[0]
+
+        data = dict(route[i:i + 2] for i in range(1, len(route), 2))
         data['network'] = '0.0.0.0/0' if network == 'default' else network
+        data.update(flags)
         return data
 
     @classmethod

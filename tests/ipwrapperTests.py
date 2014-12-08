@@ -47,7 +47,13 @@ class TestIpwrapper(TestCaseBase):
             '200.100.50.0/16 via 11.11.11.11 dev eth2 table foo':
             ('200.100.50.0/16', '11.11.11.11', 'eth2', 'foo'),
             'local 127.0.0.1 dev lo  src 127.0.0.1':
-            ('local', None, 'lo', None)}
+            ('127.0.0.1', None, 'lo', None),
+            'unreachable ::ffff:0.0.0.0/96 dev lo  metric 1024  error -101':
+            ('::ffff:0.0.0.0/96', None, 'lo', None),
+            'broadcast 240.0.0.255 dev veth_23  table local  '
+            'proto kernel  scope link  src 240.0.0.1':
+            ('240.0.0.255', None, 'veth_23', 'local'),
+            }
 
         for text, attributes in good_routes.iteritems():
             route = Route.fromText(text)
