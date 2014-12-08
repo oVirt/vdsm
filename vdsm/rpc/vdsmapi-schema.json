@@ -661,9 +661,8 @@
 # @stp:         Whether Spanning Tree Protocol status for the bridge device
 #               should be turned on
 #
-# @bootproto4:  The protocol used to set up the network. Reported values are
-#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
-#               (Added in version 4.15.0.)
+# @dhcpv4:      Whether DHCPv4 was used to set up the network.
+#               (Renamed and changed to boolean in version 4.17.0.)
 #
 # @addr:        The primary IPv4 address assigned to the bridge device
 #
@@ -697,7 +696,7 @@
 # XXX: Add types for IP Address?
 ##
 {'type': 'NetInfoBridgedNetwork',
- 'data': {'ports': ['str'], 'stp': 'bool', 'bootproto4': 'str', 'addr': 'str',
+ 'data': {'ports': ['str'], 'stp': 'bool', 'dhcpv4': 'bool', 'addr': 'str',
           'netmask': 'str', 'gateway': 'str', 'ipv4addrs': ['str'],
           'ipv6addrs': ['str'], 'ipv6gateway': 'str', 'mtu': 'uint',
           'cfg': 'StringMap', 'bridged': 'bool', '*hostQos': 'HostQoSParams',
@@ -739,9 +738,8 @@
 #
 # @speed:       The reported speed of the nic
 #
-# @bootproto4:  The protocol used to set up the network. Reported values are
-#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
-#               (Added in version 4.16.0.)
+# @dhcpv4:      Whether DHCPv4 was used to set up the nic.
+#               (Renamed and changed to boolean in version 4.17.0.)
 #
 # @addr:        The primary IPv4 address assigned to the nic device
 #
@@ -763,7 +761,7 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoNic',
- 'data': {'speed': 'int', 'bootproto4': 'str', 'addr': 'str', 'netmask': 'str',
+ 'data': {'speed': 'int', 'dhcpv4': 'bool', 'addr': 'str', 'netmask': 'str',
           'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'hwaddr': 'str',
           'mtu': 'uint', '*permhwaddr': 'str'}}
 
@@ -776,9 +774,8 @@
 #
 # @active_slave:Active slave of the bond if exists, '' otherwise
 #
-# @bootproto4:  The protocol used to set up the network. Reported values are
-#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
-#               (Added in version 4.16.0.)
+# @dhcpv4:      Whether DHCPv4 was used to set up the bond.
+#               (Renamed and changed to boolean in version 4.17.0.)
 #
 # @addr:        The primary IPv4 address assigned to the bond device
 #
@@ -802,7 +799,7 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoBond',
- 'data': {'slaves': ['str'], 'active_slave': 'str','bootproto4': 'str',
+ 'data': {'slaves': ['str'], 'active_slave': 'str','dhcpv4': 'bool',
           'addr': 'str', 'netmask': 'str', 'ipv4addrs': ['str'],
           'ipv6addrs': ['str'], 'hwaddr': 'str', 'cfg': 'StringMap',
           'mtu': 'uint', 'opts': 'StringMap'}}
@@ -814,9 +811,8 @@
 #
 # @iface:       The network device associated with the vlan
 #
-# @bootproto4:  The protocol used to set up the network. Reported values are
-#               "dhcp" if a DHCPv4 client was used, 'none' if set up manually.
-#               (Added in version 4.16.0.)
+# @dhcpv4:      Whether DHCPv4 was used to set up the vlan.
+#               (Renamed and changed to boolean in version 4.17.0.)
 #
 # @addr:        The primary IPv4 address assigned to the vlan device
 #
@@ -835,7 +831,7 @@
 # Since: 4.10.0
 ##
 {'type': 'NetInfoVlan',
- 'data': {'iface': 'str', 'bootproto4': 'str', 'addr': 'str', 'netmask': 'str',
+ 'data': {'iface': 'str', 'dhcpv4': 'bool', 'addr': 'str', 'netmask': 'str',
           'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'mtu': 'uint',
           'vlanid': 'uint'}}
 

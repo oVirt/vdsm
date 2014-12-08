@@ -437,7 +437,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4):
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'bootproto4': 'dhcp' if iface in dhcpv4 else 'none',
+                     'dhcpv4': iface in dhcpv4,
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
                      'gateway': _get_gateway(routes, iface),
@@ -489,11 +489,11 @@ def _devinfo(link, routes, ipaddrs, dhcpv4):
             'ipv6addrs': ipv6addrs,
             'gateway': _get_gateway(routes, link.name),
             'ipv6gateway': _get_gateway(routes, link.name, family=6),
-            'bootproto4': 'dhcp' if link.name in dhcpv4 else 'none',
+            'dhcpv4': link.name in dhcpv4,
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}
     if 'BOOTPROTO' not in info['cfg']:
-        info['cfg']['BOOTPROTO'] = info['bootproto4']
+        info['cfg']['BOOTPROTO'] = 'dhcp' if info['dhcpv4'] else 'none'
     return info
 
 
@@ -625,9 +625,9 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4=None):
 
 def _cfgBootprotoCompat(networks):
     """Set network 'cfg' 'BOOTPROTO' for backwards engine compatibility."""
-    for netAttrs in networks.itervalues():
-        if netAttrs['bridged'] and 'BOOTPROTO' not in netAttrs['cfg']:
-            netAttrs['cfg']['BOOTPROTO'] = netAttrs['bootproto4']
+    for attrs in networks.itervalues():
+        if attrs['bridged'] and 'BOOTPROTO' not in attrs['cfg']:
+            attrs['cfg']['BOOTPROTO'] = 'dhcp' if attrs['dhcpv4'] else 'none'
 
 
 def get(vdsmnets=None):

@@ -388,7 +388,7 @@ def _delBrokenNetwork(network, netAttr, configurator):
     deleted via _delNetwork.'''
     _netinfo = netinfo.NetInfo()
     _netinfo.networks[network] = netAttr
-    _netinfo.networks[network]['bootproto4'] = 'none'
+    _netinfo.networks[network]['dhcpv4'] = False
 
     if _netinfo.networks[network]['bridged']:
         try:
@@ -458,10 +458,11 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
         _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
 
     net_ent = objectivizeNetwork(bridge=network if bridged else None,
-                                 vlan=vlan,  bonding=bonding, nics=nics,
+                                 vlan=vlan, bonding=bonding, nics=nics,
                                  _netinfo=_netinfo, configurator=configurator,
                                  implicitBonding=implicitBonding)
-    net_ent.ip.bootproto = _netinfo.networks[network]['bootproto4']
+    net_ent.ip.bootproto = ('dhcp' if _netinfo.networks[network]['dhcpv4']
+                            else 'none')
 
     if bridged and keep_bridge:
         # we now leave the bridge intact but delete everything underneath it

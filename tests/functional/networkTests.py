@@ -1709,9 +1709,10 @@ class NetworkTest(TestCaseBase):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(left)
             with dnsmasqDhcp(left):
-                dhcpv4 = 'dhcp'
+                dhcpv4 = True
+                bootproto = 'dhcp'
                 network = {NETWORK_NAME: {'nic': right, 'bridged': bridged,
-                                          'bootproto': dhcpv4,
+                                          'bootproto': bootproto,
                                           'blockingdhcp': True}}
 
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
@@ -1719,23 +1720,24 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkExists(NETWORK_NAME)
 
                 test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                self.assertEqual(test_net['bootproto4'], dhcpv4)
+                self.assertEqual(test_net['dhcpv4'], dhcpv4)
 
                 if bridged:
-                    self.assertEqual(test_net['cfg']['BOOTPROTO'], dhcpv4)
+                    self.assertEqual(test_net['cfg']['BOOTPROTO'], bootproto)
 
                     devs = self.vdsm_net.netinfo.bridges
                     self.assertIn(NETWORK_NAME, devs)
                     self.assertEqual(devs[NETWORK_NAME]['cfg']['BOOTPROTO'],
-                                     dhcpv4)
-                    self.assertEqual(devs[NETWORK_NAME]['bootproto4'], dhcpv4)
+                                     bootproto)
+                    self.assertEqual(devs[NETWORK_NAME]['dhcpv4'], dhcpv4)
                     device_name = NETWORK_NAME
 
                 else:
                     devs = self.vdsm_net.netinfo.nics
                     self.assertIn(right, devs)
-                    self.assertEqual(devs[right]['cfg']['BOOTPROTO'], dhcpv4)
-                    self.assertEqual(devs[right]['bootproto4'], dhcpv4)
+                    self.assertEqual(devs[right]['cfg']['BOOTPROTO'],
+                                     bootproto)
+                    self.assertEqual(devs[right]['dhcpv4'], dhcpv4)
                     device_name = right
 
                 ip_addr = test_net['addr']
