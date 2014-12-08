@@ -147,13 +147,36 @@ CON_TYPE_ID_2_CON_TYPE = {
     sd.GLUSTERFS_DOMAIN: 'glusterfs'}
 
 
+def _updateIfaceNameIfNeeded(iface, netIfaceName):
+    if iface.netIfaceName is None:
+        iface.netIfaceName = netIfaceName
+        iface.update()
+        return True
+
+    return False
+
+
 def _resolveIscsiIface(ifaceName, initiatorName, netIfaceName):
     if not ifaceName:
         return iscsi.IscsiInterface('default')
 
     for iface in iscsi.iterateIscsiInterfaces():
-        if iface.name == ifaceName:
-            return iface
+
+        if iface.name != ifaceName:
+            continue
+
+        if netIfaceName is not None:
+            if (not _updateIfaceNameIfNeeded(iface, netIfaceName) and
+                    netIfaceName != iface.netIfaceName):
+                logging.error('iSCSI netIfaceName coming from engine [%s] '
+                              'is different from iface.net_ifacename '
+                              'present on the system [%s]. Aborting iscsi '
+                              'iface [%s] configuration.' %
+                              (netIfaceName, iface.netIfaceName, iface.name))
+
+                raise se.iSCSIifaceError()
+
+        return iface
 
     iface = iscsi.IscsiInterface(ifaceName, initiatorName=initiatorName,
                                  netIfaceName=netIfaceName)
