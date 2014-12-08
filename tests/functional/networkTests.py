@@ -1741,8 +1741,9 @@ class NetworkTest(TestCaseBase):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(left)
             with dnsmasqDhcp(left):
+                dhcpv4 = 'dhcp'
                 network = {NETWORK_NAME: {'nic': right, 'bridged': bridged,
-                                          'bootproto': 'dhcp',
+                                          'bootproto': dhcpv4,
                                           'blockingdhcp': True}}
 
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
@@ -1750,21 +1751,23 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkExists(NETWORK_NAME)
 
                 vdsm_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                self.assertEqual(vdsm_net['bootproto4'], 'dhcp')
+                self.assertEqual(vdsm_net['bootproto4'], dhcpv4)
 
                 if bridged:
-                    self.assertEqual(vdsm_net['cfg']['BOOTPROTO'], 'dhcp')
+                    self.assertEqual(vdsm_net['cfg']['BOOTPROTO'], dhcpv4)
 
                     devs = self.vdsm_net.netinfo.bridges
                     self.assertIn(NETWORK_NAME, devs)
                     self.assertEqual(devs[NETWORK_NAME]['cfg']['BOOTPROTO'],
-                                     'dhcp')
+                                     dhcpv4)
+                    self.assertEqual(devs[NETWORK_NAME]['bootproto4'], dhcpv4)
                     device_name = NETWORK_NAME
 
                 else:
                     devs = self.vdsm_net.netinfo.nics
                     self.assertIn(right, devs)
-                    self.assertEqual(devs[right]['cfg']['BOOTPROTO'], 'dhcp')
+                    self.assertEqual(devs[right]['cfg']['BOOTPROTO'], dhcpv4)
+                    self.assertEqual(devs[right]['bootproto4'], dhcpv4)
                     device_name = right
 
                 ip_addr = vdsm_net['addr']
