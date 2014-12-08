@@ -170,6 +170,10 @@ def iface_info(name):
                 continue
 
             key, value = line.split("=", 1)
+
+            if value.strip() == '<empty>':
+                continue
+
             res[key.strip()] = value.strip()
 
         return res
