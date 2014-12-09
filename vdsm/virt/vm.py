@@ -3271,6 +3271,11 @@ class Vm(object):
                 if drive['device'] == 'disk' and isVdsmImage(drive):
                     self.sdIds.append(drive['domainID'])
 
+            # we need to fix the graphics device configuration in the
+            # case VDSM is upgraded from 3.4 to 3.5 on the host without
+            # rebooting it. Evident on, but not limited to, the HE case.
+            self._fixLegacyConf()
+
         for devType, devClass in self.DeviceMapping:
             for dev in devices[devType]:
                 self._devices[devType].append(devClass(self.conf, self.log,
@@ -6006,6 +6011,11 @@ class Vm(object):
             self.conf['displayPort'] = dev['port']
         if 'tlsPort' in dev:
             self.conf['displaySecurePort'] = dev['tlsPort']
+
+    def _fixLegacyConf(self):
+        with self._confLock:
+            if not self._getFirstGraphicsDevice():
+                self.conf['devices'].extend(self.getConfGraphics())
 
     def _getFirstGraphicsDevice(self):
         for dev in self.conf.get('devices', ()):
