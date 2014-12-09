@@ -1712,7 +1712,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testDhclientLeases(self, dateFormat):
-        dhcp4 = set()
+        dhcpv4 = set()
         with vethIf() as (server, client):
             with avoidAnotherDhclient(client):
 
@@ -1726,11 +1726,11 @@ class NetworkTest(TestCaseBase):
                                                               dateFormat)
                         try:
                             with running(dhclient_runner) as dhc:
-                                dhcp4 = getDhclientIfaces([dhc.lease_file])
+                                dhcpv4 = getDhclientIfaces([dhc.lease_file])
                         except dhcp.ProcessCannotBeKilled:
                             raise SkipTest('dhclient could not be killed')
 
-        self.assertIn(client, dhcp4, 'Test iface not found in a lease file.')
+        self.assertIn(client, dhcpv4, 'Test iface not found in a lease file.')
 
     def testGetRouteDeviceTo(self):
         with dummyIf(1) as nics:

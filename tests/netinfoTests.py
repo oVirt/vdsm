@@ -248,12 +248,12 @@ class TestNetinfo(TestCaseBase):
                     lastMinute
                 ))
 
-            dhcp4 = getDhclientIfaces([leaseFile])
+            dhcpv4 = getDhclientIfaces([leaseFile])
 
-        self.assertIn('valid', dhcp4)
-        self.assertIn('valid2', dhcp4)
-        self.assertNotIn('expired', dhcp4)
-        self.assertNotIn('expired2', dhcp4)
+        self.assertIn('valid', dhcpv4)
+        self.assertIn('valid2', dhcpv4)
+        self.assertNotIn('expired', dhcpv4)
+        self.assertNotIn('expired2', dhcpv4)
 
     @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
                  if os.path.exists(netinfo.BONDING_DEFAULTS)

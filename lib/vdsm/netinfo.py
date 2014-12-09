@@ -420,7 +420,7 @@ def _bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def _getNetInfo(iface, bridged, routes, ipaddrs, dhcp4):
+def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -437,7 +437,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcp4):
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'bootproto4': ('dhcp' if ipv4addr and iface in dhcp4
+                     'bootproto4': ('dhcp' if ipv4addr and iface in dhcpv4
                                     else 'none'),
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
@@ -482,7 +482,7 @@ def _vlaninfo(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
 
-def _devinfo(link, routes, ipaddrs, dhcp4):
+def _devinfo(link, routes, ipaddrs, dhcpv4):
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(link.name, ipaddrs)
     info = {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
@@ -490,7 +490,7 @@ def _devinfo(link, routes, ipaddrs, dhcp4):
             'ipv6addrs': ipv6addrs,
             'gateway': _get_gateway(routes, link.name),
             'ipv6gateway': _get_gateway(routes, link.name, family=6),
-            'bootproto4': ('dhcp' if ipv4addr and link.name in dhcp4
+            'bootproto4': ('dhcp' if ipv4addr and link.name in dhcpv4
                            else 'none'),
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}
@@ -608,18 +608,18 @@ def _get_routes():
     return routes
 
 
-def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcp4=None):
+def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4=None):
     if routes is None:
         routes = _get_routes()
     if ipAddrs is None:
         ipAddrs = _getIpAddrs()
-    if dhcp4 is None:
-        dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
+    if dhcpv4 is None:
+        dhcpv4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
     d = {}
     for net, netAttr in nets.iteritems():
         try:
             d[net] = _getNetInfo(netAttr.get('iface', net), netAttr['bridged'],
-                                 routes, ipAddrs, dhcp4)
+                                 routes, ipAddrs, dhcpv4)
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
@@ -637,12 +637,12 @@ def get(vdsmnets=None):
          'vlans': {}}
     paddr = permAddr()
     ipaddrs = _getIpAddrs()
-    dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
+    dhcpv4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
     routes = _get_routes()
 
     if vdsmnets is None:
         libvirt_nets = networks()
-        d['networks'] = libvirtNets2vdsm(libvirt_nets, routes, ipaddrs, dhcp4)
+        d['networks'] = libvirtNets2vdsm(libvirt_nets, routes, ipaddrs, dhcpv4)
     else:
         d['networks'] = vdsmnets
 
@@ -657,7 +657,7 @@ def get(vdsmnets=None):
             devinfo = d['vlans'][dev.name] = _vlaninfo(dev)
         else:
             continue
-        devinfo.update(_devinfo(dev, routes, ipaddrs, dhcp4))
+        devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4))
         if dev.isBOND():
             _bondOptsCompat(devinfo)
 
