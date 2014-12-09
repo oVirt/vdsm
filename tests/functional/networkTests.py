@@ -1511,13 +1511,13 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             # net NETWORK_NAME has bootproto:none because we can't use dhcp
             # on dummyIf
-            networks = {NETWORK_NAME: {'nic': nic, 'bridged': False,
-                                       'bootproto': 'none'},
-                        vlan_name: {'nic': nic, 'bridged': True,
-                                    'vlan': VLAN_ID, 'bootproto': 'none'}}
+            bridgless = {'nic': nic, 'bridged': False, 'bootproto': 'none'}
+            bridged = {'nic': nic, 'bridged': True, 'vlan': VLAN_ID,
+                       'bootproto': 'none'}
+
             with self.vdsm_net.pinger():
                 status, msg = self.vdsm_net.setupNetworks(
-                    {NETWORK_NAME: networks[NETWORK_NAME]}, {}, {})
+                    {NETWORK_NAME: bridgless}, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
@@ -1526,7 +1526,7 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(bootproto, 'none')
 
                 status, msg = self.vdsm_net.setupNetworks(
-                    {vlan_name: networks[vlan_name]}, {}, {})
+                    {vlan_name: bridged}, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(vlan_name)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
@@ -1536,7 +1536,7 @@ class NetworkTest(TestCaseBase):
 
                 # network should be fine even after second addition of vlan
                 status, msg = self.vdsm_net.setupNetworks(
-                    {vlan_name: networks[vlan_name]}, {}, {})
+                    {vlan_name: bridged}, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
                 self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
