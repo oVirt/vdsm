@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,12 +17,11 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmprofilingdir = $(vdsmpylibdir)/profiling
-dist_vdsmprofiling_PYTHON = \
-	__init__.py \
-	cpu.py \
-	errors.py \
-	profile.py \
-	$(NULL)
+"""
+This module provides exceptions for the profiling package.
+"""
+
+
+class UsageError(Exception):
+    """ Raised when profiler is used incorrectly """

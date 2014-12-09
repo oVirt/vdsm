@@ -30,6 +30,8 @@ import threading
 from vdsm import constants
 from vdsm.config import config
 
+from .errors import UsageError
+
 # Import yappi lazily when profile is started
 yappi = None
 
@@ -42,10 +44,6 @@ _CLOCK = config.get('devel', 'cpu_profile_clock')
 _THREADS = True
 
 _lock = threading.Lock()
-
-
-class Error(Exception):
-    """ Raised when profiler is used incorrectly """
 
 
 def start():
@@ -100,7 +98,7 @@ def _start_profiling(clock, builtins, threads):
         # yappi is already started, happily having too different code paths
         # that thinks they own the single process profiler.
         if yappi.is_running():
-            raise Error('CPU profiler is already running')
+            raise UsageError('CPU profiler is already running')
         yappi.set_clock_type(clock)
         yappi.start(builtins=builtins, profile_threads=threads)
 

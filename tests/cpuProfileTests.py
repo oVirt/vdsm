@@ -25,6 +25,7 @@ import time
 import threading
 
 from vdsm.profiling import cpu
+from vdsm.profiling.errors import UsageError
 
 from monkeypatch import MonkeyPatch
 from nose.plugins.skip import SkipTest
@@ -186,7 +187,8 @@ class FunctionProfileTests(ProfileTests):
         requires_yappi()
         cpu.start()
         try:
-            self.assertRaises(cpu.Error, self.profiled_function)
+            self.assertRaises(UsageError,
+                              self.profiled_function)
         finally:
             cpu.stop()
 
@@ -195,7 +197,8 @@ class FunctionProfileTests(ProfileTests):
                  make_config([('devel', 'cpu_profile_enable', 'false')]))
     def test_fail_recursive_profile(self):
         requires_yappi()
-        self.assertRaises(cpu.Error, self.recursive_profile)
+        self.assertRaises(UsageError,
+                          self.recursive_profile)
 
     @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'cpu_profile_enable', 'false')]))
