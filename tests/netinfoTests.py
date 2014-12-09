@@ -233,6 +233,24 @@ class TestNetinfo(TestCaseBase):
             '  interface "expired2";\n'
             '  expire epoch {expired:.0f}; # Fri Jan 31 20:04:20 2014\n'
             '}}\n'
+            'lease6 {{\n'
+            '  interface "valid3";\n'
+            '  ia-na [some MAC address] {{\n'
+            '    iaaddr [some IPv6 address] {{\n'
+            '      starts {now:.0f};\n'
+            '      max-life 60;\n'  # the lease has a minute left
+            '    }}\n'
+            '  }}\n'
+            '}}\n'
+            'lease6 {{\n'
+            '  interface "expired3";\n'
+            '  ia-na [some MAC address] {{\n'
+            '    iaaddr [some IPv6 address] {{\n'
+            '      starts {expired:.0f};\n'
+            '      max-life 30;\n'  # the lease expired half a minute ago
+            '    }}\n'
+            '  }}\n'
+            '}}\n'
         )
 
         with namedTemporaryDir() as tmp_dir:
@@ -246,15 +264,18 @@ class TestNetinfo(TestCaseBase):
                     active_datetime=datetime.utcfromtimestamp(next_minute),
                     active=next_minute,
                     expired_datetime=datetime.utcfromtimestamp(last_minute),
-                    expired=last_minute
+                    expired=last_minute,
+                    now=now
                 ))
 
-            dhcpv4_ifaces = _get_dhclient_ifaces([lease_file])
+            dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces([lease_file])
 
         self.assertIn('valid', dhcpv4_ifaces)
         self.assertIn('valid2', dhcpv4_ifaces)
         self.assertNotIn('expired', dhcpv4_ifaces)
         self.assertNotIn('expired2', dhcpv4_ifaces)
+        self.assertIn('valid3', dhcpv6_ifaces)
+        self.assertNotIn('expired3', dhcpv6_ifaces)
 
     @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
                  if os.path.exists(netinfo.BONDING_DEFAULTS)

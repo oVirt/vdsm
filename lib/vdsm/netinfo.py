@@ -21,7 +21,7 @@
 from collections import defaultdict
 import errno
 from glob import iglob
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import partial
 from itertools import chain
 import json
@@ -55,7 +55,7 @@ NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 # possible names of dhclient's lease files (e.g. as NetworkManager's slave)
 _DHCLIENT_LEASES_GLOBS = [
     '/var/lib/dhclient/dhclient*.lease*',  # iproute2 configurator, initscripts
-    '/var/lib/NetworkManager/dhclient-*.lease',
+    '/var/lib/NetworkManager/dhclient*-*.lease',
 ]
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
@@ -420,7 +420,7 @@ def _bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces):
+def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -438,6 +438,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces):
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
                      'dhcpv4': iface in dhcpv4_ifaces,
+                     'dhcpv6': iface in dhcpv6_ifaces,
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
                      'gateway': _get_gateway(routes, iface),
@@ -481,7 +482,7 @@ def _vlaninfo(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
 
-def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces):
+def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(link.name, ipaddrs)
     info = {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
@@ -490,6 +491,7 @@ def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces):
             'gateway': _get_gateway(routes, link.name),
             'ipv6gateway': _get_gateway(routes, link.name, family=6),
             'dhcpv4': link.name in dhcpv4_ifaces,
+            'dhcpv6': link.name in dhcpv6_ifaces,
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}
     if 'BOOTPROTO' not in info['cfg']:
@@ -511,15 +513,24 @@ def _parse_expiry_time(expiry_time):
 def _parse_lease_file(lease_file):
     IFACE = '  interface "'
     IFACE_END = '";\n'
-    EXPIRE = '  expire '
+    EXPIRE = '  expire '  # DHCPv4
+    STARTS = '      starts '  # DHCPv6
+    MAX_LIFE = '      max-life '
+    VALUE_END = ';\n'
 
     family = None
     iface = None
-    dhcpv4_ifaces = set()
+    lease6_starts = None
+    dhcpv4_ifaces, dhcpv6_ifaces = set(), set()
 
     for line in lease_file:
         if line == 'lease {\n':
             family = 4
+            iface = None
+            continue
+
+        elif line == 'lease6 {\n':
+            family = 6
             iface = None
             continue
 
@@ -542,23 +553,43 @@ def _parse_lease_file(lease_file):
                 if iface:
                     dhcpv4_ifaces.add(iface)
 
-    return dhcpv4_ifaces
+        elif family == 6:
+            if line.startswith(STARTS) and line.endswith(VALUE_END):
+                timestamp = float(line[len(STARTS):-len(VALUE_END)])
+                lease6_starts = datetime.utcfromtimestamp(timestamp)
+
+            elif (lease6_starts and line.startswith(MAX_LIFE) and
+                    line.endswith(VALUE_END)):
+                seconds = float(line[len(MAX_LIFE):-len(VALUE_END)])
+                max_life = timedelta(seconds=seconds)
+                if datetime.utcnow() > lease6_starts + max_life:
+                    family = None
+                    continue
+
+            elif line == '}\n':
+                family = None
+                if iface:
+                    dhcpv6_ifaces.add(iface)
+
+    return dhcpv4_ifaces, dhcpv6_ifaces
 
 
 def _get_dhclient_ifaces(lease_files_globs=_DHCLIENT_LEASES_GLOBS):
-    """Return a set of interfaces configured using dhclient.
+    """Return a pair of sets containing ifaces configured using dhclient (-6)
 
     dhclient stores DHCP leases to file(s) whose names can be specified
     by the lease_files_globs parameter (an iterable of glob strings).
     """
-    dhcpv4_ifaces = set()
+    dhcpv4_ifaces, dhcpv6_ifaces = set(), set()
 
     for lease_files_glob in lease_files_globs:
         for lease_path in iglob(lease_files_glob):
             with open(lease_path) as lease_file:
-                dhcpv4_ifaces.update(_parse_lease_file(lease_file))
+                found_dhcpv4, found_dhcpv6 = _parse_lease_file(lease_file)
+                dhcpv4_ifaces.update(found_dhcpv4)
+                dhcpv6_ifaces.update(found_dhcpv6)
 
-    return dhcpv4_ifaces
+    return dhcpv4_ifaces, dhcpv6_ifaces
 
 
 def _getIpAddrs():
@@ -601,18 +632,19 @@ def _get_routes():
     return routes
 
 
-def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4_ifaces=None):
+def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4_ifaces=None,
+                     dhcpv6_ifaces=None):
     if routes is None:
         routes = _get_routes()
     if ipAddrs is None:
         ipAddrs = _getIpAddrs()
-    if dhcpv4_ifaces is None:
-        dhcpv4_ifaces = _get_dhclient_ifaces()
+    if dhcpv4_ifaces is None or dhcpv6_ifaces is None:
+        dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces()
     d = {}
     for net, netAttr in nets.iteritems():
         try:
             d[net] = _getNetInfo(netAttr.get('iface', net), netAttr['bridged'],
-                                 routes, ipAddrs, dhcpv4_ifaces)
+                                 routes, ipAddrs, dhcpv4_ifaces, dhcpv6_ifaces)
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
@@ -630,13 +662,13 @@ def get(vdsmnets=None):
          'vlans': {}}
     paddr = permAddr()
     ipaddrs = _getIpAddrs()
-    dhcpv4_ifaces = _get_dhclient_ifaces()
+    dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces()
     routes = _get_routes()
 
     if vdsmnets is None:
         libvirt_nets = networks()
         d['networks'] = libvirtNets2vdsm(libvirt_nets, routes, ipaddrs,
-                                         dhcpv4_ifaces)
+                                         dhcpv4_ifaces, dhcpv6_ifaces)
     else:
         d['networks'] = vdsmnets
 
@@ -651,7 +683,8 @@ def get(vdsmnets=None):
             devinfo = d['vlans'][dev.name] = _vlaninfo(dev)
         else:
             continue
-        devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4_ifaces))
+        devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4_ifaces,
+                                dhcpv6_ifaces))
         if dev.isBOND():
             _bondOptsCompat(devinfo)
 

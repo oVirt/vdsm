@@ -1774,13 +1774,16 @@ class NetworkTest(TestCaseBase):
                     for rule in rules:
                         self.assertRuleDoesNotExist(rule)
 
-    @permutations([['default'], ['local']])
+    @permutations([[(4, 'default')], [(4, 'local')], [(6, 'not applicable')]])
     @cleanupNet
     @RequireVethMod
-    def testDhclientLeases(self, dateFormat):
+    def testDhclientLeases(self, (family, dateFormat)):
         el6 = _system_is_el6()
+        if el6 and family == 6:
+            raise SkipTest("el6's dnsmasq does not support DHCPv6")
 
         dhcpv4_ifaces = set()
+        dhcpv6_ifaces = set()
         with vethIf() as (server, client):
             with avoidAnotherDhclient(client):
 
@@ -1792,16 +1795,20 @@ class NetworkTest(TestCaseBase):
 
                     with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
                         dhclient_runner = dhcp.DhclientRunner(
-                            client, 4, dir, dateFormat)
+                            client, family, dir, dateFormat)
                         try:
                             with running(dhclient_runner) as dhc:
-                                dhcpv4_ifaces = _get_dhclient_ifaces(
-                                    [dhc.lease_file])
+                                dhcpv4_ifaces, dhcpv6_ifaces = \
+                                    _get_dhclient_ifaces([dhc.lease_file])
                         except dhcp.ProcessCannotBeKilled:
                             raise SkipTest('dhclient could not be killed')
 
-        self.assertIn(client, dhcpv4_ifaces,
-                      '{0} not found in a lease file.'.format(client))
+        if family == 4:
+            self.assertIn(client, dhcpv4_ifaces,
+                          '{0} not found in a lease file.'.format(client))
+        else:
+            self.assertIn(client, dhcpv6_ifaces,
+                          '{0} not found in a lease file.'.format(client))
 
     def testGetRouteDeviceTo(self):
         with dummyIf(1) as nics:
