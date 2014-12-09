@@ -330,17 +330,17 @@ parameters = [
     # Section: [devel]
     ('devel', [
 
-        ('profile_enable', 'false',
+        ('cpu_profile_enable', 'false',
             'Enable whole process profiling (requires yappi profiler).'),
 
-        ('profile_format', 'pstat',
+        ('cpu_profile_format', 'pstat',
             'Profile file format (pstat, callgrind, ystat)'),
 
-        ('profile_builtins', 'false',
+        ('cpu_profile_builtins', 'false',
             'Profile builtin functions used by standard Python modules. '
             'false by default.'),
 
-        ('profile_clock', 'cpu',
+        ('cpu_profile_clock', 'cpu',
             'Sets the underlying clock type (cpu, wall)'),
 
         ('python_warnings_enable', 'false',

@@ -36,9 +36,9 @@ yappi = None
 # Defaults
 
 _FILENAME = os.path.join(constants.P_VDSM_RUN, 'vdsmd.prof')
-_FORMAT = config.get('devel', 'profile_format')
-_BUILTINS = config.getboolean('devel', 'profile_builtins')
-_CLOCK = config.get('devel', 'profile_clock')
+_FORMAT = config.get('devel', 'cpu_profile_format')
+_BUILTINS = config.getboolean('devel', 'cpu_profile_builtins')
+_CLOCK = config.get('devel', 'cpu_profile_clock')
 _THREADS = True
 
 _lock = threading.Lock()
@@ -49,19 +49,19 @@ class Error(Exception):
 
 
 def start():
-    """ Starts application wide profiling """
+    """ Starts application wide CPU profiling """
     if is_enabled():
         _start_profiling(_CLOCK, _BUILTINS, _THREADS)
 
 
 def stop():
-    """ Stops application wide profiling """
+    """ Stops application wide CPU profiling """
     if is_enabled():
         _stop_profiling(_FILENAME, _FORMAT)
 
 
 def is_enabled():
-    return config.getboolean('devel', 'profile_enable')
+    return config.getboolean('devel', 'cpu_profile_enable')
 
 
 def is_running():
@@ -91,7 +91,7 @@ def profile(filename, format=_FORMAT, clock=_CLOCK, builtins=_BUILTINS,
 
 def _start_profiling(clock, builtins, threads):
     global yappi
-    logging.debug("Starting profiling")
+    logging.debug("Starting CPU profiling")
 
     import yappi
 
@@ -100,13 +100,13 @@ def _start_profiling(clock, builtins, threads):
         # yappi is already started, happily having too different code paths
         # that thinks they own the single process profiler.
         if yappi.is_running():
-            raise Error('Profiler is already running')
+            raise Error('CPU profiler is already running')
         yappi.set_clock_type(clock)
         yappi.start(builtins=builtins, profile_threads=threads)
 
 
 def _stop_profiling(filename, format):
-    logging.debug("Stopping profiling")
+    logging.debug("Stopping CPU profiling")
     with _lock:
         if yappi.is_running():
             yappi.stop()
