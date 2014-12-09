@@ -2614,6 +2614,11 @@ class Vm(object):
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
             self.saveState()
+        else:
+            # we need to fix the graphics device configuration in the
+            # case VDSM is upgraded from 3.4 to 3.5 on the host without
+            # rebooting it. Evident on, but not limited to, the HE case.
+            self._fixLegacyConf()
 
         for devType, devClass in self.DeviceMapping:
             for dev in devices[devType]:
@@ -5304,6 +5309,11 @@ class Vm(object):
             self.conf['displayPort'] = dev['port']
         if 'tlsPort' in dev:
             self.conf['displaySecurePort'] = dev['tlsPort']
+
+    def _fixLegacyConf(self):
+        with self._confLock:
+            if not self._getFirstGraphicsDevice():
+                self.conf['devices'].extend(self.getConfGraphics())
 
     def _getFirstGraphicsDevice(self):
         for dev in self.conf.get('devices', ()):
