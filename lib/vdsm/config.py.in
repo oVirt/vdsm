@@ -346,6 +346,12 @@ parameters = [
         ('python_warnings_enable', 'false',
             'Display python warnings in the log'),
 
+        ('memory_profile_enable', 'false',
+            'Enable whole process profiling (requires dowser profiler).'),
+
+        ('memory_profile_port', '9090',
+            'Port on which the dowser Web UI will be reachable.'),
+
     ]),
 
 ]

@@ -21,6 +21,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/cpu.py
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/errors.py
+./usr/lib/python2.7/dist-packages/vdsm/profiling/memory.py
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/profile.py
 ./usr/lib/python2.7/dist-packages/vdsm/qemuimg.py
 ./usr/lib/python2.7/dist-packages/vdsm/response.py

@@ -24,5 +24,6 @@ dist_vdsmprofiling_PYTHON = \
 	__init__.py \
 	cpu.py \
 	errors.py \
+	memory.py \
 	profile.py \
 	$(NULL)
