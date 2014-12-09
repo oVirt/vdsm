@@ -44,7 +44,7 @@ from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm.utils import RollbackContext, execCmd, running
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
-                          getDhclientIfaces)
+                          _get_dhclient_ifaces)
 from vdsm import ipwrapper
 from vdsm.utils import pgrep
 
@@ -1760,7 +1760,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testDhclientLeases(self, dateFormat):
-        dhcpv4 = set()
+        dhcpv4_ifaces = set()
         with vethIf() as (server, client):
             with avoidAnotherDhclient(client):
 
@@ -1774,11 +1774,13 @@ class NetworkTest(TestCaseBase):
                                                               dateFormat)
                         try:
                             with running(dhclient_runner) as dhc:
-                                dhcpv4 = getDhclientIfaces([dhc.lease_file])
+                                dhcpv4_ifaces = _get_dhclient_ifaces(
+                                    [dhc.lease_file])
                         except dhcp.ProcessCannotBeKilled:
                             raise SkipTest('dhclient could not be killed')
 
-        self.assertIn(client, dhcpv4, 'Test iface not found in a lease file.')
+        self.assertIn(client, dhcpv4_ifaces,
+                      '{0} not found in a lease file.'.format(client))
 
     def testGetRouteDeviceTo(self):
         with dummyIf(1) as nics:

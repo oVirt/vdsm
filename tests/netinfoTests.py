@@ -27,7 +27,7 @@ import time
 
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm.netinfo import (getDhclientIfaces, BONDING_MASTERS, BONDING_OPT,
+from vdsm.netinfo import (_get_dhclient_ifaces, BONDING_MASTERS, BONDING_OPT,
                           _getBondingOptions, OPERSTATE_UP)
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
@@ -219,41 +219,42 @@ class TestNetinfo(TestCaseBase):
         LEASES = (
             'lease {{\n'
             '  interface "valid";\n'
-            '  expire {0:%w %Y/%m/%d %H:%M:%S};\n'
+            '  expire {active_datetime:%w %Y/%m/%d %H:%M:%S};\n'
             '}}\n'
             'lease {{\n'
             '  interface "valid2";\n'
-            '  expire epoch {1:.0f}; # Sat Jan 31 20:04:20 2037\n'
+            '  expire epoch {active:.0f}; # Sat Jan 31 20:04:20 2037\n'
             '}}\n'                   # human-readable date is just a comment
             'lease {{\n'
             '  interface "expired";\n'
-            '  expire {2:%w %Y/%m/%d %H:%M:%S};\n'
+            '  expire {expired_datetime:%w %Y/%m/%d %H:%M:%S};\n'
             '}}\n'
             'lease {{\n'
             '  interface "expired2";\n'
-            '  expire epoch {3:.0f}; # Fri Jan 31 20:04:20 2014\n'
+            '  expire epoch {expired:.0f}; # Fri Jan 31 20:04:20 2014\n'
             '}}\n'
         )
 
-        with namedTemporaryDir() as tmpDir:
-            leaseFile = os.path.join(tmpDir, 'test.lease')
-            with open(leaseFile, 'w') as f:
-                lastMinute = time.time() - 60
-                nextMinute = time.time() + 60
+        with namedTemporaryDir() as tmp_dir:
+            lease_file = os.path.join(tmp_dir, 'test.lease')
+            with open(lease_file, 'w') as f:
+                now = time.time()
+                last_minute = now - 60
+                next_minute = now + 60
 
                 f.write(LEASES.format(
-                    datetime.utcfromtimestamp(nextMinute),
-                    nextMinute,
-                    datetime.utcfromtimestamp(lastMinute),
-                    lastMinute
+                    active_datetime=datetime.utcfromtimestamp(next_minute),
+                    active=next_minute,
+                    expired_datetime=datetime.utcfromtimestamp(last_minute),
+                    expired=last_minute
                 ))
 
-            dhcpv4 = getDhclientIfaces([leaseFile])
+            dhcpv4_ifaces = _get_dhclient_ifaces([lease_file])
 
-        self.assertIn('valid', dhcpv4)
-        self.assertIn('valid2', dhcpv4)
-        self.assertNotIn('expired', dhcpv4)
-        self.assertNotIn('expired2', dhcpv4)
+        self.assertIn('valid', dhcpv4_ifaces)
+        self.assertIn('valid2', dhcpv4_ifaces)
+        self.assertNotIn('expired', dhcpv4_ifaces)
+        self.assertNotIn('expired2', dhcpv4_ifaces)
 
     @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
                  if os.path.exists(netinfo.BONDING_DEFAULTS)
