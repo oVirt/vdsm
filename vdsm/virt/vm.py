@@ -532,7 +532,7 @@ class VmStatsThread(AdvancedStatsThread):
                 elif "GUID" in vmDrive:
                     dStats['lunGUID'] = vmDrive.GUID
                 if (sInfo and vmDrive.name in sInfo and
-                   eInfo and vmDrive.name in eInfo):
+                        eInfo and vmDrive.name in eInfo):
                     # will be None if sampled during recovery
                     dStats.update(_calcDiskRate(vmDrive, sInfo, eInfo,
                                                 sampleInterval))
@@ -1161,7 +1161,7 @@ class GraphicsDevice(vmdevices.Base):
             graphics.appendChild(clipboard)
 
         if (self.device == 'spice' and
-           'spiceSecureChannels' in self.specParams):
+                'spiceSecureChannels' in self.specParams):
             for chan in self._getSpiceChannels():
                 graphics.appendChildWithArgs('channel', name=chan,
                                              mode='secure')
@@ -1651,7 +1651,7 @@ class Vm(object):
                 except Exception as e:
                     # as above
                     if isinstance(e, libvirt.libvirtError) and \
-                       e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                            e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                         raise MissingLibvirtDomainError()
                     elif not self.recovering:
                         raise
@@ -4307,7 +4307,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             # after succesfull migraions
             if (self.lastStatus == vmstatus.DOWN and
-               e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN):
+                    e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN):
                 self.log.info("VM '%s' already down and destroyed",
                               self.conf['vmId'])
             else:
@@ -4781,7 +4781,7 @@ class Vm(object):
 
             for dev in self.conf['devices']:
                 if (dev.get('type') == GRAPHICS_DEVICES and
-                   dev.get('device') == graphicsType):
+                        dev.get('device') == graphicsType):
                     if port:
                         dev['port'] = port
                     if tlsPort:
@@ -5346,8 +5346,8 @@ class Vm(object):
 
     def _setUnresponsiveIfTimeout(self, stats, statsAge):
         if (not self.isMigrating()
-           and statsAge > config.getint('vars', 'vm_command_timeout')
-           and stats['monitorResponse'] != '-1'):
+                and statsAge > config.getint('vars', 'vm_command_timeout')
+                and stats['monitorResponse'] != '-1'):
             self.log.warning('monitor become unresponsive'
                              ' (command timeout, age=%s)',
                              statsAge)
