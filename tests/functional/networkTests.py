@@ -81,6 +81,7 @@ NOCHK = {'connectivityCheck': False}
 
 
 @ValidateRunningAsRoot
+@RequireDummyMod
 def setupModule():
     """Persists network configuration."""
     vdsm = VdsProxy()
@@ -392,7 +393,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksAddBondWithManyVlans(self, bridged):
         def assertDevStatsReported():
             status, msg, hostStats = self.vdsm_net.getVdsStats()
@@ -434,7 +434,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksAddDelBondedNetwork(self, bridged):
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.setupNetworks(
@@ -453,7 +452,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksAddOverExistingBond(self, bridged=True):
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.setupNetworks(
@@ -487,7 +485,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     def testSetupNetworksDelOneOfBondNets(self):
         NETA_NAME = NETWORK_NAME + 'A'
         NETB_NAME = NETWORK_NAME + 'B'
@@ -525,7 +522,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testReorderBondingOptions(self, bridged):
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.addNetwork(
@@ -546,7 +542,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testAddDelBondedNetwork(self, bridged):
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
@@ -564,7 +559,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testAddDelNetwork(self, bridged):
         with dummyIf(1) as nics:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
@@ -581,7 +575,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testFailWithInvalidBondingName(self, bridged):
         with dummyIf(1) as nics:
             invalid_bond_names = ('bond', 'bonda', 'bond0a', 'jamesbond007')
@@ -639,7 +632,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testAddNetworkManyVlans(self, bridged):
         opts = {'bridged': bridged}
         VLAN_COUNT = 5
@@ -668,7 +660,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testAddNetworkVlan(self, bridged):
         with dummyIf(1) as nics:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, vlan=VLAN_ID,
@@ -685,7 +676,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testAddNetworkBondWithManyVlans(self, bridged):
         opts = dict(bridged=bridged)
         VLAN_COUNT = 5
@@ -719,7 +709,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testAddNetworkVlanBond(self, bridged):
         with dummyIf(1) as nics:
             vlan_id = '42'
@@ -759,7 +748,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testDelNetworkWithMTU(self, bridged):
         MTU = '1234'
         with dummyIf(1) as nics:
@@ -781,7 +769,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testTwiceAdd(self, bridged):
         with dummyIf(1) as nics:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, nics=nics,
@@ -796,7 +783,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testDelWithoutAdd(self, bridged):
         with dummyIf(1) as nics:
             status, msg = self.vdsm_net.delNetwork(NETWORK_NAME, nics=nics,
@@ -805,7 +791,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testEditWithoutAdd(self, bridged):
         with dummyIf(1) as nics:
             status, msg = self.vdsm_net.editNetwork(NETWORK_NAME, NETWORK_NAME,
@@ -815,7 +800,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     @brokentest('This test is known to break until initscripts-9.03.41-1.el6 '
                 'is released to fix https://bugzilla.redhat.com/1086897')
     def testSetupNetworksAddVlan(self, bridged):
@@ -861,7 +845,6 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     def testSetupNetworksConvertVlanNetBridgeness(self):
         """Convert a bridged networks to a bridgeless one and viceversa"""
 
@@ -885,7 +868,6 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(status, SUCCESS, msg)
 
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksAddManyVlans(self, bridged):
         VLAN_COUNT = 5
         NET_VLANS = [(NETWORK_NAME + str(index), str(index))
@@ -917,7 +899,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksNetCompatibilityMultipleNetsSameNic(self, bridged):
         with dummyIf(3) as (nic, another_nic, yet_another_nic):
 
@@ -989,7 +970,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksAddNetworkToNicAfterBondResizing(self, bridged):
         with dummyIf(3) as nics:
             networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
@@ -1030,7 +1010,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksMtus(self, bridged):
         JUMBO = '9000'
         MIDI = '4000'
@@ -1099,7 +1078,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksAddNetworkToNicAfterBondBreaking(self, bridged):
         with dummyIf(2) as nics:
             networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
@@ -1131,7 +1109,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksKeepNetworkOnBondAfterBondResizing(self, bridged):
         with dummyIf(3) as nics:
             networks = {NETWORK_NAME: dict(bonding=BONDING_NAME,
@@ -1180,7 +1157,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksStableBond(self, bridged):
         with dummyIf(3) as nics:
             with self.vdsm_net.pinger():
@@ -1231,7 +1207,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksMultiMTUsOverBond(self, bridged):
         with dummyIf(2) as nics:
             with self.vdsm_net.pinger():
@@ -1277,7 +1252,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksMultiMTUsOverNic(self, bridged):
         with dummyIf(1) as nics:
             nic, = nics
@@ -1312,7 +1286,6 @@ class NetworkTest(TestCaseBase):
         self.assertNotEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     def testDelNetworkBondAccumulation(self):
         with dummyIf(1) as nics:
             for bigBond in ('bond555', 'bond666', 'bond777'):
@@ -1331,7 +1304,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSetupNetworksResizeBond(self, bridged):
         with dummyIf(3) as nics:
             with self.vdsm_net.pinger():
@@ -1370,7 +1342,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testBondHwAddress(self, bridged=True):
         """
         Test that bond mac address is independent of the ordering of nics arg
@@ -1396,7 +1367,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testSafeNetworkConfig(self, bridged):
         """
         Checks that setSafeNetworkConfig saves
@@ -1422,7 +1392,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @RequireDummyMod
     def testVolatileConfig(self, bridged):
         """
         Checks that the network doesn't persist over restart
@@ -1441,7 +1410,6 @@ class NetworkTest(TestCaseBase):
 
     @permutations([[True], [False]])
     @cleanupNet
-    @RequireDummyMod
     def testStaticSourceRouting(self, bridged=True):
         with dummyIf(1) as nics:
             status, msg = self.vdsm_net.setupNetworks(
@@ -1469,7 +1437,6 @@ class NetworkTest(TestCaseBase):
                 self.assertRuleDoesNotExist(rule)
 
     @cleanupNet
-    @RequireDummyMod
     def testAddVlanedBridgeless(self):
         # BZ# 980174
         vlan_name = 'vlan_net'
@@ -1516,7 +1483,6 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     def testAddVlanedBridgeless_oneCommand(self):
         vlan_name = 'vlan_net'
         with dummyIf(1) as nics:
@@ -1544,7 +1510,6 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     @ValidatesHook('before_network_setup', 'testBeforeNetworkSetup.py', True,
                    "#!/usr/bin/env python\n"
                    "import json\n"
@@ -1588,7 +1553,6 @@ class NetworkTest(TestCaseBase):
                                             {}, {})
 
     @cleanupNet
-    @RequireDummyMod
     @ValidatesHook('after_network_setup', 'testAfterNetworkSetup.sh', True,
                    "#!/bin/sh\n"
                    "cat $_hook_json > %(cookiefile)s\n"
@@ -1622,7 +1586,6 @@ class NetworkTest(TestCaseBase):
                                             {}, {})
 
     @cleanupNet
-    @RequireDummyMod
     def testIPv6ConfigNetwork(self):
         with dummyIf(1) as nics:
             nic, = nics
@@ -1652,7 +1615,6 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     def testIpLinkWrapper(self):
         """Tests that the created devices are properly parsed by the ipwrapper
         Link class."""
@@ -1770,7 +1732,6 @@ class NetworkTest(TestCaseBase):
 
         self.assertIn(client, dhcp4, 'Test iface not found in a lease file.')
 
-    @RequireDummyMod
     def testGetRouteDeviceTo(self):
         with dummyIf(1) as nics:
             nic, = nics
@@ -1796,7 +1757,6 @@ class NetworkTest(TestCaseBase):
             finally:
                 addrFlush(nic)
 
-    @RequireDummyMod
     def testBrokenBridgelessNetReplacement(self):
         with dummyIf(1) as nics:
             nic, = nics
@@ -1820,7 +1780,6 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkDoesntExist(NETWORK_NAME)
 
     @cleanupNet
-    @RequireDummyMod
     def testReconfigureBrNetWithVanishedPort(self):
         """Test for re-defining a bridged network for which the device
         providing connectivity to the bridge had been removed from it"""
@@ -1850,7 +1809,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
 
-    @RequireDummyMod
     def testNoBridgeLeftovers(self):
         """Test for https://bugzilla.redhat.com/1071398"""
         with dummyIf(2) as nics:
@@ -1870,7 +1828,6 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.setupNetworks({}, bonds, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
-    @RequireDummyMod
     def testRedefineBondedNetworkIPs(self):
         """Test for https://bugzilla.redhat.com/1097674"""
         with dummyIf(2) as nics:
@@ -1916,7 +1873,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     def testLowerMtuDoesNotOverride(self):
         """Adding multiple vlanned networks with different mtus over a bond
         should have each network with its own mtu and the bond with the maximum
@@ -1966,7 +1922,6 @@ class NetworkTest(TestCaseBase):
     @slowtest
     @permutations([[True], [False]])
     @cleanupNet
-    @RequireDummyMod
     def testSetupNetworksEmergencyDevicesCleanupVlanOverwrite(self, bridged):
         with dummyIf(1) as nics:
             nic, = nics
@@ -1992,7 +1947,6 @@ class NetworkTest(TestCaseBase):
     @slowtest
     @permutations([[True], [False]])
     @cleanupNet
-    @RequireDummyMod
     def testSetupNetworksEmergencyDevicesCleanupBondOverwrite(self, bridged):
         with dummyIf(1) as nics:
             nic, = nics
@@ -2109,7 +2063,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @RequireDummyMod
     def testSetupNetworksActiveSlave(self):
         def create_bond_with_mode(nics, mode):
             bonding = {BONDING_NAME: {'nics': nics}}
