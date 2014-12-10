@@ -420,7 +420,7 @@ def _bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def _getNetInfo(iface, dhcp4, bridged, routes, ipaddrs):
+def _getNetInfo(iface, bridged, routes, ipaddrs, dhcp4):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -608,19 +608,18 @@ def _get_routes():
     return routes
 
 
-def libvirtNets2vdsm(nets, dhcp4=None, routes=None, ipAddrs=None):
-    if dhcp4 is None:
-        dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
+def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcp4=None):
     if routes is None:
         routes = _get_routes()
     if ipAddrs is None:
         ipAddrs = _getIpAddrs()
+    if dhcp4 is None:
+        dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
     d = {}
     for net, netAttr in nets.iteritems():
         try:
-            d[net] = _getNetInfo(netAttr.get('iface', net),
-                                 dhcp4,
-                                 netAttr['bridged'], routes, ipAddrs)
+            d[net] = _getNetInfo(netAttr.get('iface', net), netAttr['bridged'],
+                                 routes, ipAddrs, dhcp4)
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
@@ -643,7 +642,7 @@ def get(vdsmnets=None):
 
     if vdsmnets is None:
         libvirt_nets = networks()
-        d['networks'] = libvirtNets2vdsm(libvirt_nets, dhcp4, routes, ipaddrs)
+        d['networks'] = libvirtNets2vdsm(libvirt_nets, routes, ipaddrs, dhcp4)
     else:
         d['networks'] = vdsmnets
 
