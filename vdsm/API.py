@@ -1399,7 +1399,7 @@ class Global(APIBase):
                    options=None):
         """Add a new network to this vds.
 
-        Network topology is bridge--[vlan--][bond--]nics.
+        Network topology is network--[vlan--][bond--]nics.
         vlan(number) and bond are optional - pass the empty string to discard
         them.  """
         if options is None:

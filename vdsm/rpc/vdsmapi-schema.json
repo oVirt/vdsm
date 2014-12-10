@@ -78,7 +78,7 @@
 #
 # Add a new network to this host.
 #
-# @bridge:  The name of the bridge device
+# @network: The name of the network to add
 #
 # @vlan:    #optional The name of a VLAN to create on the device
 #
@@ -91,7 +91,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'addNetwork'},
- 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
+ 'data': {'network': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
           '*options': 'NetworkOptions'}}
 
 ##
