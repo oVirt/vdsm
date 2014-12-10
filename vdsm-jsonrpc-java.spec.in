@@ -183,6 +183,9 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
+* Wed Dec 10 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.11
+- wait on OS buff to empty
+
 * Fri Nov 21 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.11
 - require one java package
 - json parser flags
