@@ -92,15 +92,16 @@ public class SSLEngineNioHelper {
             while (buff.hasRemaining()) {
                 SSLEngineResult result = this.engine.wrap(buff, this.packetBuffer);
                 this.packetBuffer.flip();
-                int written = this.channel.write(this.packetBuffer);
-                if (result.bytesConsumed() == 0 && written == 0) {
-                    attempts++;
-                    if (attempts > MAX_ATTEMPTS) {
-                        // looks like network issue we let higher logic handle timeout
-                        this.packetBuffer.clear();
+                while (this.packetBuffer.hasRemaining()) {
+                    int written = this.channel.write(this.packetBuffer);
+                    if (result.bytesConsumed() == 0 && written == 0) {
+                        attempts++;
+                        if (attempts > MAX_ATTEMPTS) {
+                            // looks like network issue we let higher logic handle timeout
+                            this.packetBuffer.clear();
+                        }
                     }
                 }
-
                 this.packetBuffer.compact();
             }
             return;
