@@ -38,6 +38,7 @@ public abstract class ReactorClient {
     public interface MessageListener {
         public void onMessageReceived(byte[] message);
     }
+    public static final String CLIENT_CLOSED = "Client close";
     public static final int BUFFER_SIZE = 1024;
     private static Log log = LogFactory.getLog(ReactorClient.class);
     private final String hostname;
@@ -63,6 +64,11 @@ public abstract class ReactorClient {
 
     public String getHostname() {
         return this.hostname;
+    }
+
+    public String getClientId() {
+        String connectionHash = this.channel == null ? "" : Integer.toString(this.channel.hashCode());
+        return this.hostname + ":" + connectionHash;
     }
 
     public void setRetryPolicy(RetryPolicy policy) {
@@ -152,17 +158,17 @@ public abstract class ReactorClient {
     }
 
     public final void disconnect(String message) {
+        byte[] response = buildNetworkResponse(message);
         postDisconnect();
         closeChannel();
-        emitOnMessageReceived(buildNetworkResponse(message));
+        emitOnMessageReceived(response);
     }
 
     public Future<Void> close() {
-        final String message = "Client close";
         final Callable<Void> disconnectCallable = new Callable<Void>() {
             @Override
             public Void call() {
-                disconnect(message);
+                disconnect(CLIENT_CLOSED);
                 return null;
             }
         };

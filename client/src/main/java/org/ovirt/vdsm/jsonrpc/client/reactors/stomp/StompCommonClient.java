@@ -159,7 +159,7 @@ public abstract class StompCommonClient extends ReactorClient {
 
     @Override
     protected byte[] buildNetworkResponse(String reason) {
-        JsonRpcResponse response = buildErrorResponse(null, getHostname(), reason);
+        JsonRpcResponse response = buildErrorResponse(null, getClientId(), reason);
         return response.toByteArray();
     }
 
