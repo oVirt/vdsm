@@ -272,10 +272,52 @@ class VmStatsThread(AdvancedStatsThread):
             self._vm.updateDriveVolume(vmDrive)
 
     def _sampleCpu(self):
+        """
+        Physical CPU statistics. Return value is a dict with
+        at least three key/value pairs:
+        * 'cpu_time': total wall clock time spent, nanoseconds.
+        * 'system_time': time spent by the hypervisor in kernel
+                         space, nanoseconds.
+        * 'user_time': time spent by the hypervisor in user space,
+                       nanoseconds.
+        Extra keys will be ignored.
+
+        Example:
+        {
+            'cpu_time': 17732877847L,
+            'system_time': 3030000000L,
+            'user_time': 510000000L
+        }
+        """
         cpuStats = self._vm._dom.getCPUStats(True, 0)
         return cpuStats[0]
 
     def _sampleDisk(self):
+        """
+        Disk statistics. Return value is a dict with a key for
+        each Vm drive. Each value is in turn a dict with at least
+        eight key/value pairs:
+        * {rd,wr,flush}_total_times: total time spent, in the
+                       I/O operations of the given kind, nanoseconds.
+        * {rd,wr,flush}_operations: number of operations of the given kind
+        * {rd,wr}_bytes: amount of bytes read or written, per disk.
+        Extra keys will be ignored.
+
+        Example:
+        {
+            'vda':
+            {
+                'rd_total_times': 41725620156L,
+                'wr_total_times': 11113038027L,
+                'flush_total_times': 14947030448L,
+                'rd_operations': 8395L,
+                'wr_operations': 1174L,
+                'flush_operations': 143L,
+                'rd_bytes': 229022208L,
+                'wr_bytes': 16778240L
+            }
+        }
+        """
         if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
@@ -297,16 +339,60 @@ class VmStatsThread(AdvancedStatsThread):
         return diskSamples
 
     def _sampleNet(self):
+        """
+        Network interface statistics. Return value is a dict with a key
+        per network interface. Each value is a tuple of eight (8) elements.
+
+        The meaning of each item in the value tuple is, in order:
+        * bytes received
+        * packets received
+        * number of errors reported receiving data
+        * number of incoming packets dropped
+        * bytes transmitted
+        * packets transmitted
+        * number of errors reported transmitting data
+        * number of outgoing packets dropped
+
+        Example:
+        {
+            'vnet0': (29562785L, 19999L, 0L, 0L, 803385L, 11673L, 0L, 0L)
+        }
+        """
         netSamples = {}
         for nic in self._vm.getNicDevices():
             netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
         return netSamples
 
     def _sampleVcpuPinning(self):
+        """
+        Virtual CPU pinning information. Return value is a list of
+        tuples, one per virtual CPU.
+
+        The meaning of each item in the virtual CPU tuple is:
+        * virtual CPU number
+        * virtual CPU state
+        * CPU time used, in nanoseconds
+        * real CPU number, or -1 if offline
+
+        virtual CPU state could be
+        0: offline
+        1: running
+        2: blocked on resource
+
+        Example:
+        [(0, 1, 26040000000L, 4), (1, 1, 12620000000L, 4)]
+        """
         vCpuInfos = self._vm._dom.vcpus()
         return vCpuInfos[0]
 
     def _sampleBalloon(self):
+        """
+        memory usage information. Return value is the memory in KBytes
+        used by the VM.
+
+        Example:
+        8388608L
+        """
         infos = self._vm._dom.info()
         return infos[2]
 
@@ -314,6 +400,36 @@ class VmStatsThread(AdvancedStatsThread):
         return self._vm.queryBlockJobs()
 
     def _sampleCpuTune(self):
+        """
+        virtual cpu tuning information. Return value is a dict
+        with at least six key/value pairs, defined as follows:
+        * vcpu_quota: max allowed bandwith, in microseconds.
+                      -1 means 'infinite'
+        * vcpu_period: timeframe on which the virtual cpu quota is
+                       enforced, in microseconds.
+        * emulator_quota: max allowd bandwith for emulator threads,
+                          in microseconds. -1 means 'infinite'.
+        * emulator_period: timeframe on which the emulator quota is
+                           enforced, in microseconds.
+        * cpu_shares: weight of this VM. This value is meaningful
+                      only if compared with the other values of
+                      the running vms.
+        * vcpuCount: number of virtual CPUs used by the VM
+
+        another key may be optionally present:
+        * vcpuLimit: FIXME add docs
+        Extra keys will be ignored.
+
+        Example:
+        {
+            'vcpu_quota': -1L,
+            'vcpu_period': 1000L,
+            'emulator_period': 100000L,
+            'emulator_quota': -1L,
+            'cpu_shares': 1020L
+            'vcpuCount': 2
+        }
+        """
         infos = self._vm._dom.schedulerParameters()
         infos['vcpuCount'] = self._vm._dom.vcpusFlags(
             libvirt.VIR_DOMAIN_VCPU_CURRENT)
