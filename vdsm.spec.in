@@ -1325,12 +1325,16 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/toolTests_vdsm_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/glusterGeoRepStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeGeoRepConfigList.xml
+%{_datadir}/%{vdsm_name}/tests/glusterSnapshotList.xml
+%{_datadir}/%{vdsm_name}/tests/glusterSnapshotListEmpty.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfo.xml
 %{_datadir}/%{vdsm_name}/tests/glusterSnapshotConfig.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeProfileInfoNfs.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRebalanceStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeRemoveBricksStatus.xml
 %{_datadir}/%{vdsm_name}/tests/glusterSnapshotRestore.xml
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeSnapshotList.xml
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeSnapshotListEmpty.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeTasks.xml
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
 %{_datadir}/%{vdsm_name}/tests/functional/*.policy

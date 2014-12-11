@@ -648,6 +648,14 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeSnapshotList(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeSnapshotList(volumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1099,5 +1107,10 @@ def getGlusterCmdDict(serv):
              ('optionName=<option_name>'
               'optionValue=<option_value>',
               'Set gluster snapshot configuration at cluster leval'
+              )),
+         'glusterVolumeSnapshotList': (
+             serv.do_glusterVolumeSnapshotList,
+             ('[volumeName=<volume_name>]',
+              'snapshot list for given volume'
               ))
          }

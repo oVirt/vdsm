@@ -593,3 +593,8 @@ class GlusterSnapshotConfigGetFailedException(
         GlusterSnapshotException):
     code = 4708
     message = "Snapshot config get failed"
+
+
+class GlusterSnapshotInfoFailedException(GlusterSnapshotException):
+    code = 4709
+    message = "Snapshot Info failed"

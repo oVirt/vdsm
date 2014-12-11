@@ -19,6 +19,8 @@
 #
 
 import xml.etree.cElementTree as etree
+import time
+import calendar
 
 from vdsm import utils
 from vdsm import netinfo
@@ -29,6 +31,7 @@ from . import makePublic
 _glusterCommandPath = utils.CommandPath("gluster",
                                         "/usr/sbin/gluster",
                                         )
+_TIME_ZONE = time.tzname[0]
 
 
 if hasattr(etree, 'ParseError'):
@@ -85,6 +88,11 @@ class TaskType:
     REBALANCE = 'REBALANCE'
     REPLACE_BRICK = 'REPLACE_BRICK'
     REMOVE_BRICK = 'REMOVE_BRICK'
+
+
+class SnapshotStatus:
+    ACTIVATED = 'ACTIVATED'
+    DEACTIVATED = 'DEACTIVATED'
 
 
 def _execGluster(cmd):
@@ -1387,3 +1395,121 @@ def snapshotConfig(volumeName=None, optionName=None, optionValue=None):
         return _parseSnapshotConfigList(xmltree)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+def _parseVolumeSnapshotList(tree):
+    """
+    {'v1': {'snapshots': [{'name': 'snap1_v1',
+                           'description': description of the snapshot,
+                           'id': '8add41ae-c60c-4023'
+                                           '-a1a6-5093a5d35603',
+                           'createTime': {'timeZone': 'IST',
+                                          'epochTime': 1414427114}
+                           'snapVolume': '5eeaf23def3f446d898e1de8461a6aa7'
+                           'snapVolumeStatus': 'ACTIVATED'}, ...],
+            'snapRemaining': 252}
+    }
+    """
+    volume = {}
+    volumeName = tree.find(
+        'snapInfo/originVolume/name').text
+    volume[volumeName] = {
+        'snapRemaining': tree.find('snapInfo/originVolume/snapRemaining').text,
+        'snapshots': []
+    }
+    if int(tree.find('snapInfo/count').text) == 0:
+        return {}
+    for el in tree.findall('snapInfo/snapshots/snapshot'):
+        snapshot = {}
+        snapshot['id'] = el.find('uuid').text
+        snapshot['description'] = "" if el.find('description') is None \
+                                  else el.find('description').text
+        snapshot['createTime'] = {
+            'epochTime': calendar.timegm(
+                time.strptime(el.find('createTime').text,
+                              "%Y-%m-%d %H:%M:%S")
+            ),
+            'timeZone': _TIME_ZONE
+        }
+        snapshot['snapVolume'] = el.find('snapVolume/name').text
+        status = el.find('snapVolume/status').text
+        if status.upper() == 'STARTED':
+            snapshot['snapVolumeStatus'] = SnapshotStatus.ACTIVATED
+        else:
+            snapshot['snapVolumeStatus'] = SnapshotStatus.DEACTIVATED
+        snapshot['name'] = el.find('name').text
+        volume[volumeName]['snapshots'].append(snapshot)
+    return volume
+
+
+def _parseAllVolumeSnapshotList(tree):
+    """
+    {'v1': {'snapshots': [{'name': 'snap1_v1',
+                           'description': description of the snapshot,
+                           'id': '8add41ae-c60c-4023-'
+                                           'a1a6-5093a5d35603',
+                           'createTime': {'timeZone': 'IST',
+                                          'epochTime': 141442711}
+                           'snapVolume': '5eeaf23def3f446d898e1de8461a6aa7'
+                           'snapVolumeStatus': 'ACTIVATED'}, ...],
+            'snapRemaining': 252},
+     'v2': {'snapshots': [{'name': 'snap1_v2',
+                           'description': description of the snapshot,
+                           'id': '8add41ae-c60c-4023'
+                                           '-a1a6-1233a5d35603',
+                           'createTime': {'timeZone': 'IST',
+                                          'epochTime': 1414427114}
+                           'snapVolume': '5eeaf23def3f446d898e1123461a6aa7'
+                           'snapVolumeStatus': 'DEACTIVATED'}, ...],
+            'snapRemaining': 252},...
+    }
+    """
+    volumes = {}
+    if int(tree.find('snapInfo/count').text) == 0:
+        return {}
+    for el in tree.findall('snapInfo/snapshots/snapshot'):
+        snapshot = {}
+        snapshot['id'] = el.find('uuid').text
+        snapshot['description'] = "" if el.find('description') is None \
+                                  else el.find('description').text
+        snapshot['createTime'] = {
+            'epochTime': calendar.timegm(
+                time.strptime(el.find('createTime').text,
+                              "%Y-%m-%d %H:%M:%S")
+            ),
+            'timeZone': _TIME_ZONE
+        }
+        snapshot['snapVolumeName'] = el.find('snapVolume/name').text
+        status = el.find('snapVolume/status').text
+        if status.upper() == 'STARTED':
+            snapshot['snapVolumeStatus'] = SnapshotStatus.ACTIVATED
+        else:
+            snapshot['snapVolumeStatus'] = SnapshotStatus.DEACTIVATED
+        snapshot['name'] = el.find('name').text
+        volumeName = el.find('snapVolume/originVolume/name').text
+        if volumeName not in volumes:
+            volumes[volumeName] = {
+                'snapRemaining': el.find(
+                    'snapVolume/originVolume/snapRemaining').text,
+                'snapshots': []
+            }
+        volumes[volumeName]['snapshots'].append(snapshot)
+    return volumes
+
+
+@makePublic
+def snapshotInfo(volumeName=None):
+    command = _getGlusterSnapshotCmd() + ["info"]
+    if volumeName:
+        command += ["volume", volumeName]
+    try:
+        xmltree = _execGlusterXml(command)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterSnapshotInfoFailedException(rc=e.rc, err=e.err)
+    try:
+        if volumeName:
+            return _parseVolumeSnapshotList(xmltree)
+        else:
+            return _parseAllVolumeSnapshotList(xmltree)
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorInfoException(err=[etree.tostring(xmltree)])

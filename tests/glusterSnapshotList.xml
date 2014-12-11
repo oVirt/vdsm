@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+  <snapInfo>
+    <count>14</count>
+    <snapshots>
+      <snapshot>
+        <name>snap1_v1</name>
+        <uuid>8add41ae-c60c-4023-a1a6-5093a5d35603</uuid>
+        <createTime>2014-10-27 16:25:03</createTime>
+        <volCount>1</volCount>
+        <snapVolume>
+          <name>5eeaf23def3f446d898e1de8461a6aa7</name>
+          <status>Started</status>
+          <originVolume>
+            <name>v1</name>
+            <snapCount>3</snapCount>
+            <snapRemaining>252</snapRemaining>
+          </originVolume>
+        </snapVolume>
+      </snapshot>
+      <snapshot>
+        <name>snap2_v1</name>
+        <uuid>96f4f3eb-bab4-40f8-b4d7-3edbc5112b44</uuid>
+        <createTime>2014-10-27 16:25:07</createTime>
+        <volCount>1</volCount>
+        <snapVolume>
+          <name>20ddd7e468244bb8a46d70f98b998d62</name>
+          <status>Started</status>
+          <originVolume>
+            <name>v1</name>
+            <snapCount>3</snapCount>
+            <snapRemaining>252</snapRemaining>
+          </originVolume>
+        </snapVolume>
+      </snapshot>
+      <snapshot>
+        <name>snap3_v1</name>
+        <uuid>309a98d7-e650-4ecd-8d97-b0a5b744c03c</uuid>
+        <createTime>2014-10-27 16:25:14</createTime>
+        <volCount>1</volCount>
+        <snapVolume>
+          <name>692b1b4504304a708aaafb19e7e85118</name>
+          <status>Started</status>
+          <originVolume>
+            <name>v1</name>
+            <snapCount>3</snapCount>
+            <snapRemaining>252</snapRemaining>
+          </originVolume>
+        </snapVolume>
+      </snapshot>
+    </snapshots>
+  </snapInfo>
+</cliOutput>

@@ -1148,3 +1148,75 @@ GLUSTER_SNAPSHOT_CONFIG_LIST = {
         'snap-max-soft-limit': '91%'
     }
 }
+
+GLUSTER_VOLUME_SNAPSHOT_LIST = {
+    'snap-vol': {
+        'snapRemaining': '252',
+        'snapshots': [
+            {
+                'description': '',
+                'snapVolumeStatus': 'ACTIVATED',
+                'createTime': {
+                    'timeZone': 'IST',
+                    'epochTime': 1418061170},
+                'snapVolume': 'fca1ad5a73e9447ea541a7d2d141c979',
+                'id': 'a5967958-705e-4835-9089-66e6358d7514',
+                'name': 'snap7'
+            },
+            {
+                'description': '',
+                'snapVolumeStatus': 'ACTIVATED',
+                'createTime': {
+                    'timeZone': 'IST',
+                    'epochTime': 1418061175},
+                'snapVolume': 'b25e8490fdef46dd82bff94b27df15a8',
+                'id': 'cc8b262f-a6d5-4d41-ad5d-e5ac90d73ca4',
+                'name': 'snap6'
+            },
+            {
+                'description': 'this is a sample description',
+                'snapVolumeStatus': 'ACTIVATED',
+                'createTime': {
+                    'timeZone': 'IST',
+                    'epochTime': 1418293687},
+                'snapVolume': '9368c4cd2b8d42e494c929357dd1bc44',
+                'id': '8f7135a8-452b-4c14-ba7a-8bf9cbd0efb2',
+                'name': 'snap10'
+            }
+        ]
+    }
+}
+
+GLUSTER_ALL_VOLUME_SNAPSHOT_LIST = {
+    'v1': {
+        'snapRemaining': '252',
+        'snapshots': [
+            {
+                'name': 'snap1_v1',
+                'snapVolumeStatus': 'ACTIVATED',
+                'snapVolumeName': '5eeaf23def3f446d898e1de8461a6aa7',
+                'createTime': {
+                    'timeZone': 'IST',
+                    'epochTime': 1414427103},
+                'id': '8add41ae-c60c-4023-a1a6-5093a5d35603',
+                'description': ''},
+            {
+                'name': 'snap2_v1',
+                'snapVolumeStatus': 'ACTIVATED',
+                'snapVolumeName': '20ddd7e468244bb8a46d70f98b998d62',
+                'createTime': {
+                    'timeZone': 'IST',
+                    'epochTime': 1414427107},
+                'id': '96f4f3eb-bab4-40f8-b4d7-3edbc5112b44',
+                'description': ''},
+            {
+                'name': 'snap3_v1',
+                'snapVolumeStatus': 'ACTIVATED',
+                'snapVolumeName': '692b1b4504304a708aaafb19e7e85118',
+                'createTime': {'timeZone': 'IST',
+                               'epochTime': 1414427114},
+                'id': '309a98d7-e650-4ecd-8d97-b0a5b744c03c',
+                'description': ''}
+        ]
+    }
+}
