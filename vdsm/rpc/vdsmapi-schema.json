@@ -99,7 +99,7 @@
 #
 # Remove a network from this host.
 #
-# @bridge:   The name of the bridge device
+# @network:  The name of the network to remove
 #
 # @vlan:     #optional The name of an associated vlan to remove
 #
@@ -113,7 +113,7 @@
 ##
 
 {'command': {'class': 'Host', 'name': 'delNetwork'},
- 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
+ 'data': {'network': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
           '*options': 'NetworkOptions'}}
 
 ##
