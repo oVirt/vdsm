@@ -91,6 +91,9 @@ public class SSLEngineNioHelper {
             int attempts = 0;
             while (buff.hasRemaining()) {
                 SSLEngineResult result = this.engine.wrap(buff, this.packetBuffer);
+                if (SSLEngineResult.Status.CLOSED == result.getStatus()) {
+                    return;
+                }
                 this.packetBuffer.flip();
                 while (this.packetBuffer.hasRemaining()) {
                     int written = this.channel.write(this.packetBuffer);

@@ -9,6 +9,7 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.mapValues;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -25,6 +26,7 @@ import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 import org.ovirt.vdsm.jsonrpc.client.RequestAlreadySentException;
+import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
 import org.ovirt.vdsm.jsonrpc.client.utils.ResponseTracking;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
@@ -52,7 +54,7 @@ public class ResponseTracker implements Runnable {
         try (LockWrapper wrapper = new LockWrapper(this.lock)) {
             this.queue.remove(id);
             ResponseTracking tracking = this.map.remove(id);
-            List<JsonNode> nodes = this.hostToId.get(tracking.getClient().getHostname());
+            List<JsonNode> nodes = this.hostToId.get(tracking.getClient().getClientId());
             nodes.remove(id);
         }
     }
@@ -74,7 +76,7 @@ public class ResponseTracker implements Runnable {
             this.map.put(id, tracking);
             this.queue.add(id);
             nodes.add(id);
-            nodes = this.hostToId.putIfAbsent(tracking.getClient().getHostname(), nodes);
+            nodes = this.hostToId.putIfAbsent(tracking.getClient().getClientId(), nodes);
             if (nodes != null) {
                 nodes.add(id);
             }
@@ -131,14 +133,28 @@ public class ResponseTracker implements Runnable {
     public void processIssue(JsonRpcResponse response) {
         JsonNode error = response.getError();
         Map<String, Object> map = mapValues(error);
-        String hostname = (String) map.get("code");
-        JsonRpcResponse errorResponse = buildErrorResponse(null, 5022, (String) map.get("message"));
+        String code = (String) map.get("code");
+        String message = (String) map.get("message");
+        JsonRpcResponse errorResponse = buildErrorResponse(null, 5022, message);
 
         try (LockWrapper wrapper = new LockWrapper(this.lock)) {
-            List<JsonNode> nodes = this.hostToId.get(hostname);
-            for (JsonNode id : nodes) {
-                remove(this.map.get(id), id, errorResponse);
+            if (ReactorClient.CLIENT_CLOSED.equals(message)) {
+                removeNodes(this.hostToId.get(code), errorResponse);
+            } else {
+                String hostname = code.substring(0, code.indexOf(":"));
+                Set<String> keys = this.hostToId.keySet();
+                for (String key: keys) {
+                    if (key.startsWith(hostname)) {
+                        removeNodes(this.hostToId.get(key), errorResponse);
+                    }
+                }
             }
+        }
+    }
+
+    private void removeNodes(List<JsonNode> nodes, JsonRpcResponse errorResponse) {
+        for (JsonNode id : nodes) {
+            remove(this.map.get(id), id, errorResponse);
         }
     }
 }
