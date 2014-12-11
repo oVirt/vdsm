@@ -135,6 +135,10 @@ dist_vdsmtests_DATA = \
 	glusterSnapshotConfig.xml \
 	glusterSnapshotRestore.xml \
 	glusterVolumeGeoRepConfigList.xml \
+	glusterSnapshotList.xml \
+	glusterVolumeSnapshotList.xml \
+	glusterSnapshotListEmpty.xml \
+	glusterVolumeSnapshotListEmpty.xml \
 	glusterVolumeProfileInfo.xml \
 	glusterVolumeProfileInfoNfs.xml \
 	glusterVolumeRebalanceStatus.xml \

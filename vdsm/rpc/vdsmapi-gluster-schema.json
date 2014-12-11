@@ -1847,3 +1847,97 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'snapshotConfigSet'},
  'data': {'volumeName': 'str', 'optionName': 'str', 'optionValue': 'str'}}
+
+##
+# @SnapshotStatus:
+#
+# Possible value of snapshot status.
+#
+# @ACTIVATED:   Snapshot is activated
+#
+# @DEACTIVATED: Snapshot is deactivated
+#
+# Since: 4.17.0
+##
+{'enum': 'SnapshotStatus',
+ 'data': ['ACTIVATED', 'DEDACTIVATED']}
+
+##
+# @CreateTime:
+#
+# creation time of snapshot
+#
+# @epochTime:    Creation time represented in epoch
+#
+# @timeZone:     Time zone of cluster in which snapshot was created
+#
+# Since: 4.17.0
+##
+{'type': 'CreateTime',
+ 'data': {'epochTime': 'int', 'timeZone': 'str'}}
+
+##
+# @SnapInfo:
+#
+# info about a snapshot.
+#
+# @name:             Name of the snapshot
+#
+# @id:               Uuid of the snapshot
+#
+# @createTime:       Snapshot creation time
+#
+# @snapVolume:       Name of the snapshot volume
+#
+# @snapVolumeStatus: Status of the snapshot volume
+#
+# @description:      Description of the snapshot
+#
+# Since: 4.17.0
+##
+{'type': 'SnapInfo',
+ 'data': {'name': 'str', 'id': 'UUID', 'createTime': 'CreateTime',
+          'snapVolume': 'str', 'snapVolumeStatus': 'SnapshotStatus',
+          'description': 'str'}}
+
+##
+# @VolumeSnapInfo:
+#
+# info about volume snapshots.
+#
+# @snapshots:      List of snapshot info of all snaps for that volume
+#
+# @snapRemaining:  Number of snapshots remaining for that volume
+#
+# @snapCount:      Number of snapshots taken for that volume
+#
+# Since: 4.17.0
+##
+{'type': 'VolumeSnapInfo',
+ 'data': {'snapshots': ['snapInfo'], 'snapRemaining': 'str'}}
+
+##
+# @SnapshotInfoMap:
+#
+# A mapping of snapshot info indexed by volume name.
+#
+# Since: 4.17.0
+##
+{'map': 'SnapshotInfoMap',
+ 'key': 'str', 'value': 'volumeSnapInfo'}
+
+##
+# @GlusterVolume.snapshotList:
+#
+# Snapshot list is retrived for the given volume
+#
+# @volumeName: #optional gluster volume name
+#
+# Returns:
+# Volume snapshot list for that volume
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'snapshotList'},
+ 'data': {'*volumeName': 'str'},
+ 'returns': 'SnapshotInfoMap'}

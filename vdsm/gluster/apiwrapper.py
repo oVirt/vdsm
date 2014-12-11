@@ -255,6 +255,9 @@ class GlusterVolume(GlusterApiBase):
     def snapshotConfigList(self, volumeName):
         return self._gluster.volumeSnapshotConfigList(volumeName)
 
+    def snapshotList(self, volumeName=None):
+        return self._gluster.volumeSnapshotList(volumeName)
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):

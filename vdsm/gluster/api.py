@@ -484,6 +484,11 @@ class GlusterApi(object):
             raise ge.GlusterSnapshotConfigSetFailedException(rc=e.rc,
                                                              err=e.err)
 
+    @exportAsVerb
+    def volumeSnapshotList(self, volumeName=None, options=None):
+        status = self.svdsmProxy.glusterSnapshotInfo(volumeName)
+        return {'snapshotList': status}
+
 
 def getGlusterMethods(gluster):
     l = []

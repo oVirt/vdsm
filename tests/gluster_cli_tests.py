@@ -1164,3 +1164,38 @@ class GlusterCliTests(TestCaseBase):
         tree = etree.fromstring(out)
         status = gcli._parseSnapshotConfigList(tree)
         self.assertEquals(status, glusterTestData.GLUSTER_SNAPSHOT_CONFIG_LIST)
+
+    def test_parseAllVolumeSnapshotList(self):
+        with open("glusterSnapshotList.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        gcli._TIME_ZONE = 'IST'
+        status = gcli._parseAllVolumeSnapshotList(tree)
+        self.assertEquals(status,
+                          glusterTestData.GLUSTER_ALL_VOLUME_SNAPSHOT_LIST)
+
+    def test_parseVolumeSnapshotList(self):
+        with open("glusterVolumeSnapshotList.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        gcli._TIME_ZONE = 'IST'
+        status = gcli._parseVolumeSnapshotList(tree)
+        self.assertEquals(status, glusterTestData.GLUSTER_VOLUME_SNAPSHOT_LIST)
+
+    def test_parseVolumeSnapshotListEmpty(self):
+        with open("glusterVolumeSnapshotListEmpty.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        gcli._TIME_ZONE = 'IST'
+        status = gcli._parseVolumeSnapshotList(tree)
+        expected = {}
+        self.assertEquals(status, expected)
+
+    def test_parseAllVolumeSnapshotListEmpty(self):
+        with open("glusterSnapshotListEmpty.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        gcli._TIME_ZONE = 'IST'
+        status = gcli._parseAllVolumeSnapshotList(tree)
+        expected = {}
+        self.assertEquals(status, expected)
