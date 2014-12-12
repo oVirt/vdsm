@@ -22,7 +22,7 @@
 # VDSM API Schema
 #
 
-## Category: @Host #############################################################
+## Category: @Host ############################################################
 ##
 # @Host:
 #
@@ -61,7 +61,8 @@
 #                   should wait to get an address before returning creation
 #                   success. If not set, the default is False.
 #
-# @bondingOptions:  #optional A string of space-separated <option>=<value> pairs
+# @bondingOptions:  #optional A string of space-separated <option>=<value>
+#                   pairs
 #
 # @hostQos:         #optional Host networking QoS params.
 #
@@ -146,7 +147,8 @@
 #
 # @vlan:          #optional The name of an associated vlan
 #
-# @bonding:       #optional If the network is bonded, the name of the bond device
+# @bonding:       #optional If the network is bonded, the name of the bond
+#                 device
 #
 # @nic:           #optional If the network is not bonded, an array containing a
 #                 single network device name
@@ -157,8 +159,8 @@
 #
 # @gateway:       #optional Assign this gateway to the network
 #
-# @bootproto:     #optional Interface autoconfiguration protocol (typically 'dhcp'
-#                 or 'none')
+# @bootproto:     #optional Interface autoconfiguration protocol (typically
+#                 'dhcp' or 'none')
 #
 # @remove:        #optional If True, remove existing network only
 #
@@ -167,8 +169,8 @@
 # @defaultRoute:  #optional boolean - Is this network's gateway the host's
 #                 default gateway?
 #
-# @custom:        #optional A dictionary of custom, free-form properties for network.
-#                 (new in version 4.15.0)
+# @custom:        #optional A dictionary of custom, free-form properties for
+#                 network. (new in version 4.15.0)
 #
 # Since: 4.10.0
 ##
@@ -200,7 +202,8 @@
 #
 # Additional options for setupNetworks.
 #
-# @force:                #optional If True, skip validation of the configuration
+# @force:                #optional If True, skip validation of the
+#                        configuration
 #
 # @connectivityCheck:    #optional After reconfiguration, check for network
 #                        connectivity and roll back if necessary
@@ -707,7 +710,8 @@
 #
 # @interface:  The network device name associated with the network
 #
-# @bridged:    Always False to distinguish this type from @NetInfoBridgedNetwork
+# @bridged:    Always False to distinguish this type from
+#              @NetInfoBridgedNetwork
 #
 # Since: 4.10.0
 ##
@@ -1432,7 +1436,8 @@
 #
 # @physicalblocksize:  The physical block size of the device (in bytes)
 #
-# @partitioned:        Reports whether the device has been split into partitions
+# @partitioned:        Reports whether the device has been split into
+#                      partitions
 #
 # Since: 4.10.0
 #
@@ -1441,7 +1446,8 @@
 #         different.
 #
 #         If @partitioned is True, the device is not usable by Vdsm.  If the
-#         device has a partition table but no partitions, @partitioned is False.
+#         device has a partition table but no partitions, @partitioned is
+#         False.
 ##
 {'type': 'BlockDeviceInfo',
  'data': {'GUID': 'UUID', 'pvUUID': 'UUID', 'vendorID': 'str',
@@ -2508,8 +2514,8 @@
 #
 # @device:           The disk device type (eg. @cdrom or @disk)
 #
-# @iface:            #optional Indicates the device connection method exposed to
-#                    the guest
+# @iface:            #optional Indicates the device connection method exposed
+#                    to the guest
 #
 # @path:             #optional The filesystem path to the drive's volume
 #
@@ -2552,7 +2558,8 @@
 #
 # @truesize:         The amount of underlying storage allocated (in bytes)
 #
-# @volumeChain:      The sequence of Volume objects needed to construct the disk
+# @volumeChain:      The sequence of Volume objects needed to construct the
+#                    disk
 #
 # @baseVolumeID:     #optional When used as a parameter to @VM.merge, indicates
 #                    the Volume that should become the new base volume
@@ -2615,7 +2622,8 @@
 ##
 # @BandwidthParams:
 #
-# Bandwidth traffic shape parameters for VM Interface device expressed as integers.
+# Bandwidth traffic shape parameters for VM Interface device expressed as
+# integers.
 #
 # @average: Average bit rate of the interface being shaped in kB/sec.
 #
@@ -2721,13 +2729,14 @@
 #
 # @specParams:    #optional Additional device parameters
 #
-# @linkActive:    #optional Whether the VM network card has its link active (up)
-#                 or not (down). If omitted, the link will be active
+# @linkActive:    #optional Whether the VM network card has its link active
+#                 (up) or not (down). If omitted, the link will be active
 #
 # @portMirroring: #optional If present, indicates the traffic of which networks
 #                 should be mirrored to the interface.
 #
-# @custom:        #optional A dictionary of custom, free-form properties for device.
+# @custom:        #optional A dictionary of custom, free-form properties for
+#                 device.
 #
 # Since: 4.10.0
 ##
@@ -3082,7 +3091,8 @@
 # Since: 4.10.1
 ##
 {'type': 'VmWatchdogDeviceSpecParams',
- 'data': {'model': 'VmWatchdogDeviceModel', 'action': 'VmWatchdogDeviceAction'}}
+ 'data': {'model': 'VmWatchdogDeviceModel',
+          'action': 'VmWatchdogDeviceAction'}}
 
 ##
 # @VmWatchdogDevice:
@@ -3413,7 +3423,8 @@
 #                         are reserved for host-passthrough and host-mode cpu
 #                         mode
 #
-# @custom:                #optional A dictionary of custom, free-form properties
+# @custom:                #optional A dictionary of custom, free-form
+#                         properties
 #
 # @devices:               #optional An array of VM devices present
 #
@@ -3427,15 +3438,15 @@
 #
 # @emulatedMachine:       #optional The machine specification being emulated
 #
-# @hypervEnable:          #optional Enables hyperv specific optimizations for the
-#                         Guest OS (new in version 4.16.0)
+# @hypervEnable:          #optional Enables hyperv specific optimizations for
+#                         the Guest OS (new in version 4.16.0)
 #
 # @keyboardLayout:        #optional The keyboard layout string (eg. 'en-us')
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
 #
-# @maxVCpus:              #optional Maximum number of CPU available for the guest
-#                         It is the upper boundry for hot plug CPU action
+# @maxVCpus:              #optional Maximum number of CPU available for the
+#                         guest It is the upper boundry for hot plug CPU action
 #
 # @memSize:               The amount of memory assigned to the VM in MB
 #
@@ -3451,9 +3462,11 @@
 #
 # @smp:                   The number of CPUs presented to the VM
 #
-# @smpCoresPerSocket:     #optional Indicates the number of CPU cores per socket
+# @smpCoresPerSocket:     #optional Indicates the number of CPU cores per
+#                         socket
 #
-# @smpThreadsPerCore:     #optional Indicates the number of CPU threads per core
+# @smpThreadsPerCore:     #optional Indicates the number of CPU threads per
+#                         core
 #
 # @status:                The current VM status
 #
@@ -3480,17 +3493,18 @@
 {'type': 'VmDefinition',
  'data': {'acpiEnable': 'bool', 'clientIp': 'str', '*copyPasteEnable': 'bool',
           '*cpuShares': 'str', '*cpuType': 'str', '*custom': 'StringMap',
-          '*devices': ['VmDevice'], 'display': 'VmDisplayType', 'displayIp': 'str',
-          'displayPort': 'int', 'displaySecurePort': 'int',
+          '*devices': ['VmDevice'], 'display': 'VmDisplayType',
+          'displayIp': 'str', 'displayPort': 'int', 'displaySecurePort': 'int',
           '*emulatedMachine': 'str', '*hypervEnable': 'bool',
           '*keyboardLayout': 'str', 'kvmEnable': 'bool',
           '*maxVCpus': 'uint', 'memSize': 'uint',
           'memGuaranteedSize': 'uint', 'nicModel': 'str', 'nice': 'int',
-          '*pauseCode': 'str', 'pid': 'uint', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
-          '*smpThreadsPerCore': 'uint', 'status': 'VmStatus',
-          'timeOffset': 'uint', 'transparentHugePages': 'bool',
-          'vmId': 'UUID', 'vmName': 'str', 'vmType': 'VmType',
-          '*exitCode': 'int', '*exitMessage': 'str', '*serial': 'str'}}
+          '*pauseCode': 'str', 'pid': 'uint', 'smp': 'uint',
+          '*smpCoresPerSocket': 'uint', '*smpThreadsPerCore': 'uint',
+          'status': 'VmStatus', 'timeOffset': 'uint',
+          'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
+          'vmType': 'VmType', '*exitCode': 'int', '*exitMessage': 'str',
+          '*serial': 'str'}}
 
 ##
 # @VmParameters:
@@ -3506,14 +3520,15 @@
 #                         other VMs). In case both cpuShares and nice are
 #                         present, cpuShares will be used.
 #
-# @custom:                #optional A dictionary of custom, free-form properties
+# @custom:                #optional A dictionary of custom, free-form
+#                         properties
 #
 # @devices:               #optional An array of VM devices requested
 #
 # @display:               The type of display
 #
-# @hypervEnable:          #optional Enables hyperv specific optimizations for the
-#                         Guest OS. (new in version 4.16.0)
+# @hypervEnable:          #optional Enables hyperv specific optimizations for
+#                         the Guest OS. (new in version 4.16.0)
 #
 # @kvmEnable:             Indicates if KVM hardware acceleration is enabled
 #
@@ -3523,9 +3538,11 @@
 #
 # @smp:                   The number of CPUs presented to the VM
 #
-# @smpCoresPerSocket:     #optional Indicates the number of CPU cores per socket
+# @smpCoresPerSocket:     #optional Indicates the number of CPU cores per
+#                         socket
 #
-# @smpThreadsPerCore:     #optional Indicates the number of CPU threads per core
+# @smpThreadsPerCore:     #optional Indicates the number of CPU threads per
+#                         core
 #
 # @timeOffset:            The time difference from host to the VM in seconds
 #
@@ -3548,9 +3565,9 @@
 ##
 {'type': 'VmParameters',
  'data': {'acpiEnable': 'bool', '*bootMenuEnable': 'bool',
-          '*cpuShares': 'str', '*custom': 'StringMap', '*devices': ['VmDevice'],
-          'display': 'VmDisplayType', '*hypervEnable': 'bool',
-          'kvmEnable': 'bool', 'memSize': 'uint',
+          '*cpuShares': 'str', '*custom': 'StringMap',
+          '*devices': ['VmDevice'], 'display': 'VmDisplayType',
+          '*hypervEnable': 'bool', 'kvmEnable': 'bool', 'memSize': 'uint',
           'nice': 'int', 'smp': 'uint', '*smpCoresPerSocket': 'uint',
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
           'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
@@ -3743,8 +3760,8 @@
 #
 # @pauseCode:             Indicates the reason a VM has been paused
 #
-# @guestFQDN:             Fully qualified domain name of the guest OS. (Reported
-#                         by the guest agent)
+# @guestFQDN:             Fully qualified domain name of the guest OS.
+#                         (Reported by the guest agent)
 #
 # @displayIp:             The IP address to use for accessing the VM display
 #
@@ -3761,7 +3778,8 @@
 #
 # @smartcardEnable:       Info whether smartcard is enabled.
 #
-# @nicModel:              The type of device that is exposed to the VM operating system
+# @nicModel:              The type of device that is exposed to the VM
+#                         operating system
 #
 # @pitReinjection:
 #
@@ -4119,7 +4137,8 @@
 # Since: 4.10.0
 ##
 {'type': 'ConnectionRefArgs',
- 'data': {'connType': 'ConnectionRefType', 'params': 'ConnectionRefParameters'}}
+ 'data': {'connType': 'ConnectionRefType',
+          'params': 'ConnectionRefParameters'}}
 
 ##
 # @ConnectionError:
@@ -4226,7 +4245,7 @@
 {'command': {'class': 'ConnectionRefs', 'name': 'statuses'},
  'returns': 'ConnectionRefMap'}
 
-## Category: @ISCSIConnection ##################################################
+## Category: @ISCSIConnection #################################################
 ##
 # @ISCSIConnection:
 #
@@ -4258,7 +4277,7 @@
  'data': {'host': 'str', 'port': 'int', '*user': 'str', '*password': 'str'},
  'returns': ['str']}
 
-## Category: @Image ############################################################
+## Category: @Image ###########################################################
 ##
 # @Image:
 #
@@ -4289,8 +4308,8 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'delete'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'postZero': 'bool', 'force': 'bool'},
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'postZero': 'bool', 'force': 'bool'},
  'returns': 'UUID'}
 
 ##
@@ -4306,9 +4325,11 @@
 #
 # @volumeList:       A list of Volume UUIDs
 #
-# @postZero:         #optional If True, overwrite Volume data with zeroes after deletion
+# @postZero:         #optional If True, overwrite Volume data with zeroes after
+#                    deletion
 #
-# @force:            #optional Force the operation and do not perform any validation
+# @force:            #optional Force the operation and do not perform any
+#                    validation
 #
 # Returns:
 # A task UUID
@@ -4316,8 +4337,9 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'deleteVolumes'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'volumeList': ['UUID'], '*postZero': 'bool', '*force': 'bool'},
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'volumeList': ['UUID'],
+          '*postZero': 'bool', '*force': 'bool'},
  'returns': 'UUID'}
 
 ##
@@ -4337,7 +4359,8 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'getVolumes'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID'},
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID'},
  'returns': ['UUID']}
 
 ##
@@ -4363,8 +4386,9 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'mergeSnapshots'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'ancestor': 'UUID', 'successor': 'UUID', 'postZero': 'bool'},
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'ancestor': 'UUID', 'successor': 'UUID',
+          'postZero': 'bool'},
  'returns': 'UUID'}
 
 ##
@@ -4407,9 +4431,10 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Image', 'name': 'move'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'dstSdUUID': 'UUID', 'operation': 'ImageMoveOperation',
-          'postZero': 'bool', 'force': 'bool'},
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'dstSdUUID': 'UUID',
+          'operation': 'ImageMoveOperation', 'postZero': 'bool',
+          'force': 'bool'},
  'returns': 'UUID'}
 
 ##
@@ -4435,9 +4460,9 @@
 # Since: 4.17.0
 ##
 {'command': {'class': 'Image', 'name': 'sparsify'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'tmpVolUUID': 'UUID', 'dstSdUUID': 'UUID', 'dstImgUUID': 'UUID',
-          'dstVolUUID': 'UUID'}}
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID', 'tmpVolUUID': 'UUID', 'dstSdUUID': 'UUID',
+          'dstImgUUID': 'UUID', 'dstVolUUID': 'UUID'}}
 
 ##
 # @Image.cloneStructure:
@@ -4459,7 +4484,8 @@
 # Since: 4.11.0
 ##
 {'command': {'class': 'Image', 'name': 'cloneStructure'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID',
           'dstSdUUID': 'UUID'},
  'returns': 'UUID'}
 
@@ -4499,7 +4525,8 @@
 # Since: 4.11.0
 ##
 {'command': {'class': 'Image', 'name': 'syncData'},
- 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
+ 'data': {'imageID': 'UUID', 'storagepoolID': 'UUID',
+          'storagedomainID': 'UUID',
           'dstSdUUID': 'UUID', 'syncType': 'syncType'},
  'returns': 'UUID'}
 
@@ -4654,7 +4681,7 @@
           'imageID': 'UUID', 'leafVolID': 'UUID'}
  'returns': ['UUID']}
 
-## Category: @LVMVolumeGroup ###################################################
+## Category: @LVMVolumeGroup ##################################################
 ##
 # @LVMVolumeGroup:
 #
@@ -4675,7 +4702,8 @@
 #
 # @devlist:           An array of device names to include in the Volume Group
 #
-# @force:             #optional Force the operation and do not perform any validation
+# @force:             #optional Force the operation and do not perform any
+#                     validation
 #
 # Returns:
 # The uuid of the created Volume Group
@@ -4718,7 +4746,7 @@
 {'command': {'class': 'LVMVolumeGroup', 'name': 'remove'},
  'data': {'lvmvolumegroupID': 'UUID'}}
 
-## Category: @StorageDomain ####################################################
+## Category: @StorageDomain ###################################################
 ##
 # @StorageDomain:
 #
@@ -4865,10 +4893,11 @@
 #
 # @masterSdUUID:     #optional The UUID of a Storage Domain that should become
 #                    master after this domain has been deactivated.  If this
-#                    domain was not the master domain, then the current master's
-#                    UUID may be used.
+#                    domain was not the master domain, then the current
+#                    master's UUID may be used.
 #
-# @masterVersion:    #optional The Storage Domain version of the new master domain
+# @masterVersion:    #optional The Storage Domain version of the new master
+#                    domain
 #
 # @force:            #optional Force operation -- do not perform validation
 #
@@ -4956,7 +4985,8 @@
 # Since: 4.15.0
 ##
 {'command': {'class': 'StorageDomain', 'name': 'getFileStats'},
- 'data': {'storagedomainID': 'UUID', 'pattern': 'str', 'caseSensitive': 'bool'},
+ 'data': {'storagedomainID': 'UUID', 'pattern': 'str',
+          'caseSensitive': 'bool'},
  'returns': 'StorageDomainFileStatsMap'}
 
 ##
@@ -5123,7 +5153,7 @@
 {'command': {'class': 'StorageDomain', 'name': 'validate'},
  'data': {'storagedomainID': 'UUID'}}
 
-## Category: @StoragePool ######################################################
+## Category: @StoragePool #####################################################
 ##
 # @StoragePool:
 #
@@ -5214,15 +5244,15 @@
 #                           attached to the Storage Pool
 #
 # @lockRenewalIntervalSec:  The number of seconds to wait before renewing lease
-#                           (Should be less than @leaseTimeSec).  0 selects the
+#                           (Should be less than @leaseTimeSec). 0 selects the
 #                           default value.
 #
 # @leaseTimeSec:            The maximum number of seconds that the leaseholder
-#                           may retain the lease without renewing it.  0 selects
+#                           may retain the lease without renewing it. 0 selects
 #                           the default value.
 #
 # @ioOpTimeoutSec:          The maximum number of seconds that an I/O operation
-#                           may take to complete.  0 selects the default value.
+#                           may take to complete. 0 selects the default value.
 #
 # @leaseRetries:            The number of times to attempt lease renewal before
 #                           failure.  0 selects the default value.
@@ -5262,8 +5292,8 @@
 #
 # @scsiKey:        Deprecated. Retained here to support older versions
 #
-# @remove:         #optional If True, remove the Storage Pool after it is disconnected
-#                  Not used by vdsm and set to false
+# @remove:         #optional If True, remove the Storage Pool after it is
+#                  disconnected. Not used by vdsm and set to false
 #
 # Since: 4.10.0
 ##
@@ -5355,7 +5385,8 @@
 ##
 # @StoragePool.getBackedUpVmsInfo:
 #
-# Get information about backed-up virtual machines from a Backup Storage Domain.
+# Get information about backed-up virtual machines from a Backup Storage
+# Domain.
 #
 # @storagepoolID:    The UUID of the Storage Pool
 #
@@ -5567,7 +5598,8 @@
 ##
 # @StoragePoolDomainInfoMap:
 #
-# A mapping of active Storage Domain information indexed by Storage Domain UUID.
+# A mapping of active Storage Domain information indexed by Storage Domain
+# UUID.
 #
 # Since: 4.10.0
 ##
@@ -5667,18 +5699,18 @@
 # @domainDict:              Storage Domain statuses to be restored
 #
 # @lockRenewalIntervalSec:  The number of seconds to wait before renewing lease
-#                           (Should be less than @leaseTimeSec).  0 selects the
+#                           (Should be less than @leaseTimeSec). 0 selects the
 #                           default value.
 #
 # @leaseTimeSec:            The maximum number of seconds that the leaseholder
-#                           may retain the lease without renewing it.  0 selects
+#                           may retain the lease without renewing it. 0 selects
 #                           the default value.
 #
 # @ioOpTimeoutSec:          The maximum number of seconds that an I/O operation
 #                           may take to complete.  0 selects the default value.
 #
 # @leaseRetries:            The number of times to attempt lease renewal before
-#                           failure.  0 selects the default value.
+#                           failure. 0 selects the default value.
 #
 # Since: 4.10.0
 ##
@@ -5733,9 +5765,11 @@
 #
 # @enableScsiFencing:  This parameter is not used
 #
-# @maxHostID:          #optional The maximum number of hosts that could be in the cluster
+# @maxHostID:          #optional The maximum number of hosts that could be in
+#                      the cluster
 #
-# @domVersion:         #optional The expected Storage Domain version of the master domain
+# @domVersion:         #optional The expected Storage Domain version of the
+#                      master domain
 #
 # Returns:
 # A task UUID
@@ -5837,7 +5871,8 @@
 #
 # Notes:  Deprecated since 4.10.0.  Returns 0 for all connections.
 ##
-{'command': {'class': 'StoragePool', 'name': 'validateStorageServerConnection'},
+{'command': {'class': 'StoragePool',
+             'name': 'validateStorageServerConnection'},
  'data': {'storagepoolID': 'UUID', 'domainType': 'StorageDomainType',
           'connectionParams': ['StorageServerConnectionValidateParams']},
  'returns': ['StorageServerConnectionValidateStatus']}
@@ -5868,7 +5903,8 @@
 #
 # @vmList:           A list of virtual machine definitions to store
 #
-# @storagedomainID:  #optional The Storage Domain to use for storing the VM definitions
+# @storagedomainID:  #optional The Storage Domain to use for storing the VM
+#                    definitions
 #
 # Since: 4.10.0
 ##
@@ -5890,9 +5926,10 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'removeVM'},
- 'data': {'storagepoolID': 'UUID', 'vmUUID': 'UUID', '*storagedomainID': 'UUID'}}
+ 'data': {'storagepoolID': 'UUID', 'vmUUID': 'UUID',
+          '*storagedomainID': 'UUID'}}
 
-## Category: @Task #############################################################
+## Category: @Task ############################################################
 ##
 # @Task:
 #
@@ -5970,7 +6007,7 @@
 {'command': {'class': 'Task', 'name': 'stop'},
  'data': {'taskID': 'UUID'}}
 
-## Category: @VM ###############################################################
+## Category: @VM ##############################################################
 ##
 # @VM:
 #
@@ -6423,11 +6460,14 @@
 # Guest memory balloon information. Values are present only when the
 # balloon is enabled and ready.
 #
-# @balloon_max:  #optional The maximum amount of memory available to the guest (in KiB)
+# @balloon_max:    #optional The maximum amount of memory available to the
+#                  guest (in KiB)
 #
-# @balloon_cur: #optional The current amount of memory available to the guest (in KiB)
+# @balloon_cur:    #optional The current amount of memory available to the
+#                  guest (in KiB)
 #
-# @balloon_min:  #optional The minimum amount of memory guaranteed to the guest (in KiB)
+# @balloon_min:    #optional The minimum amount of memory guaranteed to the
+#                  guest (in KiB)
 #
 # @balloon_target: #optional The amount of memory requested (in KiB)
 #
@@ -6699,7 +6739,8 @@
 #
 # @netIfaces:          Network device address info as reported by the agent
 #
-# @watchdogEvent:      #optional Information about the most recent watchdog event
+# @watchdogEvent:      #optional Information about the most recent watchdog
+#                      event
 #
 # @guestFQDN:          Fully qualified domain name of the guest OS. (Reported
 #                      by the guest agent)
@@ -6708,8 +6749,8 @@
 #                      Migration, when there is one active.
 #                      (new in version 4.15.0)
 #
-# @guestCPUCount:         The number of CPU cores are visible as online on the
-#                         guest OS. This value is -1 if not supported to report
+# @guestCPUCount:      The number of CPU cores are visible as online on the
+#                      guest OS. This value is -1 if not supported to report
 #
 # @displayInfo:        Display and graphics device informations.
 #                      (new in version 4.15.0)
@@ -6717,8 +6758,9 @@
 # @vmJobs:             #optional Info about active vm jobs
 #                      (new in version 4.15.0)
 #
-# @vNodeRuntimeInfo:   #optional Information about the vm numa node runtime pinning
-#                      to host numa node. (new in version 4.15.0)
+# @vNodeRuntimeInfo:   #optional Information about the vm numa node runtime
+#                      pinning to host numa node. (new in version 4.15.0)
+#
 # @vcpuQuota:          #optional Setting for libvirt cpu_quota.
 #                      (new in version 4.15.0)
 #
@@ -6794,7 +6836,8 @@
 #
 # Indicates where VM hibernation state and metadata should be stored.
 # The format is:
-# <domainUUID>,<poolUUID>,<stateImageUUID>,<stateVolumeUUID>,<metaImageUUID>,<metaVolumeUUID>
+# <domainUUID>,<poolUUID>,<stateImageUUID>,<stateVolumeUUID>,<metaImageUUID>,
+# <metaVolumeUUID>
 #
 # Since: 4.10.0
 ##
@@ -7038,30 +7081,32 @@
 #
 # Parameters for @VM.migrate.
 #
-# @vmId:       The UUID of the virtual machine to migrate
+# @vmId:          The UUID of the virtual machine to migrate
 #
-# @dst:        The destination host in <host>[:<port>] format.  The port is
-#              optional and should usually be omitted.
+# @dst:           The destination host in <host>[:<port>] format.  The port is
+#                 optional and should usually be omitted.
 #
-# @dstparams:  Used only by the hibernate API.  Ignored for @remote migration
+# @dstparams:     Used only by the hibernate API.  Ignored for @remote
+#                 migration
 #
-# @mode:       #optional The migration mode.  Callers of this API should use @remote.  For
-#              @file migration use @VM.hibernate.
+# @mode:          #optional The migration mode.  Callers of this API should use
+#                 @remote.  For @file migration use @VM.hibernate.
 #
-# @method:     #optional
+# @method:        #optional
 #
-# @tunneled:   #optional use libvirt's tunneled migration. default it False.
+# @tunneled:      #optional use libvirt's tunneled migration. default it False.
 #
 # @abortOnError:  #optional Abort migration on I/O errors and refuse to migrate
 #                 VMs, paused due to EIO
 #
-# @dstqemu:    #optional The destination's host address dedicated for migration.
+# @dstqemu:       #optional The destination's host address dedicated for
+#                 migration.
 #
-# @compressed: #optional Compress repeated pages during live migration.
-#              (new in version 4.17.0)
+# @compressed:    #optional Compress repeated pages during live migration.
+#                 (new in version 4.17.0)
 #
-# @autoConverge: #optional Force convergence during live migration.
-#                (new in version 4.17.0)
+# @autoConverge:  #optional Force convergence during live migration.
+#                 (new in version 4.17.0)
 #
 # Since: 4.10.0
 ##
@@ -7256,8 +7301,8 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'shutdown'},
- 'data': {'vmID': 'UUID', '*delay': 'int', '*message': 'str', '*reboot': 'bool',
-          '*timeout': 'int', '*force': 'bool'}}
+ 'data': {'vmID': 'UUID', '*delay': 'int', '*message': 'str',
+          '*reboot': 'bool', '*timeout': 'int', '*force': 'bool'}}
 
 ##
 # @SnapshotVolumeDriveInfo:
@@ -7447,7 +7492,7 @@
           'topVolUUID': 'UUID', '*bandwidth': 'int', '*jobUUID': 'UUID'}}
 
 
-## Category: @Volume ###########################################################
+## Category: @Volume ##########################################################
 ##
 # @Volume:
 #

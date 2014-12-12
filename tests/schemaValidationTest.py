@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import inspect
+import os
 
 import API
 try:
@@ -44,6 +45,23 @@ class SchemaValidation(TestCaseBase):
         if _glusterEnabled:
             apiobj = self._get_api('gapi')
             self._validate(apiobj)
+
+    def test_line_length(self):
+        with open(self._get_path()) as f:
+            longer = []
+            for i, line in enumerate(f):
+                if len(line) > 80:
+                    longer.append('line [%d] %s' % (i + 1, line))
+
+            if len(longer) > 0:
+                raise AssertionError('Lines longer than 80\n%s'
+                                     % '\n'.join(longer))
+
+    def _get_path(self):
+        testPath = os.path.realpath(__file__)
+        dirName = os.path.split(testPath)[0]
+        return os.path.join(
+            dirName, '..', 'vdsm', 'rpc', 'vdsmapi-schema.json')
 
     def _validate(self, api_mod):
         bridge = Bridge.DynamicBridge()
