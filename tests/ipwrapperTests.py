@@ -18,6 +18,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from time import sleep
+
 from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
 from vdsm.ipwrapper import Monitor
@@ -156,6 +158,11 @@ class TestMonitor(TestCaseBase):
         tcTests._checkDependencies()
         mon = Monitor()
         mon.start()
+        # FIXME: sometimes mon.start() is returned before properly started,
+        # in this case, iterator doesn't catch the first created bridge and
+        # stuck forever. Remove this sleep() when new netlink-based event
+        # monitor will be available.
+        sleep(0.5)
         iterator = iter(mon)
 
         bridge.addDevice()  # Generate an event to avoid blocking
