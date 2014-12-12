@@ -72,6 +72,11 @@ class _Bridge(_Interface):
 
     def delDevice(self):
         self._ifDown()
+        # FIXME: Sometimes _ifDown() is returned before the device is DOWN,
+        # in this case we are not able to delete UP device and delbr
+        # function ends with an error. We could prevent this in the future,
+        # when netlink-based event monitor will be available.
+        time.sleep(0.5)
         check_call([EXT_BRCTL, 'delbr', self.devName])
 
     def addIf(self, dev):
