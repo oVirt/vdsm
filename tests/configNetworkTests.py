@@ -44,7 +44,7 @@ class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-            api.addNetwork(netName, **opts)
+            api._addNetwork(netName, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
