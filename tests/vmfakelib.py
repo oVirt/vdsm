@@ -201,12 +201,18 @@ def VM(params=None, devices=None, runCpu=False,
             yield fake
 
 
-class SuperVdsm:
-    def __init__(self):
-        pass
+class SuperVdsm(object):
+    def __init__(self, exception=None, pid=42):
+        self._exception = exception
+        self._pid = pid
 
     def getProxy(self):
         return self
+
+    def getVmPid(self, vmname):
+        if self._exception:
+            raise self._exception()
+        return self._pid
 
     def getVcpuNumaMemoryMapping(self, vmName):
         return {0: [0, 1], 1: [0, 1], 2: [0, 1], 3: [0, 1]}

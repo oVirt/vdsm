@@ -2176,7 +2176,9 @@ class Vm(object):
             self.conf['pauseCode'] = self._initTimePauseCode
             if self._initTimePauseCode == 'ENOSPC':
                 self.cont()
-        self.conf['pid'] = self._getPid()
+
+        if not self.recovering or 'pid' not in self.conf:
+            self.conf['pid'] = str(self._getPid())
 
         nice = int(self.conf.get('nice', '0'))
         nice = max(min(nice, 19), 0)
@@ -3869,13 +3871,16 @@ class Vm(object):
                     if dev['type'] == hwclass.GRAPHICS))
 
     def _getPid(self):
-        pid = '0'
         try:
             vmName = self.conf['vmName'].encode('utf-8')
-            pid = supervdsm.getProxy().getVmPid(vmName)
-        except Exception:
-            pass
-        return pid
+            pid = int(supervdsm.getProxy().getVmPid(vmName))
+        except (IOError, ValueError):
+            self.log.error('cannot read pid')
+            raise
+        else:
+            if pid <= 0:
+                raise ValueError('read invalid pid: %i' % pid)
+            return pid
 
     def _updateDomainDescriptor(self):
         domainXML = self._dom.XMLDesc(0)
