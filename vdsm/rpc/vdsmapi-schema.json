@@ -3859,6 +3859,12 @@
 # @totalvfs:        #optional Number of available virtual functions
 #                   (if sriov capable)
 #
+# @physfn:          #optional Name of the physical function that this
+#                   VF belongs to. Also reported for physical function
+#                   itself, therefore in order to detect PF one must
+#                   consider the tuple (totalvfs, physfn).
+#                   (if sriov capable)
+#
 # Since: 4.17.0
 ##
 {'type': 'HostDeviceParams',

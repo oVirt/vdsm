@@ -218,6 +218,63 @@ target0:0:0/0:0:0:0</path>
     </device>
     """]
 
+_SRIOV_PF_XML = """
+    <device>
+    <name>pci_0000_05_00_1</name>
+    <path>/sys/devices/pci0000:00/0000:00:09.0/0000:05:00.1</path>
+    <parent>pci_0000_00_09_0</parent>
+    <driver>
+        <name>igb</name>
+    </driver>
+    <capability type='pci'>
+        <domain>0</domain>
+        <bus>5</bus>
+        <slot>0</slot>
+        <function>1</function>
+        <product id='0x10c9'>82576 Gigabit Network Connection</product>
+        <vendor id='0x8086'>Intel Corporation</vendor>
+        <capability type='virt_functions'>
+        <address domain='0x0000' bus='0x05' slot='0x10' function='0x1'/>
+        <address domain='0x0000' bus='0x05' slot='0x10' function='0x3'/>
+        <address domain='0x0000' bus='0x05' slot='0x10' function='0x5'/>
+        <address domain='0x0000' bus='0x05' slot='0x10' function='0x7'/>
+        <address domain='0x0000' bus='0x05' slot='0x11' function='0x1'/>
+        <address domain='0x0000' bus='0x05' slot='0x11' function='0x3'/>
+        <address domain='0x0000' bus='0x05' slot='0x11' function='0x5'/>
+        </capability>
+        <iommuGroup number='15'>
+        <address domain='0x0000' bus='0x05' slot='0x00' function='0x0'/>
+        <address domain='0x0000' bus='0x05' slot='0x00' function='0x1'/>
+        </iommuGroup>
+    </capability>
+    </device>
+    """
+
+_SRIOV_VF_XML = """
+    <device>
+    <name>pci_0000_05_10_7</name>
+    <path>/sys/devices/pci0000:00/0000:00:09.0/0000:05:10.7</path>
+    <parent>pci_0000_00_09_0</parent>
+    <driver>
+        <name>igbvf</name>
+    </driver>
+    <capability type='pci'>
+        <domain>0</domain>
+        <bus>5</bus>
+        <slot>16</slot>
+        <function>7</function>
+        <product id='0x10ca'>82576 Virtual Function</product>
+        <vendor id='0x8086'>Intel Corporation</vendor>
+        <capability type='phys_function'>
+        <address domain='0x0000' bus='0x05' slot='0x00' function='0x1'/>
+        </capability>
+        <iommuGroup number='25'>
+        <address domain='0x0000' bus='0x05' slot='0x10' function='0x7'/>
+        </iommuGroup>
+    </capability>
+    </device>
+    """
+
 ADDITIONAL_DEVICE = """
     <device>
         <name>pci_0000_00_09_0</name>
@@ -286,7 +343,6 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'product_id': '0x1502',
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
-                                        'totalvfs': 7,
                                         'capability': 'pci'},
                   u'usb_1_1_4': {'product': 'Broadcom Bluetooth Device',
                                  'vendor': 'Broadcom Corp',
@@ -311,6 +367,25 @@ ADDITIONAL_DEVICE_PARSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                             'parent': 'computer',
                             'iommu_group': '4',
                             'vendor_id': '0x8086', 'capability': 'pci'}
+
+_SRIOV_PF_PARSED = {'capability': 'pci',
+                    'iommu_group': '15',
+                    'parent': 'pci_0000_00_09_0',
+                    'physfn': 'pci_0000_05_10_1',
+                    'product': '82576 Gigabit Network Connection',
+                    'product_id': '0x10c9',
+                    'totalvfs': 7,
+                    'vendor': 'Intel Corporation',
+                    'vendor_id': '0x8086'}
+
+_SRIOV_VF_PARSED = {'capability': 'pci',
+                    'iommu_group': '25',
+                    'parent': 'pci_0000_00_09_0',
+                    'physfn': 'pci_0000_05_00_1',
+                    'product': '82576 Virtual Function',
+                    'product_id': '0x10ca',
+                    'vendor': 'Intel Corporation',
+                    'vendor_id': '0x8086'}
 
 DEVICE_TO_VM_MAPPING = {'usb_1_1_4': 'vmId1', 'pci_0000_00_19_0': 'vmId2'}
 
@@ -375,7 +450,7 @@ class Connection(fake.Connection):
 
 
 def _fake_totalvfs(device_name):
-    if device_name == 'pci_0000_00_19_0':
+    if device_name == 'pci_0000_05_00_1':
         return 7
 
     raise IOError
@@ -390,6 +465,16 @@ class HostdevTests(TestCaseBase):
         deviceXML = hostdev._parse_device_params(ADDITIONAL_DEVICE)
 
         self.assertEquals(ADDITIONAL_DEVICE_PARSED, deviceXML)
+
+    def testParseSRIOV_PFDeviceParams(self):
+        deviceXML = hostdev._parse_device_params(_SRIOV_PF_XML)
+
+        self.assertEquals(_SRIOV_PF_PARSED, deviceXML)
+
+    def testParseSRIOV_VFDeviceParams(self):
+        deviceXML = hostdev._parse_device_params(_SRIOV_PF_XML)
+
+        self.assertEquals(_SRIOV_PF_PARSED, deviceXML)
 
     def testGetDevicesFromLibvirt(self):
         libvirt_devices = hostdev._get_devices_from_libvirt()

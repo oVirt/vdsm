@@ -30,6 +30,18 @@ def _name_to_pci_path(device_name):
     return device_name[4:].replace('_', '.').replace('.', ':', 2)
 
 
+def _pci_address_to_name(domain, bus, slot, function):
+    """
+    Convert 4 attributes that identify the pci device on the bus to
+    libvirt's pci name: pci_${domain}_${bus}_${slot}_${function}.
+    The first 2 characters are hex notation that is unwanted in the name.
+    """
+    return 'pci_{}_{}_{}_{}'.format(domain[2:],
+                                    bus[2:],
+                                    slot[2:],
+                                    function[2:])
+
+
 def _sriov_totalvfs(device_name):
     with open('/sys/bus/pci/devices/{}/sriov_totalvfs'.format(
             _name_to_pci_path(device_name))) as f:
@@ -58,6 +70,11 @@ def _parse_device_params(device_xml):
                 params[element + '_id'] = elementXML.attrib['id']
             if elementXML.text:
                 params[element] = elementXML.text
+
+    physfn = caps.find('capability')
+    if physfn is not None and params['capability'] == 'pci':
+        address = physfn.find('address')
+        params['physfn'] = _pci_address_to_name(**address.attrib)
 
     iommu_group = caps.find('iommuGroup')
     if iommu_group is not None:
