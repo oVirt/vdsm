@@ -36,7 +36,7 @@ import re
 
 from vdsm import utils
 from vdsm import netinfo
-from vdsm.ipwrapper import getLinks
+from vdsm import ipwrapper
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 
 import caps
@@ -229,6 +229,20 @@ def getBootTime():
     raise ValueError('Boot time not present')
 
 
+def _get_interfaces_and_samples():
+    links_and_samples = {}
+    for link in ipwrapper.getLinks():
+        try:
+            links_and_samples[link.name] = InterfaceSample(link)
+        except IOError as e:
+            # this handles a race condition where the device is now no
+            # longer exists and netlink fails to fetch it
+            if e.errno == errno.ENODEV:
+                continue
+            raise
+    return links_and_samples
+
+
 class HostSample(TimedSample):
     """
     A sample of host-related statistics.
@@ -257,8 +271,7 @@ class HostSample(TimedSample):
         :type pid: int
         """
         TimedSample.__init__(self)
-        self.interfaces = dict(
-            (link.name, InterfaceSample(link)) for link in getLinks())
+        self.interfaces = _get_interfaces_and_samples()
         self.pidcpu = PidCpuSample(pid)
         self.totcpu = TotalCpuSample()
         meminfo = utils.readMemInfo()
