@@ -212,7 +212,7 @@ Requires: fence-agents
 Requires: kernel >= 2.6.32-279.9.1
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: policycoreutils >= 2.0.83-19.30
-Requires: policycoreutils-python >= 2.0.83-19.47
+Requires: policycoreutils-python >= 2.0.83-19.47.el6_6.1
 Requires: selinux-policy-targeted >= 3.7.19-260.el6_6.1
 Requires: lvm2 >= 2.02.100-5
 Requires: logrotate < 3.8.0
