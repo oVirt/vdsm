@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from contextlib import contextmanager
 import itertools
 import os
 import tempfile
@@ -28,10 +29,11 @@ import threading
 from vdsm import ipwrapper
 import virt.sampling as sampling
 
-from testValidation import brokentest
+from testValidation import brokentest, ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
+from functional import dummy
 
 
 class SamplingTests(TestCaseBase):
@@ -109,13 +111,66 @@ procs_blocked 0
             self.assertEquals(sampling.getBootTime(), 1395249141)
 
 
+@contextmanager
+def dummy_if():
+    dummy_name = dummy.create()
+    try:
+        yield dummy_name
+    finally:
+        dummy.remove(dummy_name)
+
+
+@contextmanager
+def vlan(name, link, vlan_id):
+    ipwrapper.linkAdd(name, 'vlan', link=link, args=['id', str(vlan_id)])
+    try:
+        yield
+    finally:
+        try:
+            ipwrapper.linkDel(name)
+        except ipwrapper.IPRoute2Error:
+            # faultyGetLinks is expected to have already removed the vlan
+            # device.
+            pass
+
+
 class InterfaceSampleTests(TestCaseBase):
+    def setUp(self):
+        self.NEW_VLAN = 'vlan_%s' % (random.randint(0, 1000))
+
     def testDiff(self):
         lo = ipwrapper.getLink('lo')
         s0 = sampling.InterfaceSample(lo)
         s1 = sampling.InterfaceSample(lo)
         s1.operstate = 'x'
         self.assertEquals('operstate:x', s1.connlog_diff(s0))
+
+    @ValidateRunningAsRoot
+    def testHostSampleReportsNewInterface(self):
+        hs_before = sampling.HostSample(os.getpid())
+        interfaces_before = set(hs_before.interfaces.iterkeys())
+
+        with dummy_if() as dummy_name:
+            hs_after = sampling.HostSample(os.getpid())
+            interfaces_after = set(hs_after.interfaces.iterkeys())
+            interfaces_diff = interfaces_after - interfaces_before
+            self.assertEqual(interfaces_diff, set([dummy_name]))
+
+    @ValidateRunningAsRoot
+    def testHostSampleHandlesDisappearingVlanInterfaces(self):
+        original_getLinks = ipwrapper.getLinks
+
+        def faultyGetLinks():
+            all_links = list(original_getLinks())
+            ipwrapper.linkDel(self.NEW_VLAN)
+            return iter(all_links)
+
+        with MonkeyPatchScope(
+                [(ipwrapper, 'getLinks', faultyGetLinks)]):
+            with dummy_if() as dummy_name:
+                with vlan(self.NEW_VLAN, dummy_name, 999):
+                    hs = sampling.HostSample(os.getpid())
+                    self.assertNotIn(self.NEW_VLAN, hs.interfaces)
 
 
 @expandPermutations
