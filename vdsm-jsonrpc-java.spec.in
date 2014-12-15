@@ -183,6 +183,9 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
+* Mon Dec 15 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.13
+- handling of network events for multipe connection
+
 * Wed Dec 10 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.12
 - wait on OS buff to empty
 
