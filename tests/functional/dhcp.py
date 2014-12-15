@@ -45,7 +45,7 @@ class Dnsmasq():
     def __init__(self):
         self.proc = None
 
-    def start(self, interface, dhcpRangeFrom, dhcpRangeTo, router=None):
+    def start(self, interface, dhcp_range_from, dhcp_range_to, router=None):
         # -p 0                      don't act as a DNS server
         # --dhcp-option=3,<router>  advertise a specific gateway (or None)
         # --dhcp-option=6           don't reply with any DNS servers
@@ -53,7 +53,7 @@ class Dnsmasq():
         self.proc = execCmd([
             _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
             '-p', '0',
-            '--dhcp-range={0},{1},2m'.format(dhcpRangeFrom, dhcpRangeTo),
+            '--dhcp-range={0},{1},2m'.format(dhcp_range_from, dhcp_range_to),
             '--dhcp-option=3' + (',{0}'.format(router) if router else ''),
             '--dhcp-option=6',
             '-i', interface, '-I', 'lo', '-d',

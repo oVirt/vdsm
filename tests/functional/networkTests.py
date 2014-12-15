@@ -1740,8 +1740,9 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(devs[right]['dhcpv4'], dhcpv4)
                     device_name = right
 
-                ip_addr = test_net['addr']
-                self.assertSourceRoutingConfiguration(device_name, ip_addr)
+                if dhcpv4:
+                    ip_addr = test_net['addr']
+                    self.assertSourceRoutingConfiguration(device_name, ip_addr)
 
                 network = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
@@ -1749,12 +1750,13 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkDoesntExist(NETWORK_NAME)
 
                 # Assert that routes and rules don't exist
-                routes = self.getSourceRoutingRoutes(device_name, ip_addr)
-                for route in routes:
-                    self.assertRouteDoesNotExist(route)
-                rules = self.getSourceRoutingRules(device_name, ip_addr)
-                for rule in rules:
-                    self.assertRuleDoesNotExist(rule)
+                if dhcpv4:
+                    routes = self.getSourceRoutingRoutes(device_name, ip_addr)
+                    for route in routes:
+                        self.assertRouteDoesNotExist(route)
+                    rules = self.getSourceRoutingRules(device_name, ip_addr)
+                    for rule in rules:
+                        self.assertRuleDoesNotExist(rule)
 
     @permutations([['default'], ['local']])
     @cleanupNet
