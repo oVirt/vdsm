@@ -42,7 +42,7 @@ if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
 
 
-class InterfaceSample:
+class InterfaceSample(object):
     """
     A network interface sample.
 
@@ -114,7 +114,7 @@ class InterfaceSample:
             if getattr(self, attr) != getattr(other, attr))
 
 
-class TotalCpuSample:
+class TotalCpuSample(object):
     """
     A sample of total CPU consumption.
 
@@ -127,7 +127,7 @@ class TotalCpuSample:
         self.user += userNice
 
 
-class CpuCoreSample:
+class CpuCoreSample(object):
     """
     A sample of the CPU consumption of each core
 
@@ -156,7 +156,7 @@ class CpuCoreSample:
             return self.coresSample[strCoreId]
 
 
-class NumaNodeMemorySample:
+class NumaNodeMemorySample(object):
     """
     A sample of the memory stats of each numa node
 
@@ -177,7 +177,7 @@ class NumaNodeMemorySample:
             self.nodesMemSample[nodeIndex] = nodeMemSample
 
 
-class PidCpuSample:
+class PidCpuSample(object):
     """
     A sample of the CPU consumption of a process.
 
@@ -189,7 +189,7 @@ class PidCpuSample:
                 map(int, stat.read().split()[13:15])
 
 
-class TimedSample:
+class TimedSample(object):
     def __init__(self):
         self.timestamp = time.time()
 
@@ -242,7 +242,7 @@ class HostSample(TimedSample):
         :param pid: The PID of this vdsm host.
         :type pid: int
         """
-        TimedSample.__init__(self)
+        super(HostSample, self).__init__()
         self.interfaces = dict(
             (link.name, InterfaceSample(link)) for link in getLinks())
         self.pidcpu = PidCpuSample(pid)
