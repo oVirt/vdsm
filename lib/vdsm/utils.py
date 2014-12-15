@@ -32,6 +32,7 @@ from fnmatch import fnmatch
 from StringIO import StringIO
 from weakref import proxy
 from .compat import pickle
+import distutils.spawn
 import errno
 import fcntl
 import functools
@@ -876,10 +877,12 @@ def validateMinimalKeySet(dictionary, reqParams):
 
 
 class CommandPath(object):
-    def __init__(self, name, *args):
+    def __init__(self, name, *args, **kwargs):
         self.name = name
         self.paths = args
         self._cmd = None
+        self._search_path = kwargs.get('search_path', True)
+
 
     @property
     def cmd(self):
@@ -889,8 +892,12 @@ class CommandPath(object):
                     self._cmd = path
                     break
             else:
-                raise OSError(os.errno.ENOENT,
-                              os.strerror(os.errno.ENOENT) + ': ' + self.name)
+                if self._search_path:
+                    self._cmd = distutils.spawn.find_executable(self.name)
+                if self._cmd is None:
+                    raise OSError(os.errno.ENOENT,
+                                  os.strerror(os.errno.ENOENT) + ': ' +
+                                              self.name)
         return self._cmd
 
     def __repr__(self):

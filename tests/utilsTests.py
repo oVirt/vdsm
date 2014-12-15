@@ -121,6 +121,13 @@ class CommandPathTests(TestCaseBase):
         cp = utils.CommandPath('sh', 'utter nonsense', '/bin/sh')
         self.assertEquals(cp.cmd, '/bin/sh')
 
+    def testExistingNotInPaths(self):
+        """Tests if CommandPath can find the executable like the 'which' unix
+        tool"""
+        cp = utils.CommandPath('sh', 'utter nonsense')
+        _, stdout, _ = utils.execCmd(['which', 'sh'])
+        self.assertIn(cp.cmd, stdout)
+
     def testMissing(self):
         NAME = 'nonsense'
         try:
