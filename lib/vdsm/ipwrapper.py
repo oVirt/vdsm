@@ -357,6 +357,10 @@ class Route(object):
         textual representation.
         """
         route = text.split()
+        try:
+            route = route[:route.index('\\')]
+        except ValueError:
+            pass
 
         flags = {}
         while route[0] in _ROUTE_FLAGS:
@@ -541,7 +545,7 @@ def routeShowGateways(table):
 
 
 def routeShowTable(table):
-    command = [_IP_BINARY.cmd, 'route', 'show', 'table', table]
+    command = [_IP_BINARY.cmd, '-oneline', 'route', 'show', 'table', table]
     return _execCmd(command)
 
 

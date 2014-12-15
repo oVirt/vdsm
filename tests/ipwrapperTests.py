@@ -53,6 +53,8 @@ class TestIpwrapper(TestCaseBase):
             'broadcast 240.0.0.255 dev veth_23  table local  '
             'proto kernel  scope link  src 240.0.0.1':
             ('240.0.0.255', None, 'veth_23', 'local'),
+            'ff02::2 dev veth_23  metric 0 \    cache':
+            ('ff02::2', None, 'veth_23', None),
             }
 
         for text, attributes in good_routes.iteritems():
