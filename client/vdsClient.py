@@ -545,6 +545,12 @@ class service:
     def do_hostdevListByCaps(self, args):
         return self.ExecAndExit(self.s.hostdevListByCaps(args))
 
+    def do_hostdevChangeNumvfs(self, args):
+        device_name = args[0]
+        numvfs = args[1]
+        return self.ExecAndExit(self.s.hostdevChangeNumvfs(device_name,
+                                                           numvfs))
+
     def desktopLogin(self, args):
         vmId, domain, user, password = tuple(args[:4])
         if len(args) > 4:
@@ -2189,6 +2195,11 @@ if __name__ == '__main__':
                                'capability. Leave caps empty to list all '
                                'devices.'
                                )),
+        'hostdevChangeNumvfs': (serv.do_hostdevChangeNumvfs,
+                                ('<device_name>, <numvfs>',
+                                 'Change number of virtual functions for '
+                                 'given physical function.'
+                                 )),
         'getVGList': (serv.getVGList,
                       ('storageType',
                        'List of all VGs.'

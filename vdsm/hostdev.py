@@ -198,3 +198,7 @@ def reattach_detachable(device_name):
 
     if device_params['capability'] in _DETACH_REQUIRING_CAPS:
         libvirt_device.reAttach()
+
+
+def change_numvfs(device_name, numvfs):
+    supervdsm.getProxy().changeNumvfs(_name_to_pci_path(device_name), numvfs)

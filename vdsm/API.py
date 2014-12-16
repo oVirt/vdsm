@@ -1313,6 +1313,10 @@ class Global(APIBase):
         devices = hostdev.list_by_caps(self._cif.vmContainer, caps)
         return {'status': doneCode, 'deviceList': devices}
 
+    def hostdevChangeNumvfs(self, device_name, numvfs):
+        hostdev.change_numvfs(device_name, numvfs)
+        return {'status': doneCode}
+
     def getStats(self):
         """
         Report host statistics.

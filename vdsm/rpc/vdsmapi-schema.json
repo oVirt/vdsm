@@ -3933,6 +3933,22 @@
  'returns': ['HostDevices']}
 
 ##
+# @Host.hostdevChangeNumvfs:
+#
+# Change number of VFs for specified PF
+#
+# @deviceName:      Libvirt name of the device (specified using
+#                   underscores - pci_0000_05_00_0 for example)
+#
+# @numvfs:          Number of requested VFs. Should be smaller or
+#                   equal to totalvfs of PF.
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'hostdevChangeNumvfs'},
+ 'data': {'deviceName': 'str', 'numvfs': 'uint'}}
+
+##
 # @Host.ping:
 #
 # Test connectivity to vdsm.
