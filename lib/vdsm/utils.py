@@ -883,7 +883,6 @@ class CommandPath(object):
         self._cmd = None
         self._search_path = kwargs.get('search_path', True)
 
-
     @property
     def cmd(self):
         if not self._cmd:
@@ -897,7 +896,7 @@ class CommandPath(object):
                 if self._cmd is None:
                     raise OSError(os.errno.ENOENT,
                                   os.strerror(os.errno.ENOENT) + ': ' +
-                                              self.name)
+                                  self.name)
         return self._cmd
 
     def __repr__(self):
