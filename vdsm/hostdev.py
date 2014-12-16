@@ -21,9 +21,10 @@
 import xml.etree.ElementTree as etree
 
 from vdsm import libvirtconnection
-
+import supervdsm
 
 _DETACH_REQUIRING_CAPS = ('usb_device', 'pci')
+_UDEV_REQUIRING_CAPS = ('pci')
 
 
 def _name_to_pci_path(device_name):
@@ -174,6 +175,12 @@ def list_by_caps(vmContainer, caps=None):
 def detach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
 
+    iommu_group = device_params['iommu_group']
+
+    if device_params['capability'] in _UDEV_REQUIRING_CAPS:
+        supervdsm.getProxy().appropriateIommuGroup(iommu_group)
+        supervdsm.getProxy().udevTrigger(iommu_group)
+
     if device_params['capability'] in _DETACH_REQUIRING_CAPS:
         libvirt_device.detachFlags(None)
 
@@ -182,6 +189,12 @@ def detach_detachable(device_name):
 
 def reattach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
+
+    iommu_group = device_params['iommu_group']
+
+    if device_params['capability'] in _UDEV_REQUIRING_CAPS:
+        supervdsm.getProxy().rmAppropriateIommuGroup(iommu_group)
+        supervdsm.getProxy().udevTrigger(iommu_group)
 
     if device_params['capability'] in _DETACH_REQUIRING_CAPS:
         libvirt_device.reAttach()

@@ -69,7 +69,8 @@ from storage import hba
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
-    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER
+    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER, \
+    QEMU_PROCESS_USER, QEMU_PROCESS_GROUP
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
 import mkimage
@@ -79,6 +80,9 @@ _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
 _UDEV_RULE_FILE_EXT = ".rules"
 _UDEV_RULE_FILE_NAME = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + '%s-%s' +
+    _UDEV_RULE_FILE_EXT)
+_UDEV_RULE_FILE_NAME_VFIO = os.path.join(
+    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "iommu_group_%s" +
     _UDEV_RULE_FILE_EXT)
 
 RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
@@ -284,6 +288,33 @@ class _SuperVdsm(object):
             except OSError:
                 fails.append(r)
         return fails
+
+    @logDecorator
+    def appropriateIommuGroup(self, iommu_group):
+        """
+        Create udev rule in /etc/udev/rules.d/ to change ownership
+        of /dev/vfio/$iommu_group to qemu:qemu. This method should be called
+        when detaching a device from the host.
+        """
+        ruleFile = _UDEV_RULE_FILE_NAME_VFIO % iommu_group
+        rule = ('KERNEL=="{}", SUBSYSTEM=="vfio" RUN+="{} {}:{} '
+                '/dev/vfio/{}"').format(iommu_group, EXT_CHOWN,
+                                        QEMU_PROCESS_USER, QEMU_PROCESS_GROUP,
+                                        iommu_group)
+        with open(ruleFile, "w") as rf:
+            self.log.debug("Creating rule %s: %r", ruleFile, rule)
+            rf.write(rule)
+
+    @logDecorator
+    def rmAppropriateIommuGroup(self, iommu_group):
+        """
+        Remove udev rule in /etc/udev/rules.d/ created by
+        vfioAppropriateDevice.
+        """
+        rule = os.path.join(_UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX +
+                            "iommu_group_" + iommu_group + _UDEV_RULE_FILE_EXT)
+        self.log.debug("Removing rule %s", rule)
+        os.remove(rule)
 
     @logDecorator
     def ksmTune(self, tuningParams):
