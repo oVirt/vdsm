@@ -328,7 +328,7 @@ def gethwaddr(dev):
 
 
 def getVlanBondingNic(bridge):
-    """Return the (vlan, bonding, nics) tupple that belongs to bridge."""
+    """Return the (vlan, bonding, nics) tuple that belongs to bridge."""
 
     if bridge not in bridges():
         raise ValueError('unknown bridge %s' % bridge)
@@ -336,8 +336,8 @@ def getVlanBondingNic(bridge):
     nics = []
     for iface in ports(bridge):
         if iface in vlans():
-            iface = getVlanDevice(iface)
             vlan = getVlanID(iface)
+            iface = getVlanDevice(iface)
         if iface in bondings():
             bonding = iface
             nics = slaves(iface)
