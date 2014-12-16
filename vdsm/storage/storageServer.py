@@ -376,7 +376,7 @@ class IscsiConnection(object):
     def connect(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
 
-    def match(self, session):
+    def _match(self, session):
         target = session.target
         portal = target.portal
         iface = session.iface
@@ -417,14 +417,14 @@ class IscsiConnection(object):
         errors = []
         for session in iscsi.iterateIscsiSessions():
             try:
-                self.match(session)
+                self._match(session)
             except self.Mismatch as e:
                 errors.append(e)
             else:
                 self._lastSessionId = session.id
                 return session
 
-        self.log.debug("Session mismatch: %s", [str(e) for e in errors])
+        self.log.debug("Session mismatches: %s", ["%s" % e for e in errors])
         raise OSError(errno.ENOENT, "Session not found")
 
     def isConnected(self):
