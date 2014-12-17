@@ -45,7 +45,7 @@
 %global with_gluster 1
 %endif
 
-%if ! 0%{?rhel}
+%if ! 0%{?rhel} || ! 0%{fedora_koji_build}
 %global with_vhostmd 1
 %endif
 
