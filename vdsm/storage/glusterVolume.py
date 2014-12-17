@@ -19,10 +19,9 @@ class GlusterVolume(fileVolume.FileVolume):
         """
         Send info to represent Gluster volume as a network block device
         """
-        rpath = sdCache.produce(self.sdUUID).getRemotePath()
-        rpath_list = rpath.rsplit(":", 1)
-        volfileServer = rpath_list[0]
-        volname = rpath_list[1]
+        rpath = sdCache.produce(self.sdUUID).getRealPath()
+        volfileServer, volname = rpath.rsplit(":", 1)
+        volname = volname.strip('/')
 
         # Volume transport to Libvirt transport mapping
         VOLUME_TRANS_MAP = {'TCP': 'tcp', 'RDMA': 'rdma'}
