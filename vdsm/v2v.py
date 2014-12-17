@@ -16,14 +16,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import xml.etree.ElementTree as ET
 from contextlib import closing
-
 import logging
-from vdsm.define import errCode
-import caps
+import xml.etree.ElementTree as ET
+
 import libvirt
+
+from vdsm.define import errCode
 from vdsm import libvirtconnection
+
+import caps
 
 
 class InvalidVMConfiguration(ValueError):
@@ -54,8 +56,10 @@ def get_external_vms(uri, username, password):
                 logging.error('error parsing domain xml, msg: %s  xml: %s',
                               e.message, vm.XMLDesc(0))
                 continue
-            _add_disks(root, params)
             _add_networks(root, params)
+            _add_disks(root, params)
+            for disk in params['disks']:
+                _add_disk_info(conn, disk)
             ret.append(params)
         return ret
 
@@ -110,6 +114,18 @@ def _add_general_info(root, params):
     e = root.find('./os/type/[@arch]')
     if e is not None:
         params['arch'] = e.get('arch')
+
+
+def _add_disk_info(conn, disk):
+    if 'alias' in disk.keys():
+        try:
+            vol = conn.storageVolLookupByPath(disk['alias'])
+            _, capacity, alloc = vol.info()
+        except libvirt.libvirtError:
+            logging.exception("Error getting disk size")
+
+        disk['capacity'] = str(capacity)
+        disk['allocation'] = str(alloc)
 
 
 def _add_disks(root, params):

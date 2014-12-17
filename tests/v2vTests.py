@@ -75,6 +75,13 @@ class LibvirtMock(object):
     def listAllDomains(self):
         return [VmMock()]
 
+    def storageVolLookupByPath(self, name):
+        return LibvirtMock.Volume()
+
+    class Volume(object):
+        def info(self):
+            return [0, 0, 0]
+
 
 def hypervisorConnect(uri, username, passwd):
     return LibvirtMock()

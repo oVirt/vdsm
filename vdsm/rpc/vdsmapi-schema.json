@@ -3642,14 +3642,19 @@
 #
 # Disk information from external source
 #
-# @dev:      #optional guest device name (sda, sdb, etc)
+# @dev:        #optional guest device name (sda, sdb, etc)
 #
-# @alias:    #optional device path (file path)
+# @alias:      #optional device path (file path)
+#
+# @capacity:   #optional logical size bytes
+#
+# @allocation: #optional current allocation bytes
 #
 # Since: 4.17.0
 ##
 {'type': 'ExternalDiskInfo',
- 'data': {'*dev': 'str', '*alias': 'str'}}
+ 'data': {'*dev': 'str', '*alias': 'str',
+          '*capacity': 'uint', '*allocation': 'uint'}}
 
 ##
 # @ExternalNetworkInfo:
