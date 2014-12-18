@@ -128,7 +128,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
 
     cmd.append(image)
 
-    if size:
+    if size is not None:
         cmd.append(str(size))
 
     rc, out, err = utils.execCmd(cmd, cwd=cwdPath, deathSignal=signal.SIGKILL)

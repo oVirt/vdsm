@@ -127,6 +127,15 @@ class CreateTests(TestCaseBase):
         with FakeCmd(utils, 'execCmd', create):
             qemuimg.create('image')
 
+    def test_zero_size(self):
+        def create(cmd, **kw):
+            expected = [QEMU_IMG, 'create', 'image', '0']
+            self.assertEqual(cmd, expected)
+            return 0, '', ''
+
+        with FakeCmd(utils, 'execCmd', create):
+            qemuimg.create('image', size=0)
+
     def test_qcow2_compat_unsupported(self):
         def qcow2_compat_unsupported(cmd, **kw):
             self.check_supports_qcow2_compat(cmd, **kw)
