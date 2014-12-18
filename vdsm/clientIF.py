@@ -60,7 +60,7 @@ class clientIF(object):
     """
     The client interface of vdsm.
 
-    Exposes vdsm verbs as xml-rpc functions.
+    Exposes vdsm verbs as json-rpc or xml-rpc functions.
     """
     _instance = None
     _instanceLock = threading.Lock()
