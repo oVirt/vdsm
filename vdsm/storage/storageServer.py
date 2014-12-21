@@ -27,6 +27,7 @@ import glob
 from collections import namedtuple
 import misc
 from functools import partial
+import sys
 
 from vdsm.compat import pickle
 
@@ -206,26 +207,26 @@ class MountConnection(object):
 
         try:
             self._mount.mount(self.options, self._vfsType)
-        except MountError as e:
-            self.log.error("Mount failed: %s", e, exc_info=True)
+        except MountError:
+            t, v, tb = sys.exc_info()
             try:
                 os.rmdir(self._getLocalPath())
             except OSError:
                 self.log.warn("Failed to remove mount point directory: %s",
                               self._getLocalPath(), exc_info=True)
-            raise e
-
+            raise t, v, tb
         else:
             try:
                 fileSD.validateDirAccess(
                     self.getMountObj().getRecord().fs_file)
-            except se.StorageServerAccessPermissionError as e:
+            except se.StorageServerAccessPermissionError:
+                t, v, tb = sys.exc_info()
                 try:
                     self.disconnect()
                 except OSError:
                     self.log.warn("Error while disconnecting after access"
                                   "problem", exc_info=True)
-                raise e
+                raise t, v, tb
 
     def isConnected(self):
         return self._mount.isMounted()
