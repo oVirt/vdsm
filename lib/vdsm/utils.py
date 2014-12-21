@@ -44,10 +44,12 @@ import re
 import sys
 import os
 import platform
+import random
 import select
 import shutil
 import signal
 import stat
+import string
 import threading
 import time
 import vdsm.infra.zombiereaper as zombiereaper
@@ -1223,3 +1225,14 @@ def monotonic_time():
       adjustments.
     """
     return os.times()[4]
+
+
+def random_iface_name(prefix='', max_length=15):
+    """
+    Create a network device name with the supplied prefix and a pseudo-random
+    suffix, e.g. dummy_ilXaYiSn7. The name is bound to IFNAMSIZ of 16-1 chars.
+    """
+    suffix_len = max_length - len(prefix)
+    suffix = ''.join(random.choice(string.ascii_letters + string.digits)
+                     for _ in range(suffix_len))
+    return prefix + suffix

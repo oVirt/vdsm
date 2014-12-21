@@ -16,34 +16,30 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import random
-
 from nose.plugins.skip import SkipTest
 
 import dummy
 from vdsm.ipwrapper import linkAdd, IPRoute2Error
+from vdsm.utils import random_iface_name
 
 
-def create(prefix='veth_'):
+def create(prefix='veth_', max_length=15):
     """
-    Creates a veth interface with a pseudo-random name for both endpoints (e.g.
-    veth_85 and veth_31 in the format veth_Number). Assumes root privileges.
+    Create a veth interface with a pseudo-random suffix (e.g. veth_m6Lz7uMK9c)
+    for both endpoints. Use the longest possible name length by default.
+    This assumes root privileges.
     """
-
-    deviceNumbers = random.sample(range(100), 2)
-    leftPoint = '%s%s' % (prefix, deviceNumbers[0])
-    rightPoint = '%s%s' % (prefix, deviceNumbers[1])
+    leftPoint = random_iface_name(prefix, max_length)
+    rightPoint = random_iface_name(prefix, max_length)
     try:
         linkAdd(leftPoint, linkType='veth', args=('peer', 'name', rightPoint))
     except IPRoute2Error:
-        pass
+        raise SkipTest('Failed to create a veth interface')
     else:
         return (leftPoint, rightPoint)
 
-    raise SkipTest('Failed to create a veth interface')
 
-
-# the pair device gets removed automatically
+# the peer device is removed by the kernel
 remove = dummy.remove
 remove
 

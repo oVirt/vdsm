@@ -16,30 +16,25 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import random
-
 from nose.plugins.skip import SkipTest
 
 from vdsm.ipwrapper import linkAdd, linkDel, addrAdd, linkSet, IPRoute2Error
+from vdsm.utils import random_iface_name
 
 
-def create(prefix='dummy_'):
+def create(prefix='dummy_', max_length=11):
     """
-    Creates a dummy interface, in a fixed number of attempts (100).
-    The dummy interface created has a pseudo-random name (e.g. dummy_85
-    in the format dummy_Number). Assumes root privileges.
+    Create a dummy interface with a pseudo-random suffix, e.g. dummy_ilXaYiSn7.
+    Limit the name to 11 characters to make room for VLAN IDs.
+    This assumes root privileges.
     """
-
-    for i in random.sample(range(100), 100):
-        dummy_name = '%s%s' % (prefix, i)
-        try:
-            linkAdd(dummy_name, linkType='dummy')
-        except IPRoute2Error:
-            pass
-        else:
-            return dummy_name
-
-    raise SkipTest('Failed to load a dummy interface')
+    dummy_name = random_iface_name(prefix, max_length)
+    try:
+        linkAdd(dummy_name, linkType='dummy')
+    except IPRoute2Error:
+        raise SkipTest('Failed to load a dummy interface')
+    else:
+        return dummy_name
 
 
 def remove(dummyName):

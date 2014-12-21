@@ -19,19 +19,11 @@
 
 
 import json
-import random
-import string
 
 from ..netinfo import (BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS,
                        bondOpts, realBondOpts)
+from ..utils import random_iface_name
 from . import expose, ExtraArgsError
-
-
-def _random_iface_name():
-    MAX_LENGTH = 15
-    CHARS = string.ascii_lowercase + string.ascii_uppercase + string.digits
-
-    return ''.join(random.choice(CHARS) for _ in range(MAX_LENGTH))
 
 
 def _get_default_bonding_options():
@@ -40,7 +32,7 @@ def _get_default_bonding_options():
     are strings.
     """
     MAX_MODE = 6
-    bond_name = _random_iface_name()
+    bond_name = random_iface_name()
     opts = {}
 
     with open(BONDING_MASTERS, 'w') as bonds:
