@@ -55,7 +55,9 @@ public class ResponseTracker implements Runnable {
             this.queue.remove(id);
             ResponseTracking tracking = this.map.remove(id);
             List<JsonNode> nodes = this.hostToId.get(tracking.getClient().getClientId());
-            nodes.remove(id);
+            if (nodes != null) {
+                nodes.remove(id);
+            }
         }
     }
 
