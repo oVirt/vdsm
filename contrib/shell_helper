@@ -1,0 +1,207 @@
+# Useful VDSM helpers for developers. It supplies a few shorthands for common
+# developer's daily tasks. This file can be imported to one's .bashrc or
+# .zshrc.
+
+VDSM_DIR=~/code/vdsm
+
+_latest_version() {
+    ls ~/rpmbuild/RPMS/x86_64/ -t -w 1 | head -1 | perl -pe 's|^.*?git|git|' | perl -pe 's|\..*$||'
+}
+
+_latest_rpms() {
+    local VERSION=$(_latest_version)
+    find ~/rpmbuild/RPMS/ -iname "*$VERSION*.rpm" | egrep "vdsm-[0-9]|python|cli|xmlrpc|jsonrpc|tests|infra"
+}
+
+vdsm_configure_force() {
+    sudo vdsm-tool configure --force
+}
+
+vdsm_restart() {
+    sudo service vdsmd stop && sudo service supervdsmd stop
+    sudo service vdsmd start
+    sleep 3
+    service vdsmd status | egrep "Active|active|activating|failed"
+    service supervdsmd status | egrep  "Active|active|activating|failed"
+}
+
+vdsm_caps_nonsecure() {
+    if [ -t 1 ]; then
+        sudo vdsClient 0 getVdsCaps | less
+    else
+        sudo vdsClient 0 getVdsCaps
+    fi
+}
+
+vdsm_caps() {
+    if [ -t 1 ]; then
+        sudo vdsClient -s 0 getVdsCaps | less
+    else
+        sudo vdsClient -s 0 getVdsCaps
+    fi
+}
+
+vdsm_functional() {
+    pushd /usr/share/vdsm/tests && \
+    clear && sudo NOSE_TESTMATCH=$1 ./run_tests.sh -s functional/networkTests.py
+    popd
+}
+
+vdsm_check() {
+    pushd $VDSM_DIR
+    ./autogen.sh --system && ./configure && make check
+    popd
+}
+
+vdsm_smoke() {
+    vdsm_functional testSetupNetworksAddBondWithManyVlans
+}
+
+vdsm_remove() {
+    sudo yum erase -y vdsm\*
+    pushd $VDSM_DIR
+    git clean -fdx
+    popd
+}
+
+vdsm_install() {
+    FILES=$(_latest_rpms)
+    sudo yum install -y `echo $FILES | paste -sd " "` && \
+    vdsm_configure_force
+}
+
+vdsm_reinstall() {
+    FILES=$(_latest_rpms)
+    sudo yum reinstall -y `echo $FILES | paste -sd " "` && \
+    vdsm_configure_force
+}
+
+vdsm_downgrade() {
+    FILES=$(_latest_rpms)
+    sudo yum downgrade -y `echo $FILES | paste -sd " "` && \
+    vdsm_configure_force
+}
+
+vdsm_build() {
+    pushd $VDSM_DIR
+    ./autogen.sh --system && ./configure && make && NOSE_EXCLUDE=.* make rpm
+    popd
+}
+
+vdsm_build_with_hooks() {
+    pushd $VDSM_DIR
+    ./autogen.sh --system && ./configure --enable-hooks && make \
+    && NOSE_EXCLUDE=.* make rpm
+    popd
+}
+
+vdsm_build_reinstall() {
+    vdsm_build && vdsm_reinstall
+}
+
+vdsm_build_reinstall_restart() {
+    vdsm_build && vdsm_reinstall && restart_vdsm
+}
+
+del_dummies() {
+    for nic in `ip l | awk '{print $2;}' | egrep "^dummy"`; do
+        sudo ip link del dev ${nic%:*}
+    done
+    sudo rm /etc/sysconfig/network-scripts/ifcfg-dummy*
+}
+
+del_bonds() {
+    for nic in `ip l | awk '{print $2;}' | egrep "^bond"`; do
+        echo "-${nic%:*}" | sudo tee /sys/class/net/bonding_masters
+    done
+    sudo rm /etc/sysconfig/network-scripts/ifcfg-bond*
+}
+
+del_bridges() {
+    for bridge in `brctl show | awk '{print $1;}' | grep test-network`; do
+        sudo ip link set dev $bridge down
+        sudo brctl delbr $bridge
+        sudo rm /etc/sysconfig/network-scripts/ifcfg-$bridge
+    done
+}
+
+del_test_nets() {
+    cat << EOF | sudo python -
+from vdsm import libvirtconnection
+c = libvirtconnection.get()
+nets = c.listAllNetworks(0)
+for net in nets:
+    if net.name().startswith('vdsm-test-network'):
+        net.destroy()
+        net.undefine()
+EOF
+}
+
+del_net_persistency() {
+cat << EOF | sudo python -
+import os
+
+dirs = ('/var/run/vdsm/netconf/nets/',
+    '/var/run/vdsm/netconf/bonds/',
+    '/var/lib/vdsm/persistence/netconf/nets/',
+    '/var/lib/vdsm/persistence/netconf/bonds/')
+
+for d in dirs:
+    if not os.path.exists(d):
+        continue
+
+    files = os.listdir(d)
+    for f in files:
+        full_path = os.path.join(d, f)
+        print 'removing %s' % full_path
+        os.remove(full_path)
+
+d = '/etc/sysconfig/network-scripts/'
+for f in os.listdir('/etc/sysconfig/network-scripts/'):
+    if (f.startswith('ifcfg-bond') or
+        f.startswith('ifcfg-test-network')):
+        full_path = os.path.join(d, f)
+        print 'removing %s' % full_path
+        os.remove(full_path)
+EOF
+}
+
+emergency_net_cleanup() {
+    del_dummies
+    del_bonds
+    del_bridges
+    del_test_nets
+    del_net_persistency
+}
+
+vdsm_pep8() {
+    pushd $VDSM_DIR
+    ./autogen.sh --system && ./configure && make pep8
+    popd
+}
+
+vdsm_unit () {
+    cd $VDSM_DIR && \
+    ./autogen.sh --system && make && \
+    cd tests && sudo ./run_tests_local.sh $1
+}
+
+log () {
+    case $1 in
+        vdsm)
+        less /var/log/vdsm/vdsm.log
+        ;;
+
+        supervdsm)
+        less /var/log/vdsm/supervdsm.log
+        ;;
+
+        messages)
+        sudo less /var/log/messages
+        ;;
+
+        sanlock)
+        less /var/log/sanlock.log
+        ;;
+    esac
+}
