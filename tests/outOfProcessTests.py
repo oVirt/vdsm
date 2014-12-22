@@ -20,6 +20,8 @@
 
 from testlib import VdsmTestCase as TestCaseBase
 import storage.outOfProcess as oop
+from monkeypatch import MonkeyPatchScope
+
 import gc
 import logging
 import os
@@ -62,9 +64,7 @@ class OopWrapperTests(TestCaseBase):
         self.assertNotEquals(pids[0], pids[1])
 
     def testAmountOfInstancesPerPoolName(self):
-        idle = oop.IOPROC_IDLE_TIME
-        try:
-            oop.IOPROC_IDLE_TIME = 5
+        with MonkeyPatchScope([(oop, 'IOPROC_IDLE_TIME', 5)]):
             poolA = "A"
             poolB = "B"
             wrapper = ref(oop.getProcessPool(poolA))
@@ -84,8 +84,6 @@ class OopWrapperTests(TestCaseBase):
                 logging.info(refs)
                 logging.info(gc.get_referrers(*refs))
                 raise
-        finally:
-            oop.IOPROC_IDLE_TIME = idle
 
     def testEcho(self):
         data = """Censorship always defeats it own purpose, for it creates in
