@@ -43,7 +43,10 @@ def allowDhcp(veth):
         if _serviceRunning('iptables'):
             _execCmdChecker([_IPTABLES_BINARY.cmd, '-I', 'INPUT', '-i',
                             veth, '-p', 'udp', '--sport', '68', '--dport',
-                            '67', '-j', 'ACCEPT'])
+                            '67', '-j', 'ACCEPT'])  # DHCPv4
+            _execCmdChecker([_IPTABLES_BINARY.cmd, '-I', 'INPUT', '-i',
+                            veth, '-p', 'udp', '--sport', '546', '--dport',
+                            '547', '-j', 'ACCEPT'])  # DHCPv6
         elif _serviceRunning('firewalld'):
             _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
                             '--change-interface=' + veth])
@@ -67,7 +70,10 @@ def stopAllowingDhcp(veth):
     if _serviceRunning('iptables'):
         _execCmdChecker([_IPTABLES_BINARY.cmd, '-D', 'INPUT', '-i',
                         veth, '-p', 'udp', '--sport', '68', '--dport',
-                        '67', '-j', 'ACCEPT'])
+                        '67', '-j', 'ACCEPT'])  # DHCPv4
+        _execCmdChecker([_IPTABLES_BINARY.cmd, '-D', 'INPUT', '-i',
+                        veth, '-p', 'udp', '--sport', '546', '--dport',
+                        '547', '-j', 'ACCEPT'])  # DHCPv6
     elif _serviceRunning('firewalld'):
         _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
                         '--remove-interface=' + veth])

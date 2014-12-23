@@ -68,6 +68,8 @@ IP_MASK = str(_ip_network.netmask)
 IP_GATEWAY = str(_ip_network.broadcast - 1)
 DHCP_RANGE_FROM = '240.0.0.10'
 DHCP_RANGE_TO = '240.0.0.100'
+DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
+DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
 
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1'
@@ -101,12 +103,18 @@ def tearDownModule():
 
 
 @contextmanager
-def dnsmasqDhcp(interface):
-    """Manages the life cycle of dnsmasq as a DHCP server."""
+def dnsmasqDhcp(interface, el6=False):
+    """Manages the life cycle of dnsmasq as a DHCP server.
+
+    'el6' parameter serves to disable DHCPv6 functionality on EL6 where it is
+    not supported, and avoids warning on --bind-interfaces switch elsewhere."""
     dhcpServer = dhcp.Dnsmasq()
     try:
+        dhcpv6_range_from, dhcpv6_range_to = (
+            (None, None) if el6 else (DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO))
         dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO,
-                         router=IP_GATEWAY)
+                         dhcpv6_range_from, dhcpv6_range_to, router=IP_GATEWAY,
+                         bind_dynamic=el6)
     except dhcp.DhcpError as e:
         raise SkipTest(e)
 
@@ -219,6 +227,12 @@ def _cleanup_qos_definition(qos):
                 del attrs['m1']
             if attrs.get('d') == 0:
                 del attrs['d']
+
+
+def _system_is_el6():
+    # REQUIRED_FOR: el6
+    return (caps.getos() in (caps.OSName.RHEVH, caps.OSName.RHEL)
+            and caps.osversion()['version'].startswith('6'))
 
 
 @expandPermutations
@@ -379,8 +393,7 @@ class NetworkTest(TestCaseBase):
             self.assertEquals(int(mtu), int(self.vdsm_net.getMtu(elem)))
 
     def testLegacyBonds(self):
-        if not (caps.getos() in (caps.OSName.RHEVH, caps.OSName.RHEL)
-                and caps.osversion()['version'].startswith('6')):
+        if not _system_is_el6():
             raise SkipTest('legacy bonds are expected only on el6')
 
         for b in caps._REQUIRED_BONDINGS:
@@ -1705,10 +1718,13 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testSetupNetworksAddDelDhcp(self, bridged):
+        el6 = _system_is_el6()
+
         with vethIf() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
+            veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             veth.setLinkUp(left)
-            with dnsmasqDhcp(left):
+            with dnsmasqDhcp(left, el6):
                 dhcpv4 = True
                 bootproto = 'dhcp'
                 network = {NETWORK_NAME: {'nic': right, 'bridged': bridged,
@@ -1762,18 +1778,21 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testDhclientLeases(self, dateFormat):
+        el6 = _system_is_el6()
+
         dhcpv4_ifaces = set()
         with vethIf() as (server, client):
             with avoidAnotherDhclient(client):
 
                 veth.setIP(server, IP_ADDRESS, IP_CIDR)
+                veth.setIP(server, IPv6_ADDRESS, IPv6_CIDR, 6)
                 veth.setLinkUp(server)
 
-                with dnsmasqDhcp(server):
+                with dnsmasqDhcp(server, el6):
 
                     with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
-                        dhclient_runner = dhcp.DhclientRunner(client, dir,
-                                                              dateFormat)
+                        dhclient_runner = dhcp.DhclientRunner(
+                            client, 4, dir, dateFormat)
                         try:
                             with running(dhclient_runner) as dhc:
                                 dhcpv4_ifaces = _get_dhclient_ifaces(
@@ -2042,8 +2061,8 @@ class NetworkTest(TestCaseBase):
                     with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                         # Start a non-vdsm owned dhclient for the 'client'
                         # iface
-                        dhclient_runner = dhcp.DhclientRunner(client, dhdir,
-                                                              'default')
+                        dhclient_runner = dhcp.DhclientRunner(
+                            client, 4, dhdir, 'default')
                         with running(dhclient_runner):
                             # Set up a network over it and wait for dhcp
                             # success

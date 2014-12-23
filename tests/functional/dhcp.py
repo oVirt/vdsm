@@ -45,11 +45,15 @@ class Dnsmasq():
     def __init__(self):
         self.proc = None
 
-    def start(self, interface, dhcp_range_from, dhcp_range_to, router=None):
+    def start(self, interface, dhcp_range_from, dhcp_range_to,
+              dhcpv6_range_from=None, dhcpv6_range_to=None, router=None,
+              bind_dynamic=True):
         # -p 0                      don't act as a DNS server
         # --dhcp-option=3,<router>  advertise a specific gateway (or None)
         # --dhcp-option=6           don't reply with any DNS servers
         # -d                        don't daemonize and log to stderr
+        # --bind-dynamic            bind only the testing veth iface
+        # (a better, and quiet, version of --bind-interfaces, but not on EL6)
         self.proc = execCmd([
             _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
             '-p', '0',
@@ -57,7 +61,10 @@ class Dnsmasq():
             '--dhcp-option=3' + (',{0}'.format(router) if router else ''),
             '--dhcp-option=6',
             '-i', interface, '-I', 'lo', '-d',
-            '--bind-interfaces'], sync=False)
+            '--bind-dynamic' if bind_dynamic else '--bind-interfaces']
+            + (['--dhcp-range={0},{1},2m'.format(dhcpv6_range_from,
+                                                 dhcpv6_range_to)]
+               if dhcpv6_range_from and dhcpv6_range_to else []), sync=False)
         sleep(_START_CHECK_TIMEOUT)
         if self.proc.returncode:
             raise DhcpError('Failed to start dnsmasq DHCP server.' +
@@ -78,16 +85,19 @@ class DhclientRunner(object):
     In the working directory (tmp_dir), which is managed by the caller.
     dhclient accepts the following date_formats: 'default' and 'local'.
     """
-    def __init__(self, interface, tmp_dir, date_format, default_route=False):
+    def __init__(self, interface, family, tmp_dir, date_format,
+                 default_route=False):
         self._interface = interface
+        self._family = family
         self._date_format = date_format
         self._conf_file = os.path.join(tmp_dir, 'test.conf')
         self._pid_file = os.path.join(tmp_dir, 'test.pid')
         self.pid = None
         self.lease_file = os.path.join(tmp_dir, 'test.lease')
-        cmd = [_DHCLIENT_BINARY.cmd, '-v', '-lf', self.lease_file, '-pf',
-               self._pid_file, '-timeout', str(_DHCLIENT_TIMEOUT), '-1',
-               '-cf', self._conf_file]
+        cmd = [_DHCLIENT_BINARY.cmd, '-' + str(family), '-1', '-v',
+               '-timeout', str(_DHCLIENT_TIMEOUT), '-cf', self._conf_file,
+               '-pf', self._pid_file, '-lf', self.lease_file
+               ]
         if not default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
             cmd += ['-e', 'DEFROUTE=no']
