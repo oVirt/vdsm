@@ -47,7 +47,8 @@ public class SSLStompClient extends SSLClient {
             send(message.build());
 
             subscribtionId = UUID.randomUUID().toString();
-            send(new Message().subscribe().withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
+
+            send(new Message().subscribe().withHeader(HEADER_DESTINATION, getResponseQueue())
                     .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
         }
 
@@ -64,7 +65,7 @@ public class SSLStompClient extends SSLClient {
         waitForConnect();
 
         send(new Message().send()
-                .withHeader(HEADER_DESTINATION, REQUEST_QUEUE)
+                .withHeader(HEADER_DESTINATION, this.getRequestQueue())
                 .withContent(message)
                 .build());
     }

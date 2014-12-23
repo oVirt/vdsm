@@ -10,12 +10,12 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.NullNode;
 import org.ovirt.vdsm.jsonrpc.client.internal.BatchCall;
 import org.ovirt.vdsm.jsonrpc.client.internal.Call;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.internal.JsonRpcCall;
 import org.ovirt.vdsm.jsonrpc.client.internal.ResponseTracker;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.ResponseTracking;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 /**
  * {@link ReactorClient} wrapper which provides ability to send single or batched requests.
@@ -26,7 +26,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 public class JsonRpcClient {
     private final ReactorClient client;
     private ResponseTracker tracker;
-    private RetryPolicy policy;
+    private ClientPolicy policy;
 
     /**
      * Wraps {@link ReactorClient} to hide response update details.
@@ -38,19 +38,19 @@ public class JsonRpcClient {
         this.tracker = tracker;
     }
 
-    public void setClientRetryPolicy(RetryPolicy policy) {
-        this.client.setRetryPolicy(policy);
+    public void setClientRetryPolicy(ClientPolicy policy) {
+        this.client.setClientPolicy(policy);
     }
 
-    public void setRetryPolicy(RetryPolicy policy) {
+    public void setRetryPolicy(ClientPolicy policy) {
         this.policy = policy;
     }
 
-    public RetryPolicy getClientRetryPolicy() {
+    public ClientPolicy getClientRetryPolicy() {
         return this.client.getRetryPolicy();
     }
 
-    public RetryPolicy getRetryPolicy() {
+    public ClientPolicy getRetryPolicy() {
         return this.policy;
     }
 

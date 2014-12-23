@@ -23,8 +23,8 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 // This class is heavily time dependent so there is
 // good number of timeouts. It is ignored due to time
@@ -116,7 +116,7 @@ public class TestReactor {
                         queue.add(message);
                     }
                 });
-                client.setRetryPolicy(new RetryPolicy(2000, 10, 10000, IOException.class));
+                client.setClientPolicy(new ClientPolicy(2000, 10, 10000, IOException.class));
                 client.connect();
                 return client;
             }

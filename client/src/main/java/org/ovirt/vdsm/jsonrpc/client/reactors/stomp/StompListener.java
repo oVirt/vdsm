@@ -10,13 +10,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.CommandExecutor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.Command;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Sender;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class StompListener extends StompClient implements Sender {
     private CommandFactory commandFactory;
@@ -34,14 +34,14 @@ public class StompListener extends StompClient implements Sender {
     }
 
     @Override
-    public void setRetryPolicy(RetryPolicy policy) {
+    public void setClientPolicy(ClientPolicy policy) {
         this.policy = policy;
     }
 
     @Override
     public void sendMessage(byte[] message) {
         send(new Message().message()
-                .withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
+                .withHeader(HEADER_DESTINATION, DEFAULT_RESPONSE_QUEUE)
                 .withContent(message)
                 .build());
     }

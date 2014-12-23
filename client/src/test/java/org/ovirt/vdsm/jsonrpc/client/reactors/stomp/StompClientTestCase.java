@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.SSLStompClientTestCase.generateRandomMessage;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient.DEFAULT_REQUEST_QUEUE;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient.DEFAULT_RESPONSE_QUEUE;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
 import java.io.IOException;
@@ -21,7 +23,6 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class StompClientTestCase {
     private final static int TIMEOUT_SEC = 20;
@@ -76,7 +77,7 @@ public class StompClientTestCase {
         assertNotNull(listener);
 
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
-        client.setRetryPolicy(new RetryPolicy(180000, 0, 1000000));
+        client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override

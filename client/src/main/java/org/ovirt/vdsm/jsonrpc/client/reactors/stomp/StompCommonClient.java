@@ -30,8 +30,8 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.Command;
 
 public abstract class StompCommonClient extends ReactorClient {
-    public final static String REQUEST_QUEUE = "/queue/_local/vdsm/requests";
-    public final static String RESPONSE_QUEUE = "/queue/_local/vdsm/reponses";
+    public final static String DEFAULT_REQUEST_QUEUE = "jms.queue.requests";
+    public final static String DEFAULT_RESPONSE_QUEUE = "jms.queue.reponses";
     protected ByteBuffer headerBuffer = ByteBuffer.allocate(BUFFER_SIZE);
     protected Message message;
     protected CountDownLatch connected;
@@ -188,5 +188,19 @@ public abstract class StompCommonClient extends ReactorClient {
     @Override
     protected void sendHeartbeat() {
         this.send(HEARTBEAT_FRAME);
+    }
+
+    public void validate() {
+        if (!StompClientPolicy.class.isInstance(this.policy)) {
+            throw new IllegalStateException("Wrong policy type");
+        }
+    }
+
+    public String getRequestQueue() {
+        return ((StompClientPolicy)this.policy).getRequestQueue();
+    }
+
+    public String getResponseQueue() {
+        return ((StompClientPolicy)this.policy).getResponseQueue();
     }
 }

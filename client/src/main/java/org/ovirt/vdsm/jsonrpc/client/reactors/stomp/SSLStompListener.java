@@ -16,6 +16,7 @@ import javax.net.ssl.SSLException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.SSLEngineNioHelper;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.CommandExecutor;
@@ -23,7 +24,6 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.Command;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Sender;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class SSLStompListener extends SSLStompClient implements Sender {
     private static Log log = LogFactory.getLog(SSLStompListener.class);
@@ -42,13 +42,13 @@ public class SSLStompListener extends SSLStompClient implements Sender {
     @Override
     public void sendMessage(byte[] message) {
         send(new Message().message()
-                .withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
+                .withHeader(HEADER_DESTINATION, DEFAULT_RESPONSE_QUEUE)
                 .withContent(message)
                 .build());
     }
 
     @Override
-    public void setRetryPolicy(RetryPolicy policy) {
+    public void setClientPolicy(ClientPolicy policy) {
         this.policy = policy;
     }
 

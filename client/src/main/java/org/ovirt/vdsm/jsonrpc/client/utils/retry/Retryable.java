@@ -4,6 +4,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 
 /**
  * Wrapper of any {@link Callable} which retries call method execution based on provided <code>RetryPolicy</code>.
@@ -15,7 +16,7 @@ public class Retryable<T> implements Callable<T> {
     private Callable<T> callable;
     private RetryContext context;
 
-    public Retryable(Callable<T> callable, RetryPolicy policy) {
+    public Retryable(Callable<T> callable, ClientPolicy policy) {
         this.callable = callable;
         this.context = new RetryContext(policy);
     }

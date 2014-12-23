@@ -42,7 +42,7 @@ public class StompClient extends PlainClient {
                 send(message.build());
 
                 subscribtionId = UUID.randomUUID().toString();
-                send(new Message().subscribe().withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
+                send(new Message().subscribe().withHeader(HEADER_DESTINATION, getResponseQueue())
                         .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
 
                 connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
@@ -63,7 +63,7 @@ public class StompClient extends PlainClient {
     @Override
     public void sendMessage(byte[] message) {
         send(new Message().send()
-                .withHeader(HEADER_DESTINATION, REQUEST_QUEUE)
+                .withHeader(HEADER_DESTINATION, this.getRequestQueue())
                 .withContent(message)
                 .build());
     }

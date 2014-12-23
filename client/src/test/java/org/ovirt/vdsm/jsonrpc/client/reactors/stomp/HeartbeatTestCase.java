@@ -20,11 +20,11 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.TestManagerProvider;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 // Takes a long time to finish
 @Ignore
@@ -121,7 +121,7 @@ public class HeartbeatTestCase {
         assertNotNull(listener);
 
         ReactorClient client = sendingReactor.createClient(HOSTNAME, listener.getPort());
-        client.setRetryPolicy(new RetryPolicy(180000, 0, incoming, outgoing));
+        client.setClientPolicy(new ClientPolicy(180000, 0, incoming, outgoing));
         client.connect();
 
         TimeUnit.SECONDS.sleep(WAIT_TIMEOUT);

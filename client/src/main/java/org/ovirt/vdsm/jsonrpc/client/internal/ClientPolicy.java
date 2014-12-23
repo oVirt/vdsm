@@ -1,4 +1,4 @@
-package org.ovirt.vdsm.jsonrpc.client.utils.retry;
+package org.ovirt.vdsm.jsonrpc.client.internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Java bean which provide information how retry logic should work.
  *
  */
-public class RetryPolicy {
+public class ClientPolicy {
     private final int retryTimeOut;
     private final int retryNumber;
     private volatile int incomingHeartbeat;
@@ -36,11 +36,8 @@ public class RetryPolicy {
      * @param retryableExceptions
      *            - <code>List</code> of retryable exceptions.
      */
-    public RetryPolicy(int retryTimeOut,
-            int retryNumber,
-            int incomingHeartbeat,
-            int outgoingHeartbeat,
-            List<Class<? extends Exception>> retryableExceptions) {
+    public ClientPolicy(int retryTimeOut, int retryNumber, int incomingHeartbeat,
+            int outgoingHeartbeat, List<Class<? extends Exception>> retryableExceptions) {
         this.retryNumber = retryNumber;
         this.retryTimeOut = retryTimeOut;
         setIncomingHeartbeat(incomingHeartbeat);
@@ -48,11 +45,11 @@ public class RetryPolicy {
         this.exceptions = Collections.unmodifiableList(retryableExceptions);
     }
 
-    public RetryPolicy(int retryTimeOut, int retryNumber, int incomingHeartbeat) {
-        this(retryTimeOut, retryNumber, incomingHeartbeat, incomingHeartbeat, new ArrayList<Class<? extends Exception>>());
+    public ClientPolicy(int retryTimeOut, int retryNumber, int incomingHeartbeat) {
+        this(retryTimeOut, retryNumber, incomingHeartbeat, 0, new ArrayList<Class<? extends Exception>>());
     }
 
-    public RetryPolicy(int retryTimeOut, int retryNumber, int incomingHeartbeat, int outgoingHeartbeat) {
+    public ClientPolicy(int retryTimeOut, int retryNumber, int incomingHeartbeat, int outgoingHeartbeat) {
         this(retryTimeOut,
                 retryNumber,
                 incomingHeartbeat,
@@ -60,7 +57,7 @@ public class RetryPolicy {
                 new ArrayList<Class<? extends Exception>>());
     }
 
-    public RetryPolicy(int retryTimeOut,
+    public ClientPolicy(int retryTimeOut,
             int retryNumber,
             int incomingHeartbeat,
             Class<? extends Exception> retryableException) {
@@ -71,7 +68,7 @@ public class RetryPolicy {
                 new ArrayList<Class<? extends Exception>>(Arrays.asList(retryableException)));
     }
 
-    public RetryPolicy(int retryTimeOut,
+    public ClientPolicy(int retryTimeOut,
             int retryNumber,
             int incomingHeartbeat,
             int outgoingHeartbeat,
@@ -154,7 +151,7 @@ public class RetryPolicy {
     }
 
     @Override
-    public RetryPolicy clone() throws CloneNotSupportedException {
-        return new RetryPolicy(this.retryTimeOut, this.retryNumber, this.incomingHeartbeat, this.outgoingHeartbeat, this.exceptions);
+    public ClientPolicy clone() throws CloneNotSupportedException {
+        return new ClientPolicy(this.retryTimeOut, this.retryNumber, this.incomingHeartbeat, this.outgoingHeartbeat, this.exceptions);
     }
 }

@@ -3,6 +3,8 @@ package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient.DEFAULT_REQUEST_QUEUE;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient.DEFAULT_RESPONSE_QUEUE;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
 import java.io.IOException;
@@ -26,7 +28,6 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class SSLStompClientTestCase {
     private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -71,7 +72,7 @@ public class SSLStompClientTestCase {
         int port = 60627;
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(5);
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, port);
-        client.setRetryPolicy(new RetryPolicy(180000, 0, 1000000));
+        client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override
@@ -160,7 +161,7 @@ public class SSLStompClientTestCase {
         assertNotNull(listener);
 
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
-        client.setRetryPolicy(new RetryPolicy(180000, 0, 1000000));
+        client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
             @Override

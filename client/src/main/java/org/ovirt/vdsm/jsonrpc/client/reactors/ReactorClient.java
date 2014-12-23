@@ -24,10 +24,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.DefaultConnectionRetryPolicy;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.Retryable;
 
 /**
@@ -46,7 +46,7 @@ public abstract class ReactorClient {
     private final Lock lock;
     private long lastIncomingHeartbeat = 0;
     private long lastOutgoingHeartbeat = 0;
-    protected RetryPolicy policy = new DefaultConnectionRetryPolicy();
+    protected ClientPolicy policy = new DefaultConnectionRetryPolicy();
     protected final List<MessageListener> eventListeners;
     protected final Reactor reactor;
     protected final Deque<ByteBuffer> outbox;
@@ -72,14 +72,15 @@ public abstract class ReactorClient {
         return this.hostname + ":" + connectionHash;
     }
 
-    public void setRetryPolicy(RetryPolicy policy) {
+    public void setClientPolicy(ClientPolicy policy) {
         this.policy = policy;
+        this.validate();
         if (isOpen()) {
             disconnect("Policy reset");
         }
     }
 
-    public RetryPolicy getRetryPolicy() {
+    public ClientPolicy getRetryPolicy() {
         return this.policy;
     }
 
@@ -283,7 +284,7 @@ public abstract class ReactorClient {
      * @throws IOException
      *             when networking issue occurs.
      */
-    abstract void write(ByteBuffer buff) throws IOException;
+     abstract void write(ByteBuffer buff) throws IOException;
 
     /**
      * Transport specific post connection functionality.
@@ -291,7 +292,7 @@ public abstract class ReactorClient {
      * @throws ClientConnectionException
      *             when issues with connection.
      */
-    abstract void postConnect(OneTimeCallback callback) throws ClientConnectionException;
+    protected abstract void postConnect(OneTimeCallback callback) throws ClientConnectionException;
 
     /**
      * Updates selection key's operation set.
@@ -324,4 +325,9 @@ public abstract class ReactorClient {
      * Client sends protocol specific heartbeat message
      */
     protected abstract void sendHeartbeat();
+
+    /**
+     * Validates policy when it is set.
+     */
+    public abstract void validate();
 }

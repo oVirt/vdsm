@@ -7,6 +7,8 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.ovirt.vdsm.jsonrpc.client.TestJsonRpcClient.jsonFromString;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient.DEFAULT_REQUEST_QUEUE;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient.DEFAULT_RESPONSE_QUEUE;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -21,6 +23,7 @@ import java.util.concurrent.TimeoutException;
 import org.codehaus.jackson.JsonNode;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.internal.ResponseWorker;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
@@ -28,7 +31,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorFactory;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorType;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
+import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompClientPolicy;
 
 // it takes too long to have it as part of build process
 @Ignore
@@ -50,7 +53,7 @@ public class JsonRpcClientConnectivityTestCase {
         // Given
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, 3333);
-        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class));
+        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         ResponseWorker worker = ReactorFactory.getWorker();
         JsonRpcClient jsonClient = worker.register(client);
         JsonRpcRequest request = mock(JsonRpcRequest.class);
@@ -93,10 +96,10 @@ public class JsonRpcClientConnectivityTestCase {
 
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT);
-        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class));
+        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         ResponseWorker worker = ReactorFactory.getWorker();
         JsonRpcClient jsonClient = worker.register(client);
-        jsonClient.setRetryPolicy(new RetryPolicy(TIMEOUT, 2, HEART_BEAT));
+        jsonClient.setRetryPolicy(new ClientPolicy(TIMEOUT, 2, HEART_BEAT));
         JsonRpcRequest request = mock(JsonRpcRequest.class);
         when(request.getId()).thenReturn(mock(JsonNode.class));
 
@@ -143,10 +146,10 @@ public class JsonRpcClientConnectivityTestCase {
 
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT + 1);
-        client.setRetryPolicy(new RetryPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class));
+        client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         ResponseWorker worker = ReactorFactory.getWorker();
         JsonRpcClient jsonClient = worker.register(client);
-        jsonClient.setRetryPolicy(new RetryPolicy(TIMEOUT, 2, HEART_BEAT));
+        jsonClient.setRetryPolicy(new ClientPolicy(TIMEOUT, 2, HEART_BEAT));
 
         final JsonNode params = jsonFromString("{\"text\": \"Hello World\"}");
         final JsonNode id1 = jsonFromString("123");

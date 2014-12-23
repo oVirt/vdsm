@@ -2,6 +2,8 @@ package org.ovirt.vdsm.jsonrpc.client.utils.retry;
 
 import java.util.concurrent.TimeUnit;
 
+import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
+
 /**
  * <code>RetryConext</code> represents current execution retry
  * state. Initially context is populated form the <code>RetryPolicy</code>
@@ -11,9 +13,9 @@ import java.util.concurrent.TimeUnit;
 public class RetryContext {
     private int numberOfAttempts;
     private int timeout;
-    private RetryPolicy policy;
+    private ClientPolicy policy;
 
-    public RetryContext(RetryPolicy policy) {
+    public RetryContext(ClientPolicy policy) {
         this.numberOfAttempts = policy.getRetryNumber();
         this.timeout = policy.getRetryTimeOut();
         this.policy = policy;
