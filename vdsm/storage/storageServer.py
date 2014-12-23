@@ -211,9 +211,9 @@ class MountConnection(object):
             t, v, tb = sys.exc_info()
             try:
                 os.rmdir(self._getLocalPath())
-            except OSError:
-                self.log.warn("Failed to remove mount point directory: %s",
-                              self._getLocalPath(), exc_info=True)
+            except OSError as e:
+                self.log.warn("Error removing mountpoint directory %r: %s",
+                              self._getLocalPath(), e)
             raise t, v, tb
         else:
             try:
@@ -224,8 +224,7 @@ class MountConnection(object):
                 try:
                     self.disconnect()
                 except OSError:
-                    self.log.warn("Error while disconnecting after access"
-                                  "problem", exc_info=True)
+                    self.log.exception("Error disconnecting")
                 raise t, v, tb
 
     def isConnected(self):
