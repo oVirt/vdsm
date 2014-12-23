@@ -27,9 +27,8 @@ from contextlib import contextmanager
 from itertools import product
 from M2Crypto import SSL
 from rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
-from yajsonrpc.stompreactor import StompDetector
+from yajsonrpc.stompreactor import StompDetector, StompRpcClient, _FAKE_SUB_ID
 from protocoldetector import MultiProtocolAcceptor
-from yajsonrpc import JsonRpcClient
 from rpc.bindingjsonrpc import BindingJsonRpc
 from sslhelper import DEAFAULT_SSL_CONTEXT
 
@@ -96,16 +95,18 @@ def constructClient(log, bridge, ssl, type):
             for (method, name) in bridge.getBridgeMethods():
                 xml_handler[0].xml_binding.server.register_function(method,
                                                                     name)
-            client = create
+            client = XMLClient(socket)
         else:
             for handler in acceptor._handlers:
                 if handler.NAME == type:
                     reactor = handler._reactor
 
-        if not client:
-            client = lambda client_socket: (
-                JsonRpcClient(reactor.createClient(client_socket))
-            )
+            def client(client_socket):
+                return StompRpcClient(
+                    reactor.createClient(client_socket),
+                    _FAKE_SUB_ID,
+                    _FAKE_SUB_ID,
+                )
 
         def clientFactory():
             return client(create_socket(
@@ -126,10 +127,6 @@ def create_socket(sslctx, host, port):
     sock.settimeout(TIMEOUT)
     sock.connect((host, port))
     return sock
-
-
-def create(socket):
-    return XMLClient(socket)
 
 
 class XMLClient():

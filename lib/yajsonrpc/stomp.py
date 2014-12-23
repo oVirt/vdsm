@@ -291,24 +291,38 @@ class Parser(object):
 class AsyncDispatcher(object):
     log = logging.getLogger("stomp.AsyncDispatcher")
 
-    def __init__(self, frameHandler, bufferSize=4096):
-        self._frameHandler = frameHandler
+    """
+    Uses asyncore dispatcher to handle regular messages and heartbeats.
+    It accepts frame handler which abstracts message processing.
+    Abstract frame handler should look like:
+
+    class abstract_frame_handler(object):
+
+        Performs any required action after a connection is established
+        def handle_connect(self)
+
+        Process received frame
+        def handle_frame(self, frame)
+
+        Returns response frame to be sent
+        def peek_message(self)
+
+        Returns Ture if there are messages to be sent
+        def has_outgoing_messages(self)
+
+        Queues a frame to be sent
+        def queue_frame(self, frame)
+
+    There are two implementations available:
+    - StompAdapterImpl - responsible for server side
+    - AsyncClient - responsible for client side
+    """
+    def __init__(self, frame_handler, bufferSize=4096):
+        self._frame_handler = frame_handler
         self._bufferSize = bufferSize
         self._parser = Parser()
-        self._outbox = deque()
         self._outbuf = None
         self._outgoing_heartbeat_in_milis = 0
-
-    def _queueFrame(self, frame):
-        self._outbox.append(frame)
-
-    @property
-    def outgoing(self):
-        n = len(self._outbox)
-        if self._outbuf != "":
-            n += 1
-
-        return n
 
     def setHeartBeat(self, outgoing, incoming=0):
         if incoming != 0:
@@ -319,7 +333,7 @@ class AsyncDispatcher(object):
 
     def handle_connect(self, dispatcher):
         self._outbuf = None
-        self._frameHandler.handle_connect(self)
+        self._frame_handler.handle_connect(self)
 
     def handle_read(self, dispatcher):
         try:
@@ -334,7 +348,7 @@ class AsyncDispatcher(object):
             parser.parse(data)
 
         while parser.pending > 0:
-            self._frameHandler.handle_frame(self, parser.popFrame())
+            self._frame_handler.handle_frame(self, parser.popFrame())
 
     def popFrame(self):
         return self._parser.popFrame()
@@ -355,7 +369,7 @@ class AsyncDispatcher(object):
     def handle_write(self, dispatcher):
         if self._outbuf is None:
             try:
-                frame = self._outbox.popleft()
+                frame = self._frame_handler.peek_message()
             except IndexError:
                 return
 
@@ -366,18 +380,22 @@ class AsyncDispatcher(object):
         self._update_outgoing_heartbeat()
         if numSent == len(data):
             self._outbuf = None
+            # Throw away the frame that was sent to the server
+            # we do not want to do it for partially processed
+            # messages.
+            self._frame_handler.pop_message()
         else:
             self._outbuf = data[numSent:]
 
-    def send_raw(self, frame):
-        self._queueFrame(frame)
-
     def writable(self, dispatcher):
-        if len(self._outbox) > 0 or self._outbuf is not None:
+        if self._frame_handler.has_outgoing_messages:
+            return True
+
+        if self._outbuf is not None:
             return True
 
         if (self.next_check_interval() == 0):
-            self._queueFrame(_heartBeatFrame)
+            self._frame_handler.queue_frame(_heartBeatFrame)
             return True
 
         return False
@@ -392,49 +410,75 @@ class AsyncDispatcher(object):
 class AsyncClient(object):
     log = logging.getLogger("yajsonrpc.protocols.stomp.AsyncClient")
 
-    def __init__(self, frameHandler, hostname):
-        self._hostname = hostname
-        self._frameHandler = frameHandler
+    def __init__(self):
         self._connected = False
+        self._outbox = deque()
         self._error = None
+        self._subscriptions = {}
         self._commands = {
             Command.CONNECTED: self._process_connected,
             Command.MESSAGE: self._process_message,
             Command.RECEIPT: self._process_receipt,
-            Command.ERROR: self._process_error}
+            Command.ERROR: self._process_error,
+        }
 
     @property
     def connected(self):
         return self._connected
 
+    def queue_frame(self, frame):
+        self._outbox.append(frame)
+
+    @property
+    def has_outgoing_messages(self):
+        return (len(self._outbox) > 0)
+
+    def peek_message(self):
+        return self._outbox[0]
+
+    def pop_message(self):
+        return self._outbox.popleft()
+
     def getLastError(self):
         return self._error
 
-    def handle_connect(self, dispatcher):
-        hostname = self._hostname
-        frame = Frame(
+    def handle_connect(self):
+        # TODO : reset subscriptions
+        # We use appendleft to make sure this is the first frame we send in
+        # case of a reconnect
+        self._outbox.appendleft(Frame(
             Command.CONNECT,
-            {"accept-version": "1.2",
-             "host": hostname})
-
-        dispatcher.send_raw(frame)
+            {
+                Headers.ACCEPT_VERSION: "1.2",
+                Headers.HEARTEBEAT: "0,5000",
+            }
+        ))
 
     def handle_frame(self, dispatcher, frame):
         self._commands[frame.command](frame, dispatcher)
 
     def _process_connected(self, frame, dispatcher):
         self._connected = True
-        frameHandler = self._frameHandler
-        if hasattr(frameHandler, "handle_connect"):
-            frameHandler.handle_connect(self, frame)
 
         self.log.debug("Stomp connection established")
 
     def _process_message(self, frame, dispatcher):
-        frameHandler = self._frameHandler
+        sub_id = frame.headers.get(Headers.SUBSCRIPTION)
+        if sub_id is None:
+            self.log.warning(
+                "Got message without a subscription"
+            )
+            return
 
-        if hasattr(frameHandler, "handle_message"):
-            frameHandler.handle_message(self, frame)
+        sub = self._subscriptions.get(sub_id)
+        if sub is None:
+            self.log.warning(
+                "Got message without an unknown subscription id '%s'",
+                sub_id
+            )
+            return
+
+        sub.handle_message(frame)
 
     def _process_receipt(self, frame, dispatcher):
         self.log.warning("Receipt frame received and ignored")
@@ -442,29 +486,40 @@ class AsyncClient(object):
     def _process_error(self, frame, dispatcher):
         raise StompError(frame)
 
-    def send(self, dispatcher, destination, data="", headers=None):
-        frame = Frame(
-            Command.SEND,
-            {"destination": destination},
-            data)
+    def send(self, destination, data="", headers=None):
+        final_headers = {"destination": destination}
+        if headers is not None:
+            final_headers.update(headers)
+        self.queue_frame(Frame(Command.SEND, final_headers, data))
 
-        dispatcher.send_raw(frame)
-
-    def subscribe(self, dispatcher, destination, ack=None):
+    def subscribe(self, destination, ack=None, sub_id=None,
+                  message_handler=None):
         if ack is None:
             ack = AckMode.AUTO
 
-        subscriptionID = str(uuid4())
+        if message_handler is None:
+            message_handler = lambda sub, frame: None
 
-        frame = Frame(
+        if sub_id is None:
+            sub_id = str(uuid4())
+
+        self.queue_frame(Frame(
             Command.SUBSCRIBE,
-            {"destination": destination,
-             "ack": ack,
-             "id": subscriptionID})
+            {
+                "destination": destination,
+                "ack": ack,
+                "id": sub_id
+            }
+        ))
 
-        dispatcher.send_raw(frame)
+        sub = _Subscription(self, destination, sub_id, ack, message_handler)
+        self._subscriptions[sub_id] = sub
 
-        return subscriptionID
+        return sub
+
+    def unsubscribe(self, sub):
+        self.queue_frame(Frame(Command.UNSUBSCRIBE,
+                               {"id": sub.id}))
 
 
 class _Subscription(object):

@@ -14,10 +14,13 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import logging
+from collections import deque
+
 import stomp
 
 from betterAsyncore import Dispatcher, Reactor
 from vdsm.sslutils import SSLSocket
+from yajsonrpc import JsonRpcClient
 
 _STATE_LEN = "Waiting for message length"
 _STATE_MSG = "Waiting for message"
@@ -25,6 +28,8 @@ _STATE_MSG = "Waiting for message"
 
 _DEFAULT_RESPONSE_DESTINATIOM = "/queue/_local/vdsm/reponses"
 _DEFAULT_REQUEST_DESTINATION = "/queue/_local/vdsm/requests"
+
+_FAKE_SUB_ID = "__vdsm_fake_broker__"
 
 
 def parseHeartBeatHeader(v):
@@ -51,6 +56,7 @@ class StompAdapterImpl(object):
 
     def __init__(self, reactor, messageHandler):
         self._reactor = reactor
+        self._outbox = deque()
         self._messageHandler = messageHandler
         self._commands = {
             stomp.Command.CONNECT: self._cmd_connect,
@@ -58,13 +64,30 @@ class StompAdapterImpl(object):
             stomp.Command.SUBSCRIBE: self._cmd_subscribe,
             stomp.Command.UNSUBSCRIBE: self._cmd_unsubscribe}
 
+    @property
+    def has_outgoing_messages(self):
+        return (len(self._outbox) > 0)
+
+    def peek_message(self):
+        return self._outbox[0]
+
+    def pop_message(self):
+        return self._outbox.popleft()
+
+    def queue_frame(self, frame):
+        self._outbox.append(frame)
+
     def _cmd_connect(self, dispatcher, frame):
         self.log.info("Processing CONNECT request")
         version = frame.headers.get(stomp.Headers.ACCEPT_VERSION, None)
         if version != "1.2":
-            res = stomp.Frame(stomp.Command.ERROR, None, "Version unsupported")
+            resp = stomp.Frame(
+                stomp.Command.ERROR,
+                None,
+                "Version unsupported"
+            )
         else:
-            res = stomp.Frame(stomp.Command.CONNECTED, {"version": "1.2"})
+            resp = stomp.Frame(stomp.Command.CONNECTED, {"version": "1.2"})
             cx, cy = parseHeartBeatHeader(
                 frame.headers.get(stomp.Headers.HEARTEBEAT, "0,0")
             )
@@ -75,10 +98,10 @@ class StompAdapterImpl(object):
 
             # The server can send a heart-beat every cy ms and doesn't want
             # to receive any heart-beat from the client.
-            res.headers[stomp.Headers.HEARTEBEAT] = "%d,0" % (cy,)
+            resp.headers[stomp.Headers.HEARTEBEAT] = "%d,0" % (cy,)
             dispatcher.setHeartBeat(cy)
 
-        dispatcher.send_raw(res)
+        self.queue_frame(resp)
         self._reactor.wakeup()
 
     def _cmd_subscribe(self, dispatcher, frame):
@@ -105,11 +128,12 @@ class _StompConnection(object):
         self._reactor = reactor
         self._messageHandler = None
 
+        self._async_client = aclient
         adisp = self._adisp = stomp.AsyncDispatcher(aclient)
         self._dispatcher = Dispatcher(adisp, sock=sock, map=reactor._map)
 
     def send_raw(self, msg):
-        self._adisp.send_raw(msg)
+        self._async_client.queue_frame(msg)
         self._reactor.wakeup()
 
     def setTimeout(self, timeout):
@@ -156,10 +180,15 @@ class StompServer(object):
 
     def send(self, message):
         self.log.debug("Sending response")
-        res = stomp.Frame(stomp.Command.MESSAGE,
-                          {"destination": _DEFAULT_RESPONSE_DESTINATIOM,
-                           "content-type": "application/json"},
-                          message)
+        res = stomp.Frame(
+            stomp.Command.MESSAGE,
+            {
+                stomp.Headers.DESTINATION: _DEFAULT_RESPONSE_DESTINATIOM,
+                stomp.Headers.SUBSCRIPTION: _FAKE_SUB_ID,
+                stomp.Headers.CONTENT_TYPE: "application/json",
+            },
+            message
+        )
         self._stompConn.send_raw(res)
 
     def close(self):
@@ -177,12 +206,13 @@ class StompClient(object):
         self._messageHandler = None
         self._socket = sock
 
-        self._aclient = stomp.AsyncClient(self, "vdsm")
+        self._aclient = stomp.AsyncClient()
         self._stompConn = _StompConnection(
             self._aclient,
             sock,
             reactor
         )
+        self._aclient.handle_connect()
 
     def setTimeout(self, timeout):
         self._stompConn.setTimeout(timeout)
@@ -190,7 +220,7 @@ class StompClient(object):
     def connect(self):
         self._stompConn.connect()
 
-    def handle_message(self, impl, frame):
+    def handle_message(self, sub, frame):
         if self._messageHandler is not None:
             self._messageHandler((self, frame.body))
 
@@ -202,11 +232,18 @@ class StompClient(object):
         if isinstance(self._socket, SSLSocket) and self._socket.pending() > 0:
             self._stompConn._dispatcher.handle_read()
 
-    def send(self, message):
+    def subscribe(self, *args, **kwargs):
+        return self._aclient.subscribe(*args, **kwargs)
+
+    def send(self, message, destination=_DEFAULT_REQUEST_DESTINATION,
+             headers=None):
         self.log.debug("Sending response")
-        self._aclient.send(self._stompConn, _DEFAULT_REQUEST_DESTINATION,
-                           message,
-                           {"content-type": "application/json"})
+        self._aclient.send(
+            destination,
+            message,
+            headers
+        )
+        self._reactor.wakeup()
 
     def close(self):
         self._stompConn.close()
@@ -276,3 +313,50 @@ class StompDetector():
     def handle_socket(self, client_socket, socket_address):
         self.json_binding.add_socket(self._reactor, client_socket)
         self.log.debug("Stomp detected from %s", socket_address)
+
+
+class ClientRpcTransportAdapter(object):
+    def __init__(self, sub, destination, client):
+        self._sub = sub
+        sub.set_message_handler(self._handle_message)
+        self._destination = destination
+        self._client = client
+        self._message_handler = lambda arg: None
+
+    """
+    In order to process message we need to set message
+    handler which is responsible for processing jsonrpc
+    content of the message. Currently there are 2 handlers:
+    JsonRpcClient and JsonRpcServer.
+    """
+    def set_message_handler(self, handler):
+        self._message_handler = handler
+
+    def send(self, data):
+        headers = {
+            "content-type": "application/json",
+            "reply-to": self._sub.destination,
+        }
+        self._client.send(
+            data,
+            self._destination,
+            headers,
+        )
+
+    def _handle_message(self, sub, frame):
+        self._message_handler((self, frame.body))
+
+    def close(self):
+        self._sub.unsubscribe()
+
+
+def StompRpcClient(stomp_client, request_queue, response_queue):
+    sub_id = _FAKE_SUB_ID if request_queue == _FAKE_SUB_ID else None
+
+    return JsonRpcClient(
+        ClientRpcTransportAdapter(
+            stomp_client.subscribe(response_queue, sub_id=sub_id),
+            request_queue,
+            stomp_client,
+        )
+    )

@@ -83,8 +83,6 @@ class JsonRpcServerTests(TestCaseBase):
     @contextmanager
     def _client(self, clientFactory):
             client = clientFactory()
-            client.setTimeout(CALL_TIMEOUT)
-            client.connect()
             try:
                 yield client
             finally:

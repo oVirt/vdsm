@@ -283,12 +283,6 @@ class JsonRpcClient(object):
         self._lock = Lock()
         self._eventcbs = []
 
-    def setTimeout(self, timeout):
-        self._transport.setTimeout(timeout)
-
-    def connect(self):
-        self._transport.connect()
-
     def callMethod(self, methodName, params=[], rid=None):
         resp = self.call(JsonRpcRequest(methodName, params, rid))[0]
         if resp.error:
