@@ -702,7 +702,16 @@ autoreconf -if
 %endif
 %configure %{?with_hooks:--enable-hooks} \
         %{?with_chown_hack:--enable-chown-hack} \
-        %{rhev_build_config_opt}
+        %{rhev_build_config_opt} \
+%if 0%{?rhev_build}
+        --with-reg-bridge-name='rhevm' \
+        --with-engine-name='RHEV-M' \
+        --with-smbios-manufacturer='Red Hat' \
+        --with-smbios-osname='RHEV Hypervisor' \
+        --with-qemu-kvm='qemu-kvm-rhev' \
+        --with-qemu-img='qemu-img-rhev' \
+        --with-register-uri='/RHEVManagerWeb/VdsAutoRegistration.aspx'
+%endif
 
 make
 # Setting software_version and software_revision in dsaversion.py
