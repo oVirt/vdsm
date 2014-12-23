@@ -59,6 +59,9 @@ VG_ATTR_BITS = ("permission", "resizeable", "exported",
 LV_ATTR_BITS = ("voltype", "permission", "allocations", "fixedminor", "state",
                 "devopen", "target", "zero")
 
+# Returned by lvm commands for pv_name when a pv name is not available.
+UNKNOWN_DEVICE = "unknown device"
+
 PV = namedtuple("PV", PV_FIELDS + ",guid")
 VG = namedtuple("VG", VG_FIELDS + ",writeable,partial")
 VG_ATTR = namedtuple("VG_ATTR", VG_ATTR_BITS)
@@ -329,6 +332,9 @@ class LVMCache(object):
             for line in out:
                 fields = [field.strip() for field in line.split(SEPARATOR)]
                 pv = makePV(*fields)
+                if pv.name == UNKNOWN_DEVICE:
+                    log.error("Missing pv: %s in vg: %s", pv.uuid, pv.vg_name)
+                    continue
                 self._pvs[pv.name] = pv
                 updatedPVs[pv.name] = pv
             # If we updated all the PVs drop stale flag
@@ -383,6 +389,9 @@ class LVMCache(object):
                 uuid = fields[VG._fields.index("uuid")]
                 pvNameIdx = VG._fields.index("pv_name")
                 pv_name = fields[pvNameIdx]
+                if pv_name == UNKNOWN_DEVICE:
+                    # PV is missing, e.g. device lost of target not connected
+                    continue
                 if uuid not in vgsFields:
                     fields[pvNameIdx] = [pv_name]  # Make a pv_names list
                     vgsFields[uuid] = fields
