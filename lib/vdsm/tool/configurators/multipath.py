@@ -135,11 +135,12 @@ def configure():
     # Flush all unused multipath device maps
     utils.execCmd([constants.EXT_MULTIPATH, "-F"])
 
-    rc = service.service_reload("multipathd")
-    if rc != 0:
+    try:
+        service.service_reload("multipathd")
+    except service.ServiceOperationError:
         status = service.service_status("multipathd", False)
         if status == 0:
-            raise RuntimeError("Failed to reload Multipath.")
+            raise
 
 
 def isconfigured():
