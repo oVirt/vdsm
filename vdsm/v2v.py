@@ -18,18 +18,26 @@
 #
 import xml.etree.ElementTree as ET
 from contextlib import closing
-import libvirt
 
 import logging
+import caps
+import libvirt
 from vdsm import libvirtconnection
 
 
 class InvalidVMConfiguration(ValueError):
     ''' Unexpected error while parsing libvirt domain xml '''
-    pass
+
+
+def supported():
+    return not (caps.getos() in (caps.OSName.RHEVH, caps.OSName.RHEL)
+                and caps.osversion()['version'].startswith('6'))
 
 
 def get_external_vms(uri, username, password):
+    if not supported():
+        return errCode["noimpl"]
+
     conn = libvirtconnection.open_connection(uri=uri,
                                              username=username,
                                              passwd=password)

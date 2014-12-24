@@ -3689,6 +3689,7 @@
 # @Host.getExternalVMs:
 #
 # Get information about the not-KVM virtual machines.
+# This verb is not supported on el6
 #
 # @uri:       libvirt connection uri
 #

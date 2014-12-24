@@ -21,6 +21,7 @@ import v2v
 from vdsm import libvirtconnection
 
 
+from nose.plugins.skip import SkipTest
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
@@ -82,6 +83,9 @@ def hypervisorConnect(uri, username, passwd):
 class v2vTests(TestCaseBase):
     @MonkeyPatch(libvirtconnection, 'open_connection', hypervisorConnect)
     def testGetExternalVMs(self):
+        if not v2v.supported():
+            raise SkipTest('v2v is not supported current os version')
+
         vms = v2v.get_external_vms('esx://mydomain', 'user',
                                    'password')
         self.assertEquals(len(vms), 1)
