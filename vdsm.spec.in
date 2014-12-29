@@ -15,6 +15,10 @@
 # Fedora official build
 %global fedora_koji_build 0
 
+%if 0%{fedora_koji_build}
+%global with_hooks 1
+%endif
+
 # RHEV build - overridable using rpmbuild --define "rhev_build 1"
 %{!?rhev_build: %global rhev_build 0}
 %if %{rhev_build}
