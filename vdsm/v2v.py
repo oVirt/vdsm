@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 from contextlib import closing
 
 import logging
+from vdsm.define import errCode
 import caps
 import libvirt
 from vdsm import libvirtconnection
