@@ -3870,7 +3870,8 @@
 {'type': 'HostDeviceParams',
  'data': {'capability': 'str', 'iommu_group': 'uint',
           'parent': 'str', 'product_id': 'str', 'product': 'str',
-          'vendor_id': 'str', 'vendor': 'str', 'totalvfs': 'uint'}}
+          'vendor_id': 'str', 'vendor': 'str', 'totalvfs': 'uint',
+          '*physfn':'str'}}
 
 ##
 # @HostDevice:
