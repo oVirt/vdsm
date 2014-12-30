@@ -653,12 +653,6 @@ class VmStatsThread(AdvancedStatsThread):
     def get(self):
         stats = {}
 
-        try:
-            stats['statsAge'] = time.time() - self.getLastSampleTime()
-        except TypeError:
-            self._log.debug("Stats age not available")
-            stats['statsAge'] = -1.0
-
         self._getCpuStats(stats)
         self._getNetworkStats(stats)
         self._getDiskStats(stats)
@@ -1803,9 +1797,11 @@ class Vm(object):
 
         decStats = {}
         try:
-            if self._vmStats:
+            if self._vmStats and self._vmStats.getLastSampleTime() is not None:
                 decStats = self._vmStats.get()
-                self._setUnresponsiveIfTimeout(stats, decStats['statsAge'])
+                self._setUnresponsiveIfTimeout(
+                    stats,
+                    time.time() - self._vmStats.getLastSampleTime())
         except Exception:
             self.log.exception("Error fetching vm stats")
         for var in decStats:

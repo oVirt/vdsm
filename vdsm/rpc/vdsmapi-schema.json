@@ -1953,8 +1953,6 @@
 #
 # @txRate:          Outgoing packet rate (as a percentage of total capacity)
 #
-# @statsAge:        Seconds elapsed since the stats were last sampled
-#
 # @network:         Per-interface network statistics
 #
 # @rxDropped:       The number of incoming packets dropped
@@ -2031,7 +2029,7 @@
 ##
 {'type': 'HostStats',
  'data': {'cpuUser': 'float', 'cpuSys': 'float', 'cpuIdle': 'float',
-           'rxRate': 'float', 'txRate': 'float', 'statsAge': 'uint',
+           'rxRate': 'float', 'txRate': 'float',
            'network': 'HostNetworkInterfaceStatsMap',
            'rxDropped': 'uint', 'txDropped': 'uint',
            'cpuSysVdsmd': 'float', 'cpuUserVdsmd': 'float',
@@ -6721,8 +6719,6 @@
 #
 # @boot: #optional     An alias for the type of device used to boot the VM
 #
-# @statsAge:           The age of these statistics in seconds
-#
 # @cpuSys:             Ratio of CPU time spent by qemu on other than guest time
 #
 # @cpuUser:            Ratio of CPU time spent by the guest VM
@@ -6799,7 +6795,7 @@
           'network': 'NetworkInterfaceStatsMap',
           'disks': 'VmDiskStatsMap', 'monitorResponse': 'int',
           'elapsedTime': 'uint', '*cdrom': 'str',
-          '*boot': 'VmBootMode','statsAge': 'float', 'cpuSys': 'float',
+          '*boot': 'VmBootMode', 'cpuSys': 'float',
           'cpuUser': 'float',
           'acpiEnable': 'bool', 'timeOffset': 'uint',
           'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'uint',

@@ -527,7 +527,6 @@ class HostStatsThread(threading.Thread):
         self._log = log
         self._stopEvent = threading.Event()
         self._samples = []
-        self._lastSampleTime = time.time()
 
         self._pid = os.getpid()
         self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
@@ -555,7 +554,6 @@ class HostStatsThread(threading.Thread):
                         if diff:
                             self._CONNLOG.debug('%s', diff)
 
-                    self._lastSampleTime = sample.timestamp
                     if len(self._samples) > self.AVERAGING_WINDOW:
                         self._samples.pop(0)
                 except vm.TimeoutError:
@@ -651,8 +649,7 @@ class HostStatsThread(threading.Thread):
             * txRate
         """
         stats = {'cpuUser': 0.0, 'cpuSys': 0.0, 'cpuIdle': 100.0,
-                 'rxRate': 0.0, 'txRate': 0.0,
-                 'statsAge': time.time() - self._lastSampleTime}
+                 'rxRate': 0.0, 'txRate': 0.0}
         if len(self._samples) < 2:
             return stats
         hs0, hs1 = self._samples[0], self._samples[-1]
