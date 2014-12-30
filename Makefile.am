@@ -107,10 +107,10 @@ SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 .PHONY: pyflakes
 pyflakes:
 	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
-	find . -path './.git' -prune -type f -o \
+	( find . -path './.git' -prune -type f -o \
 		-path './vdsm_compat' -prune -type f -o \
-		-name '*.py' -o -name '*.py.in'  | \
-		echo $(WHITELIST) | xargs $(PYFLAKES) | \
+		-name '*.py' -o -name '*.py.in' && \
+		echo $(WHITELIST) ) | xargs $(PYFLAKES) | \
 		grep -w -v $(SKIP_PYFLAKES_ERR) | \
 		while read LINE; do echo "$$LINE"; false; done
 
