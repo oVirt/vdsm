@@ -1489,11 +1489,17 @@ class TestVmStatsThread(TestCaseBase):
         MAC = '52:54:00:59:F5:3F'
         with fake.VM() as testvm:
             mock_stats_thread = vm.VmStatsThread(testvm)
+            pretime = utils.monotonic_time()
             res = mock_stats_thread._getNicStats(
                 name='vnettest', model='virtio', mac=MAC,
                 start_sample=(2 ** 64 - 15 * GBPS, 1, 2, 3, 0, 4, 5, 6),
                 end_sample=(0, 7, 8, 9, 5 * GBPS, 10, 11, 12),
                 interval=15.0)
+            posttime = utils.monotonic_time()
+            self.assertIn('sampleTime', res)
+            self.assertTrue(pretime <= res['sampleTime'] <= posttime,
+                            'sampleTime not in [%s..%s]' % (pretime, posttime))
+            del res['sampleTime']
             self.assertEqual(res, {
                 'rxErrors': '8', 'rxDropped': '9',
                 'txErrors': '11', 'txDropped': '12',

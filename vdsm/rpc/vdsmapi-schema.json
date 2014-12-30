@@ -1704,6 +1704,8 @@
 #
 # @tx:         The number of outgoing bytes in total (new in version 4.17)
 #
+# @sampleTime: Time stamp of the sample (new in version 4.17)
+#
 # @macAddr:    The hardware address
 #
 # Since: 4.10.0
@@ -1712,7 +1714,8 @@
  'data': {'name': 'str', 'speed': 'uint', 'rxDropped': 'uint',
           'txDropped': 'uint', 'rxErrors': 'uint', 'txErrors': 'uint',
           'state': 'NetworkInterfaceState', 'rxRate': 'float',
-          'txRate': 'float', 'rx': 'uint', 'tx': 'uint', 'macAddr': 'str'}}
+          'txRate': 'float', 'rx': 'uint', 'tx': 'uint', 'sampleTime': 'float',
+          'macAddr': 'str'}}
 ##
 # @HostNetworkInterfaceStats:
 #
@@ -1740,13 +1743,16 @@
 #
 # @tx:         The number of outgoing bytes in total (new in version 4.17)
 #
+# @sampleTime: Time stamp of the sample (new in version 4.17)
+#
 # Since: 4.11.1
 ##
 {'type': 'HostNetworkInterfaceStats',
  'data': {'name': 'str', 'speed': 'uint', 'rxDropped': 'uint',
           'txDropped': 'uint', 'rxErrors': 'uint', 'txErrors': 'uint',
           'state': 'NetworkInterfaceState', 'rxRate': 'float',
-          'txRate': 'float', 'rx': 'uint', 'tx': 'uint'}}
+          'txRate': 'float', 'rx': 'uint', 'tx': 'uint', 'sampleTime': 'float',
+         }}
 
 ##
 # @StorageDomainVitals:

@@ -692,6 +692,7 @@ class HostStatsThread(threading.Thread):
                                       'txRate': '%.1f' % txRate,
                                       'rx': str(iface.rx),
                                       'tx': str(iface.tx),
+                                      'sampleTime': hs1.timestamp,
                                       }
             rx += thisRx
             tx += thisTx

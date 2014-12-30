@@ -434,17 +434,23 @@ class NetworkTest(TestCaseBase):
             self.assertIn(
                 left, hostStats['network'], 'could not find veth %s' % left)
 
-        def getTxStatsFromInterface(iface):
+        def getStatsFromInterface(iface):
             status, msg, hostStats = self.vdsm_net.getVdsStats()
             self.assertEqual(status, SUCCESS, msg)
             self.assertIn('network', hostStats)
             self.assertIn(iface, hostStats['network'])
             self.assertIn('tx', hostStats['network'][iface])
             self.assertIn('rx', hostStats['network'][iface])
-            return int(hostStats['network'][iface]['tx'])
+            self.assertIn('sampleTime', hostStats['network'][iface])
+            return (int(hostStats['network'][iface]['tx']),
+                    hostStats['network'][iface]['sampleTime'])
 
         def assertStatsInRange():
-            curTxStat = getTxStatsFromInterface(left)
+            curTxStat, curTime = getStatsFromInterface(left)
+            self.assertTrue(
+                curTime > prevTime,
+                'sampleTime is not monotonically increasing')
+
             diff = (curTxStat - prevTxStat)
             self.assertTrue(ARP_REQUEST_SIZE <= diff
                             <= (ARP_REQUEST_SIZE + DHCP_PACKET_SIZE),
@@ -461,7 +467,7 @@ class NetworkTest(TestCaseBase):
             self.retryAssert(
                 assertTestDevStatsReported, timeout=20)
 
-            prevTxStat = getTxStatsFromInterface(left)
+            prevTxStat, prevTime = getStatsFromInterface(left)
             # running ARP from the interface
             rc, out, err = execCmd([_ARPPING_COMMAND.cmd, '-D', '-I', left,
                                     '-c', '1', IP_ADDRESS_IN_NETWORK])

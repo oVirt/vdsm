@@ -587,6 +587,7 @@ class VmStatsThread(AdvancedStatsThread):
 
         ifStats['rx'] = str(end_sample[0])
         ifStats['tx'] = str(end_sample[4])
+        ifStats['sampleTime'] = utils.monotonic_time()
 
         return ifStats
 
