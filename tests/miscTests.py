@@ -137,6 +137,7 @@ class EventTests(TestCaseBase):
         event.emit()
         ev.wait(5)
         self.assertTrue(ev.isSet())
+        receiver  # Makes pyflakes happy
 
     def testInstanceMethodDead(self):
         ev = threading.Event()
