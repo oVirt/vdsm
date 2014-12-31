@@ -294,7 +294,12 @@ else:
     @_sysvNative
     def _serviceReload(srvName):
         cmd = [_SERVICE.cmd, srvName, "reload"]
-        return _execSysvEnv(cmd)
+        rc, out, err = _execSysvEnv(cmd)
+        status = service_status(srvName, False)
+        if (rc == 0) and (status != 0):
+            rc = 1
+            err = 'reload failed because service was not running'
+        return (rc, out, err)
 
     @_sysvNative
     def _serviceIsManaged(srvName):
