@@ -418,6 +418,7 @@ command_info = {
     'Image_deleteVolumes': {'ret': 'uuid'},
     'Image_getVolumes': {'ret': 'uuidlist'},
     'Image_download': {'ret': 'uuid'},
+    'Image_upload': {'ret': 'uuid'},
     'Image_mergeSnapshots': {'ret': 'uuid'},
     'Image_move': {'ret': 'uuid'},
     'Image_reconcileVolumeChain': {'ret': 'volumes'},
