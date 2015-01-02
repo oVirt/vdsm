@@ -1288,6 +1288,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/qemuimg.py*
 %{python_sitelib}/%{vdsm_name}/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/sslutils.py*
+%{python_sitelib}/%{vdsm_name}/sysctl.py*
 %{python_sitelib}/%{vdsm_name}/utils.py*
 %{python_sitelib}/%{vdsm_name}/vdscli.py*
 %{python_sitelib}/%{vdsm_name}/virtsparsify.py*

@@ -33,6 +33,7 @@ dist_vdsmpylib_PYTHON = \
 	profile.py \
 	qemuimg.py \
 	sslutils.py \
+	sysctl.py \
 	utils.py \
 	vdscli.py \
 	virtsparsify.py \

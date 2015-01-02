@@ -54,6 +54,7 @@ except ImportError:
     _glusterEnabled = False
 
 from vdsm import utils
+from vdsm import sysctl
 from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
@@ -358,6 +359,14 @@ class _SuperVdsm(object):
     @logDecorator
     def hbaRescan(self):
         return hba._rescan()
+
+    @logDecorator
+    def set_rp_filter_loose(self, dev):
+        sysctl.set_rp_filter_loose(dev)
+
+    @logDecorator
+    def set_rp_filter_strict(self, dev):
+        sysctl.set_rp_filter_strict(dev)
 
     def __udevReloadRules(self, guid):
         if self.__udevOperationReload():
