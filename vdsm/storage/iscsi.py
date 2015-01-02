@@ -32,6 +32,7 @@ from collections import namedtuple
 
 import misc
 from vdsm.config import config
+from vdsm.netinfo import getRouteDeviceTo
 import devicemapper
 from threading import RLock
 
@@ -185,6 +186,9 @@ def addIscsiNode(iface, target, credentials=None):
                     iscsiadm.node_update(iface.name, portalStr, target.iqn,
                                          key, value, hideValue=True)
 
+            setRpFilterIfNeeded(iface.netIfaceName, target.portal.hostname,
+                                True)
+
             iscsiadm.node_login(iface.name, portalStr, target.iqn)
 
             iscsiadm.node_update(iface.name, portalStr, target.iqn,
@@ -207,6 +211,7 @@ def removeIscsiNode(iface, target):
             pass
 
         iscsiadm.node_delete(iface.name, portalStr, target.iqn)
+        setRpFilterIfNeeded(iface.netIfaceName, target.portal.hostname, False)
 
 
 def addIscsiPortal(iface, portal, credentials=None):
@@ -524,9 +529,53 @@ def disconnectFromUndelyingStorage(devPath):
 def disconnectiScsiSession(sessionID):
     # FIXME : Should throw exception on error
     sessionID = int(sessionID)
+    sessionInfo = getSessionInfo(sessionID)
     try:
         iscsiadm.session_logout(sessionID)
     except iscsiadm.IscsiError as e:
         return e[0]
 
+    netIfaceName = sessionInfo.iface.netIfaceName
+    hostname = sessionInfo.target.portal.hostname
+    setRpFilterIfNeeded(netIfaceName, hostname, False)
+
     return 0
+
+
+def _sessionsUsingNetiface(netIfaceName):
+    """ Return sessions using netIfaceName """
+    for session in iterateIscsiSessions():
+        if session.iface.netIfaceName == netIfaceName:
+            yield session
+
+
+def setRpFilterIfNeeded(netIfaceName, hostname, loose_mode):
+    """
+    Set rp_filter to loose or strict mode if there's no session using the
+    netIfaceName device and it's not the device used by the OS to reach the
+    'hostname'.
+    loose mode is needed to allow multiple iSCSI connections in a multiple NIC
+    per subnet configuration. strict mode is needed to avoid the security
+    breach where an untrusted VM can DoS the host by sending it packets with
+    spoofed random sources.
+
+    Arguments:
+        netIfaceName: the device used by the iSCSI session
+        target: iSCSI target object cointaining the portal hostname
+        loose_mode: boolean
+    """
+    if netIfaceName is None:
+        log.info("iSCSI iface.net_ifacename not provided. Skipping.")
+        return
+
+    sessions = _sessionsUsingNetiface(netIfaceName)
+
+    if not any(sessions) and netIfaceName != getRouteDeviceTo(hostname):
+        if loose_mode:
+            log.info("Setting loose mode rp_filter for device %r." %
+                     netIfaceName)
+            supervdsm.getProxy().set_rp_filter_loose(netIfaceName)
+        else:
+            log.info("Setting strict mode rp_filter for device %r." %
+                     netIfaceName)
+            supervdsm.getProxy().set_rp_filter_strict(netIfaceName)
