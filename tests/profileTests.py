@@ -30,7 +30,7 @@ from vdsm import config
 
 from monkeypatch import MonkeyPatch
 from nose.plugins.skip import SkipTest
-from testlib import VdsmTestCase
+from testlib import VdsmTestCase, make_config
 
 yappi = None
 try:
@@ -39,13 +39,6 @@ except ImportError:
     pass
 
 FILENAME = __file__ + '.prof'
-
-
-def make_config(enable='false'):
-    cfg = ConfigParser.ConfigParser()
-    config.set_defaults(cfg)
-    cfg.set('devel', 'profile_enable', enable)
-    return cfg
 
 
 def requires_yappi():
@@ -65,7 +58,8 @@ class ProfileTests(VdsmTestCase):
 
 class ApplicationProfileTests(ProfileTests):
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     @MonkeyPatch(profile, '_FORMAT', 'pstat')
     def test_pstats_format(self):
@@ -75,7 +69,8 @@ class ApplicationProfileTests(ProfileTests):
         profile.stop()
         self.assertNotRaises(pstats.Stats, FILENAME)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     @MonkeyPatch(profile, '_FORMAT', 'ystat')
     def test_ystats_format(self):
@@ -85,7 +80,8 @@ class ApplicationProfileTests(ProfileTests):
         profile.stop()
         self.assertNotRaises(open_ystats, FILENAME)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     @MonkeyPatch(profile, '_FORMAT', 'ystat')
     @MonkeyPatch(profile, '_BUILTINS', True)
@@ -97,7 +93,8 @@ class ApplicationProfileTests(ProfileTests):
         stats = open_ystats(FILENAME)
         self.assertTrue(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     @MonkeyPatch(profile, '_FORMAT', 'ystat')
     @MonkeyPatch(profile, '_BUILTINS', False)
@@ -109,7 +106,8 @@ class ApplicationProfileTests(ProfileTests):
         stats = open_ystats(FILENAME)
         self.assertFalse(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     @MonkeyPatch(profile, '_FORMAT', 'ystat')
     @MonkeyPatch(profile, '_CLOCK', 'cpu')
@@ -123,7 +121,8 @@ class ApplicationProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertTrue(func.ttot < 0.1)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     @MonkeyPatch(profile, '_FORMAT', 'ystat')
     @MonkeyPatch(profile, '_CLOCK', 'wall')
@@ -137,7 +136,8 @@ class ApplicationProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertTrue(func.ttot > 0.1)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     def test_is_running(self):
         requires_yappi()
@@ -149,13 +149,15 @@ class ApplicationProfileTests(ProfileTests):
             profile.stop()
         self.assertFalse(profile.is_running())
 
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     def test_is_enabled(self):
         requires_yappi()
         self.assertTrue(profile.is_enabled())
 
     # This must succeed even if yappi is not installed
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_disabled(self):
         profile.start()
         try:
@@ -170,7 +172,8 @@ class ApplicationProfileTests(ProfileTests):
 class FunctionProfileTests(ProfileTests):
 
     # Function profile must succeed if profile is disabled in config.
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_profile_disabled(self):
         requires_yappi()
         self.profiled_function()
@@ -178,7 +181,8 @@ class FunctionProfileTests(ProfileTests):
 
     # Function profile must fail if profile is enabled in config - we cannot
     # use application wide profile and function profile in the same time.
-    @MonkeyPatch(profile, 'config', make_config(enable='true'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'true')]))
     @MonkeyPatch(profile, '_FILENAME', FILENAME)
     def test_fail_if_Profile_is_running(self):
         requires_yappi()
@@ -189,32 +193,37 @@ class FunctionProfileTests(ProfileTests):
             profile.stop()
 
     # It is not possible to call a profiled function from a profiled function.
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_fail_recursive_profile(self):
         requires_yappi()
         self.assertRaises(profile.Error, self.recursive_profile)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_ystat_format(self):
         requires_yappi()
         self.ystat_format()
         self.assertNotRaises(open_ystats, FILENAME)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_with_builtins(self):
         requires_yappi()
         self.with_builtins()
         stats = open_ystats(FILENAME)
         self.assertTrue(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_without_builtins(self):
         requires_yappi()
         self.without_builtins()
         stats = open_ystats(FILENAME)
         self.assertFalse(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_cpu_clock(self):
         requires_yappi()
         self.cpu_clock()
@@ -223,7 +232,8 @@ class FunctionProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertTrue(func.ttot < 0.1)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_wall_clock(self):
         requires_yappi()
         self.wall_clock()
@@ -268,7 +278,8 @@ class ThreadsProfileTests(ProfileTests):
         self.ready = threading.Event()
         self.resume = threading.Event()
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_new_threads(self):
         # The easy case - threads started after yappi was started
         requires_yappi()
@@ -278,7 +289,8 @@ class ThreadsProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertEquals(func.ncall, 1)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_running_threads(self):
         # The harder case - threads started before yappi was started
         requires_yappi()
@@ -289,7 +301,8 @@ class ThreadsProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertEquals(func.ncall, 1)
 
-    @MonkeyPatch(profile, 'config', make_config(enable='false'))
+    @MonkeyPatch(profile, 'config',
+                 make_config([('devel', 'profile_enable', 'false')]))
     def test_without_threads(self):
         requires_yappi()
         self.without_threads()
