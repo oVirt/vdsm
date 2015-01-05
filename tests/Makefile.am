@@ -91,6 +91,7 @@ test_modules = \
 	vmStorageTests.py \
 	vmTests.py \
 	vmTestsData.py \
+	vmUtilsTests.py \
 	vmXmlTests.py \
 	volumeTests.py \
 	v2vTests.py \
