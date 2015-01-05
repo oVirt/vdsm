@@ -590,10 +590,19 @@ class VM(APIBase):
         return v.diskReplicateFinish(srcDisk, dstDisk)
 
     def diskSizeExtend(self, driveSpecs, newSize):
-        v = self._cif.vmContainer.get(self._UUID)
-        if not v:
-            return errCode['noVM']
-        return v.diskSizeExtend(driveSpecs, newSize)
+        if self._UUID == VM.BLANK_UUID:
+            try:
+                volume = Volume(
+                    driveSpecs['volumeID'], driveSpecs['poolID'],
+                    driveSpecs['domainID'], driveSpecs['imageID'])
+            except KeyError:
+                return errCode['imageErr']
+            return volume.updateSize(newSize)
+        else:
+            v = self._cif.vmContainer.get(self._UUID)
+            if not v:
+                return errCode['noVM']
+            return v.diskSizeExtend(driveSpecs, newSize)
 
     def pause(self):
         v = self._cif.vmContainer.get(self._UUID)
