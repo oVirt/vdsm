@@ -67,6 +67,17 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([RHEV], [test "${enable_rhev}" = "yes"])
 
 AC_ARG_ENABLE(
+    [koji],
+    [AS_HELP_STRING(
+        [--enable-koji],
+        [build koji version @<:@default=no@:>@]
+    )],
+    ,
+    [enable_koji="no"]
+)
+AM_CONDITIONAL([KOJI], [test "${enable_koji}" = "yes"])
+
+AC_ARG_ENABLE(
     [chown_hack],
     [AS_HELP_STRING(
         [--enable-chown-hack],
