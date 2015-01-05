@@ -2984,6 +2984,23 @@ class Vm(object):
 
         return 'NOERR'
 
+    def isDomainReadyForCommands(self):
+        """
+        Returns True if the domain is reported to be in the safest condition
+        to accept commands.
+        False negative (domain is reported NOT ready, but it is) is possible
+        False positive (domain is reported ready, but it is NOT) is avoided
+        """
+        try:
+            state, details, stateTime = self._dom.controlInfo()
+        except AttributeError:
+            # this method may be called asynchronously by periodic
+            # operations. Thus, we must use a try/except block
+            # to avoid racy checks.
+            return False
+        else:
+            return state == libvirt.VIR_DOMAIN_CONTROL_OK
+
     def _timeoutExperienced(self, timeout):
         if timeout:
             self._monitorResponse = -1
