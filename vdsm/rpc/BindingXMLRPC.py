@@ -531,17 +531,8 @@ class BindingXMLRPC(object):
         return api.getDiskAlignment(driveSpecs)
 
     def diskSizeExtend(self, vmId, driveSpecs, newSize):
-        if vmId == API.VM.BLANK_UUID:
-            try:
-                volume = API.Volume(
-                    driveSpecs['volumeID'], driveSpecs['poolID'],
-                    driveSpecs['domainID'], driveSpecs['imageID'])
-            except KeyError:
-                return errCode['imageErr']
-            return volume.updateSize(newSize)
-        else:
-            vm = API.VM(vmId)
-            return vm.diskSizeExtend(driveSpecs, newSize)
+        api = API.VM(vmId)
+        return api.diskSizeExtend(driveSpecs, newSize)
 
     def addNetwork(self, bridge, vlan=None, bond=None, nics=None,
                    options=None):
