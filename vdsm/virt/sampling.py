@@ -23,17 +23,17 @@ Support for VM and host statistics sampling.
 """
 
 from collections import deque
-import threading
-import os
-import time
-import logging
 import errno
+import logging
+import os
 import re
+import threading
+import time
 
-from vdsm import utils
-from vdsm import netinfo
-from vdsm import ipwrapper
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
+from vdsm import ipwrapper
+from vdsm import netinfo
+from vdsm import utils
 
 import caps
 
