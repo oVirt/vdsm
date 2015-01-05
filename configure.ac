@@ -351,6 +351,7 @@ AC_OUTPUT([
 	lib/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/netlink/Makefile
+	lib/vdsm/profiling/Makefile
 	lib/vdsm/tool/Makefile
 	lib/vdsm/tool/configurators/Makefile
 	lib/yajsonrpc/Makefile

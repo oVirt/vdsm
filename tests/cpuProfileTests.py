@@ -24,7 +24,7 @@ import pstats
 import time
 import threading
 
-from vdsm import profile
+from vdsm.profiling import cpu
 
 from monkeypatch import MonkeyPatch
 from nose.plugins.skip import SkipTest
@@ -56,112 +56,112 @@ class ProfileTests(VdsmTestCase):
 
 class ApplicationProfileTests(ProfileTests):
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
-    @MonkeyPatch(profile, '_FORMAT', 'pstat')
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FORMAT', 'pstat')
     def test_pstats_format(self):
         requires_yappi()
-        profile.start()
-        profile.is_running()  # Let if profile something
-        profile.stop()
+        cpu.start()
+        cpu.is_running()  # Let if profile something
+        cpu.stop()
         self.assertNotRaises(pstats.Stats, FILENAME)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
-    @MonkeyPatch(profile, '_FORMAT', 'ystat')
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FORMAT', 'ystat')
     def test_ystats_format(self):
         requires_yappi()
-        profile.start()
-        profile.is_running()  # Let if profile something
-        profile.stop()
+        cpu.start()
+        cpu.is_running()  # Let if profile something
+        cpu.stop()
         self.assertNotRaises(open_ystats, FILENAME)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
-    @MonkeyPatch(profile, '_FORMAT', 'ystat')
-    @MonkeyPatch(profile, '_BUILTINS', True)
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FORMAT', 'ystat')
+    @MonkeyPatch(cpu, '_BUILTINS', True)
     def test_with_builtins(self):
         requires_yappi()
-        profile.start()
+        cpu.start()
         dict()
-        profile.stop()
+        cpu.stop()
         stats = open_ystats(FILENAME)
         self.assertTrue(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
-    @MonkeyPatch(profile, '_FORMAT', 'ystat')
-    @MonkeyPatch(profile, '_BUILTINS', False)
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FORMAT', 'ystat')
+    @MonkeyPatch(cpu, '_BUILTINS', False)
     def test_without_builtins(self):
         requires_yappi()
-        profile.start()
+        cpu.start()
         dict()
-        profile.stop()
+        cpu.stop()
         stats = open_ystats(FILENAME)
         self.assertFalse(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
-    @MonkeyPatch(profile, '_FORMAT', 'ystat')
-    @MonkeyPatch(profile, '_CLOCK', 'cpu')
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FORMAT', 'ystat')
+    @MonkeyPatch(cpu, '_CLOCK', 'cpu')
     def test_cpu_clock(self):
         requires_yappi()
-        profile.start()
+        cpu.start()
         self.sleep(0.1)
-        profile.stop()
+        cpu.stop()
         stats = open_ystats(FILENAME)
         name = function_name(self.sleep)
         func = find_function(stats, __file__, name)
         self.assertTrue(func.ttot < 0.1)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
-    @MonkeyPatch(profile, '_FORMAT', 'ystat')
-    @MonkeyPatch(profile, '_CLOCK', 'wall')
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FORMAT', 'ystat')
+    @MonkeyPatch(cpu, '_CLOCK', 'wall')
     def test_wall_clock(self):
         requires_yappi()
-        profile.start()
+        cpu.start()
         self.sleep(0.1)
-        profile.stop()
+        cpu.stop()
         stats = open_ystats(FILENAME)
         name = function_name(self.sleep)
         func = find_function(stats, __file__, name)
         self.assertTrue(func.ttot > 0.1)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
     def test_is_running(self):
         requires_yappi()
-        self.assertFalse(profile.is_running())
-        profile.start()
+        self.assertFalse(cpu.is_running())
+        cpu.start()
         try:
-            self.assertTrue(profile.is_running())
+            self.assertTrue(cpu.is_running())
         finally:
-            profile.stop()
-        self.assertFalse(profile.is_running())
+            cpu.stop()
+        self.assertFalse(cpu.is_running())
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
     def test_is_enabled(self):
         requires_yappi()
-        self.assertTrue(profile.is_enabled())
+        self.assertTrue(cpu.is_enabled())
 
     # This must succeed even if yappi is not installed
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_disabled(self):
-        profile.start()
+        cpu.start()
         try:
-            self.assertFalse(profile.is_running())
+            self.assertFalse(cpu.is_running())
         finally:
-            profile.stop()
+            cpu.stop()
 
     def sleep(self, seconds):
         time.sleep(seconds)
@@ -170,7 +170,7 @@ class ApplicationProfileTests(ProfileTests):
 class FunctionProfileTests(ProfileTests):
 
     # Function profile must succeed if profile is disabled in config.
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_profile_disabled(self):
         requires_yappi()
@@ -179,32 +179,32 @@ class FunctionProfileTests(ProfileTests):
 
     # Function profile must fail if profile is enabled in config - we cannot
     # use application wide profile and function profile in the same time.
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'true')]))
-    @MonkeyPatch(profile, '_FILENAME', FILENAME)
+    @MonkeyPatch(cpu, '_FILENAME', FILENAME)
     def test_fail_if_Profile_is_running(self):
         requires_yappi()
-        profile.start()
+        cpu.start()
         try:
-            self.assertRaises(profile.Error, self.profiled_function)
+            self.assertRaises(cpu.Error, self.profiled_function)
         finally:
-            profile.stop()
+            cpu.stop()
 
     # It is not possible to call a profiled function from a profiled function.
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_fail_recursive_profile(self):
         requires_yappi()
-        self.assertRaises(profile.Error, self.recursive_profile)
+        self.assertRaises(cpu.Error, self.recursive_profile)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_ystat_format(self):
         requires_yappi()
         self.ystat_format()
         self.assertNotRaises(open_ystats, FILENAME)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_with_builtins(self):
         requires_yappi()
@@ -212,7 +212,7 @@ class FunctionProfileTests(ProfileTests):
         stats = open_ystats(FILENAME)
         self.assertTrue(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_without_builtins(self):
         requires_yappi()
@@ -220,7 +220,7 @@ class FunctionProfileTests(ProfileTests):
         stats = open_ystats(FILENAME)
         self.assertFalse(find_module(stats, '__builtin__'))
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_cpu_clock(self):
         requires_yappi()
@@ -230,7 +230,7 @@ class FunctionProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertTrue(func.ttot < 0.1)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_wall_clock(self):
         requires_yappi()
@@ -240,31 +240,31 @@ class FunctionProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertTrue(func.ttot > 0.1)
 
-    @profile.profile(FILENAME)
+    @cpu.profile(FILENAME)
     def profiled_function(self):
-        self.assertTrue(profile.is_running())
+        self.assertTrue(cpu.is_running())
 
-    @profile.profile(FILENAME)
+    @cpu.profile(FILENAME)
     def recursive_profile(self):
         self.profiled_function()
 
-    @profile.profile(FILENAME, format="ystat")
+    @cpu.profile(FILENAME, format="ystat")
     def ystat_format(self):
         pass
 
-    @profile.profile(FILENAME, format="ystat", builtins=False)
+    @cpu.profile(FILENAME, format="ystat", builtins=False)
     def without_builtins(self):
         pass
 
-    @profile.profile(FILENAME, format="ystat", builtins=True)
+    @cpu.profile(FILENAME, format="ystat", builtins=True)
     def with_builtins(self):
         pass
 
-    @profile.profile(FILENAME, format="ystat", clock="cpu")
+    @cpu.profile(FILENAME, format="ystat", clock="cpu")
     def cpu_clock(self):
         time.sleep(0.1)
 
-    @profile.profile(FILENAME, format="ystat", clock="wall")
+    @cpu.profile(FILENAME, format="ystat", clock="wall")
     def wall_clock(self):
         time.sleep(0.1)
 
@@ -276,7 +276,7 @@ class ThreadsProfileTests(ProfileTests):
         self.ready = threading.Event()
         self.resume = threading.Event()
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_new_threads(self):
         # The easy case - threads started after yappi was started
@@ -287,7 +287,7 @@ class ThreadsProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertEquals(func.ncall, 1)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_running_threads(self):
         # The harder case - threads started before yappi was started
@@ -299,7 +299,7 @@ class ThreadsProfileTests(ProfileTests):
         func = find_function(stats, __file__, name)
         self.assertEquals(func.ncall, 1)
 
-    @MonkeyPatch(profile, 'config',
+    @MonkeyPatch(cpu, 'config',
                  make_config([('devel', 'profile_enable', 'false')]))
     def test_without_threads(self):
         requires_yappi()
@@ -308,16 +308,16 @@ class ThreadsProfileTests(ProfileTests):
         name = function_name(self.worker_function)
         self.assertRaises(NotFound, find_function, stats, __file__, name)
 
-    @profile.profile(FILENAME, format="ystat", threads=True)
+    @cpu.profile(FILENAME, format="ystat", threads=True)
     def new_threads(self):
         self.start_thread()
         self.join_thread()
 
-    @profile.profile(FILENAME, format="ystat", threads=True)
+    @cpu.profile(FILENAME, format="ystat", threads=True)
     def running_threads(self):
         self.join_thread()
 
-    @profile.profile(FILENAME, format="ystat", threads=False)
+    @cpu.profile(FILENAME, format="ystat", threads=False)
     def without_threads(self):
         self.start_thread()
         self.join_thread()

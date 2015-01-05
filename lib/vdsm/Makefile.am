@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=netlink tool infra
+SUBDIRS=netlink tool infra profiling
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
@@ -32,7 +32,6 @@ dist_vdsmpylib_PYTHON = \
 	libvirtconnection.py \
 	netconfpersistence.py \
 	netinfo.py \
-	profile.py \
 	qemuimg.py \
 	schedule.py \
 	sslutils.py \

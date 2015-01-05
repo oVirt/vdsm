@@ -30,6 +30,7 @@ test_modules = \
 	capsTests.py \
 	clientifTests.py \
 	configNetworkTests.py \
+	cpuProfileTests.py \
 	deviceTests.py \
 	domainDescriptorTests.py \
 	executorTests.py \
@@ -64,7 +65,6 @@ test_modules = \
 	parted_utils_tests.py \
 	permutationTests.py \
 	persistentDictTests.py \
-	profileTests.py \
 	protocoldetectorTests.py \
 	qemuimgTests.py \
 	qosTests.py \
