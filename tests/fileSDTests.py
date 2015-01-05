@@ -24,7 +24,6 @@ import time
 import uuid
 
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import brokentest
 
 from storage import fileSD
 from storage import sd
@@ -124,7 +123,6 @@ class GetAllVolumesTests(TestCaseBase):
         self.assertEqual(res["volume-4"], (("image-2",), None))
         self.assertEqual(res["volume-5"], (("image-3",), None))
 
-    @brokentest("too slow in current code")
     def test_scale(self):
         # For this test we want real world strings
         images_count = 5000
@@ -154,6 +152,6 @@ class GetAllVolumesTests(TestCaseBase):
         elapsed = time.time() - start
         print "%f seconds" % elapsed
 
-        # This task should take no time using decent algorithm, using one
-        # second to make sure it will not fail on a overloaded test slave.
+        # This takes 0.065 seconds on my laptop, 1 second should be enough even
+        # on overloaded jenkins slave.
         self.assertTrue(elapsed < 1.0, "Elapsed time: %f seconds" % elapsed)
