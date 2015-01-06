@@ -157,6 +157,10 @@ def _parseVolumeStatus(tree):
         for ch in el.getchildren():
             value[ch.tag] = ch.text or ''
 
+        ports = {}
+        for ch in el.find('ports').getchildren():
+            ports[ch.tag] = ch.text or ''
+
         if value['path'] == 'localhost':
             value['path'] = hostname
 
@@ -168,7 +172,8 @@ def _parseVolumeStatus(tree):
         if value['hostname'] == 'NFS Server':
             status['nfs'].append({'hostname': value['path'],
                                   'hostuuid': value['peerid'],
-                                  'port': value['port'],
+                                  'port': ports['tcp'],
+                                  'rdma_port': ports['rdma'],
                                   'status': value['status'],
                                   'pid': value['pid']})
         elif value['hostname'] == 'Self-heal Daemon':
@@ -180,7 +185,8 @@ def _parseVolumeStatus(tree):
             status['bricks'].append({'brick': '%s:%s' % (value['hostname'],
                                                          value['path']),
                                      'hostuuid': value['peerid'],
-                                     'port': value['port'],
+                                     'port': ports['tcp'],
+                                     'rdma_port': ports['rdma'],
                                      'status': value['status'],
                                      'pid': value['pid']})
     return status
@@ -272,11 +278,13 @@ def volumeStatus(volumeName, brick=None, option=None):
           'bricks': [{'brick': BRICK,
                       'hostuuid': UUID,
                       'port': PORT,
+                      'rdma_port': RDMA_PORT,
                       'status': STATUS,
                       'pid': PID}, ...],
           'nfs': [{'hostname': HOST,
                    'hostuuid': UUID,
                    'port': PORT,
+                   'rdma_port': RDMA_PORT,
                    'status': STATUS,
                    'pid': PID}, ...],
           'shd: [{'hostname': HOST,
