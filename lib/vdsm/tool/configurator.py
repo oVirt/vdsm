@@ -39,11 +39,7 @@ from . import \
     expose, \
     UsageError, \
     requiresRoot
-from .configurators import \
-    YES, \
-    InvalidConfig, \
-    InvalidRun, \
-    NO
+from . import configurators
 
 
 def _import_module(abspkg, mname):
@@ -116,7 +112,7 @@ def _isconfigured(module):
 
     Note: after configure isconfigured should return MAYBE or YES.
     """
-    return getattr(module, 'isconfigured', lambda: NO)()
+    return getattr(module, 'isconfigured', lambda: configurators.NO)()
 
 
 def _removeConf(module):
@@ -142,12 +138,12 @@ def configure(*args):
     sys.stdout.write("\nChecking configuration status...\n\n")
     for c in args.modules:
         isconfigured = _isconfigured(c)
-        override = args.force and isconfigured != YES
+        override = args.force and isconfigured != configurators.YES
         if not override and not _validate(c):
-            raise InvalidConfig(
+            raise configurators.InvalidConfig(
                 "Configuration of %s is invalid" % c.name
             )
-        if override or isconfigured == NO:
+        if override or isconfigured == configurators.NO:
             configurer_to_trigger.append(c)
 
     services = []
@@ -155,7 +151,7 @@ def configure(*args):
         for s in _getservices(c):
             if service.service_status(s, False) == 0:
                 if not args.force:
-                    raise InvalidRun(
+                    raise configurators.InvalidRun(
                         "\n\nCannot configure while service '%s' is "
                         "running.\n Stop the service manually or use the "
                         "--force flag.\n" % s
@@ -186,7 +182,7 @@ def isconfigured(*args):
     ret = True
     args = _parse_args(*args)
 
-    m = [c.name for c in args.modules if _isconfigured(c) == NO]
+    m = [c.name for c in args.modules if _isconfigured(c) == configurators.NO]
 
     if m:
         sys.stdout.write(
@@ -207,7 +203,7 @@ If all modules are not configured try to use:
 (The force flag will stop the module's service and start it
 afterwards automatically to load the new configuration.)
 """
-        raise InvalidRun(msg)
+        raise configurators.InvalidRun(msg)
 
 
 @expose("validate-config")
@@ -230,7 +226,9 @@ def validate_config(*args):
         ret = False
 
     if not ret:
-        raise InvalidConfig("Config is not valid. Check conf files")
+        raise configurators.InvalidConfig(
+            "Config is not valid. Check conf files"
+        )
 
 
 @expose("remove-config")
@@ -257,7 +255,7 @@ def remove_config(*args):
             traceback.print_exc(file=sys.stderr)
             failed = True
     if failed:
-        raise InvalidRun("Remove configuration failed")
+        raise configurators.InvalidRun("Remove configuration failed")
 
 
 def _add_dependencies(modulesNames):
