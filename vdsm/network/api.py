@@ -388,6 +388,8 @@ def _delBrokenNetwork(network, netAttr, configurator):
     deleted via _delNetwork.'''
     _netinfo = netinfo.NetInfo()
     _netinfo.networks[network] = netAttr
+    _netinfo.networks[network]['bootproto4'] = 'none'
+
     if _netinfo.networks[network]['bridged']:
         try:
             nets = configurator.runningConfig.networks

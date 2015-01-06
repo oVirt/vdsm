@@ -1803,16 +1803,18 @@ class NetworkTest(TestCaseBase):
             finally:
                 addrFlush(nic)
 
-    def testBrokenBridgelessNetReplacement(self):
+    @permutations([[False], [True]])
+    def testBrokenNetworkReplacement(self, bridged):
         with dummyIf(1) as nics:
             nic, = nics
             network = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN_ID,
-                                      'bridged': False}}
+                                      'bridged': bridged}}
             status, msg = self.vdsm_net.setupNetworks(network, {},
                                                       NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME)
-            ipwrapper.linkDel(nic + '.' + VLAN_ID)
+            device_to_remove = NETWORK_NAME if bridged else nic + '.' + VLAN_ID
+            ipwrapper.linkDel(device_to_remove)
             self.vdsm_net.refreshNetinfo()
             self.assertNotIn(NETWORK_NAME, self.vdsm_net.netinfo.networks)
             status, msg = self.vdsm_net.setupNetworks(network, {},
