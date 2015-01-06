@@ -125,6 +125,8 @@ class SchemaValidation(TestCaseBase):
                     ret_info = Bridge.command_info.get(cmd, {}).get('ret')
                     if not ret_info and not ret:
                         continue
+                    if ret_info == 'status':
+                        continue
                     if not ret_info or not ret:
                         raise AssertionError('wrong return type for ' + cmd)
                 except KeyError:
