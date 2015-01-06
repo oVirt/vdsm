@@ -53,11 +53,13 @@ def remove_outbound(top_device):
     vlan_tag = models.hierarchy_vlan_tag(top_device)
     device = models.hierarchy_backing_device(top_device).name
     class_id = '%x' % (_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
+    MISSING_OBJ_ERR_CODES = (errno.EINVAL, errno.ENOENT, errno.ENOTSUP)
+
     try:
         tc.filter.delete(
             device, pref=_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
     except tc.TrafficControlException as tce:
-        if tce.errCode not in (errno.EINVAL, errno.ENOENT):  # No filter exists
+        if tce.errCode not in MISSING_OBJ_ERR_CODES:  # No filter exists
             raise
 
     device_qdiscs = list(tc._qdiscs(device))
@@ -67,7 +69,7 @@ def remove_outbound(top_device):
     try:
         tc.cls.delete(device, classid=root_qdisc_handle + class_id)
     except tc.TrafficControlException as tce:
-        if tce.errCode not in (errno.EINVAL, errno.ENOENT):  # No class exists
+        if tce.errCode not in MISSING_OBJ_ERR_CODES:  # No class exists
             raise
 
     if not _uses_classes(device, root_qdisc_handle=root_qdisc_handle):
@@ -75,7 +77,7 @@ def remove_outbound(top_device):
             tc._qdisc_del(device)
             tc._qdisc_del(device, kind='ingress')
         except tc.TrafficControlException as tce:
-            if tce.errCode not in (errno.EINVAL, errno.ENOENT):  # No qdisc
+            if tce.errCode not in MISSING_OBJ_ERR_CODES:  # No qdisc
                 raise
 
 
