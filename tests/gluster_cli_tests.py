@@ -241,6 +241,10 @@ class GlusterCliTests(TestCaseBase):
           <path>/tmp/music-b1</path>
           <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49152</port>
+          <ports>
+            <tcp>49152</tcp>
+            <rdma>N/A</rdma>
+          </ports>
           <status>1</status>
           <pid>1313</pid>
         </node>
@@ -249,6 +253,10 @@ class GlusterCliTests(TestCaseBase):
           <path>/tmp/music-b2</path>
           <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>49153</port>
+          <ports>
+            <tcp>49153</tcp>
+            <rdma>N/A</rdma>
+          </ports>
           <status>1</status>
           <pid>1335</pid>
         </node>
@@ -257,6 +265,10 @@ class GlusterCliTests(TestCaseBase):
           <path>192.168.122.2</path>
           <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>38467</port>
+          <ports>
+            <tcp>38467</tcp>
+            <rdma>N/A</rdma>
+          </ports>
           <status>1</status>
           <pid>1357</pid>
         </node>
@@ -265,6 +277,10 @@ class GlusterCliTests(TestCaseBase):
           <path>192.168.122.2</path>
           <peerid>f06b108e-a780-4519-bb22-c3083a1e3f8a</peerid>
           <port>0</port>
+          <ports>
+            <tcp>0</tcp>
+            <rdma>N/A</rdma>
+          </ports>
           <status>1</status>
           <pid>1375</pid>
         </node>
@@ -281,12 +297,14 @@ class GlusterCliTests(TestCaseBase):
                                        'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                                        'pid': '1313',
                                        'port': '49152',
+                                       'rdma_port': 'N/A',
                                        'status': 'ONLINE'},
                                       {'brick': '192.168.122.2:/tmp/music-b2',
                                        'hostuuid':
                                        'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                                        'pid': '1335',
                                        'port': '49153',
+                                       'rdma_port': 'N/A',
                                        'status': 'ONLINE'}],
                            'name': 'music',
                            'nfs': [{'hostname': '192.168.122.2',
@@ -294,6 +312,7 @@ class GlusterCliTests(TestCaseBase):
                                     'f06b108e-a780-4519-bb22-c3083a1e3f8a',
                                     'pid': '1357',
                                     'port': '38467',
+                                    'rdma_port': 'N/A',
                                     'status': 'ONLINE'}],
                            'shd': [{'hostname': '192.168.122.2',
                                     'hostuuid':
