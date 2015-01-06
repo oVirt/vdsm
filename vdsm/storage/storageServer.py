@@ -349,7 +349,7 @@ class IscsiConnection(object):
 
         def __init__(self, fmt, *args):
             self.fmt = fmt
-            self.args
+            self.args = args
 
         def __str__(self):
             return self.fmt % self.args

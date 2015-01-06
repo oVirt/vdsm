@@ -76,6 +76,7 @@ test_modules = \
 	sslhelper.py \
 	sslTests.py \
 	storageMailboxTests.py \
+	storageServerTests.py \
 	tcTests.py \
 	testlibTests.py \
 	toolTests.py \
