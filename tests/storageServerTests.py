@@ -31,3 +31,9 @@ class IscsiConnectionMismatchTests(VdsmTestCase):
     def test_format(self):
         s = str(IscsiConnection.Mismatch("error %d with %r", 1, "text"))
         self.assertEqual(s, "error 1 with 'text'")
+
+    def test_format_mismatches_list(self):
+        errors = [IscsiConnection.Mismatch("error 1"),
+                  IscsiConnection.Mismatch("error 2")]
+        expected = "%s" % ["error 1", "error 2"]
+        self.assertEqual(str(errors), expected)

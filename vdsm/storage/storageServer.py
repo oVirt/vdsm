@@ -354,6 +354,10 @@ class IscsiConnection(object):
         def __str__(self):
             return self.fmt % self.args
 
+        def __repr__(self):
+            # Required for logging list of errors
+            return repr(self.__str__())
+
     @property
     def target(self):
         return self._target
@@ -424,7 +428,7 @@ class IscsiConnection(object):
                 self._lastSessionId = session.id
                 return session
 
-        self.log.debug("Session mismatches: %s", ["%s" % e for e in errors])
+        self.log.debug("Session mismatches: %s", errors)
         raise OSError(errno.ENOENT, "Session not found")
 
     def isConnected(self):
