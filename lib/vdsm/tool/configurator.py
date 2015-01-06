@@ -73,6 +73,7 @@ for module in _listmodules(configurators):
 
 #
 # Configurators Interface:
+#
 # The only required attribute for modules is 'name'.
 # Default implementation of all other attributes/methods follows;
 #
@@ -120,6 +121,10 @@ def _isconfigured(module):
 def _removeConf(module):
     """Cleanup vdsm's configuration."""
     getattr(module, 'removeConf', lambda: None)()
+
+#
+# Configurators Interface End.
+#
 
 
 @expose("configure")
