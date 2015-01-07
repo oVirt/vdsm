@@ -22,10 +22,7 @@ import logging
 from vdsm import netinfo
 from vdsm import ipwrapper
 from vdsm.constants import EXT_BRCTL
-from vdsm.ipwrapper import routeAdd
-from vdsm.ipwrapper import routeDel
-from vdsm.ipwrapper import ruleAdd
-from vdsm.ipwrapper import ruleDel
+from vdsm.ipwrapper import routeAdd, routeDel, ruleAdd, ruleDel, IPRoute2Error
 from vdsm.netconfpersistence import RunningConfig
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
@@ -213,7 +210,15 @@ class Iproute2(Configurator):
     @staticmethod
     def removeSourceRoute(routes, rules, device):
         for route in routes:
-            routeDel(route)
+            try:
+                routeDel(route)
+            except IPRoute2Error as e:
+                if 'No such process' in e.message[0]:
+                    # The kernel or dhclient has won the race and removed the
+                    # route already. We have yet to remove routing rules.
+                    pass
+                else:
+                    raise
 
         for rule in rules:
             ruleDel(rule)
