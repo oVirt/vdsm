@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import array
 import logging
 import time
 import socket
@@ -37,11 +38,13 @@ _MESSAGE_API_VERSION_LOOKUP = {
     'set-number-of-cpus': 1}
 
 __REPLACEMENT_CHAR = u'\ufffd'
-__RESTRICTED_CHARS = set(range(8 + 1)). \
-    union(set(range(0xB, 0xC + 1))). \
-    union(set(range(0xE, 0x1F + 1))). \
-    union(set(range(0x7F, 0x84 + 1))). \
-    union(set(range(0x86, 0x9F + 1)))
+__RESTRICTED_CHARS = frozenset(unichr(c) for c in
+                               range(8 + 1) +
+                               range(0xB, 0xC + 1) +
+                               range(0xE, 0x1F + 1) +
+                               range(0x7F, 0x84 + 1) +
+                               range(0x86, 0x9F + 1) +
+                               [0xFFFE, 0xFFFF])
 
 
 def _filterXmlChars(u):
@@ -65,19 +68,12 @@ def _filterXmlChars(u):
     if not isinstance(u, unicode):
         raise TypeError
 
-    def filterXmlChar(c):
-        if ord(c) > 0x10ffff:
-            return __REPLACEMENT_CHAR  # Outside Unicode range
-        elif unicodedata.category(c) == 'Cs':
-            return __REPLACEMENT_CHAR  # Surrogate pair code point
-        elif (ord(c) == 0xFFFE) or (ord(c) == 0xFFFF):
-            return __REPLACEMENT_CHAR  # Specifically excluded code points
-        elif ord(c) in __RESTRICTED_CHARS:
-            return __REPLACEMENT_CHAR  # Restricted character
-        else:
-            return c
-
-    return ''.join(filterXmlChar(c) for c in u)
+    chars = array.array('u', u)
+    for i, c in enumerate(chars):
+        if (c > u'\U00010fff' or unicodedata.category(c) == 'Cs'
+                or c in __RESTRICTED_CHARS):
+            chars[i] = __REPLACEMENT_CHAR
+    return chars.tounicode()
 
 
 def _filterObject(obj):
