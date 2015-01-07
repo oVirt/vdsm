@@ -71,9 +71,9 @@ def getVmNumaNodeRuntimeInfo(vm):
             vCpuMemoryMapping = \
                 supervdsm.getProxy().getVcpuNumaMemoryMapping(vmName)
             pNodesCpusMap = _getHostNumaNodesCpuMap()
-            vNodesCpusMap = _getVmNumaNodesCpuMap(vm)
+            vcpu_to_vnode = _get_mapping_vcpu_to_vnode(vm)
             for vCpu, pCpu in vCpuRuntimePinMap.iteritems():
-                vNodeIndex = str(vNodesCpusMap[vCpu])
+                vNodeIndex = str(vcpu_to_vnode[vCpu])
                 if vNodeIndex not in vmNumaNodeRuntimeMap:
                     vmNumaNodeRuntimeMap[vNodeIndex] = []
                 vmNumaNodeRuntimeMap[vNodeIndex].append(pNodesCpusMap[pCpu])
@@ -103,9 +103,9 @@ def _getHostNumaNodesCpuMap():
     return pNodesCpusMap
 
 
-def _getVmNumaNodesCpuMap(vm):
-    vNodesCpusMap = {}
-    for vmNumaNode in vm.conf['guestNumaNodes']:
-        for vCpuId in map(int, vmNumaNode['cpus'].split(",")):
-            vNodesCpusMap[vCpuId] = vmNumaNode['nodeIndex']
-    return vNodesCpusMap
+def _get_mapping_vcpu_to_vnode(vm):
+    vcpu_to_vnode = {}
+    for vm_numa_node in vm.conf['guestNumaNodes']:
+        for vcpu_id in map(int, vm_numa_node['cpus'].split(",")):
+            vcpu_to_vnode[vcpu_id] = vm_numa_node['nodeIndex']
+    return vcpu_to_vnode
