@@ -2104,7 +2104,7 @@ class NetworkTest(TestCaseBase):
                                                       {}, NOCHK)
             self.assertEqual([], list(tc._filters(nic)),
                              'Failed to cleanup tc filters')
-            self.assertEqual([], list(tc._classes(nic)),
+            self.assertEqual([], list(tc.classes(nic)),
                              'Failed to cleanup tc classes')
             # Real devices always get a qdisc, dummies don't, so 0 after
             # deletion.

@@ -86,7 +86,7 @@ def _uses_classes(device, root_qdisc_handle=None):
     root class and a default unused class"""
     if root_qdisc_handle is None:
         root_qdisc_handle = _root_qdisc(tc._qdiscs(device))['handle']
-    classes = [cls for cls in tc._classes(device, parent=root_qdisc_handle) if
+    classes = [cls for cls in tc.classes(device, parent=root_qdisc_handle) if
                not cls.get('root')]
     return (classes and
             not(len(classes) == 1 and not netinfo.ifaceUsed(device) and

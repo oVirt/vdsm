@@ -341,7 +341,7 @@ class TestFilters(TestCaseBase):
              'leaf': '5000:', 'hfsc': {'ls': {'m1': 0, 'd': 0,
                                               'm2': 40000 * 1000}}},
         )
-        for parsed, correct in izip_longest(tc._classes(None, out=data),
+        for parsed, correct in izip_longest(tc.classes(None, out=data),
                                             classes):
             self.assertEqual(parsed, correct)
 

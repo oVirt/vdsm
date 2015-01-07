@@ -133,7 +133,7 @@ def _report_network_qos(caps):
                         qos._DEFAULT_CLASSID)
 
         # Now that iface is either a bond or a nic, let's get the QoS info
-        classes = [cls for cls in tc._classes(iface, classid=class_id) if
+        classes = [cls for cls in tc.classes(iface, classid=class_id) if
                    cls['kind'] == 'hfsc']
         if classes:
             cls, = classes
