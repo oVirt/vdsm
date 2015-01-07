@@ -1155,10 +1155,12 @@
 #
 # @memory:      The total memory of this guest numa node in MiB.
 #
+# @nodeIndex:   The index of the guest numa node
+#
 # Since: 4.15.0
 ##
 {'type': 'GuestNumaNode',
- 'data': {'cpus': 'str', 'memory': 'int'}}
+ 'data': {'cpus': 'str', 'memory': 'int', 'nodeIndex': 'int'}}
 
 ##
 # @SELinuxStatus:
