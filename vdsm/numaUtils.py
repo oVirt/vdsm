@@ -68,7 +68,7 @@ def getVmNumaNodeRuntimeInfo(vm):
         vCpuRuntimePinMap = _getVcpuRuntimePinMap(vm)
         if vCpuRuntimePinMap:
             vmName = vm.conf['vmName'].encode('utf-8')
-            vCpuMemoryMapping = \
+            vcpu_to_pnode = \
                 supervdsm.getProxy().getVcpuNumaMemoryMapping(vmName)
             pNodesCpusMap = _getHostNumaNodesCpuMap()
             vcpu_to_vnode = _get_mapping_vcpu_to_vnode(vm)
@@ -77,9 +77,9 @@ def getVmNumaNodeRuntimeInfo(vm):
                 if vNodeIndex not in vmNumaNodeRuntimeMap:
                     vmNumaNodeRuntimeMap[vNodeIndex] = []
                 vmNumaNodeRuntimeMap[vNodeIndex].append(pNodesCpusMap[pCpu])
-                if vCpu in vCpuMemoryMapping:
+                if vCpu in vcpu_to_pnode:
                     vmNumaNodeRuntimeMap[vNodeIndex].extend(
-                        vCpuMemoryMapping[vCpu])
+                        vcpu_to_pnode[vCpu])
             vmNumaNodeRuntimeMap = dict([(k, list(set(v))) for k, v in
                                         vmNumaNodeRuntimeMap.iteritems()])
     return vmNumaNodeRuntimeMap
