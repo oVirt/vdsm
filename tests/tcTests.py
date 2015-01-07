@@ -317,29 +317,45 @@ class TestFilters(TestCaseBase):
             self.assertEqual(parsed, correct)
 
     def test_classes(self):
+        cmd_line_ls_10 = 3200
+        cmd_line_ls_m1_20 = 6400
+        cmd_line_ls_d_20 = 152
+        cmd_line_ls_m2_20 = 3200
+        cmd_line_ls_30 = 3500
+        cmd_line_ls_m2_5000 = 40000
         data = '\n'.join((
             'class hfsc 1: root',
-            'class hfsc 1:10 parent 1: leaf 10: sc m1 0bit d 0us m2 3200Kbit',
-            'class hfsc 1:20 parent 1: leaf 20: ls m1 6400Kibit d 150us m2 '
-            '3200Kbit ul m1 0bit d 0us m2 30000Kbit',  # end of previous line
-            'class hfsc 1:30 parent 1: leaf 40: sc m1 0bit d 0us m2 3500bit',
+            'class hfsc 1:10 parent 1: leaf 10: sc m1 0bit d 0us '
+            'm2 {0}Kbit'.format(cmd_line_ls_10),  # end of previous line
+            'class hfsc 1:20 parent 1: leaf 20: ls m1 {0}Kibit d {1}us '
+            'm2 {2}Kbit ul m1 0bit d 0us m2 30000Kbit'.format(
+                cmd_line_ls_m1_20, cmd_line_ls_d_20, cmd_line_ls_m2_20),
+            'class hfsc 1:30 parent 1: leaf 40: sc m1 0bit d 0us '
+            'm2 {0}bit'.format(cmd_line_ls_30),  # end of previous line
             'class hfsc 1:5000 parent 1: leaf 5000: ls m1 0bit d 0us '
-            'm2 40000Kbit',  # end of previous line
+            'm2 {0}Kbit'.format(cmd_line_ls_m2_5000),  # end of previous line
         ))
+        reported_ls_10 = cmd_line_ls_10 * 1000 / 8
+        reported_ls_m1_20 = cmd_line_ls_m1_20 * 1024 / 8
+        reported_ls_d_20 = cmd_line_ls_d_20 / 8
+        reported_ls_m2_20 = cmd_line_ls_m2_20 * 1000 / 8
+        reported_ls_30 = cmd_line_ls_30 / 8
+        reported_ls_5000 = cmd_line_ls_m2_5000 * 1000 / 8
         classes = (
             {'kind': 'hfsc', 'root': True, 'handle': '1:'},
             {'kind': 'hfsc', 'handle': '1:10', 'parent': '1:', 'leaf': '10:',
-             'hfsc': {'ls': {'m1': 0, 'd': 0, 'm2': 3200 * 1000},
-                      'rt': {'m1': 0, 'd': 0, 'm2': 3200 * 1000}}},
+             'hfsc': {'ls': {'m1': 0, 'd': 0, 'm2': reported_ls_10},
+                      'rt': {'m1': 0, 'd': 0, 'm2': reported_ls_10}}},
             {'kind': 'hfsc', 'handle': '1:20', 'parent': '1:', 'leaf': '20:',
-             'hfsc': {'ls': {'m1': 6400 * 1024, 'd': 150, 'm2': 3200 * 1000},
+             'hfsc': {'ls': {'m1': reported_ls_m1_20, 'd': reported_ls_d_20,
+                             'm2': reported_ls_m2_20},
                       'ul': {'m1': 0, 'd': 0, 'm2': 30000 * 1000}}},
             {'kind': 'hfsc', 'handle': '1:30', 'parent': '1:', 'leaf': '40:',
-             'hfsc': {'ls': {'m1': 0, 'd': 0, 'm2': 3500},
-                      'rt': {'m1': 0, 'd': 0, 'm2': 3500}}},
+             'hfsc': {'ls': {'m1': 0, 'd': 0, 'm2': reported_ls_30},
+                      'rt': {'m1': 0, 'd': 0, 'm2': reported_ls_30}}},
             {'kind': 'hfsc', 'handle': '1:5000', 'parent': '1:',
              'leaf': '5000:', 'hfsc': {'ls': {'m1': 0, 'd': 0,
-                                              'm2': 40000 * 1000}}},
+                                              'm2': reported_ls_5000}}},
         )
         for parsed, correct in izip_longest(tc.classes(None, out=data),
                                             classes):

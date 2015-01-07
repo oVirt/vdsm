@@ -16,6 +16,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from copy import deepcopy
+
 from . import _parser
 from . import _wrapper
 _TC_PRIO_MAX = 15
@@ -27,7 +29,8 @@ def add(dev, kind, parent, classid, **opts):
     command = ['class', 'add', 'dev', dev, 'parent', parent,
                'classid', classid]
     command.append(kind)
-    for key, value in _qos_to_str_dict(opts).items():
+    adapted_ops = _adapt_qos_options_link_share(opts)
+    for key, value in _qos_to_str_dict(adapted_ops).items():
         if isinstance(value, str):
             command += [key, value]
         else:
@@ -83,7 +86,8 @@ def parse(tokens):
         #  api we separate it into the two components
         curve = data[kind].pop('sc')
         data[kind]['rt'] = data[kind]['ls'] = curve
-    return data
+
+    return _adapt_qos_options_link_share_for_reporting(data)
 
 
 def _parse_hfsc_curve(tokens):
@@ -107,6 +111,27 @@ def _qos_to_str_dict(qos):
         if 'm2' in attrs:
             data[curve] += ['m2', '%sbit' % attrs.get('m2', 0)]
     return data
+
+
+def _adapt_qos_options_link_share_for_reporting(qos_opts):
+    """See _adapt_qos_options_link_share"""
+    adapted_qos_ops = deepcopy(qos_opts)
+    hfsc = adapted_qos_ops.get('hfsc', {})
+    link_share = hfsc.get('ls', {})
+    for k in link_share.iterkeys():
+        link_share[k] /= 8
+    return adapted_qos_ops
+
+
+def _adapt_qos_options_link_share(qos_opts):
+    """This function adapts the relative parameters used for tc outbound QOS.
+    They are multiplied by 8 because tc always rounds them down to multiples of
+    8, thus eliminating rounding errors."""
+    adapted_qos_ops = deepcopy(qos_opts)
+    link_share = adapted_qos_ops.get('ls', {})
+    for k in link_share.iterkeys():
+        link_share[k] *= 8
+    return adapted_qos_ops
 
 
 _spec = {
