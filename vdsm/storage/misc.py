@@ -40,7 +40,6 @@ import Queue
 import random
 import re
 import signal
-import select
 import string
 import struct
 import threading
@@ -968,24 +967,6 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
         yield respQueue.get()
 
 
-def NoIntrCall(fun, *args, **kwargs):
-    """
-    This wrapper is used to handle the interrupt exceptions that might
-    occur during a system call.
-    """
-    while True:
-        try:
-            return fun(*args, **kwargs)
-        except (IOError, select.error) as e:
-            if e.args[0] == os.errno.EINTR:
-                continue
-            raise
-        break
-
-
-NoIntrPoll = utils.NoIntrPoll
-
-
 def isAscii(s):
     try:
         s.decode('ascii')
@@ -1062,3 +1043,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
 def deprecated(f):
     """Used to mark exported methods as deprecated"""
     return f
+
+
+NoIntrCall = utils.NoIntrCall
+NoIntrPoll = utils.NoIntrPoll

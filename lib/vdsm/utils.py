@@ -331,6 +331,21 @@ def NoIntrPoll(pollfun, timeout=-1):
             timeout = max(0, endtime - time.time())
 
 
+def NoIntrCall(callfun, *args, **kwargs):
+    """
+    This wrapper is used to handle the interrupt exceptions that might
+    occur during a system call.
+    """
+    while True:
+        try:
+            return callfun(*args, **kwargs)
+        except (IOError, select.error) as e:
+            if e.args[0] == os.errno.EINTR:
+                continue
+            raise
+        break
+
+
 class AsyncProc(object):
     """
     AsyncProc is a funky class. It wraps a standard subprocess.Popen
