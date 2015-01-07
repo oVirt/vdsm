@@ -65,14 +65,14 @@ def getVmNumaNodeRuntimeInfo(vm):
 
     vmNumaNodeRuntimeMap = {}
     if 'guestNumaNodes' in vm.conf:
-        vCpuRuntimePinMap = _getVcpuRuntimePinMap(vm)
-        if vCpuRuntimePinMap:
+        vcpu_to_pcpu = _get_mapping_vcpu_to_pcpu(vm)
+        if vcpu_to_pcpu:
             vmName = vm.conf['vmName'].encode('utf-8')
             vcpu_to_pnode = \
                 supervdsm.getProxy().getVcpuNumaMemoryMapping(vmName)
             pNodesCpusMap = _getHostNumaNodesCpuMap()
             vcpu_to_vnode = _get_mapping_vcpu_to_vnode(vm)
-            for vCpu, pCpu in vCpuRuntimePinMap.iteritems():
+            for vCpu, pCpu in vcpu_to_pcpu.iteritems():
                 vNodeIndex = str(vcpu_to_vnode[vCpu])
                 if vNodeIndex not in vmNumaNodeRuntimeMap:
                     vmNumaNodeRuntimeMap[vNodeIndex] = []
@@ -85,14 +85,17 @@ def getVmNumaNodeRuntimeInfo(vm):
     return vmNumaNodeRuntimeMap
 
 
-def _getVcpuRuntimePinMap(vm):
-    vCpuRuntimePinMap = {}
+def _get_mapping_vcpu_to_pcpu(vm):
+    vcpu_to_pcpu = {}
     if vm._vmStats:
         sample = vm._vmStats.sampleVcpuPinning.getLastSample()
-        vCpuInfos = sample if sample is not None else []
-        for vCpuInfo in vCpuInfos:
-            vCpuRuntimePinMap[vCpuInfo[0]] = vCpuInfo[3]
-    return vCpuRuntimePinMap
+        # please note that here the naming is misleading.
+        # these samples does not represent the *pinning*,
+        # but rather last *positioning*
+        infos = sample if sample is not None else []
+        for (vcpu_id, _, _, pcpu_id) in infos:
+            vcpu_to_pcpu[vcpu_id] = pcpu_id
+    return vcpu_to_pcpu
 
 
 def _getHostNumaNodesCpuMap():
