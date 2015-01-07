@@ -18,21 +18,17 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-
-from xml.dom import minidom
+import xml.etree.cElementTree as ET
 
 import caps
 import supervdsm
 
 
 def getVcpuPid(vmName):
-    runFile = "/var/run/libvirt/qemu/%s.xml" % vmName
-    runInfo = minidom.parse(runFile)
-    vCpus = runInfo.getElementsByTagName('vcpus')[0]
-    vCpuSet = vCpus.getElementsByTagName('vcpu')
+    runInfo = ET.parse("/var/run/libvirt/qemu/%s.xml" % vmName)
     vCpuPids = {}
-    for vCpuIndex, vCpu in enumerate(vCpuSet):
-        vCpuPids[vCpuIndex] = vCpu.getAttribute('pid')
+    for vCpuIndex, vCpu in enumerate(runInfo.findall('./vcpus/vcpu[@pid]')):
+        vCpuPids[vCpuIndex] = vCpu.get('pid')
     return vCpuPids
 
 
