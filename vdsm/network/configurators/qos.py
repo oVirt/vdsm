@@ -53,7 +53,7 @@ def remove_outbound(top_device):
     vlan_tag = models.hierarchy_vlan_tag(top_device)
     device = models.hierarchy_backing_device(top_device).name
     class_id = '%x' % (_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
-    MISSING_OBJ_ERR_CODES = (errno.EINVAL, errno.ENOENT, errno.ENOTSUP)
+    MISSING_OBJ_ERR_CODES = (errno.EINVAL, errno.ENOENT, errno.EOPNOTSUPP)
 
     try:
         tc.filter.delete(
