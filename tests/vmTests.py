@@ -48,6 +48,7 @@ import hooks
 from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from testlib import namedTemporaryDir
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
@@ -120,22 +121,19 @@ class TestVm(TestCaseBase):
         self.assertEqual(converted, None)
 
     def assertBuildCmdLine(self, confToDom):
-        oldVdsmRun = constants.P_VDSM_RUN
-        constants.P_VDSM_RUN = tempfile.mkdtemp()
-        try:
-            for conf, expectedXML in confToDom:
+        with namedTemporaryDir() as tmpDir:
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
+                for conf, expectedXML in confToDom:
 
-                expectedXML = expectedXML % conf
+                    expectedXML = expectedXML % conf
 
-                testVm = vm.Vm(self, conf)
+                    testVm = vm.Vm(self, conf)
 
-                output = testVm._buildDomainXML()
+                    output = testVm._buildDomainXML()
 
-                self.assertEqual(re.sub('\n\s*', ' ', output.strip(' ')),
-                                 re.sub('\n\s*', ' ', expectedXML.strip(' ')))
-        finally:
-            shutil.rmtree(constants.P_VDSM_RUN)
-            constants.P_VDSM_RUN = oldVdsmRun
+                    self.assertEqual(
+                        re.sub('\n\s*', ' ', output.strip(' ')),
+                        re.sub('\n\s*', ' ', expectedXML.strip(' ')))
 
     def testDomXML(self):
         expectedXML = """
