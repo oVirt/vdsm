@@ -240,7 +240,7 @@ def VM(params=None, devices=None, runCpu=False,
        cif=None, create_device_objects=False,
        post_copy=None):
     with namedTemporaryDir() as tmpDir:
-        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
+        with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir),
                                (libvirtconnection, 'get', Connection),
                                (containersconnection, 'get', Connection),
                                (vm.Vm, 'send_status_event',

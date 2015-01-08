@@ -107,7 +107,7 @@ class TestVm(XMLTestCase):
 
     def assertBuildCmdLine(self, confToDom):
         with namedTemporaryDir() as tmpDir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir)]):
                 for conf, expectedXML in confToDom:
 
                     expectedXML = expectedXML % conf

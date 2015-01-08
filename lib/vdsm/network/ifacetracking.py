@@ -25,7 +25,7 @@ from vdsm.constants import P_VDSM_RUN
 from vdsm.utils import rmFile
 
 
-TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'
+TRACKED_INTERFACES_FOLDER = os.path.join(P_VDSM_RUN, 'trackedInterfaces')
 
 
 def add(device_name):

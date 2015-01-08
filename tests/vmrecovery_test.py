@@ -140,7 +140,7 @@ class RecoveryFileTests(TestCaseBase):
     @contextlib.contextmanager
     def setup_env(self):
         with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir)]):
                 yield testvm, tmpdir
 
 
@@ -188,7 +188,7 @@ class RecoveryFunctionsTests(TestCaseBase):
     def test_clean_vm_files(self):
 
         with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir)]):
                 stored = recovery.File(testvm.id)
                 stored.save(testvm)
 
@@ -212,7 +212,7 @@ class RecoveryAllVmsTests(TestCaseBase):
 
         with namedTemporaryDir() as tmpdir:
             with MonkeyPatchScope([
-                (constants, 'P_VDSM_RUN', tmpdir + '/'),
+                (constants, 'P_VDSM_RUN', tmpdir),
                 (recovery, '_list_domains', lambda: []),
                 (containersconnection, 'recovery', lambda: []),
             ]):
