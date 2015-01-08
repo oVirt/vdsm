@@ -84,6 +84,11 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 ExclusiveArch: x86_64 ppc64
 %endif
 
+%if 0%{?rhel} <= 6
+# qemu-img is x86_64 only on RHEL6
+ExclusiveArch: x86_64
+%endif
+
 BuildRequires: cyrus-sasl-lib
 BuildRequires: gcc
 BuildRequires: python
