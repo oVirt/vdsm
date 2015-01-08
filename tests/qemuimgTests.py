@@ -161,7 +161,9 @@ class ConvertTests(CommandTests):
             self.assertEqual(cmd, expected)
             return 0, '', ''
 
-        with MonkeyPatchScope([(utils, 'watchCmd', convert)]):
+        with MonkeyPatchScope([(utils, 'watchCmd', convert),
+                               (qemuimg, '_supports_src_cache_uncached',
+                                self.supported('convert', False))]):
             qemuimg.convert('src', 'dst', True)
 
     def test_qcow2_compat_unsupported(self):
@@ -172,6 +174,8 @@ class ConvertTests(CommandTests):
             return 0, '', ''
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
+                                self.supported('convert', False)),
+                               (qemuimg, '_supports_src_cache_uncached',
                                 self.supported('convert', False)),
                                (utils, 'watchCmd', convert)]):
             qemuimg.convert('src', 'dst', True, dstFormat='qcow2')
@@ -185,6 +189,8 @@ class ConvertTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('convert', True)),
+                               (qemuimg, '_supports_src_cache_uncached',
+                                self.supported('convert', False)),
                                (utils, 'watchCmd', convert)]):
             qemuimg.convert('src', 'dst', True, dstFormat='qcow2')
 
@@ -197,6 +203,8 @@ class ConvertTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('convert', True)),
+                               (qemuimg, '_supports_src_cache_uncached',
+                                self.supported('convert', False)),
                                (utils, 'watchCmd', convert)]):
             qemuimg.convert('src', 'dst', None, dstFormat='qcow2')
 
@@ -210,6 +218,8 @@ class ConvertTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('convert', True)),
+                               (qemuimg, '_supports_src_cache_uncached',
+                                self.supported('convert', False)),
                                (utils, 'watchCmd', convert)]):
             qemuimg.convert('src', 'dst', None, dstFormat='qcow2',
                             backing='bak')
@@ -223,6 +233,8 @@ class ConvertTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('convert', True)),
+                               (qemuimg, '_supports_src_cache_uncached',
+                                self.supported('convert', False)),
                                (utils, 'watchCmd', convert)]):
             qemuimg.convert('src', 'dst', None, dstFormat='qcow2',
                             backingFormat='qcow2')
@@ -237,6 +249,8 @@ class ConvertTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('convert', True)),
+                               (qemuimg, '_supports_src_cache_uncached',
+                                self.supported('convert', False)),
                                (utils, 'watchCmd', convert)]):
             qemuimg.convert('src', 'dst', None, dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2')
@@ -267,3 +281,55 @@ class SupportsQcow2ComaptTests(TestCaseBase):
     @MonkeyPatch(utils, 'execCmd', qcow2_compat_unsupported)
     def test_convert_unsupported(self, **kw):
         self.assertFalse(qemuimg._supports_qcow2_compat('convert'))
+
+
+def src_cache_supported(cmd, **kw):
+    out = """
+  compare [-f fmt] [-F fmt] [-T src_cache] ...
+  convert [-c] [-p] [-q] [-n] [-f fmt] [-t cache] [-T src_cache] ...
+  rebase [-q] [-f fmt] [-t cache] [-T src_cache] [-p] ...
+  resize [-q] filename [+ | -]size ...
+"""
+
+    return 0, out, ''
+
+
+def rebase_src_cache_unsupported(cmd, **kw):
+    out = """
+  compare [-f fmt] [-F fmt] [-T src_cache] ...
+  convert [-c] [-p] [-q] [-n] [-f fmt] [-t cache] [-T src_cache] ...
+  rebase [-q] [-f fmt] [-t cache] [-p] ...
+  resize [-q] filename [+ | -]size ...
+"""
+
+    return 0, out, ''
+
+
+def convert_src_cache_unsupported(cmd, **kw):
+    out = """
+  compare [-f fmt] [-F fmt] [-T src_cache] ...
+  convert [-c] [-p] [-q] [-n] [-f fmt] [-t cache] ...
+  rebase [-q] [-f fmt] [-t cache] [-T src_cache] [-p] ...
+  resize [-q] filename [+ | -]size ...
+"""
+
+    return 0, out, ''
+
+
+class SupportsSrcCacheTests(TestCaseBase):
+
+    @MonkeyPatch(utils, 'execCmd', src_cache_supported)
+    def test_rebase_supported(self, **kw):
+        self.assertTrue(qemuimg._supports_src_cache_uncached('rebase'))
+
+    @MonkeyPatch(utils, 'execCmd', rebase_src_cache_unsupported)
+    def test_rebase_unsupported(self, **kw):
+        self.assertFalse(qemuimg._supports_src_cache_uncached('rebase'))
+
+    @MonkeyPatch(utils, 'execCmd', src_cache_supported)
+    def test_convert_supported(self, **kw):
+        self.assertTrue(qemuimg._supports_src_cache_uncached('convert'))
+
+    @MonkeyPatch(utils, 'execCmd', convert_src_cache_unsupported)
+    def test_convert_unsupported(self, **kw):
+        self.assertFalse(qemuimg._supports_src_cache_uncached('convert'))

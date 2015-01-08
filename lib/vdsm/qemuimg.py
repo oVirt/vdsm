@@ -166,6 +166,9 @@ def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None,
     options = []
     cwdPath = None
 
+    if _supports_src_cache('convert'):
+        cmd.extend(("-T", "none"))
+
     if srcFormat:
         cmd.extend(("-f", srcFormat))
 
@@ -217,6 +220,9 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
            stop=None):
     cmd = [_qemuimg.cmd, "rebase", "-t", "none"]
 
+    if _supports_src_cache('rebase'):
+        cmd.extend(("-T", "none"))
+
     if unsafe:
         cmd.extend(("-u",))
 
@@ -236,6 +242,8 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
     if rc != 0:
         raise QImgError(rc, out, err)
 
+
+# Testing capabilities
 
 def _supports_qcow2_compat(command):
     """
@@ -265,3 +273,30 @@ def _supports_qcow2_compat(command):
     # compat           Compatibility level (0.10 or 1.1)
 
     return '\ncompat ' in out
+
+
+@utils.memoized
+def _supports_src_cache(command):
+    return _supports_src_cache_uncached(command)
+
+
+# TODO: Drop this function, move its code to _supports_src_cache() and ajust
+# tests using it when we are able to invalidate cache in utils.memoized
+def _supports_src_cache_uncached(command):
+    """
+    The "-T" option specifies the cache mode that should be used with the
+    source file. This will check if "-T" option is available, aiming to set it
+    to "none", avoiding the use of cache memory (BZ#1138690).
+    """
+    # REQUIRED_FOR: FEDORA 20 (no qemu-img with -T support)
+    cmd = [_qemuimg.cmd, "--help"]
+    rc, out, err = utils.execCmd(cmd, raw=True)
+
+    # REQUIRED_FOR: EL6 (--help returns 1)
+    if rc not in (0, 1):
+        raise QImgError(rc, out, err)
+
+    # Line to match:
+    #   convert [-c] [-p] [-q] [-n] [-f fmt] [-t cache] [-T src_cache]...
+    pattern = r"\n +%s .*\[-T src_cache\]" % command
+    return re.search(pattern, out) is not None
