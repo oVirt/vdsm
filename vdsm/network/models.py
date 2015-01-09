@@ -33,7 +33,7 @@ from . import errors as ne
 class NetDevice(object):
     def __init__(self, name, configurator, ipconfig=None, mtu=None):
         self.name = name
-        self.ip = ipconfig
+        self.ip = ipconfig if ipconfig is not None else IpConfig()
         self.mtu = mtu
         self.configurator = configurator
         self.master = None
@@ -49,12 +49,7 @@ class NetDevice(object):
 
     @property
     def ipConfig(self):
-        try:
-            config = self.ip.getConfig()
-        except AttributeError:
-            config = IpConfig.ipConfig(*(len(IpConfig.ipConfig._fields) *
-                                       [None]))
-        return config
+        return self.ip.getConfig()
 
     @property
     def bridge(self):
@@ -475,12 +470,13 @@ class IpConfig(object):
 
     def __init__(self, ipv4=None, ipv6=None, bootproto=None, blocking=False,
                  ipv6autoconf=None, dhcpv6=None):
-        if ipv4 is None and ipv6 is None:
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'You need to specify '
-                                     'IPv4 or IPv6 or both address.')
-        if ((ipv4 and ipv4.address and bootproto == 'dhcp') or
-           (ipv6 and ipv6.address and (ipv6autoconf or dhcpv6))):
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Static and dynamic ip '
+        if ipv4 is None:
+            ipv4 = IPv4()
+        if ipv6 is None:
+            ipv6 = IPv6()
+        if (ipv4.address and bootproto == 'dhcp') or \
+           (ipv6.address and (ipv6autoconf or dhcpv6)):
+            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Static and dynamic IP '
                                      'configurations are mutually exclusive.')
         self.ipv4 = ipv4
         self.ipv6 = ipv6
@@ -489,6 +485,11 @@ class IpConfig(object):
         self.ipv6autoconf = ipv6autoconf
         self.dhcpv6 = dhcpv6
 
+    def __nonzero__(self):
+        # iproute2 and pyroute_two check that IP configuration is not empty
+        return bool(self.ipv4.address or self.ipv6.address or self.bootproto or
+                    self.ipv6autoconf or self.dhcpv6)
+
     def __repr__(self):
         return 'IpConfig(%r, %r, %s, %s, %s)' % (self.ipv4, self.ipv6,
                                                  self.bootproto,
@@ -496,22 +497,11 @@ class IpConfig(object):
                                                  self.dhcpv6)
 
     def getConfig(self):
-        try:
-            ipaddr = self.ipv4.address
-            netmask = self.ipv4.netmask
-            gateway = self.ipv4.gateway
-            defaultRoute = self.ipv4.defaultRoute
-        except AttributeError:
-            ipaddr = netmask = gateway = defaultRoute = None
-        try:
-            ipv6addr = self.ipv6.address
-            ipv6gateway = self.ipv6.gateway
-            ipv6defaultRoute = self.ipv6.defaultRoute
-        except AttributeError:
-            ipv6addr = ipv6gateway = ipv6defaultRoute = None
-        return self.ipConfig(ipaddr, netmask, gateway, defaultRoute, ipv6addr,
-                             ipv6gateway, ipv6defaultRoute, self.bootproto,
-                             self.async, self.ipv6autoconf, self.dhcpv6)
+        return self.ipConfig(
+            self.ipv4.address, self.ipv4.netmask, self.ipv4.gateway,
+            self.ipv4.defaultRoute, self.ipv6.address, self.ipv6.gateway,
+            self.ipv6.defaultRoute, self.bootproto, self.async,
+            self.ipv6autoconf, self.dhcpv6)
 
 
 def _nicSort(nics):

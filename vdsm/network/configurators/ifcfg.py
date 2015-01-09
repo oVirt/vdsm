@@ -200,7 +200,8 @@ class Ifcfg(Configurator):
                 if self.unifiedPersistence:
                     self.runningConfig.removeBonding(bonding.name)
             else:  # Recreate the bond with ip and master info cleared
-                bonding.ip = bonding.master = None
+                bonding.ip = IpConfig()
+                bonding.master = None
                 bonding.configure()
         else:
             set_mtu = self._setNewMtu(bonding,
