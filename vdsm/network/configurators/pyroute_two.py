@@ -56,25 +56,27 @@ class ConfigApplier(object):
         self.ip = IPDB()
 
     def _setIpConfig(self, iface):
-        ipConfig = iface.ipConfig
-        if ipConfig.ipaddr or ipConfig.ipv6addr:
+        ipconfig = iface.ipconfig
+        ipv4 = ipconfig.ipv4
+        ipv6 = ipconfig.ipv6
+        if ipv4.address or ipv6.address:
             self.removeIpConfig(iface)
-        if ipConfig.ipaddr:
+        if ipv4.address:
             with self.ip.interfaces[iface.name] as i:
-                i.add_ip('%s/%s' % (ipConfig.ipaddr, ipConfig.netmask))
-            if ipConfig.gateway and ipConfig.defaultRoute:
+                i.add_ip(ipv4.address + '/' + ipv4.netmask)
+            if ipv4.gateway and ipv4.defaultRoute:
                 self.ip.routes.add({'dst': 'default',
-                                    'gateway': ipConfig.gateway}).commit()
-        if ipConfig.ipv6addr:
+                                    'gateway': ipv4.gateway}).commit()
+        if ipv6.address:
             with self.ip.interfaces[iface.name] as i:
-                i.add_ip(ipConfig.ipv6addr)
-            if ipConfig.ipv6gateway:
+                i.add_ip(ipv6.address)
+            if ipv6.gateway:
                 self.ip.routes.add({'dst': 'default',
-                                    'gateway': ipConfig.ipv6gateway}).commit()
-        if ipConfig.ipv6autoconf is not None:
+                                    'gateway': ipv6.gateway}).commit()
+        if ipconfig.ipv6autoconf is not None:
             with open('/proc/sys/net/ipv6/conf/%s/autoconf' % iface.name,
                       'w') as ipv6_autoconf:
-                ipv6_autoconf.write('1' if ipConfig.ipv6autoconf else '0')
+                ipv6_autoconf.write('1' if ipconfig.ipv6autoconf else '0')
 
     def removeIpConfig(self, iface):
         ipwrapper.addrFlush(iface.name)
@@ -89,9 +91,9 @@ class ConfigApplier(object):
     def ifup(self, iface):
         with self.ip.interfaces[iface.name] as i:
             i.up()
-        if iface.ipConfig.bootproto == 'dhcp':
+        if iface.ipconfig.bootproto == 'dhcp':
             runDhclient(iface)
-        if iface.ipConfig.dhcpv6:
+        if iface.ipconfig.dhcpv6:
             runDhclient(iface, 6)
 
     def ifdown(self, iface):
