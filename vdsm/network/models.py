@@ -476,40 +476,40 @@ class IpConfig(object):
                                        'bootproto', 'async', 'ipv6autoconf',
                                        'dhcpv6'])
 
-    def __init__(self, inet4=None, inet6=None, bootproto=None, blocking=False,
+    def __init__(self, ipv4=None, ipv6=None, bootproto=None, blocking=False,
                  ipv6autoconf=None, dhcpv6=None):
-        if inet4 is None and inet6 is None:
+        if ipv4 is None and ipv6 is None:
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'You need to specify '
                                      'IPv4 or IPv6 or both address.')
-        if ((inet4 and inet4.address and bootproto == 'dhcp') or
-           (inet6 and inet6.address and (ipv6autoconf or dhcpv6))):
+        if ((ipv4 and ipv4.address and bootproto == 'dhcp') or
+           (ipv6 and ipv6.address and (ipv6autoconf or dhcpv6))):
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Static and dynamic ip '
                                      'configurations are mutually exclusive.')
-        self.inet4 = inet4
-        self.inet6 = inet6
+        self.ipv4 = ipv4
+        self.ipv6 = ipv6
         self.bootproto = bootproto
         self.async = (bootproto == 'dhcp' or dhcpv6) and not blocking
         self.ipv6autoconf = ipv6autoconf
         self.dhcpv6 = dhcpv6
 
     def __repr__(self):
-        return 'IpConfig(%r, %r, %s, %s, %s)' % (self.inet4, self.inet6,
+        return 'IpConfig(%r, %r, %s, %s, %s)' % (self.ipv4, self.ipv6,
                                                  self.bootproto,
                                                  self.ipv6autoconf,
                                                  self.dhcpv6)
 
     def getConfig(self):
         try:
-            ipaddr = self.inet4.address
-            netmask = self.inet4.netmask
-            gateway = self.inet4.gateway
-            defaultRoute = self.inet4.defaultRoute
+            ipaddr = self.ipv4.address
+            netmask = self.ipv4.netmask
+            gateway = self.ipv4.gateway
+            defaultRoute = self.ipv4.defaultRoute
         except AttributeError:
             ipaddr = netmask = gateway = defaultRoute = None
         try:
-            ipv6addr = self.inet6.address
-            ipv6gateway = self.inet6.gateway
-            ipv6defaultRoute = self.inet6.defaultRoute
+            ipv6addr = self.ipv6.address
+            ipv6gateway = self.ipv6.gateway
+            ipv6defaultRoute = self.ipv6.defaultRoute
         except AttributeError:
             ipv6addr = ipv6gateway = ipv6defaultRoute = None
         return self.ipConfig(ipaddr, netmask, gateway, defaultRoute, ipv6addr,

@@ -162,7 +162,7 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     ipv6 = IPv6(ipv6addr, ipv6gateway, defaultRoute)
     ipv4 = IPv4(ipaddr, netmask, gateway, defaultRoute)
     topNetDev.ip = IpConfig(
-        inet4=ipv4, inet6=ipv6, bootproto=bootproto,
+        ipv4=ipv4, ipv6=ipv6, bootproto=bootproto,
         blocking=(configurator._inRollback or utils.tobool(blockingdhcp)),
         ipv6autoconf=ipv6autoconf, dhcpv6=dhcpv6)
     return topNetDev
