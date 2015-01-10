@@ -22,6 +22,7 @@
 import collections
 import os
 
+from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 
 from storage import blockSD
@@ -56,26 +57,30 @@ class MatadataValidityTests(TestCaseBase):
         self.assertEquals(False, blockSD.metadataValidity(vg)['mdathreshold'])
 
 
-class TestBlockGetAllVolumes(TestCaseBase):
-    def mGetLV(self, vgName):
-        """ This function returns lvs output in lvm.getLV() format.
+def fakeGetLV(vgName):
+    """ This function returns lvs output in lvm.getLV() format.
 
-        Input file name: lvs_<sdName>.out
-        Input file should be the output of:
-        lvs --noheadings --units b --nosuffix --separator '|' \
-            -o uuid,name,vg_name,attr,size,seg_start_pe,devices,tags <sdName>
-        """
-        lvs = []
-        lvs_out = open(os.path.join(TESTDIR, 'lvs_%s.out' % vgName),
-                       "r").read()
-        for line in lvs_out.split():
-            fields = [field.strip() for field in
-                      line.split(lvm.SEPARATOR)]
+    Input file name: lvs_<sdName>.out
+    Input file should be the output of:
+    lvs --noheadings --units b --nosuffix --separator '|' \
+        -o uuid,name,vg_name,attr,size,seg_start_pe,devices,tags <sdName>
+
+    """
+    # TODO: simplify by returning fake lvs instead of parsing real lvs output.
+    lvs_output = os.path.join(TESTDIR, 'lvs_%s.out' % vgName)
+    lvs = []
+    with open(lvs_output) as f:
+        for line in f:
+            fields = [field.strip() for field in line.split(lvm.SEPARATOR)]
             lvs.append(lvm.makeLV(*fields))
-        return lvs
+    return lvs
 
-    def test_getAllVolumes(self):
-        blockSD.lvm.getLV = self.mGetLV
+
+class GetAllVolumesTests(TestCaseBase):
+    # TODO: add more tests, see fileSDTests.py
+
+    @MonkeyPatch(lvm, 'getLV', fakeGetLV)
+    def test_volumes_count(self):
         sdName = "3386c6f2-926f-42c4-839c-38287fac8998"
         allVols = blockSD.getAllVolumes(sdName)
         self.assertEqual(len(allVols), 23)
