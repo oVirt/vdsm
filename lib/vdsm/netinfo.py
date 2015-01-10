@@ -508,8 +508,7 @@ def _parseExpiryTime(expiryTime):
         return datetime.strptime(expiryTime, '%w %Y/%m/%d %H:%M:%S')
 
 
-def _parseLeaseFile(leaseFile, ipv6):
-    LEASE = 'lease{0} {{\n'.format('6' if ipv6 else '')
+def _parseLeaseFile(leaseFile):
     IFACE = '  interface "'
     IFACE_END = '";\n'
     EXPIRE = '  expire '
@@ -537,31 +536,26 @@ def _parseLeaseFile(leaseFile, ipv6):
                 if name:
                     interfaces.add(name)
 
-        elif line == LEASE:
+        elif line == 'lease {\n':
             insideLease = True
             name = ''
 
     return interfaces
 
 
-def getDhclientIfaces(leaseFilesGlobs, ipv6=False):
+def getDhclientIfaces(leaseFilesGlobs):
     """Returns a set of interfaces configured using dhclient.
 
     dhclient stores DHCP leases to file(s) whose names can be specified
     by the leaseFilesGlobs parameter (an iterable of glob strings).
-
-        TODO: dhclient6 does not use an 'expire' line, create a test to see
-        if a line reading 'released;' is an unambiguous sign of an invalid
-        DHCPv6 lease.
-
-    To discover DHCPv6 leases set the ipv6 parameter to True."""
+    """
 
     interfaces = set()
 
     for leaseFilesGlob in leaseFilesGlobs:
         for leaseFile in iglob(leaseFilesGlob):
             with open(leaseFile) as leaseFile:
-                interfaces.update(_parseLeaseFile(leaseFile, ipv6))
+                interfaces.update(_parseLeaseFile(leaseFile))
 
     return interfaces
 
