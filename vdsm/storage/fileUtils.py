@@ -145,17 +145,16 @@ def createdir(dirPath, mode=None):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
-        else:
-            log.warning("Dir %s already exists", dirPath)
-            if mode is not None:
-                statinfo = os.stat(dirPath)
-                curMode = statinfo[stat.ST_MODE]
-                if curMode != mode:
-                    raise OSError(errno.EPERM,
-                                  ("Existing %s permissions %s are not as "
-                                   "requested %s") % (dirPath,
-                                                      oct(curMode),
-                                                      oct(mode)))
+        log.warning("Dir %s already exists", dirPath)
+        if mode is not None:
+            statinfo = os.stat(dirPath)
+            curMode = statinfo[stat.ST_MODE]
+            if curMode != mode:
+                raise OSError(errno.EPERM,
+                              ("Existing %s permissions %s are not as "
+                               "requested %s") % (dirPath,
+                                                  oct(curMode),
+                                                  oct(mode)))
 
 
 def resolveUid(user):
