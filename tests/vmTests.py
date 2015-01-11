@@ -21,8 +21,6 @@
 
 from itertools import product
 import re
-import shutil
-import tempfile
 import threading
 import time
 import xml.etree.ElementTree as ET
