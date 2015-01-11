@@ -18,11 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
+import stat
 
 import storage.fileUtils as fileUtils
 import testValidation
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
+from testlib import namedTemporaryDir
 
 
 class DirectFileTests(TestCaseBase):
@@ -134,6 +136,48 @@ class DirectFileTests(TestCaseBase):
 
             with fileUtils.open_ex(srcPath, "r") as f:
                 self.assertEquals(f.read(len(data)), data)
+
+
+class CreatedirTests(TestCaseBase):
+
+    def test_create_dirs_no_mode(self):
+        with namedTemporaryDir() as base:
+            path = os.path.join(base, "a", "b")
+            self.assertFalse(os.path.isdir(path))
+            fileUtils.createdir(path)
+            self.assertTrue(os.path.isdir(path))
+
+    def test_create_dirs_with_mode(self):
+        with namedTemporaryDir() as base:
+            path = os.path.join(base, "a", "b")
+            mode = 0o700
+            fileUtils.createdir(path, mode=mode)
+            self.assertTrue(os.path.isdir(path))
+            while path != base:
+                pathmode = stat.S_IMODE(os.lstat(path).st_mode)
+                self.assertEqual(pathmode, mode)
+                path = os.path.dirname(path)
+
+    @testValidation.ValidateNotRunningAsRoot
+    def test_create_raise_errors(self):
+        with namedTemporaryDir() as base:
+            path = os.path.join(base, "a", "b")
+            self.assertRaises(OSError, fileUtils.createdir, path, 0o400)
+
+    def test_directory_exists_no_mode(self):
+        with namedTemporaryDir() as base:
+            fileUtils.createdir(base)
+
+    def test_directory_exists_other_mode(self):
+        with namedTemporaryDir() as base:
+            self.assertRaises(OSError, fileUtils.createdir, base, 0o755)
+
+    def test_file_exists_with_mode(self):
+        with namedTemporaryDir() as base:
+            path = os.path.join(base, "file")
+            with open(path, "w"):
+                mode = stat.S_IMODE(os.lstat(path).st_mode)
+                self.assertRaises(OSError, fileUtils.createdir, path, mode)
 
 
 class ChownTests(TestCaseBase):
