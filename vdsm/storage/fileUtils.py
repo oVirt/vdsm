@@ -139,7 +139,8 @@ def createdir(dirPath, mode=None):
     else:
         params = (dirPath,)
 
-    log.debug("Creating directory: %s", dirPath)
+    log.debug("Creating directory: %s mode: %s", dirPath,
+              mode if mode is None else oct(mode))
     try:
         os.makedirs(*params)
     except OSError as e:
@@ -151,10 +152,8 @@ def createdir(dirPath, mode=None):
             curMode = statinfo[stat.ST_MODE]
             if curMode != mode:
                 raise OSError(errno.EPERM,
-                              ("Existing %s permissions %s are not as "
-                               "requested %s") % (dirPath,
-                                                  oct(curMode),
-                                                  oct(mode)))
+                              ("Existing %s permissions %o are not as "
+                               "requested %o") % (dirPath, curMode, mode))
 
 
 def resolveUid(user):
