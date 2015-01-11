@@ -1612,6 +1612,7 @@ exit 0
 %{python_sitelib}/yajsonrpc/stompReactor.py*
 
 %files infra
+%{python_sitelib}/%{vdsm_name}/infra/eventfd/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/filecontrol/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/sigutils/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/zombiereaper/__init__.py*

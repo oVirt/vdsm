@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 __all__ = [
+    "eventfd",
     "filecontrol",
     "sigutils",
     "zombiereaper",
