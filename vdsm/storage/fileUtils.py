@@ -152,7 +152,7 @@ def createdir(dirPath, mode=None):
         statinfo = os.stat(dirPath)
         if not stat.S_ISDIR(statinfo.st_mode):
             raise OSError(errno.ENOTDIR, "Not a directory %s" % dirPath)
-        log.warning("Dir %s already exists", dirPath)
+        log.debug("Using existing directory: %s", dirPath)
         if mode is not None:
             curMode = stat.S_IMODE(statinfo.st_mode)
             if curMode != mode:
