@@ -19,6 +19,7 @@
 #
 
 from vdsm import utils
+from vdsm.netinfo import DUMMY_BRIDGE
 
 from .core import Base
 
