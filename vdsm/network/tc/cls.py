@@ -27,7 +27,7 @@ def add(dev, kind, parent, classid, **opts):
     command = ['class', 'add', 'dev', dev, 'parent', parent,
                'classid', classid]
     command.append(kind)
-    for key, value in opts.items():
+    for key, value in _qos_to_str_dict(opts).items():
         if isinstance(value, str):
             command += [key, value]
         else:
@@ -95,6 +95,18 @@ def _parse_hfsc_curve(tokens):
         (_parser.parse_str(tokens),  # Get and consume 'm2'
          _parser.parse_rate(tokens)),
     ))
+
+
+def _qos_to_str_dict(qos):
+    data = {}
+    for curve, attrs in qos.items():
+        data[curve] = []
+        if 'm1' in attrs:
+            data[curve] += ['m1', '%sbit' % attrs.get('m1', 0),
+                            'd', '%sus' % attrs.get('d', 0)]
+        if 'm2' in attrs:
+            data[curve] += ['m2', '%sbit' % attrs.get('m2', 0)]
+    return data
 
 
 _spec = {

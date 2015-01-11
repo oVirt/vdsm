@@ -40,11 +40,10 @@ def configure_outbound(qosOutbound, top_device):
     root_qdisc = _root_qdisc(tc._qdiscs(device))
     class_id = '%x' % (_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
     if not root_qdisc or root_qdisc['kind'] != _SHAPING_QDISC_KIND:
-        _fresh_qdisc_conf_out(device, vlan_tag, class_id,
-                              _qos_to_str_dict(qosOutbound))
+        _fresh_qdisc_conf_out(device, vlan_tag, class_id, qosOutbound)
     else:
         _qdisc_conf_out(device, root_qdisc['handle'], vlan_tag, class_id,
-                        _qos_to_str_dict(qosOutbound))
+                        qosOutbound)
 
 
 def remove_outbound(top_device):
@@ -179,18 +178,6 @@ def _add_fair_qdisc(dev, root_qdisc_handle, class_id):
 def _add_hfsc_cls(dev, root_qdisc_handle, class_id, **qos_opts):
     tc.cls.add(dev, _SHAPING_QDISC_KIND, parent=root_qdisc_handle,
                classid=root_qdisc_handle + class_id, **qos_opts)
-
-
-def _qos_to_str_dict(qos):
-    data = {}
-    for curve, attrs in qos.items():
-        data[curve] = []
-        if 'm1' in attrs:
-            data[curve] += ['m1', '%sbit' % attrs.get('m1', 0),
-                            'd', '%sus' % attrs.get('d', 0)]
-        if 'm2' in attrs:
-            data[curve] += ['m2', '%sbit' % attrs.get('m2', 0)]
-    return data
 
 
 def _root_qdisc(qdiscs):
