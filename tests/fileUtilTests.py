@@ -179,6 +179,12 @@ class CreatedirTests(TestCaseBase):
                 mode = stat.S_IMODE(os.lstat(path).st_mode)
                 self.assertRaises(OSError, fileUtils.createdir, path, mode)
 
+    def test_file_exists_no_mode(self):
+        with namedTemporaryDir() as base:
+            path = os.path.join(base, "file")
+            with open(path, "w"):
+                self.assertRaises(OSError, fileUtils.createdir, path)
+
 
 class ChownTests(TestCaseBase):
     @testValidation.ValidateRunningAsRoot

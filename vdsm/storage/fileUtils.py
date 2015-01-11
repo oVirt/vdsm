@@ -134,7 +134,7 @@ def createdir(dirPath, mode=None):
     If already exists check that permissions are as requested.
     """
     if mode is not None:
-        mode |= stat.S_IFDIR
+        mode = stat.S_IMODE(mode)
         params = (dirPath, mode)
     else:
         params = (dirPath,)
@@ -146,10 +146,12 @@ def createdir(dirPath, mode=None):
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
+        statinfo = os.stat(dirPath)
+        if not stat.S_ISDIR(statinfo.st_mode):
+            raise OSError(errno.ENOTDIR, "Not a directory %s" % dirPath)
         log.warning("Dir %s already exists", dirPath)
         if mode is not None:
-            statinfo = os.stat(dirPath)
-            curMode = statinfo[stat.ST_MODE]
+            curMode = stat.S_IMODE(statinfo.st_mode)
             if curMode != mode:
                 raise OSError(errno.EPERM,
                               ("Existing %s permissions %o are not as "
