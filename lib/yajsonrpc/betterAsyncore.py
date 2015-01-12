@@ -18,6 +18,7 @@
 # while enabling compositing instead of inheritance.
 import asyncore
 import socket
+import types
 from errno import EWOULDBLOCK
 from sys import py3kwarning
 from warnings import filterwarnings, catch_warnings
@@ -249,38 +250,38 @@ class Dispatcher(asyncore.dispatcher):
             # impl.init() is optional.
             pass
 
-    def __invoke(self, name, *args, **kwargs):
-        if hasattr(self.__impl, name):
-            return getattr(self.__impl, name)(self, *args, **kwargs)
-        else:
-            return getattr(asyncore.dispatcher, name)(self, *args, **kwargs)
+        self._bind_implementation()
 
-    def handle_connect(self):
-        return self.__invoke("handle_connect")
+    def _bind_implementation(self):
+        for attr_name in (
+            "handle_accept",
+            "handle_close",
+            "handle_connect",
+            "handle_error",
+            "handle_expt",
+            "handle_read",
+            "handle_write",
+            "readable",
+            "writable",
+        ):
+            method = getattr(
+                self.__impl,
+                attr_name,
+                getattr(
+                    asyncore.dispatcher,
+                    attr_name
+                )
+            )
 
-    def handle_close(self):
-        return self.__invoke("handle_close")
-
-    def handle_accept(self):
-        return self.__invoke("handle_accept")
-
-    def handle_expt(self):
-        return self.__invoke("handle_expt")
-
-    def handle_error(self):
-        return self.__invoke("handle_error")
-
-    def readable(self):
-        return self.__invoke("readable")
-
-    def writable(self):
-        return self.__invoke("writable")
-
-    def handle_read(self):
-        return self.__invoke("handle_read")
-
-    def handle_write(self):
-        return self.__invoke("handle_write")
+            setattr(
+                self,
+                attr_name,
+                types.MethodType(
+                    method,
+                    self,
+                    Dispatcher,
+                )
+            )
 
     def recv(self, buffer_size):
         try:
