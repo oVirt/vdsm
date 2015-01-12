@@ -14,9 +14,8 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 import asyncore
-import os
-import threading
 import logging
+from vdsm.infra.eventfd import EventFD
 
 import stomp
 
@@ -245,41 +244,29 @@ class StompListenerImpl(object):
 
 class _AsyncoreEvent(asyncore.file_dispatcher):
     def __init__(self, map):
-        self._lock = threading.Lock()
-        r, w = os.pipe()
-        self._w = w
+        self._eventfd = EventFD()
         try:
-            asyncore.file_dispatcher.__init__(self, r, map=map)
+            asyncore.file_dispatcher.__init__(
+                self,
+                self._eventfd.fileno(),
+                map=map
+            )
         except:
-            os.close(r)
-            os.close(w)
+            self._eventfd.close()
             raise
-
-        # the file_dispatcher ctor dups the file in order to take ownership of
-        # it
-        os.close(r)
-        self._isSet = False
 
     def writable(self):
         return False
 
     def set(self):
-        with self._lock:
-            if self._isSet:
-                return
-
-            self._isSet = True
-
-        os.write(self._w, "a")
+        self._eventfd.write(1)
 
     def handle_read(self):
-        with self._lock:
-            self.recv(1)
-            self._isSet = False
+        self._eventfd.read()
 
     def close(self):
         try:
-            os.close(self._w)
+            self._eventfd.close()
         except (OSError, IOError):
             pass
 
