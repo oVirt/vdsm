@@ -64,7 +64,7 @@ BuildRequires:	java7-devel
 BuildRequires:	java-devel >= 1.7.0
 %endif
 
-Requires:	java-1.7.0-openjdk
+Requires:	java-openjdk >= 1.7.0
 
 
 %if %{_use_maven}
