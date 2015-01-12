@@ -68,6 +68,20 @@ class Dispatcher(asyncore.dispatcher):
                 )
             )
 
+    def next_check_interval(self):
+        """
+        Return the relative timeout wanted between poller refresh checks
+
+        The function should return the number of seconds it wishes to wait
+        until the next update. None should be returned in cases where the
+        implementation doesn't care.
+
+        Note that this value is a recommendation only.
+        """
+        default_func = lambda: None
+
+        return getattr(self.__impl, "next_check_interval", default_func)()
+
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
@@ -156,12 +170,26 @@ class Reactor(object):
     def process_requests(self):
         self._is_running = True
         while self._is_running:
-            asyncore.loop(timeout=.5, use_poll=True, map=self._map, count=1)
+            asyncore.loop(
+                timeout=self._get_timeout(self._map),
+                use_poll=True,
+                map=self._map,
+                count=1,
+            )
 
         for dispatcher in self._map.values():
             dispatcher.close()
 
         self._map.clear()
+
+    def _get_timeout(self, map):
+        timeout = None
+        for disp in map.itervalues():
+            if hasattr(disp, "next_check_interval"):
+                interval = disp.next_check_interval()
+                if interval is not None and interval >= 0:
+                    timeout = min(interval, timeout)
+        return timeout
 
     def wakeup(self):
         self._wakeupEvent.set()

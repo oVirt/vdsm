@@ -385,7 +385,7 @@ class AsyncDispatcher(object):
         self._parser = Parser()
         self._outbox = deque()
         self._outbuf = None
-        self._outgoingHeartBeat = 0
+        self._outgoing_heartbeat_in_milis = 0
 
     def _queueFrame(self, frame):
         self._outbox.append(frame)
@@ -402,8 +402,8 @@ class AsyncDispatcher(object):
         if incoming != 0:
             raise ValueError("incoming heart-beat not supported")
 
-        self._lastOutgoingTimeStamp = self._milis()
-        self._outgoingHeartBeat = outgoing
+        self._update_outgoing_heartbeat()
+        self._outgoing_heartbeat_in_milis = outgoing
 
     def handle_connect(self, dispatcher):
         self._frameHandler.handle_connect(self)
@@ -436,6 +436,19 @@ class AsyncDispatcher(object):
     def popFrame(self):
         return self._parser.popFrame()
 
+    def _update_outgoing_heartbeat(self):
+        self._lastOutgoingTimeStamp = monotonic_time()
+
+    def _outgoing_heartbeat_expiration_interval(self):
+        since_last_update = (monotonic_time() - self._lastOutgoingTimeStamp)
+        return (self._outgoing_heartbeat_in_milis / 1000.0) - since_last_update
+
+    def next_check_interval(self):
+        if self._outgoing_heartbeat_in_milis == 0:
+            return None
+
+        return max(self._outgoing_heartbeat_expiration_interval(), 0)
+
     def handle_write(self, dispatcher):
         if self._outbuf is None:
             try:
@@ -447,7 +460,7 @@ class AsyncDispatcher(object):
 
         data = self._outbuf
         numSent = dispatcher.send(data)
-        self._lastOutgoingTimeStamp = self._milis()
+        self._update_outgoing_heartbeat()
         if numSent == len(data):
             self._outbuf = None
         else:
@@ -460,9 +473,7 @@ class AsyncDispatcher(object):
         if len(self._outbox) > 0 or self._outbuf is not None:
             return True
 
-        if (self._outgoingHeartBeat > 0
-            and ((self._milis() - self._lastOutgoingTimeStamp)
-                 > self._outgoingHeartBeat)):
+        if (self.next_check_interval() == 0):
             self._queueFrame(_heartBeatFrame)
             return True
 
