@@ -108,8 +108,8 @@ class GlusterVolume(GlusterApiBase):
     def status(self, volumeName, brick=None, statusOption=None):
         return self._gluster.volumeStatus(volumeName, brick, statusOption)
 
-    def list(self, volumeName=None):
-        return self._gluster.volumesList(volumeName)
+    def list(self, volumeName=None, remoteServer=None):
+        return self._gluster.volumesList(volumeName, remoteServer)
 
     def create(self, volumeName, brickList, replicaCount=0, stripeCount=0,
                transportList=[], force=False):

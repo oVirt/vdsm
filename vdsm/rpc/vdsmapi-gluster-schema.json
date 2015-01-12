@@ -641,13 +641,15 @@
 #
 # @volumeName: Gluster volume name
 #
+# @remoteServer: #optional remote server name
+#
 # Returns:
 # List of Gluster volumes
 #
-# Since: 4.10.3
+# Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'list'},
- 'data': {'volumeName': 'str'},
+ 'data': {'volumeName': 'str', '*remoteServer': 'str'},
  'returns': ['VolumeInfo']}
 
 ##
