@@ -47,11 +47,7 @@ def get_external_vms(uri, username, password):
         for vm in conn.listAllDomains():
             root = ET.fromstring(vm.XMLDesc(0))
             params = {}
-            params['vmName'] = vm.name()
-            if vm.state()[0] == libvirt.VIR_DOMAIN_SHUTOFF:
-                params['status'] = "Down"
-            else:
-                params['status'] = "Up"
+            _add_vm_info(vm, params)
             try:
                 _add_general_info(root, params)
             except InvalidVMConfiguration as e:
@@ -79,6 +75,14 @@ def _mem_to_mib(size, unit):
     else:
         raise InvalidVMConfiguration("Invalid currentMemory unit attribute:"
                                      " %r" % unit)
+
+
+def _add_vm_info(vm, params):
+    params['vmName'] = vm.name()
+    if vm.state()[0] == libvirt.VIR_DOMAIN_SHUTOFF:
+        params['status'] = "Down"
+    else:
+        params['status'] = "Up"
 
 
 def _add_general_info(root, params):
