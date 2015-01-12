@@ -19,11 +19,12 @@ import cStringIO
 from threading import Timer, Event
 from uuid import uuid4
 from collections import deque
-import time
 
 from betterAsyncore import Dispatcher
+from vdsm.utils import monotonic_time
 import asyncore
 import re
+
 
 _RE_ESCAPE_SEQUENCE = re.compile(r"\\(.)")
 
@@ -333,7 +334,7 @@ class Client(object):
 
     def recv(self):
         timeout = self._timeout
-        s = time.time()
+        s = monotonic_time()
         duration = 0
         while timeout is None or duration < timeout:
             try:
@@ -341,7 +342,7 @@ class Client(object):
             except IndexError:
                 td = timeout - duration if timeout is not None else None
                 self.process(td)
-                duration = time.time() - s
+                duration = monotonic_time() - s
 
         return None
 
@@ -361,12 +362,12 @@ class Client(object):
         disp = self._disp
         timeout = self._timeout
         duration = 0
-        s = time.time()
+        s = monotonic_time()
         while ((timeout is None or duration < timeout) and
                (disp.writable() or not self._connected.isSet())):
                 td = timeout - duration if timeout is not None else None
                 self.process(td)
-                duration = time.time() - s
+                duration = monotonic_time() - s
 
     def gettimout(self):
         return self._timeout
@@ -471,7 +472,7 @@ class AsyncDispatcher(object):
         return True
 
     def _milis(self):
-        return int(round(time.time() * 1000))
+        return int(round(monotonic_time() * 1000))
 
 
 class AsyncClient(object):
