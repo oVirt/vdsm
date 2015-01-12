@@ -1973,17 +1973,14 @@ class Vm(object):
     def _getGraphicsStats(self):
         def getInfo(dev):
             return {
-                'type': dev['device'],
-                'port': dev.get(
-                    'port', GraphicsDevice.LIBVIRT_PORT_AUTOSELECT),
-                'tlsPort': dev.get(
-                    'tlsPort', GraphicsDevice.LIBVIRT_PORT_AUTOSELECT),
-                'ipAddress': dev.get('specParams', {}).get('displayIp', '0')}
+                'type': dev.device,
+                'port': dev.port,
+                'tlsPort': dev.tlsPort,
+                'ipAddress': dev.specParams.get('displayIp', '0')}
 
         return {
             'displayInfo': [getInfo(dev)
-                            for dev in self.conf.get('devices', [])
-                            if dev['type'] == hwclass.GRAPHICS],
+                            for dev in self._devices[hwclass.GRAPHICS]],
             'displayType': self.conf['display'],
             'displayPort': self.conf['displayPort'],
             'displaySecurePort': self.conf['displaySecurePort'],
