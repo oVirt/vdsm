@@ -1007,7 +1007,3 @@ def walk(top, topdown=True, onerror=None, followlinks=False, blacklist=()):
 def deprecated(f):
     """Used to mark exported methods as deprecated"""
     return f
-
-
-NoIntrCall = utils.NoIntrCall
-NoIntrPoll = utils.NoIntrPoll

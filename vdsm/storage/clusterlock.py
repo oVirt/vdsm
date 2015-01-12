@@ -431,7 +431,7 @@ class LocalLock(object):
 
             if lockFile:
                 try:
-                    misc.NoIntrCall(fcntl.fcntl, lockFile, fcntl.F_GETFD)
+                    utils.NoIntrCall(fcntl.fcntl, lockFile, fcntl.F_GETFD)
                 except IOError as e:
                     # We found a stale file descriptor, removing.
                     del self._globalLockMap[self._sdUUID]
@@ -444,13 +444,13 @@ class LocalLock(object):
                                    "%s (id: %s)", self._sdUUID, hostId)
                     return  # success, the lock was already acquired
 
-            lockFile = misc.NoIntrCall(os.open, self._idsPath, os.O_RDONLY)
+            lockFile = utils.NoIntrCall(os.open, self._idsPath, os.O_RDONLY)
 
             try:
-                misc.NoIntrCall(fcntl.flock, lockFile,
-                                fcntl.LOCK_EX | fcntl.LOCK_NB)
+                utils.NoIntrCall(fcntl.flock, lockFile,
+                                 fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError as e:
-                misc.NoIntrCall(os.close, lockFile)
+                utils.NoIntrCall(os.close, lockFile)
                 if e.errno in (os.errno.EACCES, os.errno.EAGAIN):
                     raise se.AcquireLockFailure(
                         self._sdUUID, e.errno, "Cannot acquire local lock",
@@ -478,7 +478,7 @@ class LocalLock(object):
                                self._sdUUID)
                 return
 
-            misc.NoIntrCall(os.close, lockFile)
+            utils.NoIntrCall(os.close, lockFile)
             self._globalLockMap[self._sdUUID] = (hostId, None)
 
             self.log.debug("Local lock for domain %s successfully released",

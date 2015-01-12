@@ -23,7 +23,7 @@ import time
 import select
 import logging
 
-from storage.misc import NoIntrPoll
+from vdsm.utils import NoIntrPoll
 
 # How many times a reconnect should be performed before a cooldown will be
 # applied

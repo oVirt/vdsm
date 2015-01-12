@@ -23,12 +23,15 @@ import contextlib
 import copy
 import cpopen
 import errno
+import fcntl
 import logging
 import operator
 import os.path
+import select
 import signal
 import six
 import sys
+import tempfile
 import threading
 import time
 import timeit
@@ -36,11 +39,12 @@ import timeit
 from vdsm import constants
 from vdsm import utils
 
+from vmTestsData import VM_STATUS_DUMP
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import checkSudo
 from testValidation import stresstest
-from vmTestsData import VM_STATUS_DUMP
+from multiprocessing import Process
 
 EXT_SLEEP = "sleep"
 
@@ -635,7 +639,7 @@ import vmTestsData
         # just a bit faster, hence the divisor
         # assertLess* requires python 2.7
         self.assertTrue(
-            hack < base/2,
+            hack < base / 2,
             "picklecopy [%f] not faster than deepcopy [%f]" % (hack, base))
 
 
@@ -850,3 +854,101 @@ class StopwatchTests(TestCaseBase):
         with utils.stopwatch("message", log=log):
             pass
         self.assertEqual(log.messages, [])
+
+
+class NoIntrPollTests(TestCaseBase):
+    RETRIES = 3
+    SLEEP_INTERVAL = 0.1
+
+    def _waitAndSigchld(self):
+        time.sleep(self.SLEEP_INTERVAL)
+        os.kill(os.getpid(), signal.SIGCHLD)
+
+    def _startFakeSigchld(self):
+        def _repeatFakeSigchld():
+            for i in range(self.RETRIES):
+                self._waitAndSigchld()
+        intrThread = threading.Thread(target=_repeatFakeSigchld)
+        intrThread.setDaemon(True)
+        intrThread.start()
+
+    def _noIntrWatchFd(self, fd, isEpoll, mask=select.POLLERR):
+        if isEpoll:
+            poller = select.epoll()
+            pollInterval = self.SLEEP_INTERVAL * self.RETRIES * 2
+        else:
+            poller = select.poll()
+            pollInterval = self.SLEEP_INTERVAL * self.RETRIES * 2 * 1000
+
+        poller.register(fd, mask)
+        utils.NoIntrPoll(poller.poll, pollInterval)
+        poller.unregister(fd)
+
+    def testWatchFile(self):
+        tempFd, tempPath = tempfile.mkstemp()
+        os.unlink(tempPath)
+        self._startFakeSigchld()
+        # only poll can support regular file
+        self._noIntrWatchFd(tempFd, isEpoll=False)
+
+    def testWatchPipeEpoll(self):
+        myPipe, hisPipe = os.pipe()
+        self._startFakeSigchld()
+        self._noIntrWatchFd(myPipe, isEpoll=True)  # caught IOError
+
+    def testWatchPipePoll(self):
+        myPipe, hisPipe = os.pipe()
+        self._startFakeSigchld()
+        self._noIntrWatchFd(myPipe, isEpoll=False)  # caught select.error
+
+    def testNoTimeoutPipePoll(self):
+        def _sigChldAndClose(fd):
+            self._waitAndSigchld()
+            time.sleep(self.SLEEP_INTERVAL)
+            os.close(fd)
+
+        myPipe, hisPipe = os.pipe()
+
+        poller = select.poll()
+        poller.register(myPipe, select.POLLHUP)
+
+        intrThread = threading.Thread(target=_sigChldAndClose, args=(hisPipe,))
+        intrThread.setDaemon(True)
+        intrThread.start()
+
+        try:
+            self.assertTrue(len(utils.NoIntrPoll(poller.poll, -1)) > 0)
+        finally:
+            os.close(myPipe)
+
+    def testClosedPipe(self):
+        def _closePipe(pipe):
+            time.sleep(self.SLEEP_INTERVAL)
+            os.close(pipe)
+
+        myPipe, hisPipe = os.pipe()
+        proc = Process(target=_closePipe, args=(hisPipe,))
+        proc.start()
+        # no exception caught
+        self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
+        proc.join()
+
+    def testPipeWriteEAGAIN(self):
+        def _raiseEAGAIN(pipe):
+            PIPE_BUF_BYTES = 65536
+            longStr = '0' * (1 + PIPE_BUF_BYTES)
+            for i in range(self.RETRIES):
+                time.sleep(self.SLEEP_INTERVAL)
+                try:
+                    os.write(pipe, longStr)
+                except OSError as e:
+                    if e.errno not in (errno.EINTR, errno.EAGAIN):
+                        raise
+
+        myPipe, hisPipe = os.pipe()
+        fcntl.fcntl(hisPipe, fcntl.F_SETFL, os.O_NONBLOCK)
+        fcntl.fcntl(myPipe, fcntl.F_SETFL, os.O_NONBLOCK)
+        proc = Process(target=_raiseEAGAIN, args=(hisPipe,))
+        proc.start()
+        self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
+        proc.join()
