@@ -15,11 +15,9 @@
 
 import asyncore
 import logging
-from vdsm.infra.eventfd import EventFD
-
 import stomp
 
-from betterAsyncore import Dispatcher
+from betterAsyncore import Dispatcher, AsyncoreEvent
 from vdsm.sslutils import SSLSocket
 
 _STATE_LEN = "Waiting for message length"
@@ -242,42 +240,11 @@ class StompListenerImpl(object):
         return False
 
 
-class _AsyncoreEvent(asyncore.file_dispatcher):
-    def __init__(self, map):
-        self._eventfd = EventFD()
-        try:
-            asyncore.file_dispatcher.__init__(
-                self,
-                self._eventfd.fileno(),
-                map=map
-            )
-        except:
-            self._eventfd.close()
-            raise
-
-    def writable(self):
-        return False
-
-    def set(self):
-        self._eventfd.write(1)
-
-    def handle_read(self):
-        self._eventfd.read()
-
-    def close(self):
-        try:
-            self._eventfd.close()
-        except (OSError, IOError):
-            pass
-
-        asyncore.file_dispatcher.close(self)
-
-
 class StompReactor(object):
     def __init__(self):
         self._map = {}
         self._isRunning = False
-        self._wakeupEvent = _AsyncoreEvent(self._map)
+        self._wakeupEvent = AsyncoreEvent(self._map)
 
     def createListener(self, connected_socket, acceptHandler):
         listener = StompListener(self, acceptHandler, connected_socket)

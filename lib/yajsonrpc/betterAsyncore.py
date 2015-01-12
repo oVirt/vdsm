@@ -21,6 +21,8 @@ import socket
 import types
 from errno import EWOULDBLOCK
 
+from vdsm.infra.eventfd import EventFD
+
 
 class Dispatcher(asyncore.dispatcher):
     def __init__(self, impl, sock=None, map=None):
@@ -98,3 +100,34 @@ class Dispatcher(asyncore.dispatcher):
                 return 0
             else:
                 raise
+
+
+class AsyncoreEvent(asyncore.file_dispatcher):
+    def __init__(self, map=None):
+        self._eventfd = EventFD()
+        try:
+            asyncore.file_dispatcher.__init__(
+                self,
+                self._eventfd.fileno(),
+                map=map
+            )
+        except:
+            self._eventfd.close()
+            raise
+
+    def writable(self):
+        return False
+
+    def set(self):
+        self._eventfd.write(1)
+
+    def handle_read(self):
+        self._eventfd.read()
+
+    def close(self):
+        try:
+            self._eventfd.close()
+        except (OSError, IOError):
+            pass
+
+        asyncore.file_dispatcher.close(self)
