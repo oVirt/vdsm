@@ -47,8 +47,9 @@ class GlusterService(service):
     def do_glusterVolumesList(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
+        remoteServer = params.get('remoteServer', '')
 
-        status = self.s.glusterVolumesList(volumeName)
+        status = self.s.glusterVolumesList(volumeName, remoteServer)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -451,7 +452,9 @@ def getGlusterCmdDict(serv):
          'glusterVolumesList': (
              serv.do_glusterVolumesList,
              ('[volumeName=<volume_name>]\n\t'
-              '<volume_name> is existing volume name',
+              '[remoteServer=<remote_server]\n\t'
+              '<volume_name> is existing volume name '
+              '<remote_server> is a remote host name ',
               'list all or given gluster volume details'
               )),
          'glusterVolumeStart': (

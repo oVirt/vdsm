@@ -74,8 +74,9 @@ class GlusterApi(object):
         self.svdsmProxy = svdsm.getProxy()
 
     @exportAsVerb
-    def volumesList(self, volumeName=None, options=None):
-        return {'volumes': self.svdsmProxy.glusterVolumeInfo(volumeName)}
+    def volumesList(self, volumeName=None, remoteServer=None, options=None):
+        return {'volumes': self.svdsmProxy.glusterVolumeInfo(volumeName,
+                                                             remoteServer)}
 
     @exportAsVerb
     def volumeCreate(self, volumeName, brickList, replicaCount=0,
