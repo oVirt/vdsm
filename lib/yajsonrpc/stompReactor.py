@@ -13,11 +13,10 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
-import asyncore
 import logging
 import stomp
 
-from betterAsyncore import Dispatcher, AsyncoreEvent
+from betterAsyncore import Dispatcher, Reactor
 from vdsm.sslutils import SSLSocket
 
 _STATE_LEN = "Waiting for message length"
@@ -242,37 +241,25 @@ class StompListenerImpl(object):
 
 class StompReactor(object):
     def __init__(self):
-        self._map = {}
-        self._isRunning = False
-        self._wakeupEvent = AsyncoreEvent(self._map)
+        self._reactor = Reactor()
 
     def createListener(self, connected_socket, acceptHandler):
-        listener = StompListener(self, acceptHandler, connected_socket)
-        self.wakeup()
+        listener = StompListener(
+            self._reactor,
+            acceptHandler,
+            connected_socket
+        )
+        self._reactor.wakeup()
         return listener
 
     def createClient(self, connected_socket):
-        return StompClient(connected_socket, self)
+        return StompClient(connected_socket, self._reactor)
 
     def process_requests(self):
-        self._isRunning = True
-        while self._isRunning:
-            asyncore.loop(use_poll=True, map=self._map, count=1, timeout=.5)
-
-        for key, dispatcher in self._map.items():
-            del self._map[key]
-            dispatcher.close()
-
-    def wakeup(self):
-        self._wakeupEvent.set()
+        self._reactor.process_requests()
 
     def stop(self):
-        self._isRunning = False
-        try:
-            self.wakeup()
-        except (IOError, OSError):
-            # Client woke up and closed the event dispatcher without our help
-            pass
+        self._reactor.stop()
 
 
 class StompDetector():

@@ -131,3 +131,45 @@ class AsyncoreEvent(asyncore.file_dispatcher):
             pass
 
         asyncore.file_dispatcher.close(self)
+
+
+class Reactor(object):
+    """
+    map dictionary maps sock.fileno() to channels to watch. We add channels to
+    it by running add_dispatcher and removing by remove_dispatcher.
+    It is used by asyncore loop to know which channels events to track.
+
+    We use eventfd as mechanism to trigger processing when needed.
+    """
+
+    def __init__(self):
+        self._map = {}
+        self._is_running = False
+        self._wakeupEvent = AsyncoreEvent(self._map)
+
+    def add_dispatcher(self, disp):
+        disp.add_channel(self._map)
+
+    def remove_dispatcher(self, disp):
+        disp.del_channel(self._map)
+
+    def process_requests(self):
+        self._is_running = True
+        while self._is_running:
+            asyncore.loop(timeout=.5, use_poll=True, map=self._map, count=1)
+
+        for dispatcher in self._map.values():
+            dispatcher.close()
+
+        self._map.clear()
+
+    def wakeup(self):
+        self._wakeupEvent.set()
+
+    def stop(self):
+        self._is_running = False
+        try:
+            self.wakeup()
+        except (IOError, OSError):
+            # Client woke up and closed the event dispatcher without our help
+            pass
