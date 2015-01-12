@@ -229,7 +229,7 @@ class Parser(object):
         buf = self._buffer
         cl = self._contentLength
         ndata = buf.tell()
-        if ndata < cl:
+        if ndata < (cl + 1):
             return False
 
         remainingBytes = 0
