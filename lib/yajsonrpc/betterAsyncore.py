@@ -206,7 +206,7 @@ class Reactor(object):
         self._map.clear()
 
     def _get_timeout(self, map):
-        timeout = None
+        timeout = 30.0
         for disp in self._map.values():
             if hasattr(disp, "next_check_interval"):
                 interval = disp.next_check_interval()
