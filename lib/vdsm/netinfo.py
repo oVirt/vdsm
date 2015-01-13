@@ -523,11 +523,11 @@ def _parse_lease_file(lease_file):
             iface = None
             continue
 
-        if family:
-            if line.startswith(IFACE) and line.endswith(IFACE_END):
-                iface = line[len(IFACE):-len(IFACE_END)]
+        if family and line.startswith(IFACE) and line.endswith(IFACE_END):
+            iface = line[len(IFACE):-len(IFACE_END)]
 
-            elif line.startswith(EXPIRE):
+        elif family == 4:
+            if line.startswith(EXPIRE):
                 end = line.find(';')
                 if end == -1:
                     continue  # the line should always contain a ;
