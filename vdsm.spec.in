@@ -231,7 +231,7 @@ Requires: kernel >= 2.6.32-465
 Requires: initscripts >= 9.03.31-2.el6_3.1
 Requires: policycoreutils >= 2.0.83-19.30
 Requires: policycoreutils-python >= 2.0.83-19.47.el6_6.1
-Requires: selinux-policy-targeted >= 3.7.19-260.el6_6.1
+Requires: selinux-policy-targeted >= 3.7.19-260.el6_6.2
 Requires: lvm2 >= 2.02.100-5
 Requires: logrotate < 3.8.0
 %endif
@@ -247,7 +247,7 @@ Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
 Requires: lvm2 >= 2.02.98-15
-Requires: selinux-policy-targeted >= 3.12.1-71
+Requires: selinux-policy-targeted >= 3.12.1-177
 # In order to avoid a policycoreutils bug (rhbz 889698) when selinux is
 # disabled we now require the version 2.1.13-55 (or newer) of Fedora.
 Requires: policycoreutils >= 2.1.13-55
