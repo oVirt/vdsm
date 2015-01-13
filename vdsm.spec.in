@@ -155,6 +155,7 @@ Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
 Requires: libnl3
+Requires: curl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 
