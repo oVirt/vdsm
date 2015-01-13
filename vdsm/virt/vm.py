@@ -5986,15 +5986,25 @@ class Vm(object):
             return
 
         volumeID = volumes[-1]
+        res = self.cif.irs.getVolumeInfo(drive.domainID, drive.poolID,
+                                         drive.imageID, volumeID)
+        if res['status']['code'] != 0:
+            self.log.error("Unable to get info of volume %s (domain: %s image:"
+                           " %s)", volumeID, drive.domainID, drive.imageID)
+            raise RuntimeError("Unable to get volume info")
+        driveFormat = res['info']['format'].lower()
+
         # Sync this VM's data strctures.  Ugh, we're storing the same info in
         # two places so we need to change it twice.
         device = self._lookupConfByPath(drive['path'])
         if drive.volumeID != volumeID:
             # If the active layer changed:
-            #  Update the disk path, volumeID, and volumeInfo members
+            #  Update the disk path, volumeID, volumeInfo, and format members
             volInfo = getVolumeInfo(device, volumeID)
+
             # Path must be set with the value being used by libvirt
             device['path'] = drive.path = volInfo['path'] = activePath
+            device['format'] = drive.format = driveFormat
             device['volumeID'] = drive.volumeID = volumeID
             device['volumeInfo'] = drive.volumeInfo = volInfo
             for v in device['volumeChain']:
