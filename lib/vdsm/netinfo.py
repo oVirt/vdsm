@@ -518,6 +518,11 @@ def _parse_lease_file(lease_file):
     dhcpv4_ifaces = set()
 
     for line in lease_file:
+        if line == 'lease {\n':
+            family = 4
+            iface = None
+            continue
+
         if family:
             if line.startswith(IFACE) and line.endswith(IFACE_END):
                 iface = line[len(IFACE):-len(IFACE_END)]
@@ -536,10 +541,6 @@ def _parse_lease_file(lease_file):
                 family = None
                 if iface:
                     dhcpv4_ifaces.add(iface)
-
-        elif line == 'lease {\n':
-            family = 4
-            iface = None
 
     return dhcpv4_ifaces
 
