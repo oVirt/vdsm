@@ -55,6 +55,27 @@ import vmfakelib as fake
 from testValidation import slowtest
 
 
+def indent(elem, level=0, s="    "):
+    """
+    Modify elem indentation in-place.
+
+    Based on http://effbot.org/zone/element-lib.htm#prettyprint
+    """
+    i = "\n" + level * s
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + s
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level + 1, s)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+
 class TestVm(TestCaseBase):
 
     PCI_ADDR = \
@@ -104,14 +125,29 @@ class TestVm(TestCaseBase):
                      'memSize': '1024', 'memGuaranteedSize': '512'}
 
     def assertXMLEqual(self, element, expectedXML, path=None):
-        if path is None:
-            converted = element.toprettyxml()
-        else:
-            elem = ET.fromstring(element.toprettyxml())
-            converted = re.sub(' />', '/>',
-                               ET.tostring(elem.find("./%s" % path)))
-        self.assertEqual(re.sub('\n\s*', ' ', converted).strip(' '),
-                         re.sub('\n\s*', ' ', expectedXML).strip(' '))
+        """
+        Assert that serializing element generates expected xml, ignoring
+        whitespace differences.
+
+        If path is not None, find and compare the element at path instead of
+        element.
+
+        In case of a mismatch, display normalized xmls to make it easier to
+        find the differences.
+        """
+        actual = ET.fromstring(element.toxml())
+        if path:
+            actual = actual.find("./" + path)
+        indent(actual)
+        actualXML = ET.tostring(actual)
+
+        expected = ET.fromstring(expectedXML)
+        indent(expected)
+        expectedXML = ET.tostring(expected)
+
+        self.assertEqual(actualXML, expectedXML,
+                         "XMLs are different:\nActual:\n%s\nExpected:\n%s\n" %
+                         (actualXML, expectedXML))
 
     def assertBuildCmdLine(self, confToDom):
         with namedTemporaryDir() as tmpDir:
