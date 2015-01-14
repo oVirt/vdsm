@@ -28,7 +28,11 @@ from testlib import VdsmTestCase as TestCaseBase
 from vdsm import utils
 from rpc import vdsmapi
 
+import API
+from clientIF import clientIF
+
 from testValidation import brokentest
+from monkeypatch import MonkeyPatchScope
 import vmfakelib as fake
 
 
@@ -64,6 +68,14 @@ def ensureVmStats(vm):
         vm._vmStats.stop()
 
 
+_VM_PARAMS = {
+    'displayPort': -1, 'displaySecurePort': -1, 'display': 'qxl',
+    'displayIp': '127.0.0.1', 'vmType': 'kvm', 'devices': {},
+    'memSize': 1024,
+    # HACKs
+    'pauseCode': 'NOERR'}
+
+
 class TestVmStats(TestSchemaCompliancyBase):
     def testDownStats(self):
         with fake.VM() as testvm:
@@ -73,13 +85,27 @@ class TestVmStats(TestSchemaCompliancyBase):
 
     @brokentest
     def testRunningStats(self):
-        vmParams = {
-            'displayPort': -1, 'displaySecurePort': -1, 'display': 'qxl',
-            'displayIp': '127.0.0.1', 'vmType': 'kvm', 'devices': {},
-            'memSize': 1024,
-            # HACKs
-            'pauseCode': 'NOERR'}
-        with fake.VM(vmParams) as testvm:
+        with fake.VM(_VM_PARAMS) as testvm:
             with ensureVmStats(testvm):
                 self.assertVmStatsSchemaCompliancy('RunningVmStats',
                                                    testvm.getStats())
+
+
+class TestApiAllVm(TestSchemaCompliancyBase):
+
+    @brokentest
+    def testAllVmStats(self):
+        with fake.VM(_VM_PARAMS) as testvm:
+            with ensureVmStats(testvm):
+                with MonkeyPatchScope([(clientIF, 'getInstance',
+                                        lambda _: testvm.cif)]):
+                    api = API.Global()
+
+                    # here is where clientIF will be used.
+                    response = api.getAllVmStats()
+
+                    self.assertEqual(response['status']['code'], 0)
+
+                    for stat in response['statsList']:
+                        self.assertVmStatsSchemaCompliancy(
+                            'RunningVmStats', stat)
