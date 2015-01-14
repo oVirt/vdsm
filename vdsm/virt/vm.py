@@ -278,12 +278,16 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                 self._sampleCpuTune,
                 config.getint('vars', 'vm_sample_cpu_tune_interval'),
                 self.CPU_TUNE_SAMPLING_WINDOW))
+        self.sampleNuma = (
+            sampling.AdvancedStatsFunction(
+                self._sampleNuma,
+                config.getint('vars', 'vm_sample_numa_interval'), 1))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
             self.sampleDisk, self.sampleDiskLatency, self.sampleNet,
             self.sampleBalloon, self.sampleVmJobs, self.sampleVcpuPinning,
-            self.sampleCpuTune)
+            self.sampleCpuTune, self.sampleNuma)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -302,6 +306,13 @@ class VmStatsThread(sampling.AdvancedStatsThread):
     def _sampleCpu(self):
         cpuStats = self._vm._dom.getCPUStats(True, 0)
         return cpuStats[0]
+
+    def _sampleNuma(self):
+        """
+        Numa CPU assignments.
+        """
+        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
+        return vmNumaNodeRuntimeMap
 
     def _sampleDisk(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -617,6 +628,11 @@ class VmStatsThread(sampling.AdvancedStatsThread):
                     self._log.warning("Disk %s latency not available", dName)
 
             stats[dName].update(dLatency)
+
+    def _getNumaStats(self, stats):
+        vmNumaNodeRuntimeMap = self.sampleNuma.getLastSample()
+        if vmNumaNodeRuntimeMap:
+            stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
 
     def _getVmJobs(self, stats):
         sInfo, eInfo, sampleInterval = self.sampleVmJobs.getStats()

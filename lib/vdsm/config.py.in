@@ -190,6 +190,9 @@ parameters = [
 
         ('vm_sample_cpu_tune_interval', '15', None),
 
+        ('vm_sample_numa_interval', '15',
+            'How often should we sample NUMA CPU assignments'),
+
         ('trust_store_path', '@TRUSTSTORE@',
             'Where the certificates and keys are situated.'),
 
