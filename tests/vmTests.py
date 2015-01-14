@@ -103,7 +103,7 @@ class TestVm(TestCaseBase):
                      'smp': '8', 'maxVCpus': '160',
                      'memSize': '1024', 'memGuaranteedSize': '512'}
 
-    def assertXML(self, element, expectedXML, path=None):
+    def assertXMLEqual(self, element, expectedXML, path=None):
         if path is None:
             converted = element.toprettyxml()
         else:
@@ -145,7 +145,7 @@ class TestVm(TestCaseBase):
            </domain>"""
 
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
-        self.assertXML(domxml.dom, expectedXML)
+        self.assertXMLEqual(domxml.dom, expectedXML)
 
     def testOSXMLBootMenu(self):
         vmConfs = (
@@ -198,7 +198,7 @@ class TestVm(TestCaseBase):
             conf.update(self.conf)
             domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
             domxml.appendOs()
-            self.assertXML(domxml.dom, xmlout, 'os')
+            self.assertXMLEqual(domxml.dom, xmlout, 'os')
 
     def testOSXMLX86_64(self):
         expectedXMLs = ["""
@@ -228,7 +228,7 @@ class TestVm(TestCaseBase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
             domxml.appendOs()
-            self.assertXML(domxml.dom, xml, 'os')
+            self.assertXMLEqual(domxml.dom, xml, 'os')
 
     def testOSPPCXML(self):
         expectedXMLs = ["""
@@ -256,14 +256,14 @@ class TestVm(TestCaseBase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.PPC64)
             domxml.appendOs()
-            self.assertXML(domxml.dom, xml, 'os')
+            self.assertXMLEqual(domxml.dom, xml, 'os')
 
     def testSmartcardXML(self):
         smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'
         dev = {'device': 'smartcard',
                'specParams': {'mode': 'passthrough', 'type': 'spicevmc'}}
         smartcard = vmdevices.core.Smartcard(self.conf, self.log, **dev)
-        self.assertXML(smartcard.getXML(), smartcardXML)
+        self.assertXMLEqual(smartcard.getXML(), smartcardXML)
 
     def testTpmXML(self):
         tpmXML = """
@@ -277,7 +277,7 @@ class TestVm(TestCaseBase):
                'specParams': {'mode': 'passthrough',
                               'path': '/dev/tpm0', 'model': 'tpm-tis'}}
         tpm = vmdevices.core.Tpm(self.conf, self.log, **dev)
-        self.assertXML(tpm.getXML(), tpmXML)
+        self.assertXMLEqual(tpm.getXML(), tpmXML)
 
     def testFeaturesXML(self):
         featuresXML = """
@@ -286,7 +286,7 @@ class TestVm(TestCaseBase):
             </features>"""
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml.appendFeatures()
-        self.assertXML(domxml.dom, featuresXML, 'features')
+        self.assertXMLEqual(domxml.dom, featuresXML, 'features')
 
     def testFeaturesHyperVXML(self):
         featuresXML = """
@@ -300,7 +300,7 @@ class TestVm(TestCaseBase):
         conf.update(self.conf)
         domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
         domxml.appendFeatures()
-        self.assertXML(domxml.dom, featuresXML, 'features')
+        self.assertXMLEqual(domxml.dom, featuresXML, 'features')
 
     def testSysinfoXML(self):
         sysinfoXML = """
@@ -320,7 +320,7 @@ class TestVm(TestCaseBase):
                                    product, version, serial, self.conf['vmId'])
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml.appendSysinfo(product, version, serial)
-        self.assertXML(domxml.dom, sysinfoXML, 'sysinfo')
+        self.assertXMLEqual(domxml.dom, sysinfoXML, 'sysinfo')
 
     def testConsoleXML(self):
         consoleXML = """
@@ -329,7 +329,7 @@ class TestVm(TestCaseBase):
             </console>"""
         dev = {'device': 'console'}
         console = vmdevices.core.Console(self.conf, self.log, **dev)
-        self.assertXML(console.getXML(), consoleXML)
+        self.assertXMLEqual(console.getXML(), consoleXML)
 
     def testClockXML(self):
         clockXML = """
@@ -341,7 +341,7 @@ class TestVm(TestCaseBase):
         self.conf['timeOffset'] = '-3600'
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml.appendClock()
-        self.assertXML(domxml.dom, clockXML, 'clock')
+        self.assertXMLEqual(domxml.dom, clockXML, 'clock')
 
     def testHyperVClockXML(self):
         clockXML = """
@@ -354,7 +354,7 @@ class TestVm(TestCaseBase):
         conf.update(self.conf)
         domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
         domxml.appendClock()
-        self.assertXML(domxml.dom, clockXML, 'clock')
+        self.assertXMLEqual(domxml.dom, clockXML, 'clock')
 
     def testCpuXML(self):
         cpuXML = """
@@ -391,11 +391,11 @@ class TestVm(TestCaseBase):
         vmConf.update(self.conf)
         domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
         domxml.appendCpu()
-        self.assertXML(domxml.dom, cpuXML, 'cpu')
-        self.assertXML(domxml.dom, cputuneXML, 'cputune')
+        self.assertXMLEqual(domxml.dom, cpuXML, 'cpu')
+        self.assertXMLEqual(domxml.dom, cputuneXML, 'cputune')
 
         domxml.appendNumaTune()
-        self.assertXML(domxml.dom, numatuneXML, 'numatune')
+        self.assertXMLEqual(domxml.dom, numatuneXML, 'numatune')
 
     def testChannelXML(self):
         channelXML = """
@@ -408,7 +408,7 @@ class TestVm(TestCaseBase):
         channelXML = channelXML % (name, path)
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml._appendAgentDevice(path, name)
-        self.assertXML(domxml.dom, channelXML, 'devices/channel')
+        self.assertXMLEqual(domxml.dom, channelXML, 'devices/channel')
 
     def testInputXMLX86_64(self):
         expectedXMLs = [
@@ -420,7 +420,7 @@ class TestVm(TestCaseBase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
             domxml.appendInput()
-            self.assertXML(domxml.dom, xml, 'devices/input')
+            self.assertXMLEqual(domxml.dom, xml, 'devices/input')
 
     def testInputXMLPPC64(self):
         expectedXMLs = [
@@ -432,7 +432,7 @@ class TestVm(TestCaseBase):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.PPC64)
             domxml.appendInput()
-            self.assertXML(domxml.dom, xml, 'devices/input')
+            self.assertXMLEqual(domxml.dom, xml, 'devices/input')
 
     def testLegacyGraphicsXML(self):
         vmConfs = [
@@ -490,18 +490,18 @@ class TestVm(TestCaseBase):
             dev = (testvm.getConfGraphics() if isLegacy
                    else vmConf['devices'])[0]
             graph = vm.GraphicsDevice(vmConf, self.log, **dev)
-            self.assertXML(graph.getXML(), xml)
+            self.assertXMLEqual(graph.getXML(), xml)
 
             if graph.device == 'spice':
-                self.assertXML(graph.getSpiceVmcChannelsXML(),
-                               spiceChannelXML)
+                self.assertXMLEqual(graph.getSpiceVmcChannelsXML(),
+                                    spiceChannelXML)
 
     def testBalloonXML(self):
         balloonXML = '<memballoon model="virtio"/>'
         dev = {'device': 'memballoon', 'type': 'balloon',
                'specParams': {'model': 'virtio'}}
         balloon = vmdevices.core.Balloon(self.conf, self.log, **dev)
-        self.assertXML(balloon.getXML(), balloonXML)
+        self.assertXMLEqual(balloon.getXML(), balloonXML)
 
     def testRngXML(self):
         rngXML = """
@@ -514,20 +514,20 @@ class TestVm(TestCaseBase):
                {'period': '2000', 'bytes': '1234', 'source': 'random'}}
 
         rng = vmdevices.core.Rng(self.conf, self.log, **dev)
-        self.assertXML(rng.getXML(), rngXML)
+        self.assertXMLEqual(rng.getXML(), rngXML)
 
     def testWatchdogXML(self):
         watchdogXML = '<watchdog action="none" model="i6300esb"/>'
         dev = {'device': 'watchdog', 'type': 'watchdog',
                'specParams': {'model': 'i6300esb', 'action': 'none'}}
         watchdog = vmdevices.core.Watchdog(self.conf, self.log, **dev)
-        self.assertXML(watchdog.getXML(), watchdogXML)
+        self.assertXMLEqual(watchdog.getXML(), watchdogXML)
 
     def testSoundXML(self):
         soundXML = '<sound model="ac97"/>'
         dev = {'device': 'ac97'}
         sound = vmdevices.core.Sound(self.conf, self.log, **dev)
-        self.assertXML(sound.getXML(), soundXML)
+        self.assertXMLEqual(sound.getXML(), soundXML)
 
     def testVideoXML(self):
         videoXML = """
@@ -538,7 +538,7 @@ class TestVm(TestCaseBase):
         dev = {'device': 'vga', 'specParams': {'vram': '32768',
                'heads': '2'}}
         video = vmdevices.core.Video(self.conf, self.log, **dev)
-        self.assertXML(video.getXML(), videoXML)
+        self.assertXMLEqual(video.getXML(), videoXML)
 
     def testInterfaceXML(self):
         interfaceXML = """
@@ -569,7 +569,7 @@ class TestVm(TestCaseBase):
 
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
-        self.assertXML(iface.getXML(), interfaceXML)
+        self.assertXMLEqual(iface.getXML(), interfaceXML)
 
     def testInterfaceXMLBandwidthUpdate(self):
         originalBwidthXML = """
@@ -596,9 +596,9 @@ class TestVm(TestCaseBase):
         self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         originalBandwidth = iface.getXML().getElementsByTagName('bandwidth')[0]
-        self.assertXML(originalBandwidth, originalBwidthXML)
-        self.assertXML(iface.paramsToBandwidthXML(NEW_OUT, originalBandwidth),
-                       updatedBwidthXML)
+        self.assertXMLEqual(originalBandwidth, originalBwidthXML)
+        bandwith = iface.paramsToBandwidthXML(NEW_OUT, originalBandwidth)
+        self.assertXMLEqual(bandwith, updatedBwidthXML)
 
     def testControllerXML(self):
         devConfs = [
@@ -632,7 +632,7 @@ class TestVm(TestCaseBase):
 
         for devConf, xml in zip(devConfs, expectedXMLs):
             dev = vmdevices.core.Controller(self.conf, self.log, **devConf)
-            self.assertXML(dev.getXML(), xml % self.PCI_ADDR)
+            self.assertXMLEqual(dev.getXML(), xml % self.PCI_ADDR)
 
     def testRedirXML(self):
         redirXML = """
@@ -643,7 +643,7 @@ class TestVm(TestCaseBase):
         dev = {'device': 'spicevmc', 'address': self.PCI_ADDR_DICT}
 
         redir = vmdevices.core.Redir(self.conf, self.log, **dev)
-        self.assertXML(redir.getXML(), redirXML)
+        self.assertXMLEqual(redir.getXML(), redirXML)
 
     def testDriveSharedStatus(self):
         sharedConfigs = [
@@ -768,7 +768,7 @@ class TestVm(TestCaseBase):
             drive = vmdevices.storage.Drive(vmConf, self.log, **devConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = blockDev
-            self.assertXML(drive.getXML(), xml % SERIAL)
+            self.assertXMLEqual(drive.getXML(), xml % SERIAL)
 
     def testIoTuneException(self):
         SERIAL = '54-a672-23e5b495a9ea'
@@ -829,13 +829,13 @@ class TestVm(TestCaseBase):
     def testGetVmPolicySucceded(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain()
-            self.assertXML(testvm._getVmPolicy(), '<qos/>')
+            self.assertXMLEqual(testvm._getVmPolicy(), '<qos/>')
 
     def testGetVmPolicyEmptyOnNoMetadata(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN_METADATA)
-            self.assertXML(testvm._getVmPolicy(), '<qos/>')
+            self.assertXMLEqual(testvm._getVmPolicy(), '<qos/>')
 
     def testGetVmPolicyFailOnNoDomain(self):
         with fake.VM() as testvm:
