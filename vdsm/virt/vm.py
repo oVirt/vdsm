@@ -219,11 +219,16 @@ class VmStatsThread(AdvancedStatsThread):
             AdvancedStatsFunction(
                 self._sampleCpuTune,
                 config.getint('vars', 'vm_sample_cpu_tune_interval'), 1))
+        self.sampleNuma = (
+            AdvancedStatsFunction(
+                self._sampleNuma,
+                config.getint('vars', 'vm_sample_numa_interval'), 1))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
             self.sampleDisk, self.sampleNet, self.sampleBalloon,
-            self.sampleVmJobs, self.sampleVcpuPinning, self.sampleCpuTune)
+            self.sampleVmJobs, self.sampleVcpuPinning, self.sampleCpuTune,
+            self.sampleNuma)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -259,6 +264,13 @@ class VmStatsThread(AdvancedStatsThread):
         """
         cpuStats = self._vm._dom.getCPUStats(True, 0)
         return cpuStats[0]
+
+    def _sampleNuma(self):
+        """
+        Numa CPU assignments.
+        """
+        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
+        return vmNumaNodeRuntimeMap
 
     def _sampleDisk(self):
         """
@@ -573,7 +585,7 @@ class VmStatsThread(AdvancedStatsThread):
             stats[vmDrive.name] = dStats
 
     def _getNumaStats(self, stats):
-        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
+        vmNumaNodeRuntimeMap = self.sampleNuma.getLastSample()
         if vmNumaNodeRuntimeMap:
             stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
 
