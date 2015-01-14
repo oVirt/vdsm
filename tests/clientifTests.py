@@ -18,13 +18,14 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import logging
 import os.path
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
 from monkeypatch import MonkeyPatch
 from virt.vm import VolumeError
 import clientIF
+
+import vmfakelib as fake
 
 
 INEXISTENT_PATH = '/no/such/path'
@@ -49,13 +50,6 @@ class FakeSuperVdsm:
     def mkFloppyFs(self, *args, **kwargs):
         self.calls.append(('mkFloppyFs', args, kwargs))
         return FAKE_FLOPPY_PATH
-
-
-class FakeClientIF(clientIF.clientIF):
-    def __init__(self):
-        # the bare minimum initialization for our test needs.
-        self.irs = None  # just to make sure nothing ever happens
-        self.log = logging.getLogger('ClientIFTests')
 
 
 def fakeDrive():
@@ -90,7 +84,7 @@ def fakePayloadDrive():
 class ClientIFTests(TestCaseBase):
 
     def setUp(self):
-        self.cif = FakeClientIF()
+        self.cif = fake.ClientIF()
 
     def assertCalled(self, funcName):
         sv = clientIF.supervdsm.getProxy()

@@ -19,8 +19,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import xml.etree.ElementTree as etree
 from contextlib import contextmanager
+import logging
+import xml.etree.ElementTree as etree
 
 import libvirt
 
@@ -28,6 +29,7 @@ from vdsm import constants
 from vdsm import libvirtconnection
 
 import caps
+import clientIF
 from virt import vm
 
 from testlib import namedTemporaryDir
@@ -45,8 +47,11 @@ class Connection:
         return []
 
 
-class ClientIF(object):
-    def __init__(self, *args, **kwargs):
+class ClientIF(clientIF.clientIF):
+    def __init__(self):
+        # the bare minimum initialization for our test needs.
+        self.irs = None  # just to make sure nothing ever happens
+        self.log = logging.getLogger('fake.ClientIF')
         self.channelListener = None
         self.vmContainer = {}
 
