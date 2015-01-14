@@ -250,7 +250,7 @@ class ConfiguratorTests(VdsmTestCase):
     def testConfigureFiltering(self):
         class Dummy(object):
             pass
-        c, args = Dummy(), Dummy()
+        c = Dummy()
         setattr(c, 'name', "Mock")
 
         for (isconfigured, isvalid, force, expected) in (
