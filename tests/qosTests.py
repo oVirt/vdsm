@@ -19,6 +19,7 @@
 from testlib import VdsmTestCase as TestCaseBase
 
 from network.configurators import qos
+from network.tc import cls
 
 
 class TestConversions(TestCaseBase):
@@ -36,7 +37,7 @@ class TestConversions(TestCaseBase):
                 ({'ls': {'m1': 100, 'd': 10, 'm2': 300}},
                  {'ls': ['m1', '100bit', 'd', '10us', 'm2', '300bit']}))
         for inp, correct in data:
-            self.assertEqual(qos._qos_to_str_dict(inp), correct)
+            self.assertEqual(cls._qos_to_str_dict(inp), correct)
 
     def test_get_root_qdisc(self):
         root = {'kind': 'hfsc', 'root': True, 'handle': '1:', 'refcnt': 2,
