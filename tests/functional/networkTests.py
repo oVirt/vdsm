@@ -1730,49 +1730,58 @@ class NetworkTest(TestCaseBase):
                 network = {NETWORK_NAME: {'nic': right, 'bridged': bridged,
                                           'bootproto': bootproto,
                                           'blockingdhcp': True}}
+                try:
+                    status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                              NOCHK)
+                    self.assertEqual(status, SUCCESS, msg)
+                    self.assertNetworkExists(NETWORK_NAME)
 
-                status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkExists(NETWORK_NAME)
+                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                    self.assertEqual(test_net['dhcpv4'], dhcpv4)
 
-                test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                self.assertEqual(test_net['dhcpv4'], dhcpv4)
+                    if bridged:
+                        self.assertEqual(test_net['cfg']['BOOTPROTO'],
+                                         bootproto)
 
-                if bridged:
-                    self.assertEqual(test_net['cfg']['BOOTPROTO'], bootproto)
+                        devs = self.vdsm_net.netinfo.bridges
+                        self.assertIn(NETWORK_NAME, devs)
+                        self.assertEqual(
+                            devs[NETWORK_NAME]['cfg']['BOOTPROTO'], bootproto)
+                        self.assertEqual(devs[NETWORK_NAME]['dhcpv4'], dhcpv4)
+                        device_name = NETWORK_NAME
 
-                    devs = self.vdsm_net.netinfo.bridges
-                    self.assertIn(NETWORK_NAME, devs)
-                    self.assertEqual(devs[NETWORK_NAME]['cfg']['BOOTPROTO'],
-                                     bootproto)
-                    self.assertEqual(devs[NETWORK_NAME]['dhcpv4'], dhcpv4)
-                    device_name = NETWORK_NAME
+                    else:
+                        devs = self.vdsm_net.netinfo.nics
+                        self.assertIn(right, devs)
+                        self.assertEqual(devs[right]['cfg']['BOOTPROTO'],
+                                         bootproto)
+                        self.assertEqual(devs[right]['dhcpv4'], dhcpv4)
+                        device_name = right
 
-                else:
-                    devs = self.vdsm_net.netinfo.nics
-                    self.assertIn(right, devs)
-                    self.assertEqual(devs[right]['cfg']['BOOTPROTO'],
-                                     bootproto)
-                    self.assertEqual(devs[right]['dhcpv4'], dhcpv4)
-                    device_name = right
+                    if dhcpv4:
+                        ip_addr = test_net['addr']
+                        self.assertSourceRoutingConfiguration(device_name,
+                                                              ip_addr)
 
-                if dhcpv4:
-                    ip_addr = test_net['addr']
-                    self.assertSourceRoutingConfiguration(device_name, ip_addr)
+                    network = {NETWORK_NAME: {'remove': True}}
+                    status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                              NOCHK)
+                    self.assertEqual(status, SUCCESS, msg)
+                    self.assertNetworkDoesntExist(NETWORK_NAME)
 
-                network = {NETWORK_NAME: {'remove': True}}
-                status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
-                self.assertNetworkDoesntExist(NETWORK_NAME)
-
-                # Assert that routes and rules don't exist
-                if dhcpv4:
-                    routes = self.getSourceRoutingRoutes(device_name, ip_addr)
-                    for route in routes:
-                        self.assertRouteDoesNotExist(route)
-                    rules = self.getSourceRoutingRules(device_name, ip_addr)
-                    for rule in rules:
-                        self.assertRuleDoesNotExist(rule)
+                    # Assert that routes and rules don't exist
+                    if dhcpv4:
+                        routes = self.getSourceRoutingRoutes(device_name,
+                                                             ip_addr)
+                        for route in routes:
+                            self.assertRouteDoesNotExist(route)
+                        rules = self.getSourceRoutingRules(device_name,
+                                                           ip_addr)
+                        for rule in rules:
+                            self.assertRuleDoesNotExist(rule)
+                finally:
+                    dhcp.delete_dhclient_leases(
+                        NETWORK_NAME if bridged else right, dhcpv4)
 
     @permutations([[(4, 'default')], [(4, 'local')], [(6, 'not applicable')]])
     @cleanupNet

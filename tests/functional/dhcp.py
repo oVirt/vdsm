@@ -27,6 +27,7 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
+from vdsm.utils import rmFile
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
 _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
@@ -35,6 +36,7 @@ _NM_CLI_BINARY = CommandPath('nmcli', '/usr/bin/nmcli')
 _START_CHECK_TIMEOUT = 0.5
 _DHCLIENT_TIMEOUT = 10
 _WAIT_FOR_STOP_TIMEOUT = 2
+DHCLIENT_LEASE = '/var/lib/dhclient/dhclient{0}--{1}.lease'
 
 
 class DhcpError(Exception):
@@ -176,3 +178,10 @@ def removeNMplaceholderConnection(connection):
 
     if rc:
         raise DhcpError('Could not remove the placeholder NM connection.')
+
+
+def delete_dhclient_leases(iface, dhcpv4=False, dhcpv6=False):
+    if dhcpv4:
+        rmFile(DHCLIENT_LEASE.format('', iface))
+    if dhcpv6:
+        rmFile(DHCLIENT_LEASE.format('6', iface))
