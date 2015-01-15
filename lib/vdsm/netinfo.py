@@ -55,7 +55,7 @@ NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 # possible names of dhclient's lease files (e.g. as NetworkManager's slave)
 _DHCLIENT_LEASES_GLOBS = [
     '/var/lib/dhclient/dhclient*.lease*',  # iproute2 configurator, initscripts
-    '/var/lib/NetworkManager/dhclient-*.lease',  # NetworkManager
+    '/var/lib/NetworkManager/dhclient-*.lease',
 ]
 
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
@@ -545,7 +545,7 @@ def _parse_lease_file(lease_file):
     return dhcpv4_ifaces
 
 
-def _get_dhclient_ifaces(lease_files_globs):
+def _get_dhclient_ifaces(lease_files_globs=_DHCLIENT_LEASES_GLOBS):
     """Return a set of interfaces configured using dhclient.
 
     dhclient stores DHCP leases to file(s) whose names can be specified
@@ -607,7 +607,7 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4_ifaces=None):
     if ipAddrs is None:
         ipAddrs = _getIpAddrs()
     if dhcpv4_ifaces is None:
-        dhcpv4_ifaces = _get_dhclient_ifaces(_DHCLIENT_LEASES_GLOBS)
+        dhcpv4_ifaces = _get_dhclient_ifaces()
     d = {}
     for net, netAttr in nets.iteritems():
         try:
@@ -630,7 +630,7 @@ def get(vdsmnets=None):
          'vlans': {}}
     paddr = permAddr()
     ipaddrs = _getIpAddrs()
-    dhcpv4_ifaces = _get_dhclient_ifaces(_DHCLIENT_LEASES_GLOBS)
+    dhcpv4_ifaces = _get_dhclient_ifaces()
     routes = _get_routes()
 
     if vdsmnets is None:
