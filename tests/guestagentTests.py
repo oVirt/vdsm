@@ -98,6 +98,9 @@ class TestGuestIF(TestCaseBase):
         self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid4))
         invalid5 = u"\udc79"
         self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid5))
+        restricted = u''.join(guestagent._RESTRICTED_CHARS)
+        self.assertEqual(guestagent._REPLACEMENT_CHAR * len(restricted),
+                         guestagent._filterXmlChars(restricted))
 
     def test_filterObject(self):
         ILLEGAL_DATA = {u"foo": u"\x00data\x00test\uffff\ufffe\ud800\udc79"}

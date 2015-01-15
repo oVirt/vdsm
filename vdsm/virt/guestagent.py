@@ -37,14 +37,14 @@ _IMPLICIT_API_VERSION_ZERO = 0
 _MESSAGE_API_VERSION_LOOKUP = {
     'set-number-of-cpus': 1}
 
-__REPLACEMENT_CHAR = u'\ufffd'
-__RESTRICTED_CHARS = frozenset(unichr(c) for c in
-                               range(8 + 1) +
-                               range(0xB, 0xC + 1) +
-                               range(0xE, 0x1F + 1) +
-                               range(0x7F, 0x84 + 1) +
-                               range(0x86, 0x9F + 1) +
-                               [0xFFFE, 0xFFFF])
+_REPLACEMENT_CHAR = u'\ufffd'
+_RESTRICTED_CHARS = frozenset(unichr(c) for c in
+                              range(8 + 1) +
+                              range(0xB, 0xC + 1) +
+                              range(0xE, 0x1F + 1) +
+                              range(0x7F, 0x84 + 1) +
+                              range(0x86, 0x9F + 1) +
+                              [0xFFFE, 0xFFFF])
 
 
 def _filterXmlChars(u):
@@ -54,7 +54,7 @@ def _filterXmlChars(u):
 
     "Char" is defined as any unicode character except the surrogate blocks,
     \ufffe and \uffff.
-    "RestrictedChar" is defiend as the code points in __RESTRICTED_CHARS above
+    "RestrictedChar" is defiend as the code points in _RESTRICTED_CHARS above
 
     It's a little hard to follow, but the upshot is an XML document
     must contain only characters in Char that are not in
@@ -71,8 +71,8 @@ def _filterXmlChars(u):
     chars = array.array('u', u)
     for i, c in enumerate(chars):
         if (c > u'\U00010fff' or unicodedata.category(c) == 'Cs'
-                or c in __RESTRICTED_CHARS):
-            chars[i] = __REPLACEMENT_CHAR
+                or c in _RESTRICTED_CHARS):
+            chars[i] = _REPLACEMENT_CHAR
     return chars.tounicode()
 
 
