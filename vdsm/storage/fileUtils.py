@@ -35,6 +35,7 @@ import shutil
 import logging
 import errno
 import sys
+import warnings
 
 import six
 
@@ -153,6 +154,7 @@ def createdir(dirPath, mode=None):
         if not stat.S_ISDIR(statinfo.st_mode):
             raise OSError(errno.ENOTDIR, "Not a directory %s" % dirPath)
         log.debug("Using existing directory: %s", dirPath)
+        warnings.warn("Using existing direcotory: %s" % dirPath, stacklevel=2)
         if mode is not None:
             curMode = stat.S_IMODE(statinfo.st_mode)
             if curMode != mode:
