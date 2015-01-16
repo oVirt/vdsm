@@ -36,14 +36,14 @@ def _pci_address_to_name(domain, bus, slot, function):
     libvirt's pci name: pci_${domain}_${bus}_${slot}_${function}.
     The first 2 characters are hex notation that is unwanted in the name.
     """
-    return 'pci_{}_{}_{}_{}'.format(domain[2:],
-                                    bus[2:],
-                                    slot[2:],
-                                    function[2:])
+    return 'pci_{0}_{1}_{2}_{3}'.format(domain[2:],
+                                        bus[2:],
+                                        slot[2:],
+                                        function[2:])
 
 
 def _sriov_totalvfs(device_name):
-    with open('/sys/bus/pci/devices/{}/sriov_totalvfs'.format(
+    with open('/sys/bus/pci/devices/{0}/sriov_totalvfs'.format(
             _name_to_pci_path(device_name))) as f:
         return int(f.read())
 
