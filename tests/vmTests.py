@@ -41,6 +41,7 @@ from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import make_config
+from testlib import XMLTestCase
 import caps
 import hooks
 from vdsm import utils
@@ -71,28 +72,7 @@ def find(xml, match):
     return ET.tostring(found)
 
 
-def indent(elem, level=0, s="    "):
-    """
-    Modify elem indentation in-place.
-
-    Based on http://effbot.org/zone/element-lib.htm#prettyprint
-    """
-    i = "\n" + level * s
-    if len(elem):
-        if not elem.text or not elem.text.strip():
-            elem.text = i + s
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-        for elem in elem:
-            indent(elem, level + 1, s)
-        if not elem.tail or not elem.tail.strip():
-            elem.tail = i
-    else:
-        if level and (not elem.tail or not elem.tail.strip()):
-            elem.tail = i
-
-
-class TestVm(TestCaseBase):
+class TestVm(XMLTestCase):
 
     PCI_ADDR = \
         'bus="0x00" domain="0x0000" function="0x0" slot="0x03" type="pci"'
@@ -139,26 +119,6 @@ class TestVm(TestCaseBase):
                      'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
                      'smp': '8', 'maxVCpus': '160',
                      'memSize': '1024', 'memGuaranteedSize': '512'}
-
-    def assertXMLEqual(self, xml, expectedXML):
-        """
-        Assert that xml is equivalent to expected xml, ignoring whitespace
-        differences.
-
-        In case of a mismatch, display normalized xmls to make it easier to
-        find the differences.
-        """
-        actual = ET.fromstring(xml)
-        indent(actual)
-        actualXML = ET.tostring(actual)
-
-        expected = ET.fromstring(expectedXML)
-        indent(expected)
-        expectedXML = ET.tostring(expected)
-
-        self.assertEqual(actualXML, expectedXML,
-                         "XMLs are different:\nActual:\n%s\nExpected:\n%s\n" %
-                         (actualXML, expectedXML))
 
     def assertBuildCmdLine(self, confToDom):
         with namedTemporaryDir() as tmpDir:

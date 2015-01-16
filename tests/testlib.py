@@ -29,6 +29,7 @@ import sys
 import tempfile
 import threading
 from contextlib import contextmanager
+import xml.etree.ElementTree as ET
 
 from nose import config
 from nose import core
@@ -243,6 +244,50 @@ class VdsmTestCase(unittest.TestCase):
                 safe_repr(first), safe_repr(second), places)
         msg = self._formatMessage(msg, standardMsg)
         raise self.failureException(msg)
+
+
+class XMLTestCase(VdsmTestCase):
+
+    def assertXMLEqual(self, xml, expectedXML):
+        """
+        Assert that xml is equivalent to expected xml, ignoring whitespace
+        differences.
+
+        In case of a mismatch, display normalized xmls to make it easier to
+        find the differences.
+        """
+        actual = ET.fromstring(xml)
+        indent(actual)
+        actualXML = ET.tostring(actual)
+
+        expected = ET.fromstring(expectedXML)
+        indent(expected)
+        expectedXML = ET.tostring(expected)
+
+        self.assertEqual(actualXML, expectedXML,
+                         "XMLs are different:\nActual:\n%s\nExpected:\n%s\n" %
+                         (actualXML, expectedXML))
+
+
+def indent(elem, level=0, s="    "):
+    """
+    Modify elem indentation in-place.
+
+    Based on http://effbot.org/zone/element-lib.htm#prettyprint
+    """
+    i = "\n" + level * s
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + s
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level + 1, s)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 
 class VdsmTestResult(result.TextTestResult):
