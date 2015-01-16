@@ -113,11 +113,6 @@ class TestVm(TestCaseBase):
         self.assertEqual(re.sub('\n\s*', ' ', converted).strip(' '),
                          re.sub('\n\s*', ' ', expectedXML).strip(' '))
 
-    def assertXMLNone(self, element, path):
-        elem = ET.fromstring(element.toprettyxml())
-        converted = elem.find("./%s" % path)
-        self.assertEqual(converted, None)
-
     def assertBuildCmdLine(self, confToDom):
         with namedTemporaryDir() as tmpDir:
             with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
