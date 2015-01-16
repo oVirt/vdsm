@@ -55,6 +55,22 @@ import vmfakelib as fake
 from testValidation import slowtest
 
 
+def find(xml, match):
+    """
+    Finds the first element matching match. match may be a tag name or path.
+    Returns found element xml.
+
+    path is using the limmited supported xpath syntax:
+    https://docs.python.org/2/library/xml.etree.elementtree.html#supported-xpath-syntax
+    Note that xpath support in Python 2.6 is partial and undocumented.
+    """
+    elem = ET.fromstring(xml)
+    found = elem.find(match)
+    if found is None:
+        raise AssertionError("No such element: %s" % match)
+    return ET.tostring(found)
+
+
 def indent(elem, level=0, s="    "):
     """
     Modify elem indentation in-place.
@@ -124,20 +140,15 @@ class TestVm(TestCaseBase):
                      'smp': '8', 'maxVCpus': '160',
                      'memSize': '1024', 'memGuaranteedSize': '512'}
 
-    def assertXMLEqual(self, xml, expectedXML, path=None):
+    def assertXMLEqual(self, xml, expectedXML):
         """
         Assert that xml is equivalent to expected xml, ignoring whitespace
         differences.
-
-        If path is not None, find and compare the element at path instead of
-        element.
 
         In case of a mismatch, display normalized xmls to make it easier to
         find the differences.
         """
         actual = ET.fromstring(xml)
-        if path:
-            actual = actual.find("./" + path)
         indent(actual)
         actualXML = ET.tostring(actual)
 
@@ -225,11 +236,12 @@ class TestVm(TestCaseBase):
                  <cmdline>console=ttyS0 1</cmdline>
                  <smbios mode="sysinfo"/>
             </os>""")
-        for conf, xmlout in zip(vmConfs, expectedXMLs):
+        for conf, osXML in zip(vmConfs, expectedXMLs):
             conf.update(self.conf)
             domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
             domxml.appendOs()
-            self.assertXMLEqual(domxml.dom.toxml(), xmlout, 'os')
+            xml = find(domxml.dom.toxml(), './os')
+            self.assertXMLEqual(xml, osXML)
 
     def testOSXMLX86_64(self):
         expectedXMLs = ["""
@@ -255,11 +267,12 @@ class TestVm(TestCaseBase):
             vmConfs.append({'boot': k})
             expectedXMLs.append(OSXML % v)
 
-        for vmConf, xml in zip(vmConfs, expectedXMLs):
+        for vmConf, osXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
             domxml.appendOs()
-            self.assertXMLEqual(domxml.dom.toxml(), xml, 'os')
+            xml = find(domxml.dom.toxml(), './os')
+            self.assertXMLEqual(xml, osXML)
 
     def testOSPPCXML(self):
         expectedXMLs = ["""
@@ -283,11 +296,12 @@ class TestVm(TestCaseBase):
             vmConfs.append({'boot': k})
             expectedXMLs.append(OSXML % v)
 
-        for vmConf, xml in zip(vmConfs, expectedXMLs):
+        for vmConf, osXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.PPC64)
             domxml.appendOs()
-            self.assertXMLEqual(domxml.dom.toxml(), xml, 'os')
+            xml = find(domxml.dom.toxml(), './os')
+            self.assertXMLEqual(xml, osXML)
 
     def testSmartcardXML(self):
         smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'
@@ -317,7 +331,8 @@ class TestVm(TestCaseBase):
             </features>"""
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml.appendFeatures()
-        self.assertXMLEqual(domxml.dom.toxml(), featuresXML, 'features')
+        xml = find(domxml.dom.toxml(), './features')
+        self.assertXMLEqual(xml, featuresXML)
 
     def testFeaturesHyperVXML(self):
         featuresXML = """
@@ -331,7 +346,8 @@ class TestVm(TestCaseBase):
         conf.update(self.conf)
         domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
         domxml.appendFeatures()
-        self.assertXMLEqual(domxml.dom.toxml(), featuresXML, 'features')
+        xml = find(domxml.dom.toxml(), './features')
+        self.assertXMLEqual(xml, featuresXML)
 
     def testSysinfoXML(self):
         sysinfoXML = """
@@ -351,7 +367,8 @@ class TestVm(TestCaseBase):
                                    product, version, serial, self.conf['vmId'])
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml.appendSysinfo(product, version, serial)
-        self.assertXMLEqual(domxml.dom.toxml(), sysinfoXML, 'sysinfo')
+        xml = find(domxml.dom.toxml(), './sysinfo')
+        self.assertXMLEqual(xml, sysinfoXML)
 
     def testConsoleXML(self):
         consoleXML = """
@@ -372,7 +389,8 @@ class TestVm(TestCaseBase):
         self.conf['timeOffset'] = '-3600'
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml.appendClock()
-        self.assertXMLEqual(domxml.dom.toxml(), clockXML, 'clock')
+        xml = find(domxml.dom.toxml(), './clock')
+        self.assertXMLEqual(xml, clockXML)
 
     def testHyperVClockXML(self):
         clockXML = """
@@ -385,7 +403,8 @@ class TestVm(TestCaseBase):
         conf.update(self.conf)
         domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
         domxml.appendClock()
-        self.assertXMLEqual(domxml.dom.toxml(), clockXML, 'clock')
+        xml = find(domxml.dom.toxml(), './clock')
+        self.assertXMLEqual(xml, clockXML)
 
     def testCpuXML(self):
         cpuXML = """
@@ -422,11 +441,11 @@ class TestVm(TestCaseBase):
         vmConf.update(self.conf)
         domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
         domxml.appendCpu()
-        self.assertXMLEqual(domxml.dom.toxml(), cpuXML, 'cpu')
-        self.assertXMLEqual(domxml.dom.toxml(), cputuneXML, 'cputune')
-
         domxml.appendNumaTune()
-        self.assertXMLEqual(domxml.dom.toxml(), numatuneXML, 'numatune')
+        xml = domxml.dom.toxml()
+        self.assertXMLEqual(find(xml, "./cpu"), cpuXML)
+        self.assertXMLEqual(find(xml, "./cputune"), cputuneXML)
+        self.assertXMLEqual(find(xml, './numatune'), numatuneXML)
 
     def testChannelXML(self):
         channelXML = """
@@ -439,7 +458,8 @@ class TestVm(TestCaseBase):
         channelXML = channelXML % (name, path)
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
         domxml._appendAgentDevice(path, name)
-        self.assertXMLEqual(domxml.dom.toxml(), channelXML, 'devices/channel')
+        xml = find(domxml.dom.toxml(), './devices/channel')
+        self.assertXMLEqual(xml, channelXML)
 
     def testInputXMLX86_64(self):
         expectedXMLs = [
@@ -447,11 +467,12 @@ class TestVm(TestCaseBase):
             """<input bus="usb" type="tablet"/>"""]
 
         vmConfs = [{}, {'tabletEnable': 'true'}]
-        for vmConf, xml in zip(vmConfs, expectedXMLs):
+        for vmConf, inputXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
             domxml.appendInput()
-            self.assertXMLEqual(domxml.dom.toxml(), xml, 'devices/input')
+            xml = find(domxml.dom.toxml(), './devices/input')
+            self.assertXMLEqual(xml, inputXML)
 
     def testInputXMLPPC64(self):
         expectedXMLs = [
@@ -459,11 +480,12 @@ class TestVm(TestCaseBase):
             """<input bus="usb" type="tablet"/>"""]
 
         vmConfs = [{}, {'tabletEnable': 'true'}]
-        for vmConf, xml in zip(vmConfs, expectedXMLs):
+        for vmConf, inputXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
             domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.PPC64)
             domxml.appendInput()
-            self.assertXMLEqual(domxml.dom.toxml(), xml, 'devices/input')
+            xml = find(domxml.dom.toxml(), './devices/input')
+            self.assertXMLEqual(xml, inputXML)
 
     def testLegacyGraphicsXML(self):
         vmConfs = [
