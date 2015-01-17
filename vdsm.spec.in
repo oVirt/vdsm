@@ -120,6 +120,9 @@ BuildRequires: policycoreutils-python > 2.0.83-19.47
 BuildRequires: python-argparse
 BuildRequires: python-ordereddict
 %endif
+%if 0%{?rhel} > 6 || 0%{?fedora}
+BuildRequires: python-blivet
+%endif
 
 # Autotools BuildRequires
 %if 0%{?enable_autotools}
@@ -138,7 +141,6 @@ BuildRequires: python-pep8
 BuildRequires: systemd-units
 %endif
 
-Requires: python-blivet
 Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
@@ -697,6 +699,9 @@ BuildArch:      noarch
 Requires: %{name} = %{version}-%{release}
 Requires: glusterfs-server
 Requires: python-magic
+%if 0%{?rhel} > 6 || 0%{?fedora}
+Requires: python-blivet
+%endif
 
 %description gluster
 Gluster plugin enables VDSM to serve Gluster functionalities.

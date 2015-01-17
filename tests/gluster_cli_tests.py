@@ -20,8 +20,8 @@
 
 from testlib import VdsmTestCase as TestCaseBase
 from gluster import cli as gcli
-from gluster.storagedev import _parseDevices as parseStorageDevices
 import xml.etree.cElementTree as etree
+from nose.plugins.skip import SkipTest
 import glusterTestData
 
 
@@ -1081,6 +1081,11 @@ class GlusterCliTests(TestCaseBase):
         self.assertEquals(status, ostatus)
 
     def test_parseStorageDevices(self):
+        try:
+            from gluster.storagedev import _parseDevices as parseStorageDevices
+        except ImportError as e:
+            raise SkipTest('%s' % e)
+
         status = parseStorageDevices(glusterTestData.glusterStorageDevData())
         self.assertEquals(status, glusterTestData.GLUSTER_STORAGE_DEVICES)
 
