@@ -30,6 +30,7 @@ import protocoldetector
 from vdsm import sslutils
 from sslhelper import KEY_FILE, CRT_FILE
 from testlib import VdsmTestCase, expandPermutations, permutations
+from testValidation import brokentest
 
 
 class Detector(object):
@@ -151,6 +152,7 @@ class AcceptorTests(VdsmTestCase):
         self.start_acceptor(use_ssl)
         self.check_very_slow_client(use_ssl)
 
+    @brokentest('fails quite often on jekins')
     @permutations(PERMUTATIONS)
     def test_reject_very_slow_client_concurrency(self, use_ssl):
         self.start_acceptor(use_ssl)
