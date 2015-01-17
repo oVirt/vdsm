@@ -531,6 +531,11 @@ class ConfigWriter(object):
         writes the new configuration and sets the specified access mode.'''
         self._backup(fileName)
         configuration = self.CONFFILE_HEADER + '\n' + configuration
+
+        # make sure that ifcfg files are never persisted by the node
+        if self.unifiedPersistence and utils.isOvirtNode():
+            node_fs.Config().unpersist(fileName)
+
         logging.debug('Writing to file %s configuration:\n%s', fileName,
                       configuration)
         with open(fileName, 'w') as confFile:
