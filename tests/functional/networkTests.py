@@ -18,10 +18,13 @@
 #
 from contextlib import contextmanager
 from functools import wraps
-import os.path
 import json
-import signal
 import netaddr
+import os.path
+import signal
+
+from nose import with_setup
+from nose.plugins.skip import SkipTest
 
 from hookValidation import ValidatesHook
 from network.sourceroute import StaticSourceRoute
@@ -34,8 +37,6 @@ import dhcp
 import dummy
 import firewall
 import veth
-from nose import with_setup
-from nose.plugins.skip import SkipTest
 from utils import SUCCESS, VdsProxy
 
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
