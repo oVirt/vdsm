@@ -23,8 +23,6 @@ from signal import SIGKILL, SIGTERM
 from time import sleep, time
 from errno import ENOENT, ESRCH
 
-from nose.plugins.skip import SkipTest
-
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
 from vdsm.utils import rmFile
@@ -32,7 +30,6 @@ from vdsm.utils import rmFile
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
 _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
                                '/sbin/dhclient')
-_NM_CLI_BINARY = CommandPath('nmcli', '/usr/bin/nmcli')
 _START_CHECK_TIMEOUT = 0.5
 _DHCLIENT_TIMEOUT = 10
 _WAIT_FOR_STOP_TIMEOUT = 2
@@ -157,28 +154,6 @@ class DhclientRunner(object):
             else:
                 raise
         return executable == _DHCLIENT_BINARY.cmd
-
-
-def addNMplaceholderConnection(interface, connection):
-    """Creating our own 'connection' with a static address prevents Network
-    Manager from running dhclient on the interface.
-
-    And so it does not interfere with dhclient we are going to run."""
-    rc, out, err = execCmd([_NM_CLI_BINARY.cmd, 'connection', 'add',
-                            'type', 'ethernet', 'ifname', interface,
-                            'con-name', connection, 'autoconnect', 'yes',
-                            'ip4', '12.34.56.78'])
-
-    if rc:
-        raise SkipTest('Could not add a placeholder NM connection.')
-
-
-def removeNMplaceholderConnection(connection):
-    rc, out, err = execCmd([_NM_CLI_BINARY.cmd, 'connection',
-                            'delete', connection])
-
-    if rc:
-        raise DhcpError('Could not remove the placeholder NM connection.')
 
 
 def delete_dhclient_leases(iface, dhcpv4=False, dhcpv6=False):

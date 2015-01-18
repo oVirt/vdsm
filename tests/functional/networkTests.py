@@ -126,22 +126,6 @@ def dnsmasqDhcp(interface, el6=False):
 
 
 @contextmanager
-def avoidAnotherDhclient(interface):
-    """Makes sure no other dhclient is run automatically on the interface."""
-    has_nm = pgrep('NetworkManager')
-
-    if has_nm:
-        connectionName = 'placeholder-' + interface
-        dhcp.addNMplaceholderConnection(interface, connectionName)
-
-    try:
-        yield
-    finally:
-        if has_nm:
-            dhcp.removeNMplaceholderConnection(connectionName)
-
-
-@contextmanager
 def firewallDhcp(interface):
     """ Adds and removes firewall rules for DHCP"""
     firewall.allowDhcp(interface)
@@ -1888,23 +1872,21 @@ class NetworkTest(TestCaseBase):
         dhcpv4_ifaces = set()
         dhcpv6_ifaces = set()
         with vethIf() as (server, client):
-            with avoidAnotherDhclient(client):
+            veth.setIP(server, IP_ADDRESS, IP_CIDR)
+            veth.setIP(server, IPv6_ADDRESS, IPv6_CIDR, 6)
+            veth.setLinkUp(server)
 
-                veth.setIP(server, IP_ADDRESS, IP_CIDR)
-                veth.setIP(server, IPv6_ADDRESS, IPv6_CIDR, 6)
-                veth.setLinkUp(server)
+            with dnsmasqDhcp(server, el6):
 
-                with dnsmasqDhcp(server, el6):
-
-                    with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
-                        dhclient_runner = dhcp.DhclientRunner(
-                            client, family, dir, dateFormat)
-                        try:
-                            with running(dhclient_runner) as dhc:
-                                dhcpv4_ifaces, dhcpv6_ifaces = \
-                                    _get_dhclient_ifaces([dhc.lease_file])
-                        except dhcp.ProcessCannotBeKilled:
-                            raise SkipTest('dhclient could not be killed')
+                with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
+                    dhclient_runner = dhcp.DhclientRunner(
+                        client, family, dir, dateFormat)
+                    try:
+                        with running(dhclient_runner) as dhc:
+                            dhcpv4_ifaces, dhcpv6_ifaces = \
+                                _get_dhclient_ifaces([dhc.lease_file])
+                    except dhcp.ProcessCannotBeKilled:
+                        raise SkipTest('dhclient could not be killed')
 
         if family == 4:
             self.assertIn(client, dhcpv4_ifaces,
@@ -2175,39 +2157,35 @@ class NetworkTest(TestCaseBase):
                     .split('\0')[-1] for pid in pids]
 
         with vethIf() as (server, client):
-            with avoidAnotherDhclient(client):
-                veth.setIP(server, IP_ADDRESS, IP_CIDR)
-                veth.setLinkUp(server)
-                with dnsmasqDhcp(server):
-                    with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
-                        # Start a non-vdsm owned dhclient for the 'client'
-                        # iface
-                        dhclient_runner = dhcp.DhclientRunner(
-                            client, 4, dhdir, 'default')
-                        with running(dhclient_runner):
-                            # Set up a network over it and wait for dhcp
-                            # success
-                            status, msg = self.vdsm_net.setupNetworks(
-                                {
-                                    NETWORK_NAME: {
-                                        'nic': client, 'bridged': False,
-                                        'bootproto': 'dhcp',
-                                        'blockingdhcp': True
-                                    }
-                                },
-                                {},
-                                NOCHK)
-                            self.assertEquals(status, SUCCESS, msg)
-                            self.assertNetworkExists(NETWORK_NAME)
+            veth.setIP(server, IP_ADDRESS, IP_CIDR)
+            veth.setLinkUp(server)
+            with dnsmasqDhcp(server):
+                with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
+                    # Start a non-vdsm owned dhclient for the 'client' iface
+                    dhclient_runner = dhcp.DhclientRunner(
+                        client, 4, dhdir, 'default')
+                    with running(dhclient_runner):
+                        # Set up a network over it and wait for dhcp success
+                        status, msg = self.vdsm_net.setupNetworks(
+                            {
+                                NETWORK_NAME: {
+                                    'nic': client, 'bridged': False,
+                                    'bootproto': 'dhcp',
+                                    'blockingdhcp': True
+                                }
+                            },
+                            {},
+                            NOCHK)
+                        self.assertEquals(status, SUCCESS, msg)
+                        self.assertNetworkExists(NETWORK_NAME)
 
-                            # Verify that dhclient is running for the device
-                            ifaces = _get_dhclient_ifaces()
-                            vdsm_dhclient = [iface for iface in ifaces if
-                                             iface == client]
-                            self.assertEqual(len(vdsm_dhclient), 1,
-                                             'There should be one and only '
-                                             'one running dhclient for the '
-                                             'device')
+                        # Verify that dhclient is running for the device
+                        ifaces = _get_dhclient_ifaces()
+                        vdsm_dhclient = [iface for iface in ifaces if
+                                         iface == client]
+                        self.assertEqual(len(vdsm_dhclient), 1,
+                                         'There should be one and only one '
+                                         'running dhclient for the device')
 
             # cleanup
             self.vdsm_net.setupNetworks(
