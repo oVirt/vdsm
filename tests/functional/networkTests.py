@@ -1880,7 +1880,7 @@ class NetworkTest(TestCaseBase):
                 finally:
                     dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
 
-    @permutations([[(4, 'default')], [(4, 'local')], [(6, 'not applicable')]])
+    @permutations([[(4, 'default')], [(4, 'local')], [(6, None)]])
     @cleanupNet
     @RequireVethMod
     def testDhclientLeases(self, (family, dateFormat)):

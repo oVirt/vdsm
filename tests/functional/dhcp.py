@@ -107,7 +107,8 @@ class DhclientRunner(object):
 
     def _create_conf(self):
         with open(self._conf_file, 'w') as f:
-            f.write('db-time-format {0};'.format(self._date_format))
+            if self._date_format:
+                f.write('db-time-format {0};'.format(self._date_format))
 
     def start(self):
         self._create_conf()
