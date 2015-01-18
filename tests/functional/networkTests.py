@@ -25,6 +25,16 @@ import os.path
 from nose import with_setup
 from nose.plugins.skip import SkipTest
 
+from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
+from vdsm import ipwrapper
+from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
+                            getLinks, routeShowTable)
+from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
+                          _get_dhclient_ifaces)
+from vdsm.netlink import monitor
+from vdsm import sysctl
+from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
+
 from hookValidation import ValidatesHook
 from network.sourceroute import StaticSourceRoute
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
@@ -37,18 +47,6 @@ import dummy
 import firewall
 import veth
 from utils import SUCCESS, VdsProxy
-
-from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
-                            getLinks, routeShowTable)
-
-from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
-from vdsm.utils import RollbackContext, execCmd, running, CommandPath
-from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
-                          _get_dhclient_ifaces)
-from vdsm.netlink import monitor
-from vdsm import ipwrapper
-from vdsm import sysctl
-from vdsm.utils import pgrep
 
 import caps
 from network import errors
