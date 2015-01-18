@@ -35,8 +35,12 @@ from vdsm.netlink import monitor
 from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
 
-from hookValidation import ValidatesHook
+import caps
+from network import api, errors, tc
+from network.configurators.ifcfg import Ifcfg
 from network.sourceroute import StaticSourceRoute
+
+from hookValidation import ValidatesHook
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import (brokentest, slowtest, RequireDummyMod,
@@ -47,12 +51,6 @@ import dummy
 import firewall
 import veth
 from utils import SUCCESS, VdsProxy
-
-import caps
-from network import errors
-from network import tc
-from network import api
-from network.configurators.ifcfg import Ifcfg
 
 
 NETWORK_NAME = 'test-network'
