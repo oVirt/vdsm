@@ -721,11 +721,30 @@ def _apply_hook(bondings, networks, options):
     return bondings, networks, options
 
 
-def _should_keep_bridge(marked_for_removal, currently_bridged,
-                        should_be_bridged):
+def _should_keep_bridge(network_attrs, currently_bridged,
+                        network_running_config):
+    marked_for_removal = 'remove' in network_attrs
     if marked_for_removal:
         return False
+
+    should_be_bridged = network_attrs.get('bridged')
     if currently_bridged and not should_be_bridged:
+        return False
+
+    # check if the user wanted to only reconfigure bridge itself (mtu is a
+    # special case as it is handled automatically by the os)
+    def _bridge_only_config(conf):
+        return dict(
+            (k, v) for k, v in conf.iteritems()
+            if k not in ('bonding', 'nic', 'mtu'))
+
+    def _bridge_reconfigured(required_conf, current_conf):
+        return (_bridge_only_config(required_conf) !=
+                _bridge_only_config(current_conf))
+
+    if currently_bridged and _bridge_reconfigured(network_running_config,
+                                                  network_attrs):
+        logging.debug("the bridge is being reconfigured")
         return False
 
     return True
@@ -796,10 +815,12 @@ def setupNetworks(networks, bondings, **options):
         for network, attrs in networks.items():
             if network in _netinfo.networks:
                 logger.debug("Removing network %r", network)
+                running_conf = configurator.runningConfig.networks.get(network)
                 keep_bridge = _should_keep_bridge(
-                    marked_for_removal='remove' in attrs,
+                    network_attrs=attrs,
                     currently_bridged=_netinfo.networks[network]['bridged'],
-                    should_be_bridged=attrs.get('bridged'))
+                    network_running_config=running_conf
+                )
 
                 _delNetwork(network, configurator=configurator, force=force,
                             implicitBonding=False, _netinfo=_netinfo,

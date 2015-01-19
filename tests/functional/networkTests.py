@@ -1857,6 +1857,48 @@ class NetworkTest(TestCaseBase):
                     dhcp.delete_dhclient_leases(
                         NETWORK_NAME if bridged else right, dhcpv4, dhcpv6)
 
+    @cleanupNet
+    @RequireVethMod
+    def testSetupNetworksReconfigureBridge(self):
+        def setup_test_network(dhcp=True):
+            network_params = {'nic': right, 'bridged': True}
+            if dhcp:
+                network_params.update(
+                    {'bootproto': 'dhcp', 'blockingdhcp': True})
+            else:
+                network_params.update(
+                    {'ipaddr': IP_ADDRESS_IN_NETWORK, 'netmask': IP_MASK,
+                     'gateway':  IP_GATEWAY})
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: network_params}, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+
+            test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+            self.assertEqual(test_net['dhcpv4'], dhcp)
+
+            ifcfg_bootproto = 'dhcp' if dhcp else 'none'
+            self.assertEqual(test_net['cfg']['BOOTPROTO'], ifcfg_bootproto)
+
+            bridges = self.vdsm_net.netinfo.bridges
+            self.assertIn(NETWORK_NAME, bridges)
+            self.assertEqual(
+                bridges[NETWORK_NAME]['cfg']['BOOTPROTO'],
+                ifcfg_bootproto)
+            self.assertEqual(bridges[NETWORK_NAME]['dhcpv4'], dhcp)
+
+        with vethIf() as (left, right):
+            veth.setIP(left, IP_ADDRESS, IP_CIDR)
+            veth.setLinkUp(left)
+            with dnsmasqDhcp(left, _system_is_el6()):
+                try:
+                    setup_test_network(dhcp=True)
+                    dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
+                    setup_test_network(dhcp=False)
+                finally:
+                    dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
+
     @permutations([[(4, 'default')], [(4, 'local')], [(6, 'not applicable')]])
     @cleanupNet
     @RequireVethMod
