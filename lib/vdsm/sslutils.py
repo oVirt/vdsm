@@ -18,9 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import httplib
+import logging
 import socket
 import ssl
 import xmlrpclib
+from vdsm.utils import (
+    monotonic_time,
+)
 
 from M2Crypto import SSL, X509, threading
 
@@ -36,7 +40,7 @@ threading.init()
 class SSLSocket(object):
     def __init__(self, connection):
         self.connection = connection
-        self._data = None
+        self._data = ''
 
     def gettimeout(self):
         return self.connection.socket.gettimeout()
@@ -58,12 +62,14 @@ class SSLSocket(object):
     def read(self, size=4096, flag=None):
         result = None
         if flag == socket.MSG_PEEK:
-            self._data = self.connection.read(size)
+            bytes_left = size - len(self._data)
+            if bytes_left > 0:
+                self._data += self.connection.read(bytes_left)
             result = self._data
         else:
             if self._data:
                 result = self._data
-                self._data = None
+                self._data = ''
             else:
                 result = self.connection.read(size)
         return result
@@ -253,3 +259,75 @@ class VerifyingHTTPS(httplib.HTTPS):
         # here for compatibility with post-1.5.2 CVS.
         self.key_file = key_file
         self.cert_file = cert_file
+
+
+class SSLHandshakeDispatcher(object):
+    """
+    SSLHandshakeDispatcher is dispatcher implementation to process ssl
+    handshake in asynchronous way. Once we are done with handshaking we
+    we need to swap our dispatcher implementation with message processing
+    dispatcher. We use handshake_finished_handler function to perform
+    swapping. The handler implementation need to invoke
+
+    dispatcher.switch_implementation()
+
+    where we provide message processing dispatcher as parameter.
+    """
+    log = logging.getLogger("ProtocolDetector.SSLHandshakeDispatcher")
+    SSL_HANDSHAKE_TIMEOUT = 10
+
+    def __init__(
+        self,
+        sslctx,
+        handshake_finished_handler,
+        handshake_timeout=SSL_HANDSHAKE_TIMEOUT,
+    ):
+        self._give_up_at = monotonic_time() + handshake_timeout
+        self._has_been_set_up = False
+        self._is_handshaking = True
+        self._sslctx = sslctx
+        self._handshake_finished_handler = handshake_finished_handler
+
+    def _set_up_socket(self, dispatcher):
+        client_socket = dispatcher.socket
+        client_socket = self._sslctx.wrapSocket(client_socket)
+        # Older versions of M2Crypto ignore nbio and retry internally
+        # if timeout is set.
+        client_socket.settimeout(None)
+        client_socket.address = client_socket.getpeername()
+        try:
+            client_socket.setup_ssl()
+            client_socket.set_accept_state()
+        except SSL.SSLError as e:
+            self.log.error("Error setting up ssl: %s", e)
+            dispatcher.close()
+            return
+
+        dispatcher.socket = client_socket
+
+    def next_check_interval(self):
+        return min(self._give_up_at - monotonic_time(), 0)
+
+    def readable(self, dispatcher):
+        if self.has_expired():
+            dispatcher.close()
+            return False
+
+        return True
+
+    def has_expired(self):
+        return monotonic_time() > self._give_up_at
+
+    def handle_read(self, dispatcher):
+        if not self._has_been_set_up:
+            self._set_up_socket(dispatcher)
+
+        if self._is_handshaking:
+            try:
+                self._is_handshaking = (dispatcher.socket.accept_ssl() == 0)
+            except Exception as e:
+                self.log.error("Error during handshake: %s", e)
+                dispatcher.close()
+
+        if not self._is_handshaking:
+            self._handshake_finished_handler(dispatcher)

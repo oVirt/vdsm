@@ -24,7 +24,6 @@ import threading
 
 from xmlrpclib import Transport, dumps, Fault
 from contextlib import contextmanager
-from functools import partial
 from itertools import product
 from M2Crypto import SSL
 from rpc.BindingXMLRPC import BindingXMLRPC, XmlDetector
@@ -110,9 +109,12 @@ def constructClient(log, bridge, ssl, type):
             t.start()
             client = cpool.createClient
 
-        _, port = acceptor._socket.getsockname()
-        clientFactory = partial(client, create_socket(sslctx, acceptor._host,
-                                                      port))
+        def clientFactory():
+            return client(create_socket(
+                sslctx,
+                acceptor._host,
+                acceptor._port
+            ))
 
         yield clientFactory
 

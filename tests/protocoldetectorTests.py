@@ -23,21 +23,12 @@ import socket
 import ssl
 import threading
 import time
-from contextlib import contextmanager, closing
-
-import protocoldetector
+from contextlib import contextmanager
 
 from vdsm import sslutils
+from protocoldetector import MultiProtocolAcceptor
 from sslhelper import KEY_FILE, CRT_FILE
 from testlib import VdsmTestCase, expandPermutations, permutations
-
-
-class TestingAcceptor(protocoldetector.MultiProtocolAcceptor):
-    """
-    Acceptor with shorter cleanup interval to make it practical to test the
-    cleanup logic.
-    """
-    CLEANUP_INTERVAL = 1.0
 
 
 class Detector(object):
@@ -53,15 +44,19 @@ class Detector(object):
     def detect(self, data):
         return data.startswith(self.NAME)
 
-    def handleSocket(self, client_socket, socket_address):
+    def handle_dispatcher(self, dispatcher, socket_address):
+        client_socket = dispatcher.socket
+        dispatcher.del_channel()
+
         def run():
             try:
-                assert client_socket.gettimeout() is None
-                rfile = client_socket.makefile('rb', -1)
-                with closing(rfile):
-                    request = rfile.readline()
-                    response = self.response(request)
-                    client_socket.sendall(response)
+                request = ""
+                while "\n" not in request:
+                    request += dispatcher.recv(1024)
+
+                response = self.response(request)
+                client_socket.setblocking(1)
+                client_socket.sendall(response)
             finally:
                 client_socket.shutdown(socket.SHUT_RDWR)
                 client_socket.close()
@@ -179,14 +174,14 @@ class AcceptorTests(VdsmTestCase):
 
     def check_slow_client(self, use_ssl):
         with self.connect(use_ssl) as client:
-            time.sleep(self.acceptor.CLEANUP_INTERVAL - self.GRACETIME)
+            time.sleep(self.acceptor.TIMEOUT - self.GRACETIME)
             data = "echo let me in\n"
             client.sendall(data)
             self.assertEqual(client.recv(self.BUFSIZE), data)
 
     def check_very_slow_client(self, use_ssl):
         with self.connect(use_ssl) as client:
-            time.sleep(self.acceptor.CLEANUP_INTERVAL * 2 + self.GRACETIME)
+            time.sleep(self.acceptor.TIMEOUT * 2 + self.GRACETIME)
             client.sendall("echo too slow probably\n")
             self.check_disconnected(client)
 
@@ -201,11 +196,12 @@ class AcceptorTests(VdsmTestCase):
     # Helpers
 
     def start_acceptor(self, use_ssl):
-        self.acceptor = TestingAcceptor(
+        self.acceptor = MultiProtocolAcceptor(
             '127.0.0.1', 0, sslctx=self.SSLCTX if use_ssl else None)
+        self.acceptor.TIMEOUT = 1
         self.acceptor.add_detector(Echo())
         self.acceptor.add_detector(Uppercase())
-        self.acceptor_address = self.acceptor._socket.getsockname()
+        self.acceptor_address = self.acceptor._acceptor.socket.getsockname()
         t = threading.Thread(target=self.acceptor.serve_forever)
         t.deamon = True
         t.start()

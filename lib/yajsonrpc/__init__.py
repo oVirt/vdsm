@@ -22,7 +22,7 @@ from vdsm.compat import json
 
 from vdsm.utils import traceback
 
-__all__ = ["tcpReactor"]
+__all__ = ["betterAsyncore", "stompReactor", "stomp"]
 
 _STATE_INCOMING = 1
 _STATE_OUTGOING = 2

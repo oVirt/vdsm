@@ -25,17 +25,10 @@ from vdsm.infra.eventfd import EventFD
 
 
 class Dispatcher(asyncore.dispatcher):
-    def __init__(self, impl, sock=None, map=None):
-        self.__impl = impl
+    def __init__(self, impl=None, sock=None, map=None):
         asyncore.dispatcher.__init__(self, sock=sock, map=map)
-
-        try:
-            impl.init(self)
-        except AttributeError:
-            # impl.init() is optional.
-            pass
-
-        self._bind_implementation()
+        if impl is not None:
+            self.switch_implementation(impl)
 
     def _bind_implementation(self):
         for attr_name in (
@@ -68,6 +61,14 @@ class Dispatcher(asyncore.dispatcher):
                 )
             )
 
+    def switch_implementation(self, impl):
+        self.__impl = impl
+
+        if hasattr(impl, 'init'):
+            impl.init(self)
+
+        self._bind_implementation()
+
     def next_check_interval(self):
         """
         Return the relative timeout wanted between poller refresh checks
@@ -79,7 +80,6 @@ class Dispatcher(asyncore.dispatcher):
         Note that this value is a recommendation only.
         """
         default_func = lambda: None
-
         return getattr(self.__impl, "next_check_interval", default_func)()
 
     def handle_read_event(self):
@@ -96,7 +96,7 @@ class Dispatcher(asyncore.dispatcher):
         # we need to check whether there is pending function on
         # our fd because we use eventfds which do not provide it
         if hasattr(self.socket, "pending"):
-            while self.socket.pending() > 0:
+            while self.socket.pending() > 0 and self.connected:
                 self.handle_read()
 
     def recv(self, buffer_size):
@@ -111,7 +111,9 @@ class Dispatcher(asyncore.dispatcher):
                 return data
         except socket.error, why:
             # winsock sometimes raises ENOTCONN
-            if why.args[0] in asyncore._DISCONNECTED:
+            if why.args[0] == EWOULDBLOCK:
+                return None
+            elif why.args[0] in asyncore._DISCONNECTED:
                 self.handle_close()
                 return ''
             else:
@@ -180,6 +182,7 @@ class Reactor(object):
 
     def add_dispatcher(self, disp):
         disp.add_channel(self._map)
+        disp._map = self._map
 
     def remove_dispatcher(self, disp):
         disp.del_channel(self._map)
@@ -201,7 +204,7 @@ class Reactor(object):
 
     def _get_timeout(self, map):
         timeout = None
-        for disp in map.itervalues():
+        for disp in self._map.values():
             if hasattr(disp, "next_check_interval"):
                 interval = disp.next_check_interval()
                 if interval is not None and interval >= 0:

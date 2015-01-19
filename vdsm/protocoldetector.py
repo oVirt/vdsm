@@ -18,17 +18,33 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import errno
 import logging
-import os
-import select
 import socket
-import time
-
-from M2Crypto import SSL
 
 from vdsm.utils import traceback
 import vdsm.infra.filecontrol as filecontrol
+from yajsonrpc.betterAsyncore import (
+    Dispatcher,
+    Reactor,
+)
+
+from vdsm.utils import monotonic_time
+from vdsm.sslutils import SSLHandshakeDispatcher
+
+
+def _create_socket(host, port):
+    addr = socket.getaddrinfo(host, port, socket.AF_INET,
+                              socket.SOCK_STREAM)
+    if not addr:
+        raise socket.error("Could not translate address '%s:%s'"
+                           % (host, str(port)))
+
+    server_socket = socket.socket(addr[0][0], addr[0][1], addr[0][2])
+    filecontrol.set_close_on_exec(server_socket.fileno())
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(addr[0][4])
+
+    return server_socket
 
 
 def _is_handshaking(sock):
@@ -36,6 +52,75 @@ def _is_handshaking(sock):
         return False
 
     return sock.is_handshaking
+
+
+class _AcceptorImpl(object):
+    log = logging.getLogger("ProtocolDetector.AcceptorImpl")
+
+    def __init__(self, dispatcher_factory):
+        self._dispatcher_factory = dispatcher_factory
+
+    def readable(self, dispatcher):
+        return True
+
+    def handle_accept(self, dispatcher):
+        try:
+            client, _ = dispatcher.socket.accept()
+        except socket.error:
+            pass
+        else:
+            client.setblocking(0)
+            self.log.info("Accepting connection from %s:%d",
+                          *client.getpeername())
+            self._dispatcher_factory(client)
+
+
+class _ProtocolDetector(object):
+    log = logging.getLogger("ProtocolDetector.Detector")
+
+    def __init__(self, detectors, timeout=None):
+        self._detectors = detectors
+        self._required_size = max(h.REQUIRED_SIZE for h in self._detectors)
+        self.log.debug("Using required_size=%d", self._required_size)
+        self._give_up_at = monotonic_time() + timeout
+
+    def readable(self, dispatcher):
+        return True
+
+    def next_check_interval(self):
+        return min(self._give_up_at - monotonic_time(), 0)
+
+    def handle_read(self, dispatcher):
+        sock = dispatcher.socket
+        try:
+            data = sock.recv(self._required_size, socket.MSG_PEEK)
+        except socket.error, why:
+            if why.args[0] == socket.EWOULDBLOCK:
+                return
+            dispatcher.handle_error()
+            return
+
+        if len(data) < self._required_size:
+            return
+
+        if monotonic_time() > self._give_up_at:
+            self.log.debug("Timed out while waiting for data")
+            dispatcher.close()
+
+        for detector in self._detectors:
+            if detector.detect(data):
+                host, port = sock.getpeername()
+                self.log.info(
+                    "Detected protocol %s from %s:%d",
+                    detector.NAME,
+                    host,
+                    port
+                )
+                detector.handle_dispatcher(dispatcher, (host, port))
+                break
+        else:
+            self.log.warning("Unrecognized protocol: %r", data)
+            dispatcher.close()
 
 
 class MultiProtocolAcceptor:
@@ -60,95 +145,70 @@ class MultiProtocolAcceptor:
             Given first bytes read from the connection, try to detect the
             protocol. Returns True if protocol is detected.
 
-        def handleSocket(self, client_socket, socket_address):
+        def handle_dispatcher(self, client_dispatcher, socket_address):
             Called after detect() succeeded. The detector owns the socket and
-            is responsible for closing it.
+            is responsible for closing it or changing the implementation.
     """
     log = logging.getLogger("vds.MultiProtocolAcceptor")
 
-    CLEANUP_INTERVAL = 30.0
-
-    def __init__(self, host, port, sslctx=None):
+    def __init__(
+        self,
+        host,
+        port,
+        sslctx=None,
+        ssl_hanshake_timeout=SSLHandshakeDispatcher.SSL_HANDSHAKE_TIMEOUT,
+    ):
         self._sslctx = sslctx
-        self._host = host
-        self._port = port
-
-        self._read_fd, self._write_fd = os.pipe()
-        filecontrol.set_non_blocking(self._read_fd)
-        filecontrol.set_close_on_exec(self._read_fd)
-        filecontrol.set_non_blocking(self._write_fd)
-        filecontrol.set_close_on_exec(self._write_fd)
-
-        self._socket = self._create_socket(host, port)
-        self._poller = select.poll()
-        self._poller.register(self._socket, select.POLLIN)
-        self._poller.register(self._read_fd, select.POLLIN)
-        self._pending_connections = {}
+        self._reactor = Reactor()
+        sock = _create_socket(host, port)
+        self._host, self._port = sock.getsockname()
+        self.log.info("Listening at %s:%d", self._host, self._port)
+        self._acceptor = Dispatcher(
+            _AcceptorImpl(
+                self.handle_accept
+            ),
+            sock,
+        )
+        self._acceptor.listen(5)
+        self._reactor.add_dispatcher(self._acceptor)
         self._handlers = []
-        # Initialize *before* starting to serve, to make it easier to test the
-        # cleanup logic.
-        self._next_cleanup = time.time() + self.CLEANUP_INTERVAL
-        self._required_size = None
+        self.TIMEOUT = ssl_hanshake_timeout
+
+    def handle_accept(self, client):
+        if self._sslctx is None:
+            self._reactor.add_dispatcher(
+                self._register_protocol_detector(
+                    Dispatcher(
+                        sock=client,
+                    ),
+                ),
+            )
+        else:
+            self._reactor.add_dispatcher(
+                Dispatcher(
+                    SSLHandshakeDispatcher(
+                        self._sslctx,
+                        self._register_protocol_detector,
+                        self.TIMEOUT,
+                    ),
+                    client,
+                ),
+            )
+
+    def _register_protocol_detector(self, dispatcher):
+        dispatcher.switch_implementation(
+            _ProtocolDetector(
+                self._handlers,
+                self.TIMEOUT,
+            ),
+        )
+
+        return dispatcher
 
     @traceback(on=log.name)
     def serve_forever(self):
         self.log.debug("Running")
-        self._required_size = max(h.REQUIRED_SIZE for h in self._handlers)
-        self.log.debug("Using required_size=%d", self._required_size)
-        try:
-            while True:
-                try:
-                    self._process_events()
-                except _Stopped:
-                    break
-                except Exception:
-                    self.log.exception("Unhandled exception")
-        finally:
-            self._cleanup()
-
-    def _process_events(self):
-        seconds = max(self._next_cleanup - time.time(), 0)
-        events = self._poller.poll(seconds * 1000)
-
-        for fd, event in events:
-            if event & select.POLLIN:
-                if fd is self._read_fd:
-                    self._maybe_stop()
-                elif fd is self._socket.fileno():
-                    self._accept_connection()
-                else:
-                    self._handle_connection_read(fd)
-            if fd in self._pending_connections and event & select.POLLOUT:
-                self._handle_connection_write(fd)
-
-        now = time.time()
-        if now > self._next_cleanup:
-            self._next_cleanup += self.CLEANUP_INTERVAL
-            self._cleanup_pending_connections()
-
-    def _cleanup(self):
-        self.log.debug("Cleaning up")
-
-        for _, client_socket in self._pending_connections.values():
-            self._close_connection(client_socket)
-
-        self._poller.unregister(self._socket)
-        self._poller.unregister(self._read_fd)
-        self._socket.close()
-        os.close(self._read_fd)
-        os.close(self._write_fd)
-
-    def _cleanup_pending_connections(self):
-        now = time.time()
-        for accepted, client_socket in self._pending_connections.values():
-            if now - accepted > self.CLEANUP_INTERVAL:
-                self._close_connection(client_socket)
-
-    def detect_protocol(self, data):
-        for handler in self._handlers:
-            if handler.detect(data):
-                return handler
-        raise _CannotDetectProtocol()
+        self._reactor.process_requests()
 
     def add_detector(self, detector):
         self.log.debug("Adding detector %s", detector)
@@ -156,127 +216,7 @@ class MultiProtocolAcceptor:
 
     def stop(self):
         self.log.debug("Stopping Acceptor")
-        while True:
-            try:
-                os.write(self._write_fd, "1")
-            except OSError as e:
-                if e.errno in (errno.EPIPE, errno.EBADF):
-                    # Detector already stopped
-                    return
-                if e.errno != errno.EINTR:
-                    raise
-            else:
-                break
-
-    def _maybe_stop(self):
-        try:
-            if os.read(self._read_fd, 1) == '1':
-                raise _Stopped()
-        except OSError as e:
-            if e.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
-                raise
-
-    def _accept_connection(self):
-        client_socket, address = self._socket.accept()
-        if self._sslctx:
-            client_socket = self._sslctx.wrapSocket(client_socket)
-            # Older versions of M2Crypto ignore nbio and retry internally
-            # if timeout is set.
-            client_socket.settimeout(None)
-            client_socket.address = address
-            try:
-                client_socket.setup_ssl()
-                client_socket.set_accept_state()
-            except SSL.SSLError as e:
-                self.log.warning("Error setting up ssl: %s", e)
-                client_socket.close()
-                return
-
-            client_socket.is_handshaking = True
-
-        self._add_connection(client_socket)
-
-    def _add_connection(self, socket):
-        host, port = socket.getpeername()
-        self.log.debug("Adding connection %s:%d", host, port)
-        socket.setblocking(0)
-        self._pending_connections[socket.fileno()] = (time.time(),
-                                                      socket)
-        if _is_handshaking(socket):
-            self._poller.register(socket, select.POLLIN | select.POLLOUT)
-        else:
-            self._poller.register(socket, select.POLLIN)
-
-    def _remove_connection(self, socket):
-        self._poller.unregister(socket)
-        del self._pending_connections[socket.fileno()]
-        socket.setblocking(1)
-        host, port = socket.getpeername()
-        self.log.debug("Removing connection %s:%d", host, port)
-
-    def _close_connection(self, socket):
-        self._remove_connection(socket)
-        socket.close()
-
-    def _process_handshake(self, socket):
-        try:
-            socket.is_handshaking = (socket.accept_ssl() == 0)
-        except Exception as e:
-            self.log.debug("Error during handshake: %s", e)
-            self._close_connection(socket)
-        else:
-            if not socket.is_handshaking:
-                self._poller.modify(socket, select.POLLIN)
-
-    def _handle_connection_write(self, fd):
-        _, client_socket = self._pending_connections[fd]
-        if _is_handshaking(client_socket):
-            self._process_handshake(client_socket)
-
-    def _handle_connection_read(self, fd):
-        _, client_socket = self._pending_connections[fd]
-        if _is_handshaking(client_socket):
-            self._process_handshake(client_socket)
-            return
-
-        try:
-            data = client_socket.recv(self._required_size, socket.MSG_PEEK)
-        except socket.error as e:
-            if e.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
-                self.log.warning("Unable to read data: %s", e)
-                self._close_connection(client_socket)
-            return
-
-        if data is None:
-            # None is returned when ssl socket needs to read more data
-            return
-
-        try:
-            handler = self.detect_protocol(data)
-        except _CannotDetectProtocol:
-            self.log.warning("Unrecognized protocol: %r", data)
-            self._close_connection(client_socket)
-        else:
-            host, port = client_socket.getpeername()
-            self.log.debug("Detected protocol %s from %s:%d",
-                           handler.NAME, host, port)
-            self._remove_connection(client_socket)
-            handler.handleSocket(client_socket, (host, port))
-
-    def _create_socket(self, host, port):
-        addr = socket.getaddrinfo(host, port, socket.AF_INET,
-                                  socket.SOCK_STREAM)
-        if not addr:
-            raise Exception("Could not translate address '%s:%s'"
-                            % (self._host, str(self._port)))
-        server_socket = socket.socket(addr[0][0], addr[0][1], addr[0][2])
-        filecontrol.set_close_on_exec(server_socket.fileno())
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind(addr[0][4])
-        server_socket.listen(5)
-
-        server_socket.setblocking(0)
-        return server_socket
+        self._reactor.stop()
 
 
 class _CannotDetectProtocol(Exception):
