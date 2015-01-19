@@ -31,8 +31,9 @@ def create(prefix='dummy_', max_length=11):
     dummy_name = random_iface_name(prefix, max_length)
     try:
         linkAdd(dummy_name, linkType='dummy')
-    except IPRoute2Error:
-        raise SkipTest('Failed to load a dummy interface')
+    except IPRoute2Error as e:
+        raise SkipTest('Failed to load a dummy interface %s: %s' %
+                       (dummy_name, e))
     else:
         return dummy_name
 
@@ -52,8 +53,8 @@ def remove(dummyName):
 def setIP(dummyName, ipaddr, netmask, family=4):
     try:
         addrAdd(dummyName, ipaddr, netmask, family)
-    except IPRoute2Error:
-        raise SkipTest('Failed to set device ip')
+    except IPRoute2Error as e:
+        raise SkipTest('Failed to set device ip: %s' % e)
 
 
 def setLinkUp(dummyName):
