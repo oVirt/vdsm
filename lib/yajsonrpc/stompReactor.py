@@ -152,8 +152,7 @@ class StompServer(object):
         self.check_read()
 
     def check_read(self):
-        if hasattr(self._socket, 'pending') and self._socket.pending() > 0:
-            self._stompConn._dispatcher.handle_read()
+        self._stompConn._dispatcher.handle_read_event()
 
     def send(self, message):
         self.log.debug("Sending response")

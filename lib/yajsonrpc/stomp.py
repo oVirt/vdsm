@@ -409,24 +409,16 @@ class AsyncDispatcher(object):
         self._frameHandler.handle_connect(self)
 
     def handle_read(self, dispatcher):
-        pending = self._bufferSize
-        while pending:
-            try:
-                data = dispatcher.recv(pending)
-            except socket.error:
-                dispatcher.handle_error()
-                return
+        try:
+            data = dispatcher.recv(self._bufferSize)
+        except socket.error:
+            dispatcher.handle_error()
+            return
 
-            try:
-                pending = dispatcher.socket.pending()
-            except AttributeError:
-                pending = 0
-                pass
+        parser = self._parser
 
-            parser = self._parser
-
-            if data is not None:
-                parser.parse(data)
+        if data is not None:
+            parser.parse(data)
 
         frameHandler = self._frameHandler
         if hasattr(frameHandler, "handle_frame"):
