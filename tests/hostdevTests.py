@@ -472,9 +472,9 @@ class HostdevTests(TestCaseBase):
         self.assertEquals(_SRIOV_PF_PARSED, deviceXML)
 
     def testParseSRIOV_VFDeviceParams(self):
-        deviceXML = hostdev._parse_device_params(_SRIOV_PF_XML)
+        deviceXML = hostdev._parse_device_params(_SRIOV_VF_XML)
 
-        self.assertEquals(_SRIOV_PF_PARSED, deviceXML)
+        self.assertEquals(_SRIOV_VF_PARSED, deviceXML)
 
     def testGetDevicesFromLibvirt(self):
         libvirt_devices = hostdev._get_devices_from_libvirt()
