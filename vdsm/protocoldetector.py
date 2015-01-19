@@ -85,7 +85,9 @@ class MultiProtocolAcceptor:
         self._poller.register(self._read_fd, select.POLLIN)
         self._pending_connections = {}
         self._handlers = []
-        self._next_cleanup = 0
+        # Initialize *before* starting to serve, to make it easier to test the
+        # cleanup logic.
+        self._next_cleanup = time.time() + self.CLEANUP_INTERVAL
         self._required_size = None
 
     @traceback(on=log.name)
@@ -93,7 +95,6 @@ class MultiProtocolAcceptor:
         self.log.debug("Running")
         self._required_size = max(h.REQUIRED_SIZE for h in self._handlers)
         self.log.debug("Using required_size=%d", self._required_size)
-        self._next_cleanup = time.time() + self.CLEANUP_INTERVAL
         try:
             while True:
                 try:

@@ -30,7 +30,14 @@ import protocoldetector
 from vdsm import sslutils
 from sslhelper import KEY_FILE, CRT_FILE
 from testlib import VdsmTestCase, expandPermutations, permutations
-from testValidation import brokentest
+
+
+class TestingAcceptor(protocoldetector.MultiProtocolAcceptor):
+    """
+    Acceptor with shorter cleanup interval to make it practical to test the
+    cleanup logic.
+    """
+    CLEANUP_INTERVAL = 1.0
 
 
 class Detector(object):
@@ -152,7 +159,6 @@ class AcceptorTests(VdsmTestCase):
         self.start_acceptor(use_ssl)
         self.check_very_slow_client(use_ssl)
 
-    @brokentest('fails quite often on jekins')
     @permutations(PERMUTATIONS)
     def test_reject_very_slow_client_concurrency(self, use_ssl):
         self.start_acceptor(use_ssl)
@@ -194,9 +200,8 @@ class AcceptorTests(VdsmTestCase):
     # Helpers
 
     def start_acceptor(self, use_ssl):
-        self.acceptor = protocoldetector.MultiProtocolAcceptor(
+        self.acceptor = TestingAcceptor(
             '127.0.0.1', 0, sslctx=self.SSLCTX if use_ssl else None)
-        self.acceptor.CLEANUP_INTERVAL = 1
         self.acceptor.add_detector(Echo())
         self.acceptor.add_detector(Uppercase())
         self.acceptor_address = self.acceptor._socket.getsockname()
