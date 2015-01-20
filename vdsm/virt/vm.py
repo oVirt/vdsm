@@ -2137,7 +2137,7 @@ class Vm(object):
         self._logGuestCpuStatus('domain initialization')
         if self.lastStatus not in (vmstatus.MIGRATION_DESTINATION,
                                    vmstatus.RESTORING_STATE):
-            self._initTimePauseCode = self._readPauseCode(0)
+            self._initTimePauseCode = self._readPauseCode()
         if not self.recovering and self._initTimePauseCode:
             self.conf['pauseCode'] = self._initTimePauseCode
             if self._initTimePauseCode == 'ENOSPC':
@@ -2969,18 +2969,26 @@ class Vm(object):
 
         return {'status': doneCode, 'vmList': self.status()}
 
-    def _readPauseCode(self, timeout):
-        # libvirt does not not export yet the I/O error reason code.
-        # we need a way to
-        # 1. detect ENOSPC when connected to a VM.
-        # 2. detect a VM was paused to ENOSPC when reconnecting after
-        #    a VDSM restart.
-        # upstream libvirt unfortunately lacks both features, because
-        # in turn QEMU doesn't yet export the information thorugh the
-        # QMP interface.
-        # libvirt: https://bugzilla.redhat.com/show_bug.cgi?id=1067414
-        # qemu: https://bugs.launchpad.net/qemu/+bug/1284090
-        self.log.debug('_readPauseCode unsupported by libvirt vm')
+    def _readPauseCode(self):
+        state, reason = self._dom.state(0)
+
+        if (state == libvirt.VIR_DOMAIN_PAUSED and
+           reason == libvirt.VIR_DOMAIN_PAUSED_IOERROR):
+
+            diskErrors = self._dom.diskErrors()
+            for device, error in diskErrors.iteritems():
+                if error == libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE:
+                    self.log.warning('device %s out of space', device)
+                    return 'ENOSPC'
+                elif error == libvirt.VIR_DOMAIN_DISK_ERROR_UNSPEC:
+                    # Mapping to 'EOTHER' may not be exact.
+                    # It is still safer than EIO given the VDSM mechanics.
+                    self.log.warning('device %s reported I/O error',
+                                     device)
+                    return 'EOTHER'
+                # else error == libvirt.VIR_DOMAIN_DISK_ERROR_NONE
+                # so no worries.
+
         return 'NOERR'
 
     def _timeoutExperienced(self, timeout):

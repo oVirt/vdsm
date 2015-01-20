@@ -60,6 +60,7 @@ class Domain(object):
     def __init__(self, xml='',
                  virtError=libvirt.VIR_ERR_OK,
                  domState=libvirt.VIR_DOMAIN_RUNNING,
+                 domReason=0,
                  vmId=''):
         self._xml = xml
         self.devXml = ''
@@ -67,8 +68,10 @@ class Domain(object):
         self._metadata = ""
         self._io_tune = {}
         self._domState = domState
+        self._domReason = domReason
         self._vmId = vmId
         self.calls = {}
+        self._diskErrors = {}
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
@@ -78,6 +81,10 @@ class Domain(object):
 
     def UUIDString(self):
         return self._vmId
+
+    def state(self, unused):
+        self._failIfRequested()
+        return (self._domState, self._domReason)
 
     def info(self):
         self._failIfRequested()
@@ -115,6 +122,12 @@ class Domain(object):
     def setMemory(self, target):
         self._failIfRequested()
         self.calls['setMemory'] = (target,)
+
+    def setDiskErrors(self, diskErrors):
+        self._diskErrors = diskErrors
+
+    def diskErrors(self):
+        return self._diskErrors
 
 
 class GuestAgent(object):

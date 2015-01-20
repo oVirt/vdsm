@@ -1441,6 +1441,38 @@ class TestVmOperations(TestCaseBase):
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
             self.assertTrue(testvm._isDomainRunning())
 
+    def testReadPauseCodeDomainRunning(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
+            self.assertEqual(testvm._readPauseCode(), 'NOERR')
+
+    def testReadPauseCodeDomainPausedCrash(self):
+        with fake.VM() as testvm:
+            # if paused for different reason we must not extend the disk
+            # so anything else is ok
+            dom = fake.Domain(domState=libvirt.VIR_DOMAIN_PAUSED,
+                              domReason=libvirt.VIR_DOMAIN_PAUSED_CRASHED)
+            testvm._dom = dom
+            self.assertNotEqual(testvm._readPauseCode(), 'ENOSPC')
+
+    def testReadPauseCodeDomainPausedENOSPC(self):
+        with fake.VM() as testvm:
+            dom = fake.Domain(domState=libvirt.VIR_DOMAIN_PAUSED,
+                              domReason=libvirt.VIR_DOMAIN_PAUSED_IOERROR)
+            dom.setDiskErrors({'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NO_SPACE,
+                               'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_NONE})
+            testvm._dom = dom
+            self.assertEqual(testvm._readPauseCode(), 'ENOSPC')
+
+    def testReadPauseCodeDomainPausedEIO(self):
+        with fake.VM() as testvm:
+            dom = fake.Domain(domState=libvirt.VIR_DOMAIN_PAUSED,
+                              domReason=libvirt.VIR_DOMAIN_PAUSED_IOERROR)
+            dom.setDiskErrors({'vda': libvirt.VIR_DOMAIN_DISK_ERROR_NONE,
+                               'hdc': libvirt.VIR_DOMAIN_DISK_ERROR_UNSPEC})
+            testvm._dom = dom
+            self.assertEqual(testvm._readPauseCode(), 'EOTHER')
+
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),
                  vmexitreason.exitReasons.keys()))
