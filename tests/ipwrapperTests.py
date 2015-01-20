@@ -18,16 +18,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from threading import Timer
-from time import sleep
-import logging
-import sys
-
 from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
-from vdsm.ipwrapper import Monitor
-from vdsm.ipwrapper import MonitorEvent
-from vdsm.ipwrapper import MonitorError
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
 import tcTests
@@ -97,110 +89,6 @@ class TestIpwrapper(TestCaseBase):
                      '32:    from 10.0.0.0/8 to 264.0.0.0/8 lookup table_100']
         for text in bad_rules:
             self.assertRaises(ValueError, Rule.fromText, text)
-
-
-class TestMonitor(TestCaseBase):
-    def testWrongMonitorUsage(self):
-        mon = Monitor()
-        with self.assertRaises(MonitorError):
-            for event in mon:
-                pass
-
-    def testMonitorEvents(self):
-        devs = ({'index': '273',
-                 'reportedName': 'bond0', 'name': 'bond0',
-                 'flags': frozenset(['BROADCAST', 'MULTICAST', 'MASTER']),
-                 'attrs': 'mtu 1500 qdisc noqueue',
-                 'state': 'DOWN',
-                 'address': '33:44:55:66:77:88', 'brd': 'ff:ff:ff:ff:ff:ff'},
-                {'index': '4',
-                 'reportedName': 'wlp3s0', 'name': 'wlp3s0',
-                 'flags': frozenset(['BROADCAST', 'MULTICAST', 'UP',
-                                     'LOWER_UP']),
-                 'address': ''},
-                {'index': '417',
-                 'reportedName': 'p1p3.13@p1p3', 'name': 'p1p3.13',
-                 'flags': frozenset(['NO-CARRIER', 'BROADCAST', 'MULTICAST',
-                                     'UP']),
-                 'attrs': 'mtu 1500 qdisc noqueue',
-                 'state': 'LOWERLAYERDOWN',
-                 'address': '00:10:18:e1:6c:f4',
-                 'brd': 'ff:ff:ff:ff:ff:ff'},
-                {'index': '418',
-                 'reportedName': 'foo', 'name': 'foo',
-                 'flags': frozenset(['BROADCAST', 'MULTICAST']),
-                 'attrs': 'mtu 1500 qdisc noop',
-                 'state': 'DOWN',
-                 'extraAttrs': 'group default',
-                 'address': 'ba:2c:7b:68:b8:77',
-                 'brd': 'ff:ff:ff:ff:ff:ff',
-                 'deleted': True})
-
-        def entry(index, reportedName, flags, address, attrs=None,
-                  state=None, extraAttrs=None, brd=None, deleted=False,
-                  **kwargs):
-            elements = []
-            if deleted:
-                elements.append(Monitor._DELETED_TEXT)
-            elements += [index + ':', reportedName + ':',
-                         '<' + ','.join(flags) + '>']
-            if attrs is not None:
-                elements.append(attrs)
-            if state is not None:
-                elements.append('state ' + state)
-            if extraAttrs is not None:
-                elements.append(extraAttrs)
-            elements.append('\\   ')
-            elements.append('link/ether ' + address)
-            if brd is not None:
-                elements.append('brd ' + brd)
-            return ' '.join(elements)
-
-        data = [entry(**dev) for dev in devs]
-        events = [MonitorEvent(
-            dev['index'], dev['name'], dev['flags'],
-            Monitor.LINK_STATE_DELETED if dev.get('deleted') else
-            dev.get('state', None)) for dev in devs]
-        self.assertEqual(Monitor._parse('\n'.join(data)), events)
-
-    @ValidateRunningAsRoot
-    def testMonitorIteration(self):
-        bridge = tcTests._Bridge()
-        tcTests._checkDependencies()
-        mon = Monitor()
-        mon.start()
-        try:
-            def _timeout():
-                mon.stop()
-                err_msg = 'test omitted: waiting too long for a monitor event'
-                logging.error(err_msg)
-                sys.stderr.write(err_msg + '\n')
-            timer = Timer(3, _timeout)
-            timer.start()
-            try:
-                # FIXME: sometimes mon.start() is returned before properly
-                # started, in this case, iterator doesn't catch the first
-                # created bridge and stuck forever. Remove this sleep() when
-                # new netlink-based event monitor will be available.
-                sleep(0.5)
-                iterator = iter(mon)
-
-                # Generate events to avoid blocking
-                bridge.addDevice()
-                iterator.next()
-
-                bridge.delDevice()
-                iterator.next()
-            finally:
-                timer.cancel()
-        finally:
-            # Stop the monitor and check that eventually StopIteration is
-            # raised.  There might be other system link events so we loop to
-            # exhaust them.
-            mon.stop()
-        with self.assertRaises(StopIteration):
-            while True:
-                iterator.next()
 
 
 class TestLinks(TestCaseBase):

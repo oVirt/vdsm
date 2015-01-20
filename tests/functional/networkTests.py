@@ -46,6 +46,7 @@ from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm.utils import RollbackContext, execCmd, running, CommandPath
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
                           _get_dhclient_ifaces)
+from vdsm.netlink import monitor
 from vdsm import ipwrapper
 from vdsm import sysctl
 from vdsm.utils import pgrep
@@ -178,28 +179,13 @@ def vethIf():
         veth.remove(left)
 
 
-class Alarm(Exception):
-    pass
-
-
 def _waitForKnownOperstate(device, timeout=1):
-
-    def _alarmHandler(signum, frame):
-        raise Alarm
-
-    monitor = ipwrapper.Monitor()
-    monitor.start()
-    try:
-        state = operstate(device).upper()
-        if state == 'UNKNOWN':
-            signal.signal(signal.SIGALRM, _alarmHandler)
-            signal.alarm(timeout)
-            for event in monitor:
-                if event.device == device and event.state != 'UNKNOWN':
+    with monitor.Monitor(groups=('link',), timeout=timeout) as mon:
+        state = operstate(device).lower()
+        if state == 'unknown':
+            for event in mon:
+                if event['name'] == device and event['state'] != 'unknown':
                     break
-            signal.alarm(0)
-    finally:
-        monitor.stop()
 
 
 class OperStateChangedError(ValueError):
@@ -209,15 +195,13 @@ class OperStateChangedError(ValueError):
 @contextmanager
 def nonChangingOperstate(device):
     """Raises an exception if it detects that the device link state changes."""
-    originalState = operstate(device).upper()
-    monitor = ipwrapper.Monitor()
-    monitor.start()
+    originalState = operstate(device).lower()
     try:
-        yield
+        with monitor.Monitor(groups=('link',)) as mon:
+            yield
     finally:
-        monitor.stop()
-        changes = [(event.device, event.state) for event in monitor
-                   if event.device == device]
+        changes = [(event['name'], event['state']) for event in mon
+                   if event['name'] == device]
         for _, state in changes:
             if state != originalState:
                 raise OperStateChangedError('%s operstate changed: %s -> %r' %

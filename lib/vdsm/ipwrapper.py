@@ -17,7 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from collections import namedtuple
 from contextlib import closing
 from glob import iglob
 import array
@@ -25,7 +24,6 @@ import ctypes
 import errno
 import fcntl
 import os
-import signal
 import socket
 import struct
 
@@ -520,10 +518,6 @@ class IPRoute2Error(Exception):
     pass
 
 
-class MonitorError(Exception):
-    pass
-
-
 def _execCmd(command):
     returnCode, output, error = execCmd(command)
 
@@ -644,69 +638,3 @@ def linkSet(dev, linkArgs):
 def linkDel(dev):
     command = [_IP_BINARY.cmd, 'link', 'del', 'dev', dev]
     _execCmd(command)
-
-
-MonitorEvent = namedtuple('MonitorEvent', ['index', 'device', 'flags',
-                                           'state'])
-
-
-class Monitor(object):
-    """Wrapper over `ip monitor link`. Usage:
-    Get events collected while the monitor was running:
-
-        mon = Monitor()
-        mon.start()
-        ....
-        mon.stop()
-        for event in mon:
-            handle event
-
-    Monitoring events forever:
-        mon = Monitor()
-        mon.start()
-        for event in mon:
-            handle event
-
-    Note that the underlying `ip monitor` process is killed when its controlled
-    thread dies, so as not to leave stray processes when Vdsm crahsed.
-    """
-    _DELETED_TEXT = 'Deleted'
-    LINK_STATE_DELETED = 'DELETED'
-
-    def __init__(self):
-        self.proc = None
-
-    def __iter__(self):
-        if self.proc is None:
-            raise MonitorError('The monitor has not run yet')
-        for line in self.proc.stdout:
-            yield self._parseLine(line)
-
-    def start(self):
-        self.proc = execCmd([_IP_BINARY.cmd, '-d', '-o', 'monitor', 'link'],
-                            deathSignal=signal.SIGKILL,
-                            sync=False)
-        self.proc.blocking = True
-
-    def stop(self):
-        self.proc.kill()
-        self.proc.wait()
-
-    @classmethod
-    def _parseLine(cls, line):
-        state = None
-        if line.startswith(cls._DELETED_TEXT):
-            state = cls.LINK_STATE_DELETED
-            line = line[len(cls._DELETED_TEXT):]
-
-        data = _parseLinkLine(line)
-        # Consider everything with an '@' symbol a vlan/macvlan/macvtap
-        # since that's how iproute2 reports it and there is currently no
-        # disambiguation (iproute bug https://bugzilla.redhat.com/1042799
-        data['name'] = data['name'].split('@', 1)[0]
-        state = state if state or 'state' not in data else data['state']
-        return MonitorEvent(data['index'], data['name'], data['flags'], state)
-
-    @classmethod
-    def _parse(cls, text):
-        return [cls._parseLine(line) for line in text.splitlines()]
