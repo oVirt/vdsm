@@ -1,12 +1,12 @@
 from collections import deque
 from contextlib import contextmanager
-from threading import Timer
 import threading
 import time
 
 from functional import dummy
 from functional.networkTests import IP_ADDRESS, IP_CIDR
 from vdsm.netlink import monitor
+from vdsm.utils import monotonic_time
 
 from testValidation import ValidateRunningAsRoot
 from testlib import VdsmTestCase as TestCaseBase
@@ -109,7 +109,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
                 {'event': 'del_link', 'name': nic}])
 
         with _timed_monitor(timeout=self.TIMEOUT,
-                            raise_exception=False) as mon:
+                            silent_timeout=True) as mon:
             dummy_name = dummy.create()
             dummy.setIP(dummy_name, IP_ADDRESS, IP_CIDR)
             dummy.setLinkUp(dummy_name)
@@ -128,27 +128,53 @@ class NetlinkEventMonitorTests(TestCaseBase):
                          ' been caught (in the right order)'
                          % (1 + len(expected_events)))
 
+    def test_timeout(self):
+        with self.assertRaises(monitor.MonitorError):
+            try:
+                with _timed_monitor(timeout=.01, custom_err_msg=False) as mon:
+                    for event in mon:
+                        pass
+            except monitor.MonitorError as e:
+                self.assertEquals(e[0], monitor.E_TIMEOUT)
+                raise
+
+        self.assertTrue(mon.is_stopped())
+
+    def test_timeout_silent(self):
+        with _timed_monitor(timeout=.01, silent_timeout=True) as mon:
+            for event in mon:
+                pass
+
+        self.assertTrue(mon.is_stopped())
+
+    @ValidateRunningAsRoot
+    def test_timeout_not_triggered(self):
+        time_start = monotonic_time()
+        with _timed_monitor(timeout=self.TIMEOUT) as mon:
+            dummy_name = dummy.create()
+            dummy.remove(dummy_name)
+
+            for event in mon:
+                break
+
+        self.assertLess(monotonic_time() - time_start, self.TIMEOUT)
+        self.assertTrue(mon.is_stopped())
+
 
 @contextmanager
-def _timed_monitor(timeout=0, groups=frozenset(), raise_exception=True):
-    mon = monitor.Monitor(groups=groups)
+def _timed_monitor(timeout=None, groups=frozenset(), silent_timeout=False,
+                   custom_err_msg=True):
+    mon = monitor.Monitor(groups=groups, timeout=timeout,
+                          silent_timeout=silent_timeout)
     mon.start()
     try:
-        timer = Timer(timeout, mon.stop)
-        timer.start()
-        try:
-            yield mon
-        finally:
-            timer.cancel()
-            timer.join()
+        yield mon
+    except monitor.MonitorError as e:
+        if e[0] == monitor.E_TIMEOUT and custom_err_msg:
+            raise monitor.MonitorError('Waiting too long for a monitor event.')
+        raise
     finally:
-        # In this point of time, the timer is no longer running. So we can test
-        # if mon was stopped, if so, timeout was triggered.
-        if mon._stopped:
-            if raise_exception:
-                raise monitor.MonitorError('Waiting too long for a monitor '
-                                           'event.')
-        else:
+        if not mon.is_stopped():
             mon.stop()
 
 

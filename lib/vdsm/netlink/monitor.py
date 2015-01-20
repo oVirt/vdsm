@@ -24,7 +24,7 @@ import os
 import select
 import threading
 
-from vdsm.utils import NoIntrCall, NoIntrPoll
+from vdsm.utils import NoIntrCall, NoIntrPoll, monotonic_time
 
 from . import (LIBNL, _GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,
@@ -38,8 +38,10 @@ from route import _route_info
 # If monitoring thread is running, queue waiting for new value and we call
 # stop(), we have to stop queue by passing special code.
 _STOP_FLAG = 31
+_TIMEOUT_FLAG = 32
 
 E_NOT_RUNNING = 1
+E_TIMEOUT = 2
 
 
 class MonitorError(Exception):
@@ -65,6 +67,14 @@ class Monitor(object):
             mon.stop()
         handle event
 
+    Monitoring events with defined timeout. If timeout expires during
+    iteration and silent_timeout is set to False, MonitorError(E_TIMEOUT) is
+    raised by iteration:
+    mon = Monitor(timeout=2)
+    mon.start()
+    for event in mon:
+        handle event
+
     Monitor defined groups (monitor everything if not set):
     mon = Monitor(groups=('link', 'ipv4-route'))
     mon.start()
@@ -77,8 +87,10 @@ class Monitor(object):
     ipv4-route ipv6-ifaddr, ipv6-mroute, ipv6-route, ipv6-ifinfo,
     decnet-ifaddr, decnet-route, ipv6-prefix
     """
-    def __init__(self, groups=frozenset()):
-        self._stopped = False
+    def __init__(self, groups=frozenset(), timeout=None, silent_timeout=False):
+        self._time_start = None
+        self._timeout = timeout
+        self._silent_timeout = silent_timeout
         if groups:
             self._groups = groups
         else:
@@ -87,14 +99,21 @@ class Monitor(object):
         self._scan_thread = threading.Thread(target=self._scan)
         self._scan_thread.daemon = True
         self._scanning_started = threading.Event()
+        self._scanning_stopped = threading.Event()
 
     def __iter__(self):
         for event in iter(self._queue.get, None):
-            if event == _STOP_FLAG:
+            if event == _TIMEOUT_FLAG:
+                if self._silent_timeout:
+                    break
+                raise MonitorError(E_TIMEOUT)
+            elif event == _STOP_FLAG:
                 break
             yield event
 
     def start(self):
+        if self._timeout:
+            self._end_time = monotonic_time() + self._timeout
         self._scan_thread.start()
         self._scanning_started.wait()
 
@@ -104,21 +123,41 @@ class Monitor(object):
                 with _pipetrick(epoll) as self._pipetrick:
                     self._scanning_started.set()
                     while True:
-                        events = NoIntrPoll(epoll.poll)
-                        if (self._pipetrick[0], select.POLLIN) in events:
+                        if self._timeout:
+                            timeout = self._end_time - monotonic_time()
+                            # timeout expired
+                            if timeout <= 0:
+                                self._scanning_stopped.set()
+                                self._queue.put(_TIMEOUT_FLAG)
+                                break
+                        else:
+                            timeout = -1
+
+                        events = NoIntrPoll(epoll.poll, timeout=timeout)
+                        # poll timeouted
+                        if len(events) == 0:
+                            self._scanning_stopped.set()
+                            self._queue.put(_TIMEOUT_FLAG)
+                            break
+                        # stopped by pipetrick
+                        elif (self._pipetrick[0], select.POLLIN) in events:
                             NoIntrCall(os.read, self._pipetrick[0], 1)
                             self._queue.put(_STOP_FLAG)
                             break
+
                         _nl_recvmsgs_default(sock)
 
     def stop(self):
-        if not self._stopped:
-            self._stopped = True
+        if self.is_stopped():
+            raise MonitorError(E_NOT_RUNNING)
+        else:
+            self._scanning_stopped.set()
             self._scanning_started.wait()
             os.write(self._pipetrick[1], 'c')
             self._scan_thread.join()
-        else:
-            raise MonitorError(E_NOT_RUNNING)
+
+    def is_stopped(self):
+        return self._scanning_stopped.is_set()
 
 
 # libnl/include/linux/rtnetlink.h
