@@ -54,9 +54,11 @@ public class ResponseTracker implements Runnable {
         try (LockWrapper wrapper = new LockWrapper(this.lock)) {
             this.queue.remove(id);
             ResponseTracking tracking = this.map.remove(id);
-            List<JsonNode> nodes = this.hostToId.get(tracking.getClient().getClientId());
-            if (nodes != null) {
-                nodes.remove(id);
+            if (tracking != null && tracking.getClient() != null) {
+                List<JsonNode> nodes = this.hostToId.get(tracking.getClient().getClientId());
+                if (nodes != null) {
+                    nodes.remove(id);
+                }
             }
         }
     }
@@ -145,7 +147,7 @@ public class ResponseTracker implements Runnable {
             } else {
                 String hostname = code.substring(0, code.indexOf(":"));
                 Set<String> keys = this.hostToId.keySet();
-                for (String key: keys) {
+                for (String key : keys) {
                     if (key.startsWith(hostname)) {
                         removeNodes(this.hostToId.get(key), errorResponse);
                     }
