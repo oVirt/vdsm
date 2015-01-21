@@ -263,8 +263,8 @@ Requires: systemd >= 197-1.fc18.2
 Requires: qemu-kvm%{?rhev_suffix}
 Requires: qemu-img%{?rhev_suffix}
 %else
-Requires: qemu-kvm%{?rhev_suffix} >= 2:0.12.1.2-2.415.el6_5.3
-Requires: qemu-img%{?rhev_suffix} >= 2:0.12.1.2-2.415.el6_5.3
+Requires: qemu-kvm%{?rhev_suffix} >= 2:0.12.1.2-2.422
+Requires: qemu-img%{?rhev_suffix} >= 2:0.12.1.2-2.422
 %endif
 %else
 Requires: qemu-kvm >= 2:0.15.0-4
