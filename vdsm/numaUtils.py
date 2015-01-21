@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from collections import defaultdict
+
 import xml.etree.cElementTree as ET
 
 import caps
@@ -67,6 +69,7 @@ def getVmNumaNodeRuntimeInfo(vm):
     if 'guestNumaNodes' in vm.conf:
         vcpu_to_pcpu = _get_mapping_vcpu_to_pcpu(vm)
         if vcpu_to_pcpu:
+            vm_numa_placement = defaultdict(set)
             vmName = vm.conf['vmName'].encode('utf-8')
             vcpu_to_pnode = \
                 supervdsm.getProxy().getVcpuNumaMemoryMapping(vmName)
@@ -74,14 +77,11 @@ def getVmNumaNodeRuntimeInfo(vm):
             vcpu_to_vnode = _get_mapping_vcpu_to_vnode(vm)
             for vCpu, pCpu in vcpu_to_pcpu.iteritems():
                 vNodeIndex = str(vcpu_to_vnode[vCpu])
-                if vNodeIndex not in vmNumaNodeRuntimeMap:
-                    vmNumaNodeRuntimeMap[vNodeIndex] = []
-                vmNumaNodeRuntimeMap[vNodeIndex].append(pcpu_to_pnode[pCpu])
-                if vCpu in vcpu_to_pnode:
-                    vmNumaNodeRuntimeMap[vNodeIndex].extend(
-                        vcpu_to_pnode[vCpu])
-            vmNumaNodeRuntimeMap = dict([(k, list(set(v))) for k, v in
-                                        vmNumaNodeRuntimeMap.iteritems()])
+                vm_numa_placement[vNodeIndex].add(pcpu_to_pnode[pCpu])
+                vm_numa_placement[vNodeIndex].update(
+                    vcpu_to_pnode.get(vCpu, ()))
+            vmNumaNodeRuntimeMap = dict([(k, list(v)) for k, v in
+                                        vm_numa_placement.iteritems()])
     return vmNumaNodeRuntimeMap
 
 
