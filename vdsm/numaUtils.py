@@ -66,22 +66,26 @@ def getVmNumaNodeRuntimeInfo(vm):
     """
 
     vmNumaNodeRuntimeMap = {}
+
     if 'guestNumaNodes' in vm.conf:
         vcpu_to_pcpu = _get_mapping_vcpu_to_pcpu(vm)
         if vcpu_to_pcpu:
             vm_numa_placement = defaultdict(set)
-            vmName = vm.conf['vmName'].encode('utf-8')
-            vcpu_to_pnode = \
-                supervdsm.getProxy().getVcpuNumaMemoryMapping(vmName)
+
+            vcpu_to_pnode = supervdsm.getProxy().getVcpuNumaMemoryMapping(
+                vm.conf['vmName'].encode('utf-8'))
             pcpu_to_pnode = _get_mapping_pcpu_to_pnode()
             vcpu_to_vnode = _get_mapping_vcpu_to_vnode(vm)
-            for vCpu, pCpu in vcpu_to_pcpu.iteritems():
-                vNodeIndex = str(vcpu_to_vnode[vCpu])
-                vm_numa_placement[vNodeIndex].add(pcpu_to_pnode[pCpu])
-                vm_numa_placement[vNodeIndex].update(
-                    vcpu_to_pnode.get(vCpu, ()))
+
+            for vcpu_id, pcpu_id in vcpu_to_pcpu.iteritems():
+                vnode_index = str(vcpu_to_vnode[vcpu_id])
+                vm_numa_placement[vnode_index].add(pcpu_to_pnode[pcpu_id])
+                vm_numa_placement[vnode_index].update(
+                    vcpu_to_pnode.get(vcpu_id, ()))
+
             vmNumaNodeRuntimeMap = dict((k, list(v)) for k, v in
                                         vm_numa_placement.iteritems())
+
     return vmNumaNodeRuntimeMap
 
 
