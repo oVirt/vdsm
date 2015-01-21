@@ -430,6 +430,22 @@ def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
                                  network)
 
 
+def _disconnect_bridge_port(bridge, port):
+    try:
+        ipwrapper.linkSet(port, ['nomaster'])
+    except ipwrapper.IPRoute2Error:
+        # REQUIRED_FOR: el6
+        # rhel6 ip link command does not support 'nomaster'
+        rc, out, err = utils.execCmd(
+            [constants.EXT_BRCTL, 'delif', bridge, port])
+        if rc != 0:
+            raise ConfigNetworkError(
+                ne.ERR_FAILED_IFDOWN,
+                'Failed to disconnect {0} from {1}. error: {2}'.format(
+                    port, bridge, err
+                ))
+
+
 @_alterRunningConfig
 def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                 configurator=None, implicitBonding=True, _netinfo=None,
@@ -473,7 +489,7 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
             # we are interested to leave the bridge here, we have to disconnect
             # it from the device so that the configurator will allow its
             # removal.
-            ipwrapper.linkSet(net_ent_to_remove.name, ['nomaster'])
+            _disconnect_bridge_port(net_ent.name, net_ent_to_remove.name)
     else:
         net_ent_to_remove = net_ent
 
