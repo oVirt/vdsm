@@ -80,8 +80,8 @@ def getVmNumaNodeRuntimeInfo(vm):
                 vm_numa_placement[vNodeIndex].add(pcpu_to_pnode[pCpu])
                 vm_numa_placement[vNodeIndex].update(
                     vcpu_to_pnode.get(vCpu, ()))
-            vmNumaNodeRuntimeMap = dict([(k, list(v)) for k, v in
-                                        vm_numa_placement.iteritems()])
+            vmNumaNodeRuntimeMap = dict((k, list(v)) for k, v in
+                                        vm_numa_placement.iteritems())
     return vmNumaNodeRuntimeMap
 
 
