@@ -1,6 +1,6 @@
 #
 # vdsm-jsonrpc-java - vdsm json rpc
-# Copyright (C) 2013 Red Hat, Inc.
+# Copyright (C) 2013-2015 Red Hat, Inc.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -43,7 +43,7 @@
 Summary:	oVirt JsonRpc java client (%{name})
 Name:		@PACKAGE_NAME@
 Version:	@PACKAGE_RPM_VERSION@
-Release:	@PACKAGE_RPM_RELEASE@%{?release_suffix}%{?dist}
+Release:	@PACKAGE_RPM_RELEASE@%{?dist}
 License:	LGPLv2+
 URL:		http://www.ovirt.org
 Source:		http://resources.ovirt.org/pub/ovirt-3.5-snapshot/src/%{name}/%{name}-%{package_version}.tar.gz

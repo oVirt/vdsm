@@ -1,6 +1,6 @@
 dnl
 dnl vdsm-jsonrpc-java - vdsm json rpc
-dnl Copyright (C) 2013 Red Hat, Inc.
+dnl Copyright (C) 2013-2015 Red Hat, Inc.
 dnl
 dnl This library is free software; you can redistribute it and/or
 dnl modify it under the terms of the GNU Lesser General Public
@@ -27,7 +27,7 @@ define([VERSION_SUFFIX], [])
 
 AC_INIT([vdsm-jsonrpc-java], VERSION_NUMBER[]VERSION_SUFFIX)
 PACKAGE_RPM_VERSION="VERSION_NUMBER"
-PACKAGE_RPM_RELEASE="0.0.1"
+PACKAGE_RPM_RELEASE="1"
 PACKAGE_MAVEN_VERSION="VERSION_MAJOR.VERSION_MINOR.VERSION_FIX"
 AC_SUBST([PACKAGE_RPM_VERSION])
 AC_SUBST([PACKAGE_RPM_RELEASE])
