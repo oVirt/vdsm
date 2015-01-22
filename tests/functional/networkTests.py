@@ -22,7 +22,6 @@ import os.path
 import json
 import signal
 import netaddr
-import time
 
 from hookValidation import ValidatesHook
 from network.sourceroute import StaticSourceRoute
