@@ -27,7 +27,7 @@ import supervdsm
 def getVcpuPid(vmName):
     runInfo = ET.parse("/var/run/libvirt/qemu/%s.xml" % vmName)
     vCpuPids = {}
-    for vCpuIndex, vCpu in enumerate(runInfo.findall('./vcpus/vcpu[@pid]')):
+    for vCpuIndex, vCpu in enumerate(runInfo.findall('./vcpus/vcpu')):
         vCpuPids[vCpuIndex] = vCpu.get('pid')
     return vCpuPids
 

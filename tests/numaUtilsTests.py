@@ -43,29 +43,6 @@ _VM_RUN_FILE_CONTENT = """
     </domstatus>"""
 
 
-# malformed XML tests
-
-_VM_RUN_FILE_CONTENT_INCOMPLETE = """
-    <domstatus state='running' reason='booted' pid='12262'>
-      <monitor path='/var/lib/libvirt/qemu/testvm.monitor'
-               json='1' type='unix'/>
-        <vcpus>
-          <vcpu />
-          <vcpu pid='12267'/>
-          <vcpu />
-          <vcpu pid='12269'/>
-        </vcpus>
-    </domstatus>"""
-
-_VM_RUN_FILE_CONTENT_NOVCPUDATA = """
-    <domstatus state='running' reason='booted' pid='12262'>
-      <monitor path='/var/lib/libvirt/qemu/testvm.monitor'
-               json='1' type='unix'/>
-        <vcpus>
-        </vcpus>
-    </domstatus>"""
-
-
 class TestNumaUtils(TestCaseBase):
 
     @MonkeyPatch(ET, 'parse',
@@ -77,21 +54,6 @@ class TestNumaUtils(TestCaseBase):
                             2: '12268',
                             3: '12269'}
         self.assertEqual(vcpuPids, expectedVcpuPids)
-
-    @MonkeyPatch(ET, 'parse',
-                 lambda x: ET.fromstring(_VM_RUN_FILE_CONTENT_INCOMPLETE))
-    def testVcpuPidIncomplete(self):
-        vcpuPids = numaUtils.getVcpuPid('testvm')
-        # this test demonstrates than the current code
-        # doesn't guarantee stable ordering of VCPU.
-        expectedVcpuPids = {0: '12267',
-                            1: '12269'}
-        self.assertEqual(vcpuPids, expectedVcpuPids)
-
-    @MonkeyPatch(ET, 'parse',
-                 lambda x: ET.fromstring(_VM_RUN_FILE_CONTENT_NOVCPUDATA))
-    def testVcpuPidNoVcpuData(self):
-        self.assertEqual(numaUtils.getVcpuPid('testvm'), {})
 
     @MonkeyPatch(numaUtils, 'supervdsm', fake.SuperVdsm())
     @MonkeyPatch(caps,
