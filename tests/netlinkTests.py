@@ -1,5 +1,4 @@
 from collections import deque
-from contextlib import contextmanager
 import threading
 import time
 
@@ -18,7 +17,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def test_iterate_after_events(self):
-        with _timed_monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             dummy_name = dummy.create()
             dummy.remove(dummy_name)
             for event in mon:
@@ -39,7 +38,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
             dummy.remove(dummy_name)
         add_device_thread = threading.Thread(target=_set_and_remove_device)
 
-        with _timed_monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             add_device_thread.start()
             for event in mon:
                 if event.get('name') == dummy_name:
@@ -48,7 +47,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def test_stopped(self):
-        with _timed_monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             dummy_name = dummy.create()
             dummy.remove(dummy_name)
 
@@ -57,10 +56,10 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def test_event_groups(self):
-        with _timed_monitor(timeout=self.TIMEOUT,
-                            groups=('ipv4-ifaddr',)) as mon_a:
-            with _timed_monitor(timeout=self.TIMEOUT,
-                                groups=('link', 'ipv4-route')) as mon_l_r:
+        with monitor.Monitor(timeout=self.TIMEOUT,
+                             groups=('ipv4-ifaddr',)) as mon_a:
+            with monitor.Monitor(timeout=self.TIMEOUT,
+                                 groups=('link', 'ipv4-route')) as mon_l_r:
                 dummy_name = dummy.create()
                 dummy.setIP(dummy_name, IP_ADDRESS, IP_CIDR)
                 dummy.setLinkUp(dummy_name)
@@ -78,7 +77,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def test_iteration(self):
-        with _timed_monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             iterator = iter(mon)
 
             # Generate events to avoid blocking
@@ -108,8 +107,8 @@ class NetlinkEventMonitorTests(TestCaseBase):
                 {'destination': address, 'event': 'del_route'},
                 {'event': 'del_link', 'name': nic}])
 
-        with _timed_monitor(timeout=self.TIMEOUT,
-                            silent_timeout=True) as mon:
+        with monitor.Monitor(timeout=self.TIMEOUT,
+                             silent_timeout=True) as mon:
             dummy_name = dummy.create()
             dummy.setIP(dummy_name, IP_ADDRESS, IP_CIDR)
             dummy.setLinkUp(dummy_name)
@@ -131,7 +130,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
     def test_timeout(self):
         with self.assertRaises(monitor.MonitorError):
             try:
-                with _timed_monitor(timeout=.01, custom_err_msg=False) as mon:
+                with monitor.Monitor(timeout=.01) as mon:
                     for event in mon:
                         pass
             except monitor.MonitorError as e:
@@ -141,7 +140,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
         self.assertTrue(mon.is_stopped())
 
     def test_timeout_silent(self):
-        with _timed_monitor(timeout=.01, silent_timeout=True) as mon:
+        with monitor.Monitor(timeout=.01, silent_timeout=True) as mon:
             for event in mon:
                 pass
 
@@ -150,7 +149,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
     @ValidateRunningAsRoot
     def test_timeout_not_triggered(self):
         time_start = monotonic_time()
-        with _timed_monitor(timeout=self.TIMEOUT) as mon:
+        with monitor.Monitor(timeout=self.TIMEOUT) as mon:
             dummy_name = dummy.create()
             dummy.remove(dummy_name)
 
@@ -159,23 +158,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
         self.assertLess(monotonic_time() - time_start, self.TIMEOUT)
         self.assertTrue(mon.is_stopped())
-
-
-@contextmanager
-def _timed_monitor(timeout=None, groups=frozenset(), silent_timeout=False,
-                   custom_err_msg=True):
-    mon = monitor.Monitor(groups=groups, timeout=timeout,
-                          silent_timeout=silent_timeout)
-    mon.start()
-    try:
-        yield mon
-    except monitor.MonitorError as e:
-        if e[0] == monitor.E_TIMEOUT and custom_err_msg:
-            raise monitor.MonitorError('Waiting too long for a monitor event.')
-        raise
-    finally:
-        if not mon.is_stopped():
-            mon.stop()
 
 
 def _is_subdict(subset, superset):

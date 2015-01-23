@@ -111,6 +111,14 @@ class Monitor(object):
                 break
             yield event
 
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, groups, timeout, silent_timeout):
+        if not self.is_stopped():
+            self.stop()
+
     def start(self):
         if self._timeout:
             self._end_time = monotonic_time() + self._timeout
