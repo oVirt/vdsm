@@ -123,7 +123,7 @@ class MultiProtocolAcceptor:
 
         now = time.time()
         if now > self._next_cleanup:
-            self._next_cleanup = now + self.CLEANUP_INTERVAL
+            self._next_cleanup += self.CLEANUP_INTERVAL
             self._cleanup_pending_connections()
 
     def _cleanup(self):
