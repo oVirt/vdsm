@@ -95,6 +95,7 @@ class Uppercase(Detector):
 class AcceptorTests(VdsmTestCase):
 
     TIMEOUT = 2.0
+    GRACETIME = 0.5
     CONCURRENCY = 5
     PERMUTATIONS = ((False,), (True,))
     SSLCTX = sslutils.SSLContext(CRT_FILE, KEY_FILE, ca_cert=CRT_FILE)
@@ -178,14 +179,14 @@ class AcceptorTests(VdsmTestCase):
 
     def check_slow_client(self, use_ssl):
         with self.connect(use_ssl) as client:
-            time.sleep(self.acceptor.CLEANUP_INTERVAL - 0.2)
+            time.sleep(self.acceptor.CLEANUP_INTERVAL - self.GRACETIME)
             data = "echo let me in\n"
             client.sendall(data)
             self.assertEqual(client.recv(self.BUFSIZE), data)
 
     def check_very_slow_client(self, use_ssl):
         with self.connect(use_ssl) as client:
-            time.sleep(self.acceptor.CLEANUP_INTERVAL * 2)
+            time.sleep(self.acceptor.CLEANUP_INTERVAL * 2 + self.GRACETIME)
             client.sendall("echo too slow probably\n")
             self.check_disconnected(client)
 
