@@ -30,12 +30,15 @@ import os
 import signal
 
 _trackedPids = set()
+_registered = False
 
 
 def autoReapPID(pid):
     """
     Register a PID to be auto-cleaned.
     """
+    if not _registered:
+        raise RuntimeError("zombiereaper is not registered for SIGCHLD")
     _trackedPids.add(pid)
     # SIGCHLD happend before we added the pid to the set
     _tryReap(pid)
@@ -60,7 +63,9 @@ def registerSignalHandler():
     Set up the signal handler so that PIDs are reaped. Should be called once
     at the start of the program.
     """
+    global _registered
     signal.signal(signal.SIGCHLD, _zombieReaper)
+    _registered = True
 
 
 def unregisterSignalHandler():
@@ -68,4 +73,6 @@ def unregisterSignalHandler():
     Stop cleaning PIDs. Should only be used for testing or other specialized
     use cases.
     """
+    global _registered
     signal.signal(signal.SIGCHLD, signal.SIG_DFL)
+    _registered = False

@@ -25,10 +25,15 @@ from cpopen import CPopen
 
 from unittest import TestCase
 
-zombiereaper.registerSignalHandler()
-
 
 class zombieReaperTests(TestCase):
+
+    def setUp(self):
+        zombiereaper.registerSignalHandler()
+
+    def tearDown(self):
+        zombiereaper.unregisterSignalHandler()
+
     def testProcessDiesAfterBeingTracked(self):
         p = CPopen(["sleep", "1"])
         zombiereaper.autoReapPID(p.pid)
@@ -47,3 +52,8 @@ class zombieReaperTests(TestCase):
 
         # Throws error because pid is not found or is not child
         self.assertRaises(OSError, os.waitpid, p.pid, os.WNOHANG)
+
+
+class RegisterTests(TestCase):
+    def testUnregistered(self):
+        self.assertRaises(RuntimeError, zombiereaper.autoReapPID, 12345)
