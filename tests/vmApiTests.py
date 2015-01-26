@@ -28,6 +28,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from vdsm import utils
 from rpc import vdsmapi
 
+from testValidation import brokentest
 import vmfakelib as fake
 
 
@@ -70,6 +71,7 @@ class TestVmStats(TestSchemaCompliancyBase):
             self.assertVmStatsSchemaCompliancy('ExitedVmStats',
                                                testvm.getStats())
 
+    @brokentest
     def testRunningStats(self):
         vmParams = {
             'displayPort': -1, 'displaySecurePort': -1, 'display': 'qxl',
