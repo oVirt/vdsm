@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,21 +47,23 @@ class SchemaValidation(TestCaseBase):
             self._validate(apiobj)
 
     def test_line_length(self):
-        with open(self._get_path()) as f:
-            longer = []
-            for i, line in enumerate(f):
-                if len(line) > 80:
-                    longer.append('line [%d] %s' % (i + 1, line))
+        for fname in self._get_paths():
+            with open(fname) as f:
+                longer = []
+                for i, line in enumerate(f):
+                    if len(line) > 80:
+                        longer.append('line [%d] %s' % (i + 1, line))
 
-            if len(longer) > 0:
-                raise AssertionError('Lines longer than 80\n%s'
-                                     % '\n'.join(longer))
+                if len(longer) > 0:
+                    raise AssertionError('Lines longer than 80\n%s'
+                                         % '\n'.join(longer))
 
-    def _get_path(self):
+    def _get_paths(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
-        return os.path.join(
-            dirName, '..', 'vdsm', 'rpc', 'vdsmapi-schema.json')
+        for tail in ('vdsmapi-schema.json', 'vdsmapi-gluster-schema.json'):
+            yield os.path.join(
+                dirName, '..', 'vdsm', 'rpc', tail)
 
     def _validate(self, api_mod):
         bridge = Bridge.DynamicBridge()

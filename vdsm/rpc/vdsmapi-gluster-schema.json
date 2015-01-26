@@ -22,7 +22,7 @@
 # VDSM GLUSTER API Schema
 #
 
-## Category: @GlusterHook ######################################################
+## Category: @GlusterHook ####################################################
 ##
 # @GlusterHook:
 #
@@ -245,7 +245,7 @@
  'data': {'glusterCmd': 'str', 'hookLevel': 'HookLevel', 'hookName': 'str'},
  'returns': 'bool'}
 
-## Category: @GlusterHost ######################################################
+## Category: @GlusterHost ####################################################
 ##
 # @GlusterHost:
 #
@@ -268,7 +268,7 @@
 {'command': {'class': 'GlusterHost', 'name': 'uuid'},
  'returns': 'UUID'}
 
-## Category: @GlusterService ######################################################
+## Category: @GlusterService ##################################################
 ##
 # @GlusterService:
 #
@@ -377,7 +377,7 @@
  'returns': 'GlusterServicesStatusInfo'}
 
 
-## Category: @GlusterTask ######################################################
+## Category: @GlusterTask ####################################################
 ##
 # @GlusterTask:
 #
@@ -415,6 +415,7 @@
         'id': 'UUID', 'volumeName': 'str', 'filesScanned': 'int',
         'filesMoved': 'int', 'filesFailed': 'int', 'filesSkipped': 'int',
         'totalSizeMoved': 'int', 'status': 'str'}}
+
 ##
 # @TaskInfo:
 #
@@ -437,6 +438,7 @@
 {'type': 'TaskInfo',
   'data': {'id': 'UUID', 'volume': 'str', 'status': 'TaskStatus',
            'type': 'TaskType', 'data': 'TaskSummary', 'bricks': ['str']}}
+
 ##
 # @GlusterTask.list:
 #
@@ -453,7 +455,7 @@
  'data': {'*taskID': 'UUID'},
   'returns': ['TaskInfo']}
 
-## Category: @GlusterVolume ######################################################
+## Category: @GlusterVolume ##################################################
 ##
 # @GlusterVolume:
 #
@@ -549,7 +551,6 @@
 {'type': 'BricksInfo',
  'data': {'name': 'str', 'hostUuid': 'UUID'}}
 
-
 ##
 # @VolumeInfo:
 #
@@ -580,6 +581,7 @@
           'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str',
           'status': 'volumeStatus', 'volumeType': 'str',
           'bricksInfo': ['BricksInfo']}}
+
 ##
 # @StatusOption:
 #
@@ -613,7 +615,8 @@
 # Since: 4.10.3
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'status'},
- 'data': {'volumeName': 'str', '*brick': 'str', '*statusOption': 'StatusOption'},
+ 'data': {'volumeName': 'str', '*brick': 'str',
+          '*statusOption': 'StatusOption'},
  'returns': ['VolumeStatus']}
 
 ##
@@ -1305,7 +1308,8 @@
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStart'},
- 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str', 'force': 'bool'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
+          'force': 'bool'},
  'returns': 'bool'}
 
 ##
@@ -1327,5 +1331,6 @@
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStop'},
- 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str', 'force': 'bool'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
+          'force': 'bool'},
  'returns': 'bool'}
