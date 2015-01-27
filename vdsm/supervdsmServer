@@ -106,9 +106,6 @@ def logDecorator(func):
         return res
     return wrapper
 
-KB = 2 ** 10
-TEST_BUFF_LEN = 4 * KB
-
 
 class _SuperVdsm(object):
 
