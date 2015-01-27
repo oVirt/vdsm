@@ -122,6 +122,7 @@ dist_vdsmtests_DATA = \
 	mem_info.out \
 	netmaskconversions \
 	tc_filter_show.out \
+	iscsiadm_-m_iface.out \
 	toolTests_empty.conf \
 	toolTests_lconf_ssl.conf \
 	toolTests_libvirt_logrotate.conf \

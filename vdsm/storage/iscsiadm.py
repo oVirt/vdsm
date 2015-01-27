@@ -1,3 +1,5 @@
+import re
+from collections import namedtuple
 from threading import Lock
 import misc
 from vdsm import constants
@@ -7,6 +9,9 @@ from vdsm.utils import AsyncProcessOperation
 ISCSI_ERR_SESS_EXISTS = 15
 ISCSI_ERR_LOGIN_AUTH_FAILED = 24
 ISCSI_ERR_OBJECT_NOT_FOUND = 21
+
+Iface = namedtuple('Iface', 'ifacename transport_name hwaddress ipaddress \
+                    net_ifacename initiatorname')
 
 
 class IscsiError(RuntimeError):
@@ -94,7 +99,11 @@ def _runCmd(args, hideValue=False, sync=True):
 
 def iface_exists(interfaceName):
     # FIXME: can be optimized by checking /var/lib/iscsi/ifaces
-    return interfaceName in iface_list()
+    for iface in iface_list():
+        if interfaceName == iface.ifacename:
+            return True
+
+    return False
 
 
 def iface_new(name):
@@ -134,14 +143,20 @@ def iface_delete(name):
     raise IscsiInterfaceDeletionError(name)
 
 
-def iface_list():
+def iface_list(out=None):
     # FIXME: This can be done more efficiently by iterating
     # /var/lib/iscsi/ifaces. Fix if ever a performance bottleneck.
-    rc, out, err = _runCmd(["-m", "iface"])
-    if rc == 0:
-        return [line.split()[0] for line in out]
+    # "iscsiadm -m iface" output format:
+    #   <iscsi_ifacename> <transport_name>,<hwaddress>,<ipaddress>,\
+    #   <net_ifacename>,<initiatorname>
+    if out is None:
+        rc, out, err = _runCmd(["-m", "iface"])
+        if rc != 0:
+            raise IscsiInterfaceListingError(rc, out, err)
 
-    raise IscsiInterfaceListingError(rc, out, err)
+    for line in out:
+        yield Iface._make(None if value == '<empty>' else value
+                          for value in re.split('[\s,]', line))
 
 
 def iface_info(name):
