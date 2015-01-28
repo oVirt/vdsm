@@ -54,6 +54,10 @@ public class JsonRpcClient {
         return this.policy;
     }
 
+    public String getHostname() {
+        return this.client.getHostname();
+    }
+
     /**
      * Sends single request and returns {@link Future} representation of {@link JsonRpcResponse}.
      *

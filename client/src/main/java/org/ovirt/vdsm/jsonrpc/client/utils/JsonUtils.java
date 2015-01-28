@@ -30,6 +30,8 @@ import org.ovirt.vdsm.jsonrpc.client.ResponseBuilder;
 public class JsonUtils {
     public static final Charset UTF8 = Charset.forName("UTF-8");
     private static final double GRACE_PERIOD = 0.2;
+    public static final String ALL = "*";
+    public static final String SUBSCRIPTION_ALL = "*|*|*|*";
     private static Log log = LogFactory.getLog(JsonUtils.class);
     private static ObjectMapper mapper = new ObjectMapper();
     private static JsonFactory factory = mapper.getJsonFactory();
@@ -133,5 +135,13 @@ public class JsonUtils {
         } else {
             logger.error(message);
         }
+    }
+
+    public static String[] parse(String id) {
+        String[] ids = id.split("\\|");
+        if (ids == null || ids.length == 0 || ids.length != 4) {
+            throw new IllegalArgumentException("wrong id format");
+        }
+        return ids;
     }
 }

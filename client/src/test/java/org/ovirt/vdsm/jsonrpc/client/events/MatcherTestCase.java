@@ -1,0 +1,193 @@
+package org.ovirt.vdsm.jsonrpc.client.events;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.parse;
+
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Test;
+import org.ovirt.vdsm.jsonrpc.client.JsonRpcEvent;
+
+public class MatcherTestCase {
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAllSubscription() {
+        SubscriptionHolder holder = mock(SubscriptionHolder.class);
+        when(holder.getId()).thenReturn("*|*|*|*");
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmptyKeySubscription() {
+        String id = "|*|*|*";
+        SubscriptionHolder holder = mock(SubscriptionHolder.class);
+        when(holder.getId()).thenReturn(id);
+        when(holder.getParsedId()).thenReturn(parse(id));
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+    }
+
+    @Test
+    public void testUidLevelSubscription() {
+        String id = "*|*|*|uuid";
+        SubscriptionHolder holder = mock(SubscriptionHolder.class);
+        when(holder.getId()).thenReturn(id);
+        when(holder.getParsedId()).thenReturn(parse(id));
+        SubscriptionHolder differentHolder = mock(SubscriptionHolder.class);
+        when(differentHolder.getId()).thenReturn("*|*|*|uuid2");
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(differentHolder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test|uuid");
+        JsonRpcEvent secondEvent = mock(JsonRpcEvent.class);
+        when(secondEvent.getMethod()).thenReturn("localhost|testcase|test|uuid2");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(1, holders.size());
+
+        holders = matcher.match(secondEvent);
+        assertEquals(1, holders.size());
+
+        matcher.remove(holder);
+        holders = matcher.match(event);
+        assertEquals(0, holders.size());
+    }
+
+    @Test
+    public void testOperationSubscription() {
+        SubscriptionHolder holder = mock(SubscriptionHolder.class);
+        when(holder.getId()).thenReturn("*|*|test|*");
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test|uuid");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(1, holders.size());
+    }
+
+    @Test
+    public void testUidAndOperationSubscription() {
+        SubscriptionHolder holder = mock(SubscriptionHolder.class);
+        when(holder.getId()).thenReturn("*|*|test|uuid");
+        SubscriptionHolder differentHolder = mock(SubscriptionHolder.class);
+        when(differentHolder.getId()).thenReturn("*|*|test|*");
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(differentHolder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test|uuid");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(2, holders.size());
+    }
+
+    @Test
+    public void testUidAndOperationAndComponentSubscription() {
+        SubscriptionHolder holder = mock(SubscriptionHolder.class);
+        when(holder.getId()).thenReturn("*|*|test|uuid");
+        SubscriptionHolder differentHolder = mock(SubscriptionHolder.class);
+        when(differentHolder.getId()).thenReturn("*|*|test|*");
+        SubscriptionHolder thirdHolder = mock(SubscriptionHolder.class);
+        when(thirdHolder.getId()).thenReturn("*|testcase|*|*");
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(differentHolder);
+        matcher.add(thirdHolder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test|uuid");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(3, holders.size());
+    }
+
+    @Test
+    public void testOperationAndComponentSubscription() {
+        SubscriptionHolder holder = mock(SubscriptionHolder.class);
+        when(holder.getId()).thenReturn("*|*|*|uuid");
+        SubscriptionHolder differentHolder = mock(SubscriptionHolder.class);
+        when(differentHolder.getId()).thenReturn("*|*|test|*");
+        SubscriptionHolder thirdHolder = mock(SubscriptionHolder.class);
+        when(thirdHolder.getId()).thenReturn("*|testcase|test2|*");
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(differentHolder);
+        matcher.add(thirdHolder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test|uuid");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(3, holders.size());
+
+        event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test2|uuid");
+        holders = matcher.match(event);
+        assertEquals(2, holders.size());
+    }
+
+    @Test
+    public void testMixedSubscription() {
+        EventSubscriber subscriber = mock(EventSubscriber.class);
+        when(subscriber.getSubsctibtionId()).thenReturn("*|testcase|*|uuid");
+        SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
+
+        EventSubscriber differentSubscriber = mock(EventSubscriber.class);
+        when(differentSubscriber.getSubsctibtionId()).thenReturn("*|testcase|test|*");
+        SubscriptionHolder differentHolder = new SubscriptionHolder(differentSubscriber, new AtomicInteger());
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(differentHolder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test2|uuid");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(1, holders.size());
+    }
+
+    @Test
+    public void testReceiverSubscription() {
+        EventSubscriber subscriber = mock(EventSubscriber.class);
+        when(subscriber.getSubsctibtionId()).thenReturn("localhost|testcase|*|uuid");
+        SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
+
+        EventSubscriber differentSubscriber = mock(EventSubscriber.class);
+        when(differentSubscriber.getSubsctibtionId()).thenReturn("remote|*|test|*");
+        SubscriptionHolder differentHolder = new SubscriptionHolder(differentSubscriber, new AtomicInteger());
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(differentHolder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("remote|testcase|test|uuid2");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(1, holders.size());
+
+        event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("localhost|testcase|test|uuid");
+
+        holders = matcher.match(event);
+        assertEquals(1, holders.size());
+
+    }
+}
