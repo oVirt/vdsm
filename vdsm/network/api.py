@@ -122,6 +122,8 @@ def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
         _netinfo = netinfo.NetInfo()
     if opts is None:
         opts = {}
+    if bootproto == 'none':
+        bootproto = None
     if bondingOptions and not bonding:
         raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Bonding options '
                                  'specified without bonding')
