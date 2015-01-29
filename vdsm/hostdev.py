@@ -72,7 +72,8 @@ def _parse_device_params(device_xml):
                 params[element] = elementXML.text
 
     physfn = caps.find('capability')
-    if physfn is not None and params['capability'] == 'pci':
+    if physfn is not None and physfn.attrib['type'] == 'phys_function' \
+            and params['capability'] == 'pci':
         address = physfn.find('address')
         params['physfn'] = _pci_address_to_name(**address.attrib)
 

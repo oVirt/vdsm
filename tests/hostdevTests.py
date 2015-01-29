@@ -390,7 +390,6 @@ _NET_DEVICE_PARSED = {
 _SRIOV_PF_PARSED = {'capability': 'pci',
                     'iommu_group': '15',
                     'parent': 'pci_0000_00_09_0',
-                    'physfn': 'pci_0000_05_10_1',
                     'product': '82576 Gigabit Network Connection',
                     'product_id': '0x10c9',
                     'totalvfs': 7,
