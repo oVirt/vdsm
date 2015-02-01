@@ -1689,33 +1689,32 @@ class NetworkTest(TestCaseBase):
                                                           {}, {})
                 self.assertEqual(status, SUCCESS, msg)
 
+    @permutations([[(4,)], [(6,)], [(4, 6)]])
     @cleanupNet
-    def testIPv6ConfigNetwork(self):
+    def testStaticNetworkConfig(self, families):
         with dummyIf(1) as nics:
             nic, = nics
-            networks = {
-                NETWORK_NAME + '1':
-                {'nic': nic, 'bootproto': 'none', 'ipv6gateway': IPv6_GATEWAY,
-                 'ipv6addr': IPv6_ADDRESS_AND_CIDR},
-                NETWORK_NAME + '2':
-                {'nic': nic, 'bootproto': 'none', 'ipv6gateway': IPv6_GATEWAY,
-                 'ipv6addr': IPv6_ADDRESS_AND_CIDR, 'ipaddr': IP_ADDRESS,
-                 'gateway': IP_GATEWAY, 'netmask': IP_MASK}}
-            for network, netdict in networks.iteritems():
-                with self.vdsm_net.pinger():
-                    status, msg = self.vdsm_net.setupNetworks(
-                        {network: netdict}, {}, {})
-                    self.assertEqual(status, SUCCESS, msg)
-                    self.assertNetworkExists(network)
-                    self.assertIn(
-                        IPv6_ADDRESS_AND_CIDR,
-                        self.vdsm_net.netinfo.networks[network]['ipv6addrs'])
-                    self.assertEqual(
-                        IPv6_GATEWAY,
-                        self.vdsm_net.netinfo.networks[network]['ipv6gateway'])
-                    delete = {network: {'remove': True}}
-                    status, msg = self.vdsm_net.setupNetworks(delete, {}, {})
-                    self.assertEqual(status, SUCCESS, msg)
+            ipv4 = dict(nic=nic, bootproto='none', ipaddr=IP_ADDRESS,
+                        netmask=IP_MASK, gateway=IP_GATEWAY)
+            ipv6 = dict(nic=nic, bootproto='none', ipv6gateway=IPv6_GATEWAY,
+                        ipv6addr=IPv6_ADDRESS_AND_CIDR)
+            netdict = ipv4 if 4 in families else {}
+            if 6 in families:
+                netdict.update(ipv6)
+            with self.vdsm_net.pinger():
+                status, msg = self.vdsm_net.setupNetworks(
+                    {NETWORK_NAME: netdict}, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertNetworkExists(NETWORK_NAME)
+                test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                if 4 in families:
+                    self.assertEqual(IP_GATEWAY, test_net['gateway'])
+                if 6 in families:
+                    self.assertIn(IPv6_ADDRESS_AND_CIDR, test_net['ipv6addrs'])
+                    self.assertEqual(IPv6_GATEWAY, test_net['ipv6gateway'])
+                delete = {NETWORK_NAME: {'remove': True}}
+                status, msg = self.vdsm_net.setupNetworks(delete, {}, {})
+                self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     def testIpLinkWrapper(self):
