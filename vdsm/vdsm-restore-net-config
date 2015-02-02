@@ -63,6 +63,10 @@ def unified_restoration():
     for configurator_cls in _get_all_configurators():
         configurator_cls().flush()
 
+    # Restore non-VDSM network devices (BZ#1188251)
+    configWriter = ifcfg.ConfigWriter()
+    configWriter.restorePersistentBackup()
+
     persistentConfig = PersistentConfig()
     nets, bonds = _filter_nets_bonds(persistentConfig.networks,
                                      persistentConfig.bonds)

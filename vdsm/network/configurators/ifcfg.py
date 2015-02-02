@@ -362,6 +362,9 @@ class ConfigWriter(object):
         self._atomicBackup(filename)
         if config.get('vars', 'net_persistence') != 'unified':
             self._persistentBackup(filename)
+        elif not self._ownedIfcfg(filename):
+            # Backup non-VDSM network devices (BZ#1188251)
+            self._persistentBackup(filename)
 
     def _atomicBackup(self, filename):
         """
@@ -483,19 +486,23 @@ class ConfigWriter(object):
 
             logging.info('Loaded %s', fpath)
 
+    def _ownedIfcfg(self, fpath):
+        if not os.path.isfile(fpath):
+            return False
+        try:
+            with open(fpath) as confFile:
+                content = confFile.readline()
+        except IOError as e:
+            if e.errno == os.errno.ENOENT:
+                return False
+            else:
+                raise
+        if content.startswith(self.CONFFILE_HEADER_BASE):
+            return True
+
     def _ownedFiles(self):
         for fpath in glob.iglob(netinfo.NET_CONF_DIR + '/*'):
-            if not os.path.isfile(fpath):
-                continue
-            try:
-                with open(fpath) as confFile:
-                    content = confFile.read()
-            except IOError as e:
-                if e.errno == os.errno.ENOENT:
-                    continue
-                else:
-                    raise
-            if content.startswith(self.CONFFILE_HEADER_BASE):
+            if self._ownedIfcfg(fpath):
                 yield fpath
 
     def loadBackups(self):
