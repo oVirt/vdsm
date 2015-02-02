@@ -612,8 +612,10 @@ def _get_gateway(routes_by_dev, dev=None, family=4,
         routes = routes_by_dev[dev]
 
     gateways = [r for r in routes if r['destination'] == 'none' and
-                r.get('table') == table and r['scope'] == 'global' and
-                r['family'] == ('inet6' if family == 6 else 'inet')]
+                r.get('table') == table and
+                r['scope'] == 'global' and
+                r['family'] == ('inet6' if family == 6 else 'inet')
+                ]
     try:
         gateway, = gateways
     except ValueError:
