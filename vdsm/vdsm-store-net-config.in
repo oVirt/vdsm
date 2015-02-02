@@ -46,6 +46,9 @@ unified_node_persist() {
 }
 
 unified_nonnode_persist() {
+    # Remove stored non-VDSM network devices (BZ#1188251)
+    ifcfg_nonnode_persist
+
     # Atomic directory copy by using the atomicity of overwriting a link
     # (rename syscall).
     TIMESTAMP=$(date +%s%N)
