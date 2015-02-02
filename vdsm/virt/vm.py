@@ -561,37 +561,6 @@ class VmStatsThread(AdvancedStatsThread):
             value = sample['vcpuLimit']
             stats['vcpuUserLimit'] = value
 
-    @classmethod
-    def _getNicStats(cls, name, model, mac,
-                     start_sample, end_sample, interval):
-        ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
-
-        ifStats = {'macAddr': mac,
-                   'name': name,
-                   'speed': str(ifSpeed),
-                   'state': 'unknown'}
-
-        ifStats['rxErrors'] = str(end_sample[2])
-        ifStats['rxDropped'] = str(end_sample[3])
-        ifStats['txErrors'] = str(end_sample[6])
-        ifStats['txDropped'] = str(end_sample[7])
-
-        ifRxBytes = (100.0 *
-                     ((end_sample[0] - start_sample[0]) % 2 ** 32) /
-                     interval / ifSpeed / _MBPS_TO_BPS)
-        ifTxBytes = (100.0 *
-                     ((end_sample[4] - start_sample[4]) % 2 ** 32) /
-                     interval / ifSpeed / _MBPS_TO_BPS)
-
-        ifStats['rxRate'] = '%.1f' % ifRxBytes
-        ifStats['txRate'] = '%.1f' % ifTxBytes
-
-        ifStats['rx'] = str(end_sample[0])
-        ifStats['tx'] = str(end_sample[4])
-        ifStats['sampleTime'] = utils.monotonic_time()
-
-        return ifStats
-
     def _getNetworkStats(self, stats):
         stats['network'] = {}
         sInfo, eInfo, sampleInterval = self.sampleNet.getStats()
@@ -607,7 +576,7 @@ class VmStatsThread(AdvancedStatsThread):
             if nic.name not in sInfo or nic.name not in eInfo:
                 continue
 
-            stats['network'][nic.name] = self._getNicStats(
+            stats['network'][nic.name] = _getNicStats(
                 nic.name, nic.nicModel, nic.macAddr,
                 sInfo[nic.name], eInfo[nic.name], sampleInterval)
 
@@ -678,6 +647,37 @@ class VmStatsThread(AdvancedStatsThread):
             return False
 
         return True
+
+
+def _getNicStats(name, model, mac,
+                 start_sample, end_sample, interval):
+    ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
+
+    ifStats = {'macAddr': mac,
+               'name': name,
+               'speed': str(ifSpeed),
+               'state': 'unknown'}
+
+    ifStats['rxErrors'] = str(end_sample[2])
+    ifStats['rxDropped'] = str(end_sample[3])
+    ifStats['txErrors'] = str(end_sample[6])
+    ifStats['txDropped'] = str(end_sample[7])
+
+    ifRxBytes = (100.0 *
+                 ((end_sample[0] - start_sample[0]) % 2 ** 32) /
+                 interval / ifSpeed / _MBPS_TO_BPS)
+    ifTxBytes = (100.0 *
+                 ((end_sample[4] - start_sample[4]) % 2 ** 32) /
+                 interval / ifSpeed / _MBPS_TO_BPS)
+
+    ifStats['rxRate'] = '%.1f' % ifRxBytes
+    ifStats['txRate'] = '%.1f' % ifTxBytes
+
+    ifStats['rx'] = str(end_sample[0])
+    ifStats['tx'] = str(end_sample[4])
+    ifStats['sampleTime'] = utils.monotonic_time()
+
+    return ifStats
 
 
 def _calcDiskRate(vmDrive, sInfo, eInfo, sampleInterval):
