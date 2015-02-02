@@ -1955,8 +1955,18 @@ class NetworkTest(TestCaseBase):
                                                       NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME)
-            device_to_remove = NETWORK_NAME if bridged else nic + '.' + VLAN_ID
-            ipwrapper.linkDel(device_to_remove)
+            if bridged:
+                if _system_is_el6():
+                    execCmd([EXT_IFDOWN, NETWORK_NAME])
+                    rc, _, err = execCmd([EXT_BRCTL, 'delbr', NETWORK_NAME])
+                    if rc != 0:
+                        raise self.failureException("failed to delete bridge "
+                                                    "err:%s", err)
+                else:
+                    ipwrapper.linkDel(NETWORK_NAME)
+            else:
+                ipwrapper.linkDel(nic + '.' + VLAN_ID)
+
             self.vdsm_net.refreshNetinfo()
             self.assertNotIn(NETWORK_NAME, self.vdsm_net.netinfo.networks)
             status, msg = self.vdsm_net.setupNetworks(network, {},
