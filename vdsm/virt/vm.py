@@ -169,9 +169,10 @@ VolumeChainEntry = namedtuple('VolumeChainEntry',
                               ['uuid', 'path', 'allocation'])
 
 
-class VmStatsThread(AdvancedStatsThread):
-    MBPS_TO_BPS = 10 ** 6 / 8
+_MBPS_TO_BPS = 10 ** 6 / 8
 
+
+class VmStatsThread(AdvancedStatsThread):
     # This flag will prevent excessive log flooding when running
     # on libvirt with no support for metadata xml elements.
     #
@@ -577,10 +578,10 @@ class VmStatsThread(AdvancedStatsThread):
 
         ifRxBytes = (100.0 *
                      ((end_sample[0] - start_sample[0]) % 2 ** 32) /
-                     interval / ifSpeed / cls.MBPS_TO_BPS)
+                     interval / ifSpeed / _MBPS_TO_BPS)
         ifTxBytes = (100.0 *
                      ((end_sample[4] - start_sample[4]) % 2 ** 32) /
-                     interval / ifSpeed / cls.MBPS_TO_BPS)
+                     interval / ifSpeed / _MBPS_TO_BPS)
 
         ifStats['rxRate'] = '%.1f' % ifRxBytes
         ifStats['txRate'] = '%.1f' % ifTxBytes
