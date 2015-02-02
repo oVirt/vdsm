@@ -29,7 +29,7 @@ from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable)
-from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
+from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces)
 from vdsm.netlink import monitor
 from vdsm import sysctl
@@ -1518,8 +1518,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME:
                     {'nic': nics[0], 'bridged': bridged, 'ipaddr': IP_ADDRESS,
-                     'netmask': prefix2netmask(int(IP_CIDR)),
-                     'gateway': IP_GATEWAY}},
+                     'netmask': IP_MASK, 'gateway': IP_GATEWAY}},
                 {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME, bridged)
@@ -1701,8 +1700,7 @@ class NetworkTest(TestCaseBase):
                 NETWORK_NAME + '2':
                 {'nic': nic, 'bootproto': 'none', 'ipv6gateway': IPv6_GATEWAY,
                  'ipv6addr': IPv6_ADDRESS_AND_CIDR, 'ipaddr': IP_ADDRESS,
-                 'gateway': IP_GATEWAY,
-                 'netmask': prefix2netmask(int(IP_CIDR))}}
+                 'gateway': IP_GATEWAY, 'netmask': IP_MASK}}
             for network, netdict in networks.iteritems():
                 with self.vdsm_net.pinger():
                     status, msg = self.vdsm_net.setupNetworks(
