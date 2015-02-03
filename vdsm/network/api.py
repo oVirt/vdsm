@@ -281,8 +281,8 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if not utils.tobool(force):
         logging.debug('validating network...')
         if network in _netinfo.networks:
-            raise ConfigNetworkError(ne.ERR_USED_BRIDGE,
-                                     'Network already exists')
+            raise ConfigNetworkError(
+                ne.ERR_USED_BRIDGE, 'Network already exists (%s)' % (network,))
         if bonding:
             _validateInterNetworkCompatibility(_netinfo, vlan, bonding)
         else:

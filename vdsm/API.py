@@ -1451,8 +1451,9 @@ class Global(APIBase):
 
             try:
                 if network in netinfo.NetInfo().networks:
-                    raise ConfigNetworkError(ERR_USED_BRIDGE,
-                                             'Network already exists')
+                    raise ConfigNetworkError(
+                        ERR_USED_BRIDGE,
+                        'Network already exists (%s)' % (network,))
                 supervdsm.getProxy().setupNetworks(
                     {network: options},
                     bonds,
