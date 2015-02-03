@@ -2514,9 +2514,12 @@ class Vm(object):
     def _updateGraphicsDevice(self, params):
         graphics = self._findGraphicsDeviceXMLByType(params['graphicsType'])
         if graphics:
-            return self._setTicketForGraphicDev(
+            response = self._setTicketForGraphicDev(
                 graphics, params['password'], params['ttl'],
                 params['existingConnAction'], params['params'])
+            if response['status']['code'] == 0:
+                response['vmList'] = self.status()
+            return response
         else:
             return errCode['updateDevice']
 
