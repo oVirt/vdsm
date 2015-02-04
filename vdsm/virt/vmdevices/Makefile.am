@@ -23,6 +23,7 @@ dist_vmdevices_PYTHON = \
 	__init__.py \
 	core.py \
 	graphics.py \
+	hostdevice.py \
 	hwclass.py \
 	network.py \
 	storage.py \

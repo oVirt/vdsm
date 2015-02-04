@@ -31,7 +31,7 @@ def _name_to_pci_path(device_name):
     return device_name[4:].replace('_', '.').replace('.', ':', 2)
 
 
-def _pci_address_to_name(domain, bus, slot, function):
+def pci_address_to_name(domain, bus, slot, function):
     """
     Convert 4 attributes that identify the pci device on the bus to
     libvirt's pci name: pci_${domain}_${bus}_${slot}_${function}.
@@ -100,7 +100,7 @@ def _parse_device_params(device_xml):
     if physfn is not None and physfn.attrib['type'] == 'phys_function' \
             and params['capability'] == 'pci':
         address = physfn.find('address')
-        params['physfn'] = _pci_address_to_name(**address.attrib)
+        params['physfn'] = pci_address_to_name(**address.attrib)
 
     iommu_group = caps.find('iommuGroup')
     if iommu_group is not None:
@@ -180,6 +180,11 @@ def list_by_caps(vmContainer, caps=None):
             devices[devName]['vmId'] = device_to_vm[devName]
 
     return devices
+
+
+def get_device_params(device_name):
+    _, device_params = _get_device_ref_and_params(device_name)
+    return device_params
 
 
 def detach_detachable(device_name):

@@ -52,6 +52,7 @@ from storage import fileUtils
 from logUtils import SimpleLogAdapter
 import caps
 import hooks
+import hostdev
 import supervdsm
 import numaUtils
 
@@ -789,7 +790,8 @@ class Vm(object):
                      (hwclass.REDIR, vmdevices.core.Redir),
                      (hwclass.RNG, vmdevices.core.Rng),
                      (hwclass.SMARTCARD, vmdevices.core.Smartcard),
-                     (hwclass.TPM, vmdevices.core.Tpm))
+                     (hwclass.TPM, vmdevices.core.Tpm),
+                     (hwclass.HOSTDEV, vmdevices.hostdevice.HostDevice))
 
     def _makeDeviceDict(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)
@@ -1716,6 +1718,12 @@ class Vm(object):
 
         self._guestSockCleanup(self._guestSocketFile)
 
+    def _reattachHostDevices(self):
+        # reattach host devices
+        for dev in self._devices[hwclass.HOSTDEV]:
+            self.log.debug('Reattaching device %s to host.' % dev.device)
+            hostdev.reattach_detachable(dev.device)
+
     def setDownStatus(self, code, exitReasonCode, exitMessage=''):
         if not exitMessage:
             exitMessage = vmexitreason.exitReasons.get(exitReasonCode,
@@ -2062,6 +2070,7 @@ class Vm(object):
         self._cleanupGuestAgent()
         utils.rmFile(self._recoveryFile)
         self._guestSockCleanup(self._qemuguestSocketFile)
+        self._reattachHostDevices()
 
     def _isDomainRunning(self):
         try:
@@ -2089,6 +2098,7 @@ class Vm(object):
         self._getUnderlyingWatchdogDeviceInfo()
         self._getUnderlyingSmartcardDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
+        self._getUnderlyingHostDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
@@ -2220,11 +2230,18 @@ class Vm(object):
         # we need to complete the initialization, including
         # domDependentInit, after the migration is completed.
 
-        if not self.recovering and initDomain:
-            domxml = hooks.before_vm_start(self._buildDomainXML(), self.conf)
-            # TODO: this is debug information. For 3.6.x we still need to
-            # see the XML even with 'info' as default level.
-            self.log.info(domxml)
+        if not self.recovering:
+            for dev in self._devices[hwclass.HOSTDEV]:
+                self.log.debug('Detaching device %s from the host.' %
+                               dev.device)
+                dev.detach()
+
+            if initDomain:
+                domxml = hooks.before_vm_start(self._buildDomainXML(),
+                                               self.conf)
+                # TODO: this is debug information. For 3.6.x we still need to
+                # see the XML even with 'info' as default level.
+                self.log.info(domxml)
 
         if self.recovering:
             self._dom = NotifyingVirDomain(
@@ -4050,12 +4067,12 @@ class Vm(object):
         self.log.exception("Operation failed")
         return self._reportError(key, msg)
 
-    def _getUnderlyingDeviceAddress(self, devXml):
+    def _getUnderlyingDeviceAddress(self, devXml, index=0):
         """
         Obtain device's address from libvirt
         """
         address = {}
-        adrXml = devXml.getElementsByTagName('address')[0]
+        adrXml = devXml.getElementsByTagName('address')[index]
         # Parse address to create proper dictionary.
         # Libvirt device's address definition is:
         # PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
@@ -4204,6 +4221,45 @@ class Vm(object):
                         not dev.get('address'):
                     dev['address'] = address
                     dev['alias'] = alias
+
+    def _getUnderlyingHostDeviceInfo(self):
+        """
+        Obtain host device info from libvirt
+        """
+        for x in self._domain.get_device_elements('hostdev'):
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            address = self._getUnderlyingDeviceAddress(x)
+            source = x.getElementsByTagName('source')[0]
+            device = hostdev.pci_address_to_name(
+                **self._getUnderlyingDeviceAddress(source))
+
+            # We can assume the device name to be correct since we're
+            # inspecting source element. For the address, we may look at
+            # both addresses and determine the correct one.
+            if (hostdev.pci_address_to_name(**address) == device):
+                address = self._getUnderlyingDeviceAddress(x, 1)
+
+            known_device = False
+            for dev in self.conf['devices']:
+                if dev['device'] == device:
+                    dev['alias'] = alias
+                    dev['address'] = address
+
+            for dev in self._devices[hwclass.HOSTDEV]:
+                if dev.device == device:
+                    dev.alias = alias
+                    dev.address = address
+                    known_device = True
+
+            if not known_device:
+                device = hostdev.pci_address_to_name(
+                    **self._getUnderlyingDeviceAddress(source))
+
+                hostdevice = {'type': hwclass.HOSTDEV,
+                              'device': device,
+                              'alias': alias,
+                              'address': address}
+                self.conf['devices'].append(hostdevice)
 
     def _getUnderlyingWatchdogDeviceInfo(self):
         """

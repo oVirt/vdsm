@@ -2250,11 +2250,14 @@
 # @graphics:    The graphics device
 #               (new in version 4.15.0)
 #
+# @hostdev:     A host device
+#               (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'enum': 'VmDeviceType',
  'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
-          'channel', 'console', 'smartcard', 'rng', 'graphics']}
+          'channel', 'console', 'smartcard', 'rng', 'graphics', 'hostdev']}
 
 ##
 # @VmDiskDeviceType:
@@ -3381,6 +3384,55 @@
 {'type': 'VmConsoleDevice',
  'data': {'deviceType': 'VmDeviceType', 'deviceId': 'UUID'}}
 
+
+##
+# @VmHostDeviceSpecParams:
+#
+# Additional VM host device parameters.
+#
+# @bar:         #optional ROM visibility in the guest's
+#               memory map (for pci)
+#
+# @file:        #optional Binary file to be used as
+#               device's ROM (for pci)
+#
+# Since: 4.17.0
+##
+{'type': 'VmHostDeviceSpecParams',
+ 'data': {'*bar': 'bool',
+          '*file': 'str'}}
+
+##
+# @VmHostDevice:
+#
+# Properties of a VM host device.
+#
+# @deviceType:  The device type (always @hostdev)
+#
+# @deviceId:    A unique ID for this device
+#
+# @device:      Libvirt identifier of the device
+#               (such as pci_0000_10_0_1)
+#
+# @bootOrder:   #optional If specified, this device is part of the boot
+#               sequence at the specified position
+#
+# @address:     #optional Device hardware address as seen from the
+#               guest. If not specified, this field will be populated
+#               by libvirt generated address.
+#
+# @alias:       Alias used to identify this device in commands
+#
+# @specParams:  #optional Additional device parameters
+#
+# Since: 4.17.0
+##
+{'type': 'VmHostDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'deviceId': 'UUID',
+          'device': 'str', 'bootOrder': 'int',
+          'address': 'VmDeviceAddress', 'alias': 'str',
+          '*specParams': 'VmHostDeviceSpecParams'}}
+
 ##
 # @VmDevice:
 #
@@ -3395,7 +3447,7 @@
  'union': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
           'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
           'VmChannelDevice', 'VmWatchdogDevice', 'VmConsoleDevice',
-          'VmSmartcardDevice', 'VmGraphicsDevice']}
+          'VmSmartcardDevice', 'VmGraphicsDevice', 'VmHostDevice']}
 
 ##
 # @VmShortStatus:

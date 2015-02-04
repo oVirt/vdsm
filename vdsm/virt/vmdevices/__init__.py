@@ -19,10 +19,11 @@
 #
 
 from . import core
+from . import hostdevice
 from . import hwclass
 from . import graphics
 from . import network
 from . import storage
 
 # Silence pyflakes
-core, graphics, hwclass, network, storage
+core, graphics, hostdevice, hwclass, network, storage
