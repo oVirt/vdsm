@@ -81,6 +81,11 @@ def start(cif):
             NumaInfoMonitor,
             config.getint('vars', 'vm_sample_numa_interval')),
 
+        # Job monitoring need QEMU monitor access.
+        per_vm_operation(
+            BlockjobMonitor,
+            config.getint('vars', 'vm_sample_jobs_interval')),
+
     ]
 
     for op in _operations:
@@ -262,3 +267,24 @@ class NumaInfoMonitor(object):
 
     def __call__(self):
         self._vm.updateNumaInfo()
+
+
+class BlockjobMonitor(object):
+    def __init__(self, vm):
+        self._vm = vm
+
+    @property
+    def required(self):
+        # For performance reasons, we must avoid as much
+        # as possible to create per-vm executor tasks, even
+        # though they will do nothing but a few check and exit
+        # early, as they do if a VM doesn't have Block Jobs to
+        # monitor (most often true).
+        return self._vm.hasVmJobs
+
+    @property
+    def runnable(self):
+        return self._vm.isDomainReadyForCommands()
+
+    def __call__(self):
+        self._vm.updateVmJobs()

@@ -214,10 +214,6 @@ class VmStatsThread(AdvancedStatsThread):
             AdvancedStatsFunction(
                 self._sampleBalloon,
                 config.getint('vars', 'vm_sample_balloon_interval'), 1))
-        self.sampleVmJobs = (
-            AdvancedStatsFunction(
-                self._sampleVmJobs,
-                config.getint('vars', 'vm_sample_jobs_interval'), 1))
         self.sampleCpuTune = (
             AdvancedStatsFunction(
                 self._sampleCpuTune,
@@ -226,7 +222,7 @@ class VmStatsThread(AdvancedStatsThread):
         self.addStatsFunction(
             self.highWrite, self.sampleCpu,
             self.sampleDisk, self.sampleNet, self.sampleBalloon,
-            self.sampleVmJobs, self.sampleCpuTune)
+            self.sampleCpuTune)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -336,9 +332,6 @@ class VmStatsThread(AdvancedStatsThread):
         """
         infos = self._vm._dom.info()
         return infos[2]
-
-    def _sampleVmJobs(self):
-        return self._vm.queryBlockJobs()
 
     def _sampleCpuTune(self):
         """
@@ -504,14 +497,6 @@ class VmStatsThread(AdvancedStatsThread):
 
             stats[vmDrive.name] = dStats
 
-    def _getVmJobs(self, stats):
-        info = self.sampleVmJobs.getLastSample()
-        if info is not None:
-            # If we are unable to collect stats we must not return anything at
-            # all since an empty dictionary would be interpreted as vm jobs
-            # finishing.
-            stats['vmJobs'] = info
-
     def get(self):
         stats = {}
 
@@ -519,7 +504,6 @@ class VmStatsThread(AdvancedStatsThread):
         self._getNetworkStats(stats)
         self._getDiskStats(stats)
         self._getBalloonStats(stats)
-        self._getVmJobs(stats)
         self._getCpuCount(stats)
         self._getIoTuneStats(stats)
 
@@ -771,6 +755,7 @@ class Vm(object):
         self._vcpuLimit = None
         self._vcpuTuneInfo = {}
         self._numaInfo = {}
+        self._vmJobs = None
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -1740,7 +1725,7 @@ class Vm(object):
                 stats[var] = decStats[var]
             elif type(decStats[var]) is not dict:
                 stats[var] = utils.convertToStr(decStats[var])
-            elif var in ('network', 'balloonInfo', 'vmJobs'):
+            elif var in ('network', 'balloonInfo'):
                 stats[var] = decStats[var]
             else:
                 try:
@@ -1760,6 +1745,9 @@ class Vm(object):
             stats['vNodeRuntimeInfo'] = self._numaInfo
         if self._vcpuLimit:
             stats['vcpuUserLimit'] = self._vcpuLimit
+
+        stats.update(self._getVmJobsStats())
+
         stats.update(self._getVmTuneStats())
         return stats
 
@@ -1779,6 +1767,20 @@ class Vm(object):
         vcpu_period = self._vcpuTuneInfo.get('vcpu_period', _NO_CPU_PERIOD)
         if vcpu_period != _NO_CPU_PERIOD:
             stats['vcpuPeriod'] = vcpu_period
+
+        return stats
+
+    def _getVmJobsStats(self):
+        stats = {}
+
+        # vmJobs = {} is a valid output and should be reported.
+        # means 'jobs finishing' to Engine.
+        #
+        # default value for self._vmJobs is None, this means
+        # "VDSM does not know yet", thus should not report anything to Engine.
+        # Once Vm.updateVmJobs run at least once, VDSM will know for sure.
+        if self._vmJobs is not None:
+            stats['vmJobs'] = self._vmJobs
 
         return stats
 
@@ -4689,6 +4691,20 @@ class Vm(object):
             return True
         return False
 
+    @property
+    def hasVmJobs(self):
+        """
+        Return True if there are VM jobs to monitor
+        """
+        with self._jobsLock:
+            # we always do a full check the first time we run.
+            # This may be wasteful on normal flow,
+            # but covers pretty nicely the recovering flow.
+            return self._vmJobs is None or bool(self.conf['_blockJobs'])
+
+    def updateVmJobs(self):
+        self._vmJobs = self.queryBlockJobs()
+
     def queryBlockJobs(self):
         def startCleanup(job, drive, needPivot):
             t = LiveMergeCleanupThread(self, job['jobID'], drive, needPivot)
@@ -4857,7 +4873,7 @@ class Vm(object):
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
-        self._vmStats.sampleVmJobs()
+        self.updateVmJobs()
 
         return {'status': doneCode}
 
