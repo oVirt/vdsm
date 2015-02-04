@@ -21,7 +21,6 @@ from functools import wraps
 import json
 import netaddr
 import os.path
-import signal
 
 from nose import with_setup
 from nose.plugins.skip import SkipTest
