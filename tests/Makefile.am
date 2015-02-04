@@ -88,8 +88,9 @@ test_modules = \
 	vdsClientTests.py \
 	vmApiTests.py \
 	vmMigrationTests.py \
-	vmTestsData.py \
+	vmStorageTests.py \
 	vmTests.py \
+	vmTestsData.py \
 	vmXmlTests.py \
 	volumeTests.py \
 	v2vTests.py \
