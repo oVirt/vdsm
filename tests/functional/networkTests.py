@@ -1656,9 +1656,10 @@ class NetworkTest(TestCaseBase):
 
                 self.assertTrue(os.path.isfile(hook_cookiefile))
 
-                delete_networks = {NETWORK_NAME: {'remove': True}}
-                self.vdsm_net.setupNetworks(delete_networks,
-                                            {}, {})
+                status, msg = self.vdsm_net.setupNetworks(
+                    {NETWORK_NAME: {'remove': True, 'custom': CUSTOM_PROPS}},
+                    {}, {})
+                self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     @ValidatesHook('after_network_setup', 'testAfterNetworkSetup.sh', True,
@@ -1690,8 +1691,9 @@ class NetworkTest(TestCaseBase):
                                         network_config['current']['networks'])
 
                 delete_networks = {NETWORK_NAME: {'remove': True}}
-                self.vdsm_net.setupNetworks(delete_networks,
-                                            {}, {})
+                status, msg = self.vdsm_net.setupNetworks(delete_networks,
+                                                          {}, {})
+                self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     def testIPv6ConfigNetwork(self):

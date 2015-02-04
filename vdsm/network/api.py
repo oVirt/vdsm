@@ -544,9 +544,14 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
 def _validateNetworkSetup(networks, bondings):
     for network, networkAttrs in networks.iteritems():
         if networkAttrs.get('remove', False):
-            if set(networkAttrs) - set(['remove']):
-                raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Cannot specify '
-                                         'any attribute when removing')
+            net_attr_keys = set(networkAttrs)
+            if 'remove' in net_attr_keys and net_attr_keys - set(
+                    ['remove', 'custom']):
+                raise ConfigNetworkError(
+                    ne.ERR_BAD_PARAMS,
+                    "Cannot specify any attribute when removing (other "
+                    "than custom properties). specified attributes: %s" % (
+                        networkAttrs,))
 
     currentBondings = netinfo.bondings()
     currentNicsSet = set(netinfo.nics())
