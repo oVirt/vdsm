@@ -29,6 +29,7 @@ import org.ovirt.vdsm.jsonrpc.client.ResponseBuilder;
  */
 public class JsonUtils {
     public static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final double GRACE_PERIOD = 0.2;
     private static Log log = LogFactory.getLog(JsonUtils.class);
     private static ObjectMapper mapper = new ObjectMapper();
     private static JsonFactory factory = mapper.getJsonFactory();
@@ -110,7 +111,16 @@ public class JsonUtils {
     }
 
     public static int reduceGracePeriod(int interval) {
-        return interval - (int) (interval * 0.1);
+        return interval - (int) (interval * GRACE_PERIOD);
+    }
+
+    public static int addGracePeriod(int interval) {
+        return interval + (int) (interval * GRACE_PERIOD);
+    }
+
+    public static String swapHeartbeat(String heartbeat) {
+        String[] heartbeats = heartbeat.split(",");
+        return heartbeats[1] + "," + heartbeats[0];
     }
 
     public static long getTimeout(int timeout, TimeUnit unit) {

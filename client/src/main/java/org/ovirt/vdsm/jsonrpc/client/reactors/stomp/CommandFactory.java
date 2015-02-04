@@ -2,9 +2,11 @@ package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ACK;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_MESSAGE;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_RECEIPT;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.swapHeartbeat;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +42,12 @@ public class CommandFactory {
 
                 @Override
                 public Message execute(Message message) {
-                    return new Message().connected().withHeader("session", UUID.randomUUID().toString());
+                    String heartbeats = message.getHeaders().get(HEADER_HEART_BEAT);
+                    Message response = new Message().connected().withHeader("session", UUID.randomUUID().toString());
+                    if (heartbeats != null) {
+                        response.withHeader(HEADER_HEART_BEAT, swapHeartbeat(heartbeats));
+                    }
+                    return response;
                 }
             });
             put(Command.SUBSCRIBE.toString(), new CommandExecutor() {

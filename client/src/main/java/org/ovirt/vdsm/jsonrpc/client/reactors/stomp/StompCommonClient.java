@@ -1,12 +1,16 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.END_OF_MESSAGE;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_MESSAGE;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_RECEIPT;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEARTBEAT_FRAME;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.addGracePeriod;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.buildErrorResponse;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.isEmpty;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -57,7 +61,7 @@ public abstract class StompCommonClient extends ReactorClient {
 
     void processMessage(Message message) {
         if (Command.CONNECTED.toString().equals(message.getCommand())) {
-            // TODO add heart beat interval handling
+            updatePolicyWithHeartbeat(message.getHeaders().get(HEADER_HEART_BEAT), true);
             this.connected.countDown();
         } else if (Command.ACK.toString().equals(message.getCommand())) {
             String headerId = message.getHeaders().get(HEADER_ID);
@@ -93,7 +97,7 @@ public abstract class StompCommonClient extends ReactorClient {
             if (read <= 0) {
                 return;
             }
-            updateLastHeartbeat();
+            updateLastIncomingHeartbeat();
 
             this.message = getMessage(headerBuffer, read);
             if (this.message == null) {
@@ -126,7 +130,7 @@ public abstract class StompCommonClient extends ReactorClient {
         }
 
         read(this.ibuff);
-        updateLastHeartbeat();
+        updateLastIncomingHeartbeat();
         int length = this.message.getContent().length + this.ibuff.position();
         if (this.message.getContentLength() != length - 1) {
             return;
@@ -163,4 +167,25 @@ public abstract class StompCommonClient extends ReactorClient {
         return response.toByteArray();
     }
 
+    public void updatePolicyWithHeartbeat(String heartbeat, boolean client) {
+        if (!isEmpty(heartbeat)) {
+            String[] heartbeats = heartbeat.split(",");
+            try {
+                int outgoing = Integer.parseInt(heartbeats[client ? 1 : 0]);
+                int incoming = Integer.parseInt(heartbeats[client ? 0 : 1]);
+                if (policy.getOutgoingHeartbeat() != outgoing) {
+                    policy.setOutgoingHeartbeat(reduceGracePeriod(outgoing));
+                }
+                if (policy.getIncomingHeartbeat() != incoming) {
+                    policy.setIncomingHeartbeat(addGracePeriod(incoming));
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+    }
+
+    @Override
+    protected void sendHeartbeat() {
+        this.send(HEARTBEAT_FRAME);
+    }
 }

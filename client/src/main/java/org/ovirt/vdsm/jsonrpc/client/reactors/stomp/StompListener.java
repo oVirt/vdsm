@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -15,6 +16,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.Command;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Sender;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
+import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 
 public class StompListener extends StompClient implements Sender {
     private CommandFactory commandFactory;
@@ -25,7 +27,15 @@ public class StompListener extends StompClient implements Sender {
         channel = socketChannel;
         this.commandFactory = new CommandFactory(this, eventListeners);
 
+        updateLastIncomingHeartbeat();
+        updateLastOutgoingHeartbeat();
+
         postConnect(null);
+    }
+
+    @Override
+    public void setRetryPolicy(RetryPolicy policy) {
+        this.policy = policy;
     }
 
     @Override
@@ -40,6 +50,9 @@ public class StompListener extends StompClient implements Sender {
         String command = message.getCommand();
         CommandExecutor executor = this.commandFactory.getCommandExecutor(command);
         Message response = executor.execute(message);
+        if (Command.CONNECT.toString().equals(command)) {
+            updatePolicyWithHeartbeat(response.getHeaders().get(HEADER_HEART_BEAT), false);
+        }
         if (response != null) {
             this.send(response.build());
         }

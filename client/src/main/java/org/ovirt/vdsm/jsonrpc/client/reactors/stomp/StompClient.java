@@ -28,8 +28,16 @@ public class StompClient extends PlainClient {
                 subscribed = new CountDownLatch(1);
 
                 Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2");
-                if (policy.isHeartbeat()) {
-                    message.withHeader(HEADER_HEART_BEAT, 0 + "," + reduceGracePeriod(policy.getHeartbeat()));
+                int outgoing = 0;
+                int incoming = 0;
+                if (policy.isIncomingHeartbeat()) {
+                    incoming = policy.getIncomingHeartbeat();
+                }
+                if (policy.isOutgoingHeartbeat()) {
+                    outgoing = policy.getOutgoingHeartbeat();
+                }
+                if (incoming != 0 || outgoing != 0) {
+                    message.withHeader(HEADER_HEART_BEAT, outgoing + "," + reduceGracePeriod(incoming));
                 }
                 send(message.build());
 

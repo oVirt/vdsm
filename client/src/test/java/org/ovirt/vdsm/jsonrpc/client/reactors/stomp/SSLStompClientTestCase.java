@@ -41,10 +41,7 @@ public class SSLStompClientTestCase {
 
     @Before
     public void setUp() throws IOException, GeneralSecurityException {
-        this.provider =
-                new TestManagerProvider(ClassLoader.getSystemResourceAsStream(KEYSTORE_NAME),
-                        ClassLoader.getSystemResourceAsStream(TRUSTSTORE_NAME),
-                        PASSWORD);
+        this.provider = createProvider();
         SSLContext context = this.provider.getSSLContext();
         this.listeningReactor = new SSLStompReactor(context);
         this.sendingReactor = new SSLStompReactor(context);
@@ -125,12 +122,18 @@ public class SSLStompClientTestCase {
     public static String generateRandomMessage(int length) {
         Random random = new Random();
         StringBuffer randStr = new StringBuffer();
-        for(int i=0; i< length; i++){
+        for (int i = 0; i < length; i++) {
             int number = random.nextInt(CHAR_LIST.length());
             char ch = CHAR_LIST.charAt(number);
             randStr.append(ch);
         }
         return randStr.toString();
+    }
+
+    public static TestManagerProvider createProvider() {
+        return new TestManagerProvider(ClassLoader.getSystemResourceAsStream(KEYSTORE_NAME),
+                ClassLoader.getSystemResourceAsStream(TRUSTSTORE_NAME),
+                PASSWORD);
     }
 
     public void testEcho(String message) throws InterruptedException, ExecutionException, ClientConnectionException {

@@ -132,10 +132,11 @@ public class SSLEngineNioHelper {
         switch (hs) {
         case NEED_UNWRAP:
             this.read(appPeerBuffer);
-            this.client.updateLastHeartbeat();
+            this.client.updateLastIncomingHeartbeat();
             return null;
         case NEED_WRAP:
             this.write(appBuffer);
+            this.client.updateLastOutgoingHeartbeat();
             return null;
         case NEED_TASK:
             return engine.getDelegatedTask();

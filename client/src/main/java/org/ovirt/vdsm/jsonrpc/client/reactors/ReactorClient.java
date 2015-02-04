@@ -44,7 +44,8 @@ public abstract class ReactorClient {
     private final String hostname;
     private final int port;
     private final Lock lock;
-    private long lastHeartbeat = 0;
+    private long lastIncomingHeartbeat = 0;
+    private long lastOutgoingHeartbeat = 0;
     protected RetryPolicy policy = new DefaultConnectionRetryPolicy();
     protected final List<MessageListener> eventListeners;
     protected final Reactor reactor;
@@ -114,7 +115,8 @@ public abstract class ReactorClient {
                                 }
                             }
 
-                            updateLastHeartbeat();
+                            updateLastIncomingHeartbeat();
+                            updateLastOutgoingHeartbeat();
 
                             return socketChannel;
                         }
@@ -196,14 +198,22 @@ public abstract class ReactorClient {
     protected abstract void processIncoming() throws IOException, ClientConnectionException;
 
     private void processHeartbeat() {
-        if (!this.isInInit() && this.policy.isHeartbeat() && this.lastHeartbeat +  this.policy.getHeartbeat() < System.currentTimeMillis()) {
+        if (!this.isInInit() && this.policy.isIncomingHeartbeat() && this.isIncomingHeartbeatExeeded()) {
             log.debug("Heartbeat exeeded. Closing channel");
             this.disconnect("Heartbeat exeeded");
         }
     }
 
-    protected void updateLastHeartbeat() {
-        this.lastHeartbeat = System.currentTimeMillis();
+    private boolean isIncomingHeartbeatExeeded() {
+        return this.lastIncomingHeartbeat +  this.policy.getIncomingHeartbeat() < System.currentTimeMillis();
+    }
+
+    protected void updateLastIncomingHeartbeat() {
+        this.lastIncomingHeartbeat = System.currentTimeMillis();
+    }
+
+    protected void updateLastOutgoingHeartbeat() {
+        this.lastOutgoingHeartbeat = System.currentTimeMillis();
     }
 
     protected void processOutgoing() throws IOException, ClientConnectionException {
@@ -218,6 +228,7 @@ public abstract class ReactorClient {
         if (!buff.hasRemaining()) {
             outbox.removeLast();
         }
+        updateLastOutgoingHeartbeat();
         updateInterestedOps();
     }
 
@@ -235,6 +246,16 @@ public abstract class ReactorClient {
 
     public boolean isOpen() {
         return channel != null && channel.isOpen();
+    }
+
+    public void performAction() {
+        if (!this.isInInit() && this.policy.isOutgoingHeartbeat() && this.isOutgoingHeartbeatExeeded()) {
+            this.sendHeartbeat();
+        }
+    }
+
+    private boolean isOutgoingHeartbeatExeeded() {
+        return this.lastOutgoingHeartbeat +  this.policy.getOutgoingHeartbeat() < System.currentTimeMillis();
     }
 
     /**
@@ -298,4 +319,9 @@ public abstract class ReactorClient {
      * Builds network issue message for specific protocol.
      */
     protected abstract byte[] buildNetworkResponse(String reason);
+
+    /**
+     * Client sends protocol specific heartbeat message
+     */
+    protected abstract void sendHeartbeat();
 }

@@ -10,6 +10,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.AbstractSelector;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -95,8 +96,20 @@ public abstract class Reactor extends Thread {
                 }
             }
 
+            checkActions(this.selector.keys());
+
             if (!key.channel().isOpen()) {
                 key.cancel();
+            }
+        }
+    }
+
+    private void checkActions(Set<SelectionKey> keys) {
+        for (SelectionKey key : keys) {
+            Object attachement = key.attachment();
+            if (ReactorClient.class.isInstance(attachement)) {
+                final ReactorClient client = (ReactorClient) attachement;
+                client.performAction();
             }
         }
     }
