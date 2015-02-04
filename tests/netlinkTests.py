@@ -156,7 +156,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
             for event in mon:
                 break
 
-        self.assertLess(monotonic_time() - time_start, self.TIMEOUT)
+        self.assertTrue((monotonic_time() - time_start) <= self.TIMEOUT)
         self.assertTrue(mon.is_stopped())
 
 
