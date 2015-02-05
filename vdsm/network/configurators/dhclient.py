@@ -19,6 +19,7 @@
 #
 
 import errno
+import logging
 import os
 import signal
 import threading
@@ -99,6 +100,8 @@ def kill_dhclient(device_name, family=4):
 
         if running_family != family:
             continue
+        logging.info('Stopping dhclient -%s before running our own on %s',
+                     family, device_name)
         _kill_and_rm_pid(pid, pid_file)
 
     #  In order to be able to configure the device with dhclient again. It is
