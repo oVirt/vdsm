@@ -27,19 +27,13 @@ from testlib import permutations, expandPermutations
 class TestDriveXML(XMLTestCase):
 
     def test_cdrom(self):
-        conf = {
-            'device': 'cdrom',
-            'format': 'raw',
-            'iface': 'ide',
-            'index': '2',
-            'name': 'hdc',
-            'path': '/path/to/fedora.iso',
-            'propagateErrors': 'off',
-            'readonly': 'True',
-            'serial': '54-a672-23e5b495a9ea',
-            'shared': 'none',
-            'type': 'disk',
-        }
+        conf = drive_config(
+            device='cdrom',
+            iface='ide',
+            index='2',
+            path='/path/to/fedora.iso',
+            readonly='True',
+        )
         xml = """
             <disk device="cdrom" snapshot="no" type="file">
                 <source file="/path/to/fedora.iso" startupPolicy="optional"/>
@@ -51,25 +45,17 @@ class TestDriveXML(XMLTestCase):
         self.check({}, conf, xml, is_block_device=False)
 
     def test_disk_virtio_cache(self):
-        conf = {
-            'device': 'disk',
-            'format': 'cow',
-            'iface': 'virtio',
-            'index': '0',
-            'name': 'vda',
-            'path': '/path/to/volume',
-            'propagateErrors': 'on',
-            'readonly': 'False',
-            'serial': '54-a672-23e5b495a9ea',
-            'shared': 'shared',
-            'specParams': {
+        conf = drive_config(
+            format='cow',
+            propagateErrors='on',
+            shared='shared',
+            specParams={
                 'ioTune': {
                     'read_bytes_sec': 6120000,
                     'total_iops_sec': 800,
                 }
             },
-            'type': 'disk',
-        }
+        )
         xml = """
             <disk device="disk" snapshot="no" type="file">
                 <source file="/path/to/volume"/>
@@ -88,19 +74,7 @@ class TestDriveXML(XMLTestCase):
         self.check(vm_conf, conf, xml, is_block_device=False)
 
     def test_disk_block(self):
-        conf = {
-            'device': 'disk',
-            'format': 'raw',
-            'iface': 'virtio',
-            'index': '0',
-            'name': 'vda',
-            'path': '/path/to/volume',
-            'propagateErrors': 'off',
-            'readonly': 'False',
-            'serial': '54-a672-23e5b495a9ea',
-            'shared': 'none',
-            'type': 'disk',
-        }
+        conf = drive_config()
         xml = """
             <disk device="disk" snapshot="no" type="block">
                 <source dev="/path/to/volume"/>
@@ -113,23 +87,11 @@ class TestDriveXML(XMLTestCase):
         self.check({}, conf, xml, is_block_device=True)
 
     def test_disk_file(self):
-        conf = {
-            'device': 'disk',
-            'format': 'raw',
-            'iface': 'scsi',
-            'index': '0',
-            'name': 'sda',
-            'path': '/path/to/volume',
-            'propagateErrors': 'off',
-            'readonly': 'False',
-            'serial': '54-a672-23e5b495a9ea',
-            'shared': 'exclusive',
-            'type': 'disk',
-        }
+        conf = drive_config()
         xml = """
             <disk device="disk" snapshot="no" type="file">
                 <source file="/path/to/volume"/>
-                <target bus="scsi" dev="sda"/>
+                <target bus="virtio" dev="vda"/>
                 <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="none" error_policy="stop"
                         io="threads" name="qemu" type="raw"/>
@@ -138,20 +100,12 @@ class TestDriveXML(XMLTestCase):
         self.check({}, conf, xml, is_block_device=False)
 
     def test_lun(self):
-        conf = {
-            'device': 'lun',
-            'format': 'raw',
-            'iface': 'scsi',
-            'index': '0',
-            'name': 'sda',
-            'path': '/dev/mapper/lun1',
-            'propagateErrors': 'off',
-            'readonly': 'False',
-            'serial': '54-a672-23e5b495a9ea',
-            'sgio': 'unfiltered',
-            'shared': 'none',
-            'type': 'disk',
-        }
+        conf = drive_config(
+            device='lun',
+            iface='scsi',
+            path='/dev/mapper/lun1',
+            sgio='unfiltered',
+        )
         xml = """
             <disk device="lun" sgio="unfiltered" snapshot="no" type="block">
                 <source dev="/dev/mapper/lun1"/>
@@ -192,8 +146,26 @@ class DriveExSharedStatusTests(VdsmTestCase):
         self.check(shared, 'none')
 
     def check(self, shared, expected):
-        conf = {'index': '0', 'iface': 'virtio', 'device': 'disk'}
+        conf = drive_config()
         if shared:
             conf['shared'] = shared
         drive = Drive({}, self.log, **conf)
         self.assertEqual(drive.extSharedState, expected)
+
+
+def drive_config(**kw):
+    """ Reutrn drive configuration updated from **kw """
+    conf = {
+        'device': 'disk',
+        'format': 'raw',
+        'iface': 'virtio',
+        'index': '0',
+        'path': '/path/to/volume',
+        'propagateErrors': 'off',
+        'readonly': 'False',
+        'serial': '54-a672-23e5b495a9ea',
+        'shared': 'none',
+        'type': 'disk',
+    }
+    conf.update(kw)
+    return conf
