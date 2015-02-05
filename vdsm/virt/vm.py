@@ -174,14 +174,6 @@ _MBPS_TO_BPS = 10 ** 6 / 8
 
 
 class VmStatsThread(AdvancedStatsThread):
-    # This flag will prevent excessive log flooding when running
-    # on libvirt with no support for metadata xml elements.
-    #
-    # The issue currently exists only on CentOS/RHEL 6.5 that
-    # ships libvirt-0.10.x.
-    #
-    # TODO: Remove as soon as there is a hard dependency we can use
-    _libvirt_metadata_supported = True
 
     def __init__(self, vm):
         AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
@@ -410,33 +402,6 @@ class VmStatsThread(AdvancedStatsThread):
         infos['vcpuCount'] = self._vm._dom.vcpusFlags(
             libvirt.VIR_DOMAIN_VCPU_CURRENT)
 
-        metadataCpuLimit = None
-
-        try:
-            if VmStatsThread._libvirt_metadata_supported:
-                metadataCpuLimit = self._vm._dom.metadata(
-                    libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                    METADATA_VM_TUNE_URI, 0)
-        except libvirt.libvirtError as e:
-            if e.get_error_code() == libvirt.VIR_ERR_ARGUMENT_UNSUPPORTED:
-                VmStatsThread._libvirt_metadata_supported = False
-                self._log.error("libvirt does not support metadata")
-
-            elif (e.get_error_code()
-                  not in (libvirt.VIR_ERR_NO_DOMAIN,
-                          libvirt.VIR_ERR_NO_DOMAIN_METADATA)):
-                # Non-existing VM and no metadata block are expected
-                # conditions and no reasons for concern here.
-                # All other errors should be reported.
-                self._log.warn("Failed to retrieve QoS metadata because of %s",
-                               e)
-
-        if metadataCpuLimit:
-            metadataCpuLimitXML = _domParseStr(metadataCpuLimit)
-            nodeList = \
-                metadataCpuLimitXML.getElementsByTagName('vcpuLimit')
-            infos['vcpuLimit'] = nodeList[0].childNodes[0].data
-
         return infos
 
     def _getIoTuneStats(self, stats):
@@ -551,17 +516,6 @@ class VmStatsThread(AdvancedStatsThread):
             else:
                 self._log.error('Failed to get VM cpu count')
 
-    def _getUserCpuTuneInfo(self, stats):
-        sample = self.sampleCpuTune.getLastSample()
-
-        # Handling the case when not enough samples exist
-        if sample is None:
-            return
-
-        if 'vcpuLimit' in sample:
-            value = sample['vcpuLimit']
-            stats['vcpuUserLimit'] = value
-
     def _getNetworkStats(self, stats):
         stats['network'] = {}
         sInfo, eInfo, sampleInterval = self.sampleNet.getStats()
@@ -642,7 +596,6 @@ class VmStatsThread(AdvancedStatsThread):
         self._getNumaStats(stats)
         self._getCpuTuneInfo(stats)
         self._getCpuCount(stats)
-        self._getUserCpuTuneInfo(stats)
         self._getIoTuneStats(stats)
 
         return stats
@@ -774,6 +727,7 @@ class Vm(object):
     Runs Qemu in a subprocess and communicates with it, and monitors
     its behaviour.
     """
+
     log = logging.getLogger("vm.Vm")
     # limit threads number until the libvirt lock will be fixed
     _ongoingCreations = threading.BoundedSemaphore(4)
@@ -886,6 +840,7 @@ class Vm(object):
         self._liveMergeCleanupThreads = {}
         self._shutdownLock = threading.Lock()
         self._shutdownReason = None
+        self._vcpuLimit = None
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -1865,6 +1820,8 @@ class Vm(object):
                                   self.guestAgent.diskMappingHash)))
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
+        if self._vcpuLimit:
+            stats['vcpuUserLimit'] = self._vcpuLimit
         return stats
 
     def _getVmStatus(self):
@@ -2194,6 +2151,8 @@ class Vm(object):
             self._dom.setSchedulerParameters({'cpu_shares': cpuShares})
         except Exception:
             self.log.warning('failed to set Vm niceness', exc_info=True)
+
+        self._getVcpuLimit()
 
     def _run(self):
         self.log.info("VM wrapper has started")
@@ -2665,6 +2624,16 @@ class Vm(object):
         hooks.after_set_num_of_cpus()
         return {'status': doneCode, 'vmList': self.status()}
 
+    def _getVcpuLimit(self):
+        qos = self._getVmPolicy()
+        if qos is not None:
+            try:
+                vcpuLimit = qos.getElementsByTagName("vcpuLimit")
+                self._vcpuLimit = vcpuLimit[0].childNodes[0].data
+            except IndexError:
+                # missing vcpuLimit node
+                self._vcpuLimit = None
+
     def updateVmPolicy(self, params):
         """
         Update the QoS policy settings for VMs.
@@ -2719,7 +2688,7 @@ class Vm(object):
             qos.appendChild(vcpuLimit)
 
             metadata_modified = True
-            del params['vcpuLimit']
+            self._vcpuLimit = params.pop('vcpuLimit')
 
         if 'ioTune' in params:
             # Make sure the top level element exists

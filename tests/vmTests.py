@@ -55,6 +55,16 @@ import vmfakelib as fake
 from testValidation import slowtest
 
 
+_VM_PARAMS = {
+    'displayPort': -1,
+    'displaySecurePort': -1,
+    'display': 'qxl',
+    'displayIp': '127.0.0.1',
+    'vmType': 'kvm',
+    'memSize': 1024
+}
+
+
 class TestVm(XMLTestCase):
 
     def __init__(self, *args, **kwargs):
@@ -520,6 +530,17 @@ class TestVm(XMLTestCase):
             """)
 
             self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
+
+    def testCpuTune(self):
+        LIMIT = 50
+        with fake.VM(_VM_PARAMS) as machine:
+            machine._dom = fake.Domain()
+            policy = {"vcpuLimit": LIMIT}
+
+            machine.updateVmPolicy(policy)
+
+            stats = machine.getStats()
+            self.assertEqual(stats['vcpuUserLimit'], LIMIT)
 
     def testIoTuneParser(self):
         with fake.VM() as machine:
