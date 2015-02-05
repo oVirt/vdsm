@@ -18,10 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from virt.vmdevices.storage import Drive
+from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
 from testlib import permutations, expandPermutations
+
+from vdsm import utils
+from virt.vmdevices.storage import Drive
 
 
 class DriveXMLTests(XMLTestCase):
@@ -151,6 +154,42 @@ class DriveExSharedStatusTests(VdsmTestCase):
             conf['shared'] = shared
         drive = Drive({}, self.log, **conf)
         self.assertEqual(drive.extSharedState, expected)
+
+
+class DriveDiskTypeTests(VdsmTestCase):
+
+    def test_cdrom(self):
+        conf = drive_config(device='cdrom')
+        drive = Drive({}, self.log, **conf)
+        self.assertFalse(drive.networkDev)
+        self.assertFalse(drive.blockDev)
+
+    def test_floppy(self):
+        conf = drive_config(device='floppy')
+        drive = Drive({}, self.log, **conf)
+        self.assertFalse(drive.networkDev)
+        self.assertFalse(drive.blockDev)
+
+    def test_network_disk(self):
+        # This is undocumented interface used by glusterfs
+        conf = drive_config(volumeInfo={'volType': 'network'})
+        drive = Drive({}, self.log, **conf)
+        self.assertTrue(drive.networkDev)
+        self.assertFalse(drive.blockDev)
+
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
+    def test_block_disk(self):
+        conf = drive_config(device='disk')
+        drive = Drive({}, self.log, **conf)
+        self.assertFalse(drive.networkDev)
+        self.assertTrue(drive.blockDev)
+
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: False)
+    def test_file_disk(self):
+        conf = drive_config(device='disk')
+        drive = Drive({}, self.log, **conf)
+        self.assertFalse(drive.networkDev)
+        self.assertFalse(drive.blockDev)
 
 
 def drive_config(**kw):
