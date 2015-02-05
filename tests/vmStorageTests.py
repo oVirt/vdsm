@@ -191,6 +191,36 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.networkDev)
         self.assertFalse(drive.blockDev)
 
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: False)
+    def test_migrate_from_file_to_block(self):
+        conf = drive_config(path='/filedomain/volume')
+        drive = Drive({}, self.log, **conf)
+        self.assertFalse(drive.blockDev)
+        # Migrate drive to block domain...
+        utils.isBlockDevice = lambda path: True
+        drive.path = "/blockdomain/volume"
+        self.assertTrue(drive.blockDev)
+
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
+    def test_migrate_from_block_to_file(self):
+        conf = drive_config(path='/blockdomain/volume')
+        drive = Drive({}, self.log, **conf)
+        self.assertTrue(drive.blockDev)
+        # Migrate drive to file domain...
+        utils.isBlockDevice = lambda path: False
+        drive.path = "/filedomain/volume"
+        self.assertFalse(drive.blockDev)
+
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
+    def test_migrate_from_block_to_network(self):
+        conf = drive_config(path='/blockdomain/volume')
+        drive = Drive({}, self.log, **conf)
+        self.assertTrue(drive.blockDev)
+        # Migrate drive to netowrk (not sure we will support this)...
+        drive.path = "rbd:pool/volume"
+        drive.volumeInfo = {'volType': 'network'}
+        self.assertFalse(drive.blockDev)
+
 
 def drive_config(**kw):
     """ Reutrn drive configuration updated from **kw """

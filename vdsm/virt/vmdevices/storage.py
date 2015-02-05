@@ -40,7 +40,7 @@ class DRIVE_SHARED_TYPE:
 
 
 class Drive(Base):
-    __slots__ = ('iface', 'path', 'readonly', 'bootOrder', 'domainID',
+    __slots__ = ('iface', '_path', 'readonly', 'bootOrder', 'domainID',
                  'poolID', 'imageID', 'UUID', 'volumeID', 'format',
                  'propagateErrors', 'address', 'apparentsize', 'volumeInfo',
                  'index', 'name', 'optional', 'shared', 'truesize',
@@ -62,10 +62,7 @@ class Drive(Base):
         self.name = self._makeName()
         self.cache = config.get('vars', 'qemu_drive_cache')
 
-        if self.device in ("cdrom", "floppy"):
-            self._blockDev = False
-        else:
-            self._blockDev = None
+        self._blockDev = None  # Lazy initialized
 
         self._customize()
         self._setExtSharedState()
@@ -156,16 +153,30 @@ class Drive(Base):
 
     @property
     def blockDev(self):
-        if self.networkDev:
-            return False
-
         if self._blockDev is None:
-            try:
-                self._blockDev = utils.isBlockDevice(self.path)
-            except Exception:
-                self.log.debug("Unable to determine if the path '%s' is a "
-                               "block device", self.path, exc_info=True)
+            if self.networkDev or self.device in ("cdrom", "floppy"):
+                self._blockDev = False
+            else:
+                try:
+                    self._blockDev = utils.isBlockDevice(self.path)
+                except Exception:
+                    self.log.debug("Unable to determine if the path '%s' is a "
+                                   "block device", self.path, exc_info=True)
         return self._blockDev
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, path):
+        if hasattr(self, "_path") and self._path != path:
+            self.log.debug("Drive %s moved from %r to %r",
+                           self.name, self._path, path)
+            # After live storage migration domain type may have changed
+            # invalidating cached blockDev.
+            self._blockDev = None
+        self._path = path
 
     @property
     def transientDisk(self):
