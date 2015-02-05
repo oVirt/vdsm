@@ -19,7 +19,9 @@
 #
 
 from virt.vmdevices.storage import Drive
+from testlib import VdsmTestCase
 from testlib import XMLTestCase
+from testlib import permutations, expandPermutations
 
 
 class TestDriveXML(XMLTestCase):
@@ -166,3 +168,32 @@ class TestDriveXML(XMLTestCase):
         # Patch to skip the block device checking.
         drive._blockDev = is_block_device
         self.assertXMLEqual(drive.getXML().toxml(), xml)
+
+
+@expandPermutations
+class DriveExSharedStatusTests(VdsmTestCase):
+
+    def test_default_not_shared(self):
+        self.check(None, 'none')
+
+    @permutations([['exclusive'], ['shared'], ['none'], ['transient']])
+    def test_supported(self, shared):
+        self.check(shared, shared)
+
+    def test_unsupported(self):
+        self.assertRaises(ValueError, self.check, "UNKNOWN-VALUE", None)
+
+    @permutations([[True], ['True'], ['true']])
+    def test_bc_shared(self, shared):
+        self.check(shared, 'shared')
+
+    @permutations([[False], ['False'], ['false']])
+    def test_bc_not_shared(self, shared):
+        self.check(shared, 'none')
+
+    def check(self, shared, expected):
+        conf = {'index': '0', 'iface': 'virtio', 'device': 'disk'}
+        if shared:
+            conf['shared'] = shared
+        drive = Drive({}, self.log, **conf)
+        self.assertEqual(drive.extSharedState, expected)

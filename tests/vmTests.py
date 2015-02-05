@@ -658,40 +658,6 @@ class TestVm(XMLTestCase):
         redir = vmdevices.core.Redir(self.conf, self.log, **dev)
         self.assertXMLEqual(redir.getXML().toxml(), redirXML)
 
-    def testDriveSharedStatus(self):
-        sharedConfigs = [
-            # Backward compatibility
-            {'shared': True}, {'shared': 'True'}, {'shared': 'true'},
-            {'shared': False}, {'shared': 'False'}, {'shared': 'false'},
-            # Missing shared definition
-            {},
-            # New extended values
-            {'shared': 'exclusive'}, {'shared': 'shared'}, {'shared': 'none'},
-            {'shared': 'transient'},
-        ]
-
-        expectedStates = [
-            # Backward compatibility
-            'shared', 'shared', 'shared', 'none', 'none', 'none',
-            # Missing shared definition
-            'none',
-            # New extended values
-            'exclusive', 'shared', 'none', 'transient',
-        ]
-
-        driveConfig = {'index': '0', 'iface': 'virtio', 'device': 'disk'}
-
-        for driveInput, driveOutput in zip(sharedConfigs, expectedStates):
-            driveInput.update(driveConfig)
-            drive = vmdevices.storage.Drive({}, self.log, **driveInput)
-            self.assertEqual(drive.extSharedState, driveOutput)
-
-        # Negative flow, unsupported value
-        driveInput.update({'shared': 'UNKNOWN-VALUE'})
-
-        with self.assertRaises(ValueError):
-            drive = vmdevices.storage.Drive({}, self.log, **driveInput)
-
     def testIoTuneException(self):
         SERIAL = '54-a672-23e5b495a9ea'
         basicConf = {'index': '0', 'propagateErrors': 'on', 'iface': 'virtio',
