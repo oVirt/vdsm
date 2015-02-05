@@ -24,7 +24,7 @@ from testlib import XMLTestCase
 from testlib import permutations, expandPermutations
 
 
-class TestDriveXML(XMLTestCase):
+class DriveXMLTests(XMLTestCase):
 
     def test_cdrom(self):
         conf = drive_config(
