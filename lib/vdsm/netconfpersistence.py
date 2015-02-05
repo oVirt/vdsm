@@ -41,23 +41,6 @@ class BaseConfig(object):
         self.networks = networks
         self.bonds = bonds
 
-    def __eq__(self, other):
-        return self.networks == other.networks and self.bonds == other.bonds
-
-    def __repr__(self):
-        return '%s(%s, %s)' % (self.__class__.__name__, self.networks,
-                               self.bonds)
-
-    def __nonzero__(self):
-        return True if self.networks or self.bonds else False
-
-    def diffFrom(self, other):
-        """Returns a diff Config that shows the what should be changed for
-        going from other to self."""
-        diff = BaseConfig(self._confDictDiff(self.networks, other.networks),
-                          self._confDictDiff(self.bonds, other.bonds))
-        return diff
-
     def setNetwork(self, network, attributes):
         # Clean netAttrs from fields that should not be serialized
         cleanAttrs = dict((key, value) for key, value in attributes.iteritems()
@@ -85,6 +68,23 @@ class BaseConfig(object):
         except KeyError:
             logging.debug('%s not found for removal', bonding)
 
+    def diffFrom(self, other):
+        """Returns a diff Config that shows the what should be changed for
+        going from other to self."""
+        diff = BaseConfig(self._confDictDiff(self.networks, other.networks),
+                          self._confDictDiff(self.bonds, other.bonds))
+        return diff
+
+    def __eq__(self, other):
+        return self.networks == other.networks and self.bonds == other.bonds
+
+    def __repr__(self):
+        return '%s(%s, %s)' % (self.__class__.__name__, self.networks,
+                               self.bonds)
+
+    def __nonzero__(self):
+        return True if self.networks or self.bonds else False
+
     @staticmethod
     def _confDictDiff(lhs, rhs):
         result = {}
@@ -104,6 +104,20 @@ class Config(BaseConfig):
         self.bondingsPath = os.path.join(savePath, 'bonds', '')
         super(Config, self).__init__(self._getConfigs(self.networksPath),
                                      self._getConfigs(self.bondingsPath))
+
+    def delete(self):
+        self.networks = {}
+        self.bonds = {}
+        self._clearDisk()
+
+    def save(self):
+        self._clearDisk()
+        for bond, attrs in self.bonds.iteritems():
+            self._setConfig(attrs, self._bondingPath(bond))
+        for network, attrs in self.networks.iteritems():
+            self._setConfig(attrs, self._networkPath(network))
+        logging.info('Saved new config %r to %s and %s' %
+                     (self, self.networksPath, self.bondingsPath))
 
     def _networkPath(self, network):
         return self.networksPath + network
@@ -166,20 +180,6 @@ class Config(BaseConfig):
                 logging.debug('No existent config to clear.')
             else:
                 raise
-
-    def delete(self):
-        self.networks = {}
-        self.bonds = {}
-        self._clearDisk()
-
-    def save(self):
-        self._clearDisk()
-        for bond, attrs in self.bonds.iteritems():
-            self._setConfig(attrs, self._bondingPath(bond))
-        for network, attrs in self.networks.iteritems():
-            self._setConfig(attrs, self._networkPath(network))
-        logging.info('Saved new config %r to %s and %s' %
-                     (self, self.networksPath, self.bondingsPath))
 
 
 class RunningConfig(Config):
