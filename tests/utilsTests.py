@@ -19,23 +19,24 @@
 #
 
 import collections
-import os.path
 import contextlib
+import copy
 import errno
 import logging
+import os.path
 import sys
 import threading
+import time
+import timeit
 
-from testlib import VdsmTestCase as TestCaseBase
+from vdsm import constants
+from vdsm import utils
+
 from testlib import permutations, expandPermutations
+from testlib import VdsmTestCase as TestCaseBase
 from testValidation import checkSudo
 from testValidation import stresstest
 from vmTestsData import VM_STATUS_DUMP
-from vdsm import utils
-from vdsm import constants
-import copy
-import time
-import timeit
 
 EXT_SLEEP = "sleep"
 
