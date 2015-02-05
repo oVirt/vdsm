@@ -1326,9 +1326,10 @@ class Vm(object):
         toSave = self.status()
         toSave['startTime'] = self._startTime
         if self.lastStatus != vmstatus.DOWN and self._vmStats:
-            toSave['username'] = self.guestAgent.guestInfo['username']
-            toSave['guestIPs'] = self.guestAgent.guestInfo['guestIPs']
-            toSave['guestFQDN'] = self.guestAgent.guestInfo['guestFQDN']
+            guestInfo = self.guestAgent.getGuestInfo()
+            toSave['username'] = guestInfo['username']
+            toSave['guestIPs'] = guestInfo['guestIPs']
+            toSave['guestFQDN'] = guestInfo['guestFQDN']
         else:
             toSave['username'] = ""
             toSave['guestIPs'] = ""
