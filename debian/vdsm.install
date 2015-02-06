@@ -151,6 +151,7 @@
 ./usr/share/vdsm/virt/domain_descriptor.py
 ./usr/share/vdsm/virt/guestagent.py
 ./usr/share/vdsm/virt/migration.py
+./usr/share/vdsm/virt/periodic.py
 ./usr/share/vdsm/virt/sampling.py
 ./usr/share/vdsm/virt/vm.py
 ./usr/share/vdsm/virt/vmchannels.py

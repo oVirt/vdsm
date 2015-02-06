@@ -333,6 +333,18 @@ parameters = [
 
     ]),
 
+    # Section: [sampling]
+    ('sampling', [
+
+        ('periodic_workers', '4',
+            'Number of worker threads to serve the periodic tasks.'
+            ' This is for internal usage and may change without warning'),
+
+        ('periodic_task_per_worker', '100',
+            'Max number of tasks which can be queued on workers.'
+            ' This is for internal usage and may change without warning'),
+    ]),
+
     # Section: [devel]
     ('devel', [
 

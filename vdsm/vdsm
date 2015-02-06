@@ -41,6 +41,7 @@ from storage.hsm import HSM
 
 from vdsm.infra import sigutils
 import vdsm.infra.zombiereaper as zombiereaper
+from virt import periodic
 import dsaversion
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
@@ -90,12 +91,14 @@ def serve_clients(log):
     from clientIF import clientIF  # must import after config is read
     cif = clientIF.getInstance(irs, log)
     cif.start()
+    periodic.start(cif)
     try:
         while running[0]:
             sigutils.wait_for_signal()
 
         profile.stop()
     finally:
+        periodic.stop()
         cif.prepareForShutdown()
 
 
