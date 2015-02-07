@@ -79,13 +79,13 @@ ConfiguratorClass = _getConfiguratorClass()
 persistence = _getPersistenceModule()
 
 
-def objectivizeNetwork(bridge=None, vlan=None, bonding=None,
-                       bondingOptions=None, nics=None, mtu=None, ipaddr=None,
-                       netmask=None, gateway=None, bootproto=None,
-                       ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
-                       dhcpv6=None, defaultRoute=None, _netinfo=None,
-                       configurator=None, blockingdhcp=None,
-                       implicitBonding=None, opts=None):
+def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
+                        bondingOptions=None, nics=None, mtu=None, ipaddr=None,
+                        netmask=None, gateway=None, bootproto=None,
+                        ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
+                        dhcpv6=None, defaultRoute=None, _netinfo=None,
+                        configurator=None, blockingdhcp=None,
+                        implicitBonding=None, opts=None):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -308,7 +308,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     bootproto = options.pop('bootproto', None)
 
-    net_ent = objectivizeNetwork(
+    net_ent = _objectivizeNetwork(
         bridge=network if bridged else None, vlan=vlan, bonding=bonding,
         bondingOptions=bondingOptions, nics=nics, mtu=mtu, ipaddr=ipaddr,
         netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
@@ -420,11 +420,11 @@ def _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo):
 
 def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
     if network in netinfo.bridges():
-        net_ent = objectivizeNetwork(bridge=network, vlan=vlan,
-                                     bonding=bonding,  nics=nics,
-                                     _netinfo=_netinfo,
-                                     configurator=configurator,
-                                     implicitBonding=False)
+        net_ent = _objectivizeNetwork(bridge=network, vlan=vlan,
+                                      bonding=bonding,  nics=nics,
+                                      _netinfo=_netinfo,
+                                      configurator=configurator,
+                                      implicitBonding=False)
         net_ent.remove()
     else:
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network"
@@ -475,10 +475,10 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
     if not utils.tobool(force):
         _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
 
-    net_ent = objectivizeNetwork(bridge=network if bridged else None,
-                                 vlan=vlan, bonding=bonding, nics=nics,
-                                 _netinfo=_netinfo, configurator=configurator,
-                                 implicitBonding=implicitBonding)
+    net_ent = _objectivizeNetwork(bridge=network if bridged else None,
+                                  vlan=vlan, bonding=bonding, nics=nics,
+                                  _netinfo=_netinfo, configurator=configurator,
+                                  implicitBonding=implicitBonding)
     net_ent.ip.bootproto = ('dhcp' if _netinfo.networks[network]['dhcpv4']
                             else 'none')
 
