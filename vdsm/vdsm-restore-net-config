@@ -90,7 +90,11 @@ def _filter_nets_bonds(nets, bonds):
     for net, attrs in nets.iteritems():
         bond = attrs.get('bonding')
         if bond is not None:
-            if bond not in available_bonds:
+            if bond not in bonds:
+                logging.error('Bond "%s" is not configured. '
+                              'Network "%s" will not be '
+                              'configured as a consequence', bond, net)
+            elif bond not in available_bonds:
                 logging.error('Some of the nics required by bond "%s" (%s) '
                               'are missing. Network "%s" will not be '
                               'configured as a consequence', bond,
