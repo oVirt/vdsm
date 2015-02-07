@@ -62,7 +62,7 @@ class DhcpClient(object):
             t.daemon = True
             t.start()
         else:
-            rc, out, err = self._dhclient()
+            rc, _, _ = self._dhclient()
             return rc
 
     def shutdown(self):

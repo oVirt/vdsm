@@ -438,7 +438,7 @@ def _disconnect_bridge_port(bridge, port):
     except ipwrapper.IPRoute2Error:
         # REQUIRED_FOR: el6
         # rhel6 ip link command does not support 'nomaster'
-        rc, out, err = utils.execCmd(
+        rc, _, err = utils.execCmd(
             [constants.EXT_BRCTL, 'delif', bridge, port])
         if rc != 0:
             raise ConfigNetworkError(

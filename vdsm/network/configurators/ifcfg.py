@@ -785,7 +785,7 @@ class ConfigWriter(object):
 
 def ifdown(iface):
     "Bring down an interface"
-    rc, out, err = utils.execCmd([constants.EXT_IFDOWN, iface], raw=True)
+    rc, _, _ = utils.execCmd([constants.EXT_IFDOWN, iface], raw=True)
     return rc
 
 
@@ -808,7 +808,7 @@ def ifup(iface, async=False):
         t.daemon = True
         t.start()
     else:
-        rc, out, err = _ifup(iface)
+        rc, _, _ = _ifup(iface)
         return rc
 
 
