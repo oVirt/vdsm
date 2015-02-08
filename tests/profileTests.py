@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import ConfigParser
 import errno
 import os
 import pstats
@@ -26,7 +25,6 @@ import time
 import threading
 
 from vdsm import profile
-from vdsm import config
 
 from monkeypatch import MonkeyPatch
 from nose.plugins.skip import SkipTest
