@@ -1473,9 +1473,11 @@ class Vm(object):
         return len(extend) > 0
 
     def extendDriveVolume(self, vmDrive, volumeID, curSize):
-        if not vmDrive.blockDev:
-            return
+        """
+        Extend drive volume and its replica volume during replication.
 
+        Must be called only when the drive or the replica are chunked.
+        """
         newSize = vmDrive.getNextVolumeSize(curSize)  # newSize is in megabytes
 
         if getattr(vmDrive, 'diskReplicate', None):
@@ -3489,12 +3491,13 @@ class Vm(object):
             self._delDiskReplica(srcDrive)
             return errCode['replicaErr']
 
-        try:
-            self.extendDriveVolume(srcDrive, srcDrive.volumeID,
-                                   srcDrive.apparentsize)
-        except Exception:
-            self.log.exception("Initial extension request failed for %s",
-                               srcDrive.name)
+        if srcDrive.chunked:
+            try:
+                self.extendDriveVolume(srcDrive, srcDrive.volumeID,
+                                       srcDrive.apparentsize)
+            except Exception:
+                self.log.exception("Initial extension request failed for %s",
+                                   srcDrive.name)
 
         return {'status': doneCode}
 
@@ -4772,7 +4775,8 @@ class Vm(object):
         # the worst case, we'll need to extend 'base' to the same size as 'top'
         # plus a bit more to accomodate additional writes to 'top' during the
         # live merge operation.
-        self.extendDriveVolume(drive, baseVolUUID, topSize)
+        if drive.chunked:
+            self.extendDriveVolume(drive, baseVolUUID, topSize)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
