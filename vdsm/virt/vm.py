@@ -1406,7 +1406,7 @@ class Vm(object):
         # once libvirt starts reporting watermark information for all volumes.
         mergeCandidates = {}
         for drive in self._devices[hwclass.DISK]:
-            if not drive.blockDev or drive.format != 'cow':
+            if not drive.chunked:
                 continue
 
             capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)

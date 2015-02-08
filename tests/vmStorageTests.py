@@ -222,6 +222,26 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
 
 
+@expandPermutations
+class ChunkedTests(VdsmTestCase):
+
+    @permutations([
+        # device, blockDev, format, chunked
+        ('cdrom', True, 'raw', False),
+        ('cdrom', False, 'raw', False),
+        ('floppy', False, 'raw', False),
+        ('disk', False, 'raw', False),
+        ('disk', True, 'raw', False),
+        ('lun', True, 'raw', False),
+        ('disk', True, 'cow', True),
+    ])
+    def test_chunked(self, device, blockDev, format, chunked):
+        conf = drive_config(device=device, format=format)
+        drive = Drive({}, self.log, **conf)
+        drive._blockDev = blockDev
+        self.assertEqual(drive.chunked, chunked)
+
+
 def drive_config(**kw):
     """ Reutrn drive configuration updated from **kw """
     conf = {

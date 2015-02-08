@@ -144,6 +144,17 @@ class Drive(Base):
         return min(nextSize, self.truesize)
 
     @property
+    def chunked(self):
+        """
+        Return True if drive is using chunks and may require extending.
+
+        If a drive is chunked, current drive write watermark and
+        Drive.volExtensionChunk is used to detect if a drive should be
+        extended, and getNextVolumeSize to find the new size.
+        """
+        return self.blockDev and self.format == "cow"
+
+    @property
     def networkDev(self):
         try:
             return self.volumeInfo['volType'] == "network"
