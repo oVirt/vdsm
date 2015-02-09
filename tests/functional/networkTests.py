@@ -114,7 +114,7 @@ def dnsmasqDhcp(interface, el6=False):
             (None, None) if el6 else (DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO))
         dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO,
                          dhcpv6_range_from, dhcpv6_range_to, router=IP_GATEWAY,
-                         bind_dynamic=el6)
+                         bind_dynamic=not el6)
     except dhcp.DhcpError as e:
         raise SkipTest(e)
 
