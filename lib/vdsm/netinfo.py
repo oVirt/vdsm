@@ -41,10 +41,11 @@ from .ipwrapper import Route
 from .ipwrapper import routeGet
 from .ipwrapper import routeShowGateways
 from . import libvirtconnection
-from .utils import memoized
+from .netconfpersistence import RunningConfig
 from .netlink import link as nl_link
 from .netlink import addr as nl_addr
 from .netlink import route as nl_route
+from .utils import memoized
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -420,7 +421,24 @@ def _bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
+def _dhcp_used(iface, ifaces_with_active_leases, net_attrs, family=4):
+    if net_attrs is None:
+        logging.debug('There is no VDSM network configured on %s.' % iface)
+        return iface in ifaces_with_active_leases
+    else:
+        try:
+            if family == 4:
+                return net_attrs['bootproto'] == 'dhcp'
+            else:
+                return net_attrs['dhcpv6']
+        except KeyError:
+            logging.debug('DHCPv%s configuration not specified for %s.' %
+                          (family, iface))
+            return False
+
+
+def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
+                net_attrs):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -437,8 +455,9 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'dhcpv4': iface in dhcpv4_ifaces,
-                     'dhcpv6': iface in dhcpv6_ifaces,
+                     'dhcpv4': _dhcp_used(iface, dhcpv4_ifaces, net_attrs),
+                     'dhcpv6': _dhcp_used(iface, dhcpv6_ifaces, net_attrs,
+                                          family=6),
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
                      'gateway': _get_gateway(routes, iface),
@@ -650,11 +669,14 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4_ifaces=None,
         ipAddrs = _getIpAddrs()
     if dhcpv4_ifaces is None or dhcpv6_ifaces is None:
         dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces()
+    running_config = RunningConfig()
     d = {}
     for net, netAttr in nets.iteritems():
         try:
+            # Pass the iface if the net is _not_ bridged, the bridge otherwise
             d[net] = _getNetInfo(netAttr.get('iface', net), netAttr['bridged'],
-                                 routes, ipAddrs, dhcpv4_ifaces, dhcpv6_ifaces)
+                                 routes, ipAddrs, dhcpv4_ifaces, dhcpv6_ifaces,
+                                 running_config.networks.get(net, None))
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d

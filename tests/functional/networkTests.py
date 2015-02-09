@@ -1799,6 +1799,16 @@ class NetworkTest(TestCaseBase):
                         self.assertSourceRoutingConfiguration(device_name,
                                                               ip_addr)
 
+                    # Do not report DHCP from (typically still valid) leases
+                    network[NETWORK_NAME]['bootproto'] = 'none'
+                    network[NETWORK_NAME]['dhcpv6'] = False
+                    status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                              NOCHK)
+                    self.assertEqual(status, SUCCESS, msg)
+                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                    self.assertEqual(test_net['dhcpv4'], False)
+                    self.assertEqual(test_net['dhcpv6'], False)
+
                     network = {NETWORK_NAME: {'remove': True}}
                     status, msg = self.vdsm_net.setupNetworks(network, {},
                                                               NOCHK)
