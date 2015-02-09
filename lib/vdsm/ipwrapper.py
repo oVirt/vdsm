@@ -527,11 +527,6 @@ def _execCmd(command):
     return output
 
 
-def routeList():
-    command = [_IP_BINARY.cmd, 'route']
-    return _execCmd(command)
-
-
 def routeShowGateways(table):
     command = [_IP_BINARY.cmd, 'route', 'show', 'to', '0.0.0.0/0', 'table',
                table]
