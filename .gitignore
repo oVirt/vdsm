@@ -66,7 +66,6 @@ vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
 vdsm/vdsm.rwtab
 vdsm/vdsmd.8
-vdsm/gluster/hostname.py
 vdsm-tool/vdsm-tool.1
 vdsm/rpc/vdsm-api.html
 vdsm_hooks/openstacknet/sudoers

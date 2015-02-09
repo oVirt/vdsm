@@ -49,7 +49,6 @@
 ./usr/share/vdsm/gluster/__init__.py
 ./usr/share/vdsm/gluster/cli.py
 ./usr/share/vdsm/gluster/exception.py
-./usr/share/vdsm/gluster/hostname.py
 ./usr/share/vdsm/hooking.py
 ./usr/share/vdsm/hooks.py
 ./usr/share/vdsm/hostdev.py

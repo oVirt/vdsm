@@ -1020,7 +1020,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/__init__.py*
 %{_datadir}/%{vdsm_name}/gluster/cli.py*
 %{_datadir}/%{vdsm_name}/gluster/exception.py*
-%{_datadir}/%{vdsm_name}/gluster/hostname.py*
 %else
 %exclude %{_datadir}/%{vdsm_name}/gluster/*
 %endif

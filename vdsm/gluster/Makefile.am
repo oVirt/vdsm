@@ -22,10 +22,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmglusterdir = $(vdsmdir)/gluster
 
-nodist_vdsmgluster_PYTHON = \
-	hostname.py
-	$(NULL)
-
 dist_vdsmgluster_PYTHON = \
 	__init__.py \
 	api.py \
@@ -39,14 +35,3 @@ dist_vdsmgluster_PYTHON = \
 	storagedev.py \
 	tasks.py \
 	$(NULL)
-
-EXTRA_DIST = \
-	hostname.py.in
-	$(NULL)
-
-CLEANFILES = \
-	hostname.py
-	$(NULL)
-
-all-local: \
-	$(nodist_vdsmgluster_PYTHON)

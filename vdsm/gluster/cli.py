@@ -18,14 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import xml.etree.cElementTree as etree
-import time
 import calendar
+import logging
+import socket
+import time
+import xml.etree.cElementTree as etree
 
 from vdsm import utils
 from vdsm import netinfo
 import exception as ge
-from hostname import getHostNameFqdn, HostNameException
 from . import makePublic
 
 _glusterCommandPath = utils.CommandPath("gluster",
@@ -128,8 +129,9 @@ def _getLocalIpAddress():
 
 def _getGlusterHostName():
     try:
-        return getHostNameFqdn()
-    except HostNameException:
+        return socket.getfqdn()
+    except socket.herror:
+        logging.exception('getfqdn')
         return ''
 
 
