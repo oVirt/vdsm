@@ -2137,6 +2137,24 @@ class NetworkTest(TestCaseBase):
                 routes, rules = self.assertSourceRoutingConfiguration(
                     device_name, NETWORK_NAME)
 
+                # Do not report DHCP from (typically still valid) leases
+                network[NETWORK_NAME]['bootproto'] = 'none'
+                status, msg = self.vdsm_net.setupNetworks(network, {},
+                                                          NOCHK)
+                self.assertEqual(status, SUCCESS, msg)
+                test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                self.assertEqual(test_net['bootproto4'], 'none')
+                if bridged:
+                    self.assertEqual(test_net['cfg']['BOOTPROTO'], 'none')
+                    devs = self.vdsm_net.netinfo.bridges
+                    self.assertIn(NETWORK_NAME, devs)
+                    self.assertEqual(devs[NETWORK_NAME]['cfg']['BOOTPROTO'],
+                                     'none')
+                else:
+                    devs = self.vdsm_net.netinfo.nics
+                    self.assertIn(right, devs)
+                    self.assertEqual(devs[right]['cfg']['BOOTPROTO'], 'none')
+
                 network = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.vdsm_net.setupNetworks(network, {}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)

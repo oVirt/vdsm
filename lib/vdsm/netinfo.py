@@ -540,7 +540,15 @@ def _bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs):
+def _dhcp_used(iface, ifaces_with_active_leases, net_attrs):
+    if net_attrs is None:
+        return iface in ifaces_with_active_leases
+    else:
+        return net_attrs.get('bootproto') == 'dhcp'
+
+
+def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs,
+                net_attrs):
     '''Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist.'''
     data = {}
@@ -557,7 +565,8 @@ def _getNetInfo(iface, dhcp4, bridged, gateways, ipv6routes, ipaddrs):
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(iface, ipaddrs)
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'bootproto4': 'dhcp' if iface in dhcp4 else 'none',
+                     'bootproto4': 'dhcp' if _dhcp_used(
+                         iface, dhcp4, net_attrs) else 'none',
                      'gateway': getgateway(gateways, iface),
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
@@ -700,6 +709,7 @@ def _getIpAddrs():
 
 def _libvirtNets2vdsm(nets, gateways=None, ipv6routes=None,
                       ipAddrs=None):
+    running_config = RunningConfig()
     dhcp4 = getDhclientIfaces(_DHCLIENT_LEASES_GLOBS)
     if gateways is None:
         gateways = getRoutes()
@@ -710,10 +720,12 @@ def _libvirtNets2vdsm(nets, gateways=None, ipv6routes=None,
     d = {}
     for net, netAttr in nets.iteritems():
         try:
+            # Pass the iface if the net is _not_ bridged, the bridge otherwise
             d[net] = _getNetInfo(netAttr.get('iface', net),
                                  dhcp4,
                                  netAttr['bridged'], gateways,
-                                 ipv6routes, ipAddrs)
+                                 ipv6routes, ipAddrs,
+                                 running_config.networks.get(net, None))
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
