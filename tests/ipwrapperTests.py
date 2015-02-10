@@ -50,7 +50,7 @@ class TestIpwrapper(TestCaseBase):
             ('240.0.0.255', None, 'veth_23', 'local'),
             'ff02::2 dev veth_23  metric 0 \    cache':
             ('ff02::2', None, 'veth_23', None),
-            }
+        }
 
         for text, attributes in good_routes.iteritems():
             route = Route.fromText(text)

@@ -62,7 +62,8 @@ def find(xml, match):
     Returns found element xml.
 
     path is using the limmited supported xpath syntax:
-    https://docs.python.org/2/library/xml.etree.elementtree.html#supported-xpath-syntax
+    https://docs.python.org/2/library/
+        xml.etree.elementtree.html#supported-xpath-syntax
     Note that xpath support in Python 2.6 is partial and undocumented.
     """
     elem = ET.fromstring(xml)
