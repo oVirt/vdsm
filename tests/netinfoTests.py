@@ -305,3 +305,33 @@ class TestNetinfo(TestCaseBase):
 
             finally:
                 bonds.write('-' + bondName)
+
+    def test_get_gateway(self):
+        TEST_IFACE = 'test_iface'
+        # different tables but the gateway is the same so it should be reported
+        DUPLICATED_GATEWAY = {TEST_IFACE: [
+            {
+                'destination': 'none',
+                'family': 'inet',
+                'gateway': '12.34.56.1',
+                'oif': TEST_IFACE,
+                'oif_index': 8,
+                'scope': 'global',
+                'source': None,
+                'table': 203569230,  # lucky us, we got the address 12.34.56.78
+            }, {
+                'destination': 'none',
+                'family': 'inet',
+                'gateway': '12.34.56.1',
+                'oif': TEST_IFACE,
+                'oif_index': 8,
+                'scope': 'global',
+                'source': None,
+                'table': 254,
+            }]}
+        SINGLE_GATEWAY = {TEST_IFACE: [DUPLICATED_GATEWAY[TEST_IFACE][0]]}
+
+        gateway = netinfo._get_gateway(SINGLE_GATEWAY, TEST_IFACE)
+        self.assertEqual(gateway, '12.34.56.1')
+        gateway = netinfo._get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
+        self.assertEqual(gateway, '12.34.56.1')

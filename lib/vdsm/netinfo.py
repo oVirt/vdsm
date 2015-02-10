@@ -636,14 +636,24 @@ def _get_gateway(routes_by_dev, dev, family=4,
                 r['scope'] == 'global' and
                 r['family'] == ('inet6' if family == 6 else 'inet')
                 ]
-    try:
-        gateway, = gateways
-    except ValueError:
-        if len(gateways) > 1 and table != nl_route._RT_TABLE_UNSPEC:
-            logging.error('Multiple default gateways (%r) in table: %s',
-                          gateways, table)
+    if not gateways:
         return '::' if family == 6 else ''
-    return gateway['gateway']
+    elif len(gateways) == 1:
+        return gateways[0]['gateway']
+    else:
+        unique_gateways = frozenset(route['gateway'] for route in gateways)
+        if len(unique_gateways) == 1:
+            gateway, = unique_gateways
+            logging.debug('The gateway %s is duplicated for the device %s',
+                          gateway, dev)
+            return gateway
+        else:
+            # We could pick the first gateway or the one with the lowest metric
+            # but, in general, there are also routing rules in the game so we
+            # should probably ask the kernel somehow.
+            logging.error('Multiple IPv%s gateways for the device %s in table '
+                          '%s: %r', family, dev, table, gateways)
+            return '::' if family == 6 else ''
 
 
 def _get_routes():
