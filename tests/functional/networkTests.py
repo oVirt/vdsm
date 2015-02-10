@@ -1788,6 +1788,7 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(net_attrs['dhcpv6'], dhcpv6)
 
                     if dhcpv4:
+                        self.assertEqual(test_net['gateway'], IP_GATEWAY)
                         # TODO: source routing not ready for IPv6
                         ip_addr = test_net['addr']
                         self.assertSourceRoutingConfiguration(device_name,
