@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,39 +22,42 @@ import blivet
 from . import makePublic
 
 
+def _getDeviceDict(device, createBrick=False):
+    info = {'name': device.name,
+            'size': '%s' % device.size,
+            'devPath': device.path,
+            'devUuid': device.uuid or '',
+            'bus': device.bus or '',
+            'model': '',
+            'fsType': '',
+            'mountPoint': '',
+            'uuid': '',
+            'createBrick': createBrick}
+    if not info['bus'] and device.parents:
+        info['bus'] = device.parents[0].bus
+    if device.model:
+        info['model'] = "%s (%s)" % (device.model, device.type)
+    else:
+        info['model'] = device.type
+    if device.format:
+        info['uuid'] = device.format.uuid or ''
+        info['fsType'] = device.format.type or ''
+    if hasattr(device.format, 'mountpoint'):
+        info['mountPoint'] = device.format.mountpoint or ''
+    return info
+
+
 def _parseDevices(devices):
     deviceList = []
     for device in devices:
-        info = {'name': device.name,
-                'size': '%s' % device.size,
-                'devPath': device.path,
-                'devUuid': device.uuid or '',
-                'bus': device.bus or '',
-                'model': '',
-                'fsType': '',
-                'mountPoint': '',
-                'uuid': '',
-                'createBrick': True}
-        if not info['bus'] and device.parents:
-            info['bus'] = device.parents[0].bus
-        if device.model:
-            info['model'] = "%s (%s)" % (device.model, device.type)
-        else:
-            info['model'] = device.type
-        if device.format:
-            info['fsType'] = device.format.type or ''
-        if hasattr(device.format, 'mountpoint'):
-            info['mountPoint'] = device.format.mountpoint or ''
-        info['createBrick'] = _canCreateBrick(device)
-
-        deviceList.append(info)
+        deviceList.append(_getDeviceDict(device, _canCreateBrick(device)))
     return deviceList
 
 
 def _canCreateBrick(device):
     if not device or device.kids > 0 or device.format.type or \
        hasattr(device.format, 'mountpoint') or \
-       device.type in ['cdrom', 'lvmvg', 'lvmthinpool', 'lvmlv']:
+       device.type in ['cdrom', 'lvmvg', 'lvmthinpool', 'lvmlv', 'lvmthinlv']:
         return False
     return True
 

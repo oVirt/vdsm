@@ -842,14 +842,14 @@ GLUSTER_STORAGE_DEVICES = [{'createBrick': True,
                             'uuid': ''},
                            {'createBrick': False,
                             'devPath': '/dev/vda5',
-                            'devUuid': '',
+                            'devUuid': 'ee18ca64-806a-4a84-b69e-1f939265fa68',
                             'bus': '',
                             'fsType': 'xfs',
                             'model': 'Virtio Block Device (partition)',
                             'mountPoint': '/',
                             'name': 'vda5',
                             'size': '1024.0',
-                            'uuid': ''},
+                            'uuid': '12345-12345-12345'},
                            {'createBrick': False,
                             'devPath': '/dev/vda4',
                             'devUuid': '',
@@ -859,7 +859,7 @@ GLUSTER_STORAGE_DEVICES = [{'createBrick': True,
                             'mountPoint': '',
                             'name': 'vda4',
                             'size': '1024.0',
-                            'uuid': ''},
+                            'uuid': '12344-12344-12344'},
                            {'createBrick': True,
                             'devPath': '/dev/vda3',
                             'devUuid': '',
@@ -920,6 +920,7 @@ def glusterStorageDevData():
     device.type = "disk"
     device.format = TestStorageDev()
     device.format.type = None
+    device.format.uuid = None
     devices.append(device)
 
     # Check model
@@ -953,13 +954,14 @@ def glusterStorageDevData():
     device.type = "disk"
     device.format = TestStorageDev()
     device.format.type = None
+    device.format.uuid = None
     devices.append(device)
 
     device = TestStorageDev()
     device.name = 'vda5'
     device.size = 1024.0
     device.path = '/dev/vda5'
-    device.uuid = None
+    device.uuid = 'ee18ca64-806a-4a84-b69e-1f939265fa68'
     device.parents = []
     device.bus = ''
     device.kids = 0
@@ -967,8 +969,8 @@ def glusterStorageDevData():
     device.type = "partition"
     device.format = TestStorageDev()
     device.format.type = 'xfs'
+    device.format.uuid = "12345-12345-12345"
     device.format.mountpoint = '/'
-    device.format.uuid = 'ee18ca64-806a-4a84-b69e-1f939265fa68'
     devices.append(device)
 
     # check fstype, no mountpoint attribute
@@ -984,7 +986,7 @@ def glusterStorageDevData():
     device.type = "partition"
     device.format = TestStorageDev()
     device.format.type = 'xfs'
-    device.format.uuid = None
+    device.format.uuid = "12344-12344-12344"
     devices.append(device)
 
     # check empty mountpoint
@@ -1016,6 +1018,7 @@ def glusterStorageDevData():
     device.type = "disk"
     device.format = TestStorageDev()
     device.format.type = None
+    device.format.uuid = None
     devices.append(device)
 
     # device type cd-rom
@@ -1048,7 +1051,6 @@ def glusterStorageDevData():
     device.format = TestStorageDev()
     device.format.type = None
     device.format.uuid = None
-    device.format.type = None
     devices.append(device)
     return devices
 
