@@ -133,6 +133,9 @@ def _add_disks(root, params):
     disks = root.findall('.//disk[@type="file"]')
     for disk in disks:
         d = {}
+        device = disk.get('device')
+        if device is not None:
+            d['type'] = device
         target = disk.find('./target/[@dev]')
         if target is not None:
             d['dev'] = target.get('dev')
@@ -158,4 +161,7 @@ def _add_networks(root, params):
         target = iface.find('./target/[@dev]')
         if target is not None:
             i['dev'] = target.get('dev')
+        model = iface.find('./model/[@type]')
+        if model is not None:
+            i['model'] = model.get('type')
         params['networks'].append(i)
