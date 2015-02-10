@@ -1775,23 +1775,17 @@ class NetworkTest(TestCaseBase):
                     if bridged:
                         self.assertEqual(test_net['cfg']['BOOTPROTO'],
                                          bootproto)
-
                         devs = self.vdsm_net.netinfo.bridges
-                        self.assertIn(NETWORK_NAME, devs)
-                        self.assertEqual(
-                            devs[NETWORK_NAME]['cfg']['BOOTPROTO'], bootproto)
-                        self.assertEqual(devs[NETWORK_NAME]['dhcpv4'], dhcpv4)
-                        self.assertEqual(devs[NETWORK_NAME]['dhcpv6'], dhcpv6)
                         device_name = NETWORK_NAME
-
                     else:
                         devs = self.vdsm_net.netinfo.nics
-                        self.assertIn(right, devs)
-                        self.assertEqual(devs[right]['cfg']['BOOTPROTO'],
-                                         bootproto)
-                        self.assertEqual(devs[right]['dhcpv4'], dhcpv4)
-                        self.assertEqual(devs[right]['dhcpv6'], dhcpv6)
                         device_name = right
+
+                    self.assertIn(device_name, devs)
+                    net_attrs = devs[device_name]
+                    self.assertEqual(net_attrs['cfg']['BOOTPROTO'], bootproto)
+                    self.assertEqual(net_attrs['dhcpv4'], dhcpv4)
+                    self.assertEqual(net_attrs['dhcpv6'], dhcpv6)
 
                     if dhcpv4:
                         # TODO: source routing not ready for IPv6
