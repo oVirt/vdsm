@@ -27,8 +27,7 @@ import time
 
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm.netinfo import (_get_dhclient_ifaces, BONDING_MASTERS, BONDING_OPT,
-                          _getBondingOptions, OPERSTATE_UP)
+from vdsm.netinfo import OPERSTATE_UP
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 
@@ -268,7 +267,8 @@ class TestNetinfo(TestCaseBase):
                     now=now
                 ))
 
-            dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces([lease_file])
+            dhcpv4_ifaces, dhcpv6_ifaces = \
+                netinfo._get_dhclient_ifaces([lease_file])
 
         self.assertIn('valid', dhcpv4_ifaces)
         self.assertIn('valid2', dhcpv4_ifaces)
@@ -286,20 +286,21 @@ class TestNetinfo(TestCaseBase):
         INTERVAL = '12345'
         bondName = random_iface_name()
 
-        with open(BONDING_MASTERS, 'w') as bonds:
+        with open(netinfo.BONDING_MASTERS, 'w') as bonds:
             bonds.write('+' + bondName)
             bonds.flush()
 
             try:  # no error is anticipated but let's make sure we can clean up
                 self.assertEqual(
-                    _getBondingOptions(bondName), {}, "This test fails when "
-                    "a new bonding option is added to the kernel. Please run "
-                    "`vdsm-tool dump-bonding-defaults` and retest.")
+                    netinfo._getBondingOptions(bondName), {}, "This test fails"
+                    " when a new bonding option is added to the kernel. Please"
+                    " run vdsm-tool dump-bonding-defaults` and retest.")
 
-                with open(BONDING_OPT % (bondName, 'miimon'), 'w') as opt:
+                with open(netinfo.BONDING_OPT % (bondName, 'miimon'),
+                          'w') as opt:
                     opt.write(INTERVAL)
 
-                self.assertEqual(_getBondingOptions(bondName),
+                self.assertEqual(netinfo._getBondingOptions(bondName),
                                  {'miimon': INTERVAL})
 
             finally:
