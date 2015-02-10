@@ -879,10 +879,8 @@ class Vm(object):
         # note that we don't use _statusLock here. One of the reasons is the
         # non-obvious recursive locking in the following flow:
         # _set_lastStatus() -> saveState() -> status() -> _get_lastStatus().
-        PAUSED_STATES = (vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
-                         vmstatus.UP)
         status = self._lastStatus
-        if not self._guestCpuRunning and status in PAUSED_STATES:
+        if not self._guestCpuRunning and status in vmstatus.PAUSED_STATES:
             return vmstatus.PAUSED
         return status
 
