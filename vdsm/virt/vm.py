@@ -1468,17 +1468,18 @@ class Vm(object):
                 "%s, capacity: %s, allocated: %s, physical: %s)",
                 volumeID, drive.domainID, drive.apparentsize, capacity,
                 alloc, physical)
-            self.extendDriveVolume(drive, volumeID, physical)
+            self.extendDriveVolume(drive, volumeID, physical, capacity)
 
         return len(extend) > 0
 
-    def extendDriveVolume(self, vmDrive, volumeID, curSize):
+    def extendDriveVolume(self, vmDrive, volumeID, curSize, capacity):
         """
         Extend drive volume and its replica volume during replication.
 
         Must be called only when the drive or the replica are chunked.
         """
-        newSize = vmDrive.getNextVolumeSize(curSize)  # newSize is in megabytes
+        # newSize is in megabytes
+        newSize = vmDrive.getNextVolumeSize(curSize, capacity)
 
         if getattr(vmDrive, 'diskReplicate', None):
             volInfo = {'poolID': vmDrive.diskReplicate['poolID'],
@@ -3493,8 +3494,10 @@ class Vm(object):
 
         if srcDrive.chunked:
             try:
-                self.extendDriveVolume(srcDrive, srcDrive.volumeID,
-                                       srcDrive.apparentsize)
+                capacity, alloc, physical = self._dom.blockInfo(
+                    srcDrive.path, 0)
+                self.extendDriveVolume(srcDrive, srcDrive.volumeID, physical,
+                                       capacity)
             except Exception:
                 self.log.exception("Initial extension request failed for %s",
                                    srcDrive.name)
@@ -4776,7 +4779,8 @@ class Vm(object):
         # plus a bit more to accomodate additional writes to 'top' during the
         # live merge operation.
         if drive.chunked:
-            self.extendDriveVolume(drive, baseVolUUID, topSize)
+            capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+            self.extendDriveVolume(drive, baseVolUUID, topSize, capacity)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job

@@ -23,6 +23,7 @@ from testlib import VdsmTestCase
 from testlib import XMLTestCase
 from testlib import permutations, expandPermutations
 
+from vdsm import constants
 from vdsm import utils
 from virt.vmdevices.storage import Drive
 
@@ -240,6 +241,26 @@ class ChunkedTests(VdsmTestCase):
         drive = Drive({}, self.log, **conf)
         drive._blockDev = blockDev
         self.assertEqual(drive.chunked, chunked)
+
+
+@expandPermutations
+class GetNextVolumeSizeTests(VdsmTestCase):
+
+    CAPACITY = 8192 * constants.MEGAB
+
+    @permutations([[1024 * constants.MEGAB], [2048 * constants.MEGAB]])
+    def test_next_size(self, cursize):
+        conf = drive_config(format='cow')
+        drive = Drive({}, self.log, **conf)
+        self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
+                         cursize / constants.MEGAB + drive.volExtensionChunk)
+
+    @permutations([[CAPACITY - 1], [CAPACITY], [CAPACITY + 1]])
+    def test_capacity_limit(self, cursize):
+        conf = drive_config(format='cow')
+        drive = Drive({}, self.log, **conf)
+        self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
+                         self.CAPACITY / constants.MEGAB)
 
 
 def drive_config(**kw):

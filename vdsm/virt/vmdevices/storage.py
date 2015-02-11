@@ -131,17 +131,19 @@ class Drive(Base):
         return (self.VOLWM_FREE_PCT * self.volExtensionChunk *
                 constants.MEGAB / 100)
 
-    def getNextVolumeSize(self, curSize):
+    def getNextVolumeSize(self, curSize, capacity):
         """
         Returns the next volume size in megabytes. This value is based on the
         volExtensionChunk property and it's the size that should be requested
         for the next LV extension.  curSize is the current size of the volume
         to be extended.  For the leaf volume curSize == self.apparentsize.
         For internal volumes it is discovered by calling irs.getVolumeSize().
+        capacity is the maximum size of the volume. It can be discovered using
+        libvirt.virDomain.blockInfo() or qemuimg.info().
         """
-        nextSize = (self.volExtensionChunk +
-                    ((curSize + constants.MEGAB - 1) / constants.MEGAB))
-        return min(nextSize, self.truesize)
+        curSizeMB = (curSize + constants.MEGAB - 1) / constants.MEGAB
+        nextSizeMB = curSizeMB + self.volExtensionChunk
+        return min(nextSizeMB, capacity / constants.MEGAB)
 
     @property
     def chunked(self):
