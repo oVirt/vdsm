@@ -58,6 +58,18 @@ class SchemaValidation(TestCaseBase):
                     raise AssertionError('Lines longer than 80\n%s'
                                          % '\n'.join(longer))
 
+    def test_tabs_in_line(self):
+        for fname in self._get_paths():
+            with open(fname) as f:
+                with_tabs = []
+                for i, line in enumerate(f):
+                    if '\t' in line:
+                        with_tabs.append('line [%d] %s' % (i + 1, line))
+
+                if len(with_tabs) > 0:
+                    raise AssertionError('Lines containing tabs\n%s'
+                                         % '\n'.join(with_tabs))
+
     def _get_paths(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
