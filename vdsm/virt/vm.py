@@ -1756,6 +1756,7 @@ class Vm(object):
 
     def _getExitedVmStats(self):
         stats = {
+            'vmId': self.conf['vmId'],
             'exitCode': self.conf['exitCode'],
             'status': self.lastStatus,
             'exitMessage': self.conf['exitMessage'],
