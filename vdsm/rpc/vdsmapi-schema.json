@@ -6433,6 +6433,8 @@
 #
 # Statistics about a VM that no longer running.
 #
+# @vmId:         The UUID of the Vm
+#
 # @exitCode:     Code indicating whether the VM exit was normal or in error
 #
 # @status:       The current VM status
@@ -6446,8 +6448,9 @@
 # Since: 4.10.0
 ##
 {'type': 'ExitedVmStats',
- 'data': {'exitCode': 'VmExitCode', 'status': 'VmStatus', 'exitMessage': 'str',
-          'exitReason': 'VmExitReason', '*timeOffset': 'int'}}
+ 'data': {'vmId': 'UUID', 'exitCode': 'VmExitCode', 'status': 'VmStatus',
+          'exitMessage': 'str', 'exitReason': 'VmExitReason',
+          '*timeOffset': 'int'}}
 
 ##
 # @VmDiskStats:
@@ -6765,6 +6768,8 @@
 #
 # Statistics for a running virtual machine.
 #
+# @vmId:               The UUID of the Vm
+#
 # @displayPort:        The port in use for unencrypted display data
 #
 # @displaySecurePort:  The port in use for encrypted display data
@@ -6861,7 +6866,7 @@
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
- 'data': {'displayPort': 'uint', 'displaySecurePort': 'uint',
+ 'data': {'vmId': 'UUID', 'displayPort': 'uint', 'displaySecurePort': 'uint',
           'displayType': 'VmDisplayType', 'displayIp': 'str', 'pid': 'uint',
           'vmType': 'VmType', 'kvmEnable': 'bool',
           'network': 'NetworkInterfaceStatsMap',
