@@ -253,7 +253,7 @@ class DriveVolumeSizeTests(VdsmTestCase):
         conf = drive_config(format='cow')
         drive = Drive({}, self.log, **conf)
         self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
-                         cursize / constants.MEGAB + drive.volExtensionChunk)
+                         cursize + drive.volExtensionChunk)
 
     @permutations([[CAPACITY - 1], [CAPACITY], [CAPACITY + 1]])
     def test_next_size_limit(self, cursize):
@@ -265,9 +265,9 @@ class DriveVolumeSizeTests(VdsmTestCase):
     def test_max_size(self):
         conf = drive_config(format='cow')
         drive = Drive({}, self.log, **conf)
-        size = int(self.CAPACITY * drive.VOLWM_COW_OVERHEAD)
-        self.assertEqual(drive.getMaxVolumeSize(self.CAPACITY),
-                         size / constants.MEGAB + 1)
+        size = utils.round(self.CAPACITY * drive.VOLWM_COW_OVERHEAD,
+                           constants.MEGAB)
+        self.assertEqual(drive.getMaxVolumeSize(self.CAPACITY), size)
 
 
 def drive_config(**kw):

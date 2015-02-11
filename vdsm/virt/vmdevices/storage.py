@@ -47,7 +47,8 @@ class Drive(Base):
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID',
                  'diskReplicate')
-    VOLWM_CHUNK_MB = config.getint('irs', 'volume_utilization_chunk_mb')
+    VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
+                        constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
 
@@ -116,27 +117,30 @@ class Drive(Base):
     @property
     def volExtensionChunk(self):
         """
-        Returns the volume extension chunks (used for the thin provisioning
-        on block devices). The value is based on the vdsm configuration but
-        can also dynamically change according to the VM needs (e.g. increase
-        during a live storage migration).
+        Returns the volume extension chunk size in bytes.
+
+        This size is used for the thin provisioning on block devices. The value
+        is based on the vdsm configuration but can also dynamically change
+        according to the VM needs (e.g. increase during a live storage
+        migration).
         """
         if self.isDiskReplicationInProgress():
-            return self.VOLWM_CHUNK_MB * self.VOLWM_CHUNK_REPLICATE_MULT
-        return self.VOLWM_CHUNK_MB
+            return self.VOLWM_CHUNK_SIZE * self.VOLWM_CHUNK_REPLICATE_MULT
+        return self.VOLWM_CHUNK_SIZE
 
     @property
     def watermarkLimit(self):
         """
-        Returns the watermark limit, when the LV usage reaches this limit an
-        extension is in order (thin provisioning on block devices).
+        Returns the watermark limit in bytes.
+
+        When the LV usage reaches this limit an extension is in order (thin
+        provisioning on block devices).
         """
-        return (self.VOLWM_FREE_PCT * self.volExtensionChunk *
-                constants.MEGAB / 100)
+        return self.VOLWM_FREE_PCT * self.volExtensionChunk / 100
 
     def getNextVolumeSize(self, curSize, capacity):
         """
-        Returns the next volume size in megabytes. This value is based on the
+        Returns the next volume size in bytes. This value is based on the
         volExtensionChunk property and it's the size that should be requested
         for the next LV extension.  curSize is the current size of the volume
         to be extended.  For the leaf volume curSize == self.apparentsize.
@@ -144,19 +148,19 @@ class Drive(Base):
         capacity is the maximum size of the volume. It can be discovered using
         libvirt.virDomain.blockInfo() or qemuimg.info().
         """
-        curSizeMB = (curSize + constants.MEGAB - 1) / constants.MEGAB
-        nextSizeMB = curSizeMB + self.volExtensionChunk
-        return min(nextSizeMB, self.getMaxVolumeSize(capacity))
+        nextSize = utils.round(curSize + self.volExtensionChunk,
+                               constants.MEGAB)
+        return min(nextSize, self.getMaxVolumeSize(capacity))
 
     def getMaxVolumeSize(self, capacity):
         """
-        Returns the maximum volume size in megabytes. This value is larger than
+        Returns the maximum volume size in bytes. This value is larger than
         drive capacity since we must allocate extra space for cow internal
         data. The actual lv size may be larger due to rounding to next lvm
         extent.
         """
-        size = int(capacity * self.VOLWM_COW_OVERHEAD)
-        return (size + constants.MEGAB - 1) / constants.MEGAB
+        return utils.round(capacity * self.VOLWM_COW_OVERHEAD,
+                           constants.MEGAB)
 
     @property
     def chunked(self):

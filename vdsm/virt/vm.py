@@ -1339,7 +1339,7 @@ class Vm(object):
         # may result in the VM being paused) we can't use the regular
         # getNextVolumeSize call as it relies on a cached value of the
         # drive apparentsize.
-        nextPhysSize = physical + drive.VOLWM_CHUNK_MB * constants.MEGAB
+        nextPhysSize = physical + drive.VOLWM_CHUNK_SIZE
 
         # NOTE: the intent of this check is to prevent faulty images to
         # trick qemu in requesting extremely large extensions (BZ#998443).
@@ -1364,8 +1364,7 @@ class Vm(object):
             self.pause(pauseCode='EOTHER')
             raise ImprobableResizeRequestError(msg)
 
-        maxPhysSize = drive.getMaxVolumeSize(capacity) * constants.MEGAB
-        if physical >= maxPhysSize:
+        if physical >= drive.getMaxVolumeSize(capacity):
             # The volume was extended to the maximum size. physical may be
             # larger than maximum volume size since it is rounded up to the
             # next lvm extent.
@@ -1398,7 +1397,6 @@ class Vm(object):
 
         Must be called only when the drive or the replica are chunked.
         """
-        # newSize is in megabytes
         newSize = vmDrive.getNextVolumeSize(curSize, capacity)
 
         if getattr(vmDrive, 'diskReplicate', None):
@@ -1410,7 +1408,7 @@ class Vm(object):
             self.log.debug("Requesting an extension for the volume "
                            "replication: %s", volInfo)
             self.cif.irs.sendExtendMsg(vmDrive.poolID, volInfo,
-                                       newSize * constants.MEGAB,
+                                       newSize,
                                        self.__afterReplicaExtension)
         else:
             self.__extendDriveVolume(vmDrive, volumeID, newSize)
@@ -1442,9 +1440,9 @@ class Vm(object):
 
         self.log.debug("Verifying extension for volume %s, requested size %s, "
                        "current size %s", volInfo['volumeID'],
-                       volInfo['newSize'] * constants.MEGAB, apparentSize)
+                       volInfo['newSize'], apparentSize)
 
-        if apparentSize < volInfo['newSize'] * constants.MEGAB:  # in bytes
+        if apparentSize < volInfo['newSize']:
             raise RuntimeError(
                 "Volume extension failed for %s (domainID: %s, volumeID: %s)" %
                 (volInfo['name'], volInfo['domainID'], volInfo['volumeID']))
@@ -1468,7 +1466,7 @@ class Vm(object):
         self.cif.irs.sendExtendMsg(
             vmDrive.poolID,
             volInfo,
-            newSize * constants.MEGAB,
+            newSize,
             self.__afterVolumeExtension)
 
     def __afterVolumeExtension(self, volInfo):
