@@ -30,7 +30,7 @@ import os
 import shlex
 import socket
 import struct
-from xml.dom import minidom
+import xml.etree.cElementTree as etree
 
 from . import constants
 from .ipwrapper import drv_name
@@ -113,14 +113,13 @@ def networks():
         if netname.startswith(LIBVIRT_NET_PREFIX):
             netname = netname[len(LIBVIRT_NET_PREFIX):]
             nets[netname] = {}
-            xml = minidom.parseString(net.XMLDesc(0))
-            interfaces = xml.getElementsByTagName('interface')
-            if len(interfaces) > 0:
-                nets[netname]['iface'] = interfaces[0].getAttribute('dev')
+            xml = etree.fromstring(net.XMLDesc(0))
+            interfaces = xml.find('.//interface')
+            if interfaces:
+                nets[netname]['iface'] = interfaces.get('dev')
                 nets[netname]['bridged'] = False
             else:
-                nets[netname]['bridge'] = \
-                    xml.getElementsByTagName('bridge')[0].getAttribute('name')
+                nets[netname]['bridge'] = xml.find('.//bridge').get('name')
                 nets[netname]['bridged'] = True
     return nets
 
