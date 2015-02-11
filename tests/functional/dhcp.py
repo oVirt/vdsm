@@ -34,6 +34,7 @@ _START_CHECK_TIMEOUT = 0.5
 _DHCLIENT_TIMEOUT = 10
 _WAIT_FOR_STOP_TIMEOUT = 2
 DHCLIENT_LEASE = '/var/lib/dhclient/dhclient{0}--{1}.lease'
+DHCLIENT_LEASE_EL6 = '/var/lib/dhclient/dhclient{0}-{1}.leases'
 
 
 class DhcpError(Exception):
@@ -156,8 +157,9 @@ class DhclientRunner(object):
         return executable == _DHCLIENT_BINARY.cmd
 
 
-def delete_dhclient_leases(iface, dhcpv4=False, dhcpv6=False):
+def delete_dhclient_leases(iface, dhcpv4=False, dhcpv6=False, el6=False):
+    lease_file = DHCLIENT_LEASE_EL6 if el6 else DHCLIENT_LEASE
     if dhcpv4:
-        rmFile(DHCLIENT_LEASE.format('', iface))
+        rmFile(lease_file.format('', iface))
     if dhcpv6:
-        rmFile(DHCLIENT_LEASE.format('6', iface))
+        rmFile(lease_file.format('6', iface))
