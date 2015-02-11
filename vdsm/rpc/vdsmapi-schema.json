@@ -1266,6 +1266,9 @@
 #                       host.
 #                       (new in version 4.15.0)
 #
+# @directedPassthrough: Indicates status of Intel VT-d or AMD-vi
+#                       (new in version 4.17.0)
+#
 # Since: 4.15.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -1291,7 +1294,8 @@
           'numaNodeDistance': 'NumaNodeDistanceMap',
           'autoNumaBalancing': 'AutoNumaBalancingStatus',
           'selinux': 'SELinuxStatus', '*liveSnapshot': 'bool',
-          'kdumpStatus': 'int', '*liveMerge': 'bool'}}
+          'kdumpStatus': 'int', '*liveMerge': 'bool',
+          'directedPassthrough': 'bool'}}
 
 ##
 # @Host.getCapabilities:

@@ -596,6 +596,10 @@ def _getSELinux():
     return selinux
 
 
+def _getHostdevPassthorughSupport():
+    return bool(len(os.listdir('/sys/class/iommu')))
+
+
 def get():
     targetArch = getTargetArch()
 
@@ -687,6 +691,8 @@ def get():
         caps['liveSnapshot'] = str(liveSnapSupported).lower()
     caps['liveMerge'] = str(getLiveMergeSupport()).lower()
     caps['kdumpStatus'] = _getKdumpStatus()
+
+    caps['hostdevPassthrough'] = str(_getHostdevPassthorughSupport()).lower()
 
     return caps
 
