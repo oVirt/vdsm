@@ -114,15 +114,6 @@ procs_blocked 0
 
 
 @contextmanager
-def dummy_if():
-    dummy_name = dummy.create()
-    try:
-        yield dummy_name
-    finally:
-        dummy.remove(dummy_name)
-
-
-@contextmanager
 def vlan(name, link, vlan_id):
     ipwrapper.linkAdd(name, 'vlan', link=link, args=['id', str(vlan_id)])
     try:
@@ -156,7 +147,7 @@ class InterfaceSampleTests(TestCaseBase):
         interfaces_before = set(
             sampling._get_interfaces_and_samples().iterkeys())
 
-        with dummy_if() as dummy_name:
+        with dummy.device() as dummy_name:
             interfaces_after = set(
                 sampling._get_interfaces_and_samples().iterkeys())
             interfaces_diff = interfaces_after - interfaces_before
@@ -172,7 +163,8 @@ class InterfaceSampleTests(TestCaseBase):
             return iter(all_links)
 
         with MonkeyPatchScope([(ipwrapper, 'getLinks', faultyGetLinks)]):
-            with dummy_if() as dummy, vlan(self.NEW_VLAN, dummy, 999):
+            with dummy.device() as dummy_name, vlan(
+                    self.NEW_VLAN, dummy_name, 999):
                 interfaces_and_samples = sampling._get_interfaces_and_samples()
                 self.assertNotIn(self.NEW_VLAN, interfaces_and_samples)
 

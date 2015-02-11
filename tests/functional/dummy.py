@@ -16,6 +16,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from contextlib import contextmanager
+
 from nose.plugins.skip import SkipTest
 
 from vdsm.ipwrapper import linkAdd, linkDel, addrAdd, linkSet, IPRoute2Error
@@ -32,7 +34,7 @@ def create(prefix='dummy_', max_length=11):
     try:
         linkAdd(dummy_name, linkType='dummy')
     except IPRoute2Error as e:
-        raise SkipTest('Failed to load a dummy interface %s: %s' %
+        raise SkipTest('Failed to create a dummy interface %s: %s' %
                        (dummy_name, e))
     else:
         return dummy_name
@@ -46,8 +48,17 @@ def remove(dummy_name):
     try:
         linkDel(dummy_name)
     except IPRoute2Error as e:
-        raise SkipTest("Unable to delete dummy interface %s because %s" %
+        raise SkipTest("Unable to delete the dummy interface %s: %s" %
                        (dummy_name, e))
+
+
+@contextmanager
+def device(prefix='dummy_', max_length=11):
+    dummy_name = create(prefix, max_length)
+    try:
+        yield dummy_name
+    finally:
+        remove(dummy_name)
 
 
 def setIP(dummy_name, ipaddr, netmask, family=4):
