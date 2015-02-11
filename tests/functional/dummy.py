@@ -54,7 +54,12 @@ def setIP(dummyName, ipaddr, netmask, family=4):
     try:
         addrAdd(dummyName, ipaddr, netmask, family)
     except IPRoute2Error as e:
-        raise SkipTest('Failed to set device ip: %s' % e)
+        message = ('Failed to add the IPv%s address %s/%s to device %s: %s'
+                   % (family, ipaddr, netmask, dummyName, e))
+        if family == 6:
+            message += ('; NetworkManager may have set the sysctl disable_ipv6'
+                        ' flag on the device, please see e.g. RH BZ #1102064')
+        raise SkipTest(message)
 
 
 def setLinkUp(dummyName):
