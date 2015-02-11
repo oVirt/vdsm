@@ -38,40 +38,40 @@ def create(prefix='dummy_', max_length=11):
         return dummy_name
 
 
-def remove(dummyName):
+def remove(dummy_name):
     """
-    Removes dummy interface dummyName. Assumes root privileges.
+    Remove the dummy interface. This assumes root privileges.
     """
 
     try:
-        linkDel(dummyName)
+        linkDel(dummy_name)
     except IPRoute2Error as e:
         raise SkipTest("Unable to delete dummy interface %s because %s" %
-                       (dummyName, e))
+                       (dummy_name, e))
 
 
-def setIP(dummyName, ipaddr, netmask, family=4):
+def setIP(dummy_name, ipaddr, netmask, family=4):
     try:
-        addrAdd(dummyName, ipaddr, netmask, family)
+        addrAdd(dummy_name, ipaddr, netmask, family)
     except IPRoute2Error as e:
         message = ('Failed to add the IPv%s address %s/%s to device %s: %s'
-                   % (family, ipaddr, netmask, dummyName, e))
+                   % (family, ipaddr, netmask, dummy_name, e))
         if family == 6:
             message += ('; NetworkManager may have set the sysctl disable_ipv6'
                         ' flag on the device, please see e.g. RH BZ #1102064')
         raise SkipTest(message)
 
 
-def setLinkUp(dummyName):
-    _setLinkState(dummyName, 'up')
+def setLinkUp(dummy_name):
+    _setLinkState(dummy_name, 'up')
 
 
-def setLinkDown(dummyName):
-    _setLinkState(dummyName, 'down')
+def setLinkDown(dummy_name):
+    _setLinkState(dummy_name, 'down')
 
 
-def _setLinkState(dummyName, state):
+def _setLinkState(dummy_name, state):
     try:
-        linkSet(dummyName, [state])
+        linkSet(dummy_name, [state])
     except IPRoute2Error:
-        raise SkipTest('Failed to bring %s to state %s' % (dummyName, state))
+        raise SkipTest('Failed to bring %s to state %s' % (dummy_name, state))
