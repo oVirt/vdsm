@@ -54,7 +54,7 @@ class Dnsmasq():
         # -d                        don't daemonize and log to stderr
         # --bind-dynamic            bind only the testing veth iface
         # (a better, and quiet, version of --bind-interfaces, but not on EL6)
-        self.proc = execCmd([
+        command = [
             _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
             '-p', '0',
             '--dhcp-range={0},{1},2m'.format(dhcp_range_from, dhcp_range_to),
@@ -62,13 +62,14 @@ class Dnsmasq():
             '--dhcp-option=6',
             '-i', interface, '-I', 'lo', '-d',
             '--bind-dynamic' if bind_dynamic else '--bind-interfaces']
-            + (['--dhcp-range={0},{1},2m'.format(dhcpv6_range_from,
-                                                 dhcpv6_range_to)]
-               if dhcpv6_range_from and dhcpv6_range_to else []), sync=False)
+        if dhcpv6_range_from and dhcpv6_range_to:
+            command += ['--dhcp-range={0},{1},2m'.format(dhcpv6_range_from,
+                                                         dhcpv6_range_to)]
+        self.proc = execCmd(command, sync=False)
         sleep(_START_CHECK_TIMEOUT)
         if self.proc.returncode:
-            raise DhcpError('Failed to start dnsmasq DHCP server.' +
-                            ''.join(self.proc.stderr))
+            raise DhcpError('Failed to start dnsmasq DHCP server.\n%s\n%s' %
+                            (''.join(self.proc.stderr), ' '.join(command)))
 
     def stop(self):
         self.proc.kill()
