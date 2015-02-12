@@ -277,12 +277,6 @@ def _supports_qcow2_compat(command):
 
 @utils.memoized
 def _supports_src_cache(command):
-    return _supports_src_cache_uncached(command)
-
-
-# TODO: Drop this function, move its code to _supports_src_cache() and ajust
-# tests using it when we are able to invalidate cache in utils.memoized
-def _supports_src_cache_uncached(command):
     """
     The "-T" option specifies the cache mode that should be used with the
     source file. This will check if "-T" option is available, aiming to set it
