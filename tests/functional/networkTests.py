@@ -60,6 +60,7 @@ IP_ADDRESS = '240.0.0.1'
 IP_NETWORK = '240.0.0.0'
 IP_ADDRESS_IN_NETWORK = '240.0.0.50'
 IP_CIDR = '24'
+IP_ADDRESS_AND_CIDR = IP_ADDRESS + '/' + IP_CIDR
 IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
 _ip_network = netaddr.IPNetwork(IP_NETWORK_AND_CIDR)
 IP_MASK = str(_ip_network.netmask)
@@ -1692,6 +1693,9 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkExists(NETWORK_NAME)
                 test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
                 if 4 in families:
+                    self.assertEqual(IP_ADDRESS, test_net['addr'])
+                    self.assertEqual(IP_MASK, test_net['netmask'])
+                    self.assertIn(IP_ADDRESS_AND_CIDR, test_net['ipv4addrs'])
                     self.assertEqual(IP_GATEWAY, test_net['gateway'])
                 if 6 in families:
                     self.assertIn(IPv6_ADDRESS_AND_CIDR, test_net['ipv6addrs'])
