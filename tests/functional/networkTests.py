@@ -2173,7 +2173,7 @@ class NetworkTest(TestCaseBase):
         with vethIf() as (server, client):
             veth.setIP(server, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(server)
-            with dnsmasqDhcp(server):
+            with dnsmasqDhcp(server, _system_is_el6()):
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                     # Start a non-vdsm owned dhclient for the 'client' iface
                     dhclient_runner = dhcp.DhclientRunner(
