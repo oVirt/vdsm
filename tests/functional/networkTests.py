@@ -43,7 +43,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
 from vdsm.constants import EXT_BRCTL
 from vdsm.utils import RollbackContext, execCmd
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
-                          getDhclientIfaces)
+                          getDhclientIfaces, BONDING_SLAVES)
 from vdsm import ipwrapper
 from vdsm.utils import pgrep
 
@@ -2106,3 +2106,25 @@ class NetworkTest(TestCaseBase):
             {'connectivityCheck': True, 'connectivityTimeout': 0.1})
         self.assertEqual(status, errors.ERR_LOST_CONNECTION)
         self.assertNetworkDoesntExist(NETWORK_NAME)
+
+    @cleanupNet
+    def testSetupNetworksRemoveSlavelessBond(self):
+        with dummyIf(1) as nics:
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME:
+                    {'bonding': BONDING_NAME, 'bridged': False}},
+                {BONDING_NAME: {'nics': nics}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertBondExists(BONDING_NAME, nics)
+
+            nic, = nics
+            with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
+                f.write('-%s\n' % nic)
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'remove': True}},
+                {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+            self.assertBondDoesntExist(BONDING_NAME, nics)
