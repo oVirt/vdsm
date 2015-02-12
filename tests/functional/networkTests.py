@@ -111,21 +111,11 @@ def dnsmasqDhcp(interface):
     except dhcp.DhcpError as e:
         raise SkipTest(e)
 
-    with firewallDhcp(interface):
+    with firewall.allow_dhcp(interface):
         try:
             yield
         finally:
             dhcpServer.stop()
-
-
-@contextmanager
-def firewallDhcp(interface):
-    """ Adds and removes firewall rules for DHCP"""
-    firewall.allowDhcp(interface)
-    try:
-        yield
-    finally:
-        firewall.stopAllowingDhcp(interface)
 
 
 @contextmanager

@@ -16,8 +16,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
+from contextlib import contextmanager
 import logging
+
 from nose.plugins.skip import SkipTest
 
 from vdsm.utils import CommandPath
@@ -32,8 +33,18 @@ class FirewallError(Exception):
     pass
 
 
-def allowDhcp(veth):
-    """Allows DHCP traffic on a testing veth interface.
+@contextmanager
+def allow_dhcp(iface):
+    """Temporarily allow DHCP traffic in firewall."""
+    _allow_dhcp(iface)
+    try:
+        yield
+    finally:
+        _forbid_dhcp(iface)
+
+
+def _allow_dhcp(iface):
+    """Allow DHCP traffic on an interface.
 
     When using the iptables service, no other traffic is allowed.
     With firewalld, the whole interface is moved to the 'trusted',
@@ -42,26 +53,25 @@ def allowDhcp(veth):
     try:
         if _serviceRunning('iptables'):
             _execCmdChecker([_IPTABLES_BINARY.cmd, '-I', 'INPUT', '-i',
-                            veth, '-p', 'udp', '--sport', '68', '--dport',
+                            iface, '-p', 'udp', '--sport', '68', '--dport',
                             '67', '-j', 'ACCEPT'])  # DHCPv4
             _execCmdChecker([_IPTABLES_BINARY.cmd, '-I', 'INPUT', '-i',
-                            veth, '-p', 'udp', '--sport', '546', '--dport',
+                            iface, '-p', 'udp', '--sport', '546', '--dport',
                             '547', '-j', 'ACCEPT'])  # DHCPv6
         elif _serviceRunning('firewalld'):
             _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
-                            '--change-interface=' + veth])
+                            '--change-interface=' + iface])
         else:
             logging.info('No firewall service detected.')
     except FirewallError as e:
         raise SkipTest('Failed to allow DHCP traffic in firewall: %s' % e)
 
 
-def stopAllowingDhcp(veth):
-    """Removes the rules allowing DHCP on the testing veth interface.
+def _forbid_dhcp(iface):
+    """Remove the rules allowing DHCP on the interface.
 
-    As the interface is expected to be removed from the system,
-    this function merely reverses the effect of the 'allowDhcp' function
-    just to clean up.
+    As the interface is expected to be removed from the system, this function
+    merely reverses the effect of _allow_dhcp(), just to clean up.
     For iptables, it deletes the rule introduced. For firewalld, it removes
     the interface from the 'trusted' zone.
 
@@ -69,14 +79,14 @@ def stopAllowingDhcp(veth):
     """
     if _serviceRunning('iptables'):
         _execCmdChecker([_IPTABLES_BINARY.cmd, '-D', 'INPUT', '-i',
-                        veth, '-p', 'udp', '--sport', '68', '--dport',
+                        iface, '-p', 'udp', '--sport', '68', '--dport',
                         '67', '-j', 'ACCEPT'])  # DHCPv4
         _execCmdChecker([_IPTABLES_BINARY.cmd, '-D', 'INPUT', '-i',
-                        veth, '-p', 'udp', '--sport', '546', '--dport',
+                        iface, '-p', 'udp', '--sport', '546', '--dport',
                         '547', '-j', 'ACCEPT'])  # DHCPv6
     elif _serviceRunning('firewalld'):
         _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
-                        '--remove-interface=' + veth])
+                        '--remove-interface=' + iface])
     else:
         logging.warning('No firewall service detected.')
 
