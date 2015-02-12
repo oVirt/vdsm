@@ -104,6 +104,10 @@ def run_libvirt_event_loop():
 
 
 class testLibvirtconnection(TestCaseBase):
+
+    def tearDown(self):
+        libvirtconnection._clear()
+
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     @MonkeyPatch(constants, 'P_VDSM_LIBVIRT_PASSWD', '/dev/null')
     def testCallSucceeded(self):

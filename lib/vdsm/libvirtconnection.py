@@ -102,6 +102,14 @@ def open_connection(uri=None, username=None, passwd=None):
     return utils.retry(libvirtOpen, timeout=10, sleep=0.2)
 
 
+def _clear():
+    """
+    For clearing connections during the tests.
+    """
+    with __connectionLock:
+        __connections.clear()
+
+
 def get(target=None, killOnFailure=True):
     """Return current connection to libvirt or open a new one.
     Use target to get/create the connection object linked to that object.
