@@ -297,9 +297,6 @@ class Bond(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
                                      'Missing required nics on a bonding %s '
                                      'that is unknown to Vdsm ' % name)
-        if not slaves:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required nics'
-                                     ' for bonding device.')
 
         return cls(name, configurator, slaves=slaves, options=options, mtu=mtu,
                    destroyOnMasterRemoval=destroyOnMasterRemoval)
