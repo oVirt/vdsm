@@ -1261,6 +1261,47 @@
 {'command': {'class': 'GlusterHost', 'name': 'storageDevicesList'},
  'returns': ['StorageDevicesList']}
 
+
+# @RaidDevice:
+#
+# Raid storage devices.
+#
+# @type :       Raid type
+#
+# @stripeSize:  Stripe size
+#
+# @diskCnt:     Disk count
+#
+# Since: 4.17.0
+##
+{'type': 'RaidDevice':
+ 'data': {'type': 'str', 'stripeSize': 'int', 'diskCnt': 'int'}}
+
+##
+# @GlusterHost.createBrick:
+#
+# Create a brick for the gluster volume
+#
+# @name:       Gluster brick name
+#
+# @mountPoint: Device mountPoint
+#
+# @devList:    List of devices to be used
+#
+# @fsType:     # optional file system type
+#
+# @raidParams: # optional dictonary contains raid details of a raid device
+#
+# Returns:
+# Success or failure
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterHost', 'name': 'createBrick'},
+ 'data': {'name': 'str', 'mountPoint': 'str', 'devList': ['str'],
+          '*fsType': 'str', '*raidParams': 'RaidDevice'},
+ 'returns': 'bool'}
+
 ##
 # @GlusterVolumeStatsInfo:
 #

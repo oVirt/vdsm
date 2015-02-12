@@ -32,6 +32,7 @@ dist_vdsmgluster_PYTHON = \
 	apiwrapper.py \
 	cli.py \
 	exception.py \
+	fstab.py \
 	gfapi.py \
 	hooks.py \
 	services.py \

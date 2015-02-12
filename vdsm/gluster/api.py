@@ -489,6 +489,16 @@ class GlusterApi(object):
         status = self.svdsmProxy.glusterSnapshotInfo(volumeName)
         return {'snapshotList': status}
 
+    @exportAsVerb
+    def createBrick(self, name, mountPoint, devList, fsType=None,
+                    raidParams={}, options=None):
+        status = self.svdsmProxy.glusterCreateBrick(name,
+                                                    mountPoint,
+                                                    devList,
+                                                    fsType,
+                                                    raidParams)
+        return {'device': status}
+
 
 def getGlusterMethods(gluster):
     l = []
