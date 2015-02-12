@@ -103,6 +103,10 @@ def run_libvirt_event_loop():
 
 
 class testLibvirtconnection(TestCaseBase):
+
+    def tearDown(self):
+        libvirtconnection._clear()
+
     @MonkeyPatch(libvirtconnection, 'libvirt', LibvirtMock())
     def testCallSucceeded(self):
         """Positive test - libvirtMock does not raise any errors"""
