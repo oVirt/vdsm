@@ -318,6 +318,9 @@ def convert_src_cache_unsupported(cmd, **kw):
 
 class SupportsSrcCacheTests(TestCaseBase):
 
+    def tearDown(self):
+        qemuimg._supports_src_cache.invalidate()
+
     @MonkeyPatch(utils, 'execCmd', src_cache_supported)
     def test_rebase_supported(self, **kw):
         self.assertTrue(qemuimg._supports_src_cache('rebase'))
