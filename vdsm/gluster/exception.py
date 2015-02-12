@@ -399,6 +399,74 @@ class GlusterHostUUIDNotFoundException(GlusterHostException):
     message = "Host UUID not found"
 
 
+class GlusterHostStorageDeviceNotFoundException(GlusterHostException):
+    code = 4409
+
+    def __init__(self, deviceList):
+        self.message = "Device(s) %s not found" % deviceList
+
+
+class GlusterHostStorageDeviceInUseException(GlusterHostException):
+    code = 4410
+
+    def __init__(self, deviceList):
+        self.message = "Device(s) %s already in use" % deviceList
+
+
+class GlusterHostStorageDeviceMountFailedException(GlusterHostException):
+    code = 4411
+
+    def __init__(self, device, mountPoint, fsType, mountOpts):
+        self.message = "Failed to mount device %s on mount point %s using " \
+                       "fs-type %s with mount options %s" % (
+                           device, mountPoint, fsType, mountOpts)
+
+
+class GlusterHostStorageDeviceFsTabFoundException(GlusterHostException):
+    code = 4412
+
+    def __init__(self, device):
+        self.message = "fstab entry for device %s already exists" % device
+
+
+class GlusterHostStorageDevicePVCreateFailedException(GlusterHostException):
+    code = 4413
+
+    def __init__(self, device, alignment, rc=0, out=(), err=()):
+        self.rc = rc
+        self.out = out
+        self.err = err
+        self.message = "Failed to create LVM PV for device %s with " \
+                       "data alignment %s" % (device, alignment)
+
+
+class GlusterHostStorageDeviceLVConvertFailedException(GlusterHostException):
+    code = 4414
+
+    def __init__(self, device, alignment, rc=0, out=(), err=()):
+        self.rc = rc
+        self.out = out
+        self.err = err
+        self.message = "Failed to run lvconvert for device %s with " \
+                       "data alignment %s" % (device, alignment)
+
+
+class GlusterHostStorageDeviceLVChangeFailedException(GlusterHostException):
+    code = 4415
+
+    def __init__(self, poolName, rc=0, out=(), err=()):
+        self.rc = rc
+        self.out = out
+        self.err = err
+        self.message = "Failed to run lvchange for the thin pool: %s" % (
+            poolName)
+
+
+class GlusterHostStorageDeviceMakeDirsFailedException(GlusterHostException):
+    code = 4516
+    message = "Make directories failed"
+
+
 # Hook
 class GlusterHookException(GlusterException):
     code = 4500

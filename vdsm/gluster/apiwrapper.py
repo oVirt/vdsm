@@ -81,6 +81,11 @@ class GlusterHost(GlusterApiBase):
     def storageDevicesList(self, options=None):
         return self._gluster.storageDevicesList()
 
+    def createBrick(self, name, mountPoint, devList, fsType=None,
+                    raidParams={}):
+        return self._gluster.createBrick(name, mountPoint,
+                                         devList, fsType, raidParams)
+
 
 class GlusterService(GlusterApiBase):
     def __init__(self):

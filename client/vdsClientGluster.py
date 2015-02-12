@@ -656,6 +656,24 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterCreateBrick(self, args):
+        params = self._eqSplit(args)
+        devList = params.get('devices', '').split(',')
+        brickName = params.get('brickName', '')
+        mountPoint = params.get('mountPoint', '')
+        fsType = params.get('fsType', '')
+        raidType = params.get('raidType', '')
+        raidParams = {}
+        if raidType:
+            raidParams['type'] = raidType.upper()
+            raidParams['stripeSize'] = int(params.get('stripeSize', 0))
+            raidParams['pdCount'] = int(params.get('pdCount', 0))
+
+        status = self.s.glusterCreateBrick(brickName, mountPoint,
+                                           devList, fsType, raidParams)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1112,5 +1130,23 @@ def getGlusterCmdDict(serv):
              serv.do_glusterVolumeSnapshotList,
              ('[volumeName=<volume_name>]',
               'snapshot list for given volume'
-              ))
+              )),
+         'glusterCreateBrick': (
+             serv.do_glusterCreateBrick,
+             ('brickName=<brick_name> mountPoint=<mountPoint> '
+              'devices=<device[,device, ...]> '
+              '[raidType=<raid_type>] [stripeSize=<stripe_size>] '
+              '[fsType=<fs_type>] [pdCount=<pd_count>] \n\n'
+              '<brick_name> is the name of the brick\n'
+              '<mountPoint> device mount point\n'
+              '<device[,device, ...]> is the list of device name(s)\n'
+              '<fsType> is the file system type of the brick \n'
+              '<raid_type> is the type of raid like 6 or 10 or 0\n'
+              '<stripe_size> is the stripe unit size\n'
+              '<pd_count> is the total number of physical '
+              'disks used in the raid\n'
+              '<raid_type>, <stripe_size> and <pd_count> '
+              'are the optional parameters\n',
+              'This will create a brick using given input devices'
+              )),
          }
