@@ -873,9 +873,14 @@ class memoized(object):
             self.cache[args] = value
             return value
 
+    def invalidate(self):
+        self.cache.clear()
+
     def __get__(self, obj, objtype):
         """Support instance methods."""
-        return functools.partial(self.__call__, obj)
+        wrapper = functools.partial(self.__call__, obj)
+        wrapper.invalidate = self.cache.clear
+        return wrapper
 
 
 def validateMinimalKeySet(dictionary, reqParams):
