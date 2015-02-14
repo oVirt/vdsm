@@ -18,6 +18,7 @@
 #
 from __future__ import absolute_import
 
+import copy
 import glob
 import logging
 import os
@@ -687,32 +688,31 @@ class ConfigWriter(object):
 
     @staticmethod
     def _getIfaceConfValues(iface):
-        ipaddr, netmask, gateway, defaultRoute, ipv6addr, ipv6gateway, \
-            ipv6defaultRoute, bootproto, async, ipv6autoconf, dhcpv6 = \
-            iface.ipConfig
+        ipconfig = copy.deepcopy(iface.ipconfig)
+        ipv4 = ipconfig.ipv4
+        ipv6 = ipconfig.ipv6
         mtu = iface.mtu
         if netinfo.ifaceUsed(iface.name):
             confParams = netinfo.getIfaceCfg(iface.name)
-            if not ipaddr and bootproto != 'dhcp':
-                ipaddr = confParams.get('IPADDR', None)
-                netmask = confParams.get('NETMASK', None)
-                gateway = confParams.get('GATEWAY', None)
-                bootproto = bootproto or confParams.get('BOOTPROTO', None)
-            if defaultRoute is None and confParams.get('DEFROUTE'):
-                defaultRoute = _from_ifcfg_bool(confParams['DEFROUTE'])
-            if confParams.get('IPV6INIT', 'no') == 'yes':
-                ipv6addr = confParams.get('IPV6ADDR', None)
-                ipv6gateway = confParams.get('IPV6_DEFAULTGW', None)
-                ipv6autoconf = (confParams.get('IPV6_AUTOCONF', 'no') == 'yes')
-                dhcpv6 = (confParams.get('DHCPV6C', 'no') == 'yes')
+            if not ipv4.address and ipconfig.bootproto != 'dhcp':
+                ipv4.address = confParams.get('IPADDR')
+                ipv4.netmask = confParams.get('NETMASK')
+                ipv4.gateway = confParams.get('GATEWAY')
+                if not ipconfig.bootproto:
+                    ipconfig.bootproto = confParams.get('BOOTPROTO')
+            if ipv4.defaultRoute is None and confParams.get('DEFROUTE'):
+                ipv4.defaultRoute = _from_ifcfg_bool(confParams['DEFROUTE'])
+            if confParams.get('IPV6INIT') == 'yes':
+                ipv6.address = confParams.get('IPV6ADDR')
+                ipv6.gateway = confParams.get('IPV6_DEFAULTGW')
+                ipconfig.ipv6autoconf = (
+                    confParams.get('IPV6_AUTOCONF') == 'yes')
+                ipconfig.dhcpv6 = confParams.get('DHCPV6C') == 'yes'
             if not iface.mtu:
-                mtu = confParams.get('MTU', None)
+                mtu = confParams.get('MTU')
                 if mtu:
                     mtu = int(mtu)
-        ipconfig = IpConfig.ipConfig(ipaddr, netmask, gateway, defaultRoute,
-                                     ipv6addr, ipv6gateway, ipv6defaultRoute,
-                                     bootproto, async, ipv6autoconf, dhcpv6)
-        return ipconfig, mtu
+        return ipconfig.getConfig(), mtu
 
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic
