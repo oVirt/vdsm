@@ -561,36 +561,35 @@ class ConfigWriter(object):
 
     def _createConfFile(self, conf, name, ipconfig, mtu=None, **kwargs):
         """ Create ifcfg-* file with proper fields per device """
-
-        cfg = """DEVICE=%s\n""" % pipes.quote(name)
+        ipv4 = ipconfig.ipv4
+        ipv6 = ipconfig.ipv6
+        cfg = 'DEVICE=%s\n' % pipes.quote(name)
         cfg += conf
-        if ipconfig.ipaddr:
-            cfg = cfg + 'IPADDR=%s\n' % pipes.quote(ipconfig.ipaddr)
-            cfg = cfg + 'NETMASK=%s\n' % pipes.quote(ipconfig.netmask)
-            if ipconfig.gateway:
-                cfg = cfg + 'GATEWAY=%s\n' % pipes.quote(ipconfig.gateway)
+        if ipv4.address:
+            cfg += 'IPADDR=%s\n' % pipes.quote(ipv4.address)
+            cfg += 'NETMASK=%s\n' % pipes.quote(ipv4.netmask)
+            if ipv4.gateway:
+                cfg += 'GATEWAY=%s\n' % pipes.quote(ipv4.gateway)
             # According to manual the BOOTPROTO=none should be set
             # for static IP
-            cfg = cfg + 'BOOTPROTO=none\n'
+            cfg += 'BOOTPROTO=none\n'
         elif ipconfig.bootproto:
-            cfg = cfg + 'BOOTPROTO=%s\n' % pipes.quote(ipconfig.bootproto)
+            cfg += 'BOOTPROTO=%s\n' % pipes.quote(ipconfig.bootproto)
             if (ipconfig.bootproto == 'dhcp' and
                     os.path.exists(os.path.join(netinfo.NET_PATH, name))):
                 # Ask dhclient to stop any dhclient running for the device
                 dhclient.kill_dhclient(name)
-
         if mtu:
-            cfg = cfg + 'MTU=%d\n' % mtu
-        if ipconfig.defaultRoute is not None:
-            cfg = cfg + 'DEFROUTE=%s\n' % _to_ifcfg_bool(ipconfig.defaultRoute)
+            cfg += 'MTU=%d\n' % mtu
+        if ipv4.defaultRoute is not None:
+            cfg += 'DEFROUTE=%s\n' % _to_ifcfg_bool(ipv4.defaultRoute)
         cfg += 'NM_CONTROLLED=no\n'
-        if ipconfig.ipv6addr or ipconfig.ipv6autoconf or ipconfig.dhcpv6:
+        if ipv6.address or ipconfig.ipv6autoconf or ipconfig.dhcpv6:
             cfg += 'IPV6INIT=yes\n'
-            if ipconfig.ipv6addr is not None:
-                cfg += 'IPV6ADDR=%s\n' % pipes.quote(ipconfig.ipv6addr)
-                if ipconfig.ipv6gateway is not None:
-                    cfg += 'IPV6_DEFAULTGW=%s\n' % \
-                        pipes.quote(ipconfig.ipv6gateway)
+            if ipv6.address is not None:
+                cfg += 'IPV6ADDR=%s\n' % pipes.quote(ipv6.address)
+                if ipv6.gateway is not None:
+                    cfg += 'IPV6_DEFAULTGW=%s\n' % pipes.quote(ipv6.gateway)
             elif ipconfig.dhcpv6:
                 cfg += 'DHCPV6C=yes\n'
             if ipconfig.ipv6autoconf:
@@ -607,7 +606,6 @@ class ConfigWriter(object):
                 cfg += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
             else:
                 logging.debug('ignoring variable %s', k)
-
         self.writeConfFile(netinfo.NET_CONF_PREF + name, cfg)
 
     def addBridge(self, bridge, **opts):
@@ -623,7 +621,7 @@ class ConfigWriter(object):
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             opts['bridging_opts'] = opts['custom']['bridge_opts']
-        self._createConfFile(conf, bridge.name, bridge.ipConfig, bridge.mtu,
+        self._createConfFile(conf, bridge.name, bridge.ipconfig, bridge.mtu,
                              **opts)
 
     def addVlan(self, vlan, **opts):
@@ -636,7 +634,7 @@ class ConfigWriter(object):
             conf += 'ONBOOT=%s\n' % 'yes'
         else:
             conf += 'ONBOOT=%s\n' % 'no'
-        self._createConfFile(conf, vlan.name, vlan.ipConfig, vlan.mtu, **opts)
+        self._createConfFile(conf, vlan.name, vlan.ipconfig, vlan.mtu, **opts)
 
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
@@ -712,7 +710,7 @@ class ConfigWriter(object):
                 mtu = confParams.get('MTU')
                 if mtu:
                     mtu = int(mtu)
-        return ipconfig.getConfig(), mtu
+        return ipconfig, mtu
 
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic
