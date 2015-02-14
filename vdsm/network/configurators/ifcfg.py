@@ -558,12 +558,6 @@ class ConfigWriter(object):
             logging.debug('ignoring restorecon error in case '
                           'SElinux is disabled', exc_info=True)
 
-    @staticmethod
-    def _toIfcfgFormat(defaultRoute):
-        if defaultRoute is None:
-            return None
-        return 'yes' if defaultRoute else 'no'
-
     def _createConfFile(self, conf, name, ipconfig, mtu=None, **kwargs):
         """ Create ifcfg-* file with proper fields per device """
 
@@ -586,8 +580,8 @@ class ConfigWriter(object):
 
         if mtu:
             cfg = cfg + 'MTU=%d\n' % mtu
-        if ipconfig.defaultRoute:
-            cfg = cfg + 'DEFROUTE=%s\n' % ipconfig.defaultRoute
+        if ipconfig.defaultRoute is not None:
+            cfg = cfg + 'DEFROUTE=%s\n' % _to_ifcfg_bool(ipconfig.defaultRoute)
         cfg += 'NM_CONTROLLED=no\n'
         if ipconfig.ipv6addr or ipconfig.ipv6autoconf or ipconfig.dhcpv6:
             cfg += 'IPV6INIT=yes\n'
@@ -621,17 +615,15 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bridge.stp is not None:
             conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
-        ipconfig = bridge.ipConfig
-        if not self.unifiedPersistence or ipconfig.defaultRoute:
+        if not self.unifiedPersistence or bridge.ipConfig.defaultRoute:
             conf += 'ONBOOT=%s\n' % 'yes'
         else:
             conf += 'ONBOOT=%s\n' % 'no'
-        defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
-        ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             opts['bridging_opts'] = opts['custom']['bridge_opts']
-        self._createConfFile(conf, bridge.name, ipconfig, bridge.mtu, **opts)
+        self._createConfFile(conf, bridge.name, bridge.ipConfig, bridge.mtu,
+                             **opts)
 
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
@@ -643,10 +635,7 @@ class ConfigWriter(object):
             conf += 'ONBOOT=%s\n' % 'yes'
         else:
             conf += 'ONBOOT=%s\n' % 'no'
-        ipconfig = vlan.ipConfig
-        defaultRoute = ConfigWriter._toIfcfgFormat(ipconfig.defaultRoute)
-        ipconfig = ipconfig._replace(defaultRoute=defaultRoute)
-        self._createConfFile(conf, vlan.name, ipconfig, vlan.mtu, **opts)
+        self._createConfFile(conf, vlan.name, vlan.ipConfig, vlan.mtu, **opts)
 
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
@@ -701,7 +690,6 @@ class ConfigWriter(object):
         ipaddr, netmask, gateway, defaultRoute, ipv6addr, ipv6gateway, \
             ipv6defaultRoute, bootproto, async, ipv6autoconf, dhcpv6 = \
             iface.ipConfig
-        defaultRoute = ConfigWriter._toIfcfgFormat(defaultRoute)
         mtu = iface.mtu
         if netinfo.ifaceUsed(iface.name):
             confParams = netinfo.getIfaceCfg(iface.name)
@@ -710,7 +698,8 @@ class ConfigWriter(object):
                 netmask = confParams.get('NETMASK', None)
                 gateway = confParams.get('GATEWAY', None)
                 bootproto = bootproto or confParams.get('BOOTPROTO', None)
-            defaultRoute = defaultRoute or confParams.get('DEFROUTE', None)
+            if defaultRoute is None and confParams.get('DEFROUTE'):
+                defaultRoute = _from_ifcfg_bool(confParams['DEFROUTE'])
             if confParams.get('IPV6INIT', 'no') == 'yes':
                 ipv6addr = confParams.get('IPV6ADDR', None)
                 ipv6gateway = confParams.get('IPV6_DEFAULTGW', None)
@@ -826,3 +815,11 @@ def configuredPorts(nets, bridge):
                     ports.append(port)
                     break
     return ports
+
+
+def _from_ifcfg_bool(value):
+    return value == 'yes'
+
+
+def _to_ifcfg_bool(value):
+    return 'yes' if value else 'no'
