@@ -263,7 +263,7 @@ class ConfigApplier(object):
         dhclient.shutdown()
 
     def setIfaceConfigAndUp(self, iface):
-        if iface.ip:
+        if iface.ipconfig:
             self._setIpConfig(iface)
         if iface.mtu:
             self.setIfaceMtu(iface.name, iface.mtu)

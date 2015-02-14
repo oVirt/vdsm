@@ -123,21 +123,22 @@ class Configurator(object):
         qos.remove_outbound(top_device)
 
     def _addSourceRoute(self, netEnt):
-        ip = netEnt.ipConfig
+        ipconfig = netEnt.ipConfig
         # bootproto is None for both static and no bootproto
-        if ip.bootproto != 'dhcp' and netEnt.master is None:
+        if ipconfig.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Adding source route: name=%s, addr=%s, netmask=%s, "
-                          "gateway=%s" % (netEnt.name, ip.ipaddr, ip.netmask,
-                                          ip.gateway))
-            if (ip.gateway in (None, '0.0.0.0')
-               or not ip.ipaddr or not ip.netmask):
+                          "gateway=%s" % (netEnt.name, ipconfig.ipaddr,
+                                          ipconfig.netmask, ipconfig.gateway))
+            if (ipconfig.gateway in (None, '0.0.0.0') or
+               not ipconfig.ipaddr or not ipconfig.netmask):
                     logging.error('invalid input for source routing: name=%s, '
                                   'addr=%s, netmask=%s, gateway=%s',
-                                  netEnt.name, ip.ipaddr, ip.netmask,
-                                  ip.gateway)
+                                  netEnt.name, ipconfig.ipaddr,
+                                  ipconfig.netmask, ipconfig.gateway)
             else:
-                StaticSourceRoute(netEnt.name, self, ip.ipaddr, ip.netmask,
-                                  ip.gateway).configure()
+                StaticSourceRoute(netEnt.name, self, ipconfig.ipaddr,
+                                  ipconfig.netmask, ipconfig.gateway
+                                  ).configure()
 
     def _removeSourceRoute(self, netEnt, sourceRouteClass):
         if netEnt.ipConfig.bootproto != 'dhcp' and netEnt.master is None:

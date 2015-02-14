@@ -200,7 +200,7 @@ class Ifcfg(Configurator):
                 if self.unifiedPersistence:
                     self.runningConfig.removeBonding(bonding.name)
             else:  # Recreate the bond with ip and master info cleared
-                bonding.ip = IpConfig()
+                bonding.ipconfig = IpConfig()
                 bonding.master = None
                 bonding.configure()
         else:

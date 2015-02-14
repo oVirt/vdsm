@@ -33,7 +33,7 @@ from . import errors as ne
 class NetDevice(object):
     def __init__(self, name, configurator, ipconfig=None, mtu=None):
         self.name = name
-        self.ip = ipconfig if ipconfig is not None else IpConfig()
+        self.ipconfig = ipconfig if ipconfig is not None else IpConfig()
         self.mtu = mtu
         self.configurator = configurator
         self.master = None
@@ -49,7 +49,7 @@ class NetDevice(object):
 
     @property
     def ipConfig(self):
-        return self.ip.getConfig()
+        return self.ipconfig.getConfig()
 
     @property
     def bridge(self):

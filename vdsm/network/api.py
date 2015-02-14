@@ -163,7 +163,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
                                  'devices.')
     ipv6 = IPv6(ipv6addr, ipv6gateway, defaultRoute)
     ipv4 = IPv4(ipaddr, netmask, gateway, defaultRoute)
-    topNetDev.ip = IpConfig(
+    topNetDev.ipconfig = IpConfig(
         ipv4=ipv4, ipv6=ipv6, bootproto=bootproto,
         blocking=(configurator._inRollback or utils.tobool(blockingdhcp)),
         ipv6autoconf=ipv6autoconf, dhcpv6=dhcpv6)
@@ -480,8 +480,8 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                                   vlan=vlan, bonding=bonding, nics=nics,
                                   _netinfo=_netinfo, configurator=configurator,
                                   implicitBonding=implicitBonding)
-    net_ent.ip.bootproto = ('dhcp' if _netinfo.networks[network]['dhcpv4']
-                            else 'none')
+    net_ent.ipconfig.bootproto = (
+        'dhcp' if _netinfo.networks[network]['dhcpv4'] else 'none')
 
     if bridged and keep_bridge:
         # we now leave the bridge intact but delete everything underneath it
