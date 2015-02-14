@@ -16,7 +16,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from collections import namedtuple
 from contextlib import contextmanager
 import logging
 import os
@@ -48,10 +47,6 @@ class NetDevice(object):
         raise NotImplementedError
 
     @property
-    def ipConfig(self):
-        return self.ipconfig.getConfig()
-
-    @property
     def bridge(self):
         if isinstance(self.master, Bridge):
             return self.master
@@ -73,7 +68,7 @@ class NetDevice(object):
     def serving_default_route(self):
         device = self
         while device:
-            if device.ipConfig.defaultRoute:
+            if device.ipconfig.ipv4.defaultRoute:
                 return True
             device = device.master
         return False
@@ -462,12 +457,6 @@ class IPv6(object):
 
 
 class IpConfig(object):
-    ipConfig = namedtuple('ipConfig', ['ipaddr', 'netmask', 'gateway',
-                                       'defaultRoute', 'ipv6addr',
-                                       'ipv6gateway', 'ipv6defaultRoute',
-                                       'bootproto', 'async', 'ipv6autoconf',
-                                       'dhcpv6'])
-
     def __init__(self, ipv4=None, ipv6=None, bootproto=None, blocking=False,
                  ipv6autoconf=None, dhcpv6=None):
         if ipv4 is None:
@@ -495,13 +484,6 @@ class IpConfig(object):
                                                  self.bootproto,
                                                  self.ipv6autoconf,
                                                  self.dhcpv6)
-
-    def getConfig(self):
-        return self.ipConfig(
-            self.ipv4.address, self.ipv4.netmask, self.ipv4.gateway,
-            self.ipv4.defaultRoute, self.ipv6.address, self.ipv6.gateway,
-            self.ipv6.defaultRoute, self.bootproto, self.async,
-            self.ipv6autoconf, self.dhcpv6)
 
 
 def _nicSort(nics):

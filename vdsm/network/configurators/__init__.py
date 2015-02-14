@@ -123,25 +123,24 @@ class Configurator(object):
         qos.remove_outbound(top_device)
 
     def _addSourceRoute(self, netEnt):
-        ipconfig = netEnt.ipConfig
+        ipv4 = netEnt.ipconfig.ipv4
         # bootproto is None for both static and no bootproto
-        if ipconfig.bootproto != 'dhcp' and netEnt.master is None:
+        if netEnt.ipconfig.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Adding source route: name=%s, addr=%s, netmask=%s, "
-                          "gateway=%s" % (netEnt.name, ipconfig.ipaddr,
-                                          ipconfig.netmask, ipconfig.gateway))
-            if (ipconfig.gateway in (None, '0.0.0.0') or
-               not ipconfig.ipaddr or not ipconfig.netmask):
+                          "gateway=%s" % (netEnt.name, ipv4.address,
+                                          ipv4.netmask, ipv4.gateway))
+            if (ipv4.gateway in (None, '0.0.0.0')
+               or not ipv4.address or not ipv4.netmask):
                     logging.error('invalid input for source routing: name=%s, '
                                   'addr=%s, netmask=%s, gateway=%s',
-                                  netEnt.name, ipconfig.ipaddr,
-                                  ipconfig.netmask, ipconfig.gateway)
+                                  netEnt.name, ipv4.address, ipv4.netmask,
+                                  ipv4.gateway)
             else:
-                StaticSourceRoute(netEnt.name, self, ipconfig.ipaddr,
-                                  ipconfig.netmask, ipconfig.gateway
-                                  ).configure()
+                StaticSourceRoute(netEnt.name, self, ipv4.address,
+                                  ipv4.netmask, ipv4.gateway).configure()
 
     def _removeSourceRoute(self, netEnt, sourceRouteClass):
-        if netEnt.ipConfig.bootproto != 'dhcp' and netEnt.master is None:
+        if netEnt.ipconfig.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s", netEnt.name)
             sourceRouteClass(netEnt.name, self, None, None, None).remove()
 
@@ -177,7 +176,7 @@ def getEthtoolOpts(name):
 
 def runDhclient(iface, family=4):
     dhclient = DhcpClient(iface.name, family)
-    rc = dhclient.start(iface.ipConfig.async)
-    if not iface.ipConfig.async and rc:
+    rc = dhclient.start(iface.ipconfig.async)
+    if not iface.ipconfig.async and rc:
         raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed',
                                  family)

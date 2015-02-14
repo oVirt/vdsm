@@ -93,7 +93,7 @@ class DynamicSourceRoute(StaticSourceRoute):
 
     @staticmethod
     def addInterfaceTracking(device):
-        if device.ipConfig.bootproto == 'dhcp':
+        if device.ipconfig.bootproto == 'dhcp':
             open(DynamicSourceRoute.getTrackingFilePath(device.name), 'a').\
                 close()
 
