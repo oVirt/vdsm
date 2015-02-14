@@ -749,27 +749,6 @@ class ConfigWriter(object):
         self._backup(netinfo.NET_CONF_PREF + bridge)
         self._removeFile(netinfo.NET_CONF_PREF + bridge)
 
-    def _getConfigValue(self, conffile, entry):
-        """
-        Get value from network configuration file
-
-        :param entry: entry to look for (entry=value)
-        :type entry: string
-
-        :returns: value for entry (or None)
-        :rtype: string
-
-        Search for entry in conffile and return
-        its value or None if not found
-        """
-        with open(conffile) as f:
-            entries = [line for line in f.readlines()
-                       if line.startswith(entry + '=')]
-        if len(entries) != 0:
-            value = entries[0].split('=', 1)[1]
-            return value.strip()
-        return None
-
     def _updateConfigValue(self, conffile, entry, value):
         """
         Set value for network configuration file. If value is None, remove the
