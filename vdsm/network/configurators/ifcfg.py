@@ -90,13 +90,13 @@ class Ifcfg(Configurator):
         if bridge.port:
             bridge.port.configure(**opts)
         self._addSourceRoute(bridge)
-        ifup(bridge.name, bridge.ipConfig.async)
+        ifup(bridge.name, bridge.ipconfig.async)
 
     def configureVlan(self, vlan, **opts):
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan)
-        ifup(vlan.name, vlan.ipConfig.async)
+        ifup(vlan.name, vlan.ipconfig.async)
 
     def configureBond(self, bond, **opts):
         self.configApplier.addBonding(bond, **opts)
@@ -106,7 +106,7 @@ class Ifcfg(Configurator):
         for slave in bond.slaves:
             slave.configure(**opts)
         self._addSourceRoute(bond)
-        ifup(bond.name, bond.ipConfig.async)
+        ifup(bond.name, bond.ipconfig.async)
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
@@ -159,7 +159,7 @@ class Ifcfg(Configurator):
         if nic.bond is None:
             if not netinfo.isVlanned(nic.name):
                 ifdown(nic.name)
-            ifup(nic.name, nic.ipConfig.async)
+            ifup(nic.name, nic.ipconfig.async)
 
     def removeBridge(self, bridge):
         DynamicSourceRoute.addInterfaceTracking(bridge)
@@ -614,7 +614,7 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bridge.stp is not None:
             conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
-        if not self.unifiedPersistence or bridge.ipConfig.defaultRoute:
+        if not self.unifiedPersistence or bridge.ipconfig.ipv4.defaultRoute:
             conf += 'ONBOOT=%s\n' % 'yes'
         else:
             conf += 'ONBOOT=%s\n' % 'no'
