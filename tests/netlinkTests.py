@@ -98,7 +98,6 @@ class NetlinkEventMonitorTests(TestCaseBase):
                 {'event': 'new_link', 'name': nic},
                 {'event': 'new_addr', 'address': address + '/' + cidr},
                 {'event': 'new_link', 'name': nic},
-                {'event': 'new_link', 'name': nic},
                 {'event': 'new_addr', 'family': 'inet6'},
                 {'event': 'new_link', 'name': nic},
                 {'event': 'del_neigh'},
