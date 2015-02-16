@@ -37,9 +37,8 @@ from vdsm.netlink import monitor
 from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
 
-from network import api, errors, tc
+from network import api, errors, sourceroute, tc
 from network.configurators.ifcfg import Ifcfg
-from network.sourceroute import StaticSourceRoute
 
 from hookValidation import ValidatesHook
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
@@ -190,6 +189,11 @@ def _cleanup_qos_definition(qos):
                 del attrs['d']
 
 
+def _get_source_route(device_name, ipv4_address):
+    return sourceroute.StaticSourceRoute(
+        device_name, None, ipv4_address, IP_MASK, IP_GATEWAY)
+
+
 @expandPermutations
 class NetworkTest(TestCaseBase):
 
@@ -322,25 +326,13 @@ class NetworkTest(TestCaseBase):
         if ruleExists(rule):
             raise self.failureException("routing rule {0} found".format(rule))
 
-    def getSourceRoutingRules(self, deviceName, ip_addr):
-        return (StaticSourceRoute(deviceName, None, ip_addr,
-                                  IP_MASK, IP_GATEWAY))._buildRules()
-
-    def getSourceRoutingRoutes(self, deviceName, ip_addr):
-        return (StaticSourceRoute(deviceName, None, ip_addr,
-                                  IP_MASK, IP_GATEWAY))._buildRoutes()
-
-    def getSourceRoutingTable(self, deviceName, ip_addr):
-        return (StaticSourceRoute(deviceName, None, ip_addr,
-                                  IP_MASK, IP_GATEWAY))._table
-
-    def assertSourceRoutingConfiguration(self, deviceName, ip_addr):
+    def assertSourceRoutingConfiguration(self, device_name, ipv4_address):
         """assert that the IP rules and the routing tables pointed by them
         are configured correctly in order to implement source routing"""
-        table = self.getSourceRoutingTable(deviceName, ip_addr)
-        for route in self.getSourceRoutingRoutes(deviceName, ip_addr):
-            self.assertRouteExists(route, table)
-        for rule in self.getSourceRoutingRules(deviceName, ip_addr):
+        source_route = _get_source_route(device_name, ipv4_address)
+        for route in source_route._buildRoutes():
+            self.assertRouteExists(route, source_route._table)
+        for rule in source_route._buildRules():
             self.assertRuleExists(rule)
 
     def assertMtu(self, mtu, *elems):
@@ -1530,9 +1522,10 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
             # Assert that routes and rules don't exist
-            for route in self.getSourceRoutingRoutes(deviceName, ip_addr):
+            source_route = _get_source_route(deviceName, ip_addr)
+            for route in source_route._buildRoutes():
                 self.assertRouteDoesNotExist(route)
-            for rule in self.getSourceRoutingRules(deviceName, ip_addr):
+            for rule in source_route._buildRules():
                 self.assertRuleDoesNotExist(rule)
 
     @cleanupNet
@@ -1824,13 +1817,10 @@ class NetworkTest(TestCaseBase):
 
                     # Assert that routes and rules don't exist
                     if dhcpv4:
-                        routes = self.getSourceRoutingRoutes(device_name,
-                                                             ip_addr)
-                        for route in routes:
+                        source_route = _get_source_route(device_name, ip_addr)
+                        for route in source_route._buildRoutes():
                             self.assertRouteDoesNotExist(route)
-                        rules = self.getSourceRoutingRules(device_name,
-                                                           ip_addr)
-                        for rule in rules:
+                        for rule in source_route._buildRules():
                             self.assertRuleDoesNotExist(rule)
                 finally:
                     dhcp.delete_dhclient_leases(
