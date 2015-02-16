@@ -30,6 +30,7 @@ test_modules = \
 	capsTests.py \
 	clientifTests.py \
 	configNetworkTests.py \
+	deviceTests.py \
 	domainDescriptorTests.py \
 	executorTests.py \
 	fileSDTests.py \
