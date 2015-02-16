@@ -365,7 +365,7 @@ class JsonRpcCall(object):
 
     def wait(self, timeout=None):
         self._ev.wait(timeout)
-        return self._ev.is_set()
+        return self.isSet()
 
     def isSet(self):
         return self._ev.is_set()
