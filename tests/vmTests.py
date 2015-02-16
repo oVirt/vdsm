@@ -1055,10 +1055,12 @@ class TestVmExit(TestCaseBase):
             self.assertEqual(stats['exitMessage'], msg)
 
 
+_VM_PARAMS = {'displayPort': -1, 'displaySecurePort': -1,
+              'display': 'qxl', 'displayIp': '127.0.0.1',
+              'vmType': 'kvm', 'memSize': 1024}
+
+
 class TestVmStatsThread(TestCaseBase):
-    VM_PARAMS = {'displayPort': -1, 'displaySecurePort': -1,
-                 'display': 'qxl', 'displayIp': '127.0.0.1',
-                 'vmType': 'kvm', 'memSize': 1024}
 
     DEV_BALLOON = [{'type': 'balloon', 'specParams': {'model': 'virtio'}}]
 
@@ -1087,7 +1089,7 @@ class TestVmStatsThread(TestCaseBase):
 
     def testGetStatsNoDom(self):
         # bz1073478 - main case
-        with fake.VM(self.VM_PARAMS, self.DEV_BALLOON) as testvm:
+        with fake.VM(_VM_PARAMS, self.DEV_BALLOON) as testvm:
             self.assertEqual(testvm._dom, None)
             mock_stats_thread = vm.VmStatsThread(testvm)
             res = mock_stats_thread.get()
@@ -1096,7 +1098,7 @@ class TestVmStatsThread(TestCaseBase):
 
     def testGetStatsDomInfoFail(self):
         # bz1073478 - extra case
-        with fake.VM(self.VM_PARAMS, self.DEV_BALLOON) as testvm:
+        with fake.VM(_VM_PARAMS, self.DEV_BALLOON) as testvm:
             testvm._dom = fake.Domain(
                 virtError=libvirt.VIR_ERR_NO_DOMAIN)
             mock_stats_thread = vm.VmStatsThread(testvm)
@@ -1107,7 +1109,7 @@ class TestVmStatsThread(TestCaseBase):
         devices = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
                    {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
 
-        with fake.VM(self.VM_PARAMS, devices) as testvm:
+        with fake.VM(_VM_PARAMS, devices) as testvm:
             testvm._updateDevices(testvm.buildConfDevices())
             res = testvm.getStats()
             self.assertIn('displayPort', res)
@@ -1119,7 +1121,7 @@ class TestVmStatsThread(TestCaseBase):
                 self.assertIn('port', statsDev)
 
     def testDiskMappingHashInStatsHash(self):
-        with fake.VM(self.VM_PARAMS) as testvm:
+        with fake.VM(_VM_PARAMS) as testvm:
             res = testvm.getStats()
             testvm.guestAgent.diskMappingHash += 1
             self.assertNotEquals(res['hash'],
@@ -1128,7 +1130,7 @@ class TestVmStatsThread(TestCaseBase):
     @MonkeyPatch(vm, 'config',
                  make_config([('vars', 'vm_command_timeout', '10')]))
     def testMonitorTimeoutResponsive(self):
-        with fake.VM(self.VM_PARAMS) as testvm:
+        with fake.VM(_VM_PARAMS) as testvm:
             self.assertFalse(testvm.isMigrating())
             stats = {'monitorResponse': '0'}
             testvm._setUnresponsiveIfTimeout(stats, 1)  # any value < timeout
@@ -1137,7 +1139,7 @@ class TestVmStatsThread(TestCaseBase):
     @MonkeyPatch(vm, 'config',
                  make_config([('vars', 'vm_command_timeout', '1')]))
     def testMonitorTimeoutUnresponsive(self):
-        with fake.VM(self.VM_PARAMS) as testvm:
+        with fake.VM(_VM_PARAMS) as testvm:
             self.assertEqual(testvm._monitorResponse, 0)
             self.assertFalse(testvm.isMigrating())
             stats = {'monitorResponse': '0'}
@@ -1147,7 +1149,7 @@ class TestVmStatsThread(TestCaseBase):
     @MonkeyPatch(vm, 'config',
                  make_config([('vars', 'vm_command_timeout', '10')]))
     def testMonitorTimeoutOnAlreadyUnresponsive(self):
-        with fake.VM(self.VM_PARAMS) as testvm:
+        with fake.VM(_VM_PARAMS) as testvm:
             self._monitorResponse = -1
             self.assertFalse(testvm.isMigrating())
             stats = {'monitorResponse': '-1'}
@@ -1322,6 +1324,17 @@ class TestVmSanity(TestCaseBase):
     def testSmpByParameters(self, cpus):
         with fake.VM({'smp': cpus}) as testvm:
             self.assertEqual(int(testvm.conf['smp']), cpus)
+
+    def testVmNameDefault(self):
+        with fake.VM(_VM_PARAMS) as testvm:
+            self.assertIn('vmName', testvm.getStats())
+
+    def testVmNameExplicit(self):
+        NAME = 'not the default VM name'
+        params = {'vmName': NAME}
+        params.update(_VM_PARAMS)
+        with fake.VM(params) as testvm:
+            self.assertEqual(NAME, testvm.getStats()['vmName'])
 
 
 class ChangeBlockDevTests(TestCaseBase):

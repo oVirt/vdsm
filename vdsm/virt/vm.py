@@ -1802,6 +1802,7 @@ class Vm(object):
         """
         stats = {
             'vmId': self.conf['vmId'],
+            'vmName': self.name,
             'pid': self.conf['pid'],
             'vmType': self.conf['vmType'],
             'kvmEnable': self._kvmEnable,
@@ -3747,7 +3748,7 @@ class Vm(object):
         self._watchdogEvent["time"] = time.time()
         self._watchdogEvent["action"] = actionEnum[action]
         self.log.info("Watchdog event comes from guest %s. "
-                      "Action: %s", self.conf['vmName'],
+                      "Action: %s", self.name,
                       actionToString(action))
 
     def changeCD(self, drivespec):
@@ -3870,10 +3871,14 @@ class Vm(object):
                     for dev in self.conf.get('devices', [])
                     if dev['type'] == hwclass.GRAPHICS))
 
+    @property
+    def name(self):
+        return self.conf['vmName']
+
     def _getPid(self):
         try:
-            vmName = self.conf['vmName'].encode('utf-8')
-            pid = int(supervdsm.getProxy().getVmPid(vmName))
+            pid = supervdsm.getProxy().getVmPid(
+                self.name.encode('utf-8'))
         except (IOError, ValueError):
             self.log.error('cannot read pid')
             raise
