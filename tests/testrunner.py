@@ -70,10 +70,6 @@ def panicMock(msg):
     raise AssertionError(msg)
 
 
-def fakeMemoized(func):
-    return func
-
-
 if __name__ == '__main__':
     if "--help" in sys.argv:
         print("testrunner options:\n"
@@ -85,6 +81,5 @@ if __name__ == '__main__':
 
     # Mock panic() calls for tests
     utils.panic = panicMock
-    # Memoization during tests is a bad idea.
-    utils.memoized = fakeMemoized
+
     testlib.run()
