@@ -1398,8 +1398,7 @@ class Global(APIBase):
             disk: dev, alias
             network: type, macAddr, bridge, dev
         """
-        vms = v2v.get_external_vms(uri, username, password)
-        return {'status': doneCode, 'vmList': vms}
+        return v2v.get_external_vms(uri, username, password)
 
     # Networking-related functions
     def setupNetworks(self, networks, bondings, options):

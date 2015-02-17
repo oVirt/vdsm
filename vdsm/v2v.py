@@ -22,7 +22,7 @@ import xml.etree.ElementTree as ET
 
 import libvirt
 
-from vdsm.define import errCode
+from vdsm.define import errCode, doneCode
 from vdsm import libvirtconnection
 
 import caps
@@ -41,11 +41,17 @@ def get_external_vms(uri, username, password):
     if not supported():
         return errCode["noimpl"]
 
-    conn = libvirtconnection.open_connection(uri=uri,
-                                             username=username,
-                                             passwd=password)
+    try:
+        conn = libvirtconnection.open_connection(uri=uri,
+                                                 username=username,
+                                                 passwd=password)
+    except libvirt.libvirtError as e:
+        logging.error('error connection to hypervisor: %r', e.message)
+        return {'status': {'code': errCode['V2VConnection']['status']['code'],
+                           'message': e.message}}
+
     with closing(conn):
-        ret = []
+        vms = []
         for vm in conn.listAllDomains():
             root = ET.fromstring(vm.XMLDesc(0))
             params = {}
@@ -60,8 +66,8 @@ def get_external_vms(uri, username, password):
             _add_disks(root, params)
             for disk in params['disks']:
                 _add_disk_info(conn, disk)
-            ret.append(params)
-        return ret
+            vms.append(params)
+        return {'status': doneCode, 'vmList': vms}
 
 
 def _mem_to_mib(size, unit):

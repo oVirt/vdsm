@@ -147,6 +147,9 @@ errCode = {
     'updateIoTuneErr': {'status': {
         'code': 64,
         'message': 'Failed to update ioTune values'}},
+    'V2VConnection': {'status': {
+        'code': 65,
+        'message': 'error connecting to hypervisor'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},
