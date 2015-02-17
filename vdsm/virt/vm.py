@@ -184,10 +184,6 @@ class VmStatsThread(AdvancedStatsThread):
             AdvancedStatsFunction(
                 self._highWrite,
                 config.getint('vars', 'vm_watermark_interval')))
-        self.updateVolumes = (
-            AdvancedStatsFunction(
-                self._updateVolumes,
-                config.getint('irs', 'vol_size_sample_interval')))
 
         self.sampleCpu = (
             AdvancedStatsFunction(
@@ -226,7 +222,7 @@ class VmStatsThread(AdvancedStatsThread):
                 config.getint('vars', 'vm_sample_numa_interval'), 1))
 
         self.addStatsFunction(
-            self.highWrite, self.updateVolumes, self.sampleCpu,
+            self.highWrite, self.sampleCpu,
             self.sampleDisk, self.sampleNet, self.sampleBalloon,
             self.sampleVmJobs, self.sampleVcpuPinning, self.sampleCpuTune,
             self.sampleNuma)
@@ -236,14 +232,6 @@ class VmStatsThread(AdvancedStatsThread):
             # Avoid queries from storage during recovery process
             return
         self._vm.extendDrivesIfNeeded()
-
-    def _updateVolumes(self):
-        if not self._vm.isDisksStatsCollectionEnabled():
-            # Avoid queries from storage during recovery process
-            return
-
-        for vmDrive in self._vm.getDiskDevices():
-            self._vm.updateDriveVolume(vmDrive)
 
     def _sampleCpu(self):
         """

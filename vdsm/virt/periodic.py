@@ -22,6 +22,7 @@
 code to perform periodic maintenance and bookkeeping of the VMs.
 """
 
+import functools
 import logging
 import threading
 
@@ -61,10 +62,20 @@ def _dispatched_operation(get_vms, func, period):
 
 
 def start(cif):
-    # `cif' will be used by future patches, for getVMs.
+    global _operations
 
     _scheduler.start()
     _executor.start()
+
+    per_vm_operation = functools.partial(_dispatched_operation, cif.getVMs)
+
+    _operations = [
+        # needs dispatching becuse updating the volume stats needs the
+        # access the storage, thus can block.
+        per_vm_operation(
+            UpdateVolumes,
+            config.getint('irs', 'vol_size_sample_interval')),
+    ]
 
     for op in _operations:
         op.start()
@@ -208,3 +219,24 @@ class VmDispatcher(object):
 
     def __repr__(self):
         return 'VmDispatcher(%s)' % self._create
+
+
+class UpdateVolumes(object):
+    def __init__(self, vm):
+        self._vm = vm
+
+    @property
+    def required(self):
+        # Avoid queries from storage during recovery process
+        return self._vm.isDisksStatsCollectionEnabled()
+
+    @property
+    def runnable(self):
+        return self._vm.isDomainReadyForCommands()
+
+    def __call__(self):
+        for drive in self._vm.getDiskDevices():
+            # TODO: If this block (it is actually possible?)
+            # we must make sure we don't overwrite good data
+            # with stale old data.
+            self._vm.updateDriveVolume(drive)
