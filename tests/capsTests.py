@@ -41,6 +41,13 @@ def _getCapsNumaDistanceTestData(testFileName):
 
 
 class TestCaps(TestCaseBase):
+
+    def tearDown(self):
+        for name in dir(caps):
+            obj = getattr(caps, name)
+            if isinstance(obj, utils.memoized):
+                obj.invalidate()
+
     def _readCaps(self, fileName):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
