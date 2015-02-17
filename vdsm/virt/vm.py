@@ -178,6 +178,8 @@ class UpdatePortMirroringError(Exception):
 VolumeChainEntry = namedtuple('VolumeChainEntry',
                               ['uuid', 'path', 'allocation'])
 
+VolumeSize = namedtuple("VolumeSize",
+                        ["apparentsize", "truesize"])
 
 _MBPS_TO_BPS = 10 ** 6 / 8
 
@@ -810,16 +812,10 @@ class Vm(object):
             drv['device'] = 'disk'
 
         if drv['device'] == 'disk':
-            res = self.cif.irs.getVolumeSize(drv['domainID'], drv['poolID'],
-                                             drv['imageID'], drv['volumeID'])
-            if res['status']['code'] != 0:
-                raise StorageUnavailableError("Failed to get size for"
-                                              " volume %s",
-                                              drv['volumeID'])
-
-            # if a key is missing here, is hsm bug and we cannot handle it.
-            drv['truesize'] = res['truesize']
-            drv['apparentsize'] = res['apparentsize']
+            volsize = self._getVolumeSize(drv['domainID'], drv['poolID'],
+                                          drv['imageID'], drv['volumeID'])
+            drv['truesize'] = volsize.truesize
+            drv['apparentsize'] = volsize.apparentsize
         else:
             drv['truesize'] = 0
             drv['apparentsize'] = 0
@@ -1423,31 +1419,19 @@ class Vm(object):
                        volInfo['volumeID'])
 
         self.__refreshDriveVolume(volInfo)
-        volSizeRes = self.cif.irs.getVolumeSize(volInfo['domainID'],
-                                                volInfo['poolID'],
-                                                volInfo['imageID'],
-                                                volInfo['volumeID'])
-
-        if volSizeRes['status']['code']:
-            raise RuntimeError(
-                "Cannot get the volume size for %s "
-                "(domainID: %s, volumeID: %s)" % (volInfo['name'],
-                                                  volInfo['domainID'],
-                                                  volInfo['volumeID']))
-
-        apparentSize = int(volSizeRes['apparentsize'])
-        trueSize = int(volSizeRes['truesize'])
+        volSize = self._getVolumeSize(volInfo['domainID'], volInfo['poolID'],
+                                      volInfo['imageID'], volInfo['volumeID'])
 
         self.log.debug("Verifying extension for volume %s, requested size %s, "
                        "current size %s", volInfo['volumeID'],
-                       volInfo['newSize'], apparentSize)
+                       volInfo['newSize'], volSize.apparentsize)
 
-        if apparentSize < volInfo['newSize']:
+        if volSize.apparentsize < volInfo['newSize']:
             raise RuntimeError(
                 "Volume extension failed for %s (domainID: %s, volumeID: %s)" %
                 (volInfo['name'], volInfo['domainID'], volInfo['volumeID']))
 
-        return apparentSize, trueSize
+        return volSize
 
     def __afterReplicaExtension(self, volInfo):
         self.__verifyVolumeExtension(volInfo)
@@ -1472,12 +1456,13 @@ class Vm(object):
     def __afterVolumeExtension(self, volInfo):
         # Check if the extension succeeded.  On failure an exception is raised
         # TODO: Report failure to the engine.
-        apparentSize, trueSize = self.__verifyVolumeExtension(volInfo)
+        volSize = self.__verifyVolumeExtension(volInfo)
 
         # Only update apparentsize and truesize if we've resized the leaf
         if not volInfo['internal']:
             vmDrive = self._findDriveByName(volInfo['name'])
-            vmDrive.apparentsize, vmDrive.truesize = apparentSize, trueSize
+            vmDrive.apparentsize = volSize.apparentsize
+            vmDrive.truesize = volSize.truesize
 
         try:
             self.cont()
@@ -3108,19 +3093,17 @@ class Vm(object):
         if not vmDrive.device == 'disk' or not isVdsmImage(vmDrive):
             return
 
-        volSize = self.cif.irs.getVolumeSize(
-            vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
-            vmDrive.volumeID)
-
-        if volSize['status']['code'] != 0:
-            self.log.error(
-                "Unable to update the volume %s (domain: %s image: %s) "
-                "for the drive %s" % (vmDrive.volumeID, vmDrive.domainID,
-                                      vmDrive.imageID, vmDrive.name))
+        try:
+            volSize = self._getVolumeSize(
+                vmDrive.domainID, vmDrive.poolID, vmDrive.imageID,
+                vmDrive.volumeID)
+        except StorageUnavailableError as e:
+            self.log.error("Unable to update drive %s volume size: %s",
+                           vmDrive.name, e)
             return
 
-        vmDrive.truesize = int(volSize['truesize'])
-        vmDrive.apparentsize = int(volSize['apparentsize'])
+        vmDrive.truesize = volSize.truesize
+        vmDrive.apparentsize = volSize.apparentsize
 
     def updateDriveParameters(self, driveParams):
         """Update the drive with the new volume information"""
@@ -3618,33 +3601,31 @@ class Vm(object):
             'imageID': drive.imageID, 'volumeID': drive.volumeID,
         })
 
-        volumeInfo = self.cif.irs.getVolumeSize(
+        volSize = self._getVolumeSize(
             drive.domainID, drive.poolID, drive.imageID, drive.volumeID)
-
-        sizeRoundedBytes = int(volumeInfo['apparentsize'])
 
         # For the RAW device we use the volumeInfo apparentsize rather
         # than the (possibly) wrong size provided in the request.
-        if sizeRoundedBytes != newSizeBytes:
+        if volSize.apparentsize != newSizeBytes:
             self.log.info(
                 "The requested extension size %s is different from "
-                "the RAW device size %s", newSizeBytes, sizeRoundedBytes)
+                "the RAW device size %s", newSizeBytes, volSize.apparentsize)
 
         # At the moment here there's no way to fetch the previous size
         # to compare it with the new one. In the future blockInfo will
         # be able to return the value (fetched from qemu).
 
         try:
-            self._dom.blockResize(drive.name, sizeRoundedBytes,
+            self._dom.blockResize(drive.name, volSize.apparentsize,
                                   libvirt.VIR_DOMAIN_BLOCK_RESIZE_BYTES)
         except libvirt.libvirtError:
             self.log.warn(
                 "Libvirt failed to notify the new size %s to the "
                 "running VM, the change will be available at the ",
-                "reboot", sizeRoundedBytes, exc_info=True)
+                "reboot", volSize.apparentsize, exc_info=True)
             return errCode['updateDevice']
 
-        return {'status': doneCode, 'size': str(sizeRoundedBytes)}
+        return {'status': doneCode, 'size': str(volSize.apparentsize)}
 
     def diskSizeExtend(self, driveSpecs, newSizeBytes):
         try:
@@ -4816,7 +4797,7 @@ class Vm(object):
             flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
 
             # If top is the active layer, it's allocated size is stored in
-            # drive.apparantsize.
+            # drive.apparentsize.
             topSize = drive.apparentsize
         else:
             # If top is an internal volume, we must call getVolumeInfo
@@ -5026,6 +5007,17 @@ class Vm(object):
     @property
     def hasGuestNumaNode(self):
         return 'guestNumaNodes' in self.conf
+
+    # Accessing storage
+
+    def _getVolumeSize(self, domainID, poolID, imageID, volumeID):
+        """ Return volume size info by accessing storage """
+        res = self.cif.irs.getVolumeSize(domainID, poolID, imageID, volumeID)
+        if res['status']['code'] != 0:
+            raise StorageUnavailableError(
+                "Unable to get volume size for domain %s volume %s" %
+                (domainID, volumeID))
+        return VolumeSize(int(res['apparentsize']), int(res['truesize']))
 
 
 class LiveMergeCleanupThread(threading.Thread):
