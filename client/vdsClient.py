@@ -2591,8 +2591,31 @@ if __name__ == '__main__':
         )),
         'downloadImage': (serv.downloadImage, (
             '<methodArgs> <spUUID> <sdUUID> <imgUUID> [<volUUID>]',
-            'Download an image from a remote endpoint using the specified',
-            'methodArgs.'
+            'Download an image from a remote endpoint using the specified '
+            'methodArgs.',
+            'Arguments:',
+            '    methodArgs:  Python dictionary literal specifying the '
+            'download method.',
+            '                 The dictionary must be quoted '
+            '(e.g. \'{"url": ...}\')',
+            '                 Keys:',
+            '                 - url:         url of the source image',
+            '                 - headers:     dictionary of headers '
+            '(optional)',
+            '                 - method:      currently only "http" is '
+            'supported',
+            '    spUUID:      UUID of the Storage Pool associated with '
+            'the Image',
+            '    sdUUID:      UUID of the Storage Domain associated with '
+            'the Image',
+            '    imgUUID:     UUID of the Image',
+            '    volUUID:     UUID of the Volume (optional)',
+            'Returns: A task UUID',
+            'Example:',
+            'vdsClient -s 0 downloadImage \ ',
+            '  \'{"url": "http://example.com/myimage", '
+            '"headers": {"Foo": "Bar"}, "method": "http"}\' \ ',
+            '  spUUID sdUUID imgUUID'
         )),
         'prepareImage': (serv.prepareImage, (
             '<spUUID> <sdUUID> <imgUUID> [<volUUID>]',
