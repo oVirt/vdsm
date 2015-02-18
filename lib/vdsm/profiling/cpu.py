@@ -92,8 +92,10 @@ def profile(filename, format=_FORMAT, clock=_CLOCK, builtins=_BUILTINS,
 def _start_profiling(clock, builtins, threads):
     global yappi
     logging.debug("Starting profiling")
+
+    import yappi
+
     with _lock:
-        import yappi
         # yappi start semantics are a bit too liberal, returning success if
         # yappi is already started, happily having too different code paths
         # that thinks they own the single process profiler.
