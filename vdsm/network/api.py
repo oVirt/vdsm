@@ -319,13 +319,14 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if bridged and network in _netinfo.bridges:
         net_ent_to_configure = net_ent.port
         logging.info("Bridge %s already exists.", network)
-        # The bridge already exists and we attach a new underlying device to
-        # it. We need to make sure that the bridge MTU configuration is
-        # updated.
-        configurator.configApplier.setIfaceMtu(network, mtu)
-        # We must also update the vms` tap devices (the bridge ports in this
-        # case) so that their MTU is synced with the bridge
-        _update_bridge_ports_mtu(net_ent.name, mtu)
+        if mtu:
+            # The bridge already exists and we attach a new underlying device
+            # to it. We need to make sure that the bridge MTU configuration is
+            # updated.
+            configurator.configApplier.setIfaceMtu(network, mtu)
+            # We must also update the vms` tap devices (the bridge ports in
+            # this case) so that their MTU is synced with the bridge
+            _update_bridge_ports_mtu(net_ent.name, mtu)
     else:
         net_ent_to_configure = net_ent
 
