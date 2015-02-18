@@ -618,17 +618,14 @@ def _getIpAddrs():
     return addrs
 
 
-def _get_gateway(routes_by_dev, dev=None, family=4,
+def _get_gateway(routes_by_dev, dev, family=4,
                  table=nl_route._RT_TABLE_UNSPEC):
     """
     Return the default gateway for a device and an address family
     :param routes_by_dev: dictionary from device names to a list of routes.
     :type routes_by_dev: dict[str]->list[dict[str]->str]
     """
-    if dev is None:  # get all routes
-        routes = nl_route.iter_routes()
-    else:  # get only routes for the device
-        routes = routes_by_dev[dev]
+    routes = routes_by_dev[dev]
 
     # VDSM's source routing thread creates a separate table (with an ID derived
     # currently from an IPv4 address) for each device so we have to look for
@@ -642,8 +639,6 @@ def _get_gateway(routes_by_dev, dev=None, family=4,
     try:
         gateway, = gateways
     except ValueError:
-        # It is expected to find multiple gateways if we use multiple devices
-        # and look in all tables.
         if len(gateways) > 1 and table != nl_route._RT_TABLE_UNSPEC:
             logging.error('Multiple default gateways (%r) in table: %s',
                           gateways, table)
