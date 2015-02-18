@@ -30,6 +30,7 @@ public class Message {
     }
 
     public static final String HEADER_DESTINATION = "destination";
+    public static final String HEADER_REPLY_TO = "reply-to";
     public static final String HEADER_ACCEPT = "accept-version";
     public static final String HEADER_ID = "id";
     public static final String HEADER_MESSAGE = "message";

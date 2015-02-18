@@ -5,6 +5,7 @@ import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_A
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_REPLY_TO;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.nio.channels.Selector;
@@ -64,6 +65,7 @@ public class StompClient extends PlainClient {
     public void sendMessage(byte[] message) {
         send(new Message().send()
                 .withHeader(HEADER_DESTINATION, this.getRequestQueue())
+                .withHeader(HEADER_REPLY_TO, getResponseQueue())
                 .withContent(message)
                 .build());
     }
