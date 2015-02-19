@@ -107,6 +107,17 @@ def ValidateRunningAsRoot(f):
     return wrapper
 
 
+def ValidateNotRunningAsRoot(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if os.geteuid() == 0:
+            raise SkipTest("This test must not run as root")
+
+        return f(*args, **kwargs)
+
+    return wrapper
+
+
 def RequireDummyMod(f):
     """
     Assumes root privileges to be used after
