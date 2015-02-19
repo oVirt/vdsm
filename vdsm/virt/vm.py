@@ -3689,8 +3689,7 @@ class Vm(object):
         except Exception:
             self.log.exception("Unable to extend disk %s to size %s",
                                drive.name, newSizeBytes)
-
-        return errCode['updateDevice']
+            return errCode['updateDevice']
 
     def _onWatchdogEvent(self, action):
         def actionToString(action):
