@@ -35,13 +35,14 @@ class DomainMonitorStatus(object):
         "error", "checkTime", "valid", "readDelay", "masterMounted",
         "masterValid", "diskUtilization", "vgMdUtilization",
         "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
-        "isoPrefix", "version",
+        "isoPrefix", "version", "actual",
     )
 
-    def __init__(self):
-        self.clear()
+    def __init__(self, actual=True):
+        self.clear(actual=actual)
 
-    def clear(self):
+    def clear(self, actual=True):
+        self.actual = actual
         self.error = None
         self.checkTime = time()
         self.valid = True
@@ -152,9 +153,8 @@ class DomainMonitorThread(object):
         self.sdUUID = sdUUID
         self.hostId = hostId
         self.interval = interval
-        self.firstChange = True
-        self.status = DomainMonitorStatus()
-        self.nextStatus = DomainMonitorStatus()
+        self.status = DomainMonitorStatus(actual=False)
+        self.nextStatus = DomainMonitorStatus(actual=False)
         self.isIsoDomain = None
         self.isoPrefix = None
         self.lastRefresh = time()
@@ -270,8 +270,6 @@ class DomainMonitorThread(object):
                 self.log.warn("Could not emit domain state change event",
                               exc_info=True)
 
-        self.firstChange = False
-
         # An ISO domain can be shared by multiple pools
         if (not self.isIsoDomain and self.nextStatus.valid
                 and self.nextStatus.hasHostId is False):
@@ -285,4 +283,5 @@ class DomainMonitorThread(object):
         self.status.update(self.nextStatus)
 
     def _statusDidChange(self):
-        return self.firstChange or self.status.valid != self.nextStatus.valid
+        return (not self.status.actual or
+                self.status.valid != self.nextStatus.valid)

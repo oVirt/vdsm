@@ -3622,6 +3622,7 @@ class HSM(object):
                     'version': domStatus.version,
                     # domStatus.hasHostId can also be None
                     'acquired': domStatus.hasHostId is True,
+                    'actual': domStatus.actual
                 },
 
                 'disktotal': disktotal,
