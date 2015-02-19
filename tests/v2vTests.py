@@ -94,7 +94,7 @@ class v2vTests(TestCaseBase):
             raise SkipTest('v2v is not supported current os version')
 
         vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                   'password')
+                                   'password')['vmList']
         self.assertEquals(len(vms), 1)
         vm = vms[0]
         self.assertEquals(vm['vmId'], '564d7cb4-8e3d-06ec-ce82-7b2b13c6a611')
