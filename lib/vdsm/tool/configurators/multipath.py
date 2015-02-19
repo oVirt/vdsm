@@ -87,14 +87,15 @@ _OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
              "# RHEV REVISION 0.4", "# RHEV REVISION 0.5",
              "# RHEV REVISION 0.6", "# RHEV REVISION 0.7",
              "# RHEV REVISION 0.8", "# RHEV REVISION 0.9",
-             "# RHEV REVISION 1.0"]
+             "# RHEV REVISION 1.0", "# RHEV REVISION 1.1"]
 
-_MPATH_CONF_TAG = "# RHEV REVISION 1.1"
+_MPATH_CONF_TAG = "# VDSM REVISION 1.2"
 
 # Having the PRIVATE_TAG in the conf file means
 # vdsm-tool should never change the conf file
 # even when using the --force flag
-_MPATH_CONF_PRIVATE_TAG = "# RHEV PRIVATE"
+_OLD_PRIVATE_TAG = "# RHEV PRIVATE"
+_MPATH_CONF_PRIVATE_TAG = "# VDSM PRIVATE"
 
 _MPATH_CONF_TEMPLATE = _MPATH_CONF_TAG + _STRG_MPATH_CONF
 
@@ -161,7 +162,7 @@ def isconfigured():
             second = mpathconf[1]
         except IndexError:
             pass
-        if _MPATH_CONF_PRIVATE_TAG in second:
+        if _MPATH_CONF_PRIVATE_TAG in second or _OLD_PRIVATE_TAG in second:
             sys.stdout.write("Manual override for multipath.conf detected"
                              " - preserving current configuration\n")
             if _MPATH_CONF_TAG not in first:
