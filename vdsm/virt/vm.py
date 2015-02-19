@@ -3573,8 +3573,8 @@ class Vm(object):
             return errCode['resizeErr']
 
         # Uncommit the current volume size (mark as in transaction)
-        self.cif.irs.setVolumeSize(drive.domainID, drive.poolID,
-                                   drive.imageID, drive.volumeID, 0)
+        self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
+                            drive.volumeID, 0)
 
         try:
             self._dom.blockResize(drive.name, newSizeBytes,
@@ -3588,9 +3588,8 @@ class Vm(object):
             # In all cases we want to try and fix the size in the metadata.
             # Same as above, this is what libvirt would do, see BZ#963881
             sizeRoundedBytes = qemuimg.info(drive.path, "qcow2")['virtualsize']
-            self.cif.irs.setVolumeSize(
-                drive.domainID, drive.poolID, drive.imageID, drive.volumeID,
-                sizeRoundedBytes)
+            self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
+                                drive.volumeID, sizeRoundedBytes)
 
         return {'status': doneCode, 'size': str(sizeRoundedBytes)}
 
@@ -5018,6 +5017,14 @@ class Vm(object):
                 "Unable to get volume size for domain %s volume %s" %
                 (domainID, volumeID))
         return VolumeSize(int(res['apparentsize']), int(res['truesize']))
+
+    def _setVolumeSize(self, domainID, poolID, imageID, volumeID, size):
+        res = self.cif.irs.setVolumeSize(domainID, poolID, imageID, volumeID,
+                                         size)
+        if res['status']['code'] != 0:
+            raise StorageUnavailableError(
+                "Unable to set volume size to %s for domain %s volume %s" %
+                (size, domainID, volumeID))
 
 
 class LiveMergeCleanupThread(threading.Thread):
