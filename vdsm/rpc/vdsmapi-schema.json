@@ -1778,12 +1778,18 @@
 #              acquired and therefore if it's possible to run (sanlock)
 #              protected VMs
 #
+# @actual:     Indicates if the returned status is an actual monitoring result
+#              or initial result that means that the first monitor run was not
+#              yet completed
+#              (new in version 4.16.13)
+#
 # Since: 4.10.0
 # XXX: Add an enum for return codes and their meanings
 ##
 {'type': 'StorageDomainVitals',
  'data': {'code': 'int', 'delay': 'float', 'lastCheck': 'float',
-          'valid': 'bool', 'version': 'int', 'acquired': 'bool'}}
+          'valid': 'bool', 'version': 'int', 'acquired': 'bool',
+          'actual': 'bool'}}
 
 ##
 # @PathStats:

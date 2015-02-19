@@ -36,10 +36,11 @@ class Status(object):
         "error", "checkTime", "valid", "readDelay", "masterMounted",
         "masterValid", "diskUtilization", "vgMdUtilization",
         "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
-        "isoPrefix", "version",
+        "isoPrefix", "version", "actual",
     )
 
-    def __init__(self):
+    def __init__(self, actual=True):
+        self.actual = actual
         self.error = None
         self.checkTime = time.time()
         self.valid = True
@@ -170,8 +171,7 @@ class MonitorThread(object):
         self.sdUUID = sdUUID
         self.hostId = hostId
         self.interval = interval
-        self.firstChange = True
-        self.nextStatus = Status()
+        self.nextStatus = Status(actual=False)
         self.status = FrozenStatus(self.nextStatus)
         self.isIsoDomain = None
         self.isoPrefix = None
@@ -255,7 +255,6 @@ class MonitorThread(object):
 
         if self._statusDidChange():
             self._notifyStatusChanges()
-        self.firstChange = False
 
         if self._shouldAcquireHostId():
             self._acquireHostId()
@@ -265,7 +264,8 @@ class MonitorThread(object):
     # Notifiying status changes
 
     def _statusDidChange(self):
-        return self.firstChange or self.status.valid != self.nextStatus.valid
+        return (not self.status.actual or
+                self.status.valid != self.nextStatus.valid)
 
     @utils.cancelpoint
     def _notifyStatusChanges(self):
