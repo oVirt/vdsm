@@ -457,8 +457,8 @@ class IPv6(object):
 
 
 class IpConfig(object):
-    def __init__(self, ipv4=None, ipv6=None, bootproto=None, blocking=False,
-                 ipv6autoconf=None, dhcpv6=None):
+    def __init__(self, ipv4=None, ipv6=None, bootproto=None,
+                 blockingdhcp=False, ipv6autoconf=None, dhcpv6=None):
         if ipv4 is None:
             ipv4 = IPv4()
         if ipv6 is None:
@@ -470,7 +470,7 @@ class IpConfig(object):
         self.ipv4 = ipv4
         self.ipv6 = ipv6
         self.bootproto = bootproto
-        self.async = (bootproto == 'dhcp' or dhcpv6) and not blocking
+        self.async = (bootproto == 'dhcp' or dhcpv6) and not blockingdhcp
         self.ipv6autoconf = ipv6autoconf
         self.dhcpv6 = dhcpv6
 

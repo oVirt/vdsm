@@ -161,11 +161,11 @@ def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
-    ipv6 = IPv6(ipv6addr, ipv6gateway, defaultRoute)
     ipv4 = IPv4(ipaddr, netmask, gateway, defaultRoute)
+    ipv6 = IPv6(ipv6addr, ipv6gateway, defaultRoute)
+    blockingdhcp = configurator._inRollback or utils.tobool(blockingdhcp)
     topNetDev.ipconfig = IpConfig(
-        ipv4=ipv4, ipv6=ipv6, bootproto=bootproto,
-        blocking=(configurator._inRollback or utils.tobool(blockingdhcp)),
+        ipv4=ipv4, ipv6=ipv6, bootproto=bootproto, blockingdhcp=blockingdhcp,
         ipv6autoconf=ipv6autoconf, dhcpv6=dhcpv6)
     return topNetDev
 
