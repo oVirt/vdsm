@@ -1436,7 +1436,7 @@ class Vm(object):
         volInfo = {
             'domainID': vmDrive.domainID,
             'imageID': vmDrive.imageID,
-            'internal': bool(vmDrive.volumeID != volumeID),
+            'internal': vmDrive.volumeID != volumeID,
             'name': vmDrive.name,
             'newSize': newSize,
             'poolID': vmDrive.poolID,
