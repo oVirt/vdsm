@@ -1395,17 +1395,8 @@ class Vm(object):
         """
         newSize = vmDrive.getNextVolumeSize(curSize, capacity)
 
-        if getattr(vmDrive, 'diskReplicate', None):
-            volInfo = {'poolID': vmDrive.diskReplicate['poolID'],
-                       'domainID': vmDrive.diskReplicate['domainID'],
-                       'imageID': vmDrive.diskReplicate['imageID'],
-                       'volumeID': vmDrive.diskReplicate['volumeID'],
-                       'name': vmDrive.name, 'newSize': newSize}
-            self.log.debug("Requesting an extension for the volume "
-                           "replication: %s", volInfo)
-            self.cif.irs.sendExtendMsg(vmDrive.poolID, volInfo,
-                                       newSize,
-                                       self.__afterReplicaExtension)
+        if hasattr(vmDrive, 'diskReplicate'):
+            self.__extendDriveReplica(vmDrive, newSize)
         else:
             self.__extendDriveVolume(vmDrive, volumeID, newSize)
 
@@ -1452,6 +1443,20 @@ class Vm(object):
             volInfo,
             newSize,
             self.__afterVolumeExtension)
+
+    def __extendDriveReplica(self, drive, newSize):
+        volInfo = {'poolID': drive.diskReplicate['poolID'],
+                   'domainID': drive.diskReplicate['domainID'],
+                   'imageID': drive.diskReplicate['imageID'],
+                   'volumeID': drive.diskReplicate['volumeID'],
+                   'name': drive.name,
+                   'newSize': newSize}
+        self.log.debug("Requesting an extension for the volume "
+                       "replication: %s", volInfo)
+        self.cif.irs.sendExtendMsg(drive.poolID,
+                                   volInfo,
+                                   newSize,
+                                   self.__afterReplicaExtension)
 
     def __afterVolumeExtension(self, volInfo):
         # Check if the extension succeeded.  On failure an exception is raised
