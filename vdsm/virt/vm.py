@@ -1318,7 +1318,13 @@ class Vm(object):
             if not drive.chunked:
                 continue
 
-            capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+            try:
+                capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+            except libvirt.libvirtError as e:
+                self.log.error("Unable to get watermarks for drive %s: %s",
+                               drive.name, e)
+                continue
+
             ret.append((drive, drive.volumeID, capacity, alloc, physical))
 
             try:
