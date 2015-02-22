@@ -64,6 +64,7 @@ def watchCmd(cmd, stop, cwd=None, data=None):
 
 
 class EventTests(TestCaseBase):
+
     def testEmit(self):
         ev = threading.Event()
 
@@ -164,6 +165,7 @@ class Receiver(object):
 
 
 class TMap(TestCaseBase):
+
     def test(self):
         def dummy(arg):
             # This will cause some of the operations to take longer
@@ -198,6 +200,7 @@ class TMap(TestCaseBase):
 
 
 class ITMap(TestCaseBase):
+
     def testMoreArgsThanThreads(self):
         def dummy(arg):
             time.sleep(0.5)
@@ -241,6 +244,7 @@ class ITMap(TestCaseBase):
 
 
 class RotateFiles(TestCaseBase):
+
     def testNonExistingDir(self, persist=False):
         """
         Tests that the method fails correctly when given a non existing dir.
@@ -289,6 +293,7 @@ class RotateFiles(TestCaseBase):
 
 
 class ParseHumanReadableSize(TestCaseBase):
+
     def testValidInput(self):
         """
         Test that the method parses size correctly if given correct input.
@@ -309,6 +314,7 @@ class ParseHumanReadableSize(TestCaseBase):
 
 
 class AsyncProcTests(TestCaseBase):
+
     def test(self):
         data = """Striker: You are a Time Lord, a lord of time.
                            Are there lords in such a small domain?
@@ -396,6 +402,7 @@ class AsyncProcTests(TestCaseBase):
 
 
 class DdWatchCopy(TestCaseBase):
+
     def testNonAlignedCopy(self, sudo=False):
         """
         Test that copying a file with odd length works.
@@ -545,6 +552,7 @@ class DdWatchCopy(TestCaseBase):
 
 
 class ValidateN(TestCaseBase):
+
     def testValidInput(self):
         """
         Test cases that the validator should validate.
@@ -576,6 +584,7 @@ class ValidateN(TestCaseBase):
 
 
 class ValidateInt(TestCaseBase):
+
     def testValidInput(self):
         """
         Test cases that the validator should validate.
@@ -607,6 +616,7 @@ class ValidateInt(TestCaseBase):
 
 
 class ValidateUuid(TestCaseBase):
+
     def testValidInput(self):
         """
         Test if the function succeeds in validating valid UUIDs.
@@ -655,6 +665,7 @@ class ValidateUuid(TestCaseBase):
 
 
 class UuidPack(TestCaseBase):
+
     def test(self):
         """
         Test that the uuid that was packed can be unpacked without being
@@ -667,6 +678,7 @@ class UuidPack(TestCaseBase):
 
 
 class Checksum(TestCaseBase):
+
     def testConsistency(self):
         """
         Test if when given the same input in different times the user will get
@@ -678,6 +690,7 @@ class Checksum(TestCaseBase):
 
 
 class ParseBool(TestCaseBase):
+
     def testValidInput(self):
         """
         Compare valid inputs with expected results.
@@ -699,6 +712,7 @@ class ParseBool(TestCaseBase):
 
 
 class AlignData(TestCaseBase):
+
     def test(self):
         """
         Test various inputs and see that they are correct.
@@ -711,6 +725,7 @@ class AlignData(TestCaseBase):
 
 
 class ValidateDDBytes(TestCaseBase):
+
     def testValidInputTrue(self):
         """
         Test that it works when given valid and correct input.
@@ -748,6 +763,7 @@ class ValidateDDBytes(TestCaseBase):
 
 
 class ReadBlock(TestCaseBase):
+
     def _createTempFile(self, neededFileSize, writeData):
         """
         Create a temp file with the data in *writeData* written continuously in
@@ -831,6 +847,7 @@ class ReadBlock(TestCaseBase):
 
 
 class CleanUpDir(TestCaseBase):
+
     def testFullDir(self):
         """
         Test if method can clean a dir it should be able to.
@@ -882,6 +899,7 @@ class CleanUpDir(TestCaseBase):
 
 @expandPermutations
 class ReadSpeed(TestCaseBase):
+
     @permutations([
         ("1 byte (1 B) copied, 1 s, 1 B/s",
          "1", "1"),
@@ -907,6 +925,7 @@ class ReadSpeed(TestCaseBase):
 
 
 class PidExists(TestCaseBase):
+
     def testPidExists(self):
         """
         Test if pid given exists.
@@ -1002,6 +1021,7 @@ class WatchCmd(TestCaseBase):
 
 
 class ExecCmd(TestCaseBase):
+
     def testExec(self):
         """
         Tests that execCmd execs and returns the correct ret code
@@ -1060,6 +1080,7 @@ class ExecCmd(TestCaseBase):
 
 
 class FindCallerTests(TestCaseBase):
+
     def _assertFindCaller(self, callback):
         frame = inspect.currentframe()
         code = frame.f_code
@@ -1095,6 +1116,7 @@ class FindCallerTests(TestCaseBase):
 
 
 class NoIntrPollTests(TestCaseBase):
+
     RETRIES = 3
     SLEEP_INTERVAL = 0.1
 
