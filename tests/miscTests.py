@@ -880,24 +880,31 @@ class CleanUpDir(TestCaseBase):
 
 
 class ReadSpeed(TestCaseBase):
-    STATS_TEMPLATE = "%s byte%s (%s %sB) copied, %s s, %s %sB/s"
     STATS_TESTS = (
-        ("1", "", "1", "", "1", "1", ""),
-        ("1024", "s", "1", "k", "1", "1", "k"),
-        ("1572864", "s", "1.5", "M", "1.5", "1", "M"),
-        ("1610612736", "s", "1.5", "G", "1000.5", "1.53", "M"),
-        ("479", "s", "479", "", "5.6832e-05", "8.4", "M"),
-        ("512", "s", "512e-3", "M", "1", "512e-3", "M"),
-        ("524288", "s", "512e3", "", "1", "512e3", ""),
+        # output, bytes, seconds
+        ("1 byte (1 B) copied, 1 s, 1 B/s",
+         "1", "1"),
+        ("1024 bytes (1 kB) copied, 1 s, 1 kB/s",
+         "1024", "1"),
+        ("1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s",
+         "1572864", "1.5"),
+        ("1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s",
+         "1610612736", "1000.5"),
+        ("479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s",
+         "479", "5.6832e-05"),
+        ("512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s",
+         "512", "1"),
+        ("524288 bytes (512e3 B) copied, 1 s, 512e3 B/s",
+         "524288", "1")
     )
 
     def testReadSpeedRegExp(self):
-        for stats in self.STATS_TESTS:
-            m = misc._readspeed_regex.match(self.STATS_TEMPLATE % stats)
+        for output, bytes, seconds in self.STATS_TESTS:
+            m = misc._readspeed_regex.match(output)
             self.assertNotEqual(m, None)
 
-            self.assertEqual(m.group("bytes"), stats[0])
-            self.assertEqual(m.group("seconds"), stats[4])
+            self.assertEqual(m.group("bytes"), bytes)
+            self.assertEqual(m.group("seconds"), seconds)
 
 
 class PidExists(TestCaseBase):
