@@ -1331,11 +1331,7 @@ class Vm(object):
         return ret
 
     def _shouldExtendVolume(self, drive, volumeID, capacity, alloc, physical):
-        # Since the check based on nextPhysSize is extremly risky (it
-        # may result in the VM being paused) we can't use the regular
-        # getNextVolumeSize call as it relies on a cached value of the
-        # drive apparentsize.
-        nextPhysSize = physical + drive.VOLWM_CHUNK_SIZE
+        nextPhysSize = drive.getNextVolumeSize(physical, capacity)
 
         # NOTE: the intent of this check is to prevent faulty images to
         # trick qemu in requesting extremely large extensions (BZ#998443).
