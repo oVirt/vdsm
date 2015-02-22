@@ -1349,9 +1349,9 @@ class Vm(object):
         if alloc > nextPhysSize:
             msg = ("Improbable extension request for volume %s on domain "
                    "%s, pausing the VM to avoid corruptions (capacity: %s, "
-                   "allocated: %s, physical: %s, next physical size: %s)",
-                   volumeID, drive.domainID, capacity, alloc,
-                   physical, nextPhysSize)
+                   "allocated: %s, physical: %s, next physical size: %s)" %
+                   (volumeID, drive.domainID, capacity, alloc, physical,
+                    nextPhysSize))
             self.log.error(msg)
             self.pause(pauseCode='EOTHER')
             raise ImprobableResizeRequestError(msg)
