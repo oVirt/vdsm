@@ -1433,10 +1433,15 @@ class Vm(object):
         self.__extendDriveVolume(vmDrive, vmDrive.volumeID, volInfo['newSize'])
 
     def __extendDriveVolume(self, vmDrive, volumeID, newSize):
-        volInfo = {'poolID': vmDrive.poolID, 'domainID': vmDrive.domainID,
-                   'imageID': vmDrive.imageID, 'volumeID': volumeID,
-                   'name': vmDrive.name, 'newSize': newSize,
-                   'internal': bool(vmDrive.volumeID != volumeID)}
+        volInfo = {
+            'domainID': vmDrive.domainID,
+            'imageID': vmDrive.imageID,
+            'internal': bool(vmDrive.volumeID != volumeID),
+            'name': vmDrive.name,
+            'newSize': newSize,
+            'poolID': vmDrive.poolID,
+            'volumeID': volumeID,
+        }
         self.log.debug("Requesting an extension for the volume: %s", volInfo)
         self.cif.irs.sendExtendMsg(
             vmDrive.poolID,
@@ -1445,12 +1450,14 @@ class Vm(object):
             self.__afterVolumeExtension)
 
     def __extendDriveReplica(self, drive, newSize):
-        volInfo = {'poolID': drive.diskReplicate['poolID'],
-                   'domainID': drive.diskReplicate['domainID'],
-                   'imageID': drive.diskReplicate['imageID'],
-                   'volumeID': drive.diskReplicate['volumeID'],
-                   'name': drive.name,
-                   'newSize': newSize}
+        volInfo = {
+            'domainID': drive.diskReplicate['domainID'],
+            'imageID': drive.diskReplicate['imageID'],
+            'name': drive.name,
+            'newSize': newSize,
+            'poolID': drive.diskReplicate['poolID'],
+            'volumeID': drive.diskReplicate['volumeID'],
+        }
         self.log.debug("Requesting an extension for the volume "
                        "replication: %s", volInfo)
         self.cif.irs.sendExtendMsg(drive.poolID,
