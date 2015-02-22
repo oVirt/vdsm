@@ -34,6 +34,7 @@ from testlib import AssertingLock
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
 from testlib import namedTemporaryDir
+from testlib import permutations, expandPermutations
 from testlib import TEMPDIR
 import inspect
 from multiprocessing import Process
@@ -879,9 +880,9 @@ class CleanUpDir(TestCaseBase):
         self.assertTrue(os.path.lexists(baseDir))
 
 
+@expandPermutations
 class ReadSpeed(TestCaseBase):
-    STATS_TESTS = (
-        # output, bytes, seconds
+    @permutations([
         ("1 byte (1 B) copied, 1 s, 1 B/s",
          "1", "1"),
         ("1024 bytes (1 kB) copied, 1 s, 1 kB/s",
@@ -896,15 +897,13 @@ class ReadSpeed(TestCaseBase):
          "512", "1"),
         ("524288 bytes (512e3 B) copied, 1 s, 512e3 B/s",
          "524288", "1")
-    )
+    ])
+    def testReadSpeedRegExp(self, output, bytes, seconds):
+        m = misc._readspeed_regex.match(output)
+        self.assertNotEqual(m, None)
 
-    def testReadSpeedRegExp(self):
-        for output, bytes, seconds in self.STATS_TESTS:
-            m = misc._readspeed_regex.match(output)
-            self.assertNotEqual(m, None)
-
-            self.assertEqual(m.group("bytes"), bytes)
-            self.assertEqual(m.group("seconds"), seconds)
+        self.assertEqual(m.group("bytes"), bytes)
+        self.assertEqual(m.group("seconds"), seconds)
 
 
 class PidExists(TestCaseBase):
