@@ -879,7 +879,9 @@ class ReadSpeed(TestCaseBase):
         ("512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s",
          "512", "1"),
         ("524288 bytes (512e3 B) copied, 1 s, 512e3 B/s",
-         "524288", "1")
+         "524288", "1"),
+        ("517 bytes (517 B) copied, 0 s, Infinity B/s",
+         "517", "0")
     ])
     def testReadSpeedRegExp(self, output, bytes, seconds):
         m = misc._readspeed_regex.match(output)

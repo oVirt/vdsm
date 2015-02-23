@@ -188,7 +188,7 @@ def getProcCtime(pid):
 _readspeed_regex = re.compile(
     "(?P<bytes>\d+) bytes? \([\de\-.]+ [kMGT]*B\) copied, "
     "(?P<seconds>[\de\-.]+) s, "
-    "[\de\-.]+ [kMGT]*B/s"
+    "([\de\-.]+|Infinity) [kMGT]*B/s"
 )
 
 
