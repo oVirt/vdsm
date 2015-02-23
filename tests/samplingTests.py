@@ -27,12 +27,13 @@ import shutil
 import threading
 
 from vdsm import ipwrapper
+from vdsm import libvirtconnection
 import virt.sampling as sampling
 
 from testValidation import brokentest, ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatchScope
+from monkeypatch import MonkeyPatchScope, MonkeyPatch
 from functional import dummy
 
 
@@ -134,6 +135,10 @@ def vlan(name, link, vlan_id):
             pass
 
 
+def read_password():
+    return 'password'
+
+
 class InterfaceSampleTests(TestCaseBase):
     def setUp(self):
         self.NEW_VLAN = 'vlan_%s' % (random.randint(0, 1000))
@@ -145,6 +150,7 @@ class InterfaceSampleTests(TestCaseBase):
         s1.operstate = 'x'
         self.assertEquals('operstate:x', s1.connlog_diff(s0))
 
+    @MonkeyPatch(libvirtconnection, '_read_password', read_password)
     @ValidateRunningAsRoot
     def testHostSampleReportsNewInterface(self):
         hs_before = sampling.HostSample(os.getpid())
@@ -156,6 +162,7 @@ class InterfaceSampleTests(TestCaseBase):
             interfaces_diff = interfaces_after - interfaces_before
             self.assertEqual(interfaces_diff, set([dummy_name]))
 
+    @MonkeyPatch(libvirtconnection, '_read_password', read_password)
     @ValidateRunningAsRoot
     def testHostSampleHandlesDisappearingVlanInterfaces(self):
         original_getLinks = ipwrapper.getLinks
