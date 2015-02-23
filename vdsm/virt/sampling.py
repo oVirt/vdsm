@@ -22,7 +22,7 @@
 Support for VM and host statistics sampling.
 """
 
-from collections import deque
+from collections import defaultdict, deque, namedtuple
 import errno
 import logging
 import os
@@ -401,54 +401,115 @@ class AdvancedStatsFunction(object):
         return self._samples.last()
 
 
+StatsSample = namedtuple('StatsSample',
+                         ['first_value', 'last_value',
+                          'interval', 'stats_age'])
+
+
+EMPTY_SAMPLE = StatsSample(None, None, None, None)
+
+
 class StatsCache(object):
     """
     Cache for bulk stats samples.
-    Provide facilities to retrieve per-vm samples,
-    and the glue code to deal with disappearing per-vm samples.
+    Provide facilities to retrieve per-vm samples, and the glue code to deal
+    with disappearing per-vm samples.
+
+    Rationale for the 'clock()' method and for the odd API of the 'put()'
+    method with explicit 'monotonic_ts' argument:
+
+    QEMU processes can go rogue and block on a sampling operation, most
+    likely, but not only, because storage becomes unavailable.
+    In turn, that means that libvirt API that VDSM uses can get stuck,
+    but eventually those calls can unblock.
+
+    VDSM has countermeasures for those cases. Stuck threads are replaced,
+    thanks to Executor. But still, before to be destroyed, a replaced
+    thread can mistakenly try to add a sample to a StatsCache.
+
+    Because of worker thread replacement, that sample from stuck thread
+    can  be stale.
+    So, under the assumption that at stable state stats collection has
+    a time cost negligible with respect the collection interval, we need
+    to take the sample timestamp BEFORE to start the possibly-blocking call.
+    If we take the timestamp after the call, we have no means to distinguish
+    between a well behaving call and an unblocked stuck call.
     """
 
     _log = logging.getLogger("sampling.StatsCache")
 
-    def __init__(self):
-        self._samples = SampleWindow(size=2,
-                                     timefn=utils.monotonic_time)
+    def __init__(self, clock=utils.monotonic_time):
+        self._clock = clock
+        self._lock = threading.Lock()
+        self._samples = SampleWindow(size=2, timefn=self._clock)
         self._last_sample_time = 0
+        self._vm_last_timestamp = defaultdict(int)
+
+    def add(self, vmid):
+        """
+        Warm up the cache for the given VM.
+        This is to avoid races during the first sampling and the first
+        reporting, which may result in a VM wrongly reported as unresponsive.
+        """
+        with self._lock:
+            self._vm_last_timestamp[vmid] = self._clock()
+
+    def remove(self, vmid):
+        """
+        Remove any data from the cache related to the given VM.
+        """
+        with self._lock:
+            del self._vm_last_timestamp[vmid]
 
     def get(self, vmid):
         """
-        Return the available samples for the given VM, and the
-        interval among them.
-        Interval will be None if one of the sample is not available.
-        If there are not enough samples, or not enough samples
-        for the given VM, return a None triplet.
+        Return the available StatSample for the given VM.
         """
-        first_batch, last_batch, interval = self._samples.stats()
-        if first_batch is None:
-            return (None, None, None)
+        with self._lock:
+            first_batch, last_batch, interval = self._samples.stats()
 
-        first_sample = first_batch.get(vmid)
-        last_sample = last_batch.get(vmid)
+            if first_batch is None:
+                return EMPTY_SAMPLE
 
-        if first_sample is None or last_sample is None:
-            return (None, None, None)
-        return (first_sample, last_sample, interval)
+            first_sample = first_batch.get(vmid)
+            last_sample = last_batch.get(vmid)
+
+            if first_sample is None or last_sample is None:
+                return EMPTY_SAMPLE
+
+            stats_age = self._clock() - self._vm_last_timestamp[vmid]
+
+            return StatsSample(first_sample, last_sample,
+                               interval, stats_age)
+
+    def clock(self):
+        """
+        Provide timestamp compatible with what put() expects
+        """
+        return self._clock()
 
     def put(self, bulk_stats, monotonic_ts):
         """
         Add a new bulk sample to the collection.
         `monotonic_ts' is the sample time which must be associated with
-        the sample. The sample time must be given from the outside to
-        deal with blocked stats.
+        the sample.
         Discard silently out of order samples, which are assumed to be
         returned by unblocked stuck calls, to avoid overwrite fresh data
         with stale one.
         """
-        if monotonic_ts >= self._last_sample_time:
-            self._samples.append(bulk_stats)
-            self._last_sample_time = monotonic_ts
-        else:
-            self._log.warning('dropped stale old sample')
+        with self._lock:
+            if monotonic_ts >= self._last_sample_time:
+                self._samples.append(bulk_stats)
+                self._last_sample_time = monotonic_ts
+
+                self._update_ts(bulk_stats, monotonic_ts)
+            else:
+                self._log.warning('dropped stale old sample')
+
+    def _update_ts(self, bulk_stats, monotonic_ts):
+        # FIXME: this is expected to be costly performance-wise.
+        for vmid in bulk_stats:
+            self._vm_last_timestamp[vmid] = monotonic_ts
 
 
 stats_cache = StatsCache()
