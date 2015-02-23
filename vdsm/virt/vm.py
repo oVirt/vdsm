@@ -2361,15 +2361,15 @@ class Vm(object):
 
         if not params:
             self.log.error("updateVmPolicy got an empty policy.")
-            return self._reportError(key='MissParam',
-                                     msg="updateVmPolicy got an empty policy.")
+            return response.error('MissParam',
+                                  'updateVmPolicy got an empty policy.')
 
         #
         # Get the current QoS block
         metadata_modified = False
         qos = self._getVmPolicy()
         if qos is None:
-            return self._reportError(key='updateVmPolicyErr')
+            return response.error('updateVmPolicyErr')
 
         #
         # Process provided properties, remove property after it is processed
@@ -2423,8 +2423,7 @@ class Vm(object):
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     return response.error('noVM')
                 else:
-                    return self._reportError(key='updateVmPolicyErr',
-                                             msg=e.message)
+                    return response.error('updateVmPolicyErr', e.message)
 
         return {'status': doneCode}
 
@@ -2483,9 +2482,9 @@ class Vm(object):
             found_device = self._findDeviceByNameOrPath(device_name,
                                                         device_path)
             if found_device is None:
-                return self._reportError(
-                    key='updateIoTuneErr',
-                    msg="Device {} not found".format(device_name))
+                return response.error(
+                    'updateIoTuneErr',
+                    "Device {} not found".format(device_name))
 
             # Merge the update with current values
             dom = found_device.getXML()
@@ -2511,8 +2510,7 @@ class Vm(object):
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                     return response.error('noVM')
                 else:
-                    return self._reportError(key='updateIoTuneErr',
-                                             msg=e.message)
+                    return response.error('updateIoTuneErr', e.message)
 
             # Update both the ioTune arguments and device xml DOM
             # so we are still up-to-date
@@ -3861,7 +3859,7 @@ class Vm(object):
     def setBalloonTarget(self, target):
 
         if not self._dom.connected:
-            return self._reportError(key='balloonErr')
+            return response.error('balloonErr')
         try:
             target = int(target)
             self._dom.setMemory(target)
@@ -3885,8 +3883,8 @@ class Vm(object):
         try:
             self._dom.setSchedulerParameters({'vcpu_quota': int(quota)})
         except ValueError:
-            return self._reportError(key='cpuTuneErr',
-                                     msg='an integer is required for period')
+            return response.error('cpuTuneErr',
+                                  'an integer is required for period')
         except libvirt.libvirtError as e:
             return self._reportException(key='cpuTuneErr', msg=e.message)
         else:
@@ -3897,8 +3895,8 @@ class Vm(object):
         try:
             self._dom.setSchedulerParameters({'vcpu_period': int(period)})
         except ValueError:
-            return self._reportError(key='cpuTuneErr',
-                                     msg='an integer is required for period')
+            return response.error('cpuTuneErr',
+                                  'an integer is required for period')
         except libvirt.libvirtError as e:
             return self._reportException(key='cpuTuneErr', msg=e.message)
         else:
@@ -3913,23 +3911,13 @@ class Vm(object):
         else:
             return {'status': doneCode}
 
-    def _reportError(self, key, msg=None):
-        """
-        Produce an error status.
-        """
-        if msg is None:
-            error = errCode[key]
-        else:
-            error = response.error(key, msg)
-        return error
-
     def _reportException(self, key, msg=None):
         """
         Convert an exception to an error status.
         This method should be called only within exception-handling context.
         """
         self.log.exception("Operation failed")
-        return self._reportError(key, msg)
+        return response.error(key, msg)
 
     def _getUnderlyingDeviceAddress(self, devXml, index=0):
         """
