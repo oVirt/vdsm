@@ -573,9 +573,9 @@ class ConfigWriter(object):
             # According to manual the BOOTPROTO=none should be set
             # for static IP
             cfg += 'BOOTPROTO=none\n'
-        elif ipconfig.bootproto:
-            cfg += 'BOOTPROTO=%s\n' % pipes.quote(ipconfig.bootproto)
-            if (ipconfig.bootproto == 'dhcp' and
+        elif ipv4.bootproto:
+            cfg += 'BOOTPROTO=%s\n' % pipes.quote(ipv4.bootproto)
+            if (ipv4.bootproto == 'dhcp' and
                     os.path.exists(os.path.join(netinfo.NET_PATH, name))):
                 # Ask dhclient to stop any dhclient running for the device
                 dhclient.kill_dhclient(name)
@@ -584,15 +584,15 @@ class ConfigWriter(object):
         if ipv4.defaultRoute is not None:
             cfg += 'DEFROUTE=%s\n' % _to_ifcfg_bool(ipv4.defaultRoute)
         cfg += 'NM_CONTROLLED=no\n'
-        if ipv6.address or ipconfig.ipv6autoconf or ipconfig.dhcpv6:
+        if ipv6.address or ipv6.ipv6autoconf or ipv6.dhcpv6:
             cfg += 'IPV6INIT=yes\n'
             if ipv6.address is not None:
                 cfg += 'IPV6ADDR=%s\n' % pipes.quote(ipv6.address)
                 if ipv6.gateway is not None:
                     cfg += 'IPV6_DEFAULTGW=%s\n' % pipes.quote(ipv6.gateway)
-            elif ipconfig.dhcpv6:
+            elif ipv6.dhcpv6:
                 cfg += 'DHCPV6C=yes\n'
-            if ipconfig.ipv6autoconf:
+            if ipv6.ipv6autoconf:
                 cfg += 'IPV6_AUTOCONF=%s\n' % 'yes'
             else:
                 cfg += 'IPV6_AUTOCONF=%s\n' % 'no'
@@ -692,20 +692,19 @@ class ConfigWriter(object):
         mtu = iface.mtu
         if netinfo.ifaceUsed(iface.name):
             confParams = netinfo.getIfaceCfg(iface.name)
-            if not ipv4.address and ipconfig.bootproto != 'dhcp':
+            if not ipv4.address and ipv4.bootproto != 'dhcp':
                 ipv4.address = confParams.get('IPADDR')
                 ipv4.netmask = confParams.get('NETMASK')
                 ipv4.gateway = confParams.get('GATEWAY')
-                if not ipconfig.bootproto:
-                    ipconfig.bootproto = confParams.get('BOOTPROTO')
+                if not ipv4.bootproto:
+                    ipv4.bootproto = confParams.get('BOOTPROTO')
             if ipv4.defaultRoute is None and confParams.get('DEFROUTE'):
                 ipv4.defaultRoute = _from_ifcfg_bool(confParams['DEFROUTE'])
             if confParams.get('IPV6INIT') == 'yes':
                 ipv6.address = confParams.get('IPV6ADDR')
                 ipv6.gateway = confParams.get('IPV6_DEFAULTGW')
-                ipconfig.ipv6autoconf = (
-                    confParams.get('IPV6_AUTOCONF') == 'yes')
-                ipconfig.dhcpv6 = confParams.get('DHCPV6C') == 'yes'
+                ipv6.ipv6autoconf = confParams.get('IPV6_AUTOCONF') == 'yes'
+                ipv6.dhcpv6 = confParams.get('DHCPV6C') == 'yes'
             if not iface.mtu:
                 mtu = confParams.get('MTU')
                 if mtu:

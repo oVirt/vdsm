@@ -222,9 +222,8 @@ class Iproute2(Configurator):
 class ConfigApplier(object):
 
     def _setIpConfig(self, iface):
-        ipconfig = iface.ipconfig
-        ipv4 = ipconfig.ipv4
-        ipv6 = ipconfig.ipv6
+        ipv4 = iface.ipconfig.ipv4
+        ipv6 = iface.ipconfig.ipv6
         if ipv4.address or ipv6.address:
             self.removeIpConfig(iface)
         if ipv4.address:
@@ -238,10 +237,10 @@ class ConfigApplier(object):
             if ipv6.gateway:
                 ipwrapper.routeAdd(['default', 'via', ipv6.gateway],
                                    dev=iface.name, family=6)
-        if ipconfig.ipv6autoconf is not None:
+        if ipv6.ipv6autoconf is not None:
             with open('/proc/sys/net/ipv6/conf/%s/autoconf' % iface.name,
                       'w') as ipv6_autoconf:
-                ipv6_autoconf.write('1' if ipconfig.ipv6autoconf else '0')
+                ipv6_autoconf.write('1' if ipv6.ipv6autoconf else '0')
 
     def removeIpConfig(self, iface):
         ipwrapper.addrFlush(iface.name)
@@ -254,9 +253,9 @@ class ConfigApplier(object):
 
     def ifup(self, iface):
         ipwrapper.linkSet(iface.name, ['up'])
-        if iface.ipconfig.bootproto == 'dhcp':
+        if iface.ipconfig.ipv4.bootproto == 'dhcp':
             runDhclient(iface)
-        if iface.ipconfig.dhcpv6:
+        if iface.ipconfig.ipv6.dhcpv6:
             runDhclient(iface, 6)
 
     def ifdown(self, iface):

@@ -356,7 +356,7 @@ class Bond(NetDevice):
 
 class IPv4(object):
     def __init__(self, address=None, netmask=None, gateway=None,
-                 defaultRoute=None):
+                 defaultRoute=None, bootproto=None):
         if address:
             if not netmask:
                 raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Must specify '
@@ -370,14 +370,20 @@ class IPv4(object):
             if netmask or gateway:
                 raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified netmask '
                                          'or gateway but not ip address.')
+        if address and bootproto == 'dhcp':
+            raise ConfigNetworkError(
+                ne.ERR_BAD_ADDR, 'Mixing of static and dynamic IPv4 '
+                'configuration is currently not supported.')
         self.address = address
         self.netmask = netmask
         self.gateway = gateway
         self.defaultRoute = defaultRoute
+        self.bootproto = bootproto
 
     def __repr__(self):
-        return 'IPv4(%s, %s, %s, %s)' % (self.address, self.netmask,
-                                         self.gateway, self.defaultRoute)
+        return 'IPv4(%s, %s, %s, %s, %s)' % (self.address, self.netmask,
+                                             self.gateway, self.defaultRoute,
+                                             self.bootproto)
 
     @classmethod
     def validateAddress(cls, address):
@@ -410,7 +416,8 @@ class IPv4(object):
 
 
 class IPv6(object):
-    def __init__(self, address=None, gateway=None, defaultRoute=None):
+    def __init__(self, address=None, gateway=None, defaultRoute=None,
+                 ipv6autoconf=None, dhcpv6=None):
         if address:
             self.validateAddress(address)
             if gateway:
@@ -418,13 +425,20 @@ class IPv6(object):
         elif gateway:
             raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Specified gateway but '
                                      'not ip address.')
+        if address and (ipv6autoconf or dhcpv6):
+            raise ConfigNetworkError(
+                ne.ERR_BAD_ADDR, 'Mixing of static and dynamic IPv6 '
+                'configuration is currently not supported.')
         self.address = address
         self.gateway = gateway
         self.defaultRoute = defaultRoute
+        self.ipv6autoconf = ipv6autoconf
+        self.dhcpv6 = dhcpv6
 
     def __repr__(self):
-        return 'IPv6(%s, %s, %s)' % (self.address, self.gateway,
-                                     self.defaultRoute)
+        return 'IPv6(%s, %s, %s, %s, %s)' % (
+            self.address, self.gateway, self.defaultRoute, self.ipv6autoconf,
+            self.dhcpv6)
 
     @classmethod
     def validateAddress(cls, address):
@@ -458,33 +472,24 @@ class IPv6(object):
 
 
 class IpConfig(object):
-    def __init__(self, ipv4=None, ipv6=None, bootproto=None,
-                 blockingdhcp=False, ipv6autoconf=None, dhcpv6=None):
+    def __init__(self, ipv4=None, ipv6=None, blockingdhcp=False):
         if ipv4 is None:
             ipv4 = IPv4()
         if ipv6 is None:
             ipv6 = IPv6()
-        if (ipv4.address and bootproto == 'dhcp') or \
-           (ipv6.address and (ipv6autoconf or dhcpv6)):
-            raise ConfigNetworkError(ne.ERR_BAD_ADDR, 'Static and dynamic IP '
-                                     'configurations are mutually exclusive.')
         self.ipv4 = ipv4
         self.ipv6 = ipv6
-        self.bootproto = bootproto
-        self.async = (bootproto == 'dhcp' or dhcpv6) and not blockingdhcp
-        self.ipv6autoconf = ipv6autoconf
-        self.dhcpv6 = dhcpv6
+        self.async = ((ipv4.bootproto == 'dhcp' or ipv6.dhcpv6) and
+                      not blockingdhcp)
 
     def __nonzero__(self):
         # iproute2 and pyroute_two check that IP configuration is not empty
-        return bool(self.ipv4.address or self.ipv6.address or self.bootproto or
-                    self.ipv6autoconf or self.dhcpv6)
+        return bool(self.ipv4.address or self.ipv6.address or
+                    self.ipv4.bootproto or self.ipv6.ipv6autoconf or
+                    self.ipv6.dhcpv6)
 
     def __repr__(self):
-        return 'IpConfig(%r, %r, %s, %s, %s)' % (self.ipv4, self.ipv6,
-                                                 self.bootproto,
-                                                 self.ipv6autoconf,
-                                                 self.dhcpv6)
+        return 'IpConfig(%r, %r, %s)' % (self.ipv4, self.ipv6, self.async)
 
 
 def _nicSort(nics):

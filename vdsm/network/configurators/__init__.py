@@ -125,7 +125,7 @@ class Configurator(object):
     def _addSourceRoute(self, netEnt):
         ipv4 = netEnt.ipconfig.ipv4
         # bootproto is None for both static and no bootproto
-        if netEnt.ipconfig.bootproto != 'dhcp' and netEnt.master is None:
+        if ipv4.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Adding source route: name=%s, addr=%s, netmask=%s, "
                           "gateway=%s" % (netEnt.name, ipv4.address,
                                           ipv4.netmask, ipv4.gateway))
@@ -141,7 +141,7 @@ class Configurator(object):
                                   ipv4.netmask, ipv4.gateway).configure()
 
     def _removeSourceRoute(self, netEnt, sourceRouteClass):
-        if netEnt.ipconfig.bootproto != 'dhcp' and netEnt.master is None:
+        if netEnt.ipconfig.ipv4.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s", netEnt.name)
             sourceRouteClass(netEnt.name, self, None, None, None).remove()
 

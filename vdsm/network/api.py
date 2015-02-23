@@ -162,12 +162,10 @@ def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
-    ipv4 = IPv4(ipaddr, netmask, gateway, defaultRoute)
-    ipv6 = IPv6(ipv6addr, ipv6gateway, defaultRoute)
+    ipv4 = IPv4(ipaddr, netmask, gateway, defaultRoute, bootproto)
+    ipv6 = IPv6(ipv6addr, ipv6gateway, defaultRoute, ipv6autoconf, dhcpv6)
     blockingdhcp = configurator._inRollback or utils.tobool(blockingdhcp)
-    topNetDev.ipconfig = IpConfig(
-        ipv4=ipv4, ipv6=ipv6, bootproto=bootproto, blockingdhcp=blockingdhcp,
-        ipv6autoconf=ipv6autoconf, dhcpv6=dhcpv6)
+    topNetDev.ipconfig = IpConfig(ipv4, ipv6, blockingdhcp)
     return topNetDev
 
 
@@ -481,7 +479,7 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                                   vlan=vlan, bonding=bonding, nics=nics,
                                   _netinfo=_netinfo, configurator=configurator,
                                   implicitBonding=implicitBonding)
-    net_ent.ipconfig.bootproto = (
+    net_ent.ipconfig.ipv4.bootproto = (
         'dhcp' if _netinfo.networks[network]['dhcpv4'] else 'none')
 
     if bridged and keep_bridge:
