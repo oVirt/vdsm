@@ -30,9 +30,12 @@ from . import errors as ne
 
 
 class NetDevice(object):
-    def __init__(self, name, configurator, ipconfig=None, mtu=None):
+    def __init__(self, name, configurator, ipv4=None, ipv6=None,
+                 blockingdhcp=False, mtu=None):
         self.name = name
-        self.ipconfig = ipconfig if ipconfig is not None else IpConfig()
+        self.ipv4 = ipv4 if ipv4 is not None else IPv4()
+        self.ipv6 = ipv6 if ipv6 is not None else IPv6()
+        self.blockingdhcp = blockingdhcp
         self.mtu = mtu
         self.configurator = configurator
         self.master = None
@@ -68,7 +71,7 @@ class NetDevice(object):
     def serving_default_route(self):
         device = self
         while device:
-            if device.ipconfig.ipv4.defaultRoute:
+            if device.ipv4.defaultRoute:
                 return True
             device = device.master
         return False
@@ -77,10 +80,15 @@ class NetDevice(object):
     def backing_device(self):
         return False
 
+    @property
+    def asynchronous_dhcp(self):
+        return ((self.ipv4.bootproto == 'dhcp' or self.ipv6.dhcpv6) and
+                not self.blockingdhcp)
+
 
 class Nic(NetDevice):
-    def __init__(self, name, configurator, ipconfig=None, mtu=None,
-                 _netinfo=None):
+    def __init__(self, name, configurator, ipv4=None, ipv6=None,
+                 blockingdhcp=False, mtu=None, _netinfo=None):
         if _netinfo is None:
             _netinfo = netinfo.NetInfo()
         if name not in _netinfo.nics:
@@ -89,8 +97,8 @@ class Nic(NetDevice):
         if _netinfo.ifaceUsers(name):
             mtu = max(mtu, netinfo.getMtu(name))
 
-        super(Nic, self).__init__(name, configurator, ipconfig,
-                                  mtu=mtu)
+        super(Nic, self).__init__(name, configurator, ipv4, ipv6, blockingdhcp,
+                                  mtu)
 
     def configure(self, **opts):
         # in a limited condition, we should not touch the nic config
@@ -120,7 +128,8 @@ class Nic(NetDevice):
 class Vlan(NetDevice):
     MAX_ID = 4094
 
-    def __init__(self, device, tag, configurator, ipconfig=None, mtu=None):
+    def __init__(self, device, tag, configurator, ipv4=None, ipv6=None,
+                 blockingdhcp=False, mtu=None):
         self.validateTag(tag)
         if device is None:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required vlan'
@@ -129,7 +138,7 @@ class Vlan(NetDevice):
         self.device = device
         self.tag = tag
         super(Vlan, self).__init__('%s.%s' % (device.name, tag), configurator,
-                                   ipconfig, mtu)
+                                   ipv4, ipv6, blockingdhcp, mtu)
 
     def __iter__(self):
         yield self
@@ -163,14 +172,15 @@ class Bridge(NetDevice):
     MAX_NAME_LEN = 15
     ILLEGAL_CHARS = frozenset(':. \t')
 
-    def __init__(self, name, configurator, ipconfig=None, mtu=None, port=None,
-                 stp=None):
+    def __init__(self, name, configurator, ipv4=None, ipv6=None,
+                 blockingdhcp=False, mtu=None, port=None, stp=None):
         self.validateName(name)
         if port:
             port.master = self
         self.port = port
         self.stp = stp
-        super(Bridge, self).__init__(name, configurator, ipconfig, mtu)
+        super(Bridge, self).__init__(name, configurator, ipv4, ipv6,
+                                     blockingdhcp, mtu)
 
     def __iter__(self):
         yield self
@@ -199,8 +209,9 @@ class Bridge(NetDevice):
 
 
 class Bond(NetDevice):
-    def __init__(self, name, configurator, ipconfig=None, mtu=None, slaves=(),
-                 options=None, destroyOnMasterRemoval=None):
+    def __init__(self, name, configurator, ipv4=None, ipv6=None,
+                 blockingdhcp=False, mtu=None, slaves=(), options=None,
+                 destroyOnMasterRemoval=None):
         self.validateName(name)
         for slave in slaves:
             slave.master = self
@@ -211,7 +222,8 @@ class Bond(NetDevice):
             self.validateOptions(name, options)
             self.options = self._reorderOptions(options)
         self.destroyOnMasterRemoval = destroyOnMasterRemoval
-        super(Bond, self).__init__(name, configurator, ipconfig, mtu)
+        super(Bond, self).__init__(name, configurator, ipv4, ipv6,
+                                   blockingdhcp, mtu)
 
     def __iter__(self):
         yield self
@@ -380,6 +392,9 @@ class IPv4(object):
         self.defaultRoute = defaultRoute
         self.bootproto = bootproto
 
+    def __nonzero__(self):
+        return bool(self.address or self.bootproto)
+
     def __repr__(self):
         return 'IPv4(%s, %s, %s, %s, %s)' % (self.address, self.netmask,
                                              self.gateway, self.defaultRoute,
@@ -435,6 +450,9 @@ class IPv6(object):
         self.ipv6autoconf = ipv6autoconf
         self.dhcpv6 = dhcpv6
 
+    def __nonzero__(self):
+        return bool(self.address or self.ipv6autoconf or self.dhcpv6)
+
     def __repr__(self):
         return 'IPv6(%s, %s, %s, %s, %s)' % (
             self.address, self.gateway, self.defaultRoute, self.ipv6autoconf,
@@ -469,27 +487,6 @@ class IPv6(object):
         except ConfigNetworkError as cne:
             cne.message = '%r is not a valid IPv6 gateway.'
             raise
-
-
-class IpConfig(object):
-    def __init__(self, ipv4=None, ipv6=None, blockingdhcp=False):
-        if ipv4 is None:
-            ipv4 = IPv4()
-        if ipv6 is None:
-            ipv6 = IPv6()
-        self.ipv4 = ipv4
-        self.ipv6 = ipv6
-        self.async = ((ipv4.bootproto == 'dhcp' or ipv6.dhcpv6) and
-                      not blockingdhcp)
-
-    def __nonzero__(self):
-        # iproute2 and pyroute_two check that IP configuration is not empty
-        return bool(self.ipv4.address or self.ipv6.address or
-                    self.ipv4.bootproto or self.ipv6.ipv6autoconf or
-                    self.ipv6.dhcpv6)
-
-    def __repr__(self):
-        return 'IpConfig(%r, %r, %s)' % (self.ipv4, self.ipv6, self.async)
 
 
 def _nicSort(nics):

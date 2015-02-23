@@ -123,7 +123,7 @@ class Configurator(object):
         qos.remove_outbound(top_device)
 
     def _addSourceRoute(self, netEnt):
-        ipv4 = netEnt.ipconfig.ipv4
+        ipv4 = netEnt.ipv4
         # bootproto is None for both static and no bootproto
         if ipv4.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Adding source route: name=%s, addr=%s, netmask=%s, "
@@ -141,7 +141,7 @@ class Configurator(object):
                                   ipv4.netmask, ipv4.gateway).configure()
 
     def _removeSourceRoute(self, netEnt, sourceRouteClass):
-        if netEnt.ipconfig.ipv4.bootproto != 'dhcp' and netEnt.master is None:
+        if netEnt.ipv4.bootproto != 'dhcp' and netEnt.master is None:
             logging.debug("Removing source route for device %s", netEnt.name)
             sourceRouteClass(netEnt.name, self, None, None, None).remove()
 
@@ -177,7 +177,7 @@ def getEthtoolOpts(name):
 
 def runDhclient(iface, family=4):
     dhclient = DhcpClient(iface.name, family)
-    rc = dhclient.start(iface.ipconfig.async)
-    if not iface.ipconfig.async and rc:
+    rc = dhclient.start(iface.asynchronous_dhcp)
+    if not iface.asynchronous_dhcp and rc:
         raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed',
                                  family)

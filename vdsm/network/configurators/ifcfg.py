@@ -43,7 +43,7 @@ if utils.isOvirtNode():
 
 from . import Configurator, dhclient, getEthtoolOpts, libvirt
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
-from ..models import Nic, Bridge, IpConfig
+from ..models import Nic, Bridge, IPv4, IPv6
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 import dsaversion  # TODO: Make parent package import when vdsm is a package
 
@@ -90,13 +90,13 @@ class Ifcfg(Configurator):
         if bridge.port:
             bridge.port.configure(**opts)
         self._addSourceRoute(bridge)
-        ifup(bridge.name, bridge.ipconfig.async)
+        ifup(bridge.name, bridge.asynchronous_dhcp)
 
     def configureVlan(self, vlan, **opts):
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan)
-        ifup(vlan.name, vlan.ipconfig.async)
+        ifup(vlan.name, vlan.asynchronous_dhcp)
 
     def configureBond(self, bond, **opts):
         self.configApplier.addBonding(bond, **opts)
@@ -106,7 +106,7 @@ class Ifcfg(Configurator):
         for slave in bond.slaves:
             slave.configure(**opts)
         self._addSourceRoute(bond)
-        ifup(bond.name, bond.ipconfig.async)
+        ifup(bond.name, bond.asynchronous_dhcp)
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
@@ -159,7 +159,7 @@ class Ifcfg(Configurator):
         if nic.bond is None:
             if not netinfo.isVlanned(nic.name):
                 ifdown(nic.name)
-            ifup(nic.name, nic.ipconfig.async)
+            ifup(nic.name, nic.asynchronous_dhcp)
 
     def removeBridge(self, bridge):
         DynamicSourceRoute.addInterfaceTracking(bridge)
@@ -201,7 +201,8 @@ class Ifcfg(Configurator):
                 if self.unifiedPersistence:
                     self.runningConfig.removeBonding(bonding.name)
             else:  # Recreate the bond with ip and master info cleared
-                bonding.ipconfig = IpConfig()
+                bonding.ipv4 = IPv4()
+                bonding.ipv6 = IPv6()
                 bonding.master = None
                 bonding.configure()
         else:
@@ -610,12 +611,12 @@ class ConfigWriter(object):
         if bridge.stp is not None:
             conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
         conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
-            not self.unifiedPersistence or bridge.ipconfig.ipv4.defaultRoute)
+            not self.unifiedPersistence or bridge.ipv4.defaultRoute)
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             opts['bridging_opts'] = opts['custom']['bridge_opts']
-        self._createConfFile(conf, bridge.name, bridge.ipconfig.ipv4,
-                             bridge.ipconfig.ipv6, bridge.mtu, **opts)
+        self._createConfFile(conf, bridge.name, bridge.ipv4, bridge.ipv6,
+                             bridge.mtu, **opts)
 
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
@@ -625,8 +626,8 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
         conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
             not self.unifiedPersistence or vlan.serving_default_route)
-        self._createConfFile(conf, vlan.name, vlan.ipconfig.ipv4,
-                             vlan.ipconfig.ipv6, vlan.mtu, **opts)
+        self._createConfFile(conf, vlan.name, vlan.ipv4, vlan.ipv6, vlan.mtu,
+                             **opts)
 
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
@@ -674,8 +675,8 @@ class ConfigWriter(object):
 
     @staticmethod
     def _getIfaceConfValues(iface):
-        ipv4 = copy.deepcopy(iface.ipconfig.ipv4)
-        ipv6 = copy.deepcopy(iface.ipconfig.ipv6)
+        ipv4 = copy.deepcopy(iface.ipv4)
+        ipv6 = copy.deepcopy(iface.ipv6)
         mtu = iface.mtu
         if netinfo.ifaceUsed(iface.name):
             confParams = netinfo.getIfaceCfg(iface.name)

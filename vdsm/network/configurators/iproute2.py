@@ -222,8 +222,8 @@ class Iproute2(Configurator):
 class ConfigApplier(object):
 
     def _setIpConfig(self, iface):
-        ipv4 = iface.ipconfig.ipv4
-        ipv6 = iface.ipconfig.ipv6
+        ipv4 = iface.ipv4
+        ipv6 = iface.ipv6
         if ipv4.address or ipv6.address:
             self.removeIpConfig(iface)
         if ipv4.address:
@@ -253,9 +253,9 @@ class ConfigApplier(object):
 
     def ifup(self, iface):
         ipwrapper.linkSet(iface.name, ['up'])
-        if iface.ipconfig.ipv4.bootproto == 'dhcp':
+        if iface.ipv4.bootproto == 'dhcp':
             runDhclient(iface)
-        if iface.ipconfig.ipv6.dhcpv6:
+        if iface.ipv6.dhcpv6:
             runDhclient(iface, 6)
 
     def ifdown(self, iface):
@@ -264,7 +264,7 @@ class ConfigApplier(object):
         dhclient.shutdown()
 
     def setIfaceConfigAndUp(self, iface):
-        if iface.ipconfig:
+        if iface.ipv4 or iface.ipv6:
             self._setIpConfig(iface)
         if iface.mtu:
             self.setIfaceMtu(iface.name, iface.mtu)
