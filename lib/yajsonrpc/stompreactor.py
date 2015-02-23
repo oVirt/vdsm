@@ -284,9 +284,11 @@ class StompServer(object):
         return _StompConnection(self, adapter, sock,
                                 self._reactor)
 
-    def send(self, message):
+    """
+    Sends message to all subscribes that subscribed to destination.
+    """
+    def send(self, message, destination=_DEFAULT_RESPONSE_DESTINATION):
         self.log.debug("Sending response")
-        destination = _DEFAULT_RESPONSE_DESTINATION
         try:
             resp = json.loads(message)
             destination = self._req_dest[resp.get("id")]
@@ -313,10 +315,6 @@ class StompServer(object):
                 message
             )
             connection.client.send_raw(res)
-
-    def close(self):
-        for connection in self._sub_map.values():
-            connection.close()
 
 
 class StompClient(object):
@@ -413,6 +411,10 @@ class StompReactor(object):
         )
         self._reactor.wakeup()
         return listener
+
+    @property
+    def server(self):
+        return self._server
 
     def createClient(self, connected_socket):
         return StompClient(connected_socket, self._reactor)

@@ -27,6 +27,7 @@ from functools import partial
 from weakref import proxy
 
 from yajsonrpc.betterAsyncore import Reactor
+from yajsonrpc import Notification
 import alignmentScan
 from vdsm.config import config
 from momIF import MomThread
@@ -133,6 +134,21 @@ class clientIF(object):
     @property
     def ready(self):
         return (self.irs is None or self.irs.ready) and not self._recovery
+
+    def notify(self, event_id, **kwargs):
+        """
+        Send notification using provided subscription id as
+        event_id and a dictionary as event body. Before sending
+        there is notify_time added on top level to the dictionary.
+        """
+        notification = Notification(
+            event_id,
+            self._send_notification,
+        )
+        notification.emit(**kwargs)
+
+    def _send_notification(self, message):
+        self.bindings['jsonrpc'].reactor.server.send(message)
 
     def contEIOVms(self, sdUUID, isDomainStateValid):
         # This method is called everytime the onDomainStateChange

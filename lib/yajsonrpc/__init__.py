@@ -21,7 +21,7 @@ from threading import Lock, Event
 from vdsm.compat import json
 
 from vdsm.password import protect_passwords, unprotect_passwords
-from vdsm.utils import traceback
+from vdsm.utils import monotonic_time, traceback
 
 __all__ = ["betterAsyncore", "stompreactor", "stomp"]
 
@@ -101,9 +101,7 @@ class JsonRpcRequest(object):
             raise JsonRpcInvalidRequestError("missing method header", obj)
 
         reqId = obj.get("id")
-        if not isinstance(reqId, (str, unicode, int)):
-            raise JsonRpcInvalidRequestError("missing request identifier",
-                                             obj)
+        # when sending notifications id is not provided
 
         params = obj.get('params', [])
         if not isinstance(params, (list, dict)):
@@ -169,6 +167,31 @@ class JsonRpcResponse(object):
         reqId = obj.get("id")
 
         return JsonRpcResponse(result, error, reqId)
+
+
+class Notification(object):
+    """
+    Represents jsonrpc notification message. It builds proper jsonrpc
+    notification and pass it a callback which is responsible for
+    sending it.
+    """
+    log = logging.getLogger("jsonrpc.Notification")
+
+    def __init__(self, event_id, cb):
+        self._event_id = event_id
+        self._cb = cb
+
+    def emit(self, **kwargs):
+        self._add_notify_time(kwargs)
+        notification = json.dumps({'jsonrpc': '2.0',
+                                   'method': self._event_id,
+                                   'params': kwargs})
+
+        self.log.debug("Sending event %s", notification)
+        self._cb(notification)
+
+    def _add_notify_time(self, body):
+        body['notify_time'] = int(monotonic_time() * 1000)
 
 
 class _JsonRpcClientRequestContext(object):

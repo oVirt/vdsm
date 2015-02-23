@@ -33,6 +33,7 @@ from yajsonrpc.stomp import (
     LEGACY_SUBSCRIPTION_ID_REQUEST,
     LEGACY_SUBSCRIPTION_ID_RESPONSE
 )
+from yajsonrpc import Notification
 from protocoldetector import MultiProtocolAcceptor
 from rpc.bindingjsonrpc import BindingJsonRpc
 from sslhelper import DEAFAULT_SSL_CONTEXT
@@ -45,8 +46,9 @@ TIMEOUT = 3
 class FakeClientIf(object):
     log = logging.getLogger("FakeClientIf")
 
-    def __init__(self):
+    def __init__(self, binding):
         self.threadLocal = threading.local()
+        self.json_binding = binding
         self.irs = True
         self.gluster = None
 
@@ -60,6 +62,17 @@ class FakeClientIf(object):
     def ready(self):
         return True
 
+    def notify(self, event_id, **kwargs):
+        notification = Notification(
+            event_id,
+            self._send_notification,
+        )
+        notification.emit(**kwargs)
+
+    def _send_notification(self, message):
+        server = self.json_binding.reactor.server
+        server.send(message, LEGACY_SUBSCRIPTION_ID_RESPONSE)
+
 
 @contextmanager
 def constructAcceptor(log, ssl, jsonBridge):
@@ -71,15 +84,18 @@ def constructAcceptor(log, ssl, jsonBridge):
         0,
         sslctx,
     )
-    cif = FakeClientIf()
+    json_binding = BindingJsonRpc(jsonBridge)
+    json_binding.start()
+
+    cif = FakeClientIf(json_binding)
 
     xml_binding = BindingXMLRPC(cif, cif.log)
     xml_binding.start()
     xmlDetector = XmlDetector(xml_binding)
     acceptor.add_detector(xmlDetector)
 
-    json_binding = BindingJsonRpc(jsonBridge)
-    json_binding.start()
+    jsonBridge.cif = cif
+
     stompDetector = StompDetector(json_binding)
     acceptor.add_detector(stompDetector)
 

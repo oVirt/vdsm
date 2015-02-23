@@ -45,6 +45,7 @@ CALL_ID = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
 
 class _DummyBridge(object):
     log = logging.getLogger("tests.DummyBridge")
+    cif = None
 
     def getBridgeMethods(self):
         return ((self.echo, 'echo'),
@@ -56,6 +57,10 @@ class _DummyBridge(object):
 
     def ping(self):
         return None
+
+    def double_response(self):
+        self.cif.notify('vdsm.double_response', content=True)
+        return 'sent'
 
     def register_server_address(self, server_address):
         self.server_address = server_address
@@ -174,3 +179,22 @@ class JsonRpcServerTests(TestCaseBase):
                     res = self._callTimeout(client, "ping", [],
                                             CALL_ID, timeout=CALL_TIMEOUT)
                     self.assertEquals(res, True)
+
+    @MonkeyPatch(clientIF, 'getInstance', getInstance)
+    @permutations(PERMUTATIONS)
+    def testDoubleResponse(self, ssl, type):
+        bridge = _DummyBridge()
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+            with self._client(clientFactory) as client:
+                if type == "xml":
+                    # ignore notifications for xmlrpc
+                    pass
+                else:
+                    def callback(client, event, params):
+                        self.assertEquals(event, 'vdsm.double_response')
+                        self.assertEquals(params['content'], True)
+
+                    client.registerEventCallback(callback)
+                    res = self._callTimeout(client, "double_response", [],
+                                            CALL_ID, timeout=CALL_TIMEOUT)
+                    self.assertEquals(res, 'sent')
