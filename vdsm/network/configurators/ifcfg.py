@@ -559,10 +559,8 @@ class ConfigWriter(object):
             logging.debug('ignoring restorecon error in case '
                           'SElinux is disabled', exc_info=True)
 
-    def _createConfFile(self, conf, name, ipconfig, mtu=None, **kwargs):
+    def _createConfFile(self, conf, name, ipv4, ipv6, mtu=None, **kwargs):
         """ Create ifcfg-* file with proper fields per device """
-        ipv4 = ipconfig.ipv4
-        ipv6 = ipconfig.ipv6
         cfg = 'DEVICE=%s\n' % pipes.quote(name)
         cfg += conf
         if ipv4.address:
@@ -616,8 +614,8 @@ class ConfigWriter(object):
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             opts['bridging_opts'] = opts['custom']['bridge_opts']
-        self._createConfFile(conf, bridge.name, bridge.ipconfig, bridge.mtu,
-                             **opts)
+        self._createConfFile(conf, bridge.name, bridge.ipconfig.ipv4,
+                             bridge.ipconfig.ipv6, bridge.mtu, **opts)
 
     def addVlan(self, vlan, **opts):
         """ Create ifcfg-* file with proper fields for VLAN """
@@ -627,7 +625,8 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
         conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
             not self.unifiedPersistence or vlan.serving_default_route)
-        self._createConfFile(conf, vlan.name, vlan.ipconfig, vlan.mtu, **opts)
+        self._createConfFile(conf, vlan.name, vlan.ipconfig.ipv4,
+                             vlan.ipconfig.ipv6, vlan.mtu, **opts)
 
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
@@ -638,8 +637,8 @@ class ConfigWriter(object):
         conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
             not self.unifiedPersistence or bond.serving_default_route)
 
-        ipconfig, mtu = self._getIfaceConfValues(bond)
-        self._createConfFile(conf, bond.name, ipconfig, mtu, **opts)
+        ipv4, ipv6, mtu = self._getIfaceConfValues(bond)
+        self._createConfFile(conf, bond.name, ipv4, ipv6, mtu, **opts)
 
         # create the bonding device to avoid initscripts noise
         with open(netinfo.BONDING_MASTERS) as info:
@@ -670,14 +669,13 @@ class ConfigWriter(object):
         if ethtool_opts:
             conf += 'ETHTOOL_OPTS=%s\n' % pipes.quote(ethtool_opts)
 
-        ipconfig, mtu = self._getIfaceConfValues(nic)
-        self._createConfFile(conf, nic.name, ipconfig, mtu, **opts)
+        ipv4, ipv6, mtu = self._getIfaceConfValues(nic)
+        self._createConfFile(conf, nic.name, ipv4, ipv6, mtu, **opts)
 
     @staticmethod
     def _getIfaceConfValues(iface):
-        ipconfig = copy.deepcopy(iface.ipconfig)
-        ipv4 = ipconfig.ipv4
-        ipv6 = ipconfig.ipv6
+        ipv4 = copy.deepcopy(iface.ipconfig.ipv4)
+        ipv6 = copy.deepcopy(iface.ipconfig.ipv6)
         mtu = iface.mtu
         if netinfo.ifaceUsed(iface.name):
             confParams = netinfo.getIfaceCfg(iface.name)
@@ -698,7 +696,7 @@ class ConfigWriter(object):
                 mtu = confParams.get('MTU')
                 if mtu:
                     mtu = int(mtu)
-        return ipconfig, mtu
+        return ipv4, ipv6, mtu
 
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic
