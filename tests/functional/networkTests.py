@@ -2284,3 +2284,25 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
             self.assertBondDoesntExist(BONDING_NAME, nics)
+
+    @cleanupNet
+    def testSetupNetworksRemoveBondWithKilledEnslavedNics(self):
+        nic = dummy.create()
+        nics = [nic]
+        try:
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME:
+                    {'bonding': BONDING_NAME, 'bridged': False}},
+                {BONDING_NAME: {'nics': nics}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertBondExists(BONDING_NAME, nics)
+        finally:
+            dummy.remove(nic)
+
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'remove': True}},
+            {BONDING_NAME: {'remove': True}}, NOCHK)
+        self.assertEqual(status, SUCCESS, msg)
+        self.assertNetworkDoesntExist(NETWORK_NAME)
+        self.assertBondDoesntExist(BONDING_NAME, nics)
