@@ -1159,7 +1159,7 @@ class Vm(object):
             if self.lastStatus in (vmstatus.MIGRATION_SOURCE,
                                    vmstatus.SAVING_STATE, vmstatus.DOWN):
                 self.log.error('cannot cont while %s', self.lastStatus)
-                return errCode['unexpected']
+                return response.error('unexpected')
             self._underlyingCont()
             self._setGuestCpuRunning(self._isDomainRunning(),
                                      guestCpuLocked=True)
@@ -1212,7 +1212,7 @@ class Vm(object):
 
     def shutdown(self, delay, message, reboot, timeout, force):
         if self.lastStatus == vmstatus.DOWN:
-            return errCode['noVM']
+            return response.error('noVM')
 
         delay = int(delay)
 
@@ -1538,13 +1538,13 @@ class Vm(object):
         try:
             if self.isMigrating():
                 self.log.warning('vm already migrating')
-                return errCode['exist']
+                return response.error('exist')
             if self.hasTransientDisks():
-                return errCode['transientErr']
+                return response.error('transientErr')
             # while we were blocking, another migrationSourceThread could have
             # taken self Down
             if self._lastStatus == vmstatus.DOWN:
-                return errCode['noVM']
+                return response.error('noVM')
             self._migrationSourceThread = migration.SourceThread(
                 self, **params)
             self._migrationSourceThread.start()
@@ -1566,11 +1566,11 @@ class Vm(object):
             return self._migrationSourceThread.status
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
-                return errCode['migCancelErr']
+                return response.error('migCancelErr')
             raise
         except AttributeError:
             if self._dom is None:
-                return errCode['migCancelErr']
+                return response.error('migCancelErr')
             raise
         finally:
             self._guestCpuLock.release()
@@ -1966,7 +1966,7 @@ class Vm(object):
 
     def hotplugNic(self, params):
         if self.isMigrating():
-            return errCode['migInProgress']
+            return response.error('migInProgress')
 
         nicParams = params['nic']
         nic = vmdevices.network.Interface(self.conf, self.log, **nicParams)
@@ -1985,7 +1985,7 @@ class Vm(object):
             nicXml = hooks.after_nic_hotplug_fail(
                 nicXml, self.conf, params=nic.custom)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return errCode['noVM']
+                return response.error('noVM')
             return response.error('hotplugNic', e.message)
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
@@ -2173,7 +2173,7 @@ class Vm(object):
                 result['vmList'] = self.status()
             return result
         else:
-            return errCode['updateDevice']
+            return response.error('updateDevice')
 
     def updateDevice(self, params):
         if params.get('deviceType') == hwclass.NIC:
@@ -2181,11 +2181,11 @@ class Vm(object):
         elif params.get('deviceType') == hwclass.GRAPHICS:
             return self._updateGraphicsDevice(params)
         else:
-            return errCode['noimpl']
+            return response.error('noimpl')
 
     def hotunplugNic(self, params):
         if self.isMigrating():
-            return errCode['migInProgress']
+            return response.error('migInProgress')
 
         nicParams = params['nic']
 
@@ -2232,7 +2232,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return errCode['noVM']
+                return response.error('noVM')
             # Restore NIC device in vm's conf and _devices
             if nicDev:
                 with self._confLock:
@@ -2286,7 +2286,7 @@ class Vm(object):
     def setNumberOfCpus(self, numberOfCpus):
 
         if self.isMigrating():
-            return errCode['migInProgress']
+            return response.error('migInProgress')
 
         self.log.debug("Setting number of cpus to : %s", numberOfCpus)
         hooks.before_set_num_of_cpus()
@@ -2296,7 +2296,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("setNumberOfCpus failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return errCode['noVM']
+                return response.error('noVM')
             return response.error('setNumberOfCpusErr', e.message)
 
         self.conf['smp'] = str(numberOfCpus)
@@ -2340,7 +2340,7 @@ class Vm(object):
         """
 
         if self.isMigrating():
-            return errCode['migInProgress']
+            return response.error('migInProgress')
 
         if not params:
             self.log.error("updateVmPolicy got an empty policy.")
@@ -2404,7 +2404,7 @@ class Vm(object):
             except libvirt.libvirtError as e:
                 self.log.exception("updateVmPolicy failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    return errCode['noVM']
+                    return response.error('noVM')
                 else:
                     return self._reportError(key='updateVmPolicyErr',
                                              msg=e.message)
@@ -2491,7 +2491,7 @@ class Vm(object):
             except libvirt.libvirtError as e:
                 self.log.exception("setVmIoTune failed")
                 if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                    return errCode['noVM']
+                    return response.error('noVM')
                 else:
                     return self._reportError(key='updateIoTuneErr',
                                              msg=e.message)
@@ -2554,7 +2554,7 @@ class Vm(object):
 
     def hotplugDisk(self, params):
         if self.isMigrating():
-            return errCode['migInProgress']
+            return response.error('migInProgress')
 
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
@@ -2567,7 +2567,7 @@ class Vm(object):
         drive = vmdevices.storage.Drive(self.conf, self.log, **diskParams)
 
         if drive.hasVolumeLeases:
-            return errCode['noimpl']
+            return response.error('noimpl')
 
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         # TODO: this is debug information. For 3.6.x we still need to
@@ -2583,7 +2583,7 @@ class Vm(object):
             self.log.exception("Hotplug failed")
             self.cif.teardownVolumePath(diskParams)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return errCode['noVM']
+                return response.error('noVM')
             return response.error('hotplugDisk', e.message)
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
@@ -2603,7 +2603,7 @@ class Vm(object):
 
     def hotunplugDisk(self, params):
         if self.isMigrating():
-            return errCode['migInProgress']
+            return response.error('migInProgress')
 
         diskParams = params.get('drive', {})
         diskParams['path'] = self.cif.prepareVolumePath(diskParams)
@@ -2616,7 +2616,7 @@ class Vm(object):
             return response.error('hotunplugDisk', "Disk not found")
 
         if drive.hasVolumeLeases:
-            return errCode['noimpl']
+            return response.error('noimpl')
 
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         # TODO: this is debug information. For 3.6.x we still need to
@@ -2643,7 +2643,7 @@ class Vm(object):
         except libvirt.libvirtError as e:
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return errCode['noVM']
+                return response.error('noVM')
             self._devices[hwclass.DISK].append(drive)
             # Restore disk device in vm's conf and _devices
             if diskDev:
@@ -3013,7 +3013,7 @@ class Vm(object):
         vmDrives = {}
 
         if self.isMigrating():
-            return errCode['migInProgress']
+            return response.error('migInProgress')
 
         for drive in snapDrives:
             baseDrv, tgetDrv = _normSnapDriveParams(drive)
@@ -3034,15 +3034,15 @@ class Vm(object):
             except LookupError:
                 # The volume we want to snapshot doesn't exist
                 self.log.error("The base volume doesn't exist: %s", baseDrv)
-                return errCode['snapshotErr']
+                return response.error('snapshotErr')
 
             if vmDrive.hasVolumeLeases:
                 self.log.error('disk %s has volume leases', vmDrive.name)
-                return errCode['noimpl']
+                return response.error('noimpl')
 
             if vmDrive.transientDisk:
                 self.log.error('disk %s is a transient disk', vmDrive.name)
-                return errCode['transientErr']
+                return response.error('transientErr')
 
             vmDevName = vmDrive.name
 
@@ -3074,7 +3074,7 @@ class Vm(object):
                 self.log.exception('unable to prepare the volume path for '
                                    'disk %s', vmDevName)
                 _rollbackDrives(preparedDrives)
-                return errCode['snapshotErr']
+                return response.error('snapshotErr')
 
             snapType = 'block' if vmDrives[vmDevName].blockDev else 'file'
             snapelem = _diskSnapshot(vmDevName, newDrives[vmDevName]["path"],
@@ -3128,7 +3128,7 @@ class Vm(object):
                 self._dom.snapshotCreateXML(snapxml, snapFlags)
             except libvirt.libvirtError:
                 self.log.exception("Unable to take snapshot")
-                return errCode['snapshotErr']
+                return response.error('snapshotErr')
             finally:
                 # Must always thaw, even if freeze failed; in case the guest
                 # did freeze the filesystems, but failed to reply in time.
@@ -3168,13 +3168,13 @@ class Vm(object):
             drive = self._findDriveByUUIDs(srcDisk)
         except LookupError:
             self.log.error("Unable to find the disk for '%s'", srcDisk)
-            return errCode['imageErr']
+            return response.error('imageErr')
 
         if drive.hasVolumeLeases:
-            return errCode['noimpl']
+            return response.error('noimpl')
 
         if drive.transientDisk:
-            return errCode['transientErr']
+            return response.error('transientErr')
 
         replica = dstDisk.copy()
 
@@ -3190,7 +3190,7 @@ class Vm(object):
         except Exception:
             self.log.error("Unable to set the replication for disk '%s' with "
                            "destination '%s'", drive.name, replica)
-            return errCode['replicaErr']
+            return response.error('replicaErr')
 
         try:
             replica['path'] = self.cif.prepareVolumePath(replica)
@@ -3211,7 +3211,7 @@ class Vm(object):
             self.log.exception("Unable to start replication for %s to %s",
                                drive.name, replica)
             self._delDiskReplica(drive)
-            return errCode['replicaErr']
+            return response.error('replicaErr')
 
         if drive.chunked or drive.replicaChunked:
             try:
@@ -3228,16 +3228,16 @@ class Vm(object):
         try:
             drive = self._findDriveByUUIDs(srcDisk)
         except LookupError:
-            return errCode['imageErr']
+            return response.error('imageErr')
 
         if drive.hasVolumeLeases:
-            return errCode['noimpl']
+            return response.error('noimpl')
 
         if drive.transientDisk:
-            return errCode['transientErr']
+            return response.error('transientErr')
 
         if not drive.isDiskReplicationInProgress():
-            return errCode['replicaErr']
+            return response.error('replicaErr')
 
         # Looking for the replication blockJob info (checking its presence)
         blkJobInfo = self._dom.blockJobInfo(drive.name, 0)
@@ -3249,12 +3249,12 @@ class Vm(object):
 
             # Making sure that we don't have any stale information
             self._delDiskReplica(drive)
-            return errCode['replicaErr']
+            return response.error('replicaErr')
 
         # Checking if we reached the replication mode ("mirroring" in libvirt
         # and qemu terms)
         if blkJobInfo['cur'] != blkJobInfo['end']:
-            return errCode['unavail']
+            return response.error('unavail')
 
         dstDiskCopy = dstDisk.copy()
 
@@ -3293,7 +3293,7 @@ class Vm(object):
                 # There is nothing we can do at this point other than logging
                 self.log.exception("Unable to teardown the replication "
                                    "destination disk")
-            return errCode['changeDisk']  # Finally is evaluated
+            return response.error('changeDisk')  # Finally is evaluated
         else:
             try:
                 self.cif.teardownVolumePath(diskToTeardown)
@@ -3392,7 +3392,7 @@ class Vm(object):
                 "Requested extension size %s for disk %s is smaller "
                 "than the current size %s", newSizeBytes, drive.name,
                 curVirtualSize)
-            return errCode['resizeErr']
+            return response.error('resizeErr')
 
         # Uncommit the current volume size (mark as in transaction)
         self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
@@ -3405,7 +3405,7 @@ class Vm(object):
             self.log.exception(
                 "An error occurred while trying to extend the disk %s "
                 "to size %s", drive.name, newSizeBytes)
-            return errCode['updateDevice']
+            return response.error('updateDevice')
         finally:
             # In all cases we want to try and fix the size in the metadata.
             # Same as above, this is what libvirt would do, see BZ#963881
@@ -3446,7 +3446,7 @@ class Vm(object):
                 "Libvirt failed to notify the new size %s to the "
                 "running VM, the change will be available at the ",
                 "reboot", volSize.apparentsize, exc_info=True)
-            return errCode['updateDevice']
+            return response.error('updateDevice')
 
         return {'status': doneCode, 'size': str(volSize.apparentsize)}
 
@@ -3454,12 +3454,12 @@ class Vm(object):
         try:
             newSizeBytes = int(newSizeBytes)
         except ValueError:
-            return errCode['resizeErr']
+            return response.error('resizeErr')
 
         try:
             drive = self._findDriveByUUIDs(driveSpecs)
         except LookupError:
-            return errCode['imageErr']
+            return response.error('imageErr')
 
         try:
             if drive.format == "cow":
@@ -3469,7 +3469,7 @@ class Vm(object):
         except Exception:
             self.log.exception("Unable to extend disk %s to size %s",
                                drive.name, newSizeBytes)
-            return errCode['updateDevice']
+            return response.error('updateDevice')
 
     def onWatchdogEvent(self, action):
         def actionToString(action):
@@ -3510,7 +3510,7 @@ class Vm(object):
         try:
             path = self.cif.prepareVolumePath(drivespec)
         except VolumeError:
-            return errCode['imageErr']
+            return response.error('imageErr')
         diskelem = vmxml.Element('disk', type='file', device=vmDev)
         diskelem.appendChildWithArgs('source', file=path)
         diskelem.appendChildWithArgs('target', dev=blockdev)
@@ -3521,9 +3521,7 @@ class Vm(object):
         except Exception:
             self.log.debug("updateDeviceFlags failed", exc_info=True)
             self.cif.teardownVolumePath(drivespec)
-            return {'status': {'code': errCode['changeDisk']['status']['code'],
-                               'message': errCode['changeDisk']['status']
-                                                 ['message']}}
+            return response.error('changeDisk')
         if vmDev in self.conf:
             self.cif.teardownVolumePath(self.conf[vmDev])
 
@@ -3733,7 +3731,7 @@ class Vm(object):
                                  self.conf['vmId'], exc_info=True)
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
                     return self._destroyVmForceful()
-                return errCode['destroyErr']
+                return response.error('destroyErr')
         return {'status': doneCode}
 
     def _destroyVmForceful(self):
@@ -3742,7 +3740,7 @@ class Vm(object):
         except libvirt.libvirtError:
             self.log.warning("Failed to destroy VM '%s'",
                              self.conf['vmId'], exc_info=True)
-            return errCode['destroyErr']
+            return response.error('destroyErr')
         return {'status': doneCode}
 
     def deleteVm(self):
@@ -4651,7 +4649,7 @@ class Vm(object):
     def merge(self, driveSpec, baseVolUUID, topVolUUID, bandwidth, jobUUID):
         if not caps.getLiveMergeSupport():
             self.log.error("Live merge is not supported on this host")
-            return errCode['mergeErr']
+            return response.error('mergeErr')
 
         bandwidth = int(bandwidth)
         if jobUUID is None:
@@ -4660,14 +4658,14 @@ class Vm(object):
         try:
             drive = self._findDriveByUUIDs(driveSpec)
         except LookupError:
-            return errCode['imageErr']
+            return response.error('imageErr')
 
         # Check that libvirt exposes full volume chain information
         chains = self._driveGetActualVolumeChain([drive])
         if drive['alias'] not in chains:
             self.log.error("merge: libvirt does not support volume chain "
                            "monitoring.  Unable to perform live merge.")
-            return errCode['mergeErr']
+            return response.error('mergeErr')
 
         base = top = None
         for v in drive.volumeChain:
@@ -4677,10 +4675,10 @@ class Vm(object):
                 top = v['path']
         if base is None:
             self.log.error("merge: base volume '%s' not found", baseVolUUID)
-            return errCode['mergeErr']
+            return response.error('mergeErr')
         if top is None:
             self.log.error("merge: top volume '%s' not found", topVolUUID)
-            return errCode['mergeErr']
+            return response.error('mergeErr')
 
         # If base is a shared volume then we cannot allow a merge.  Otherwise
         # We'd corrupt the shared volume for other users.
@@ -4688,10 +4686,10 @@ class Vm(object):
                                          drive.imageID, baseVolUUID)
         if res['status']['code'] != 0:
             self.log.error("Unable to get volume info for '%s'", baseVolUUID)
-            return errCode['mergeErr']
+            return response.error('mergeErr')
         if res['info']['voltype'] == 'SHARED':
             self.log.error("merge: Refusing to merge into a shared volume")
-            return errCode['mergeErr']
+            return response.error('mergeErr')
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files.  This is necessary to ensure that a volume chain is
@@ -4716,7 +4714,7 @@ class Vm(object):
             if res['status']['code'] != 0:
                 self.log.error("Unable to get volume info for '%s'",
                                topVolUUID)
-                return errCode['mergeErr']
+                return response.error('mergeErr')
             topSize = int(res['info']['apparentsize'])
 
         # Take the jobs lock here to protect the new job we are tracking from
@@ -4727,7 +4725,7 @@ class Vm(object):
                                    'commit')
             except BlockJobExistsError:
                 self.log.error("A block job is already active on this disk")
-                return errCode['mergeErr']
+                return response.error('mergeErr')
             self.log.info("Starting merge with jobUUID='%s'", jobUUID)
 
             try:
@@ -4738,7 +4736,7 @@ class Vm(object):
             except (RuntimeError, libvirt.libvirtError):
                 self.log.exception("Live merge failed (job: %s)", jobUUID)
                 self.untrackBlockJob(jobUUID)
-                return errCode['mergeErr']
+                return response.error('mergeErr')
 
         # blockCommit will cause data to be written into the base volume.
         # Perform an initial extension to ensure there is enough space to
