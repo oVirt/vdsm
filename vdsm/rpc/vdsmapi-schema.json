@@ -4691,12 +4691,12 @@
 #
 # @url:         Url where upload or download the image
 #
-# @headers:     Additional http headers to be used in the request
+# @headers:     #optional Additional http headers to be used in the request
 #
 # Since: 4.12.0
 ##
 {'type': 'ImageSharingMethodArgsHttp',
- 'data': {'url': 'str', 'headers': 'StringMap'}}
+ 'data': {'url': 'str', '*headers': 'StringMap'}}
 
 ##
 # @ImageSharingMethodArgs:
