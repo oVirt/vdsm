@@ -4556,12 +4556,18 @@ class Vm(object):
         try:
             dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
 
+            flags = (libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY |
+                     libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
+                     libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW)
+
+            # Recent libvirt requires a flag for preserving the type of
+            # block-based disk.  See https://bugzilla.redhat.com/1176673.
+            if srcDrive.blockDev:
+                flags |= getattr(libvirt, "VIR_DOMAIN_BLOCK_REBASE_COPY_DEV",
+                                 0)
             try:
-                self._dom.blockRebase(srcDrive.name, dstDiskCopy['path'], 0, (
-                    libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY |
-                    libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
-                    libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW
-                ))
+                self._dom.blockRebase(srcDrive.name, dstDiskCopy['path'], 0,
+                                      flags)
             except Exception:
                 self.log.error("Unable to start the replication for %s to %s",
                                srcDrive.name, dstDiskCopy, exc_info=True)
