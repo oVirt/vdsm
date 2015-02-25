@@ -269,6 +269,23 @@ class XMLTestCase(VdsmTestCase):
                          (actualXML, expectedXML))
 
 
+def find_xml_element(xml, match):
+    """
+    Finds the first element matching match. match may be a tag name or path.
+    Returns found element xml.
+
+    path is using the limmited supported xpath syntax:
+    https://docs.python.org/2/library/
+        xml.etree.elementtree.html#supported-xpath-syntax
+    Note that xpath support in Python 2.6 is partial and undocumented.
+    """
+    elem = ET.fromstring(xml)
+    found = elem.find(match)
+    if found is None:
+        raise AssertionError("No such element: %s" % match)
+    return ET.tostring(found)
+
+
 def indent(elem, level=0, s="    "):
     """
     Modify elem indentation in-place.
