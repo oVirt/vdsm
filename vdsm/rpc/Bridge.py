@@ -339,13 +339,6 @@ def Host_getVMFullList_Call(api, args):
     return API.Global().getVMList(True, vmList)
 
 
-def Host_getVMList_Ret(ret):
-    """
-    Just return a list of VM UUIDs
-    """
-    return [v['vmId'] for v in ret['vmList']]
-
-
 def StoragePool_getInfo_Ret(ret):
     """
     The result contains two data structures which must be merged
@@ -419,7 +412,7 @@ command_info = {
     'Host_hostdevChangeNumvfs': {},
     'Host_startMonitoringDomain': {},
     'Host_stopMonitoringDomain': {},
-    'Host_getVMList': {'call': Host_getVMList_Call, 'ret': Host_getVMList_Ret},
+    'Host_getVMList': {'call': Host_getVMList_Call, 'ret': 'vmList'},
     'Host_getVMFullList': {'call': Host_getVMFullList_Call, 'ret': 'vmList'},
     'Host_getAllVmStats': {'ret': 'statsList'},
     'Host_setupNetworks': {'ret': 'status'},
