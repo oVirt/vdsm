@@ -55,6 +55,11 @@ def _timeout_from(interval):
     return interval / 2.
 
 
+def _dispatched_operation(get_vms, func, period):
+    disp = VmDispatcher(get_vms, _executor, func, _timeout_from(period))
+    return Operation(disp, period)
+
+
 def start(cif):
     # `cif' will be used by future patches, for getVMs.
 
@@ -154,3 +159,52 @@ class Operation(object):
         self._call = None
         self._executor.dispatch(self, self._timeout)
         self._step()
+
+
+class VmDispatcher(object):
+    """
+    Adapter class. Dispatch an Operation to all VMs, to improve
+    isolation among them.
+    """
+
+    _log = logging.getLogger("periodic.VmDispatcher")
+
+    def __init__(self, get_vms, executor, create, timeout):
+        """
+        get_vms: callable which will return a dict which maps
+                 vm_ids to vm_instances
+        executor: executor.Executor instance
+        create: callable to obtain the real callable to
+                dispatch, with its timeout
+        """
+        self._get_vms = get_vms
+        self._executor = executor
+        self._create = create
+        self._timeout = timeout
+
+    def __call__(self):
+        vms = self._get_vms()
+        skipped = []
+
+        for vm_id, vm_obj in vms.iteritems():
+            op = self._create(vm_obj)
+
+            if not op.required:
+                continue
+
+            # When dealing with blocked domains, we also want to avoid
+            # to pile up jobs that libvirt can't handle and eventually clog it.
+            # We don't care too much about precise tracking, so it is still OK
+            # if occasional misdetection occours, but we definitely want to
+            # avoid known-bad situation and to needlessly overload libvirt.
+            if op.runnable:
+                self._executor.dispatch(op, self._timeout)
+            else:
+                skipped.append(vm_id)
+
+        if skipped:
+            self._log.warning('could not run %s on %s',
+                              self._create, skipped)
+
+    def __repr__(self):
+        return 'VmDispatcher(%s)' % self._create

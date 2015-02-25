@@ -18,8 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from collections import defaultdict
 import threading
 import time
+import uuid
 
 from vdsm import executor
 from vdsm import schedule
@@ -29,6 +31,7 @@ from virt import periodic
 
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
+import vmfakelib as fake
 
 
 @expandPermutations
@@ -166,3 +169,61 @@ class PeriodicOperationTests(TestCaseBase):
         self.assertTrue(TIMES <= invokations[0] <= TIMES+1)
         # one execution never completed
         self.assertEqual(executions[0], invokations[0]-1)
+
+
+class VmDispatcherTests(TestCaseBase):
+
+    VM_NUM = 5  # just a number, no special meaning
+
+    def setUp(self):
+        self.cif = fake.ClientIF()
+
+        self._make_fake_vms()
+
+        _Visitor.VMS.clear()
+
+    def test_dispatch_vms(self):
+        op = periodic.VmDispatcher(
+            self.cif.getVMs, _FakeExecutor(), _Visitor, 0)
+        # we don't care about executor (hence the simplistic fake)
+        op()
+
+        vms = self.cif.getVMs()
+        for vmId, _ in vms.items():
+            self.assertEqual(_Visitor.VMS.get(vmId), 1)
+
+    def _make_fake_vms(self):
+        for i in range(self.VM_NUM):
+            vmId = str(uuid.uuid4())
+            with self.cif.vmContainerLock:
+                self.cif.vmContainer[vmId] = _FakeVM(
+                    vmId, 'VM-%i' % i)
+
+
+class _Visitor(object):
+
+    VMS = defaultdict(int)
+
+    def __init__(self, vm):
+        self._vm = vm
+
+        self.required = True
+        self.runnable = True
+
+    def __call__(self):
+        _Visitor.VMS[self._vm.id] += 1
+
+
+class _FakeExecutor(object):
+
+    def dispatch(self, func, timeout):
+        func()
+
+
+# fake.VM is a quite complex beast. We need only the bare minimum here,
+# literally only `id' and `name', so it seems sensible to create this
+# new tiny fake locally.
+class _FakeVM(object):
+    def __init__(self, vmId, vmName):
+        self.id = vmId
+        self.name = vmName
