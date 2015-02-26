@@ -554,7 +554,6 @@ def _validateNetworkSetup(networks, bondings):
                     "than custom properties). specified attributes: %s" % (
                         networkAttrs,))
 
-    currentBondings = netinfo.bondings()
     currentNicsSet = set(netinfo.nics())
     for bonding, bondingAttrs in bondings.iteritems():
         Bond.validateName(bonding)
@@ -562,9 +561,6 @@ def _validateNetworkSetup(networks, bondings):
             Bond.validateOptions(bonding, bondingAttrs['options'])
 
         if bondingAttrs.get('remove', False):
-            if bonding not in currentBondings:
-                raise ConfigNetworkError(ne.ERR_BAD_BONDING, "Cannot remove "
-                                         "bonding %s: Doesn't exist" % bonding)
             continue
 
         nics = bondingAttrs.get('nics', None)
@@ -576,7 +572,7 @@ def _validateNetworkSetup(networks, bondings):
                                      "Unknown nics in: %r" % list(nics))
 
 
-def _handleBondings(bondings, configurator):
+def _handleBondings(bondings, configurator, in_rollback):
     """ Add/Edit/Remove bond interface """
     logger = logging.getLogger("_handleBondings")
 
@@ -586,6 +582,16 @@ def _handleBondings(bondings, configurator):
     addition = []
     for name, attrs in bondings.items():
         if 'remove' in attrs:
+            if name not in _netinfo.bondings:
+                if in_rollback:
+                    logger.error(
+                        'Cannot remove bonding %s during rollback: '
+                        'does not exist', name)
+                    continue
+                else:
+                    raise ConfigNetworkError(
+                        ne.ERR_BAD_BONDING,
+                        "Cannot remove bonding %s: does not exist" % name)
             bond = Bond.objectivize(name, configurator, attrs.get('options'),
                                     attrs.get('nics'), mtu=None,
                                     _netinfo=_netinfo,
@@ -824,7 +830,8 @@ def setupNetworks(networks, bondings, **options):
     connectivity_check_networks = set()
 
     logger.debug("Applying...")
-    with ConfiguratorClass(options.get('_inRollback', False)) as configurator:
+    in_rollback = options.get('_inRollback', False)
+    with ConfiguratorClass(in_rollback) as configurator:
         # Remove edited networks and networks with 'remove' attribute
         for network, attrs in networks.items():
             if network in _netinfo.networks:
@@ -856,7 +863,7 @@ def setupNetworks(networks, bondings, **options):
             else:
                 connectivity_check_networks.add(network)
 
-        _handleBondings(bondings, configurator)
+        _handleBondings(bondings, configurator, in_rollback)
 
         _add_missing_networks(configurator, networks, bondings, force,
                               logger, _netinfo)
