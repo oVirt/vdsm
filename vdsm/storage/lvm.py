@@ -698,12 +698,13 @@ def _createpv(devices, metadataSize, options=tuple()):
     pvcreate on a dev that is already a PV but not in a VG returns rc = 0.
     The device is re-created with the new parameters.
     """
-    metadatasize = str(metadataSize) + 'm'
     cmd = ["pvcreate"]
     if options:
         cmd.extend(options)
-    cmd.extend(("--metadatasize", metadatasize, "--metadatacopies", "2",
-                "--metadataignore", "y"))
+    if metadataSize != 0:
+        cmd.extend(("--metadatasize", "%sm" % metadataSize,
+                    "--metadatacopies", "2",
+                    "--metadataignore", "y"))
     cmd.extend(devices)
     rc, out, err = _lvminfo.cmd(cmd, devices)
     return rc, out, err
