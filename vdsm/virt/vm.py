@@ -1455,6 +1455,13 @@ class Vm(object):
             self.pause(pauseCode='EOTHER')
             raise ImprobableResizeRequestError(msg)
 
+        maxPhysSize = drive.getMaxVolumeSize(capacity) * constants.MEGAB
+        if physical >= maxPhysSize:
+            # The volume was extended to the maximum size. physical may be
+            # larger than maximum volume size since it is rounded up to the
+            # next lvm extent.
+            return False
+
         if physical - alloc < drive.watermarkLimit:
             return True
         return False
