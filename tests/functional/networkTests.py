@@ -43,7 +43,7 @@ from vdsm.ipwrapper import (ruleAdd, ruleDel, routeAdd, routeDel, routeExists,
 from vdsm.constants import EXT_BRCTL
 from vdsm.utils import RollbackContext, execCmd
 from vdsm.netinfo import (bridges, operstate, prefix2netmask, getRouteDeviceTo,
-                          getDhclientIfaces, BONDING_SLAVES)
+                          getDhclientIfaces, BONDING_SLAVES, BONDING_MASTERS)
 from vdsm import ipwrapper
 from vdsm.utils import pgrep
 
@@ -2150,3 +2150,37 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(status, SUCCESS, msg)
         self.assertNetworkDoesntExist(NETWORK_NAME)
         self.assertBondDoesntExist(BONDING_NAME, nics)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_setupNetworks_on_external_bond(self):
+        with dummyIf(1) as (nic, ):
+            with open(BONDING_MASTERS, 'w') as bonds:
+                bonds.write('+%s\n' % BONDING_NAME)
+            try:
+                with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
+                    f.write('+%s\n' % nic)
+                status, msg = self.vdsm_net.setupNetworks(
+                    {NETWORK_NAME:
+                        {'bonding': BONDING_NAME, 'bridged': False}},
+                    {BONDING_NAME: {'nics': [nic]}}, NOCHK)
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertNetworkExists(NETWORK_NAME)
+                self.assertBondExists(BONDING_NAME, [nic])
+            finally:
+                with open(BONDING_MASTERS, 'w') as bonds:
+                    bonds.write('-%s\n' % BONDING_NAME)
+
+            self.vdsm_net.save_config()
+            self.vdsm_net.restoreNetConfig()
+
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertBondExists(BONDING_NAME, [nic])
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'remove': True}},
+                {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+            self.assertBondDoesntExist(BONDING_NAME, [nic])
+            self.vdsm_net.save_config()
