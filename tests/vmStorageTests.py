@@ -244,7 +244,7 @@ class ChunkedTests(VdsmTestCase):
 
 
 @expandPermutations
-class GetNextVolumeSizeTests(VdsmTestCase):
+class DriveVolumeSizeTests(VdsmTestCase):
 
     CAPACITY = 8192 * constants.MEGAB
 
@@ -256,11 +256,18 @@ class GetNextVolumeSizeTests(VdsmTestCase):
                          cursize / constants.MEGAB + drive.volExtensionChunk)
 
     @permutations([[CAPACITY - 1], [CAPACITY], [CAPACITY + 1]])
-    def test_capacity_limit(self, cursize):
+    def test_next_size_limit(self, cursize):
         conf = drive_config(format='cow')
         drive = Drive({}, self.log, **conf)
         self.assertEqual(drive.getNextVolumeSize(cursize, self.CAPACITY),
-                         self.CAPACITY / constants.MEGAB)
+                         drive.getMaxVolumeSize(self.CAPACITY))
+
+    def test_max_size(self):
+        conf = drive_config(format='cow')
+        drive = Drive({}, self.log, **conf)
+        size = int(self.CAPACITY * drive.VOLWM_COW_OVERHEAD)
+        self.assertEqual(drive.getMaxVolumeSize(self.CAPACITY),
+                         size / constants.MEGAB + 1)
 
 
 def drive_config(**kw):

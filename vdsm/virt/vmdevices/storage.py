@@ -51,6 +51,9 @@ class Drive(Base):
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
 
+    # Estimate of the additional space needed for qcow format internal data.
+    VOLWM_COW_OVERHEAD = 1.1
+
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
@@ -143,7 +146,17 @@ class Drive(Base):
         """
         curSizeMB = (curSize + constants.MEGAB - 1) / constants.MEGAB
         nextSizeMB = curSizeMB + self.volExtensionChunk
-        return min(nextSizeMB, capacity / constants.MEGAB)
+        return min(nextSizeMB, self.getMaxVolumeSize(capacity))
+
+    def getMaxVolumeSize(self, capacity):
+        """
+        Returns the maximum volume size in megabytes. This value is larger than
+        drive capacity since we must allocate extra space for cow internal
+        data. The actual lv size may be larger due to rounding to next lvm
+        extent.
+        """
+        size = int(capacity * self.VOLWM_COW_OVERHEAD)
+        return (size + constants.MEGAB - 1) / constants.MEGAB
 
     @property
     def chunked(self):
