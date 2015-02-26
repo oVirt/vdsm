@@ -731,3 +731,18 @@ class MemoizedTests(TestCaseBase):
 @utils.memoized
 def memoized_function(test, *args):
     return test.get(args)
+
+
+@expandPermutations
+class RoundTests(TestCaseBase):
+
+    @permutations([
+        # n, size, result
+        (0, 1024, 0),
+        (1, 1024, 1024),
+        (3.14, 1024, 1024),
+        (1024, 1024, 1024),
+        (1025, 1024, 2048),
+    ])
+    def test_round(self, n, size, result):
+        self.assertEqual(utils.round(n, size), result)

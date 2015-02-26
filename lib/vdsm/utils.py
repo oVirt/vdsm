@@ -1244,3 +1244,11 @@ def random_iface_name(prefix='', max_length=15):
     suffix = ''.join(random.choice(string.ascii_letters + string.digits)
                      for _ in range(suffix_len))
     return prefix + suffix
+
+
+def round(n, size):
+    """
+    Round number n to the next multiple of size
+    """
+    count = int(n + size - 1) // size
+    return count * size
