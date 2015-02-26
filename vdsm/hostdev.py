@@ -194,7 +194,6 @@ def detach_detachable(device_name):
 
     if device_params['capability'] in _UDEV_REQUIRING_CAPS:
         supervdsm.getProxy().appropriateIommuGroup(iommu_group)
-        supervdsm.getProxy().udevTrigger(iommu_group)
 
     if device_params['capability'] in _DETACH_REQUIRING_CAPS:
         libvirt_device.detachFlags(None)
@@ -209,7 +208,6 @@ def reattach_detachable(device_name):
 
     if device_params['capability'] in _UDEV_REQUIRING_CAPS:
         supervdsm.getProxy().rmAppropriateIommuGroup(iommu_group)
-        supervdsm.getProxy().udevTrigger(iommu_group)
 
     if device_params['capability'] in _DETACH_REQUIRING_CAPS:
         libvirt_device.reAttach()

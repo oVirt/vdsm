@@ -308,14 +308,25 @@ class _SuperVdsm(object):
         of /dev/vfio/$iommu_group to qemu:qemu. This method should be called
         when detaching a device from the host.
         """
-        ruleFile = _UDEV_RULE_FILE_NAME_VFIO % iommu_group
-        rule = ('KERNEL=="{}", SUBSYSTEM=="vfio" RUN+="{} {}:{} '
-                '/dev/vfio/{}"').format(iommu_group, EXT_CHOWN,
-                                        QEMU_PROCESS_USER, QEMU_PROCESS_GROUP,
-                                        iommu_group)
-        with open(ruleFile, "w") as rf:
-            self.log.debug("Creating rule %s: %r", ruleFile, rule)
-            rf.write(rule)
+        rule_file = _UDEV_RULE_FILE_NAME_VFIO % iommu_group
+
+        if not os.path.isfile(rule_file):
+            # If the file exists, different device from the same group has
+            # already been detached and we therefore can skip overwriting the
+            # file. Also, this file should only be created/removed via the
+            # means of supervdsm.
+
+            rule = ('KERNEL=="{}", SUBSYSTEM=="vfio" RUN+="{} {}:{} '
+                    '/dev/vfio/{}"').format(iommu_group, EXT_CHOWN,
+                                            QEMU_PROCESS_USER,
+                                            QEMU_PROCESS_GROUP,
+                                            iommu_group)
+
+            with open(rule_file, "w") as rf:
+                self.log.debug("Creating rule %s: %r", rule_file, rule)
+                rf.write(rule)
+
+            self.udevTrigger(iommu_group)
 
     @logDecorator
     def rmAppropriateIommuGroup(self, iommu_group):
@@ -323,10 +334,26 @@ class _SuperVdsm(object):
         Remove udev rule in /etc/udev/rules.d/ created by
         vfioAppropriateDevice.
         """
-        rule = os.path.join(_UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX +
-                            "iommu_group_" + iommu_group + _UDEV_RULE_FILE_EXT)
-        self.log.debug("Removing rule %s", rule)
-        os.remove(rule)
+        rule_file = os.path.join(_UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX +
+                                 "iommu_group_" + iommu_group +
+                                 _UDEV_RULE_FILE_EXT)
+        error = False
+
+        try:
+            os.remove(rule_file)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                # OSError with ENOENT errno here means that the rule file does
+                # not exist - this is expected when multiple devices in one
+                # iommu group were passed through.
+                error = True
+            else:
+                raise
+        else:
+            self.log.debug("Removing rule %s", rule_file)
+
+        if not error:
+            self.udevTrigger(iommu_group)
 
     @logDecorator
     def ksmTune(self, tuningParams):
