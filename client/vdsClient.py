@@ -834,19 +834,6 @@ class service:
             return res['status']['code'], res['status']['message']
         return 0, ''
 
-    def validateStorageServerConnection(self, args):
-        serverType = int(args[0])
-        spUUID = args[1]
-        conList = [parseConList(args[2])]
-        res = self.s.validateStorageServerConnection(serverType,
-                                                     spUUID, conList)
-        if res['status']['code']:
-            return res['status']['code'], res['status']['message']
-        else:
-            for i in res['statuslist']:
-                print("Connection id %s - status %s" % (i['id'], i['status']))
-        return 0, ''
-
     def disconnectStorageServer(self, args):
         serverType = int(args[0])
         spUUID = args[1]
@@ -2262,15 +2249,6 @@ if __name__ == '__main__':
                                   'specified, if both specified, auth= takes '
                                   'precedence.'
                                   )),
-        'validateStorageServerConnection':
-        (serv.validateStorageServerConnection,
-         ('<server type> <spUUID> <conList (id=...,'
-          'connection=server:/export_path,portal=...,port=...,iqn=...,'
-          'user=...,password|auth=...[,initiatorName=...])>',
-          'Validate that we can connect to a storage server',
-          'password= can be omitted if auth= is specified, if both specified, '
-          'auth= takes precedence.'
-          )),
         'disconnectStorageServer': (serv.disconnectStorageServer,
                                     ('<server type> <spUUID> <conList (id=...,'
                                      'connection=server:/export_path,'

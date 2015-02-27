@@ -76,11 +76,6 @@ class fakeXMLRPCServer(object):
         return {'status':
                 {'code': 0, 'message': otp64}}
 
-    def validateStorageServerConnection(self, domainType, spUUID,
-                                        connectionParams):
-        return {'status':
-                {'code': 1, 'message': connectionParams}}
-
     def disconnectStorageServer(self, serverType, spUUID, conList):
         return {'status':
                 {'code': 1, 'message': conList}}
@@ -345,62 +340,6 @@ class vdsClientTest(TestCaseBase):
                 'keep', '--', 'auth=env:NOVAR']
         with self.assertRaises(RuntimeError):
             serv.do_setVmTicket(args)
-
-    def testFileValidateStorageServerConnection(self):
-        serv = createFakeService(self)
-        password = 'password'
-
-        with passFile(password) as filename:
-            args = [1, '00000000-0000-0000-0000-000000000000',
-                    ('id=null,connection=192.168.1.10:/export/data,'
-                     'portal=null,port=2049,iqn=null,user=username,'
-                     'auth=file:') + filename]
-            result = serv.validateStorageServerConnection(args)
-            self.assertEqual(result[1][0]['password'], password)
-
-    @MonkeyPatch(os, 'environ', {'my_password': 'password'})
-    def testEnvValidateStorageServerConnection(self):
-        serv = createFakeService(self)
-
-        args = [1, '00000000-0000-0000-0000-000000000000',
-                ('id=null,connection=192.168.1.10:/export/data,'
-                 'portal=null,port=2049,iqn=null,user=username,'
-                 'auth=env:my_password')]
-        result = serv.validateStorageServerConnection(args)
-        self.assertEqual(result[1][0]['password'], 'password')
-
-    def testOldValidateStorageServerConnection(self):
-        serv = createFakeService(self)
-        password = 'password'
-
-        args = [1, '00000000-0000-0000-0000-000000000000',
-                ('id=null,connection=192.168.1.10:/export/data,'
-                 'portal=null,port=2049,iqn=null,user=username,'
-                 'password=') + password]
-        result = serv.validateStorageServerConnection(args)
-        self.assertEqual(result[1][0]['password'], password)
-
-    def testPassAndOldValidateStorageServerConnection(self):
-        serv = createFakeService(self)
-        password = 'password'
-
-        args = [1, '00000000-0000-0000-0000-000000000000',
-                ('id=null,connection=192.168.1.10:/export/data,'
-                 'portal=null,port=2049,iqn=null,user=username,'
-                 'password=wrong_password,auth=pass:' + password)]
-        result = serv.validateStorageServerConnection(args)
-        self.assertEqual(result[1][0]['password'], password)
-
-    def testPassValidateStorageServerConnection(self):
-        serv = createFakeService(self)
-        password = 'password'
-
-        args = [1, '00000000-0000-0000-0000-000000000000',
-                ('id=null,connection=192.168.1.10:/export/data,'
-                 'portal=null,port=2049,iqn=null,user=username,'
-                 'auth=pass:' + password)]
-        result = serv.validateStorageServerConnection(args)
-        self.assertEqual(result[1][0]['password'], password)
 
     def testFileDisconnectStorageServer(self):
         serv = createFakeService(self)

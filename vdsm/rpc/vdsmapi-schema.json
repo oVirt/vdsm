@@ -5986,61 +5986,6 @@
  'returns': 'StoragePoolUpgradeStatus'}
 
 ##
-# @StorageServerConnectionValidateParams:
-#
-# Validation parameters for a connection to backing storage.
-#
-# @id:  A UUID to identify this set of parameters in the return value
-#
-# Since: 4.10.0
-#
-# Notes:  Deprecated since 4.10.0
-##
-{'type': 'StorageServerConnectionValidateParams',
- 'data': {'id': 'UUID'}}
-
-##
-# @StorageServerConnectionValidateStatus:
-#
-# indicates validity of backing storage connection parameters.
-#
-# @id:      A UUID to identify this set of parameters
-#
-# @status:  Code indicating the validity of the parameters
-#
-# Since: 4.10.0
-#
-# Notes:  Deprecated since 4.10.0
-##
-{'type': 'StorageServerConnectionValidateStatus',
- 'data': {'id': 'UUID', 'status': 'int'}}
-
-##
-# @StoragePool.validateStorageServerConnection:
-#
-# Validate storage server connection parameters.
-#
-# @storagepoolID:     The UUID of the Storage Pool
-#
-# @domainType:        The type of backing storage being validated
-#
-# @connectionParams:  A list of connection parameter dictionaries
-#
-# Returns:
-# A list of connection parameter statuses
-#
-# Since: 4.10.0
-#
-# Notes:  Deprecated since 4.10.0.  Returns 0 for all connections.
-##
-{'command': {'class': 'StoragePool',
-             'name': 'validateStorageServerConnection'},
- 'data': {'storagepoolID': 'UUID', 'domainType': 'StorageDomainType',
-          'connectionParams': ['StorageServerConnectionValidateParams']},
- 'returns': ['StorageServerConnectionValidateStatus']}
-
-
-##
 # @UpdateVmDefinition:
 #
 # Virtual machine definition data suitable for saving to a Storage Domain.

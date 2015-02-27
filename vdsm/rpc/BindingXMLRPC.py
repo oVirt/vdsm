@@ -824,11 +824,6 @@ class BindingXMLRPC(object):
         pool = API.StoragePool(spUUID)
         return pool.upgrade(targetDomVersion)
 
-    def poolValidateStorageServerConnection(self, domType, spUUID, conList,
-                                            options=None):
-        pool = API.StoragePool(spUUID)
-        return pool.validateStorageServerConnection(domType, conList)
-
     def poolUpdateVMs(self, spUUID, vmList, sdUUID=None, options=None):
         pool = API.StoragePool(spUUID)
         return pool.updateVMs(vmList, sdUUID)
@@ -1087,8 +1082,6 @@ class BindingXMLRPC(object):
                 (self.poolSpmStart, 'spmStart'),
                 (self.poolSpmStop, 'spmStop'),
                 (self.poolUpgrade, 'upgradeStoragePool'),
-                (self.poolValidateStorageServerConnection,
-                 'validateStorageServerConnection'),
                 (self.poolUpdateVMs, 'updateVM'),
                 (self.poolRemoveVm, 'removeVM'),
                 (self.taskClear, 'clearTask'),

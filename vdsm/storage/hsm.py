@@ -2510,24 +2510,6 @@ class HSM(object):
 
     @deprecated
     @public(logger=logged(printers={'conList': connectionListPrinter}))
-    def validateStorageServerConnection(self, domType, spUUID, conList,
-                                        options=None):
-        """
-        This call is useless and slow. It check different things in different
-        levels for different storage types and does not guarantee a future
-        connect will succeed. Until someone actually defines what is actually
-        being validated (params? hostname? permissions? authentication tokens?)
-        I suggest to just disable this verb so it doesn't make any NFS
-        connection take twice as long and be exponentially more complex.
-        """
-        res = []
-        for con in conList:
-            res.append({'id': con['id'], 'status': 0})
-
-        return dict(statuslist=res)
-
-    @deprecated
-    @public(logger=logged(printers={'conList': connectionListPrinter}))
     def disconnectStorageServer(self, domType, spUUID, conList, options=None):
         """
         Disconnects from a storage low level entity (server).

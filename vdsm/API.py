@@ -1138,11 +1138,6 @@ class StoragePool(APIBase):
     def upgrade(self, targetDomVersion):
         return self._irs.upgradeStoragePool(self._UUID, targetDomVersion)
 
-    def validateStorageServerConnection(self, domainType,
-                                        connectionParams):
-        return self._irs.validateStorageServerConnection(
-            domainType, self._UUID, connectionParams)
-
     def updateVMs(self, vmList, storagedomainID=None):
         return self._irs.updateVM(self._UUID, vmList, storagedomainID)
 
