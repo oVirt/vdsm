@@ -12,7 +12,6 @@ import java.net.ConnectException;
 import java.util.concurrent.Callable;
 
 import org.junit.Test;
-import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryPolicy;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.Retryable;
 
 public class RetryTestCase {

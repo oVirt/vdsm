@@ -142,6 +142,9 @@ public class StompClient implements Reciever {
             }
         } else if (Command.ERROR.toString().equals(message.getCommand())) {
             String destination = message.getHeaders().get(HEADER_DESTINATION);
+            if (destination == null) {
+                return;
+            }
             Listener listener = this.listener.get(destination);
             if (listener != null) {
                 listener.error(message.getHeaders());

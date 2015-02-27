@@ -110,7 +110,11 @@ public class StompTransport extends Thread implements TestSender {
                             for (String message : messages) {
                                 message = message + END_OF_MESSAGE;
                                 try {
-                                    this.reciever.recieve(Message.parse(message.getBytes(UTF8)), key);
+                                    Message msg = Message.parse(message.getBytes(UTF8));
+                                    if (msg != null) {
+                                        // ignore when heartbeat
+                                        this.reciever.recieve(msg, key);
+                                    }
                                 } catch (ClientConnectionException e) {
                                     fail();
                                 }

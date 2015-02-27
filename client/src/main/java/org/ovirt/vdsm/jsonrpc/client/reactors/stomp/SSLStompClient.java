@@ -48,7 +48,7 @@ public class SSLStompClient extends SSLClient {
 
             subscribtionId = UUID.randomUUID().toString();
             send(new Message().subscribe().withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
-                    .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "client").build());
+                    .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
         }
 
     };
@@ -89,8 +89,6 @@ public class SSLStompClient extends SSLClient {
     private void waitForConnect() throws ClientConnectionException {
         try {
             this.connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
-            // TODO wait for the mini broker to be finished
-            // this.subscribed.await();
         } catch (InterruptedException e) {
             disconnect("Waiting for connect interrupted");
             throw new IllegalStateException("Communication interrupted");

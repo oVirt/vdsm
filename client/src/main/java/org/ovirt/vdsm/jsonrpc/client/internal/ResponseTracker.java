@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.NullNode;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
@@ -160,6 +161,8 @@ public class ResponseTracker implements Runnable {
 
     private void removeNodes(List<JsonNode> nodes, JsonRpcResponse errorResponse) {
         for (JsonNode id : nodes) {
+            if (NullNode.class.isInstance(id))
+                continue;
             remove(this.map.get(id), id, errorResponse);
         }
     }

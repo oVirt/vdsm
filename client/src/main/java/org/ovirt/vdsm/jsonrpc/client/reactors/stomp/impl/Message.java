@@ -186,7 +186,7 @@ public class Message {
         // let us see stomp control messages
         LOG.debug(new String(array, UTF8));
         Message result = new Message();
-        if (message.length < 2) {
+        if (message.length <= 2) {
             // heart-beat
             return null;
         }

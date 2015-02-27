@@ -43,7 +43,7 @@ public class StompClient extends PlainClient {
 
                 subscribtionId = UUID.randomUUID().toString();
                 send(new Message().subscribe().withHeader(HEADER_DESTINATION, RESPONSE_QUEUE)
-                        .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "client").build());
+                        .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
 
                 connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
                 // TODO wait for the mini broker to be finished

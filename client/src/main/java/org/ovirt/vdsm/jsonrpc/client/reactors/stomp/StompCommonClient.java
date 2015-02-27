@@ -123,9 +123,10 @@ public abstract class StompCommonClient extends ReactorClient {
                 this.ibuff = ByteBuffer.allocate(contentLength - length + 1);
             } else {
                 byte[] content = this.message.getContent();
-                this.message.withContent(Arrays.copyOfRange(content, 0, contentLength));
+                this.message.withContent(Arrays.copyOfRange(content, 0, contentLength + 1));
                 emitOnMessageReceived(this.message);
-                headerBuffer.put(Arrays.copyOfRange(content, contentLength, content.length));
+                headerBuffer.put(Arrays.copyOfRange(content, contentLength + 1, content.length));
+                return;
             }
         }
 
