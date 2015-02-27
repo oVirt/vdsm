@@ -674,6 +674,21 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterGeoRepKeysGet(self, args):
+        status = self.s.glusterGeoRepKeysGet()
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterGeoRepKeysUpdate(self, args):
+        params = self._eqSplit(args)
+        userName = params.get('userName', '')
+        geoRepPubKeys = params.get('geoRepPubKeys', '')
+
+        status = self.s.glusterGeoRepKeysUpdate(userName,
+                                                geoRepPubKeys.split('\\n'))
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1149,4 +1164,16 @@ def getGlusterCmdDict(serv):
               'are the optional parameters\n',
               'This will create a brick using given input devices'
               )),
+         'glusterGeoRepKeysGet': (
+             serv.do_glusterGeoRepKeysGet,
+             ('',
+              'get geo replication public keys for all nodes in cluster'
+              )),
+         'glusterGeoRepKeysUpdate': (
+             serv.do_glusterGeoRepKeysUpdate,
+             ('userName=user_name'
+              'geoRepPubKeys=geo_replication_pub_keys',
+              'update geo replication public keys to authorized'
+              ' keys file of user'
+              ))
          }

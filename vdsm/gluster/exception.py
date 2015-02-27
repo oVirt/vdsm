@@ -612,6 +612,27 @@ class GlusterGeoRepConfigFailedException(GlusterGeoRepException):
     message = "Volume geo-replication config failed"
 
 
+class GlusterGeoRepPublicKeyFileCreateFailedException(
+        GlusterGeoRepException):
+    code = 4207
+    message = "Creation of public key file failed"
+
+
+class GlusterGeoRepPublicKeyFileReadErrorException(GlusterGeoRepException):
+    code = 4208
+    message = "Failed to read public key file"
+
+
+class GlusterGeoRepUserNotFoundException(GlusterGeoRepException):
+    code = 4209
+    message = "geo rep user does not exist"
+
+
+class GlusterGeoRepPublicKeyWriteFailedException(GlusterGeoRepException):
+    code = 4210
+    message = "geo rep public keys write failed"
+
+
 # Volume Snapshot
 class GlusterSnapshotException(GlusterException):
     code = 4700

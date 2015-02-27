@@ -18,13 +18,20 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
+import os
 from functools import wraps
 from vdsm.define import doneCode
+from pwd import getpwnam
 
 import supervdsm as svdsm
 import exception as ge
+from . import makePublic
+from . import safeWrite
 
 _SUCCESS = {'status': doneCode}
+GEOREP_PUB_KEY_PATH = "/var/lib/glusterd/geo-replication/common_secret.pem.pub"
+
 
 GLUSTER_RPM_PACKAGES = (
     ('glusterfs', ('glusterfs',)),
@@ -60,6 +67,63 @@ def exportAsVerb(func):
 
     wrapper.exportAsVerb = True
     return wrapper
+
+
+@makePublic
+def getGeoRepKeys():
+    try:
+        with open(GEOREP_PUB_KEY_PATH, 'r') as f:
+            pubKeys = f.readlines()
+    except IOError as e:
+        raise ge.GlusterGeoRepPublicKeyFileReadErrorException(err=[str(e)])
+    return pubKeys
+
+
+@makePublic
+def updateGeoRepKeys(userName, geoRepPubKeys):
+    try:
+        userInfo = getpwnam(userName)
+        homeDir = userInfo[5]
+        uid = userInfo[2]
+        gid = userInfo[3]
+    except KeyError as e:
+        raise ge.GlusterGeoRepUserNotFoundException(err=[str(e)])
+
+    sshDir = homeDir + "/.ssh"
+    authKeysFile = sshDir + "/authorized_keys"
+
+    if not os.path.exists(sshDir):
+        try:
+            os.makedirs(sshDir, 0700)
+            os.chown(sshDir, uid, gid)
+        except OSError as e:
+            raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
+
+    newKeys = [" ".join(l.split()[:-1]) for l in geoRepPubKeys]
+    newKeyDict = dict(zip(newKeys, geoRepPubKeys))
+
+    try:
+        with open(authKeysFile) as f:
+            existingKeyLines = f.readlines()
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            existingKeyLines = []
+        else:
+            raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
+
+    try:
+        existingKeys = [" ".join(l.split()[:-1]) for l in existingKeyLines]
+        existingKeyDict = dict(zip(existingKeys, existingKeyLines))
+
+        outLines = existingKeyLines
+        outKeys = set(newKeyDict).difference(set(existingKeyDict))
+        outLines.extend([newKeyDict[k] for k in outKeys if newKeyDict[k]])
+
+        safeWrite(authKeysFile, ''.join(outLines))
+        os.chmod(authKeysFile, 0600)
+        os.chown(authKeysFile, uid, gid)
+    except IOError as e:
+        raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
 
 class GlusterApi(object):
@@ -498,6 +562,16 @@ class GlusterApi(object):
                                                     fsType,
                                                     raidParams)
         return {'device': status}
+
+    @exportAsVerb
+    def geoRepKeysGet(self, options=None):
+        self.svdsmProxy.glusterExecuteGsecCreate()
+        pubKeys = self.svdsmProxy.glusterGetGeoRepKeys()
+        return {'geoRepPubKeys': pubKeys}
+
+    @exportAsVerb
+    def geoRepKeysUpdate(self, userName, geoRepPubKeys, options=None):
+        self.svdsmProxy.glusterUpdateGeoRepKeys(userName, geoRepPubKeys)
 
 
 def getGlusterMethods(gluster):

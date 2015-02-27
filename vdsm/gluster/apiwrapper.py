@@ -263,6 +263,12 @@ class GlusterVolume(GlusterApiBase):
     def snapshotList(self, volumeName=None):
         return self._gluster.volumeSnapshotList(volumeName)
 
+    def geoRepKeysGet(self):
+        return self._gluster.geoRepKeysGet()
+
+    def geoRepKeysUpdate(self, userName, geoRepPubKeys):
+        return self._gluster.geoRepKeysUpdate(userName, geoRepPubKeys)
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):
