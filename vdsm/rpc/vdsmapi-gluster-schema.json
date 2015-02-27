@@ -2001,3 +2001,42 @@
 {'command': {'class': 'GlusterVolume', 'name': 'snapshotList'},
  'data': {'*volumeName': 'str'},
  'returns': 'SnapshotInfoMap'}
+
+##
+# @GeoRepPubKeys:
+#
+# collection of geo-replication public keys from all local nodes
+#
+# @geoRepPubKeys: collection of geo-rep public keys
+#
+# Since: 4.17.0
+##
+{'type': 'GeoRepPubKeys',
+ 'data': {'geoRepPubKeys': ['str']}}
+
+##
+# @GlusterVolume.geoRepKeysGet:
+#
+# Get collected public keys for geo-replication setup
+#
+# Returns:
+# collection of geo-replication public keys as string.
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepKeysGet'},
+ 'returns': 'GeoRepPubKeys'}
+
+##
+# @GlusterVolume.writeGeoRepPubKeysUpdate:
+#
+# write collected public keys to users authorized_keys file.
+#
+# @userName:  Name of user
+#
+# @geoRepPubKeys :  Collection of geo-rep public keys from local nodes
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepKeysUpdate'},
+ 'data': {'userName': 'str', 'geoRepPubKeys': ['str']}}

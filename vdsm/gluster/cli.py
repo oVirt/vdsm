@@ -1518,3 +1518,13 @@ def snapshotInfo(volumeName=None):
             return _parseAllVolumeSnapshotList(xmltree)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorInfoException(err=[etree.tostring(xmltree)])
+
+
+@makePublic
+def executeGsecCreate():
+    command = _getGlusterSystemCmd() + ["execute", "gsec_create"]
+    rc, out, err = _execGluster(command)
+    if rc:
+        raise ge.GlusterGeoRepPublicKeyFileCreateFailedException(rc,
+                                                                 out, err)
+    return True
