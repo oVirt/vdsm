@@ -752,9 +752,9 @@ def _should_keep_bridge(network_attrs, currently_bridged,
             (k, v) for k, v in conf.iteritems()
             if k not in ('bonding', 'nic', 'mtu'))
 
-    def _bridge_reconfigured(required_conf, current_conf):
-        return (_bridge_only_config(required_conf) !=
-                _bridge_only_config(current_conf))
+    def _bridge_reconfigured(current_conf, required_conf):
+        return (_bridge_only_config(current_conf) !=
+                _bridge_only_config(required_conf))
 
     if currently_bridged and _bridge_reconfigured(network_running_config,
                                                   network_attrs):
