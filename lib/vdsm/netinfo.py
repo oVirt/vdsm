@@ -114,9 +114,9 @@ def networks():
             netname = netname[len(LIBVIRT_NET_PREFIX):]
             nets[netname] = {}
             xml = etree.fromstring(net.XMLDesc(0))
-            interfaces = xml.find('.//interface')
-            if interfaces:
-                nets[netname]['iface'] = interfaces.get('dev')
+            interface = xml.find('.//interface')
+            if interface is not None:
+                nets[netname]['iface'] = interface.get('dev')
                 nets[netname]['bridged'] = False
             else:
                 nets[netname]['bridge'] = xml.find('.//bridge').get('name')
