@@ -1078,9 +1078,13 @@ def volumeTasks(volumeName="all"):
 
 @makePublic
 def volumeGeoRepSessionStart(volumeName, remoteHost, remoteVolumeName,
-                             force=False):
+                             remoteUserName=None, force=False):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
     command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        remoteHost, remoteVolumeName), "start"]
+        userAtHost, remoteVolumeName), "start"]
     if force:
         command.append('force')
     try:
@@ -1093,9 +1097,13 @@ def volumeGeoRepSessionStart(volumeName, remoteHost, remoteVolumeName,
 
 @makePublic
 def volumeGeoRepSessionStop(volumeName, remoteHost, remoteVolumeName,
-                            force=False):
+                            remoteUserName=None, force=False):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
     command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        remoteHost, remoteVolumeName), "stop"]
+        userAtHost, remoteVolumeName), "stop"]
     if force:
         command.append('force')
     try:
@@ -1116,6 +1124,7 @@ def _parseGeoRepStatus(tree, detail=False):
                               brickName: 'brick in the local volume',
                               remoteHost: 'slave',
                               status: 'status'
+                              remoteUserName: 'root'
                               checkpointStatus: 'checkpoint status'
                               crawlStatus: 'crawlStatus'
                               *filesSynced: 'nos of files syncd'
@@ -1144,6 +1153,7 @@ def _parseGeoRepStatus(tree, detail=False):
                 pairDetail['brickName'] = pair.find('master_brick').text
                 pairDetail['remoteHost'] = pair.find(
                     'slave').text.split("::")[0]
+                pairDetail['remoteUserName'] = pair.find('slave_user').text
                 pairDetail['status'] = pair.find('status').text
                 pairDetail['checkpointStatus'] = pair.find(
                     'checkpoint_status').text
@@ -1168,12 +1178,17 @@ def _parseGeoRepStatus(tree, detail=False):
 
 @makePublic
 def volumeGeoRepStatus(volumeName=None, remoteHost=None,
-                       remoteVolumeName=None, detail=False):
+                       remoteVolumeName=None, remoteUserName=None,
+                       detail=False):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
     command = _getGlusterVolGeoRepCmd()
     if volumeName:
         command.append(volumeName)
     if remoteHost and remoteVolumeName:
-        command.append("%s::%s" % (remoteHost, remoteVolumeName))
+        command.append("%s::%s" % (userAtHost, remoteVolumeName))
     command.append("status")
     if detail:
         command.append("detail")
@@ -1190,9 +1205,13 @@ def volumeGeoRepStatus(volumeName=None, remoteHost=None,
 
 @makePublic
 def volumeGeoRepSessionPause(volumeName, remoteHost, remoteVolumeName,
-                             force=False):
+                             remoteUserName=None, force=False):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
     command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        remoteHost, remoteVolumeName), "pause"]
+        userAtHost, remoteVolumeName), "pause"]
     if force:
         command.append('force')
     try:
@@ -1205,9 +1224,13 @@ def volumeGeoRepSessionPause(volumeName, remoteHost, remoteVolumeName,
 
 @makePublic
 def volumeGeoRepSessionResume(volumeName, remoteHost, remoteVolumeName,
-                              force=False):
+                              remoteUserName=None, force=False):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
     command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        remoteHost, remoteVolumeName), "resume"]
+        userAtHost, remoteVolumeName), "resume"]
     if force:
         command.append('force')
     try:
@@ -1234,9 +1257,14 @@ def _parseVolumeGeoRepConfig(tree):
 @makePublic
 def volumeGeoRepConfig(volumeName, remoteHost,
                        remoteVolumeName, optionName=None,
-                       optionValue=None):
+                       optionValue=None,
+                       remoteUserName=None):
+    if remoteUserName:
+        userAtHost = "%s@%s" % (remoteUserName, remoteHost)
+    else:
+        userAtHost = remoteHost
     command = _getGlusterVolGeoRepCmd() + [volumeName, "%s::%s" % (
-        remoteHost, remoteVolumeName), "config"]
+        userAtHost, remoteVolumeName), "config"]
     if optionName and optionValue:
         command += [optionName, optionValue]
     elif optionName:

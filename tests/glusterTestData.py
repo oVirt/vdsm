@@ -1064,6 +1064,7 @@ GLUSTER_GEOREP_STATUS = {
                  'crawlStatus': 'N/A',
                  'filesPending': '0',
                  'filesSynced': '0',
+                 'remoteUserName': 'root',
                  'hostUuid': '6a2f7584-05a8-4651-8786-1cd6ae87b896',
                  'remoteHost': '192.168.122.145',
                  'checkpointStatus': 'N/A',

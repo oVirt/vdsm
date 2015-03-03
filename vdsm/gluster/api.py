@@ -411,87 +411,102 @@ class GlusterApi(object):
     @exportAsVerb
     def volumeGeoRepSessionStart(self, volumeName, remoteHost,
                                  remoteVolumeName,
+                                 remoteUserName=None,
                                  force=False, options=None):
         self.svdsmProxy.glusterVolumeGeoRepSessionStart(volumeName,
                                                         remoteHost,
                                                         remoteVolumeName,
+                                                        remoteUserName,
                                                         force)
 
     @exportAsVerb
-    def volumeGeoRepSessionStop(self, volumeName, remoteHost, remoteVolumeName,
+    def volumeGeoRepSessionStop(self, volumeName, remoteHost,
+                                remoteVolumeName, remoteUserName=None,
                                 force=False, options=None):
         self.svdsmProxy.glusterVolumeGeoRepSessionStop(volumeName,
                                                        remoteHost,
                                                        remoteVolumeName,
+                                                       remoteUserName,
                                                        force)
 
     @exportAsVerb
     def volumeGeoRepSessionList(self, volumeName=None, remoteHost=None,
-                                remoteVolumeName=None, options=None):
+                                remoteVolumeName=None, remoteUserName=None,
+                                options=None):
         status = self.svdsmProxy.glusterVolumeGeoRepStatus(
             volumeName,
             remoteHost,
-            remoteVolumeName
+            remoteVolumeName,
+            remoteUserName,
         )
         return {'sessions': status}
 
     @exportAsVerb
     def volumeGeoRepSessionStatus(self, volumeName, remoteHost,
-                                  remoteVolumeName, options=None):
+                                  remoteVolumeName, remoteUserName=None,
+                                  options=None):
         status = self.svdsmProxy.glusterVolumeGeoRepStatus(
             volumeName,
             remoteHost,
             remoteVolumeName,
+            remoteUserName,
             detail=True
         )
         return {'sessionStatus': status}
 
     @exportAsVerb
     def volumeGeoRepSessionPause(self, volumeName, remoteHost,
-                                 remoteVolumeName,
+                                 remoteVolumeName, remoteUserName=None,
                                  force=False, options=None):
         self.svdsmProxy.glusterVolumeGeoRepSessionPause(volumeName,
                                                         remoteHost,
                                                         remoteVolumeName,
+                                                        remoteUserName,
                                                         force)
 
     @exportAsVerb
     def volumeGeoRepSessionResume(self, volumeName, remoteHost,
-                                  remoteVolumeName,
+                                  remoteVolumeName, remoteUserName=None,
                                   force=False, options=None):
         self.svdsmProxy.glusterVolumeGeoRepSessionResume(volumeName,
                                                          remoteHost,
                                                          remoteVolumeName,
+                                                         remoteUserName,
                                                          force)
 
     @exportAsVerb
-    def volumeGeoRepConfigList(self, volumeName, remoteHost, remoteVolumeName,
+    def volumeGeoRepConfigList(self, volumeName, remoteHost,
+                               remoteVolumeName, remoteUserName=None,
                                options=None):
         status = self.svdsmProxy.glusterVolumeGeoRepConfig(
             volumeName,
             remoteHost,
-            remoteVolumeName
+            remoteVolumeName,
+            remoteUserName=remoteUserName
         )
         return {'sessionConfig': status}
 
     @exportAsVerb
     def volumeGeoRepConfigSet(self, volumeName, remoteHost, remoteVolumeName,
-                              optionName, optionValue, options=None):
+                              optionName, optionValue, remoteUserName=None,
+                              options=None):
         self.svdsmProxy.glusterVolumeGeoRepConfig(volumeName,
                                                   remoteHost,
                                                   remoteVolumeName,
                                                   optionName,
-                                                  optionValue)
+                                                  optionValue,
+                                                  remoteUserName)
 
     @exportAsVerb
     def volumeGeoRepConfigReset(self, volumeName, remoteHost,
-                                remoteVolumeName,
-                                optionName, options=None):
+                                remoteVolumeName, optionName,
+                                remoteUserName=None, options=None):
         self.svdsmProxy.glusterVolumeGeoRepConfig(
             volumeName,
             remoteHost,
             remoteVolumeName,
-            optionName)
+            optionName,
+            remoteUserName=remoteUserName)
 
     @exportAsVerb
     def volumeSnapshotCreate(self, volumeName, snapName,
