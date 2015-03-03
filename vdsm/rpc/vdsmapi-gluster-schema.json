@@ -556,23 +556,27 @@
 #
 # volume information.
 #
-# @brickCount:    The number of bricks
+# @brickCount:      The number of bricks
 #
-# @bricks:        List of bricks
+# @bricks:          List of bricks
 #
-# @options:       List of options
+# @options:         List of options
 #
-# @transportType: Type of transport protocol
+# @transportType:   Type of transport protocol
 #
-# @uuid:          Id of the volume
+# @uuid:            Id of the volume
 #
-# @volumeName:    Name of the volume
+# @volumeName:      Name of the volume
 #
-# @status:        Status of the volume
+# @status:          Status of the volume
 #
-# @volumeType:    Type of the volume
+# @volumeType:      Type of the volume
 #
-# @bricksInfo:    details related to bricks(new in version 4.14.0)
+# @disperseCount:   Disperse count of the volume
+#
+# @redundancyCount: Redundancy count of the volume
+#
+# @bricksInfo:      details related to bricks(new in version 4.14.0)
 #
 # Since: 4.10.3
 ##
@@ -580,6 +584,7 @@
  'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'],
           'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str',
           'status': 'volumeStatus', 'volumeType': 'str',
+          'disperseCount': 'int', 'redundancyCount': 'int',
           'bricksInfo': ['BricksInfo']}}
 
 ##
