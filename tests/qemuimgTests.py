@@ -174,3 +174,36 @@ class QemuimgCreateTests(TestCaseBase):
 
         with FakeExecCmd(qcow2_compat_supported, create_qcow2_compat):
             qemuimg.create('image', format='qcow2')
+
+
+class CheckTests(TestCaseBase):
+
+    def test_offset_with_stats(self):
+        def call(cmd, **kw):
+            out = ["No errors were found on the image.",
+                   "65157/98304 = 66.28% allocated, 0.00% fragmented, 0.00% "
+                   "compressed clusters",
+                   "Image end offset: 4271243264"]
+            return 0, out, []
+
+        with FakeExecCmd(call):
+            check = qemuimg.check('unused')
+            self.assertEquals(4271243264, check['offset'])
+
+    def test_offset_without_stats(self):
+        def call(cmd, **kw):
+            out = ["No errors were found on the image.",
+                   "Image end offset: 4271243264"]
+            return 0, out, []
+
+        with FakeExecCmd(call):
+            check = qemuimg.check('unused')
+            self.assertEquals(4271243264, check['offset'])
+
+    def test_offset_no_match(self):
+        def call(cmd, **kw):
+            out = ["All your base are belong to us."]
+            return 0, out, []
+
+        with FakeExecCmd(call):
+            self.assertRaises(qemuimg.QImgError, qemuimg.check, 'unused')
