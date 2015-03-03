@@ -50,7 +50,11 @@ __iregex = {
     'offset': re.compile("^Image end offset: (?P<value>\d+)$"),
 }
 
-INFO_OPTFIELDS_STARTIDX = 4  # qemu-img info optional fields start in this line
+# The first row of qemu-img info output where optional fields may appear
+_INFO_OPTFIELDS_STARTIDX = 4
+
+# The first row of qemu-img check output where the 'offset' may appear
+_CHECK_OPTFIELDS_STARTIDX = 1
 
 
 class _RegexSearchError(Exception):
@@ -97,7 +101,7 @@ def info(image, format=None):
         raise QImgError(rc, out, err, "unable to parse qemu-img info output")
 
     # Scan for optional fields in the output
-    row = INFO_OPTFIELDS_STARTIDX
+    row = _INFO_OPTFIELDS_STARTIDX
     for field, filterFn in (('clustersize', int), ('backingfile', str)):
         try:
             info[field] = filterFn(__iregexSearch(field, out[row]))
@@ -149,15 +153,18 @@ def check(image, format=None):
     # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
         raise QImgError(rc, out, err)
-    try:
-        check = {
-            'offset': int(__iregexSearch("offset", out[1]))
-        }
-    # TODO: Add requires for qemu supporting offset and print exc_info
-    except:
-        raise QImgError(rc, out, err, "unable to parse qemu-img check output")
-
-    return check
+    # Scan for 'offset' in the output
+    for row in range(_CHECK_OPTFIELDS_STARTIDX, len(out)):
+        try:
+            check = {
+                'offset': int(__iregexSearch("offset", out[row]))
+            }
+            return check
+        except _RegexSearchError:
+            pass
+        except:
+            break
+    raise QImgError(rc, out, err, "unable to parse qemu-img check output")
 
 
 def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None,
