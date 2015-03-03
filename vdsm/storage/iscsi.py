@@ -105,19 +105,25 @@ def getIscsiHostPath(sessionID):
     Returns:
         - iSCSI host path - e.g. '/sys/class/iscsi_host/host17/'
     """
+    path = os.path.realpath(getIscsiSessionPath(sessionID))
+    if not os.path.exists(path):
+        raise OSError(errno.ENOENT, "No such session %r" % sessionID)
 
-    pattern = '/sys/devices/platform/host*/session%s' % sessionID
-    for path in glob.iglob(pattern):
-        host = os.path.basename(os.path.dirname(path))
-        return '/sys/class/iscsi_host/' + host
+    # Session path depends on the iSCSI implementation:
+    # Hardware iSCSI:
+    #   /sys/devices/pci*/*/*/host0/session7/iscsi_session/session7
+    # Software iSCSI:
+    #   /sys/devices/platform/host5/session8/iscsi_session/session8
+    host = path.rsplit(os.sep, 4)[-4]
+    if not host.startswith('host'):
+        raise RuntimeError("Unexpected session path %r" % path)
 
-    raise OSError(errno.ENOENT, "No iscsi_host for session [%s]" % sessionID)
+    return '/sys/class/iscsi_host/' + host
 
 
 def readSessionInfo(sessionID):
     iscsi_session = getIscsiSessionPath(sessionID)
     iscsi_connection = getIscsiConnectionPath(sessionID)
-    iscsi_host = getIscsiHostPath(sessionID)
 
     if not os.path.isdir(iscsi_session) or not os.path.isdir(iscsi_connection):
         raise OSError(errno.ENOENT, "No such session")
@@ -132,6 +138,8 @@ def readSessionInfo(sessionID):
     paddr = os.path.join(iscsi_connection, "persistent_address")
     pport = os.path.join(iscsi_connection, "persistent_port")
 
+    # iscsi_host is available only when the session exists.
+    iscsi_host = getIscsiHostPath(sessionID)
     netdev = os.path.join(iscsi_host, "netdev")
 
     res = []
