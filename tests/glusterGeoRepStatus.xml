@@ -13,6 +13,7 @@
             <master_node>localhost.localdomain</master_node>
             <master_node_uuid>6a2f7584-05a8-4651-8786-1cd6ae87b896</master_node_uuid>
             <master_brick>/root/b1_vol1</master_brick>
+	    <slave_user>root</slave_user>
             <slave>192.168.122.145::vol2</slave>
             <status>Stopped</status>
             <checkpoint_status>N/A</checkpoint_status>

@@ -1340,13 +1340,16 @@
 #
 # Starts the Geo Replication session
 #
-# @volumeName: Is an existing volume name in the master node
+# @volumeName:       Is an existing volume name in the master node
 #
-# @remoteHost: Is remote slave host name or ip
+# @remoteHost:       Is remote slave host name or ip
 #
 # @remoteVolumeName: Is an available existing volume name in the slave node
 #
-# @force: For starting a geo-replication session forcefully
+# @remoteUserName:   #optional Name of user in remote Machine
+#
+# @force:            #optional For starting a geo-replication session
+#                    forcefully
 #
 # Returns:
 # True if session is successfully started
@@ -1355,7 +1358,7 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStart'},
  'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
-          'force': 'bool'},
+          '*remoteUserName': 'str', '*force': 'bool'},
  'returns': 'bool'}
 
 ##
@@ -1363,13 +1366,15 @@
 #
 # Stops the Geo Replication session
 #
-# @volumeName: Is an existing volume name in the master node
+# @volumeName:       Is an existing volume name in the master node
 #
-# @remoteHost: Is remote slave host name or ip
+# @remoteHost:       Is remote slave host name or ip
 #
 # @remoteVolumeName: Is an available existing volume name in the slave node
 #
-# @force: For stoping a geo-replication session forcefully
+# @remoteUserName:   #optional Name of user in remote Machine
+#
+# @force:            #optional For stoping a geo-replication session forcefully
 #
 # Returns:
 # True if session is successfully stopped
@@ -1378,7 +1383,7 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStop'},
  'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
-          'force': 'bool'},
+          '*remoteUserName': 'str', '*force': 'bool'},
  'returns': 'bool'}
 
 # @geoRepPairInfo:
@@ -1392,6 +1397,8 @@
 # @brickName:          Local volume brick involved in session
 #
 # @remoteHost:         The remote host involved in the session
+#
+# @remoteUserName:     Name of user in remote Machine
 #
 # @status:             Status of geo replication
 #
@@ -1413,7 +1420,8 @@
 ##
 {'type': 'geoRepPairInfo',
  'data': {'host': 'str', 'hostUuid': 'UUID', 'brickName': 'str',
-          'remoteHost': 'str', 'status': 'str', 'checkpointStatus': 'str',
+          'remoteUserName': 'str', 'remoteHost': 'str',
+          'status': 'str', 'checkpointStatus': 'str',
           'crawlStatus': 'str', '*filesSynced': 'str', '*filesPending': 'str',
           '*bytesPending': 'str', '*deletesPending': 'str',
           '*filesSkipped': 'str'}}
@@ -1471,6 +1479,8 @@
 # @remoteVolumeName:   #optional Is an available existing volume name in the
 #                      remote node
 #
+# @remoteUserName:     #optional Name of user in remote Machine
+#
 # Returns:
 # list of geo-replicaion sessions
 #
@@ -1478,7 +1488,7 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionList'},
  'data': {'*volumeName': 'str', '*remoteHost': 'str',
-          '*remoteVolumeName': 'str'},
+          '*remoteVolumeName': 'str', '*remoteUserName': 'str'},
  'returns': 'GlusterGeoRepSessionMap'}
 
 ##
@@ -1492,6 +1502,8 @@
 #
 # @remoteVolumeName:   Is an available existing volume name in the remote node
 #
+# @remoteUserName:     #optional Name of user in remote Machine
+#
 # Returns:
 # Detailed information of geo-replication session
 #
@@ -1499,7 +1511,7 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStatus'},
  'data': {'VolumeName': 'str', 'remoteHost': 'str',
-          'remoteVolumeName': 'str'},
+          'remoteVolumeName': 'str', '*remoteUserName': 'str'},
  'returns': 'GlusterGeoRepSessionMap'}
 
 ##
@@ -1513,6 +1525,8 @@
 #
 # @remoteVolumeName:   Is an available existing volume name in the remote node
 #
+# @remoteUserName:     #optional Name of user in remote Machine
+#
 # @force:              #optional For pausing a geo-replication session
 #                      forcefully
 #
@@ -1523,7 +1537,7 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionPause'},
  'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
-          '*force': 'bool'},
+          '*remoteUserName': 'str', '*force': 'bool'},
  'returns': 'bool'}
 
 ##
@@ -1537,6 +1551,8 @@
 #
 # @remoteVolumeName:   Is an available existing volume name in the remote node
 #
+# @remoteUserName:     #optional Name of user in remote Machine
+#
 # @force:              #optional For resuming a geo-replication session
 #                      forcefully
 #
@@ -1547,7 +1563,7 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionResume'},
  'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
-          '*force': 'bool'},
+          '*remoteUserName': 'str', '*force': 'bool'},
  'returns': 'bool'}
 
 ##
@@ -1584,13 +1600,16 @@
 #
 # @remoteVolumeName:   Is an available existing volume name in the remote node
 #
+# @remoteUserName:     #optional Name of user in remote Machine
+#
 # Returns:
 # List of geo replication configurations
 #
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepConfigList'},
- 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str'},
+ 'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
+          '*remoteUserName': 'str'},
  'returns': 'GeoRepConfig'}
 
 ##
@@ -1608,6 +1627,8 @@
 #
 # @optionValue:        Value to the option
 #
+# @remoteUserName:     #optional Name of user in remote Machine
+#
 # Returns:
 # True if it sets value to the option successfully
 #
@@ -1616,7 +1637,7 @@
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepConfigSet'},
  'data': {'volumeName': 'str', 'remoteHost': 'str',
           'remoteVolumeName': 'str', 'optionName': 'str',
-          'optionValue': 'str'},
+          'optionValue': 'str', '*remoteUserName': 'str'},
  'returns': 'bool'}
 
 ##
@@ -1632,6 +1653,8 @@
 #
 # @optionName:         Valid configuration option name
 #
+# @remoteUserName:     #optional Name of user in remote Machine
+#
 # Returns:
 # True if default value is set successfully
 #
@@ -1639,7 +1662,7 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepConfigReset'},
  'data': {'volumeName': 'str', 'remoteHost': 'str', 'remoteVolumeName': 'str',
-          'optionName': 'str'},
+          'optionName': 'str', '*remoteUserName': 'str'},
  'returns': 'bool'}
 
 ##

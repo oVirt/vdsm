@@ -439,6 +439,7 @@ class GlusterService(service):
     def do_glusterVolumeGeoRepSessionStart(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
+        remoteUserName = params.get('remoteUserName', '')
         remoteHost = params.get('remoteHost', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
         force = (params.get('force', 'no').upper() == 'YES')
@@ -446,6 +447,7 @@ class GlusterService(service):
         status = self.s.glusterVolumeGeoRepSessionStart(volumeName,
                                                         remoteHost,
                                                         remoteVolumeName,
+                                                        remoteUserName,
                                                         force)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
@@ -454,12 +456,14 @@ class GlusterService(service):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
+        remoteUserName = params.get('remoteUserName', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
         force = (params.get('force', 'no').upper() == 'YES')
 
         status = self.s.glusterVolumeGeoRepSessionStop(volumeName,
                                                        remoteHost,
                                                        remoteVolumeName,
+                                                       remoteUserName,
                                                        force)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
@@ -468,10 +472,12 @@ class GlusterService(service):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
+        remoteUserName = params.get('remoteUserName', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
 
         status = self.s.glusterVolumeGeoRepSessionList(volumeName, remoteHost,
-                                                       remoteVolumeName)
+                                                       remoteVolumeName,
+                                                       remoteUserName)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -479,11 +485,13 @@ class GlusterService(service):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
+        remoteUserName = params.get('remoteUserName', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
 
         status = self.s.glusterVolumeGeoRepSessionStatus(volumeName,
                                                          remoteHost,
-                                                         remoteVolumeName)
+                                                         remoteVolumeName,
+                                                         remoteUserName)
 
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
@@ -493,11 +501,13 @@ class GlusterService(service):
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
+        remoteUserName = params.get('remoteUserName', '')
         force = (params.get('force', 'no').upper() == 'YES')
 
         status = self.s.glusterVolumeGeoRepSessionPause(volumeName,
                                                         remoteHost,
                                                         remoteVolumeName,
+                                                        remoteUserName,
                                                         force)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
@@ -507,11 +517,13 @@ class GlusterService(service):
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
+        remoteUserName = params.get('remoteUserName', '')
         force = (params.get('force', 'no').upper() == 'YES')
 
         status = self.s.glusterVolumeGeoRepSessionResume(volumeName,
                                                          remoteHost,
                                                          remoteVolumeName,
+                                                         remoteUserName,
                                                          force)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
@@ -520,11 +532,13 @@ class GlusterService(service):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
+        remoteUserName = params.get('remoteUserName', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
 
         status = self.s.glusterVolumeGeoRepConfigList(volumeName,
                                                       remoteHost,
-                                                      remoteVolumeName)
+                                                      remoteVolumeName,
+                                                      remoteUserName)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -533,6 +547,7 @@ class GlusterService(service):
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
+        remoteUserName = params.get('remoteUserName', '')
         optionName = params.get('optionName', '')
         optionValue = params.get('optionValue', '')
 
@@ -540,7 +555,8 @@ class GlusterService(service):
                                                      remoteHost,
                                                      remoteVolumeName,
                                                      optionName,
-                                                     optionValue)
+                                                     optionValue,
+                                                     remoteUserName)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -549,12 +565,14 @@ class GlusterService(service):
         volumeName = params.get('volumeName', '')
         remoteHost = params.get('remoteHost', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
+        remoteUserName = params.get('remoteUserName', '')
         optionName = params.get('optionName', '')
 
         status = self.s.glusterVolumeGeoRepConfigReset(volumeName,
                                                        remoteHost,
                                                        remoteVolumeName,
-                                                       optionName)
+                                                       optionName,
+                                                       remoteUserName)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -1044,6 +1062,7 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> '
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
+              'remoteUserName=<remote_user_name>'
               '[force={yes|no}]\n\t'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
@@ -1054,6 +1073,7 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> '
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
+              'remoteUserName=<remote_user_name>'
               '[force={yes|no}]\n\t'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
@@ -1064,6 +1084,7 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> '
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
+              'remoteUserName=<remote_user_name>'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'list the geo-replication sessions'
@@ -1073,6 +1094,7 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> '
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
+              'remoteUserName=<remote_user_name>'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'get the geo-replication session status'
@@ -1082,6 +1104,7 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> '
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
+              'remoteUserName=<remote_user_name>'
               '[force={yes|no}]\n\t'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
@@ -1092,6 +1115,7 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> '
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
+              'remoteUserName=<remote_user_name>'
               '[force={yes|no}]\n\t'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
@@ -1102,6 +1126,7 @@ def getGlusterCmdDict(serv):
              ('volumeName=<volume_name> '
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
+              'remoteUserName=<remote_user_name>'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'Get the list of geo-replication configuration for a session'
@@ -1113,6 +1138,7 @@ def getGlusterCmdDict(serv):
               'remoteVolumeName=<remote_volume_name> '
               'optionName=<option_name>'
               'optionValue=<option_value>'
+              'remoteUserName=<remote_user_name>'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'set a geo-replication configuration for a session'
@@ -1123,6 +1149,7 @@ def getGlusterCmdDict(serv):
               'remoteHost=<remote_host> '
               'remoteVolumeName=<remote_volume_name> '
               'optionName=<option_name>'
+              'remoteUserName=<remote_user_name>'
               '<remote_host> is IP/dns name of host in remote Gluster cluster.'
               '<remote_volume_name> volume name in remote gluster cluster.',
               'Reset a geo-replication configuration to its default value'
