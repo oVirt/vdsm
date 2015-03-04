@@ -94,6 +94,7 @@ class Domain(object):
         return self._xml
 
     def updateDeviceFlags(self, devXml, unused):
+        self._failIfRequested()
         self.devXml = devXml
 
     def vcpusFlags(self, flags):
@@ -181,13 +182,14 @@ class ConfStub(object):
 
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
-       arch=caps.Architecture.X86_64, status=None):
+       arch=caps.Architecture.X86_64, status=None,
+       cif=None):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get', Connection)]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
-            cif = ClientIF()
+            cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams)
             cif.vmContainer[fake.id] = fake
             fake.arch = arch

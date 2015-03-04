@@ -1296,3 +1296,22 @@ class TestVmSanity(TestCaseBase):
     def testSmpByParameters(self, cpus):
         with fake.VM({'smp': cpus}) as testvm:
             self.assertEqual(int(testvm.conf['smp']), cpus)
+
+
+class ChangeBlockDevTests(TestCaseBase):
+
+    def test_change_cd_failure(self):
+        cif = fake.ClientIF()
+        with MonkeyPatchScope([(cif, 'prepareVolumePath',
+                                lambda _: None),
+                               (cif, 'teardownVolumePath',
+                                lambda _: None)]):
+            with fake.VM(cif=cif) as fakevm:
+                # no specific meaning, actually any error != None is good
+                fakevm._dom = fake.Domain(
+                    virtError=libvirt.VIR_ERR_ACCESS_DENIED)
+
+                res = fakevm.changeCD({})
+
+                expected_status = define.errCode['changeDisk']['status']
+                self.assertEqual(res['status'], expected_status)
