@@ -6473,13 +6473,22 @@
 #
 # @flushLatency:  The latency of flush operations in nanoseconds
 #
+# @writeOps:      Write operations since VM start (new in version 4.17.0)
+#
+# @readOps:       Read operations since VM start (new in version 4.17.0)
+#
+# @readBytes:     Bytes read (new in version 4.17.0)
+#
+# @writtenBytes:  Bytes written (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDiskStats',
  'data': {'truesize': 'uint', 'apparentsize': 'uint', 'imageID': 'UUID',
           'readRate': 'uint', 'writeRate': 'uint',
           'readLatency': 'uint', 'writeLatency': 'uint',
-          'flushLatency': 'uint'}}
+          'flushLatency': 'uint', 'writeOps': 'uint', 'readOps': 'uint',
+          'readBytes': 'uint', 'writtenBytes': 'uint'}}
 
 ##
 # @VmBootMode:

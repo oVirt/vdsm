@@ -590,7 +590,11 @@ class VmStatsThread(AdvancedStatsThread):
                           'apparentsize': str(vmDrive.apparentsize),
                           'readLatency': '0',
                           'writeLatency': '0',
-                          'flushLatency': '0'}
+                          'flushLatency': '0',
+                          'readOps': '0',
+                          'writeOps': '0',
+                          'writtenBytes': '0',
+                          'readBytes': '0'}
                 if isVdsmImage(vmDrive):
                     dStats['imageID'] = vmDrive.imageID
                 elif "GUID" in vmDrive:
@@ -601,6 +605,11 @@ class VmStatsThread(AdvancedStatsThread):
                     dStats.update(_calcDiskRate(vmDrive, sInfo, eInfo,
                                                 sampleInterval))
                     dStats.update(_calcDiskLatency(vmDrive, sInfo, eInfo))
+                    driveInfo = eInfo[vmDrive.name]
+                    dStats['readOps'] = str(driveInfo['rd_operations'])
+                    dStats['writeOps'] = str(driveInfo['wr_operations'])
+                    dStats['readBytes'] = str(driveInfo['rd_bytes'])
+                    dStats['writtenBytes'] = str(driveInfo['wr_bytes'])
 
             except (AttributeError, TypeError, ZeroDivisionError):
                 self._log.exception("Disk %s stats not available",
