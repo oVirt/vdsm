@@ -123,7 +123,7 @@ class Smartcard(Base):
 
 
 class Sound(Base):
-    __slots__ = ('address', 'alias')
+    __slots__ = ('address')
 
     def getXML(self):
         """
