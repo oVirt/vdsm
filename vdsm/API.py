@@ -1342,7 +1342,8 @@ class Global(APIBase):
         stats['memCommitted'] = self._memCommitted() / Mbytes
         stats['memFree'] = self._memFree() / Mbytes
         stats['swapTotal'], stats['swapFree'] = _readSwapTotalFree()
-        stats['vmCount'], stats['vmActive'], stats['vmMigrating'] = \
+        (stats['vmCount'], stats['vmActive'], stats['vmMigrating'],
+         stats['incomingVmMigrations'], stats['outgoingVmMigrations']) = \
             self._countVms()
         (tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec,
          dummy, dummy, dummy) = time.gmtime(time.time())
@@ -1708,18 +1709,20 @@ class Global(APIBase):
         return committed
 
     def _countVms(self):
-        count = active = migrating = 0
+        count = active = incoming = outgoing = 0
         for vmId, v in self._cif.vmContainer.items():
             try:
                 count += 1
                 status = v.lastStatus
                 if status == vmstatus.UP:
                     active += 1
-                elif 'Migration' in status:
-                    migrating += 1
+                elif status == vmstatus.MIGRATION_DESTINATION:
+                    incoming += 1
+                elif status == vmstatus.MIGRATION_SOURCE:
+                    outgoing += 1
             except:
                 self.log.error(vmId + ': Lost connection to VM')
-        return count, active, migrating
+        return count, active, incoming + outgoing, incoming, outgoing
 
     def _getHaInfo(self):
         """

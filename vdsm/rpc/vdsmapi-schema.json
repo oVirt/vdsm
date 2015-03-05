@@ -2010,7 +2010,10 @@
 #
 # @vmActive:        The number of VMs active on this host
 #
-# @vmMigrating:     The number of VMs migrating away from this host
+# @vmMigrating:     The number of VMs migrating to or from this host
+#                   (It is deprecated by incomingVmMigrations and
+#                   outgoingVmMigrations from version 4.17.0 and it will
+#                   be removed in next major version)
 #
 # @dateTime:        The current date and time according to this host
 #
@@ -2041,6 +2044,12 @@
 # @cpuStatistics:   Statistics about each cpu core
 #                   (new in version 4.15.0)
 #
+# @incomingVmMigrations:   The number of VMs migrating to this host
+#                          (new in version 4.17.0)
+#
+# @outgoingVmMigrations:   The number of VMs migrating away from this host
+#                          (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'HostStats',
@@ -2061,7 +2070,8 @@
            'momStatus': 'MOMStatus', '*haScore': 'int',
            'haStatus': 'HostedEngineStatus', '*bootTime': 'uint',
            'numaNodeMemFree': 'NumaNodeMemoryStatsMap',
-           'cpuStatistics': 'CpuCoreStatsMap'}}
+           'cpuStatistics': 'CpuCoreStatsMap',
+           'incomingVmMigrations': 'uint', 'outgoingVmMigrations': 'uint'}}
 
 ##
 # @Host.getStats:
