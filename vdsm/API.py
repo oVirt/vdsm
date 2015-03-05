@@ -1383,8 +1383,7 @@ class Global(APIBase):
 
         Doesn't survive a restart
         """
-        logging.getLogger('clientIF.setLogLevel').info('Setting loglevel '
-                                                       'to %s' % level)
+        logging.warning('Setting loglevel to %s', level)
         handlers = logging.getLogger().handlers
         [fileHandler] = [h for h in handlers if
                          isinstance(h, logging.FileHandler)]
