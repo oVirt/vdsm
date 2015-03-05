@@ -21,6 +21,10 @@ from collections import deque
 from vdsm.utils import monotonic_time
 import re
 
+# REQUIRED_FOR: engine-3.5
+# safe to remove when 3.5 support is dropped
+LEGACY_SUBSCRIPTION_ID_REQUEST = "/queue/_local/vdsm/requests"
+LEGACY_SUBSCRIPTION_ID_RESPONSE = "/queue/_local/vdsm/reponses"
 
 _RE_ESCAPE_SEQUENCE = re.compile(r"\\(.)")
 
@@ -293,8 +297,8 @@ class AsyncDispatcher(object):
 
     """
     Uses asyncore dispatcher to handle regular messages and heartbeats.
-    It accepts frame handler which abstracts message processing.
-    Abstract frame handler should look like:
+    It accepts frame handler which abstracts message processing and a
+    connection. Abstract frame handler should look like:
 
     class abstract_frame_handler(object):
 
@@ -317,8 +321,9 @@ class AsyncDispatcher(object):
     - StompAdapterImpl - responsible for server side
     - AsyncClient - responsible for client side
     """
-    def __init__(self, frame_handler, bufferSize=4096):
+    def __init__(self, connection, frame_handler, bufferSize=4096):
         self._frame_handler = frame_handler
+        self.connection = connection
         self._bufferSize = bufferSize
         self._parser = Parser()
         self._outbuf = None
@@ -465,11 +470,8 @@ class AsyncClient(object):
     def _process_message(self, frame, dispatcher):
         sub_id = frame.headers.get(Headers.SUBSCRIPTION)
         if sub_id is None:
-            self.log.warning(
-                "Got message without a subscription"
-            )
+            self.log.warning("Got message without subscription id")
             return
-
         sub = self._subscriptions.get(sub_id)
         if sub is None:
             self.log.warning(
