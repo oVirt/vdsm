@@ -295,7 +295,17 @@ class SourceThread(threading.Thread):
                     dev._deviceXML, self._vm.conf, dev.custom)
             hooks.before_vm_migrate_source(self._vm._dom.XMLDesc(0),
                                            self._vm.conf)
+
+            # Do not measure the time spent for creating the VM on the
+            # destination. In some cases some expensive operations can cause
+            # the migration to get cancelled right after the transfer started.
+            destCreateStartTime = time.time()
             response = self.destServer.migrationCreate(self._machineParams)
+            destCreationTime = time.time() - destCreateStartTime
+            startTime += destCreationTime
+            self.log.info('Creation of destination VM took: %d seconds',
+                          destCreationTime)
+
             if response['status']['code']:
                 self.status = response
                 raise RuntimeError('migration destination error: ' +
