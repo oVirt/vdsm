@@ -87,6 +87,7 @@ class vdsm(Plugin, RedHatPlugin):
         self._addVdsmRunDir()
         self.addCopySpec("@TRUSTSTORE@")
         self.addCopySpec("@HOOKSDIR@")
+        self.addCopySpec("@VDSMLIBDIR@")
         self.addCopySpec("/var/log/ovirt.log")
         self.addCopySpec("/var/log/sanlock.log")
         p = subprocess.Popen(['/usr/bin/pgrep', 'qemu-kvm'],
