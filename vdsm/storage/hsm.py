@@ -2007,8 +2007,6 @@ class HSM(object):
                     self.log.warning("getPV failed for guid: %s", guid,
                                      exc_info=True)
                 else:
-                    if pv is None:
-                        continue
                     pvs[os.path.basename(pv.name)] = pv
         else:
             for pv in lvm.getAllPVs():

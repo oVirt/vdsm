@@ -831,8 +831,11 @@ def _setLVAvailability(vg, lvs, available):
 #
 
 
-def getPV(pv):
-    return _lvminfo.getPv(_fqpvname(pv))
+def getPV(pvName):
+    pv = _lvminfo.getPv(_fqpvname(pvName))
+    if pv is None:
+        raise se.InaccessiblePhysDev((pvName,))
+    return pv
 
 
 def getAllPVs():
