@@ -6994,6 +6994,9 @@
 # @ioTune:             #optional Current QoS settings for IO devices
 #                      (new in version 4.15.0)
 #
+# @cpuUsage:           #optional Total cpu usage since VM start in ns
+#                      (new in version 4.17.0)
+#
 # @vmName:             The Name of the Vm (new in version 4.17.0)
 #
 # Since: 4.10.0
@@ -7020,7 +7023,8 @@
           '*vNodeRuntimeInfo': 'VmNumaNodeRuntimeInfoMap',
           'displayInfo': ['VmDisplayInfo'], '*vcpuQuota': 'int',
           '*vcpuPeriod': 'int', '*vcpuCount': 'int', '*vcpuUserLimit': 'int',
-          '*ioTune': ['VmDiskDeviceTuneParams'], 'vmName': 'str'}}
+          '*ioTune': ['VmDiskDeviceTuneParams'], 'vmName': 'str',
+          '*cpuUsage': 'uint'}}
 
 ##
 # @VmStats:
