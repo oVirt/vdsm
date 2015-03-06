@@ -1528,3 +1528,28 @@ def executeGsecCreate():
         raise ge.GlusterGeoRepPublicKeyFileCreateFailedException(rc,
                                                                  out, err)
     return True
+
+
+@makePublic
+def executeMountBrokerUserAdd(remoteUserName, remoteVolumeName):
+    command = _getGlusterSystemCmd() + ["execute", "mountbroker",
+                                        "user", remoteUserName,
+                                        remoteVolumeName]
+    rc, out, err = _execGluster(command)
+    if rc:
+        raise ge.GlusterGeoRepExecuteMountBrokerUserAddFailedException(rc,
+                                                                       out,
+                                                                       err)
+    return True
+
+
+@makePublic
+def executeMountBrokerOpt(optionName, optionValue):
+    command = _getGlusterSystemCmd() + ["execute", "mountbroker",
+                                        "opt", optionName,
+                                        optionValue]
+    rc, out, err = _execGluster(command)
+    if rc:
+        raise ge.GlusterGeoRepExecuteMountBrokerOptFailedException(rc,
+                                                                   out, err)
+    return True

@@ -269,6 +269,12 @@ class GlusterVolume(GlusterApiBase):
     def geoRepKeysUpdate(self, userName, geoRepPubKeys):
         return self._gluster.geoRepKeysUpdate(userName, geoRepPubKeys)
 
+    def geoRepMountBrokerSetup(self, remoteUserName, remoteGroupName,
+                               remoteVolumeName):
+        return self._gluster.geoRepMountBrokerSetup(remoteUserName,
+                                                    remoteGroupName,
+                                                    remoteVolumeName)
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):

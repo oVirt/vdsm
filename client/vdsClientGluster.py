@@ -689,6 +689,18 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterGeoRepMountBrokerSetup(self, args):
+        params = self._eqSplit(args)
+        remoteUserName = params.get('remoteUserName', '')
+        remoteVolumeName = params.get('remoteVolumeName', '')
+        remoteGroupName = params.get('remoteGroupName', '')
+
+        status = self.s.glusterGeoRepMountBrokerSetup(remoteUserName,
+                                                      remoteGroupName,
+                                                      remoteVolumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1175,5 +1187,12 @@ def getGlusterCmdDict(serv):
               'geoRepPubKeys=geo_replication_pub_keys',
               'update geo replication public keys to authorized'
               ' keys file of user'
+              )),
+         'glusterGeoRepMountBrokerSetup': (
+             serv.do_glusterGeoRepMountBrokerSetup,
+             ('remoteUserName=remote_user_name'
+              'remoteVolumeName=remote_volume_name'
+              'remoteGroupName=remote_group_name',
+              'setup mount broker for geo replication'
               ))
          }

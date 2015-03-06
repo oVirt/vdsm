@@ -633,6 +633,24 @@ class GlusterGeoRepPublicKeyWriteFailedException(GlusterGeoRepException):
     message = "geo rep public keys write failed"
 
 
+class GlusterGeoRepExecuteMountBrokerOptFailedException(
+        GlusterGeoRepException):
+    code = 4211
+    message = "geo rep mount broker option set failed"
+
+
+class GlusterGeoRepExecuteMountBrokerUserAddFailedException(
+        GlusterGeoRepException):
+    code = 4212
+    message = "geo rep mount broker user add failed"
+
+
+class GlusterMountBrokerRootCreateFailedException(
+        GlusterGeoRepException):
+    code = 4213
+    message = "geo rep mount broker root create failed"
+
+
 # Volume Snapshot
 class GlusterSnapshotException(GlusterException):
     code = 4700
