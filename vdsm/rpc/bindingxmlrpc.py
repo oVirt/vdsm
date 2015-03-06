@@ -770,7 +770,7 @@ class BindingXMLRPC(object):
         image = API.Image(imgUUID, spUUID, sdUUID)
         return image.download(methodArgs, volUUID)
 
-    def imagePrepare(self, spUUID, sdUUID, imgUUID, volUUID=None):
+    def imagePrepare(self, spUUID, sdUUID, imgUUID, volUUID):
         image = API.Image(imgUUID, spUUID, sdUUID)
         return image.prepare(volUUID)
 

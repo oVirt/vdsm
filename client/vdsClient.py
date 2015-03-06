@@ -2691,7 +2691,7 @@ if __name__ == '__main__':
             '  spUUID sdUUID imgUUID'
         )),
         'prepareImage': (serv.prepareImage, (
-            '<spUUID> <sdUUID> <imgUUID> [<volUUID>]',
+            '<spUUID> <sdUUID> <imgUUID> <volUUID>',
             'Prepare an image, making the needed volumes available.'
         )),
         'teardownImage': (serv.teardownImage, (

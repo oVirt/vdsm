@@ -5049,13 +5049,13 @@
 #
 # @imageID:          The UUID of the Image
 #
-# @volumeID:         #optional The UUID of the Volume (optional)
+# @volumeID:         The UUID of the Volume
 #
 # Since: 4.15.0
 ##
 {'command': {'class': 'Image', 'name': 'prepare'},
  'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'imageID': 'UUID', '*volumeID': 'UUID'}}
+          'imageID': 'UUID', 'volumeID': 'UUID'}}
 
 ##
 # @Image.teardown:
