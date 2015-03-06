@@ -277,6 +277,7 @@ Requires: glusterfs >= 3.6.999
 Requires: glusterfs-cli
 Requires: glusterfs-api
 Requires: glusterfs-fuse
+Requires: glusterfs-geo-replication
 Requires: glusterfs-rdma
 %endif
 

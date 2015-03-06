@@ -31,6 +31,7 @@ from . import safeWrite
 
 _SUCCESS = {'status': doneCode}
 GEOREP_PUB_KEY_PATH = "/var/lib/glusterd/geo-replication/common_secret.pem.pub"
+MOUNT_BROKER_ROOT = "/var/mountbroker-root"
 
 
 GLUSTER_RPM_PACKAGES = (
@@ -124,6 +125,21 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         os.chown(authKeysFile, uid, gid)
     except IOError as e:
         raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
+
+
+@makePublic
+def createMountBrokerRoot(userName):
+    try:
+        getpwnam(userName)
+    except KeyError as e:
+        raise ge.GlusterGeoRepUserNotFoundException(err=[str(e)])
+
+    if not os.path.exists(MOUNT_BROKER_ROOT):
+        try:
+            os.makedirs(MOUNT_BROKER_ROOT, 0711)
+        except OSError as e:
+            raise ge.GlusterMountBrokerRootCreateFailedException(err=[str(e)])
+    return
 
 
 class GlusterApi(object):
@@ -572,6 +588,19 @@ class GlusterApi(object):
     @exportAsVerb
     def geoRepKeysUpdate(self, userName, geoRepPubKeys, options=None):
         self.svdsmProxy.glusterUpdateGeoRepKeys(userName, geoRepPubKeys)
+
+    @exportAsVerb
+    def geoRepMountBrokerSetup(self, remoteUserName, remoteGroupName,
+                               remoteVolumeName, options=None):
+        self.svdsmProxy.glusterCreateMountBrokerRoot(remoteUserName)
+        mountBrokerOptions = {'mountbroker-root': MOUNT_BROKER_ROOT,
+                              'geo-replication-log-group': remoteGroupName,
+                              'rpc-auth-allow-insecure': 'on'}
+        for optionName, optionValue in mountBrokerOptions.iteritems():
+            self.svdsmProxy.glusterExecuteMountBrokerOpt(optionName,
+                                                         optionValue)
+        self.svdsmProxy.glusterExecuteMountBrokerUserAdd(remoteUserName,
+                                                         remoteVolumeName)
 
 
 def getGlusterMethods(gluster):

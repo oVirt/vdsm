@@ -2040,3 +2040,20 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepKeysUpdate'},
  'data': {'userName': 'str', 'geoRepPubKeys': ['str']}}
+
+##
+# @GlusterVolume.geoRepMountBrokerSetup:
+#
+# set up gluster mount broker needed for non-root geo-rep
+#
+# @remoteUserName:         Name of user
+#
+# @remoteGroupName :       Name of the users group
+#
+# @remoteVolumeName:       Name of the remote volume
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'geoRepMountBrokerSetup'},
+ 'data': {'remoteUserName': 'str', 'remoteGroupName': 'str',
+          'remoteVolumeName': 'str'}}
