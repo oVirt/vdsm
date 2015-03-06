@@ -5111,7 +5111,8 @@
 # Download an image to a remote endpoint using the specified method
 # and methodArgs.
 #
-# @methodArgs:       Download method and map of arguments
+# @methodArgs:       An ImageSharingMethodArgs record specifying the download
+#                    method.
 #
 # @storagepoolID:    The UUID of the Storage Pool associated with the Image
 #
@@ -5137,7 +5138,8 @@
 # Upload an image to a remote endpoint using the specified method and
 # methodArgs.
 #
-# @methodArgs:       Upload method and map of arguments
+# @methodArgs:       An ImageSharingMethodArgs record specifying the upload
+#                    method.
 #
 # @storagepoolID:    The UUID of the Storage Pool associated with the Image
 #
