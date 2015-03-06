@@ -322,7 +322,8 @@ def Host_getVMList_Call(api, args):
     """
     API.updateTimestamp()  # required for editNetwork flow
     vmList = args.get('vmList', [])
-    return API.Global().getVMList(False, vmList)
+    onlyUUID = args.get('onlyUUID', True)
+    return API.Global().getVMList(False, vmList, onlyUUID)
 
 
 def Host_getVMFullList_Call(api, args):
@@ -330,7 +331,7 @@ def Host_getVMFullList_Call(api, args):
     This call is interested in returning full status.
     """
     vmList = args.get('vmList', [])
-    return API.Global().getVMList(True, vmList)
+    return API.Global().getVMList(True, vmList, False)
 
 
 def Host_getVMList_Ret(ret):

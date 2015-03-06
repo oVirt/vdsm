@@ -3471,7 +3471,7 @@
 ##
 {'type': 'VmInfo',
  'data': {},
- 'union': ['VmDefinition', 'VmShortStatus']}
+ 'union': ['VmDefinition', 'UUID', 'VmShortStatus']}
 
 ##
 # @Host.getVMList:
@@ -3480,14 +3480,18 @@
 #
 # @vmList:      #optional Filter the results by a list of UUIDs
 #
+# @onlyUUID:    #optional determines whether we need short of full status
+#               This parmeter is provided to keep backward compatibility
+#               with engine-3.5.0
+#
 # Returns:
 # A list of VM UUIDs
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getVMList'},
- 'data': {'*vmList': ['UUID']},
- 'returns': ['UUID']}
+ 'data': {'*fullStatus': 'bool','*vmList': ['UUID'], '*onlyUUID': 'bool'},
+ 'returns': ['VmInfo']}
 
 ##
 # @GuestDiskMappingInfo:

@@ -1363,7 +1363,7 @@ class Global(APIBase):
         return dict(status=doneCode)
 
     # VM-related functions
-    def getVMList(self, fullStatus=False, vmList=()):
+    def getVMList(self, fullStatus=False, vmList=(), onlyUUID=True):
         """ return a list of known VMs with full (or partial) config each """
 
         def reportedStatus(v, full):
@@ -1375,10 +1375,14 @@ class Global(APIBase):
 
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
-        return {'status': doneCode,
-                'vmList': [reportedStatus(v, fullStatus)
-                           for v in self._cif.vmContainer.values()
-                           if not vmSet or v.id in vmSet]}
+        vmlist = [v.status(fullStatus)
+                  for v in self._cif.vmContainer.values()
+                  if not vmSet or v.id in vmSet]
+        if onlyUUID:
+            # BZ 1196735: api backward compatibility issue
+            # REQUIRED_FOR: engine-3.5.0 only
+            vmlist = [v['vmId'] for v in vmlist]
+        return {'status': doneCode, 'vmList': vmlist}
 
     # Networking-related functions
     def setupNetworks(self, networks, bondings, options):
