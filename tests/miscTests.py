@@ -164,41 +164,6 @@ class Receiver(object):
         self.flag.set()
 
 
-class TMap(TestCaseBase):
-
-    def test(self):
-        def dummy(arg):
-            # This will cause some of the operations to take longer
-            # thus testing the result reordering mechanism
-            if len(arg) % 2:
-                time.sleep(1)
-            return arg
-
-        data = """Stephen Fry: Well next week I shall be examining the claims
-                  of a man who says that in a previous existence he was
-                  Education Secretary Kenneth Baker and I shall be talking to a
-                  woman who claims she can make flowers grow just by planting
-                  seeds in soil and watering them. Until then, wait very
-                  quietly in your seats please. Goodnight."""
-        # (C) BBC - A Bit of Fry and Laury
-        data = data.split()
-        self.assertEquals(list(misc.tmap(dummy, data)), data)
-
-    def testErrMethod(self):
-        exceptionStr = ("It's time to kick ass and chew bubble gum... "
-                        "and I'm all outta gum.")
-
-        def dummy(arg):
-            raise Exception(exceptionStr)
-        try:
-            misc.tmap(dummy, [1, 2, 3, 4])
-        except Exception as e:
-            self.assertEquals(str(e), exceptionStr)
-            return
-        else:
-            self.fail("tmap did not throw an exception")
-
-
 class ITMap(TestCaseBase):
 
     def testMoreArgsThanThreads(self):

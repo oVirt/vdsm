@@ -25,6 +25,7 @@ dist_vdsmpylib_PYTHON = \
 	__init__.py \
 	cmdutils.py \
 	compat.py \
+	concurrent.py \
 	define.py \
 	exception.py \
 	executor.py \

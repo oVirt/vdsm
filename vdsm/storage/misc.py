@@ -753,42 +753,6 @@ def samplingmethod(func):
     return helper
 
 
-def tmap(func, iterable):
-    resultsDict = {}
-    error = [None]
-
-    def wrapper(f, arg, index):
-        try:
-            resultsDict[index] = f(arg)
-        except Exception as e:
-            # We will throw the last error received
-            # we can only throw one error, and the
-            # last one is as good as any. This shouldn't
-            # happen. Wrapped methods should not throw
-            # exceptions, if this happens it's a bug
-            log.error("tmap caught an unexpected error", exc_info=True)
-            error[0] = e
-            resultsDict[index] = None
-
-    threads = []
-    for i, arg in enumerate(iterable):
-        t = threading.Thread(target=wrapper, args=(func, arg, i))
-        threads.append(t)
-        t.start()
-
-    for t in threads:
-        t.join()
-
-    results = [None] * len(resultsDict)
-    for i, result in resultsDict.iteritems():
-        results[i] = result
-
-    if error[0] is not None:
-        raise error[0]
-
-    return tuple(results)
-
-
 def getfds():
     return [int(fd) for fd in os.listdir("/proc/self/fd")]
 
