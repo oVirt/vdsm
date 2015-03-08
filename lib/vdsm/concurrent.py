@@ -18,43 +18,31 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import logging
 import threading
+from collections import namedtuple
 
-log = logging.getLogger("vds.concurrent")
+
+Result = namedtuple("Result", ["succeeded", "value"])
 
 
 def tmap(func, iterable):
-    resultsDict = {}
-    error = [None]
+    args = list(iterable)
+    results = [None] * len(args)
 
-    def wrapper(f, arg, index):
+    def worker(i, f, arg):
         try:
-            resultsDict[index] = f(arg)
+            results[i] = Result(True, f(arg))
         except Exception as e:
-            # We will throw the last error received
-            # we can only throw one error, and the
-            # last one is as good as any. This shouldn't
-            # happen. Wrapped methods should not throw
-            # exceptions, if this happens it's a bug
-            log.error("tmap caught an unexpected error", exc_info=True)
-            error[0] = e
-            resultsDict[index] = None
+            results[i] = Result(False, e)
 
     threads = []
-    for i, arg in enumerate(iterable):
-        t = threading.Thread(target=wrapper, args=(func, arg, i))
-        threads.append(t)
+    for i, arg in enumerate(args):
+        t = threading.Thread(target=worker, args=(i, func, arg))
+        t.daemon = True
         t.start()
+        threads.append(t)
 
     for t in threads:
         t.join()
 
-    results = [None] * len(resultsDict)
-    for i, result in resultsDict.iteritems():
-        results[i] = result
-
-    if error[0] is not None:
-        raise error[0]
-
-    return tuple(results)
+    return results

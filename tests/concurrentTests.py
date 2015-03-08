@@ -31,7 +31,8 @@ class TMapTests(VdsmTestCase):
     def test_results(self):
         values = tuple(range(10))
         results = concurrent.tmap(lambda x: x, values)
-        self.assertEqual(results, values)
+        expected = [concurrent.Result(True, x) for x in values]
+        self.assertEqual(results, expected)
 
     def test_results_order(self):
         def func(x):
@@ -39,7 +40,8 @@ class TMapTests(VdsmTestCase):
             return x
         values = tuple(random.random() * 0.1 for x in range(10))
         results = concurrent.tmap(func, values)
-        self.assertEqual(results, values)
+        expected = [concurrent.Result(True, x) for x in values]
+        self.assertEqual(results, expected)
 
     def test_concurrency(self):
         start = time.time()
@@ -48,6 +50,11 @@ class TMapTests(VdsmTestCase):
         self.assertTrue(0.1 < elapsed < 0.2)
 
     def test_error(self):
+        error = RuntimeError("No result for you!")
+
         def func(x):
-            raise RuntimeError()
-        self.assertRaises(RuntimeError, concurrent.tmap, func, range(10))
+            raise error
+
+        results = concurrent.tmap(func, range(10))
+        expected = [concurrent.Result(False, error)] * 10
+        self.assertEqual(results, expected)
