@@ -1,4 +1,4 @@
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 #
 from __future__ import absolute_import
 
-from xml.dom.minidom import Document
+import xml.etree.cElementTree as etree
 from xml.sax.saxutils import escape
 
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
@@ -69,27 +69,27 @@ def createNetworkDef(network, bridged=True, iface=None):
 
     netName = netinfo.LIBVIRT_NET_PREFIX + network
 
-    def XmlElement(tagName, text=None, **attrs):
-        elem = Document().createElement(tagName)
+    def EtreeElement(tagName, text=None, **attrs):
+        elem = etree.Element(tagName)
         if text:
-            textNode = Document().createTextNode(escape(text))
-            elem.appendChild(textNode)
+            elem.text = escape(text)
         if attrs:
             for attr, value in attrs.iteritems():
-                elem.setAttribute(attr, escape(str(value)))
+                elem.set(attr, escape(str(value)))
         return elem
 
-    root = XmlElement('network')
-    nameElem = XmlElement('name', netName)
-    forwardElem = XmlElement('forward',
-                             mode='bridge' if bridged else 'passthrough')
-    root.appendChild(nameElem)
-    root.appendChild(forwardElem)
+    root = etree.Element('network')
+    nameElem = EtreeElement('name', netName)
+    forwardElem = EtreeElement(
+        'forward', mode='bridge' if bridged else 'passthrough'
+    )
+    root.append(nameElem)
+    root.append(forwardElem)
     if bridged:
-        root.appendChild(XmlElement('bridge', name=network))
+        root.append(EtreeElement('bridge', name=network))
     else:
-        forwardElem.appendChild(XmlElement('interface', dev=iface))
-    return root.toxml()
+        forwardElem.append(EtreeElement('interface', dev=iface))
+    return etree.tostring(root)
 
 
 def createNetwork(netXml):
