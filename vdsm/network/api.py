@@ -643,6 +643,14 @@ def _handleBondings(bondings, configurator, in_rollback):
                     raise ConfigNetworkError(
                         ne.ERR_BAD_BONDING,
                         "Cannot remove bonding %s: does not exist" % name)
+            bond_users = _netinfo.ifaceUsers(name)
+            # networks removal takes place before bondings handling, therefore
+            # all assigned networks (bond_users) should be already removed
+            if bond_users:
+                raise ConfigNetworkError(
+                    ne.ERR_USED_BOND,
+                    "Cannot remove bonding %s: used by another interfaces %s" %
+                    (name, bond_users))
             bond = Bond.objectivize(name, configurator, attrs.get('options'),
                                     attrs.get('nics'), mtu=None,
                                     _netinfo=_netinfo,

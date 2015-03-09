@@ -1581,9 +1581,15 @@ class Global(APIBase):
                 except KeyError:
                     bonding = None
 
+                # Don't remove bond assigned to another network
+                remove_bonding = (
+                    (len(list(_netinfo.getNetworksAndVlansForIface(bonding)))
+                     <= 1)
+                    if bonding else False)
+
                 supervdsm.getProxy().setupNetworks(
                     {network: {'remove': True}},
-                    {bonding: {'remove': True}} if bonding else {},
+                    {bonding: {'remove': True}} if remove_bonding else {},
                     {'connectivityCheck': False})
             except ConfigNetworkError as e:
                 self.log.error(e.message, exc_info=True)

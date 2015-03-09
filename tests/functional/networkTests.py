@@ -469,11 +469,11 @@ class NetworkTest(TestCaseBase):
                 self.assertVlanExists(BONDING_NAME + '.' +
                                       networks[vlan_net]['vlan'])
 
+            status, msg = self.setupNetworks(
+                {vlan_net: {'remove': True} for vlan_net in network_names},
+                {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
             for vlan_net in network_names:
-                status, msg = self.setupNetworks(
-                    {vlan_net: {'remove': True}},
-                    {BONDING_NAME: {'remove': True}}, NOCHK)
-                self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkDoesntExist(vlan_net)
                 self.assertVlanDoesntExist(BONDING_NAME + '.' +
                                            networks[vlan_net]['vlan'])
@@ -2745,4 +2745,29 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
+            self.assertBondDoesntExist(BONDING_NAME, nics)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_remove_bond_under_network(self):
+        with dummyIf(1) as nics:
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME:
+                    {'bonding': BONDING_NAME, 'bridged': False}},
+                {BONDING_NAME: {'nics': nics}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertBondExists(BONDING_NAME, nics)
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, errors.ERR_USED_BOND, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertBondExists(BONDING_NAME, nics)
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'remove': True}},
+                {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
             self.assertBondDoesntExist(BONDING_NAME, nics)
