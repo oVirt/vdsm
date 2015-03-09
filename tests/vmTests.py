@@ -1045,6 +1045,40 @@ class TestVmOperations(TestCaseBase):
             testvm._dom = dom
             self.assertEqual(testvm._readPauseCode(), 'EOTHER')
 
+    @permutations([[1000, 24], [900, 0], [1200, -128]])
+    def testSetCpuTuneQuote(self, quota, offset):
+        with fake.VM() as testvm:
+            # we need a different behaviour with respect to
+            # plain fake.Domain. Seems simpler to just add
+            # a new special-purpose trivial fake here.
+            testvm._dom = ChangingSchedulerDomain(offset)
+            testvm.setCpuTuneQuota(quota)
+            self.assertEqual(quota + offset,
+                             testvm._vcpuTuneInfo['vcpu_quota'])
+
+    @permutations([[100000, 128], [150000, 0], [9999, -99]])
+    def testSetCpuTunePeriod(self, period, offset):
+        with fake.VM() as testvm:
+            # same as per testSetCpuTuneQuota
+            testvm._dom = ChangingSchedulerDomain(offset)
+            testvm.setCpuTunePeriod(period)
+            self.assertEqual(period + offset,
+                             testvm._vcpuTuneInfo['vcpu_period'])
+
+
+class ChangingSchedulerDomain(object):
+
+    def __init__(self, offset=10):
+        self._offset = offset
+        self._params = {}
+
+    def setSchedulerParameters(self, params):
+        for k, v in params.items():
+            self._params[k] = int(v) + self._offset
+
+    def schedulerParameters(self):
+        return self._params
+
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),
                  vmexitreason.exitReasons.keys()))

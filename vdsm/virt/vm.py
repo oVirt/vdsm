@@ -383,38 +383,17 @@ class VmStatsThread(AdvancedStatsThread):
         """
         virtual cpu tuning information. Return value is a dict
         with at least six key/value pairs, defined as follows:
-        * vcpu_quota: max allowed bandwith, in microseconds.
-                      -1 means 'infinite'
-        * vcpu_period: timeframe on which the virtual cpu quota is
-                       enforced, in microseconds.
-        * emulator_quota: max allowd bandwith for emulator threads,
-                          in microseconds. -1 means 'infinite'.
-        * emulator_period: timeframe on which the emulator quota is
-                           enforced, in microseconds.
-        * cpu_shares: weight of this VM. This value is meaningful
-                      only if compared with the other values of
-                      the running vms.
         * vcpuCount: number of virtual CPUs used by the VM
-
-        another key may be optionally present:
-        * vcpuLimit: FIXME add docs
-        Extra keys will be ignored.
 
         Example:
         {
-            'vcpu_quota': -1L,
-            'vcpu_period': 1000L,
-            'emulator_period': 100000L,
-            'emulator_quota': -1L,
-            'cpu_shares': 1020L
             'vcpuCount': 2
         }
         """
-        infos = self._vm._dom.schedulerParameters()
-        infos['vcpuCount'] = self._vm._dom.vcpusFlags(
-            libvirt.VIR_DOMAIN_VCPU_CURRENT)
-
-        return infos
+        return {
+            'vcpuCount': self._vm._dom.vcpusFlags(
+                libvirt.VIR_DOMAIN_VCPU_CURRENT)
+        }
 
     def _getIoTuneStats(self, stats):
         """
@@ -493,26 +472,6 @@ class VmStatsThread(AdvancedStatsThread):
                 'balloon_cur': str(sample),
                 'balloon_target': str(balloon_target)
             })
-
-    def _getCpuTuneInfo(self, stats):
-
-        sample = self.sampleCpuTune.getLastSample()
-
-        # Handling the case when not enough samples exist
-        if sample is None:
-            return
-
-        # Handling the case where quota is not set, setting to 0.
-        # According to libvirt API:"A quota with value 0 means no value."
-        # The value does not have to be present in some transient cases
-        if sample.get('vcpu_quota', _NO_CPU_QUOTA) != _NO_CPU_QUOTA:
-            stats['vcpuQuota'] = str(sample['vcpu_quota'])
-
-        # Handling the case where period is not set, setting to 0.
-        # According to libvirt API:"A period with value 0 means no value."
-        # The value does not have to be present in some transient cases
-        if sample.get('vcpu_period', _NO_CPU_PERIOD) != _NO_CPU_PERIOD:
-            stats['vcpuPeriod'] = sample['vcpu_period']
 
     def _getCpuCount(self, stats):
         sample = self.sampleCpuTune.getLastSample()
@@ -606,7 +565,6 @@ class VmStatsThread(AdvancedStatsThread):
         self._getBalloonStats(stats)
         self._getVmJobs(stats)
         self._getNumaStats(stats)
-        self._getCpuTuneInfo(stats)
         self._getCpuCount(stats)
         self._getIoTuneStats(stats)
 
@@ -853,6 +811,7 @@ class Vm(object):
         self._shutdownLock = threading.Lock()
         self._shutdownReason = None
         self._vcpuLimit = None
+        self._vcpuTuneInfo = {}
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -1834,6 +1793,26 @@ class Vm(object):
             stats['watchdogEvent'] = self._watchdogEvent
         if self._vcpuLimit:
             stats['vcpuUserLimit'] = self._vcpuLimit
+        stats.update(self._getVmTuneStats())
+        return stats
+
+    def _getVmTuneStats(self):
+        stats = {}
+
+        # Handling the case where quota is not set, setting to 0.
+        # According to libvirt API:"A quota with value 0 means no value."
+        # The value does not have to be present in some transient cases
+        vcpu_quota = self._vcpuTuneInfo.get('vcpu_quota', _NO_CPU_QUOTA)
+        if vcpu_quota != _NO_CPU_QUOTA:
+            stats['vcpuQuota'] = str(vcpu_quota)
+
+        # Handling the case where period is not set, setting to 0.
+        # According to libvirt API:"A period with value 0 means no value."
+        # The value does not have to be present in some transient cases
+        vcpu_period = self._vcpuTuneInfo.get('vcpu_period', _NO_CPU_PERIOD)
+        if vcpu_period != _NO_CPU_PERIOD:
+            stats['vcpuPeriod'] = vcpu_period
+
         return stats
 
     def _getVmStatus(self):
@@ -2164,6 +2143,7 @@ class Vm(object):
         except Exception:
             self.log.warning('failed to set Vm niceness', exc_info=True)
 
+        self._updateVcpuTuneInfo()
         self._updateVcpuLimit()
 
     def _run(self):
@@ -4027,7 +4007,9 @@ class Vm(object):
                                      msg='an integer is required for period')
         except libvirt.libvirtError as e:
             return self._reportException(key='cpuTuneErr', msg=e.message)
-        return {'status': doneCode}
+        else:
+            # libvirt may change the value we set, so we must get fresh data
+            return self._updateVcpuTuneInfo()
 
     def setCpuTunePeriod(self, period):
         try:
@@ -4037,7 +4019,17 @@ class Vm(object):
                                      msg='an integer is required for period')
         except libvirt.libvirtError as e:
             return self._reportException(key='cpuTuneErr', msg=e.message)
-        return {'status': doneCode}
+        else:
+            # libvirt may change the value we set, so we must get fresh data
+            return self._updateVcpuTuneInfo()
+
+    def _updateVcpuTuneInfo(self):
+        try:
+            self._vcpuTuneInfo = self._dom.schedulerParameters()
+        except libvirt.libvirtError as e:
+            return self._reportException(key='cpuTuneErr', msg=e.message)
+        else:
+            return {'status': doneCode}
 
     def _reportError(self, key, msg=None):
         """
