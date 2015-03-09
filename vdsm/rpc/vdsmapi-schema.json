@@ -3490,7 +3490,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getVMList'},
- 'data': {'*fullStatus': 'bool','*vmList': ['UUID'], '*onlyUUID': 'bool'},
+ 'data': {'*vmList': ['UUID'], '*onlyUUID': 'bool'},
  'returns': ['VmInfo']}
 
 ##
