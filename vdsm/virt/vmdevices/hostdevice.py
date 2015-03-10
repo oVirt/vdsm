@@ -65,18 +65,6 @@ class HostDevice(core.Base):
         if self._deviceParams['capability'] == 'pci':
             source.appendChildWithArgs('address', None,
                                        **self._deviceParams['address'])
-            rom = hostdev.appendChildWithArgs('rom')
-            romAttrs = {}
-
-            if 'bar' in self.specParams:
-                if self.specParams['bar']:
-                    romAttrs['bar'] = 'on'
-                else:
-                    romAttrs['bar'] = 'off'
-                if 'file' in self.specParams:
-                    romAttrs['file'] = self.specParams['file']
-
-            rom.setAttrs(**romAttrs)
 
         if hasattr(self, 'address'):
             hostdev.appendChildWithArgs('address', None, **self.address)

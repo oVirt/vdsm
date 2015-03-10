@@ -3390,17 +3390,10 @@
 #
 # Additional VM host device parameters.
 #
-# @bar:         #optional ROM visibility in the guest's
-#               memory map (for pci)
-#
-# @file:        #optional Binary file to be used as
-#               device's ROM (for pci)
-#
 # Since: 4.17.0
 ##
 {'type': 'VmHostDeviceSpecParams',
- 'data': {'*bar': 'bool',
-          '*file': 'str'}}
+ 'data': {}}
 
 ##
 # @VmHostDevice:
