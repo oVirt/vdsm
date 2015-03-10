@@ -1375,7 +1375,7 @@ class Global(APIBase):
 
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
-        vmlist = [v.status(fullStatus)
+        vmlist = [reportedStatus(v, fullStatus)
                   for v in self._cif.vmContainer.values()
                   if not vmSet or v.id in vmSet]
         if onlyUUID:
