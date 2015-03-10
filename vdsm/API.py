@@ -1285,7 +1285,7 @@ class Global(APIBase):
         Get statistics of all running VMs.
         """
         hooks.before_get_all_vm_stats()
-        vms = self.getVMList()
+        vms = self.getVMList(onlyUUID=False)
         statsList = []
         for s in vms['vmList']:
             response = VM(s['vmId']).getStats(runHooks=False)
