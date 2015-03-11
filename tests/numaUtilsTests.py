@@ -20,6 +20,7 @@
 #
 
 import xml.etree.cElementTree as ET
+import os.path
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
@@ -48,6 +49,8 @@ class TestNumaUtils(TestCaseBase):
 
     @MonkeyPatch(ET, 'parse',
                  lambda x: ET.fromstring(_VM_RUN_FILE_CONTENT))
+    @MonkeyPatch(os.path, 'getmtime',
+                 lambda x: 0)
     def testVcpuPid(self):
         vcpuPids = numaUtils.getVcpuPid('testvm')
         expectedVcpuPids = {0: '12266',

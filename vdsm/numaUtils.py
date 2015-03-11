@@ -20,17 +20,52 @@
 
 from collections import defaultdict
 
+import os.path
 import xml.etree.cElementTree as ET
 
 import caps
 import supervdsm
 
+# xml file name -> (last mtime, cached value)
+_libvirt_vcpu_pids_cache = {}
 
+
+def _libvirt_xml_path(vmName):
+    return "/var/run/libvirt/qemu/%s.xml" % vmName
+
+
+def invalidateNumaCache(vm):
+    vmName = vm.name.encode('utf-8')
+    path = _libvirt_xml_path(vmName)
+    try:
+        del _libvirt_vcpu_pids_cache[path]
+    except KeyError:
+        pass  # ignore
+
+
+# TODO update to API calls once bug
+#      https://bugzilla.redhat.com/show_bug.cgi?id=1211518
+#      is resolved.
 def getVcpuPid(vmName):
-    runInfo = ET.parse("/var/run/libvirt/qemu/%s.xml" % vmName)
+    path = _libvirt_xml_path(vmName)
+    mtime = os.path.getmtime(path)
+
+    try:
+        if path in _libvirt_vcpu_pids_cache:
+            lastmtime, value = _libvirt_vcpu_pids_cache[path]
+            if lastmtime == mtime:
+                return value
+    except KeyError:
+        # Make sure we do not crash if the cache is suddenly
+        # invalidated
+        pass
+
+    runInfo = ET.parse(path)
     vCpuPids = {}
     for vCpuIndex, vCpu in enumerate(runInfo.findall('./vcpus/vcpu')):
         vCpuPids[vCpuIndex] = vCpu.get('pid')
+
+    _libvirt_vcpu_pids_cache[path] = (mtime, vCpuPids)
     return vCpuPids
 
 

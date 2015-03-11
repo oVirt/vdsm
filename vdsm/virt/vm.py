@@ -1581,6 +1581,7 @@ class Vm(object):
         self._guestSockCleanup(self._qemuguestSocketFile)
         self._reattachHostDevices()
         self._cleanupStatsCache()
+        numaUtils.invalidateNumaCache(self)
 
     def _cleanupStatsCache(self):
         try:
