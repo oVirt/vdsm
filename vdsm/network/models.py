@@ -228,6 +228,7 @@ class Bond(NetDevice):
         # is already applied in any way, we can skip the configuring.
         if (self.vlan and
             self.name in netinfo.bondings() and
+            self.name in self.configurator.runningConfig.bonds and
             netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
             netinfo.ifaceUsed(self.name) and
             self.mtu <= netinfo.getMtu(self.name) and

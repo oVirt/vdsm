@@ -31,7 +31,7 @@ from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable)
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
-                          BONDING_MASTERS)
+                          BONDING_MASTERS, NET_CONF_PREF)
 from vdsm.netlink import monitor
 from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
@@ -2333,6 +2333,57 @@ class NetworkTest(TestCaseBase):
 
             self.assertNetworkExists(NETWORK_NAME)
             self.assertBondExists(BONDING_NAME, [nic])
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'remove': True}},
+                {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+            self.assertBondDoesntExist(BONDING_NAME, [nic])
+            self.vdsm_net.save_config()
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_setupNetworks_on_external_vlaned_bond(self):
+        with dummyIf(1) as (nic, ):
+            with open(NET_CONF_PREF + nic, 'w') as f:
+                f.write("""DEVICE=%s
+MASTER=%s
+SLAVE=yes
+ONBOOT=yes
+MTU=1500
+NM_CONTROLLED=no""" % (nic, BONDING_NAME))
+            with open(NET_CONF_PREF + BONDING_NAME, 'w') as f:
+                f.write("""DEVICE=%s
+BONDING_OPTS='mode=802.3ad miimon=150'
+ONBOOT=yes
+BOOTPROTO=none
+DEFROUTE=yes
+NM_CONTROLLED=no
+HOTPLUG=no""" % BONDING_NAME)
+            with open(NET_CONF_PREF + BONDING_NAME + '.' + VLAN_ID, 'w') as f:
+                f.write("""DEVICE=%s.%s
+VLAN=yes
+ONBOOT=yes
+BOOTPROTO=static
+NM_CONTROLLED=no
+HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
+
+            rc, _, _ = execCmd([EXT_IFUP, BONDING_NAME])
+            rc, _, _ = execCmd([EXT_IFUP, BONDING_NAME + '.' + VLAN_ID])
+
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'bonding': BONDING_NAME, 'bridged': True,
+                                'vlan': VLAN_ID}}, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+
+            self.vdsm_net.save_config()
+            self.vdsm_net.restoreNetConfig()
+
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertBondExists(BONDING_NAME, [nic])
+            self.assertVlanExists(BONDING_NAME + '.' + VLAN_ID)
 
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
