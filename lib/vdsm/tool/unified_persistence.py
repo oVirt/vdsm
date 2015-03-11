@@ -115,7 +115,7 @@ def _getNetInfo():
         bondings = {}
         for bonding, bondingParams in netinfo.bondings.iteritems():
             # If the bond is unused, skip it
-            if not bondingParams['slaves'] or not _owned(bonding):
+            if not bondingParams['slaves']:
                 continue
 
             bondings[bonding] = {'nics': bondingParams['slaves']}
@@ -127,7 +127,30 @@ def _getNetInfo():
         return bondings
 
     netinfo = NetInfo()
-    return _processNetworks(netinfo), _processBondings(netinfo)
+    networks = _processNetworks(netinfo)
+    bonds = _processBondings(netinfo)
+
+    used_bonds = frozenset(
+        attr['bonding'] for attr in networks.values()
+        if 'bonding' in attr)
+
+    # we do not want to touch bonds that are unrelated to us
+    for bonding in bonds.keys():
+        if not _owned(bonding) and bonding not in used_bonds:
+            del bonds[bonding]
+
+    # assert that all bonds that we depend on are persisted
+    for network, attributes in networks.iteritems():
+        bond = attributes.get('bonding')
+        if bond is None:
+            continue
+
+        if bond not in bonds:
+            raise Exception(
+                'Network %s depends on missing bond %s' %
+                (network, bond))
+
+    return networks, bonds
 
 
 def _persist(networks, bondings):
