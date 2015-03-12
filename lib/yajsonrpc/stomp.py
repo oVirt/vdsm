@@ -28,14 +28,21 @@ import re
 
 _RE_ESCAPE_SEQUENCE = re.compile(r"\\(.)")
 
+_RE_ENCODE_CHARS = re.compile(r"[\r\n\\:]")
+
 _EC_DECODE_MAP = {
     r"\\": "\\",
-    r"r": "\r",
-    r"n": "\n",
-    r"c": ":",
+    r"\r": "\r",
+    r"\n": "\n",
+    r"\c": ":",
 }
 
-_ESCAPE_CHARS = (('\\\\', '\\'), ('\\r', '\r'), ('\\n', '\n'), ('\\c', ':'))
+_EC_ENCODE_MAP = {
+    ":": "\c",
+    "\\": "\\\\",
+    "\r": "\\r",
+    "\n": "\\n",
+}
 
 
 class Command:
@@ -90,15 +97,19 @@ class Frame(object):
         if body is not None:
             self.headers["content-length"] = len(body)
 
-        data = self.command + '\n'
-        data += '\n'.join(["%s:%s" % (encodeValue(key), encodeValue(value))
-                          for key, value in self.headers.iteritems()])
-        data += '\n\n'
-        if body is not None:
-            data += body
+        data = [self.command, '\n']
+        for key, value in self.headers.iteritems():
+            data.append(encodeValue(key))
+            data.append(":")
+            data.append(encodeValue(value))
+            data.append("\n")
 
-        data += "\0"
-        return data
+        data.append('\n')
+        if body is not None:
+            data.append(body)
+
+        data.append("\0")
+        return ''.join(data)
 
     def __repr__(self):
         return "<StompFrame command=%s>" % (repr(self.command))
@@ -114,24 +125,25 @@ def decodeValue(s):
         raise ValueError("Contains illigal charachter `:`")
 
     try:
-        return _RE_ESCAPE_SEQUENCE.sub(
-            lambda m: _EC_DECODE_MAP[m.groups()[0]],
-            s
+        s = _RE_ESCAPE_SEQUENCE.sub(
+            lambda m: _EC_DECODE_MAP[m.group(0)],
+            s,
         )
     except KeyError as e:
         raise ValueError("Containes invalid escape squence `\\%s`" % e.args[0])
 
+    return s.decode('utf-8')
+
 
 def encodeValue(s):
-    if not isinstance(s, (str, unicode)):
-        s = str(s)
-    for escaped, raw in _ESCAPE_CHARS:
-        s = s.replace(raw, escaped)
-
     if isinstance(s, unicode):
         s = s.encode('utf-8')
+    elif isinstance(s, int):
+        s = str(s)
+    elif not isinstance(s, str):
+        raise ValueError('Unable to encode non-string values')
 
-    return s
+    return _RE_ENCODE_CHARS.sub(lambda m: _EC_ENCODE_MAP[m.group(0)], s)
 
 
 class Parser(object):
@@ -185,10 +197,10 @@ class Parser(object):
         if header is None:
             return False
 
-        headers = self._tmpFrame.headers
         if len(header) > 0 and header[-1] == '\r':
             header = header[:-1]
 
+        headers = self._tmpFrame.headers
         if header == "":
             self._contentLength = int(headers.get('content-length', -1))
             self._state = self._STATE_BODY

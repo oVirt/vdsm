@@ -34,6 +34,7 @@ test_modules = \
 	cpuProfileTests.py \
 	deviceTests.py \
 	domainDescriptorTests.py \
+	encodingTests.py \
 	executorTests.py \
 	fileSDTests.py \
 	fileVolumeTests.py \
