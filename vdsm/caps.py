@@ -597,7 +597,10 @@ def _getSELinux():
 
 
 def _getHostdevPassthorughSupport():
-    return bool(len(os.listdir('/sys/class/iommu')))
+    try:
+        return bool(len(os.listdir('/sys/class/iommu')))
+    except OSError:
+        return False
 
 
 def get():
