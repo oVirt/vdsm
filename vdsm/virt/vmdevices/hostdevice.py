@@ -24,12 +24,15 @@ from . import hwclass
 
 
 class HostDevice(core.Base):
-    __slots__ = ('address', 'bootOrder', '_deviceParams')
+    __slots__ = ('address', 'bootOrder', '_deviceParams', 'macAddr', 'vlanId')
 
     def __init__(self, conf, log, **kwargs):
         super(HostDevice, self).__init__(conf, log, **kwargs)
 
         self._deviceParams = get_device_params(self.device)
+
+        self.macAddr = self.specParams.get('macAddr')
+        self.vlanId = self.specParams.get('vlanId')
 
     def detach(self):
         """
@@ -39,34 +42,76 @@ class HostDevice(core.Base):
         self._deviceParams = detach_detachable(self.device)
 
     def getXML(self):
-        """
-        Create domxml for a host device.
+        if any((self.macAddr, self.vlanId)):
+            xml = self._create_network_interface_xml()
+        else:
+            xml = self._create_generic_hostdev_xml()
 
-        <devices>
-            <hostdev mode='subsystem' type='pci' managed='no'>
-            <source>
-                <address domain='0x0000' bus='0x06' slot='0x02'
-                function='0x0'/>
-            </source>
-            <boot order='1'/>
-            <rom bar='on' file='/etc/fake/boot.bin'/>
-            </hostdev>
-        </devices>
+        if hasattr(self, 'bootOrder'):
+            xml.appendChildWithArgs('boot', order=self.bootOrder)
+
+        if hasattr(self, 'address'):
+            self._add_source_address(xml)
+
+        return xml
+
+    def _create_generic_hostdev_xml(self):
         """
+            Create domxml for a host device.
+
+            <devices>
+                <hostdev mode='subsystem' type='pci' managed='no'>
+                <source>
+                    <address domain='0x0000' bus='0x06' slot='0x02'
+                    function='0x0'/>
+                </source>
+                <boot order='1'/>
+                </hostdev>
+            </devices>
+            """
         hostdev = self.createXmlElem(hwclass.HOSTDEV, None)
         hostdev.setAttrs(managed='no', mode='subsystem',
                          type=self._deviceParams['capability'])
         source = hostdev.appendChildWithArgs('source')
 
-        if hasattr(self, 'bootOrder'):
-            hostdev.appendChildWithArgs(
-                'boot', order=self.bootOrder)
-
         if self._deviceParams['capability'] == 'pci':
-            source.appendChildWithArgs('address', None,
-                                       **self._deviceParams['address'])
-
-        if hasattr(self, 'address'):
-            hostdev.appendChildWithArgs('address', None, **self.address)
+            self._add_source_address(source)
 
         return hostdev
+
+    def _create_network_interface_xml(self):
+        """
+        Create domxml for a host device.
+
+        <devices>
+         <interface type='hostdev' managed='no'>
+          <driver name='vfio'/>
+          <source>
+           <address type='pci' domain='0x0000' bus='0x00' slot='0x07'
+           function='0x0'/>
+          </source>
+          <mac address='52:54:00:6d:90:02'/>
+          <vlan>
+           <tag id=100/>
+          </vlan>
+          <boot order='1'/>
+         </interface>
+        </devices>
+        """
+        interface = self.createXmlElem(hwclass.NIC, hwclass.HOSTDEV)
+        interface.setAttrs(managed='no')
+        interface.appendChildWithArgs('driver', name='vfio')
+        source = interface.appendChildWithArgs('source')
+        self._add_source_address(source, type='pci')
+
+        if self.macAddr is not None:
+            interface.appendChildWithArgs('mac', address=self.macAddr)
+        if self.vlanId is not None:
+            vlan = interface.appendChildWithArgs('vlan')
+            vlan.appendChildWithArgs('tag', id=str(self.vlanId))
+
+        return interface
+
+    def _add_source_address(self, parent_element, type=None):
+        parent_element.appendChildWithArgs('address', type=type,
+                                           **self._deviceParams['address'])
