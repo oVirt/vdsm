@@ -2021,12 +2021,15 @@ class HSM(object):
             pv = pvs.get(dev.get('guid', ""))
             if pv is not None:
                 pvuuid = pv.uuid
+                pvsize = pv.size
                 vguuid = pv.vg_uuid
             else:
                 pvuuid = ""
+                pvsize = ""
                 vguuid = ""
 
             devInfo = {'GUID': dev.get("guid", ""), 'pvUUID': pvuuid,
+                       'pvsize': str(pvsize),
                        'vgUUID': vguuid, 'vendorID': dev.get("vendor", ""),
                        'productID': dev.get("product", ""),
                        'fwrev': dev.get("fwrev", ""),

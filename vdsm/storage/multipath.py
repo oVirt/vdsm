@@ -214,6 +214,7 @@ def pathListIter(filterGuids=None):
             pathInfo = {}
             pathInfo["physdev"] = slave
             pathInfo["state"] = pathStatuses.get(slave, "failed")
+            pathInfo["capacity"] = str(getDeviceSize(slave))
             try:
                 hbtl = getHBTL(slave)
             except OSError as e:

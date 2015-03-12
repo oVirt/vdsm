@@ -1378,11 +1378,14 @@
 #
 # @deviceType:  The type of path (@BlockDeviceType)
 #
+# @capacity:    The path size (in bytes) (new in version 4.17)
+#
 # Since: 4.10.0
 ##
 {'type': 'BlockDevicePathInfo',
  'data': {'physdev': 'str', 'state': 'BlockDevicePathState',
-          'lun': 'uint', 'deviceType': 'BlockDeviceType'}}
+          'lun': 'uint', 'deviceType': 'BlockDeviceType',
+          'capacity': 'uint'}}
 
 ##
 # @IscsiSessionInfo:
@@ -1441,6 +1444,9 @@
 # @partitioned:        Reports whether the device has been split into
 #                      partitions
 #
+# @pvsize:             The LVM physical volume size (in bytes)
+#                      (new in version 4.17)
+#
 # Since: 4.10.0
 #
 # Notes:  The value of @serial may be dependent on the current host so this
@@ -1457,7 +1463,8 @@
           'capacity': 'uint', 'devtype': 'BlockDeviceType',
           'pathstatus': ['BlockDevicePathInfo'],
           'pathlist': ['IscsiSessionInfo'], 'logicalblocksize': 'uint',
-          'physicalblocksize': 'uint', 'partitioned': 'bool'}}
+          'physicalblocksize': 'uint', 'partitioned': 'bool',
+          'pvsize': 'uint'}}
 
 ##
 # @Host.getDeviceList:
