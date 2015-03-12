@@ -3480,9 +3480,12 @@
 #
 # @vmList:      #optional Filter the results by a list of UUIDs
 #
-# @onlyUUID:    #optional determines whether we need short of full status
-#               This parmeter is provided to keep backward compatibility
-#               with engine-3.5.0
+# @onlyUUID:    #optional Control the Short Status format, and
+#               has no effect if on Full Status (fullStatus=True).
+#               if True, the return value is a list of UUIDs.
+#               if False, the return value is a list of ShortStatus.
+#               This parameter is provided for backward
+#               compatibility with engine-3.5.0.
 #
 # Returns:
 # A list of VM UUIDs
