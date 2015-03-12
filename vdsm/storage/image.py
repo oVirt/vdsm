@@ -836,7 +836,7 @@ class Image:
                                     volume.fmt2str(dstVolFormat))
                 except ActionStopped:
                     raise
-                except qemuimg.QImgError:
+                except qemuimg.QImgError as e:
                     self.log.exception('conversion failure for volume %s',
                                        srcVol.volUUID)
                     raise se.CopyImageError(str(e))
