@@ -2164,7 +2164,7 @@ class Vm(object):
         except Exception:
             self.log.warning('failed to set Vm niceness', exc_info=True)
 
-        self._getVcpuLimit()
+        self._updateVcpuLimit()
 
     def _run(self):
         self.log.info("VM wrapper has started")
@@ -2636,7 +2636,7 @@ class Vm(object):
         hooks.after_set_num_of_cpus()
         return {'status': doneCode, 'vmList': self.status()}
 
-    def _getVcpuLimit(self):
+    def _updateVcpuLimit(self):
         qos = self._getVmPolicy()
         if qos is not None:
             try:
