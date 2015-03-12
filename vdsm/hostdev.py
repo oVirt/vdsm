@@ -129,26 +129,6 @@ def _get_device_ref_and_params(device_name):
     return libvirt_device, _parse_device_params(libvirt_device.XMLDesc(0))
 
 
-def _get_devices_from_vms(vmContainer):
-    """
-    Scan all running VMs and identify their host devices,
-    return mapping of these devices to their VMs in format
-    {deviceName: vmId, ...}
-    """
-    devices = {}
-
-    # loop through VMs and find their host devices
-    for vmId, VM in vmContainer.items():
-        for device in VM.conf['devices']:
-            if device['device'] == 'hostdev':
-                name = device['name']
-                # Name is always present, if it is not we have encountered
-                # unknown situation
-                devices[name] = vmId
-
-    return devices
-
-
 def _get_devices_from_libvirt():
     """
     Returns all available host devices from libvirt parsed to dict
@@ -157,7 +137,7 @@ def _get_devices_from_libvirt():
                 for device in libvirtconnection.get().listAllDevices(0))
 
 
-def list_by_caps(vmContainer, caps=None):
+def list_by_caps(caps=None):
     """
     Returns devices that have specified capability in format
     {device_name: {'params': {'capability': '', 'vendor': '',
@@ -170,15 +150,12 @@ def list_by_caps(vmContainer, caps=None):
     """
     devices = {}
     libvirt_devices = _get_devices_from_libvirt()
-    device_to_vm = _get_devices_from_vms(vmContainer)
 
     for devName, params in libvirt_devices.items():
         if caps and params['capability'] not in caps:
             continue
 
         devices[devName] = {'params': params}
-        if devName in device_to_vm:
-            devices[devName]['vmId'] = device_to_vm[devName]
 
     devices = hooks.after_hostdev_list_by_caps(devices)
     return devices

@@ -1310,7 +1310,7 @@ class Global(APIBase):
         return {'status': doneCode, 'statsList': statsList}
 
     def hostdevListByCaps(self, caps=None):
-        devices = hostdev.list_by_caps(self._cif.vmContainer, caps)
+        devices = hostdev.list_by_caps(caps)
         return {'status': doneCode, 'deviceList': devices}
 
     def hostdevChangeNumvfs(self, deviceName, numvfs):

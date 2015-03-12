@@ -443,8 +443,6 @@ _SRIOV_VF_PARSED = {'capability': 'pci',
                     'vendor': 'Intel Corporation',
                     'vendor_id': '0x8086'}
 
-DEVICE_TO_VM_MAPPING = {'usb_1_1_4': 'vmId1', 'pci_0000_00_19_0': 'vmId2'}
-
 DEVICES_BY_CAPS = {'': {u'pci_0000_00_1b_0':
                         {'params': DEVICES_PARSED['pci_0000_00_1b_0']},
                         u'scsi_0_0_0_0':
@@ -460,12 +458,10 @@ DEVICES_BY_CAPS = {'': {u'pci_0000_00_1b_0':
                         u'scsi_host0': {'params':
                                         DEVICES_PARSED['scsi_host0']},
                         u'usb_usb1': {'params': DEVICES_PARSED['usb_usb1']},
-                        u'usb_1_1_4': {'vmId': 'vmId1', 'params':
-                                       DEVICES_PARSED['usb_1_1_4']},
+                        u'usb_1_1_4': {'params': DEVICES_PARSED['usb_1_1_4']},
                         u'usb_1_1': {'params': DEVICES_PARSED['usb_1_1']},
                         u'pci_0000_00_19_0':
-                        {'vmId': 'vmId2',
-                         'params': DEVICES_PARSED['pci_0000_00_19_0']}},
+                        {'params': DEVICES_PARSED['pci_0000_00_19_0']}},
                    'pci': {u'pci_0000_00_1b_0':
                            {'params': DEVICES_PARSED['pci_0000_00_1b_0']},
                            u'pci_0000_00_1a_0':
@@ -475,25 +471,16 @@ DEVICES_BY_CAPS = {'': {u'pci_0000_00_1b_0':
                            u'pci_0000_00_02_0':
                            {'params': DEVICES_PARSED['pci_0000_00_02_0']},
                            u'pci_0000_00_19_0':
-                           {'vmId': 'vmId2',
-                            'params': DEVICES_PARSED['pci_0000_00_19_0']}},
+                           {'params': DEVICES_PARSED['pci_0000_00_19_0']}},
                    'usb_device': {u'usb_usb1':
                                   {'params': DEVICES_PARSED['usb_usb1']},
                                   u'usb_1_1_4':
-                                  {'vmId': 'vmId1',
-                                   'params': DEVICES_PARSED['usb_1_1_4']},
+                                  {'params': DEVICES_PARSED['usb_1_1_4']},
                                   u'usb_1_1':
                                   {'params': DEVICES_PARSED['usb_1_1']}}}
 
 
 class Connection(fake.Connection):
-    vmContainer = {'vmId1': fake.ConfStub({'devices': [{'device': 'hostdev',
-                                                        'name':
-                                                        'usb_1_1_4'}]}),
-                   'vmId2': fake.ConfStub({'devices': [{'device': 'hostdev',
-                                                        'name':
-                                                        'pci_0000_00_19_0'}
-                                                       ]})}
 
     def __init__(self, *args):
         self._virNodeDevices = []
@@ -547,17 +534,10 @@ class HostdevTests(TestCaseBase):
                          len(USB_DEVICE_XML) +
                          len(SCSI_DEVICE_XML))
 
-    def testGetDevicesFromVms(self):
-        device_to_vm = hostdev._get_devices_from_vms(
-            libvirtconnection.get().vmContainer)
-
-        self.assertEqual(DEVICE_TO_VM_MAPPING, device_to_vm)
-
     @permutations([[''], [('pci',)], [('usb_device',)],
                    [('pci', 'usb_device')]])
     def testListByCaps(self, caps):
-        devices = hostdev.list_by_caps(
-            libvirtconnection.get().vmContainer, caps)
+        devices = hostdev.list_by_caps(caps)
 
         for cap in caps:
             self.assertTrue(set(DEVICES_BY_CAPS[cap].keys()).

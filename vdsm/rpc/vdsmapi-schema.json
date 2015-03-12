@@ -4010,14 +4010,12 @@
 #
 # Assignment of the device to VM
 #
-# @vmId:            The VM UUID
-#
 # @params:          Properties of the device
 #
 # Since: 4.17.0
 ##
 {'type': 'HostDevice',
- 'data': {'vmId': 'UUID', 'params': 'HostDeviceParams'}}
+ 'data': {'params': 'HostDeviceParams'}}
 
 ##
 # @HostDevices:
