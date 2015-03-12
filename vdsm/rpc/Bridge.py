@@ -353,7 +353,7 @@ def VM_getInfo_Call(api, args):
     pass arguments to get verbose information for only this one VM.
     """
     vmId = api._UUID
-    return API.Global().getVMList(True, [vmId])
+    return API.Global().getVMList(True, [vmId], False)
 
 
 def VM_getInfo_Ret(ret):

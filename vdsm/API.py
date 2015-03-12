@@ -1387,7 +1387,7 @@ class Global(APIBase):
         vmlist = [v.status(fullStatus)
                   for v in self._cif.vmContainer.values()
                   if not vmSet or v.id in vmSet]
-        if onlyUUID:
+        if not fullStatus and onlyUUID:
             # BZ 1196735: api backward compatibility issue
             # REQUIRED_FOR: engine-3.5.0 only
             vmlist = [v['vmId'] for v in vmlist]
