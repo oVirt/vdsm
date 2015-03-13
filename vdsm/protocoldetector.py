@@ -101,7 +101,7 @@ class _ProtocolDetector(object):
         sock = dispatcher.socket
         try:
             data = sock.recv(self._required_size, socket.MSG_PEEK)
-        except socket.error, why:
+        except socket.error as why:
             if why.args[0] == socket.EWOULDBLOCK:
                 return
             dispatcher.handle_error()

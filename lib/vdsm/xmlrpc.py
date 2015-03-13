@@ -82,7 +82,7 @@ class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
                 # using that method if present.
                 response = self.server._marshaled_dispatch(
                     data, getattr(self, '_dispatch', None))
-            except Exception, e:
+            except Exception as e:
                 # This should only happen if the module is buggy
                 # internal error, report as HTTP server error
                 self.send_response(500)

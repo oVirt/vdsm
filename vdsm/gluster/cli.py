@@ -629,7 +629,7 @@ def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
         command.append("force")
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRebalanceStartFailedException(rc=e.rc,
                                                             err=e.err)
     try:
@@ -645,7 +645,7 @@ def volumeRebalanceStop(volumeName, force=False):
         command.append('force')
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRebalanceStopFailedException(rc=e.rc,
                                                            err=e.err)
 
@@ -716,7 +716,7 @@ def volumeRebalanceStatus(volumeName):
     command = _getGlusterVolCmd() + ["rebalance", volumeName, "status"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRebalanceStatusFailedException(rc=e.rc,
                                                              err=e.err)
     try:
@@ -731,7 +731,7 @@ def volumeReplaceBrickStart(volumeName, existingBrick, newBrick):
                                      existingBrick, newBrick, "start"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeReplaceBrickStartFailedException(rc=e.rc,
                                                                err=e.err)
     try:
@@ -747,7 +747,7 @@ def volumeReplaceBrickAbort(volumeName, existingBrick, newBrick):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeReplaceBrickAbortFailedException(rc=e.rc,
                                                                err=e.err)
 
@@ -759,7 +759,7 @@ def volumeReplaceBrickPause(volumeName, existingBrick, newBrick):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeReplaceBrickPauseFailedException(rc=e.rc,
                                                                err=e.err)
 
@@ -797,7 +797,7 @@ def volumeReplaceBrickCommit(volumeName, existingBrick, newBrick,
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeReplaceBrickCommitFailedException(rc=e.rc,
                                                                 err=e.err)
 
@@ -810,7 +810,7 @@ def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
     command += brickList + ["start"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRemoveBrickStartFailedException(rc=e.rc,
                                                               err=e.err)
     try:
@@ -827,7 +827,7 @@ def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
     command += brickList + ["stop"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRemoveBrickStopFailedException(rc=e.rc,
                                                              err=e.err)
 
@@ -845,7 +845,7 @@ def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
     command += brickList + ["status"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRemoveBrickStatusFailedException(rc=e.rc,
                                                                err=e.err)
     try:
@@ -863,7 +863,7 @@ def volumeRemoveBrickCommit(volumeName, brickList, replicaCount=0):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRemoveBrickCommitFailedException(rc=e.rc,
                                                                err=e.err)
 
@@ -877,7 +877,7 @@ def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
     try:
         _execGlusterXml(command)
         return True
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeRemoveBrickForceFailedException(rc=e.rc,
                                                               err=e.err)
 
@@ -1076,7 +1076,7 @@ def volumeTasks(volumeName="all"):
     command = _getGlusterVolCmd() + ["status", volumeName, "tasks"]
     try:
         xmltree = _execGlusterXml(command)
-    except ge.GlusterCmdFailedException, e:
+    except ge.GlusterCmdFailedException as e:
         raise ge.GlusterVolumeTasksFailedException(rc=e.rc, err=e.err)
     try:
         return _parseVolumeTasks(xmltree)

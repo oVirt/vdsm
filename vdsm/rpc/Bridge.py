@@ -75,7 +75,7 @@ class DynamicBridge(object):
 
         try:
             result = fn(argobj)
-        except VdsmError, e:
+        except VdsmError as e:
             # TBD: Do we really want to always log here
             self.log.debug("Operation failed, returning error", exc_info=True)
             raise yajsonrpc.JsonRpcError(e.code, e.message)

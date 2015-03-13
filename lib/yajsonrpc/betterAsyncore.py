@@ -106,7 +106,7 @@ class Dispatcher(asyncore.dispatcher):
                 return ''
             else:
                 return data
-        except socket.error, why:
+        except socket.error as why:
             # winsock sometimes raises ENOTCONN
             if why.args[0] == EWOULDBLOCK:
                 return None
@@ -122,7 +122,7 @@ class Dispatcher(asyncore.dispatcher):
             if result == -1:
                 return 0
             return result
-        except socket.error, why:
+        except socket.error as why:
             if why.args[0] == EWOULDBLOCK:
                 return 0
             elif why.args[0] in asyncore._DISCONNECTED:

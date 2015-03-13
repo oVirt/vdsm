@@ -1609,7 +1609,7 @@ class HSM(object):
         pool = self.getPool(spUUID)
         try:
             self.validateImageMove(srcDom, dstDom, imgUUID)
-        except se.ImageDoesNotExistInSD, e:
+        except se.ImageDoesNotExistInSD as e:
             if not dstDom.isBackup():
                 raise
             else:
@@ -1764,7 +1764,7 @@ class HSM(object):
             images[imgUUID.strip()] = misc.parseBool(pZero)
             try:
                 self.validateImageMove(srcDom, dstDom, imgUUID)
-            except se.ImageDoesNotExistInSD, e:
+            except se.ImageDoesNotExistInSD as e:
                 if not dstDom.isBackup():
                     raise
                 else:
@@ -2778,7 +2778,7 @@ class HSM(object):
             # Allow format also for broken domain
         except (se.StorageDomainMetadataNotFound, se.MetaDataGeneralError,
                 se.MiscFileReadException, se.MiscBlockReadException,
-                se.MiscBlockReadIncomplete), e:
+                se.MiscBlockReadIncomplete) as e:
             self.log.warn("Domain %s has problem with metadata. Continue "
                           "formatting... (%s)", sdUUID, e)
 

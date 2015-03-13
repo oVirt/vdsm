@@ -115,7 +115,7 @@ def main():
             try:
                 deployUtil.setVdsConf(vds_config_str, VDSM_CONF_FILE)
                 print("<BSTRAP component='VDS Configuration' status='OK'/>")
-            except Exception, err:
+            except Exception as err:
                 res = False
                 print("<BSTRAP component='VDS Configuration' status='FAIL'"
                       " message='%s'/>" % deployUtil.escapeXML(str(err)))
