@@ -16,32 +16,35 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from contextlib import contextmanager
+
 from nose.plugins.skip import SkipTest
 
-import dummy
 from vdsm.ipwrapper import linkAdd, IPRoute2Error
 from vdsm.utils import random_iface_name
 
+import dummy
 
-def create(prefix='veth_', max_length=15):
+
+@contextmanager
+def pair(prefix='veth_', max_length=15):
     """
-    Create a veth interface with a pseudo-random suffix (e.g. veth_m6Lz7uMK9c)
-    for both endpoints. Use the longest possible name length by default.
-    This assumes root privileges.
+    Yield a pair of veth devices. This assumes root privileges (currently
+    required by all tests anyway).
+
+    Both sides of the pair have a pseudo-random suffix (e.g. veth_m6Lz7uMK9c).
     """
-    leftPoint = random_iface_name(prefix, max_length)
-    rightPoint = random_iface_name(prefix, max_length)
+    left_side = random_iface_name(prefix, max_length)
+    right_side = random_iface_name(prefix, max_length)
     try:
-        linkAdd(leftPoint, linkType='veth', args=('peer', 'name', rightPoint))
+        linkAdd(left_side, linkType='veth',
+                args=('peer', 'name', right_side))
+        yield left_side, right_side
     except IPRoute2Error:
-        raise SkipTest('Failed to create a veth interface')
-    else:
-        return (leftPoint, rightPoint)
-
-
-# the peer device is removed by the kernel
-remove = dummy.remove
-remove
+        raise SkipTest('Failed to create a veth pair.')
+    finally:
+        # the peer device is removed by the kernel
+        dummy.remove(left_side)
 
 
 setIP = dummy.setIP

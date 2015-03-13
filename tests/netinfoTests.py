@@ -180,22 +180,20 @@ class TestNetinfo(TestCaseBase):
     def testFakeNics(self):
         with MonkeyPatchScope([(ipwrapper.Link, '_fakeNics', ['veth_*',
                                                               'dummy_*'])]):
-            with dummy.device() as d1:
-                v1a, v1b = veth.create()
-                fakes = set([d1, v1a, v1b])
-                nics = netinfo.nics()
-                veth.remove(v1a)
-                self.assertTrue(fakes.issubset(nics), 'Fake devices %s are'
-                                ' not listed in nics %s' % (fakes, nics))
+            with veth.pair() as (v1a, v1b):
+                with dummy.device() as d1:
+                    fakes = set([d1, v1a, v1b])
+                    nics = netinfo.nics()
+                    self.assertTrue(fakes.issubset(nics), 'Fake devices %s are'
+                                    ' not listed in nics %s' % (fakes, nics))
 
-            with dummy.device(prefix='mehd_') as d2:
-                v2a, v2b = veth.create(prefix='mehv_')
-                hiddens = set([d2, v2a, v2b])
-                nics = netinfo.nics()
-                veth.remove(v2a)
-                self.assertFalse(hiddens.intersection(nics), 'Some of '
-                                 'hidden devices %s is shown in nics %s' %
-                                 (hiddens, nics))
+            with veth.pair(prefix='mehv_') as (v2a, v2b):
+                with dummy.device(prefix='mehd_') as d2:
+                    hiddens = set([d2, v2a, v2b])
+                    nics = netinfo.nics()
+                    self.assertFalse(hiddens.intersection(nics), 'Some of '
+                                     'hidden devices %s is shown in nics %s' %
+                                     (hiddens, nics))
 
     def testGetIfaceCfg(self):
         deviceName = "___This_could_never_be_a_device_name___"

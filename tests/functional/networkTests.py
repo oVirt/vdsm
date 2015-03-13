@@ -131,16 +131,6 @@ def dummyIf(num):
             dummyPool.add(nic)
 
 
-@contextmanager
-def vethIf():
-    """ Yields a tuple containing pair of veth devices."""
-    (left, right) = veth.create()
-    try:
-        yield (left, right)
-    finally:
-        veth.remove(left)
-
-
 def _waitForKnownOperstate(device, timeout=1):
     with monitor.Monitor(groups=('link',), timeout=timeout) as mon:
         state = operstate(device).lower()
@@ -379,7 +369,7 @@ class NetworkTest(TestCaseBase):
                             <= (ARP_REQUEST_SIZE + DHCP_PACKET_SIZE),
                             '%s is out of range' % diff)
 
-        with vethIf() as (left, right):
+        with veth.pair() as (left, right):
             # disabling IPv6 on Interface for removal of Router Solicitation
             sysctl.disable_ipv6(left)
             sysctl.disable_ipv6(right)
@@ -1445,7 +1435,7 @@ class NetworkTest(TestCaseBase):
             self.vdsm_net.refreshNetinfo()
             return self.vdsm_net.config.networks[net_name].get('blockingdhcp')
 
-        with vethIf() as (server, client):
+        with veth.pair() as (server, client):
             veth.setIP(server, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(server)
             dhcp_async_net = {'nic': client, 'bridged': False,
@@ -1745,7 +1735,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testSetupNetworksAddDelDhcp(self, bridged, families):
-        with vethIf() as (left, right):
+        with veth.pair() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             veth.setLinkUp(left)
@@ -1847,7 +1837,7 @@ class NetworkTest(TestCaseBase):
                 ifcfg_bootproto)
             self.assertEqual(bridges[NETWORK_NAME]['dhcpv4'], dhcp)
 
-        with vethIf() as (left, right):
+        with veth.pair() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(left)
             with dnsmasqDhcp(left):
@@ -1864,7 +1854,7 @@ class NetworkTest(TestCaseBase):
     def testDhclientLeases(self, family, dateFormat):
         dhcpv4_ifaces = set()
         dhcpv6_ifaces = set()
-        with vethIf() as (server, client):
+        with veth.pair() as (server, client):
             veth.setIP(server, IP_ADDRESS, IP_CIDR)
             veth.setIP(server, IPv6_ADDRESS, IPv6_CIDR, 6)
             veth.setLinkUp(server)
@@ -2136,7 +2126,7 @@ class NetworkTest(TestCaseBase):
             return [open('/proc/%s/cmdline' % pid).read().strip('\0')
                     .split('\0')[-1] for pid in pids]
 
-        with vethIf() as (server, client):
+        with veth.pair() as (server, client):
             veth.setIP(server, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(server)
             with dnsmasqDhcp(server):
