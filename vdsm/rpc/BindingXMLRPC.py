@@ -1148,34 +1148,34 @@ def wrapApiMethod(f):
 
             # Logging current call
             logStr = 'client [%s]::call %s with %s %s' % \
-                (getattr(f.im_self.cif.threadLocal, 'client', ''),
+                (getattr(f.__self__.cif.threadLocal, 'client', ''),
                  f.__name__, displayArgs, kwargs)
 
             # if flowID exists
-            if getattr(f.im_self.cif.threadLocal, 'flowID', None) is not None:
-                logStr += " flowID [%s]" % f.im_self.cif.threadLocal.flowID
+            if getattr(f.__self__.cif.threadLocal, 'flowID', None) is not None:
+                logStr += " flowID [%s]" % f.__self__.cif.threadLocal.flowID
 
             # Ready to show the log into vdsm.log
-            f.im_self.log.log(logLevel, logStr)
+            f.__self__.log.log(logLevel, logStr)
 
-            if f.im_self.cif.ready:
+            if f.__self__.cif.ready:
                 res = f(*args, **kwargs)
             else:
                 res = errCode['recovery']
-            f.im_self.cif.log.log(logLevel, 'return %s with %s',
-                                  f.__name__, res)
+            f.__self__.cif.log.log(logLevel, 'return %s with %s',
+                                   f.__name__, res)
             return res
         except libvirt.libvirtError as e:
-            f.im_self.cif.log.error("libvirt error", exc_info=True)
+            f.__self__.cif.log.error("libvirt error", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
             else:
                 return errCode['unexpected']
         except VdsmException as e:
-            f.im_self.cif.log.error("vdsm exception occured", exc_info=True)
+            f.__self__.cif.log.error("vdsm exception occured", exc_info=True)
             return e.response()
         except:
-            f.im_self.cif.log.error("unexpected error", exc_info=True)
+            f.__self__.cif.log.error("unexpected error", exc_info=True)
             return errCode['unexpected']
     wrapper.__name__ = f.__name__
     wrapper.__doc__ = f.__doc__

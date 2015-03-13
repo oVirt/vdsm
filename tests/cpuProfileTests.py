@@ -365,4 +365,4 @@ def find_function(ystats, module, name):
 
 
 def function_name(meth):
-    return meth.im_class.__name__ + '.' + meth.__name__
+    return meth.__self__.__class__.__name__ + '.' + meth.__name__

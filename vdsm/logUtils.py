@@ -30,12 +30,12 @@ from inspect import ismethod
 
 def funcName(func):
     if ismethod(func):
-        return func.im_func.func_name
+        return func.__func__.__name__
 
     if hasattr(func, 'func'):
-        return func.func.func_name
+        return func.func.__name__
 
-    return func.func_name
+    return func.__name__
 
 
 def logcall(loggerName, pattern="%s", loglevel=logging.INFO, printers={},
@@ -58,15 +58,15 @@ def logcall(loggerName, pattern="%s", loglevel=logging.INFO, printers={},
 
 def call2str(func, args, kwargs, printers={}):
     kwargs = kwargs.copy()
-    varnames = func.func_code.co_varnames[:func.func_code.co_argcount]
+    varnames = func.__code__.co_varnames[:func.__code__.co_argcount]
     if ismethod(func):
-        args = [func.im_self] + list(args)
-        func = func.im_func
+        args = [func.__self__] + list(args)
+        func = func.__func__
 
     for name, val in zip(varnames, args):
         kwargs[name] = val
 
-    defaults = func.func_defaults if func.func_defaults else []
+    defaults = func.__defaults__ if func.__defaults__ else []
 
     for name, val in zip(varnames[-len(defaults):], defaults):
         if name not in kwargs:
@@ -81,7 +81,7 @@ def call2str(func, args, kwargs, printers={}):
         printer = printers.get(argName, repr)
         argsStrs.append("%s=%s" % (argName, printer(val)))
 
-    return "%s(%s)" % (func.func_name, ", ".join(argsStrs))
+    return "%s(%s)" % (func.__name__, ", ".join(argsStrs))
 
 
 class SimpleLogAdapter(logging.LoggerAdapter):

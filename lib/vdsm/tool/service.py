@@ -346,14 +346,14 @@ def _runAlts(alts, srvName, *args, **kwarg):
             try:
                 rc, out, err = alt(srv, *args, **kwarg)
             except ServiceNotExistError as e:
-                errors[alt.func_name].append(e)
+                errors[alt.__name__].append(e)
                 continue
             else:
                 if rc == 0:
                     return 0
                 else:
                     raise ServiceOperationError(
-                        "%s failed" % alt.func_name, out, err)
+                        "%s failed" % alt.__name__, out, err)
     raise ServiceNotExistError(
         'Tried all alternatives but failed:\n%s' %
         ('\n'.join(str(e) for errs in errors.values() for e in errs)))

@@ -85,7 +85,7 @@ class _LogSkip(object):
 
     @classmethod
     def wrap(cls, func, loggerName):
-        cls.registerSkip(id(func.func_code), loggerName)
+        cls.registerSkip(id(func.__code__), loggerName)
         return func
 
 
@@ -715,7 +715,7 @@ class SamplingMethod(object):
         self.__barrier = DynamicBarrier()
 
         if hasattr(self.__func, "func_name"):
-            self.__funcName = self.__func.func_name
+            self.__funcName = self.__func.__name__
         else:
             self.__funcName = str(self.__func)
 
@@ -724,7 +724,7 @@ class SamplingMethod(object):
     def __call__(self, *args, **kwargs):
         if self.__funcParent is None:
             if (hasattr(self.__func, "func_code") and
-                    self.__func.func_code.co_varnames == 'self'):
+                    self.__func.__code__.co_varnames == 'self'):
                 self.__funcParent = args[0].__class__.__name__
             else:
                 self.__funcParent = self.__func.__module__
