@@ -1230,8 +1230,8 @@ class Vm(object):
         self._dom = None
         # Try release VM resources first, if failed stuck in 'Powering Down'
         # state
-        response = self.releaseVm()
-        if not response['status']['code']:
+        result = self.releaseVm()
+        if not result['status']['code']:
             with self._shutdownLock:
                 reason = self._shutdownReason
             if reason is None:
@@ -2504,12 +2504,12 @@ class Vm(object):
     def _updateGraphicsDevice(self, params):
         graphics = self._findGraphicsDeviceXMLByType(params['graphicsType'])
         if graphics:
-            response = self._setTicketForGraphicDev(
+            result = self._setTicketForGraphicDev(
                 graphics, params['password'], params['ttl'],
                 params['existingConnAction'], params['params'])
-            if response['status']['code'] == 0:
-                response['vmList'] = self.status()
-            return response
+            if result['status']['code'] == 0:
+                result['vmList'] = self.status()
+            return result
         else:
             return errCode['updateDevice']
 
@@ -3870,9 +3870,9 @@ class Vm(object):
                 self._vmStats.stop()
             self.guestAgent.stop()
             if self._dom:
-                response = self._destroyVmGraceful()
-                if response['status']['code']:
-                    return response
+                result = self._destroyVmGraceful()
+                if result['status']['code']:
+                    return result
 
             # Wait for any Live Merge cleanup threads.  This will only block in
             # the extremely rare case where a VM is being powered off at the
@@ -3934,9 +3934,9 @@ class Vm(object):
     def destroy(self):
         self.log.debug('destroy Called')
 
-        response = self.doDestroy()
-        if response['status']['code']:
-            return response
+        result = self.doDestroy()
+        if result['status']['code']:
+            return result
         # Clean VM from the system
         self.deleteVm()
 

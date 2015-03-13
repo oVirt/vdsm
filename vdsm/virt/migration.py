@@ -300,16 +300,16 @@ class SourceThread(threading.Thread):
             # destination. In some cases some expensive operations can cause
             # the migration to get cancelled right after the transfer started.
             destCreateStartTime = time.time()
-            response = self.destServer.migrationCreate(self._machineParams)
+            result = self.destServer.migrationCreate(self._machineParams)
             destCreationTime = time.time() - destCreateStartTime
             startTime += destCreationTime
             self.log.info('Creation of destination VM took: %d seconds',
                           destCreationTime)
 
-            if response['status']['code']:
-                self.status = response
+            if result['status']['code']:
+                self.status = result
                 raise RuntimeError('migration destination error: ' +
-                                   response['status']['message'])
+                                   result['status']['message'])
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
