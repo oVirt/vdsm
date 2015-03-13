@@ -24,7 +24,6 @@ from . import makePublic
 
 def _getDeviceDict(device, createBrick=False):
     info = {'name': device.name,
-            'size': '%s' % device.size,
             'devPath': device.path,
             'devUuid': device.uuid or '',
             'bus': device.bus or '',
@@ -33,6 +32,10 @@ def _getDeviceDict(device, createBrick=False):
             'mountPoint': '',
             'uuid': '',
             'createBrick': createBrick}
+    if isinstance(device.size, blivet.size.Size):
+        info['size'] = '%s' % device.size.convertTo(spec="MiB")
+    else:
+        info['size'] = '%s' % device.size
     if not info['bus'] and device.parents:
         info['bus'] = device.parents[0].bus
     if device.model:
