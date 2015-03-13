@@ -14,6 +14,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 
+from __future__ import print_function
 import os
 import sys
 import subprocess
@@ -41,11 +42,11 @@ TESTFILE = "vdsmTest"
 
 
 def usage():
-    print "Usage: " + sys.argv[0] + " server:/target"
-    print "nfs-check is a python script to validate nfs targets to use" \
-        " with oVirt project."
-    print "Some operations includes: mount the nfs target," \
-        " create a file as %s:%s and remove it." % (USER, GROUP)
+    print("Usage: " + sys.argv[0] + " server:/target")
+    print("nfs-check is a python script to validate nfs targets to use"
+          " with oVirt project.")
+    print("Some operations includes: mount the nfs target,"
+          " create a file as %s:%s and remove it." % (USER, GROUP))
     sys.exit(0)
 
 
@@ -66,16 +67,16 @@ class Nfs(object):
         signal.signal(signal.SIGALRM, self.handler)
         signal.alarm(TIMEOUT_NFS)
 
-        print "Current hostname: %s - IP addr %s" % (self.getHostName(),
-                                                     self.getLocalIP())
-        print "Trying to %s -t nfs %s..." % (MOUNT, cmd)
+        print("Current hostname: %s - IP addr %s" % (self.getHostName(),
+                                                     self.getLocalIP()))
+        print("Trying to %s -t nfs %s..." % (MOUNT, cmd))
 
         try:
             errorMsg = process.communicate()[1].strip()
             signal.alarm(0)
         except Alarm:
-            print "Timeout, cannot mount the nfs! Please check the status " \
-                "of NFS service or/and the Firewall settings!"
+            print("Timeout, cannot mount the nfs! Please check the status "
+                  "of NFS service or/and the Firewall settings!")
             self.exitCode(-1)
 
         # get return from mount cmd
@@ -95,18 +96,18 @@ class Nfs(object):
         if ret != 0 and localMachine:
             ret = self.checkLocalServer(ret, errorMsg, target)
         elif ret != 0:
-            print "return = %s error %s" % (ret, errorMsg)
+            print("return = %s error %s" % (ret, errorMsg))
 
         return ret
 
     def checkLocalServer(self, ret, errorMsg, target):
-        print "NFS Server is local machine, looking local configurations.."
+        print("NFS Server is local machine, looking local configurations..")
         if "access denied" in errorMsg:
-            print "return = %s error msg = %s" % (ret, errorMsg)
-            print "Access Denied: Cannot mount nfs!"
+            print("return = %s error msg = %s" % (ret, errorMsg))
+            print("Access Denied: Cannot mount nfs!")
             if not os.path.isfile(EXPORTS):
-                print EXPORTS + " doesn`t exist, please create one" \
-                    " and start nfs server!"
+                print(EXPORTS + " doesn`t exist, please create one"
+                      " and start nfs server!")
             else:
                 targetFound = False
                 with open(EXPORTS, 'r') as f:
@@ -114,14 +115,14 @@ class Nfs(object):
                         if target in line.split(" ")[0]:
                             targetFound = True
                     if targetFound:
-                        print "Please include %s into %s and restart" \
-                            " nfs server!" % (target, EXPORTS)
+                        print("Please include %s into %s and restart"
+                              " nfs server!" % (target, EXPORTS))
 
         elif "does not exist" in errorMsg:
-            print "return = %s error msg = %s" % (ret, errorMsg)
+            print("return = %s error msg = %s" % (ret, errorMsg))
         else:
-            print "NFS server down?"
-            print "return = %s error msg = %s" % (ret, errorMsg)
+            print("NFS server down?")
+            print("return = %s error msg = %s" % (ret, errorMsg))
 
         return ret
 
@@ -131,7 +132,7 @@ class Nfs(object):
         try:
             addrList = socket.getaddrinfo(Server, None)
         except:
-            print "Cannot get address from %s" % Server
+            print("Cannot get address from %s" % Server)
             self.exitCode(-1)
 
         for item in addrList:
@@ -147,8 +148,8 @@ class Nfs(object):
         try:
             addr = socket.gethostbyname(socket.gethostname())
         except socket.gaierror as err:
-            print "INFO: Cannot resolve hostname" \
-                ": %s %s" % (socket.gethostname(), err)
+            print("INFO: Cannot resolve hostname"
+                  ": %s %s" % (socket.gethostname(), err))
 
         return addr
 
@@ -160,23 +161,22 @@ class Nfs(object):
 
         try:
             if pwd.getpwnam(USER).pw_uid != UID:
-                print "WARNING: %s user has UID [%s] which is different from "\
-                    "the required [%s]" % (USER, pwd.getpwnam(USER).pw_uid,
-                                           UID)
+                print("WARNING: %s user has UID [%s] which is different from "
+                      "the required [%s]" %
+                      (USER, pwd.getpwnam(USER).pw_uid, UID))
         except:
-            print "Cannot find %s user! You must have %s user created!" % \
-                (USER, USER)
+            print("Cannot find %s user! You must have %s user created!" %
+                  (USER, USER))
             ret = -1
 
         try:
             if grp.getgrnam(GROUP).gr_gid != GUID:
-                print "WARNING: %s group has GUID [%s] which is different " \
-                    "from the required [%s]" % (GROUP,
-                                                grp.getgrnam(GROUP).gr_gid,
-                                                GUID)
+                print("WARNING: %s group has GUID [%s] which is different "
+                      "from the required [%s]" %
+                      (GROUP, grp.getgrnam(GROUP).gr_gid, GUID))
         except:
-            print "Cannot find %s group! The system must have %s group" % \
-                (GROUP, GROUP)
+            print("Cannot find %s group! The system must have %s group" %
+                  (GROUP, GROUP))
             ret = -1
 
         if ret != -1:
@@ -191,24 +191,25 @@ class Nfs(object):
                 ret = process.poll()
                 if ret != 0:
                     if "Permission denied" in errorMsg:
-                        print "Permission denied: %s user as %s cannot " \
-                            "create a file into %s" % (USER, GROUP, pathName)
-                        print "Suggestions: please verify the permissions of "\
-                            "target (chmod or/and selinux booleans)"
-                        print "return = %s error msg = %s" % (ret, errorMsg)
+                        print("Permission denied: %s user as %s cannot "
+                              "create a file into %s" %
+                              (USER, GROUP, pathName))
+                        print("Suggestions: please verify the permissions of "
+                              "target (chmod or/and selinux booleans)")
+                        print("return = %s error msg = %s" % (ret, errorMsg))
                         ret = -1
                     elif "Read-only file system" in errorMsg:
-                        print "Please make sure the target NFS contain the " \
-                            "read and WRITE access"
-                        print "return = %s error msg = %s" % (ret, errorMsg)
+                        print("Please make sure the target NFS contain the "
+                              "read and WRITE access")
+                        print("return = %s error msg = %s" % (ret, errorMsg))
                         ret = -1
                     else:
-                        print "return = %s error msg = %s" % (ret, errorMsg)
+                        print("return = %s error msg = %s" % (ret, errorMsg))
                         ret = -1
 
                 # remove the file
                 if ret != -1:
-                    print "Removing %s file.." % TESTFILE
+                    print("Removing %s file.." % TESTFILE)
                     cmdRemove = "/bin/rm " + fileTest
 
                     process, errorMsg, ret = self.runCommand(cmdRemove)
@@ -218,8 +219,8 @@ class Nfs(object):
                         # get the return from the command
                         ret = process.poll()
                         if ret != 0:
-                            print "Error removing %s file, error = %s " % \
-                                (TESTFILE, errorMsg)
+                            print("Error removing %s file, error = %s " %
+                                  (TESTFILE, errorMsg))
                             ret = -1
 
         return ret
@@ -238,7 +239,7 @@ class Nfs(object):
             errorMsg = process.communicate()[1]
             signal.alarm(0)
         except Alarm:
-            print "Timeout, cannot execute: %s" % cmd
+            print("Timeout, cannot execute: %s" % cmd)
             ret = -1
 
         return process, errorMsg, ret
@@ -255,21 +256,21 @@ class Nfs(object):
             errorMsg = process.communicate()[1].strip()
             signal.alarm(0)
         except Alarm:
-            print "Timeout, cannot %s the nfs!" % UMOUNT
+            print("Timeout, cannot %s the nfs!" % UMOUNT)
             self.exitCode(-1)
 
         # get the return from the command
         ret = process.poll()
 
         if ret != 0:
-            print "cannot execute %s!" % UMOUNT
-            print "return = %s error msg = %s" % (ret, errorMsg)
+            print("cannot execute %s!" % UMOUNT)
+            print("return = %s error msg = %s" % (ret, errorMsg))
 
         return ret
 
 if __name__ == "__main__":
     if os.geteuid() != 0:
-        print "You must be root to run this script."
+        print("You must be root to run this script.")
         sys.exit(-1)
 
     if len(sys.argv) != 2 or ":" not in sys.argv[1]:
@@ -289,21 +290,22 @@ if __name__ == "__main__":
         if ret != 0:
             nfs.exitCode(ret)
 
-        print "Executing NFS tests.."
+        print("Executing NFS tests..")
         ret = nfs.tests(LOCALPATH)
         if ret != 0:
-            print "Status of tests [Failed]"
-            print "For more troubleshooting tips, visit " \
-                "http://www.ovirt.org/wiki/Troubleshooting_NFS_Storage_Issues"
+            print("Status of tests [Failed]")
+            print("For more troubleshooting tips, visit "
+                  "http://www.ovirt.org/wiki/"
+                  "Troubleshooting_NFS_Storage_Issues")
         else:
-            print "Status of tests [OK]"
+            print("Status of tests [OK]")
 
-        print "Disconnecting from NFS Server.."
+        print("Disconnecting from NFS Server..")
         ret = nfs.umount(LOCALPATH)
         if ret != 0:
-            print "Umount [Failed]\n"
+            print("Umount [Failed]\n")
             nfs.exitCode(ret)
     finally:
         os.removedirs(LOCALPATH)
 
-    print "Done!"
+    print("Done!")

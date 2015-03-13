@@ -29,6 +29,7 @@ Where:
     security_groups if present, will trigger correct behavior for enabling
     security groups support, mainly when using OVS. The value is unimportant.
 '''
+from __future__ import print_function
 
 import os
 import sys
@@ -155,7 +156,7 @@ def test(ovs, withSecurityGroups):
                      pluginType,
                      'test_port_id',
                      withSecurityGroups)
-    print domxml.toxml(encoding='utf-8')
+    print(domxml.toxml(encoding='utf-8'))
 
 
 if __name__ == '__main__':

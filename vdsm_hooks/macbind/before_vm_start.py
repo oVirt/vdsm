@@ -29,6 +29,7 @@ Syntax:
 Example:
    macbind={'00:1a:4a:60:d1:9a': 'br0', '00:1a:4a:60:c4:88': 'br1'}
 '''
+from __future__ import print_function
 
 
 _DEV_TYPE = frozenset(('bridge', 'openvswitch'))
@@ -103,13 +104,13 @@ def test():
 
     domxml = xml.dom.minidom.parseString(text)
 
-    print "Interface before forcing device: %s" % \
-        domxml.toxml(encoding='UTF-8')
+    print("Interface before forcing device: %s" %
+          domxml.toxml(encoding='UTF-8'))
 
     replaceSourceBridge(domxml, {'00:1a:4a:60:d1:9a': 'br0'}, "bridge")
 
-    print "Interface after forcing device: %s" % \
-        domxml.toxml(encoding='UTF-8')
+    print("Interface after forcing device: %s" %
+          domxml.toxml(encoding='UTF-8'))
 
 
 if __name__ == '__main__':

@@ -31,6 +31,7 @@ Sets up an xmlrpc Server with a modified Transport
 protocol (TcpkeepHTTP) that uses TcpkeepHTTPConnection when it
 needs to set up a connection.
 """
+from __future__ import print_function
 
 import xmlrpclib
 import httplib
@@ -80,7 +81,7 @@ class TcpkeepHTTPConnection(httplib.HTTPConnection):
             try:
                 self.sock = socket.socket(af, socktype, proto)
                 if self.debuglevel > 0:
-                    print "connect: (%s, %s)" % (self.host, self.port)
+                    print("connect: (%s, %s)" % (self.host, self.port))
 
                 oldtimeout = self.sock.gettimeout()  # added
                 self.sock.settimeout(CONNECTTIMEOUT)  # added
@@ -88,7 +89,7 @@ class TcpkeepHTTPConnection(httplib.HTTPConnection):
                 self.sock.settimeout(oldtimeout)   # added
             except socket.error as msg:
                 if self.debuglevel > 0:
-                    print 'connect fail:', (self.host, self.port)
+                    print('connect fail:', (self.host, self.port))
                 if self.sock:
                     self.sock.close()
                 self.sock = None

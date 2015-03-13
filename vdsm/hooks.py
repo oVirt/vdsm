@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import print_function
 from vdsm import utils
 import glob
 import hashlib
@@ -399,7 +400,7 @@ def installed():
 
 if __name__ == '__main__':
     def usage():
-        print 'Usage: %s hook_name' % sys.argv[0]
+        print('Usage: %s hook_name' % sys.argv[0])
         sys.exit(1)
 
     if len(sys.argv) >= 2:

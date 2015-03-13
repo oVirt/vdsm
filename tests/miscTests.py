@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import print_function
 import os
 import tempfile
 import uuid
@@ -135,7 +136,7 @@ class EventTests(TestCaseBase):
         ev = threading.Event()
         event = misc.Event("name", sync=True)
         receiver = Receiver(event, ev)
-        print event._registrar
+        print(event._registrar)
         event.emit()
         ev.wait(5)
         self.assertTrue(ev.isSet())
@@ -145,9 +146,9 @@ class EventTests(TestCaseBase):
         ev = threading.Event()
         event = misc.Event("name", sync=True)
         receiver = Receiver(event, ev)
-        print event._registrar
+        print(event._registrar)
         del receiver
-        print event._registrar
+        print(event._registrar)
         event.emit()
         ev.wait(1)
         self.assertFalse(ev.isSet())

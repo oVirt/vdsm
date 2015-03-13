@@ -19,6 +19,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import print_function
 import os
 import sys
 import getopt
@@ -61,7 +62,7 @@ def Reboot(act=1):
     result = "<BSTRAP component='" + action + "' status='OK' message='" + \
         message + "' />"
     logging.debug(result)
-    print result
+    print(result)
     sys.stdout.flush()
 
     logging.debug("Reboot: ended.")
@@ -94,7 +95,7 @@ def main():
                       (installVirtualizationService, installGlusterService))
         rnum = args[0]
     except:
-        print main.__doc__
+        print(main.__doc__)
         return False
     try:
         arg = int(args[1])
@@ -113,11 +114,11 @@ def main():
         if res:
             try:
                 deployUtil.setVdsConf(vds_config_str, VDSM_CONF_FILE)
-                print "<BSTRAP component='VDS Configuration' status='OK'/>"
+                print("<BSTRAP component='VDS Configuration' status='OK'/>")
             except Exception, err:
                 res = False
-                print "<BSTRAP component='VDS Configuration' status='FAIL'" \
-                      " message='%s'/>" % deployUtil.escapeXML(str(err))
+                print("<BSTRAP component='VDS Configuration' status='FAIL'"
+                      " message='%s'/>" % deployUtil.escapeXML(str(err)))
 
         deployUtil.setService("vdsmd", "reconfigure")
     except:
@@ -125,11 +126,11 @@ def main():
         res = False
 
     if res:
-        print "<BSTRAP component='RHEV_INSTALL' status='OK'/>"
+        print("<BSTRAP component='RHEV_INSTALL' status='OK'/>")
         sys.stdout.flush()
         Reboot(arg)
     else:
-        print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
+        print("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
         sys.stdout.flush()
 
     return res

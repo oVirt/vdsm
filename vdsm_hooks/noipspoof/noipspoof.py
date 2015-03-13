@@ -8,6 +8,7 @@ sudo engine-config -s "UserDefinedVMProperties=noipspoof=^[0-9.]*$"
 - enabled per a specfic VM by setting its noipspoof to a comman-separated list
   of valid IP addresses for it.
 """
+from __future__ import print_function
 
 import os
 import sys
@@ -69,12 +70,12 @@ def test():
     </interface>
     """).getElementsByTagName('interface')[0]
 
-    print "Original interface: %s\n" % \
-        interface.toxml(encoding='UTF-8')
+    print("Original interface: %s\n" %
+          interface.toxml(encoding='UTF-8'))
 
     replaceMacSpoofingFilter(interface, ['192.168.1.1', 'nonsense'])
-    print "Interface after replacing filter: %s\n" % \
-        interface.toxml(encoding='UTF-8')
+    print("Interface after replacing filter: %s\n" %
+          interface.toxml(encoding='UTF-8'))
 
 
 if __name__ == '__main__':

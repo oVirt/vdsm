@@ -8,6 +8,7 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
+from __future__ import print_function
 import sys
 
 # When using Python 2, we must monkey patch threading module before importing
@@ -54,8 +55,8 @@ if config.getboolean('devel', 'python_warnings_enable'):
 
 
 def usage():
-    print "Usage:  vdsm [OPTIONS]"
-    print "     -h  - Display this help message"
+    print("Usage:  vdsm [OPTIONS]")
+    print("     -h  - Display this help message")
 
 
 def serve_clients(log):

@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import hooking
 import subprocess
 from vdsm.netinfo import DUMMY_BRIDGE

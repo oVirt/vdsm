@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import print_function
 import fnmatch
 import os
 import time
@@ -150,7 +151,7 @@ class GetAllVolumesTests(TestCaseBase):
         start = time.time()
         dom.getAllVolumes()
         elapsed = time.time() - start
-        print "%f seconds" % elapsed
+        print("%f seconds" % elapsed)
 
         # This takes 0.065 seconds on my laptop, 1 second should be enough even
         # on overloaded jenkins slave.

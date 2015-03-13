@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import os
 import hooking
 
@@ -54,12 +55,12 @@ def test():
     </interface>
     """).getElementsByTagName('interface')[0]
 
-    print "Interface before removing filter: %s" % \
-        interface.toxml(encoding='UTF-8')
+    print("Interface before removing filter: %s" %
+          interface.toxml(encoding='UTF-8'))
 
     removeMacSpoofingFilter(interface)
-    print "Interface after removing filter: %s" % \
-        interface.toxml(encoding='UTF-8')
+    print("Interface after removing filter: %s" %
+          interface.toxml(encoding='UTF-8'))
 
 
 if __name__ == '__main__':

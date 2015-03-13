@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 import ast
 import os
 import sys
@@ -100,13 +101,13 @@ def test():
 
     xmldom = minidom.parseString(text)
     graphics = xmldom.getElementsByTagName('graphics')[0]
-    print "\n Graphic device definition before execution \n %s"\
-          % graphics.toxml(encoding='UTF-8')
+    print("\n Graphic device definition before execution \n %s"
+          % graphics.toxml(encoding='UTF-8'))
     returnEle = createElement(xmldom, 'image', 'compression', 'glz')
     if returnEle:
         graphics.appendChild(returnEle)
-    print "\n Graphic device after setting image element \n %s"\
-          % graphics.toxml(encoding='UTF-8')
+    print("\n Graphic device after setting image element \n %s"
+          % graphics.toxml(encoding='UTF-8'))
 
 
 if __name__ == '__main__':

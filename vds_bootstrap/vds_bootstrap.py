@@ -40,6 +40,7 @@
 # 8. Reboot
 #
 
+from __future__ import print_function
 import sys
 import getopt
 import os
@@ -280,7 +281,7 @@ class Deploy:
         if not test:
             message += "/>"
 
-        print message
+        print(message)
         logging.debug(message)
         sys.stdout.flush()
 
@@ -1150,7 +1151,7 @@ obsolete options:
         # if not rev_num:
         #    rev_num = REVISION
     except:
-        print main.__doc__
+        print(main.__doc__)
         return False
 
     #
@@ -1170,7 +1171,7 @@ obsolete options:
             miniyum.selinux_role()
         except:
             logging.error("MiniYum selinux setup failed", exc_info=True)
-            print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
+            print("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
             return False
 
     logging.debug('**** Start VDS Validation ****')
@@ -1185,7 +1186,7 @@ obsolete options:
         logging.error("VDS validation failed", exc_info=True)
         logging.error(main.__doc__)
         logging.debug("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
-        print "<BSTRAP component='RHEV_INSTALL' status='FAIL'/>"
+        print("<BSTRAP component='RHEV_INSTALL' status='FAIL'/>")
         return False
     else:
         message = ("<BSTRAP component='RHEV_INSTALL' status=")

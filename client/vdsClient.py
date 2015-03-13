@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import print_function
 import sys
 import ast
 import getopt
@@ -82,39 +83,40 @@ def fmt3(num):
 
 
 def usage(cmd, full=True):
-    print "Usage:  vdsClient [OPTIONS] <server> <command> [Command parameters]"
-    print "\nOptions"
-    print "-h\tDisplay this help"
-    print "-m\tList supported methods and their params (Short help)"
-    print "-s [--truststore path]\tConnect to server with SSL."
-    print "-o, --oneliner\tShow the key-val information in one line."
-    print "\tIf truststore path is not specified, use defaults."
-    print
-    print "Password can be provided as command line argument, path to"
-    print "file with password or environment variable by providing"
-    print "auth=file:path or auth=env:name or auth=pass:password"
+    print(
+        "Usage:  vdsClient [OPTIONS] <server> <command> [Command parameters]")
+    print("\nOptions")
+    print("-h\tDisplay this help")
+    print("-m\tList supported methods and their params (Short help)")
+    print("-s [--truststore path]\tConnect to server with SSL.")
+    print("-o, --oneliner\tShow the key-val information in one line.")
+    print("\tIf truststore path is not specified, use defaults.")
+    print()
+    print("Password can be provided as command line argument, path to")
+    print("file with password or environment variable by providing")
+    print("auth=file:path or auth=env:name or auth=pass:password")
 
-    print "\nCommands"
+    print("\nCommands")
     verbs = cmd.keys()
     verbs.sort()
     for entry in verbs:
         if full:
-            print entry
+            print(entry)
             for line in cmd[entry][1]:
-                print '\t' + line
+                print('\t' + line)
         else:
-            print entry + '\t' + cmd[entry][1][0]
+            print(entry + '\t' + cmd[entry][1][0])
 
 
 def printConf(conf):
     try:
-        print "\n" + conf['vmId']
-        print "\tStatus = " + conf['status']
+        print("\n" + conf['vmId'])
+        print("\tStatus = " + conf['status'])
     except:
         pass
     for element in conf.keys():
         if element not in ('vmId', 'status'):
-            print "\t%s = %s" % (element, conf[element])
+            print("\t%s = %s" % (element, conf[element]))
 
 
 def printDict(dict, pretty=True, depth=0):
@@ -126,7 +128,7 @@ def printDict(dict, pretty=True, depth=0):
                 '\n', '\n\t' + ' ' * len(element + ' = ') + '\t' * depth)
         else:
             representation = dict[element]
-        print '\t' * depth + '\t%s = %s' % (element, representation)
+        print('\t' * depth + '\t%s = %s' % (element, representation))
 
 
 def printDevices(devices, roots=None, pretty=True, depth=1):
@@ -203,13 +205,13 @@ class service:
 
     def ExecAndExit(self, response, parameterName='none'):
         if response['status']['code'] != 0:
-            print response['status']['message']
+            print(response['status']['message'])
         else:
             if 'vmList' in response:
                 printConf(response['vmList'])
             elif 'statsList' in response:
                 if parameterName != 'none':
-                    print response['statsList'][0][parameterName]
+                    print(response['statsList'][0][parameterName])
                 else:
                     printStats(response['statsList'])
             elif 'info' in response:
@@ -401,14 +403,14 @@ class service:
                        status, allStats[vmId].get('guestIPs', '')))
 
             elif view == 'ids':
-                print conf['vmId']
+                print(conf['vmId'])
 
         sys.exit(response['status']['code'])
 
     def do_destroy(self, args):
         vmId = args[0]
         response = self.s.destroy(vmId)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def do_pause(self, args):
@@ -433,7 +435,7 @@ class service:
                 response = self.s.shutdown(vmId, delay, message, reboot)
         else:
             response = self.s.shutdown(vmId, delay, message)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def do_setVmTicket(self, args):
@@ -469,16 +471,16 @@ class service:
         cmd = args[1]
         response = self.s.monitorCommand(vmId, cmd)
         if response['status']['code']:
-            print response['status']['message']
+            print(response['status']['message'])
         else:
             for line in response['output']:
-                print line
+                print(line)
         sys.exit(response['status']['code'])
 
     def do_newDisk(self, args):
         file, size = args
         response = self.s.newDisk(file, size)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def do_sendkeys(self, args):
@@ -488,7 +490,7 @@ class service:
     def hibernate(self, args):
         vmId, hiberVolHandle = args[0], args[1]
         response = self.s.hibernate(vmId, hiberVolHandle)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def do_migrate(self, args):
@@ -500,7 +502,7 @@ class service:
         else:
             raise Exception("Not enough parameters")
         response = self.s.migrate(params)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def do_mStat(self, args):
@@ -510,13 +512,13 @@ class service:
             print(response['status']['message'] +
                   ' ' + str(response['progress']) + '%')
         else:
-            print response['status']['message']
+            print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def do_mCancel(self, args):
         vmId = args[0]
         response = self.s.migrateCancel(vmId)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def do_getRoute(self, args):
@@ -557,25 +559,25 @@ class service:
             extra_args = parseArgs(args[4])
             password = getAuthFromArgs(extra_args, password)
         response = self.s.desktopLogin(vmId, domain, user, password)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def desktopLock(self, args):
         vmId = args[0]
         response = self.s.desktopLock(vmId)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def desktopLogoff(self, args):
         vmId, force = tuple(args)
         response = self.s.desktopLogoff(vmId, force)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def sendHcCmd(self, args):
         vmId, message = tuple(args)
         response = self.s.sendHcCmdToDesktop(vmId, message)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
     def getDiskAlignment(self, args):
@@ -592,9 +594,9 @@ class service:
         res = self.s.getDiskAlignment(vmId, driveSpecs)
         if res['status'] == 0:
             for pName, aligned in res['alignment'].items():
-                print "\t%s = %s" % (pName, aligned)
+                print("\t%s = %s" % (pName, aligned))
         else:
-            print "Error in scan disk alignment"
+            print("Error in scan disk alignment")
         sys.exit(0)
 
     def merge(self, args):
@@ -602,7 +604,7 @@ class service:
         params.append(self._parseDriveSpec(args[1]))
         params.extend(args[2:])
         response = self.s.merge(*params)
-        print response['status']['message']
+        print(response['status']['message'])
         sys.exit(response['status']['code'])
 
 # ####### IRS methods #######
@@ -689,7 +691,7 @@ class service:
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
         for element in info['info'].keys():
-            print "\t%s = %s" % (element, info['info'][element])
+            print("\t%s = %s" % (element, info['info'][element]))
         return 0, ''
 
     def getStorageDomainStats(self, args):
@@ -699,8 +701,8 @@ class service:
             return stats['status']['code'], stats['status']['message']
         dt = stats['stats']['disktotal']
         df = stats['stats']['diskfree']
-        print "\tdisktotal = %s (%s)" % (dt, fmt3(int(dt)))
-        print "\tdiskfree  = %s (%s)" % (df, fmt3(int(df)))
+        print("\tdisktotal = %s (%s)" % (dt, fmt3(int(dt))))
+        print("\tdiskfree  = %s (%s)" % (df, fmt3(int(df))))
         return 0, ''
 
     def getStorageDomainsList(self, args):
@@ -712,7 +714,7 @@ class service:
         if domains['status']['code']:
             return domains['status']['code'], domains['status']['message']
         for entry in domains['domlist']:
-            print entry
+            print(entry)
         return 0, ''
 
     def getDeviceList(self, args):
@@ -728,7 +730,7 @@ class service:
         if res['status']['code']:
             return res['status']['code'], res['status']['message']
         for guid, visible in res['visible'].iteritems():
-            print '\t%s = %s' % (guid, visible)
+            print('\t%s = %s' % (guid, visible))
         return 0, ''
 
     def getVGList(self, args):
@@ -741,9 +743,9 @@ class service:
         if vgs['status']['code']:
             return vgs['status']['code'], vgs['status']['message']
         for entry in vgs['vglist']:
-            print '============================'
+            print('============================')
             for element in entry.keys():
-                print "%s = %s " % (element, entry[element])
+                print("%s = %s " % (element, entry[element]))
         return 0, ''
 
     def getVGInfo(self, args):
@@ -753,15 +755,15 @@ class service:
             return info['status']['code'], info['status']['message']
         # print info['info']
         for entry in info['info'].keys():
-            print '============================'
+            print('============================')
             if entry != 'pvlist':
-                print "%s = %s " % (entry, info['info'][entry])
+                print("%s = %s " % (entry, info['info'][entry]))
             else:
-                print 'pvlist:'
+                print('pvlist:')
                 for item in info['info'][entry]:
                     for i in item.keys():
-                        print "%s = %s " % (i, item[i]),
-                    print
+                        print("%s = %s " % (i, item[i]), end=' ')
+                    print()
         return 0, ''
 
     def createVG(self, args):
@@ -811,12 +813,12 @@ class service:
         if targets['status']['code']:
             return targets['status']['code'], targets['status']['message']
 
-        print "---- fullTargets"
+        print("---- fullTargets")
         for target in targets['fullTargets']:
-            print target
-        print "---- targets"
+            print(target)
+        print("---- targets")
         for target in targets['targets']:
-            print target
+            print(target)
         return 0, ''
 
     def cleanupUnusedConnections(self, args):
@@ -842,7 +844,7 @@ class service:
             return res['status']['code'], res['status']['message']
         else:
             for i in res['statuslist']:
-                print "Connection id %s - status %s" % (i['id'], i['status'])
+                print("Connection id %s - status %s" % (i['id'], i['status']))
         return 0, ''
 
     def disconnectStorageServer(self, args):
@@ -875,7 +877,7 @@ class service:
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         for element in status['spm_st'].keys():
-            print "\t%s = %s" % (element, status['spm_st'][element])
+            print("\t%s = %s" % (element, status['spm_st'][element]))
         return 0, ''
 
     def fenceSpmStorage(self, args):
@@ -886,7 +888,7 @@ class service:
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         for element in status['spm_st'].keys():
-            print "\t%s = %s" % (element, status['spm_st'][element])
+            print("\t%s = %s" % (element, status['spm_st'][element]))
         return 0, ''
 
     def updateVM(self, args):
@@ -1032,9 +1034,9 @@ class service:
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
         for element in info['info'].keys():
-            print "\t%s = %s" % (element, info['info'][element])
+            print("\t%s = %s" % (element, info['info'][element]))
         for element in info['dominfo'].keys():
-            print "\t%s = %s" % (element, info['dominfo'][element])
+            print("\t%s = %s" % (element, info['dominfo'][element]))
         return 0, ''
 
     def createVolume(self, args):
@@ -1074,7 +1076,7 @@ class service:
         if info['status']['code']:
             return info['status']['code'], info['status']['message']
         for element in info['info'].keys():
-            print "\t%s = %s" % (element, info['info'][element])
+            print("\t%s = %s" % (element, info['info'][element]))
         return 0, ''
 
     def getVolumeSize(self, args):
@@ -1146,19 +1148,19 @@ class service:
         todelete = []
         if volumes['status']['code']:
             return volumes['status']['code'], volumes['status']['message']
-        print "Images to delete:"
+        print("Images to delete:")
         for entry in volumes['uuidlist']:
             info = self.s.getVolumeInfo(sdUUID, spUUID, imgUUID, entry)['info']
             if info['description']:
                 if args[0] in info['description']:
-                    print "\t" + entry + " : " + info['description']
+                    print("\t" + entry + " : " + info['description'])
                     todelete.append(entry)
         if not len(todelete):
             return 0, 'Nothing to delete'
         var = raw_input("Are you sure yes/no?[no] :")
         if var == "yes":
-            print self.s.deleteVolume(sdUUID, spUUID, imgUUID,
-                                      todelete, 'false')
+            print(self.s.deleteVolume(sdUUID, spUUID, imgUUID,
+                                      todelete, 'false'))
         return 0, ''
 
     def getVolumesList(self, args):
@@ -1180,14 +1182,14 @@ class service:
                 message = entry + ' : '
                 res = self.s.getVolumeInfo(sdUUID, spUUID, imgUUID, entry)
                 if 'info' not in res:
-                    print 'ERROR:', entry, ':', res
+                    print('ERROR:', entry, ':', res)
                     continue
                 info = res['info']
                 if info['description']:
                     message += info['description'] + '. '
                 if BLANK_UUID not in info['parent']:
                     message += 'Parent is ' + info['parent']
-                print message
+                print(message)
         return 0, ''
 
     def getFileStats(self, args):
@@ -1197,7 +1199,7 @@ class service:
             return response['status']['code'], response['status']['message']
 
         for key, value in response['fileStats'].iteritems():
-            print 'file: ', key, 'stats: ', value
+            print('file: ', key, 'stats: ', value)
 
         return 0, ''
 
@@ -1207,9 +1209,9 @@ class service:
         if isos['status']['code']:
             return isos['status']['code'], isos['status']['message']
 
-        print '------ ISO list with proper permissions only -------'
+        print('------ ISO list with proper permissions only -------')
         for entry in isos['isolist']:
-            print entry
+            print(entry)
         return 0, ''
 
     def getFloppyList(self, args):
@@ -1218,7 +1220,7 @@ class service:
         if floppies['status']['code']:
             return floppies['status']['code'], floppies['status']['message']
         for entry in floppies['isolist']:
-            print entry
+            print(entry)
         return 0, ''
 
     def getImagesList(self, args):
@@ -1227,7 +1229,7 @@ class service:
         if images['status']['code']:
             return images['status']['code'], images['status']['message']
         for entry in images['imageslist']:
-            print entry
+            print(entry)
         return 0, ''
 
     def getImageDomainsList(self, args):
@@ -1237,7 +1239,7 @@ class service:
         if domains['status']['code']:
             return domains['status']['code'], domains['status']['message']
         for entry in domains['domainslist']:
-            print entry
+            print(entry)
         return 0, ''
 
     def getConnectedStoragePoolsList(self, args):
@@ -1245,7 +1247,7 @@ class service:
         if pools['status']['code']:
             return pools['status']['code'], pools['status']['message']
         for entry in pools['poollist']:
-            print entry
+            print(entry)
         return 0, ''
 
     def getTaskInfo(self, args):
@@ -1254,7 +1256,7 @@ class service:
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         for k, v in status['TaskInfo'].iteritems():
-            print '\t', k, '=', v
+            print('\t', k, '=', v)
         return 0, ''
 
     def getAllTasksInfo(self, args):
@@ -1262,9 +1264,9 @@ class service:
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         for t, inf in status['allTasksInfo'].iteritems():
-            print t, ':'
+            print(t, ':')
             for k, v in inf.iteritems():
-                print '\t', k, '=', v
+                print('\t', k, '=', v)
         return 0, ''
 
     def getTaskStatus(self, args):
@@ -1272,12 +1274,12 @@ class service:
         status = self.s.getTaskStatus(taskID)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print "TASK: %s STATUS: %s RESULT: %s MESSAGE: '%s'" % (
+        print("TASK: %s STATUS: %s RESULT: %s MESSAGE: '%s'" % (
             taskID,
             status["taskStatus"]["taskState"],
             status["taskStatus"]["taskResult"],
-            status["taskStatus"]["message"])
-        print "%s" % status  # TODO
+            status["taskStatus"]["message"]))
+        print("%s" % status)  # TODO
 
         return 0, ''
 
@@ -1285,7 +1287,7 @@ class service:
         status = self.s.getAllTasksStatuses()
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status  # TODO
+        print(status)  # TODO
         return 0, ''
 
     def getAllTasks(self, args):
@@ -1296,9 +1298,9 @@ class service:
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
         for t, inf in status['tasks'].iteritems():
-            print t, ':'
+            print(t, ':')
             for k, v in inf.iteritems():
-                print '\t', k, '=', v
+                print('\t', k, '=', v)
         return 0, ''
 
     def stopTask(self, args):
@@ -1306,7 +1308,7 @@ class service:
         status = self.s.stopTask(taskID)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status  # TODO
+        print(status)  # TODO
         return 0, ''
 
     def clearTask(self, args):
@@ -1314,7 +1316,7 @@ class service:
         status = self.s.clearTask(taskID)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status  # TODO
+        print(status)  # TODO
         return 0, ''
 
     def revertTask(self, args):
@@ -1322,7 +1324,7 @@ class service:
         status = self.s.revertTask(taskID)
         if status['status']['code']:
             return status['status']['code'], status['status']['message']
-        print status  # TODO
+        print(status)  # TODO
         return 0, ''
 
     def getParent(self, args):
@@ -1458,7 +1460,7 @@ class service:
         ret = self.s.reconcileVolumeChain(*args)
         if 'volumes' in ret:
             for v in ret['volumes']:
-                print v
+                print(v)
             return 0, ''
         return ret['status']['code'], ret['status']['message']
 
@@ -1617,9 +1619,9 @@ class service:
             if not message:
                 message = 'No VMs found.'
             if isinstance(message, unicode):
-                print message.encode('utf-8')
+                print(message.encode('utf-8'))
             else:
-                print message
+                print(message)
 
             return 0, ''
 
@@ -1640,7 +1642,7 @@ class service:
                 message += entry
             if not message:
                 message = 'No VMs found.'
-            print message
+            print(message)
             return 0, ''
 
     def _eqSplit(self, args):
@@ -1797,7 +1799,7 @@ class service:
                       (imgUUID, status, res["message"], res["imagestatus"]))
             if "badvols" in res:
                 for v, err in res["badvols"].iteritems():
-                    print "\tVolume %s is bad: %s" % (v, err)
+                    print("\tVolume %s is bad: %s" % (v, err))
 
     def __domain_status(self, sdUUID, res):
             if "domainstatus" in res and "message" in res:
@@ -1808,7 +1810,7 @@ class service:
                       (sdUUID, status, res["message"], res["domainstatus"]))
             if "badimages" in res:
                 for i in res["badimages"]:
-                    print "\tImage %s is bad" % (i)
+                    print("\tImage %s is bad" % (i))
                     self.__image_status(i, res["badimages"][i])
 
     def __pool_status(self, spUUID, res):
@@ -1819,23 +1821,23 @@ class service:
                 print("Pool %s status %s: %s (%s)" %
                       (spUUID, status, res["message"], res["poolstatus"]))
             if "masterdomain":
-                print "\tMaster domain is %s" % res["masterdomain"]
+                print("\tMaster domain is %s" % res["masterdomain"])
             if "spmhost":
-                print "\tThe SPM host id is %s" % res["spmhost"]
+                print("\tThe SPM host id is %s" % res["spmhost"])
             if "baddomains" in res:
                 for d in res["baddomains"]:
-                    print "\tDomain %s is bad:" % (d)
+                    print("\tDomain %s is bad:" % (d))
                     self.__domain_status(d, res["baddomains"][d])
 
     def repoStats(self, args):
         stats = self.s.repoStats()
         if stats['status']['code']:
-            print "count not get repo stats"
+            print("count not get repo stats")
             return int(stats['status']['code'])
         for d in stats:
             if d == "status":
                 continue
-            print 'Domain %s %s' % (d, str(stats[d]))
+            print('Domain %s %s' % (d, str(stats[d])))
         return 0, ''
 
     def startMonitoringDomain(self, args):
@@ -1900,7 +1902,7 @@ class service:
             }, newSize)
 
         if status['status']['code'] == 0:
-            print "New disk size:", status.get('size', None)
+            print("New disk size:", status.get('size', None))
 
         return status['status']['code'], status['status']['message']
 
@@ -1913,7 +1915,7 @@ class service:
             vmList = status['vmList']
             for vm in vmList:
                 for key, val in vm.iteritems():
-                    print key + ': ' + str(val)
+                    print(key + ': ' + str(val))
 
         return status['status']['code'], status['status']['message']
 
@@ -2826,7 +2828,7 @@ if __name__ == '__main__':
     except SystemExit as status:
         sys.exit(status)
     except Exception as e:
-        print "ERROR - %s" % (e)
+        print("ERROR - %s" % (e))
         usage(commands)
         sys.exit(-1)
 
@@ -2839,19 +2841,19 @@ if __name__ == '__main__':
         code, message = commands[command][0](commandArgs)
         if code != 0:
             code = 1
-        print message
+        print(message)
         sys.exit(code)
     except (TypeError, IndexError, ValueError, AssertionError) as e:
-        print "Error using command:", e, "\n"
-        print command
+        print("Error using command:", e, "\n")
+        print(command)
         for line in commands[command][1]:
-            print '\t' + line
+            print('\t' + line)
         sys.exit(-1)
     except SystemExit as status:
         sys.exit(status)
     except socket.error as e:
         if e[0] == 111:
-            print "Connection to %s refused" % hostPort
+            print("Connection to %s refused" % hostPort)
         else:
             traceback.print_exc()
         sys.exit(-1)

@@ -19,6 +19,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import print_function
 import os
 import sys
 import socket
@@ -42,7 +43,7 @@ VDSM_REG_RESTART_FAILED_ERROR = 5
 
 def usage():
     name = os.path.basename(sys.argv[0])
-    print """
+    print("""
 
 Usage: %(name)s [-f | --force] [-p PORT | --port PORT] OVIRT_ENGINE
 
@@ -56,7 +57,7 @@ Options:
 Example:
   # %(name)s ovirt-engine-server
   # %(name)s -p 8443 ovirt-engine-server
-""" % {'name': name}
+""" % {'name': name})
 
 
 def isHostReachable(host, port=None, ssl=True, timeout=15):

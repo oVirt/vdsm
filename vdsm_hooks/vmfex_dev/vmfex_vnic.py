@@ -25,6 +25,7 @@ different events:
     * before_device_create
     * before_nic_hotplug
 """
+from __future__ import print_function
 from xml.dom import minidom
 import fcntl
 import os

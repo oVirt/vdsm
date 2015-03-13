@@ -6,6 +6,7 @@
 # http://wiki.python.org/moin/PythonSoftwareFoundationLicenseV2Easy
 #
 
+from __future__ import print_function
 import threading
 from time import sleep
 from Queue import Queue, Empty
@@ -232,44 +233,44 @@ if __name__ == "__main__":
     # then sort them
 
     def sortTask(data):
-        print "SortTask starting for ", data
+        print("SortTask starting for ", data)
         numbers = range(data[0], data[1])
         for a in numbers:
             rnd = randrange(0, len(numbers) - 1)
             a, numbers[rnd] = numbers[rnd], a
-        print "SortTask sorting for ", data
+        print("SortTask sorting for ", data)
         numbers.sort()
-        print "SortTask done for ", data
+        print("SortTask done for ", data)
         return "Sorter ", data
 
     # Sample task 2: just sleep for a number of seconds.
 
     def waitTask(data):
-        print "WaitTask starting for ", data
-        print "WaitTask sleeping for %d seconds" % data
+        print("WaitTask starting for ", data)
+        print("WaitTask sleeping for %d seconds" % data)
         sleep(data)
         return "Waiter ", data
 
     # Both tasks use the same callback
 
     def taskCallback(data):
-        print "Callback called for", data
+        print("Callback called for", data)
 
     # Create a pool with three worker threads
 
     pool = ThreadPool(100)
 
     # Insert tasks into the queue and let them run
-    print "Running tasks: ", pool.getRunningTasks(), "\n"
+    print("Running tasks: ", pool.getRunningTasks(), "\n")
     pool.queueTask(sortTask, (1000, 100000), taskCallback)
-    print "Running tasks: ", pool.getRunningTasks(), "\n"
+    print("Running tasks: ", pool.getRunningTasks(), "\n")
     pool.queueTask(waitTask, 5, taskCallback)
     pool.queueTask(sortTask, (200, 200000), taskCallback)
     pool.queueTask(waitTask, 2, taskCallback)
-    print "Running tasks: ", pool.getRunningTasks(), "\n"
+    print("Running tasks: ", pool.getRunningTasks(), "\n")
     pool.queueTask(sortTask, (3, 30000), taskCallback)
     pool.queueTask(waitTask, 7, taskCallback)
 
     # When all tasks are finished, allow the threads to terminate
     pool.joinAll()
-    print "ThreadPool sample done.\n"
+    print("ThreadPool sample done.\n")

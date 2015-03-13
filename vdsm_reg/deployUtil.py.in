@@ -19,6 +19,7 @@
 #
 # Description: Deployment utilities.
 
+from __future__ import print_function
 import contextlib
 import subprocess
 import logging
@@ -250,10 +251,10 @@ def setCoreDumpPath():
     fReturn = True
     try:
         _logExec([EX_ECHO, CORE_DUMP_PATH, ">", CORE_PATTERN])
-        print "<BSTRAP component='CoreDump' status='OK'/>"
+        print("<BSTRAP component='CoreDump' status='OK'/>")
     except:
         fReturn = False
-        print "<BSTRAP component='CoreDump' status='FAIL'/>"
+        print("<BSTRAP component='CoreDump' status='FAIL'/>")
 
     logging.debug("setCoreDumpPath end:" + str(fReturn))
     return fReturn
@@ -292,7 +293,7 @@ def cleanAll(random_num):
     ):
         _removeNoError(_WORK_DIR + f)
 
-    print "<BSTRAP component='cleanAll' status='OK'/>"
+    print("<BSTRAP component='cleanAll' status='OK'/>")
     logging.debug("cleanAll end")
 
     return True
@@ -1394,12 +1395,12 @@ def instCert(random_num, confFile):
         _linkOrPersist(VDSMKEY, '/etc/pki/libvirt/private/clientkey.pem')
         _linkOrPersist(CACERT, '/etc/pki/CA/cacert.pem')
 
-        print "<BSTRAP component='instCert' status='OK'/>"
+        print("<BSTRAP component='instCert' status='OK'/>")
         logging.debug("instCert: ended.")
     except:
         fReturn = False
         logging.debug("instCert: failed.", exc_info=True)
-        print "<BSTRAP component='instCert' status='FAIL'/>"
+        print("<BSTRAP component='instCert' status='FAIL'/>")
 
     return fReturn
 
@@ -1784,28 +1785,28 @@ def main():
 
     if options.nodeCleanup:
         nodeCleanup()
-        print 'Node clean-up successful'
+        print('Node clean-up successful')
         return 0
     if options.downloadRhevmCert:
         if not options.serverIp or not options.serverPort:
-            print "Must supply @ENGINENAME@'s IP and port"
+            print("Must supply @ENGINENAME@'s IP and port")
             return -1
         if not getRhevmCert(options.serverIp, options.serverPort):
-            print 'Failed downloading the @ENGINENAME@ certificate file'
+            print('Failed downloading the @ENGINENAME@ certificate file')
             return -1
         _, _, engineWebCACert = certPaths('')
         if options.fingerPrint:
             fp = generateFingerPrint(engineWebCACert)
             if options.fingerPrint != fp:
-                print 'Expected fingerprint %s is different from recieved ' \
-                    'fingerprint %s' % (options.fingerPrint, fp)
+                print('Expected fingerprint %s is different from recieved '
+                      'fingerprint %s' % (options.fingerPrint, fp))
                 return -1
 
         if isOvirt():
             ovirtfunctions.ovirt_store_config(engineWebCACert)
-        print '@ENGINENAME@ certificate downloaded and verified successfully.'
+        print('@ENGINENAME@ certificate downloaded and verified successfully.')
         return 0
-    print 'Missing arguments'
+    print('Missing arguments')
     return -1
 
 

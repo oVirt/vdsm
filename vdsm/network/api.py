@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import print_function
 from functools import wraps
 import errno
 import inspect

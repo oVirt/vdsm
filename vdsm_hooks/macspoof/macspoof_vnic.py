@@ -5,6 +5,7 @@ it gets triggered and used by two different events:
     * before_device_create
     * before_nic_hotplug
 """
+from __future__ import print_function
 
 
 import os
@@ -51,12 +52,12 @@ def test():
     </interface>
     """).getElementsByTagName('interface')[0]
 
-    print "Interface before removing filter: %s" % \
-        interface.toxml(encoding='UTF-8')
+    print("Interface before removing filter: %s" %
+          interface.toxml(encoding='UTF-8'))
 
     removeMacSpoofingFilter(interface)
-    print "Interface after removing filter: %s" % \
-        interface.toxml(encoding='UTF-8')
+    print("Interface after removing filter: %s" %
+          interface.toxml(encoding='UTF-8'))
 
 
 if __name__ == '__main__':

@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import print_function
 from collections import namedtuple
 import sys
 import hooking
@@ -62,7 +63,7 @@ def test():
     for subcmd in _parse_into_subcommands(opts['ethtool_opts'].split()):
         command = ([ETHTOOL_BINARY.cmd] + [subcmd.name, subcmd.device] +
                    subcmd.flags)
-        print('    '),
+        print('    ', end=' ')
         print(command)
 
     # Test with the correct nics
