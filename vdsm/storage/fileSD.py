@@ -364,7 +364,7 @@ class FileStorageDomain(sd.StorageDomain):
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         currImgDir = self.getImagePath(imgUUID)
         dirName, baseName = os.path.split(currImgDir)
-        toDelDir = os.tempnam(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
+        toDelDir = os.path.join(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
         self.log.debug("Renaming dir %s to %s", currImgDir, toDelDir)
         try:
             self.oop.os.rename(currImgDir, toDelDir)
