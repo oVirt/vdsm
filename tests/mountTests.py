@@ -110,7 +110,7 @@ class IterMountsPerfTests(TestCaseBase):
 
         with open(mounts_path, 'w') as mounts:
             with open(mtab_path, 'w') as mtab:
-                for i in xrange(100):
+                for i in range(100):
                     mnt = mount.MountRecord('/dev/sda%d' % i,
                                             '/some/path/%d' % i,
                                             'btrfs',
@@ -119,7 +119,7 @@ class IterMountsPerfTests(TestCaseBase):
                     mounts.write(cls.line_fmt % mnt._asdict())
                     mtab.write(cls.line_fmt % mnt._asdict())
 
-                for i in xrange(size):
+                for i in range(size):
                     mounts_mnt = mount.MountRecord('/dev/loop%d' % i,
                                                    '/mnt/loop%d' % i,
                                                    'xfs',

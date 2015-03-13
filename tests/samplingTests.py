@@ -245,7 +245,7 @@ class AdvancedStatsFunctionTests(TestCaseBase):
         self.assertEqual(stat.getLastSample(), value)
 
     def testGetStats(self):
-        values = range(42)
+        values = tuple(range(42))
         stat = sampling.AdvancedStatsFunction(
             lambda x: x, interval=1, window=2)
         for val in values:
@@ -264,7 +264,7 @@ class AdvancedStatsFunctionTests(TestCaseBase):
         self.assertTrue(diff > 0)  # assertGreater requires py >= 2.7
 
     def testLastSample(self):
-        values = range(42)
+        values = tuple(range(42))
         stat = sampling.AdvancedStatsFunction(
             lambda x: x, interval=1, window=2)
         for val in values:

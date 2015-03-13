@@ -234,7 +234,7 @@ if __name__ == "__main__":
 
     def sortTask(data):
         print("SortTask starting for ", data)
-        numbers = range(data[0], data[1])
+        numbers = list(range(data[0], data[1]))
         for a in numbers:
             rnd = randrange(0, len(numbers) - 1)
             a, numbers[rnd] = numbers[rnd], a

@@ -65,12 +65,12 @@ class ExpiringCacheOperationTests(TestCaseBase):
 
     def test_clear(self):
         ITEMS = 10
-        for i in xrange(ITEMS):
+        for i in range(ITEMS):
             self.cache[i] = 'foobar-%d' % i
 
         self.cache.clear()
 
-        for i in xrange(ITEMS):
+        for i in range(ITEMS):
             self.cache.get(i) is None
 
     def test_nonzero(self):

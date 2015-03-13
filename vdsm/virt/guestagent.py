@@ -39,11 +39,11 @@ _MESSAGE_API_VERSION_LOOKUP = {
 
 _REPLACEMENT_CHAR = u'\ufffd'
 _RESTRICTED_CHARS = frozenset(unichr(c) for c in
-                              range(8 + 1) +
-                              range(0xB, 0xC + 1) +
-                              range(0xE, 0x1F + 1) +
-                              range(0x7F, 0x84 + 1) +
-                              range(0x86, 0x9F + 1) +
+                              list(range(8 + 1)) +
+                              list(range(0xB, 0xC + 1)) +
+                              list(range(0xE, 0x1F + 1)) +
+                              list(range(0x7F, 0x84 + 1)) +
+                              list(range(0x86, 0x9F + 1)) +
                               [0xFFFE, 0xFFFF])
 
 

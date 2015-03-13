@@ -40,7 +40,7 @@ class LibvirtMock(object):
         VIR_ERR_SYSTEM_ERROR, \
         VIR_ERR_INTERNAL_ERROR, \
         VIR_ERR_NO_CONNECT, \
-        VIR_ERR_INVALID_CONN = range(8)
+        VIR_ERR_INVALID_CONN = list(range(8))
 
     SOME_ERROR_LEVEL = 3
 

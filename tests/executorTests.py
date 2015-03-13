@@ -76,14 +76,14 @@ class ExecutorTests(TestCaseBase):
         self.assertTrue(task.executed.is_set())  # task must have executed!
 
     def test_too_many_tasks(self):
-        tasks = [Task(wait=0.1) for n in xrange(31)]
+        tasks = [Task(wait=0.1) for n in range(31)]
         with self.assertRaises(executor.TooManyTasks):
             for task in tasks:
                 self.executor.dispatch(task)
 
     @slowtest
     def test_concurrency(self):
-        tasks = [Task(wait=0.1) for n in xrange(20)]
+        tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
         time.sleep(0.3)
@@ -92,11 +92,11 @@ class ExecutorTests(TestCaseBase):
 
     @slowtest
     def test_blocked_workers(self):
-        slow_tasks = [Task(wait=0.4) for n in xrange(5)]
+        slow_tasks = [Task(wait=0.4) for n in range(5)]
         for task in slow_tasks:
             self.executor.dispatch(task, 1.0)
         # Slow tasks block half of the workers
-        tasks = [Task(wait=0.1) for n in xrange(20)]
+        tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
         time.sleep(0.5)
@@ -107,13 +107,13 @@ class ExecutorTests(TestCaseBase):
 
     @slowtest
     def test_discarded_workers(self):
-        slow_tasks = [Task(wait=0.4) for n in xrange(10)]
+        slow_tasks = [Task(wait=0.4) for n in range(10)]
         for task in slow_tasks:
             self.executor.dispatch(task, 0.1)
         # All workers are blocked on slow tasks
         time.sleep(0.1)
         # Blocked workers should be replaced with new workers
-        tasks = [Task(wait=0.1) for n in xrange(20)]
+        tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
         time.sleep(0.3)
@@ -122,7 +122,7 @@ class ExecutorTests(TestCaseBase):
         for task in slow_tasks:
             self.assertTrue(task.executed.is_set())
         # Discarded workers should exit, executor should operate normally
-        tasks = [Task(wait=0.1) for n in xrange(20)]
+        tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
         time.sleep(0.3)

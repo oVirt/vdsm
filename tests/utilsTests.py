@@ -528,7 +528,7 @@ class ExecCmdStressTest(TestCaseBase):
         self.check(self.write_stdin_read_stderr)
 
     def check(self, func):
-        for i in xrange(self.CONCURRENCY):
+        for i in range(self.CONCURRENCY):
             worker = Worker(self.resume, func, self.FUNC_CALLS,
                             self.FUNC_DELAY)
             self.workers.append(worker)

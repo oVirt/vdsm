@@ -27,11 +27,9 @@ import io
 
 from .. import utils
 
-(
-    BEFORE,
-    WITHIN,
-    AFTER
-) = range(3)
+BEFORE = 0
+WITHIN = 1
+AFTER = 2
 
 
 def context(func):

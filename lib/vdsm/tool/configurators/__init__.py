@@ -40,4 +40,4 @@ class InvalidRun(UsageError):
 #         configuration validity could not be determined.
 #
 # See also --force at configurators.py.
-YES, NO, MAYBE = range(3)
+YES, NO, MAYBE = tuple(range(3))

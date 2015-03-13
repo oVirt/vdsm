@@ -399,7 +399,7 @@ class DdWatchCopy(TestCaseBase):
         fd, path = tempfile.mkstemp(dir=TEMPDIR)
 
         try:
-            for i in xrange(repetitions):
+            for i in range(repetitions):
                 os.write(fd, data)
             self.assertEquals(os.stat(path).st_size, misc.MEGA)
         except:
@@ -425,7 +425,7 @@ class DdWatchCopy(TestCaseBase):
             self.assertEquals(os.stat(path).st_size, misc.MEGA * 2)
 
             with open(path, "r") as f:
-                for i in xrange(repetitions):
+                for i in range(repetitions):
                     self.assertEquals(f.read(len(data)), data)
         finally:
             os.unlink(path)
@@ -452,7 +452,7 @@ class DdWatchCopy(TestCaseBase):
                               misc.MEGA * 2 + len(add_data))
 
             with open(path, "r") as f:
-                for i in xrange(repetitions):
+                for i in range(repetitions):
                     self.assertEquals(f.read(len(data)), data)
                 # Checking the additional data
                 self.assertEquals(f.read(len(add_data)), add_data)

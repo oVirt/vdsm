@@ -45,7 +45,7 @@ class TestHooks(TestCaseBase):
 echo -n %s >> "$_hook_domxml"
             """
             scripts = [tempfile.NamedTemporaryFile(dir=dirName, delete=False)
-                       for n in xrange(Q)]
+                       for n in range(Q)]
             scripts.sort(key=lambda f: f.name)
             for n, script in enumerate(scripts):
                 script.write(code % n)
@@ -69,7 +69,7 @@ echo -n %s >> "$_hook_domxml"
             Q = 3
             DOMXML = "algo"
             expectedResult = DOMXML
-            for n in xrange(Q):
+            for n in range(Q):
                 expectedResult = expectedResult + str(n)
             res = hooks._runHooksDir(DOMXML, dirName)
             self.assertEqual(expectedResult, res)
