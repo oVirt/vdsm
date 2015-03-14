@@ -229,7 +229,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
 
     def setSpmStatus(self, lVer=None, spmId=None):
         self.invalidateMetadata()
-        metaParams = dict(filter(lambda (k, v): v is not None,
+        metaParams = dict(filter(lambda k, v: v is not None,
                           ((PMDK_LVER, lVer), (PMDK_SPM_ID, spmId))))
         self._metadata.update(metaParams)
 

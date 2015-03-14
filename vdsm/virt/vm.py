@@ -115,7 +115,7 @@ def getVDSMDomains():
 
 
 def _filterSnappableDiskDevices(diskDeviceXmlElements):
-        return filter(lambda(x): not(x.getAttribute('device')) or
+        return filter(lambda x: not(x.getAttribute('device')) or
                       x.getAttribute('device') in ['disk', 'lun'],
                       diskDeviceXmlElements)
 

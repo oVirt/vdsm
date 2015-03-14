@@ -1758,11 +1758,11 @@ class NetworkTest(TestCaseBase):
                 {BONDING_NAME: {'remove': True}},
                 NOCHK)
 
-    @permutations([[(True, (4,))], [(True, (6,))], [(True, (4, 6))],
-                   [(False, (4,))], [(False, (6,))], [(False, (4, 6))]])
+    @permutations([(True, (4,)), (True, (6,)), (True, (4, 6)),
+                   (False, (4,)), (False, (6,)), (False, (4, 6))])
     @cleanupNet
     @RequireVethMod
-    def testSetupNetworksAddDelDhcp(self, (bridged, families)):
+    def testSetupNetworksAddDelDhcp(self, bridged, families):
         with vethIf() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
@@ -1879,10 +1879,10 @@ class NetworkTest(TestCaseBase):
                 finally:
                     dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
 
-    @permutations([[(4, 'default')], [(4, 'local')], [(6, None)]])
+    @permutations([(4, 'default'), (4, 'local'), (6, None)])
     @cleanupNet
     @RequireVethMod
-    def testDhclientLeases(self, (family, dateFormat)):
+    def testDhclientLeases(self, family, dateFormat):
         dhcpv4_ifaces = set()
         dhcpv6_ifaces = set()
         with vethIf() as (server, client):
