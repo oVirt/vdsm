@@ -73,10 +73,10 @@ class TestNumaUtils(TestCaseBase):
         with fake.VM(VM_PARAMS) as testvm:
             expectedResult = {'0': [0, 1], '1': [0, 1]}
             self.assertTrue(testvm.hasGuestNumaNode)
-            sample = [(0, 1, 19590000000L, 1),
-                      (1, 1, 10710000000L, 1),
-                      (2, 1, 19590000000L, 0),
-                      (3, 1, 19590000000L, 2)]
+            sample = [(0, 1, 19590000000, 1),
+                      (1, 1, 10710000000, 1),
+                      (2, 1, 19590000000, 0),
+                      (3, 1, 19590000000, 2)]
             with MonkeyPatchScope([(numaUtils, "_get_vcpu_positioning",
                                   lambda vm: sample)]):
                 vm_numa_info = numaUtils.getVmNumaNodeRuntimeInfo(testvm)

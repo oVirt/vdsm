@@ -222,10 +222,10 @@ class SuperVdsm(object):
 
 class AdvancedStatsFunction:
     def __init__(self):
-        self._samples = [(0, 1, 19590000000L, 1),
-                         (1, 1, 10710000000L, 1),
-                         (2, 1, 19590000000L, 0),
-                         (3, 1, 19590000000L, 2)]
+        self._samples = [(0, 1, 19590000000, 1),
+                         (1, 1, 10710000000, 1),
+                         (2, 1, 19590000000, 0),
+                         (3, 1, 19590000000, 2)]
 
     def getStats(self):
         return [], self._samples, 15

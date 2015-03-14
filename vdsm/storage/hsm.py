@@ -36,6 +36,7 @@ import time
 import signal
 import types
 import math
+import numbers
 import stat
 
 from vdsm.config import config
@@ -3241,7 +3242,7 @@ class HSM(object):
 
             leasePath, leaseOffset = dom.getVolumeLease(imgUUID, volUUID)
 
-            if leasePath and type(leaseOffset) in (int, long):
+            if leasePath and isinstance(leaseOffset, numbers.Integral):
                 volInfo.update({
                     'leasePath': leasePath,
                     'leaseOffset': leaseOffset,

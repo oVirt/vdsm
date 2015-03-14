@@ -715,7 +715,7 @@ class Vm(object):
         self.id = self.conf['vmId']
         self._volPrepareLock = threading.Lock()
         self._initTimePauseCode = None
-        self._initTimeRTC = long(self.conf.get('timeOffset', 0))
+        self._initTimeRTC = int(self.conf.get('timeOffset', 0))
         self._guestEvent = vmstatus.POWERING_UP
         self._guestEventTime = 0
         self._vmStats = None
@@ -1288,7 +1288,7 @@ class Vm(object):
         timer.start()
 
     def _rtcUpdate(self, timeOffset):
-        newTimeOffset = str(self._initTimeRTC + long(timeOffset))
+        newTimeOffset = str(self._initTimeRTC + int(timeOffset))
         self.log.debug('new rtc offset %s', newTimeOffset)
         with self._confLock:
             self.conf['timeOffset'] = newTimeOffset
