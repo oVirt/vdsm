@@ -23,8 +23,9 @@ include $(top_srcdir)/build-aux/Makefile.subs
 nodist_noinst_DATA = \
 	supervdsmd.service \
 	systemd-vdsmd \
-	vdsm-tmpfiles.d.conf \
 	vdsmd.service \
+	vdsm-network.service \
+	vdsm-tmpfiles.d.conf \
 	$(NULL)
 
 CLEANFILES = \
@@ -35,8 +36,9 @@ CLEANFILES = \
 EXTRA_DIST = \
 	supervdsmd.service.in \
 	systemd-vdsmd.in \
-	vdsm-tmpfiles.d.conf.in \
 	vdsmd.service.in \
+	vdsm-network.service.in \
+	vdsm-tmpfiles.d.conf.in \
 	$(NULL)
 
 all-local: \

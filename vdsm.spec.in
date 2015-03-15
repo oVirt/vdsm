@@ -762,6 +762,7 @@ install -Dm 0644 vdsm/limits.conf \
 %if 0%{?with_systemd}
 install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/usr/lib/systemd/systemd-vdsmd
 install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
+install -Dm 0644 init/systemd/vdsm-network.service %{buildroot}%{_unitdir}/vdsm-network.service
 install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
 
 install -Dm 0755 vdsm_reg/vdsm-reg.init \
@@ -867,6 +868,7 @@ fi
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
 if [ "$1" -eq 1 ] ; then
     /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
+    /bin/systemctl enable vdsm-network.service >/dev/null 2>&1 || :
     /bin/systemctl enable supervdsmd.service >/dev/null 2>&1 || :
 fi
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
@@ -902,12 +904,14 @@ fi
 %else
 %if 0%{?with_systemd}
 %systemd_preun vdsmd.service
+%systemd_preun vdsm-network.service
 %systemd_preun supervdsmd.service
 %else
 if [ "$1" -eq 0 ]; then
     /bin/systemctl --no-reload disable vdsmd.service > /dev/null 2>&1 || :
     /bin/systemctl --no-reload disable supervdsmd.service > /dev/null 2>&1 || :
     /bin/systemctl stop vdsmd.service > /dev/null 2>&1 || :
+    /bin/systemctl stop vdsm-network.service > /dev/null 2>&1 || :
     /bin/systemctl stop supervdsmd.service > /dev/null 2>&1 || :
 fi
 exit 0
@@ -1011,6 +1015,7 @@ exit 0
 %if 0%{?with_systemd}
 /usr/lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
+%{_unitdir}/vdsm-network.service
 %{_unitdir}/supervdsmd.service
 %else
 %{_initrddir}/vdsmd
