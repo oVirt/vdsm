@@ -1,0 +1,55 @@
+#!/usr/bin/python
+#
+# Copyright 2015-2018 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+"""
+Parse repoStats log lines and calculate statistics.
+
+Usage: repostat vdsm.log [...]
+"""
+
+from __future__ import print_function
+import fileinput
+import re
+import six
+
+pattern = re.compile(r' FINISH repoStats return=(\{.+\}\}) from=internal')
+
+stats = {}
+
+
+def liststat(a):
+    b = sorted(a)
+    return sum(b) / len(b),  b[0], b[-1]
+
+
+for line in fileinput.input():
+    match = pattern.search(line)
+    if not match:
+        continue
+    response = eval(match.group(1))
+    for uuid, info in response.items():
+        stats.setdefault(uuid, {'delays': [], 'checks': []})
+        stats[uuid]['delays'].append(float(info['delay']))
+        stats[uuid]['checks'].append(float(info['lastCheck']))
+
+for uuid, info in six.iteritems(stats):
+    print('domain:', uuid)
+    print('  delay      avg: %f min: %f max: %f' % liststat(info['delays']))
+    print('  last check avg: %f min: %f max: %f' % liststat(info['checks']))

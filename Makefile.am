@@ -52,6 +52,7 @@ EXTRA_DIST = \
 	contrib/lvs-stats \
 	contrib/profile-stats \
 	contrib/repoplot \
+	contrib/repostat \
 	pylintrc \
 	vdsm.spec \
 	vdsm.spec.in \
