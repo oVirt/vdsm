@@ -48,6 +48,7 @@ EXTRA_DIST = \
 	autobuild.sh \
 	autogen.sh \
 	build-aux/pkg-version \
+	contrib/logdb \
 	contrib/profile-stats \
 	pylintrc \
 	vdsm.spec \
@@ -79,6 +80,7 @@ PEP8_BLACKLIST = \
 	$(NULL)
 
 WHITELIST = \
+	contrib/logdb \
 	contrib/profile-stats \
 	init/daemonAdapter \
 	vdsm/get-conf-item \
