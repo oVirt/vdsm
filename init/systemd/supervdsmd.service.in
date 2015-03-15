@@ -1,5 +1,5 @@
 [Unit]
-Description="Auxiliary vdsm service for running helper functions as root"
+Description=Auxiliary vdsm service for running helper functions as root
 Requires=libvirtd.service
 
 [Service]
