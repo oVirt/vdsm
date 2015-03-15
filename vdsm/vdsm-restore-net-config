@@ -60,8 +60,9 @@ def unified_restoration():
         removeBonds[bond] = {'remove': True}
     logging.debug('Removing all networks (%s) and bonds (%s) in running '
                   'config.', removeNetworks, removeBonds)
-    setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
-                  _inRollback=True)
+    if removeNetworks or removeBonds:
+        setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
+                      _inRollback=True)
 
     # Flush vdsm configurations left-overs from any configurator on the system
     # so that changes of configurator and persistence system are smooth.
@@ -77,7 +78,8 @@ def unified_restoration():
                                      persistentConfig.bonds)
     logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
                   nets, bonds)
-    setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
+    if nets or bonds:
+        setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
 
 
 def _filter_nets_bonds(nets, bonds):
