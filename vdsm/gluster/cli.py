@@ -1392,9 +1392,7 @@ def _parseSnapshotConfigList(tree):
                        'snap-max-soft-limit': 'softLimit',
                        'auto-delete': 'enable/disable'},
              'volume':{'name' :
-                          {'snap-max-hard-limit: 'hardlimit',
-                           'effective-hard-limit: 'EffectiveHardlimit',
-                           'snap-max-soft-limit': 'softLimit'}
+                          {'snap-max-hard-limit: 'hardlimit'}
                       }
             }
     """
@@ -1410,9 +1408,7 @@ def _parseSnapshotConfigList(tree):
     for el in tree.findall('snapConfig/volumeConfig/volume'):
         config = {}
         volumeName = el.find('name').text
-        config['snap-max-hard-limit'] = el.find('hardLimit').text
-        config['effective-hard-limit'] = el.find('effectiveHardLimit').text
-        config['snap-max-soft-limit'] = el.find('softLimit').text
+        config['snap-max-hard-limit'] = el.find('effectiveHardLimit').text
         volumeConfig[volumeName] = config
 
     return {'system': systemConfig, 'volume': volumeConfig}
