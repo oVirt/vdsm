@@ -93,7 +93,9 @@ def cannonizeHostPort(hostPort=None, port=_PORT):
 
 
 def connect(hostPort=None, useSSL=None, tsPath=None,
-            TransportClass=sslutils.VerifyingSafeTransport):
+            TransportClass=sslutils.VerifyingSafeTransport,
+            timeout=sslutils.SOCKET_DEFAULT_TIMEOUT):
+
     hostPort = cannonizeHostPort(hostPort)
     if useSSL is None:
         useSSL = _USE_SSL
@@ -109,10 +111,15 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
                 raise Exception("No permission to read file: %s" % f)
 
         transport = TransportClass(key_file=KEYFILE,
-                                   cert_file=CERTFILE, ca_certs=CACERT)
+                                   cert_file=CERTFILE, ca_certs=CACERT,
+                                   timeout=timeout)
         server = xmlrpclib.ServerProxy('https://%s' % hostPort,
                                        wrap_transport(transport))
     else:
+        # TODO: add timeout option for HTTP connection
+        if timeout is not sslutils.SOCKET_DEFAULT_TIMEOUT:
+            raise NotImplementedError('timeout is not supported in'
+                                      ' plaintext connection')
         transport = wrap_transport(SingleRequestTransport())
         server = xmlrpclib.Server('http://%s' % hostPort, transport)
     return server

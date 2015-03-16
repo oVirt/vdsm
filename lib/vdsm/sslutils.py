@@ -26,6 +26,7 @@ from M2Crypto import SSL, X509, threading
 
 
 DEFAULT_ACCEPT_TIMEOUT = 5
+SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT
 
 # M2Crypto.threading needs initialization.
 # See https://bugzilla.redhat.com/482420
@@ -174,7 +175,7 @@ class SSLContext(object):
 
 class VerifyingHTTPSConnection(httplib.HTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
-                 strict=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
+                 strict=None, timeout=SOCKET_DEFAULT_TIMEOUT,
                  ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
         httplib.HTTPSConnection.__init__(self, host, port, key_file, cert_file,
                                          strict, timeout)
@@ -196,12 +197,14 @@ class VerifyingHTTPSConnection(httplib.HTTPSConnection):
 
 class VerifyingSafeTransport(xmlrpclib.SafeTransport):
     def __init__(self, use_datetime=0, key_file=None, cert_file=None,
-                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED,
+                 timeout=SOCKET_DEFAULT_TIMEOUT):
         xmlrpclib.SafeTransport.__init__(self, use_datetime)
         self.key_file = key_file
         self.cert_file = cert_file
         self.ca_certs = ca_certs
         self.cert_reqs = cert_reqs
+        self._timeout = timeout
 
     def make_connection(self, host):
         """Return VerifyingHTTPS object that is aware of ca_certs, and will
@@ -212,12 +215,14 @@ class VerifyingSafeTransport(xmlrpclib.SafeTransport):
         if hasattr(xmlrpclib.SafeTransport, "single_request"):   # Python 2.7
             return VerifyingHTTPSConnection(
                 chost, None, key_file=self.key_file, strict=None,
-                cert_file=self.cert_file, ca_certs=self.ca_certs,
+                cert_file=self.cert_file, timeout=self._timeout,
+                ca_certs=self.ca_certs,
                 cert_reqs=self.cert_reqs)
         else:
             return VerifyingHTTPS(
                 chost, None, key_file=self.key_file,
-                cert_file=self.cert_file, ca_certs=self.ca_certs,
+                cert_file=self.cert_file, timeout=self._timeout,
+                ca_certs=self.ca_certs,
                 cert_reqs=self.cert_reqs)
 
 
@@ -225,7 +230,8 @@ class VerifyingHTTPS(httplib.HTTPS):
     _connection_class = VerifyingHTTPSConnection
 
     def __init__(self, host='', port=None, key_file=None, cert_file=None,
-                 strict=None, ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
+                 strict=None, timeout=SOCKET_DEFAULT_TIMEOUT,
+                 ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
         """A ca_cert-aware HTTPS object,
         that creates a VerifyingHTTPSConnection
         """
@@ -239,6 +245,7 @@ class VerifyingHTTPS(httplib.HTTPS):
                                            key_file=key_file,
                                            cert_file=cert_file,
                                            strict=strict,
+                                           timeout=timeout,
                                            ca_certs=ca_certs,
                                            cert_reqs=cert_reqs))
 
