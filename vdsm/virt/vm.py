@@ -2731,6 +2731,13 @@ class Vm(object):
                 if device.UUID == drive["UUID"]:
                     return device
 
+        elif drive.get('diskType') == DISK_TYPE.NETWORK:
+            for device in self._devices[hwclass.DISK][:]:
+                if device.diskType != DISK_TYPE.NETWORK:
+                    continue
+                if device.path == drive["path"]:
+                    return device
+
         raise LookupError("No such drive: '%s'" % drive)
 
     def _findDriveConfigByName(self, name):
