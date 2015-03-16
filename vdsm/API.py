@@ -1380,7 +1380,7 @@ class Global(APIBase):
         return dict(status=doneCode)
 
     # VM-related functions
-    def getVMList(self, fullStatus=False, vmList=(), onlyUUID=True):
+    def getVMList(self, fullStatus=False, vmList=(), onlyUUID=False):
         """ return a list of known VMs with full (or partial) config each """
         # To improve complexity, convert 'vms' to set(vms)
         vmSet = set(vmList)
