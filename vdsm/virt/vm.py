@@ -38,6 +38,7 @@ from vdsm import constants
 from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import qemuimg
+from vdsm import response
 from vdsm import utils
 from vdsm.compat import pickle
 from vdsm.config import config
@@ -2323,8 +2324,7 @@ class Vm(object):
                 nicXml, self.conf, params=nic.custom)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            return {'status': {'code': errCode['hotplugNic']['status']['code'],
-                               'message': e.message}}
+            return response.error('hotplugNic', e.message)
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
             # we sent command to libvirt and before save conf. In this case
@@ -2353,9 +2353,7 @@ class Vm(object):
                                    network)
                 nicParams['portMirroring'] = mirroredNetworks
                 self.hotunplugNic({'nic': nicParams})
-                return {'status':
-                        {'code': errCode['hotplugNic']['status']['code'],
-                         'message': e.message}}
+                return response.error('hotplugNic', e.message)
 
         return {'status': doneCode, 'vmList': self.status()}
 
@@ -2419,9 +2417,7 @@ class Vm(object):
         except (LookupError,
                 SetLinkAndNetworkError,
                 UpdatePortMirroringError) as e:
-            return {'status':
-                    {'code': errCode['updateDevice']['status']['code'],
-                     'message': e.message}}
+            return response.error('updateDevice', e.message)
 
     @contextmanager
     def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom,
@@ -2552,9 +2548,7 @@ class Vm(object):
         else:
             self.log.error("Hotunplug NIC failed - NIC not found: %s",
                            nicParams)
-            return {'status': {'code': errCode['hotunplugNic']
-                                              ['status']['code'],
-                               'message': "NIC not found"}}
+            return response.error('hotunplugNic', "NIC not found")
 
         # Remove found NIC from vm's NICs list
         if nic:
@@ -2586,9 +2580,7 @@ class Vm(object):
             self.saveState()
             hooks.after_nic_hotunplug_fail(nicXml, self.conf,
                                            params=nic.custom)
-            return {
-                'status': {'code': errCode['hotunplugNic']['status']['code'],
-                           'message': e.message}}
+            return response.error('hotunplugNic', e.message)
 
         hooks.after_nic_hotunplug(nicXml, self.conf,
                                   params=nic.custom)
@@ -2608,8 +2600,7 @@ class Vm(object):
             self.log.exception("setNumberOfCpus failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            return {'status': {'code': errCode['setNumberOfCpusErr']
-                    ['status']['code'], 'message': e.message}}
+            return response.error('setNumberOfCpusErr', e.message)
 
         self.conf['smp'] = str(numberOfCpus)
         self.saveState()
@@ -2896,9 +2887,7 @@ class Vm(object):
             self.cif.teardownVolumePath(diskParams)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            return {'status': {'code': errCode['hotplugDisk']
-                                              ['status']['code'],
-                               'message': e.message}}
+            return response.error('hotplugDisk', e.message)
         else:
             # FIXME!  We may have a problem here if vdsm dies right after
             # we sent command to libvirt and before save conf. In this case
@@ -2927,10 +2916,7 @@ class Vm(object):
         except LookupError:
             self.log.error("Hotunplug disk failed - Disk not found: %s",
                            diskParams)
-            return {'status': {
-                'code': errCode['hotunplugDisk']['status']['code'],
-                'message': "Disk not found"
-            }}
+            return response.error('hotunplugDisk', "Disk not found")
 
         if drive.hasVolumeLeases:
             return errCode['noimpl']
@@ -2967,9 +2953,7 @@ class Vm(object):
                 with self._confLock:
                     self.conf['devices'].append(diskDev)
             self.saveState()
-            return {
-                'status': {'code': errCode['hotunplugDisk']['status']['code'],
-                           'message': e.message}}
+            return response.error('hotunplugDisk', e.message)
         else:
             hooks.after_disk_hotunplug(driveXml, self.conf,
                                        params=drive.custom)
@@ -3768,8 +3752,7 @@ class Vm(object):
         try:
             self._dom.updateDeviceFlags(graphics.toxml(), 0)
         except TimeoutError as tmo:
-            res = {'status': {'code': errCode['ticketErr']['status']['code'],
-                              'message': unicode(tmo)}}
+            res = response.error('ticketErr', unicode(tmo))
         else:
             hooks.after_vm_set_ticket(self._domain.xml, self.conf, params)
             res = {'status': doneCode}
@@ -4038,8 +4021,7 @@ class Vm(object):
         if msg is None:
             error = errCode[key]
         else:
-            error = {'status': {'code': errCode[key]
-                                ['status']['code'], 'message': msg}}
+            error = response.error(key, msg)
         return error
 
     def _reportException(self, key, msg=None):
