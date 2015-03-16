@@ -2525,6 +2525,22 @@
  'union': ['bool', 'SharedDriveType']}
 
 ##
+# @NetworkDiskHostInfo:
+#
+# Map of network disk host information
+#
+# @name:        IP address or DNS name
+#
+# @port:        Port number
+#
+# @transport:   Transport protocol
+#
+# Since: 4.17.0
+##
+{'type': 'NetworkDiskHostInfo',
+ 'data': {'name': 'str', 'port': 'str', 'transport': 'str'}}
+
+##
 # @VmDiskDevice:
 #
 # Properties of a VM disk device.
@@ -2583,6 +2599,18 @@
 # @baseVolumeID:     #optional When used as a parameter to @VM.merge, indicates
 #                    the Volume that should become the new base volume
 #
+# @diskType:         #optional Disk type name. Currently only the "network"
+#                    type is supported
+#                    Since: 4.17.0
+#
+# @hosts:            #optional List of network disk host info objects. At least
+#                    one host is required if diskType is set to "network"
+#                    Since: 4.17.0
+#
+# @protocol:         #optional Network disk protocol. Required if diskType is
+#                    set to "network"
+#                    Since: 4.17.0
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDiskDevice',
@@ -2596,7 +2624,8 @@
           'apparentsize': 'uint', 'index': 'int', 'name': 'str',
           'optional': 'bool', 'shared': 'VmSharedDriveType',
           'truesize': 'uint', 'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
-          '*baseVolumeID': 'UUID'}}
+          '*baseVolumeID': 'UUID', '*diskType': 'str',
+          '*hosts': ['NetworkDiskHostInfo'], '*protocol': 'str'}}
 
 ##
 # @VmInterfaceDeviceType:

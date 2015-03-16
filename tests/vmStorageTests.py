@@ -121,10 +121,35 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check({}, conf, xml, is_block_device=True)
 
+    def test_network(self):
+        conf = drive_config(
+            diskType=DISK_TYPE.NETWORK,
+            hosts=[
+                dict(name='1.2.3.41', port='6789', transport='tcp'),
+                dict(name='1.2.3.42', port='6789', transport='tcp'),
+            ],
+            path='poolname/volumename',
+            protocol='rbd',
+        )
+        xml = """
+            <disk device="disk" snapshot="no" type="network">
+                <source name="poolname/volumename" protocol="rbd">
+                    <host name="1.2.3.41" port="6789" transport="tcp"/>
+                    <host name="1.2.3.42" port="6789" transport="tcp"/>
+                </source>
+                <target bus="virtio" dev="vda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="none" error_policy="stop"
+                        io="threads" name="qemu" type="raw"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=None)
+
     def check(self, vm_conf, device_conf, xml, is_block_device=False):
         drive = Drive(vm_conf, self.log, **device_conf)
         # Patch to skip the block device checking.
-        drive._blockDev = is_block_device
+        if is_block_device is not None:
+            drive._blockDev = is_block_device
         self.assertXMLEqual(drive.getXML().toxml(), xml)
 
 
@@ -266,8 +291,7 @@ class DriveDiskTypeTests(VdsmTestCase):
         self.assertFalse(drive.blockDev)
 
     def test_network_disk(self):
-        # This is undocumented interface used by glusterfs
-        conf = drive_config(volumeInfo={'volType': 'network'})
+        conf = drive_config(diskType=DISK_TYPE.NETWORK)
         drive = Drive({}, self.log, **conf)
         self.assertTrue(drive.networkDev)
         self.assertFalse(drive.blockDev)
@@ -311,10 +335,20 @@ class DriveDiskTypeTests(VdsmTestCase):
         conf = drive_config(path='/blockdomain/volume')
         drive = Drive({}, self.log, **conf)
         self.assertTrue(drive.blockDev)
-        # Migrate drive to netowrk (not sure we will support this)...
-        drive.path = "rbd:pool/volume"
-        drive.volumeInfo = {'volType': 'network'}
+        # Migrate drive to network disk...
+        drive.path = "pool/volume"
+        drive.diskType = DISK_TYPE.NETWORK
         self.assertFalse(drive.blockDev)
+
+    @MonkeyPatch(utils, 'isBlockDevice', lambda path: True)
+    def test_migrate_network_to_block(self):
+        conf = drive_config(diskType=DISK_TYPE.NETWORK, path='pool/volume')
+        drive = Drive({}, self.log, **conf)
+        self.assertTrue(drive.networkDev)
+        # Migrate drive to block domain...
+        drive.path = '/blockdomain/volume'
+        drive.diskType = None
+        self.assertTrue(drive.blockDev)
 
 
 @expandPermutations

@@ -60,7 +60,7 @@ class Drive(Base):
                  'index', 'name', 'optional', 'shared', 'truesize',
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID',
-                 'diskReplicate')
+                 'diskReplicate', '_diskType', 'hosts', 'protocol')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -200,11 +200,7 @@ class Drive(Base):
 
     @property
     def networkDev(self):
-        try:
-            return self.volumeInfo['volType'] == DISK_TYPE.NETWORK
-        except AttributeError:
-            # To handle legacy and removable drives.
-            return False
+        return getattr(self, '_diskType', None) == DISK_TYPE.NETWORK
 
     @property
     def blockDev(self):
@@ -241,6 +237,10 @@ class Drive(Base):
             return DISK_TYPE.NETWORK
         else:
             return DISK_TYPE.FILE
+
+    @diskType.setter
+    def diskType(self, value):
+        self._diskType = value
 
     @property
     def transientDisk(self):
@@ -412,13 +412,9 @@ def _getSourceXML(drive):
     if drive["diskType"] == DISK_TYPE.BLOCK:
         source.setAttrs(dev=drive["path"])
     elif drive["diskType"] == DISK_TYPE.NETWORK:
-        info = drive["volumeInfo"]
-        source.setAttrs(protocol=info['protocol'],
-                        name=info['path'])
-        hostAttrs = {'name': info['volfileServer'],
-                     'port': info['volPort'],
-                     'transport': info['volTransport']}
-        source.appendChildWithArgs('host', **hostAttrs)
+        source.setAttrs(protocol=drive["protocol"], name=drive["path"])
+        for host in drive["hosts"]:
+            source.appendChildWithArgs('host', **host)
     elif drive["diskType"] == DISK_TYPE.FILE:
         source.setAttrs(file=drive["path"])
         if drive["device"] == 'cdrom' or drive["device"] == 'floppy':
