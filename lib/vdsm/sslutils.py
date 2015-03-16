@@ -234,8 +234,11 @@ class VerifyingHTTPS(httplib.HTTPS):
         # urf. compensate for bad input.
         if port == 0:
             port = None
-        self._setup(self._connection_class(host, port, key_file,
-                                           cert_file, strict,
+        self._setup(self._connection_class(host=host,
+                                           port=port,
+                                           key_file=key_file,
+                                           cert_file=cert_file,
+                                           strict=strict,
                                            ca_certs=ca_certs,
                                            cert_reqs=cert_reqs))
 
