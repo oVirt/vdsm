@@ -1133,14 +1133,10 @@ GLUSTER_SNAPSHOT_RESTORE = {
 GLUSTER_SNAPSHOT_CONFIG_LIST = {
     'volume': {
         'snap-vol': {
-            'snap-max-hard-limit': '256',
-            'snap-max-soft-limit': '232',
-            'effective-hard-limit': '255'
+            'snap-max-hard-limit': '255'
         },
         'snap-vol2': {
-            'snap-max-hard-limit': '254',
-            'snap-max-soft-limit': '231',
-            'effective-hard-limit': '254'
+            'snap-max-hard-limit': '254'
         }
     },
     'system': {

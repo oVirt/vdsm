@@ -1874,15 +1874,10 @@
 #
 # @snap-max-hard-limit:  Snapshot max hard limit
 #
-# @effective-hard-limit: Effective snapshot Hard limit for that volume
-#
-# @snap-max-soft-limit:  Snapshot soft limit for that volume
-#
 # @Since: 4.17.0
 ##
 {'type': 'VolumeSnapConfig',
- 'data': {'snap-max-hard-limit': 'str', 'effective-hard-limit': 'str',
-          'snap-max-soft-limit': 'str'}}
+ 'data': {'snap-max-hard-limit': 'str'}}
 
 ##
 #
