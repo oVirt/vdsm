@@ -102,6 +102,7 @@ test_modules = \
 	toolTests.py \
 	transportWrapperTests.py \
 	utilsTests.py \
+	vdscliTests.py \
 	vdsClientTests.py \
 	vdsmDumpChainsTests.py \
 	verify.py \
