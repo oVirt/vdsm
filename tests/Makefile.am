@@ -70,6 +70,7 @@ test_modules = \
 	qosTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
+	responseTests.py \
 	samplingTests.py \
 	scheduleTests.py \
 	schemaTests.py \
