@@ -26,6 +26,7 @@ import time
 import uuid
 
 import libvirt
+from nose.plugins.skip import SkipTest
 
 from virt import vm
 from virt import vmdevices
@@ -1014,6 +1015,10 @@ class TestVmOperations(TestCaseBase):
             self.assertEqual(testvm._readPauseCode(), 'NOERR')
 
     def testReadPauseCodeDomainPausedCrash(self):
+        # REQUIRED_FOR: el6
+        if not hasattr(libvirt, 'VIR_DOMAIN_PAUSED_CRASHED'):
+            raise SkipTest('libvirt.VIR_DOMAIN_PAUSED_CRASHED undefined')
+
         with fake.VM() as testvm:
             # if paused for different reason we must not extend the disk
             # so anything else is ok
@@ -1369,7 +1374,7 @@ class ChangeBlockDevTests(TestCaseBase):
             with fake.VM(cif=cif) as fakevm:
                 # no specific meaning, actually any error != None is good
                 fakevm._dom = fake.Domain(
-                    virtError=libvirt.VIR_ERR_ACCESS_DENIED)
+                    virtError=libvirt.VIR_ERR_GET_FAILED)
 
                 res = fakevm.changeCD({})
 
