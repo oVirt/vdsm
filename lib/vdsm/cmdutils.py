@@ -19,6 +19,7 @@
 #
 
 import os
+import re
 
 from . import constants
 
@@ -63,3 +64,31 @@ def systemd_run(cmd, scope=False, unit=None, slice=None):
         command.append('--slice=%s' % slice)
     command.extend(cmd)
     return command
+
+
+# This function returns truthy value if its argument contains unsafe characters
+# for including in a command passed to the shell. The safe characters were
+# stolen from pipes._safechars.
+_needs_quoting = re.compile(r'[^A-Za-z0-9_%+,\-./:=@]').search
+
+
+def _list2cmdline(args):
+    """
+    Convert argument list for exeCmd to string for logging. The purpose of this
+    log is make it easy to run vdsm commands in the shell for debugging.
+    """
+    parts = []
+    for arg in args:
+        if _needs_quoting(arg) or arg == '':
+            arg = "'" + arg.replace("'", r"'\''") + "'"
+        parts.append(arg)
+    return ' '.join(parts)
+
+
+def command_log_line(args, cwd=None):
+    return "{0} (cwd {1})".format(_list2cmdline(args), cwd)
+
+
+def retcode_log_line(code, err=None):
+    result = "SUCCESS" if code == 0 else "FAILED"
+    return "{0}: <err> = {1!r}; <rc> = {2!r}".format(result, err, code)
