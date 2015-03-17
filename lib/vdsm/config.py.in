@@ -182,6 +182,8 @@ parameters = [
 
         ('jsonrpc_enable', 'true', 'Enable the JSON RPC server'),
 
+        ('broker_enable', 'false', 'Enable outgoing connection to broker'),
+
         ('report_host_threads_as_cores', 'false',
             'Count each cpu hyperthread as an individual core'),
 
@@ -314,6 +316,19 @@ parameters = [
 
         ('guests_gateway_ip', '', None),
 
+        ('broker_address', '127.0.0.1',
+            'Address where the broker is listening at. Use an empty string '
+            'for none'),
+
+        ('broker_port', '5445',
+            'Port where the broker is listening at.'),
+
+        ('request_queues',
+            'jms.topic.vdsm_requests,jms.topic.vdsm_irs_requests',
+            'Queues for vdsm to subscribe to'),
+
+        ('event_queue', 'jms.queue.events',
+            'Queue used for events'),
     ]),
 
     # Section: [sampling]

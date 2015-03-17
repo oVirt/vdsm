@@ -21,6 +21,7 @@ import httplib
 import logging
 import socket
 import threading
+from collections import defaultdict
 
 from xmlrpclib import Transport, dumps, Fault
 from contextlib import contextmanager
@@ -84,7 +85,7 @@ def constructAcceptor(log, ssl, jsonBridge):
         0,
         sslctx,
     )
-    json_binding = BindingJsonRpc(jsonBridge)
+    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list))
     json_binding.start()
 
     cif = FakeClientIf(json_binding)

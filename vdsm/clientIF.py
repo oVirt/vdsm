@@ -20,13 +20,16 @@
 
 import os
 import os.path
+import socket
 import time
 import threading
 import uuid
 from functools import partial
 from weakref import proxy
+from collections import defaultdict
 
 from yajsonrpc.betterAsyncore import Reactor
+from yajsonrpc.stompreactor import StompClient, StompRpcServer
 from yajsonrpc import Notification
 import alignmentScan
 from vdsm.config import config
@@ -89,6 +92,8 @@ class clientIF(object):
         self._generationID = str(uuid.uuid4())
         self.mom = None
         self.bindings = {}
+        self._broker_client = None
+        self._subscriptions = defaultdict(list)
         if _glusterEnabled:
             self.gluster = gapi.GlusterApi(self, log)
         else:
@@ -111,9 +116,11 @@ class clientIF(object):
 
             host = config.get('addresses', 'management_ip')
             port = config.getint('addresses', 'management_port')
+
             self._createAcceptor(host, port)
             self._prepareXMLRPCBinding()
             self._prepareJSONRPCBinding()
+            self._connectToBroker()
         except:
             self.log.error('failed to init clientIF, '
                            'shutting down storage dispatcher')
@@ -148,7 +155,9 @@ class clientIF(object):
         notification.emit(**kwargs)
 
     def _send_notification(self, message):
-        self.bindings['jsonrpc'].reactor.server.send(message)
+        self.bindings['jsonrpc'].reactor.server.send(message,
+                                                     config.get('addresses',
+                                                                'event_queue'))
 
     def contEIOVms(self, sdUUID, isDomainStateValid):
         # This method is called everytime the onDomainStateChange
@@ -190,6 +199,27 @@ class clientIF(object):
         self._acceptor = MultiProtocolAcceptor(self._reactor, host,
                                                port, sslctx)
 
+    def _connectToBroker(self):
+        if config.getboolean('vars', 'broker_enable'):
+            broker_address = config.get('addresses', 'broker_address')
+            broker_port = config.getint('addresses', 'broker_port')
+            request_queues = config.get('addresses', 'request_queues')
+
+            sslctx = sslutils.create_ssl_context()
+            sock = socket.socket()
+            sock.connect((broker_address, broker_port))
+            if sslctx:
+                sock = sslctx.wrapSocket(sock)
+
+            self._broker_client = StompClient(sock, self._reactor)
+            for destination in request_queues.split(","):
+                self._subscriptions[destination] = StompRpcServer(
+                    self.bindings['jsonrpc'].server,
+                    self._broker_client,
+                    destination,
+                    broker_address,
+                )
+
     def _prepareXMLRPCBinding(self):
         if config.getboolean('vars', 'xmlrpc_enable'):
             try:
@@ -215,7 +245,7 @@ class clientIF(object):
                               'Please make sure it is installed.')
             else:
                 bridge = Bridge.DynamicBridge()
-                json_binding = BindingJsonRpc(bridge)
+                json_binding = BindingJsonRpc(bridge, self._subscriptions)
                 self.bindings['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)

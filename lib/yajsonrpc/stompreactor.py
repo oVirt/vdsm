@@ -15,25 +15,20 @@
 
 from __future__ import absolute_import
 import logging
-from collections import deque, defaultdict
+from collections import deque
 from uuid import uuid4
 import functools
 
 from vdsm import utils
+from vdsm.config import config
 from vdsm.compat import json
 from vdsm.sslutils import SSLSocket
-from . import JsonRpcClient
+from . import JsonRpcClient, JsonRpcServer
 from . import stomp
 from .betterAsyncore import Dispatcher, Reactor
 
 _STATE_LEN = "Waiting for message length"
 _STATE_MSG = "Waiting for message"
-
-
-_DEFAULT_RESPONSE_DESTINATION = "/queue/_local/vdsm/reponses"
-_DEFAULT_REQUEST_DESTINATION = "/queue/_local/vdsm/requests"
-
-_FAKE_SUB_ID = "__vdsm_fake_broker__"
 
 
 def parseHeartBeatHeader(v):
@@ -73,6 +68,8 @@ class StompAdapterImpl(object):
         self._sub_dests = sub_map
         self._req_dest = req_dest
         self._sub_ids = {}
+        request_queues = config.get('addresses', 'request_queues')
+        self.request_queues = request_queues.split(",")
         self._commands = {
             stomp.Command.CONNECT: self._cmd_connect,
             stomp.Command.SEND: self._cmd_send,
@@ -178,7 +175,7 @@ class StompAdapterImpl(object):
 
     def _cmd_send(self, dispatcher, frame):
         destination = frame.headers.get(stomp.Headers.DESTINATION, None)
-        if _DEFAULT_REQUEST_DESTINATION == destination:
+        if destination in self.request_queues:
             # default subscription
             self._handle_internal(dispatcher,
                                   frame.headers.get(stomp.Headers.REPLY_TO),
@@ -285,10 +282,10 @@ class _StompConnection(object):
 class StompServer(object):
     log = logging.getLogger("yajsonrpc.StompServer")
 
-    def __init__(self, reactor):
+    def __init__(self, reactor, subscriptions):
         self._reactor = reactor
         self._messageHandler = None
-        self._sub_map = defaultdict(list)
+        self._sub_map = subscriptions
         self._req_dest = {}
 
     def add_client(self, sock):
@@ -300,7 +297,7 @@ class StompServer(object):
     """
     Sends message to all subscribes that subscribed to destination.
     """
-    def send(self, message, destination=_DEFAULT_RESPONSE_DESTINATION):
+    def send(self, message, destination=stomp.LEGACY_SUBSCRIPTION_ID_RESPONSE):
         self.log.debug("Sending response")
         try:
             resp = json.loads(message)
@@ -411,9 +408,9 @@ class StompListenerImpl(object):
 
 
 class StompReactor(object):
-    def __init__(self):
+    def __init__(self, subs):
         self._reactor = Reactor()
-        self._server = StompServer(self._reactor)
+        self._server = StompServer(self._reactor, subs)
 
     def createListener(self, connected_socket, acceptHandler):
         listener = StompListener(
@@ -454,6 +451,43 @@ class StompDetector():
     def handle_socket(self, client_socket, socket_address):
         self.json_binding.add_socket(self._reactor, client_socket)
         self.log.debug("Stomp detected from %s", socket_address)
+
+
+class ServerRpcContextAdapter(object):
+    """
+    Adapter is responsible for passing received messages from the broker
+    to instance of a JsonRpcServer and adds 'reply_to' header to a frame
+    before sending it.
+    """
+    @classmethod
+    def subscription_handler(cls, server, address):
+        def handler(sub, frame):
+            server.queueRequest(
+                (
+                    ServerRpcContextAdapter(sub.client, frame, address),
+                    frame.body
+                )
+            )
+
+        return handler
+
+    def __init__(self, client, request_frame, address):
+        self._address = address
+        self._client = client
+        self._reply_to = request_frame.headers.get('reply-to', None)
+
+    def get_local_address(self, *args, **kwargs):
+        return self._address
+
+    def send(self, data):
+        if self._reply_to:
+            self._client.send(
+                self._reply_to,
+                data,
+                {
+                    "content-type": "application/json",
+                }
+            )
 
 
 class ClientRpcTransportAdapter(object):
@@ -499,4 +533,14 @@ def StompRpcClient(stomp_client, request_queue, response_queue):
             request_queue,
             stomp_client,
         )
+    )
+
+
+def StompRpcServer(bridge, stomp_client, request_queue, address):
+    server = JsonRpcServer(bridge)
+
+    return stomp_client.subscribe(
+        request_queue,
+        message_handler=ServerRpcContextAdapter.subscription_handler(server,
+                                                                     address)
     )
