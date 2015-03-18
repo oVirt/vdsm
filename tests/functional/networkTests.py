@@ -2213,8 +2213,10 @@ BOOTPROTO=static
 NM_CONTROLLED=no
 HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
 
-            rc, _, _ = execCmd([EXT_IFUP, BONDING_NAME])
-            rc, _, _ = execCmd([EXT_IFUP, BONDING_NAME + '.' + VLAN_ID])
+            rc, _, err = execCmd([EXT_IFUP, BONDING_NAME])
+            self.assertEqual(rc, SUCCESS, err)
+            rc, _, err = execCmd([EXT_IFUP, BONDING_NAME + '.' + VLAN_ID])
+            self.assertEqual(rc, SUCCESS, err)
 
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'bonding': BONDING_NAME, 'bridged': True,
