@@ -80,8 +80,8 @@ class VerifyingClient():
         self.transport = VerifyingSafeTransport(key_file=key_file,
                                                 cert_file=cert_file,
                                                 ca_certs=CRT_FILE,
-                                                cert_reqs=ssl.CERT_REQUIRED)
-        self.transport.timeout = 1
+                                                cert_reqs=ssl.CERT_REQUIRED,
+                                                timeout=1)
         self.proxy = xmlrpclib.ServerProxy('https://%s:%s' % (HOST, port),
                                            transport=self.transport)
 
