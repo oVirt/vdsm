@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import hooks
 import hostdev
 import vmfakelib as fake
 
@@ -514,6 +515,7 @@ def _fake_totalvfs(device_name):
 @expandPermutations
 @MonkeyClass(libvirtconnection, 'get', Connection)
 @MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
+@MonkeyClass(hooks, 'after_hostdev_list_by_caps', lambda json: json)
 class HostdevTests(TestCaseBase):
 
     def testParseDeviceParams(self):

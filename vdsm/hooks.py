@@ -370,6 +370,11 @@ def after_get_caps(caps):
                         hookType=_JSON_HOOK)
 
 
+def after_hostdev_list_by_caps(devices):
+    return _runHooksDir(devices, 'after_hostdev_list_by_caps',
+                        raiseError=False, hookType=_JSON_HOOK)
+
+
 def _getScriptInfo(path):
     try:
         with open(path) as f:

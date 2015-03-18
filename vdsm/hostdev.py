@@ -20,6 +20,7 @@
 
 import xml.etree.ElementTree as etree
 
+import hooks
 from vdsm import libvirtconnection
 import supervdsm
 
@@ -179,6 +180,7 @@ def list_by_caps(vmContainer, caps=None):
         if devName in device_to_vm:
             devices[devName]['vmId'] = device_to_vm[devName]
 
+    devices = hooks.after_hostdev_list_by_caps(devices)
     return devices
 
 

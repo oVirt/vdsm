@@ -61,7 +61,7 @@ Currently-supported hooks have self-explanatory names:
     before_set_num_of_cpus, after_set_num_of_cpus,
     before_get_vm_stats, after_get_vm_stats,
     before_get_all_vm_stats, after_get_all_vm_stats,
-    before_get_caps, after_get_caps.
+    before_get_caps, after_get_caps, after_hostdev_list_by_caps.
 
 Each hook executes the scripts under
 .FN /usr/libexec/vdsm/hooks/<hook-name>/
@@ -71,7 +71,7 @@ in lexicographic order.
 Each hook script (except before_vdsm_start, after_vdsm_stop, 
 before_network_setup and after_network_setup, before_get_vm_stats,
 after_get_vm_stats, before_get_all_vm_stats, after_get_all_vm_stats,
-before_get_caps and after_get_caps) inherit
+before_get_caps, after_get_caps and after_hostdev_list_by_caps) inherit
 the environment of the VDSM process, with an additional variable
 .B _hook_domxml
 which holds the path of libvirt's
