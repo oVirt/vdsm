@@ -54,10 +54,22 @@ class SingleRequestTransport(xmlrpclib.Transport):
     connection. This class reverts the change to avoid the concurrency
     issues.'''
 
+    def __init__(self, *args, **kwargs):
+        if 'timeout' in kwargs:
+            self.timeout = kwargs['timeout']
+            del kwargs['timeout']
+        else:
+            self.timeout = sslutils.SOCKET_DEFAULT_TIMEOUT
+
+        xmlrpclib.Transport.__init__(self, *args, **kwargs)
+
     def make_connection(self, host):
         '''Creates a new HTTPConnection to the host.'''
+
         self._connection = None
-        return xmlrpclib.Transport.make_connection(self, host)
+        httpCon = xmlrpclib.Transport.make_connection(self, host)
+        httpCon.timeout = self.timeout
+        return httpCon
 
 
 def __guessDefaults():
@@ -117,11 +129,8 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
         server = xmlrpclib.ServerProxy('https://%s' % hostPort,
                                        wrap_transport(transport))
     else:
-        # TODO: add timeout option for HTTP connection
-        if timeout is not sslutils.SOCKET_DEFAULT_TIMEOUT:
-            raise NotImplementedError('timeout is not supported in'
-                                      ' plaintext connection')
-        transport = wrap_transport(SingleRequestTransport())
+        transport = wrap_transport(
+            SingleRequestTransport(timeout=timeout))
         server = xmlrpclib.Server('http://%s' % hostPort, transport)
     return server
 
