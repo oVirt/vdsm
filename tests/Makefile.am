@@ -90,6 +90,7 @@ test_modules = \
 	transportWrapperTests.py \
 	utilsTests.py \
 	vdsClientTests.py \
+	vdsmDumpChainsTests.py \
 	vmApiTests.py \
 	vmMigrationTests.py \
 	vmStorageTests.py \

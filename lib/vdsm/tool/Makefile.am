@@ -41,6 +41,7 @@ dist_vdsmtool_PYTHON = \
 	__init__.py \
 	dummybr.py \
 	dump_bonding_defaults.py \
+	dump_volume_chains.py \
 	nwfilter.py \
 	configfile.py \
 	configurator.py \
