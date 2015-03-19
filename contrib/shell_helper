@@ -21,8 +21,10 @@ vdsm_restart() {
     sudo service vdsmd stop && sudo service supervdsmd stop
     sudo service vdsmd start
     sleep 3
-    service vdsmd status | egrep "Active|active|activating|failed"
-    service supervdsmd status | egrep  "Active|active|activating|failed"
+    service vdsm-network-cleanup status | egrep -i "activ|failed"
+    service vdsm-network status | egrep -i "activ|failed"
+    service vdsmd status | egrep -i "activ|failed"
+    service supervdsmd status | egrep -i "activ|failed"
 }
 
 vdsm_caps_nonsecure() {
