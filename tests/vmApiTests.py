@@ -18,9 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
 import os.path
 
+from virt import vm
 from virt import vmexitreason
 from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
@@ -31,7 +31,7 @@ import API
 from clientIF import clientIF
 
 from testValidation import brokentest
-from monkeypatch import MonkeyPatchScope
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 import vmfakelib as fake
 
 
@@ -67,6 +67,8 @@ _VM_PARAMS = {
 
 
 class TestVmStats(TestSchemaCompliancyBase):
+
+    @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
     def testDownStats(self):
         with fake.VM() as testvm:
             testvm.setDownStatus(define.ERROR, vmexitreason.GENERIC_ERROR)

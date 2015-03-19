@@ -152,6 +152,9 @@ class ClientIF(clientIF.clientIF):
         self.vmContainerLock = threading.Lock()
         self.vmContainer = {}
 
+    def notify(self, event_id, **kwargs):
+        pass
+
 
 class Domain(object):
     def __init__(self, xml='',
@@ -291,6 +294,7 @@ def VM(params=None, devices=None, runCpu=False,
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams)
+            fake.send_status_event = lambda x: None
             cif.vmContainer[fake.id] = fake
             fake.arch = arch
             fake.guestAgent = GuestAgent()

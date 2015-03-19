@@ -574,5 +574,7 @@ class clientIF(object):
                 v._onWatchdogEvent(action)
             else:
                 v.log.warning('unknown eventid %s args %s', eventid, args)
+
+            v.send_status_event()
         except:
             self.log.error("Error running VM callback", exc_info=True)
