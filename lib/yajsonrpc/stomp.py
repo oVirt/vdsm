@@ -15,7 +15,6 @@
 
 import logging
 import socket
-import cStringIO
 from threading import Timer, Event
 from uuid import uuid4
 from collections import deque
@@ -157,21 +156,29 @@ class Parser(object):
             self._STATE_HEADER: self._parse_header,
             self._STATE_BODY: self._parse_body}
         self._frames = deque()
-        self._state = self._STATE_CMD
+        self._change_state(self._STATE_CMD)
         self._contentLength = -1
         self._flush()
 
+    def _change_state(self, new_state):
+        self._state = new_state
+        self._state_cb = self._states[new_state]
+
     def _flush(self):
-        self._buffer = cStringIO.StringIO()
+        self._buffer = ""
+
+    def _write_buffer(self, buff):
+        self._buffer += buff
+
+    def _get_buffer(self):
+        return self._buffer
 
     def _handle_terminator(self, term):
-        if term not in self._buffer.getvalue():
+        res, sep, rest = self._buffer.partition(term)
+        if not sep:
             return None
 
-        data = self._buffer.getvalue()
-        res, rest = data.split(term, 1)
-        self._flush()
-        self._buffer.write(rest)
+        self._buffer = rest
 
         return res
 
@@ -189,7 +196,7 @@ class Parser(object):
         cmd = decodeValue(cmd)
         self._tmpFrame = Frame(cmd)
 
-        self._state = self._STATE_HEADER
+        self._change_state(self._STATE_HEADER)
         return True
 
     def _parse_header(self):
@@ -203,7 +210,7 @@ class Parser(object):
         headers = self._tmpFrame.headers
         if header == "":
             self._contentLength = int(headers.get('content-length', -1))
-            self._state = self._STATE_BODY
+            self._change_state(self._STATE_BODY)
             return True
 
         key, value = header.split(":", 1)
@@ -220,7 +227,7 @@ class Parser(object):
 
     def _pushFrame(self):
         self._frames.append(self._tmpFrame)
-        self._state = self._STATE_CMD
+        self._change_state(self._STATE_CMD)
         self._tmpFrame = None
         self._contentLength = -1
 
@@ -240,16 +247,16 @@ class Parser(object):
         return True
 
     def _parse_body_length(self):
-        buf = self._buffer
+        buf = self._get_buffer()
         cl = self._contentLength
-        ndata = buf.tell()
+        ndata = len(buf)
         if ndata < (cl + 1):
             return False
 
         remainingBytes = 0
         self._flush()
-        body = buf.getvalue()
-        self._buffer.write(body[cl + 1:])
+        body = buf
+        self._write_buffer(body[cl + 1:])
         body = body[:cl]
 
         if remainingBytes == 0:
@@ -263,9 +270,8 @@ class Parser(object):
         return len(self._frames)
 
     def parse(self, data):
-        states = self._states
-        self._buffer.write(data)
-        while states[self._state]():
+        self._write_buffer(data)
+        while self._state_cb():
             pass
 
     def popFrame(self):
