@@ -121,7 +121,7 @@ BuildRequires: python-argparse
 BuildRequires: python-ordereddict
 %endif
 %if 0%{?rhel} > 6 || 0%{?fedora}
-BuildRequires: python-blivet >= 0.61.14
+BuildRequires: python-blivet
 %endif
 
 # Autotools BuildRequires
