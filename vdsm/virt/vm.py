@@ -2047,6 +2047,7 @@ class Vm(object):
         self._getUnderlyingBalloonDeviceInfo()
         self._getUnderlyingWatchdogDeviceInfo()
         self._getUnderlyingSmartcardDeviceInfo()
+        self._getUnderlyingRngDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
         self._getUnderlyingHostDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
@@ -4186,6 +4187,31 @@ class Vm(object):
                         not dev.get('address'):
                     dev['address'] = address
                     dev['alias'] = alias
+
+    def _getUnderlyingRngDeviceInfo(self):
+        """
+        Obtain rng device info from libvirt.
+        """
+        for rng in self._domain.get_device_elements('rng'):
+            address = self._getUnderlyingDeviceAddress(rng)
+            alias = rng.getElementsByTagName('alias')[0].getAttribute('name')
+            source = rng.getElementsByTagName('backend')[0].firstChild.\
+                nodeValue
+
+            for dev in self._devices[hwclass.RNG]:
+                if caps.RNG_SOURCES[dev.specParams['source']] == source and \
+                        not hasattr(dev, 'alias'):
+                    dev.address = address
+                    dev.alias = alias
+                    break
+
+            for dev in self.conf['devices']:
+                if dev['device'] == hwclass.RNG and \
+                        caps.RNG_SOURCES[dev['specParams']['source']] == \
+                        source and 'alias' not in dev:
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    break
 
     def _getUnderlyingHostDeviceInfo(self):
         """
