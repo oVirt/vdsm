@@ -398,7 +398,7 @@ class Client(object):
 class AsyncDispatcher(object):
     log = logging.getLogger("stomp.AsyncDispatcher")
 
-    def __init__(self, frameHandler, bufferSize=1024):
+    def __init__(self, frameHandler, bufferSize=4096):
         self._frameHandler = frameHandler
         self._bufferSize = bufferSize
         self._parser = Parser()
