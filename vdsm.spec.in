@@ -116,7 +116,7 @@ BuildRequires: python-ordereddict
 BuildRequires: python-simplejson >= 2.0.9
 %endif
 %if 0%{?rhel} > 6 || 0%{?fedora}
-BuildRequires: python-blivet >= 0.61.14
+BuildRequires: python-blivet
 %endif
 
 # Autotools BuildRequires
