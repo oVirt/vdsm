@@ -367,7 +367,7 @@ class Client(object):
 
     def put_subscribe(self, destination, ack=None):
         subid = self._aclient.subscribe(self._adisp, destination, ack)
-        sub = Subsciption(self, subid, ack)
+        sub = _Subscription(self, subid, ack)
         self._registerSubscription(sub)
         return sub
 
@@ -576,7 +576,7 @@ class AsyncClient(object):
         return subscriptionID
 
 
-class Subsciption(object):
+class _Subscription(object):
     def __init__(self, client, subid, ack):
         self._ack = ack
         self._subid = subid
