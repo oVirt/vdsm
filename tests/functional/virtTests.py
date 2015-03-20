@@ -31,6 +31,8 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import temporaryPath
 
+import verify
+
 from vdsm.utils import CommandPath, RollbackContext
 import storageTests as storage
 from storage.misc import execCmd
@@ -158,7 +160,7 @@ class RunningVm(object):
 
 
 @expandPermutations
-class VirtTestBase(TestCaseBase):
+class VirtTestBase(TestCaseBase, verify.DeviceMixin):
     UPSTATES = frozenset((vmstatus.UP, vmstatus.POWERING_UP))
 
     def setUp(self):
@@ -212,6 +214,12 @@ class VirtTestBase(TestCaseBase):
         self.retryAssert(partial(self.assertVmDown, vmid),
                          timeout=10)
 
+    def _verifyDevices(self, vmId):
+        status, msg, stats = self.vdsm.getVmList(vmId)
+        self.assertEqual(status, SUCCESS, msg)
+
+        self.verifyDevicesConf(conf=stats['devices'])
+
 
 @expandPermutations
 class VirtTest(VirtTestBase):
@@ -223,6 +231,47 @@ class VirtTest(VirtTestBase):
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            self._verifyDevices(vm)
+
+    @requireKVM
+    def testComplexVm(self):
+        customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
+                         'vmName': 'testComplexVm',
+                         'display': 'qxl', 'devices': [
+                             {'type': 'sound', 'device': 'ac97'},
+                             {'type': 'sound', 'device': 'ich6'},
+                             {'type': 'video', 'device': 'qxl'},
+                             {'type': 'video', 'device': 'qxl'},
+                             {'type': 'graphics', 'device': 'spice'},
+                             {'type': 'controller', 'device': 'virtio-serial'},
+                             {'type': 'controller', 'device': 'usb'},
+                             {'type': 'balloon', 'device': 'memballoon',
+                              'specParams': {'model': 'virtio'}},
+                             {'type': 'watchdog', 'device': 'wawtchdog'},
+                             {'type': 'smartcard', 'device': 'smartcard',
+                              'specParams': {'type': 'spicevmc',
+                                             'mode': 'passthrough'}},
+                             {'type': 'console', 'device': 'console'},
+                             {'nicModel': 'virtio', 'device': 'bridge',
+                              'macAddr': '52:54:00:59:F5:3F', 'network': '',
+                              'type': 'interface'},
+                             {'nicModel': 'virtio', 'device': 'bridge',
+                              'macAddr': '52:54:00:59:FF:FF', 'network': '',
+                              'type': 'interface'},
+                         ]}
+
+        status, msg, caps = self.vdsm.getVdsCapabilities()
+        self.assertEqual(status, SUCCESS, msg)
+
+        if caps['rngSources']:
+            for _ in range(0, 2):
+                customization['devices'].append(
+                    {'type': 'rng', 'model': 'virtio', 'device': 'rng',
+                     'specParams': {'source': caps['rngSources'][0]}})
+
+        with RunningVm(self.vdsm, customization) as vm:
+            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            self._verifyDevices(vm)
 
     @requireKVM
     @permutations([['localfs'], ['iscsi'], ['nfs']])
@@ -240,6 +289,7 @@ class VirtTest(VirtTestBase):
             disk.createVdsmStorageLayout(conf, 3, rollback)
             with RunningVm(self.vdsm, customization) as vm:
                 self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+                self._verifyDevices(vm)
 
     @requireKVM
     @permutations([['hotplugNic'], ['virtioNic'], ['smartcard'],
@@ -297,6 +347,7 @@ class VirtTest(VirtTestBase):
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            self._verifyDevices(vm)
 
             if 'hotplugNic' in devices:
                 self.retryAssert(partial(self.vdsm.hotplugNic,
@@ -344,6 +395,7 @@ class VirtTest(VirtTestBase):
 
             with RunningVm(self.vdsm, customization) as vm:
                 self._waitForStartup(vm, 10)
+                self._verifyDevices(vm)
 
                 status, msg, stats = self.vdsm.getVmList(vm)
                 self.assertEqual(status, SUCCESS, msg)
@@ -363,6 +415,7 @@ class VirtTest(VirtTestBase):
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            self._verifyDevices(vm)
 
     @permutations([['vnc'], ['spice']])
     def testVmDefinitionGraphics(self, displayType):
@@ -374,6 +427,8 @@ class VirtTest(VirtTestBase):
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            self._verifyDevices(vm)
+
             status, msg, stats = self.vdsm.getVmStats(vm)
             self.assertEqual(status, SUCCESS, msg)
             self.assertEqual(stats['displayInfo'][0]['type'],
@@ -392,6 +447,8 @@ class VirtTest(VirtTestBase):
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            self._verifyDevices(vm)
+
             status, msg, stats = self.vdsm.getVmStats(vm)
             self.assertEqual(status, SUCCESS, msg)
             for dispInfo, dispType in zip(stats['displayInfo'],
@@ -407,6 +464,8 @@ class VirtTest(VirtTestBase):
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
+            self._verifyDevices(vm)
+
             status, msg, stats = self.vdsm.getVmStats(vm)
             self.assertEqual(status, SUCCESS, msg)
             self.vdsm.updateVmPolicy(customization['vmId'],

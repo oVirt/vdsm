@@ -91,6 +91,7 @@ test_modules = \
 	utilsTests.py \
 	vdsClientTests.py \
 	vdsmDumpChainsTests.py \
+	verify.py \
 	vmApiTests.py \
 	vmMigrationTests.py \
 	vmStorageTests.py \
