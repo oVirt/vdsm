@@ -24,7 +24,7 @@ import time
 from vdsm import schedule
 from vdsm import utils
 from testlib import VdsmTestCase
-from testValidation import slowtest
+from testValidation import slowtest, brokentest
 from testlib import permutations, expandPermutations
 
 
@@ -94,6 +94,7 @@ class SchedulerTests(VdsmTestCase):
         task.wait(delay + self.GRACETIME)
         self.assertEquals(task.call_time, None)
 
+    @brokentest
     @permutations(PERMUTATIONS)
     def test_cancel_call_many(self, clock):
         self.create_scheduler(clock)
@@ -120,6 +121,7 @@ class SchedulerTests(VdsmTestCase):
         task.wait(delay + self.GRACETIME)
         self.assertEquals(task.call_time, None)
 
+    @brokentest
     @permutations(PERMUTATIONS)
     def test_stop_scheduler_many(self, clock):
         self.create_scheduler(clock)
