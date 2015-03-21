@@ -26,6 +26,9 @@ from vdsm.infra.eventfd import EventFD
 
 class Dispatcher(asyncore.dispatcher):
     def __init__(self, impl=None, sock=None, map=None):
+        # This has to be done before the super initialization because
+        # dispatcher implements __getattr__.
+        self.__impl = None
         asyncore.dispatcher.__init__(self, sock=sock, map=map)
         if impl is not None:
             self.switch_implementation(impl)
