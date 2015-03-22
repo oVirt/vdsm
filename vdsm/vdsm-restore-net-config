@@ -166,10 +166,19 @@ def restore(args):
         logging.info('networks already restored. doing nothing.')
         return
 
-    if config.get('vars', 'net_persistence') == 'unified':
-        unified_restoration()
+    unified = config.get('vars', 'net_persistence') == 'unified'
+    logging.info('starting network restoration.')
+    try:
+        if unified:
+            unified_restoration()
+        else:
+            ifcfg_restoration()
+    except Exception:
+        logging.exception('%s restoration failed.',
+                          'unified' if unified else 'ifcfg')
+        raise
     else:
-        ifcfg_restoration()
+        logging.info('restoration completed successfully.')
 
     touch_file(_NETS_RESTORED_MARK)
 
