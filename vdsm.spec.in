@@ -934,6 +934,12 @@ if [ "$1" -ge 1 ]; then
         supervdsmd_start_required='yes'
     fi
 
+    if ! %{_bindir}/vdsm-tool is-configured --module multipath >/dev/null 2>&1;
+    then
+        %{_bindir}/vdsm-tool configure --module multipath --force \
+            >/dev/null 2>&1;
+    fi
+
     if ! %{_bindir}/vdsm-tool is-configured --module libvirt >/dev/null 2>&1;
     then
         if ! %{_bindir}/vdsm-tool configure --module libvirt --force \
