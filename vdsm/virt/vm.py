@@ -804,7 +804,8 @@ class Vm(object):
         self._watchdogEvent = {}
         self.arch = caps.getTargetArch()
 
-        if (self.arch not in ['ppc64', 'x86_64']):
+        if self.arch not in caps.Architecture.POWER and \
+                self.arch != caps.Architecture.X86_64:
             raise RuntimeError('Unsupported architecture: %s' % self.arch)
 
         self._powerDownEvent = threading.Event()

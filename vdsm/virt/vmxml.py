@@ -210,7 +210,8 @@ class Domain(object):
         self.dom.appendChild(oselem)
 
         DEFAULT_MACHINES = {caps.Architecture.X86_64: 'pc',
-                            caps.Architecture.PPC64: 'pseries'}
+                            caps.Architecture.PPC64: 'pseries',
+                            caps.Architecture.PPC64LE: 'pseries'}
 
         machine = self.conf.get('emulatedMachine', DEFAULT_MACHINES[self.arch])
 
