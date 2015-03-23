@@ -152,8 +152,9 @@ make %{?_smp_mflags} install DESTDIR="%{buildroot}"
 %mvn_install
 %else
 install -d "%{buildroot}%{_javadir}/%{name}"
-install target/%{name}-client-%{package_maven_version}.jar %{buildroot}%{_javadir}/%{name}
-ln -s %{name}-client-%{package_maven_version}.jar %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
+FILE=$(ls -1 target/%{name}-client*.jar | grep -v source | grep -v javadoc | xargs -n 1 basename)
+install target/$FILE %{buildroot}%{_javadir}/%{name}
+ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %if 0%{?_use_repolib:1}
