@@ -4492,6 +4492,10 @@ class Vm(object):
             devType = x.getAttribute('type')
             mac = x.getElementsByTagName('mac')[0].getAttribute('address')
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            xdrivers = x.getElementsByTagName('driver')
+            driver = ({'name': xdrivers[0].getAttribute('name'),
+                       'queues': xdrivers[0].getAttribute('queues')}
+                      if xdrivers else {})
             if devType == 'hostdev':
                 name = alias
                 model = 'passthrough'
@@ -4523,6 +4527,10 @@ class Vm(object):
                     nic.alias = alias
                     nic.address = address
                     nic.linkActive = linkActive
+                    if driver:
+                        # If a driver was reported, pass it back to libvirt.
+                        # Engine (vm's conf) is not interested in this value.
+                        nic.driver = driver
             # Update vm's conf with address for known nic devices
             knownDev = False
             for dev in self.conf['devices']:
