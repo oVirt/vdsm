@@ -29,8 +29,8 @@ from . import sslutils
 
 _USE_SSL = False
 _TRUSTED_STORE_PATH = '/etc/pki/vdsm'
-_ADDRESS = '0'
-_PORT = 54321
+ADDRESS = '0'
+PORT = 54321
 
 
 def wrap_transport(transport):
@@ -60,15 +60,15 @@ class SingleRequestTransport(xmlrpclib.Transport):
 
 
 def __guessDefaults():
-    global _USE_SSL, _TRUSTED_STORE_PATH, _ADDRESS, _PORT
+    global _USE_SSL, _TRUSTED_STORE_PATH, ADDRESS, PORT
     VDSM_CONF = '/etc/vdsm/vdsm.conf'
     try:
         from .config import config
         config.read(VDSM_CONF)
         _USE_SSL = config.getboolean('vars', 'ssl')
         _TRUSTED_STORE_PATH = config.get('vars', 'trust_store_path')
-        _PORT = config.getint('addresses', 'management_port')
-        _ADDRESS = config.get('addresses', 'management_ip')
+        PORT = config.getint('addresses', 'management_port')
+        ADDRESS = config.get('addresses', 'management_ip')
     except:
         pass
 
@@ -76,9 +76,9 @@ def __guessDefaults():
 __guessDefaults()
 
 
-def cannonizeHostPort(hostPort=None, port=_PORT):
+def cannonizeHostPort(hostPort=None, port=PORT):
     if hostPort is None or hostPort == '0':
-        addr = _ADDRESS
+        addr = ADDRESS
         if ':' in addr:
             # __guessDefaults() might set an IPv6 address, cannonize it
             addr = '[%s]' % addr
@@ -126,6 +126,6 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
 
 if __name__ == '__main__':
     print('connecting to %s:%s ssl %s ts %s' % (
-        _ADDRESS, _PORT, _USE_SSL, _TRUSTED_STORE_PATH))
+        ADDRESS, PORT, _USE_SSL, _TRUSTED_STORE_PATH))
     server = connect()
     print(server.getVdsCapabilities())
