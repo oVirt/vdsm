@@ -82,7 +82,7 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %if !%{fedora_koji_build}
-ExclusiveArch: x86_64 ppc64
+ExclusiveArch: x86_64 ppc64 ppc64le
 %endif
 
 %if 0%{?rhel} <= 6
