@@ -1676,10 +1676,7 @@ class Vm(object):
             self.guestAgent.stop()
         except Exception:
             pass
-        try:
-            self._vmStats.stop()
-        except Exception:
-            pass
+        self.stopVmStats()
         self.saveState()
 
     def status(self, fullStatus=True):
@@ -2007,6 +2004,16 @@ class Vm(object):
         self._vmStats = VmStatsThread(self)
         self._vmStats.start()
         self._guestEventTime = self._startTime
+
+    def stopVmStats(self):
+        # this is less clean that it could be, but we can get here from
+        # many flows and with various locks held
+        # (_releaseLock, _shutdownLock)
+        # _vmStats may be None already, and we're good with that.
+        try:
+            self._vmStats.stop()
+        except AttributeError:
+            pass
 
     @staticmethod
     def _guestSockCleanup(sock):
@@ -3887,8 +3894,7 @@ class Vm(object):
             self.lastStatus = vmstatus.POWERING_DOWN
             # Terminate the VM's creation thread.
             self._incomingMigrationFinished.set()
-            if self._vmStats:
-                self._vmStats.stop()
+            self.stopVmStats()
             self.guestAgent.stop()
             if self._dom:
                 result = self._destroyVmGraceful()
