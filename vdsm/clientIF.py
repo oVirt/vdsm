@@ -239,6 +239,8 @@ class clientIF(object):
             self._enabled = False
             self.channelListener.stop()
             self._hostStats.stop()
+            for vm_obj in self.vmContainer.values():
+                vm_obj.stopVmStats()
             if self.mom:
                 self.mom.stop()
             if self.irs:
