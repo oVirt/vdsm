@@ -69,6 +69,21 @@ _VM_PARAMS = {
 }
 
 
+_TICKET_PARAMS = {
+    'userName': 'admin',
+    'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc'
+}
+
+
+_GRAPHICS_DEVICE_PARAMS = {
+    'deviceType': hwclass.GRAPHICS,
+    'password': password.ProtectedPassword('12345678'),
+    'ttl': 0,
+    'existingConnAction': 'disconnect',
+    'params': _TICKET_PARAMS
+}
+
+
 class TestVm(XMLTestCase):
 
     def __init__(self, *args, **kwargs):
@@ -1014,26 +1029,23 @@ class TestVmOperations(TestCaseBase):
             self._verifyDeviceUpdate(
                 device, self.GRAPHIC_DEVICES, domXml, devXml)
 
-    def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml):
-        TICKET_PARAMS = {
-            'userName': 'admin',
-            'userId': 'fdfc627c-d875-11e0-90f0-83df133b58cc'}
-
+    def _updateGraphicsDevice(self, testvm, device_type):
         def _check_ticket_params(domXML, conf, params):
-            self.assertEqual(params, TICKET_PARAMS)
+            self.assertEqual(params, _TICKET_PARAMS)
 
         with MonkeyPatchScope([(hooks, 'before_vm_set_ticket',
                                 _check_ticket_params)]):
-            with fake.VM(devices=allDevices) as testvm:
-                testvm._dom = fake.Domain(domXml)
-                testvm.updateDevice({
-                    'deviceType': 'graphics',
-                    'graphicsType': device['device'],
-                    'password': password.ProtectedPassword('12345678'),
-                    'ttl': 0,
-                    'existingConnAction': 'disconnect',
-                    'params': TICKET_PARAMS})
-                self.assertEquals(testvm._dom.devXml, devXml)
+            params = {'graphicsType': device_type}
+            params.update(_GRAPHICS_DEVICE_PARAMS)
+            return testvm.updateDevice(params)
+
+    def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml):
+        with fake.VM(devices=allDevices) as testvm:
+            testvm._dom = fake.Domain(domXml)
+
+            self._updateGraphicsDevice(testvm, device['device'])
+
+            self.assertEquals(testvm._dom.devXml, devXml)
 
     def testDomainNotRunningWithoutDomain(self):
         with fake.VM() as testvm:
@@ -1159,6 +1171,27 @@ class TestVmOperations(TestCaseBase):
                 res = testvm.setNumberOfCpus(4)  # random value
 
                 self.assertEqual(res, response.error(vdsm_error))
+
+    def testUpdateDeviceGraphicsFailed(self):
+        with fake.VM(devices=self.GRAPHIC_DEVICES) as testvm:
+            message = 'fake timeout while setting ticket'
+            device = 'spice'
+            domXml = '''
+                <devices>
+                    <graphics type="%s" port="5900" />
+                </devices>''' % device
+
+            def _fail(*args):
+                raise vm.TimeoutError(defmsg=message)
+
+            domain = fake.Domain(domXml)
+            domain.updateDeviceFlags = _fail
+            testvm._dom = domain
+
+            res = self._updateGraphicsDevice(testvm, device)
+
+            self.assertEqual(res,
+                             response.error('ticketErr', message))
 
 
 class ChangingSchedulerDomain(object):
