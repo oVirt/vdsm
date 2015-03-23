@@ -35,7 +35,8 @@ class SchemaValidation(TestCaseBase):
 
     # verbs not used in the engine and lacking definition in schema
     IGNORED_CMDS = ['Image_downloadFromStream', 'Image_uploadToStream',
-                    'Volume_setSize', 'Volume_updateSize']
+                    'Volume_setSize', 'Volume_updateSize',
+                    'VM_getMigrationStatus']
 
     def test_verify_schema(self):
         apiobj = self._get_api('API')
