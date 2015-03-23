@@ -6431,6 +6431,18 @@
  'data': {'vmID': 'UUID'},
  'returns': 'VmDefinition'}
 
+##
+# @MigrationStatusInfo:
+#
+# Information regarding migration
+# on error return what cause the error
+# on success added actulal downtime of the VM
+#
+# @downtime:  total time the the VM was offline
+#
+# Since: 4.17.0
+##
+{'type', 'MigrationStatusInfo', 'data': {'downtime': 'str'}}
 
 ##
 # @VM.getMigrationStatus:
@@ -6445,7 +6457,8 @@
 #        'message')
 ##
 {'command': {'class': 'VM', 'name': 'getMigrationStatus'},
- 'data': {'vmID': 'UUID'}}
+ 'data': {'vmID': 'UUID'},
+ 'returns': 'MigrationStatusInfo'}
 
 ##
 # @VmExitCode:

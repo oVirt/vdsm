@@ -97,6 +97,11 @@ class SourceThread(threading.Thread):
         if self._monitorThread is not None:
             # fetch migration status from the monitor thread
             self.status['progress'] = self._monitorThread.progress
+
+        stat = self._vm._dom.jobStats(libvirt.VIR_DOMAIN_JOB_STATS_COMPLETED)
+        if 'downtime' in stat:
+            self.status['downtime'] = stat['downtime']
+
         return self.status
 
     def _setupVdsConnection(self):
