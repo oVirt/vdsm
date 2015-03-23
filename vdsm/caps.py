@@ -143,6 +143,8 @@ def _report_network_qos(caps):
 class Architecture:
     X86_64 = 'x86_64'
     PPC64 = 'ppc64'
+    PPC64LE = 'ppc64le'
+    POWER = (PPC64, PPC64LE)
 
 
 class CpuInfo(object):
@@ -166,7 +168,7 @@ class CpuInfo(object):
     def flags(self):
         if self._arch == Architecture.X86_64:
             return self._info.itervalues().next()['flags'].split()
-        elif self._arch == Architecture.PPC64:
+        elif self._arch in Architecture.POWER:
             return ['powernv']
         else:
             raise RuntimeError('Unsupported architecture')
@@ -174,7 +176,7 @@ class CpuInfo(object):
     def mhz(self):
         if self._arch == Architecture.X86_64:
             return self._info.itervalues().next()['cpu MHz']
-        elif self._arch == Architecture.PPC64:
+        elif self._arch in Architecture.POWER:
             clock = self._info.itervalues().next()['clock']
             return clock[:-3]
         else:
@@ -183,7 +185,7 @@ class CpuInfo(object):
     def model(self):
         if self._arch == Architecture.X86_64:
             return self._info.itervalues().next()['model name']
-        elif self._arch == Architecture.PPC64:
+        elif self._arch in Architecture.POWER:
             return self._info.itervalues().next()['cpu']
         else:
             raise RuntimeError('Unsupported architecture')
