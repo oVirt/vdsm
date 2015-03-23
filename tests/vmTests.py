@@ -37,6 +37,7 @@ from virt import vmxml
 from virt import vmstatus
 from vdsm import constants
 from vdsm import define
+from vdsm import response
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import find_xml_element
@@ -1065,6 +1066,25 @@ class TestVmOperations(TestCaseBase):
             self.assertEqual(period + offset,
                              testvm._vcpuTuneInfo['vcpu_period'])
 
+    @permutations([[libvirt.VIR_ERR_OPERATION_DENIED, 'setNumberOfCpusErr',
+                    'Failed to set the number of cpus'],
+                   [libvirt.VIR_ERR_NO_DOMAIN, 'noVM', None]])
+    def testSetNumberOfVcpusFailed(self, virt_error, vdsm_error,
+                                   error_message):
+        def _fail(*args):
+            raise_libvirt_error(virt_error, error_message)
+
+        with MonkeyPatchScope([(hooks, 'before_set_num_of_cpus',
+                                lambda: None)]):
+            with fake.VM() as testvm:
+                dom = fake.Domain()
+                dom.setVcpusFlags = _fail
+                testvm._dom = dom
+
+                res = testvm.setNumberOfCpus(4)  # random value
+
+                self.assertEqual(res, response.error(vdsm_error))
+
 
 class ChangingSchedulerDomain(object):
 
@@ -1414,3 +1434,9 @@ class ChangeBlockDevTests(TestCaseBase):
 
                 expected_status = define.errCode['changeDisk']['status']
                 self.assertEqual(res['status'], expected_status)
+
+
+def raise_libvirt_error(code, message):
+    err = libvirt.libvirtError(defmsg=message)
+    err.err = [code]
+    raise err
