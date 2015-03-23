@@ -61,7 +61,7 @@ class TestSchemaCompliancyBase(TestCaseBase):
 
 @contextmanager
 def ensureVmStats(vm):
-    vm._initVmStats()
+    vm.startVmStats()
     try:
         yield vm
     finally:

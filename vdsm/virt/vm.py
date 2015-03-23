@@ -2003,7 +2003,7 @@ class Vm(object):
 
         return domxml.toxml()
 
-    def _initVmStats(self):
+    def startVmStats(self):
         self._vmStats = VmStatsThread(self)
         self._vmStats.start()
         self._guestEventTime = self._startTime
@@ -2115,7 +2115,7 @@ class Vm(object):
 
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
-        self._initVmStats()
+        self.startVmStats()
         try:
             self.guestAgent.connect()
         except Exception:
