@@ -48,7 +48,7 @@ public abstract class TestJsonRpcClient {
     }
 
     private void setUpClientPool() {
-        this.responseWorker = new ResponseWorker();
+        this.responseWorker = new ResponseWorker(Runtime.getRuntime().availableProcessors());
     }
 
     private void setUpClient() {

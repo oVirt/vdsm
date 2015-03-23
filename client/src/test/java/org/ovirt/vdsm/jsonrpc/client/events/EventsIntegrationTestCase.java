@@ -69,7 +69,7 @@ public class EventsIntegrationTestCase {
         ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
         client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
 
-        ResponseWorker worker = ReactorFactory.getWorker();
+        ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         worker.register(client);
         client.connect();
 

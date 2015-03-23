@@ -54,7 +54,7 @@ public class JsonRpcClientConnectivityTestCase {
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, 3333);
         client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
-        ResponseWorker worker = ReactorFactory.getWorker();
+        ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         JsonRpcClient jsonClient = worker.register(client);
         JsonRpcRequest request = mock(JsonRpcRequest.class);
         when(request.getId()).thenReturn(mock(JsonNode.class));
@@ -97,7 +97,7 @@ public class JsonRpcClientConnectivityTestCase {
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT);
         client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
-        ResponseWorker worker = ReactorFactory.getWorker();
+        ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         JsonRpcClient jsonClient = worker.register(client);
         jsonClient.setRetryPolicy(new ClientPolicy(TIMEOUT, 2, HEART_BEAT));
         JsonRpcRequest request = mock(JsonRpcRequest.class);
@@ -147,7 +147,7 @@ public class JsonRpcClientConnectivityTestCase {
         Reactor reactor = getReactor();
         final ReactorClient client = reactor.createClient(HOSTNAME, PORT + 1);
         client.setClientPolicy(new StompClientPolicy(TIMEOUT, CONNECTION_RETRY, HEART_BEAT, IOException.class, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
-        ResponseWorker worker = ReactorFactory.getWorker();
+        ResponseWorker worker = ReactorFactory.getWorker(Runtime.getRuntime().availableProcessors());
         JsonRpcClient jsonClient = worker.register(client);
         jsonClient.setRetryPolicy(new ClientPolicy(TIMEOUT, 2, HEART_BEAT));
 

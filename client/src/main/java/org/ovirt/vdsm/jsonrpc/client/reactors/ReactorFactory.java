@@ -39,7 +39,7 @@ public class ReactorFactory {
     /**
      * @return Single instance of <code>ResponseWorker</code>.
      */
-    public static ResponseWorker getWorker() {
+    public static ResponseWorker getWorker(int parallelism) {
         if (worker != null) {
             return worker;
         }
@@ -47,7 +47,7 @@ public class ReactorFactory {
             if (worker != null) {
                 return worker;
             }
-            worker = new ResponseWorker();
+            worker = new ResponseWorker(parallelism);
         }
         return worker;
     }

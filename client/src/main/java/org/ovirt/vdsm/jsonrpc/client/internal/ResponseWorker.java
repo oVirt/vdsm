@@ -5,9 +5,9 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
 
 import java.util.Iterator;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -39,11 +39,11 @@ public final class ResponseWorker extends Thread {
         MAPPER.configure(JsonParser.Feature.CANONICALIZE_FIELD_NAMES, false);
     }
 
-    public ResponseWorker() {
+    public ResponseWorker(int parallelism) {
         this.queue = new LinkedBlockingQueue<>();
         this.tracker = new ResponseTracker();
         this.publisher =
-                new EventPublisher(new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
+                new EventPublisher(new ForkJoinPool(parallelism,
                         new ForkJoinWorkerThreadFactory() {
 
                             @Override
