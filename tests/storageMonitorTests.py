@@ -41,3 +41,19 @@ class FrozenStatusTests(VdsmTestCase):
     def test_deleting_attribute_raises(self):
         for name in self.status.__slots__:
             self.assertRaises(AssertionError, delattr, self.frozen, name)
+
+    def test_valid(self):
+        self.assertEqual(self.frozen.valid, self.status.valid)
+
+
+class StatusValidTests(VdsmTestCase):
+
+    def test_valid(self):
+        s = monitor.Status()
+        self.assertIsNone(s.error)
+        self.assertTrue(s.valid)
+
+    def test_invalid(self):
+        s = monitor.Status()
+        s.error = Exception()
+        self.assertFalse(s.valid)

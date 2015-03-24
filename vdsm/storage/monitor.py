@@ -34,7 +34,7 @@ from .sdc import sdCache
 
 class Status(object):
     __slots__ = (
-        "error", "checkTime", "valid", "readDelay", "masterMounted",
+        "error", "checkTime", "readDelay", "masterMounted",
         "masterValid", "diskUtilization", "vgMdUtilization",
         "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
         "isoPrefix", "version", "actual",
@@ -44,7 +44,6 @@ class Status(object):
         self.actual = actual
         self.error = None
         self.checkTime = time.time()
-        self.valid = True
         self.readDelay = 0
         self.diskUtilization = (None, None)
         self.masterMounted = False
@@ -62,6 +61,10 @@ class Status(object):
         # report its prefix (it might be unreachable).
         self.isoPrefix = None
         self.version = -1
+
+    @property
+    def valid(self):
+        return self.error is None
 
 
 class FrozenStatus(Status):
@@ -279,7 +282,6 @@ class MonitorThread(object):
             self.nextStatus.error = e
 
         self.nextStatus.checkTime = time.time()
-        self.nextStatus.valid = (self.nextStatus.error is None)
 
         if self._statusDidChange():
             self._notifyStatusChanges()
