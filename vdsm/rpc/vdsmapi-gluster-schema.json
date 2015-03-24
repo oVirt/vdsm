@@ -1638,6 +1638,20 @@
  'returns': 'bool'}
 
 ##
+# @SnapshotCreateDetail:
+#
+# Created snapshot detail
+#
+# @uuid:   UUID of the created snapshot
+#
+# @name:   Name of the created snapshot
+#
+# Since: 4.17.0
+##
+{'type': 'SnapshotCreateDetail',
+ 'data': {'uuid': 'UUID', 'name': 'str'}}
+
+##
 # @GlusterVolume.snapshotCreate:
 #
 # Create a Gluster volume snapshot
@@ -1651,14 +1665,14 @@
 # @force:           #optional Force create snapshot
 #
 # Returns:
-# uuid of the snapshot
+# uuid and name of the created snapshot
 #
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'snapshotCreate'},
  'data': {'volumeName': 'str', 'snapName': 'str',
           '*snapDescription': 'str', '*force': 'bool'},
- 'returns': 'UUID'}
+ 'returns': 'SnapshotCreateDetail'}
 
 ##
 # @GlusterVolume.snapshotDeleteAll:
