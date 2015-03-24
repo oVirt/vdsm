@@ -141,6 +141,21 @@ reconfigure() {
     fi
 }
 
+restore_nets(){
+    "@PYTHON@" "@VDSMDIR@/vdsm-restore-net-config" || return 1
+    return 0
+}
+
+unified_network_persistence_upgrade(){
+    echo 'Upgrading to unified persistence if needed'
+    "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-unified-persistence
+}
+
+upgrade_300_nets(){
+    echo 'Upgrading to v3.x networking if needed'
+    "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-3.0.0-networks
+}
+
 start() {
     test_already_running && return 0
 
@@ -154,6 +169,10 @@ start() {
         || return 1
 
     "${VDSMD_INIT_COMMON}" --pre-start || return 1
+
+    unified_network_persistence_upgrade || return 1
+    restore_nets || return 1
+    upgrade_300_nets || return 1
 
     echo $"Starting up vdsm daemon: "
     DAEMON_COREFILE_LIMIT=unlimited NICELEVEL="${NICE_LOWEST}" daemon \

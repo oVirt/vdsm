@@ -246,23 +246,6 @@ task_validate_configuration(){
 }
 
 
-task_restore_nets(){
-    local restoration_file="@VDSMRUNDIR@/nets_restored"
-    if [ ! -f "${restoration_file}" ]; then
-        "@PYTHON@" "@VDSMDIR@/vdsm-restore-net-config" || return 1
-        touch "${restoration_file}"
-    fi
-    return 0
-}
-
-task_unified_network_persistence_upgrade(){
-    "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-unified-persistence
-}
-
-task_upgrade_300_nets(){
-    "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-3.0.0-networks
-}
-
 task_upgraded_version_check(){
     local upgraded_ver_file="@VDSMLIBDIR@/upgraded_version"
     if [ -f "${upgraded_ver_file}" ]; then
@@ -328,9 +311,6 @@ case "$1" in
             tune_system \
             test_space \
             test_lo \
-            unified_network_persistence_upgrade \
-            restore_nets \
-            upgrade_300_nets \
             "
         ;;
     --post-stop)

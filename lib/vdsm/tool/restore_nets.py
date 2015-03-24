@@ -37,8 +37,8 @@ def restore_command(*args):
 
 
 def restore():
-    rc, out, err = utils.execCmd([os.path.join(
-        P_VDSM, 'vdsm-restore-net-config')], raw=True)
+    rc, out, err = utils.execCmd(
+        [os.path.join(P_VDSM, 'vdsm-restore-net-config'), '--force'], raw=True)
     sys.stdout.write(out)
     sys.stderr.write(err)
     if rc != 0:

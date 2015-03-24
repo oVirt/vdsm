@@ -18,11 +18,14 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import argparse
 import logging
 import logging.config
+import os
 
 from vdsm.config import config
 from vdsm import netinfo
+from vdsm.constants import P_VDSM_RUN
 
 # Ifcfg persistence restoration
 from network.configurators import ifcfg
@@ -32,6 +35,8 @@ from network.api import setupNetworks
 from network import configurators
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig
 import pkgutil
+
+_NETS_RESTORED_MARK = os.path.join(P_VDSM_RUN, 'nets_restored')
 
 
 def ifcfg_restoration():
@@ -126,11 +131,26 @@ def _get_all_configurators():
         yield cls
 
 
-def restore():
+def _nets_already_restored(nets_restored_mark):
+    return os.path.exists(nets_restored_mark)
+
+
+def touch_file(file_path):
+    with open(file_path, 'a'):
+        os.utime(file_path, None)
+
+
+def restore(args):
+    if not args.force and _nets_already_restored(_NETS_RESTORED_MARK):
+        logging.info('networks already restored. doing nothing.')
+        return
+
     if config.get('vars', 'net_persistence') == 'unified':
         unified_restoration()
     else:
         ifcfg_restoration()
+
+    touch_file(_NETS_RESTORED_MARK)
 
 
 if __name__ == '__main__':
@@ -142,4 +162,18 @@ if __name__ == '__main__':
                             level=logging.DEBUG)
         logging.error('Could not init proper logging', exc_info=True)
 
-    restore()
+    restore_help = ("Restores the network configuration from vdsm configured "
+                    "network system persistence.\n"
+                    "Restoration will delete any trace of network system "
+                    "persistence except the vdsm internal persistent network "
+                    "configuration. In order to avoid this use --no-flush.")
+    parser = argparse.ArgumentParser(description=restore_help)
+
+    force_option_help = ("Restore networks even if the " + _NETS_RESTORED_MARK
+                         + " mark exists. The mark is created upon a previous "
+                           "successful restore")
+    parser.add_argument('--force', action='store_true', default=False,
+                        help=force_option_help)
+
+    args = parser.parse_args()
+    restore(args)
