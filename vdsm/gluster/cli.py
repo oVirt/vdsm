@@ -1270,7 +1270,8 @@ def snapshotCreate(volumeName, snapName,
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterSnapshotCreateFailedException(rc=e.rc, err=e.err)
     try:
-        return {'uuid': xmltree.find('snapCreate/snapshot/uuid').text}
+        return {'uuid': xmltree.find('snapCreate/snapshot/uuid').text,
+                'name': xmltree.find('snapCreate/snapshot/name').text}
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
