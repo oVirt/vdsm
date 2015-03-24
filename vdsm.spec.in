@@ -102,7 +102,7 @@ BuildRequires: python-pthreading
 BuildRequires: python-cpopen >= 1.3
 BuildRequires: qemu-img
 BuildRequires: rpm-python
-BuildRequires: libnl
+BuildRequires: libnl3
 BuildRequires: libselinux-python
 BuildRequires: libvirt-python
 BuildRequires: genisoimage
@@ -151,7 +151,7 @@ Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
 Requires: libguestfs-tools-c
-Requires: libnl
+Requires: libnl3
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 
