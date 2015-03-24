@@ -6440,33 +6440,85 @@
  'returns': 'VmDefinition'}
 
 ##
-# @MigrationStatusInfo:
+# @MigrationStatus:
 #
-# Information regarding migration
-# on error return what cause the error
-# on success added actulal downtime of the VM
+# An enumeration of VM migration status.
 #
-# @downtime:  total time the the VM was offline
+# @done:        Migration completed
+#
+# @in_progress: Migration in progress
 #
 # Since: 4.17.0
 ##
-{'type', 'MigrationStatusInfo', 'data': {'downtime': 'str'}}
+{'enum': 'MigrationStatus', 'data': ['done', 'in_progress']}
+
+##
+# @MigratingStats:
+#
+# Statistics about the current ongoing migration of a VM
+#
+# @vmId:         The UUID of the Vm
+#
+# @status:       The current migration status of a VM
+#
+# @progress:     The migration percentage progress
+#
+# Since: 4.17.0
+##
+{'type': 'MigratingStats',
+ 'data': {'vmId': 'UUID', 'status': 'MigrationStatus',
+          'progress': 'uint'}}
+
+##
+# @MigratedStats:
+#
+# Statistics about the last completed migration of a VM
+#
+# @vmId:         The UUID of the Vm
+#
+# @status:       The current migration status of a VM
+#
+# @downtime:     The downtime the VM experienced
+#
+# Since: 4.17.0
+##
+{'type': 'MigratedStats',
+ 'data': {'vmId': 'UUID', 'status': 'MigrationStatus',
+          'downtime': 'uint'}}
+
+##
+# @MigrationStats:
+#
+# A discriminated record containing virtual machine migration statistics.
+# discriminating field: status,
+# status.done returns MigratedStats;
+# status.in_progress returns MigratingStats
+#
+# Since: 4.17.0
+##
+{'type': 'MigrationStats',
+ 'data': {},
+ 'union': ['MigratedStats', 'MigratingStats']}
 
 ##
 # @VM.getMigrationStatus:
 #
-# Report status of a currently outgoing migration.
+# Report virtual machine migration statistics.
+# On going progress or statistics on done migration
 #
 # @vmID:  The UUID of the VM
 #
+# Returns:
+# Statistics on ongoing migration or done migration
+# Note: migratingStats since 4.10.0
+#       migratedStats  since 4.17.0
+#
 # Since: 4.10.0
 #
-# Notes: Migration status is returned as the command status ('code' and
-#        'message')
 ##
 {'command': {'class': 'VM', 'name': 'getMigrationStatus'},
  'data': {'vmID': 'UUID'},
- 'returns': 'MigrationStatusInfo'}
+ 'returns': 'MigrationStats'}
 
 ##
 # @VmExitCode:
