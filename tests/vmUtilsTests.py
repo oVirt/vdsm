@@ -73,6 +73,11 @@ class ExpiringCacheOperationTests(TestCaseBase):
         for i in xrange(ITEMS):
             self.cache.get(i) is None
 
+    def test_nonzero(self):
+        self.assertFalse(self.cache)
+        self.cache['foo'] = 'bar'
+        self.assertTrue(self.cache)
+
 
 class FakeClock(object):
     def __init__(self, now):
@@ -93,3 +98,30 @@ class ExpirationTests(TestCaseBase):
         self.assertEqual(None, cache.get('the answer'))
         clock.now = 1.000001
         self.assertEqual(None, cache.get('the answer'))
+
+    def test_nonzero_full_expiration(self):
+        clock = FakeClock(0.0)
+        cache = utils.ExpiringCache(ttl=1.0, clock=clock)
+
+        ITEMS = 10
+        for i in range(ITEMS):
+            cache[i] = 'foobar-%d' % i
+        self.assertTrue(cache)
+
+        clock.now = 1.1
+        self.assertFalse(cache)
+
+    def test_nonzero_partial_expiration(self):
+        clock = FakeClock(0.0)
+        cache = utils.ExpiringCache(ttl=2.0, clock=clock)
+
+        cache['a'] = 1
+        clock.now = 1.0
+        self.assertTrue(cache)
+
+        cache['b'] = 2
+        clock.now = 2.0
+        self.assertTrue(cache)
+
+        clock.now = 3.0
+        self.assertFalse(cache)

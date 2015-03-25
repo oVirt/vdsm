@@ -86,6 +86,18 @@ class ExpiringCache(object):
         with self._lock:
             del self._items[key]
 
+    def __nonzero__(self):
+        now = self._clock()
+        with self._lock:
+            expired_keys = [
+                key for key, (expiration, _)
+                in self._items.iteritems()
+                if expiration <= now]
+            for key in expired_keys:
+                del self._items[key]
+
+            return bool(self._items)
+
     # private
 
     def _get_live(self, key):
