@@ -680,7 +680,7 @@ Requires: %{name} = %{version}-%{release}
 Requires: glusterfs-server
 Requires: python-magic
 %if 0%{?rhel} > 6 || 0%{?fedora}
-Requires: python-blivet >= 0.61.14
+Requires: python-blivet
 %endif
 
 %description gluster
