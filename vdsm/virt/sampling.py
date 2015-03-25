@@ -34,6 +34,7 @@ from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import utils
+from vdsm.config import config
 
 import caps
 
@@ -516,7 +517,6 @@ class HostStatsThread(threading.Thread):
     A thread that periodically samples host statistics.
     """
     AVERAGING_WINDOW = 5
-    SAMPLE_INTERVAL_SEC = 2
     _CONNLOG = logging.getLogger('connectivity')
 
     def __init__(self, log):
@@ -531,6 +531,9 @@ class HostStatsThread(threading.Thread):
         self._pid = os.getpid()
         self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
 
+        self._sampleInterval = \
+            config.getint('vars', 'host_sample_stats_interval')
+
     def stop(self):
         self._stopEvent.set()
 
@@ -542,7 +545,7 @@ class HostStatsThread(threading.Thread):
         import vm
         try:
             # wait a bit before starting to sample
-            time.sleep(self.SAMPLE_INTERVAL_SEC)
+            time.sleep(self._sampleInterval)
             while not self._stopEvent.isSet():
                 try:
                     sample = self.sample()
@@ -558,7 +561,7 @@ class HostStatsThread(threading.Thread):
                         self._samples.pop(0)
                 except vm.TimeoutError:
                     self._log.exception("Timeout while sampling stats")
-                self._stopEvent.wait(self.SAMPLE_INTERVAL_SEC)
+                self._stopEvent.wait(self._sampleInterval)
         except:
             if not self._stopEvent.isSet():
                 self._log.exception("Error while sampling stats")
