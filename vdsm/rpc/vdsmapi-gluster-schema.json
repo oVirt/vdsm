@@ -1510,7 +1510,7 @@
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepSessionStatus'},
- 'data': {'VolumeName': 'str', 'remoteHost': 'str',
+ 'data': {'volumeName': 'str', 'remoteHost': 'str',
           'remoteVolumeName': 'str', '*remoteUserName': 'str'},
  'returns': 'GlusterGeoRepSessionMap'}
 
