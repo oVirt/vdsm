@@ -10,6 +10,7 @@ EnvironmentFile=-/etc/sysconfig/vdsm
 ExecStartPre=@BINDIR@/vdsm-tool --vvverbose --append --logfile=@VDSMLOGDIR@/upgrade.log upgrade-unified-persistence
 ExecStartPre=@BINDIR@/vdsm-tool --vvverbose --append --logfile=@VDSMLOGDIR@/upgrade.log upgrade-3.0.0-networks
 ExecStart=@VDSMDIR@/vdsm-restore-net-config
+KillMode=process
 RemainAfterExit=yes
 
 [Install]
