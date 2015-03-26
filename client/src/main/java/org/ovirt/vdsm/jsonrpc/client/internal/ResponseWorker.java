@@ -2,8 +2,10 @@ package org.ovirt.vdsm.jsonrpc.client.internal;
 
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.mapValues;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 import java.util.concurrent.ForkJoinWorkerThread;
@@ -15,6 +17,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.NullNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcClient;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcEvent;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
@@ -125,7 +128,26 @@ public final class ResponseWorker extends Thread {
     private void processIncomingObject(JsonRpcClient client, JsonNode node) {
         final JsonNode id = node.get("id");
         final JsonNode error = node.get("error");
-        if ((id == null || NullNode.class.isInstance(id)) && (error == null || NullNode.class.isInstance(error))) {
+        if ((error != null && !NullNode.class.isInstance(error))) {
+            JsonRpcResponse response = JsonRpcResponse.fromJsonNode(node);
+            Map<String, Object> map = mapValues(response.getError());
+            Object code = map.get("code");
+            if (String.class.isInstance(code)) {
+                String hostId = (String) code;
+                if (hostId.contains(":")) {
+                    String host = hostId.substring(0, hostId.indexOf(":"));
+                    ObjectNode params = MAPPER.createObjectNode();
+                    params.put(JsonRpcEvent.ERROR_KEY, (String) map.get("message"));
+
+                    JsonRpcEvent event = new JsonRpcEvent(host + "|*|*|*", params);
+                    processNotifications(event);
+                }
+            }
+            client.processResponse(response);
+            return;
+        }
+
+        if ((id == null || NullNode.class.isInstance(id))) {
             JsonRpcEvent event = JsonRpcEvent.fromJsonNode(node);
             String method = client.getHostname() + event.getMethod();
             event.setMethod(method);
@@ -147,13 +169,14 @@ public final class ResponseWorker extends Thread {
     public void close() {
         this.queue.add(new MessageContext(null, null));
         this.tracker.close();
+        this.publisher.close();
     }
 
     /**
      * @return publisher which can be used to subscribe to events defined by subscription id.
      */
     public EventPublisher getPublisher() {
-        return publisher;
+        return this.publisher;
     }
 
 }

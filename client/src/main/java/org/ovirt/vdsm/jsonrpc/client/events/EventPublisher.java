@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.EventDecomposer;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcEvent;
 import org.ovirt.vdsm.jsonrpc.client.internal.ResponseWorker;
@@ -107,10 +108,18 @@ public class EventPublisher implements Publisher<Map<String, Object>, EventSubsc
             JsonRpcEvent event = null;
             while ((event = this.holder.canProcessMore()) != null) {
                 Map<String, Object> map = this.decomposer.decompose(event);
-                subscriber.onNext(map);
+                if (map.containsKey(JsonRpcEvent.ERROR_KEY)) {
+                    subscriber.onError(new ClientConnectionException((String) map.get(JsonRpcEvent.ERROR_KEY)));
+                } else {
+                    subscriber.onNext(map);
+                }
             }
             return null;
         }
 
+    }
+
+    public void close() {
+        this.executorService.shutdown();
     }
 }

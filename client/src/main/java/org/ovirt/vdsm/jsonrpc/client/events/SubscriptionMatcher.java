@@ -41,6 +41,10 @@ public class SubscriptionMatcher {
     private ConcurrentMap<String, List<SubscriptionHolder>> operation = new ConcurrentHashMap<>();
     private ConcurrentMap<String, SubscriptionHolder> unique_id = new ConcurrentHashMap<>();
 
+    private interface Predicate {
+        boolean apply(int one, int two);
+    }
+
     /**
      * Adds a {@link SubscriptionHolder} which will be used for event matching
      *
@@ -106,15 +110,28 @@ public class SubscriptionMatcher {
         if (holder != null) {
             subscriptions.add(holder);
         }
-        addHolders(subscriptions, this.operation, 2, ids);
-        addHolders(subscriptions, this.component, 1, ids);
-        addHolders(subscriptions, this.receiver, 0, ids);
+        Predicate predicate = new Predicate() {
+
+            @Override
+            public boolean apply(int one, int two) {
+                return one == two;
+            }
+        };
+        addHolders(subscriptions, this.operation, 2, ids, predicate);
+        addHolders(subscriptions, this.component, 1, ids, predicate);
+        addHolders(subscriptions, this.receiver, 0, ids, new Predicate() {
+
+            @Override
+            public boolean apply(int one, int two) {
+                return two > 0;
+            }
+        });
         return subscriptions;
     }
 
     private void addHolders(Set<SubscriptionHolder> holders,
             ConcurrentMap<String, List<SubscriptionHolder>> map,
-            int key, String[] ids) {
+            int key, String[] ids, Predicate predicate) {
         List<SubscriptionHolder> values = map.get(ids[key]);
         if (values == null) {
             return;
@@ -123,7 +140,7 @@ public class SubscriptionMatcher {
             List<String> fids = value.getFilteredId();
             int size = fids.size();
             fids.retainAll(Arrays.asList(ids));
-            if (size == fids.size()) {
+            if (predicate.apply(size, fids.size())) {
                 holders.add(value);
             }
         }

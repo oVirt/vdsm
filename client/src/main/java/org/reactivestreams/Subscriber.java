@@ -40,7 +40,8 @@ public interface Subscriber<T> {
     /**
      * Failed terminal state.
      * <p>
-     * No further events will be sent even if {@link Subscription#request(int)} is invoked again.
+     * It is up to implementer to decide whether to cancel subscription or use {@link Subscription#request(int)}
+     * and expect further notifications.
      *
      * @param t the throwable signaled
      */
