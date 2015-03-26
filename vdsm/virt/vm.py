@@ -726,7 +726,8 @@ class Vm(object):
 
     def _getDefaultDiskInterface(self):
         DEFAULT_DISK_INTERFACES = {caps.Architecture.X86_64: 'ide',
-                                   caps.Architecture.PPC64: 'scsi'}
+                                   caps.Architecture.PPC64: 'scsi',
+                                   caps.Architecture.PPC64LE: 'scsi'}
         return DEFAULT_DISK_INTERFACES[self.arch]
 
     def __init__(self, cif, params, recover=False):
@@ -1005,7 +1006,8 @@ class Vm(object):
         """
 
         DEFAULT_VIDEOS = {caps.Architecture.X86_64: 'cirrus',
-                          caps.Architecture.PPC64: 'vga'}
+                          caps.Architecture.PPC64: 'vga',
+                          caps.Architecture.PPC64LE: 'vga'}
 
         vcards = []
         if self.conf.get('display') == 'vnc':
@@ -3716,7 +3718,7 @@ class Vm(object):
                       actionToString(action))
 
     def changeCD(self, drivespec):
-        if self.arch == caps.Architecture.PPC64:
+        if self.arch in caps.Architecture.POWER:
             blockdev = 'sda'
         else:
             blockdev = 'hdc'
