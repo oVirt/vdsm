@@ -412,29 +412,11 @@ def iterateIscsiInterfaces():
 
 
 @misc.samplingmethod
-def rescan(minTimeout=None, maxTimeout=None):
-    # FIXME: This whole thing is wrong from the core. We need to make rescan
-    #        completely async and have methods timeout on their own if they
-    #        can't find the devices they are looking for
-    if minTimeout is None:
-        minTimeout = config.getint('irs', 'scsi_rescan_minimal_timeout')
-    if maxTimeout is None:
-        maxTimeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
-
-    if (minTimeout > maxTimeout or minTimeout < 0):
-        minTimeout = 2
-        maxTimeout = 30
-        log.warning("One of the following configuration arguments has an "
-                    "illegal value: scsi_rescan_minimal_timeout or "
-                    "scsi_rescan_maximal_timeout. Set to %s and %s seconds "
-                    "respectively.", minTimeout, maxTimeout)
-
-    log.debug("Performing SCSI scan, this will take up to %s seconds",
-              maxTimeout)
-
+def rescan():
+    timeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
+    log.debug("Performing SCSI scan, this will take up to %s seconds", timeout)
     rescanOp = iscsiadm.session_rescan_async()
-    time.sleep(minTimeout)
-    rescanOp.wait(timeout=(maxTimeout - minTimeout))
+    rescanOp.wait(timeout=timeout)
 
 
 def devIsiSCSI(dev):

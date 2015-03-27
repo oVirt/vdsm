@@ -31,11 +31,14 @@ from collections import namedtuple
 
 from vdsm import constants
 from vdsm import utils
+from vdsm.config import config
+
 import hba
 import misc
 import iscsi
 import supervdsm
 import devicemapper
+import udevadm
 
 DEV_ISCSI = "iSCSI"
 DEV_FCP = "FCP"
@@ -65,6 +68,12 @@ def rescan():
 
     # Now let multipath daemon pick up new devices
     misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
+
+    # Scanning SCSI interconnects starts a storm of udev events. Wait until all
+    # events are processed, ensuring detection of new devices and creation or
+    # update of multipath devices.
+    timeout = config.getint('irs', 'scsi_settle_timeout')
+    udevadm.settle(timeout)
 
 
 def deduceType(a, b):
