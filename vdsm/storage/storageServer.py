@@ -30,6 +30,7 @@ from functools import partial
 import sys
 
 from vdsm.compat import pickle
+from vdsm.config import config
 
 import mount
 import fileUtils
@@ -38,6 +39,7 @@ import iscsi
 from sync import asyncmethod, AsyncCallStub
 from mount import MountError
 import storage_exception as se
+import udevadm
 
 
 class AliasAlreadyRegisteredError(RuntimeError):
@@ -379,6 +381,8 @@ class IscsiConnection(object):
 
     def connect(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
+        timeout = config.getint("irs", "scsi_settle_timeout")
+        udevadm.settle(timeout)
 
     def _match(self, session):
         target = session.target
