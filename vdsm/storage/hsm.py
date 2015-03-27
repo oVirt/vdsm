@@ -3221,6 +3221,11 @@ class HSM(object):
         if leafUUID not in imgVolumes:
             raise se.VolumeDoesNotExist(leafUUID)
 
+        for volUUID in imgVolumes:
+            legality = dom.produceVolume(imgUUID, volUUID).getLegality()
+            if legality == volume.ILLEGAL_VOL:
+                raise se.prepareIllegalVolumeError(volUUID)
+
         imgPath = dom.activateVolumes(imgUUID, imgVolumes)
         if spUUID and spUUID != sd.BLANK_UUID:
             runImgPath = dom.linkBCImage(imgPath, imgUUID)
