@@ -258,8 +258,10 @@ class VmStatsThread(AdvancedStatsThread):
         """
         Numa CPU assignments.
         """
-        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
-        return vmNumaNodeRuntimeMap
+        if not self._vm.hasGuestNumaNode:
+            return {}
+
+        return numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
 
     def _sampleDisk(self):
         """
@@ -5037,6 +5039,10 @@ class Vm(object):
                              ' (command timeout, age=%s)',
                              statsAge)
             stats['monitorResponse'] = '-1'
+
+    @property
+    def hasGuestNumaNode(self):
+        return 'guestNumaNodes' in self.conf
 
 
 class LiveMergeCleanupThread(threading.Thread):

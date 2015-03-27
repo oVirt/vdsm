@@ -72,5 +72,6 @@ class TestNumaUtils(TestCaseBase):
         with fake.VM(VM_PARAMS) as testvm:
             testvm._vmStats = fake.VmStatsThread(testvm)
             expectedResult = {'0': [0, 1], '1': [0, 1]}
+            self.assertTrue(testvm.hasGuestNumaNode)
             vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(testvm)
             self.assertEqual(expectedResult, vmNumaNodeRuntimeMap)
