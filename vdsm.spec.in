@@ -1125,6 +1125,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/task.py*
 %{_datadir}/%{vdsm_name}/storage/threadLocal.py*
 %{_datadir}/%{vdsm_name}/storage/threadPool.py*
+%{_datadir}/%{vdsm_name}/storage/udevadm.py*
 %{_datadir}/%{vdsm_name}/storage/volume.py*
 %{_datadir}/%{vdsm_name}/storage/imageRepository/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/imageRepository/formatConverter.py*
