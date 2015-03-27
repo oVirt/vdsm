@@ -71,7 +71,7 @@ from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
 from . import vmxml
 
-from .sampling import AdvancedStatsFunction, AdvancedStatsThread
+from .sampling import AdvancedStatsThread
 from .utils import isVdsmImage
 from vmpowerdown import VmShutdown, VmReboot
 
@@ -191,20 +191,6 @@ class VmStatsThread(AdvancedStatsThread):
     def __init__(self, vm):
         AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
         self._vm = vm
-
-        self.highWrite = (
-            AdvancedStatsFunction(
-                self._highWrite,
-                config.getint('vars', 'vm_watermark_interval')))
-
-        self.addStatsFunction(
-            self.highWrite)
-
-    def _highWrite(self):
-        if not self._vm.isDisksStatsCollectionEnabled():
-            # Avoid queries from storage during recovery process
-            return
-        self._vm.extendDrivesIfNeeded()
 
     def handleStatsException(self, ex):
         # We currently handle only libvirt exceptions

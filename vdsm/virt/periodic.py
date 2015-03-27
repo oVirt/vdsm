@@ -99,6 +99,13 @@ def start(cif):
                 sampling.stats_cache),
             config.getint('vars', 'vm_sample_interval')),
 
+        # we do this only until we get high water mark notifications
+        # from qemu. Access storage and/or qemu monitor, so can block,
+        # thus we need dispatching.
+        per_vm_operation(
+            DriveWatermarkMonitor,
+            config.getint('vars', 'vm_watermark_interval'))
+
     ]
 
     for op in _operations:
@@ -301,3 +308,20 @@ class BlockjobMonitor(object):
 
     def __call__(self):
         self._vm.updateVmJobs()
+
+
+class DriveWatermarkMonitor(object):
+    def __init__(self, vm):
+        self._vm = vm
+
+    @property
+    def required(self):
+        # Avoid queries from storage during recovery process
+        return self._vm.isDisksStatsCollectionEnabled()
+
+    @property
+    def runnable(self):
+        return self._vm.isDomainReadyForCommands()
+
+    def __call__(self):
+        self._vm.extendDrivesIfNeeded()
