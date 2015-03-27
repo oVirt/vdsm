@@ -1144,7 +1144,7 @@ _VM_PARAMS = {'displayPort': -1, 'displaySecurePort': -1,
               'vmType': 'kvm', 'memSize': 1024}
 
 
-class TestVmStatsThread(TestCaseBase):
+class TestVmStats(TestCaseBase):
 
     DEV_BALLOON = [{'type': 'balloon', 'specParams': {'model': 'virtio'}}]
 

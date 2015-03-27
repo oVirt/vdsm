@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from contextlib import contextmanager
 import os
 import os.path
 
@@ -59,15 +58,6 @@ class TestSchemaCompliancyBase(TestCaseBase):
         # TODO: type checking
 
 
-@contextmanager
-def ensureVmStats(vm):
-    vm.startVmStats()
-    try:
-        yield vm
-    finally:
-        vm._vmStats.stop()
-
-
 _VM_PARAMS = {
     'displayPort': -1, 'displaySecurePort': -1, 'display': 'qxl',
     'displayIp': '127.0.0.1', 'vmType': 'kvm', 'devices': {},
@@ -86,9 +76,8 @@ class TestVmStats(TestSchemaCompliancyBase):
     @brokentest
     def testRunningStats(self):
         with fake.VM(_VM_PARAMS) as testvm:
-            with ensureVmStats(testvm):
-                self.assertVmStatsSchemaCompliancy('RunningVmStats',
-                                                   testvm.getStats())
+            self.assertVmStatsSchemaCompliancy('RunningVmStats',
+                                               testvm.getStats())
 
 
 class TestApiAllVm(TestSchemaCompliancyBase):
@@ -96,16 +85,15 @@ class TestApiAllVm(TestSchemaCompliancyBase):
     @brokentest
     def testAllVmStats(self):
         with fake.VM(_VM_PARAMS) as testvm:
-            with ensureVmStats(testvm):
-                with MonkeyPatchScope([(clientIF, 'getInstance',
-                                        lambda _: testvm.cif)]):
-                    api = API.Global()
+            with MonkeyPatchScope([(clientIF, 'getInstance',
+                                    lambda _: testvm.cif)]):
+                api = API.Global()
 
-                    # here is where clientIF will be used.
-                    response = api.getAllVmStats()
+                # here is where clientIF will be used.
+                response = api.getAllVmStats()
 
-                    self.assertEqual(response['status']['code'], 0)
+                self.assertEqual(response['status']['code'], 0)
 
-                    for stat in response['statsList']:
-                        self.assertVmStatsSchemaCompliancy(
-                            'RunningVmStats', stat)
+                for stat in response['statsList']:
+                    self.assertVmStatsSchemaCompliancy(
+                        'RunningVmStats', stat)

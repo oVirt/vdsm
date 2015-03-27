@@ -284,16 +284,11 @@ class SourceThread(threading.Thread):
     def _startUnderlyingMigration(self, startTime):
         if self.hibernating:
             hooks.before_vm_hibernate(self._vm._dom.XMLDesc(0), self._vm.conf)
+            fname = self._vm.cif.prepareVolumePath(self._dst)
             try:
-                self._vm._vmStats.pause()
-                fname = self._vm.cif.prepareVolumePath(self._dst)
-                try:
-                    self._vm._dom.save(fname)
-                finally:
-                    self._vm.cif.teardownVolumePath(self._dst)
-            except Exception:
-                self._vm._vmStats.cont()
-                raise
+                self._vm._dom.save(fname)
+            finally:
+                self._vm.cif.teardownVolumePath(self._dst)
         else:
             for dev in self._vm._customDevices():
                 hooks.before_device_migrate_source(

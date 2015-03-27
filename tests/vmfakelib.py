@@ -234,9 +234,3 @@ class AdvancedStatsFunction:
 
     def getLastSample(self):
         return self._samples
-
-
-class VmStatsThread:
-    def __init__(self, vm):
-        self._vm = vm
-        self.sampleVcpuPinning = AdvancedStatsFunction()

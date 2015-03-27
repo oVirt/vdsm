@@ -71,7 +71,6 @@ from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
 from . import vmxml
 
-from .sampling import AdvancedStatsThread
 from .utils import isVdsmImage
 from vmpowerdown import VmShutdown, VmReboot
 
@@ -184,24 +183,6 @@ VolumeSize = namedtuple("VolumeSize",
                         ["apparentsize", "truesize"])
 
 _MBPS_TO_BPS = 10 ** 6 / 8
-
-
-class VmStatsThread(AdvancedStatsThread):
-
-    def __init__(self, vm):
-        AdvancedStatsThread.__init__(self, log=vm.log, daemon=True)
-        self._vm = vm
-
-    def handleStatsException(self, ex):
-        # We currently handle only libvirt exceptions
-        if not hasattr(ex, "get_error_code"):
-            return False
-
-        # We currently handle only the missing domain exception
-        if ex.get_error_code() != libvirt.VIR_ERR_NO_DOMAIN:
-            return False
-
-        return True
 
 
 class TimeoutError(libvirt.libvirtError):
@@ -341,7 +322,6 @@ class Vm(object):
         self._initTimeRTC = int(self.conf.get('timeOffset', 0))
         self._guestEvent = vmstatus.POWERING_UP
         self._guestEventTime = 0
-        self._vmStats = None
         self._guestCpuRunning = False
         self._guestCpuLock = threading.Lock()
         self._startTime = time.time() - \
@@ -827,7 +807,7 @@ class Vm(object):
             return
         toSave = self.status()
         toSave['startTime'] = self._startTime
-        if self.lastStatus != vmstatus.DOWN and self._vmStats:
+        if self.lastStatus != vmstatus.DOWN:
             guestInfo = self.guestAgent.getGuestInfo()
             toSave['username'] = guestInfo['username']
             toSave['guestIPs'] = guestInfo['guestIPs']
@@ -1249,7 +1229,6 @@ class Vm(object):
             self.guestAgent.stop()
         except Exception:
             pass
-        self.stopVmStats()
         sampling.stats_cache.remove(self.id)
         self.saveState()
 
@@ -1272,7 +1251,7 @@ class Vm(object):
 
         WARNING: this method should only gather statistics by copying data.
         Especially avoid costly and dangerous ditrect calls to the _dom
-        attribute. Use the VmStatsThread instead!
+        attribute. Use the periodic operations instead!
         """
 
         if self.lastStatus == vmstatus.DOWN:
@@ -1592,21 +1571,6 @@ class Vm(object):
             domxml.appendKeyboardDevice()
 
         return domxml.toxml()
-
-    def startVmStats(self):
-        self._vmStats = VmStatsThread(self)
-        self._vmStats.start()
-        self._guestEventTime = self._startTime
-
-    def stopVmStats(self):
-        # this is less clean that it could be, but we can get here from
-        # many flows and with various locks held
-        # (_releaseLock, _shutdownLock)
-        # _vmStats may be None already, and we're good with that.
-        try:
-            self._vmStats.stop()
-        except AttributeError:
-            pass
 
     @staticmethod
     def _guestSockCleanup(sock):
@@ -3484,7 +3448,6 @@ class Vm(object):
             self.lastStatus = vmstatus.POWERING_DOWN
             # Terminate the VM's creation thread.
             self._incomingMigrationFinished.set()
-            self.stopVmStats()
             sampling.stats_cache.remove(self.id)
             self.guestAgent.stop()
             if self._dom:
