@@ -6098,6 +6098,7 @@ class LiveMergeCleanupThread(threading.Thread):
                 self.vm.log.error("Pivot failed for job %s (rc=%i)",
                                   self.jobId, ret)
                 raise RuntimeError("pivot failed")
+            self._waitForXMLUpdate()
         self.vm.log.info("Pivot completed (job %s)", self.jobId)
 
     @utils.traceback()
@@ -6117,6 +6118,49 @@ class LiveMergeCleanupThread(threading.Thread):
         Returns True if this phase completed successfully.
         """
         return self.success
+
+    def _waitForXMLUpdate(self):
+        # Libvirt version 1.2.8-16.el7_1.2 introduced a bug where the
+        # synchronous call to blockJobAbort will return before the domain XML
+        # has been updated.  This makes it look like the pivot failed when it
+        # actually succeeded.  This means that vdsm state will not be properly
+        # synchronized and we may start the vm with a stale volume in the
+        # future.  See https://bugzilla.redhat.com/show_bug.cgi?id=1202719 for
+        # more details.
+        # TODO: Remove once we depend on a libvirt with this bug fixed.
+
+        # We expect libvirt to show that the original leaf has been removed
+        # from the active volume chain.
+        origVols = sorted([x['volumeID'] for x in self.drive.volumeChain])
+        expectedVols = origVols[:]
+        expectedVols.remove(self.drive.volumeID)
+
+        alias = self.drive['alias']
+        self.vm.log.info("Waiting for libvirt to update the XML after pivot "
+                         "of drive %s completed", alias)
+        while True:
+            # This operation should complete in either one or two iterations of
+            # this loop.  Until libvirt updates the XML there is nothing to do
+            # but wait.  While we wait we continue to tell engine that the job
+            # is ongoing.  If we are still in this loop when the VM is powered
+            # off, the merge will be resolved manually by engine using the
+            # reconcileVolumeChain verb.
+            chains = self.vm._driveGetActualVolumeChain([self.drive])
+            if alias not in chains.keys():
+                raise RuntimeError("Failed to retrieve volume chain for "
+                                   "drive %s.  Pivot failed.", alias)
+            curVols = sorted([entry.uuid for entry in chains[alias]])
+
+            if curVols == origVols:
+                time.sleep(1)
+            elif curVols == expectedVols:
+                self.vm.log.info("The XML update has been completed")
+                break
+            else:
+                self.log.error("Bad volume chain found for drive %s. Previous "
+                               "chain: %s, Expected chain: %s, Actual chain: "
+                               "%s", alias, origVols, expectedVols, curVols)
+                raise RuntimeError("Bad volume chain found")
 
 
 def _getNetworkIp(network):
