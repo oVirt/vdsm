@@ -67,7 +67,8 @@ def getVmNumaNodeRuntimeInfo(vm):
 
     vmNumaNodeRuntimeMap = {}
 
-    vcpu_to_pcpu = _get_mapping_vcpu_to_pcpu(vm)
+    vcpu_to_pcpu = _get_mapping_vcpu_to_pcpu(
+        _get_vcpu_positioning(vm))
     if vcpu_to_pcpu:
         vm_numa_placement = defaultdict(set)
 
@@ -88,16 +89,22 @@ def getVmNumaNodeRuntimeInfo(vm):
     return vmNumaNodeRuntimeMap
 
 
-def _get_mapping_vcpu_to_pcpu(vm):
+def _get_vcpu_positioning(vm):
+    try:
+        return vm._dom.vcpus()
+    except AttributeError:
+        # _dom may be reset to none asynchronously
+        return None
+
+
+def _get_mapping_vcpu_to_pcpu(sample):
     vcpu_to_pcpu = {}
-    if vm._vmStats:
-        sample = vm._vmStats.sampleVcpuPinning.getLastSample()
-        # please note that here the naming is misleading.
-        # these samples does not represent the *pinning*,
-        # but rather last *positioning*
-        infos = sample if sample is not None else []
-        for (vcpu_id, _, _, pcpu_id) in infos:
-            vcpu_to_pcpu[vcpu_id] = pcpu_id
+    # please note that here the naming is misleading.
+    # these samples does not represent the *pinning*,
+    # but rather last *positioning*
+    infos = sample if sample is not None else []
+    for (vcpu_id, _, _, pcpu_id) in infos:
+        vcpu_to_pcpu[vcpu_id] = pcpu_id
     return vcpu_to_pcpu
 
 

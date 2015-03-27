@@ -208,24 +208,15 @@ class VmStatsThread(AdvancedStatsThread):
             AdvancedStatsFunction(
                 self._sampleVmJobs,
                 config.getint('vars', 'vm_sample_jobs_interval'), 1))
-        self.sampleVcpuPinning = (
-            AdvancedStatsFunction(
-                self._sampleVcpuPinning,
-                config.getint('vars', 'vm_sample_vcpu_pin_interval'), 1))
         self.sampleCpuTune = (
             AdvancedStatsFunction(
                 self._sampleCpuTune,
                 config.getint('vars', 'vm_sample_cpu_tune_interval'), 1))
-        self.sampleNuma = (
-            AdvancedStatsFunction(
-                self._sampleNuma,
-                config.getint('vars', 'vm_sample_numa_interval'), 1))
 
         self.addStatsFunction(
             self.highWrite, self.sampleCpu,
             self.sampleDisk, self.sampleNet, self.sampleBalloon,
-            self.sampleVmJobs, self.sampleVcpuPinning, self.sampleCpuTune,
-            self.sampleNuma)
+            self.sampleVmJobs, self.sampleCpuTune)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
@@ -253,15 +244,6 @@ class VmStatsThread(AdvancedStatsThread):
         """
         cpuStats = self._vm._dom.getCPUStats(True, 0)
         return cpuStats[0]
-
-    def _sampleNuma(self):
-        """
-        Numa CPU assignments.
-        """
-        if not self._vm.hasGuestNumaNode:
-            return {}
-
-        return numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
 
     def _sampleDisk(self):
         """
@@ -333,28 +315,6 @@ class VmStatsThread(AdvancedStatsThread):
         for nic in self._vm.getNicDevices():
             netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
         return netSamples
-
-    def _sampleVcpuPinning(self):
-        """
-        Virtual CPU pinning information. Return value is a list of
-        tuples, one per virtual CPU.
-
-        The meaning of each item in the virtual CPU tuple is:
-        * virtual CPU number
-        * virtual CPU state
-        * CPU time used, in nanoseconds
-        * real CPU number, or -1 if offline
-
-        virtual CPU state could be
-        0: offline
-        1: running
-        2: blocked on resource
-
-        Example:
-        [(0, 1, 26040000000L, 4), (1, 1, 12620000000L, 4)]
-        """
-        vCpuInfos = self._vm._dom.vcpus()
-        return vCpuInfos[0]
 
     def _sampleBalloon(self):
         """
@@ -534,11 +494,6 @@ class VmStatsThread(AdvancedStatsThread):
 
             stats[vmDrive.name] = dStats
 
-    def _getNumaStats(self, stats):
-        vmNumaNodeRuntimeMap = self.sampleNuma.getLastSample()
-        if vmNumaNodeRuntimeMap:
-            stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
-
     def _getVmJobs(self, stats):
         info = self.sampleVmJobs.getLastSample()
         if info is not None:
@@ -555,7 +510,6 @@ class VmStatsThread(AdvancedStatsThread):
         self._getDiskStats(stats)
         self._getBalloonStats(stats)
         self._getVmJobs(stats)
-        self._getNumaStats(stats)
         self._getCpuCount(stats)
         self._getIoTuneStats(stats)
 
@@ -805,6 +759,7 @@ class Vm(object):
         self._shutdownReason = None
         self._vcpuLimit = None
         self._vcpuTuneInfo = {}
+        self._numaInfo = {}
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -1765,8 +1720,7 @@ class Vm(object):
                 stats[var] = decStats[var]
             elif type(decStats[var]) is not dict:
                 stats[var] = utils.convertToStr(decStats[var])
-            elif var in ('network', 'balloonInfo', 'vmJobs',
-                         'vNodeRuntimeInfo'):
+            elif var in ('network', 'balloonInfo', 'vmJobs'):
                 stats[var] = decStats[var]
             else:
                 try:
@@ -1782,6 +1736,8 @@ class Vm(object):
                                   self.guestAgent.diskMappingHash)))
         if self._watchdogEvent:
             stats['watchdogEvent'] = self._watchdogEvent
+        if self._numaInfo:
+            stats['vNodeRuntimeInfo'] = self._numaInfo
         if self._vcpuLimit:
             stats['vcpuUserLimit'] = self._vcpuLimit
         stats.update(self._getVmTuneStats())
@@ -5039,6 +4995,9 @@ class Vm(object):
                              ' (command timeout, age=%s)',
                              statsAge)
             stats['monitorResponse'] = '-1'
+
+    def updateNumaInfo(self):
+        self._numaInfo = numaUtils.getVmNumaNodeRuntimeInfo(self)
 
     @property
     def hasGuestNumaNode(self):

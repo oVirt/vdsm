@@ -75,6 +75,12 @@ def start(cif):
         per_vm_operation(
             UpdateVolumes,
             config.getint('irs', 'vol_size_sample_interval')),
+
+        # needs dispatching becuse access FS and libvirt data
+        per_vm_operation(
+            NumaInfoMonitor,
+            config.getint('vars', 'vm_sample_numa_interval')),
+
     ]
 
     for op in _operations:
@@ -240,3 +246,19 @@ class UpdateVolumes(object):
             # we must make sure we don't overwrite good data
             # with stale old data.
             self._vm.updateDriveVolume(drive)
+
+
+class NumaInfoMonitor(object):
+    def __init__(self, vm):
+        self._vm = vm
+
+    @property
+    def required(self):
+        return self._vm.hasGuestNumaNode
+
+    @property
+    def runnable(self):
+        return self._vm.isDomainReadyForCommands()
+
+    def __call__(self):
+        self._vm.updateNumaInfo()
