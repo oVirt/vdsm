@@ -11,8 +11,21 @@ Generate vdsm lvm udev rule
 """
 import sys
 
-write = sys.stdout.write
 enable_chown_hack = "@CHOWN_HACK@"
+
+env = {
+    "uuid": "-".join(("[a-f0-9]" * 8,
+                      "[a-f0-9]" * 4,
+                      "[a-f0-9]" * 4,
+                      "[a-f0-9]" * 4,
+                      "[a-f0-9]" * 12)),
+    "temp": "[a-zA-Z0-9]" * 8,
+}
+
+
+def write(fmt):
+    sys.stdout.write(fmt % env)
+
 
 write("""\
 #
@@ -30,7 +43,7 @@ write("""\
 ACTION!="add|change", GOTO="lvm_end"
 
 # Filter out vgs which do not look like a vdsm vg
-ENV{DM_VG_NAME}!="[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]", GOTO="lvm_end"
+ENV{DM_VG_NAME}!="%(uuid)s", GOTO="lvm_end"
 
 # Volumes used as vdsm images
 """)
@@ -40,18 +53,20 @@ if enable_chown_hack == "yes":
 # WARNING: we cannot use OWNER, GROUP and MODE since using any of them will
 # change the selinux label to the default, causing vms to pause after extending
 # disks. https://bugzilla.redhat.com/1147910
-ENV{DM_LV_NAME}=="[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]", RUN+="@CHOWN_PATH@ @VDSMUSER@:@QEMUGROUP@ $env{DEVNAME}", GOTO="lvm_end"
+ENV{DM_LV_NAME}=="%(uuid)s", RUN+="@CHOWN_PATH@ @VDSMUSER@:@QEMUGROUP@ $env{DEVNAME}", GOTO="lvm_end"
 """)
 else:
     write("""\
-ENV{DM_LV_NAME}=="[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
+ENV{DM_LV_NAME}=="%(uuid)s", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
 """)
 
 write("""\
 
 # Temporary volumes - not accessed by libvirt/qemu
-ENV{DM_LV_NAME}=="[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]_MERGE", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
-ENV{DM_LV_NAME}=="_remove_me_[a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9][a-zA-Z0-9]_[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9]-[a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9][a-f0-9]", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
+ENV{DM_LV_NAME}=="%(uuid)s_MERGE", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
+
+# Deleted volumes
+ENV{DM_LV_NAME}=="_remove_me_%(temp)s_%(uuid)s", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
 
 # Special volumes used by vdsm
 ENV{DM_LV_NAME}=="metadata|inbox|outbox", MODE:="0600", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
