@@ -1032,6 +1032,9 @@ class StorageDomain(APIBase):
         return self._irs.extendStorageDomain(self._UUID, storagepoolID,
                                              devlist, force)
 
+    def resizePV(self, storagepoolID, guid):
+        return self._irs.resizePV(self._UUID, storagepoolID, guid)
+
     def format(self, autoDetach):
         return self._irs.formatStorageDomain(self._UUID, autoDetach)
 

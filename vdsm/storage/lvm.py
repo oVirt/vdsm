@@ -867,6 +867,23 @@ def testPVCreate(devices, metadataSize):
     return unusedDevs, usedDevs
 
 
+def resizePV(vgName, guid):
+    """
+    In case the LUN was increased on storage server, in order to see the
+    changes it is needed to resize the PV after the multipath devices have
+    been resized
+
+    Raises se.CouldNotResizePhysicalVolume if pvresize fails
+    """
+    pvName = _fqpvname(guid)
+    cmd = ["pvresize", pvName]
+    rc, out, err = _lvminfo.cmd(cmd, (pvName,))
+    if rc != 0:
+        raise se.CouldNotResizePhysicalVolume(pvName, err)
+    _lvminfo._invalidatepvs(pvName)
+    _lvminfo._invalidatevgs(vgName)
+
+
 def getVG(vgName):
     vg = _lvminfo.getVg(vgName)  # returns single VG namedtuple
     if not vg:

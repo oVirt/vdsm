@@ -5278,6 +5278,28 @@
           'devlist': ['str'], '*force': 'bool'}}
 
 ##
+# @StorageDomain.resizePV:
+#
+# Resize PV will cause the PV to use the entire size of the block device,
+# after the block device was resized on the storage server.
+#
+# @storagedomainID:  The UUID of the Storage Domain
+#
+# @storagepoolID:    The UUID of the Storage Pool
+#
+# @guid:             A block device GUID
+#
+# Returns:
+# The size in bytes of the device after resize
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'StorageDomain', 'name': 'resizePV'},
+ 'data': {'storagedomainID': 'UUID', 'storagepoolID': 'UUID',
+          'guid': 'str'},
+ 'returns': 'uint'}
+
+##
 # @StorageDomain.format:
 #
 # Format a storage domain and erase all of its data.

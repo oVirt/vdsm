@@ -443,6 +443,7 @@ command_info = {
     'StorageDomain_getInfo': {'ret': 'info'},
     'StorageDomain_getStats': {'ret': 'stats'},
     'StorageDomain_getVolumes': {'ret': 'uuidlist'},
+    'StorageDomain_resizePV': {'ret': 'size'},
     'StoragePool_connectStorageServer': {'ret': 'statuslist'},
     'StoragePool_disconnectStorageServer': {'ret': 'statuslist'},
     'StoragePool_fence': {'ret': 'spm_st'},

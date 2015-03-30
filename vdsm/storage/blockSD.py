@@ -712,6 +712,13 @@ class BlockStorageDomain(sd.StorageDomain):
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
 
+    def resizePV(self, guid):
+        with self._extendlock:
+            lvm.resizePV(self.sdUUID, guid)
+            self.updateMapping()
+            newsize = self.metaSize(self.sdUUID)
+            lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
+
     _lvTagMetaSlotLock = threading.Lock()
 
     @contextmanager

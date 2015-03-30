@@ -1946,6 +1946,10 @@ class StoragePool(object):
         self.validatePoolSD(sdUUID)
         sdCache.produce(sdUUID).extend(devlist, force)
 
+    def resizePV(self, sdUUID, guid):
+        self.validatePoolSD(sdUUID)
+        sdCache.produce(sdUUID).resizePV(guid)
+
     def setSDDescription(self, sd, description):
         self.validatePoolSD(sd.sdUUID)
         sd.setDescription(descr=description)

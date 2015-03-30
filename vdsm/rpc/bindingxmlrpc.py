@@ -669,6 +669,10 @@ class BindingXMLRPC(object):
         domain = API.StorageDomain(sdUUID)
         return domain.extend(spUUID, devlist, force)
 
+    def resizePV(self, sdUUID, spUUID, guid, options=None):
+        domain = API.StorageDomain(sdUUID)
+        return domain.resizePV(spUUID, guid)
+
     def domainFormat(self, sdUUID,
                      autoDetach=False, options=None):
         domain = API.StorageDomain(sdUUID)
@@ -1089,6 +1093,7 @@ class BindingXMLRPC(object):
                 (self.domainDetach, 'detachStorageDomain'),
                 (self.domainDetachForced, 'forcedDetachStorageDomain'),
                 (self.domainExtend, 'extendStorageDomain'),
+                (self.resizePV, 'resizePV'),
                 (self.domainFormat, 'formatStorageDomain'),
                 (self.domainGetFileStats, 'getFileStats'),
                 (self.domainGetImages, 'getImagesList'),

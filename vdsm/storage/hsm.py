@@ -737,6 +737,33 @@ class HSM(object):
                        in guids)
         pool.extendSD(sdUUID, dmDevs, force)
 
+    @public
+    def resizePV(self, sdUUID, spUUID, guid, options=None):
+        """
+        Calls pvresize with specified pv guid
+        and returns the size after the resize
+
+        :param sdUUID: The UUID of the storage domain that owns the PV.
+        :type sdUUID: UUID
+        :param spUUID: The UUID of the storage pool that owns the PV.
+        :type spUUID: UUID
+        :param guid: A block device GUID
+        :type guid: str
+        :param options: unused
+        :returns: dictionary with one item :size
+        :rtype: dict
+        """
+        vars.task.setDefaultException(
+            se.StorageDomainActionError(
+                "sdUUID=%s, PV=%s" % (sdUUID, guid)))
+
+        vars.task.getSharedLock(STORAGE, sdUUID)
+        pool = self.getPool(spUUID)
+        pool.resizePV(sdUUID, guid)
+
+        pv = lvm.getPV(guid)
+        return dict(size=str(pv.size))
+
     def _deatchStorageDomainFromOldPools(self, sdUUID):
         # We are called with blank pool uuid, to avoid changing exiting
         # API which we want to drop in next version anyway.

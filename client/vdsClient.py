@@ -801,6 +801,18 @@ class service:
             return dom['status']['code'], dom['status']['message']
         return 0, ''
 
+    def resizePV(self, args):
+        validateArgTypes(args, [str, str, str], requiredArgsNumber=3)
+        sdUUID = args[0]
+        spUUID = args[1]
+        guid = args[2]
+        res = self.s.resizePV(sdUUID, spUUID, guid)
+        if res['status']['code']:
+            return res['status']['code'], res['status']['message']
+        del res['status']
+        printDict(res, self.pretty)
+        return 0, ''
+
     def discoverST(self, args):
         portal = args[0].split(":")
         ip = portal[0]
@@ -2260,6 +2272,12 @@ if __name__ == '__main__':
                                  'Extend the Storage Domain by adding devices'
                                  ' devlist (list of dev GUIDs)'
                                  )),
+        'resizePV': (serv.resizePV,
+                     ('<sdUUID> <spUUID> <GUID>',
+                      'Resize PV in Storage Domain - After a block device has '
+                      'been resized in storage server, this method will cause '
+                      'the PV to use the entire size of the block device'
+                      )),
         'discoverST': (serv.discoverST,
                        ('ip[:port] [[username password] [auth=]]',
                         'Discover the available iSCSI targetnames on a '

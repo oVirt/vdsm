@@ -794,6 +794,9 @@ class StorageDomain(object):
     def extend(self, devlist, force):
         pass
 
+    def resizePV(self, guid):
+        pass
+
     def isMaster(self):
         return self.getMetaParam(DMDK_ROLE).capitalize() == MASTER_DOMAIN
 
