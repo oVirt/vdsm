@@ -64,8 +64,9 @@ def get_link(name):
             if not link:
                 raise IOError(errno.ENODEV, '%s is not present in the system' %
                               name)
-            return _link_info(cache, link)
-
+            link_info = _link_info(cache, link)
+            _rtnl_link_put(link)
+            return link_info
 
 class NLSocketPool(object):
     """Pool of netlink sockets."""
@@ -331,6 +332,8 @@ _rtnl_link_operstate2str = _int_char_proto(('rtnl_link_operstate2str',
                                             LIBNL_ROUTE))
 _nl_af2str = _int_char_proto(('nl_af2str', LIBNL))
 _rtnl_scope2str = _int_char_proto(('rtnl_scope2str', LIBNL_ROUTE))
+
+_rtnl_link_put  = _none_proto(('rtnl_link_put', LIBNL_ROUTE))
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 _nl_addr_cache = partial(_cache_manager, _rtnl_addr_alloc_cache)
