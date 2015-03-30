@@ -1394,6 +1394,7 @@ exit 0
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}/tests
 %dir %{_datadir}/%{vdsm_name}/tests/functional
+%dir %{_datadir}/%{vdsm_name}/tests/devices
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_E5649.out
@@ -1403,6 +1404,9 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_i73770.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_i73770_nosnap.out
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
+%{_datadir}/%{vdsm_name}/tests/devices/*.py*
+%{_datadir}/%{vdsm_name}/tests/devices/parsing/*.py*
+%{_datadir}/%{vdsm_name}/tests/devices/data/*.xml
 %{_datadir}/%{vdsm_name}/tests/ip_route_show_table_all.out
 %{_datadir}/%{vdsm_name}/tests/iscsiadm_-m_iface.out
 %{_datadir}/%{vdsm_name}/tests/lvs_3386c6f2-926f-42c4-839c-38287fac8998.out

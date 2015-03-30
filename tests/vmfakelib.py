@@ -186,7 +186,7 @@ class ConfStub(object):
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
        arch=caps.Architecture.X86_64, status=None,
-       cif=None):
+       cif=None, create_device_objects=False):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get', Connection)]):
@@ -198,6 +198,9 @@ def VM(params=None, devices=None, runCpu=False,
             fake.arch = arch
             fake.guestAgent = GuestAgent()
             fake.conf['devices'] = [] if devices is None else devices
+            if create_device_objects:
+                fake._devices = fake.devMapFromDevSpecMap(
+                    fake.devSpecMapFromConf())
             fake._guestCpuRunning = runCpu
             if status is not None:
                 fake._lastStatus = status

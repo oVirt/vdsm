@@ -20,7 +20,14 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = functional
+SUBDIRS = \
+	  functional \
+	  devices \
+	  $(NULL)
+
+device_modules = \
+	devices/parsing/complex_vm_tests.py \
+	$(NULL)
 
 test_modules = \
 	alignmentScanTests.py \
@@ -194,4 +201,4 @@ check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
 	@echo '*** into your environment.  Do not submit untested code!    ***'
 	$(top_srcdir)/tests/run_tests_local.sh crossImportsTests.py
-	$(top_srcdir)/tests/run_tests_local.sh $(test_modules)
+	$(top_srcdir)/tests/run_tests_local.sh $(test_modules) $(device_modules)

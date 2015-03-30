@@ -8,6 +8,8 @@ usr/share/vdsm/tests/caps_libvirt_intel_i73770.out
 usr/share/vdsm/tests/caps_libvirt_intel_i73770_nosnap.out
 usr/share/vsdm/tests/caps_numactl_4_nodes.out
 usr/share/vdsm/tests/cpu_info.out
+usr/share/vdsm/tests/devices/parsing*.py
+usr/share/vdsm/tests/devices/data/*.xml
 usr/share/vdsm/tests/functional/*.policy
 usr/share/vdsm/tests/functional/*.py
 usr/share/vdsm/tests/glob_1c60971a-8647-44ac-ae33-6520887f8843.out

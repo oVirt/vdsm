@@ -1,0 +1,151 @@
+<domain type='kvm' id='5'>
+  <name>testComplexVm</name>
+  <uuid>77777777-ffff-3333-bbbb-222222222222</uuid>
+  <memory unit='KiB'>262144</memory>
+  <currentMemory unit='KiB'>262144</currentMemory>
+  <vcpu placement='static'>1</vcpu>
+  <cputune>
+    <shares>1020</shares>
+    <period>25000</period>
+    <quota>100000</quota>
+  </cputune>
+  <resource>
+    <partition>/machine</partition>
+  </resource>
+  <sysinfo type='smbios'>
+    <system>
+      <entry name='manufacturer'>oVirt</entry>
+      <entry name='product'>oVirt Node</entry>
+      <entry name='version'>7.1-1.el7</entry>
+      <entry name='serial'>0121A278-8EFE-D511-9C82-80C16E726398</entry>
+      <entry name='uuid'>77777777-ffff-3333-bbbb-222222222222</entry>
+    </system>
+  </sysinfo>
+  <os>
+    <type arch='x86_64' machine='pc-i440fx-rhel7.1.0'>hvm</type>
+    <kernel>/boot/vmlinuz-3.10.0-229.el7.x86_64</kernel>
+    <initrd>/boot/initramfs-3.10.0-229.el7.x86_64.img</initrd>
+    <cmdline>rd.break=cmdline rd.shell rd.skipfsck</cmdline>
+    <boot dev='hd'/>
+    <smbios mode='sysinfo'/>
+  </os>
+  <features>
+    <acpi/>
+  </features>
+  <cpu mode='custom' match='exact'>
+    <model fallback='allow'>qemu64</model>
+    <feature policy='disable' name='svm'/>
+  </cpu>
+  <clock offset='variable' adjustment='0' basis='utc'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <controller type='virtio-serial' index='0' ports='16'>
+      <alias name='virtio-serial0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+    </controller>
+    <controller type='usb' index='0'>
+      <alias name='usb0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x2'/>
+    </controller>
+    <controller type='pci' index='0' model='pci-root'>
+      <alias name='pci.0'/>
+    </controller>
+    <controller type='ccid' index='0'>
+      <alias name='ccid0'/>
+    </controller>
+    <interface type='bridge'>
+      <mac address='52:54:00:59:f5:3f'/>
+      <source bridge=';vdsmdummy;'/>
+      <target dev='vnet1'/>
+      <model type='virtio'/>
+      <alias name='net0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
+    </interface>
+    <interface type='bridge'>
+      <mac address='52:54:00:59:ff:ff'/>
+      <source bridge=';vdsmdummy;'/>
+      <target dev='vnet2'/>
+      <model type='virtio'/>
+      <alias name='net1'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+    </interface>
+    <smartcard mode='passthrough' type='spicevmc'>
+      <alias name='smartcard0'/>
+      <address type='ccid' controller='0' slot='0'/>
+    </smartcard>
+    <console type='pty' tty='/dev/pts/1'>
+      <source path='/dev/pts/1'/>
+      <target type='virtio' port='0'/>
+      <alias name='console0'/>
+    </console>
+    <channel type='unix'>
+      <source mode='bind' path='/var/lib/libvirt/qemu/channels/77777777-ffff-3333-bbbb-222222222222.com.redhat.rhevm.vdsm'/>
+      <target type='virtio' name='com.redhat.rhevm.vdsm' state='disconnected'/>
+      <alias name='channel0'/>
+      <address type='virtio-serial' controller='0' bus='0' port='1'/>
+    </channel>
+    <channel type='unix'>
+      <source mode='bind' path='/var/lib/libvirt/qemu/channels/77777777-ffff-3333-bbbb-222222222222.org.qemu.guest_agent.0'/>
+      <target type='virtio' name='org.qemu.guest_agent.0' state='disconnected'/>
+      <alias name='channel1'/>
+      <address type='virtio-serial' controller='0' bus='0' port='2'/>
+    </channel>
+    <channel type='spicevmc'>
+      <target type='virtio' name='com.redhat.spice.0' state='disconnected'/>
+      <alias name='channel2'/>
+      <address type='virtio-serial' controller='0' bus='0' port='3'/>
+    </channel>
+    <input type='mouse' bus='ps2'/>
+    <input type='keyboard' bus='ps2'/>
+    <graphics type='spice' port='5902' tlsPort='5903' autoport='yes' listen='0' passwdValidTo='1970-01-01T00:00:01'>
+      <listen type='address' address='0'/>
+    </graphics>
+    <sound model='ac97'>
+      <alias name='sound0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
+    </sound>
+    <sound model='ich6'>
+      <alias name='sound1'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x06' function='0x0'/>
+    </sound>
+    <video>
+      <model type='qxl' ram='65536' vram='32768' vgamem='16384' heads='1'/>
+      <alias name='video0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
+    </video>
+    <video>
+      <model type='qxl' ram='65536' vram='32768' vgamem='16384' heads='1'/>
+      <alias name='video1'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x0c' function='0x0'/>
+    </video>
+    <watchdog model='i6300esb' action='none'>
+      <alias name='watchdog0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x0b' function='0x0'/>
+    </watchdog>
+    <memballoon model='virtio'>
+      <alias name='balloon0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x08' function='0x0'/>
+    </memballoon>
+    <rng model='virtio'>
+      <backend model='random'>/dev/random</backend>
+      <alias name='rng0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
+    </rng>
+    <rng model='virtio'>
+      <backend model='random'>/dev/random</backend>
+      <alias name='rng1'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x0a' function='0x0'/>
+    </rng>
+  </devices>
+  <seclabel type='dynamic' model='selinux' relabel='yes'>
+    <label>system_u:system_r:svirt_t:s0:c117,c189</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c117,c189</imagelabel>
+  </seclabel>
+</domain>

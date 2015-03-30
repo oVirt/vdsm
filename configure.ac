@@ -362,6 +362,9 @@ AC_OUTPUT([
 	lib/vdsm/infra/zombiereaper/Makefile
 	tests/Makefile
 	tests/functional/Makefile
+	tests/devices/Makefile
+	tests/devices/parsing/Makefile
+	tests/devices/data/Makefile
 	vds_bootstrap/Makefile
 	vdsm-tool/Makefile
 	vdsm/Makefile
