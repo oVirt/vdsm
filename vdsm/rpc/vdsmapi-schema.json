@@ -1176,7 +1176,7 @@
 #
 # @software_revision:   Extra VDSM version information
 #
-# @supportedENGINEs:     A list of supported ovirt-engine versions
+# @supportedENGINEs:    A list of supported ovirt-engine versions
 #
 # @supportedProtocols:  A list of supported xmlrpc protocol versions
 #
@@ -1241,6 +1241,10 @@
 # @directedPassthrough: Indicates status of Intel VT-d or AMD-vi
 #                       (new in version 4.17.0)
 #
+# @additionalFeatures:  Provides a list of additional features
+#                       supported in this host.
+#                       (new in version 4.17.0)
+#
 # Since: 4.15.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -1267,7 +1271,7 @@
           'autoNumaBalancing': 'AutoNumaBalancingStatus',
           'selinux': 'SELinuxStatus', '*liveSnapshot': 'bool',
           'kdumpStatus': 'int', '*liveMerge': 'bool',
-          'directedPassthrough': 'bool'}}
+          'directedPassthrough': 'bool', 'additionalFeatures': ['str']}}
 
 ##
 # @Host.getCapabilities:

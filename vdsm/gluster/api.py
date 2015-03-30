@@ -77,6 +77,21 @@ def exportAsVerb(func):
     return wrapper
 
 
+def glusterAdditionalFeatures():
+    # Check if gluster additional features are supported by this Vdsm.
+    # This Check is done by seeing if sample verbs for supporting
+    # gluster additional features are available in gluster api.
+    glusterfeatureSampleVerbs = {
+        'volumeSnapshotCreate': 'GLUSTER_SNAPSHOT',
+        'volumeGeoRepSessionCreate': 'GLUSTER_GEO_REPLICATION',
+        'storageDevicesList': 'GLUSTER_BRICK_MANAGEMENT'}
+    additionalFeatures = []
+    for feature, code in glusterfeatureSampleVerbs.iteritems():
+        if feature in dir(GlusterApi):
+            additionalFeatures.append(code)
+    return additionalFeatures
+
+
 @makePublic
 def getGeoRepKeys():
     try:
