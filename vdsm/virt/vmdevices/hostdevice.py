@@ -20,13 +20,14 @@
 
 from vdsm import utils
 from hostdev import get_device_params, detach_detachable, \
-    SkipIOMMUPLaceholderDevice
+    SkipIOMMUPLaceholderDevice, CAPABILITY_TO_XML_ATTR
 from . import core
 from . import hwclass
 
 
 class HostDevice(core.Base):
-    __slots__ = ('address', 'bootOrder', '_deviceParams', 'macAddr', 'vlanId')
+    __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
+                 'macAddr', 'vlanId')
 
     def __init__(self, conf, log, **kwargs):
         super(HostDevice, self).__init__(conf, log, **kwargs)
@@ -35,6 +36,7 @@ class HostDevice(core.Base):
 
         self.macAddr = self.specParams.get('macAddr')
         self.vlanId = self.specParams.get('vlanId')
+        self.hostAddress = self._deviceParams.get('address')
 
     def detach(self):
         """
@@ -76,12 +78,12 @@ class HostDevice(core.Base):
             raise SkipIOMMUPLaceholderDevice
 
         hostdev = self.createXmlElem(hwclass.HOSTDEV, None)
-        hostdev.setAttrs(managed='no', mode='subsystem',
-                         type=self._deviceParams['capability'])
+        hostdev.setAttrs(
+            managed='no', mode='subsystem',
+            type=CAPABILITY_TO_XML_ATTR[self._deviceParams['capability']])
         source = hostdev.appendChildWithArgs('source')
 
-        if self._deviceParams['capability'] == 'pci':
-            self._add_source_address(source)
+        self._add_source_address(source)
 
         return hostdev
 

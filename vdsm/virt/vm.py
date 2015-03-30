@@ -3943,11 +3943,36 @@ class Vm(object):
                     dev['alias'] = alias
                     break
 
+    def _getUnderlyingHostDeviceUSBInfo(self, x):
+        alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+        address = self._getUnderlyingDeviceAddress(x)
+
+        # The routine is quite unusual because we cannot directly reconstruct
+        # the unique name. Therefore, we first look up correspondoing device
+        # object address,
+        for dev in self._devices[hwclass.HOSTDEV]:
+            if address == dev.hostAddress:
+                dev.alias = alias
+                device = dev.device
+
+        # and use that to identify the device in self.conf.
+        for dev in self.conf['devices']:
+            if dev['device'] == device:
+                dev['alias'] = alias
+
+        # This has an unfortunate effect that we will not be able to look up
+        # any new USB passthrough devices, because there is no easy
+        # way of reconstructing the udev name we use as unique id.
+
     def _getUnderlyingHostDeviceInfo(self):
         """
         Obtain host device info from libvirt
         """
         for x in self._domain.get_device_elements('hostdev'):
+            device_type = x.getAttribute('type')
+            if device_type == 'usb':
+                self._getUnderlyingHostDeviceUSBInfo(x)
+                continue
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             address = self._getUnderlyingDeviceAddress(x)
             source = x.getElementsByTagName('source')[0]
