@@ -17,6 +17,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from StringIO import StringIO
+
+
 import v2v
 from vdsm import libvirtconnection
 
@@ -109,3 +112,29 @@ class v2vTests(TestCaseBase):
         self.assertEquals(network['type'], 'bridge')
         self.assertEquals(network['macAddr'], '00:0c:29:c6:a6:11')
         self.assertEquals(network['bridge'], 'VM Network')
+
+    def testOutputParser(self):
+        output = ''.join(['[   0.0] Opening the source -i libvirt ://roo...\n',
+                          '[   1.0] Creating an overlay to protect the f...\n',
+                          '[  88.0] Copying disk 1/2 to /tmp/v2v/0000000...\n',
+                          '    (0/100%)\r',
+                          '    (50/100%)\r',
+                          '    (100/100%)\r',
+                          '[ 180.0] Copying disk 2/2 to /tmp/v2v/100000-...\n',
+                          '    (0/100%)\r',
+                          '    (50/100%)\r',
+                          '    (100/100%)\r',
+                          '[ 256.0] Creating output metadata',
+                          '[ 256.0] Finishing off'])
+
+        parser = v2v.OutputParser()
+        events = list(parser.parse(StringIO(output)))
+        self.assertEqual(events, [
+            (v2v.ImportProgress(1, 2, 'Copying disk 1/2')),
+            (v2v.DiskProgress(0)),
+            (v2v.DiskProgress(50)),
+            (v2v.DiskProgress(100)),
+            (v2v.ImportProgress(2, 2, 'Copying disk 2/2')),
+            (v2v.DiskProgress(0)),
+            (v2v.DiskProgress(50)),
+            (v2v.DiskProgress(100))])

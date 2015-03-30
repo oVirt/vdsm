@@ -16,8 +16,10 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from collections import namedtuple
 from contextlib import closing
 import logging
+import re
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -28,8 +30,21 @@ from vdsm import libvirtconnection
 import caps
 
 
+ImportProgress = namedtuple('ImportProgress',
+                            ['current_disk', 'disk_count', 'description'])
+DiskProgress = namedtuple('DiskProgress', ['progress'])
+
+
+class V2VError(Exception):
+    ''' Base class for v2v errors '''
+
+
 class InvalidVMConfiguration(ValueError):
     ''' Unexpected error while parsing libvirt domain xml '''
+
+
+class OutputParserError(V2VError):
+    ''' Error while parsing virt-v2v output '''
 
 
 def supported():
@@ -68,6 +83,50 @@ def get_external_vms(uri, username, password):
                 _add_disk_info(conn, disk)
             vms.append(params)
         return {'status': doneCode, 'vmList': vms}
+
+
+class OutputParser(object):
+    COPY_DISK_RE = re.compile(r'.*(Copying disk (\d+)/(\d+)).*')
+    DISK_PROGRESS_RE = re.compile(r'\s+\((\d+).*')
+
+    def parse(self, stream):
+        for line in stream:
+            if 'Copying disk' in line:
+                description, current_disk, disk_count = self._parse_line(line)
+                yield ImportProgress(int(current_disk), int(disk_count),
+                                     description)
+                for chunk in self._iter_progress(stream):
+                    progress = self._parse_progress(chunk)
+                    yield DiskProgress(progress)
+                    if progress == 100:
+                        break
+
+    def _parse_line(self, line):
+        m = self.COPY_DISK_RE.match(line)
+        if m is None:
+            raise OutputParserError('unexpected format in "Copying disk"'
+                                    ', line: %r' % line)
+        return m.group(1), m.group(2), m.group(3)
+
+    def _iter_progress(self, stream):
+        chunk = ''
+        while True:
+            c = stream.read(1)
+            chunk += c
+            if c == '\r':
+                yield chunk
+                chunk = ''
+
+    def _parse_progress(self, chunk):
+        m = self.DISK_PROGRESS_RE.match(chunk)
+        if m is None:
+            raise OutputParserError('error parsing progress, chunk: %r'
+                                    % chunk)
+        try:
+            return int(m.group(1))
+        except ValueError:
+            raise OutputParserError('error parsing progress regex: %r'
+                                    % m.groups)
 
 
 def _mem_to_mib(size, unit):
