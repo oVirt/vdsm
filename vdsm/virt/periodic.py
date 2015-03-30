@@ -27,9 +27,12 @@ import logging
 import threading
 
 from vdsm import executor
+from vdsm import libvirtconnection
 from vdsm import schedule
 from vdsm.config import config
 from vdsm.utils import monotonic_time
+
+from . import sampling
 
 
 # just a made up number. Maybe should be equal to number of cores?
@@ -85,6 +88,16 @@ def start(cif):
         per_vm_operation(
             BlockjobMonitor,
             config.getint('vars', 'vm_sample_jobs_interval')),
+
+        # libvirt sampling using bulk stats can block, but unresponsive
+        # domains are handled inside SampleVMs for performance reasons;
+        # thus, does not need dispatching.
+        Operation(
+            sampling.SampleVMs(
+                libvirtconnection.get(cif),
+                cif.getVMs,
+                sampling.stats_cache),
+            config.getint('vars', 'vm_sample_interval')),
 
     ]
 

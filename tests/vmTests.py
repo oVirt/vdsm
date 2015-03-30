@@ -1148,29 +1148,6 @@ class TestVmStatsThread(TestCaseBase):
 
     DEV_BALLOON = [{'type': 'balloon', 'specParams': {'model': 'virtio'}}]
 
-    def testGetNicStatsLegacy(self):
-        GBPS = 10 ** 9 / 8
-        MAC = '52:54:00:59:F5:3F'
-        pretime = utils.monotonic_time()
-        res = vm._getNicStats(
-            name='vnettest', model='virtio', mac=MAC,
-            start_sample=(2 ** 64 - 15 * GBPS, 1, 2, 3, 0, 4, 5, 6),
-            end_sample=(0, 7, 8, 9, 5 * GBPS, 10, 11, 12),
-            interval=15.0)
-        posttime = utils.monotonic_time()
-        self.assertIn('sampleTime', res)
-        self.assertTrue(pretime <= res['sampleTime'] <= posttime,
-                        'sampleTime not in [%s..%s]' % (pretime, posttime))
-        del res['sampleTime']
-        self.assertEqual(res, {
-            'rxErrors': '8', 'rxDropped': '9',
-            'txErrors': '11', 'txDropped': '12',
-            'macAddr': MAC, 'name': 'vnettest',
-            'speed': '1000', 'state': 'unknown',
-            'rxRate': '100.0', 'txRate': '33.3',
-            'rx': '0', 'tx': '625000000',
-        })
-
     def testGetNicStats(self):
         GBPS = 10 ** 9 / 8
         MAC = '52:54:00:59:F5:3F'

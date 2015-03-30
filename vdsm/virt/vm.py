@@ -54,15 +54,17 @@ from logUtils import SimpleLogAdapter
 import caps
 import hooks
 import hostdev
-import supervdsm
 import numaUtils
+import supervdsm
 
 # local package imports
 from .domain_descriptor import DomainDescriptor
 from . import guestagent
 from . import migration
+from . import sampling
 from . import vmdevices
 from . import vmexitreason
+from . import vmstats
 from . import vmstatus
 from .vmdevices import hwclass
 from .vmtune import update_io_tune_dom, collect_inner_elements
@@ -195,319 +197,14 @@ class VmStatsThread(AdvancedStatsThread):
                 self._highWrite,
                 config.getint('vars', 'vm_watermark_interval')))
 
-        self.sampleCpu = (
-            AdvancedStatsFunction(
-                self._sampleCpu,
-                config.getint('vars', 'vm_sample_cpu_interval'),
-                config.getint('vars', 'vm_sample_cpu_window')))
-        self.sampleDisk = (
-            AdvancedStatsFunction(
-                self._sampleDisk,
-                config.getint('vars', 'vm_sample_disk_interval'),
-                config.getint('vars', 'vm_sample_disk_window')))
-        self.sampleNet = (
-            AdvancedStatsFunction(
-                self._sampleNet,
-                config.getint('vars', 'vm_sample_net_interval'),
-                config.getint('vars', 'vm_sample_net_window')))
-        self.sampleBalloon = (
-            AdvancedStatsFunction(
-                self._sampleBalloon,
-                config.getint('vars', 'vm_sample_balloon_interval'), 1))
-        self.sampleCpuTune = (
-            AdvancedStatsFunction(
-                self._sampleCpuTune,
-                config.getint('vars', 'vm_sample_cpu_tune_interval'), 1))
-
         self.addStatsFunction(
-            self.highWrite, self.sampleCpu,
-            self.sampleDisk, self.sampleNet, self.sampleBalloon,
-            self.sampleCpuTune)
+            self.highWrite)
 
     def _highWrite(self):
         if not self._vm.isDisksStatsCollectionEnabled():
             # Avoid queries from storage during recovery process
             return
         self._vm.extendDrivesIfNeeded()
-
-    def _sampleCpu(self):
-        """
-        Physical CPU statistics. Return value is a dict with
-        at least three key/value pairs:
-        * 'cpu_time': total wall clock time spent, nanoseconds.
-        * 'system_time': time spent by the hypervisor in kernel
-                         space, nanoseconds.
-        * 'user_time': time spent by the hypervisor in user space,
-                       nanoseconds.
-        Extra keys will be ignored.
-
-        Example:
-        {
-            'cpu_time': 17732877847L,
-            'system_time': 3030000000L,
-            'user_time': 510000000L
-        }
-        """
-        cpuStats = self._vm._dom.getCPUStats(True, 0)
-        return cpuStats[0]
-
-    def _sampleDisk(self):
-        """
-        Disk statistics. Return value is a dict with a key for
-        each Vm drive. Each value is in turn a dict with at least
-        eight key/value pairs:
-        * {rd,wr,flush}_total_times: total time spent, in the
-                       I/O operations of the given kind, nanoseconds.
-        * {rd,wr,flush}_operations: number of operations of the given kind
-        * {rd,wr}_bytes: amount of bytes read or written, per disk.
-        Extra keys will be ignored.
-
-        Example:
-        {
-            'vda':
-            {
-                'rd_total_times': 41725620156L,
-                'wr_total_times': 11113038027L,
-                'flush_total_times': 14947030448L,
-                'rd_operations': 8395L,
-                'wr_operations': 1174L,
-                'flush_operations': 143L,
-                'rd_bytes': 229022208L,
-                'wr_bytes': 16778240L
-            }
-        }
-        """
-        if not self._vm.isDisksStatsCollectionEnabled():
-            # Avoid queries from storage during recovery process
-            return
-
-        # The usage of the cryptic flag VIR_TYPED_PARAM_STRING_OKAY
-        # is will be dropped in a future patch, once we are sure the
-        # minimum supported libvirtd server we require is ok with that.
-        # Quoting libvirt.h:
-        # """Older servers lacked the ability to handle string typed
-        # parameters.[...] This flag is automatically set when needed,
-        # [...] however, manually setting the flag can be used to
-        # reject servers that cannot return typed strings [...]"""
-
-        diskSamples = {}
-        for vmDrive in self._vm.getDiskDevices():
-            diskSamples[vmDrive.name] = self._vm._dom.blockStatsFlags(
-                vmDrive.name, flags=libvirt.VIR_TYPED_PARAM_STRING_OKAY)
-
-        return diskSamples
-
-    def _sampleNet(self):
-        """
-        Network interface statistics. Return value is a dict with a key
-        per network interface. Each value is a tuple of eight (8) elements.
-
-        The meaning of each item in the value tuple is, in order:
-        * bytes received
-        * packets received
-        * number of errors reported receiving data
-        * number of incoming packets dropped
-        * bytes transmitted
-        * packets transmitted
-        * number of errors reported transmitting data
-        * number of outgoing packets dropped
-
-        Example:
-        {
-            'vnet0': (29562785L, 19999L, 0L, 0L, 803385L, 11673L, 0L, 0L)
-        }
-        """
-        netSamples = {}
-        for nic in self._vm.getNicDevices():
-            netSamples[nic.name] = self._vm._dom.interfaceStats(nic.name)
-        return netSamples
-
-    def _sampleBalloon(self):
-        """
-        memory usage information. Return value is the memory in KBytes
-        used by the VM.
-
-        Example:
-        8388608L
-        """
-        infos = self._vm._dom.info()
-        return infos[2]
-
-    def _sampleCpuTune(self):
-        """
-        virtual cpu tuning information. Return value is a dict
-        with at least six key/value pairs, defined as follows:
-        * vcpuCount: number of virtual CPUs used by the VM
-
-        Example:
-        {
-            'vcpuCount': 2
-        }
-        """
-        return {
-            'vcpuCount': self._vm._dom.vcpusFlags(
-                libvirt.VIR_DOMAIN_VCPU_CURRENT)
-        }
-
-    def _getIoTuneStats(self, stats):
-        """
-        Collect the current ioTune settings for all disks VDSM knows about.
-
-        This assumes VDSM always has the correct info and nobody else is
-        touching the device without telling VDSM about it.
-
-        TODO: We might want to move to XML parsing (first update) and events
-        once libvirt supports them:
-        https://bugzilla.redhat.com/show_bug.cgi?id=1114492
-        """
-        ioTuneInfo = []
-
-        for disk in self._vm.getDiskDevices():
-            if "ioTune" in disk.specParams:
-                ioTuneInfo.append({
-                    "name": disk.name,
-                    "path": disk.path,
-                    "ioTune": disk.specParams["ioTune"]
-                })
-
-        stats['ioTune'] = ioTuneInfo
-
-    def _diff(self, prev, curr, val):
-        return prev[val] - curr[val]
-
-    def _usagePercentage(self, val, sampleInterval):
-        return 100 * val / sampleInterval / 1000 ** 3
-
-    def _getCpuStats(self, stats):
-        stats['cpuUser'] = 0.0
-        stats['cpuSys'] = 0.0
-
-        sInfo, eInfo, sampleInterval = self.sampleCpu.getStats()
-
-        if sInfo is None:
-            return
-
-        try:
-            stats['cpuSys'] = self._usagePercentage(
-                self._diff(eInfo, sInfo, 'user_time') +
-                self._diff(eInfo, sInfo, 'system_time'),
-                sampleInterval)
-            stats['cpuUser'] = self._usagePercentage(
-                self._diff(eInfo, sInfo, 'cpu_time')
-                - self._diff(eInfo, sInfo, 'user_time')
-                - self._diff(eInfo, sInfo, 'system_time'),
-                sampleInterval)
-
-        except (TypeError, ZeroDivisionError) as e:
-            self._log.exception("CPU stats not available: %s", e)
-
-    def _getBalloonStats(self, stats):
-        max_mem = int(self._vm.conf.get('memSize')) * 1024
-
-        sample = self.sampleBalloon.getLastSample()
-
-        for dev in self._vm.getBalloonDevicesConf():
-            if dev['specParams']['model'] != 'none':
-                balloon_target = dev.get('target', max_mem)
-                break
-        else:
-            balloon_target = None
-
-        stats['balloonInfo'] = {}
-
-        # Do not return any balloon status info before we get all data
-        # MOM will ignore VMs with missing balloon information instead
-        # using incomplete data and computing wrong balloon targets
-        if balloon_target is not None and sample is not None:
-            stats['balloonInfo'].update({
-                'balloon_max': str(max_mem),
-                'balloon_min': str(
-                    int(self._vm.conf.get('memGuaranteedSize', '0')) * 1024),
-                'balloon_cur': str(sample),
-                'balloon_target': str(balloon_target)
-            })
-
-    def _getCpuCount(self, stats):
-        sample = self.sampleCpuTune.getLastSample()
-
-        # Handling the case when not enough samples exist
-        if sample is None:
-            return
-
-        if 'vcpuCount' in sample:
-            vcpuCount = sample['vcpuCount']
-            if vcpuCount != -1:
-                stats['vcpuCount'] = vcpuCount
-            else:
-                self._log.error('Failed to get VM cpu count')
-
-    def _getNetworkStats(self, stats):
-        stats['network'] = {}
-        sInfo, eInfo, sampleInterval = self.sampleNet.getStats()
-
-        if sInfo is None:
-            return
-
-        for nic in self._vm.getNicDevices():
-            if nic.name.startswith('hostdev'):
-                continue
-
-            # may happen if nic is a new hot-plugged one
-            if nic.name not in sInfo or nic.name not in eInfo:
-                continue
-
-            stats['network'][nic.name] = _getNicStats(
-                nic.name, nic.nicModel, nic.macAddr,
-                sInfo[nic.name], eInfo[nic.name], sampleInterval)
-
-    def _getDiskStats(self, stats):
-        sInfo, eInfo, sampleInterval = self.sampleDisk.getStats()
-
-        for vmDrive in self._vm.getDiskDevices():
-            dStats = {}
-            try:
-                dStats = {'truesize': str(vmDrive.truesize),
-                          'apparentsize': str(vmDrive.apparentsize),
-                          'readLatency': '0',
-                          'writeLatency': '0',
-                          'flushLatency': '0',
-                          'readOps': '0',
-                          'writeOps': '0',
-                          'writtenBytes': '0',
-                          'readBytes': '0'}
-                if isVdsmImage(vmDrive):
-                    dStats['imageID'] = vmDrive.imageID
-                elif "GUID" in vmDrive:
-                    dStats['lunGUID'] = vmDrive.GUID
-                if (sInfo and vmDrive.name in sInfo and
-                        eInfo and vmDrive.name in eInfo):
-                    # will be None if sampled during recovery
-                    dStats.update(_calcDiskRate(vmDrive, sInfo, eInfo,
-                                                sampleInterval))
-                    dStats.update(_calcDiskLatency(vmDrive, sInfo, eInfo))
-                    driveInfo = eInfo[vmDrive.name]
-                    dStats['readOps'] = str(driveInfo['rd_operations'])
-                    dStats['writeOps'] = str(driveInfo['wr_operations'])
-                    dStats['readBytes'] = str(driveInfo['rd_bytes'])
-                    dStats['writtenBytes'] = str(driveInfo['wr_bytes'])
-
-            except (AttributeError, TypeError, ZeroDivisionError):
-                self._log.exception("Disk %s stats not available",
-                                    vmDrive.name)
-
-            stats[vmDrive.name] = dStats
-
-    def get(self):
-        stats = {}
-
-        self._getCpuStats(stats)
-        self._getNetworkStats(stats)
-        self._getDiskStats(stats)
-        self._getBalloonStats(stats)
-        self._getCpuCount(stats)
-        self._getIoTuneStats(stats)
-
-        return stats
 
     def handleStatsException(self, ex):
         # We currently handle only libvirt exceptions
@@ -519,66 +216,6 @@ class VmStatsThread(AdvancedStatsThread):
             return False
 
         return True
-
-
-def _getNicStats(name, model, mac,
-                 start_sample, end_sample, interval):
-    ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
-
-    ifStats = {'macAddr': mac,
-               'name': name,
-               'speed': str(ifSpeed),
-               'state': 'unknown'}
-
-    ifStats['rxErrors'] = str(end_sample[2])
-    ifStats['rxDropped'] = str(end_sample[3])
-    ifStats['txErrors'] = str(end_sample[6])
-    ifStats['txDropped'] = str(end_sample[7])
-
-    ifRxBytes = (100.0 *
-                 ((end_sample[0] - start_sample[0]) % 2 ** 32) /
-                 interval / ifSpeed / _MBPS_TO_BPS)
-    ifTxBytes = (100.0 *
-                 ((end_sample[4] - start_sample[4]) % 2 ** 32) /
-                 interval / ifSpeed / _MBPS_TO_BPS)
-
-    ifStats['rxRate'] = '%.1f' % ifRxBytes
-    ifStats['txRate'] = '%.1f' % ifTxBytes
-
-    ifStats['rx'] = str(end_sample[0])
-    ifStats['tx'] = str(end_sample[4])
-    ifStats['sampleTime'] = utils.monotonic_time()
-
-    return ifStats
-
-
-def _calcDiskRate(vmDrive, sInfo, eInfo, sampleInterval):
-    return {
-        'readRate': (
-            (eInfo[vmDrive.name]['rd_bytes'] -
-             sInfo[vmDrive.name]['rd_bytes'])
-            / sampleInterval),
-        'writeRate': (
-            (eInfo[vmDrive.name]['wr_bytes'] -
-             sInfo[vmDrive.name]['wr_bytes'])
-            / sampleInterval)}
-
-
-def _calcDiskLatency(vmDrive, sInfo, eInfo):
-    dname = vmDrive.name
-
-    def compute_latency(ltype):
-        ops = ltype + '_operations'
-        operations = eInfo[dname][ops] - sInfo[dname][ops]
-        if not operations:
-            return 0
-        times = ltype + '_total_times'
-        elapsed_time = eInfo[dname][times] - sInfo[dname][times]
-        return elapsed_time / operations
-
-    return {'readLatency': str(compute_latency('rd')),
-            'writeLatency': str(compute_latency('wr')),
-            'flushLatency': str(compute_latency('flush'))}
 
 
 class TimeoutError(libvirt.libvirtError):
@@ -1627,6 +1264,7 @@ class Vm(object):
         except Exception:
             pass
         self.stopVmStats()
+        sampling.stats_cache.remove(self.id)
         self.saveState()
 
     def status(self, fullStatus=True):
@@ -1708,11 +1346,12 @@ class Vm(object):
 
         decStats = {}
         try:
-            if self._vmStats and self._vmStats.getLastSampleTime() is not None:
-                decStats = self._vmStats.get()
-                self._setUnresponsiveIfTimeout(
-                    stats,
-                    time.time() - self._vmStats.getLastSampleTime())
+            vm_sample = sampling.stats_cache.get(self.id)
+            decStats = vmstats.produce(self,
+                                       vm_sample.first_value,
+                                       vm_sample.last_value,
+                                       vm_sample.interval)
+            self._setUnresponsiveIfTimeout(stats, vm_sample.stats_age)
         except Exception:
             self.log.exception("Error fetching vm stats")
         for var in decStats:
@@ -2090,7 +1729,7 @@ class Vm(object):
 
         # VmStatsThread may use block devices info from libvirt.
         # So, run it after you have this info
-        self.startVmStats()
+        sampling.stats_cache.add(self.id)
         try:
             self.guestAgent.connect()
         except Exception:
@@ -3861,6 +3500,7 @@ class Vm(object):
             # Terminate the VM's creation thread.
             self._incomingMigrationFinished.set()
             self.stopVmStats()
+            sampling.stats_cache.remove(self.id)
             self.guestAgent.stop()
             if self._dom:
                 result = self._destroyVmGraceful()

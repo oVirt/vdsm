@@ -31,6 +31,7 @@ from vdsm import libvirtconnection
 
 import caps
 import clientIF
+from virt import sampling
 from virt import vm
 
 from testlib import namedTemporaryDir
@@ -200,6 +201,7 @@ def VM(params=None, devices=None, runCpu=False,
             fake._guestCpuRunning = runCpu
             if status is not None:
                 fake._lastStatus = status
+            sampling.stats_cache.add(fake.id)
             yield fake
 
 

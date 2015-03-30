@@ -37,6 +37,8 @@ from vdsm import utils
 from vdsm.config import config
 import v2v
 
+from .utils import ExpiringCache
+
 import caps
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
@@ -516,6 +518,69 @@ class StatsCache(object):
 stats_cache = StatsCache()
 
 
+# this value can be tricky to tune.
+# we should avoid as much as we can to trigger
+# false positive fast flows (getAllDomainStats call).
+# to do so, we should avoid this value to be
+# a multiple of known timeout and period:
+# - vm sampling period is 15s (we control that)
+# - libvirt (default) qemu monitor timeout is 30s (we DON'T contol this)
+_TIMEOUT = 40.0
+
+
+class SampleVMs(object):
+    def __init__(self, conn, get_vms, stats_cache,
+                 stats_flags=0, timeout=_TIMEOUT):
+        self._conn = conn
+        self._get_vms = get_vms
+        self._stats_cache = stats_cache
+        self._stats_flags = stats_flags
+        self._skip_doms = ExpiringCache(timeout)
+        self._sampling = False
+        self._log = logging.getLogger("sampling.SampleVMs")
+
+    def __call__(self):
+        timestamp = self._stats_cache.clock()
+        # we are deep in the hot path. bool(ExpiringCache)
+        # *is* costly so we should avoid it if we can.
+        fast_path = (not self._sampling and not self._skip_doms)
+        self._sampling = True
+        try:
+            if fast_path:
+                # This is expected to be the common case.
+                # If everything's ok, we can skip all the costly checks.
+                bulk_stats = self._conn.getAllDomainStats(self._stats_flags)
+            else:
+                # A previous call got stuck, or not every domain
+                # has properly recovered. Thus we must whitelist domains.
+                doms = self._get_responsive_doms()
+                self._log.debug('sampling %d domains', len(doms))
+                if doms:
+                    bulk_stats = self._conn.domainListGetStats(
+                        doms, self._stats_flags)
+                else:
+                    bulk_stats = []
+        except Exception:
+            self._log.exception("vm sampling failed")
+        else:
+            self._stats_cache.put(_translate(bulk_stats), timestamp)
+        finally:
+            self._sampling = False
+
+    def _get_responsive_doms(self):
+        vms = self._get_vms()
+        doms = []
+        for vm_id, vm_obj in vms.iteritems():
+            to_skip = self._skip_doms.get(vm_id, False)
+            if to_skip:
+                continue
+            elif not vm_obj.isDomainReadyForCommands():
+                self._skip_doms[vm_id] = True
+            else:
+                doms.append(vm_obj._dom._dom)
+        return doms
+
+
 class AdvancedStatsThread(threading.Thread):
     """
     A thread that runs the registered AdvancedStatsFunction objects
@@ -853,3 +918,8 @@ def _getDuplex(ifid):
             return src.read().strip()
     except IOError:
         return 'unknown'
+
+
+def _translate(bulk_stats):
+    return dict((dom.UUIDString(), stats)
+                for dom, stats in bulk_stats)

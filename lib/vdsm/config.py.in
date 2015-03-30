@@ -145,27 +145,9 @@ parameters = [
         ('vm_watermark_interval', '2',
             'How often should we sample each vm for statistics (seconds).'),
 
-        ('vm_sample_cpu_interval', '15', None),
-
-        ('vm_sample_cpu_window', '2', None),
-
-        ('vm_sample_disk_interval', '60', None),
-
-        ('vm_sample_disk_window', '2', None),
-
-        ('vm_sample_net_interval', '15', None),
-
-        ('vm_sample_net_window', '2', None),
-
-        ('vm_sample_balloon_interval', '15', None),
+        ('vm_sample_interval', '15', None),
 
         ('vm_sample_jobs_interval', '15', None),
-
-        ('vm_sample_vcpu_pin_interval', '15',
-            'How often should we sample each vcpu runtime pinning to '
-            'which physical cpu core.'),
-
-        ('vm_sample_cpu_tune_interval', '15', None),
 
         ('vm_sample_numa_interval', '15',
             'How often should we sample NUMA CPU assignments'),
