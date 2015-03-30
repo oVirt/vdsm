@@ -1013,6 +1013,40 @@ class TestVmOperations(TestCaseBase):
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
             self.assertTrue(testvm._isDomainRunning())
 
+    def testDomainIsReadyForCommands(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            self.assertTrue(testvm.isDomainReadyForCommands())
+
+    def testDomainDisappearedNotReadyForCommands(self):
+        def _fail(*args):
+            raise_libvirt_error(libvirt.VIR_ERR_NO_DOMAIN,
+                                "Disappeared domain")
+
+        with fake.VM() as testvm:
+            dom = fake.Domain()
+            dom.controlInfo = _fail
+            testvm._dom = dom
+            self.assertFalse(testvm.isDomainReadyForCommands())
+
+    def testDomainNoneNotReadyForCommands(self):
+        with fake.VM() as testvm:
+            testvm._dom = None
+            self.assertFalse(testvm.isDomainReadyForCommands())
+
+    def testReadyForCommandsRaisesLibvirtError(self):
+        def _fail(*args):
+            # anything != NO_DOMAIN is good
+            raise_libvirt_error(libvirt.VIR_ERR_INTERNAL_ERROR,
+                                "Fake internal error")
+
+        with fake.VM() as testvm:
+            dom = fake.Domain()
+            dom.controlInfo = _fail
+            testvm._dom = dom
+            self.assertRaises(libvirt.libvirtError,
+                              testvm.isDomainReadyForCommands)
+
     def testReadPauseCodeDomainRunning(self):
         with fake.VM() as testvm:
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)

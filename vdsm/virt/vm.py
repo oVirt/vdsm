@@ -2553,6 +2553,12 @@ class Vm(object):
             # operations. Thus, we must use a try/except block
             # to avoid racy checks.
             return False
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                # same as AttributeError above: possible race on shutdown
+                return False
+            else:
+                raise
         else:
             return state == libvirt.VIR_DOMAIN_CONTROL_OK
 

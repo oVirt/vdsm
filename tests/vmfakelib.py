@@ -133,6 +133,9 @@ class Domain(object):
     def diskErrors(self):
         return self._diskErrors
 
+    def controlInfo(self):
+        return (libvirt.VIR_DOMAIN_CONTROL_OK, 0, 0)
+
 
 class GuestAgent(object):
     def __init__(self):
