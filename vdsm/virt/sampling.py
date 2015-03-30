@@ -401,6 +401,35 @@ class AdvancedStatsFunction(object):
         return self._samples.last()
 
 
+class StatsCache(object):
+
+    _log = logging.getLogger("sampling.StatsCache")
+
+    def __init__(self):
+        self._samples = SampleWindow(size=2,
+                                     timefn=utils.monotonic_time)
+        self._last_sample_time = 0
+
+    def get(self, vmid):
+        first_batch, last_batch, interval = self._samples.stats()
+        if first_batch is None:
+            return (None, None, None)
+
+        first_sample = first_batch.get(vmid)
+        last_sample = last_batch.get(vmid)
+        return (first_sample, last_sample, interval)
+
+    def put(self, bulk_stats, monotonic_ts):
+        if monotonic_ts >= self._last_sample_time:
+            self._samples.append(bulk_stats)
+            self._last_sample_time = monotonic_ts
+        else:
+            self._log.warning('dropped stale old sample')
+
+
+stats_cache = StatsCache()
+
+
 class AdvancedStatsThread(threading.Thread):
     """
     A thread that runs the registered AdvancedStatsFunction objects
