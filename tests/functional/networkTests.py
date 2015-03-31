@@ -1480,6 +1480,41 @@ class NetworkTest(TestCaseBase):
             self.vdsm_net.save_config()
 
     @cleanupNet
+    @RequireVethMod
+    @ValidateRunningAsRoot
+    def testRestoreToBlockingDHCP(self):
+        def _get_blocking_dhcp(net_name):
+            self.vdsm_net.refreshNetinfo()
+            return self.vdsm_net.config.networks[net_name].get('blockingdhcp')
+
+        with vethIf() as (server, client):
+            veth.setIP(server, IP_ADDRESS, IP_CIDR)
+            veth.setLinkUp(server)
+            dhcp_async_net = {'nic': client, 'bridged': False,
+                              'bootproto': 'dhcp', 'blockingdhcp': False}
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: dhcp_async_net}, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+
+            self.assertNetworkExists(NETWORK_NAME)
+            self.assertFalse(_get_blocking_dhcp(NETWORK_NAME))
+
+            self.vdsm_net.save_config()
+
+            with dnsmasqDhcp(server, _system_is_el6()):
+                with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
+                    dhclient_runner = dhcp.DhclientRunner(client, 4, dhdir,
+                                                          'default')
+                    with running(dhclient_runner):
+                        self.vdsm_net.restoreNetConfig()
+                        self.assertTrue(_get_blocking_dhcp(NETWORK_NAME))
+
+            # cleanup
+            status, msg = self.vdsm_net.setupNetworks(
+                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+
+    @cleanupNet
     @permutations([[True], [False]])
     def testVolatileConfig(self, bridged):
         """
