@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from contextlib import contextmanager
 from ctypes import (CFUNCTYPE, byref, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, sizeof)
 from functools import partial
@@ -24,18 +25,19 @@ import errno
 
 from . import _cache_manager, _nl_cache_get_first, _nl_cache_get_next
 from . import _char_proto, _int_char_proto, _int_proto, _void_proto
-from . import LIBNL_ROUTE, _nl_geterror, _pool
+from . import LIBNL_ROUTE, _nl_geterror, _pool, _none_proto
 from . import _addr_to_str, CHARBUFFSIZE
 
 
 def get_link(name):
     """Returns the information dictionary of the name specified link."""
     with _pool.socket() as sock:
-        link = _get_link(name=name, sock=sock)
-        if not link:
-            raise IOError(errno.ENODEV, '%s is not present in the system' %
-                          name)
-        return _link_info(link)
+        with _get_link(name=name, sock=sock) as link:
+            if not link:
+                raise IOError(errno.ENODEV, '%s is not present in the system' %
+                              name)
+            link_info = _link_info(link)
+        return link_info
 
 
 def iter_links():
@@ -95,11 +97,12 @@ def _link_index_to_name(link_index, cache=None):
     name = (c_char * CHARBUFFSIZE)()
 
     if cache is None:
-        link = _get_link(index=link_index)
-        if link is None:
-            raise IOError(errno.ENODEV, 'Dev with index %s is not present in '
-                                        'the system' % link_index)
-        return _rtnl_link_get_name(link)
+        with _get_link(index=link_index) as link:
+            if link is None:
+                raise IOError(errno.ENODEV, 'Dev with index %s is not present '
+                                            'in the system' % link_index)
+            name = _rtnl_link_get_name(link)
+        return name
     else:
         return _rtnl_link_i2name(cache, link_index, name, sizeof(name))
 
@@ -149,6 +152,7 @@ def _rtnl_link_get_kernel_workaround(sock, name):
         return _rtnl_link_get_by_name(cache, name)
 
 
+@contextmanager
 def _get_link(name=None, index=0, sock=None):
     """ If defined both name and index, index is primary """
     # libnl/incluede/netlink/errno.h
@@ -160,23 +164,34 @@ def _get_link(name=None, index=0, sock=None):
     if name is None and index == 0:
         raise ValueError('Must specify either a name or an index')
     link = c_void_p()
-    if sock is None:
-        with _pool.socket() as sock:
+
+    # related to workaroud for el6
+    ref_count = False
+
+    try:
+        if sock is None:
+            with _pool.socket() as sock:
+                err = _rtnl_link_get_kernel(sock, index, name, byref(link))
+                if -err in (NLE_INVAL, NLE_OPNOTSUPP) and index == 0:
+                    link = _rtnl_link_get_kernel_workaround(sock, name)
+                    ref_count = True
+                    err = NLE_SUCCESS
+        else:
             err = _rtnl_link_get_kernel(sock, index, name, byref(link))
             if -err in (NLE_INVAL, NLE_OPNOTSUPP) and index == 0:
                 link = _rtnl_link_get_kernel_workaround(sock, name)
+                ref_count = True
                 err = NLE_SUCCESS
-    else:
-        err = _rtnl_link_get_kernel(sock, index, name, byref(link))
-        if -err in (NLE_INVAL, NLE_OPNOTSUPP) and index == 0:
-            link = _rtnl_link_get_kernel_workaround(sock, name)
-            err = NLE_SUCCESS
-    if err:
-        if -err == NLE_NODEV:
-            link = None
-        else:
-            raise IOError(-err, _nl_geterror())
-    return link
+        if err:
+            if -err == NLE_NODEV:
+                link = None
+            else:
+                raise IOError(-err, _nl_geterror())
+        yield link
+    finally:
+        if ref_count:
+            _rtnl_link_put(link)
+
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 
@@ -195,3 +210,4 @@ _rtnl_link_i2name = CFUNCTYPE(c_char_p, c_void_p, c_int, c_char_p, c_size_t)((
     'rtnl_link_i2name', LIBNL_ROUTE))
 _rtnl_link_operstate2str = _int_char_proto(('rtnl_link_operstate2str',
                                             LIBNL_ROUTE))
+_rtnl_link_put = _none_proto(('rtnl_link_put', LIBNL_ROUTE))
