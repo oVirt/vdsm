@@ -1488,6 +1488,12 @@ exit 0
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ipv6
 
+%files hook-vmfex-dev
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex
+%{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination/50_vmfex
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_vmfex
+
 %if 0%{?with_hooks}
 %files hook-allocate_net
 %defattr(-, root, root, -)
@@ -1603,12 +1609,6 @@ exit 0
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmfex
-
-%files hook-vmfex-dev
-%defattr(-, root, root, -)
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_vmfex
-%{_libexecdir}/%{vdsm_name}/hooks/before_device_migrate_destination/50_vmfex
-%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_vmfex
 %endif
 
 %files debug-plugin

@@ -18,7 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = ethtool_options faqemu ipv6 macspoof openstacknet qemucmdline vhostmd
+SUBDIRS = \
+	ethtool_options \
+	faqemu \
+	ipv6 \
+	macspoof \
+	openstacknet \
+	qemucmdline \
+	vhostmd \
+	vmfex_dev
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
@@ -48,7 +56,6 @@ SUBDIRS += \
 	sriov \
 	vmdisk \
 	vmfex \
-	vmfex_dev \
 	$(NULL)
 endif
 
