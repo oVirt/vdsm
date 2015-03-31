@@ -34,6 +34,7 @@ dist_vdsm_virt_PYTHON = \
 	vmchannels.py \
 	vmexitreason.py \
 	vmpowerdown.py \
+	vmstats.py \
 	vmstatus.py \
 	vmtune.py \
 	vmxml.py \

@@ -1077,6 +1077,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/periodic.py*
 %{_datadir}/%{vdsm_name}/virt/sampling.py*
 %{_datadir}/%{vdsm_name}/virt/vmchannels.py*
+%{_datadir}/%{vdsm_name}/virt/vmstats.py*
 %{_datadir}/%{vdsm_name}/virt/vmstatus.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*

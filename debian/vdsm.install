@@ -157,6 +157,7 @@
 ./usr/share/vdsm/virt/vmchannels.py
 ./usr/share/vdsm/virt/vmexitreason.py
 ./usr/share/vdsm/virt/vmpowerdown.py
+./usr/share/vdsm/virt/vmstats.py
 ./usr/share/vdsm/virt/vmstatus.py
 ./usr/share/vdsm/virt/vmxml.py
 ./usr/share/vdsm/virt/utils.py

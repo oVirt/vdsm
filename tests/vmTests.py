@@ -34,6 +34,7 @@ from virt import vmexitreason
 from virt.vmdevices import hwclass
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from virt import vmxml
+from virt import vmstats
 from virt import vmstatus
 from vdsm import constants
 from vdsm import define
@@ -1144,7 +1145,7 @@ class TestVmStatsThread(TestCaseBase):
 
     DEV_BALLOON = [{'type': 'balloon', 'specParams': {'model': 'virtio'}}]
 
-    def testGetNicStats(self):
+    def testGetNicStatsLegacy(self):
         GBPS = 10 ** 9 / 8
         MAC = '52:54:00:59:F5:3F'
         pretime = utils.monotonic_time()
@@ -1167,23 +1168,42 @@ class TestVmStatsThread(TestCaseBase):
             'rx': '0', 'tx': '625000000',
         })
 
-    def testGetStatsNoDom(self):
-        # bz1073478 - main case
-        with fake.VM(_VM_PARAMS, self.DEV_BALLOON) as testvm:
-            self.assertEqual(testvm._dom, None)
-            mock_stats_thread = vm.VmStatsThread(testvm)
-            res = mock_stats_thread.get()
-            self.assertIn('balloonInfo', res)
-            self.assertNotIn('balloon_cur', res['balloonInfo'])
-
-    def testGetStatsDomInfoFail(self):
-        # bz1073478 - extra case
-        with fake.VM(_VM_PARAMS, self.DEV_BALLOON) as testvm:
-            testvm._dom = fake.Domain(
-                virtError=libvirt.VIR_ERR_NO_DOMAIN)
-            mock_stats_thread = vm.VmStatsThread(testvm)
-            res = mock_stats_thread.get()
-            self.assertIn('balloonInfo', res)
+    def testGetNicStats(self):
+        GBPS = 10 ** 9 / 8
+        MAC = '52:54:00:59:F5:3F'
+        pretime = utils.monotonic_time()
+        res = vmstats.nic(
+            name='vnettest', model='virtio', mac=MAC,
+            start_sample={'rx.bytes': 2 ** 64 - 15 * GBPS,
+                          'rx.pkts': 1,
+                          'rx.errs': 2,
+                          'rx.drop': 3,
+                          'tx.bytes': 0,
+                          'tx.pkts': 4,
+                          'tx.errs': 5,
+                          'tx.drop': 6},
+            end_sample={'rx.bytes': 0,
+                        'rx.pkts': 7,
+                        'rx.errs': 8,
+                        'rx.drop': 9,
+                        'tx.bytes': 5 * GBPS,
+                        'tx.pkts': 10,
+                        'tx.errs': 11,
+                        'tx.drop': 12},
+            interval=15.0)
+        posttime = utils.monotonic_time()
+        self.assertIn('sampleTime', res)
+        self.assertTrue(pretime <= res['sampleTime'] <= posttime,
+                        'sampleTime not in [%s..%s]' % (pretime, posttime))
+        del res['sampleTime']
+        self.assertEqual(res, {
+            'rxErrors': '8', 'rxDropped': '9',
+            'txErrors': '11', 'txDropped': '12',
+            'macAddr': MAC, 'name': 'vnettest',
+            'speed': '1000', 'state': 'unknown',
+            'rxRate': '100.0', 'txRate': '33.3',
+            'rx': '0', 'tx': '625000000',
+        })
 
     def testMultipleGraphicDeviceStats(self):
         devices = [{'type': 'graphics', 'device': 'spice', 'port': '-1'},
