@@ -94,6 +94,7 @@ BuildRequires: cyrus-sasl-lib
 
 # BuildRequires needed by the tests during the build
 BuildRequires: dosfstools
+BuildRequires: mom
 BuildRequires: psmisc
 BuildRequires: python-ethtool
 BuildRequires: python-inotify

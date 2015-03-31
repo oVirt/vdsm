@@ -1,23 +1,42 @@
 ### Auto-CpuTune ###############################################################
 
-(defvar anchor 100000)
+# Default quota turns off the CPU limits
 (defvar defaultQuota -1)
-(defvar defaultPeriod 1000)
 
-(defvar calcPeriod  (/ anchor Host.cpu_count))
+# The default measurement period in us -> 100ms
+(defvar defaultPeriod 100000)
+
 
 ### Helper functions
 (def check_and_set_quota (guest)
 {
+    # The maximum amount of CPU time the VM can use in total
+    # = Measuring interval * number of physical CPUs * Maximum load
+    #
+    # Maximum load is expressed as a percent of the total processing
+    # capability available to the host (RHEV Admin guide 10.5.7)
+    (defvar maxCpuTime (* (/ guest.vcpu_user_limit 100.0) (* defaultPeriod Host.cpu_count)))
 
-    (defvar calcQuota (/ (* anchor (/ guest.vcpu_user_limit 100.0)) guest.vcpu_count))
+    # Distribute the allocated time between the configured vCPUs
+    (defvar calcQuota (/ maxCpuTime guest.vcpu_count))
+
+    # Time amount multiplier, default is 1 = use the computed values
+    # Higher values are used when low percentages or high amount of vCPUs cause
+    # the calcQuota to get below the allowed limit of 1000. This slows down
+    # the reaction time, but allows enough time to measure such small load
+    # percentages (and makes libvirt happy)
+    (if (> calcQuota 1000) {
+        (defvar timeMultiplier 1)
+    } {
+        (defvar timeMultiplier (+ 1 (/ 1000 calcQuota)))
+    })
+
+    (setq calcQuota (* timeMultiplier calcQuota))
+    (defvar calcPeriod (* timeMultiplier defaultPeriod))
 
     (if (!= guest.vcpu_quota calcQuota)
         (guest.Control "vcpu_quota" calcQuota) 0)
-})
 
-(def check_and_set_period (guest)
-{
     (if (!= guest.vcpu_period calcPeriod)
         (guest.Control "vcpu_period" calcPeriod) 0)
 })
@@ -38,10 +57,14 @@
 # else set the quota and period
 
 
-
+# Enable CPU quota tracking only when there is a limit to enforce
 (if (== True cpuTuneEnabled) {
-    (with Guests guest (check_and_set_quota guest))
-    (with Guests guest (check_and_set_period guest))
+    (with Guests guest
+        (if
+            (< guest.vcpu_user_limit 100.0)
+            (check_and_set_quota guest)
+            (reset_quota_and_period guest)
+        ))
 } {
     (with Guests guest (reset_quota_and_period guest))
 })
