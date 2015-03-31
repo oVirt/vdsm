@@ -23,6 +23,7 @@ import xml.etree.cElementTree as ET
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatchScope
 
 import caps
 import numaUtils
@@ -70,8 +71,13 @@ class TestNumaUtils(TestCaseBase):
                                          'memory': '1024',
                                          'nodeIndex': 1}]}
         with fake.VM(VM_PARAMS) as testvm:
-            testvm._vmStats = fake.VmStatsThread(testvm)
             expectedResult = {'0': [0, 1], '1': [0, 1]}
             self.assertTrue(testvm.hasGuestNumaNode)
-            vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(testvm)
-            self.assertEqual(expectedResult, vmNumaNodeRuntimeMap)
+            sample = [(0, 1, 19590000000L, 1),
+                      (1, 1, 10710000000L, 1),
+                      (2, 1, 19590000000L, 0),
+                      (3, 1, 19590000000L, 2)]
+            with MonkeyPatchScope([(numaUtils, "_get_vcpu_positioning",
+                                  lambda vm: sample)]):
+                vm_numa_info = numaUtils.getVmNumaNodeRuntimeInfo(testvm)
+                self.assertEqual(expectedResult, vm_numa_info)
