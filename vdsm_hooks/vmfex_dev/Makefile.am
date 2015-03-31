@@ -34,5 +34,6 @@ install-data-local:
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_device_create/50_vmfex
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_device_migrate_destination/50_vmfex
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/50_vmfex
 
