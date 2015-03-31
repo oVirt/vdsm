@@ -105,6 +105,7 @@ BuildRequires: libnl3
 BuildRequires: libselinux-python
 BuildRequires: libvirt-python
 BuildRequires: m2crypto
+BuildRequires: mom
 BuildRequires: openssl
 BuildRequires: policycoreutils-python
 BuildRequires: psmisc

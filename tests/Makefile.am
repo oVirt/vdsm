@@ -56,6 +56,7 @@ test_modules = \
 	miscTests.py \
 	mkimageTests.py \
 	monkeypatchTests.py \
+	momPolicyTests.py \
 	mountTests.py \
 	netconfpersistenceTests.py \
 	netconfTests.py \
