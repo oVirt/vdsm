@@ -2117,3 +2117,31 @@
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepMountBrokerSetup'},
  'data': {'remoteUserName': 'str', 'remoteGroupName': 'str',
           'remoteVolumeName': 'str'}}
+
+##
+# @VolumeEmptyCheck:
+#
+# Flag which tells if a given volume is empty
+#
+# @volumeEmptyCheck: A flag which tells if a gluster volume is empty
+#
+# Since: 4.17.0
+##
+{'type': 'VolumeEmptyCheck',
+ 'data': {'volumeEmptyCheck': 'bool'}}
+
+##
+# @GlusterVolume.volumeEmptyCheck:
+#
+# check if a gluster volume is empty
+#
+# @volumeName: Gluster volume name
+#
+# Returns:
+# success/failure
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'volumeEmptyCheck'},
+ 'data': {'volumeName': 'str'},
+ 'returns': 'VolumeEmptyCheck'}

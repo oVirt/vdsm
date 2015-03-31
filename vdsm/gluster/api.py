@@ -640,6 +640,11 @@ class GlusterApi(object):
             remoteUserName
         )
 
+    @exportAsVerb
+    def volumeEmptyCheck(self, volumeName, options=None):
+        status = self.svdsmProxy.glusterVolumeEmptyCheck(volumeName)
+        return {'volumeEmptyCheck': status}
+
 
 def getGlusterMethods(gluster):
     l = []

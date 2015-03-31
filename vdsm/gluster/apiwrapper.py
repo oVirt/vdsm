@@ -306,6 +306,9 @@ class GlusterVolume(GlusterApiBase):
             remoteUserName
         )
 
+    def volumeEmptyCheck(self, volumeName):
+        return self._gluster.volumeEmptyCheck(volumeName)
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):

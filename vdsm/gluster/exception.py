@@ -576,6 +576,11 @@ class GlfsFiniException(GlusterLibgfapiException):
     message = "glfs fini failed"
 
 
+class GlusterVolumeEmptyCheckFailedException(GlusterVolumeException):
+    code = 4574
+    message = "Failed to Check if gluster volume is empty"
+
+
 # geo-replication
 class GlusterGeoRepException(GlusterException):
     code = 4200

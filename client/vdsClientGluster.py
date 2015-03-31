@@ -749,6 +749,15 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeEmptyCheck(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeEmptyCheck(volumeName)
+
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1274,5 +1283,10 @@ def getGlusterCmdDict(serv):
               '<slave_host_name>is remote slave host name or ip\n\t'
               '<slave_volume_name>existing volume name in the slave node',
               'Delete the geo-replication session'
+              )),
+         'glusterVolumeEmptyCheck': (
+             serv.do_glusterVolumeEmptyCheck,
+             ('volumeName=<volume name>',
+              'Check if the given volume is empty or not'
               ))
          }

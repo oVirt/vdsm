@@ -25,7 +25,7 @@ import exception as ge
 from . import makePublic
 
 
-GLUSTER_VOL_PROTOCAL = 'tcp'
+GLUSTER_VOL_PROTOCOL = 'tcp'
 GLUSTER_VOL_HOST = 'localhost'
 GLUSTER_VOL_PORT = 24007
 GLUSTER_VOL_PATH = "/"
@@ -45,6 +45,16 @@ class StatVfsStruct(ctypes.Structure):
         ('f_flag', ctypes.c_ulong),
         ('f_namemax', ctypes.c_ulong),
         ('__f_spare', ctypes.c_int * 6),
+    ]
+
+
+class DirentStruct(ctypes.Structure):
+    _fields_ = [
+        ("d_ino", ctypes.c_ulong),
+        ("d_off", ctypes.c_ulong),
+        ("d_reclen", ctypes.c_ushort),
+        ("d_type", ctypes.c_char),
+        ("d_name", ctypes.c_char * 256),
     ]
 
 
@@ -88,7 +98,7 @@ def glfsFini(fs, volumeId):
 @makePublic
 def volumeStatvfsGet(volumeId, host=GLUSTER_VOL_HOST,
                      port=GLUSTER_VOL_PORT,
-                     protocol=GLUSTER_VOL_PROTOCAL):
+                     protocol=GLUSTER_VOL_PROTOCOL):
     statvfsdata = StatVfsStruct()
 
     fs = glfsInit(volumeId, host, port, protocol)
@@ -112,6 +122,45 @@ def volumeStatvfsGet(volumeId, host=GLUSTER_VOL_HOST,
                               statvfsdata.f_favail,
                               statvfsdata.f_flag,
                               statvfsdata.f_namemax))
+
+
+def checkVolumeEmpty(volumeId, host=GLUSTER_VOL_HOST,
+                     port=GLUSTER_VOL_PORT,
+                     protocol=GLUSTER_VOL_PROTOCOL):
+    data = ctypes.POINTER(DirentStruct)()
+    fs = glfsInit(volumeId, host, port, protocol)
+
+    fd = _glfs_opendir(fs, "/")
+
+    if fd is None:
+        glfsFini(fs, volumeId)
+        raise ge.GlusterVolumeEmptyCheckFailedException(
+            err=['glfs_opendir() failed'])
+
+    entry = "."
+    flag = False
+
+    while entry in [".", "..", ".trashcan"]:
+        data = _glfs_readdir(fd)
+        if data is None:
+            glfsFini(fs, volumeId)
+            raise ge.GlusterVolumeEmptyCheckFailedException(
+                err=['glfs_readdir() failed'])
+
+        # When there are no more entries in directory _glfs_readdir()
+        # will return a null pointer. bool of null pointer will be false
+        # Using this to conclude that no more entries in volume.
+        if not bool(data):
+            flag = True
+            break
+
+        entry = data.contents.d_name
+    else:
+        flag = False
+
+    glfsFini(fs, volumeId)
+    return flag
+
 
 # C function prototypes for using the library gfapi
 
@@ -139,6 +188,13 @@ _glfs_statvfs = ctypes.CFUNCTYPE(ctypes.c_int,
                                  ctypes.c_char_p,
                                  ctypes.c_void_p)(('glfs_statvfs', _lib))
 
+_glfs_opendir = ctypes.CFUNCTYPE(ctypes.c_void_p,
+                                 ctypes.c_void_p,
+                                 ctypes.c_char_p)(('glfs_opendir', _lib))
+
+_glfs_readdir = ctypes.CFUNCTYPE(ctypes.POINTER(DirentStruct),
+                                 ctypes.c_void_p)(('glfs_readdir', _lib))
+
 
 # This is a workaround for memory leak caused by the
 # libgfapi(BZ:1093594) used to get volume statistics.
@@ -158,10 +214,10 @@ from vdsm import utils
 @makePublic
 def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
                   port=GLUSTER_VOL_PORT,
-                  protocol=GLUSTER_VOL_PROTOCAL):
+                  protocol=GLUSTER_VOL_PROTOCOL):
     module = "gluster.gfapi"
     command = [constants.EXT_PYTHON, '-m', module, '-v', volumeName,
-               '-p', str(port), '-H', host, '-t', protocol]
+               '-p', str(port), '-H', host, '-t', protocol, '-c', 'statvfs']
 
     # to include /usr/share/vdsm in python path
     env = os.environ.copy()
@@ -186,6 +242,27 @@ def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
                               res['f_namemax']))
 
 
+@makePublic
+def volumeEmptyCheck(volumeName, host=GLUSTER_VOL_HOST,
+                     port=GLUSTER_VOL_PORT,
+                     protocol=GLUSTER_VOL_PROTOCOL):
+    module = "gluster.gfapi"
+    command = [constants.EXT_PYTHON, '-m', module, '-v', volumeName,
+               '-p', str(port), '-H', host, '-t', protocol, '-c', 'readdir']
+
+    # to include /usr/share/vdsm in python path
+    env = os.environ.copy()
+    env['PYTHONPATH'] = "%s:%s" % (
+        env.get("PYTHONPATH", ""), constants.P_VDSM)
+    env['PYTHONPATH'] = ":".join(map(os.path.abspath,
+                                     env['PYTHONPATH'].split(":")))
+
+    rc, out, err = utils.execCmd(command, raw=True, env=env)
+    if rc != 0:
+        raise ge.GlusterVolumeEmptyCheckFailedException(rc, [out], [err])
+    return out.upper() == "TRUE"
+
+
 # This file is modified to act as a script which can retrive
 # volume statistics using libgfapi. This can be reverted
 # after the memory leak issue is resolved in libgfapi.
@@ -198,18 +275,32 @@ def parse_cmdargs():
     parser.add_argument("-p", "--port", action="store", type=str,
                         default=str(GLUSTER_VOL_PORT), help="port number")
     parser.add_argument("-t", "--protocol", action="store", type=str,
-                        default=GLUSTER_VOL_PROTOCAL, help="protocol")
+                        default=GLUSTER_VOL_PROTOCOL, help="protocol")
+    parser.add_argument("-c", "--command", action="store", type=str,
+                        help="command to be executed")
     args = parser.parse_args()
     return args
 
 
 if __name__ == '__main__':
     args = parse_cmdargs()
-    res = volumeStatvfsGet(args.volume, args.host,
-                           int(args.port), args.protocol)
-    json.dump({'f_blocks': res.f_blocks, 'f_bfree': res.f_bfree,
-               'f_bsize': res.f_bsize, 'f_frsize': res.f_frsize,
-               'f_bavail': res.f_bavail, 'f_files': res.f_files,
-               'f_ffree': res.f_ffree, 'f_favail': res.f_favail,
-               'f_flag': res.f_flag, 'f_namemax': res.f_namemax},
-              sys.stdout)
+    if args.command.upper() == 'STATVFS':
+        res = volumeStatvfsGet(args.volume, args.host,
+                               int(args.port), args.protocol)
+        json.dump({'f_blocks': res.f_blocks, 'f_bfree': res.f_bfree,
+                   'f_bsize': res.f_bsize, 'f_frsize': res.f_frsize,
+                   'f_bavail': res.f_bavail, 'f_files': res.f_files,
+                   'f_ffree': res.f_ffree, 'f_favail': res.f_favail,
+                   'f_flag': res.f_flag, 'f_namemax': res.f_namemax},
+                  sys.stdout)
+    elif args.command.upper() == 'READDIR':
+        try:
+            result = checkVolumeEmpty(args.volume,
+                                      args.host,
+                                      int(args.port),
+                                      args.protocol)
+        except ge.GlusterException as e:
+            sys.stderr.write(str(e))
+            sys.exit(1)
+
+        sys.stdout.write(str(result))
