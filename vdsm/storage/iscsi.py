@@ -27,7 +27,6 @@ import glob
 import logging
 import re
 import errno
-import time
 from collections import namedtuple
 
 import misc
