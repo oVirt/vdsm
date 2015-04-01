@@ -60,6 +60,7 @@ _DHCLIENT_LEASES_GLOBS = [
     '/var/lib/NetworkManager/dhclient*-*.lease',
 ]
 
+DNS_CONF_FILE = '/etc/resolv.conf'
 NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
 PROC_NET_VLAN = '/proc/net/vlan/'
 NET_PATH = '/sys/class/net'
@@ -85,6 +86,22 @@ OPERSTATE_UP = 'up'
 OPERSTATE_UNKNOWN = 'unknown'
 OPERSTATE_DOWN = 'down'
 DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
+
+
+def get_host_nameservers():
+    """Returns a list of nameservers listed in /etc/resolv.conf"""
+    with open(DNS_CONF_FILE, 'r') as file_object:
+        file_text = file_object.read()
+    return _parse_dnss(file_text)
+
+
+def _parse_dnss(file_text):
+    dnss = []
+    for line in file_text.splitlines():
+        words = line.strip().split()
+        if words[0] == 'nameserver':
+            dnss.append(words[1])
+    return dnss
 
 
 def _visible_devs(predicate):
