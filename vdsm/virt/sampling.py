@@ -402,6 +402,11 @@ class AdvancedStatsFunction(object):
 
 
 class StatsCache(object):
+    """
+    Cache for bulk stats samples.
+    Provide facilities to retrieve per-vm samples,
+    and the glue code to deal with disappearing per-vm samples.
+    """
 
     _log = logging.getLogger("sampling.StatsCache")
 
@@ -411,15 +416,34 @@ class StatsCache(object):
         self._last_sample_time = 0
 
     def get(self, vmid):
+        """
+        Return the available samples for the given VM, and the
+        interval among them.
+        Interval will be None if one of the sample is not available.
+        If there are not enough samples, or not enough samples
+        for the given VM, return a None triplet.
+        """
         first_batch, last_batch, interval = self._samples.stats()
         if first_batch is None:
             return (None, None, None)
 
         first_sample = first_batch.get(vmid)
         last_sample = last_batch.get(vmid)
+
+        if first_sample is None or last_sample is None:
+            return (None, None, None)
         return (first_sample, last_sample, interval)
 
     def put(self, bulk_stats, monotonic_ts):
+        """
+        Add a new bulk sample to the collection.
+        `monotonic_ts' is the sample time which must be associated with
+        the sample. The sample time must be given from the outside to
+        deal with blocked stats.
+        Discard silently out of order samples, which are assumed to be
+        returned by unblocked stuck calls, to avoid overwrite fresh data
+        with stale one.
+        """
         if monotonic_ts >= self._last_sample_time:
             self._samples.append(bulk_stats)
             self._last_sample_time = monotonic_ts

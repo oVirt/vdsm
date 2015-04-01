@@ -28,6 +28,7 @@ import threading
 
 from vdsm import ipwrapper
 from vdsm import libvirtconnection
+from vdsm import utils
 import virt.sampling as sampling
 
 from testValidation import brokentest, ValidateRunningAsRoot
@@ -301,3 +302,81 @@ class HostStatsThread(TestCaseBase):
             self._samplingDone.wait(3.0)
             self.assertTrue(self._samplingDone.is_set())
             self.assertTrue(self._sampleCount >= self.STOP_SAMPLE)
+
+
+class StatsCacheTests(TestCaseBase):
+
+    FAKE_CLOCK_STEP = 1
+
+    def setUp(self):
+        self.clock = 0
+        with MonkeyPatchScope([(utils, 'monotonic_time',
+                                self.fake_monotonic_time)]):
+            self.cache = sampling.StatsCache()
+
+    def fake_monotonic_time(self):
+        self.clock += self.FAKE_CLOCK_STEP
+        return self.clock
+
+    def test_empty(self):
+        res = self.cache.get('x')  # vmid not relevant
+        self.assertEqual(res, (None, None, None))
+
+    def test_not_enough_samples(self):
+        self._feed_cache((
+            ({'a': 42}, 1),
+        ))
+        res = self.cache.get('a')
+        self.assertEqual(res, (None, None, None))
+
+    def test_get(self):
+        self._feed_cache((
+            ({'a': 'foo'}, 1),
+            ({'a': 'bar'}, 2)
+        ))
+        res = self.cache.get('a')
+        self.assertEqual(res, ('foo', 'bar', self.FAKE_CLOCK_STEP))
+
+    def test_get_missing(self):
+        self._feed_cache((
+            ({'a': 'foo'}, 1),
+            ({'a': 'bar'}, 2)
+        ))
+        res = self.cache.get('b')
+        self.assertEqual(res, (None, None, None))
+
+    def test_put_overwrite(self):
+        self._feed_cache((
+            ({'a': 'foo'}, 1),
+            ({'a': 'bar'}, 2),
+            ({'a': 'baz'}, 3)
+        ))
+        res = self.cache.get('a')
+        self.assertEqual(res, ('bar', 'baz', self.FAKE_CLOCK_STEP))
+
+    def test_put_out_of_order(self):
+        self._feed_cache((
+            ({'a': 'foo'}, 10),
+            ({'a': 'bar'},  0),
+            ({'a': 'baz'}, 30)
+        ))
+        res = self.cache.get('a')
+        self.assertEqual(res, ('foo', 'baz', self.FAKE_CLOCK_STEP))
+        # interval is computed using fake_monotonic_time, not the
+        # given timestamp, which is used only to enforce ordering.
+
+    def test_skip_one_cycle(self):
+        # as unfortunate side effect, there is room only for
+        # last two _global_ samples (not per-vm)
+        self._feed_cache((
+            ({'a': 'foo', 'b': 'foo'}, 1),
+            ({'a': 'bar'}, 2),
+            # here we lost sampling for 'b'
+            ({'a': 'baz', 'b': 'baz'}, 3),
+        ))
+        self.assertEqual(self.cache.get('a'), ('bar', 'baz', 1))
+        self.assertEqual(self.cache.get('b'), (None, None, None))
+
+    def _feed_cache(self, samples):
+        for sample in samples:
+            self.cache.put(*sample)
