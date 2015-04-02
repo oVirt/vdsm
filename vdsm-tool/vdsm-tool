@@ -28,7 +28,18 @@ import textwrap
 import syslog
 import traceback
 
-import vdsm.tool
+########################################################################
+# Hack for vdsm-4.16.x installation
+# To avoid import vdsm-tool verbs from old location (/usr/lib64) on
+# upgrade we need to explicit import vdsm.tool from /usr/lib. Otherwise
+# all tool's verbs are loaded from the old vdsm code during upgrade.
+import imp
+lib_dir = os.path.join(os.path.dirname(os.__file__).
+                       replace('lib64', 'lib'), 'site-packages')
+vdsm = imp.load_module('vdsm', *imp.find_module('vdsm', [lib_dir]))
+vdsm.tool = imp.load_module('vdsm.tool',
+                            *imp.find_module('tool', vdsm.__path__))
+########################################################################
 
 tool_modules = []
 tool_command = {}
