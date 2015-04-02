@@ -31,14 +31,22 @@ def restore_command(*args):
     restore-nets
     Restores the networks to what was previously persisted via vdsm.
     """
-    if len(args) > 1:
+    if len(args) > 2:
         raise ExtraArgsError()
-    restore()
+
+    cmd = [os.path.join(P_VDSM, 'vdsm-restore-net-config')]
+    if '--force' in args:
+        cmd.append('--force')
+    exec_restore(cmd)
 
 
 def restore():
-    rc, out, err = utils.execCmd(
-        [os.path.join(P_VDSM, 'vdsm-restore-net-config'), '--force'], raw=True)
+    cmd = [os.path.join(P_VDSM, 'vdsm-restore-net-config'), '--force']
+    exec_restore(cmd)
+
+
+def exec_restore(cmd):
+    rc, out, err = utils.execCmd(cmd, raw=True)
     sys.stdout.write(out)
     sys.stderr.write(err)
     if rc != 0:
