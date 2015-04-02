@@ -161,6 +161,9 @@ class Domain(object):
 
         self.dom.appendChildWithArgs('name', text=self.conf['vmName'])
         self.dom.appendChildWithArgs('uuid', text=self.conf['vmId'])
+        if 'numOfIoThreads' in self.conf:
+            self.dom.appendChildWithArgs('iothreads',
+                                         text=str(self.conf['numOfIoThreads']))
         memSizeKB = str(int(self.conf.get('memSize', '256')) * 1024)
         self.dom.appendChildWithArgs('memory', text=memSizeKB)
         self.dom.appendChildWithArgs('currentMemory', text=memSizeKB)

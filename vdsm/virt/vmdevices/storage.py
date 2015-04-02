@@ -367,6 +367,10 @@ class Drive(Base):
             elif self.format:
                 driverAttrs['type'] = 'raw'
 
+            if hasattr(self, 'specParams') and (
+               'pinToIoThread' in self.specParams):
+                driverAttrs['iothread'] = str(self.specParams['pinToIoThread'])
+
             driverAttrs['cache'] = self.cache
 
             if (self.propagateErrors == 'on' or

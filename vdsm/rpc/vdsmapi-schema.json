@@ -2450,11 +2450,14 @@
 #
 # @ioTune:  #optional Additional IO tune parameters
 #
+# @pinToIoThread: #optional pin this device to a specific IO Thread
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDiskDeviceSpecParams',
  'data': {'*path': 'str'
-          '*ioTune': 'VmDiskDeviceIoTuneParams'}}
+          '*ioTune': 'VmDiskDeviceIoTuneParams',
+          '*pinToIoThread': 'uint'}}
 
 ##
 # @VmDiskDeviceTuneParams:
@@ -3571,6 +3574,8 @@
 #
 # @serial:                #optional Serial number for the VM.
 #
+# @numOfIoThreads:        #optional The num of iothreads qemu allocates
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDefinition',
@@ -3587,7 +3592,7 @@
           'status': 'VmStatus', 'timeOffset': 'uint',
           'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
           'vmType': 'VmType', '*exitCode': 'int', '*exitMessage': 'str',
-          '*serial': 'str'}}
+          '*serial': 'str', '*numOfIoThreads': 'uint'}}
 
 ##
 # @VmParameters:
