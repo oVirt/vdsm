@@ -142,7 +142,7 @@ reconfigure() {
 }
 
 restore_nets(){
-    "@PYTHON@" "@VDSMDIR@/vdsm-restore-net-config" || return 1
+    "$VDSM_TOOL" restore-nets
     return 0
 }
 
