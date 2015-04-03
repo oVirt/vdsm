@@ -49,6 +49,9 @@ class Detector(object):
         dispatcher.del_channel()
 
         def run():
+            # Wait to detect case where the event loop steals data from
+            # the socket after the dispatcher was removed.
+            time.sleep(0.05)
             try:
                 request = ""
                 while "\n" not in request:
