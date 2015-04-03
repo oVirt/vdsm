@@ -131,7 +131,9 @@ public class ResponseTracker implements Runnable {
     private void remove(ResponseTracking tracking, JsonNode id, JsonRpcResponse response) {
         this.runningCalls.remove(id);
         removeRequestFromTracking(id);
-        tracking.getCall().addResponse(response);
+        if (tracking != null && tracking.getClient() != null) {
+            tracking.getCall().addResponse(response);
+        }
     }
 
     public void processIssue(JsonRpcResponse response) {

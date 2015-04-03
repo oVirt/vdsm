@@ -134,7 +134,11 @@ public class RetryPolicy {
     }
 
     public void setIncomingHeartbeat(boolean isHeartbeat) {
-        this.isIncomingHeartbeat.set(isHeartbeat);
+        if (isHeartbeat && this.incomingHeartbeat != 0) {
+            this.isIncomingHeartbeat.set(isHeartbeat);
+            return;
+        }
+        this.isIncomingHeartbeat.set(false);
     }
 
     public boolean isOutgoingHeartbeat() {
@@ -142,6 +146,15 @@ public class RetryPolicy {
     }
 
     public void setOutgoingHeartbeat(boolean isHeartbeat) {
-        this.isOutgoingHeartbeat.set(isHeartbeat);
+        if (isHeartbeat && this.outgoingHeartbeat != 0) {
+            this.isOutgoingHeartbeat.set(isHeartbeat);
+            return;
+        }
+        this.isOutgoingHeartbeat.set(false);
+    }
+
+    @Override
+    public RetryPolicy clone() throws CloneNotSupportedException {
+        return new RetryPolicy(this.retryTimeOut, this.retryNumber, this.incomingHeartbeat, this.outgoingHeartbeat, this.exceptions);
     }
 }
