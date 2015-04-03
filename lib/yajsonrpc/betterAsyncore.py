@@ -137,6 +137,10 @@ class Dispatcher(asyncore.dispatcher):
             else:
                 raise
 
+    def del_channel(self, map=None):
+        asyncore.dispatcher.del_channel(self, map)
+        self.connected = False
+
 
 class AsyncoreEvent(asyncore.file_dispatcher):
     def __init__(self, map=None):
