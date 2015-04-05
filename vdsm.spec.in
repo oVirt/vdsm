@@ -179,18 +179,31 @@ Requires: libvirt-daemon-driver-qemu
 %endif
 
 %if 0%{?rhel} >= 7
-Requires: libvirt-daemon >= 1.0.2-1
-%endif
+%if 0%{?rhev_build}
+Requires: libvirt-daemon >= 1.2.8-16.el7_1.2
+Requires: libvirt-python >= 1.2.8-7.el7_1.1
+%else
+Requires: libvirt-daemon >= 1.2.8-15.el7
+Requires: libvirt-python
+%endif # rhev_build
+%endif # rhel 7
 
 %if 0%{?rhel} == 6
 Requires: libvirt >= 0.10.2-29.el6_5.4
+Requires: libvirt-python
 %endif
 
-%if 0%{?fedora}
-Requires: libvirt-daemon >= 1.0.2-1
+%if 0%{?fedora} >= 22
+Requires: libvirt-daemon >= 1.2.14
+Requires: libvirt-python
 %endif
 
-Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
+%if 0%{?fedora} && 0%{?fedora} <= 21
+Requires: libvirt-daemon >= 1.2.9
+Requires: libvirt-python
+%endif
+
+Requires: libvirt-lock-sanlock, libvirt-client
 
 # iscsi-intiator versions
 %if 0%{?rhel}
