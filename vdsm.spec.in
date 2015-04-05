@@ -148,7 +148,7 @@ Requires: sudo >= 1.7.3
 Requires: logrotate
 Requires: xz
 Requires: ntp
-Requires: iproute
+Requires: iproute >= 3.10.0
 Requires: python-netaddr
 Requires: python-inotify
 Requires: python-argparse
