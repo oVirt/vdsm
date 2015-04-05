@@ -1862,8 +1862,7 @@ class NetworkTest(TestCaseBase):
                             self.assertRuleDoesNotExist(rule)
                 finally:
                     dhcp.delete_dhclient_leases(
-                        NETWORK_NAME if bridged else right, dhcpv4, dhcpv6,
-                        el6)
+                        NETWORK_NAME if bridged else right, dhcpv4, dhcpv6)
 
     @cleanupNet
     @RequireVethMod
@@ -1903,12 +1902,10 @@ class NetworkTest(TestCaseBase):
             with dnsmasqDhcp(left, el6):
                 try:
                     setup_test_network(dhcp=True)
-                    dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True,
-                                                el6=el6)
+                    dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
                     setup_test_network(dhcp=False)
                 finally:
-                    dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True,
-                                                el6=el6)
+                    dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
 
     @permutations([[(4, 'default')], [(4, 'local')], [(6, None)]])
     @cleanupNet
