@@ -1890,10 +1890,6 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testDhclientLeases(self, (family, dateFormat)):
-        el6 = _system_is_el6()
-        if el6 and family == 6:
-            raise SkipTest("el6's dnsmasq does not support DHCPv6")
-
         dhcpv4_ifaces = set()
         dhcpv6_ifaces = set()
         with vethIf() as (server, client):
