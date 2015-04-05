@@ -191,15 +191,19 @@ Requires: libvirt-daemon-driver-network
 Requires: libvirt-daemon-driver-nwfilter
 Requires: libvirt-daemon-driver-qemu
 %endif
-%if 0%{?rhel}
+
 %if 0%{?rhel} >= 7
 Requires: libvirt-daemon >= 1.2.8-15.el7
-%else
-Requires: libvirt >= 0.10.2-29.el6_5.4
-%endif # rhel 7
-%else # fedora
-Requires: libvirt >= 1.2.9
 %endif
+
+%if 0%{?rhel} == 6
+Requires: libvirt >= 0.10.2-29.el6_5.4
+%endif
+
+%if 0%{?fedora}
+Requires: libvirt-daemon >= 1.2.9
+%endif
+
 Requires: libvirt-python, libvirt-lock-sanlock, libvirt-client
 
 # iscsi-intiator versions
