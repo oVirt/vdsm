@@ -105,18 +105,12 @@ def tearDownModule():
 
 
 @contextmanager
-def dnsmasqDhcp(interface, el6=False):
-    """Manages the life cycle of dnsmasq as a DHCP server.
-
-    'el6' parameter serves to disable DHCPv6 functionality on EL6 where it is
-    not supported, and avoids warning on --bind-interfaces switch elsewhere."""
+def dnsmasqDhcp(interface):
+    """Manages the life cycle of dnsmasq as a DHCP server."""
     dhcpServer = dhcp.Dnsmasq()
     try:
-        dhcpv6_range_from, dhcpv6_range_to = (
-            (None, None) if el6 else (DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO))
         dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO,
-                         dhcpv6_range_from, dhcpv6_range_to, router=IP_GATEWAY,
-                         bind_dynamic=not el6)
+                         DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, router=IP_GATEWAY)
     except dhcp.DhcpError as e:
         raise SkipTest(e)
 
@@ -1786,15 +1780,11 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testSetupNetworksAddDelDhcp(self, (bridged, families)):
-        el6 = _system_is_el6()
-        if el6 and 6 in families:
-            raise SkipTest("el6's dnsmasq does not support DHCPv6")
-
         with vethIf() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             veth.setLinkUp(left)
-            with dnsmasqDhcp(left, el6):
+            with dnsmasqDhcp(left):
                 dhcpv4 = 4 in families
                 dhcpv6 = 6 in families
                 bootproto = 'dhcp' if dhcpv4 else 'none'
@@ -1898,8 +1888,7 @@ class NetworkTest(TestCaseBase):
         with vethIf() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(left)
-            el6 = _system_is_el6()
-            with dnsmasqDhcp(left, el6):
+            with dnsmasqDhcp(left):
                 try:
                     setup_test_network(dhcp=True)
                     dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
@@ -1922,7 +1911,7 @@ class NetworkTest(TestCaseBase):
             veth.setIP(server, IPv6_ADDRESS, IPv6_CIDR, 6)
             veth.setLinkUp(server)
 
-            with dnsmasqDhcp(server, el6):
+            with dnsmasqDhcp(server):
 
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
                     dhclient_runner = dhcp.DhclientRunner(
@@ -2205,7 +2194,7 @@ class NetworkTest(TestCaseBase):
         with vethIf() as (server, client):
             veth.setIP(server, IP_ADDRESS, IP_CIDR)
             veth.setLinkUp(server)
-            with dnsmasqDhcp(server, _system_is_el6()):
+            with dnsmasqDhcp(server):
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                     # Start a non-vdsm owned dhclient for the 'client' iface
                     dhclient_runner = dhcp.DhclientRunner(
