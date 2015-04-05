@@ -355,16 +355,6 @@ class NetworkTest(TestCaseBase):
         for elem in elems:
             self.assertEquals(int(mtu), int(self.vdsm_net.getMtu(elem)))
 
-    def testLegacyBonds(self):
-        if not _system_is_el6():
-            raise SkipTest('legacy bonds are expected only on el6')
-
-        for b in caps._REQUIRED_BONDINGS:
-            # assertBondExists is not used here since we do not care about
-            # whether the bond exists in the running config; we only need it to
-            # be reported to legacy Engines.
-            self.assertIn(b, self.vdsm_net.netinfo.bondings)
-
     def assert_active_slave_exists(self, bondName, nics):
         netinfo = self.vdsm_net.netinfo
         self.assertIn(bondName, netinfo.bondings)
