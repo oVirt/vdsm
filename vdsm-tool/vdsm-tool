@@ -33,7 +33,6 @@ import traceback
 # To avoid import vdsm-tool verbs from old location (/usr/lib64) on
 # upgrade we need to explicit import vdsm.tool from /usr/lib. Otherwise
 # all tool's verbs are loaded from the old vdsm code during upgrade.
-import imp
 lib_dir = os.path.join(os.path.dirname(os.__file__).
                        replace('lib64', 'lib'), 'site-packages')
 vdsm = imp.load_module('vdsm', *imp.find_module('vdsm', [lib_dir]))
