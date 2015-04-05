@@ -36,7 +36,6 @@ from vdsm.netlink import monitor
 from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
 
-import caps
 from network import api, errors, tc
 from network.configurators.ifcfg import Ifcfg
 from network.sourceroute import StaticSourceRoute
@@ -190,12 +189,6 @@ def _cleanup_qos_definition(qos):
                 del attrs['m1']
             if attrs.get('d') == 0:
                 del attrs['d']
-
-
-def _system_is_el6():
-    # REQUIRED_FOR: el6
-    return (caps.getos() in (caps.OSName.RHEVH, caps.OSName.RHEL)
-            and caps.osversion()['version'].startswith('6'))
 
 
 @expandPermutations
@@ -1953,14 +1946,7 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME)
             if bridged:
-                if _system_is_el6():
-                    execCmd([EXT_IFDOWN, NETWORK_NAME])
-                    rc, _, err = execCmd([EXT_BRCTL, 'delbr', NETWORK_NAME])
-                    if rc != 0:
-                        raise self.failureException("failed to delete bridge "
-                                                    "err:%s", err)
-                else:
-                    ipwrapper.linkDel(NETWORK_NAME)
+                ipwrapper.linkDel(NETWORK_NAME)
             else:
                 ipwrapper.linkDel(nic + '.' + VLAN_ID)
 
