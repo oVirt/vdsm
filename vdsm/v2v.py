@@ -95,6 +95,21 @@ class VolumeError(ClientError):
     ''' Error preparing volume '''
 
 
+class NoSuchJob(ClientError):
+    ''' Job not exists in _jobs collection '''
+    err_name = 'V2VNoSuchJob'
+
+
+class JobNotDone(ClientError):
+    ''' Import process still in progress '''
+    err_name = 'V2VJobNotDone'
+
+
+class NoSuchOvf(V2VError):
+    ''' Ovf path is not exists in /var/run/vdsm/v2v/ '''
+    err_name = 'V2VNoSuchOvf'
+
+
 class V2VProcessError(V2VError):
     ''' virt-v2v process had error in execution '''
 
@@ -148,6 +163,42 @@ def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     return {'status': doneCode}
 
 
+def get_converted_vm(job_id):
+    try:
+        job = _get_job(job_id)
+        _validate_job_done(job)
+        ovf = _read_ovf(job_id)
+    except ClientError as e:
+        logging.info('Converted VM error %s', e)
+        return errCode[e.err_name]
+    except V2VError as e:
+        logging.error('Converted VM error %s', e)
+        return errCode[e.err_name]
+    return {'status': doneCode, 'ovf': ovf}
+
+
+def delete_job(job_id):
+    try:
+        job = _get_job(job_id)
+        _validate_job_finished(job)
+        _remove_job(job_id)
+    except ClientError as e:
+        logging.info('Cannot delete job, error: %s', e)
+        return errCode[e.err_name]
+    return {'status': doneCode}
+
+
+def abort_job(job_id):
+    try:
+        job = _get_job(job_id)
+        job.abort()
+        _remove_job(job_id)
+    except ClientError as e:
+        logging.info('Cannot abort job, error: %s', e)
+        return errCode[e.err_name]
+    return {'status': doneCode}
+
+
 def get_jobs_status():
     ret = {}
     with _lock:
@@ -166,6 +217,41 @@ def _add_job(job_id, job):
         if job_id in _jobs:
             raise JobExistsError("Job %r exists" % job_id)
         _jobs[job_id] = job
+
+
+def _get_job(job_id):
+    with _lock:
+        if job_id not in _jobs:
+            raise NoSuchJob("No such job %r" % job_id)
+        return _jobs[job_id]
+
+
+def _remove_job(job_id):
+    with _lock:
+        if job_id not in _jobs:
+            raise NoSuchJob("No such job %r" % job_id)
+        del _jobs[job_id]
+
+
+def _validate_job_done(job):
+    if job.status != STATUS.DONE:
+        raise JobNotDone("Job %r is %s" % (job.id, job.status))
+
+
+def _validate_job_finished(job):
+    if job.status not in (STATUS.DONE, STATUS.FAILED, STATUS.ABORTED):
+        raise JobNotDone("Job %r is %s" % (job.id, job.status))
+
+
+def _read_ovf(job_id):
+    file_name = os.path.join(_V2V_DIR, "%s.ovf" % job_id)
+    try:
+        with open(file_name, 'r') as f:
+            return f.read()
+    except IOError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        raise NoSuchOvf("No such ovf %r" % file_name)
 
 
 def get_storage_domain_path(path):

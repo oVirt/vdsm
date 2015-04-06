@@ -1399,6 +1399,15 @@ class Global(APIBase):
         return v2v.convert_external_vm(uri, username, password, vminfo, jobid,
                                        self._cif.irs)
 
+    def getConvertedVm(self, jobid):
+        return v2v.get_converted_vm(jobid)
+
+    def deleteV2VJob(self, jobid):
+        return v2v.delete_job(jobid)
+
+    def abortV2VJob(self, jobid):
+        return v2v.abort_job(jobid)
+
     # Networking-related functions
     def setupNetworks(self, networks, bondings, options):
         """Add a new network to this vds, replacing an old one."""

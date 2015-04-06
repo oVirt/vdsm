@@ -3843,6 +3843,43 @@
   'vminfo': 'ExternalVmInfo', 'jobid': 'UUID'}}
 
 ##
+# @Host.getConvertedVm:
+#
+# Return OVF string that created via convertExternalVm call
+#
+# @jobid:  UUID to identify the job that created in convertExternalVm
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'getConvertedVm'},
+  'data': {'jobid': 'UUID'}
+  'returns': 'str'}
+
+##
+# @Host.abortV2VJob:
+#
+# Abort V2V importing process
+#
+# @jobid:  UUID to identify the job that created in convertExternalVm
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'abortV2VJob'},
+  'data': {'jobid': 'UUID'}}
+
+##
+# @Host.deleteV2VJob:
+#
+# Delete V2V job when job is done or stop due to errors
+#
+# @jobid:  UUID to identify the job that created in convertExternalVm
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'deleteV2VJob'},
+  'data': {'jobid': 'UUID'}}
+
+##
 # @VMFullInfo:
 #
 # Full information about VM.

@@ -1921,6 +1921,23 @@ class service:
             return response['status']['code'], response['status']['message']
         return 0, 'Job started'
 
+    def getConvertedVm(self, args):
+        validateArgTypes(args, [str], requiredArgsNumber=1)
+        response = self.s.getConvertedVm(args[0])
+        if response['status']['code'] == 0:
+            print(response['ovf'])
+        return response['status']['code'], response['status']['message']
+
+    def abortV2VJob(self, args):
+        validateArgTypes(args, [str], requiredArgsNumber=1)
+        response = self.s.abortV2VJob(args[0])
+        return response['status']['code'], response['status']['message']
+
+    def deleteV2VJob(self, args):
+        validateArgTypes(args, [str], requiredArgsNumber=1)
+        response = self.s.deleteV2VJob(args[0])
+        return response['status']['code'], response['status']['message']
+
 if __name__ == '__main__':
     if _glusterEnabled:
         serv = ge.GlusterService()
@@ -2803,6 +2820,21 @@ if __name__ == '__main__':
                 '                       {"volumeId": "<UUID>",',
                 '                        "imageId":  "<UUID>"}]}\'',
                 '  jobId:   <UUID> identify the job to report back via Stats'
+            )),
+        'getConvertedVm': (
+            serv.getConvertedVm, (
+                '<jobId>',
+                'Return converted VMs OVF'
+            )),
+        'abortV2VJob': (
+            serv.abortV2VJob, (
+                '<jobId>',
+                'Abort running V2V convert process'
+            )),
+        'deleteV2VJob': (
+            serv.deleteV2VJob, (
+                '<jobId>',
+                'Delete V2v job when job is done'
             )),
     }
     if _glusterEnabled:

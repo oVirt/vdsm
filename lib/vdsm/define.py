@@ -150,6 +150,18 @@ errCode = {
     'V2VConnection': {'status': {
         'code': 65,
         'message': 'error connecting to hypervisor'}},
+    'V2VNoSuchJob': {'status': {
+        'code': 66,
+        'message': 'Job Id does not exists'}},
+    'V2VNoSuchOvf': {'status': {
+        'code': 67,
+        'message': 'OVF file does not exists'}},
+    'V2VJobNotDone': {'status': {
+        'code': 68,
+        'message': 'Job status is not done'}},
+    'V2VJobExists': {'status': {
+        'code': 69,
+        'message': 'Job id already exists'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},
