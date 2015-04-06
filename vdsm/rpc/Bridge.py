@@ -27,6 +27,7 @@ from vdsm.netinfo import getDeviceByIP
 
 try:
     import gluster.apiwrapper as gapi
+    import gluster.exception as ge
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
@@ -261,7 +262,13 @@ class DynamicBridge(object):
         else:
             fn = getattr(api, methodName)
             try:
-                result = fn(*methodArgs)
+                if _glusterEnabled:
+                    try:
+                        result = fn(*methodArgs)
+                    except ge.GlusterException as e:
+                        result = e.response()
+                else:
+                        result = fn(*methodArgs)
             except TypeError as e:
                 raise InvalidCall(fn, methodArgs, e)
 
