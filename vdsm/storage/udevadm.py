@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 from vdsm import utils
 
 _UDEVADM = utils.CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
@@ -25,12 +26,14 @@ _UDEVADM = utils.CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
 
 class Error(Exception):
 
-    def __init__(self, rc, err):
+    def __init__(self, rc, out, err):
         self.rc = rc
+        self.out = out
         self.err = err
 
     def __str__(self):
-        return "Process failed with rc=%d err=%r" % (self.rc, self.err)
+        return "Process failed with rc=%d out=%r err=%r" % (
+            self.rc, self.out, self.err)
 
 
 def settle(timeout, exit_if_exists=None):
@@ -45,20 +48,21 @@ def settle(timeout, exit_if_exists=None):
                    and always return immediately.
 
     exit_if_exists Stop waiting if file exists.
-
-    Raise udevadm.Error if process failed.
     """
     args = ["settle", "--timeout=%s" % timeout]
 
     if exit_if_exists:
         args.append("--exit-if-exists=%s" % exit_if_exists)
 
-    _run_command(args)
+    try:
+        _run_command(args)
+    except Error as e:
+        logging.error("%s", e)
 
 
 def _run_command(args):
     cmd = [_UDEVADM.cmd]
     cmd.extend(args)
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = utils.execCmd(cmd, raw=True)
     if rc != 0:
-        raise Error(rc, err)
+        raise Error(rc, out, err)
