@@ -19,13 +19,13 @@
 #
 from __future__ import print_function
 
+import getopt
+import imp
+import logging
 import os
 import sys
-import imp
-import getopt
-import logging
-import textwrap
 import syslog
+import textwrap
 import traceback
 
 ########################################################################
