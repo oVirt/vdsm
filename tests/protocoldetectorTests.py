@@ -44,18 +44,16 @@ class Detector(object):
     def detect(self, data):
         return data.startswith(self.NAME)
 
-    def handle_dispatcher(self, dispatcher, socket_address):
-        client_socket = dispatcher.socket
-        dispatcher.del_channel()
+    def handle_socket(self, client_socket, socket_address):
 
         def run():
-            # Wait to detect case where the event loop steals data from
-            # the socket after the dispatcher was removed.
+            # Wait to detect case where the event loop steals data from the
+            # socket after the socket was removed from the event loop.
             time.sleep(0.05)
             try:
                 request = ""
                 while "\n" not in request:
-                    chunk = dispatcher.recv(1024)
+                    chunk = client_socket.recv(1024)
                     if not chunk:
                         return
                     request += chunk

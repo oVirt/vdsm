@@ -1194,8 +1194,6 @@ class XmlDetector():
         return (data.startswith("PUT /") or data.startswith("GET /") or
                 data.startswith("POST /"))
 
-    def handle_dispatcher(self, dispatcher, socket_address):
-        client_socket = dispatcher.socket
-        dispatcher.del_channel()
+    def handle_socket(self, client_socket, socket_address):
         self.xml_binding.add_socket(client_socket, socket_address)
         self.log.debug("xml over http detected from %s", socket_address)

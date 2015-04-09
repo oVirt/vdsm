@@ -119,7 +119,8 @@ class _ProtocolDetector(object):
                     host,
                     port
                 )
-                detector.handle_dispatcher(dispatcher, (host, port))
+                dispatcher.del_channel()
+                detector.handle_socket(sock, (host, port))
                 break
         else:
             self.log.warning("Unrecognized protocol: %r", data)
@@ -151,9 +152,9 @@ class MultiProtocolAcceptor:
             Given first bytes read from the connection, try to detect the
             protocol. Returns True if protocol is detected.
 
-        def handle_dispatcher(self, client_dispatcher, socket_address):
+        def handle_socket(self, client_socket, socket_address):
             Called after detect() succeeded. The detector owns the socket and
-            is responsible for closing it or changing the implementation.
+            is responsible for closing it.
     """
     log = logging.getLogger("vds.MultiProtocolAcceptor")
 

@@ -273,8 +273,6 @@ class StompDetector():
     def detect(self, data):
         return data.startswith(stomp.COMMANDS)
 
-    def handle_dispatcher(self, dispatcher, socket_address):
-        client_socket = dispatcher.socket
-        dispatcher.del_channel()
+    def handle_socket(self, client_socket, socket_address):
         self.json_binding.add_socket(self._reactor, client_socket)
         self.log.debug("Stomp detected from %s", socket_address)
