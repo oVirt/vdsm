@@ -419,6 +419,7 @@ class AsyncDispatcher(object):
         self._outgoing_heartbeat_in_milis = outgoing
 
     def handle_connect(self, dispatcher):
+        self._outbuf = None
         self._frameHandler.handle_connect(self)
 
     def handle_read(self, dispatcher):
