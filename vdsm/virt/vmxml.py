@@ -178,13 +178,21 @@ class Domain(object):
         <clock offset="variable" adjustment="-3600">
             <timer name="rtc" tickpolicy="catchup">
         </clock>
+
+        for hyperv:
+        <clock offset="variable" adjustment="-3600">
+            <timer name="hypervclock" tickpolicy="catchup">
+        </clock>
         """
+
+        if utils.tobool(self.conf.get('hypervEnable', 'false')):
+            clockName = 'hypervclock'
+        else:
+            clockName = 'rtc'
 
         m = Element('clock', offset='variable',
                     adjustment=str(self.conf.get('timeOffset', 0)))
-        rtc = m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
-        if utils.tobool(self.conf.get('hypervEnable', 'false')):
-            rtc.setAttrs(track='guest')
+        m.appendChildWithArgs('timer', name=clockName, tickpolicy='catchup')
         m.appendChildWithArgs('timer', name='pit', tickpolicy='delay')
 
         if self.arch == caps.Architecture.X86_64:
