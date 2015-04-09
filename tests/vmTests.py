@@ -237,6 +237,8 @@ class TestVm(XMLTestCase):
                   <acpi/>
                   <hyperv>
                          <relaxed state="on"/>
+                         <vapic state="on"/>
+                         <spinlocks retries="8191" state="on"/>
                   </hyperv>
             </features>"""
         conf = {'hypervEnable': 'true'}

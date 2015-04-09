@@ -279,16 +279,16 @@ Requires: systemd >= 197-1.fc18.2
 
 %if 0%{?rhel}
 %if 0%{?rhel} >= 7
-Requires: qemu-kvm%{?rhev_suffix}
-Requires: qemu-img%{?rhev_suffix}
+Requires: qemu-kvm%{?rhev_suffix} >= 1.5.3-60.el7
+Requires: qemu-img%{?rhev_suffix} >= 1.5.3-60.el7
 %else
 Requires: qemu-kvm%{?rhev_suffix} >= 2:0.12.1.2-2.422
 Requires: qemu-img%{?rhev_suffix} >= 2:0.12.1.2-2.422
-%endif
+%endif  # rhel > = 7
 %else
-Requires: qemu-kvm >= 2:0.15.0-4
-Requires: qemu-img >= 2:0.15.0-4
-%endif
+Requires: qemu-kvm >= 2.0.0-1
+Requires: qemu-img >= 2.0.0-1
+%endif # rhel
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %if 0%{?with_gluster}

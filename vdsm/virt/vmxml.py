@@ -303,6 +303,12 @@ class Domain(object):
             hyperv.appendChildWithArgs('relaxed', state='on')
             # turns off an internal Windows watchdog, and by doing so avoids
             # some high load BSODs.
+            hyperv.appendChildWithArgs('vapic', state='on')
+            # magic number taken from recomendations. References:
+            # https://bugzilla.redhat.com/show_bug.cgi?id=1083529#c10
+            # https://bugzilla.redhat.com/show_bug.cgi?id=1053846#c0
+            hyperv.appendChildWithArgs(
+                'spinlocks', state='on', retries='8191')
 
     def appendCpu(self):
         """
