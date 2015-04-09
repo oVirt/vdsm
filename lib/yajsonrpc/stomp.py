@@ -71,6 +71,8 @@ _heartBeatFrame = _HeartBeatFrame()
 
 
 class Frame(object):
+    __slots__ = ("headers", "command", "body")
+
     def __init__(self, command="", headers=None, body=None):
         self.command = command
         if headers is None:
