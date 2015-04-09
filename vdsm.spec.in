@@ -81,6 +81,8 @@ Url:            http://www.ovirt.org/wiki/Vdsm
 Source0:        %{vdsm_name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+%{!?_licensedir:%global license %%doc}
+
 %if !%{fedora_koji_build}
 ExclusiveArch: x86_64 ppc64 ppc64le
 %endif
@@ -1031,7 +1033,8 @@ exit 0
 
 %files
 %defattr(-, root, root, -)
-%doc COPYING README lib/vdsm/vdsm.conf.sample
+%doc README lib/vdsm/vdsm.conf.sample
+%license COPYING
 %if 0%{?with_systemd}
 /usr/lib/systemd/systemd-vdsmd
 %{_unitdir}/vdsmd.service
@@ -1461,7 +1464,7 @@ exit 0
 %if 0%{?with_vhostmd}
 %files hook-vhostmd
 %defattr(-, root, root, -)
-%doc COPYING
+%license COPYING
 %{_sysconfdir}/sudoers.d/50_vdsm_hook_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vhostmd
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vhostmd
@@ -1477,7 +1480,7 @@ exit 0
 
 %files hook-qemucmdline
 %defattr(-, root, root, -)
-%doc COPYING
+%license COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_qemucmdline
 
 %files hook-ethtool-options
@@ -1618,7 +1621,7 @@ exit 0
 
 %files cli
 %defattr(-, root, root, -)
-%doc COPYING
+%license COPYING
 %{_bindir}/vdsClient
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_datadir}/%{vdsm_name}/vdsClientGluster.py*
@@ -1657,12 +1660,12 @@ exit 0
 
 %files bootstrap
 %defattr(-, root, root, -)
-%doc COPYING
+%license COPYING
 %{_datadir}/%{vdsm_bootstrap}
 
 %files reg
 %defattr(-, root, root, -)
-%doc COPYING
+%license COPYING
 %dir %{_sysconfdir}/%{vdsm_reg}
 %dir %{_datadir}/%{vdsm_reg}
 %config(noreplace) %{_sysconfdir}/logrotate.d/vdsm-reg
@@ -1695,14 +1698,14 @@ exit 0
 
 %files hook-faqemu
 %defattr(-, root, root, -)
-%doc COPYING
+%license COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
 
 %if 0%{?with_gluster}
 %files gluster
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}/gluster
-%doc COPYING
+%license COPYING
 %{_datadir}/%{vdsm_name}/gluster/api.py*
 %{_datadir}/%{vdsm_name}/gluster/apiwrapper.py*
 %{_datadir}/%{vdsm_name}/gluster/fstab.py*
