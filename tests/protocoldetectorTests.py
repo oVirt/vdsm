@@ -55,7 +55,10 @@ class Detector(object):
             try:
                 request = ""
                 while "\n" not in request:
-                    request += dispatcher.recv(1024)
+                    chunk = dispatcher.recv(1024)
+                    if not chunk:
+                        return
+                    request += chunk
 
                 response = self.response(request)
                 client_socket.setblocking(1)
