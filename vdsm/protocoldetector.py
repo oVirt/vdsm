@@ -120,6 +120,7 @@ class _ProtocolDetector(object):
                     port
                 )
                 dispatcher.del_channel()
+                sock.setblocking(1)
                 detector.handle_socket(sock, (host, port))
                 break
         else:

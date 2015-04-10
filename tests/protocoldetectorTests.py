@@ -59,7 +59,6 @@ class Detector(object):
                     request += chunk
 
                 response = self.response(request)
-                client_socket.setblocking(1)
                 client_socket.sendall(response)
             finally:
                 client_socket.shutdown(socket.SHUT_RDWR)
