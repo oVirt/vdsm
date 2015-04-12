@@ -49,7 +49,6 @@ class CrossImportsTestCaseShould(TestCaseBase):
         if os.path.exists(src_dir):
             mods = get_mods(src_dir)
         else:
-            mods = get_mods(os.path.join(
-                            get_python_lib(plat_specific=True), pkg_name))
+            mods = get_mods(os.path.join(get_python_lib(), pkg_name))
 
         __import__(pkg_name, fromlist=mods)
