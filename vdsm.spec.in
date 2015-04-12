@@ -240,7 +240,7 @@ Requires: fence-agents-all
 Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
-Requires: selinux-policy-targeted >= selinux-policy-3.13.1-16.el7
+Requires: selinux-policy-targeted >= 3.13.1-16.el7
 %else
 Requires: python
 Requires: device-mapper-multipath >= 0.4.9-75
