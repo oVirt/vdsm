@@ -1,4 +1,3 @@
-./etc/cron.d/vdsm-libvirt-logrotate
 ./etc/cron.hourly/vdsm-logrotate
 ./etc/dhcp/dhclient.d/sourceRoute.sh
 ./etc/init/supervdsmd.conf

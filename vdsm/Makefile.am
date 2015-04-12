@@ -112,7 +112,6 @@ EXTRA_DIST = \
 	vdsm-gencerts.sh.in \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
-	vdsm-libvirt-logrotate \
 	vdsm-logrotate \
 	vdsm-logrotate.conf.in \
 	vdsm-modules-load.d.conf \
@@ -214,13 +213,10 @@ install-data-logrotate:
 	$(INSTALL_SCRIPT) $(srcdir)/vdsm-logrotate \
 		$(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/cron.d
-	$(INSTALL_DATA) $(srcdir)/vdsm-libvirt-logrotate \
-		$(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
 
 uninstall-data-logrotate:
 	$(RM) $(DESTDIR)$(vdsmconfdir)/logrotate/vdsm
 	$(RM) $(DESTDIR)$(sysconfdir)/cron.hourly/vdsm-logrotate
-	$(RM) $(DESTDIR)$(sysconfdir)/cron.d/vdsm-libvirt-logrotate
 
 install-data-mom:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/mom.d

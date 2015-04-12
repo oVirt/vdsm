@@ -158,7 +158,6 @@ dist_vdsmtests_DATA = \
 	tc_filter_show.out \
 	toolTests_empty.conf \
 	toolTests_lconf_ssl.conf \
-	toolTests_libvirt_logrotate.conf \
 	toolTests_libvirtd.conf \
 	toolTests_qemu_sanlock.conf \
 	toolTests_qemu_ssl.conf \

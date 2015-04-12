@@ -295,12 +295,7 @@ class LibvirtModuleConfigureTests(TestCase):
         self.test_env['QCONF'] = self._test_dir + '/qemu.conf'
         self.test_env['LDCONF'] = self._test_dir + '/qemu-sanlock.conf'
         self.test_env['QLCONF'] = self._test_dir + '/libvirtd'
-        self.test_env['LRCONF'] = self._test_dir + '/logrotate-libvirtd'
         self.test_env['QNETWORK'] = 'NON_EXISTENT'
-        self.test_env['LRCONF_EXAMPLE'] = os.path.join(
-            LibvirtModuleConfigureTests.srcPath,
-            'lib/vdsm/tool/libvirtd.logrotate'
-        )
 
         for key, val in self.test_env.items():
             libvirt.FILES[key]['path'] = val
@@ -372,7 +367,6 @@ class LibvirtModuleConfigureTests(TestCase):
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'qemu_ssl'),
-            ('LRCONF', 'libvirt_logrotate')
 
         )
         self.assertEqual(
@@ -384,7 +378,6 @@ class LibvirtModuleConfigureTests(TestCase):
         self._setConfig(
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'empty'),
-            ('LRCONF', 'empty'),
         )
         self.assertEqual(
             libvirt.isconfigured(),
@@ -396,7 +389,6 @@ class LibvirtModuleConfigureTests(TestCase):
             'LCONF', 'empty'),
             ('VDSM_CONF', 'vdsm_ssl'),
             ('QCONF', 'empty'),
-            ('LRCONF', 'empty'),
         )
 
         self.assertEqual(
@@ -416,7 +408,6 @@ class LibvirtModuleConfigureTests(TestCase):
             ('LCONF', 'empty'),
             ('VDSM_CONF', 'vdsm_no_ssl'),
             ('QCONF', 'empty'),
-            ('LRCONF', 'empty'),
         )
         self.assertEquals(
             libvirt.isconfigured(),

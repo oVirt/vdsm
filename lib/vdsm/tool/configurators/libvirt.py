@@ -257,18 +257,6 @@ def _addSection(content, vdsmConfiguration):
                 conff.addEntry(key, val)
 
 
-def _prefixAndPrepend(content, vdsmConfiguration):
-    """
-    Prefix each line with a comment and prepend a section
-    from file path defined by 'content["prependFile"]'
-    """
-    with _openConfig(content['path']) as conf:
-        conf.prefixLines()
-
-        with open(_getFile(content['prependFile'])) as src_conf:
-            conf.prependSection(src_conf.read())
-
-
 def _removeFile(content, vdsmConfiguration):
     """
     delete a file if it exists.
@@ -281,16 +269,6 @@ def _removeFile(content, vdsmConfiguration):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 raise
-
-
-def _unprefixAndRemoveSection(path):
-    """
-    undo changes done by _prefixAndPrepend.
-    """
-    if os.path.exists(path):
-        with _openConfig(path) as conff:
-            conff.removeConf()
-            conff.unprefixLines()
 
 
 def _removeSection(path):
@@ -477,29 +455,6 @@ FILES = {
             }
         ]
     },
-
-    'LRCONF': {
-        'path': os.path.join(
-            constants.SYSCONF_PATH,
-            'logrotate.d/libvirtd',
-        ),
-        'configure': _prefixAndPrepend,
-        'prependFile': 'LRCONF_EXAMPLE',
-        'removeConf': _unprefixAndRemoveSection,
-        'persisted': False,
-    },
-
-    'LRCONF_EXAMPLE': {
-        'path': os.path.join(
-            constants.P_VDSM,
-            'tool',
-            'libvirtd.logrotate',
-        ),
-        'configure': lambda x, y: True,
-        'removeConf': lambda x: True,
-        'persisted': False,
-    },
-
 
     'QNETWORK': {
         'path': os.path.join(

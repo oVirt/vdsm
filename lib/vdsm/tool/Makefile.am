@@ -21,12 +21,6 @@ SUBDIRS=configurators
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-toolfilesdir=$(pkgdatadir)/tool
-
-dist_toolfiles_DATA= \
-    libvirtd.logrotate \
-    $(NULL)
-
 EXTRA_DIST = \
 	load_needed_modules.py.in \
 	validate_ovirt_certs.py.in \
