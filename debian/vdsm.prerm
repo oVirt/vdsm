@@ -22,22 +22,7 @@ case "$1" in
         initctl stop vdsmd || :
         initctl stop supervdsmd || :
 
-        start_conf_section="## beginning of configuration section by vdsm"
-        end_conf_section="## end of configuration section by vdsm"
-        by_vdsm="by vdsm"
-
-        sed -i -e "/${start_conf_section}/,/${end_conf_section}/d" \
-                    -e "/${by_vdsm}/d" \
-               /etc/default/libvirt-bin \
-               /etc/libvirt/libvirtd.conf \
-               /etc/libvirt/qemu.conf \
-               /etc/logrotate.d/libvirtd \
-               /etc/sysctl.conf \
-               /etc/default/sanlock
-
-        # Restoring backuped logrotate.d/libvirtd
-        sed -i -e 's/# VDSM backup//' /etc/logrotate.d/libvirtd
-        saslpasswd2 -p -a libvirt -d vdsm@ovirt
+	vdsm-tool remove-config
     ;;
 
     upgrade)
