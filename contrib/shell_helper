@@ -49,7 +49,7 @@ vdsm_functional() {
 
 vdsm_check() {
     pushd $VDSM_DIR
-    ./autogen.sh --system && ./configure && make check
+    ./autogen.sh --system && make check
     popd
 }
 
@@ -60,7 +60,7 @@ vdsm_smoke() {
 vdsm_remove() {
     sudo yum erase -y vdsm\*
     pushd $VDSM_DIR
-    git clean -fdx
+    make distclean
     popd
 }
 
@@ -84,7 +84,7 @@ vdsm_downgrade() {
 
 vdsm_build() {
     pushd $VDSM_DIR
-    ./autogen.sh --system && ./configure && make && NOSE_EXCLUDE=.* make rpm
+    ./autogen.sh --system && NOSE_EXCLUDE=.* make rpm
     popd
 }
 
