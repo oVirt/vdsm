@@ -170,9 +170,8 @@ def get_device_params(device_name):
 def detach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
 
-    iommu_group = device_params['iommu_group']
-
     if CAPABILITY_TO_XML_ATTR[device_params['capability']] == 'pci':
+        iommu_group = device_params['iommu_group']
         supervdsm.getProxy().appropriateIommuGroup(iommu_group)
         libvirt_device.detachFlags(None)
 
@@ -182,9 +181,8 @@ def detach_detachable(device_name):
 def reattach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
 
-    iommu_group = device_params['iommu_group']
-
     if CAPABILITY_TO_XML_ATTR[device_params['capability']] == 'pci':
+        iommu_group = device_params['iommu_group']
         supervdsm.getProxy().rmAppropriateIommuGroup(iommu_group)
         libvirt_device.reAttach()
 
