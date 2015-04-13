@@ -854,11 +854,6 @@ fi
 
 %post
 %{_bindir}/vdsm-tool configure --module sanlock --force >/dev/null
-# update the vdsm "secret" password for libvirt
-if [ -f /etc/pki/vdsm/keys/libvirt_password ]; then
-    @SASLPASSWD2_PATH@ -p -a libvirt vdsm@ovirt < \
-            /etc/pki/vdsm/keys/libvirt_password
-fi
 
 # After vdsm install we should create the logs files.
 # In the install session we create it but since we use
@@ -913,8 +908,6 @@ then
 
     /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
         /etc/sysctl.conf
-
-    %{_bindir}/vdsm-tool remove-saslpasswd
 
     if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
         /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
@@ -1379,11 +1372,11 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/configurators/__init__*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/certificates.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/libvirt.py*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sanlock.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/sebool.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/multipath.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_volume_chains.py*
-%{python_sitelib}/%{vdsm_name}/tool/passwd.py*
 %{python_sitelib}/%{vdsm_name}/tool/restore_nets.py*
 %{python_sitelib}/%{vdsm_name}/tool/service.py*
 %{python_sitelib}/%{vdsm_name}/tool/transient.py*

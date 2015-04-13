@@ -39,7 +39,6 @@ dist_vdsmtool_PYTHON = \
 	nwfilter.py \
 	configfile.py \
 	configurator.py \
-	passwd.py \
 	restore_nets.py \
 	service.py \
 	transient.py \

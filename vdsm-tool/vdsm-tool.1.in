@@ -86,13 +86,6 @@ Options for the \fInwfilter\fP module:
 Defines network filters on libvirt.
 .RE
 .TP
-Options for the \fIpasswd\fP module:
-.RS
-.TP
-.B set-saslpasswd
-Sets a VDSM password for libvirt connections.
-.RE
-.TP
 Options for the \fIrestore_nets\fP module:
 .RS
 .TP

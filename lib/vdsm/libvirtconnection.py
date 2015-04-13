@@ -26,7 +26,8 @@ import os
 import signal
 
 import libvirt
-from . import constants, utils
+from . import utils
+from .tool.configurators import passwd
 
 log = logging.getLogger()
 
@@ -75,11 +76,6 @@ def stop_event_loop():
 
 __connections = {}
 __connectionLock = threading.Lock()
-
-
-def _read_password():
-    with open(constants.P_VDSM_LIBVIRT_PASSWD) as passwd_file:
-        return passwd_file.readline().rstrip("\n")
 
 
 def open_connection(uri=None, username=None, passwd=None):
@@ -160,9 +156,8 @@ def get(target=None, killOnFailure=True):
         conn = __connections.get(id(target))
         if not conn:
             log.debug('trying to connect libvirt')
-            passwd = _read_password()
-            conn = open_connection('qemu:///system', constants.SASL_USERNAME,
-                                   passwd)
+            conn = open_connection('qemu:///system', passwd.SASL_USERNAME,
+                                   passwd.libvirt_password())
             __connections[id(target)] = conn
 
             setattr(conn, 'pingLibvirt', getattr(conn, 'getLibVersion'))
