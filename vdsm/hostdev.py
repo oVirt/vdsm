@@ -24,8 +24,9 @@ import hooks
 from vdsm import libvirtconnection
 import supervdsm
 
-_DETACH_REQUIRING_CAPS = ('usb_device', 'pci')
-_UDEV_REQUIRING_CAPS = ('pci')
+CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
+                          'scsi': 'scsi',
+                          'usb_device': 'usb'}
 
 
 def _name_to_pci_path(device_name):
@@ -171,10 +172,8 @@ def detach_detachable(device_name):
 
     iommu_group = device_params['iommu_group']
 
-    if device_params['capability'] in _UDEV_REQUIRING_CAPS:
+    if CAPABILITY_TO_XML_ATTR[device_params['capability']] == 'pci':
         supervdsm.getProxy().appropriateIommuGroup(iommu_group)
-
-    if device_params['capability'] in _DETACH_REQUIRING_CAPS:
         libvirt_device.detachFlags(None)
 
     return device_params
@@ -185,10 +184,8 @@ def reattach_detachable(device_name):
 
     iommu_group = device_params['iommu_group']
 
-    if device_params['capability'] in _UDEV_REQUIRING_CAPS:
+    if CAPABILITY_TO_XML_ATTR[device_params['capability']] == 'pci':
         supervdsm.getProxy().rmAppropriateIommuGroup(iommu_group)
-
-    if device_params['capability'] in _DETACH_REQUIRING_CAPS:
         libvirt_device.reAttach()
 
 
