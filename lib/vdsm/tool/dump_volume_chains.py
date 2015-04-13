@@ -202,6 +202,11 @@ def _get_sp_uuid(server):
 
 
 def _print_volume_chains(image_chains, volumes_info):
+    if not image_chains:
+        print()
+        _print_line("(no images found)")
+        print()
+        return
     print()
     print('Images volume chains (base volume first)')
     for img_uuid, vol_chain in image_chains.iteritems():
