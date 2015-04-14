@@ -123,7 +123,7 @@ def mkIsoFs(vmId, files, volumeName=None):
         _decodeFilesIntoDir(files, dirname)
         isopath = _getFileName(vmId, files)
 
-        command = [EXT_MKISOFS, '-R', '-o', isopath]
+        command = [EXT_MKISOFS, '-R', '-J', '-o', isopath]
         if volumeName is not None:
             command.extend(['-V', volumeName])
         command.extend([dirname])
