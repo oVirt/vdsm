@@ -188,12 +188,8 @@ class Reactor(object):
         self._is_running = False
         self._wakeupEvent = AsyncoreEvent(self._map)
 
-    def add_dispatcher(self, disp):
-        disp.add_channel(self._map)
-        disp._map = self._map
-
-    def remove_dispatcher(self, disp):
-        disp.del_channel(self._map)
+    def create_dispatcher(self, sock, impl=None):
+        return Dispatcher(impl=impl, sock=sock, map=self._map)
 
     def process_requests(self):
         self._is_running = True

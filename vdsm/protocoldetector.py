@@ -23,10 +23,7 @@ import socket
 
 from vdsm.utils import traceback
 import vdsm.infra.filecontrol as filecontrol
-from yajsonrpc.betterAsyncore import (
-    Dispatcher,
-    Reactor,
-)
+from yajsonrpc.betterAsyncore import Reactor
 
 from vdsm.utils import monotonic_time
 from vdsm.sslutils import SSLHandshakeDispatcher
@@ -163,37 +160,20 @@ class MultiProtocolAcceptor:
         sock = _create_socket(host, port)
         self._host, self._port = sock.getsockname()
         self.log.info("Listening at %s:%d", self._host, self._port)
-        self._acceptor = Dispatcher(
-            _AcceptorImpl(
-                self.handle_accept
-            ),
-            sock,
-        )
+        self._acceptor = self._reactor.create_dispatcher(
+            sock, _AcceptorImpl(self.handle_accept))
         self._acceptor.listen(5)
-        self._reactor.add_dispatcher(self._acceptor)
         self._handlers = []
         self.TIMEOUT = ssl_hanshake_timeout
 
     def handle_accept(self, client):
         if self._sslctx is None:
-            self._reactor.add_dispatcher(
-                self._register_protocol_detector(
-                    Dispatcher(
-                        sock=client,
-                    ),
-                ),
-            )
+            dispatcher = self._reactor.create_dispatcher(client)
+            self._register_protocol_detector(dispatcher)
         else:
-            self._reactor.add_dispatcher(
-                Dispatcher(
-                    SSLHandshakeDispatcher(
-                        self._sslctx,
-                        self._register_protocol_detector,
-                        self.TIMEOUT,
-                    ),
-                    client,
-                ),
-            )
+            dispatcher = SSLHandshakeDispatcher(
+                self._sslctx, self._register_protocol_detector, self.TIMEOUT)
+            self._reactor.create_dispatcher(client, dispatcher)
 
     def _register_protocol_detector(self, dispatcher):
         dispatcher.switch_implementation(
