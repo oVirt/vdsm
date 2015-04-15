@@ -116,12 +116,12 @@ class SourceThread(threading.Thread):
         self.remoteHost, _ = hostPort.rsplit(':', 1)
 
         if config.getboolean('vars', 'ssl'):
-            self.destServer = vdscli.connect(
+            self._destServer = vdscli.connect(
                 hostPort,
                 useSSL=True,
                 TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
         else:
-            self.destServer = kaxmlrpclib.Server('http://' + hostPort)
+            self._destServer = kaxmlrpclib.Server('http://' + hostPort)
         self.log.debug('Destination server is: ' + hostPort)
         try:
             self.log.debug('Initiating connection with destination')
@@ -183,7 +183,7 @@ class SourceThread(threading.Thread):
         self.log.error(message)
         if not self.hibernating:
             try:
-                self.destServer.destroy(self._vm.id)
+                self._destServer.destroy(self._vm.id)
             except Exception:
                 self.log.exception("Failed to destroy remote VM")
         # if the guest was stopped before migration, we need to cont it
@@ -305,7 +305,7 @@ class SourceThread(threading.Thread):
             # destination. In some cases some expensive operations can cause
             # the migration to get cancelled right after the transfer started.
             destCreateStartTime = time.time()
-            result = self.destServer.migrationCreate(self._machineParams)
+            result = self._destServer.migrationCreate(self._machineParams)
             destCreationTime = time.time() - destCreateStartTime
             startTime += destCreationTime
             self.log.info('Creation of destination VM took: %d seconds',
