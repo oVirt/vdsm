@@ -18,13 +18,13 @@
 # while enabling compositing instead of inheritance.
 import asyncore
 import socket
-import types
 from errno import EWOULDBLOCK
 
 from vdsm.infra.eventfd import EventFD
 
 
 class Dispatcher(asyncore.dispatcher):
+
     def __init__(self, impl=None, sock=None, map=None):
         # This has to be done before the super initialization because
         # dispatcher implements __getattr__.
@@ -33,44 +33,38 @@ class Dispatcher(asyncore.dispatcher):
         if impl is not None:
             self.switch_implementation(impl)
 
-    def _bind_implementation(self):
-        for attr_name in (
-            "handle_accept",
-            "handle_close",
-            "handle_connect",
-            "handle_error",
-            "handle_expt",
-            "handle_read",
-            "handle_write",
-            "readable",
-            "writable",
-        ):
-            method = getattr(
-                self.__impl,
-                attr_name,
-                getattr(
-                    asyncore.dispatcher,
-                    attr_name
-                )
-            )
+    def handle_connect(self):
+        self._delegate_call("handle_connect")
 
-            setattr(
-                self,
-                attr_name,
-                types.MethodType(
-                    method,
-                    self,
-                    Dispatcher,
-                )
-            )
+    def handle_close(self):
+        self._delegate_call("handle_close")
+
+    def handle_accept(self):
+        self._delegate_call("handle_accept")
+
+    def handle_expt(self):
+        self._delegate_call("handle_expt")
+
+    def handle_error(self):
+        self._delegate_call("handle_error")
+
+    def readable(self):
+        return self._delegate_call("readable")
+
+    def writable(self):
+        return self._delegate_call("writable")
+
+    def handle_read(self):
+        self._delegate_call("handle_read")
+
+    def handle_write(self):
+        self._delegate_call("handle_write")
 
     def switch_implementation(self, impl):
         self.__impl = impl
 
         if hasattr(impl, 'init'):
             impl.init(self)
-
-        self._bind_implementation()
 
     def next_check_interval(self):
         """
@@ -139,7 +133,14 @@ class Dispatcher(asyncore.dispatcher):
 
     def del_channel(self, map=None):
         asyncore.dispatcher.del_channel(self, map)
+        self.__impl = None
         self.connected = False
+
+    def _delegate_call(self, name):
+        if hasattr(self.__impl, name):
+            return getattr(self.__impl, name)(self)
+        else:
+            return getattr(asyncore.dispatcher, name)(self)
 
 
 class AsyncoreEvent(asyncore.file_dispatcher):
