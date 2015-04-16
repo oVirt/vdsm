@@ -1387,41 +1387,47 @@
 #
 # Gluster geo-replication pair information.
 #
-# @host:               Host of the local volume
+# @host:                    Host of the local volume
 #
-# @hostUuid:           Uuid of host for local volume brick
+# @hostUuid:                Uuid of host for local volume brick
 #
-# @brickName:          Local volume brick involved in session
+# @brickName:               Local volume brick involved in session
 #
-# @remoteHost:         The remote host involved in the session
+# @remoteHost:              The remote host involved in the session
 #
-# @remoteUserName:     Name of user in remote Machine
+# @remoteUserName:          Name of user in remote Machine
 #
-# @status:             Status of geo replication
+# @status:                  Status of geo replication
 #
-# @checkpointStatus:   Status of checkpoint
+# @crawlStatus:             Crawl status
 #
-# @crawlStatus:        Crawl status
+# @timeZone:                Time zone of local node
 #
-# @filesSynced:        #optional Number of files that are synced
+# @lastSynced:              Time of last sync
 #
-# @filesPending:       #optional Number of files that are pending to be synced
+# @entry:                   Nos of entry operations pending
 #
-# @bytesPending:       #optional Number of bytes that are pending to be synced
+# @data:                    Nos of data operations pending
 #
-# @deletesPending:     #optional Number of deletes that are pending
+# @meta:                    Nos of meta operations pending
 #
-# @filesSkipped:       #optional Number of files skipped
+# @failures:                Nos of failures
+#
+# @checkpointTime           Checkpoint Set time
+#
+# @checkpointCompletionTime Checkpoint completion time
+#
+# @checkpointCompleted      If checkpoint is completed or not
 #
 # Since: 4.17.0
 ##
 {'type': 'geoRepPairInfo',
  'data': {'host': 'str', 'hostUuid': 'UUID', 'brickName': 'str',
           'remoteUserName': 'str', 'remoteHost': 'str',
-          'status': 'str', 'checkpointStatus': 'str',
-          'crawlStatus': 'str', '*filesSynced': 'str', '*filesPending': 'str',
-          '*bytesPending': 'str', '*deletesPending': 'str',
-          '*filesSkipped': 'str'}}
+          'status': 'str', 'timeZone': 'str', 'lastSynced': 'int',
+          'crawlStatus': 'str', 'entry': 'str', 'data': 'str',
+          'meta': 'str', 'failures': 'str', 'checkpointTime': 'int'
+          'checkpointCompleted': 'str', 'checkpointCompletionTime': 'int'}}
 
 ##
 # @geoRepSessionInfo:

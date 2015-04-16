@@ -1163,7 +1163,8 @@ class GlusterCliTests(TestCaseBase):
         with open("glusterGeoRepStatus.xml") as f:
             out = f.read()
         tree = etree.fromstring(out)
-        status = gcli._parseGeoRepStatus(tree, detail=True)
+        gcli._TIME_ZONE = 'IST'
+        status = gcli._parseGeoRepStatus(tree)
         self.assertEquals(status, glusterTestData.GLUSTER_GEOREP_STATUS)
 
     def test_parseVolumeGeoRepConfig(self):
