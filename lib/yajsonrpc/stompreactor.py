@@ -91,6 +91,12 @@ class StompAdapterImpl(object):
     def queue_frame(self, frame):
         self._outbox.append(frame)
 
+    def remove_subscriptions(self):
+        for sub in self._sub_ids.values():
+            self._remove_subscription(sub)
+
+        self._sub_ids.clear()
+
     def _cmd_connect(self, dispatcher, frame):
         self.log.info("Processing CONNECT request")
         version = frame.headers.get(stomp.Headers.ACCEPT_VERSION, None)
@@ -158,6 +164,10 @@ class StompAdapterImpl(object):
             self.log.debug("No subscription for %s id",
                            sub_id)
             return
+        else:
+            self._remove_subscription(subscription)
+
+    def _remove_subscription(self, subscription):
         subs = self._sub_dests[subscription.destination]
         if len(subs) == 1:
             del self._sub_dests[subscription.destination]
@@ -256,6 +266,8 @@ class _StompConnection(object):
 
     def close(self):
         self._dispatcher.close()
+        if hasattr(self._async_client, 'remove_subscriptions'):
+            self._async_client.remove_subscriptions()
 
     def get_local_address(self):
         return self._socket.getsockname()[0]
@@ -476,6 +488,7 @@ class ClientRpcTransportAdapter(object):
 
     def close(self):
         self._sub.unsubscribe()
+        self._client.close()
 
 
 def StompRpcClient(stomp_client, request_queue, response_queue):

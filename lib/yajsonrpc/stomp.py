@@ -412,6 +412,9 @@ class AsyncDispatcher(object):
     def _milis(self):
         return int(round(monotonic_time() * 1000))
 
+    def handle_close(self, dispatcher):
+        self.connection.close()
+
 
 class AsyncClient(object):
     log = logging.getLogger("yajsonrpc.protocols.stomp.AsyncClient")
