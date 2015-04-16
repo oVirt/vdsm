@@ -449,8 +449,7 @@ class GlusterApi(object):
             volumeName,
             remoteHost,
             remoteVolumeName,
-            remoteUserName,
-            detail=True
+            remoteUserName
         )
         return {'sessionStatus': status}
 

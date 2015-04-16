@@ -15,14 +15,17 @@
             <master_brick>/root/b1_vol1</master_brick>
 	    <slave_user>root</slave_user>
             <slave>192.168.122.145::vol2</slave>
+	    <slave_node>192.168.122.145</slave_node>
             <status>Stopped</status>
-            <checkpoint_status>N/A</checkpoint_status>
             <crawl_status>N/A</crawl_status>
-            <files_syncd>0</files_syncd>
-            <files_pending>0</files_pending>
-            <bytes_pending>0</bytes_pending>
-            <deletes_pending>0</deletes_pending>
-            <files_skipped>0</files_skipped>
+            <last_synced>2014-12-12 05:18:23</last_synced>
+            <entry>0</entry>
+            <data>0</data>
+            <meta>0</meta>
+            <failures>0</failures>
+	    <checkpoint_time>2014-12-12 05:17:23</checkpoint_time>
+	    <checkpoint_completion_time>2014-12-12 05:18:20</checkpoint_completion_time>
+	    <checkpoint_completed>Yes</checkpoint_completed>
           </pair>
         </session>
       </sessions>

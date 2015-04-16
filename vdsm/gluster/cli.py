@@ -1122,7 +1122,7 @@ def volumeGeoRepSessionStop(volumeName, remoteHost, remoteVolumeName,
                                                                err=e.err)
 
 
-def _parseGeoRepStatus(tree, detail=False):
+def _parseGeoRepStatus(tree):
     """
     Returns:
     {volume-name: [{sessionKey: 'key to identify the session',
@@ -1133,13 +1133,17 @@ def _parseGeoRepStatus(tree, detail=False):
                               remoteHost: 'slave',
                               status: 'status'
                               remoteUserName: 'root'
-                              checkpointStatus: 'checkpoint status'
+                              timeZone: 'nodes time zone'
                               crawlStatus: 'crawlStatus'
-                              *filesSynced: 'nos of files syncd'
-                              *filesPending: 'nos of files Pending'
-                              *bytesPending: 'nos of bytes pending'
-                              *deletesPending: 'Nos of deletes pending'
-                              *filesSkipped: 'Nos of files skipped'}]...
+                              lastSynced: 'last synced time'
+                              entry: 'nos of entry operations pending'
+                              data: 'nos of data operations pending'
+                              meta: 'nos of meta operations pending'
+                              failures: 'nos of failures'
+                              checkpointTime: 'checkpoint set time'
+                              checkpointCompletionTime: 'checkpoint completion
+                                                         time'
+                              checkpointCompleted: 'yes/no'}]...
                ]....
     }
     """
@@ -1159,23 +1163,37 @@ def _parseGeoRepStatus(tree, detail=False):
                 pairDetail['hostUuid'] = pair.find(
                     'master_node_uuid').text
                 pairDetail['brickName'] = pair.find('master_brick').text
-                pairDetail['remoteHost'] = pair.find(
-                    'slave').text.split("::")[0]
+                pairDetail['remoteHost'] = pair.find('slave_node').text
                 pairDetail['remoteUserName'] = pair.find('slave_user').text
                 pairDetail['status'] = pair.find('status').text
-                pairDetail['checkpointStatus'] = pair.find(
-                    'checkpoint_status').text
                 pairDetail['crawlStatus'] = pair.find('crawl_status').text
-                if detail:
-                    pairDetail['filesSynced'] = pair.find('files_syncd').text
-                    pairDetail['filesPending'] = pair.find(
-                        'files_pending').text
-                    pairDetail['bytesPending'] = pair.find(
-                        'bytes_pending').text
-                    pairDetail['deletesPending'] = pair.find(
-                        'deletes_pending').text
-                    pairDetail['filesSkipped'] = pair.find(
-                        'files_skipped').text
+                pairDetail['timeZone'] = _TIME_ZONE
+                pairDetail['lastSynced'] = pair.find('last_synced').text
+                if pairDetail['lastSynced'] != 'N/A':
+                    pairDetail['lastSynced'] = calendar.timegm(
+                        time.strptime(pairDetail['lastSynced'],
+                                      "%Y-%m-%d %H:%M:%S"))
+
+                pairDetail['checkpointTime'] = pair.find(
+                    'checkpoint_time').text
+                if pairDetail['checkpointTime'] != 'N/A':
+                    pairDetail['checkpointTime'] = calendar.timegm(
+                        time.strptime(pairDetail['checkpointTime'],
+                                      "%Y-%m-%d %H:%M:%S"))
+
+                pairDetail['checkpointCompletionTime'] = pair.find(
+                    'checkpoint_completion_time').text
+                if pairDetail['checkpointCompletionTime'] != 'N/A':
+                    pairDetail['checkpointCompletionTime'] = calendar.timegm(
+                        time.strptime(pairDetail['checkpointCompletionTime'],
+                                      "%Y-%m-%d %H:%M:%S"))
+
+                pairDetail['entry'] = pair.find('entry').text
+                pairDetail['data'] = pair.find('data').text
+                pairDetail['meta'] = pair.find('meta').text
+                pairDetail['failures'] = pair.find('failures').text
+                pairDetail['checkpointCompleted'] = pair.find(
+                    'checkpoint_completed').text
                 pairs.append(pairDetail)
             sessionDetail['bricks'] = pairs
             sessions.append(sessionDetail)
@@ -1186,8 +1204,7 @@ def _parseGeoRepStatus(tree, detail=False):
 
 @makePublic
 def volumeGeoRepStatus(volumeName=None, remoteHost=None,
-                       remoteVolumeName=None, remoteUserName=None,
-                       detail=False):
+                       remoteVolumeName=None, remoteUserName=None):
     if remoteUserName:
         userAtHost = "%s@%s" % (remoteUserName, remoteHost)
     else:
@@ -1198,15 +1215,13 @@ def volumeGeoRepStatus(volumeName=None, remoteHost=None,
     if remoteHost and remoteVolumeName:
         command.append("%s::%s" % (userAtHost, remoteVolumeName))
     command.append("status")
-    if detail:
-        command.append("detail")
 
     try:
         xmltree = _execGlusterXml(command)
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterGeoRepStatusFailedException(rc=e.rc, err=e.err)
     try:
-        return _parseGeoRepStatus(xmltree, detail)
+        return _parseGeoRepStatus(xmltree)
     except _etreeExceptions:
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
