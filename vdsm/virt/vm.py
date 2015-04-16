@@ -3166,13 +3166,13 @@ class Vm(object):
         # Patches have been submitted to avoid this behavior, the virtual
         # and apparent sizes will be returned by the qemu process and
         # through the libvirt blockInfo call.
-        currentSize = qemuimg.info(drive.path, "qcow2")['virtualsize']
+        curVirtualSize = qemuimg.info(drive.path, "qcow2")['virtualsize']
 
-        if currentSize > newSizeBytes:
+        if curVirtualSize > newSizeBytes:
             self.log.error(
                 "Requested extension size %s for disk %s is smaller "
                 "than the current size %s", newSizeBytes, drive.name,
-                currentSize)
+                curVirtualSize)
             return errCode['resizeErr']
 
         # Uncommit the current volume size (mark as in transaction)
@@ -3190,11 +3190,13 @@ class Vm(object):
         finally:
             # In all cases we want to try and fix the size in the metadata.
             # Same as above, this is what libvirt would do, see BZ#963881
-            sizeRoundedBytes = qemuimg.info(drive.path, "qcow2")['virtualsize']
+            # Note that newVirtualSize may be larger than the requested size
+            # because of rounding in qemu.
+            newVirtualSize = qemuimg.info(drive.path, "qcow2")['virtualsize']
             self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
-                                drive.volumeID, sizeRoundedBytes)
+                                drive.volumeID, newVirtualSize)
 
-        return {'status': doneCode, 'size': str(sizeRoundedBytes)}
+        return {'status': doneCode, 'size': str(newVirtualSize)}
 
     def _diskSizeExtendRaw(self, drive, newSizeBytes):
         # Picking up the volume size extension
