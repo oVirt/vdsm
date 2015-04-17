@@ -306,7 +306,7 @@ class SSLHandshakeDispatcher(object):
         dispatcher.socket = client_socket
 
     def next_check_interval(self):
-        return min(self._give_up_at - monotonic_time(), 0)
+        return max(self._give_up_at - monotonic_time(), 0)
 
     def readable(self, dispatcher):
         if self.has_expired():
