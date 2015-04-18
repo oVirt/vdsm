@@ -85,7 +85,7 @@ class _ProtocolDetector(object):
         self._give_up_at = monotonic_time() + timeout
 
     def readable(self, dispatcher):
-        if monotonic_time() > self._give_up_at:
+        if self.has_expired():
             self.log.debug("Timed out while waiting for data")
             dispatcher.close()
             return False
@@ -124,6 +124,9 @@ class _ProtocolDetector(object):
         else:
             self.log.warning("Unrecognized protocol: %r", data)
             dispatcher.close()
+
+    def has_expired(self):
+        return monotonic_time() >= self._give_up_at
 
 
 class MultiProtocolAcceptor:

@@ -319,7 +319,7 @@ class SSLHandshakeDispatcher(object):
         return False
 
     def has_expired(self):
-        return monotonic_time() > self._give_up_at
+        return monotonic_time() >= self._give_up_at
 
     def handle_read(self, dispatcher):
         if not self._has_been_set_up:
