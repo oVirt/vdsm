@@ -1,7 +1,5 @@
 import os.path
 import ConfigParser
-import logging
-import sys
 
 from mom.Policy.Policy import Policy
 from mom.Entity import Entity
