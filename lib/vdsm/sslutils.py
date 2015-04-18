@@ -315,6 +315,9 @@ class SSLHandshakeDispatcher(object):
 
         return True
 
+    def writable(self, dispatcher):
+        return False
+
     def has_expired(self):
         return monotonic_time() > self._give_up_at
 

@@ -60,6 +60,9 @@ class _AcceptorImpl(object):
     def readable(self, dispatcher):
         return True
 
+    def writable(self, dispatcher):
+        return False
+
     def handle_accept(self, dispatcher):
         try:
             client, _ = dispatcher.socket.accept()
@@ -83,6 +86,9 @@ class _ProtocolDetector(object):
 
     def readable(self, dispatcher):
         return True
+
+    def writable(self, dispatcher):
+        return False
 
     def next_check_interval(self):
         return max(self._give_up_at - monotonic_time(), 0)
