@@ -85,6 +85,10 @@ class _ProtocolDetector(object):
         self._give_up_at = monotonic_time() + timeout
 
     def readable(self, dispatcher):
+        if monotonic_time() > self._give_up_at:
+            self.log.debug("Timed out while waiting for data")
+            dispatcher.close()
+            return False
         return True
 
     def writable(self, dispatcher):
@@ -105,10 +109,6 @@ class _ProtocolDetector(object):
 
         if len(data) < self._required_size:
             return
-
-        if monotonic_time() > self._give_up_at:
-            self.log.debug("Timed out while waiting for data")
-            dispatcher.close()
 
         for detector in self._detectors:
             if detector.detect(data):
