@@ -902,9 +902,6 @@ class Vm(object):
     def _getExtendCandidates(self):
         ret = []
 
-        # FIXME: mergeCandidates should be a dictionary of candidate volumes
-        # once libvirt starts reporting watermark information for all volumes.
-        mergeCandidates = {}
         for drive in self._devices[hwclass.DISK]:
             if not drive.chunked:
                 continue
@@ -918,13 +915,6 @@ class Vm(object):
 
             ret.append((drive, drive.volumeID, capacity, alloc, physical))
 
-            try:
-                mergeCandidate = mergeCandidates[drive.imageID]
-            except KeyError:
-                continue
-            ret.append((drive, mergeCandidate['volumeID'],
-                        mergeCandidate['capacity'], mergeCandidate['alloc'],
-                        mergeCandidate['physical']))
         return ret
 
     def _shouldExtendVolume(self, drive, volumeID, capacity, alloc, physical):
