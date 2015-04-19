@@ -3040,13 +3040,11 @@ class Vm(object):
             try:
                 self._startDriveReplication(srcDrive, dstDiskCopy)
             except Exception:
-                self.log.exception("Unable to start the replication"
-                                   " for %s to %s",
-                                   srcDrive.name, dstDiskCopy)
                 self.cif.teardownVolumePath(dstDiskCopy)
                 raise
         except Exception:
-            self.log.exception("Cannot complete the disk replication process")
+            self.log.exception("Unable to start replication for %s to %s",
+                               srcDrive.name, dstDiskCopy)
             self._delDiskReplica(srcDrive)
             return errCode['replicaErr']
 
