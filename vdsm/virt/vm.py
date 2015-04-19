@@ -67,6 +67,7 @@ from . import vmexitreason
 from . import vmstats
 from . import vmstatus
 from .vmdevices import hwclass
+from .vmdevices.storage import DISK_TYPE
 from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
 from . import vmxml
@@ -3004,6 +3005,24 @@ class Vm(object):
 
         drive.diskReplicate = replica
 
+    def _updateDiskReplica(self, drive):
+        """
+        Update the persisted copy of drive replica.
+        """
+        if not drive.isDiskReplicationInProgress():
+            raise RuntimeError("Disk '%s' does not have an ongoing "
+                               "replication" % drive.name)
+
+        for device in self.conf["devices"]:
+            if (device['type'] == hwclass.DISK
+                    and device.get("name") == drive.name):
+                with self._confLock:
+                    device['diskReplicate'] = drive.diskReplicate
+                self.saveState()
+                break
+        else:
+            raise LookupError("No such drive: '%s'" % drive.name)
+
     def _delDiskReplica(self, drive):
         """
         This utility method is the inverse of _setDiskReplica, look at the
@@ -3036,10 +3055,13 @@ class Vm(object):
 
         replica = dstDisk.copy()
 
-        # The device entry is enforced because stricly required by
-        # prepareVolumePath
-        replica['device'] = drive.device
+        replica['device'] = 'disk'
+        replica['format'] = 'cow'
+        replica.setdefault('cache', drive.cache)
+        replica.setdefault('propagateErrors', drive.propagateErrors)
 
+        # First mark the disk as replicated, so if we crash after the volume is
+        # prepared, we clean up properly in diskReplicateFinish.
         try:
             self._setDiskReplica(drive, replica)
         except Exception:
@@ -3049,8 +3071,15 @@ class Vm(object):
 
         try:
             replica['path'] = self.cif.prepareVolumePath(replica)
-
             try:
+                # Add information required during replication, and persist it
+                # so migration can continue after vdsm crash.
+                if utils.isBlockDevice(replica['path']):
+                    replica['diskType'] = DISK_TYPE.BLOCK
+                else:
+                    replica['diskType'] = DISK_TYPE.FILE
+                self._updateDiskReplica(drive)
+
                 self._startDriveReplication(drive, replica)
             except Exception:
                 self.cif.teardownVolumePath(replica)
