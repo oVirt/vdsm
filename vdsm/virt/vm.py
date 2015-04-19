@@ -2981,123 +2981,122 @@ class Vm(object):
                 (snapFlags & libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
                     == libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)}
 
-    def _setDiskReplica(self, srcDrive, dstDisk):
+    def _setDiskReplica(self, drive, replica):
         """
         This utility method is used to set the disk replication information
         both in the live object used by vdsm and the vm configuration
         dictionary that is stored on disk (so that the information is not
         lost across restarts).
         """
-        if srcDrive.isDiskReplicationInProgress():
+        if drive.isDiskReplicationInProgress():
             raise RuntimeError("Disk '%s' already has an ongoing "
-                               "replication" % srcDrive.name)
+                               "replication" % drive.name)
 
         for device in self.conf["devices"]:
             if (device['type'] == hwclass.DISK
-                    and device.get("name") == srcDrive.name):
+                    and device.get("name") == drive.name):
                 with self._confLock:
-                    device['diskReplicate'] = dstDisk
+                    device['diskReplicate'] = replica
                 self.saveState()
                 break
         else:
-            raise LookupError("No such drive: '%s'" % srcDrive.name)
+            raise LookupError("No such drive: '%s'" % drive.name)
 
-        srcDrive.diskReplicate = dstDisk
+        drive.diskReplicate = replica
 
-    def _delDiskReplica(self, srcDrive):
+    def _delDiskReplica(self, drive):
         """
         This utility method is the inverse of _setDiskReplica, look at the
         _setDiskReplica description for more information.
         """
         for device in self.conf["devices"]:
             if (device['type'] == hwclass.DISK
-                    and device.get("name") == srcDrive.name):
+                    and device.get("name") == drive.name):
                 with self._confLock:
                     del device['diskReplicate']
                 self.saveState()
                 break
         else:
-            raise LookupError("No such drive: '%s'" % srcDrive.name)
+            raise LookupError("No such drive: '%s'" % drive.name)
 
-        del srcDrive.diskReplicate
+        del drive.diskReplicate
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
-            srcDrive = self._findDriveByUUIDs(srcDisk)
+            drive = self._findDriveByUUIDs(srcDisk)
         except LookupError:
             self.log.error("Unable to find the disk for '%s'", srcDisk)
             return errCode['imageErr']
 
-        if srcDrive.hasVolumeLeases:
+        if drive.hasVolumeLeases:
             return errCode['noimpl']
 
-        if srcDrive.transientDisk:
+        if drive.transientDisk:
             return errCode['transientErr']
 
-        dstDiskCopy = dstDisk.copy()
+        replica = dstDisk.copy()
 
         # The device entry is enforced because stricly required by
         # prepareVolumePath
-        dstDiskCopy['device'] = srcDrive.device
+        replica['device'] = drive.device
 
         try:
-            self._setDiskReplica(srcDrive, dstDisk)
+            self._setDiskReplica(drive, replica)
         except Exception:
             self.log.error("Unable to set the replication for disk '%s' with "
-                           "destination '%s'", srcDrive.name, dstDisk)
+                           "destination '%s'", drive.name, replica)
             return errCode['replicaErr']
 
         try:
-            dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
+            replica['path'] = self.cif.prepareVolumePath(replica)
 
             try:
-                self._startDriveReplication(srcDrive, dstDiskCopy)
+                self._startDriveReplication(drive, replica)
             except Exception:
-                self.cif.teardownVolumePath(dstDiskCopy)
+                self.cif.teardownVolumePath(replica)
                 raise
         except Exception:
             self.log.exception("Unable to start replication for %s to %s",
-                               srcDrive.name, dstDiskCopy)
-            self._delDiskReplica(srcDrive)
+                               drive.name, replica)
+            self._delDiskReplica(drive)
             return errCode['replicaErr']
 
-        if srcDrive.chunked:
+        if drive.chunked:
             try:
-                capacity, alloc, physical = self._dom.blockInfo(
-                    srcDrive.path, 0)
-                self.extendDriveVolume(srcDrive, srcDrive.volumeID, physical,
+                capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+                self.extendDriveVolume(drive, drive.volumeID, physical,
                                        capacity)
             except Exception:
                 self.log.exception("Initial extension request failed for %s",
-                                   srcDrive.name)
+                                   drive.name)
 
         return {'status': doneCode}
 
     def diskReplicateFinish(self, srcDisk, dstDisk):
         try:
-            srcDrive = self._findDriveByUUIDs(srcDisk)
+            drive = self._findDriveByUUIDs(srcDisk)
         except LookupError:
             return errCode['imageErr']
 
-        if srcDrive.hasVolumeLeases:
+        if drive.hasVolumeLeases:
             return errCode['noimpl']
 
-        if srcDrive.transientDisk:
+        if drive.transientDisk:
             return errCode['transientErr']
 
-        if not srcDrive.isDiskReplicationInProgress():
+        if not drive.isDiskReplicationInProgress():
             return errCode['replicaErr']
 
         # Looking for the replication blockJob info (checking its presence)
-        blkJobInfo = self._dom.blockJobInfo(srcDrive.name, 0)
+        blkJobInfo = self._dom.blockJobInfo(drive.name, 0)
 
         if (not isinstance(blkJobInfo, dict)
                 or 'cur' not in blkJobInfo or 'end' not in blkJobInfo):
             self.log.error("Replication job not found for disk %s (%s)",
-                           srcDrive.name, srcDisk)
+                           drive.name, srcDisk)
 
             # Making sure that we don't have any stale information
-            self._delDiskReplica(srcDrive)
+            self._delDiskReplica(drive)
             return errCode['replicaErr']
 
         # Checking if we reached the replication mode ("mirroring" in libvirt
@@ -3110,7 +3109,7 @@ class Vm(object):
         # Updating the destination disk device and name, the device is used by
         # prepareVolumePath (required to fill the new information as the path)
         # and the name is used by updateDriveParameters.
-        dstDiskCopy.update({'device': srcDrive.device, 'name': srcDrive.name})
+        dstDiskCopy.update({'device': drive.device, 'name': drive.name})
         dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
 
         if srcDisk != dstDisk:
@@ -3128,16 +3127,16 @@ class Vm(object):
             self.log.debug("Stopping the disk replication remaining on the "
                            "source drive: %s", dstDisk)
             blockJobFlags = 0
-            diskToTeardown = srcDrive.diskReplicate
+            diskToTeardown = drive.diskReplicate
 
         try:
             # Stopping the replication
-            self._dom.blockJobAbort(srcDrive.name, blockJobFlags)
+            self._dom.blockJobAbort(drive.name, blockJobFlags)
         except Exception:
             self.log.exception("Unable to stop the replication for"
-                               " the drive: %s", srcDrive.name)
+                               " the drive: %s", drive.name)
             try:
-                self.cif.teardownVolumePath(srcDrive.diskReplicate)
+                self.cif.teardownVolumePath(drive.diskReplicate)
             except Exception:
                 # There is nothing we can do at this point other than logging
                 self.log.exception("Unable to teardown the replication "
@@ -3152,7 +3151,7 @@ class Vm(object):
                                    diskToTeardown)
             self.updateDriveParameters(dstDiskCopy)
         finally:
-            self._delDiskReplica(srcDrive)
+            self._delDiskReplica(drive)
             self.startDisksStatsCollection()
 
         return {'status': doneCode}
