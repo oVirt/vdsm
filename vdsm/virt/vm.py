@@ -3015,18 +3015,18 @@ class Vm(object):
         if srcDrive.transientDisk:
             return errCode['transientErr']
 
+        dstDiskCopy = dstDisk.copy()
+
+        # The device entry is enforced because stricly required by
+        # prepareVolumePath
+        dstDiskCopy['device'] = srcDrive.device
+
         try:
             self._setDiskReplica(srcDrive, dstDisk)
         except Exception:
             self.log.error("Unable to set the replication for disk '%s' with "
                            "destination '%s'", srcDrive.name, dstDisk)
             return errCode['replicaErr']
-
-        dstDiskCopy = dstDisk.copy()
-
-        # The device entry is enforced because stricly required by
-        # prepareVolumePath
-        dstDiskCopy['device'] = srcDrive.device
 
         try:
             dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
