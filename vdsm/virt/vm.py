@@ -3031,18 +3031,8 @@ class Vm(object):
         try:
             dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
 
-            flags = (libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY |
-                     libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
-                     libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW)
-
-            # Recent libvirt requires a flag for preserving the type of
-            # block-based disk.  See https://bugzilla.redhat.com/1176673.
-            if srcDrive.blockDev:
-                flags |= getattr(libvirt, "VIR_DOMAIN_BLOCK_REBASE_COPY_DEV",
-                                 0)
             try:
-                self._dom.blockRebase(srcDrive.name, dstDiskCopy['path'], 0,
-                                      flags)
+                self._startDriveReplication(srcDrive, dstDiskCopy)
             except Exception:
                 self.log.exception("Unable to start the replication"
                                    " for %s to %s",
@@ -3149,6 +3139,18 @@ class Vm(object):
             self.startDisksStatsCollection()
 
         return {'status': doneCode}
+
+    def _startDriveReplication(self, drive, replica):
+        flags = (libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY |
+                 libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
+                 libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW)
+
+        # Recent libvirt requires a flag for preserving the type of
+        # block-based disk.  See https://bugzilla.redhat.com/1176673.
+        if drive.blockDev:
+            flags |= getattr(libvirt, "VIR_DOMAIN_BLOCK_REBASE_COPY_DEV", 0)
+
+        self._dom.blockRebase(drive.name, replica['path'], 0, flags)
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         # Apparently this is what libvirt would do anyway, except that
