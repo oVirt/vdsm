@@ -194,6 +194,13 @@ def getPassword(string):
     return ret
 
 
+def parse_dict(dict_str):
+    d = ast.literal_eval(dict_str)
+    if type(d) != dict:
+        raise ValueError("Invalid option %r" % dict_str)
+    return d
+
+
 class service:
     def __init__(self):
         self.useSSL = False
@@ -1902,6 +1909,17 @@ class service:
 
         return status['status']['code'], status['status']['message']
 
+    def convertExternalVm(self, args):
+        validateArgTypes(args, [str, str, str, parse_dict, str],
+                         requiredArgsNumber=5)
+        uri, username, auth, vminfo, jobid = args
+        d = parseArgs(auth)
+        passwd = getAuthFromArgs(d, auth)
+        response = self.s.convertExternalVm(uri, username, passwd, vminfo,
+                                            jobid)
+        if response['status']['code'] != 0:
+            return response['status']['code'], response['status']['message']
+        return 0, 'Job started'
 
 if __name__ == '__main__':
     if _glusterEnabled:
@@ -2765,6 +2783,26 @@ if __name__ == '__main__':
             serv.getExternalVMs, (
                 '<uri> <username> <password>',
                 'get VMs from external hypervisor'
+            )),
+        'convertExternalVm': (
+            serv.convertExternalVm, (
+                '<uri> <username> <password|auth> <vminfo> <jobId>',
+                'Import and convert VM from external system',
+                'Argumemnts:',
+                '  uri:      uri of external system (vmware etc)',
+                '  username: login name for given uri',
+                '  auth:     password for given uri, can be: ',
+                '            plain text password or auth=file:path ',
+                '            or auth=env:name or auth=pass:password',
+                '  vminfo:   Python dictionary, parameter for import:',
+                '            \'{"vmName": "name",',
+                '             "poolId":, "<UUID>",',
+                '             "domainId": "<UUID",',
+                '             "disks": [{"volumeId": "<UUID>",',
+                '                       "imageId":  "<UUID>"},',
+                '                       {"volumeId": "<UUID>",',
+                '                        "imageId":  "<UUID>"}]}\'',
+                '  jobId:   <UUID> identify the job to report back via Stats'
             )),
     }
     if _glusterEnabled:
