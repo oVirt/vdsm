@@ -3037,7 +3037,7 @@ class Vm(object):
 
         # The device entry is enforced because stricly required by
         # prepareVolumePath
-        dstDiskCopy.update({'device': srcDrive.device})
+        dstDiskCopy['device'] = srcDrive.device
 
         try:
             dstDiskCopy['path'] = self.cif.prepareVolumePath(dstDiskCopy)
