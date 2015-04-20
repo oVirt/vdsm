@@ -25,7 +25,7 @@ from testlib import permutations, expandPermutations
 
 from vdsm import constants
 from vdsm import utils
-from virt.vmdevices.storage import Drive
+from virt.vmdevices.storage import Drive, DISK_TYPE
 
 
 class DriveXMLTests(XMLTestCase):
@@ -126,6 +126,95 @@ class DriveXMLTests(XMLTestCase):
         # Patch to skip the block device checking.
         drive._blockDev = is_block_device
         self.assertXMLEqual(drive.getXML().toxml(), xml)
+
+
+class DriveReplicaXML(XMLTestCase):
+
+    # Replica XML should match Drive XML using same diskType, cache and
+    # propagateErrors settings.  Only the source and driver elements are used
+    # by libvirt.
+    # https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainBlockCopy
+
+    def test_block_to_block(self):
+        conf = drive_config(
+            format='cow',
+            diskReplicate=replica(DISK_TYPE.BLOCK),
+        )
+        # source: type=block
+        # driver: io=native
+        xml = """
+            <disk device="disk" snapshot="no" type="block">
+                <source dev="/path/to/replica"/>
+                <driver cache="none" error_policy="stop"
+                        io="native" name="qemu" type="qcow2"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=True)
+
+    def test_block_to_file(self):
+        conf = drive_config(
+            format='cow',
+            diskReplicate=replica(DISK_TYPE.FILE),
+        )
+        # source: type=file
+        # driver: io=threads
+        xml = """
+            <disk device="disk" snapshot="no" type="file">
+                <source file="/path/to/replica"/>
+                <driver cache="none" error_policy="stop"
+                        io="threads" name="qemu" type="qcow2"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=True)
+
+    def test_file_to_file(self):
+        conf = drive_config(
+            format='cow',
+            diskReplicate=replica(DISK_TYPE.FILE),
+        )
+        # source: type=file
+        # driver: io=threads
+        xml = """
+            <disk device="disk" snapshot="no" type="file">
+                <source file="/path/to/replica"/>
+                <driver cache="none" error_policy="stop"
+                        io="threads" name="qemu" type="qcow2"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=False)
+
+    def test_file_to_block(self):
+        conf = drive_config(
+            format='cow',
+            diskReplicate=replica(DISK_TYPE.BLOCK),
+        )
+        # source: type=block
+        # driver: io=native
+        xml = """
+            <disk device="disk" snapshot="no" type="block">
+                <source dev="/path/to/replica"/>
+                <driver cache="none" error_policy="stop"
+                        io="native" name="qemu" type="qcow2"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=False)
+
+    def check(self, vm_conf, device_conf, xml, is_block_device=False):
+        drive = Drive(vm_conf, self.log, **device_conf)
+        # Patch to skip the block device checking.
+        drive._blockDev = is_block_device
+        self.assertXMLEqual(drive.getReplicaXML().toxml(), xml)
+
+
+def replica(diskType):
+    return {
+        "cache": "none",
+        "device": "disk",
+        "diskType": diskType,
+        "format": "cow",
+        "path": "/path/to/replica",
+        "propagateErrors": "off",
+    }
 
 
 @expandPermutations

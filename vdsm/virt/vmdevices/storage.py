@@ -336,7 +336,7 @@ class Drive(Base):
                                       ['device', 'address', 'sgio'])
         diskelem.setAttrs(snapshot='no')
 
-        diskelem.appendChild(self._getSourceXML())
+        diskelem.appendChild(_getSourceXML(self))
         diskelem.appendChild(self._getTargetXML())
 
         if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
@@ -356,66 +356,29 @@ class Drive(Base):
             diskelem.appendChildWithArgs('boot', order=self.bootOrder)
 
         if self.device == 'disk' or self.device == 'lun':
-            diskelem.appendChild(self._getDriverXML())
+            diskelem.appendChild(_getDriverXML(self))
 
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
             diskelem.appendChild(self._getIotuneXML())
 
         return diskelem
 
-    def _getSourceXML(self):
-        source = vmxml.Element('source')
-        if self.diskType == DISK_TYPE.BLOCK:
-            source.setAttrs(dev=self.path)
-        elif self.diskType == DISK_TYPE.NETWORK:
-            source.setAttrs(protocol=self.volumeInfo['protocol'],
-                            name=self.volumeInfo['path'])
-            hostAttrs = {'name': self.volumeInfo['volfileServer'],
-                         'port': self.volumeInfo['volPort'],
-                         'transport': self.volumeInfo['volTransport']}
-            source.appendChildWithArgs('host', **hostAttrs)
-        elif self.diskType == DISK_TYPE.FILE:
-            source.setAttrs(file=self.path)
-            if self.device == 'cdrom' or self.device == 'floppy':
-                source.setAttrs(startupPolicy='optional')
-        else:
-            raise RuntimeError("Unsupported diskType %r", self.diskType)
-        return source
+    def getReplicaXML(self):
+        disk = vmxml.Element(
+            "disk",
+            device=self.diskReplicate["device"],
+            snapshot="no",
+            type=self.diskReplicate["diskType"],
+        )
+        disk.appendChild(_getSourceXML(self.diskReplicate))
+        disk.appendChild(_getDriverXML(self.diskReplicate))
+        return disk
 
     def _getTargetXML(self):
         target = vmxml.Element('target', dev=self.name)
         if self.iface:
             target.setAttrs(bus=self.iface)
         return target
-
-    def _getDriverXML(self):
-        driver = vmxml.Element('driver')
-        driverAttrs = {'name': 'qemu'}
-
-        if self.blockDev:
-            driverAttrs['io'] = 'native'
-        else:
-            driverAttrs['io'] = 'threads'
-
-        if self.format == 'cow':
-            driverAttrs['type'] = 'qcow2'
-        elif self.format:
-            driverAttrs['type'] = 'raw'
-
-        if hasattr(self, 'specParams') and (
-           'pinToIoThread' in self.specParams):
-            driverAttrs['iothread'] = str(self.specParams['pinToIoThread'])
-
-        driverAttrs['cache'] = self.cache
-
-        if (self.propagateErrors == 'on' or
-                utils.tobool(self.propagateErrors)):
-            driverAttrs['error_policy'] = 'enospace'
-        else:
-            driverAttrs['error_policy'] = 'stop'
-
-        driver.setAttrs(**driverAttrs)
-        return driver
 
     def _getIotuneXML(self):
         iotune = vmxml.Element('iotune')
@@ -432,3 +395,55 @@ class Drive(Base):
 
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
             self._validateIoTuneParams(self.specParams['ioTune'])
+
+
+def _getSourceXML(drive):
+    source = vmxml.Element('source')
+    if drive["diskType"] == DISK_TYPE.BLOCK:
+        source.setAttrs(dev=drive["path"])
+    elif drive["diskType"] == DISK_TYPE.NETWORK:
+        info = drive["volumeInfo"]
+        source.setAttrs(protocol=info['protocol'],
+                        name=info['path'])
+        hostAttrs = {'name': info['volfileServer'],
+                     'port': info['volPort'],
+                     'transport': info['volTransport']}
+        source.appendChildWithArgs('host', **hostAttrs)
+    elif drive["diskType"] == DISK_TYPE.FILE:
+        source.setAttrs(file=drive["path"])
+        if drive["device"] == 'cdrom' or drive["device"] == 'floppy':
+            source.setAttrs(startupPolicy='optional')
+    else:
+        raise RuntimeError("Unsupported diskType %r", drive["diskType"])
+    return source
+
+
+def _getDriverXML(drive):
+    driver = vmxml.Element('driver')
+    driverAttrs = {'name': 'qemu'}
+
+    if drive['diskType'] == DISK_TYPE.BLOCK:
+        driverAttrs['io'] = 'native'
+    else:
+        driverAttrs['io'] = 'threads'
+
+    if drive['format'] == 'cow':
+        driverAttrs['type'] = 'qcow2'
+    elif drive['format']:
+        driverAttrs['type'] = 'raw'
+
+    try:
+        driverAttrs['iothread'] = str(drive['specParams']['pinToIoThread'])
+    except KeyError:
+        pass
+
+    driverAttrs['cache'] = drive['cache']
+
+    if (drive['propagateErrors'] == 'on' or
+            utils.tobool(drive['propagateErrors'])):
+        driverAttrs['error_policy'] = 'enospace'
+    else:
+        driverAttrs['error_policy'] = 'stop'
+
+    driver.setAttrs(**driverAttrs)
+    return driver
