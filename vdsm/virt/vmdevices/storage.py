@@ -342,10 +342,9 @@ class Drive(Base):
                          'transport': self.volumeInfo['volTransport']}
             source.appendChildWithArgs('host', **hostAttrs)
         elif self.diskType == DISK_TYPE.FILE:
-            sourceAttrs = {DISK_TYPE.FILE: self.path}
+            source.setAttrs(file=self.path)
             if self.device == 'cdrom' or self.device == 'floppy':
-                sourceAttrs['startupPolicy'] = 'optional'
-            source.setAttrs(**sourceAttrs)
+                source.setAttrs(startupPolicy='optional')
         else:
             raise RuntimeError("Unsupported diskType %r", self.diskType)
 
