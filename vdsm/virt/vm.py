@@ -3080,7 +3080,7 @@ class Vm(object):
                     replica['diskType'] = DISK_TYPE.FILE
                 self._updateDiskReplica(drive)
 
-                self._startDriveReplication(drive, replica)
+                self._startDriveReplication(drive)
             except Exception:
                 self.cif.teardownVolumePath(replica)
                 raise
@@ -3185,17 +3185,14 @@ class Vm(object):
 
         return {'status': doneCode}
 
-    def _startDriveReplication(self, drive, replica):
-        flags = (libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY |
-                 libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
-                 libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW)
+    def _startDriveReplication(self, drive):
+        destxml = drive.getReplicaXML().toprettyxml()
+        self.log.debug("Replicating drive %s to %s", drive.name, destxml)
 
-        # Recent libvirt requires a flag for preserving the type of
-        # block-based disk.  See https://bugzilla.redhat.com/1176673.
-        if drive.blockDev:
-            flags |= getattr(libvirt, "VIR_DOMAIN_BLOCK_REBASE_COPY_DEV", 0)
+        flags = (libvirt.VIR_DOMAIN_BLOCK_COPY_SHALLOW |
+                 libvirt.VIR_DOMAIN_BLOCK_COPY_REUSE_EXT)
 
-        self._dom.blockRebase(drive.name, replica['path'], 0, flags)
+        self._dom.blockCopy(drive.name, destxml, flags=flags)
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         # Apparently this is what libvirt would do anyway, except that
