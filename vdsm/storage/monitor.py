@@ -169,7 +169,7 @@ class MonitorThread(object):
         self.stopEvent = threading.Event()
         self.domain = None
         self.sdUUID = sdUUID
-        self.hostId = hostId
+        self.hostId = int(hostId)
         self.interval = interval
         self.nextStatus = Status(actual=False)
         self.status = FrozenStatus(self.nextStatus)
