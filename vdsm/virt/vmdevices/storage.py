@@ -332,6 +332,35 @@ class Drive(Base):
         </disk>
         """
         self._validate()
+        diskelem = self.createXmlElem('disk', self.diskType,
+                                      ['device', 'address', 'sgio'])
+        diskelem.setAttrs(snapshot='no')
+
+        diskelem.appendChild(self._getSourceXML())
+        diskelem.appendChild(self._getTargetXML())
+
+        if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
+            diskelem.appendChildWithArgs('shareable')
+        if hasattr(self, 'readonly') and utils.tobool(self.readonly):
+            diskelem.appendChildWithArgs('readonly')
+        elif self.device == 'floppy' and not hasattr(self, 'readonly'):
+            # floppies are used only internally for sysprep, so
+            # they are readonly unless explicitely stated otherwise
+            diskelem.appendChildWithArgs('readonly')
+        if hasattr(self, 'serial'):
+            diskelem.appendChildWithArgs('serial', text=self.serial)
+        if hasattr(self, 'bootOrder'):
+            diskelem.appendChildWithArgs('boot', order=self.bootOrder)
+
+        if self.device == 'disk' or self.device == 'lun':
+            diskelem.appendChild(self._getDriverXML())
+
+        if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
+            diskelem.appendChild(self._getIotuneXML())
+
+        return diskelem
+
+    def _getSourceXML(self):
         source = vmxml.Element('source')
         if self.diskType == DISK_TYPE.BLOCK:
             source.setAttrs(dev=self.path)
@@ -348,61 +377,45 @@ class Drive(Base):
                 source.setAttrs(startupPolicy='optional')
         else:
             raise RuntimeError("Unsupported diskType %r", self.diskType)
+        return source
 
-        diskelem = self.createXmlElem('disk', self.diskType,
-                                      ['device', 'address', 'sgio'])
-        diskelem.setAttrs(snapshot='no')
-        diskelem.appendChild(source)
-
-        targetAttrs = {'dev': self.name}
+    def _getTargetXML(self):
+        target = vmxml.Element('target', dev=self.name)
         if self.iface:
-            targetAttrs['bus'] = self.iface
-        diskelem.appendChildWithArgs('target', **targetAttrs)
+            target.setAttrs(bus=self.iface)
+        return target
 
-        if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
-            diskelem.appendChildWithArgs('shareable')
-        if hasattr(self, 'readonly') and utils.tobool(self.readonly):
-            diskelem.appendChildWithArgs('readonly')
-        elif self.device == 'floppy' and not hasattr(self, 'readonly'):
-            # floppies are used only internally for sysprep, so
-            # they are readonly unless explicitely stated otherwise
-            diskelem.appendChildWithArgs('readonly')
-        if hasattr(self, 'serial'):
-            diskelem.appendChildWithArgs('serial', text=self.serial)
-        if hasattr(self, 'bootOrder'):
-            diskelem.appendChildWithArgs('boot', order=self.bootOrder)
+    def _getDriverXML(self):
+        driver = vmxml.Element('driver')
+        driverAttrs = {'name': 'qemu'}
+        if self.blockDev:
+            driverAttrs['io'] = 'native'
+        else:
+            driverAttrs['io'] = 'threads'
+        if self.format == 'cow':
+            driverAttrs['type'] = 'qcow2'
+        elif self.format:
+            driverAttrs['type'] = 'raw'
 
-        if self.device == 'disk' or self.device == 'lun':
-            driverAttrs = {'name': 'qemu'}
-            if self.blockDev:
-                driverAttrs['io'] = 'native'
-            else:
-                driverAttrs['io'] = 'threads'
-            if self.format == 'cow':
-                driverAttrs['type'] = 'qcow2'
-            elif self.format:
-                driverAttrs['type'] = 'raw'
+        if hasattr(self, 'specParams') and (
+           'pinToIoThread' in self.specParams):
+            driverAttrs['iothread'] = str(self.specParams['pinToIoThread'])
 
-            if hasattr(self, 'specParams') and (
-               'pinToIoThread' in self.specParams):
-                driverAttrs['iothread'] = str(self.specParams['pinToIoThread'])
+        driverAttrs['cache'] = self.cache
 
-            driverAttrs['cache'] = self.cache
+        if (self.propagateErrors == 'on' or
+                utils.tobool(self.propagateErrors)):
+            driverAttrs['error_policy'] = 'enospace'
+        else:
+            driverAttrs['error_policy'] = 'stop'
+        driver.setAttrs(**driverAttrs)
+        return driver
 
-            if (self.propagateErrors == 'on' or
-                    utils.tobool(self.propagateErrors)):
-                driverAttrs['error_policy'] = 'enospace'
-            else:
-                driverAttrs['error_policy'] = 'stop'
-            diskelem.appendChildWithArgs('driver', **driverAttrs)
-
-        if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
-            iotune = vmxml.Element('iotune')
-            for key, value in self.specParams['ioTune'].iteritems():
-                iotune.appendChildWithArgs(key, text=str(value))
-            diskelem.appendChild(iotune)
-
-        return diskelem
+    def _getIotuneXML(self):
+        iotune = vmxml.Element('iotune')
+        for key, value in self.specParams['ioTune'].iteritems():
+            iotune.appendChildWithArgs(key, text=str(value))
+        return iotune
 
     def _validate(self):
         if self.device != 'lun' and hasattr(self, 'sgio'):
