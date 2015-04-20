@@ -331,6 +331,7 @@ class Drive(Base):
           <serial>54-a672-23e5b495a9ea</serial>
         </disk>
         """
+        self._validate()
         source = vmxml.Element('source')
         if self.diskType == DISK_TYPE.BLOCK:
             source.setAttrs(dev=self.path)
@@ -371,12 +372,6 @@ class Drive(Base):
         if hasattr(self, 'bootOrder'):
             diskelem.appendChildWithArgs('boot', order=self.bootOrder)
 
-        if self.device != 'lun' and hasattr(self, 'sgio'):
-            raise ValueError("sgio attribute can be set only for LUN devices")
-
-        if self.device == 'lun' and self.format == 'cow':
-            raise ValueError("cow format is not supported for LUN devices")
-
         if self.device == 'disk' or self.device == 'lun':
             driverAttrs = {'name': 'qemu'}
             if self.blockDev:
@@ -402,10 +397,19 @@ class Drive(Base):
             diskelem.appendChildWithArgs('driver', **driverAttrs)
 
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
-            self._validateIoTuneParams(self.specParams['ioTune'])
             iotune = vmxml.Element('iotune')
             for key, value in self.specParams['ioTune'].iteritems():
                 iotune.appendChildWithArgs(key, text=str(value))
             diskelem.appendChild(iotune)
 
         return diskelem
+
+    def _validate(self):
+        if self.device != 'lun' and hasattr(self, 'sgio'):
+            raise ValueError("sgio attribute can be set only for LUN devices")
+
+        if self.device == 'lun' and self.format == 'cow':
+            raise ValueError("cow format is not supported for LUN devices")
+
+        if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
+            self._validateIoTuneParams(self.specParams['ioTune'])

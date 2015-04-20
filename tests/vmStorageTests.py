@@ -129,6 +129,22 @@ class DriveXMLTests(XMLTestCase):
 
 
 @expandPermutations
+class DriveValidation(VdsmTestCase):
+
+    @permutations([["disk"], ["cdrom"], ["floppy"]])
+    def test_sgio_without_lun(self, device):
+        self.check(device=device, sgio='unfiltered')
+
+    def test_cow_with_lun(self):
+        self.check(device='lun', format='cow')
+
+    def check(self, **kw):
+        conf = drive_config(**kw)
+        drive = Drive({}, self.log, **conf)
+        self.assertRaises(ValueError, drive.getXML)
+
+
+@expandPermutations
 class DriveExSharedStatusTests(VdsmTestCase):
 
     def test_default_not_shared(self):
