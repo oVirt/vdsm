@@ -341,14 +341,17 @@ class Drive(Base):
 
         if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
             diskelem.appendChildWithArgs('shareable')
+
         if hasattr(self, 'readonly') and utils.tobool(self.readonly):
             diskelem.appendChildWithArgs('readonly')
         elif self.device == 'floppy' and not hasattr(self, 'readonly'):
             # floppies are used only internally for sysprep, so
             # they are readonly unless explicitely stated otherwise
             diskelem.appendChildWithArgs('readonly')
+
         if hasattr(self, 'serial'):
             diskelem.appendChildWithArgs('serial', text=self.serial)
+
         if hasattr(self, 'bootOrder'):
             diskelem.appendChildWithArgs('boot', order=self.bootOrder)
 
@@ -388,10 +391,12 @@ class Drive(Base):
     def _getDriverXML(self):
         driver = vmxml.Element('driver')
         driverAttrs = {'name': 'qemu'}
+
         if self.blockDev:
             driverAttrs['io'] = 'native'
         else:
             driverAttrs['io'] = 'threads'
+
         if self.format == 'cow':
             driverAttrs['type'] = 'qcow2'
         elif self.format:
@@ -408,6 +413,7 @@ class Drive(Base):
             driverAttrs['error_policy'] = 'enospace'
         else:
             driverAttrs['error_policy'] = 'stop'
+
         driver.setAttrs(**driverAttrs)
         return driver
 
