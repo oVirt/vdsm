@@ -35,6 +35,12 @@ DEFAULT_INTERFACE_FOR_ARCH = {
 }
 
 
+class DISK_TYPE:
+    BLOCK = "block"
+    NETWORK = "network"
+    FILE = "file"
+
+
 class DRIVE_SHARED_TYPE:
     NONE = "none"
     EXCLUSIVE = "exclusive"
@@ -184,7 +190,7 @@ class Drive(Base):
     @property
     def networkDev(self):
         try:
-            return self.volumeInfo['volType'] == "network"
+            return self.volumeInfo['volType'] == DISK_TYPE.NETWORK
         except AttributeError:
             # To handle legacy and removable drives.
             return False
@@ -215,6 +221,15 @@ class Drive(Base):
             # invalidating cached blockDev.
             self._blockDev = None
         self._path = path
+
+    @property
+    def diskType(self):
+        if self.blockDev:
+            return DISK_TYPE.BLOCK
+        elif self.networkDev:
+            return DISK_TYPE.NETWORK
+        else:
+            return DISK_TYPE.FILE
 
     @property
     def transientDisk(self):
@@ -318,24 +333,24 @@ class Drive(Base):
         self.device = getattr(self, 'device', 'disk')
 
         source = vmxml.Element('source')
-        if self.blockDev:
-            deviceType = 'block'
+        if self.diskType == DISK_TYPE.BLOCK:
             source.setAttrs(dev=self.path)
-        elif self.networkDev:
-            deviceType = 'network'
+        elif self.diskType == DISK_TYPE.NETWORK:
             source.setAttrs(protocol=self.volumeInfo['protocol'],
                             name=self.volumeInfo['path'])
             hostAttrs = {'name': self.volumeInfo['volfileServer'],
                          'port': self.volumeInfo['volPort'],
                          'transport': self.volumeInfo['volTransport']}
             source.appendChildWithArgs('host', **hostAttrs)
-        else:
-            deviceType = 'file'
-            sourceAttrs = {'file': self.path}
+        elif self.diskType == DISK_TYPE.FILE:
+            sourceAttrs = {DISK_TYPE.FILE: self.path}
             if self.device == 'cdrom' or self.device == 'floppy':
                 sourceAttrs['startupPolicy'] = 'optional'
             source.setAttrs(**sourceAttrs)
-        diskelem = self.createXmlElem('disk', deviceType,
+        else:
+            raise RuntimeError("Unsupported diskType %r", self.diskType)
+
+        diskelem = self.createXmlElem('disk', self.diskType,
                                       ['device', 'address', 'sgio'])
         diskelem.setAttrs(snapshot='no')
         diskelem.appendChild(source)
