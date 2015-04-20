@@ -73,6 +73,7 @@ test_modules = \
 	blocksdTests.py \
 	blockVolumeTests.py \
 	bridgeTests.py \
+	bulk_sampling_test.py \
 	cPopenTests.py \
 	capsTests.py \
 	cpuinfo_test.py \
