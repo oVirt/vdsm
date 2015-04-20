@@ -73,6 +73,7 @@ class Drive(Base):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
         super(Drive, self).__init__(conf, log, **kwargs)
+        self.device = getattr(self, 'device', 'disk')
         # Keep sizes as int
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
@@ -330,8 +331,6 @@ class Drive(Base):
           <serial>54-a672-23e5b495a9ea</serial>
         </disk>
         """
-        self.device = getattr(self, 'device', 'disk')
-
         source = vmxml.Element('source')
         if self.diskType == DISK_TYPE.BLOCK:
             source.setAttrs(dev=self.path)
