@@ -60,6 +60,13 @@ AC_ARG_WITH(
 	[with_maven_version_snapshot="yes"]
 )
 
+AC_ARG_WITH(
+	[dist_only],
+	[AS_HELP_STRING([--with-dist-only], [configure to enable source only distibution (e.g. make dist) @<:@default=no@:>@])],
+	[enable_java_build="no",with_maven="no"],
+	[with_dist_only="no"],
+)
+
 AC_PROG_INSTALL
 AC_PROG_SED
 AC_PROG_MAKE_SET
@@ -76,14 +83,16 @@ AC_ARG_VAR([JACKSON_CORE_ASL], [path to jackson-core-asl jar])
 AC_ARG_VAR([JACKSON_MAPPER_ASL], [path to jackson-mapper-asl jar])
 AC_ARG_VAR([COMMONS_LOGGING_JAR], [path to apache-commons-logging jar])
 
-if test "${with_maven}" = "yes"; then
-	test -z "${MVN}" && \
-		AC_MSG_ERROR([maven is required but not found])
-else
-	test -z "${JAVAC}" && \
-		AC_MSG_ERROR([javac is required but not found])
-	test -z "${JAR}" && \
-		AC_MSG_ERROR([jar is required but not found])
+if test ! "${with_dist_only}" = "yes"; then
+	if test "${with_maven}" = "yes"; then
+		test -z "${MVN}" && \
+			AC_MSG_ERROR([maven is required but not found])
+	else
+		test -z "${JAVAC}" && \
+			AC_MSG_ERROR([javac is required but not found])
+		test -z "${JAR}" && \
+			AC_MSG_ERROR([jar is required but not found])
+	fi
 fi
 
 if test "${with_maven_version_snapshot}" = "no"; then
@@ -95,6 +104,7 @@ AC_SUBST([MAVEN_VERSION_SNAPSHOT])
 
 AM_CONDITIONAL([ENABLE_JAVA_BUILD], [test "${enable_java_build}" = "yes"])
 AM_CONDITIONAL([WITH_MAVEN], [test "${with_maven}" = "yes"])
+AM_CONDITIONAL([WITH_DIST_ONLY], [test "${with_dist_only}" = "yes"])
 
 AC_CONFIG_FILES([
 	Makefile

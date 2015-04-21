@@ -72,3 +72,7 @@ all-local:
 	done
 endif
 endif
+
+if WITH_DIST_ONLY
+all-local: dist
+endif
