@@ -3866,7 +3866,7 @@ class Vm(object):
                     break
 
             for dev in self.conf['devices']:
-                if dev['device'] == hwclass.RNG and \
+                if dev['type'] == hwclass.RNG and \
                         caps.RNG_SOURCES[dev['specParams']['source']] == \
                         source and 'alias' not in dev:
                     dev['address'] = address
