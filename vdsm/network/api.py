@@ -523,8 +523,7 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
         _addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
                     configurator=configurator, **options)
         if utils.tobool(options.get('connectivityCheck', False)):
-            if not clientSeen(int(options.get('connectivityTimeout',
-                                              CONNECTIVITY_TIMEOUT_DEFAULT))):
+            if not clientSeen(_get_connectivity_timeout(options)):
                 _delNetwork(newBridge, force=True)
                 raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                          'connectivity check failed')
@@ -711,12 +710,16 @@ def _add_missing_networks(configurator, networks, bondings, force, logger,
         _netinfo.updateDevices()  # Things like a bond mtu can change
 
 
+def _get_connectivity_timeout(options):
+    return int(options.get('connectivityTimeout',
+                           CONNECTIVITY_TIMEOUT_DEFAULT))
+
+
 def _check_connectivity(connectivity_check_networks, networks, bondings,
                         options, logger):
     if utils.tobool(options.get('connectivityCheck', True)):
         logger.debug('Checking connectivity...')
-        if not clientSeen(int(options.get('connectivityTimeout',
-                                          CONNECTIVITY_TIMEOUT_DEFAULT))):
+        if not clientSeen(_get_connectivity_timeout(options)):
             logger.info('Connectivity check failed, rolling back')
             for network in connectivity_check_networks:
                 # If the new added network was created on top of
