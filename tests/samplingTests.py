@@ -151,6 +151,7 @@ class InterfaceSampleTests(TestCaseBase):
         s1.operstate = 'x'
         self.assertEquals('operstate:x', s1.connlog_diff(s0))
 
+    @brokentest("Broken unless libvirtd is running")
     @MonkeyPatch(libvirtconnection, '_read_password', read_password)
     @ValidateRunningAsRoot
     def testHostSampleReportsNewInterface(self):
@@ -163,6 +164,7 @@ class InterfaceSampleTests(TestCaseBase):
             interfaces_diff = interfaces_after - interfaces_before
             self.assertEqual(interfaces_diff, set([dummy_name]))
 
+    @brokentest("Broken unless libvirtd is running")
     @MonkeyPatch(libvirtconnection, '_read_password', read_password)
     @ValidateRunningAsRoot
     def testHostSampleHandlesDisappearingVlanInterfaces(self):
