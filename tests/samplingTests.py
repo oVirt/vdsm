@@ -27,7 +27,7 @@ import shutil
 from vdsm import ipwrapper
 import virt.sampling as sampling
 
-from testValidation import ValidateRunningAsRoot
+from testValidation import brokentest, ValidateRunningAsRoot
 from testrunner import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
 from functional import dummy
@@ -142,6 +142,7 @@ class InterfaceSampleTests(TestCaseBase):
         s1.operstate = 'x'
         self.assertEquals('operstate:x', s1.connlog_diff(s0))
 
+    @brokentest("Broken unless libvirtd is running")
     @ValidateRunningAsRoot
     def testHostSampleReportsNewInterface(self):
         hs_before = sampling.HostSample(os.getpid())
@@ -153,6 +154,7 @@ class InterfaceSampleTests(TestCaseBase):
             interfaces_diff = interfaces_after - interfaces_before
             self.assertEqual(interfaces_diff, set([dummy_name]))
 
+    @brokentest("Broken unless libvirtd is running")
     @ValidateRunningAsRoot
     def testHostSampleHandlesDisappearingVlanInterfaces(self):
         original_getLinks = ipwrapper.getLinks
