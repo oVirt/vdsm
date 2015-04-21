@@ -55,7 +55,7 @@ from vmTestsData import CONF_TO_DOMXML_PPC64
 from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 import vmfakelib as fake
 
-from testValidation import slowtest
+from testValidation import brokentest, slowtest
 
 
 _VM_PARAMS = {
@@ -1069,6 +1069,7 @@ class TestVmOperations(TestCaseBase):
             self.assertEqual(period + offset,
                              testvm._vcpuTuneInfo['vcpu_period'])
 
+    @brokentest("sometimes on CI tries to connect to libvirt")
     @permutations([[libvirt.VIR_ERR_OPERATION_DENIED, 'setNumberOfCpusErr',
                     'Failed to set the number of cpus'],
                    [libvirt.VIR_ERR_NO_DOMAIN, 'noVM', None]])
