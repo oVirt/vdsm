@@ -530,6 +530,17 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
                                          'connectivity check failed')
 
 
+def changeNumvfs(device_name, numvfs):
+    with open('/sys/bus/pci/devices/{}/sriov_numvfs'.format(
+            device_name), 'w', 0) as f:
+        # Zero needs to be written first in order to remove previous VFs.
+        # Trying to just write the number (if n > 0 VF's existed before)
+        # results in 'write error: Device or resource busy'
+        # https://www.kernel.org/doc/Documentation/PCI/pci-iov-howto.txt
+        f.write('0')
+        f.write(str(numvfs))
+
+
 def _validateNetworkSetup(networks, bondings):
     for network, networkAttrs in networks.iteritems():
         if networkAttrs.get('remove', False):

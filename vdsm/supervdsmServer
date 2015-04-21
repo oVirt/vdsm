@@ -59,7 +59,8 @@ from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
 from network import sourceroutethread
-from network.api import editNetwork, setupNetworks, setSafeNetworkConfig
+from network.api import editNetwork, setupNetworks, setSafeNetworkConfig,\
+    changeNumvfs
 
 from network.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
@@ -204,14 +205,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def changeNumvfs(self, device_name, numvfs):
-        with open('/sys/bus/pci/devices/{}/sriov_numvfs'.format(
-                device_name), 'w', 0) as f:
-            # Zero needs to be written first in order to remove previous VFs.
-            # Trying to just write the number (if n > 0 VF's existed before)
-            # results in 'write error: Device or resource busy'
-            # https://www.kernel.org/doc/Documentation/PCI/pci-iov-howto.txt
-            f.write('0')
-            f.write(str(numvfs))
+        return changeNumvfs(device_name, numvfs)
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(pipe):
