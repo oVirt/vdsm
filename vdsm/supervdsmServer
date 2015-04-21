@@ -60,7 +60,7 @@ from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
 from network import sourceroutethread
 from network.api import editNetwork, setupNetworks, setSafeNetworkConfig,\
-    changeNumvfs
+    change_numvfs
 
 from network.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
@@ -212,7 +212,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def changeNumvfs(self, device_name, numvfs):
-        return changeNumvfs(device_name, numvfs)
+        return change_numvfs(device_name, numvfs)
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(pipe):

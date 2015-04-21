@@ -1303,6 +1303,7 @@ class Global(APIBase):
         return {'status': doneCode, 'deviceList': devices}
 
     def hostdevChangeNumvfs(self, deviceName, numvfs):
+        self._cif._netConfigDirty = True
         hostdev.change_numvfs(deviceName, numvfs)
         return {'status': doneCode}
 

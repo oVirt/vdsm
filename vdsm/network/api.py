@@ -32,6 +32,7 @@ from vdsm import constants
 from vdsm import netinfo
 from vdsm import utils
 from vdsm import ipwrapper
+from vdsm import netconfpersistence
 
 from .configurators import libvirt
 from .errors import ConfigNetworkError
@@ -41,6 +42,7 @@ from .models import hierarchy_backing_device
 import hooks  # TODO: Turn into parent package import when vdsm is a package
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
+_SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
 
 
 def _getConfiguratorClass():
@@ -69,7 +71,6 @@ def _getConfiguratorClass():
 def _getPersistenceModule():
     persistence = config.get('vars', 'net_persistence')
     if persistence == 'unified':
-        from vdsm import netconfpersistence
         return netconfpersistence
     else:
         from .configurators import ifcfg
@@ -529,15 +530,40 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
                                          'connectivity check failed')
 
 
-def changeNumvfs(device_name, numvfs):
-    with open('/sys/bus/pci/devices/{}/sriov_numvfs'.format(
-            device_name), 'w', 0) as f:
+def _update_numvfs(device_name, numvfs):
+    with open(_SYSFS_SRIOV_NUMVFS.format(device_name), 'w', 0) as f:
         # Zero needs to be written first in order to remove previous VFs.
         # Trying to just write the number (if n > 0 VF's existed before)
         # results in 'write error: Device or resource busy'
         # https://www.kernel.org/doc/Documentation/PCI/pci-iov-howto.txt
         f.write('0')
         f.write(str(numvfs))
+
+
+def _persist_numvfs(device_name, numvfs):
+    dir_path = os.path.join(netconfpersistence.CONF_RUN_DIR,
+                            'virtual_functions')
+    try:
+        os.makedirs(dir_path)
+    except OSError as ose:
+        if errno.EEXIST != ose.errno:
+            raise
+    with open(os.path.join(dir_path, device_name), 'w') as f:
+        f.write(str(numvfs))
+
+
+def change_numvfs(device_name, numvfs):
+    """Change number of virtual functions of a device.
+    The persistence is stored in the same place as other network persistence is
+    stored. A call to setSafeNetworkConfig() will persist it across reboots.
+    """
+    logging.info("changing number of vfs on device %s -> %s.",
+                 device_name, numvfs)
+    _update_numvfs(device_name, numvfs)
+
+    logging.info("changing number of vfs on device %s -> %s. succeeded.",
+                 device_name, numvfs)
+    _persist_numvfs(device_name, numvfs)
 
 
 def _validateNetworkSetup(networks, bondings):

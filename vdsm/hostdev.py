@@ -33,7 +33,7 @@ class NoIOMMUSupportException(Exception):
     pass
 
 
-def _name_to_pci_path(device_name):
+def name_to_pci_path(device_name):
     return device_name[4:].replace('_', '.').replace('.', ':', 2)
 
 
@@ -51,7 +51,7 @@ def pci_address_to_name(domain, bus, slot, function):
 
 def _sriov_totalvfs(device_name):
     with open('/sys/bus/pci/devices/{0}/sriov_totalvfs'.format(
-            _name_to_pci_path(device_name))) as f:
+            name_to_pci_path(device_name))) as f:
         return int(f.read())
 
 
@@ -198,4 +198,4 @@ def reattach_detachable(device_name):
 
 
 def change_numvfs(device_name, numvfs):
-    supervdsm.getProxy().changeNumvfs(_name_to_pci_path(device_name), numvfs)
+    supervdsm.getProxy().changeNumvfs(name_to_pci_path(device_name), numvfs)
