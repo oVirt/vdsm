@@ -15,13 +15,11 @@
 
 import logging
 import socket
-from threading import Timer, Event
+from threading import Timer
 from uuid import uuid4
 from collections import deque
 
-from betterAsyncore import Dispatcher
 from vdsm.utils import monotonic_time
-import asyncore
 import re
 
 
@@ -279,120 +277,6 @@ class Parser(object):
             return self._frames.popleft()
         except IndexError:
             return None
-
-
-class Client(object):
-    def __init__(self, sock=None):
-        """
-        Initialize the client.
-
-        The socket parameter can be an already initialized socket. Should be
-        used to pass specialized socket objects like SSL sockets.
-        """
-        if sock is None:
-            sock = self._sock = socket.socket()
-        else:
-            self._sock = sock
-
-        self._map = {}
-        # Because we don't know how large the frames are
-        # we have to use non bolocking IO
-        sock.setblocking(False)
-
-        # We have our own timeout for operations we
-        # pretend to be synchronous (like connect).
-        self._timeout = None
-        self._connected = Event()
-        self._subscriptions = {}
-
-        self._aclient = None
-        self._adisp = None
-
-        self._inbox = deque()
-
-    @property
-    def outgoing(self):
-        return self._adisp.outgoing
-
-    def _registerSubscription(self, sub):
-        self._subscriptions[sub.id] = sub
-
-    def _unregisterSubscription(self, sub):
-        del self._subscriptions[sub.id]
-
-    @property
-    def connected(self):
-        return self._connected.isSet()
-
-    def handle_connect(self, aclient, frame):
-        self._connected.set()
-
-    def handle_message(self, aclient, frame):
-        self._inbox.append(frame)
-
-    def process(self, timeout=None):
-        if timeout is None:
-            timeout = self._timeout
-
-        asyncore.loop(use_poll=True, timeout=timeout, map=self._map, count=1)
-
-    def connect(self, address, hostname):
-        sock = self._sock
-
-        self._aclient = AsyncClient(self, hostname)
-        adisp = self._adisp = AsyncDispatcher(self._aclient)
-        disp = self._disp = Dispatcher(adisp, sock, self._map)
-        sock.setblocking(True)
-        disp.connect(address)
-        sock.setblocking(False)
-        self.recv()  # wait for CONNECTED msg
-
-        if not self._connected.isSet():
-            sock.close()
-            raise socket.error()
-
-    def recv(self):
-        timeout = self._timeout
-        s = monotonic_time()
-        duration = 0
-        while timeout is None or duration < timeout:
-            try:
-                return self._inbox.popleft()
-            except IndexError:
-                td = timeout - duration if timeout is not None else None
-                self.process(td)
-                duration = monotonic_time() - s
-
-        return None
-
-    def put_subscribe(self, destination, ack=None):
-        subid = self._aclient.subscribe(self._adisp, destination, ack)
-        sub = _Subscription(self, subid, ack)
-        self._registerSubscription(sub)
-        return sub
-
-    def put_send(self, destination, data="", headers=None):
-        self._aclient.send(self._adisp, destination, data, headers)
-
-    def put(self, frame):
-        self._adisp.send_raw(frame)
-
-    def send(self):
-        disp = self._disp
-        timeout = self._timeout
-        duration = 0
-        s = monotonic_time()
-        while ((timeout is None or duration < timeout) and
-               (disp.writable() or not self._connected.isSet())):
-                td = timeout - duration if timeout is not None else None
-                self.process(td)
-                duration = monotonic_time() - s
-
-    def gettimout(self):
-        return self._timeout
-
-    def settimeout(self, value):
-        self._timeout = value
 
 
 class AsyncDispatcher(object):
