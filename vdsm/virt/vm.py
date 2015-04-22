@@ -3192,7 +3192,26 @@ class Vm(object):
         flags = (libvirt.VIR_DOMAIN_BLOCK_COPY_SHALLOW |
                  libvirt.VIR_DOMAIN_BLOCK_COPY_REUSE_EXT)
 
-        self._dom.blockCopy(drive.name, destxml, flags=flags)
+        # TODO: Remove fallback when using libvirt >= 1.2.9.
+        try:
+            self._dom.blockCopy(drive.name, destxml, flags=flags)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() != libvirt.VIR_ERR_NO_SUPPORT:
+                raise
+
+            self.log.warning("blockCopy not supported, using blockRebase")
+
+            base = drive.diskReplicate["path"]
+            self.log.debug("Replicating drive %s to %s", drive.name, base)
+
+            flags = (libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY |
+                     libvirt.VIR_DOMAIN_BLOCK_REBASE_REUSE_EXT |
+                     libvirt.VIR_DOMAIN_BLOCK_REBASE_SHALLOW)
+
+            if drive.diskReplicate["diskType"] == DISK_TYPE.BLOCK:
+                flags |= libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY_DEV
+
+            self._dom.blockRebase(drive.name, base, flags=flags)
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         # Apparently this is what libvirt would do anyway, except that
