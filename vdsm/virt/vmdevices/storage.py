@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import caps
+
 from vdsm.config import config
 from vdsm import constants
 from vdsm import utils
@@ -25,6 +27,12 @@ from vdsm import utils
 from .. import vmxml
 
 from .core import Base
+
+DEFAULT_INTERFACE_FOR_ARCH = {
+    caps.Architecture.X86_64: 'ide',
+    caps.Architecture.PPC64: 'scsi',
+    caps.Architecture.PPC64LE: 'scsi'
+}
 
 
 class DRIVE_SHARED_TYPE:

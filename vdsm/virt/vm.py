@@ -264,12 +264,6 @@ class Vm(object):
     def _makeChannelPath(self, deviceName):
         return constants.P_LIBVIRT_VMCHANNELS + self.id + '.' + deviceName
 
-    def _getDefaultDiskInterface(self):
-        DEFAULT_DISK_INTERFACES = {caps.Architecture.X86_64: 'ide',
-                                   caps.Architecture.PPC64: 'scsi',
-                                   caps.Architecture.PPC64LE: 'scsi'}
-        return DEFAULT_DISK_INTERFACES[self.arch]
-
     def __init__(self, cif, params, recover=False):
         """
         Initialize a new VM instance.
@@ -425,7 +419,7 @@ class Vm(object):
         removables = [{
             'type': hwclass.DISK,
             'device': 'cdrom',
-            'iface': self._getDefaultDiskInterface(),
+            'iface': vmdevices.storage.DEFAULT_INTERFACE_FOR_ARCH[self.arch],
             'path': self.conf.get('cdrom', ''),
             'index': 2,
             'truesize': 0}]
@@ -645,7 +639,9 @@ class Vm(object):
             # FIXME: For BC we have now two identical keys: iface = if
             # Till the day that conf will not returned as a status anymore.
             drv['iface'] = drv.get('iface') or \
-                drv.get('if', self._getDefaultDiskInterface())
+                drv.get(
+                    'if',
+                    vmdevices.storage.DEFAULT_INTERFACE_FOR_ARCH[self.arch])
 
         return confDrives
 
@@ -4000,7 +3996,8 @@ class Vm(object):
                     knownDev = True
             # Add unknown disk device to vm's conf
             if not knownDev:
-                archIface = self._getDefaultDiskInterface()
+                archIface = vmdevices.storage.\
+                    DEFAULT_INTERFACE_FOR_ARCH[self.arch]
                 iface = archIface if address['type'] == 'drive' else 'pci'
                 diskDev = {'type': hwclass.DISK, 'device': devType,
                            'iface': iface, 'path': devPath, 'name': name,
