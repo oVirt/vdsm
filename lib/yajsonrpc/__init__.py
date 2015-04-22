@@ -50,7 +50,7 @@ class JsonRpcInvalidRequestError(JsonRpcError):
     log = logging.getLogger("JsonRpcInvalidRequestError")
 
     def __init__(self, object_name, msg_content):
-        self.log.error("Invalid message found " + msg_content)
+        self.log.error("Invalid message found %s", msg_content)
         JsonRpcError.__init__(self, -32600,
                               "The JSON sent is not a valid Request object "
                               "with " + object_name)
@@ -100,7 +100,7 @@ class JsonRpcRequest(object):
             raise JsonRpcInvalidRequestError("missing method header", obj)
 
         reqId = obj.get("id")
-        if not isinstance(reqId, (str, unicode)):
+        if not isinstance(reqId, (str, unicode, int)):
             raise JsonRpcInvalidRequestError("missing request identifier",
                                              obj)
 
@@ -151,19 +151,7 @@ class JsonRpcResponse(object):
     @staticmethod
     def decode(msg):
         obj = json.loads(msg, 'utf-8')
-
-        if "result" not in obj and "error" not in obj:
-            raise JsonRpcInvalidRequestError("missing result or error info",
-                                             obj)
-
-        result = obj.get('result')
-        error = JsonRpcError(**obj.get('error'))
-
-        reqId = obj.get('id')
-        if not isinstance(reqId, (str, unicode)):
-            raise JsonRpcInvalidRequestError("missing response identifier",
-                                             obj)
-        return JsonRpcResponse(result, error, reqId)
+        return JsonRpcResponse.fromRawObject(obj)
 
     @staticmethod
     def fromRawObject(obj):
@@ -178,9 +166,6 @@ class JsonRpcResponse(object):
         error = obj.get("error")
 
         reqId = obj.get("id")
-        if not isinstance(reqId, (str, unicode)):
-            raise JsonRpcInvalidRequestError("missing response identifier",
-                                             obj)
 
         return JsonRpcResponse(result, error, reqId)
 
@@ -354,6 +339,11 @@ class JsonRpcClient(object):
 
         resp = JsonRpcResponse.fromRawObject(resp)
         with self._lock:
+            if resp.id is None:
+                self.log.warning(
+                    "Got an error from server without an ID (%s)",
+                    resp.error,
+                )
             ctx = self._runningRequests.pop(resp.id)
 
         ctx.addResponse(resp)
