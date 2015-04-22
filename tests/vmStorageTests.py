@@ -206,17 +206,6 @@ class DriveReplicaXML(XMLTestCase):
         self.assertXMLEqual(drive.getReplicaXML().toxml(), xml)
 
 
-def replica(diskType):
-    return {
-        "cache": "none",
-        "device": "disk",
-        "diskType": diskType,
-        "format": "cow",
-        "path": "/path/to/replica",
-        "propagateErrors": "off",
-    }
-
-
 @expandPermutations
 class DriveValidation(VdsmTestCase):
 
@@ -341,11 +330,43 @@ class ChunkedTests(VdsmTestCase):
         ('lun', True, 'raw', False),
         ('disk', True, 'cow', True),
     ])
-    def test_chunked(self, device, blockDev, format, chunked):
+    def test_drive(self, device, blockDev, format, chunked):
         conf = drive_config(device=device, format=format)
         drive = Drive({}, self.log, **conf)
         drive._blockDev = blockDev
         self.assertEqual(drive.chunked, chunked)
+
+    @permutations([
+        # replica diskType, replica format
+        (DISK_TYPE.BLOCK, 'raw'),
+        (DISK_TYPE.BLOCK, 'cow'),
+    ])
+    def test_replica(self, diskType, format):
+        conf = drive_config(diskReplicate=replica(diskType, format=format))
+        drive = Drive({}, self.log, **conf)
+        drive._blockDev = False
+        self.assertEqual(drive.chunked, False)
+
+
+@expandPermutations
+class ReplicaChunkedTests(VdsmTestCase):
+
+    @permutations([
+        # replica diskType, replica format, chunked
+        (DISK_TYPE.FILE, 'raw', False),
+        (DISK_TYPE.FILE, 'cow', False),
+        (DISK_TYPE.BLOCK, 'raw', False),
+        (DISK_TYPE.BLOCK, 'cow', True),
+    ])
+    def test_replica(self, diskType, format, chunked):
+        conf = drive_config(diskReplicate=replica(diskType, format=format))
+        drive = Drive({}, self.log, **conf)
+        self.assertEqual(drive.replicaChunked, chunked)
+
+    def test_no_replica(self):
+        conf = drive_config()
+        drive = Drive({}, self.log, **conf)
+        self.assertEqual(drive.replicaChunked, False)
 
 
 @expandPermutations
@@ -391,3 +412,14 @@ def drive_config(**kw):
     }
     conf.update(kw)
     return conf
+
+
+def replica(diskType, format="cow"):
+    return {
+        "cache": "none",
+        "device": "disk",
+        "diskType": diskType,
+        "format": format,
+        "path": "/path/to/replica",
+        "propagateErrors": "off",
+    }

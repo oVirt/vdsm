@@ -189,6 +189,16 @@ class Drive(Base):
         return self.blockDev and self.format == "cow"
 
     @property
+    def replicaChunked(self):
+        """
+        Return True if drive is replicating to chuked storage and the replica
+        volume may require extending. See Drive.chunkd for more info.
+        """
+        replica = getattr(self, "diskReplicate", {})
+        return (replica.get("diskType") == DISK_TYPE.BLOCK and
+                replica.get("format") == "cow")
+
+    @property
     def networkDev(self):
         try:
             return self.volumeInfo['volType'] == DISK_TYPE.NETWORK
