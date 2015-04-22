@@ -25,6 +25,7 @@ import threading
 import time
 from contextlib import contextmanager
 
+from yajsonrpc.betterAsyncore import Reactor
 from vdsm import sslutils
 from protocoldetector import MultiProtocolAcceptor
 from sslhelper import KEY_FILE, CRT_FILE
@@ -199,13 +200,18 @@ class AcceptorTests(VdsmTestCase):
     # Helpers
 
     def start_acceptor(self, use_ssl):
+        self.reactor = Reactor()
         self.acceptor = MultiProtocolAcceptor(
-            '127.0.0.1', 0, sslctx=self.SSLCTX if use_ssl else None)
+            self.reactor,
+            '127.0.0.1',
+            0,
+            sslctx=self.SSLCTX if use_ssl else None
+        )
         self.acceptor.TIMEOUT = 1
         self.acceptor.add_detector(Echo())
         self.acceptor.add_detector(Uppercase())
         self.acceptor_address = self.acceptor._acceptor.socket.getsockname()
-        t = threading.Thread(target=self.acceptor.serve_forever)
+        t = threading.Thread(target=self.reactor.process_requests)
         t.deamon = True
         t.start()
 

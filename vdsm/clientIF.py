@@ -26,6 +26,7 @@ import uuid
 from functools import partial
 from weakref import proxy
 
+from yajsonrpc.betterAsyncore import Reactor
 import alignmentScan
 from vdsm.config import config
 from momIF import MomThread
@@ -168,8 +169,10 @@ class clientIF(object):
 
     def _createAcceptor(self, host, port):
         sslctx = self._createSSLContext()
+        self._reactor = Reactor()
 
-        self._acceptor = MultiProtocolAcceptor(host, port, sslctx)
+        self._acceptor = MultiProtocolAcceptor(self._reactor, host,
+                                               port, sslctx)
 
     def _createSSLContext(self):
         sslctx = None
@@ -251,8 +254,8 @@ class clientIF(object):
     def start(self):
         for binding in self.bindings.values():
             binding.start()
-        self.thread = threading.Thread(target=self._acceptor.serve_forever,
-                                       name='Detector thread')
+        self.thread = threading.Thread(target=self._reactor.process_requests,
+                                       name='Reactor thread')
         self.thread.setDaemon(True)
         self.thread.start()
 

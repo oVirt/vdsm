@@ -27,6 +27,7 @@ from contextlib import contextmanager
 from itertools import product
 from M2Crypto import SSL
 from rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
+from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompDetector, StompRpcClient, _FAKE_SUB_ID
 from protocoldetector import MultiProtocolAcceptor
 from rpc.bindingjsonrpc import BindingJsonRpc
@@ -59,7 +60,8 @@ class FakeClientIf(object):
 @contextmanager
 def constructAcceptor(log, ssl, jsonBridge):
     sslctx = DEAFAULT_SSL_CONTEXT if ssl else None
-    acceptor = MultiProtocolAcceptor("127.0.0.1", 0, sslctx)
+    reactor = Reactor()
+    acceptor = MultiProtocolAcceptor(reactor, "127.0.0.1", 0, sslctx)
     cif = FakeClientIf()
 
     xml_binding = BindingXMLRPC(cif, cif.log)
@@ -72,8 +74,10 @@ def constructAcceptor(log, ssl, jsonBridge):
     stompDetector = StompDetector(json_binding)
     acceptor.add_detector(stompDetector)
 
-    thread = threading.Thread(target=acceptor.serve_forever,
-                              name='Detector thread')
+    thread = threading.Thread(
+        target=reactor.process_requests,
+        name='Detector thread',
+    )
     thread.setDaemon(True)
     thread.start()
 

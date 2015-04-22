@@ -21,9 +21,7 @@
 import logging
 import socket
 
-from vdsm.utils import traceback
 import vdsm.infra.filecontrol as filecontrol
-from yajsonrpc.betterAsyncore import Reactor
 
 from vdsm.utils import monotonic_time
 from vdsm.sslutils import SSLHandshakeDispatcher
@@ -161,13 +159,14 @@ class MultiProtocolAcceptor:
 
     def __init__(
         self,
+        reactor,
         host,
         port,
         sslctx=None,
         ssl_hanshake_timeout=SSLHandshakeDispatcher.SSL_HANDSHAKE_TIMEOUT,
     ):
         self._sslctx = sslctx
-        self._reactor = Reactor()
+        self._reactor = reactor
         sock = _create_socket(host, port)
         self._host, self._port = sock.getsockname()
         self.log.info("Listening at %s:%d", self._host, self._port)
@@ -195,11 +194,6 @@ class MultiProtocolAcceptor:
         )
 
         return dispatcher
-
-    @traceback(on=log.name)
-    def serve_forever(self):
-        self.log.debug("Running")
-        self._reactor.process_requests()
 
     def add_detector(self, detector):
         self.log.debug("Adding detector %s", detector)
