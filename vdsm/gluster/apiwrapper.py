@@ -314,6 +314,12 @@ class GlusterVolume(GlusterApiBase):
     def metaVolumeMount(self, metaVolumeName=META_VOLUME):
         return self._gluster.metaVolumeMount(metaVolumeName)
 
+    def snapshotScheduleOverride(self, force=True):
+        return self._gluster.snapshotScheduleOverride(force)
+
+    def snapshotScheduleReset(self):
+        return self._gluster.snapshotScheduleReset()
+
 
 class GlusterSnapshot(GlusterApiBase):
     def __init__(self):
