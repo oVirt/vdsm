@@ -69,7 +69,6 @@ dist_vdsmstorage_PYTHON = \
 	task.py \
 	threadLocal.py \
 	threadPool.py \
-	udevadm.py \
 	volume.py
 
 dist_vdsmexec_SCRIPTS = \

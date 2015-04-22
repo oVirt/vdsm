@@ -19,7 +19,7 @@
 #
 
 import logging
-from vdsm import utils
+from . import utils
 
 _UDEVADM = utils.CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
 

@@ -31,6 +31,7 @@ import sys
 
 from vdsm.compat import pickle
 from vdsm.config import config
+from vdsm import udevadm
 
 import mount
 import fileUtils
@@ -39,7 +40,6 @@ import iscsi
 from sync import asyncmethod, AsyncCallStub
 from mount import MountError
 import storage_exception as se
-import udevadm
 
 
 class AliasAlreadyRegisteredError(RuntimeError):

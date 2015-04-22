@@ -38,6 +38,7 @@ dist_vdsmpylib_PYTHON = \
 	schedule.py \
 	sslutils.py \
 	sysctl.py \
+	udevadm.py \
 	utils.py \
 	vdscli.py \
 	virtsparsify.py \
