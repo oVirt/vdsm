@@ -564,6 +564,18 @@ class GlusterMetaVolumeFstabUpdateFailedException(GlusterVolumeException):
     message = "Failed to Update fstab entry for meta-volume"
 
 
+class GlusterSnapshotScheduleFlagUpdateFailedException(
+        GlusterVolumeException):
+    code = 4577
+    message = "Failed to update snapshot schedule flag"
+
+
+class GlusterDisableSnapshotScheduleFailedException(
+        GlusterVolumeException):
+    code = 4578
+    message = "Failed to disable snapshot schedule through cli"
+
+
 # geo-replication
 class GlusterGeoRepException(GlusterException):
     code = 4200

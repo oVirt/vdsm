@@ -2163,3 +2163,26 @@
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'metaVolumeMount'},
  'data': {'*metaVolumeName': 'str'}}
+
+##
+# @GlusterVolume.snapshotScheduleOverride:
+#
+# overrides gluster snapshot scheduling.
+#
+# @force: #optional force override snapshot schedule
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume',
+             'name': 'snapshotScheduleOverride'},
+ 'data': {'*force': 'bool'}}
+
+##
+# @GlusterVolume.snapshotScheduleReset:
+#
+# resets gluster snapshot scheduling.
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume',
+             'name': 'snapshotScheduleReset'}}

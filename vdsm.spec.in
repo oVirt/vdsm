@@ -281,7 +281,7 @@ Requires: qemu-img >= 2:2.0.0-1
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %if 0%{?with_gluster}
-Requires: glusterfs >= 3.6.999
+Requires: glusterfs >= 3.7.1
 Requires: glusterfs-cli
 Requires: glusterfs-api
 Requires: glusterfs-fuse

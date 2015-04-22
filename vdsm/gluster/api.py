@@ -19,6 +19,7 @@
 #
 
 import errno
+import fcntl
 import os
 from functools import wraps
 from vdsm.define import doneCode
@@ -38,8 +39,17 @@ GEOREP_PUB_KEY_PATH = "/var/lib/glusterd/geo-replication/common_secret.pem.pub"
 MOUNT_BROKER_ROOT = "/var/mountbroker-root"
 META_VOLUME = "gluster_shared_storage"
 META_VOL_MOUNT_POINT = "/var/run/gluster/shared_storage"
+LOCK_FILE_DIR = META_VOL_MOUNT_POINT + "/snaps/lock_files"
+LOCK_FILE = LOCK_FILE_DIR + "/lock_file"
+SNAP_SCHEDULER_FLAG_FILE = META_VOL_MOUNT_POINT + "/snaps/current_scheduler"
 FS_TYPE = "glusterfs"
+SNAP_SCHEDULER_ALREADY_DISABLED_RC = 7
 
+
+_snapSchedulerPath = utils.CommandPath(
+    "snap_scheduler.py",
+    "/usr/sbin/snap_scheduler.py",
+)
 
 GLUSTER_RPM_PACKAGES = (
     ('glusterfs', ('glusterfs',)),
@@ -208,6 +218,45 @@ def mountMetaVolume(metaVolumeName):
     if rc:
         raise ge.GlusterMetaVolumeMountFailedException(
             rc, out, err)
+    return True
+
+
+@makePublic
+def snapshotScheduleDisable():
+    command = [_snapSchedulerPath.cmd, "disable_force"]
+    rc, out, err = utils.execCmd(command)
+    if rc not in [0, SNAP_SCHEDULER_ALREADY_DISABLED_RC]:
+        raise ge.GlusterDisableSnapshotScheduleFailedException(
+            rc)
+    return True
+
+
+@makePublic
+def snapshotScheduleFlagUpdate(value):
+    if not os.path.exists(LOCK_FILE_DIR):
+        try:
+            os.makedirs(LOCK_FILE_DIR, 0o755)
+        except OSError as e:
+            raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
+                err=[str(e)])
+
+    try:
+        f = os.open(LOCK_FILE, os.O_CREAT | os.O_RDWR | os.O_NONBLOCK)
+        try:
+            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            safeWrite(SNAP_SCHEDULER_FLAG_FILE, value)
+            fcntl.flock(f, fcntl.LOCK_UN)
+        except IOError as e:
+            os.close(f)
+            raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
+                err=["unable to get the lock", str(e)])
+        except OSError as e:
+            os.close(f)
+            raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
+                err=[str(e)])
+    except (IOError, OSError) as e:
+        raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
+            err=[str(e)])
     return True
 
 
@@ -687,6 +736,16 @@ class GlusterApi(object):
     @exportAsVerb
     def metaVolumeMount(self, metaVolumeName=META_VOLUME, options=None):
         self.svdsmProxy.glusterMountMetaVolume(metaVolumeName)
+
+    @exportAsVerb
+    def snapshotScheduleOverride(self, force=True, options=None):
+        self.svdsmProxy.glusterSnapshotScheduleFlagUpdate("ovirt")
+        if force:
+            self.svdsmProxy.glusterSnapshotScheduleDisable()
+
+    @exportAsVerb
+    def snapshotScheduleReset(self, options=None):
+        self.svdsmProxy.glusterSnapshotScheduleFlagUpdate("none")
 
 
 def getGlusterMethods(gluster):

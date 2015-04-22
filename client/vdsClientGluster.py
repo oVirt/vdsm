@@ -724,7 +724,19 @@ class GlusterService(service):
         metaVolumeName = params.get('metaVolumeName', '')
 
         status = self.s.glusterMetaVolumeMount(metaVolumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
 
+    def do_glusterSnapshotScheduleOverride(self, args):
+        params = self._eqSplit(args)
+        force = (params.get('force', 'no').upper() == 'YES')
+
+        status = self.s.glusterSnapshotScheduleOverride(force)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
+    def do_glusterSnapshotScheduleReset(self, args):
+        status = self.s.glusterSnapshotScheduleReset()
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -1230,5 +1242,15 @@ def getGlusterCmdDict(serv):
              serv.do_glusterMetaVolumeMount,
              ('[volumeName=<volume name>]',
               'mount the meta-volume'
+              )),
+         'glusterSnapshotScheduleOverride': (
+             serv.do_glusterSnapshotScheduleOverride,
+             ('[force={yes|no}]\n\t',
+              'override gluster snapshot scheduling'
+              )),
+         'glusterSnapshotScheduleReset': (
+             serv.do_glusterSnapshotScheduleReset,
+             ('',
+              'Reset gluster snapshot scheduling'
               ))
          }
