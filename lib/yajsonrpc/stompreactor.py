@@ -269,7 +269,7 @@ class StompListenerImpl(object):
         dispatcher.set_reuse_addr()
 
         client = StompServer(self._socket, self._reactor)
-        self._acceptHandler(self, client)
+        self._acceptHandler(client)
 
     def writable(self, dispatcher):
         return False
