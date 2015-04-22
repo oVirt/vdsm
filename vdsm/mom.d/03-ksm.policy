@@ -31,6 +31,48 @@
     (Host.Control "ksm_pages_to_scan" newval)
 })
 
+### apply_NUMA_policy
+# Enforce KSM policy changes for NUMA aware host
+# ======================================
+# variable ksm_merge_across_nodes: actual KSM policy as read from kernel
+# variable ksmMergeAcrossNodes: required KSM policy, as requested from oVirt-engine
+# if (ksmMergeAcrossNodes != ksm_merge_across_nodes) policy change required
+#
+#
+# Policy change for KSM with nonzero shared pages requires to unmerge all shared pages,
+#     Update ksm_merge_across_nodes only after all pages are unmerged.
+#
+# There are ... rules here:
+# ksm enabled, no shared pages - no specific action requested, normal operation
+#   return 0
+# ksm enabled, nonzero shared pages, no policy change - normal operation
+#   return 0
+# ksm disabled, nonzero shared pages - unmerge all
+#   return 2
+# ksm enabled, nonzero shared pages, change in policy - unmerge all
+#   (ksm_merge_across_nodes != ksmMergeAcrossNodes)
+#   return 2
+#
+(def apply_NUMA_policy()
+{
+    (debug "entry: apply_NUMA_policy")
+    # ksm_merge_across_nodes = actual KSM policy
+    (debug Host.ksm_merge_across_nodes "=ksm_merge_across_nodes ACTUAL from kernel")
+    # ksmMergeAcrossNodes = required KSM policy
+    (debug ksmMergeAcrossNodes "=ksmMergeAcrossNodes REQUIRED from oVirt-engine")
+    (if (and
+            (> Host.ksm_pages_shared 0)
+            (or (!= Host.ksm_merge_across_nodes ksmMergeAcrossNodes)
+                (not ksmEnabled)))
+        {
+            # KSM policy change is required, unmerge pages
+            (debug Host.ksm_pages_shared " pages to unmerge. Performing KSM page unmerging")
+            2
+        }
+        0
+    )
+})
+
 ### Main Script
 # Methodology: Since running KSM does incur some overhead, try to run it only
 # when necessary.  If the amount of committed KSM shareable memory is high or if
@@ -41,15 +83,32 @@
 (defvar ksm_pressure_threshold (* Host.mem_available ksm_free_percent))
 (defvar ksm_committed Host.ksm_shareable)
 
+# Reset ksm_merge_across_nodes when there are no shared pages
+(if (== Host.ksm_pages_shared 0)
+    {
+        (debug "No shared pages, setting ksm_merge_across_nodes to" ksmMergeAcrossNodes)
+        (Host.Control "ksm_merge_across_nodes" ksmMergeAcrossNodes)
+    }
+    (debug "There are still " Host.ksm_pages_shared " shared pages")
+)
+
+# Compute NUMA and KSM disable related action (returns none or unmerge)
+(defvar ksm_action (apply_NUMA_policy))
+(debug "exit: apply_NUMA_policy return_value = " ksm_action)
+
+# If there is an explicit action, call it, otherwise check whether KSM is needed
+# and compute the KSM tunables if it is.
 (if (or (and (< (+ ksm_pressure_threshold ksm_committed) Host.mem_available)
-         (> (Host.StatAvg "mem_free") ksm_pressure_threshold)) (not ksmEnabled))
-    (Host.Control "ksm_run" 0)
+             (> (Host.StatAvg "mem_free") ksm_pressure_threshold))
+        (or (not ksmEnabled)
+            (!= ksm_action 0)))
+    (Host.Control "ksm_run" ksm_action)
     {        # else
         (Host.Control "ksm_run" 1)
         (Host.Control "ksm_sleep_millisecs"
             (/ (* ksm_sleep_ms_baseline 16777216) Host.mem_available))
        (if (< (Host.StatAvg "mem_free") ksm_pressure_threshold)
-            (change_npages ksm_pages_boost)
+           (change_npages ksm_pages_boost)
            (change_npages ksm_pages_decay))
     }
 )

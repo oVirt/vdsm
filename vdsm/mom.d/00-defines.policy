@@ -4,6 +4,7 @@
 (defvar True 1)
 
 # Define variables for configurable options here
+(defvar ksmMergeAcrossNodes 1)
 (defvar ksmEnabled 1)
 (defvar balloonEnabled 0)
 (defvar cpuTuneEnabled 1)

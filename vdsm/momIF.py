@@ -56,6 +56,7 @@ class MomThread(threading.Thread):
         stats = self._mom.getStatistics()['host']
         ret = {}
         ret['ksmState'] = bool(stats['ksm_run'])
+        ret['ksmMergeAcrossNodes'] = bool(stats['ksm_merge_across_nodes'])
         ret['ksmPages'] = stats['ksm_pages_to_scan']
         ret['memShared'] = stats['ksm_pages_sharing'] * PAGE_SIZE_BYTES
         ret['memShared'] /= Mbytes
