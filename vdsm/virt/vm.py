@@ -258,7 +258,7 @@ class Vm(object):
                      (hwclass.TPM, vmdevices.core.Tpm),
                      (hwclass.HOSTDEV, vmdevices.hostdevice.HostDevice))
 
-    def _makeDeviceDict(self):
+    def _emptyDevMap(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)
 
     def _makeChannelPath(self, deviceName):
@@ -329,7 +329,7 @@ class Vm(object):
         self.stopDisksStatsCollection()
         self._vmCreationEvent = threading.Event()
         self._pathsPreparedEvent = threading.Event()
-        self._devices = self._makeDeviceDict()
+        self._devices = self._emptyDevMap()
 
         self._connection = libvirtconnection.get(cif)
         if 'vmName' not in self.conf:
@@ -445,7 +445,7 @@ class Vm(object):
         Return the "devices" section of this Vm's conf.
         If missing, create it according to old API.
         """
-        devices = self._makeDeviceDict()
+        devices = self._emptyDevMap()
 
         # For BC we need to save previous behaviour for old type parameters.
         # The new/old type parameter will be distinguished
