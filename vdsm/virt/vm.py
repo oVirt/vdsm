@@ -449,7 +449,7 @@ class Vm(object):
 
         return dev_map
 
-    def buildConfDevices(self):
+    def devSpecMapFromConf(self):
         """
         Return the "devices" section of this Vm's conf.
         If missing, create it according to old API.
@@ -1722,7 +1722,7 @@ class Vm(object):
 
     def _run(self):
         self.log.info("VM wrapper has started")
-        devices = self.buildConfDevices()
+        dev_spec_map = self.devSpecMapFromConf()
 
         # recovery flow note:
         # we do not start disk stats collection here since
@@ -1730,9 +1730,9 @@ class Vm(object):
         # Disk stats collection is started from clientIF at the end
         # of the recovery process.
         if not self.recovering:
-            self.preparePaths(devices[hwclass.DISK])
-            self._prepareTransientDisks(devices[hwclass.DISK])
-            self._updateDevices(devices)
+            self.preparePaths(dev_spec_map[hwclass.DISK])
+            self._prepareTransientDisks(dev_spec_map[hwclass.DISK])
+            self._updateDevices(dev_spec_map)
             # We need to save conf here before we actually run VM.
             # It's not enough to save conf only on status changes as we did
             # before, because if vdsm will restarted between VM run and conf
@@ -1746,7 +1746,7 @@ class Vm(object):
             # rebooting it. Evident on, but not limited to, the HE case.
             self._fixLegacyConf()
 
-        self._devices = self.devMapFromDevSpecMap(devices)
+        self._devices = self.devMapFromDevSpecMap(dev_spec_map)
 
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
