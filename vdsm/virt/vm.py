@@ -904,11 +904,11 @@ class Vm(object):
         ret = []
 
         for drive in self._devices[hwclass.DISK]:
-            if not drive.chunked:
+            if not (drive.chunked or drive.replicaChunked):
                 continue
 
             try:
-                capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+                capacity, alloc, physical = self._getExtendInfo(drive)
             except libvirt.libvirtError as e:
                 self.log.error("Unable to get watermarks for drive %s: %s",
                                drive.name, e)
@@ -917,6 +917,28 @@ class Vm(object):
             ret.append((drive, drive.volumeID, capacity, alloc, physical))
 
         return ret
+
+    def _getExtendInfo(self, drive):
+        """
+        Return extension info for a chunked drive or drive replicating to
+        chunked replica volume.
+        """
+        capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+
+        # Libvirt reports watermarks only for the source drive, but for
+        # file-based drives it reports the same alloc and physical, which
+        # breaks our extend logic. Since drive is chunked, we must have a
+        # disk-based replica, so we get the physical size from the replica.
+
+        if not drive.chunked:
+            replica = drive.diskReplicate
+            volsize = self._getVolumeSize(replica["domainID"],
+                                          replica["poolID"],
+                                          replica["imageID"],
+                                          replica["volumeID"])
+            physical = volsize.apparentsize
+
+        return capacity, alloc, physical
 
     def _shouldExtendVolume(self, drive, volumeID, capacity, alloc, physical):
         nextPhysSize = drive.getNextVolumeSize(physical, capacity)
@@ -975,11 +997,14 @@ class Vm(object):
         """
         Extend drive volume and its replica volume during replication.
 
-        Must be called only when the drive or the replica are chunked.
+        Must be called only when the drive or its replica are chunked.
         """
         newSize = vmDrive.getNextVolumeSize(curSize, capacity)
 
-        if hasattr(vmDrive, 'diskReplicate'):
+        # If drive is replicated to a block device, we extend first the
+        # replica, and handle drive later in __afterReplicaExtension.
+
+        if vmDrive.replicaChunked:
             self.__extendDriveReplica(vmDrive, newSize)
         else:
             self.__extendDriveVolume(vmDrive, volumeID, newSize)
@@ -1011,10 +1036,12 @@ class Vm(object):
     def __afterReplicaExtension(self, volInfo):
         self.__verifyVolumeExtension(volInfo)
         vmDrive = self._findDriveByName(volInfo['name'])
-        self.log.debug("Requesting extension for the original drive: %s "
-                       "(domainID: %s, volumeID: %s)",
-                       vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
-        self.__extendDriveVolume(vmDrive, vmDrive.volumeID, volInfo['newSize'])
+        if vmDrive.chunked:
+            self.log.debug("Requesting extension for the original drive: %s "
+                           "(domainID: %s, volumeID: %s)",
+                           vmDrive.name, vmDrive.domainID, vmDrive.volumeID)
+            self.__extendDriveVolume(vmDrive, vmDrive.volumeID,
+                                     volInfo['newSize'])
 
     def __extendDriveVolume(self, vmDrive, volumeID, newSize):
         volInfo = {
@@ -3090,9 +3117,9 @@ class Vm(object):
             self._delDiskReplica(drive)
             return errCode['replicaErr']
 
-        if drive.chunked:
+        if drive.chunked or drive.replicaChunked:
             try:
-                capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+                capacity, alloc, physical = self._getExtendInfo(drive)
                 self.extendDriveVolume(drive, drive.volumeID, physical,
                                        capacity)
             except Exception:
@@ -4510,7 +4537,7 @@ class Vm(object):
         # plus a bit more to accomodate additional writes to 'top' during the
         # live merge operation.
         if drive.chunked:
-            capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+            capacity, alloc, physical = self._getExtendInfo(drive)
             self.extendDriveVolume(drive, baseVolUUID, topSize, capacity)
 
         # Trigger the collection of stats before returning so that callers
