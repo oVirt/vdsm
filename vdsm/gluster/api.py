@@ -95,7 +95,7 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
 
     if not os.path.exists(sshDir):
         try:
-            os.makedirs(sshDir, 0700)
+            os.makedirs(sshDir, 0o700)
             os.chown(sshDir, uid, gid)
         except OSError as e:
             raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
@@ -121,7 +121,7 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         outLines.extend([newKeyDict[k] for k in outKeys if newKeyDict[k]])
 
         safeWrite(authKeysFile, ''.join(outLines))
-        os.chmod(authKeysFile, 0600)
+        os.chmod(authKeysFile, 0o600)
         os.chown(authKeysFile, uid, gid)
     except IOError as e:
         raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
@@ -136,7 +136,7 @@ def createMountBrokerRoot(userName):
 
     if not os.path.exists(MOUNT_BROKER_ROOT):
         try:
-            os.makedirs(MOUNT_BROKER_ROOT, 0711)
+            os.makedirs(MOUNT_BROKER_ROOT, 0o711)
         except OSError as e:
             raise ge.GlusterMountBrokerRootCreateFailedException(err=[str(e)])
     return
