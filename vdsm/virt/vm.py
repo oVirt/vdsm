@@ -440,6 +440,15 @@ class Vm(object):
                 'truesize': 0})
         return removables
 
+    def devMapFromDevSpecMap(self, dev_spec_map):
+        dev_map = self._emptyDevMap()
+
+        for dev_type, dev_class in self.DeviceMapping:
+            for dev in dev_spec_map[dev_type]:
+                dev_map[dev_type].append(dev_class(self.conf, self.log, **dev))
+
+        return dev_map
+
     def buildConfDevices(self):
         """
         Return the "devices" section of this Vm's conf.
@@ -1737,10 +1746,7 @@ class Vm(object):
             # rebooting it. Evident on, but not limited to, the HE case.
             self._fixLegacyConf()
 
-        for devType, devClass in self.DeviceMapping:
-            for dev in devices[devType]:
-                self._devices[devType].append(devClass(self.conf, self.log,
-                                                       **dev))
+        self._devices = self.devMapFromDevSpecMap(devices)
 
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
