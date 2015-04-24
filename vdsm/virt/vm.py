@@ -1713,8 +1713,7 @@ class Vm(object):
                         supervdsm.getProxy().setPortMirroring(network,
                                                               nic.name)
 
-        # VmStatsThread may use block devices info from libvirt.
-        # So, run it after you have this info
+        self._guestEventTime = self._startTime
         sampling.stats_cache.add(self.id)
         try:
             self.guestAgent.connect()
