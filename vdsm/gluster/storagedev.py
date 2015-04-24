@@ -30,6 +30,7 @@ from blivet.devices import LVMVolumeGroupDevice
 from blivet.devices import LVMThinPoolDevice
 from blivet.devices import LVMLogicalVolumeDevice
 from blivet.devices import LVMThinLogicalVolumeDevice
+from blivet import udev
 
 import storage.lvm as lvm
 from vdsm import utils
@@ -78,7 +79,8 @@ def _getDeviceDict(device, createBrick=False):
         info['model'] = device.type
     if device.format:
         info['uuid'] = device.format.uuid or ''
-        info['fsType'] = device.format.type or ''
+        dev = udev.get_device(device.sysfsPath) or {}
+        info['fsType'] = device.format.type or dev.get('ID_FS_TYPE', '')
     if hasattr(device.format, 'mountpoint'):
         info['mountPoint'] = device.format.mountpoint or ''
     return info
