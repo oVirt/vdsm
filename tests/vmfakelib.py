@@ -222,15 +222,15 @@ class SuperVdsm(object):
         return {0: [0, 1], 1: [0, 1], 2: [0, 1], 3: [0, 1]}
 
 
-class AdvancedStatsFunction:
+class SampleWindow:
     def __init__(self):
         self._samples = [(0, 1, 19590000000, 1),
                          (1, 1, 10710000000, 1),
                          (2, 1, 19590000000, 0),
                          (3, 1, 19590000000, 2)]
 
-    def getStats(self):
+    def stats(self):
         return [], self._samples, 15
 
-    def getLastSample(self):
+    def last(self):
         return self._samples

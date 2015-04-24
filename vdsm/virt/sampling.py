@@ -367,43 +367,6 @@ class SampleWindow(object):
         return last_sample
 
 
-class AdvancedStatsFunction(object):
-    """
-    A wrapper for functions and methods that will be executed at regular
-    intervals storing the return values for statistic purpose.
-    It is possible to provide a custom time function 'timefn' that provides
-    cached values to reduce system calls.
-    """
-    def __init__(self, function, interval=1, window=_MINIMUM_SAMPLES,
-                 timefn=time.time):
-        self._function = function
-
-        if not isinstance(interval, int) or interval < 1:
-            raise ValueError("interval must be int and greater than 0")
-
-        self._interval = interval
-        self._samples = SampleWindow(window, timefn)
-
-    @property
-    def interval(self):
-        return self._interval
-
-    def __repr__(self):
-        return "<AdvancedStatsFunction %s at 0x%x>" % (
-            self._function.__name__, id(self._function.__name__))
-
-    def __call__(self, *args, **kwargs):
-        value = self._function(*args, **kwargs)
-        self._samples.append(value)
-        return value
-
-    def getStats(self):
-        return self._samples.stats()
-
-    def getLastSample(self):
-        return self._samples.last()
-
-
 StatsSample = namedtuple('StatsSample',
                          ['first_value', 'last_value',
                           'interval', 'stats_age'])

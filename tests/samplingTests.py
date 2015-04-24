@@ -217,61 +217,6 @@ class SampleWindowTests(TestCaseBase):
                          (self._VALUES[-2], self._VALUES[-1], 1))
 
 
-@expandPermutations
-class AdvancedStatsFunctionTests(TestCaseBase):
-    @permutations([[None], [-1], [0], [1.333], ['foo']])
-    def testIntervalBadValues(self, interval):
-        self.assertRaises(
-            ValueError,
-            sampling.AdvancedStatsFunction, lambda x: x, interval)
-
-    def testIntervalGoodValue(self):
-        interval = 42
-        stat = sampling.AdvancedStatsFunction(random.randint, interval)
-        self.assertEqual(stat.interval, interval)
-
-    def testCall(self):
-        value = 42
-        stat = sampling.AdvancedStatsFunction(lambda x: x, interval=1)
-        ret = stat(value)
-        self.assertEqual(ret, value)
-
-    def testWindowSizeOne(self):
-        value = 42
-        stat = sampling.AdvancedStatsFunction(
-            lambda x: x, interval=1, window=1)
-        stat(value)
-        self.assertEqual(stat.getStats(), (None, None, None))
-        self.assertEqual(stat.getLastSample(), value)
-
-    def testGetStats(self):
-        values = tuple(range(42))
-        stat = sampling.AdvancedStatsFunction(
-            lambda x: x, interval=1, window=2)
-        for val in values:
-            stat(val)
-        bgn, end, diff = stat.getStats()
-        self.assertEqual(bgn, values[-2])
-        self.assertEqual(end, values[-1])
-
-    def testElapsedTime(self):
-        counter = itertools.count()
-        stat = sampling.AdvancedStatsFunction(
-            lambda x: x, interval=1, window=2, timefn=lambda: next(counter))
-        for val in range(42):
-            stat(val)
-        bgn, end, diff = stat.getStats()
-        self.assertTrue(diff > 0)  # assertGreater requires py >= 2.7
-
-    def testLastSample(self):
-        values = tuple(range(42))
-        stat = sampling.AdvancedStatsFunction(
-            lambda x: x, interval=1, window=2)
-        for val in values:
-            stat(val)
-        self.assertEqual(stat.getLastSample(), values[-1])
-
-
 class HostStatsThread(TestCaseBase):
     FAILED_SAMPLE = 3  # random 'small' value
     STOP_SAMPLE = 6  # ditto
