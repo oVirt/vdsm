@@ -182,8 +182,6 @@ VolumeChainEntry = namedtuple('VolumeChainEntry',
 VolumeSize = namedtuple("VolumeSize",
                         ["apparentsize", "truesize"])
 
-_MBPS_TO_BPS = 10 ** 6 / 8
-
 
 class TimeoutError(libvirt.libvirtError):
     pass
