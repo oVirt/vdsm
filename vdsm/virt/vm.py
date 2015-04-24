@@ -2868,8 +2868,7 @@ class Vm(object):
         else:
             with self._confLock:
                 conf.update(driveParams)
-
-        self.saveState()
+            self.saveState()
 
     def snapshot(self, snapDrives, memoryParams):
         """Live snapshot command"""
