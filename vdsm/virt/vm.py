@@ -3146,12 +3146,12 @@ class Vm(object):
         This utility method is the inverse of _setDiskReplica, look at the
         _setDiskReplica description for more information.
         """
+        del drive.diskReplicate
+
         conf = self._findDriveConfigByName(drive.name)
         with self._confLock:
             del conf['diskReplicate']
         self.saveState()
-
-        del drive.diskReplicate
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
