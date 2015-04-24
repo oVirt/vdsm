@@ -4239,8 +4239,8 @@ class Vm(object):
         raise LookupError("No block job found for drive '%s'", drive.name)
 
     def trackBlockJob(self, jobID, drive, base, top, strategy):
-        driveSpec = dict([(k, drive[k]) for k in
-                         'poolID', 'domainID', 'imageID', 'volumeID'])
+        driveSpec = dict((k, drive[k]) for k in
+                         ('poolID', 'domainID', 'imageID', 'volumeID'))
         with self._confLock:
             try:
                 job = self.getBlockJob(drive)
