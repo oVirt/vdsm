@@ -275,6 +275,7 @@ AX_PYTHON_MODULE([netaddr], [fatal])
 AX_PYTHON_MODULE([pthreading], [fatal])
 AX_PYTHON_MODULE([pyinotify], [fatal])
 AX_PYTHON_MODULE([selinux], [fatal])
+AX_PYTHON_MODULE([six], [fatal])
 
 # External programs (sorted, please keep in order)
 AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])

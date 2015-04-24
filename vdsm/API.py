@@ -23,6 +23,7 @@
 from contextlib import contextmanager
 import os
 import signal
+import six
 import sys
 import time
 import logging
@@ -1574,7 +1575,7 @@ class Global(APIBase):
                     # exception that might have happened on rollback is
                     # properly logged and derived from actions to respond to
                     # the original exception.
-                    raise excType, value, tb
+                    six.reraise(excType, value, tb)
 
     def setSafeNetworkConfig(self):
         """Declare current network configuration as 'safe'"""

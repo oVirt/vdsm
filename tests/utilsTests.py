@@ -24,6 +24,7 @@ import copy
 import errno
 import logging
 import os.path
+import six
 import sys
 import threading
 import time
@@ -541,7 +542,7 @@ class ExecCmdStressTest(TestCaseBase):
         for worker in self.workers:
             if worker.exc_info:
                 t, v, tb = worker.exc_info
-                raise t, v, tb
+                six.reraise(t, v, tb)
 
     def read_stderr(self):
         args = ['if=/dev/zero',

@@ -40,6 +40,7 @@ import io
 import itertools
 import logging
 import re
+import six
 import sys
 import os
 import platform
@@ -1150,7 +1151,7 @@ class RollbackContext(object):
                     undoExcInfo = sys.exc_info()
 
         if exc_type is None and undoExcInfo is not None:
-            raise undoExcInfo[0], undoExcInfo[1], undoExcInfo[2]
+            six.reraise(undoExcInfo[0], undoExcInfo[1], undoExcInfo[2])
 
     def defer(self, func, *args, **kwargs):
         self._finally.append((func, args, kwargs))

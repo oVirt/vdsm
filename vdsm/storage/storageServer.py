@@ -27,6 +27,7 @@ import glob
 from collections import namedtuple
 import misc
 from functools import partial
+import six
 import sys
 
 from vdsm.compat import pickle
@@ -216,7 +217,7 @@ class MountConnection(object):
             except OSError as e:
                 self.log.warn("Error removing mountpoint directory %r: %s",
                               self._getLocalPath(), e)
-            raise t, v, tb
+            six.reraise(t, v, tb)
         else:
             try:
                 fileSD.validateDirAccess(
@@ -227,7 +228,7 @@ class MountConnection(object):
                     self.disconnect()
                 except OSError:
                     self.log.exception("Error disconnecting")
-                raise t, v, tb
+                six.reraise(t, v, tb)
 
     def isConnected(self):
         return self._mount.isMounted()
