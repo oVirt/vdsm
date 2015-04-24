@@ -400,8 +400,8 @@ class Vm(object):
         if drv['device'] == 'disk':
             volsize = self._getVolumeSize(drv['domainID'], drv['poolID'],
                                           drv['imageID'], drv['volumeID'])
-            drv['truesize'] = volsize.truesize
-            drv['apparentsize'] = volsize.apparentsize
+            drv['truesize'] = str(volsize.truesize)
+            drv['apparentsize'] = str(volsize.apparentsize)
         else:
             drv['truesize'] = 0
             drv['apparentsize'] = 0
