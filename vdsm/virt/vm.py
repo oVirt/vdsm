@@ -2866,7 +2866,8 @@ class Vm(object):
             self.log.error("Unable to update the device configuration ",
                            "for disk %s", driveParams["name"])
         else:
-            conf.update(driveParams)
+            with self._confLock:
+                conf.update(driveParams)
 
         self.saveState()
 
