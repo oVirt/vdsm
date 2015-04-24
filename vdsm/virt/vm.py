@@ -1227,7 +1227,6 @@ class Vm(object):
             self.guestAgent.stop()
         except Exception:
             pass
-        sampling.stats_cache.remove(self.id)
         self.saveState()
 
     def status(self, fullStatus=True):
