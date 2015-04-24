@@ -2729,6 +2729,13 @@ class Vm(object):
 
         raise LookupError("No such drive: '%s'" % drive)
 
+    def _findDriveConfigByName(self, name):
+        devices = self.conf["devices"][:]
+        for device in devices:
+            if device['type'] == hwclass.DISK and device.get("name") == name:
+                return device
+        raise LookupError("No such disk %r" % name)
+
     def updateDriveVolume(self, vmDrive):
         if not vmDrive.device == 'disk' or not isVdsmImage(vmDrive):
             return
@@ -2760,14 +2767,13 @@ class Vm(object):
                            driveParams["name"])
 
         # Updating the VM configuration
-        for vmDriveConfig in self.conf["devices"][:]:
-            if (vmDriveConfig['type'] == hwclass.DISK and
-                    vmDriveConfig.get("name") == driveParams["name"]):
-                vmDriveConfig.update(driveParams)
-                break
-        else:
+        try:
+            conf = self._findDriveConfigByName(driveParams["name"])
+        except LookupError:
             self.log.error("Unable to update the device configuration ",
-                           "for: %s", driveParams["name"])
+                           "for disk %s", driveParams["name"])
+        else:
+            conf.update(driveParams)
 
         self.saveState()
 
@@ -3020,15 +3026,10 @@ class Vm(object):
             raise RuntimeError("Disk '%s' already has an ongoing "
                                "replication" % drive.name)
 
-        for device in self.conf["devices"]:
-            if (device['type'] == hwclass.DISK
-                    and device.get("name") == drive.name):
-                with self._confLock:
-                    device['diskReplicate'] = replica
-                self.saveState()
-                break
-        else:
-            raise LookupError("No such drive: '%s'" % drive.name)
+        conf = self._findDriveConfigByName(drive.name)
+        with self._confLock:
+            conf['diskReplicate'] = replica
+        self.saveState()
 
         drive.diskReplicate = replica
 
@@ -3040,30 +3041,20 @@ class Vm(object):
             raise RuntimeError("Disk '%s' does not have an ongoing "
                                "replication" % drive.name)
 
-        for device in self.conf["devices"]:
-            if (device['type'] == hwclass.DISK
-                    and device.get("name") == drive.name):
-                with self._confLock:
-                    device['diskReplicate'] = drive.diskReplicate
-                self.saveState()
-                break
-        else:
-            raise LookupError("No such drive: '%s'" % drive.name)
+        conf = self._findDriveConfigByName(drive.name)
+        with self._confLock:
+            conf['diskReplicate'] = drive.diskReplicate
+        self.saveState()
 
     def _delDiskReplica(self, drive):
         """
         This utility method is the inverse of _setDiskReplica, look at the
         _setDiskReplica description for more information.
         """
-        for device in self.conf["devices"]:
-            if (device['type'] == hwclass.DISK
-                    and device.get("name") == drive.name):
-                with self._confLock:
-                    del device['diskReplicate']
-                self.saveState()
-                break
-        else:
-            raise LookupError("No such drive: '%s'" % drive.name)
+        conf = self._findDriveConfigByName(drive.name)
+        with self._confLock:
+            del conf['diskReplicate']
+        self.saveState()
 
         del drive.diskReplicate
 
