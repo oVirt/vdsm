@@ -12,13 +12,6 @@ from time import sleep
 from Queue import Queue, Empty
 import logging
 
-# Ensure booleans exist (not needed for Python 2.2.1 or higher)
-try:
-    True
-except NameError:
-    False = 0
-    True = not False
-
 
 class ThreadPool:
 
