@@ -3110,49 +3110,6 @@ class Vm(object):
                 (snapFlags & libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
                     == libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)}
 
-    def _setDiskReplica(self, drive, replica):
-        """
-        This utility method is used to set the disk replication information
-        both in the live object used by vdsm and the vm configuration
-        dictionary that is stored on disk (so that the information is not
-        lost across restarts).
-        """
-        if drive.isDiskReplicationInProgress():
-            raise RuntimeError("Disk '%s' already has an ongoing "
-                               "replication" % drive.name)
-
-        conf = self._findDriveConfigByName(drive.name)
-        with self._confLock:
-            conf['diskReplicate'] = replica
-        self.saveState()
-
-        drive.diskReplicate = replica
-
-    def _updateDiskReplica(self, drive):
-        """
-        Update the persisted copy of drive replica.
-        """
-        if not drive.isDiskReplicationInProgress():
-            raise RuntimeError("Disk '%s' does not have an ongoing "
-                               "replication" % drive.name)
-
-        conf = self._findDriveConfigByName(drive.name)
-        with self._confLock:
-            conf['diskReplicate'] = drive.diskReplicate
-        self.saveState()
-
-    def _delDiskReplica(self, drive):
-        """
-        This utility method is the inverse of _setDiskReplica, look at the
-        _setDiskReplica description for more information.
-        """
-        del drive.diskReplicate
-
-        conf = self._findDriveConfigByName(drive.name)
-        with self._confLock:
-            del conf['diskReplicate']
-        self.saveState()
-
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
             drive = self._findDriveByUUIDs(srcDisk)
@@ -3325,6 +3282,49 @@ class Vm(object):
                 flags |= libvirt.VIR_DOMAIN_BLOCK_REBASE_COPY_DEV
 
             self._dom.blockRebase(drive.name, base, flags=flags)
+
+    def _setDiskReplica(self, drive, replica):
+        """
+        This utility method is used to set the disk replication information
+        both in the live object used by vdsm and the vm configuration
+        dictionary that is stored on disk (so that the information is not
+        lost across restarts).
+        """
+        if drive.isDiskReplicationInProgress():
+            raise RuntimeError("Disk '%s' already has an ongoing "
+                               "replication" % drive.name)
+
+        conf = self._findDriveConfigByName(drive.name)
+        with self._confLock:
+            conf['diskReplicate'] = replica
+        self.saveState()
+
+        drive.diskReplicate = replica
+
+    def _updateDiskReplica(self, drive):
+        """
+        Update the persisted copy of drive replica.
+        """
+        if not drive.isDiskReplicationInProgress():
+            raise RuntimeError("Disk '%s' does not have an ongoing "
+                               "replication" % drive.name)
+
+        conf = self._findDriveConfigByName(drive.name)
+        with self._confLock:
+            conf['diskReplicate'] = drive.diskReplicate
+        self.saveState()
+
+    def _delDiskReplica(self, drive):
+        """
+        This utility method is the inverse of _setDiskReplica, look at the
+        _setDiskReplica description for more information.
+        """
+        del drive.diskReplicate
+
+        conf = self._findDriveConfigByName(drive.name)
+        with self._confLock:
+            del conf['diskReplicate']
+        self.saveState()
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
         # Apparently this is what libvirt would do anyway, except that
