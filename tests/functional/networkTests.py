@@ -1478,7 +1478,7 @@ class NetworkTest(TestCaseBase):
 
             self.vdsm_net.save_config()
 
-            with dnsmasqDhcp(server, _system_is_el6()):
+            with dnsmasqDhcp(server):
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                     dhclient_runner = dhcp.DhclientRunner(client, 4, dhdir,
                                                           'default')
