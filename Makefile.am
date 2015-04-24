@@ -129,8 +129,18 @@ pep8:
 	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' . \
 	$(WHITELIST)
 
+.PHONY: python3
+python3:
+	if [ -x "$(PYTHON3)" ]; then \
+	    PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
+		$(WHITELIST) \
+		`find . -name '*.py' -o -name '*.py.in'`; \
+	else \
+	    echo "Warning: skipping python3 syntax check"; \
+	fi
+
 # Note: dependencies ordered by time needed to run them
-check-recursive: gitignore pyflakes pep8
+check-recursive: gitignore python3 pyflakes pep8
 
 .PHONY: check-all
 check-all:

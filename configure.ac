@@ -255,6 +255,11 @@ if test "x$PEP8" = "x"; then
   AC_MSG_WARN([python-pep8 not found])
 fi
 
+AC_PATH_PROG([PYTHON3], [python3])
+if test "x$PYTHON3" = "x"; then
+  AC_MSG_WARN([python3 not found])
+fi
+
 # Checking for python-devel
 AC_PATH_PROG([PYTHON_CONFIG], [python-config])
 if test "x$PYTHON_CONFIG" = "x"; then
