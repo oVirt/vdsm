@@ -51,3 +51,15 @@ def sudo(cmd):
     command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG]
     command.extend(cmd)
     return command
+
+
+def systemd_run(cmd, scope=False, unit=None, slice=None):
+    command = [constants.EXT_SYSTEMD_RUN]
+    if scope:
+        command.append('--scope')
+    if unit:
+        command.append('--unit=%s' % unit)
+    if slice:
+        command.append('--slice=%s' % slice)
+    command.extend(cmd)
+    return command

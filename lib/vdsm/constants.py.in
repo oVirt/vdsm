@@ -165,3 +165,4 @@ EXT_VDSM_TOOL = os.path.join('@BINDIR@', 'vdsm-tool')
 
 EXT_CURL_IMG_WRAP = '@LIBEXECDIR@/curl-img-wrap'
 EXT_FC_SCAN = '@LIBEXECDIR@/fc-scan'
+EXT_SYSTEMD_RUN = '@SYSTEMD_RUN_PATH@'

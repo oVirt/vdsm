@@ -27,7 +27,8 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @MULTIPATH_PATH@, \
     @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
     @SERVICE_PATH@ vdsmd *, \
-    @REBOOT_PATH@ -f
+    @REBOOT_PATH@ -f, \
+    @SYSTEMD_RUN_PATH@
 
 vdsm  ALL=(ALL) NOPASSWD: VDSM_LIFECYCLE, VDSM_STORAGE
 Defaults:vdsm !requiretty

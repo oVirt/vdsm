@@ -36,6 +36,7 @@ test_modules = \
 	cPopenTests.py \
 	capsTests.py \
 	clientifTests.py \
+	cmdutilsTests.py \
 	concurrentTests.py \
 	configNetworkTests.py \
 	cpuProfileTests.py \
