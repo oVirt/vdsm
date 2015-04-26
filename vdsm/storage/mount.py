@@ -25,6 +25,7 @@ import os
 import stat
 import threading
 
+from vdsm import cmdutils
 from vdsm import constants
 import misc
 
@@ -212,7 +213,7 @@ class Mount(object):
         hsh ^= hash(self.fs_file)
         return hsh
 
-    def mount(self, mntOpts=None, vfstype=None, timeout=None):
+    def mount(self, mntOpts=None, vfstype=None, timeout=None, cgroup=None):
         cmd = [constants.EXT_MOUNT]
 
         if vfstype is not None:
@@ -222,6 +223,9 @@ class Mount(object):
             cmd.extend(("-o", mntOpts))
 
         cmd.extend((self.fs_spec, self.fs_file))
+
+        if cgroup:
+            cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
 
         return self._runcmd(cmd, timeout)
 

@@ -168,6 +168,9 @@ class ExampleConnection(object):
 
 
 class MountConnection(object):
+
+    CGROUP = None
+
     log = logging.getLogger("Storage.StorageServer.MountConnection")
     localPathBase = "/tmp"
 
@@ -209,7 +212,7 @@ class MountConnection(object):
         fileUtils.createdir(self._getLocalPath())
 
         try:
-            self._mount.mount(self.options, self._vfsType)
+            self._mount.mount(self.options, self._vfsType, cgroup=self.CGROUP)
         except MountError:
             t, v, tb = sys.exc_info()
             try:
@@ -255,6 +258,18 @@ class MountConnection(object):
 
 
 class GlusterFSConnection(MountConnection):
+
+    # Run the mount command as a systemd service, so glusterfs helper run in
+    # its own cgroup, and will not die when vdsm is terminated.
+    #
+    # - vdsm.slice
+    #   - vdsm-glusterfs.slice
+    #     - run-22137.scope
+    #       - 22180 /usr/bin/glusterfs ...
+    #     - run-21649.scope
+    #       - 21692 /usr/bin/glusterfs ...
+    #
+    CGROUP = "vdsm-glusterfs"
 
     def getLocalPathBase(cls):
         return os.path.join(MountConnection.getLocalPathBase(), "glusterSD")
