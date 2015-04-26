@@ -234,11 +234,6 @@ def remove_config(*args):
     for c in args.modules:
         try:
             _removeConf(c)
-            sys.stdout.write(
-                "removed configuration of module %s successfully\n" %
-                c.name
-            )
-
         except Exception:
             sys.stderr.write(
                 "can't remove configuration of module %s\n" %
