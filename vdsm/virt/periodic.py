@@ -22,7 +22,6 @@
 code to perform periodic maintenance and bookkeeping of the VMs.
 """
 
-import functools
 import logging
 import threading
 
@@ -59,18 +58,16 @@ def _timeout_from(interval):
     return interval / 2.
 
 
-def _dispatched_operation(get_vms, func, period):
-    disp = VmDispatcher(get_vms, _executor, func, _timeout_from(period))
-    return Operation(disp, period)
-
-
 def start(cif):
     global _operations
 
     _scheduler.start()
     _executor.start()
 
-    per_vm_operation = functools.partial(_dispatched_operation, cif.getVMs)
+    def per_vm_operation(func, period):
+        disp = VmDispatcher(
+            cif.getVMs, _executor, func, _timeout_from(period))
+        return Operation(disp, period)
 
     _operations = [
         # needs dispatching becuse updating the volume stats needs the
