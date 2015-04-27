@@ -29,7 +29,7 @@ _STATE_LEN = "Waiting for message length"
 _STATE_MSG = "Waiting for message"
 
 
-_DEFAULT_RESPONSE_DESTINATIOM = "/queue/_local/vdsm/reponses"
+_DEFAULT_RESPONSE_DESTINATION = "/queue/_local/vdsm/reponses"
 _DEFAULT_REQUEST_DESTINATION = "/queue/_local/vdsm/requests"
 
 _FAKE_SUB_ID = "__vdsm_fake_broker__"
@@ -286,7 +286,7 @@ class StompServer(object):
 
     def send(self, message):
         self.log.debug("Sending response")
-        destination = _DEFAULT_RESPONSE_DESTINATIOM
+        destination = _DEFAULT_RESPONSE_DESTINATION
         try:
             resp = json.loads(message)
             destination = self._req_dest[resp.get("id")]
