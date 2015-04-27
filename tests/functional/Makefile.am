@@ -27,6 +27,7 @@ dist_vdsmfunctests_PYTHON = \
 	firewall.py \
 	momTests.py \
 	networkTests.py \
+	networkTestsOVS.py \
 	sosPluginTests.py \
 	supervdsmFuncTests.py \
 	utils.py \

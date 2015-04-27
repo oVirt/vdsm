@@ -69,4 +69,5 @@ vdsm/vdsmd.8
 vdsm-tool/vdsm-tool.1
 vdsm/rpc/vdsm-api.html
 vdsm_hooks/openstacknet/sudoers
+vdsm_hooks/ovs/sudoers
 vdsm_hooks/persist-vdsm-hooks
