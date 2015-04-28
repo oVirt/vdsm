@@ -707,13 +707,7 @@ class HostStatsThread(threading.Thread):
             if txRate > 100 or rxRate > 100:
                 txRate = min(txRate, 100.0)
                 rxRate = min(rxRate, 100.0)
-                self._log.debug('Rate above 100%%. DEBUG: ifid %s interval: '
-                                '%s thisRx %s thisTx %s samples %s', ifid,
-                                interval, thisRx, thisTx,
-                                [(hs.timestamp, hs.interfaces[ifid].rx,
-                                 hs.interfaces[ifid].tx)
-                                 for hs in self._samples if
-                                 ifid in hs.interfaces])
+                self._log.debug('Rate above 100%%.')
             iface = hs1.interfaces[ifid]
             stats['network'][ifid] = {'name': ifid, 'speed': str(ifrate),
                                       'rxDropped': str(iface.rxDropped),
