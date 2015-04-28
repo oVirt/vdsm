@@ -605,13 +605,16 @@ class HostStatsThread(threading.Thread):
             return None
 
     def get(self):
-        stats = self._getInterfacesStats()
-        stats['cpuSysVdsmd'] = stats['cpuUserVdsmd'] = 0.0
-        stats['elapsedTime'] = int(time.time() - self.startTime)
+        stats = self._empty_stats()
+
         if len(self._samples) < 2:
             return stats
+
+        stats.update(self._getInterfacesStats())
+
         hs0, hs1 = self._samples[0], self._samples[-1]
         interval = hs1.timestamp - hs0.timestamp
+
         jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % (2 ** 32)
         stats['cpuUserVdsmd'] = jiffies / interval
         jiffies = (hs1.pidcpu.sys - hs0.pidcpu.sys) % (2 ** 32)
@@ -670,19 +673,7 @@ class HostStatsThread(threading.Thread):
         return cpuCoreStats
 
     def _getInterfacesStats(self):
-        """
-        Compile and return a dict containing the stats.
-
-        :returns: a dict that with the following keys:
-
-            * cpuUser
-            * cpuSys
-            * cpuIdle
-            * rxRate
-            * txRate
-        """
-        stats = {'cpuUser': 0.0, 'cpuSys': 0.0, 'cpuIdle': 100.0,
-                 'rxRate': 0.0, 'txRate': 0.0}
+        stats = {}
         if len(self._samples) < 2:
             return stats
         hs0, hs1 = self._samples[0], self._samples[-1]
@@ -738,6 +729,18 @@ class HostStatsThread(threading.Thread):
         stats['txDropped'] = txDropped
 
         return stats
+
+    def _empty_stats(self):
+        return {
+            'cpuUser': 0.0,
+            'cpuSys': 0.0,
+            'cpuIdle': 100.0,
+            'rxRate': 0.0,  # REQUIRED_FOR: engine < 3.6
+            'txRate': 0.0,  # REQUIRED_FOR: engine < 3.6
+            'cpuSysVdsmd': 0.0,
+            'cpuUserVdsmd': 0.0,
+            'elapsedTime': int(time.time() - self.startTime)
+        }
 
 
 def _getLinkSpeed(dev):
