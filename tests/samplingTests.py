@@ -150,21 +150,17 @@ class InterfaceSampleTests(TestCaseBase):
         s1.operstate = 'x'
         self.assertEquals('operstate:x', s1.connlog_diff(s0))
 
-    @brokentest("Broken unless libvirtd is running")
-    @MonkeyPatch(libvirtconnection, '_read_password', read_password)
     @ValidateRunningAsRoot
     def testHostSampleReportsNewInterface(self):
-        hs_before = sampling.HostSample(os.getpid())
-        interfaces_before = set(hs_before.interfaces.iterkeys())
+        interfaces_before = set(
+            sampling._get_interfaces_and_samples().iterkeys())
 
         with dummy_if() as dummy_name:
-            hs_after = sampling.HostSample(os.getpid())
-            interfaces_after = set(hs_after.interfaces.iterkeys())
+            interfaces_after = set(
+                sampling._get_interfaces_and_samples().iterkeys())
             interfaces_diff = interfaces_after - interfaces_before
-            self.assertEqual(interfaces_diff, set([dummy_name]))
+            self.assertEqual(interfaces_diff, {dummy_name})
 
-    @brokentest("Broken unless libvirtd is running")
-    @MonkeyPatch(libvirtconnection, '_read_password', read_password)
     @ValidateRunningAsRoot
     def testHostSampleHandlesDisappearingVlanInterfaces(self):
         original_getLinks = ipwrapper.getLinks
@@ -174,12 +170,10 @@ class InterfaceSampleTests(TestCaseBase):
             ipwrapper.linkDel(self.NEW_VLAN)
             return iter(all_links)
 
-        with MonkeyPatchScope(
-                [(ipwrapper, 'getLinks', faultyGetLinks)]):
-            with dummy_if() as dummy_name:
-                with vlan(self.NEW_VLAN, dummy_name, 999):
-                    hs = sampling.HostSample(os.getpid())
-                    self.assertNotIn(self.NEW_VLAN, hs.interfaces)
+        with MonkeyPatchScope([(ipwrapper, 'getLinks', faultyGetLinks)]):
+            with dummy_if() as dummy, vlan(self.NEW_VLAN, dummy, 999):
+                interfaces_and_samples = sampling._get_interfaces_and_samples()
+                self.assertNotIn(self.NEW_VLAN, interfaces_and_samples)
 
 
 @expandPermutations
