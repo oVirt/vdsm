@@ -569,10 +569,6 @@ class HostStatsThread(threading.Thread):
     def stop(self):
         self._stopEvent.set()
 
-    def sample(self):
-        hs = HostSample(self._pid)
-        return hs
-
     def run(self):
         import vm
         try:
@@ -580,7 +576,7 @@ class HostStatsThread(threading.Thread):
             time.sleep(self._sampleInterval)
             while not self._stopEvent.isSet():
                 try:
-                    sample = self.sample()
+                    sample = HostSample(self._pid)
                     self._samples.append(sample)
                     if len(self._samples) == 1:
                         self._CONNLOG.debug('%s', sample.to_connlog())
