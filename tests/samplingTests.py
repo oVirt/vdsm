@@ -197,6 +197,18 @@ class SampleWindowTests(TestCaseBase):
         win.append(self._VALUES[1])
         self.assertEqual(self._VALUES[1], win.last())
 
+    def test_second_last(self):
+        win = sampling.SampleWindow(size=2)
+        win.append(self._VALUES[0])
+        win.append(self._VALUES[1])
+        self.assertEqual(self._VALUES[0], win.last(nth=2))
+
+    def test_last_error(self):
+        win = sampling.SampleWindow(size=2)
+        win.append(self._VALUES[0])
+        win.append(self._VALUES[1])
+        self.assertEqual(None, win.last(nth=3))
+
     def test_stats_empty(self):
         self.assertEqual(self.win.stats(), (None, None, None))
 

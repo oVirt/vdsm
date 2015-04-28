@@ -357,14 +357,14 @@ class SampleWindow(object):
         elapsed_time = last_timestamp - first_timestamp
         return first_sample, last_sample, elapsed_time
 
-    def last(self):
+    def last(self, nth=1):
         """
-        Return the last collected sample.
+        Return the nth-last collected sample.
         """
-        if not self._samples:
+        if len(self._samples) < nth:
             return None
-        _, last_sample = self._samples[-1]
-        return last_sample
+        _, sample = self._samples[-nth]
+        return sample
 
 
 StatsSample = namedtuple('StatsSample',
