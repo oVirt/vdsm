@@ -34,10 +34,7 @@ from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm import ipwrapper
 from vdsm.netinfo import nics, bonding, vlans
 from vdsm import utils
-from vdsm.config import config
 
-from . import hoststats
-from . import virdomain
 from .utils import ExpiringCache
 
 import caps
@@ -542,58 +539,23 @@ HOST_STATS_AVERAGING_WINDOW = 5
 host_samples = SampleWindow(size=HOST_STATS_AVERAGING_WINDOW)
 
 
-class HostStatsThread(object):
-    """
-    A thread that periodically samples host statistics.
-    """
+class HostMonitor(object):
     _CONNLOG = logging.getLogger('connectivity')
 
-    _log = logging.getLogger('vds.sampling.HostStats')
-
-    def __init__(self, samples=host_samples, clock=utils.monotonic_time):
+    def __init__(self, samples=host_samples):
         self._samples = samples
-        hoststats.start(clock)
         self._pid = os.getpid()
 
-        self._stopEvent = threading.Event()
-
-        self._thread = threading.Thread(target=self._run, name='hoststats')
-        self._thread.daemon = True
-
-    def start(self):
-        self._thread.start()
-
-    def stop(self):
-        self._stopEvent.set()
-
-    def wait(self):
-        self._thread.join()
-
-    def _run(self):
-
-        sample_interval = config.getint(
-            'vars', 'host_sample_stats_interval')
-
-        try:
-            # wait a bit before starting to sample
-            time.sleep(sample_interval)
-            while not self._stopEvent.isSet():
-                try:
-                    sample = HostSample(self._pid)
-                    self._samples.append(sample)
-                    second_last = self._samples.last(nth=2)
-                    if second_last is None:
-                        self._CONNLOG.debug('%s', sample.to_connlog())
-                    else:
-                        diff = sample.connlog_diff(second_last)
-                        if diff:
-                            self._CONNLOG.debug('%s', diff)
-                except virdomain.TimeoutError:
-                    self._log.exception("Timeout while sampling stats")
-                self._stopEvent.wait(sample_interval)
-        except:
-            if not self._stopEvent.isSet():
-                self._log.exception("Error while sampling stats")
+    def __call__(self):
+        sample = HostSample(self._pid)
+        self._samples.append(sample)
+        second_last = self._samples.last(nth=2)
+        if second_last is None:
+            self._CONNLOG.debug('%s', sample.to_connlog())
+        else:
+            diff = sample.connlog_diff(second_last)
+            if diff:
+                self._CONNLOG.debug('%s', diff)
 
 
 def _getLinkSpeed(dev):

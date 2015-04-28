@@ -29,7 +29,7 @@ import virt.sampling as sampling
 
 import caps
 
-from testValidation import brokentest, ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
@@ -139,7 +139,7 @@ class SampleWindowTests(TestCaseBase):
                          (self._VALUES[-2], self._VALUES[-1], 1))
 
 
-class HostStatsThreadTests(TestCaseBase):
+class HostStatsMonitorTests(TestCaseBase):
     FAILED_SAMPLE = 3  # random 'small' value
     STOP_SAMPLE = 6  # ditto
 
@@ -148,47 +148,11 @@ class HostStatsThreadTests(TestCaseBase):
         self._sampleCount = 0
         self._samplingDone = threading.Event()
 
-    @brokentest
-    def testContinueWithErrors(self):
-        """
-        bz1113948: do not give up on errors != TimeoutError
-        """
-        def WrapHostSample(pid):
-            self._sampleCount += 1
-            if self._sampleCount == self.FAILED_SAMPLE:
-                raise ValueError
-            if self._sampleCount == self.STOP_SAMPLE:
-                self._hs.stop()
-                self._samplingDone.set()
-            return sampling.HostSample(1)
-
-        with MonkeyPatchScope([(sampling, 'HostSample', WrapHostSample),
-                               (sampling.HostStatsThread,
-                                   'SAMPLE_INTERVAL_SEC', 0.1)]):
-            self._hs = sampling.HostStatsThread()
-            self._hs.start()
-            self._samplingDone.wait(3.0)
-            self.assertTrue(self._samplingDone.is_set())
-            self.assertTrue(self._sampleCount >= self.STOP_SAMPLE)
-
     def testSamplesWraparound(self):
         NUM = sampling.HOST_STATS_AVERAGING_WINDOW + 1
 
         samples = sampling.SampleWindow(
             sampling.HOST_STATS_AVERAGING_WINDOW)
-
-        class FakeEvent(object):
-            def __init__(self, *args):
-                self.counter = 0
-
-            def isSet(self):
-                return self.counter >= NUM
-
-            def set(self):
-                pass
-
-            def wait(self, unused):
-                self.counter += 1
 
         class FakeHostSample(object):
 
@@ -208,12 +172,10 @@ class HostStatsThreadTests(TestCaseBase):
                 pass
 
         with MonkeyPatchScope([(sampling, 'HostSample', FakeHostSample)]):
-            self._hs = sampling.HostStatsThread(samples)
-            self._hs._sampleInterval = 0
-            # we cannot monkey patch, it will interfer on threading internals
-            self._hs._stopEvent = FakeEvent()
-            self._hs.start()
-            self._hs.wait()
+            hs = sampling.HostMonitor(samples=samples)
+            for _ in range(NUM):
+                hs()
+
             first, last, _ = samples.stats()
             self.assertEqual(first.id,
                              FakeHostSample.counter -

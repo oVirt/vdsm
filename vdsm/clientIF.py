@@ -47,7 +47,6 @@ from protocoldetector import MultiProtocolAcceptor
 
 from virt import migration
 from virt import recovery
-from virt import sampling
 from virt import secret
 from virt import vm
 from virt import vmstatus
@@ -102,9 +101,6 @@ class clientIF(object):
             self.gluster = None
         try:
             self.vmContainer = {}
-            self._hostStats = sampling.HostStatsThread(
-                sampling.host_samples)
-            self._hostStats.start()
             self.lastRemoteAccess = 0
             self._enabled = True
             self._netConfigDirty = False
@@ -281,7 +277,6 @@ class clientIF(object):
             self._enabled = False
             secret.clear()
             self.channelListener.stop()
-            self._hostStats.stop()
             if self.irs:
                 return self.irs.prepareForShutdown()
             else:

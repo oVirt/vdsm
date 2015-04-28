@@ -29,6 +29,7 @@ from vdsm import executor
 from vdsm import libvirtconnection
 from vdsm.config import config
 
+from . import hoststats
 from . import sampling
 from . import virdomain
 
@@ -99,9 +100,16 @@ def start(cif, scheduler):
         # thus we need dispatching.
         per_vm_operation(
             DriveWatermarkMonitor,
-            config.getint('vars', 'vm_watermark_interval'))
+            config.getint('vars', 'vm_watermark_interval')),
+
+        Operation(
+            sampling.HostMonitor(),
+            config.getint('vars', 'host_sample_stats_interval'),
+            scheduler)
 
     ]
+
+    hoststats.start()
 
     for op in _operations:
         op.start()
