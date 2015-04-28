@@ -624,7 +624,7 @@ class HostStatsThread(threading.Thread):
         if first_sample is None:
             return stats
 
-        stats.update(self._getInterfacesStats())
+        stats.update(_get_interfaces_stats(first_sample, last_sample))
 
         interval = last_sample.timestamp - first_sample.timestamp
 
@@ -662,64 +662,6 @@ class HostStatsThread(threading.Thread):
             first_sample, last_sample)
 
         stats['v2vJobs'] = v2v.get_jobs_status()
-        return stats
-
-    def _getInterfacesStats(self):
-        stats = {}
-        hs0, hs1, _ = self._samples.stats()
-        if hs0 is None:
-            return stats
-        interval = hs1.timestamp - hs0.timestamp
-
-        rx = tx = rxDropped = txDropped = 0
-        stats['network'] = {}
-        total_rate = 0
-        for ifid in hs1.interfaces:
-            # it skips hot-plugged devices if we haven't enough information
-            # to count stats from it
-            if ifid not in hs0.interfaces:
-                continue
-            ifrate = hs1.interfaces[ifid].speed or 1000
-            Mbps2Bps = (10 ** 6) / 8
-            thisRx = (hs1.interfaces[ifid].rx - hs0.interfaces[ifid].rx) % \
-                NETSTATS_BOUND
-            thisTx = (hs1.interfaces[ifid].tx - hs0.interfaces[ifid].tx) % \
-                NETSTATS_BOUND
-            rxRate = 100.0 * thisRx / interval / ifrate / Mbps2Bps
-            txRate = 100.0 * thisTx / interval / ifrate / Mbps2Bps
-            if txRate > 100 or rxRate > 100:
-                txRate = min(txRate, 100.0)
-                rxRate = min(rxRate, 100.0)
-                self._log.debug('Rate above 100%%.')
-            iface = hs1.interfaces[ifid]
-            stats['network'][ifid] = {'name': ifid, 'speed': str(ifrate),
-                                      'rxDropped': str(iface.rxDropped),
-                                      'txDropped': str(iface.txDropped),
-                                      'rxErrors': str(iface.rxErrors),
-                                      'txErrors': str(iface.txErrors),
-                                      'state': iface.operstate,
-                                      'rxRate': '%.1f' % rxRate,
-                                      'txRate': '%.1f' % txRate,
-                                      'rx': str(iface.rx),
-                                      'tx': str(iface.tx),
-                                      'sampleTime': hs1.timestamp,
-                                      }
-            rx += thisRx
-            tx += thisTx
-            rxDropped += hs1.interfaces[ifid].rxDropped
-            txDropped += hs1.interfaces[ifid].txDropped
-            total_rate += ifrate
-
-        total_bytes_per_sec = (total_rate or 1000) * (10 ** 6) / 8
-        stats['rxRate'] = 100.0 * rx / interval / total_bytes_per_sec
-        stats['txRate'] = 100.0 * tx / interval / total_bytes_per_sec
-        if stats['txRate'] > 100 or stats['rxRate'] > 100:
-            stats['txRate'] = min(stats['txRate'], 100.0)
-            stats['rxRate'] = min(stats['rxRate'], 100.0)
-            logging.debug(stats)
-        stats['rxDropped'] = rxDropped
-        stats['txDropped'] = txDropped
-
         return stats
 
     def _empty_stats(self):
@@ -761,6 +703,67 @@ def _get_cpu_core_stats(first_sample, last_sample):
                              float(core_stat['cpuSys'])))
             cpu_core_stats[str(cpu_core)] = core_stat
     return cpu_core_stats
+
+
+def _get_interfaces_stats(first_sample, last_sample):
+    interval = last_sample.timestamp - first_sample.timestamp
+
+    rx = tx = rxDropped = txDropped = 0
+    stats = {'network': {}}
+    total_rate = 0
+    for ifid in last_sample.interfaces:
+        # it skips hot-plugged devices if we haven't enough information
+        # to count stats from it
+        if ifid not in first_sample.interfaces:
+            continue
+
+        ifrate = last_sample.interfaces[ifid].speed or 1000
+        Mbps2Bps = (10 ** 6) / 8
+        thisRx = (
+            last_sample.interfaces[ifid].rx -
+            first_sample.interfaces[ifid].rx
+            ) % NETSTATS_BOUND
+        thisTx = (
+            last_sample.interfaces[ifid].tx -
+            first_sample.interfaces[ifid].tx
+            ) % NETSTATS_BOUND
+        rxRate = 100.0 * thisRx / interval / ifrate / Mbps2Bps
+        txRate = 100.0 * thisTx / interval / ifrate / Mbps2Bps
+        if txRate > 100 or rxRate > 100:
+            txRate = min(txRate, 100.0)
+            rxRate = min(rxRate, 100.0)
+            logging.debug('Rate above 100%%.')
+        iface = last_sample.interfaces[ifid]
+        stats['network'][ifid] = {
+            'name': ifid, 'speed': str(ifrate),
+            'rxDropped': str(iface.rxDropped),
+            'txDropped': str(iface.txDropped),
+            'rxErrors': str(iface.rxErrors),
+            'txErrors': str(iface.txErrors),
+            'state': iface.operstate,
+            'rxRate': '%.1f' % rxRate,
+            'txRate': '%.1f' % txRate,
+            'rx': str(iface.rx),
+            'tx': str(iface.tx),
+            'sampleTime': last_sample.timestamp,
+        }
+        rx += thisRx
+        tx += thisTx
+        rxDropped += last_sample.interfaces[ifid].rxDropped
+        txDropped += last_sample.interfaces[ifid].txDropped
+        total_rate += ifrate
+
+    total_bytes_per_sec = (total_rate or 1000) * (10 ** 6) / 8
+    stats['rxRate'] = 100.0 * rx / interval / total_bytes_per_sec
+    stats['txRate'] = 100.0 * tx / interval / total_bytes_per_sec
+    if stats['txRate'] > 100 or stats['rxRate'] > 100:
+        stats['txRate'] = min(stats['txRate'], 100.0)
+        stats['rxRate'] = min(stats['rxRate'], 100.0)
+        logging.debug(stats)
+    stats['rxDropped'] = rxDropped
+    stats['txDropped'] = txDropped
+
+    return stats
 
 
 def _getLinkSpeed(dev):
