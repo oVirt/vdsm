@@ -303,7 +303,7 @@ class HostStatsThreadTests(TestCaseBase):
             self._hs._stopEvent = FakeEvent()
             self._hs.start()
             self._hs.join()
-            first, last = self._hs._samples[0], self._hs._samples[-1]
+            first, last, _ = self._hs._samples.stats()
             self.assertEqual(first.id,
                              FakeHostSample.counter -
                              sampling.HostStatsThread.AVERAGING_WINDOW)

@@ -564,7 +564,7 @@ class HostStatsThread(threading.Thread):
         self.daemon = True
         self._log = log
         self._stopEvent = threading.Event()
-        self._samples = []
+        self._samples = SampleWindow(size=self.AVERAGING_WINDOW)
 
         self._pid = os.getpid()
         self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
@@ -584,15 +584,13 @@ class HostStatsThread(threading.Thread):
                 try:
                     sample = HostSample(self._pid)
                     self._samples.append(sample)
-                    if len(self._samples) == 1:
+                    second_last = self._samples.last(nth=2)
+                    if second_last is None:
                         self._CONNLOG.debug('%s', sample.to_connlog())
                     else:
-                        diff = sample.connlog_diff(self._samples[-2])
+                        diff = sample.connlog_diff(second_last)
                         if diff:
                             self._CONNLOG.debug('%s', diff)
-
-                    if len(self._samples) > self.AVERAGING_WINDOW:
-                        self._samples.pop(0)
                 except vm.TimeoutError:
                     self._log.exception("Timeout while sampling stats")
                 self._stopEvent.wait(self._sampleInterval)
@@ -613,12 +611,12 @@ class HostStatsThread(threading.Thread):
     def get(self):
         stats = self._empty_stats()
 
-        if len(self._samples) < 2:
+        hs0, hs1, _ = self._samples.stats()
+        if hs0 is None:
             return stats
 
         stats.update(self._getInterfacesStats())
 
-        hs0, hs1 = self._samples[0], self._samples[-1]
         interval = hs1.timestamp - hs0.timestamp
 
         jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % JIFFIES_BOUND
@@ -661,7 +659,7 @@ class HostStatsThread(threading.Thread):
             for cpuCore in cpuCores:
                 coreStat = {}
                 coreStat['nodeIndex'] = int(nodeIndex)
-                hs0, hs1 = self._samples[0], self._samples[-1]
+                hs0, hs1, _ = self._samples.stats()
                 interval = hs1.timestamp - hs0.timestamp
                 jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['user'] -
                            hs0.cpuCores.getCoreSample(cpuCore)['user']) % \
@@ -680,9 +678,9 @@ class HostStatsThread(threading.Thread):
 
     def _getInterfacesStats(self):
         stats = {}
-        if len(self._samples) < 2:
+        hs0, hs1, _ = self._samples.stats()
+        if hs0 is None:
             return stats
-        hs0, hs1 = self._samples[0], self._samples[-1]
         interval = hs1.timestamp - hs0.timestamp
 
         rx = tx = rxDropped = txDropped = 0
