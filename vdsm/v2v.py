@@ -398,7 +398,10 @@ class ImportVm(object):
                                    (self._id, event))
 
     def _create_command(self):
-        cmd = [_VIRT_V2V.cmd, '-ic', self._uri, '-o', 'vdsm', '-of', 'raw']
+        cmd = [_VIRT_V2V.cmd,
+               '-ic', self._uri,
+               '-o', 'vdsm',
+               '-of', self._get_disk_format()]
         cmd.extend(self._generate_disk_parameters())
         cmd.extend(['--password-file',
                     self._passwd_file,
@@ -433,6 +436,12 @@ class ImportVm(object):
                               self._id)
             finally:
                 zombiereaper.autoReapPID(self._proc.pid)
+
+    def _get_disk_format(self):
+        fmt = self._vminfo.get('format', 'raw').lower()
+        if fmt == 'cow':
+            return 'qcow2'
+        return fmt
 
     def _generate_disk_parameters(self):
         parameters = []

@@ -3792,12 +3792,14 @@
 #
 # @networks:  #optional list of network devices
 #
+# @format:    #optional converted disk format (raw, cow etc)
+#
 # Since: 4.17.0
 ##
 {'type': 'ExternalVmInfo',
  'data': {'vmName': 'str', 'status': 'VmStatus', 'vmId': 'UUID', 'smp': 'uint',
           'memSize': 'uint', '*disks': ['ExternalDiskInfo'],
-          '*networks': ['ExternalNetworkInfo']}}
+          '*networks': ['ExternalNetworkInfo'], '*format': 'VolumeFormat'}}
 
 ##
 # @Host.getExternalVMs:
