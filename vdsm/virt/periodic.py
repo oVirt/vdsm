@@ -226,20 +226,28 @@ class VmDispatcher(object):
         skipped = []
 
         for vm_id, vm_obj in vms.iteritems():
-            op = self._create(vm_obj)
+            try:
+                op = self._create(vm_obj)
 
-            if not op.required:
-                continue
+                if not op.required:
+                    continue
+                # When dealing with blocked domains, we also want to avoid
+                # to pile up jobs that libvirt can't handle and eventually
+                # clog it.
+                # We don't care too much about precise tracking, so it is
+                # still OK if occasional misdetection occours, but we
+                # definitely want to avoid known-bad situation and to
+                # needlessly overload libvirt.
+                if not op.runnable:
+                    skipped.append(vm_id)
+                    continue
 
-            # When dealing with blocked domains, we also want to avoid
-            # to pile up jobs that libvirt can't handle and eventually clog it.
-            # We don't care too much about precise tracking, so it is still OK
-            # if occasional misdetection occours, but we definitely want to
-            # avoid known-bad situation and to needlessly overload libvirt.
-            if op.runnable:
-                self._executor.dispatch(op, self._timeout)
+            except Exception:
+                # we want to make sure to have VM UUID logged
+                self._log.exception("while dispatching %s to VM '%s'",
+                                    self._create, vm_id)
             else:
-                skipped.append(vm_id)
+                self._executor.dispatch(op, self._timeout)
 
         if skipped:
             self._log.warning('could not run %s on %s',

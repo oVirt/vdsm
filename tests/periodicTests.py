@@ -21,7 +21,6 @@
 from collections import defaultdict
 import threading
 import time
-import uuid
 
 from vdsm import executor
 from vdsm import schedule
@@ -171,9 +170,11 @@ class PeriodicOperationTests(TestCaseBase):
         self.assertEqual(executions[0], invokations[0]-1)
 
 
-class VmDispatcherTests(TestCaseBase):
+VM_NUM = 5  # just a number, no special meaning
 
-    VM_NUM = 5  # just a number, no special meaning
+
+@expandPermutations
+class VmDispatcherTests(TestCaseBase):
 
     def setUp(self):
         self.cif = fake.ClientIF()
@@ -182,22 +183,43 @@ class VmDispatcherTests(TestCaseBase):
 
         _Visitor.VMS.clear()
 
-    def test_dispatch_vms(self):
+    @permutations([[()],
+                   [((0,))],
+                   [((0, 2))],
+                   [((VM_NUM-1,))],
+                   [((VM_NUM-2, VM_NUM-1))]])
+    def test_dispatch(self, failed_ids):
+        failed_ids = (0, 2)
+        for i in failed_ids:
+            with self.cif.vmContainerLock:
+                vm_id = _fake_vm_id(i)
+                self.cif.vmContainer[vm_id].fail_required = True
+
         op = periodic.VmDispatcher(
             self.cif.getVMs, _FakeExecutor(), _Visitor, 0)
         # we don't care about executor (hence the simplistic fake)
         op()
 
         vms = self.cif.getVMs()
-        for vmId, _ in vms.items():
-            self.assertEqual(_Visitor.VMS.get(vmId), 1)
+        expected = (
+            set(vms.keys()) -
+            set(_fake_vm_id(i) for i in failed_ids))
+        for vm_id in expected:
+            self.assertEqual(_Visitor.VMS.get(vm_id), 1)
+
+        for vm_id in failed_ids:
+            self.assertEqual(_Visitor.VMS.get(vm_id), None)
 
     def _make_fake_vms(self):
-        for i in range(self.VM_NUM):
-            vmId = str(uuid.uuid4())
+        for i in range(VM_NUM):
+            vm_id = _fake_vm_id(i)
             with self.cif.vmContainerLock:
-                self.cif.vmContainer[vmId] = _FakeVM(
-                    vmId, 'VM-%i' % i)
+                self.cif.vmContainer[vm_id] = _FakeVM(
+                    vm_id, vm_id)
+
+
+def _fake_vm_id(i):
+    return 'VM-%03i' % i
 
 
 class _Visitor(object):
@@ -207,8 +229,17 @@ class _Visitor(object):
     def __init__(self, vm):
         self._vm = vm
 
-        self.required = True
-        self.runnable = True
+    @property
+    def required(self):
+        if getattr(self._vm, 'fail_required', False):
+            raise ValueError('required failed')
+        return True
+
+    @property
+    def runnable(self):
+        if getattr(self._vm, 'fail_runnable', False):
+            raise ValueError('runnable failed')
+        return True
 
     def __call__(self):
         _Visitor.VMS[self._vm.id] += 1
