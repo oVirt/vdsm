@@ -491,7 +491,7 @@ stats_cache = StatsCache()
 _TIMEOUT = 40.0
 
 
-class SampleVMs(object):
+class VMBulkSampler(object):
     def __init__(self, conn, get_vms, stats_cache,
                  stats_flags=0, timeout=_TIMEOUT):
         self._conn = conn
@@ -500,7 +500,7 @@ class SampleVMs(object):
         self._stats_flags = stats_flags
         self._skip_doms = ExpiringCache(timeout)
         self._sampling = False
-        self._log = logging.getLogger("sampling.SampleVMs")
+        self._log = logging.getLogger("sampling.VMBulkSampler")
 
     def __call__(self):
         timestamp = self._stats_cache.clock()

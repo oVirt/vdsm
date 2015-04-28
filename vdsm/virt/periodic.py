@@ -87,10 +87,10 @@ def start(cif):
             config.getint('vars', 'vm_sample_jobs_interval')),
 
         # libvirt sampling using bulk stats can block, but unresponsive
-        # domains are handled inside SampleVMs for performance reasons;
+        # domains are handled inside VMBulkSampler for performance reasons;
         # thus, does not need dispatching.
         Operation(
-            sampling.SampleVMs(
+            sampling.VMBulkSampler(
                 libvirtconnection.get(cif),
                 cif.getVMs,
                 sampling.stats_cache),
