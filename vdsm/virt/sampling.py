@@ -30,6 +30,8 @@ import re
 import threading
 import time
 
+import six
+
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm import ipwrapper
 from vdsm import netinfo
@@ -656,40 +658,11 @@ class HostStatsThread(threading.Thread):
             stats['bootTime'] = self._boot_time()
 
         stats['numaNodeMemFree'] = last_sample.numaNodeMem.nodesMemSample
-        stats['cpuStatistics'] = self._getCpuCoresStats()
+        stats['cpuStatistics'] = _get_cpu_core_stats(
+            first_sample, last_sample)
 
         stats['v2vJobs'] = v2v.get_jobs_status()
         return stats
-
-    def _getCpuCoresStats(self):
-        """
-        :returns: a dict that with the following formats:
-
-            {'<cpuId>': {'numaNodeIndex': int, 'cpuSys': 'str',
-             'cpuIdle': 'str', 'cpuUser': 'str'}, ...}
-        """
-        cpuCoreStats = {}
-        for nodeIndex, numaNode in caps.getNumaTopology().iteritems():
-            cpuCores = numaNode['cpus']
-            for cpuCore in cpuCores:
-                coreStat = {}
-                coreStat['nodeIndex'] = int(nodeIndex)
-                hs0, hs1, _ = self._samples.stats()
-                interval = hs1.timestamp - hs0.timestamp
-                jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['user'] -
-                           hs0.cpuCores.getCoreSample(cpuCore)['user']) % \
-                    JIFFIES_BOUND
-                coreStat['cpuUser'] = ("%.2f" % (jiffies / interval))
-                jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['sys'] -
-                           hs0.cpuCores.getCoreSample(cpuCore)['sys']) % \
-                    JIFFIES_BOUND
-                coreStat['cpuSys'] = ("%.2f" % (jiffies / interval))
-                coreStat['cpuIdle'] = ("%.2f" %
-                                       max(0.0, 100.0 -
-                                           float(coreStat['cpuUser']) -
-                                           float(coreStat['cpuSys'])))
-                cpuCoreStats[str(cpuCore)] = coreStat
-        return cpuCoreStats
 
     def _getInterfacesStats(self):
         stats = {}
@@ -760,6 +733,34 @@ class HostStatsThread(threading.Thread):
             'cpuUserVdsmd': 0.0,
             'elapsedTime': int(time.time() - self.startTime)
         }
+
+
+def _get_cpu_core_stats(first_sample, last_sample):
+    interval = last_sample.timestamp - first_sample.timestamp
+
+    def compute_cpu_usage(cpu_core, mode):
+        jiffies = (
+            last_sample.cpuCores.getCoreSample(cpu_core)[mode] -
+            first_sample.cpuCores.getCoreSample(cpu_core)[mode]
+        ) % JIFFIES_BOUND
+        return ("%.2f" % (jiffies / interval))
+
+    cpu_core_stats = {}
+    for node_index, numa_node in six.iteritems(caps.getNumaTopology()):
+        cpu_cores = numa_node['cpus']
+        for cpu_core in cpu_cores:
+            core_stat = {
+                'nodeIndex': int(node_index),
+                'cpuUser': compute_cpu_usage(cpu_core, 'user'),
+                'cpuSys': compute_cpu_usage(cpu_core, 'sys'),
+            }
+            core_stat['cpuIdle'] = (
+                "%.2f" % max(0.0,
+                             100.0 -
+                             float(core_stat['cpuUser']) -
+                             float(core_stat['cpuSys'])))
+            cpu_core_stats[str(cpu_core)] = core_stat
+    return cpu_core_stats
 
 
 def _getLinkSpeed(dev):

@@ -27,8 +27,6 @@ import shutil
 import threading
 import time
 
-import six
-
 from vdsm import ipwrapper
 from vdsm.password import ProtectedPassword
 import virt.sampling as sampling
@@ -317,15 +315,10 @@ class HostStatsThreadTests(TestCaseBase):
 
     def testCpuCoreStats(self):
         node_id, cpu_id = 0, 0
-        self._hs = sampling.HostStatsThread(self.log)
         cpu_sample = {'user': 1.0, 'sys': 2.0}
 
-        # "5" is the size of the SampleWindow.
-        # there is no easy way to get SampleWindow, so
-        # we hardcode a magic number here.
-        for fake_ts in six.moves.xrange(5):
-            self._hs._samples.append(
-                fake.HostSample(fake_ts, {cpu_id: cpu_sample}))
+        first_sample = fake.HostSample(1.0, {cpu_id: cpu_sample})
+        last_sample = fake.HostSample(2.0, {cpu_id: cpu_sample})
 
         def fakeNumaTopology():
             return {
@@ -345,8 +338,9 @@ class HostStatsThreadTests(TestCaseBase):
 
         with MonkeyPatchScope([(caps, 'getNumaTopology',
                                 fakeNumaTopology)]):
-            self.assertEqual(self._hs._getCpuCoresStats(),
-                             expected)
+            self.assertEqual(
+                sampling._get_cpu_core_stats(first_sample, last_sample),
+                expected)
 
 
 class NumaNodeMemorySampleTests(TestCaseBase):
