@@ -467,13 +467,16 @@ class StatsCache(object):
         with stale one.
         """
         with self._lock:
-            if monotonic_ts >= self._last_sample_time:
+            last_sample_time = self._last_sample_time
+            if monotonic_ts >= last_sample_time:
                 self._samples.append(bulk_stats)
                 self._last_sample_time = monotonic_ts
 
                 self._update_ts(bulk_stats, monotonic_ts)
             else:
-                self._log.warning('dropped stale old sample')
+                self._log.warning(
+                    'dropped stale old sample: sampled %f stored %f',
+                    monotonic_ts, last_sample_time)
 
     def _update_ts(self, bulk_stats, monotonic_ts):
         # FIXME: this is expected to be costly performance-wise.
