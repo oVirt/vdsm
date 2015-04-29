@@ -27,13 +27,12 @@ import shutil
 import threading
 
 from vdsm import ipwrapper
-from vdsm import libvirtconnection
 import virt.sampling as sampling
 
 from testValidation import brokentest, ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatchScope, MonkeyPatch
+from monkeypatch import MonkeyPatchScope
 from functional import dummy
 
 
