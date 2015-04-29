@@ -54,7 +54,7 @@ def validate_ovirt_certs(*args):
     if len(args) > 1:
         raise ExtraArgsError()
 
-    print "checking certs.."
+    print("checking certs..")
     uid, gid = pwd.getpwnam('vdsm')[2:4]
     if not is_our_cafile(PATH_CACERT):
         for f in os.listdir(PATH_CERT):
