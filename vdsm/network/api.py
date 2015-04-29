@@ -29,10 +29,11 @@ import logging
 
 from vdsm.config import config
 from vdsm import constants
+from vdsm import netconfpersistence
 from vdsm import netinfo
+from vdsm import udevadm
 from vdsm import utils
 from vdsm import ipwrapper
-from vdsm import netconfpersistence
 
 from .configurators import libvirt
 from .errors import ConfigNetworkError
@@ -530,6 +531,18 @@ def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
                                          'connectivity check failed')
 
 
+def _wait_for_udev_events():
+    # FIXME: This is an ugly hack that is meant to prevent VDSM to report VFs
+    # that are not yet named by udev or not report all of. This is a blocking
+    # call that should wait for all udev events to be handled. a proper fix
+    # should be registering and listening to the proper netlink and udev
+    # events. The sleep prior to observing udev is meant to decrease the
+    # chances that we wait for udev before it knows from the kernel about the
+    # new devices.
+    time.sleep(0.5)
+    udevadm.settle(timeout=10)
+
+
 def _update_numvfs(device_name, numvfs):
     with open(_SYSFS_SRIOV_NUMVFS.format(device_name), 'w', 0) as f:
         # Zero needs to be written first in order to remove previous VFs.
@@ -538,6 +551,7 @@ def _update_numvfs(device_name, numvfs):
         # https://www.kernel.org/doc/Documentation/PCI/pci-iov-howto.txt
         f.write('0')
         f.write(str(numvfs))
+        _wait_for_udev_events()
 
 
 def _persist_numvfs(device_name, numvfs):
