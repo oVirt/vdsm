@@ -124,6 +124,8 @@ VDSMHOOKS = \
 	after_get_all_vm_stats \
 	before_get_caps \
 	after_get_caps \
+	before_get_stats \
+	after_get_stats \
 	after_hostdev_list_by_caps \
 	$(NULL)
 

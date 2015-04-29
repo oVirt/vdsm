@@ -371,6 +371,16 @@ def after_get_caps(caps):
                         hookType=_JSON_HOOK)
 
 
+def before_get_stats():
+    return _runHooksDir({}, 'before_get_stats', raiseError=True,
+                        hookType=_JSON_HOOK)
+
+
+def after_get_stats(caps):
+    return _runHooksDir(caps, 'after_get_stats', raiseError=False,
+                        hookType=_JSON_HOOK)
+
+
 def after_hostdev_list_by_caps(devices):
     return _runHooksDir(devices, 'after_hostdev_list_by_caps',
                         raiseError=False, hookType=_JSON_HOOK)

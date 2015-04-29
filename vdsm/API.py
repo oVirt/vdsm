@@ -1322,6 +1322,7 @@ class Global(APIBase):
             meminfo = utils.readMemInfo()
             return meminfo['SwapTotal'] / 1024, meminfo['SwapFree'] / 1024
 
+        hooks.before_get_stats()
         stats = {}
         decStats = self._cif._hostStats.get()
 
@@ -1355,6 +1356,7 @@ class Global(APIBase):
             # For backwards compatibility, will be removed in the future
             stats['haScore'] = stats['haStats']['score']
 
+        stats = hooks.after_get_stats(stats)
         return {'status': doneCode, 'info': stats}
 
     def setLogLevel(self, level):
