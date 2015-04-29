@@ -333,7 +333,7 @@ _rtnl_link_operstate2str = _int_char_proto(('rtnl_link_operstate2str',
 _nl_af2str = _int_char_proto(('nl_af2str', LIBNL))
 _rtnl_scope2str = _int_char_proto(('rtnl_scope2str', LIBNL_ROUTE))
 
-_rtnl_link_put  = _none_proto(('rtnl_link_put', LIBNL_ROUTE))
+_rtnl_link_put = _none_proto(('rtnl_link_put', LIBNL_ROUTE))
 
 _nl_link_cache = partial(_cache_manager, _rtnl_link_alloc_cache)
 _nl_addr_cache = partial(_cache_manager, _rtnl_addr_alloc_cache)
