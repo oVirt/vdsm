@@ -138,16 +138,14 @@ class Config(BaseConfig):
                 raise
 
     def _getConfigs(self, path):
+        if not os.path.exists(path):
+            return {}
+
         networkEntities = {}
-        try:
-            for fileName in os.listdir(path):
-                fullPath = path + fileName
-                networkEntities[fileName] = self._getConfigDict(fullPath)
-        except OSError as ose:
-            if ose.errno == errno.ENOENT:
-                logging.debug('Non-existing config set.')
-            else:
-                raise
+
+        for fileName in os.listdir(path):
+            fullPath = path + fileName
+            networkEntities[fileName] = self._getConfigDict(fullPath)
 
         return networkEntities
 
