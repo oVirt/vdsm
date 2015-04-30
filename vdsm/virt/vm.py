@@ -1580,6 +1580,13 @@ class Vm(object):
         utils.rmFile(self._recoveryFile)
         self._guestSockCleanup(self._qemuguestSocketFile)
         self._reattachHostDevices()
+        self._cleanupStatsCache()
+
+    def _cleanupStatsCache(self):
+        try:
+            sampling.stats_cache.remove(self.id)
+        except KeyError:
+            self.log.warn('timestamp already removed from stats cache')
 
     def _isDomainRunning(self):
         try:
@@ -3445,7 +3452,6 @@ class Vm(object):
             self.lastStatus = vmstatus.POWERING_DOWN
             # Terminate the VM's creation thread.
             self._incomingMigrationFinished.set()
-            sampling.stats_cache.remove(self.id)
             self.guestAgent.stop()
             if self._dom:
                 result = self._destroyVmGraceful()
