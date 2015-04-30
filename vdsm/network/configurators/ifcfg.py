@@ -92,13 +92,13 @@ class Ifcfg(Configurator):
         if bridge.port:
             bridge.port.configure(**opts)
         self._addSourceRoute(bridge)
-        _ifup(bridge.name, bridge.asynchronous_dhcp)
+        _ifup(bridge)
 
     def configureVlan(self, vlan, **opts):
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan)
-        _ifup(vlan.name, vlan.asynchronous_dhcp)
+        _ifup(vlan)
 
     def configureBond(self, bond, **opts):
         self.configApplier.addBonding(bond, **opts)
@@ -108,7 +108,7 @@ class Ifcfg(Configurator):
         for slave in bond.slaves:
             slave.configure(**opts)
         self._addSourceRoute(bond)
-        _ifup(bond.name, bond.asynchronous_dhcp)
+        _ifup(bond)
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
@@ -161,7 +161,7 @@ class Ifcfg(Configurator):
         if nic.bond is None:
             if not netinfo.isVlanned(nic.name):
                 ifdown(nic.name)
-            _ifup(nic.name, nic.asynchronous_dhcp)
+            _ifup(nic)
 
     def removeBridge(self, bridge):
         DynamicSourceRoute.addInterfaceTracking(bridge)
@@ -776,15 +776,16 @@ def _exec_ifup(iface_name):
         raise ConfigNetworkError(ERR_FAILED_IFUP, out[-1] if out else '')
 
 
-def _ifup(iface_name, async):
-    if async:
+def _ifup(iface):
+    if not iface.blockingdhcp and (iface.ipv4.bootproto == 'dhcp' or
+                                   iface.ipv6.dhcpv6):
         # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
         t = threading.Thread(target=_exec_ifup, name='ifup-waiting-on-dhcp',
-                             args=(iface_name,))
+                             args=(iface.name,))
         t.daemon = True
         t.start()
     else:
-        _exec_ifup(iface_name)
+        _exec_ifup(iface.name)
 
 
 def configuredPorts(nets, bridge):

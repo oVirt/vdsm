@@ -80,11 +80,6 @@ class NetDevice(object):
     def backing_device(self):
         return False
 
-    @property
-    def asynchronous_dhcp(self):
-        return ((self.ipv4.bootproto == 'dhcp' or self.ipv6.dhcpv6) and
-                not self.blockingdhcp)
-
 
 class Nic(NetDevice):
     def __init__(self, name, configurator, ipv4=None, ipv6=None,

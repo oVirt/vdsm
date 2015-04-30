@@ -55,15 +55,15 @@ class DhcpClient(object):
                                 '-lf', self.leaseFile, self.iface])
         return rc, out, err
 
-    def start(self, async):
-        if async:
+    def start(self, blocking):
+        if blocking:
+            rc, _, _ = self._dhclient()
+            return rc
+        else:
             t = threading.Thread(target=self._dhclient, name='vdsm-dhclient-%s'
                                  % self.iface)
             t.daemon = True
             t.start()
-        else:
-            rc, _, _ = self._dhclient()
-            return rc
 
     def shutdown(self):
         try:

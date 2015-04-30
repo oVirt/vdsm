@@ -177,7 +177,7 @@ def getEthtoolOpts(name):
 
 def runDhclient(iface, family=4):
     dhclient = DhcpClient(iface.name, family)
-    rc = dhclient.start(iface.asynchronous_dhcp)
-    if not iface.asynchronous_dhcp and rc:
+    rc = dhclient.start(iface.blockingdhcp)
+    if iface.blockingdhcp and rc:
         raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed',
                                  family)
