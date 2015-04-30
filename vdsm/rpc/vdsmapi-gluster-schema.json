@@ -1865,11 +1865,13 @@
 #
 # @auto-delete:         Auto delete enabled/disabled
 #
+# @activate-on-create:  Auto activate enabled/disabled
+#
 # @Since: 4.17.0
 ##
 {'type': 'SystemSnapshotConfig',
  'data': {'snap-max-hard-limit': 'str', 'snap-max-soft-limit': 'str',
-          'auto-delete': 'str'}}
+          'auto-delete': 'str', 'activate-on-create': 'str'}}
 
 ##
 #

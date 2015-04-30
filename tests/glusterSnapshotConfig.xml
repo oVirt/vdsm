@@ -8,6 +8,7 @@
       <hardLimit>255</hardLimit>
       <softLimit>91%</softLimit>
       <autoDelete>disable</autoDelete>
+      <activateOnCreate>disable</activateOnCreate>
     </systemConfig>
     <volumeConfig>
       <volume>

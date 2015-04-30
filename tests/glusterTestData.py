@@ -1142,7 +1142,8 @@ GLUSTER_SNAPSHOT_CONFIG_LIST = {
     'system': {
         'snap-max-hard-limit': '255',
         'auto-delete': 'disable',
-        'snap-max-soft-limit': '91%'
+        'snap-max-soft-limit': '91%',
+        'activate-on-create': 'disable'
     }
 }
 
