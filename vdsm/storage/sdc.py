@@ -81,6 +81,7 @@ class StorageDomainCache:
         self.__staleStatus = self.STORAGE_REFRESHING
 
         multipath.rescan()
+        multipath.resize_devices()
         lvm.invalidateCache()
 
         # If a new invalidateStorage request came in after the refresh
