@@ -241,6 +241,12 @@ class DriveValidation(VdsmTestCase):
     def test_cow_with_lun(self):
         self.check(device='lun', format='cow')
 
+    def test_network_disk_no_hosts(self):
+        self.check(diskType=DISK_TYPE.NETWORK, protocol='rbd')
+
+    def test_network_disk_no_protocol(self):
+        self.check(diskType=DISK_TYPE.NETWORK, hosts=[{}])
+
     def check(self, **kw):
         conf = drive_config(**kw)
         drive = Drive({}, self.log, **conf)

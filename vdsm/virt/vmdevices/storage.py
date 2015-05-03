@@ -397,6 +397,12 @@ class Drive(Base):
         return iotune
 
     def _validate(self):
+        if self.diskType == DISK_TYPE.NETWORK:
+            if not getattr(self, 'hosts', None):
+                raise ValueError("Network disk without hosts")
+            if not getattr(self, 'protocol', None):
+                raise ValueError("Network disk without protocol")
+
         if self.device != 'lun' and hasattr(self, 'sgio'):
             raise ValueError("sgio attribute can be set only for LUN devices")
 
