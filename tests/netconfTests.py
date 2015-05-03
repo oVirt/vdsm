@@ -110,7 +110,7 @@ class ifcfgConfigWriterTests(TestCaseBase):
             (netinfo, 'NET_CONF_PREF',
              os.path.join(self._tempdir, 'ifcfg-')),
             (ifcfg, 'ifdown', lambda x: 0),
-            (ifcfg, 'ifup', lambda *x: 0),
+            (ifcfg, '_exec_ifup', lambda *x: 0),
             (libvirt, 'createNetwork', lambda *x: None),
             (libvirt, 'removeNetwork', lambda *x: None),
         ]):

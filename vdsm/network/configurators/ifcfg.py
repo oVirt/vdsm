@@ -92,13 +92,13 @@ class Ifcfg(Configurator):
         if bridge.port:
             bridge.port.configure(**opts)
         self._addSourceRoute(bridge)
-        ifup(bridge.name, bridge.asynchronous_dhcp)
+        _ifup(bridge.name, bridge.asynchronous_dhcp)
 
     def configureVlan(self, vlan, **opts):
         self.configApplier.addVlan(vlan, **opts)
         vlan.device.configure(**opts)
         self._addSourceRoute(vlan)
-        ifup(vlan.name, vlan.asynchronous_dhcp)
+        _ifup(vlan.name, vlan.asynchronous_dhcp)
 
     def configureBond(self, bond, **opts):
         self.configApplier.addBonding(bond, **opts)
@@ -108,7 +108,7 @@ class Ifcfg(Configurator):
         for slave in bond.slaves:
             slave.configure(**opts)
         self._addSourceRoute(bond)
-        ifup(bond.name, bond.asynchronous_dhcp)
+        _ifup(bond.name, bond.asynchronous_dhcp)
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
@@ -145,11 +145,11 @@ class Ifcfg(Configurator):
             if slave.name in nicsToAdd:
                 ifdown(slave.name)  # nics must be down to join a bond
                 self.configApplier.addNic(slave)
-                ifup(slave.name)
+                _exec_ifup(slave.name)
 
         if bondIfcfgWritten:
             ifdown(bond.name)
-            ifup(bond.name)
+            _exec_ifup(bond.name)
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
@@ -161,7 +161,7 @@ class Ifcfg(Configurator):
         if nic.bond is None:
             if not netinfo.isVlanned(nic.name):
                 ifdown(nic.name)
-            ifup(nic.name, nic.asynchronous_dhcp)
+            _ifup(nic.name, nic.asynchronous_dhcp)
 
     def removeBridge(self, bridge):
         DynamicSourceRoute.addInterfaceTracking(bridge)
@@ -221,7 +221,7 @@ class Ifcfg(Configurator):
         if to_be_removed:
             self.configApplier.removeNic(nic.name)
             if nic.name in netinfo.nics():
-                ifup(nic.name)
+                _exec_ifup(nic.name)
             else:
                 logging.warning('host interface %s missing', nic.name)
         else:
@@ -438,7 +438,7 @@ class ConfigWriter(object):
     def _startDevices(self, deviceIfcfgs):
         for dev in deviceIfcfgs:
             try:
-                ifup(dev)
+                _exec_ifup(dev)
             except ConfigNetworkError:
                 logging.error('Failed to ifup device %s during rollback.', dev,
                               exc_info=True)
@@ -766,27 +766,25 @@ def ifdown(iface):
     return rc
 
 
-def ifup(iface, async=False):
-    "Bring up an interface"
-    def _ifup(netIf):
-        rc, out, err = utils.execCmd([constants.EXT_IFUP, netIf], raw=False)
+def _exec_ifup(iface_name):
+    """Bring up an interface"""
+    rc, out, err = utils.execCmd([constants.EXT_IFUP, iface_name], raw=False)
 
-        if rc != 0:
-            # In /etc/sysconfig/network-scripts/ifup* the last line usually
-            # contains the error reason.
-            raise ConfigNetworkError(ERR_FAILED_IFUP, out[-1] if out else '')
-        return rc, out, err
+    if rc != 0:
+        # In /etc/sysconfig/network-scripts/ifup* the last line usually
+        # contains the error reason.
+        raise ConfigNetworkError(ERR_FAILED_IFUP, out[-1] if out else '')
 
+
+def _ifup(iface_name, async):
     if async:
-        # wait for dhcp in another thread,
-        # so vdsm won't get stuck (BZ#498940)
-        t = threading.Thread(target=_ifup, name='ifup-waiting-on-dhcp',
-                             args=(iface,))
+        # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
+        t = threading.Thread(target=_exec_ifup, name='ifup-waiting-on-dhcp',
+                             args=(iface_name,))
         t.daemon = True
         t.start()
     else:
-        rc, _, _ = _ifup(iface)
-        return rc
+        _exec_ifup(iface_name)
 
 
 def configuredPorts(nets, bridge):

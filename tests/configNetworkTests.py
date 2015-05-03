@@ -53,7 +53,7 @@ class TestConfigNetwork(TestCaseBase):
     @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
     @MonkeyPatch(configurators.ifcfg, 'ifdown', lambda *x:
                  _raiseInvalidOpException())
-    @MonkeyPatch(configurators.ifcfg, 'ifup',
+    @MonkeyPatch(configurators.ifcfg, '_exec_ifup',
                  lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Bond, 'configure', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Bridge, 'configure', lambda *x: _raiseInvalidOpException())
