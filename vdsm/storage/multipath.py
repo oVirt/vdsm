@@ -53,6 +53,14 @@ _scsi_id = utils.CommandPath("scsi_id",
                              "/lib/udev/scsi_id",  # EL6, Ubuntu
                              )
 
+_MULTIPATHD = utils.CommandPath("multipathd",
+                                "/usr/sbin/multipathd",  # Fedora, EL7
+                                "/sbin/multipathd")  # Ubuntu
+
+
+class Error(Exception):
+    """ multipath operation failed """
+
 
 def rescan():
     """
@@ -74,6 +82,65 @@ def rescan():
     # update of multipath devices.
     timeout = config.getint('irs', 'scsi_settle_timeout')
     udevadm.settle(timeout)
+
+
+def resize_devices():
+    """
+    This is needed in case a device has been increased on the storage server
+    Resize multipath map if the underlying slaves are bigger than
+    the map size.
+    The slaves can be bigger if the LUN size has been increased on the storage
+    server after the initial discovery.
+    """
+    for dmId, guid in getMPDevsIter():
+        try:
+            _resize_if_needed(guid)
+        except Exception:
+            log.exception("Could not resize device %s", guid)
+
+
+def _resize_if_needed(guid):
+    name = devicemapper.getDmId(guid)
+    slaves = [(slave, getDeviceSize(slave))
+              for slave in devicemapper.getSlaves(name)]
+
+    if len(slaves) == 0:
+        log.warning("Map %r has no slaves" % guid)
+        return False
+
+    if len(set(size for slave, size in slaves)) != 1:
+        raise Error("Map %r slaves size differ %s" % (guid, slaves))
+
+    map_size = getDeviceSize(name)
+    slave_size = slaves[0][1]
+    if map_size == slave_size:
+        return False
+
+    log.info("Resizing map %r (map_size=%d, slave_size=%d)",
+             guid, map_size, slave_size)
+    supervdsm.getProxy().resizeMap(name)
+    return True
+
+
+def _resize_map(name):
+    """
+    Invoke multipathd to resize a device
+    Must run as root
+
+    Raises Error if multipathd failed to resize the map.
+    """
+    log.debug("Resizing map %r", name)
+    cmd = [_MULTIPATHD.cmd, "resize", "map", name]
+    start = utils.monotonic_time()
+    rc, out, err = utils.execCmd(cmd, raw=True, execCmdLogger=log)
+    # multipathd reports some errors using non-zero exit code and stderr (need
+    # to be root), but the command may return 0, and the result is reported
+    # using stdout.
+    if rc != 0 or out != "ok\n":
+        raise Error("Resizing map %r failed: out=%r err=%r"
+                    % (name, out, err))
+    elapsed = utils.monotonic_time() - start
+    log.debug("Resized map %r in %.2f seconds", name, elapsed)
 
 
 def deduceType(a, b):
@@ -140,9 +207,8 @@ def getHBTL(physdev):
     return HBTL(*hbtl[0].split(":"))
 
 
-def pathListIter(filterGuids=None):
-    filteringOn = filterGuids is not None
-    filterLen = len(filterGuids) if filteringOn else -1
+def pathListIter(filterGuids=()):
+    filterLen = len(filterGuids) if filterGuids else -1
     devsFound = 0
 
     knownSessions = {}
@@ -154,7 +220,7 @@ def pathListIter(filterGuids=None):
         if devsFound == filterLen:
             break
 
-        if filteringOn and guid not in filterGuids:
+        if filterGuids and guid not in filterGuids:
             continue
 
         devsFound += 1

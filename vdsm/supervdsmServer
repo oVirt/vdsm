@@ -68,6 +68,7 @@ from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
 from supervdsm import _SuperVdsmManager
 from storage import hba
+from storage import multipath
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
@@ -145,6 +146,10 @@ class _SuperVdsm(object):
     @logDecorator
     def getScsiSerial(self, *args, **kwargs):
         return _getScsiSerial(*args, **kwargs)
+
+    @logDecorator
+    def resizeMap(selfself, devName):
+        return multipath._resize_map(devName)
 
     @logDecorator
     def removeDeviceMapping(self, devName):
