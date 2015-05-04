@@ -68,6 +68,7 @@ def get_link(name):
             _rtnl_link_put(link)
             return link_info
 
+
 class NLSocketPool(object):
     """Pool of netlink sockets."""
     def __init__(self, size):
