@@ -24,13 +24,14 @@ import libvirt
 
 import hooks
 import kaxmlrpclib
+from vdsm import response
 from vdsm import utils
 from vdsm import vdscli
 from vdsm import jsonrpcvdscli
 from vdsm import sslutils
 from vdsm.compat import pickle
 from vdsm.config import config
-from vdsm.define import NORMAL, errCode, Mbytes
+from vdsm.define import NORMAL, Mbytes
 from yajsonrpc import \
     JsonRpcNoResponseError, \
     JsonRpcBindingsError
@@ -197,7 +198,7 @@ class SourceThread(threading.Thread):
 
     def _recover(self, message):
         if not self.status['status']['code']:
-            self.status = errCode['migrateErr']
+            self.status = response.error('migrateErr')
         self.log.error(message)
         if not self.hibernating:
             try:
@@ -287,9 +288,8 @@ class SourceThread(threading.Thread):
                 self._finishSuccessfully()
             except libvirt.libvirtError as e:
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
-                    self.status['status']['code'] = \
-                        errCode['migCancelErr']['status']['code']
-                    self.status['status']['message'] = 'Migration canceled'
+                    self.status = response.error('migCancelErr',
+                                                 message='Migration canceled')
                 raise
             finally:
                 if '_migrationParams' in self._vm.conf:
