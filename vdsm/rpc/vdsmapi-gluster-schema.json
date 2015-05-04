@@ -2153,3 +2153,15 @@
 {'command': {'class': 'GlusterVolume', 'name': 'volumeEmptyCheck'},
  'data': {'volumeName': 'str'},
  'returns': 'VolumeEmptyCheck'}
+
+##
+# @GlusterVolume.metaVolumeMount:
+#
+# Mount glusterfs meta volume
+#
+# @metaVolumeName: #optional Gluster meta volume name
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'metaVolumeMount'},
+ 'data': {'*metaVolumeName': 'str'}}
