@@ -116,11 +116,20 @@ def _convert_to_blocking_dhcp(networks):
 def _filter_nets_bonds(persisted_nets, persisted_bonds):
     """Returns only nets and bonds that can be configured with the devices
     present in the system"""
-    available_nets = {}
     available_nics = netinfo.nics()
     available_bonds = _find_bonds_with_available_nics(available_nics,
                                                       persisted_bonds)
 
+    available_nets = _find_nets_with_available_devices(available_bonds,
+                                                       available_nics,
+                                                       persisted_bonds,
+                                                       persisted_nets)
+    return available_nets, available_bonds
+
+
+def _find_nets_with_available_devices(available_bonds,  available_nics,
+                                      persisted_bonds, persisted_nets):
+    available_nets = {}
     for net, attrs in persisted_nets.iteritems():
         bond = attrs.get('bonding')
         if bond is not None:
@@ -148,7 +157,8 @@ def _filter_nets_bonds(persisted_nets, persisted_bonds):
 
         # Bridge-only nics
         available_nets[net] = attrs
-    return available_nets, available_bonds
+
+    return available_nets
 
 
 def _find_bonds_with_available_nics(available_nics, persisted_bonds):
