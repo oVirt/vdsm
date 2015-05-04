@@ -47,6 +47,8 @@ from ..models import Nic, Bridge, IPv4, IPv6
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 import dsaversion  # TODO: Make parent package import when vdsm is a package
 
+NET_LOGICALNET_CONF_BACK_DIR = netinfo.NET_CONF_BACK_DIR + 'logicalnetworks/'
+
 
 def is_available():
     return True
@@ -339,8 +341,7 @@ class ConfigWriter(object):
             content = cls.DELETED_HEADER + '\n'
         logging.debug("backing up network %s: %s", network, content)
 
-        cls.writeBackupFile(netinfo.NET_LOGICALNET_CONF_BACK_DIR, network,
-                            content)
+        cls.writeBackupFile(NET_LOGICALNET_CONF_BACK_DIR, network, content)
 
     def restoreAtomicNetworkBackup(self):
         logging.info("Rolling back logical networks configuration "
@@ -511,7 +512,7 @@ class ConfigWriter(object):
     def loadBackups(self):
         """ Load persistent backups into memory """
         # Load logical networks
-        self._loadBackupFiles(netinfo.NET_LOGICALNET_CONF_BACK_DIR)
+        self._loadBackupFiles(NET_LOGICALNET_CONF_BACK_DIR)
         # Load config files
         self._loadBackupFiles(netinfo.NET_CONF_BACK_DIR, netinfo.NET_CONF_DIR)
 

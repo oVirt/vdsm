@@ -51,7 +51,6 @@ from .utils import memoized
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 # ifcfg persistence directories
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
-NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 
 # possible names of dhclient's lease files (e.g. as NetworkManager's slave)
 _DHCLIENT_LEASES_GLOBS = [
