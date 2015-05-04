@@ -3590,6 +3590,13 @@
 #
 # @numOfIoThreads:        #optional The num of iothreads qemu allocates
 #
+# @maxMemSize:            #optional The maximum amount of memory that can be
+#                         assigned to the VM in MB
+#
+# @maxMemSlots:           #optional Maximum number of memory slots available
+#                         This is the upper boundary for hot plug memory
+#                         action, if not specified, defaults to 16
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDefinition',
@@ -3606,7 +3613,8 @@
           'status': 'VmStatus', 'timeOffset': 'uint',
           'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
           'vmType': 'VmType', '*exitCode': 'int', '*exitMessage': 'str',
-          '*serial': 'str', '*numOfIoThreads': 'uint'}}
+          '*serial': 'str', '*numOfIoThreads': 'uint', '*maxMemSize': 'uint',
+          '*maxMemSlots': 'uint'}}
 
 ##
 # @VmParameters:

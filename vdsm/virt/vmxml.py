@@ -167,6 +167,11 @@ class Domain(object):
         memSizeKB = str(int(self.conf.get('memSize', '256')) * 1024)
         self.dom.appendChildWithArgs('memory', text=memSizeKB)
         self.dom.appendChildWithArgs('currentMemory', text=memSizeKB)
+        if 'maxMemSize' in self.conf:
+            maxMemSizeKB = str(int(self.conf['maxMemSize']) * 1024)
+            maxMemSlots = str(self.conf.get('maxMemSlots', '16'))
+            self.dom.appendChildWithArgs('maxMemory', text=maxMemSizeKB,
+                                         slots=maxMemSlots)
         vcpu = self.dom.appendChildWithArgs('vcpu', text=self._getMaxVCpus())
         vcpu.setAttrs(**{'current': self._getSmp()})
 
