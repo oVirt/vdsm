@@ -60,7 +60,7 @@ class Drive(Base):
                  'index', 'name', 'optional', 'shared', 'truesize',
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID',
-                 'diskReplicate', '_diskType', 'hosts', 'protocol')
+                 'diskReplicate', '_diskType', 'hosts', 'protocol', 'auth')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -347,6 +347,10 @@ class Drive(Base):
         diskelem.setAttrs(snapshot='no')
 
         diskelem.appendChild(_getSourceXML(self))
+
+        if self.diskType == DISK_TYPE.NETWORK and hasattr(self, 'auth'):
+            diskelem.appendChild(self._getAuthXML())
+
         diskelem.appendChild(self._getTargetXML())
 
         if self.extSharedState == DRIVE_SHARED_TYPE.SHARED:
@@ -383,6 +387,13 @@ class Drive(Base):
         disk.appendChild(_getSourceXML(self.diskReplicate))
         disk.appendChild(_getDriverXML(self.diskReplicate))
         return disk
+
+    def _getAuthXML(self):
+        auth = vmxml.Element("auth", username=self.auth["username"])
+        auth.appendChildWithArgs("secret",
+                                 type=self.auth["type"],
+                                 uuid=self.auth["uuid"])
+        return auth
 
     def _getTargetXML(self):
         target = vmxml.Element('target', dev=self.name)

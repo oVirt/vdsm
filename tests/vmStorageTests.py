@@ -145,6 +145,34 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check({}, conf, xml, is_block_device=None)
 
+    def test_network_with_auth(self):
+        conf = drive_config(
+            auth={"type": "ceph", "uuid": "abcdef", "username": "cinder"},
+            diskType=DISK_TYPE.NETWORK,
+            hosts=[
+                dict(name='1.2.3.41', port='6789', transport='tcp'),
+                dict(name='1.2.3.42', port='6789', transport='tcp'),
+            ],
+            path='poolname/volumename',
+            protocol='rbd',
+        )
+        xml = """
+            <disk device="disk" snapshot="no" type="network">
+                <source name="poolname/volumename" protocol="rbd">
+                    <host name="1.2.3.41" port="6789" transport="tcp"/>
+                    <host name="1.2.3.42" port="6789" transport="tcp"/>
+                </source>
+                <auth username="cinder">
+                    <secret type="ceph" uuid="abcdef"/>
+                </auth>
+                <target bus="virtio" dev="vda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="none" error_policy="stop"
+                        io="threads" name="qemu" type="raw"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=None)
+
     def check(self, vm_conf, device_conf, xml, is_block_device=False):
         drive = Drive(vm_conf, self.log, **device_conf)
         # Patch to skip the block device checking.

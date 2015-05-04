@@ -2541,6 +2541,22 @@
  'data': {'name': 'str', 'port': 'str', 'transport': 'str'}}
 
 ##
+# @NetworkDiskAuthInfo:
+#
+# Authentication credentials needed to access a network disk
+#
+# @username:  Identifies the username
+#
+# @type:      Libvirt secret object type
+#
+# @uuid:      Libvirt secret object uuid
+#
+# Since: 4.17.0
+##
+{'type': 'NetworkDiskAuthInfo',
+ 'data': {'username': 'str', 'type': 'str', 'uuid': 'UUID'}}
+
+##
 # @VmDiskDevice:
 #
 # Properties of a VM disk device.
@@ -2611,6 +2627,9 @@
 #                    set to "network"
 #                    Since: 4.17.0
 #
+# @auth:             #optional Network disk auth info
+#                    Since: 4.17.0
+#
 # Since: 4.10.0
 ##
 {'type': 'VmDiskDevice',
@@ -2625,7 +2644,8 @@
           'optional': 'bool', 'shared': 'VmSharedDriveType',
           'truesize': 'uint', 'volumeChain': ['VmDiskDeviceVolumeChainEntry'],
           '*baseVolumeID': 'UUID', '*diskType': 'str',
-          '*hosts': ['NetworkDiskHostInfo'], '*protocol': 'str'}}
+          '*hosts': ['NetworkDiskHostInfo'], '*protocol': 'str',
+          '*auth': 'NetworkDiskAuthInfo'}}
 
 ##
 # @VmInterfaceDeviceType:
