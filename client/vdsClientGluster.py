@@ -758,6 +758,15 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterMetaVolumeMount(self, args):
+        params = self._eqSplit(args)
+        metaVolumeName = params.get('metaVolumeName', '')
+
+        status = self.s.glusterMetaVolumeMount(metaVolumeName)
+
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1288,5 +1297,10 @@ def getGlusterCmdDict(serv):
              serv.do_glusterVolumeEmptyCheck,
              ('volumeName=<volume name>',
               'Check if the given volume is empty or not'
+              )),
+         'glusterMetaVolumeMount': (
+             serv.do_glusterMetaVolumeMount,
+             ('[volumeName=<volume name>]',
+              'mount the meta-volume'
               ))
          }

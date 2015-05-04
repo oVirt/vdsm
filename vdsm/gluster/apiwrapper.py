@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from clientIF import clientIF
-from gluster.api import GlusterApi
+from gluster.api import GlusterApi, META_VOLUME
 
 
 class GlusterApiBase(object):
@@ -308,6 +308,9 @@ class GlusterVolume(GlusterApiBase):
 
     def volumeEmptyCheck(self, volumeName):
         return self._gluster.volumeEmptyCheck(volumeName)
+
+    def metaVolumeMount(self, metaVolumeName=META_VOLUME):
+        return self._gluster.metaVolumeMount(metaVolumeName)
 
 
 class GlusterSnapshot(GlusterApiBase):

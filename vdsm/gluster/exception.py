@@ -591,6 +591,16 @@ class GlusterVolumeEmptyCheckFailedException(GlusterVolumeException):
     message = "Failed to Check if gluster volume is empty"
 
 
+class GlusterMetaVolumeMountFailedException(GlusterVolumeException):
+    code = 4575
+    message = "Failed to mount meta volume"
+
+
+class GlusterMetaVolumeFstabUpdateFailedException(GlusterVolumeException):
+    code = 4576
+    message = "Failed to Update fstab entry for meta-volume"
+
+
 # geo-replication
 class GlusterGeoRepException(GlusterException):
     code = 4200

@@ -22,16 +22,23 @@ import errno
 import os
 from functools import wraps
 from vdsm.define import doneCode
+from vdsm import constants, utils
 from pwd import getpwnam
+from storage import mount
 
 import supervdsm as svdsm
 import exception as ge
 from . import makePublic
 from . import safeWrite
+import fstab
+import logging
 
 _SUCCESS = {'status': doneCode}
 GEOREP_PUB_KEY_PATH = "/var/lib/glusterd/geo-replication/common_secret.pem.pub"
 MOUNT_BROKER_ROOT = "/var/mountbroker-root"
+META_VOLUME = "gluster_shared_storage"
+META_VOL_MOUNT_POINT = "/var/run/gluster/shared_storage"
+FS_TYPE = "glusterfs"
 
 
 GLUSTER_RPM_PACKAGES = (
@@ -140,6 +147,53 @@ def createMountBrokerRoot(userName):
         except OSError as e:
             raise ge.GlusterMountBrokerRootCreateFailedException(err=[str(e)])
     return
+
+
+@makePublic
+def mountMetaVolume(metaVolumeName):
+    def _metaVolumeFstabUpdate(metaVolumeName):
+        try:
+            fs_spec = "127.0.0.1:" + metaVolumeName
+            fstab.FsTab().add(fs_spec, META_VOL_MOUNT_POINT, FS_TYPE,
+                              mntOpts=['defaults', '_netdev'])
+        except IOError as e:
+            raise ge.GlusterMetaVolumeFstabUpdateFailedException(
+                err=["fstab update failed", str(e)])
+        except ge.GlusterHostStorageDeviceFsTabFoundException as e:
+            logging.warn(e.message)
+
+    _metaVolumeFstabUpdate(metaVolumeName)
+
+    if os.path.ismount(META_VOL_MOUNT_POINT):
+        try:
+            fs_spec = mount.getMountFromTarget(
+                os.path.realpath(META_VOL_MOUNT_POINT)).fs_spec
+            if fs_spec.endswith(META_VOLUME):
+                logging.warn("Meta Volume %s already mounted at %s" % (
+                    META_VOLUME, META_VOL_MOUNT_POINT))
+                return True
+            else:
+                raise ge.GlusterMetaVolumeMountFailedException(
+                    err=["%s already mounted at %s" % (
+                        fs_spec, META_VOL_MOUNT_POINT)])
+        except OSError as e:
+            raise ge.GlusterMetaVolumeMountFailedException(
+                err=["Failed to check if volume is already mounted",
+                     str(e)])
+    else:
+        try:
+            os.makedirs(META_VOL_MOUNT_POINT, 0o755)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise ge.GlusterMetaVolumeMountFailedException(
+                    err=['Mount Point creation failed', str(e)])
+
+    command = [constants.EXT_MOUNT, META_VOL_MOUNT_POINT]
+    rc, out, err = utils.execCmd(command)
+    if rc:
+        raise ge.GlusterMetaVolumeMountFailedException(
+            rc, out, err)
+    return True
 
 
 class GlusterApi(object):
@@ -643,6 +697,10 @@ class GlusterApi(object):
     def volumeEmptyCheck(self, volumeName, options=None):
         status = self.svdsmProxy.glusterVolumeEmptyCheck(volumeName)
         return {'volumeEmptyCheck': status}
+
+    @exportAsVerb
+    def metaVolumeMount(self, metaVolumeName=META_VOLUME, options=None):
+        self.svdsmProxy.glusterMountMetaVolume(metaVolumeName)
 
 
 def getGlusterMethods(gluster):
