@@ -69,6 +69,10 @@ def unified_restoration():
 
 def _remove_networks_in_running_config():
     runningConfig = RunningConfig()
+    if not runningConfig:
+        logging.debug("Not cleaning running configuration since it is empty.")
+        return
+
     removeNetworks = {}
     removeBonds = {}
     for network in runningConfig.networks:
@@ -77,9 +81,8 @@ def _remove_networks_in_running_config():
         removeBonds[bond] = {'remove': True}
     logging.debug('Removing all networks (%s) and bonds (%s) in running '
                   'config.', removeNetworks, removeBonds)
-    if removeNetworks or removeBonds:
-        setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
-                      _inRollback=True)
+    setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
+                  _inRollback=True)
 
 
 def _flush_configurators_leftovers():
