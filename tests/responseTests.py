@@ -19,11 +19,14 @@
 #
 
 from vdsm import response
+from vdsm.define import doneCode
 from vdsm.define import errCode
 
+from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 
 
+@expandPermutations
 class ResponseTests(TestCaseBase):
 
     def test_error(self):
@@ -43,3 +46,29 @@ class ResponseTests(TestCaseBase):
         template = errCode[NAME]
         self.assertEqual(res["status"]["code"], template["status"]["code"])
         self.assertEqual(res["status"]["message"], MESSAGE)
+
+    def test_success(self):
+        res = response.success()
+
+        self.assertEqual(res, {"status": doneCode})
+
+    def test_success_with_message(self):
+        MESSAGE = "the message was overwritten"
+        res = response.success(message=MESSAGE)
+
+        template = doneCode
+        self.assertEqual(res["status"]["code"], template["code"])
+        self.assertEqual(res["status"]["message"], MESSAGE)
+
+    def test_success_with_args(self):
+        res = response.success(a=1, b=2)
+
+        self.assertEqual(res, {"status": doneCode, "a": 1, "b": 2})
+
+    @permutations([[{'answer': 42}], [{'fooList': ['bar', 'baz']}]])
+    def test_success_with_extra_args(self, args):
+        res = response.success(**args)
+        self.assertEqual(res['status']['code'], 0)
+        self.assertEqual(res['status']['message'], 'Done')
+        for key in args:
+            self.assertEqual(res[key], args[key])

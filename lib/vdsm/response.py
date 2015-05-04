@@ -19,7 +19,16 @@
 #
 
 
+from vdsm.define import doneCode
 from vdsm.define import errCode
+
+
+def success(message=None, **kwargs):
+    kwargs["status"] = {
+        "code": doneCode["code"],
+        "message": message or doneCode["message"]
+    }
+    return kwargs
 
 
 def error(name, message=None):
