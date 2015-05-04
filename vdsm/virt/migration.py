@@ -125,7 +125,7 @@ class SourceThread(threading.Thread):
         self.log.debug('Destination server is: ' + hostPort)
         try:
             self.log.debug('Initiating connection with destination')
-            status = self.destServer.getVmStats(self._vm.id)
+            status = self._destServer.getVmStats(self._vm.id)
             if not status['status']['code']:
                 self.log.error("Machine already exists on the destination")
                 self.status = errCode['exist']
