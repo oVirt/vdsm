@@ -135,8 +135,8 @@ def _find_nets_with_available_devices(available_bonds,  available_nics,
         nic = attrs.get('nic')
         if bond is not None:
             if bond not in persisted_bonds:
-                logging.error('Bond "%s" is not configured. '
-                              'Network "%s" will not be '
+                logging.error('Bond "%s" is not persisted and will not be '
+                              'configured. Network "%s" will not be '
                               'configured as a consequence', bond, net)
             elif bond not in available_bonds:
                 logging.error('Some of the nics required by bond "%s" (%s) '
