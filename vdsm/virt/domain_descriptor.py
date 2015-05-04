@@ -63,3 +63,10 @@ class DomainDescriptor(object):
     def _first_element_by_tag_name(self, tagName):
         elements = self._dom.childNodes[0].getElementsByTagName(tagName)
         return elements[0] if elements else None
+
+    def get_memory_size(self):
+        """
+        Return the vm memory from xml in MiB
+        """
+        memory = self._first_element_by_tag_name("memory")
+        return int(memory.firstChild.nodeValue) // 1024 if memory else None

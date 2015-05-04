@@ -163,6 +163,9 @@ errCode = {
     'V2VJobExists': {'status': {
         'code': 69,
         'message': 'Job id already exists'}},
+    'hotplugMem': {'status': {
+        'code': 70,
+        'message': 'Failed to hotplug memory'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

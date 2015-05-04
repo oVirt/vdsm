@@ -127,6 +127,8 @@ VDSMHOOKS = \
 	before_get_stats \
 	after_get_stats \
 	after_hostdev_list_by_caps \
+	before_memory_hotplug \
+	after_memory_hotplug \
 	$(NULL)
 
 all-local: \

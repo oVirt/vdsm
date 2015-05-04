@@ -1166,6 +1166,8 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_network_setup
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_set_num_of_cpus
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_set_num_of_cpus
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_memory_hotplug
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_memory_hotplug
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_vm_stats
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_vm_stats
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_all_vm_stats

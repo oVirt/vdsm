@@ -257,7 +257,8 @@ class Vm(object):
                      (hwclass.RNG, vmdevices.core.Rng),
                      (hwclass.SMARTCARD, vmdevices.core.Smartcard),
                      (hwclass.TPM, vmdevices.core.Tpm),
-                     (hwclass.HOSTDEV, vmdevices.hostdevice.HostDevice))
+                     (hwclass.HOSTDEV, vmdevices.hostdevice.HostDevice),
+                     (hwclass.MEMORY, vmdevices.core.Memory))
 
     def _emptyDevMap(self):
         return dict((dev, []) for dev, _ in self.DeviceMapping)
@@ -1651,6 +1652,7 @@ class Vm(object):
         self._getUnderlyingRngDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
         self._getUnderlyingHostDeviceInfo()
+        self._getUnderlyingMemoryDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
@@ -2185,6 +2187,41 @@ class Vm(object):
 
         hooks.after_nic_hotunplug(nicXml, self.conf,
                                   params=nic.custom)
+        return {'status': doneCode, 'vmList': self.status()}
+
+    def hotplugMemory(self, params):
+
+        if self.isMigrating():
+            return errCode['migInProgress']
+
+        memParams = params.get('memory', {})
+        device = vmdevices.core.Memory(self.conf, self.log, **memParams)
+
+        deviceXml = device.getXML().toprettyxml(encoding='utf-8')
+        deviceXml = hooks.before_memory_hotplug(deviceXml)
+        device._deviceXML = deviceXml
+        self.log.debug("Hotplug memory xml: %s", deviceXml)
+
+        try:
+            self._dom.attachDevice(deviceXml)
+        except libvirt.libvirtError as e:
+            self.log.exception("hotplugMemory failed")
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                return errCode['noVM']
+            return response.error('hotplugMem', e.message)
+
+        self._devices[hwclass.MEMORY].append(device)
+        with self._confLock:
+            self.conf['devices'].append(memParams)
+        self._updateDomainDescriptor()
+        self._getUnderlyingMemoryDeviceInfo()
+        # TODO: this is raceful (as the similar code of hotplugDisk
+        # and hotplugNic, as a concurrent call of hotplug can change
+        # vm.conf before we return.
+        self.saveState()
+
+        hooks.after_memory_hotplug(deviceXml)
+
         return {'status': doneCode, 'vmList': self.status()}
 
     def setNumberOfCpus(self, numberOfCpus):
@@ -4197,6 +4234,29 @@ class Vm(object):
                 if network:
                     nicDev['network'] = network
                 self.conf['devices'].append(nicDev)
+
+    def _getUnderlyingMemoryDeviceInfo(self):
+        """
+        Obtain memory device info from libvirt.
+        """
+        for x in self._domain.get_device_elements('memory'):
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            # Get device address
+            address = self._getUnderlyingDeviceAddress(x)
+
+            for mem in self._devices[hwclass.MEMORY]:
+                if not hasattr(mem, 'address') or not hasattr(mem, 'alias'):
+                    mem.alias = alias
+                    mem.address = address
+                    break
+            # Update vm's conf with address
+            for dev in self.conf['devices']:
+                if ((dev['type'] == hwclass.MEMORY) and
+                        (not dev.get('address') or not dev.get('alias'))):
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    break
+        self.conf['memSize'] = self._domain.get_memory_size()
 
     def _setWriteWatermarks(self):
         """

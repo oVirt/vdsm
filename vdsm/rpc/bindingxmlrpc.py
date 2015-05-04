@@ -453,6 +453,10 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.updateDevice(params)
 
+    def vmHotplugMemory(self, params):
+        vm = API.VM(params['vmId'])
+        return vm.hotplugMemory(params)
+
     def vmSetNumberOfCpus(self, vmId, numberOfCpus):
         vm = API.VM(vmId)
         return vm.setNumberOfCpus(numberOfCpus)
@@ -1051,6 +1055,7 @@ class BindingXMLRPC(object):
                 (self.vmHotunplugNic, 'hotunplugNic'),
                 (self.vmUpdateDevice, 'vmUpdateDevice'),
                 (self.vmSetNumberOfCpus, 'setNumberOfCpus'),
+                (self.vmHotplugMemory, 'hotplugMemory'),
                 (self.merge, 'merge'),
                 (self.vmUpdateVmPolicy, 'updateVmPolicy'),
                 (self.vmSetIoTune, 'setIoTune'),

@@ -299,3 +299,37 @@ class Watchdog(Base):
         m.setAttrs(model=self.specParams.get('model', 'i6300esb'),
                    action=self.specParams.get('action', 'none'))
         return m
+
+
+class Memory(Base):
+    __slots__ = ('address', 'size', 'node')
+
+    def __init__(self, conf, log, **kwargs):
+        super(Memory, self).__init__(conf, log, **kwargs)
+        # we get size in mb and send in kb
+        self.size = int(kwargs.get('size')) * 1024
+        self.node = kwargs.get('node')
+
+    def getXML(self):
+        """
+        <memory model='dimm'>
+            <target>
+                <size unit='KiB'>524287</size>
+                <node>1</node>
+            </target>
+        </memory>
+        """
+
+        mem = self.createXmlElem('memory', None)
+        mem.setAttrs(model='dimm')
+        target = self.createXmlElem('target', None)
+        mem.appendChild(target)
+        size = self.createXmlElem('size', None)
+        size.setAttrs(unit='KiB')
+        size.appendTextNode(str(self.size))
+        target.appendChild(size)
+        node = self.createXmlElem('node', None)
+        node.appendTextNode(str(self.node))
+        target.appendChild(node)
+
+        return mem

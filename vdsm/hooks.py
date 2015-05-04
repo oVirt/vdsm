@@ -323,6 +323,16 @@ def after_set_num_of_cpus(vmconf={}, params={}):
                         params=params, raiseError=False)
 
 
+def before_memory_hotplug(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'before_memory_hotplug', vmconf=vmconf,
+                        params=params)
+
+
+def after_memory_hotplug(domxml, vmconf={}, params={}):
+    return _runHooksDir(domxml, 'after_memory_hotplug', vmconf=vmconf,
+                        params=params, raiseError=False)
+
+
 def before_vdsm_start():
     return _runHooksDir(None, 'before_vdsm_start', raiseError=False)
 

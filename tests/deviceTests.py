@@ -495,6 +495,19 @@ class TestVmDevices(XMLTestCase):
                 self.assertXMLEqual(graph.getSpiceVmcChannelsXML().toxml(),
                                     spiceChannelXML)
 
+    def testMemoryDeviceXML(self):
+        memoryXML = """<memory model='dimm'>
+            <target>
+                <size unit='KiB'>1048576</size>
+                <node>0</node>
+            </target>
+        </memory>
+        """
+        params = {'device': 'memory', 'type': 'memory',
+                  'size': 1024, 'node': 0}
+        memory = vmdevices.core.Memory(self.conf, self.log, **params)
+        self.assertXMLEqual(memory.getXML().toxml(), memoryXML)
+
 
 class ConsoleTests(TestCaseBase):
 

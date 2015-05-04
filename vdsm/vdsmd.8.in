@@ -63,7 +63,8 @@ Currently-supported hooks have self-explanatory names:
     before_get_all_vm_stats, after_get_all_vm_stats,
     before_get_caps, after_get_caps,
     before_get_stats, after_get_stats,
-    after_hostdev_list_by_caps.
+    after_hostdev_list_by_caps,
+    before_memory_hotplug, after_memory_hotplug.
 
 Each hook executes the scripts under
 .FN /usr/libexec/vdsm/hooks/<hook-name>/
@@ -139,7 +140,8 @@ The environment of hooks specific to devices:
     before_device_create, after_device_create,
     before_device_destroy, after_device_destroy,
     before_device_migrate_source, after_device_migrate_source,
-    before_device_migrate_destination, after_device_migrate_destination.
+    before_device_migrate_destination, after_device_migrate_destination,
+    before_memory_hotplug, after_memory_hotplug.
 
 Are all augmented by custom properties specific to those devices,
 sent by the caller of the hook. For example if before_nic_hotplug is called

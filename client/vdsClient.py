@@ -332,6 +332,13 @@ class service:
         params = {'vmId': args[0], 'drive': drive}
         return self.ExecAndExit(self.s.hotunplugDisk(params))
 
+    def hotplugMemory(self, args):
+        memory = self._parseDriveSpec(args[1])
+        memory['type'] = 'memory'
+        memory['device'] = 'memory'
+        params = {'vmId': args[0], 'memory': memory}
+        return self.ExecAndExit(self.s.hotplugMemory(params))
+
     def setNumberOfCpus(self, args):
         return self.ExecAndExit(self.s.setNumberOfCpus(args[0], args[1]))
 
@@ -2777,6 +2784,14 @@ if __name__ == '__main__':
             serv.diskSizeExtend, (
                 '<vmId> <spUUID> <sdUUID> <imgUUID> <volUUID> <newSize>',
                 'Extends the virtual size of a disk'
+            )),
+        'hotplugMemory': (
+            serv.hotplugMemory, (
+                '<vmId> <memDeviceSpec>',
+                'Hotplug memory to a running VM NUMA node',
+                'memDeviceSpec parameters list: r=required, o=optional',
+                'r   size: memory size to plug in mb.',
+                'r   node: guest NUMA node id to plug into'
             )),
         'setNumberOfCpus': (
             serv.setNumberOfCpus, (

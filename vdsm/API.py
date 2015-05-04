@@ -471,6 +471,23 @@ class VM(APIBase):
 
         return curVm.hotunplugDisk(params)
 
+    def hotplugMemory(self, params):
+        try:
+            utils.validateMinimalKeySet(params, ('vmId', 'memory'))
+        except ValueError:
+            self.log.error('Missing one of required parameters: vmId, memory')
+            return {'status': {'code': errCode['MissParam']['status']['code'],
+                               'message': 'Missing one of required '
+                                          'parameters: vmId, memory'}}
+
+        try:
+            curVm = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            self.log.warning("vm %s doesn't exist", self._UUID)
+            return errCode['noVM']
+
+        return curVm.hotplugMemory(params)
+
     def setNumberOfCpus(self, numberOfCpus):
 
         if self._UUID is None or numberOfCpus is None:

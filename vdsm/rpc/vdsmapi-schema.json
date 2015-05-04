@@ -2256,11 +2256,15 @@
 # @hostdev:     A host device
 #               (new in version 4.17.0)
 #
+# @memory:      A memory device
+#               (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'enum': 'VmDeviceType',
  'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
-          'channel', 'console', 'smartcard', 'rng', 'graphics', 'hostdev']}
+          'channel', 'console', 'smartcard', 'rng', 'graphics', 'hostdev',
+          'memory']}
 
 ##
 # @VmDiskDeviceType:
@@ -8264,6 +8268,75 @@
  'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
           'storagedomainID': 'UUID', 'imageID': 'UUID',
           'legality': 'VolumeLegality'}}
+
+##
+# @VmMemoryDeviceType:
+#
+# An enumeration of VM memory device types.
+#
+# @memory:  A memory device
+#
+# Since: 4.17.0
+##
+{'enum': 'VmMemoryDeviceType', 'data': ['memory']}
+
+##
+# @VmMemoryDevice:
+#
+# Properties of a VM memory device
+#
+# @deviceType:    The device type (always @memory)
+#
+# @device:        The type of the memory device
+#
+# @address:       Device hardware address
+#
+# @alias:         Alias used to identify this device in commands
+#
+# @deviceId:      A unique ID for this device
+#
+# @size:          The memory size to hotplug
+#
+# @node:          The NUMA node to use for hotplug
+#
+# Since: 4.17.0
+##
+{'type': 'VmMemoryDevice',
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmMemoryDeviceType',
+          'address': 'VmDeviceAddress', 'alias': 'str', 'deviceId': 'UUID',
+          'size': 'uint', 'node': 'uint'}}
+
+##
+# @HotplugMemoryParams:
+#
+# Parameters for @VM.hotplugMemory.
+#
+# @vmId:  The UUID of the VM to modify
+#
+# @memory:   The memory device specification
+#
+# Since: 4.17.0
+##
+{'type': 'HotplugMemoryParams',
+ 'data': {'vmId': 'UUID', 'memory': 'VmMemoryDevice'}}
+
+##
+# @VM.hotplugMemory:
+#
+# Hotplug memory to a running VM NUMA node
+#
+# @vmID:    The UUID of the VM
+#
+# @params:  The VM UUID and memory device information
+#
+# Returns:
+# The VM definition, as updated
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'VM', 'name': 'hotplugMemory'},
+ 'data': {'vmID': 'UUID', 'params': 'HotplugMemoryParams'},
+ 'returns': 'VmDefinition'}
 
 ##
 # @VM.setNumberOfCpus:

@@ -474,6 +474,7 @@ command_info = {
     'VM_pause': {'ret': VM_running_state_change_Ret},
     'VM_setCpuTunePeriod': {'ret': 'taskStatus'},
     'VM_setCpuTuneQuota': {'ret': 'taskStatus'},
+    'VM_hotplugMemory':  {'ret': 'vmList'},
     'VM_setNumberOfCpus': {'ret': 'vmList'},
     'VM_setIoTune': {'ret': 'taskStatus'},
     'VM_updateDevice': {'ret': 'vmList'},
