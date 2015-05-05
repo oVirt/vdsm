@@ -248,46 +248,6 @@ class GlusterVolumeDeleteFailedException(GlusterVolumeException):
     message = "Volume delete failed"
 
 
-class GlusterVolumeReplaceBrickAlreadyStartedException(GlusterVolumeException):
-    code = 4141
-    message = "Volume replace brick failed"
-
-
-class GlusterVolumeReplaceBrickStartFailedException(GlusterVolumeException):
-    code = 4142
-    message = "Volume replace brick start failed"
-
-
-class GlusterVolumeReplaceBrickNotStartedException(GlusterVolumeException):
-    code = 4143
-    message = "Volume replace brick not started"
-
-
-class GlusterVolumeReplaceBrickAbortFailedException(GlusterVolumeException):
-    code = 4144
-    message = "Volume replace brick abort failed"
-
-
-class GlusterVolumeReplaceBrickPauseFailedException(GlusterVolumeException):
-    code = 4145
-    message = "Volume replace brick pause failed"
-
-
-class GlusterVolumeReplaceBrickStatusFailedException(GlusterVolumeException):
-    code = 4146
-    message = "Volume replace brick status failed"
-
-
-class GlusterVolumeReplaceBrickInProgressException(GlusterVolumeException):
-    code = 4147
-    message = "Volume replace brick in progress"
-
-
-class GlusterVolumeReplaceBrickCommitFailedException(GlusterVolumeException):
-    code = 4148
-    message = "Volume replace brick commit failed"
-
-
 class GlusterVolumesListFailedException(GlusterVolumeException):
     code = 4149
     message = "Volume list failed"

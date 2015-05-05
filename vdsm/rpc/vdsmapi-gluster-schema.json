@@ -1081,26 +1081,6 @@
  'returns': 'RebalanceRemoveStatus'}
 
 ##
-# @GlusterVolume.replaceBrickStart:
-#
-# Replace Gluster volume start
-#
-# @volumeName: Gluster volume name
-#
-# @existingBrick: Existing brick
-#
-# @newBrick: New brick
-#
-# Returns:
-# Success or failure
-#
-# Since: 4.10.3
-##
-{'command': {'class': 'GlusterVolume', 'name': 'replaceBrickStart'},
- 'data': {'volumeName': 'str', 'existingBrick': 'str', 'newBrick': 'str'},
- 'returns': 'bool'}
-
-##
 # @GlusterVolume.rebalanceStatus:
 #
 # Get Gluster volume Rebalance status
