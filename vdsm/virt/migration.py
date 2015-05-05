@@ -398,7 +398,7 @@ class SourceThread(threading.Thread):
             self._vm._dom.abortJob()
         except libvirt.libvirtError:
             if not self._preparingMigrationEvt:
-                    raise
+                raise
 
 
 def exponential_downtime(downtime, steps):
