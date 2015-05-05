@@ -195,7 +195,7 @@ Requires: libvirt-python
 %endif
 
 %if 0%{?fedora} >= 22
-Requires: libvirt-daemon >= 1.2.14
+Requires: libvirt-daemon >= 1.2.13
 Requires: libvirt-python
 %endif
 
