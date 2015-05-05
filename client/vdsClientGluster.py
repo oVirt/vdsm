@@ -163,58 +163,6 @@ class GlusterService(service):
         status = self.s.glusterHostRemoveByUuid(hostUuid, force)
         return status['status']['code'], status['status']['message']
 
-    def do_glusterVolumeReplaceBrickStart(self, args):
-        params = self._eqSplit(args)
-        volumeName = params.get('volumeName', '')
-        existingBrick = params.get('existingBrick', '')
-        newBrick = params.get('newBrick', '')
-
-        status = self.s.glusterVolumeReplaceBrickStart(volumeName,
-                                                       existingBrick,
-                                                       newBrick)
-        pp.pprint(status)
-        return status['status']['code'], status['status']['message']
-
-    def do_glusterVolumeReplaceBrickAbort(self, args):
-        params = self._eqSplit(args)
-        volumeName = params.get('volumeName', '')
-        existingBrick = params.get('existingBrick', '')
-        newBrick = params.get('newBrick', '')
-
-        status = self.s.glusterVolumeReplaceBrickAbort(volumeName,
-                                                       existingBrick,
-                                                       newBrick)
-        return status['status']['code'], status['status']['message']
-
-    def do_glusterVolumeReplaceBrickPause(self, args):
-        params = self._eqSplit(args)
-        volumeName = params.get('volumeName', '')
-        existingBrick = params.get('existingBrick', '')
-        newBrick = params.get('newBrick', '')
-
-        status = self.s.glusterVolumeReplaceBrickPause(volumeName,
-                                                       existingBrick,
-                                                       newBrick)
-        return status['status']['code'], status['status']['message']
-
-    def do_glusterVolumeReplaceBrickStatus(self, args):
-        status = self.s.glusterVolumeReplaceBrickStatus(args[0], args[1],
-                                                        args[2])
-        return status['status']['code'], status['status']['message']
-
-    def do_glusterVolumeReplaceBrickCommit(self, args):
-        params = self._eqSplit(args)
-        volumeName = params.get('volumeName', '')
-        existingBrick = params.get('existingBrick', '')
-        newBrick = params.get('newBrick', '')
-        force = (params.get('force', 'no').upper() == 'YES')
-
-        status = self.s.glusterVolumeReplaceBrickCommit(volumeName,
-                                                        existingBrick,
-                                                        newBrick,
-                                                        force)
-        return status['status']['code'], status['status']['message']
-
     def do_glusterVolumeRemoveBrickStart(self, args):
         params = self._eqSplit(args)
         volumeName = params.get('volumeName', '')
@@ -872,49 +820,6 @@ def getGlusterCmdDict(serv):
               '<hostUuid> is UUID of the host in '
               'gluster cluster',
               'remove server from gluster cluster'
-              )),
-         'glusterVolumeReplaceBrickStart': (
-             serv.do_glusterVolumeReplaceBrickStart,
-             ('volumeName=<volume_name> existingBrick=<existing_brick> '
-              'newBrick=<new_brick>\n\t'
-              '<volume_name> is existing volume name\n\t'
-              '<existing_brick> is existing brick\n\t'
-              '<new_brick> is new brick',
-              'start volume replace brick'
-              )),
-         'glusterVolumeReplaceBrickAbort': (
-             serv.do_glusterVolumeReplaceBrickAbort,
-             ('volumeName=<volume_name> existingBrick=<existing_brick> '
-              'newBrick=<new_brick>\n\t'
-              '<volume_name> is existing volume name\n\t'
-              '<existing_brick> is existing brick\n\t'
-              '<new_brick> is new brick',
-              'abort volume replace brick'
-              )),
-         'glusterVolumeReplaceBrickPause': (
-             serv.do_glusterVolumeReplaceBrickPause,
-             ('volumeName=<volume_name> existingBrick=<existing_brick> '
-              'newBrick=<new_brick>\n\t'
-              '<volume_name> is existing volume name\n\t'
-              '<existing_brick> is existing brick\n\t'
-              '<new_brick> is new brick',
-              'pause volume replace brick'
-              )),
-         'glusterVolumeReplaceBrickStatus': (
-             serv.do_glusterVolumeReplaceBrickStatus,
-             ('<volume_name> <existing_brick> <new_brick> \n\t<volume_name> '
-              'is existing volume name\n\t<brick> is existing brick\n\t'
-              '<new_brick> is new brick',
-              'get volume replace brick status'
-              )),
-         'glusterVolumeReplaceBrickCommit': (
-             serv.do_glusterVolumeReplaceBrickCommit,
-             ('volumeName=<volume_name> existingBrick=<existing_brick> '
-              'newBrick=<new_brick> [force={yes|no}]\n\t'
-              '<volume_name> is existing volume name\n\t'
-              '<existing_brick> is existing brick\n\t'
-              '<new_brick> is new brick',
-              'commit volume replace brick'
               )),
          'glusterVolumeRemoveBrickStart': (
              serv.do_glusterVolumeRemoveBrickStart,

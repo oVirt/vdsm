@@ -284,43 +284,6 @@ class GlusterApi(object):
         return self.svdsmProxy.glusterVolumeRebalanceStatus(volumeName)
 
     @exportAsVerb
-    def volumeReplaceBrickStart(self, volumeName, existingBrick, newBrick,
-                                options=None):
-        return self.svdsmProxy.glusterVolumeReplaceBrickStart(volumeName,
-                                                              existingBrick,
-                                                              newBrick)
-
-    @exportAsVerb
-    def volumeReplaceBrickAbort(self, volumeName, existingBrick, newBrick,
-                                options=None):
-        self.svdsmProxy.glusterVolumeReplaceBrickAbort(volumeName,
-                                                       existingBrick,
-                                                       newBrick)
-
-    @exportAsVerb
-    def volumeReplaceBrickPause(self, volumeName, existingBrick, newBrick,
-                                options=None):
-        self.svdsmProxy.glusterVolumeReplaceBrickPause(volumeName,
-                                                       existingBrick,
-                                                       newBrick)
-
-    @exportAsVerb
-    def volumeReplaceBrickStatus(self, volumeName, oldBrick, newBrick,
-                                 options=None):
-        st, msg = self.svdsmProxy.glusterVolumeReplaceBrickStatus(volumeName,
-                                                                  oldBrick,
-                                                                  newBrick)
-        return {'replaceBrick': st, 'message': msg}
-
-    @exportAsVerb
-    def volumeReplaceBrickCommit(self, volumeName, existingBrick, newBrick,
-                                 force=False, options=None):
-        self.svdsmProxy.glusterVolumeReplaceBrickCommit(volumeName,
-                                                        existingBrick,
-                                                        newBrick,
-                                                        force)
-
-    @exportAsVerb
     def volumeRemoveBrickStart(self, volumeName, brickList,
                                replicaCount=0, options=None):
         return self.svdsmProxy.glusterVolumeRemoveBrickStart(volumeName,
