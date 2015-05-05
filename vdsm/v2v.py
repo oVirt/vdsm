@@ -401,7 +401,8 @@ class ImportVm(object):
         cmd = [_VIRT_V2V.cmd,
                '-ic', self._uri,
                '-o', 'vdsm',
-               '-of', self._get_disk_format()]
+               '-of', self._get_disk_format(),
+               '-oa', self._vminfo.get('allocation', 'sparse').lower()]
         cmd.extend(self._generate_disk_parameters())
         cmd.extend(['--password-file',
                     self._passwd_file,

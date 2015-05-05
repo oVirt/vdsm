@@ -3778,28 +3778,31 @@
 #
 # map of VM properties
 #
-# @vmName:    The name of the VM
+# @vmName:     The name of the VM
 #
-# @status:    The current VM status
+# @status:     The current VM status
 #
-# @vmId:      The VM uuid
+# @vmId:       The VM uuid
 #
-# @smp:       number of cpu
+# @smp:        number of cpu
 #
-# @memSize:   size of actual memory in MB
+# @memSize:    size of actual memory in MB
 #
-# @disks:     #optional list of disk devices
+# @disks:      #optional list of disk devices
 #
-# @networks:  #optional list of network devices
+# @networks:   #optional list of network devices
 #
-# @format:    #optional converted disk format (raw, cow etc)
+# @format:     #optional converted disk format (raw, cow etc)
+#
+# @allocation: #optional disk allocation type (sparse, preallocated)
 #
 # Since: 4.17.0
 ##
 {'type': 'ExternalVmInfo',
  'data': {'vmName': 'str', 'status': 'VmStatus', 'vmId': 'UUID', 'smp': 'uint',
           'memSize': 'uint', '*disks': ['ExternalDiskInfo'],
-          '*networks': ['ExternalNetworkInfo'], '*format': 'VolumeFormat'}}
+          '*networks': ['ExternalNetworkInfo'], '*format': 'VolumeFormat',
+          '*allocation': 'VolumeAllocation'}}
 
 ##
 # @Host.getExternalVMs:
