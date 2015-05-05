@@ -170,6 +170,7 @@ class ExampleConnection(object):
 class MountConnection(object):
 
     CGROUP = None
+    DIR = ""
 
     log = logging.getLogger("Storage.StorageServer.MountConnection")
     localPathBase = "/tmp"
@@ -201,9 +202,8 @@ class MountConnection(object):
         self._mount = mountClass(spec, self._getLocalPath())
 
     def _getLocalPath(self):
-        return os.path.join(self.getLocalPathBase(),
-                            self._remotePath.replace("_",
-                                                     "__").replace("/", "_"))
+        path = self._remotePath.replace("_", "__").replace("/", "_")
+        return os.path.join(self.localPathBase, self.DIR, path)
 
     def connect(self):
         if self._mount.isMounted():
@@ -270,9 +270,7 @@ class GlusterFSConnection(MountConnection):
     #       - 21692 /usr/bin/glusterfs ...
     #
     CGROUP = "vdsm-glusterfs"
-
-    def getLocalPathBase(cls):
-        return os.path.join(MountConnection.getLocalPathBase(), "glusterSD")
+    DIR = "glusterSD"
 
 
 class NFSConnection(object):
