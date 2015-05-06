@@ -583,8 +583,9 @@ class ConfigWriter(object):
         if ipv4.defaultRoute is not None:
             cfg += 'DEFROUTE=%s\n' % _to_ifcfg_bool(ipv4.defaultRoute)
         cfg += 'NM_CONTROLLED=no\n'
-        if ipv6.address or ipv6.ipv6autoconf or ipv6.dhcpv6:
-            cfg += 'IPV6INIT=yes\n'
+        enable_ipv6 = ipv6.address or ipv6.ipv6autoconf or ipv6.dhcpv6
+        cfg += 'IPV6INIT=%s\n' % _to_ifcfg_bool(enable_ipv6)
+        if enable_ipv6:
             if ipv6.address is not None:
                 cfg += 'IPV6ADDR=%s\n' % pipes.quote(ipv6.address)
                 if ipv6.gateway is not None:
