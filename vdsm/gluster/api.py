@@ -284,6 +284,13 @@ class GlusterApi(object):
         return self.svdsmProxy.glusterVolumeRebalanceStatus(volumeName)
 
     @exportAsVerb
+    def volumeReplaceBrickCommitForce(self, volumeName, existingBrick,
+                                      newBrick, options=None):
+        self.svdsmProxy.glusterVolumeReplaceBrickCommitForce(volumeName,
+                                                             existingBrick,
+                                                             newBrick)
+
+    @exportAsVerb
     def volumeRemoveBrickStart(self, volumeName, brickList,
                                replicaCount=0, options=None):
         return self.svdsmProxy.glusterVolumeRemoveBrickStart(volumeName,

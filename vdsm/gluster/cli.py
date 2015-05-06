@@ -726,6 +726,19 @@ def volumeRebalanceStatus(volumeName):
 
 
 @makePublic
+def volumeReplaceBrickCommitForce(volumeName, existingBrick, newBrick):
+    command = _getGlusterVolCmd() + ["replace-brick", volumeName,
+                                     existingBrick, newBrick, "commit",
+                                     "force"]
+    try:
+        _execGlusterXml(command)
+        return True
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeReplaceBrickCommitForceFailedException(rc=e.rc,
+                                                                     err=e.err)
+
+
+@makePublic
 def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
