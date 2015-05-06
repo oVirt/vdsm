@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm import udevadm
 
+import supervdsm
 import mount
 import fileUtils
 import fileSD
@@ -271,6 +272,41 @@ class GlusterFSConnection(MountConnection):
     #
     CGROUP = "vdsm-glusterfs"
     DIR = "glusterSD"
+
+    def __init__(self,
+                 spec,
+                 vfsType=None,
+                 options="",
+                 mountClass=mount.Mount):
+        super(GlusterFSConnection, self).__init__(spec,
+                                                  vfsType=vfsType,
+                                                  options=options,
+                                                  mountClass=mountClass)
+        self._backup_servers_option = None
+
+    @property
+    def options(self):
+        if self._backup_servers_option is None:
+            self._backup_servers_option = self._get_backup_servers_option()
+        return ",".join(
+            p for p in (self._options, self._backup_servers_option) if p)
+
+    def _get_backup_servers_option(self):
+        if "backup-volfile-servers" in self._options:
+            self.log.warn("Using user specified backup-volfile-servers option")
+            return ""
+
+        volfileServer, volname = self._remotePath.split(":", 1)
+        volname = volname.strip('/')
+        volInfo = supervdsm.getProxy().glusterVolumeInfo(volname,
+                                                         volfileServer)
+        servers = [brick.split(":")[0]
+                   for brick in volInfo[volname]['bricks']]
+        servers.remove(volfileServer)
+        if not servers:
+            return ""
+
+        return "backup-volfile-servers=" + ":".join(servers)
 
 
 class NFSConnection(object):
