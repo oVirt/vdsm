@@ -213,12 +213,15 @@ class Link(object):
     def isVLAN(self):
         return self.type == LinkType.VLAN
 
+    def isMACVLAN(self):
+        return self.type == LinkType.MACVLAN
+
     def isFakeNIC(self):
         """
         Returns True iff vdsm config marks the DUMMY or VETH dev to be reported
         as NIC.
         """
-        if self.isDUMMY() or self.isVETH():
+        if self.isDUMMY() or self.isVETH() or self.isMACVLAN():
             return anyFnmatch(self.name, self._fakeNics)
         return False
 
