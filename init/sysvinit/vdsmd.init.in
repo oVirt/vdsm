@@ -151,11 +151,6 @@ unified_network_persistence_upgrade(){
     "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-unified-persistence
 }
 
-upgrade_300_nets(){
-    echo 'Upgrading to v3.x networking if needed'
-    "$VDSM_TOOL" ${UPGRADE_LOGGING_PARAMS} upgrade-3.0.0-networks
-}
-
 start() {
     test_already_running && return 0
 
@@ -172,8 +167,6 @@ start() {
 
     unified_network_persistence_upgrade || return 1
     restore_nets || return 1
-    upgrade_300_nets || return 1
-
 
     echo $"Starting up vdsm daemon: "
     DAEMON_COREFILE_LIMIT=unlimited NICELEVEL="${NICE_LOWEST}" daemon \

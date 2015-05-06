@@ -44,7 +44,6 @@ dist_vdsmtool_PYTHON = \
 	transient.py \
 	unified_persistence.py \
 	upgrade.py \
-	upgrade_300_networks.py \
 	vdsm-id.py \
 	$(NULL)
 

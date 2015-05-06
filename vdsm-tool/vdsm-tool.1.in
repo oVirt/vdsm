@@ -145,13 +145,6 @@ Runs the upgrade operation again, even if this operation has been performed prev
 .RE
 .RE
 .TP
-Options for the \fIupgrade_300_networks\fP module:
-.RS
-.TP
-.B upgrade-3.0.0-networks
-Since ovirt-3.0, VDSM uses libvirt networks (with names prefixed vdsm-*) to store its own networks. Such networks were not defined in older versions of VDSM, and only Linux bridges were used. This option is kept as a tool for upgrading networks using the old scheme for the (very few) people who still have such old setups running.
-.RE
-.TP
 Options for the \fIvalidate_ovirt_certs\fP module:
 .RS
 .TP
