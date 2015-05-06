@@ -248,6 +248,12 @@ class GlusterVolumeDeleteFailedException(GlusterVolumeException):
     message = "Volume delete failed"
 
 
+class GlusterVolumeReplaceBrickCommitForceFailedException(
+        GlusterVolumeException):
+    code = 4148
+    message = "Volume replace brick commit force failed"
+
+
 class GlusterVolumesListFailedException(GlusterVolumeException):
     code = 4149
     message = "Volume list failed"

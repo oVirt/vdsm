@@ -164,6 +164,11 @@ class GlusterVolume(GlusterApiBase):
         return self._gluster.volumeRemoveBrickForce(volumeName, brickList,
                                                     replicaCount)
 
+    def replaceBrickCommitForce(self, volumeName, existingBrick, newBrick):
+        return self._gluster.volumeReplaceBrickCommitForce(volumeName,
+                                                           existingBrick,
+                                                           newBrick)
+
     def profileInfo(self, volumeName, nfs=False):
         return self._gluster.volumeProfileInfo(volumeName, nfs)
 

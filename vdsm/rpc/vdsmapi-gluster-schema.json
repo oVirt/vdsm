@@ -1084,6 +1084,22 @@
  'returns': 'RebalanceRemoveStatus'}
 
 ##
+# @GlusterVolume.replaceBrickCommitForce:
+#
+# Replace Gluster volume brick
+#
+# @volumeName:     Gluster volume name
+#
+# @existingBrick:  Existing brick path
+#
+# @newBrick:       New brick path
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterVolume', 'name': 'replaceBrickCommitForce'},
+ 'data': {'volumeName': 'str', 'existingBrick': 'str', 'newBrick': 'str'}}
+
+##
 # @GlusterVolume.rebalanceStatus:
 #
 # Get Gluster volume Rebalance status
