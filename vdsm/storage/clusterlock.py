@@ -465,7 +465,7 @@ class LocalLock(object):
     def inquire(self):
         with self._globalLockMapSync:
             hostId, lockFile = self._getLease()
-            return self.LVER, hostId if lockFile else None, None
+            return self.LVER, (hostId if lockFile else None)
 
     def release(self):
         with self._globalLockMapSync:
