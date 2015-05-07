@@ -728,7 +728,11 @@ class service:
         return 0, ''
 
     def getDeviceList(self, args):
-        devices = self.s.getDeviceList(*args)
+        if len(args) == 0:
+            devices = self.s.getDeviceList()
+        else:
+            devices = self.s.getDeviceList(args[0], args[1:])
+
         if devices['status']['code']:
             return devices['status']['code'], devices['status']['message']
         pp.pprint(devices['devList'])
@@ -2242,8 +2246,16 @@ if __name__ == '__main__':
                        )),
         'getDeviceList': (serv.getDeviceList,
                           ('[storageType]',
+                           '[<devlist>]',
                            'List of all block devices (optionally - matching '
-                           'storageType).'
+                           'storageType, optionally - of each device listed).',
+                           '    getDeviceList',
+                           '        return all devices',
+                           '    getDeviceList FCP',
+                           '        return only FCP devices',
+                           '    getDeviceList ISCSI guid1 guid2',
+                           '        return info for guid1 and guid2',
+                           '        , assuming ISCSI type'
                            )),
         'getDevicesVisibility': (serv.getDevicesVisibility,
                                  ('<devlist>',

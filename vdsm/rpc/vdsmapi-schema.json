@@ -1479,13 +1479,17 @@
 #
 # @storageType:  #optional Only return devices of this type
 #
+# @guids:        #optional Only return info on specific list of block device
+#                 GUIDs  (new in version 4.17)
+#
 # Returns:
 # An array of @BlockDeviceInfo
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'getDeviceList'},
- 'data': {'*storageType': 'BlockDeviceType'},
+ 'data': {'*storageType': 'BlockDeviceType',
+          '*guids': ['str']},
  'returns': ['BlockDeviceInfo']}
 
 ##

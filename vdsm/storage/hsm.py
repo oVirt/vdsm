@@ -1966,12 +1966,14 @@ class HSM(object):
                                       masterVersion, leaseParams)
 
     @public
-    def getDeviceList(self, storageType=None, options={}):
+    def getDeviceList(self, storageType=None, guids=(), options={}):
         """
         List all Block Devices.
 
         :param storageType: Filter by storage type.
         :type storageType: Some enum?
+        :param guids: List of device GUIDs to retrieve info.
+        :type guids: list
         :param options: ?
 
         :returns: Dict containing a list of all the devices of the storage
@@ -1979,10 +1981,10 @@ class HSM(object):
         :rtype: dict
         """
         vars.task.setDefaultException(se.BlockDeviceActionError())
-        devices = self._getDeviceList(storageType)
+        devices = self._getDeviceList(storageType=storageType, guids=guids)
         return dict(devList=devices)
 
-    def _getDeviceList(self, storageType=None, guids=None):
+    def _getDeviceList(self, storageType=None, guids=()):
         sdCache.refreshStorage()
         typeFilter = lambda dev: True
         if storageType:
@@ -1995,7 +1997,7 @@ class HSM(object):
 
         devices = []
         pvs = {}
-        if guids is not None:
+        if guids:
             for guid in guids:
                 try:
                     pv = lvm.getPV(guid)

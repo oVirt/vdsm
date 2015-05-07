@@ -1635,8 +1635,8 @@ class Global(APIBase):
     def getLVMVolumeGroups(self, storageType=None):
         return self._irs.getVGList(storageType)
 
-    def getDeviceList(self, storageType=None):
-        return self._irs.getDeviceList(storageType)
+    def getDeviceList(self, storageType=None, guids=()):
+        return self._irs.getDeviceList(storageType, guids)
 
     def getDevicesVisibility(self, guidList):
         return self._irs.getDevicesVisibility(guidList)
