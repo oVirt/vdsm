@@ -693,8 +693,10 @@ def _getKeyPackages():
 
     if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL,
                    OSName.POWERKVM):
-        KEY_PACKAGES = {'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev'),
-                        'qemu-img': ('qemu-img', 'qemu-img-rhev'),
+        KEY_PACKAGES = {'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev',
+                                     'qemu-kvm-ev'),
+                        'qemu-img': ('qemu-img', 'qemu-img-rhev',
+                                     'qemu-img-ev'),
                         'vdsm': ('vdsm',),
                         'spice-server': ('spice-server',),
                         'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
