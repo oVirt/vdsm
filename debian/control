@@ -122,7 +122,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  xz-utils,
  vdsm-python-zombiereaper (= ${source:Version}),
  vdsm-yajsonrpc (= ${source:Version})
-Conflicts: apparmor
+Conflicts: apparmor, vdsm-hook-sriov
 Description: VDSM: Virtual Desktop Server Manager
  The VDSM service is required by a Virtualization Manager to manage the
  Linux hosts. VDSM manages and monitors the host's storage, memory and
@@ -308,13 +308,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source
 Description: Adding custom smbios entries to libvirt domain via VDSM
  Adding custom smbios entries to libvirt domain via VDSM
  such as: vendor, version, date and release
-
-Package: vdsm-hook-sriov
-Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version}), libvirt-bin (>= 1.2.9-1)
-Description: sr-iov support for VDSM
- sr-iov hook enable to add virtual functions exposed by the device
- directly to a virtual machine.
 
 Package: vdsm-hook-vmfex
 Architecture: all

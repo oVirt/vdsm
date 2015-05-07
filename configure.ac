@@ -413,7 +413,6 @@ AC_OUTPUT([
 	vdsm_hooks/scratchpad/Makefile
 	vdsm_hooks/smbios/Makefile
 	vdsm_hooks/spiceoptions/Makefile
-	vdsm_hooks/sriov/Makefile
 	vdsm_hooks/vhostmd/Makefile
 	vdsm_hooks/vmdisk/Makefile
 	vdsm_hooks/vmfex/Makefile

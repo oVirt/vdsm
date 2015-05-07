@@ -81,8 +81,6 @@ EXTRA_DIST = \
     vdsm-hook-scratchpad.install \
     vdsm-hook-smbios.docs \
     vdsm-hook-smbios.install \
-    vdsm-hook-sriov.docs \
-    vdsm-hook-sriov.install \
     vdsm-hook-vhostmd.docs \
     vdsm-hook-vhostmd.install \
     vdsm-hook-vmdisk.docs \

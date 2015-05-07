@@ -334,6 +334,7 @@ Requires(post): /bin/hostname
 # updated with latest vdsm-bootstrap
 Requires: %{name}-cli = %{version}-%{release}
 %endif
+Conflicts: vdsm-hook-sriov
 
 %description
 The VDSM service is required by a Virtualization Manager to manage the
@@ -665,18 +666,6 @@ BuildArch:      noarch
 %description hook-smbios
 Adding custom smbios entries to libvirt domain via VDSM
 such as: vendor, version, date and release
-
-%package hook-sriov
-Summary:        sr-iov support for VDSM
-%if 0%{?rhel} >= 7 || 0%{?fedora}
-Requires:       libvirt-daemon-driver-nodedev
-%endif
-BuildArch:      noarch
-
-%description hook-sriov
-sr-iov hook enable to add virtual functions exposed by the device
-directly to a virtual machine.
-
 
 %package hook-spiceoptions
 Summary:        To configure spice options for vm
@@ -1595,14 +1584,6 @@ exit 0
 %files hook-smbios
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_smbios
-
-%files hook-sriov
-%defattr(-, root, root, -)
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_sriov
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_sriov
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_sriov
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_sriov
-
 
 %files hook-spiceoptions
 %defattr(-, root, root, -)

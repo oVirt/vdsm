@@ -53,7 +53,6 @@ SUBDIRS += \
 	scratchpad \
 	smbios \
 	spiceoptions \
-	sriov \
 	vmdisk \
 	vmfex \
 	$(NULL)
