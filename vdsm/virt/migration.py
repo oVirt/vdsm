@@ -79,8 +79,8 @@ class SourceThread(threading.Thread):
         self.status = {
             'status': {
                 'code': 0,
-                'message': 'Migration in progress'},
-            'progress': 0}
+                'message': 'Migration in progress'}}
+        self._progress = 0
         threading.Thread.__init__(self)
         self._preparingMigrationEvt = True
         self._migrationCanceledEvt = False
@@ -96,7 +96,8 @@ class SourceThread(threading.Thread):
         """
         if self._monitorThread is not None:
             # fetch migration status from the monitor thread
-            self.status['progress'] = self._monitorThread.progress
+            self._progress = self._monitorThread.progress
+        self.status['progress'] = self._progress
 
         stat = self._vm._dom.jobStats(libvirt.VIR_DOMAIN_JOB_STATS_COMPLETED)
         if 'downtime' in stat:
@@ -184,7 +185,7 @@ class SourceThread(threading.Thread):
         self._vm.lastStatus = vmstatus.UP
 
     def _finishSuccessfully(self):
-        self.status['progress'] = 100
+        self._progress = 100
         if not self.hibernating:
             self._vm.setDownStatus(NORMAL, vmexitreason.MIGRATION_SUCCEEDED)
             self.status['status']['message'] = 'Migration done'
