@@ -868,19 +868,8 @@ if [ "$1" -ge 1 ]; then
         supervdsmd_start_required='yes'
     fi
 
-    if ! %{_bindir}/vdsm-tool is-configured >/dev/null 2>&1;
-    then
-        if ! %{_bindir}/vdsm-tool configure --force \
-                >/dev/null 2>&1; then
-            # fallback to vdsmd reconfigure api - This change may be removed
-            # when vdsm won't support any downgrade\upgrade to versions that
-            # don't include vdsm-tool configure api (vdsm <= 3.3)
-            for f in '/usr/lib/systemd/systemd-vdsmd' '/etc/init.d/vdsmd'; do
-                if [ -f "${f}" ]; then
-                    "${f}" reconfigure >/dev/null 2>&1 || :
-                fi
-            done
-        fi
+    if ! %{_bindir}/vdsm-tool is-configured >/dev/null 2>&1; then
+        %{_bindir}/vdsm-tool configure --force >/dev/null 2>&1
     fi
 
     if [ "${supervdsmd_start_required}" = 'yes' ]; then
