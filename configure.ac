@@ -122,6 +122,28 @@ AC_ARG_WITH(
 AC_SUBST([QEMUGROUP], ["${with_qemu_group}"])
 
 AC_ARG_WITH(
+    [ovirt-vmconsole-user],
+    [AS_HELP_STRING(
+        [--with-ovirt-vmconsole-user=USER],
+        [configure user for ovirt vmconsole access, @<:@default=ovirt-vmconsole@:>@]
+    )],
+    ,
+    [with_ovirt_vmconsole_user="ovirt-vmconsole"]
+)
+AC_SUBST([OVIRTVMCONSOLEUSER], ["${with_ovirt_vmconsole_user}"])
+
+AC_ARG_WITH(
+    [ovirt-vmconsole-group],
+    [AS_HELP_STRING(
+        [--with-ovirt-vmconsole-group=GROUP],
+        [configure group for ovirt vmconsole access, @<:@default=ovirt-vmconsole@:>@]
+    )],
+    ,
+    [with_ovirt_vmconsole_group="ovirt-vmconsole"]
+)
+AC_SUBST([OVIRTVMCONSOLEGROUP], ["${with_ovirt_vmconsole_group}"])
+
+AC_ARG_WITH(
     [libvirt-service-default],
     [AS_HELP_STRING(
         [--with-libvirt-service-default=FILE],

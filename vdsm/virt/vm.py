@@ -1619,6 +1619,8 @@ class Vm(object):
         self._reattachHostDevices()
         self._cleanupStatsCache()
         numaUtils.invalidateNumaCache(self)
+        for con in self._devices[hwclass.CONSOLE]:
+            con.cleanup()
 
     def _cleanupStatsCache(self):
         try:
@@ -1720,6 +1722,9 @@ class Vm(object):
             self.guestAgent.connect()
         except Exception:
             self.log.exception("Failed to connect to guest agent channel")
+
+        for con in self._devices[hwclass.CONSOLE]:
+            con.prepare()
 
         self._guestCpuRunning = self._isDomainRunning()
         self._logGuestCpuStatus('domain initialization')

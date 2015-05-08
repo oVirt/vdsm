@@ -71,8 +71,9 @@ from storage import hba
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
-    DISKIMAGE_USER, DISKIMAGE_GROUP, P_LIBVIRT_VMCHANNELS, VDSM_USER, \
-    QEMU_PROCESS_USER, QEMU_PROCESS_GROUP
+    DISKIMAGE_USER, DISKIMAGE_GROUP, \
+    P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES, \
+    VDSM_USER, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
 import mkimage
@@ -184,10 +185,16 @@ class _SuperVdsm(object):
         return vCpuIdxToNode
 
     @logDecorator
-    def prepareVmChannel(self, socketFile):
-        if socketFile.startswith(P_LIBVIRT_VMCHANNELS):
-            mode = os.stat(socketFile).st_mode | stat.S_IWGRP
+    def prepareVmChannel(self, socketFile, group=None):
+        if (socketFile.startswith(P_LIBVIRT_VMCHANNELS) or
+           socketFile.startswith(P_OVIRT_VMCONSOLES)):
+            fsinfo = os.stat(socketFile)
+            mode = fsinfo.st_mode | stat.S_IWGRP
             os.chmod(socketFile, mode)
+            if group is not None:
+                os.chown(socketFile,
+                         fsinfo.st_uid,
+                         resolveGid(group))
         else:
             raise Exception("Incorporate socketFile")
 

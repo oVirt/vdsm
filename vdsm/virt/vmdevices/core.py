@@ -18,7 +18,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os.path
+
+from vdsm import constants
+from vdsm import utils
+
 import caps
+import supervdsm
 
 from .. import vmxml
 
@@ -73,13 +79,34 @@ class Balloon(Base):
 
 
 class Console(Base):
-    __slots__ = ()
+    __slots__ = ('_path',)
+
+    CONSOLE_EXTENSION = '.sock'
 
     def __init__(self, *args, **kwargs):
         super(Console, self).__init__(*args, **kwargs)
-
         if not hasattr(self, 'specParams'):
             self.specParams = {}
+
+        if utils.tobool(self.specParams.get('enableSocket', False)):
+            self._path = os.path.join(
+                constants.P_OVIRT_VMCONSOLES,
+                self.conf['vmId'] + self.CONSOLE_EXTENSION
+            )
+        else:
+            self._path = None
+
+    def prepare(self):
+        if self._path:
+            supervdsm.getProxy().prepareVmChannel(
+                self._path,
+                constants.OVIRT_VMCONSOLE_GROUP)
+
+    def cleanup(self):
+        if self._path:
+            if os.path.islink(self._path):
+                utils.rmFile(os.path.realpath(self._path))
+            utils.rmFile(self._path)
 
     @property
     def isSerial(self):
@@ -111,8 +138,19 @@ class Console(Base):
         <console type='pty'>
           <target type='virtio' port='0'/>
         </console>
+
+        or
+
+        <console type='unix'>
+          <source mode='bind' path='/path/to/${vmid}.sock'>
+          <target type='virtio' port='0'/>
+        </console>
         """
-        m = self.createXmlElem('console', 'pty')
+        if self._path:
+            m = self.createXmlElem('console', 'unix')
+            m.appendChildWithArgs('source', mode='bind', path=self._path)
+        else:
+            m = self.createXmlElem('console', 'pty')
         consoleType = self.specParams.get('consoleType', 'virtio')
         m.appendChildWithArgs('target', type=consoleType, port='0')
         return m

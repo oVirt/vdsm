@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from vdsm import constants
+
 from virt import vmdevices
 from virt.vmdevices import hwclass
 from virt.domain_descriptor import DomainDescriptor
@@ -213,12 +215,26 @@ class TestVmDevices(XMLTestCase):
         tpm = vmdevices.core.Tpm(self.conf, self.log, **dev)
         self.assertXMLEqual(tpm.getXML().toxml(), tpmXML)
 
-    def testConsoleXML(self):
+    @permutations([[None], [{}], [{'enableSocket': False}]])
+    def testConsolePtyXML(self, specParams):
         consoleXML = """
             <console type="pty">
                 <target port="0" type="virtio"/>
             </console>"""
         dev = {'device': 'console'}
+        if specParams is not None:
+            dev['specParams'] = specParams
+        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        self.assertXMLEqual(console.getXML().toxml(), consoleXML)
+
+    def testConsoleSocketXML(self):
+        consoleXML = """
+            <console type="unix">
+                <source mode="bind" path="%s%s.sock" />
+                <target port="0" type="virtio"/>
+            </console>""" % (constants.P_OVIRT_VMCONSOLES,
+                             self.conf['vmId'])
+        dev = {'device': 'console', 'specParams': {'enableSocket': True}}
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXMLEqual(console.getXML().toxml(), consoleXML)
 

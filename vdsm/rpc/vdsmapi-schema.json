@@ -3403,10 +3403,14 @@
 #
 # @consoleType: Type of console to be configured for the VM
 #
+# @enableSocket:    #optional if enabled, export console endpoint
+#                   as UNIX domain socket instead of pty.
+#
 # Since: 4.17.0
 ##
 {'type': 'VmConsoleDeviceSpecParams',
- 'data': {'consoleType': 'VmConsoleDeviceType'}}
+ 'data': {'consoleType': 'VmConsoleDeviceType',
+          '*enableSocket': 'bool'}}
 
 ##
 # @VmConsoleDevice:
@@ -3417,7 +3421,8 @@
 #
 # @deviceId:    A unique ID for this device
 #
-# @specParams:  #optional Additional device params (new in version 4.17.0)
+# @specParams:  #optional Additional device parameters
+#               (new in version 4.17.0)
 #
 # Since: 4.10.0
 ##
