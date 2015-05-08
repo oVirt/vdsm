@@ -94,6 +94,7 @@ test_modules = \
 	periodicTests.py \
 	permutationTests.py \
 	persistentDictTests.py \
+	properties_test.py \
 	protocoldetectorTests.py \
 	pthreadTests.py \
 	qemuimgTests.py \
@@ -205,6 +206,7 @@ blacklist_modules_python3 = \
 	outOfProcessTests.py \
 	periodicTests.py \
 	persistentDictTests.py \
+	properties_test.py \
 	protocoldetectorTests.py \
 	qemuimgTests.py \
 	resourceManagerTests.py \

@@ -50,6 +50,7 @@ dist_vdsmpylib_PYTHON = \
 	panic.py \
 	password.py \
 	ppc64HardwareInfo.py \
+	properties.py \
 	protocoldetector.py \
 	pthread.py \
 	qemuimg.py \
