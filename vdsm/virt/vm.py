@@ -3325,7 +3325,7 @@ class Vm(object):
             graphics, otp, seconds, connAct, params)
 
     def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct, params):
-        graphics.setAttribute('passwd', otp)
+        graphics.setAttribute('passwd', otp.value)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
                                     time.gmtime(time.time() + float(seconds)))

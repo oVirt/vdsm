@@ -20,6 +20,7 @@ from threading import Lock, Event
 
 from vdsm.compat import json
 
+from vdsm.password import protect_passwords, unprotect_passwords
 from vdsm.utils import traceback
 
 __all__ = ["betterAsyncore", "stompReactor", "stomp"]
@@ -78,7 +79,7 @@ class JsonRpcInternalError(JsonRpcError):
 class JsonRpcRequest(object):
     def __init__(self, method, params=(), reqId=None):
         self.method = method
-        self.params = params
+        self.params = protect_passwords(params)
         self.id = reqId
 
     @classmethod
@@ -128,7 +129,7 @@ class JsonRpcRequest(object):
 
 class JsonRpcResponse(object):
     def __init__(self, result=None, error=None, reqId=None):
-        self.result = result
+        self.result = unprotect_passwords(result)
         self.error = error
         self.id = reqId
 

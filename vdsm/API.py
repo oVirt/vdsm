@@ -1213,7 +1213,7 @@ class Global(APIBase):
 
         self.log.debug('fenceNode(addr=%s,port=%s,agent=%s,user=%s,passwd=%s,'
                        'action=%s,secure=%s,options=%s,policy=%s)',
-                       addr, port, agent, username, 'XXXX', action, secure,
+                       addr, port, agent, username, password, action, secure,
                        options, policy)
 
         if action not in ('status', 'on', 'off', 'reboot'):
@@ -1226,7 +1226,7 @@ class Global(APIBase):
         script = constants.EXT_FENCE_PREFIX + agent
 
         inp = ('agent=fence_%s\nipaddr=%s\nlogin=%s\naction=%s\n'
-               'passwd=%s\n') % (agent, addr, username, action, password)
+               'passwd=%s\n') % (agent, addr, username, action, password.value)
         if port != '':
             inp += 'port=%s\n' % (port,)
         if utils.tobool(secure):

@@ -74,6 +74,7 @@ test_modules = \
 	numaUtilsTests.py \
 	outOfProcessTests.py \
 	parted_utils_tests.py \
+	passwordsTests.py \
 	periodicTests.py \
 	permutationTests.py \
 	persistentDictTests.py \

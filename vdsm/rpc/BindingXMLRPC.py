@@ -27,6 +27,9 @@ import threading
 import re
 import sys
 
+from vdsm.password import (ProtectedPassword,
+                           protect_passwords,
+                           unprotect_passwords)
 from vdsm import utils
 from vdsm import xmlrpc
 from vdsm.define import doneCode, errCode
@@ -361,10 +364,12 @@ class BindingXMLRPC(object):
         return api.getVMList(fullStatus, vmList, False)
 
     def getExternalVMs(self, uri, username, password):
+        password = ProtectedPassword(password)
         api = API.Global()
         return api.getExternalVMs(uri, username, password)
 
     def convertExternalVm(self, uri, username, password, vminfo, jobid):
+        password = ProtectedPassword(password)
         api = API.Global()
         return api.convertExternalVm(uri, username, password, vminfo, jobid)
 
@@ -387,6 +392,7 @@ class BindingXMLRPC(object):
 
     def vmSetTicket(self, vmId, password, ttl,
                     existingConnAction='disconnect', params={}):
+        password = ProtectedPassword(password)
         vm = API.VM(vmId)
         return vm.setTicket(password, ttl, existingConnAction, params)
 
@@ -431,6 +437,7 @@ class BindingXMLRPC(object):
         return vm.hotunplugNic(params)
 
     def vmUpdateDevice(self, vmId, params):
+        params = protect_passwords(params)
         vm = API.VM(vmId)
         return vm.updateDevice(params)
 
@@ -511,6 +518,7 @@ class BindingXMLRPC(object):
         return vm.migrationCreate(params)
 
     def vmDesktopLogin(self, vmId, domain, user, password):
+        password = ProtectedPassword(password)
         vm = API.VM(vmId)
         return vm.desktopLogin(domain, user, password)
 
@@ -579,6 +587,7 @@ class BindingXMLRPC(object):
 
     def fenceNode(self, addr, port, agent, username, password, action,
                   secure=False, options='', policy=None):
+        password = ProtectedPassword(password)
         api = API.Global()
         return api.fenceNode(addr, port, agent, username, password, action,
                              secure, options, policy)
@@ -727,6 +736,7 @@ class BindingXMLRPC(object):
                             domainsMap)
 
     def poolConnectStorageServer(self, domType, spUUID, conList, options=None):
+        conList = protect_passwords(conList)
         pool = API.StoragePool(spUUID)
         return pool.connectStorageServer(domType, conList)
 
@@ -750,6 +760,7 @@ class BindingXMLRPC(object):
 
     def poolDisconnectStorageServer(self, domType, spUUID, conList,
                                     options=None):
+        conList = protect_passwords(conList)
         pool = API.StoragePool(spUUID)
         return pool.disconnectStorageServer(domType, conList)
 
@@ -914,6 +925,7 @@ class BindingXMLRPC(object):
         return api.getAllTasks()
 
     def iscsiDiscoverSendTargets(self, con, options=None):
+        con = protect_passwords(con)
         iscsiConn = API.ISCSIConnection(con['connection'], con['port'],
                                         con['user'], con['password'])
         return iscsiConn.discoverSendTargets()
@@ -958,7 +970,8 @@ class BindingXMLRPC(object):
 
     def devicesGetList(self, storageType=None, options=None):
         api = API.Global()
-        return api.getDeviceList(storageType)
+        res = api.getDeviceList(storageType)
+        return unprotect_passwords(res)
 
     def devicesGetVisibility(self, guids, options=None):
         api = API.Global()
@@ -1128,6 +1141,11 @@ def wrapApiMethod(f):
             if f.__name__ in ('getVMList', 'getAllVmStats', 'getStats',
                               'fenceNode'):
                 logLevel = logging.TRACE
+
+            # TODO: This password protection code is fragile and ugly. Password
+            # protection should be done in the wrapped methods, and logging
+            # shold be done in the next layers, similar to storage logs.
+
             displayArgs = args
             if f.__name__ == 'vmDesktopLogin':
                 if 'password' in kwargs:

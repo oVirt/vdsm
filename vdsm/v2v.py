@@ -180,7 +180,7 @@ def get_storage_domain_path(path):
 def password_file(job_id, file_name, password):
     fd = os.open(file_name, os.O_WRONLY | os.O_CREAT, 0o600)
     try:
-        os.write(fd, password)
+        os.write(fd, password.value)
     finally:
         os.close(fd)
     try:

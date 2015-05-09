@@ -27,6 +27,7 @@ import shutil
 import threading
 
 from vdsm import ipwrapper
+from vdsm.password import ProtectedPassword
 import virt.sampling as sampling
 
 from testValidation import brokentest, ValidateRunningAsRoot
@@ -135,7 +136,7 @@ def vlan(name, link, vlan_id):
 
 
 def read_password():
-    return 'password'
+    return ProtectedPassword('password')
 
 
 class InterfaceSampleTests(TestCaseBase):

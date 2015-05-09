@@ -38,6 +38,7 @@ from virt import vmstats
 from virt import vmstatus
 from vdsm import constants
 from vdsm import define
+from vdsm import password
 from vdsm import response
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
@@ -953,9 +954,9 @@ class TestVmOperations(TestCaseBase):
 
     def testUpdateSingleDeviceGraphics(self):
         devXmls = (
-            '<graphics connected="disconnect" passwd="***"'
+            '<graphics connected="disconnect" passwd="12345678"'
             ' port="5900" type="spice"/>',
-            '<graphics passwd="***" port="5900" type="vnc"/>')
+            '<graphics passwd="12345678" port="5900" type="vnc"/>')
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
             domXml = '''
                 <devices>
@@ -965,9 +966,9 @@ class TestVmOperations(TestCaseBase):
 
     def testUpdateMultipleDeviceGraphics(self):
         devXmls = (
-            '<graphics connected="disconnect" passwd="***"'
+            '<graphics connected="disconnect" passwd="12345678"'
             ' port="5900" type="spice"/>',
-            '<graphics passwd="***" port="5901" type="vnc"/>')
+            '<graphics passwd="12345678" port="5901" type="vnc"/>')
         domXml = '''
             <devices>
                 <graphics type="spice" port="5900" />
@@ -992,7 +993,7 @@ class TestVmOperations(TestCaseBase):
                 testvm.updateDevice({
                     'deviceType': 'graphics',
                     'graphicsType': device['device'],
-                    'password': '***',
+                    'password': password.ProtectedPassword('12345678'),
                     'ttl': 0,
                     'existingConnAction': 'disconnect',
                     'params': TICKET_PARAMS})

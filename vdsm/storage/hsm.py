@@ -27,7 +27,6 @@ import threading
 import logging
 import glob
 from fnmatch import fnmatch
-from copy import deepcopy
 from itertools import imap
 from collections import defaultdict
 from functools import partial, wraps
@@ -109,30 +108,6 @@ def public(f=None, **kwargs):
 
     return dispatcher.exported(wraps(f)(publicFunctionLogger(f)))
 
-
-def loggableCon(con):
-    conCopy = con.copy()
-    for key in conCopy:
-        if key.upper() == 'PASSWORD':
-            conCopy[key] = '******'
-    return conCopy
-
-
-def loggableConList(conList):
-    cons = []
-    for con in conList:
-        conCopy = loggableCon(con)
-        cons.append(conCopy)
-
-    return cons
-
-
-def connectionListPrinter(conList):
-    return repr(loggableConList(conList))
-
-
-def connectionPrinter(con):
-    return repr(loggableCon(con))
 
 # Connection Management API competability code
 # Remove when deprecating dis\connectStorageServer
@@ -1963,14 +1938,7 @@ class HSM(object):
         return pool.reconstructMaster(hostId, poolName, masterDom, domDict,
                                       masterVersion, leaseParams)
 
-    def _logResp_getDeviceList(self, response):
-        logableDevs = deepcopy(response)
-        for dev in logableDevs['devList']:
-            for con in dev['pathlist']:
-                con['password'] = "******"
-        return logableDevs
-
-    @public(logger=logged(resPrinter=partial(_logResp_getDeviceList, None)))
+    @public
     def getDeviceList(self, storageType=None, options={}):
         """
         List all Block Devices.
@@ -2432,7 +2400,7 @@ class HSM(object):
         return dict.fromkeys(uuids, findMethod)
 
     @deprecated
-    @public(logger=logged(printers={'conList': connectionListPrinter}))
+    @public
     def connectStorageServer(self, domType, spUUID, conList, options=None):
         """
         Connects to a storage low level entity (server).
@@ -2449,11 +2417,10 @@ class HSM(object):
                   successful
         :rtype: dict
         """
-        cons = loggableConList(conList=conList)
         vars.task.setDefaultException(
             se.StorageServerConnectionError(
                 "domType=%s, spUUID=%s, conList=%s" %
-                (domType, spUUID, cons)))
+                (domType, spUUID, conList)))
 
         res = []
         for conDef in conList:
@@ -2512,7 +2479,7 @@ class HSM(object):
                     conObj._iface = iscsi.IscsiInterface('default')
 
     @deprecated
-    @public(logger=logged(printers={'conList': connectionListPrinter}))
+    @public
     def disconnectStorageServer(self, domType, spUUID, conList, options=None):
         """
         Disconnects from a storage low level entity (server).
@@ -2529,11 +2496,10 @@ class HSM(object):
                   successful
         :rtype: dict
         """
-        cons = loggableConList(conList=conList)
         vars.task.setDefaultException(
             se.StorageServerDisconnectionError(
                 "domType=%s, spUUID=%s, conList=%s" %
-                (domType, spUUID, cons)))
+                (domType, spUUID, conList)))
 
         res = []
         for conDef in conList:
@@ -3018,7 +2984,7 @@ class HSM(object):
         # getSharedLock(connectionsResource...)
         return dict(info=self.__getVGsInfo([vgUUID])[0])
 
-    @public(logger=logged(printers={'con': connectionPrinter}))
+    @public
     def discoverSendTargets(self, con, options=None):
         """
         Discovers iSCSI targets.

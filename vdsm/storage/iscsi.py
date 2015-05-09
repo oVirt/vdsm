@@ -30,6 +30,7 @@ import errno
 from collections import namedtuple
 
 import misc
+from vdsm.password import ProtectedPassword
 from vdsm.config import config
 from vdsm.netinfo import getRouteDeviceTo
 import devicemapper
@@ -151,6 +152,7 @@ def readSessionInfo(sessionID):
             res.append("")
 
     iqn, iface, tpgt, username, password, ip, port, netdev = res
+    password = ProtectedPassword(password)
     port = int(port)
     tpgt = int(tpgt)
 
@@ -158,7 +160,7 @@ def readSessionInfo(sessionID):
     # as "<NULL>" (RHEL5) or "(null)" (RHEL6)
     if username in ["<NULL>", "(null)"]:
         username = None
-    if password in ["<NULL>", "(null)"]:
+    if password.value in ["<NULL>", "(null)"]:
         password = None
 
     if netdev in ["<NULL>", "(null)"]:
@@ -293,7 +295,7 @@ class ChapCredentials(object):
         if self.username is not None:
             res.append(("auth.username", self.username))
         if self.password is not None:
-            res.append(("auth.password", self.password))
+            res.append(("auth.password", self.password.value))
 
         return res
 
@@ -301,7 +303,9 @@ class ChapCredentials(object):
         return hash(self) == hash(other)
 
     def __hash__(self):
-        return hash(self.__class__) ^ hash(self.username) ^ hash(self.password)
+        return (hash(self.__class__) ^
+                hash(self.username) ^
+                hash(self.password.value))
 
 
 # Technically there are a lot more interface properties but VDSM doesn't

@@ -27,6 +27,7 @@ import signal
 
 import libvirt
 from . import utils
+from .password import ProtectedPassword
 from .tool.configurators import passwd
 
 log = logging.getLogger()
@@ -87,7 +88,7 @@ def open_connection(uri=None, username=None, passwd=None):
             if cred[0] == libvirt.VIR_CRED_AUTHNAME:
                 cred[4] = username
             elif cred[0] == libvirt.VIR_CRED_PASSPHRASE:
-                cred[4] = passwd
+                cred[4] = passwd.value if passwd else None
         return 0
 
     auth = [[libvirt.VIR_CRED_AUTHNAME, libvirt.VIR_CRED_PASSPHRASE],
@@ -156,8 +157,9 @@ def get(target=None, killOnFailure=True):
         conn = __connections.get(id(target))
         if not conn:
             log.debug('trying to connect libvirt')
+            password = ProtectedPassword(passwd.libvirt_password())
             conn = open_connection('qemu:///system', passwd.SASL_USERNAME,
-                                   passwd.libvirt_password())
+                                   password)
             __connections[id(target)] = conn
 
             setattr(conn, 'pingLibvirt', getattr(conn, 'getLibVersion'))

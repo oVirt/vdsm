@@ -33,6 +33,7 @@ dist_vdsmpylib_PYTHON = \
 	libvirtconnection.py \
 	netconfpersistence.py \
 	netinfo.py \
+	password.py \
 	qemuimg.py \
 	response.py \
 	schedule.py \

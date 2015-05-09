@@ -373,7 +373,7 @@ class GuestAgent(object):
             else:
                 username = user
             self._forward('login', {'username': username,
-                                    "password": password})
+                                    "password": password.value})
         except:
             self.log.exception("desktopLogin failed")
 
