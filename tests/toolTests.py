@@ -330,11 +330,6 @@ class LibvirtModuleConfigureTests(TestCase):
                 lambda x: self.test_env[x]
             ),
             (
-                libvirt,
-                '_sysvToUpstart',
-                lambda: True
-            ),
-            (
                 utils,
                 'isOvirtNode',
                 lambda: False

@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = systemd sysvinit upstart
+SUBDIRS = systemd
 
 include $(top_srcdir)/build-aux/Makefile.subs
 

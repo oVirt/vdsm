@@ -16,7 +16,7 @@ glusterfs >= 3.4.0	glusterfs-common
 glusterfs-fuse	glusterfs-client
 glusterfs-rdma	glusterfs-common
 glusterfs-server	glusterfs-server
-initscripts >= 9.42.2-1	initscripts ifupdown sysvinit-utils sysv-rc
+initscripts >= 9.42.2-1	initscripts ifupdown
 iproute	iproute
 iscsi-initiator-utils >= 6.2.0.872-15	open-iscsi
 kernel >= 3.6	linux-image-generic

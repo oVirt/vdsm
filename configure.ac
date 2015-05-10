@@ -365,8 +365,6 @@ AC_OUTPUT([
 	debian/Makefile
 	init/Makefile
 	init/systemd/Makefile
-	init/sysvinit/Makefile
-	init/upstart/Makefile
 	lib/Makefile
 	lib/vdsm/Makefile
 	lib/vdsm/netlink/Makefile

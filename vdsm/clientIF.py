@@ -546,22 +546,11 @@ class clientIF(object):
         for f in os.listdir(constants.P_VDSM_RUN):
             try:
                 vmId, fileType = f.split(".", 1)
-                if fileType in ["guest.socket", "monitor.socket", "pid",
-                                "stdio.dump", "recovery"]:
-                    if vmId in self.vmContainer:
-                        continue
-                    if f == 'vdsmd.pid':
-                        continue
-                    if f == 'respawn.pid':
-                        continue
-                    if f == 'supervdsmd.pid':
-                        continue
-                    if f == 'supervdsm_respawn.pid':
-                        continue
-                else:
-                    continue
-                self.log.debug("removing old file " + f)
-                utils.rmFile(constants.P_VDSM_RUN + f)
+                exts = ["guest.socket", "monitor.socket",
+                        "stdio.dump", "recovery"]
+                if fileType in exts and vmId not in self.vmContainer:
+                    self.log.debug("removing old file " + f)
+                    utils.rmFile(constants.P_VDSM_RUN + f)
             except:
                 pass
 

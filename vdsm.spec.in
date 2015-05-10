@@ -56,10 +56,6 @@
 %global with_vhostmd 1
 %endif
 
-%if 0%{?fedora} || 0%{?rhel} >= 7
-%global with_systemd 1
-%endif
-
 %global _udevrulesdir /usr/lib/udev/rules.d/
 %global _udevexecdir /usr/lib/udev/
 
@@ -118,9 +114,7 @@ BuildRequires: pyflakes
 BuildRequires: python-pep8
 %endif
 
-%if 0%{?with_systemd}
 BuildRequires: systemd-units
-%endif
 
 Requires: ethtool
 Requires: which
@@ -644,10 +638,6 @@ make DESTDIR=%{buildroot} install
 install -dDm 0755 %{buildroot}@VDSMLOGDIR@
 touch %{buildroot}@VDSMLOGDIR@/{connectivity.log,mom.log,supervdsm.log,vdsm.log}
 
-# Install the respawn utility
-install -Dm 0755 init/sysvinit/respawn \
-                 %{buildroot}%{_datadir}/%{vdsm_name}/respawn
-
 # Install the lvm rules
 install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
                  %{buildroot}%{_udevrulesdir}/12-vdsm-lvm.rules
@@ -655,7 +645,6 @@ install -Dm 0644 vdsm/storage/vdsm-lvm.rules \
 install -Dm 0644 vdsm/limits.conf \
                  %{buildroot}/etc/security/limits.d/99-vdsm.conf
 
-%if 0%{?with_systemd}
 install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/usr/lib/systemd/systemd-vdsmd
 install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}/usr/lib/systemd/system-preset/85-vdsmd.preset
 install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
@@ -670,20 +659,10 @@ install -Dm 0644 vdsm_reg/vdsm-reg.service \
                  %{buildroot}%{_unitdir}/vdsm-reg.service
 install -Dm 0644 vdsm/vdsm-modules-load.d.conf \
                  %{buildroot}%{_sysconfdir}/modules-load.d/vdsm.conf
-%else
-# Install the SysV init scripts
-install -Dm 0755 init/sysvinit/vdsmd.init %{buildroot}%{_initrddir}/vdsmd
-install -Dm 0755 init/sysvinit/supervdsmd.init %{buildroot}%{_initrddir}/supervdsmd
-
-install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
-%endif
-
-%if 0%{?with_systemd}
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
 install -Dm 0644 init/systemd/unlimited-core.conf \
                  %{buildroot}%{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
-%endif
 
 %if 0%{?rhel}
 # This is not commonplace, but we want /var/log/core to be a world-writable
@@ -797,46 +776,17 @@ fi
 exit 0
 
 %post reg
-%if ! 0%{?with_systemd}
-if [ "$1" -eq 1 ] ; then
-    /sbin/chkconfig --add vdsm-reg
-fi
-%else
-%if 0%{?with_systemd}
 %systemd_post vdsm-reg.service
-%else
-if [ "$1" -eq 1 ] ; then
-    /bin/systemctl enable vdsm-reg.service >/dev/null 2>&1 || :
-    /bin/systemctl daemon-reload >/dev/null 2>&1 || :
-fi
 exit 0
-%endif
-%endif
 
 %preun reg
-%if ! 0%{?with_systemd}
-if [ "$1" -eq 0 ]
-then
-    /sbin/service vdsm-reg stop > /dev/null 2>&1 || :
-    /sbin/chkconfig --del vdsm-reg
-fi
-%else
-%if 0%{?with_systemd}
 %systemd_preun vdsm-reg.service
-%else
-if [ "$1" -eq 0 ]; then
-    /bin/systemctl --no-reload disable vdsm-reg.service > /dev/null 2>&1 || :
-    /bin/systemctl stop vdsm-reg.service > /dev/null 2>&1 || :
-fi
 exit 0
-%endif
-%endif
 
 %files
 %defattr(-, root, root, -)
 %doc README lib/vdsm/vdsm.conf.sample
 %license COPYING
-%if 0%{?with_systemd}
 /usr/lib/systemd/systemd-vdsmd
 /usr/lib/systemd/system-preset/85-vdsmd.preset
 %{_unitdir}/vdsmd.service
@@ -844,10 +794,6 @@ exit 0
 %{_unitdir}/supervdsmd.service
 %{_unitdir}/mom-vdsm.service
 %{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
-%else
-%{_initrddir}/vdsmd
-%{_initrddir}/supervdsmd
-%endif
 
 %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@
 %ghost %config %attr(0644, %{vdsm_user}, %{vdsm_group}) @VDSMLOGDIR@/connectivity.log
@@ -920,12 +866,8 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logrotate/vdsm
 %config(noreplace) %{_sysconfdir}/rwtab.d/vdsm
 %config(noreplace) %{_sysconfdir}/sysctl.d/vdsm.conf
-%if 0%{?with_systemd}
 %config(noreplace) %{_sysconfdir}/modules-load.d/vdsm.conf
-%endif
-%if 0%{?with_systemd}
 %config(noreplace) %{_tmpfilesdir}/%{vdsm_name}.conf
-%endif
 %{_sysconfdir}/dhcp/dhclient.d/sourceRoute.sh
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
@@ -1072,7 +1014,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/get-conf-item
 %{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
 %{_datadir}/%{vdsm_name}/momIF.py*
-%{_datadir}/%{vdsm_name}/respawn
 %{_datadir}/%{vdsm_name}/set-conf-item
 %if 0%{?with_gluster}
 %dir %{_datadir}/%{vdsm_name}/gluster
@@ -1468,12 +1409,8 @@ exit 0
 %config(noreplace) %{_sysconfdir}/%{vdsm_reg}/logger.conf
 %ghost %dir /data
 %ghost %dir %attr(0775, root, root) /data/updates
-%if 0%{?with_systemd}
 /usr/lib/systemd/systemd-vdsm-reg
 %{_unitdir}/vdsm-reg.service
-%else
-%{_initrddir}/vdsm-reg
-%endif
 %{_datadir}/%{vdsm_reg}/vdsm-reg-setup
 %{_datadir}/%{vdsm_reg}/vdsm-complete
 %{_datadir}/%{vdsm_reg}/vdsm-gen-cert

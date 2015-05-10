@@ -18,11 +18,8 @@
 #
 from __future__ import absolute_import
 import errno
-import filecmp
 import os
 import uuid
-import rpm
-import shutil
 import sys
 
 from vdsm.config import config
@@ -40,7 +37,6 @@ from .. configfile import (
     ConfigFile,
     ParserWrapper,
 )
-from .. import service
 from .. validate_ovirt_certs import validate_ovirt_certs
 from ... import utils
 from ... import constants
@@ -59,8 +55,6 @@ def _getFile(fname):
 
 
 def configure():
-    _sysvToUpstart()
-
     if utils.isOvirtNode():
         if not os.path.exists(constants.P_VDSM_CERT):
             raise InvalidRun(
@@ -118,61 +112,6 @@ def _getPersistedFiles():
         cfile['path'] for cfile in FILES.values()
         if cfile['persisted']
     ]
-
-
-def _sysvToUpstart():
-    """
-    On RHEL 6, libvirtd can be started by either SysV init or Upstart.
-    We prefer upstart because it respawns libvirtd if libvirtd
-    crashed.
-    """
-    def iterateLibvirtFiles():
-        ts = rpm.TransactionSet()
-        for name in ['libvirt', 'libvirt-daemon']:
-            for matches in ts.dbMatch('name', name):
-                for filename in matches[rpm.RPMTAG_FILENAMES]:
-                    yield filename
-
-    def reloadConfiguration():
-        rc, out, err = utils.execCmd((INITCTL,
-                                      "reload-configuration"))
-        if rc != 0:
-            sys.stdout.write(out)
-            sys.stderr.write(err)
-            raise InvalidRun(
-                "Failed to reload upstart configuration.")
-
-    INITCTL = '/sbin/initctl'
-    LIBVIRTD_UPSTART = 'libvirtd.upstart'
-    TARGET = os.path.join(constants.SYSCONF_PATH, "init/libvirtd.conf")
-
-    if os.path.isfile(INITCTL) and os.access(INITCTL, os.X_OK):
-        # libvirtd package does not provide libvirtd.upstart,
-        # this could happen in Ubuntu or other distro,
-        # so continue to use system default init mechanism
-        packaged = ''
-        for fname in iterateLibvirtFiles():
-            if os.path.basename(fname) == LIBVIRTD_UPSTART:
-                packaged = fname
-                break
-
-        if os.path.isfile(packaged):
-            if not os.path.isfile(TARGET):
-                service.service_stop('libvirtd')
-            if (not os.path.isfile(TARGET) or
-                    not filecmp.cmp(packaged, TARGET)):
-                oldmod = None
-                if os.path.isfile(TARGET):
-                    oldmod = os.stat(TARGET).st_mode
-
-                utils.unpersist(TARGET)
-                shutil.copyfile(packaged, TARGET)
-                utils.persist(TARGET)
-
-                if (oldmod is not None and
-                        oldmod != os.stat(TARGET).st_mode):
-                    os.chmod(TARGET, oldmod)
-                reloadConfiguration()
 
 
 def _isSslConflict():

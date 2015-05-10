@@ -80,7 +80,6 @@
 ./usr/share/vdsm/parted_utils.py
 ./usr/share/vdsm/ppc64HardwareInfo.py
 ./usr/share/vdsm/protocoldetector.py
-./usr/share/vdsm/respawn
 ./usr/share/vdsm/rpc/__init__.py
 ./usr/share/vdsm/rpc/bindingjsonrpc.py
 ./usr/share/vdsm/rpc/bindingxmlrpc.py
