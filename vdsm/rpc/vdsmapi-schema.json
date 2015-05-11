@@ -3990,6 +3990,68 @@
   'data': {'jobid': 'UUID'}}
 
 ##
+# @SecretInfo:
+#
+# Libvirt secret info
+#
+# @uuid:        An unique identifier for this secret
+#
+# @usageType:   Specifies the usage type for this secret
+#
+# @usageID:     Specifies a unique usage id for the current usage type, as
+#               documented in https://libvirt.org/formatsecret.html
+#
+# @password:    Base64 encoded value of this secret
+#
+# @description: #optional A human-readable description of this secret
+#
+# Since: 4.17.0
+##
+{'type': 'SecretInfo',
+ 'data': {'uuid': 'UUID', 'usageType': 'SecretUsageType', 'usageID': 'str',
+          'password': 'str', '*description': 'str'}}
+
+##
+# @SecretUsageType:
+#
+# Enumeration for secret usage type
+#
+# @volume:  This secret is associated with a volume
+#
+# @ceph:    This secret is associated with a Ceph RBD (rados block device)
+#
+# @iscsi:   This secret is associated with an iSCSI target for CHAP
+#           authentication
+#
+# Since: 4.17.0
+##
+{'enum': 'SecretUsageType', 'data': ['volume', 'ceph', 'iscsi']}
+
+##
+# @Host.registerSecrets:
+#
+# Register secrets with libvirt
+#
+# @secrets:     List of SecretInfo maps
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'registerSecrets'},
+  'data': {'secrets': ['SecretInfo']}}
+
+##
+# @Host.unregisterSecrets:
+#
+# Unregister secrets registered for given uuids
+#
+# @uuids:       List of UUIDs
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'unregisterSecrets'},
+  'data': {'uuids': ['UUID']}}
+
+##
 # @VMFullInfo:
 #
 # Full information about VM.

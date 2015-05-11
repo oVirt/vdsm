@@ -30,6 +30,7 @@ dist_vdsm_virt_PYTHON = \
 	migration.py \
 	periodic.py \
 	sampling.py \
+	secret.py \
 	vm.py \
 	vmchannels.py \
 	vmexitreason.py \

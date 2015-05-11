@@ -44,6 +44,7 @@ import storage.volume
 import storage.sd
 import storage.image
 from virt import vmstatus
+from virt import secret
 from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle
@@ -1429,6 +1430,12 @@ class Global(APIBase):
 
     def abortV2VJob(self, jobid):
         return v2v.abort_job(jobid)
+
+    def registerSecrets(self, secrets):
+        return secret.register(secrets)
+
+    def unregisterSecrets(self, uuids):
+        return secret.unregister(uuids)
 
     # Networking-related functions
     def setupNetworks(self, networks, bondings, options):

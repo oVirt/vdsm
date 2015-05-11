@@ -1,0 +1,144 @@
+#
+# Copyright 2015 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+from xml.etree import ElementTree as etree
+import base64
+import libvirt
+import logging
+import uuid
+
+from vdsm import libvirtconnection
+from vdsm import response
+
+
+def register(secrets):
+    try:
+        secrets = [Secret(params) for params in secrets]
+    except ValueError as e:
+        logging.warning("Attempt to register invalid secret: %s", e)
+        return response.error("secretBadRequestErr")
+
+    con = libvirtconnection.get()
+    try:
+        for secret in secrets:
+            logging.info("Registering secret %s", secret)
+            secret.register(con)
+    except libvirt.libvirtError as e:
+        logging.error("Could not register secret %s: %s", secret, e)
+        return response.error("secretRegisterErr")
+
+    return response.success()
+
+
+def unregister(uuids):
+    try:
+        uuids = [str(uuid.UUID(s)) for s in uuids]
+    except ValueError as e:
+        logging.warning("Attempt to unregister invalid uuid %s: %s" %
+                        (uuids, e))
+        return response.error("secretBadRequestErr")
+
+    con = libvirtconnection.get()
+    try:
+        for sec_uuid in uuids:
+            logging.info("Unregistering secret %r", sec_uuid)
+            try:
+                virsecret = con.secretLookupByUUIDString(sec_uuid)
+            except libvirt.libvirtError as e:
+                if e.get_error_code() != libvirt.VIR_ERR_NO_SECRET:
+                    raise
+                logging.debug("No such secret %r", sec_uuid)
+            else:
+                virsecret.undefine()
+    except libvirt.libvirtError as e:
+        logging.error("Could not unregister secrets: %s", e)
+        return response.error("secretUnregisterErr")
+
+    return response.success()
+
+
+class Secret(object):
+    """
+    Validate libvirt secret parameters and create secret xml string.
+
+    Raises ValueError if params dictionary does not contain the required valid
+    secret parameters.
+    """
+
+    _USAGE_TYPES = {"ceph": "name", "volume": "volume", "iscsi": "target"}
+
+    def __init__(self, params):
+        self.uuid = str(uuid.UUID(_get_required(params, "uuid")))
+        self.usage_type = _get_enum(params, "usageType", self._USAGE_TYPES)
+        self.usage_id = _get_required(params, "usageID")
+        self.password = _decode_password(_get_required(params, "password"))
+        self.description = params.get("description")
+
+    def register(self, con):
+        virsecret = con.secretDefineXML(self.toxml())
+        virsecret.setValue(self.password.value)
+
+    def toxml(self):
+        secret = etree.Element("secret", ephemeral="yes", private="yes")
+        if self.description:
+            description = etree.Element("description")
+            description.text = self.description
+            secret.append(description)
+        uuid = etree.Element("uuid")
+        uuid.text = self.uuid
+        secret.append(uuid)
+        usage = etree.Element("usage", type=self.usage_type)
+        usage_type = etree.Element(self._USAGE_TYPES[self.usage_type])
+        usage_type.text = self.usage_id
+        usage.append(usage_type)
+        secret.append(usage)
+        return etree.tostring(secret)
+
+    def __str__(self):
+        return ("Secret(uuid={self.uuid}, "
+                "usage_type={self.usage_type}, "
+                "usage_id={self.usage_id}, "
+                "description={self.description})").format(self=self)
+
+
+# TODO: Move following helpers to reusable validation module
+
+
+def _decode_password(password):
+    try:
+        password.value = base64.b64decode(password.value)
+    except TypeError as e:
+        # Note: encoded value is intentionally not displayed
+        raise ValueError("Unable to decode base64 password: %s" % e)
+    return password
+
+
+def _get_enum(params, name, values):
+    value = _get_required(params, name)
+    if value not in values:
+        raise ValueError("Invalid value %r for %r, expecting one of %s" %
+                         (value, name, values))
+    return value
+
+
+def _get_required(params, name):
+    if name not in params:
+        raise ValueError("Missing required property %r" % name)
+    return params[name]

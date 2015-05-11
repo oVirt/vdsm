@@ -110,6 +110,7 @@ test_modules = \
 	vmApiTests.py \
 	vmfakelibTests.py \
 	vmMigrationTests.py \
+	vmSecretTests.py \
 	vmStorageTests.py \
 	vmTests.py \
 	vmTestsData.py \

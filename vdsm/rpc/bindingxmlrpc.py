@@ -385,6 +385,15 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.deleteV2VJob(jobid)
 
+    def registerSecrets(self, secrets):
+        secrets = protect_passwords(secrets)
+        api = API.Global()
+        return api.registerSecrets(secrets)
+
+    def unregisterSecrets(self, uuids):
+        api = API.Global()
+        return api.unregisterSecrets(uuids)
+
     def vmPause(self, vmId):
         vm = API.VM(vmId)
         return vm.pause()
@@ -1083,7 +1092,9 @@ class BindingXMLRPC(object):
                 (self.convertExternalVm, 'convertExternalVm'),
                 (self.getConvertedVm, 'getConvertedVm'),
                 (self.abortV2VJob, 'abortV2VJob'),
-                (self.deleteV2VJob, 'deleteV2VJob'))
+                (self.deleteV2VJob, 'deleteV2VJob'),
+                (self.registerSecrets, 'registerSecrets'),
+                (self.unregisterSecrets, 'unregisterSecrets'))
 
     def getIrsMethods(self):
         return ((self.domainActivate, 'activateStorageDomain'),
@@ -1199,6 +1210,9 @@ def wrapApiMethod(f):
             elif f.__name__ == 'convertExternalVm':
                 if len(args) > 3:
                     displayArgs = args[:2] + ('****',) + args[3:]
+            elif f.__name__ == 'registerSecrets':
+                secrets = protect_passwords(utils.picklecopy(args[0]))
+                displayArgs = (secrets,) + args[1:]
 
             # Logging current call
             logStr = 'client [%s]::call %s with %s %s' % \

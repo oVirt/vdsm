@@ -169,6 +169,15 @@ errCode = {
     'ksmErr': {'status': {
         'code': 71,
         'message': 'Failed to update KSM values'}},
+    'secretBadRequestErr': {'status': {
+        'code': 72,
+        'message': 'Bad secret request'}},
+    'secretRegisterErr': {'status': {
+        'code': 73,
+        'message': 'Error registering Libvirt secret'}},
+    'secretUnregisterErr': {'status': {
+        'code': 74,
+        'message': 'Error unregistering Libvirt secret'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},
