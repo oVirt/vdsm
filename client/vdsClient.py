@@ -31,6 +31,8 @@ import string
 import pprint as pp
 
 from vdsm import utils, vdscli
+from vdsm.compat import json
+
 try:
     import vdsClientGluster as ge
     _glusterEnabled = True
@@ -1961,6 +1963,18 @@ class service:
         response = self.s.deleteV2VJob(args[0])
         return response['status']['code'], response['status']['message']
 
+    def registerSecrets(self, args):
+        validateArgTypes(args, [str], requiredArgsNumber=1)
+        with open(args[0]) as f:
+            secrets = json.load(f)
+        res = self.s.registerSecrets(secrets)
+        return res['status']['code'], res['status']['message']
+
+    def unregisterSecrets(self, args):
+        res = self.s.unregisterSecrets(args)
+        return res['status']['code'], res['status']['message']
+
+
 if __name__ == '__main__':
     if _glusterEnabled:
         serv = ge.GlusterService()
@@ -2881,6 +2895,24 @@ if __name__ == '__main__':
             serv.deleteV2VJob, (
                 '<jobId>',
                 'Delete V2v job when job is done'
+            )),
+        'registerSecrets': (serv.registerSecrets, (
+            '<secrets_file>',
+            'Register libvirt secrets from file'
+            'Arguments:',
+            '    secrets_file:  file containing secrets in json format',
+            'Example:',
+            '    vdsClient -s 0 registerSecrets secrets.json',
+            )),
+        'unregisterSecrets': (serv.unregisterSecrets, (
+            '<uuid> ...',
+            'Unregister libvirt secrets registered for uuids'
+            'Arguments:',
+            '    uuid:  uuid of secrets to unregister',
+            'Example:',
+            '    vdsClient -s 0 unregisterSecrets \ ',
+            '        3a27b133-abb2-4302-8891-bd0a4032866f \ ',
+            '        2638b449-e076-474e-8e72-0a3130cd8f7b',
             )),
     }
     if _glusterEnabled:
