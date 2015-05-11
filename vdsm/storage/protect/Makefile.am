@@ -6,11 +6,6 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
-vdsmexec_PROGRAMS = safelease
-
 dist_vdsmexec_SCRIPTS = \
 	spmprotect.sh  \
 	spmstop.sh
-
-safelease_SOURCES = \
-	safelease.c

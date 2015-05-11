@@ -59,7 +59,6 @@ vdsm/logger.conf
 vdsm/mk_sysprep_floppy
 vdsm/mom.conf
 vdsm/sos/vdsm.py
-vdsm/storage/protect/safelease
 vdsm/storage/lvm.env
 vdsm/storage/vdsm-lvm.rules
 vdsm/storage/vdsm_lvm_rules.template
