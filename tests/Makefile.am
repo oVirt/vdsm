@@ -107,6 +107,7 @@ test_modules = \
 	vdsmDumpChainsTests.py \
 	verify.py \
 	vmApiTests.py \
+	vmfakelibTests.py \
 	vmMigrationTests.py \
 	vmStorageTests.py \
 	vmTests.py \
