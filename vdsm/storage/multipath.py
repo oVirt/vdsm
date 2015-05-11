@@ -48,14 +48,13 @@ TOXIC_CHARS = '()*+?|^$.\\'
 
 log = logging.getLogger("Storage.Multipath")
 
-_scsi_id = utils.CommandPath("scsi_id",
-                             "/usr/lib/udev/scsi_id",  # Fedora
-                             "/lib/udev/scsi_id",  # EL6, Ubuntu
-                             )
+_SCSI_ID = utils.CommandPath("scsi_id",
+                             "/usr/lib/udev/scsi_id",    # Fedora, EL7
+                             "/lib/udev/scsi_id")        # Ubuntu
 
 _MULTIPATHD = utils.CommandPath("multipathd",
                                 "/usr/sbin/multipathd",  # Fedora, EL7
-                                "/sbin/multipathd")  # Ubuntu
+                                "/sbin/multipathd")      # Ubuntu
 
 
 class Error(Exception):
@@ -168,7 +167,7 @@ def getDeviceSize(dev):
 
 def getScsiSerial(physdev):
     blkdev = os.path.join("/dev", physdev)
-    cmd = [_scsi_id.cmd,
+    cmd = [_SCSI_ID.cmd,
            "--page=0x80",
            "--whitelisted",
            "--export",
