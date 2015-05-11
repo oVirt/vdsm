@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = protect imageRepository
+SUBDIRS = protect imageRepository sdm
 
 include $(top_srcdir)/build-aux/Makefile.subs
 

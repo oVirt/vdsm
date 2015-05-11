@@ -368,6 +368,7 @@ AC_OUTPUT([
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
+	vdsm/storage/sdm/Makefile
 	vdsm/storage/vdsm_lvm_rules.template
 	vdsm/virt/Makefile
 	vdsm/virt/vmdevices/Makefile
