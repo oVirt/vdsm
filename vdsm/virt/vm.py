@@ -306,8 +306,6 @@ class Vm(object):
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
         self._migrationSourceThread = migration.SourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
-        self._guestSocketFile = constants.P_VDSM_RUN + self.conf['vmId'] + \
-            '.guest.socket'
         self._incomingMigrationFinished = threading.Event()
         self.id = self.conf['vmId']
         self._volPrepareLock = threading.Lock()
