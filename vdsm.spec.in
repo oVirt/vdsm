@@ -288,8 +288,8 @@ Requires: systemd >= 197-1.fc18.2
 
 %if 0%{?rhel}
 %if 0%{?rhel} >= 7
-Requires: qemu-kvm%{?qemu_suffix} >= 10:1.5.3-60.el7
-Requires: qemu-img%{?qemu_suffix} >= 10:1.5.3-60.el7
+Requires: qemu-kvm%{?qemu_suffix} >= 10:2.1.2-23.el7_1.2
+Requires: qemu-img%{?qemu_suffix} >= 10:2.1.2-23.el7_1.2
 %else
 Requires: qemu-kvm%{?qemu_suffix} >= 2:0.12.1.2-2.422
 Requires: qemu-img%{?qemu_suffix} >= 2:0.12.1.2-2.422
