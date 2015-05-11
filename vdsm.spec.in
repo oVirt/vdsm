@@ -57,10 +57,6 @@
 %global with_systemd 1
 %endif
 
-%if 0%{?fedora} || 0%{?rhel} >= 7
-%global with_chown_hack 1
-%endif
-
 %if 0%{?rhel} == 6
 %global _udevrulesdir /lib/udev/rules.d/
 %global _udevexecdir /lib/udev/
@@ -664,7 +660,6 @@ sed -i '/ su /d' vdsm/vdsm-logrotate.conf.in
 autoreconf -if
 %endif
 %configure %{?with_hooks:--enable-hooks} \
-        %{?with_chown_hack:--enable-chown-hack} \
         %{rhev_build_config_opt} \
 %if 0%{?rhev_build}
         --with-reg-bridge-name='rhevm' \
