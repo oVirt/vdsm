@@ -74,6 +74,7 @@ Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
+BuildArch:      noarch
 
 Group:          Applications/System
 License:        GPLv2+
@@ -82,15 +83,6 @@ Source0:        %{vdsm_name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %{!?_licensedir:%global license %%doc}
-
-%if !%{fedora_koji_build}
-ExclusiveArch: x86_64 ppc64 ppc64le
-%endif
-
-%if 0%{?rhel} <= 6
-# qemu-img is x86_64 only on RHEL6
-ExclusiveArch: x86_64
-%endif
 
 BuildRequires: cyrus-sasl-lib
 BuildRequires: gcc
