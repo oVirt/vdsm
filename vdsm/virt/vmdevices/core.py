@@ -26,6 +26,7 @@ from vdsm import utils
 import caps
 import supervdsm
 
+from ..utils import cleanup_guest_socket
 from .. import vmxml
 
 
@@ -104,9 +105,7 @@ class Console(Base):
 
     def cleanup(self):
         if self._path:
-            if os.path.islink(self._path):
-                utils.rmFile(os.path.realpath(self._path))
-            utils.rmFile(self._path)
+            cleanup_guest_socket(self._path)
 
     @property
     def isSerial(self):

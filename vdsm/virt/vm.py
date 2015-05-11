@@ -72,7 +72,7 @@ from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
 from . import vmxml
 
-from .utils import isVdsmImage
+from .utils import isVdsmImage, cleanup_guest_socket
 from vmpowerdown import VmShutdown, VmReboot
 
 _VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
@@ -1220,7 +1220,7 @@ class Vm(object):
         except Exception:
             pass
 
-        self._guestSockCleanup(self._guestSocketFile)
+        cleanup_guest_socket(self._guestSocketFile)
 
     def _reattachHostDevices(self):
         # reattach host devices
@@ -1601,12 +1601,6 @@ class Vm(object):
 
         return domxml.toxml()
 
-    @staticmethod
-    def _guestSockCleanup(sock):
-        if os.path.islink(sock):
-            utils.rmFile(os.path.realpath(sock))
-        utils.rmFile(sock)
-
     def _cleanup(self):
         """
         General clean up routine
@@ -1615,7 +1609,7 @@ class Vm(object):
         self._cleanupFloppy()
         self._cleanupGuestAgent()
         utils.rmFile(self._recoveryFile)
-        self._guestSockCleanup(self._qemuguestSocketFile)
+        cleanup_guest_socket(self._qemuguestSocketFile)
         self._reattachHostDevices()
         self._cleanupStatsCache()
         numaUtils.invalidateNumaCache(self)

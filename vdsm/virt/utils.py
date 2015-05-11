@@ -22,9 +22,10 @@
 shared utilities and common code for the virt package
 """
 
+import os.path
 import threading
 
-from vdsm.utils import monotonic_time
+from vdsm.utils import monotonic_time, rmFile
 
 
 def isVdsmImage(drive):
@@ -110,3 +111,9 @@ class ExpiringCache(object):
                 raise ItemExpired
 
             return value
+
+
+def cleanup_guest_socket(sock):
+    if os.path.islink(sock):
+        rmFile(os.path.realpath(sock))
+    rmFile(sock)
