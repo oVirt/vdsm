@@ -412,7 +412,6 @@ command_info = {
     'Host_getExternalVMs': {'ret': 'vmList'},
     'Host_getHardwareInfo': {'ret': 'info'},
     'Host_getLVMVolumeGroups': {'ret': 'vglist'},
-    'Host_getRoute': {'ret': 'info'},
     'Host_getStats': {'ret': 'info'},
     'Host_getStorageDomains': {'ret': 'domlist'},
     'Host_getStorageRepoStats': {'ret': Host_getStorageRepoStats_Ret},

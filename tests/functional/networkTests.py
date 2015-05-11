@@ -1848,7 +1848,7 @@ class NetworkTest(TestCaseBase):
             else:
                 network_params.update(
                     {'ipaddr': IP_ADDRESS_IN_NETWORK, 'netmask': IP_MASK,
-                     'gateway':  IP_GATEWAY})
+                     'gateway': IP_GATEWAY})
 
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: network_params}, {}, NOCHK)
@@ -1917,9 +1917,6 @@ class NetworkTest(TestCaseBase):
             try:
                 dummy.setLinkUp(nic)
                 self.assertEqual(getRouteDeviceTo(IP_ADDRESS_IN_NETWORK), nic)
-                # test getRoute verb
-                _, _, info = self.vdsm_net.getRoute(IP_ADDRESS_IN_NETWORK)
-                self.assertEqual(info['device'], nic)
             finally:
                 addrFlush(nic)
 
@@ -1928,9 +1925,6 @@ class NetworkTest(TestCaseBase):
                 dummy.setLinkUp(nic)
                 self.assertEqual(getRouteDeviceTo(IPv6_ADDRESS_IN_NETWORK),
                                  nic)
-                # test getRoute verb
-                _, _, info = self.vdsm_net.getRoute(IPv6_ADDRESS_IN_NETWORK)
-                self.assertEqual(info['device'], nic)
             finally:
                 addrFlush(nic)
 

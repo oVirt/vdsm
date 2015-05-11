@@ -208,10 +208,6 @@ class VdsProxy(object):
         result = self.vdscli.getAllVmStats()
         return _parse_result(result, 'statsList')
 
-    def getRoute(self, ip):
-        result = self.vdscli.getRoute(ip)
-        return _parse_result(result, 'info')
-
     def getVmStats(self, vmId):
         result = self.vdscli.getVmStats(vmId)
         if 'statsList' in result:
