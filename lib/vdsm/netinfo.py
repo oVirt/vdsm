@@ -70,8 +70,9 @@ BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 _BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 _BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 _EXCLUDED_BONDING_ENTRIES = frozenset((
-    'slaves',  'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
-    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac'
+    'slaves', 'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
+    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac',
+    'custom'
 ))
 _IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
@@ -156,7 +157,7 @@ def _bondOpts(bond, keys=None):
 def bondOpts(bond, keys=None):
     """
     Return a dictionary in the same format as _bondOpts(). Exclude entries that
-    are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
+    are not bonding options, e.g. 'ad_num_ports', 'slaves' or 'custom'.
     """
     return dict(((opt, val) for (opt, val) in _bondOpts(bond, keys).iteritems()
                  if opt not in _EXCLUDED_BONDING_ENTRIES))

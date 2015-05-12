@@ -318,8 +318,8 @@ class Bond(NetDevice):
             try:
                 for option in bondingOptions.split():
                     key, _ = option.split('=')
-                    if not os.path.exists('/sys/class/net/%s/bonding/%s' %
-                                          (bond, key)):
+                    if key != 'custom' and not os.path.exists(
+                            '/sys/class/net/%s/bonding/%s' % (bond, key)):
                         raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is '
                                                  'not a valid bonding option' %
                                                  key)
