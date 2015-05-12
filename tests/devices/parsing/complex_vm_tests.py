@@ -25,7 +25,7 @@ class TestVmDevicesXmlParsing(XMLTestCase, verify.DeviceMixin):
                    {'device': 'usb', 'type': 'controller'},
                    {'device': 'memballoon', 'specParams': {'model': 'virtio'},
                     'type': 'balloon'},
-                   {'device': 'wawtchdog', 'type': 'watchdog'},
+                   {'device': 'watchdog', 'type': 'watchdog'},
                    {'device': 'smartcard', 'specParams':
                     {'type': 'spicevmc', 'mode': 'passthrough'},
                     'type': 'smartcard'},
