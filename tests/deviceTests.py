@@ -18,12 +18,17 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import os.path
+
 from vdsm import constants
 
 from virt import vmdevices
 from virt.vmdevices import hwclass
 from virt.domain_descriptor import DomainDescriptor
+
+from monkeypatch import MonkeyPatchScope
 from testlib import permutations, expandPermutations
+from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
 import vmfakelib as fake
 
@@ -489,3 +494,62 @@ class TestVmDevices(XMLTestCase):
             if graph.device == 'spice':
                 self.assertXMLEqual(graph.getSpiceVmcChannelsXML().toxml(),
                                     spiceChannelXML)
+
+
+class ConsoleTests(TestCaseBase):
+
+    def setUp(self):
+        self.cfg = {
+            'vmName': 'testVm',
+            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f'
+        }
+        self._cleaned_path = None
+        self._expected_path = os.path.join(
+            constants.P_OVIRT_VMCONSOLES,
+            '%s.sock' % self.cfg['vmId'])
+
+    def test_console_pty_not_prepare_path(self):
+        supervdsm = fake.SuperVdsm()
+        with MonkeyPatchScope([(vmdevices.core, 'supervdsm', supervdsm)]):
+            dev = {'device': 'console'}
+            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con.prepare()
+
+            self.assertEqual(supervdsm.prepared_path, None)
+
+    def test_console_usock_prepare_path(self):
+        supervdsm = fake.SuperVdsm()
+        with MonkeyPatchScope([(vmdevices.core, 'supervdsm', supervdsm)]):
+            dev = {'device': 'console', 'specParams': {'enableSocket': True}}
+            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con.prepare()
+
+            self.assertEqual(supervdsm.prepared_path,
+                             self._expected_path)
+            self.assertEqual(supervdsm.prepared_path_group,
+                             constants.OVIRT_VMCONSOLE_GROUP)
+
+    def test_console_pty_not_cleanup_path(self):
+        def _fake_cleanup(path):
+            self._cleaned_path = path
+
+        with MonkeyPatchScope([(vmdevices.core,
+                                'cleanup_guest_socket', _fake_cleanup)]):
+            dev = {'device': 'console'}
+            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con.cleanup()
+
+            self.assertEqual(self._cleaned_path, None)
+
+    def test_console_usock_cleanup_path(self):
+        def _fake_cleanup(path):
+            self._cleaned_path = path
+
+        with MonkeyPatchScope([(vmdevices.core,
+                                'cleanup_guest_socket', _fake_cleanup)]):
+
+            dev = {'device': 'console', 'specParams': {'enableSocket': True}}
+            con = vmdevices.core.Console(self.cfg, self.log, **dev)
+            con.cleanup()
+
+            self.assertEqual(self._cleaned_path, self._expected_path)

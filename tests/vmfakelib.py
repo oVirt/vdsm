@@ -215,6 +215,8 @@ class SuperVdsm(object):
     def __init__(self, exception=None, pid=42):
         self._exception = exception
         self._pid = pid
+        self.prepared_path = None
+        self.prepared_path_group = None
 
     def getProxy(self):
         return self
@@ -226,6 +228,10 @@ class SuperVdsm(object):
 
     def getVcpuNumaMemoryMapping(self, vmName):
         return {0: [0, 1], 1: [0, 1], 2: [0, 1], 3: [0, 1]}
+
+    def prepareVmChannel(self, path, group=None):
+        self.prepared_path = path
+        self.prepared_path_group = group
 
 
 class SampleWindow:
