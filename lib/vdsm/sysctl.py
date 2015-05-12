@@ -41,3 +41,9 @@ def set_rp_filter_strict(dev):
 def disable_ipv6(dev):
     with open('/proc/sys/net/ipv6/conf/%s/disable_ipv6' % dev, 'w') as f:
         f.write('1')
+
+
+def is_disabled_ipv6():
+    with open('/proc/sys/net/ipv6/conf/default/disable_ipv6') as f:
+        ipv6_enabled = f.read()
+    return int(ipv6_enabled)

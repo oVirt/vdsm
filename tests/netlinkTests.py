@@ -5,6 +5,7 @@ import time
 from functional import dummy
 from functional.networkTests import IP_ADDRESS, IP_CIDR
 from vdsm.netlink import monitor
+from vdsm.sysctl import is_disabled_ipv6
 from vdsm.utils import monotonic_time
 
 from testValidation import ValidateRunningAsRoot
@@ -94,17 +95,22 @@ class NetlinkEventMonitorTests(TestCaseBase):
     @ValidateRunningAsRoot
     def test_events_keys(self):
         def _expected_events(nic, address, cidr):
-            return deque([
+            events_add = [
                 {'event': 'new_link', 'name': nic},
                 {'event': 'new_addr', 'address': address + '/' + cidr},
-                {'event': 'new_link', 'name': nic},
-                {'event': 'new_addr', 'family': 'inet6'},
-                {'event': 'new_link', 'name': nic},
-                {'event': 'del_neigh'},
-                {'event': 'del_addr', 'family': 'inet6'},
+                {'event': 'new_link', 'name': nic}]
+            events_del = [
                 {'address': address + '/' + cidr, 'event': 'del_addr'},
                 {'destination': address, 'event': 'del_route'},
-                {'event': 'del_link', 'name': nic}])
+                {'event': 'del_link', 'name': nic}]
+            events_ipv6 = [
+                {'event': 'new_addr', 'family': 'inet6'},
+                {'event': 'del_neigh'},
+                {'event': 'del_addr', 'family': 'inet6'}]
+            if is_disabled_ipv6():
+                return deque(events_add + events_del)
+            else:
+                return deque(events_add + events_ipv6 + events_del)
 
         with monitor.Monitor(timeout=self.TIMEOUT,
                              silent_timeout=True) as mon:
