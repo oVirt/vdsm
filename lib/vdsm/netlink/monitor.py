@@ -31,9 +31,9 @@ from . import (LIBNL, _GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _close_socket, _drop_socket_memberships, _int_proto,
                _nl_msg_parse, _nl_object_get_type, _nl_recvmsgs_default,
                _nl_socket_get_fd, _open_socket)
-from addr import _addr_info
-from link import _link_info
-from route import _route_info
+from .addr import _addr_info
+from .link import _link_info
+from .route import _route_info
 
 # If monitoring thread is running, queue waiting for new value and we call
 # stop(), we have to stop queue by passing special code.
