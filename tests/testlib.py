@@ -23,7 +23,6 @@ import logging
 import os
 import unittest
 from functools import wraps
-import re
 import shutil
 import sys
 import tempfile
@@ -162,15 +161,6 @@ class VdsmTestCase(unittest.TestCase):
         from vdsm.utils import retry
         return retry(expectedException=AssertionError, *args, **kwargs)
 
-    def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
-        # FIXME: This is a forward port of the assertRaises from python
-        #        2.7, remove when no loger supporting earlier versions
-        context = _AssertRaisesContext(excClass, self)
-        if callableObj is None:
-            return context
-        with context:
-            callableObj(*args, **kwargs)
-
     def assertNotRaises(self, callableObj=None, *args, **kwargs):
         # This is required when any exception raised during the call should be
         # considered as a test failure.
@@ -179,71 +169,6 @@ class VdsmTestCase(unittest.TestCase):
             return context
         with context:
             callableObj(*args, **kwargs)
-
-    # FIXME: This is a forward port of the assertIn from python
-    #        2.7, remove when no loger supporting earlier versions
-    def assertIn(self, member, container, msg=None):
-        """
-        Just like self.assertTrue(a in b), but with a nicer default message.
-        """
-        if member not in container:
-            if msg is None:
-                msg = '%s not found in %s' % (safe_repr(member),
-                                              safe_repr(container))
-            raise self.failureException(msg)
-
-    # FIXME: This is a forward port of the assertNotIn from python
-    #        2.7, remove when no loger supporting earlier versions
-    def assertNotIn(self, member, container, msg=None):
-        """
-        Just like self.assertTrue(a not in b), but with a nicer default message
-        """
-        if member in container:
-            if msg is None:
-                msg = '%s unexpectedly found in %s' % (safe_repr(member),
-                                                       safe_repr(container))
-            raise self.failureException(msg)
-
-    # FIXME: This is a forward port of the assertAlmostEqual from python
-    #        2.7, remove when no longer supporting earlier versions
-    # we need the 'delta' keyword argument, which was added in python 2.7
-    def assertAlmostEqual(self, first, second, places=None,
-                          msg=None, delta=None):
-        """Fail if the two objects are unequal as determined by their
-           difference rounded to the given number of decimal places
-           (default 7) and comparing to zero, or by comparing that the
-           between the two objects is more than the given delta.
-
-           Note that decimal places (from zero) are usually not the same
-           as significant digits (measured from the most signficant digit).
-
-           If the two objects compare equal then they will automatically
-           compare almost equal.
-        """
-        if first == second:
-            # shortcut
-            return
-        if delta is not None and places is not None:
-            raise TypeError("specify delta or places not both")
-
-        if delta is not None:
-            if abs(first - second) <= delta:
-                return
-
-            standardMsg = '%s != %s within %s delta' % (safe_repr(first),
-                                                        safe_repr(second),
-                                                        safe_repr(delta))
-        else:
-            if places is None:
-                places = 7
-
-            if round(abs(second-first), places) == 0:
-                return
-
-            standardMsg = '%s != %s within %r places' % (
-                safe_repr(first), safe_repr(second), places)
-        msg = self._formatMessage(msg, standardMsg)
-        raise self.failureException(msg)
 
     @contextmanager
     def assertElapsed(self, expected, tolerance=0.5):
@@ -342,15 +267,6 @@ class VdsmTestResult(result.TextTestResult):
         unittest.TestResult.addFailure(self, test, err)
         self._writeResult(test, 'FAIL', TermColor.red, 'F', False)
 
-    def addSkip(self, test, reason):
-        # 2.7 skip compat
-        from nose.plugins.skip import SkipTest
-        if SkipTest in self.errorClasses:
-            storage, label, isfail = self.errorClasses[SkipTest]
-            storage.append((test, reason))
-            self._writeResult(test, 'SKIP : %s' % reason, TermColor.blue, 'S',
-                              True)
-
     def addError(self, test, err):
         stream = getattr(self, 'stream', None)
         ec, ev, tb = err
@@ -394,63 +310,12 @@ class VdsmTestResult(result.TextTestResult):
             self.stream.flush()
 
 
-# FIXME: This is a forward port of the assertRaises from python
-#        2.7, remove when no loger supporting earlier versions
-class _AssertRaisesContext(object):
-    """A context manager used to implement TestCase.assertRaises* methods."""
-
-    def __init__(self, expected, test_case, expected_regexp=None):
-        self.expected = expected
-        self.failureException = test_case.failureException
-        self.expected_regexp = expected_regexp
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, tb):
-        if exc_type is None:
-            try:
-                exc_name = self.expected.__name__
-            except AttributeError:
-                exc_name = str(self.expected)
-            raise self.failureException(
-                "{0} not raised".format(exc_name))
-        if not issubclass(exc_type, self.expected):
-            # let unexpected exceptions pass through
-            return False
-        self.exception = exc_value  # store for later retrieval
-        if self.expected_regexp is None:
-            return True
-
-        expected_regexp = self.expected_regexp
-        if isinstance(expected_regexp, basestring):
-            expected_regexp = re.compile(expected_regexp)
-        if not expected_regexp.search(str(exc_value)):
-            raise self.failureException('"%s" does not match "%s"' %
-                                        (expected_regexp.pattern,
-                                         str(exc_value)))
-        return True
-
-
 @contextmanager
 def not_raises(test_case):
     try:
         yield
     except Exception as e:
         raise test_case.failureException("Exception raised: %s" % e)
-
-
-# FIXME: This is a forward port of the assertIn from python
-#        2.7, remove when no loger supporting earlier versions
-def safe_repr(obj, short=False):
-    _MAX_LENGTH = 80
-    try:
-        result = repr(obj)
-    except Exception:
-        result = object.__repr__(obj)
-    if not short or len(result) < _MAX_LENGTH:
-        return result
-    return result[:_MAX_LENGTH] + ' [truncated]...'
 
 
 class AssertingLock(object):
