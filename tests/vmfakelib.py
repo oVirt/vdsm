@@ -21,6 +21,7 @@
 
 from contextlib import contextmanager
 import logging
+import os
 import threading
 import xml.etree.ElementTree as etree
 
@@ -47,6 +48,26 @@ class Connection:
 
     def listAllNetworks(self, *args):
         return []
+
+    def nodeDeviceLookupByName(self, name):
+        """
+        This is a method that allows us to access hostdev XML in a test.
+        Normally, libvirt holds the device XML but in case of unit testing,
+        we cannot access the libvirt.
+
+        If we want to use hostdev in a test, the XML itself must be supplied
+        in tests/devices/data/${device address passed}.
+        """
+        fakelib_path = os.path.realpath(__file__)
+        dir_name = os.path.split(fakelib_path)[0]
+        xml_path = os.path.join(
+            dir_name, 'devices', 'data', name + '.xml')
+
+        device_xml = None
+        with open(xml_path, 'r') as device_xml_file:
+            device_xml = device_xml_file.read()
+
+        return VirNodeDeviceStub(device_xml)
 
 
 class ClientIF(clientIF.clientIF):
