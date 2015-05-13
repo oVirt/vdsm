@@ -265,9 +265,23 @@ class Bond(NetDevice):
                               _netinfo=_netinfo))
         return slaves
 
+    @staticmethod
+    def remove_custom_option(options):
+        """ 'custom' property should not be exposed to configurator, it is
+        only for purpose of hooks """
+        d_opts = dict(opt.split('=', 1) for opt in options.split())
+        if d_opts.pop('custom', None) is not None:
+            options = ' '.join(['%s=%s' % (key, value)
+                                for key, value in d_opts.items()])
+        return options
+
     @classmethod
     def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
                     destroyOnMasterRemoval=None):
+
+        if options:
+            options = cls.remove_custom_option(options)
+
         if nics:  # New bonding or edit bonding.
             slaves = cls._objectivizeSlaves(name, configurator, _nicSort(nics),
                                             mtu, _netinfo)
@@ -329,7 +343,7 @@ class Bond(NetDevice):
 
         for option in bondingOptions.split():
             key, _ = option.split('=', 1)
-            if key not in defaults:
+            if key not in defaults and key != 'custom':
                 raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a '
                                          'valid bonding option' % key)
 

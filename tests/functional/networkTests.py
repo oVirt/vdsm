@@ -2446,3 +2446,22 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.assertNetworkDoesntExist(NETWORK_NAME)
             self.assertBondDoesntExist(BONDING_NAME, [nic])
             self.vdsm_net.save_config()
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_setupNetworks_bond_with_custom_option(self):
+        with dummyIf(2) as nics:
+            status, msg = self.setupNetworks(
+                {},
+                {BONDING_NAME: {'nics': nics,
+                                'options': 'custom=foo mode=balance-rr'}},
+                NOCHK, test_kernel_config=False)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondExists(BONDING_NAME, nics)
+            opts = self.vdsm_net.config.bonds.get(BONDING_NAME).get('options')
+            self.assertEquals(opts, 'mode=balance-rr')
+
+            status, msg = self.setupNetworks(
+                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondDoesntExist(BONDING_NAME, nics)
