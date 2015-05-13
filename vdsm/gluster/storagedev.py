@@ -214,6 +214,10 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
             blivetEnv.reset()
             return blivetEnv.devicetree.getDeviceByName(poolLv.name)
 
+    if os.path.ismount(mountPoint):
+        raise ge.GlusterHostStorageMountPointInUseException(
+            mountPoint, rc, out, err)
+
     vgName = "vg-" + brickName
     poolName = "pool-" + brickName
     alignment = 0
