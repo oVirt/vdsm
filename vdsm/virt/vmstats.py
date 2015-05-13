@@ -75,9 +75,10 @@ def cpu(stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
         return
 
-    stats['cpuUsage'] = str(last_sample['system_time']
-                            + last_sample['user_time'])
     try:
+        stats['cpuUsage'] = str(last_sample['cpu.system'] +
+                                last_sample['cpu.user'])
+
         stats['cpuSys'] = _usage_percentage(
             _diff(last_sample, first_sample, 'cpu.user') +
             _diff(last_sample, first_sample, 'cpu.system'),
