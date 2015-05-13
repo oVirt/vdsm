@@ -4035,6 +4035,10 @@
 #
 # @status:                State of the VM
 #
+# @statusTime:            Time in milliseconds when this structure was created.
+#                         It is used to order vm status updates by a client.
+#                         (new in version 4.17.0)
+#
 # @clientIp:              The IP address of the client connected to the display
 #
 # @guestOsInfo:           #optional Guest OS information like architecture,
@@ -4058,8 +4062,8 @@
           'displayPort': 'uint', 'guestIPs': 'str',
           'guestDiskMapping': 'GuestDisksMappingMap',
           'smartcardEnable': 'bool', 'nicModel': 'VmInterfaceDeviceModel',
-          'pitReinjection': 'bool', 'status': 'str', 'clientIp': 'str',
-          '*guestOsInfo': 'VMGuestOsInfo',
+          'pitReinjection': 'bool', 'status': 'str', 'statusTime': 'uint',
+          'clientIp': 'str', '*guestOsInfo': 'VMGuestOsInfo',
           '*guestTimezone': 'VMGuestTimezone'}}
 
 ##
@@ -7043,6 +7047,10 @@
 #
 # @elapsedTime:        The number of seconds that the VM has been running
 #
+# @statusTime:         Time in milliseconds when this structure was created.
+#                      It is used to order vm status updates by a client.
+#                      (new in version 4.17.0)
+#
 # @cdrom: #optional    The path to an ISO image used in the VM's CD-ROM device
 #
 # @boot: #optional     An alias for the type of device used to boot the VM
@@ -7127,10 +7135,9 @@
           'vmType': 'VmType', 'kvmEnable': 'bool',
           'network': 'NetworkInterfaceStatsMap',
           'disks': 'VmDiskStatsMap', 'monitorResponse': 'int',
-          'elapsedTime': 'uint', '*cdrom': 'str',
-          '*boot': 'VmBootMode', 'cpuSys': 'float',
-          'cpuUser': 'float',
-          'acpiEnable': 'bool', 'timeOffset': 'uint',
+          'elapsedTime': 'uint', 'statusTime': 'uint',
+          '*cdrom': 'str', '*boot': 'VmBootMode', 'cpuSys': 'float',
+          'cpuUser': 'float', 'acpiEnable': 'bool', 'timeOffset': 'uint',
           'clientIp': 'str', 'pauseCode': 'str', 'memUsage': 'uint',
           'username': 'str', 'session': 'GuestSessionState',
           'appsList': ['str'], 'guestIPs': 'str',

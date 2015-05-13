@@ -408,6 +408,13 @@ class Vm(object):
         sub_id = '|virt|%s|%s' % (operation, self.id)
         self.cif.notify(sub_id, **{self.id: params})
 
+    def _get_status_time(self):
+        """
+        Value provided by this method is used to order messages
+        containing changed status on the engine side.
+        """
+        return str(int(utils.monotonic_time() * 1000))
+
     lastStatus = property(_get_lastStatus, _set_lastStatus)
 
     def __getNextIndex(self, used):
@@ -1289,7 +1296,8 @@ class Vm(object):
     def status(self, fullStatus=True):
         # used by API.Global.getVMList
         if not fullStatus:
-            return {'vmId': self.id, 'status': self.lastStatus}
+            return {'vmId': self.id, 'status': self.lastStatus,
+                    'statusTime': self._get_status_time()}
 
         self.conf['status'] = self.lastStatus
         with self._confLock:
@@ -1297,6 +1305,7 @@ class Vm(object):
             status = dict((k, v) for k, v in self.conf.iteritems()
                           if not k.startswith("_"))
             status['guestDiskMapping'] = self.guestAgent.guestDiskMapping
+            status['statusTime'] = self._get_status_time()
             return utils.picklecopy(status)
 
     def getStats(self):
@@ -1308,13 +1317,14 @@ class Vm(object):
         attribute. Use the periodic operations instead!
         """
 
+        stats = {'statusTime': self._get_status_time()}
         if self.lastStatus == vmstatus.DOWN:
-            return self._getExitedVmStats()
-
-        stats = self._getConfigVmStats()
-        stats.update(self._getRunningVmStats())
-        stats.update(self._getVmStatus())
-        stats.update(self._getGuestStats())
+            stats.update(self._getExitedVmStats())
+        else:
+            stats.update(self._getConfigVmStats())
+            stats.update(self._getRunningVmStats())
+            stats.update(self._getVmStatus())
+            stats.update(self._getGuestStats())
         return stats
 
     def _getExitedVmStats(self):
