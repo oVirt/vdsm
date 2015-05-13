@@ -1964,10 +1964,12 @@ class service:
         return response['status']['code'], response['status']['message']
 
     def registerSecrets(self, args):
-        validateArgTypes(args, [str], requiredArgsNumber=1)
-        with open(args[0]) as f:
+        validateArgTypes(args, [str, utils.tobool], requiredArgsNumber=1)
+        filename = args[0]
+        clear = args[1] if len(args) > 1 else False
+        with open(filename) as f:
             secrets = json.load(f)
-        res = self.s.registerSecrets(secrets)
+        res = self.s.registerSecrets(secrets, clear)
         return res['status']['code'], res['status']['message']
 
     def unregisterSecrets(self, args):
@@ -2897,10 +2899,11 @@ if __name__ == '__main__':
                 'Delete V2v job when job is done'
             )),
         'registerSecrets': (serv.registerSecrets, (
-            '<secrets_file>',
+            '<secrets_file> [<clear>]',
             'Register libvirt secrets from file'
             'Arguments:',
             '    secrets_file:  file containing secrets in json format',
+            '    clear:         if true, clear other registered secrets',
             'Example:',
             '    vdsClient -s 0 registerSecrets secrets.json',
             )),

@@ -4032,12 +4032,14 @@
 #
 # Register secrets with libvirt
 #
-# @secrets:     List of SecretInfo maps
+# @secrets:     List of secrets to register
+#
+# @clear:       #optional If true, unregister other registered secrets
 #
 # Since: 4.17.0
 ##
 {'command': {'class': 'Host', 'name': 'registerSecrets'},
-  'data': {'secrets': ['SecretInfo']}}
+  'data': {'secrets': ['SecretInfo'], '*clear': 'bool'}}
 
 ##
 # @Host.unregisterSecrets:

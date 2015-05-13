@@ -385,10 +385,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.deleteV2VJob(jobid)
 
-    def registerSecrets(self, secrets):
+    def registerSecrets(self, secrets, clear=False):
         secrets = protect_passwords(secrets)
         api = API.Global()
-        return api.registerSecrets(secrets)
+        return api.registerSecrets(secrets, clear=clear)
 
     def unregisterSecrets(self, uuids):
         api = API.Global()

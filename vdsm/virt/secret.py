@@ -28,7 +28,7 @@ from vdsm import libvirtconnection
 from vdsm import response
 
 
-def register(secrets):
+def register(secrets, clear=False):
     try:
         secrets = [Secret(params) for params in secrets]
     except ValueError as e:
@@ -40,6 +40,11 @@ def register(secrets):
         for secret in secrets:
             logging.info("Registering secret %s", secret)
             secret.register(con)
+        if clear:
+            uuids = frozenset(sec.uuid for sec in secrets)
+            for virsecret in con.listAllSecrets():
+                if virsecret.UUIDString() not in uuids:
+                    virsecret.undefine()
     except libvirt.libvirtError as e:
         logging.error("Could not register secret %s: %s", secret, e)
         return response.error("secretRegisterErr")

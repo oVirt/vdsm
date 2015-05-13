@@ -1431,8 +1431,8 @@ class Global(APIBase):
     def abortV2VJob(self, jobid):
         return v2v.abort_job(jobid)
 
-    def registerSecrets(self, secrets):
-        return secret.register(secrets)
+    def registerSecrets(self, secrets, clear=False):
+        return secret.register(secrets, clear=clear)
 
     def unregisterSecrets(self, uuids):
         return secret.unregister(uuids)

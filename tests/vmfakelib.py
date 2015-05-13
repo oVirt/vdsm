@@ -74,6 +74,9 @@ class Connection(object):
             raise Error(libvirt.VIR_ERR_NO_SECRET)
         return self.secrets[uuid]
 
+    def listAllSecrets(self, flags=0):
+        return self.secrets.values()
+
     def domainEventRegisterAny(self, *arg):
         pass
 
