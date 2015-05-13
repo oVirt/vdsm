@@ -2397,6 +2397,7 @@ class HSM(object):
         uuidPatern = "????????-????-????-????-????????????"
 
         if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
+            sdCache.refreshStorage()
             uuids = tuple(blockSD.getStorageDomainsList())
         elif domType is sd.NFS_DOMAIN:
             lPath = conObj._mountCon._getLocalPath()
