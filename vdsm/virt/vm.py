@@ -3843,7 +3843,7 @@ class Vm(object):
                     dev.alias = alias
 
             for dev in self.conf['devices']:
-                if dev['device'] == hwclass.SMARTCARD and \
+                if dev['type'] == hwclass.SMARTCARD and \
                         not dev.get('address'):
                     dev['address'] = address
                     dev['alias'] = alias
