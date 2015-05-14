@@ -74,6 +74,11 @@ def cpu(stats, first_sample, last_sample, interval):
 
     if first_sample is None or last_sample is None:
         return
+    if interval <= 0:
+        logging.warning(
+            'invalid interval %i when computing CPU stats',
+            interval)
+        return
 
     try:
         stats['cpuUsage'] = str(last_sample['cpu.system'] +
@@ -89,7 +94,7 @@ def cpu(stats, first_sample, last_sample, interval):
             - _diff(last_sample, first_sample, 'cpu.system'),
             interval)
 
-    except (KeyError, TypeError, ZeroDivisionError) as e:
+    except (KeyError, TypeError) as e:
         logging.exception("CPU stats not available: %s", e)
 
 
@@ -207,10 +212,16 @@ def disks(vm, stats, first_sample, last_sample, interval):
             last_disk = last_sample.get('block', {}).get(vm_drive.name, {})
             if first_disk and last_disk:
                 # will be None if sampled during recovery
-                drive_stats.update(
-                    _disk_rate(first_disk, last_disk, interval))
-                drive_stats.update(
-                    _disk_latency(first_disk, last_disk))
+                if interval > 0:
+                    drive_stats.update(
+                        _disk_rate(first_disk, last_disk, interval))
+                    drive_stats.update(
+                        _disk_latency(first_disk, last_disk))
+                else:
+                    logging.warning(
+                        'invalid interval %i when calculating '
+                        'stats for vm %s disk %s',
+                        interval, vm.id, vm_drive.name)
 
                 drive_info = last_sample[vm_drive.name]
                 drive_stats['readOps'] = str(drive_info['rd.reqs'])
@@ -218,7 +229,7 @@ def disks(vm, stats, first_sample, last_sample, interval):
                 drive_stats['readBytes'] = str(drive_info['rd.bytes'])
                 drive_stats['writtenBytes'] = str(drive_info['wr.bytes'])
 
-        except (AttributeError, TypeError, ZeroDivisionError):
+        except (AttributeError, TypeError):
             logging.exception("Disk %s stats not available",
                               vm_drive.name)
 
