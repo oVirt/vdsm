@@ -1213,6 +1213,11 @@ def wrapApiMethod(f):
             elif f.__name__ == 'registerSecrets':
                 secrets = protect_passwords(utils.picklecopy(args[0]))
                 displayArgs = (secrets,) + args[1:]
+            elif f.__name__ == 'vmUpdateDevice':
+                if len(args) >= 2 and args[1].get(
+                   'deviceType', '') == 'graphics':
+                    params = protect_passwords(utils.picklecopy(args[1]))
+                    displayArgs = (args[0],) + (params,) + args[2:]
 
             # Logging current call
             logStr = 'client [%s]::call %s with %s %s' % \
