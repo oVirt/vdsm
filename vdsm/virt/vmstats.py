@@ -94,7 +94,7 @@ def cpu(stats, first_sample, last_sample, interval):
             - _diff(last_sample, first_sample, 'cpu.system'),
             interval)
 
-    except (KeyError, TypeError) as e:
+    except KeyError as e:
         logging.exception("CPU stats not available: %s", e)
 
 
@@ -229,7 +229,7 @@ def disks(vm, stats, first_sample, last_sample, interval):
                 drive_stats['readBytes'] = str(drive_info['rd.bytes'])
                 drive_stats['writtenBytes'] = str(drive_info['wr.bytes'])
 
-        except (AttributeError, TypeError):
+        except AttributeError:
             logging.exception("Disk %s stats not available",
                               vm_drive.name)
 
