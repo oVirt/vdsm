@@ -21,5 +21,20 @@
 vdsmdevdatatestsdir = ${vdsmtestsdir}/devices/data
 
 dist_vdsmdevdatatests_DATA = \
+	net_em1_28_d2_44_55_66_88.xml \
+	pci_0000_00_02_0.xml \
+	pci_0000_00_09_0.xml \
+	pci_0000_00_19_0.xml \
+	pci_0000_00_1a_0.xml \
+	pci_0000_00_1b_0.xml \
+	pci_0000_00_1f_2.xml \
+	pci_0000_05_00_1.xml \
+	pci_0000_05_10_7.xml \
+	scsi_0_0_0_0.xml \
+	scsi_host0.xml \
+	scsi_target0_0_0.xml \
 	testComplexVm.xml \
+	usb_1_1.xml \
+	usb_1_1_4.xml \
+	usb_usb1.xml \
 	$(NULL)

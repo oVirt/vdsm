@@ -1,0 +1,16 @@
+<device>
+    <name>pci_0000_00_1b_0</name>
+    <path>/sys/devices/pci0000:00/0000:00:1b.0</path>
+    <parent>computer</parent>
+    <driver>
+    <name>snd_hda_intel</name>
+    </driver>
+    <capability type='pci'>
+        <domain>0</domain>
+        <bus>0</bus>
+        <slot>27</slot>
+        <function>0</function>
+        <product id='0x1c20'>6 Series/C200 Series Chipset Family High Definition Audio Controller</product>
+        <vendor id='0x8086'>Intel Corporation</vendor>
+    </capability>
+</device>

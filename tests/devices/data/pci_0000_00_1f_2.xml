@@ -1,0 +1,16 @@
+<device>
+    <name>pci_0000_00_1f_2</name>
+    <path>/sys/devices/pci0000:00/0000:00:1f.2</path>
+    <parent>computer</parent>
+    <driver>
+    <name>ahci</name>
+    </driver>
+    <capability type='pci'>
+    <domain>0</domain>
+    <bus>0</bus>
+    <slot>31</slot>
+    <function>2</function>
+    <product id='0x1c03'>6 Series/C200 Series Chipset Family 6 port SATA AHCI Controller</product>
+    <vendor id='0x8086'>Intel Corporation</vendor>
+    </capability>
+</device>

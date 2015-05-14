@@ -1,0 +1,22 @@
+<device>
+    <name>pci_0000_05_10_7</name>
+    <path>/sys/devices/pci0000:00/0000:00:09.0/0000:05:10.7</path>
+    <parent>pci_0000_00_09_0</parent>
+    <driver>
+        <name>igbvf</name>
+    </driver>
+    <capability type='pci'>
+        <domain>0</domain>
+        <bus>5</bus>
+        <slot>16</slot>
+        <function>7</function>
+        <product id='0x10ca'>82576 Virtual Function</product>
+        <vendor id='0x8086'>Intel Corporation</vendor>
+        <capability type='phys_function'>
+            <address domain='0x0000' bus='0x05' slot='0x00' function='0x1'/>
+        </capability>
+        <iommuGroup number='25'>
+            <address domain='0x0000' bus='0x05' slot='0x10' function='0x7'/>
+        </iommuGroup>
+    </capability>
+</device>

@@ -1,0 +1,14 @@
+<device>
+    <name>usb_1_1</name>
+    <path>/sys/devices/pci0000:00/0000:00:1a.0/usb1/1-1</path>
+    <parent>usb_usb1</parent>
+    <driver>
+        <name>usb</name>
+    </driver>
+    <capability type='usb_device'>
+        <bus>1</bus>
+        <device>2</device>
+        <product id='0x0024' />
+        <vendor id='0x8087' />
+    </capability>
+</device>

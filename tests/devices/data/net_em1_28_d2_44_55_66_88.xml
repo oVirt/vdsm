@@ -1,0 +1,11 @@
+<device>
+    <name>net_em1_28_d2_44_55_66_88</name>
+    <path>/sys/devices/pci0000:00/0000:00:19.0/net/em1</path>
+    <parent>pci_0000_00_19_0</parent>
+    <capability type='net'>
+        <interface>em1</interface>
+        <address>28:d2:44:55:66:88</address>
+        <link state='down'/>
+        <capability type='80203'/>
+    </capability>
+</device>

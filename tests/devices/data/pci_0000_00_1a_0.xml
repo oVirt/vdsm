@@ -1,0 +1,16 @@
+<device>
+    <name>pci_0000_00_1a_0</name>
+    <path>/sys/devices/pci0000:00/0000:00:1a.0</path>
+    <parent>computer</parent>
+    <driver>
+        <name>ehci-pci</name>
+    </driver>
+    <capability type='pci'>
+        <domain>0</domain>
+        <bus>0</bus>
+        <slot>26</slot>
+        <function>0</function>
+        <product id='0x1c2d'>6 Series/C200 Series Chipset Family USB Enhanced Host Controller #2</product>
+        <vendor id='0x8086'>Intel Corporation</vendor>
+    </capability>
+</device>

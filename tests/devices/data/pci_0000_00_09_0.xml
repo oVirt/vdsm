@@ -1,0 +1,19 @@
+<device>
+    <name>pci_0000_00_09_0</name>
+    <path>/sys/devices/pci0000:00/0000:00:09.0</path>
+    <parent>computer</parent>
+    <driver>
+        <name>pcieport</name>
+    </driver>
+    <capability type='pci'>
+        <domain>0</domain>
+        <bus>0</bus>
+        <slot>9</slot>
+        <function>0</function>
+        <product id='0x3410'>7500/5520/5500/X58 I/O Hub PCI Express Root Port 9</product>
+        <vendor id='0x8086'>Intel Corporation</vendor>
+        <iommuGroup number='4'>
+            <address domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
+        </iommuGroup>
+    </capability>
+</device>

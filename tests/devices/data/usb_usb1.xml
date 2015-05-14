@@ -1,0 +1,14 @@
+<device>
+    <name>usb_usb1</name>
+    <path>/sys/devices/pci0000:00/0000:00:1a.0/usb1</path>
+    <parent>pci_0000_00_1a_0</parent>
+    <driver>
+        <name>usb</name>
+    </driver>
+    <capability type='usb_device'>
+        <bus>1</bus>
+        <device>1</device>
+        <product id='0x0002'>EHCI Host Controller</product>
+        <vendor id='0x1d6b'>Linux 3.10.0-123.6.3.el7.x86_64 ehci_hcd</vendor>
+    </capability>
+</device>

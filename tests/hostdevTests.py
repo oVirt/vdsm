@@ -28,290 +28,14 @@ from monkeypatch import MonkeyClass
 
 from vdsm import libvirtconnection
 
-PCI_DEVICE_XML = [
-    """
-    <device>
-        <name>pci_0000_00_1a_0</name>
-        <path>/sys/devices/pci0000:00/0000:00:1a.0</path>
-        <parent>computer</parent>
-        <driver>
-        <name>ehci-pci</name>
-        </driver>
-        <capability type='pci'>
-        <domain>0</domain>
-        <bus>0</bus>
-        <slot>26</slot>
-        <function>0</function>
-        <product id='0x1c2d'>6 Series/C200 Series Chipset Family USB \
-Enhanced Host Controller #2</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-        </capability>
-    </device>
-    """,
-    """
-    <device>
-        <name>pci_0000_00_1f_2</name>
-        <path>/sys/devices/pci0000:00/0000:00:1f.2</path>
-        <parent>computer</parent>
-        <driver>
-        <name>ahci</name>
-        </driver>
-        <capability type='pci'>
-        <domain>0</domain>
-        <bus>0</bus>
-        <slot>31</slot>
-        <function>2</function>
-        <product id='0x1c03'>6 Series/C200 Series Chipset Family 6 port \
-SATA AHCI Controller</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-        </capability>
-    </device>
-    """,
-    """
-    <device>
-        <name>pci_0000_00_02_0</name>
-        <path>/sys/devices/pci0000:00/0000:00:02.0</path>
-        <parent>computer</parent>
-        <driver>
-        <name>i915</name>
-        </driver>
-        <capability type='pci'>
-        <domain>0</domain>
-        <bus>0</bus>
-        <slot>2</slot>
-        <function>0</function>
-        <product id='0x0126'>2nd Generation Core Processor Family \
-Integrated Graphics Controller</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-        </capability>
-    </device>
-    """,
-    # in reality, the device above would be unavailable for passthrough,
-    # but in case of tests that does not really matter as we can't
-    # call real release()
-    """
-    <device>
-        <name>pci_0000_00_19_0</name>
-        <path>/sys/devices/pci0000:00/0000:00:19.0</path>
-        <parent>computer</parent>
-        <driver>
-        <name>e1000e</name>
-        </driver>
-        <capability type='pci'>
-        <domain>0</domain>
-        <bus>0</bus>
-        <slot>25</slot>
-        <function>0</function>
-        <product id='0x1502'>82579LM Gigabit Network Connection</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-        </capability>
-    </device>
-    """,
-    """
-    <device>
-        <name>pci_0000_00_1b_0</name>
-        <path>/sys/devices/pci0000:00/0000:00:1b.0</path>
-        <parent>computer</parent>
-        <driver>
-        <name>snd_hda_intel</name>
-        </driver>
-        <capability type='pci'>
-        <domain>0</domain>
-        <bus>0</bus>
-        <slot>27</slot>
-        <function>0</function>
-        <product id='0x1c20'>6 Series/C200 Series Chipset Family High \
-Definition Audio Controller</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-    </capability>
-    </device>
-    """]
-
-USB_DEVICE_XML = [
-    """
-    <device>
-        <name>usb_usb1</name>
-        <path>/sys/devices/pci0000:00/0000:00:1a.0/usb1</path>
-        <parent>pci_0000_00_1a_0</parent>
-        <driver>
-        <name>usb</name>
-        </driver>
-        <capability type='usb_device'>
-        <bus>1</bus>
-        <device>1</device>
-        <product id='0x0002'>EHCI Host Controller</product>
-        <vendor id='0x1d6b'>Linux 3.10.0-123.6.3.el7.x86_64 \
-ehci_hcd</vendor>
-        </capability>
-    </device>
-    """,
-    """
-    <device>
-        <name>usb_1_1</name>
-        <path>/sys/devices/pci0000:00/0000:00:1a.0/usb1/1-1</path>
-        <parent>usb_usb1</parent>
-        <driver>
-        <name>usb</name>
-        </driver>
-        <capability type='usb_device'>
-        <bus>1</bus>
-        <device>2</device>
-        <product id='0x0024' />
-        <vendor id='0x8087' />
-        </capability>
-    </device>
-    """,
-    """
-    <device>
-        <name>usb_1_1_4</name>
-        <path>/sys/devices/pci0000:00/0000:00:1a.0/usb1/1-1/1-1.4</path>
-        <parent>usb_1_1</parent>
-        <driver>
-        <name>usb</name>
-        </driver>
-        <capability type='usb_device'>
-        <bus>1</bus>
-        <device>10</device>
-        <product id='0x217f'>Broadcom Bluetooth Device</product>
-        <vendor id='0x0a5c'>Broadcom Corp</vendor>
-        </capability>
-    </device>
-    """]
-
-SCSI_DEVICE_XML = [
-    """
-    <device>
-        <name>scsi_host0</name>
-        <path>/sys/devices/pci0000:00/0000:00:1f.2/ata1/host0</path>
-        <parent>pci_0000_00_1f_2</parent>
-        <capability type='scsi_host'>
-        <host>0</host>
-        </capability>
-    </device>
-    """,
-    """
-    <device>
-        <name>scsi_target0_0_0</name>
-        <path>/sys/devices/pci0000:00/0000:00:1f.2/ata1/host0/\
-target0:0:0</path>
-        <parent>scsi_host0</parent>
-        <capability type='scsi_target'>
-        <target>target0:0:0</target>
-        </capability>
-    </device>
-    """,
-    """
-    <device>
-        <name>scsi_0_0_0_0</name>
-        <path>/sys/devices/pci0000:00/0000:00:1f.2/ata1/host0/\
-target0:0:0/0:0:0:0</path>
-        <parent>scsi_target0_0_0</parent>
-        <driver>
-        <name>sd</name>
-        </driver>
-        <capability type='scsi'>
-        <host>0</host>
-        <bus>0</bus>
-        <target>0</target>
-        <lun>0</lun>
-        <type>disk</type>
-        </capability>
-    </device>
-    """]
-
-_SRIOV_PF_XML = """
-    <device>
-    <name>pci_0000_05_00_1</name>
-    <path>/sys/devices/pci0000:00/0000:00:09.0/0000:05:00.1</path>
-    <parent>pci_0000_00_09_0</parent>
-    <driver>
-        <name>igb</name>
-    </driver>
-    <capability type='pci'>
-        <domain>0</domain>
-        <bus>5</bus>
-        <slot>0</slot>
-        <function>1</function>
-        <product id='0x10c9'>82576 Gigabit Network Connection</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-        <capability type='virt_functions'>
-        <address domain='0x0000' bus='0x05' slot='0x10' function='0x1'/>
-        <address domain='0x0000' bus='0x05' slot='0x10' function='0x3'/>
-        <address domain='0x0000' bus='0x05' slot='0x10' function='0x5'/>
-        <address domain='0x0000' bus='0x05' slot='0x10' function='0x7'/>
-        <address domain='0x0000' bus='0x05' slot='0x11' function='0x1'/>
-        <address domain='0x0000' bus='0x05' slot='0x11' function='0x3'/>
-        <address domain='0x0000' bus='0x05' slot='0x11' function='0x5'/>
-        </capability>
-        <iommuGroup number='15'>
-        <address domain='0x0000' bus='0x05' slot='0x00' function='0x0'/>
-        <address domain='0x0000' bus='0x05' slot='0x00' function='0x1'/>
-        </iommuGroup>
-    </capability>
-    </device>
-    """
-
-_SRIOV_VF_XML = """
-    <device>
-    <name>pci_0000_05_10_7</name>
-    <path>/sys/devices/pci0000:00/0000:00:09.0/0000:05:10.7</path>
-    <parent>pci_0000_00_09_0</parent>
-    <driver>
-        <name>igbvf</name>
-    </driver>
-    <capability type='pci'>
-        <domain>0</domain>
-        <bus>5</bus>
-        <slot>16</slot>
-        <function>7</function>
-        <product id='0x10ca'>82576 Virtual Function</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-        <capability type='phys_function'>
-        <address domain='0x0000' bus='0x05' slot='0x00' function='0x1'/>
-        </capability>
-        <iommuGroup number='25'>
-        <address domain='0x0000' bus='0x05' slot='0x10' function='0x7'/>
-        </iommuGroup>
-    </capability>
-    </device>
-    """
-
-ADDITIONAL_DEVICE = """
-    <device>
-        <name>pci_0000_00_09_0</name>
-        <path>/sys/devices/pci0000:00/0000:00:09.0</path>
-        <parent>computer</parent>
-        <driver>
-        <name>pcieport</name>
-        </driver>
-        <capability type='pci'>
-        <domain>0</domain>
-        <bus>0</bus>
-        <slot>9</slot>
-        <function>0</function>
-        <product id='0x3410'>7500/5520/5500/X58 I/O Hub PCI Express Root \
-Port 9</product>
-        <vendor id='0x8086'>Intel Corporation</vendor>
-        <iommuGroup number='4'>
-            <address domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>
-        </iommuGroup>
-        </capability>
-    </device>
-    """
-
-_NET_DEVICE = """
-<device>
-  <name>net_em1_28_d2_44_55_66_88</name>
-  <path>/sys/devices/pci0000:00/0000:00:19.0/net/em1</path>
-  <parent>pci_0000_00_19_0</parent>
-  <capability type='net'>
-    <interface>em1</interface>
-    <address>28:d2:44:55:66:88</address>
-    <link state='down'/>
-    <capability type='80203'/>
-  </capability>
-</device>
-"""
+_PCI_DEVICES = ['pci_0000_00_1a_0', 'pci_0000_00_1f_2', 'pci_0000_00_02_0',
+                'pci_0000_00_19_0', 'pci_0000_00_1b_0']
+_USB_DEVICES = ['usb_usb1', 'usb_1_1', 'usb_1_1_4']
+_SCSI_DEVICES = ['scsi_host0', 'scsi_target0_0_0', 'scsi_0_0_0_0']
+_SRIOV_PF = 'pci_0000_05_00_1'
+_SRIOV_VF = 'pci_0000_05_10_7'
+_ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
+_NET_DEVICE = 'net_em1_28_d2_44_55_66_88'
 
 DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'Chipset Family High Definition '
@@ -483,10 +207,10 @@ DEVICES_BY_CAPS = {'': {u'pci_0000_00_1b_0':
 class Connection(fake.Connection):
 
     def __init__(self, *args):
-        self._virNodeDevices = []
-
-        for device in PCI_DEVICE_XML + USB_DEVICE_XML + SCSI_DEVICE_XML:
-            self._virNodeDevices.append(fake.VirNodeDeviceStub(device))
+        self._virNodeDevices = [
+            self.nodeDeviceLookupByName(device) for device in
+            _PCI_DEVICES + _USB_DEVICES + _SCSI_DEVICES
+        ]
 
     def listAllDevices(self, flags=0):
         return self._virNodeDevices
@@ -506,22 +230,34 @@ def _fake_totalvfs(device_name):
 class HostdevTests(TestCaseBase):
 
     def testParseDeviceParams(self):
-        deviceXML = hostdev._parse_device_params(ADDITIONAL_DEVICE)
+        deviceXML = hostdev._parse_device_params(
+            libvirtconnection.get().nodeDeviceLookupByName(
+                _ADDITIONAL_DEVICE).XMLDesc()
+        )
 
         self.assertEquals(ADDITIONAL_DEVICE_PARSED, deviceXML)
 
     def testParseSRIOV_PFDeviceParams(self):
-        deviceXML = hostdev._parse_device_params(_SRIOV_PF_XML)
+        deviceXML = hostdev._parse_device_params(
+            libvirtconnection.get().nodeDeviceLookupByName(
+                _SRIOV_PF).XMLDesc()
+        )
 
         self.assertEquals(_SRIOV_PF_PARSED, deviceXML)
 
     def testParseSRIOV_VFDeviceParams(self):
-        deviceXML = hostdev._parse_device_params(_SRIOV_VF_XML)
+        deviceXML = hostdev._parse_device_params(
+            libvirtconnection.get().nodeDeviceLookupByName(
+                _SRIOV_VF).XMLDesc()
+        )
 
         self.assertEquals(_SRIOV_VF_PARSED, deviceXML)
 
     def testParseNetDeviceParams(self):
-        deviceXML = hostdev._parse_device_params(_NET_DEVICE)
+        deviceXML = hostdev._parse_device_params(
+            libvirtconnection.get().nodeDeviceLookupByName(
+                _NET_DEVICE).XMLDesc()
+        )
 
         self.assertEquals(_NET_DEVICE_PARSED, deviceXML)
 
@@ -530,9 +266,9 @@ class HostdevTests(TestCaseBase):
 
         self.assertEqual(DEVICES_PARSED, libvirt_devices)
         self.assertEqual(len(libvirt_devices),
-                         len(PCI_DEVICE_XML) +
-                         len(USB_DEVICE_XML) +
-                         len(SCSI_DEVICE_XML))
+                         len(_PCI_DEVICES) +
+                         len(_USB_DEVICES) +
+                         len(_SCSI_DEVICES))
 
     @permutations([[''], [('pci',)], [('usb_device',)],
                    [('pci', 'usb_device')]])
