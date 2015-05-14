@@ -28,7 +28,7 @@ import signal
 from multiprocessing import Process
 from binascii import unhexlify
 from itertools import izip_longest
-from subprocess import Popen, check_call, PIPE
+from subprocess import Popen, PIPE
 import fcntl
 import struct
 
@@ -36,12 +36,21 @@ from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
+from vdsm.utils import execCmd
 from nose.plugins.skip import SkipTest
 
 from network import tc
 import platform
 
 EXT_IP = "/sbin/ip"
+
+
+def check_call(cmd):
+    rc, out, err = execCmd(cmd, raw=True)
+    if rc != 0:
+        raise RuntimeError(
+            'Command %s returned non-zero exit status %s.' % (cmd, rc),
+            out, err)
 
 
 class _Interface():
@@ -148,8 +157,7 @@ def _checkDependencies():
 
     null = open("/dev/null", "a")
     try:
-        check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'],
-                   stderr=null)
+        check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'])
     except:
         raise SkipTest("'tc' has failed. Do you have Traffic Control kernel "
                        "modules installed?")
