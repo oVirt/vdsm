@@ -1138,6 +1138,9 @@ def wrapApiMethod(f):
             elif f.__name__ == 'getExternalVMs':
                 if len(args) == 3:
                     displayArgs = args[:2] + ('****',)
+            elif f.__name__ == 'convertExternalVm':
+                if len(args) > 3:
+                    displayArgs = args[:2] + ('****',) + args[3:]
 
             # Logging current call
             logStr = 'client [%s]::call %s with %s %s' % \
