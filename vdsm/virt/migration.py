@@ -123,15 +123,6 @@ class SourceThread(threading.Thread):
         else:
             self._destServer = kaxmlrpclib.Server('http://' + hostPort)
         self.log.debug('Destination server is: ' + hostPort)
-        try:
-            self.log.debug('Initiating connection with destination')
-            status = self._destServer.getVmStats(self._vm.id)
-            if not status['status']['code']:
-                self.log.error("Machine already exists on the destination")
-                self.status = errCode['exist']
-        except Exception:
-            self.log.exception("Error initiating connection")
-            self.status = errCode['noConPeer']
 
     def _setupRemoteMachineParams(self):
         self._machineParams.update(self._vm.status())
