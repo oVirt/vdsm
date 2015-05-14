@@ -26,7 +26,7 @@ import re
 import shutil
 import subprocess
 import tempfile
-from xml.dom.minidom import parseString
+import xml.etree.ElementTree as ET
 
 from vdsm import netinfo
 from network.configurators import ifcfg, libvirt
@@ -67,10 +67,12 @@ class ifcfgConfigWriterTests(TestCaseBase):
         Compare two xml strings for equality.
         """
 
-        aXml = parseString(a).toprettyxml()
-        bXml = parseString(b).toprettyxml()
-        aXmlNrml = re.sub('\n\s*', ' ', aXml).strip()
-        bXmlNrml = re.sub('\n\s*', ' ', bXml).strip()
+        aXml = ET.tostring(ET.fromstring(a))
+        bXml = ET.tostring(ET.fromstring(b))
+
+        aXmlNrml = re.sub('>\s*\n\s*<', '><', aXml).strip()
+        bXmlNrml = re.sub('>\s*\n\s*<', '><', bXml).strip()
+
         self.assertEqual(aXmlNrml, bXmlNrml, msg)
 
     def setUp(self):
