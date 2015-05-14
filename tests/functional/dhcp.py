@@ -25,7 +25,6 @@ from errno import ENOENT, ESRCH
 
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
-from vdsm.utils import rmFile
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
 _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
@@ -33,7 +32,8 @@ _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
 _START_CHECK_TIMEOUT = 0.5
 _DHCLIENT_TIMEOUT = 10
 _WAIT_FOR_STOP_TIMEOUT = 2
-DHCLIENT_LEASE = '/var/lib/dhclient/dhclient{0}--{1}.lease'
+_DHCLIENT_LEASE = '/var/lib/dhclient/dhclient{0}--{1}.lease'
+_DHCLIENT_LEASE_LEGACY = '/var/lib/dhclient/dhclient{0}-{1}.leases'
 
 
 class DhcpError(Exception):
@@ -159,6 +159,30 @@ class DhclientRunner(object):
 
 def delete_dhclient_leases(iface, dhcpv4=False, dhcpv6=False):
     if dhcpv4:
-        rmFile(DHCLIENT_LEASE.format('', iface))
+        _delete_with_fallback(_DHCLIENT_LEASE.format('', iface),
+                              _DHCLIENT_LEASE_LEGACY.format('', iface))
     if dhcpv6:
-        rmFile(DHCLIENT_LEASE.format('6', iface))
+        _delete_with_fallback(_DHCLIENT_LEASE.format('6', iface),
+                              _DHCLIENT_LEASE_LEGACY.format('6', iface))
+
+
+def _delete_with_fallback(*file_names):
+    """
+    Delete the first file in file_names that exists.
+
+    This is useful when removing dhclient lease files. dhclient stores leases
+    either as e.g. 'dhclient6-test-network.leases' if it existed before, or as
+    'dhclient6--test-network.lease'. The latter is more likely to exist.
+
+    We intentionally only delete one file, the one initscripts chose and wrote
+    to. Since the legacy one is preferred, after the test it will be gone and
+    on the next run ifup will use the more modern name.
+    """
+    for name in file_names:
+        try:
+            os.unlink(name)
+            return
+        except OSError as ose:
+            if ose.errno != ENOENT:
+                logging.error('Failed to delete: %s', name, exc_info=True)
+                raise
