@@ -42,7 +42,7 @@ _EC_ENCODE_MAP = {
 }
 
 
-class Command:
+class Command(object):
     MESSAGE = "MESSAGE"
     SEND = "SEND"
     SUBSCRIBE = "SUBSCRIBE"
@@ -57,7 +57,7 @@ COMMANDS = tuple([command for command in dir(Command)
                   if not command.startswith('_')])
 
 
-class AckMode:
+class AckMode(object):
     AUTO = "auto"
 
 
