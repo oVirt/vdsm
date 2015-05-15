@@ -277,7 +277,7 @@ class JsonRpcCall(object):
 class JsonRpcClient(object):
     def __init__(self, transport):
         self.log = logging.getLogger("jsonrpc.JsonRpcClient")
-        transport.setMessageHandler(self._handleMessage)
+        transport.set_message_handler(self._handleMessage)
         self._transport = transport
         self._runningRequests = {}
         self._lock = Lock()

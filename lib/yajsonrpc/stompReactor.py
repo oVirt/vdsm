@@ -147,7 +147,7 @@ class StompServer(object):
         if self._messageHandler is not None:
             self._messageHandler((self, data))
 
-    def setMessageHandler(self, msgHandler):
+    def set_message_handler(self, msgHandler):
         self._messageHandler = msgHandler
         self.check_read()
 
@@ -194,7 +194,7 @@ class StompClient(object):
         if self._messageHandler is not None:
             self._messageHandler((self, frame.body))
 
-    def setMessageHandler(self, msgHandler):
+    def set_message_handler(self, msgHandler):
         self._messageHandler = msgHandler
         self.check_read()
 

@@ -37,7 +37,7 @@ class BindingJsonRpc(object):
         reactor.createListener(client_socket, self._onAccept)
 
     def _onAccept(self, listener, client):
-        client.setMessageHandler(self._server.queueRequest)
+        client.set_message_handler(self._server.queueRequest)
 
     def createStompReactor(self):
         reactor = StompReactor()
