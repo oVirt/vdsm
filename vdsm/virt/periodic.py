@@ -179,7 +179,6 @@ class Operation(object):
         """
         Schedule a next call of `func'
         """
-        self._log.debug("after %f seconds: %s", self._period, self._func)
         self._call = self._scheduler.schedule(self._period,
                                               self._try_to_dispatch)
 
