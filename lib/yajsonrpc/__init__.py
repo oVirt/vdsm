@@ -19,8 +19,8 @@ from weakref import ref
 from threading import Lock, Event
 
 from vdsm.compat import json
-
-from vdsm.utils import traceback
+from vdsm.password import protect_passwords
+from vdsm.utils import traceback, picklecopy
 
 __all__ = ["tcpReactor"]
 
@@ -450,6 +450,17 @@ class JsonRpcClient(object):
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
+    SECURE_ARGS = ('Host.fenceNode',
+                   'ISCSIConnection.discoverSendTargets',
+                   'StoragePool.connectStorageServer',
+                   'StoragePool.disconnectStorageServer',
+                   'StoragePool.validateStorageServerConnection',
+                   'VM.desktopLogin',
+                   'VM.setTicket',
+                   'VM.updateDevice')
+
+    SECURE_RETURN = ('Host.getDeviceList',)
+
     def __init__(self, bridge, threadFactory=None):
         self._bridge = bridge
         self._workQueue = Queue()
@@ -465,8 +476,10 @@ class JsonRpcServer(object):
                              'Host_getStats', 'StorageDomain_getStats',
                              'VM_getStats', 'Host_fenceNode'):
             logLevel = logging.TRACE
+        protected_params = self._protected_params(req.method, req.params)
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
-                     req.method, req.params)
+                     req.method, protected_params)
+
         try:
             method = getattr(self._bridge, mangledMethod)
         except AttributeError:
@@ -496,9 +509,20 @@ class JsonRpcServer(object):
                                             req.id))
         else:
             res = True if res is None else res
+            protected_result = self._protected_result(req.method, res)
             self.log.log(logLevel, "Return '%s' in bridge with %s",
-                         req.method, res)
+                         req.method, protected_result)
             ctx.requestDone(JsonRpcResponse(res, None, req.id))
+
+    def _protected_params(self, method, args):
+        if method in self.SECURE_ARGS:
+            return protect_passwords(picklecopy(args))
+        return args
+
+    def _protected_result(self, method, result):
+        if method in self.SECURE_RETURN:
+            return protect_passwords(picklecopy(result))
+        return result
 
     @traceback(on=log.name)
     def serve_requests(self):

@@ -31,6 +31,7 @@ dist_vdsmpylib_PYTHON = \
 	netconfpersistence.py \
 	netinfo.py \
 	netlink.py \
+	password.py \
 	profile.py \
 	qemuimg.py \
 	SecureXMLRPCServer.py \
