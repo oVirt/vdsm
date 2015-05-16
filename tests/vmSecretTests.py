@@ -191,6 +191,16 @@ class APITests(VdsmTestCase):
         virsec2 = self.connection.secrets[sec2["uuid"]]
         self.assertEqual("sec2 new password", virsec2.value)
 
+    def test_register_change_usage_id(self):
+        sec = make_secret(usage_id="ovirt/provider_uuid/secert_uuid")
+        secret.register([sec])
+        # Change usage id
+        sec["usageID"] = "ovirt/domain_uuid/secret_uuid"
+        res = secret.register([sec])
+        self.assertEqual(res, response.success())
+        virsec = self.connection.secrets[sec["uuid"]]
+        self.assertEqual("ovirt/domain_uuid/secret_uuid", virsec.usage_id)
+
     def test_register_libvirt_error(self):
         def fail(xml):
             raise vmfakelib.Error(libvirt.VIR_ERR_INTERNAL_ERROR)

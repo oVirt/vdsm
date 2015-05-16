@@ -92,6 +92,18 @@ class Secret(object):
         self.description = params.get("description")
 
     def register(self, con):
+        # This is racy, but we don't have a better way. This is unlikely to
+        # fail, as we own libvirt and its secrets, and we do not modify the
+        # same secrets concurrently.
+        try:
+            virsecret = con.secretLookupByUUIDString(self.uuid)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() != libvirt.VIR_ERR_NO_SECRET:
+                raise
+        else:
+            if virsecret.usageID() != self.usage_id:
+                virsecret.undefine()
+
         virsecret = con.secretDefineXML(self.toxml())
         virsecret.setValue(self.password.value)
 
