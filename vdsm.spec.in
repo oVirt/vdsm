@@ -158,22 +158,12 @@ Requires: libnl3
 Requires: curl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
-Requires: safelease
+Requires: safelease >= 1.0-5
 
 %if 0%{?rhev_build}
 Requires: mom >= 0.4.1-4
 %else
 Requires: mom >= 0.4.3
-%endif
-
-# Numactl is not available on s390[x] and ARM
-%ifnarch s390 s390x %{arm}
-Requires: numactl
-%endif
-
-%ifarch x86_64
-Requires: python-dmidecode
-Requires: dmidecode
 %endif
 
 %if 0%{?rhel}
