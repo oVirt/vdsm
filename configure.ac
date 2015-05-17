@@ -326,6 +326,7 @@ AC_PATH_PROG([RESTORECON_PATH], [restorecon], [/sbin/restorecon])
 AC_PATH_PROG([RM_PATH], [rm], [/bin/rm])
 AC_PATH_PROG([RPM_PATH], [rpm], [/bin/rpm])
 AC_PATH_PROG([RSYNC_PATH], [rsync], [/usr/bin/rsync])
+AC_PATH_PROG([SAFELEASE_PATH], [safelease], [/usr/libexec/safelease/safelease])
 AC_PATH_PROG([SED_PATH], [sed], [/bin/sed])
 AC_PATH_PROG([SERVICE_PATH], [service], [/sbin/service])
 AC_PATH_PROG([SETSID_PATH], [setsid], [/usr/bin/setsid])
@@ -427,6 +428,7 @@ AC_OUTPUT([
 ],[
     chmod +x tests/run_tests.sh
     chmod +x tests/run_tests_local.sh
+    chmod +x vdsm/storage/protect/spmprotect.sh
 ])
 
 

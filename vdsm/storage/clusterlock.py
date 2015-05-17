@@ -90,7 +90,7 @@ class SafeLease(object):
                        ioOpTimeoutSec)
 
     def initLock(self):
-        lockUtil = os.path.join(self.lockUtilPath, "safelease")
+        lockUtil = constants.EXT_SAFELEASE
         initCommand = [lockUtil, "release", "-f", self._leasesPath, "0"]
         rc, out, err = misc.execCmd(initCommand, cwd=self.lockUtilPath)
         if rc != 0:

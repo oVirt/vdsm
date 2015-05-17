@@ -6,6 +6,20 @@
 # LICENSE_GPL_v2 which accompany this distribution.
 #
 
+include $(top_srcdir)/build-aux/Makefile.subs
+
 dist_vdsmexec_SCRIPTS = \
-	spmprotect.sh  \
-	spmstop.sh
+	spmstop.sh \
+	$(NULL)
+
+nodist_vdsmexec_SCRIPTS = \
+	spmprotect.sh \
+	$(NULL)
+
+EXTRA_DIST = \
+	spmprotect.sh.in \
+	$(NULL)
+
+all-local: \
+	$(nodist_vdsm_SCRIPTS) \
+	$(NULL)

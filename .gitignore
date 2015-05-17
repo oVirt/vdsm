@@ -62,6 +62,7 @@ vdsm/sos/vdsm.py
 vdsm/storage/lvm.env
 vdsm/storage/vdsm-lvm.rules
 vdsm/storage/vdsm_lvm_rules.template
+vdsm/storage/protect/spmprotect.sh
 vdsm/sudoers.vdsm
 vdsm/svdsm.logger.conf
 vdsm/vdscli.py

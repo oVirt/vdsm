@@ -24,7 +24,7 @@ set +o pipefail
 SETSID="/usr/bin/setsid"
 LOGFILE="/var/log/vdsm/spm-lock.log"
 VDS_CLIENT="/usr/bin/vdsClient"
-LEASE_UTIL="./safelease"
+LEASE_UTIL="@SAFELEASE_PATH@"
 KILL="/bin/kill"
 PKILL="/usr/bin/pkill"
 sdUUID=$2
