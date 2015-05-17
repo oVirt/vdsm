@@ -48,6 +48,7 @@ from protocoldetector import MultiProtocolAcceptor
 
 from virt import migration
 from virt import sampling
+from virt import secret
 from virt import vm
 from virt import vmstatus
 from virt.vm import Vm, getVDSMDomains
@@ -106,6 +107,7 @@ class clientIF(object):
             self._enabled = True
             self._netConfigDirty = False
             self._prepareMOM()
+            secret.clear()
             threading.Thread(target=self._recoverThread,
                              name='clientIFinit').start()
             self.channelListener.settimeout(
@@ -275,6 +277,7 @@ class clientIF(object):
                 binding.stop()
 
             self._enabled = False
+            secret.clear()
             self.channelListener.stop()
             self._hostStats.stop()
             if self.irs:

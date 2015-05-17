@@ -163,6 +163,29 @@ class APITests(VdsmTestCase):
         self.patch.revert()
         libvirtconnection._clear()
 
+    def test_clear(self):
+        self.connection.secrets = {
+            "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
+                                      "name1", None),
+            "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
+                                      "name2", None),
+        }
+        secret.clear()
+        self.assertEqual({}, self.connection.secrets)
+
+    def test_clear_skip_failed(self):
+        def fail():
+            raise vmfakelib.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+        self.connection.secrets = {
+            "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
+                                      "name1", None),
+            "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
+                                      "name2", None),
+        }
+        self.connection.secrets["uuid1"].undefine = fail
+        secret.clear()
+        self.assertNotIn("uuid2", self.connection.secrets)
+
     def test_register_validation(self):
         res = secret.register([{"invalid": "secret"}])
         self.assertEqual(res, response.error("secretBadRequestErr"))

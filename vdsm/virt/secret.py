@@ -79,6 +79,22 @@ def unregister(uuids):
     return response.success()
 
 
+def clear():
+    """
+    Clear all regsistered libvirt secrets.
+
+    Should be called during startup and shutdown to ensure that we don't leave
+    around stale or unneeded secrets.
+    """
+    logging.info("Unregistering all secrests")
+    con = libvirtconnection.get()
+    for virsecret in con.listAllSecrets():
+        try:
+            virsecret.undefine()
+        except libvirt.libvirtError as e:
+            logging.error("Could not unregister %s: %s", virsecret, e)
+
+
 class Secret(object):
     """
     Validate libvirt secret parameters and create secret xml string.
