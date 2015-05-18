@@ -53,6 +53,7 @@ except ImportError:
     python_apt = False
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
+CPU_MAP_FILE = '/usr/share/libvirt/cpu_map.xml'
 
 try:
     from gluster.api import GLUSTER_RPM_PACKAGES
@@ -299,8 +300,9 @@ def getLiveMergeSupport():
 
 
 @utils.memoized
-def getNumaTopology():
-    capabilities = _getCapsXMLStr()
+def getNumaTopology(capabilities=None):
+    if capabilities is None:
+        capabilities = _getCapsXMLStr()
     caps = minidom.parseString(capabilities)
     host = caps.getElementsByTagName('host')[0]
     cells = host.getElementsByTagName('cells')[0]
@@ -392,11 +394,12 @@ def _getEmulatedMachines(arch, capabilities=None):
     return []
 
 
-def _getAllCpuModels():
-    with open('/usr/share/libvirt/cpu_map.xml') as xml:
+def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
+    with open(capfile) as xml:
         cpu_map = minidom.parseString(xml.read())
 
-    arch = platform.machine()
+    if arch is None:
+        arch = platform.machine()
 
     # In libvirt CPU map XML, both x86_64 and x86 are
     # the same architecture, so in order to find all

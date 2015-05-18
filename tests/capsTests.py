@@ -42,6 +42,9 @@ def _getCapsNumaDistanceTestData(testFileName):
 
 class TestCaps(TestCaseBase):
 
+    CPU_MAP_FILE = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                'cpu_map.xml')
+
     def tearDown(self):
         for name in dir(caps):
             obj = getattr(caps, name)
@@ -194,3 +197,89 @@ class TestCaps(TestCaseBase):
         support = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
                                                capsData)
         self.assertEqual(support, False)
+
+    def test_getLiveSnapshotSupport(self):
+        # Using any caps file to test the correctness of parsing
+        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
+        UNSUPPORTED_ARCHITECTURE = 'i686'
+
+        result = caps._getLiveSnapshotSupport(UNSUPPORTED_ARCHITECTURE,
+                                              capsData)
+        self.assertIsNone(result)
+
+        result = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+                                              capsData)
+        self.assertFalse(result)
+
+        capsData = self._readCaps("caps_libvirt_intel_i73770.out")
+
+        result = caps._getLiveSnapshotSupport(UNSUPPORTED_ARCHITECTURE,
+                                              capsData)
+        self.assertIsNone(result)
+
+        result = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+                                              capsData)
+        self.assertTrue(result)
+
+    def test_getAllCpuModels(self):
+        result = caps._getAllCpuModels(capfile=self.CPU_MAP_FILE,
+                                       arch=caps.Architecture.X86_64)
+
+        expected = {
+            'qemu32': None,
+            'Haswell': 'Intel',
+            'cpu64-rhel6': None,
+            'cpu64-rhel5': None,
+            'Broadwell': 'Intel',
+            'pentium2': None,
+            'pentiumpro': None,
+            'athlon': 'AMD',
+            'Nehalem': 'Intel',
+            'Conroe': 'Intel',
+            'kvm32': None,
+            'pentium': None,
+            'Opteron_G3': 'AMD',
+            'coreduo': 'Intel',
+            'Opteron_G1': 'AMD',
+            'Opteron_G5': 'AMD',
+            'Opteron_G4': 'AMD',
+            'core2duo': 'Intel',
+            'Penryn': 'Intel',
+            'qemu64': None,
+            'phenom': 'AMD',
+            'Opteron_G2': 'AMD',
+            '486': None,
+            'Westmere': 'Intel',
+            'pentium3': None,
+            'n270': 'Intel',
+            'SandyBridge': 'Intel',
+            'kvm64': None
+            }
+        self.assertEqual(expected, result)
+
+    def test_getAllCpuModels_noArch(self):
+        result = caps._getAllCpuModels(capfile=self.CPU_MAP_FILE,
+                                       arch='non_existent_arch')
+        self.assertEqual(dict(), result)
+
+    def test_getEmulatedMachines(self):
+        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
+        result = caps._getEmulatedMachines('x86_64', capsData)
+        expected = ['rhel6.5.0', 'pc', 'rhel6.4.0', 'rhel6.3.0', 'rhel6.2.0',
+                    'rhel6.1.0', 'rhel6.0.0', 'rhel5.5.0', 'rhel5.4.4',
+                    'rhel5.4.0']
+        self.assertEqual(expected, result)
+
+    def test_getNumaTopology(self):
+        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
+        result = caps.getNumaTopology(capsData)
+        # only check cpus, memory does not come from file
+        expected = [0, 1, 2, 3, 4, 5, 6, 7]
+        self.assertEqual(expected, result['0']['cpus'])
+
+    def test_getCpuTopology(self):
+        capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
+        result = caps._getCpuTopology(capsData)
+        expected = {'cores': 4, 'threads': 8, 'sockets': 1,
+                    'onlineCpus': ['0', '1', '2', '3', '4', '5', '6', '7']}
+        self.assertEqual(expected, result)

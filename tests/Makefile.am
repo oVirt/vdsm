@@ -145,6 +145,7 @@ dist_vdsmtests_DATA = \
 	caps_libvirt_intel_E31220.out \
 	caps_libvirt_intel_i73770.out \
 	caps_libvirt_intel_i73770_nosnap.out \
+	cpu_map.xml \
 	caps_numactl_4_nodes.out \
 	glusterGeoRepStatus.xml \
 	glusterSnapshotConfig.xml \
