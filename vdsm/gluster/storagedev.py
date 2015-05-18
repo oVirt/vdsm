@@ -217,8 +217,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
             return blivetEnv.devicetree.getDeviceByName(poolLv.name)
 
     if os.path.ismount(mountPoint):
-        raise ge.GlusterHostStorageMountPointInUseException(
-            mountPoint, rc, out, err)
+        raise ge.GlusterHostStorageMountPointInUseException(mountPoint)
 
     vgName = "vg-" + brickName
     poolName = "pool-" + brickName
