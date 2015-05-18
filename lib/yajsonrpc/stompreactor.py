@@ -431,7 +431,7 @@ class StompDetector():
 
     def __init__(self, json_binding):
         self.json_binding = json_binding
-        self._reactor = self.json_binding.createStompReactor()
+        self._reactor = self.json_binding.reactor
 
     def detect(self, data):
         return data.startswith(stomp.COMMANDS)

@@ -31,7 +31,8 @@ class BindingJsonRpc(object):
 
     def __init__(self, bridge):
         self._server = JsonRpcServer(bridge, _simpleThreadFactory)
-        self._reactors = []
+        self._reactor = StompReactor()
+        self.startReactor()
 
     def add_socket(self, reactor, client_socket):
         reactor.createListener(client_socket, self._onAccept)
@@ -39,11 +40,9 @@ class BindingJsonRpc(object):
     def _onAccept(self, client):
         client.set_message_handler(self._server.queueRequest)
 
-    def createStompReactor(self):
-        reactor = StompReactor()
-        self._reactors.append(reactor)
-        self.startReactor(reactor)
-        return reactor
+    @property
+    def reactor(self):
+        return self._reactor
 
     def start(self):
         t = threading.Thread(target=self._server.serve_requests,
@@ -51,14 +50,13 @@ class BindingJsonRpc(object):
         t.setDaemon(True)
         t.start()
 
-    def startReactor(self, reactor):
-        reactorName = reactor.__class__.__name__
-        t = threading.Thread(target=reactor.process_requests,
+    def startReactor(self):
+        reactorName = self._reactor.__class__.__name__
+        t = threading.Thread(target=self._reactor.process_requests,
                              name='JsonRpc (%s)' % reactorName)
         t.setDaemon(True)
         t.start()
 
     def stop(self):
         self._server.stop()
-        for reactor in self._reactors:
-            reactor.stop()
+        self._reactor.stop()
