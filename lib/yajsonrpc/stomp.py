@@ -53,6 +53,16 @@ class Command(object):
     RECEIPT = "RECEIPT"
 
 
+class Headers(object):
+    CONTENT_LENGTH = "content-length"
+    CONTENT_TYPE = "content-type"
+    SUBSCRIPTION = "subscription"
+    DESTINATION = "destination"
+    ACCEPT_VERSION = "accept-version"
+    REPLY_TO = "reply-to"
+    HEARTEBEAT = "heart-beat"
+
+
 COMMANDS = tuple([command for command in dir(Command)
                   if not command.startswith('_')])
 

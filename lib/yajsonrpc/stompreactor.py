@@ -60,13 +60,13 @@ class StompAdapterImpl(object):
 
     def _cmd_connect(self, dispatcher, frame):
         self.log.info("Processing CONNECT request")
-        version = frame.headers.get("accept-version", None)
+        version = frame.headers.get(stomp.Headers.ACCEPT_VERSION, None)
         if version != "1.2":
             res = stomp.Frame(stomp.Command.ERROR, None, "Version unsupported")
         else:
             res = stomp.Frame(stomp.Command.CONNECTED, {"version": "1.2"})
             cx, cy = parseHeartBeatHeader(
-                frame.headers.get("heart-beat", "0,0")
+                frame.headers.get(stomp.Headers.HEARTEBEAT, "0,0")
             )
 
             # Make sure the heart-beat interval is sane
@@ -75,7 +75,7 @@ class StompAdapterImpl(object):
 
             # The server can send a heart-beat every cy ms and doesn't want
             # to receive any heart-beat from the client.
-            res.headers["heart-beat"] = "%d,0" % (cy,)
+            res.headers[stomp.Headers.HEARTEBEAT] = "%d,0" % (cy,)
             dispatcher.setHeartBeat(cy)
 
         dispatcher.send_raw(res)
