@@ -430,10 +430,7 @@ class GlusterHostStorageDeviceMakeDirsFailedException(GlusterHostException):
 class GlusterHostStorageMountPointInUseException(GlusterHostException):
     code = 4517
 
-    def __init__(self, mountPoint, rc=0, out=(), err=()):
-        self.rc = rc
-        self.out = out
-        self.err = err
+    def __init__(self, mountPoint):
         self.message = "Mount point %s is in use" % mountPoint
 
 
