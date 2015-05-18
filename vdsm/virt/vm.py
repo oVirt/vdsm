@@ -281,7 +281,8 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         self.sampleNuma = (
             sampling.AdvancedStatsFunction(
                 self._sampleNuma,
-                config.getint('vars', 'vm_sample_numa_interval'), 1))
+                # Minimum supported window is 2
+                config.getint('vars', 'vm_sample_numa_interval'), 2))
 
         self.addStatsFunction(
             self.highWrite, self.updateVolumes, self.sampleCpu,
@@ -630,7 +631,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             stats[dName].update(dLatency)
 
     def _getNumaStats(self, stats):
-        vmNumaNodeRuntimeMap = self.sampleNuma.getLastSample()
+        vmNumaNodeRuntimeMap, eInfo, sampleInterval = self.sampleNuma.getStats()
         if vmNumaNodeRuntimeMap:
             stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
 
@@ -659,11 +660,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
         self._getDiskLatency(stats)
         self._getBalloonStats(stats)
         self._getVmJobs(stats)
-
-        vmNumaNodeRuntimeMap = numaUtils.getVmNumaNodeRuntimeInfo(self._vm)
-        if vmNumaNodeRuntimeMap:
-            stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
-
+        self._getNumaStats(stats)
         self._getCpuTuneInfo(stats)
         self._getCpuCount(stats)
         self._getUserCpuTuneInfo(stats)
