@@ -15,7 +15,6 @@
 
 import logging
 import socket
-from threading import Timer
 from uuid import uuid4
 from collections import deque
 
@@ -469,28 +468,39 @@ class AsyncClient(object):
 
 
 class _Subscription(object):
-    def __init__(self, client, subid, ack):
+
+    def __init__(self, client, destination, subid, ack, message_handler):
         self._ack = ack
         self._subid = subid
         self._client = client
         self._valid = True
+        self._message_handler = message_handler
+        self._destination = destination
+
+    def handle_message(self, frame):
+        self._message_handler(self, frame)
+
+    """
+    In order to process message we need to set message
+    handler which is responsible for processing jsonrpc
+    content of the message. Currently there are 2 handlers:
+    JsonRpcClient and JsonRpcServer.
+    """
+    def set_message_handler(self, handler):
+        self._message_handler = handler
 
     @property
     def id(self):
         return self._subid
 
+    @property
+    def destination(self):
+        return self._destination
+
+    @property
+    def client(self):
+        return self._client
+
     def unsubscribe(self):
-        client = self._client
-        subid = self._subid
-
-        client._unregisterSubscription(self)
-
-        frame = Frame(Command.UNSUBSCRIBE,
-                      {"id": str(subid)})
-        client.put(frame)
+        self._client.unsubscribe(self)
         self._valid = False
-
-    def __del__(self):
-        # Using a timer because unsubscribe action might involve taking locks.
-        if self._valid:
-            Timer(0, self.unsubscribe)
