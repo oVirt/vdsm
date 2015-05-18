@@ -918,6 +918,7 @@ def glusterStorageDevData():
     device.kids = 0
     device.model = None
     device.type = "disk"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = None
     device.format.uuid = None
@@ -934,6 +935,7 @@ def glusterStorageDevData():
     device.kids = 1
     device.model = "Virtio Block Device"
     device.type = "disk"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = 'multipath_member'
     device.format.status = True
@@ -952,6 +954,7 @@ def glusterStorageDevData():
     device.kids = 1
     device.model = "Virtio Block Device"
     device.type = "disk"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = None
     device.format.uuid = None
@@ -967,6 +970,7 @@ def glusterStorageDevData():
     device.kids = 0
     device.model = "Virtio Block Device"
     device.type = "partition"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = 'xfs'
     device.format.uuid = "12345-12345-12345"
@@ -984,6 +988,7 @@ def glusterStorageDevData():
     device.kids = 0
     device.model = "Virtio Block Device"
     device.type = "partition"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = 'xfs'
     device.format.uuid = "12344-12344-12344"
@@ -1000,6 +1005,7 @@ def glusterStorageDevData():
     device.kids = 0
     device.model = "Virtio Block Device"
     device.type = "partition"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = None
     device.format.uuid = None
@@ -1016,6 +1022,7 @@ def glusterStorageDevData():
     device.kids = 3
     device.model = "Virtio Block Device"
     device.type = "disk"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = None
     device.format.uuid = None
@@ -1032,6 +1039,7 @@ def glusterStorageDevData():
     device.kids = 0
     device.model = "QEMU_DVD-ROM"
     device.type = "cdrom"
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.uuid = None
     device.format.type = None
@@ -1048,6 +1056,7 @@ def glusterStorageDevData():
     device.kids = 0
     device.model = ''
     device.type = 'lvmvg'
+    device.sysfsPath = ''
     device.format = TestStorageDev()
     device.format.type = None
     device.format.uuid = None
