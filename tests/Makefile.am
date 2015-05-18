@@ -79,6 +79,7 @@ test_modules = \
 	permutationTests.py \
 	persistentDictTests.py \
 	protocoldetectorTests.py \
+	pthreadTests.py \
 	qemuimgTests.py \
 	qosTests.py \
 	remoteFileHandlerTests.py \

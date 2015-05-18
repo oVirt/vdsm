@@ -34,6 +34,7 @@ dist_vdsmpylib_PYTHON = \
 	netconfpersistence.py \
 	netinfo.py \
 	password.py \
+	pthread.py \
 	qemuimg.py \
 	response.py \
 	schedule.py \
