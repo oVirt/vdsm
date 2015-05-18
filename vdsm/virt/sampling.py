@@ -611,36 +611,44 @@ class HostStatsThread(threading.Thread):
     def get(self):
         stats = self._empty_stats()
 
-        hs0, hs1, _ = self._samples.stats()
-        if hs0 is None:
+        first_sample, last_sample, _ = self._samples.stats()
+        if first_sample is None:
             return stats
 
         stats.update(self._getInterfacesStats())
 
-        interval = hs1.timestamp - hs0.timestamp
+        interval = last_sample.timestamp - first_sample.timestamp
 
-        jiffies = (hs1.pidcpu.user - hs0.pidcpu.user) % JIFFIES_BOUND
+        jiffies = (
+            last_sample.pidcpu.user - first_sample.pidcpu.user
+        ) % JIFFIES_BOUND
         stats['cpuUserVdsmd'] = jiffies / interval
-        jiffies = (hs1.pidcpu.sys - hs0.pidcpu.sys) % JIFFIES_BOUND
+        jiffies = (
+            last_sample.pidcpu.sys - first_sample.pidcpu.sys
+        ) % JIFFIES_BOUND
         stats['cpuSysVdsmd'] = jiffies / interval
 
-        jiffies = (hs1.totcpu.user - hs0.totcpu.user) % JIFFIES_BOUND
+        jiffies = (
+            last_sample.totcpu.user - first_sample.totcpu.user
+        ) % JIFFIES_BOUND
         stats['cpuUser'] = jiffies / interval / self._ncpus
-        jiffies = (hs1.totcpu.sys - hs0.totcpu.sys) % JIFFIES_BOUND
+        jiffies = (
+            last_sample.totcpu.sys - first_sample.totcpu.sys
+        ) % JIFFIES_BOUND
         stats['cpuSys'] = jiffies / interval / self._ncpus
         stats['cpuIdle'] = max(0.0,
                                100.0 - stats['cpuUser'] - stats['cpuSys'])
-        stats['memUsed'] = hs1.memUsed
-        stats['anonHugePages'] = hs1.anonHugePages
-        stats['cpuLoad'] = hs1.cpuLoad
+        stats['memUsed'] = last_sample.memUsed
+        stats['anonHugePages'] = last_sample.anonHugePages
+        stats['cpuLoad'] = last_sample.cpuLoad
 
-        stats['diskStats'] = hs1.diskStats
-        stats['thpState'] = hs1.thpState
+        stats['diskStats'] = last_sample.diskStats
+        stats['thpState'] = last_sample.thpState
 
         if self._boot_time():
             stats['bootTime'] = self._boot_time()
 
-        stats['numaNodeMemFree'] = hs1.numaNodeMem.nodesMemSample
+        stats['numaNodeMemFree'] = last_sample.numaNodeMem.nodesMemSample
         stats['cpuStatistics'] = self._getCpuCoresStats()
 
         stats['v2vJobs'] = v2v.get_jobs_status()
