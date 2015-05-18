@@ -41,6 +41,7 @@ SUBDIRS += \
 	fakevmstats \
 	floppy \
 	hostusb \
+	httpsisoboot \
 	hugepages \
 	isolatedprivatevlan \
 	macbind \

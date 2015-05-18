@@ -547,6 +547,18 @@ Requires:       usbutils
 Hook is getting vendor and product id of USB device
 disconnect it from host and attach it to VM
 
+%package hook-httpsisoboot
+Summary:        Allow directly booting from an https available ISO
+BuildArch:      noarch
+%if 0%{?rhel}
+Requires:       qemu-kvm%{?qemu_suffix} >= 10:2.1.2-3
+%endif
+
+%description hook-httpsisoboot
+Let the VM boot from an ISO image made available via an https URL without
+the need to import the ISO into an ISO storage domain.
+It doesn't support plain http.
+
 %package hook-hugepages
 Summary:        Huge pages enable user to handle VM with 2048KB page files.
 BuildArch:      noarch
@@ -1501,6 +1513,10 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_hostusb
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_source/50_hostusb
 %{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_hostusb
+
+%files hook-httpsisoboot
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_httpsisoboot
 
 %files hook-hugepages
 %defattr(-, root, root, -)

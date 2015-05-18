@@ -1,0 +1,61 @@
+httpsisoboot hook:
+============
+Let the VM boot from an ISO image made available via an https URL without
+the need to import the ISO into an ISO storage domain.
+The hook supports only the https protocols and the host should be able
+to properly trust the provided URL.
+
+The https source won't work reliably unless you can guarantee a low latency
+between the VM and the web server: in case of latency spikes or packet loss,
+the guest will see EIO errors.
+So it could be adopted with a local web server with plenty of spare capacity
+and a fast LAN link to RHEV-H, but using it with remotely available ISO
+images is not recommended.
+
+The support for plain http has been removed from qemu-kvm-rhev and qemu-kvm-ev
+ as a security improvement but it's available upstream.
+
+syntax:
+    httpsisoboot=https://server/path/to/disk.iso
+
+
+The hook will create an additional CDROM device from the provided URL.
+It will also increase all other boot order values to use it as the
+first boot option.
+For ex:
+    <disk type='network' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source protocol="https" name="/path/to/disk.iso">
+        <host name="server" port="8080"/>
+      </source>
+      <target dev='hdc' bus='ide' tray='closed'/>
+      <readonly/>
+      <boot order='1'/>
+    </disk>
+
+Installation:
+1. Define a new custom VM property
+* Use engine-config to set the appropriate custom properties as such:
+    # engine-config -s UserDefinedVMProperties='httpsisoboot=^https:\/\/.*$'
+
+* Setting UserDefinedVMProperties overwrites all previous custom properties.
+  If you've already defined other custom properties, you may wish to append instead:
+    sudo engine-config -g UserDefinedVMProperties
+  Copy the value into $PREVIOUS_PROPERTIES, then use:
+    # engine-config -s UserDefinedVMProperties='$PREVIOUS_PROPERTIES;httpsisoboot=^https:\/\/.*$'
+
+* Verify that the httpsisoboot custom property was properly added:
+    # engine-config -g UserDefinedVMProperties
+
+2. In order that your changes will take effect you need to restart the ovirt engine:
+    # systemctl restart ovirt-engine
+
+Usage:
+Being a boot option, you probably prefer "Run Once" dialog which mean that
+you add the custom property to the VM only this time, next time that you run
+the VM it will run without the custom property that you just provided.
+The "Run Once" dialog can be found in the VMs tab at the drop down menu beside
+the green "Play" button (after the "Clone VM" button).
+Select the last option from the list with the label "Custom Properties"
+and expand it. Add your httpsisoboot property and configure its value to
+the required URL.
