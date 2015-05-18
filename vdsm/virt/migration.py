@@ -42,6 +42,10 @@ MODE_FILE = 'file'
 METHOD_ONLINE = 'online'
 
 
+VIR_MIGRATE_PARAM_URI = 'migrate_uri'
+VIR_MIGRATE_PARAM_BANDWIDTH = 'bandwidth'
+
+
 class SourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
@@ -333,29 +337,32 @@ class SourceThread(threading.Thread):
 
         maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
         # FIXME: there still a race here with libvirt,
-        # if we call stop() and libvirt migrateToURI2 didn't start
+        # if we call stop() and libvirt migrateToURI3 didn't start
         # we may return migration stop but it will start at libvirt
         # side
         self._preparingMigrationEvt = False
         if not self._migrationCanceledEvt:
-            self._vm._dom.migrateToURI2(
-                duri, muri, None,
-                libvirt.VIR_MIGRATE_LIVE |
-                libvirt.VIR_MIGRATE_PEER2PEER |
-                (libvirt.VIR_MIGRATE_TUNNELLED if
-                    self._tunneled else 0) |
-                (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
-                    self._abortOnError else 0) |
-                (libvirt.VIR_MIGRATE_COMPRESSED if
-                    self._compressed else 0) |
-                (libvirt.VIR_MIGRATE_AUTO_CONVERGE if
-                    self._autoConverge else 0),
-                None, maxBandwidth)
+            # TODO: use libvirt constants when bz#1222795 is fixed
+            params = {VIR_MIGRATE_PARAM_URI: str(muri),
+                      VIR_MIGRATE_PARAM_BANDWIDTH: maxBandwidth}
+
+            flags = (libvirt.VIR_MIGRATE_LIVE |
+                     libvirt.VIR_MIGRATE_PEER2PEER |
+                     (libvirt.VIR_MIGRATE_TUNNELLED if
+                         self._tunneled else 0) |
+                     (libvirt.VIR_MIGRATE_ABORT_ON_ERROR if
+                         self._abortOnError else 0) |
+                     (libvirt.VIR_MIGRATE_COMPRESSED if
+                         self._compressed else 0) |
+                     (libvirt.VIR_MIGRATE_AUTO_CONVERGE if
+                         self._autoConverge else 0))
+
+            self._vm._dom.migrateToURI3(duri, params, flags)
         else:
             self._raiseAbortError()
 
     def stop(self):
-        # if its locks we are before the migrateToURI2()
+        # if its locks we are before the migrateToURI3()
         # call so no need to abortJob()
         try:
             self._migrationCanceledEvt = True
