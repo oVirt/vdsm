@@ -269,6 +269,7 @@ class HSM_MailMonitor(threading.Thread):
         self._sendMail()  # Clear outgoing mailbox
         threading.Thread.__init__(self)
         self.daemon = True
+        self.name = "mailbox.HSMMonitor"
         self.start()
 
     def _initMailbox(self):
@@ -582,6 +583,7 @@ class SPM_MailMonitor:
 
         t = threading.Thread(target=self.run)
         t.daemon = True
+        t.name = "mailbox.SPMMonitor"
         t.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
 
