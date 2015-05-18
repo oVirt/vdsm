@@ -24,12 +24,12 @@ import itertools
 import os
 import platform
 from collections import defaultdict
-from xml.dom import minidom
 import logging
 import time
 import linecache
 import glob
 import re
+import xml.etree.ElementTree as ET
 from distutils.version import LooseVersion
 
 import libvirt
@@ -209,19 +209,20 @@ def _getCpuTopology(capabilities):
     if capabilities is None:
         capabilities = _getFreshCapsXMLStr()
 
-    caps = minidom.parseString(capabilities)
-    host = caps.getElementsByTagName('host')[0]
-    cells = host.getElementsByTagName('cells')[0]
+    caps = ET.fromstring(capabilities)
+    host = caps.find('host')
+    cells = host.find('.//cells')
 
     sockets = set()
     siblings = set()
     onlineCpus = []
 
-    for cpu in cells.getElementsByTagName('cpu'):
-        if cpu.hasAttribute('socket_id') and cpu.hasAttribute('siblings'):
-            onlineCpus.append(cpu.getAttribute('id'))
-            sockets.add(cpu.getAttribute('socket_id'))
-            siblings.add(cpu.getAttribute('siblings'))
+    for cpu in cells.iter(tag='cpu'):
+        if cpu.get('socket_id') is not None and \
+           cpu.get('siblings') is not None:
+            onlineCpus.append(cpu.get('id'))
+            sockets.add(cpu.get('socket_id'))
+            siblings.add(cpu.get('siblings'))
 
     topology = {'sockets': len(sockets),
                 'cores': len(siblings),
@@ -243,17 +244,16 @@ def _findLiveSnapshotSupport(guest):
     None if libvirt does not report the live
     snapshot support (as in version <= 1.2.2),
     '''
-    features = guest.getElementsByTagName('features')
+    features = guest.find('features')
     if not features:
         return None
 
-    for feature in features[0].childNodes:
-        if feature.nodeName == 'disksnapshot':
-            value = feature.getAttribute('default')
-            if value.lower() == 'on':
-                return True
-            else:
-                return False
+    for feature in features.iter(tag='disksnapshot'):
+        value = feature.get('default')
+        if value.lower() == 'on':
+            return True
+        else:
+            return False
     # libvirt < 1.2.2 does not export this information.
     return None
 
@@ -262,11 +262,11 @@ def _findLiveSnapshotSupport(guest):
 def _getLiveSnapshotSupport(arch, capabilities=None):
     if capabilities is None:
         capabilities = _getCapsXMLStr()
-    caps = minidom.parseString(capabilities)
+    caps = ET.fromstring(capabilities)
 
-    for guestTag in caps.getElementsByTagName('guest'):
-        archTag = guestTag.getElementsByTagName('arch')[0]
-        if archTag.getAttribute('name') == arch:
+    for guestTag in caps.iter(tag='guest'):
+        archTag = guestTag.find('arch')
+        if archTag.get('name') == arch:
             return _findLiveSnapshotSupport(guestTag)
 
     if not config.getboolean('vars', 'fake_kvm_support'):
@@ -303,19 +303,19 @@ def getLiveMergeSupport():
 def getNumaTopology(capabilities=None):
     if capabilities is None:
         capabilities = _getCapsXMLStr()
-    caps = minidom.parseString(capabilities)
-    host = caps.getElementsByTagName('host')[0]
-    cells = host.getElementsByTagName('cells')[0]
+    caps = ET.fromstring(capabilities)
+    host = caps.find('host')
+    cells = host.find('.//cells')
     cellsInfo = {}
-    cellSets = cells.getElementsByTagName('cell')
+    cellSets = cells.findall('cell')
     for cell in cellSets:
         cellInfo = {}
         cpus = []
-        for cpu in cell.getElementsByTagName('cpu'):
-            cpus.append(int(cpu.getAttribute('id')))
+        for cpu in cell.iter(tag='cpu'):
+            cpus.append(int(cpu.get('id')))
         cellInfo['cpus'] = cpus
-        cellIndex = cell.getAttribute('id')
-        if cellSets.length < 2:
+        cellIndex = cell.get('id')
+        if len(cellSets) < 2:
             memInfo = getUMAHostMemoryStats()
         else:
             memInfo = getMemoryStatsByNumaCell(int(cellIndex))
@@ -385,18 +385,19 @@ def getAutoNumaBalancingInfo():
 def _getEmulatedMachines(arch, capabilities=None):
     if capabilities is None:
         capabilities = _getCapsXMLStr()
-    caps = minidom.parseString(capabilities)
+    caps = ET.fromstring(capabilities)
 
-    for archTag in caps.getElementsByTagName('arch'):
-        if archTag.getAttribute('name') == arch:
-            return [m.firstChild.data for m in archTag.childNodes
-                    if m.nodeName == 'machine']
+    for archTag in caps.iter(tag='arch'):
+        if archTag.get('name') == arch:
+            return [m.text for m in archTag.iterfind('machine')]
+
     return []
 
 
 def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
+
     with open(capfile) as xml:
-        cpu_map = minidom.parseString(xml.read())
+        cpu_map = ET.fromstring(xml.read())
 
     if arch is None:
         arch = platform.machine()
@@ -407,14 +408,13 @@ def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
     # must be used
     if arch == Architecture.X86_64:
         arch = 'x86'
-
     architectureElement = None
 
-    architectureElements = cpu_map.getElementsByTagName('arch')
+    architectureElements = cpu_map.findall('arch')
 
     if architectureElements:
         for a in architectureElements:
-            if a.getAttribute('name') == arch:
+            if a.get('name') == arch:
                 architectureElement = a
 
     if architectureElement is None:
@@ -424,23 +424,18 @@ def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
 
     allModels = dict()
 
-    for m in architectureElement.childNodes:
-        if m.nodeName != 'model':
-            continue
-        element = m.getElementsByTagName('vendor')
-        if element:
-            vendor = element[0].getAttribute('name')
+    for m in architectureElement.findall('model'):
+        element = m.find('vendor')
+        if element is not None:
+            vendor = element.get('name')
         else:
-            # If current model doesn't have a vendor, check if it has a model
-            # that it is based on. The models in the cpu_map.xml file are
-            # sorted in a way that the base model is always defined before.
-            element = m.getElementsByTagName('model')
-            if element:
-                vendor = allModels.get(element[0].getAttribute('name'), None)
-            else:
+            element = m.find('model')
+            if element is None:
                 vendor = None
-        allModels[m.getAttribute('name')] = vendor
-
+            else:
+                elementName = element.get('name')
+                vendor = allModels.get(elementName, None)
+        allModels[m.get('name')] = vendor
     return allModels
 
 
