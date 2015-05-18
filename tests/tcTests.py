@@ -148,6 +148,9 @@ class _Tap(_Interface):
 
 def _checkDependencies():
 
+    # hack to avoid name collision in concurrently-running mock-based tests
+    random.jumpahead(os.getpid())
+
     dev = _Bridge()
     try:
         dev.addDevice()
