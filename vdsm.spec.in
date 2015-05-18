@@ -793,6 +793,8 @@ install -Dm 0755 vdsm_reg/vdsm-reg.init %{buildroot}%{_initrddir}/vdsm-reg
 %if 0%{?with_systemd}
 install -Dm 0644 init/systemd/vdsm-tmpfiles.d.conf \
                  %{buildroot}%{_tmpfilesdir}/%{vdsm_name}.conf
+install -Dm 0644 init/systemd/unlimited-core.conf \
+                 %{buildroot}%{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 %endif
 
 %if 0%{?rhel}
@@ -1026,6 +1028,7 @@ exit 0
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
 %{_unitdir}/supervdsmd.service
+%{_sysconfdir}/systemd/system/libvirtd.service.d/unlimited-core.conf
 %else
 %{_initrddir}/vdsmd
 %{_initrddir}/supervdsmd

@@ -39,6 +39,7 @@ EXTRA_DIST = \
 	vdsmd.service.in \
 	vdsm-network.service.in \
 	vdsm-tmpfiles.d.conf.in \
+	unlimited-core.conf \
 	$(NULL)
 
 all-local: \
