@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import thread
 import os
 import errno
 import time
@@ -570,8 +569,8 @@ class SPM_MailMonitor:
                         'conv=notrunc',
                         'count=1'
                         ]
-        self._outLock = thread.allocate_lock()
-        self._inLock = thread.allocate_lock()
+        self._outLock = threading.Lock()
+        self._inLock = threading.Lock()
         # Clear outgoing mail
         self.log.debug("SPM_MailMonitor - clearing outgoing mail, command is: "
                        "%s", self._outCmd)
@@ -581,7 +580,9 @@ class SPM_MailMonitor:
             self.log.warning("SPM_MailMonitor couldn't clear outgoing mail, "
                              "dd failed")
 
-        thread.start_new_thread(self.run, (self, ))
+        t = threading.Thread(target=self.run)
+        t.daemon = True
+        t.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
 
     def stop(self):
@@ -781,7 +782,7 @@ class SPM_MailMonitor:
 
     @utils.traceback(on=log.name,
                      msg="Unhandled exception in SPM_MailMonitor thread")
-    def run(self, *args):
+    def run(self):
         try:
             while not self._stop:
                 try:
