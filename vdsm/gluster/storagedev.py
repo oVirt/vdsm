@@ -79,7 +79,12 @@ def _getDeviceDict(device, createBrick=False):
         info['model'] = device.type
     if device.format:
         info['uuid'] = device.format.uuid or ''
-        dev = udev.get_device(device.sysfsPath) or {}
+        if hasattr(udev, 'get_device'):
+            dev = udev.get_device(device.sysfsPath)
+        elif hasattr(udev, 'udev_get_device'):
+            dev = udev.udev_get_device(device.sysfsPath)
+        else:
+            dev = {}
         info['fsType'] = device.format.type or dev.get('ID_FS_TYPE', '')
     if hasattr(device.format, 'mountpoint'):
         info['mountPoint'] = device.format.mountpoint or ''
