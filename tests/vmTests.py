@@ -473,6 +473,7 @@ class TestVm(XMLTestCase):
     @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
     @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
+    @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
     def testBuildCmdLineX86_64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_X86_64)
 
@@ -482,6 +483,7 @@ class TestVm(XMLTestCase):
     @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
     @MonkeyPatch(utils, 'getHostUUID',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
+    @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
     def testBuildCmdLinePPC64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_PPC64)
 

@@ -108,14 +108,15 @@ class GuestAgentUnsupportedMessage(Exception):
 class GuestAgent(object):
     MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
 
-    def __init__(self, socketName, channelListener, log, user='Unknown',
-                 ips=''):
+    def __init__(self, socketName, channelListener, log, onStatusChange,
+                 user='Unknown', ips=''):
         self.effectiveApiVersion = _IMPLICIT_API_VERSION_ZERO
+        self._onStatusChange = onStatusChange
         self.log = log
         self._socketName = socketName
         self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self._stopped = True
-        self.guestStatus = None
+        self._status = None
         self.guestDiskMapping = {}
         self.guestInfo = {
             'username': user,
@@ -131,6 +132,17 @@ class GuestAgent(object):
         self._agentTimestamp = 0
         self._channelListener = channelListener
         self._messageState = MessageState.NORMAL
+
+    @property
+    def guestStatus(self):
+        return self._status
+
+    @guestStatus.setter
+    def guestStatus(self, value):
+        oldValue = self._status
+        self._status = value
+        if oldValue != value and self._onStatusChange:
+            self._onStatusChange()
 
     @property
     def guestDiskMapping(self):

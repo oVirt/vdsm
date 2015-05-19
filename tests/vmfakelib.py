@@ -289,12 +289,12 @@ def VM(params=None, devices=None, runCpu=False,
        cif=None, create_device_objects=False):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
-                               (libvirtconnection, 'get', Connection)]):
+                               (libvirtconnection, 'get', Connection),
+                               (vm.Vm, 'send_status_event', lambda x: None)]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif
             fake = vm.Vm(cif, vmParams)
-            fake.send_status_event = lambda x: None
             cif.vmContainer[fake.id] = fake
             fake.arch = arch
             fake.guestAgent = GuestAgent()

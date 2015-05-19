@@ -332,7 +332,8 @@ class Vm(object):
         self._guestSocketFile = self._makeChannelPath(_VMCHANNEL_DEVICE_NAME)
         self._qemuguestSocketFile = self._makeChannelPath(_QEMU_GA_DEVICE_NAME)
         self.guestAgent = guestagent.GuestAgent(
-            self._guestSocketFile, self.cif.channelListener, self.log)
+            self._guestSocketFile, self.cif.channelListener, self.log,
+            self.send_status_event)
         self._domain = DomainDescriptor.from_id(self.id)
         self._released = False
         self._releaseLock = threading.Lock()

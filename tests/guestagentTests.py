@@ -112,7 +112,8 @@ class TestGuestIF(TestCaseBase):
 
     def test_handleMessage(self):
         logging.TRACE = 5
-        fakeGuestAgent = guestagent.GuestAgent(None, None, self.log)
+        fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
+                                               lambda: None)
         testCase = namedtuple('testCase', 'msgType, message, assertDict')
 
         for t in zip(_MSG_TYPES, _INPUTS, _OUTPUTS):
@@ -131,7 +132,8 @@ class TestGuestIFHandleData(TestCaseBase):
     # perform general setup tasks
     def setUp(self):
         logging.TRACE = 5
-        self.fakeGuestAgent = guestagent.GuestAgent(None, None, self.log)
+        self.fakeGuestAgent = guestagent.GuestAgent(None, None, self.log,
+                                                    lambda: None)
         self.fakeGuestAgent.MAX_MESSAGE_SIZE = 100
         self.maxMessageSize = self.fakeGuestAgent.MAX_MESSAGE_SIZE
         self.fakeGuestAgent._clearReadBuffer()
@@ -201,7 +203,7 @@ class TestGuestIFHandleData(TestCaseBase):
 class DiskMappingTests(TestCaseBase):
 
     def setUp(self):
-        self.agent = guestagent.GuestAgent(None, None, None)
+        self.agent = guestagent.GuestAgent(None, None, None, lambda: None)
 
     def test_init(self):
         self.assertEqual(self.agent.guestDiskMapping, {})
