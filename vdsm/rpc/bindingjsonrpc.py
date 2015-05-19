@@ -17,7 +17,7 @@ import threading
 import logging
 
 from yajsonrpc import JsonRpcServer
-from yajsonrpc.stompReactor import StompReactor
+from yajsonrpc.stompreactor import StompReactor
 
 
 def _simpleThreadFactory(func):

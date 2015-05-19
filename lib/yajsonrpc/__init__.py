@@ -23,7 +23,7 @@ from vdsm.compat import json
 from vdsm.password import protect_passwords, unprotect_passwords
 from vdsm.utils import traceback
 
-__all__ = ["betterAsyncore", "stompReactor", "stomp"]
+__all__ = ["betterAsyncore", "stompreactor", "stomp"]
 
 _STATE_INCOMING = 1
 _STATE_OUTGOING = 2

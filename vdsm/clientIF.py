@@ -201,8 +201,8 @@ class clientIF(object):
         if config.getboolean('vars', 'jsonrpc_enable'):
             try:
                 from rpc import Bridge
-                from rpc.BindingJsonRpc import BindingJsonRpc
-                from yajsonrpc.stompReactor import StompDetector
+                from rpc.bindingjsonrpc import BindingJsonRpc
+                from yajsonrpc.stompreactor import StompDetector
             except ImportError:
                 self.log.warn('Unable to load the json rpc server module. '
                               'Please make sure it is installed.')

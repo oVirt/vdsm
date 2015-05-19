@@ -1614,7 +1614,7 @@ exit 0
 %files jsonrpc
 %doc %{vdsm_name}/rpc/vdsm-api.html
 %{_datadir}/%{vdsm_name}/rpc/__init__.py*
-%{_datadir}/%{vdsm_name}/rpc/BindingJsonRpc.py*
+%{_datadir}/%{vdsm_name}/rpc/bindingjsonrpc.py*
 %{_datadir}/%{vdsm_name}/rpc/Bridge.py*
 %{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{python_sitelib}/vdsmapi.py*
@@ -1627,7 +1627,7 @@ exit 0
 %dir %{python_sitelib}/yajsonrpc
 %{python_sitelib}/yajsonrpc/betterAsyncore.py*
 %{python_sitelib}/yajsonrpc/stomp.py*
-%{python_sitelib}/yajsonrpc/stompReactor.py*
+%{python_sitelib}/yajsonrpc/stompreactor.py*
 
 %files infra
 %{python_sitelib}/%{vdsm_name}/infra/eventfd/__init__.py*

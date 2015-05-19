@@ -27,10 +27,10 @@ from contextlib import contextmanager
 from itertools import product
 from M2Crypto import SSL
 from rpc.BindingXMLRPC import BindingXMLRPC, XmlDetector
-from yajsonrpc.stompReactor import StompDetector
+from yajsonrpc.stompreactor import StompDetector
 from protocoldetector import MultiProtocolAcceptor
 from yajsonrpc import JsonRpcClient
-from rpc.BindingJsonRpc import BindingJsonRpc
+from rpc.bindingjsonrpc import BindingJsonRpc
 from sslhelper import DEAFAULT_SSL_CONTEXT
 
 PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
