@@ -34,6 +34,8 @@ import socket
 import struct
 import xml.etree.cElementTree as etree
 
+import six
+
 from . import constants
 from .ipwrapper import drv_name
 from .ipwrapper import DUMMY_BRIDGE
@@ -895,13 +897,9 @@ class NetInfo(object):
                     yield (network, getVlanID(netdict['iface']))
 
     def getVlansForIface(self, iface):
-        for vlanDevName in self._getVlanDevsForIface(iface):
-            yield getVlanID(vlanDevName)
-
-    def _getVlanDevsForIface(self, iface):
-        for v, vdict in self.vlans.iteritems():
-            if iface == vdict['iface']:
-                yield v
+        for vlandict in six.itervalues(self.vlans):
+            if iface == vlandict['iface']:
+                yield vlandict['vlanid']
 
     def getNetworkForIface(self, iface):
         """ Return the network attached to nic/bond """
