@@ -1609,7 +1609,7 @@ exit 0
 %files xmlrpc
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
-%{_datadir}/%{vdsm_name}/rpc/BindingXMLRPC.py*
+%{_datadir}/%{vdsm_name}/rpc/bindingxmlrpc.py*
 
 %files jsonrpc
 %doc %{vdsm_name}/rpc/vdsm-api.html

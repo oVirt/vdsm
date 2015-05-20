@@ -186,8 +186,8 @@ class clientIF(object):
     def _prepareXMLRPCBinding(self):
         if config.getboolean('vars', 'xmlrpc_enable'):
             try:
-                from rpc.BindingXMLRPC import BindingXMLRPC
-                from rpc.BindingXMLRPC import XmlDetector
+                from rpc.bindingxmlrpc import BindingXMLRPC
+                from rpc.bindingxmlrpc import XmlDetector
             except ImportError:
                 self.log.error('Unable to load the xmlrpc server module. '
                                'Please make sure it is installed.')

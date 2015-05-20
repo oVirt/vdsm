@@ -26,7 +26,7 @@ from xmlrpclib import Transport, dumps, Fault
 from contextlib import contextmanager
 from itertools import product
 from M2Crypto import SSL
-from rpc.BindingXMLRPC import BindingXMLRPC, XmlDetector
+from rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
 from yajsonrpc.stompreactor import StompDetector
 from protocoldetector import MultiProtocolAcceptor
 from yajsonrpc import JsonRpcClient

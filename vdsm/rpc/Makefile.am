@@ -11,7 +11,7 @@ EXTRA_DIST = \
 dist_vdsmrpc_PYTHON = \
 	__init__.py \
 	bindingjsonrpc.py \
-	BindingXMLRPC.py \
+	bindingxmlrpc.py \
 	Bridge.py \
 	$(NULL)
 
