@@ -33,45 +33,48 @@ from ... import constants
 
 _MPATH_CONF = "/etc/multipath.conf"
 
-_STRG_MPATH_CONF = (
-    "\n\n"
-    "defaults {\n"
-    "    polling_interval        5\n"
-    "    no_path_retry           fail\n"
-    "    user_friendly_names     no\n"
-    "    flush_on_last_del       yes\n"
-    "    fast_io_fail_tmo        5\n"
-    "    dev_loss_tmo            30\n"
-    "    max_fds                 4096\n"
-    "}\n"
-    "\n"
-    "devices {\n"
-    "device {\n"
-    "    vendor                  \"HITACHI\"\n"
-    "    product                 \"DF.*\"\n"
-    "}\n"
-    "device {\n"
-    "    vendor                  \"COMPELNT\"\n"
-    "    product                 \"Compellent Vol\"\n"
-    "    no_path_retry           fail\n"
-    "}\n"
-    "device {\n"
-    "    # multipath.conf.default\n"
-    "    vendor                  \"DGC\"\n"
-    "    product                 \".*\"\n"
-    "    product_blacklist       \"LUNZ\"\n"
-    "    path_grouping_policy    \"group_by_prio\"\n"
-    "    path_checker            \"emc_clariion\"\n"
-    "    hardware_handler        \"1 emc\"\n"
-    "    prio                    \"emc\"\n"
-    "    failback                immediate\n"
-    "    rr_weight               \"uniform\"\n"
-    "    # vdsm required configuration\n"
-    "    features                \"0\"\n"
-    "    no_path_retry           fail\n"
-    "}\n"
-    "}"
-)
+_MPATH_CONF_TAG = "# VDSM REVISION 1.2"
+
+_MPATH_CONF_DATA = """\
+%(current_tag)s
+
+defaults {
+    polling_interval            5
+    no_path_retry               fail
+    user_friendly_names         no
+    flush_on_last_del           yes
+    fast_io_fail_tmo            5
+    dev_loss_tmo                30
+    max_fds                     4096
+}
+
+devices {
+    device {
+        vendor                  "HITACHI"
+        product                 "DF.*"
+    }
+    device {
+        vendor                  "COMPELNT"
+        product                 "Compellent Vol"
+        no_path_retry           fail
+    }
+    device {
+        # multipath.conf.default
+        vendor                  "DGC"
+        product                 ".*"
+        product_blacklist       "LUNZ"
+        path_grouping_policy    "group_by_prio"
+        path_checker            "emc_clariion"
+        hardware_handler        "1 emc"
+        prio                    "emc"
+        failback                immediate
+        rr_weight               "uniform"
+        # vdsm required configuration
+        features                "0"
+        no_path_retry           fail
+    }
+}
+""" % {"current_tag": _MPATH_CONF_TAG}
 
 _MAX_CONF_COPIES = 5
 
@@ -83,15 +86,11 @@ _OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
              "# RHEV REVISION 0.8", "# RHEV REVISION 0.9",
              "# RHEV REVISION 1.0", "# RHEV REVISION 1.1"]
 
-_MPATH_CONF_TAG = "# VDSM REVISION 1.2"
-
 # Having the PRIVATE_TAG in the conf file means
 # vdsm-tool should never change the conf file
 # even when using the --force flag
 _OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 _MPATH_CONF_PRIVATE_TAG = "# VDSM PRIVATE"
-
-_MPATH_CONF_DATA = _MPATH_CONF_TAG + _STRG_MPATH_CONF
 
 # If multipathd is up, it will be reloaded after configuration,
 # or started before vdsm starts, so service should not be stopped
