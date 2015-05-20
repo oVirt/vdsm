@@ -44,6 +44,7 @@ METHOD_ONLINE = 'online'
 
 VIR_MIGRATE_PARAM_URI = 'migrate_uri'
 VIR_MIGRATE_PARAM_BANDWIDTH = 'bandwidth'
+VIR_MIGRATE_PARAM_GRAPHICS_URI = 'graphics_uri'
 
 
 class SourceThread(threading.Thread):
@@ -62,7 +63,8 @@ class SourceThread(threading.Thread):
     def __init__(self, vm, dst='', dstparams='',
                  mode=MODE_REMOTE, method=METHOD_ONLINE,
                  tunneled=False, dstqemu='', abortOnError=False,
-                 compressed=False, autoConverge=False, **kwargs):
+                 consoleAddress=None, compressed=False,
+                 autoConverge=False, **kwargs):
         self.log = vm.log
         self._vm = vm
         self._dst = dst
@@ -75,6 +77,7 @@ class SourceThread(threading.Thread):
         self._machineParams = {}
         self._tunneled = utils.tobool(tunneled)
         self._abortOnError = utils.tobool(abortOnError)
+        self._consoleAddress = consoleAddress
         self._dstqemu = dstqemu
         self._downtime = kwargs.get('downtime') or \
             config.get('vars', 'migration_downtime')
@@ -345,6 +348,13 @@ class SourceThread(threading.Thread):
             # TODO: use libvirt constants when bz#1222795 is fixed
             params = {VIR_MIGRATE_PARAM_URI: str(muri),
                       VIR_MIGRATE_PARAM_BANDWIDTH: maxBandwidth}
+            if self._consoleAddress:
+                if self._vm.hasSpice:
+                    graphics = 'spice'
+                else:
+                    graphics = 'vnc'
+                params[VIR_MIGRATE_PARAM_GRAPHICS_URI] = str('%s://%s' % (
+                    graphics, self._consoleAddress))
 
             flags = (libvirt.VIR_MIGRATE_LIVE |
                      libvirt.VIR_MIGRATE_PEER2PEER |

@@ -509,6 +509,7 @@ class VM(APIBase):
             *mode* - ``remote``/``file``
             *method* - ``online``
             *downtime* - allowed down time during online migration
+            *consoleAddress* - remote host graphics address
             *dstqemu* - remote host address dedicated for migration
             *compressed* - compress repeated pages during live migration
             *autoConverge* - force convergence during live migration
