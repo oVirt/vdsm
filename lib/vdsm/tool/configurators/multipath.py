@@ -37,8 +37,6 @@ _STRG_MPATH_CONF = (
     "\n\n"
     "defaults {\n"
     "    polling_interval        5\n"
-    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
-    "--replace-whitespace --device=/dev/%%n\"\n"
     "    no_path_retry           fail\n"
     "    user_friendly_names     no\n"
     "    flush_on_last_del       yes\n"
@@ -51,8 +49,6 @@ _STRG_MPATH_CONF = (
     "device {\n"
     "    vendor                  \"HITACHI\"\n"
     "    product                 \"DF.*\"\n"
-    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
-    "--replace-whitespace --device=/dev/%%n\"\n"
     "}\n"
     "device {\n"
     "    vendor                  \"COMPELNT\"\n"
@@ -71,8 +67,6 @@ _STRG_MPATH_CONF = (
     "    failback                immediate\n"
     "    rr_weight               \"uniform\"\n"
     "    # vdsm required configuration\n"
-    "    getuid_callout          \"%(scsi_id_path)s --whitelisted "
-    "--replace-whitespace --device=/dev/%%n\"\n"
     "    features                \"0\"\n"
     "    no_path_retry           fail\n"
     "}\n"
@@ -97,12 +91,7 @@ _MPATH_CONF_TAG = "# VDSM REVISION 1.2"
 _OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 _MPATH_CONF_PRIVATE_TAG = "# VDSM PRIVATE"
 
-_MPATH_CONF_TEMPLATE = _MPATH_CONF_TAG + _STRG_MPATH_CONF
-
-_scsi_id = utils.CommandPath("scsi_id",
-                             "/usr/lib/udev/scsi_id",  # Fedora
-                             "/lib/udev/scsi_id",  # EL6, Ubuntu
-                             )
+_MPATH_CONF_DATA = _MPATH_CONF_TAG + _STRG_MPATH_CONF
 
 # If multipathd is up, it will be reloaded after configuration,
 # or started before vdsm starts, so service should not be stopped
@@ -122,8 +111,7 @@ def configure():
         utils.persist(backup)
 
     with tempfile.NamedTemporaryFile() as f:
-        f.write(_MPATH_CONF_TEMPLATE %
-                {'scsi_id_path': _scsi_id.cmd})
+        f.write(_MPATH_CONF_DATA)
         f.flush()
         cmd = [constants.EXT_CP, f.name,
                _MPATH_CONF]
