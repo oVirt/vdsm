@@ -76,7 +76,8 @@ class AckMode(object):
 
 class StompError(RuntimeError):
     def __init__(self, frame):
-        RuntimeError.__init__(self, frame.body)
+        self.frame = frame
+        super(RuntimeError, self).__init__(self.frame.body)
 
 
 class _HeartBeatFrame(object):
