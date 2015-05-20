@@ -54,6 +54,7 @@ PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 try:
     from gluster.api import GLUSTER_RPM_PACKAGES
     from gluster.api import GLUSTER_DEB_PACKAGES
+    from gluster.api import glusterAdditionalFeatures
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False
@@ -643,7 +644,9 @@ def get():
         caps['liveSnapshot'] = str(liveSnapSupported).lower()
     caps['liveMerge'] = str(getLiveMergeSupport()).lower()
     caps['kdumpStatus'] = _getKdumpStatus()
-
+    caps['additionalFeatures'] = []
+    if _glusterEnabled:
+        caps['additionalFeatures'].extend(glusterAdditionalFeatures())
     return caps
 
 
