@@ -610,7 +610,9 @@ def _devinfo(link, ipaddrs):
 def _parseExpiryTime(expiryTime):
     EPOCH = 'epoch '
 
-    if expiryTime.startswith(EPOCH):
+    if expiryTime == 'never':
+        return None
+    elif expiryTime.startswith(EPOCH):
         since_epoch = expiryTime[len(EPOCH):]
         return datetime.utcfromtimestamp(float(since_epoch))
 
@@ -638,7 +640,7 @@ def _parseLeaseFile(leaseFile, ipv6):
                     continue  # the line should always contain a ;
 
                 expiryTime = _parseExpiryTime(line[len(EXPIRE):end])
-                if datetime.utcnow() > expiryTime:
+                if expiryTime is not None and datetime.utcnow() > expiryTime:
                     insideLease = False
                     continue
 

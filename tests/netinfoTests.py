@@ -325,6 +325,10 @@ class TestNetinfo(TestCaseBase):
             '  expire epoch {1:.0f}; # Sat Jan 31 20:04:20 2037\n'
             '}}\n'                   # human-readable date is just a comment
             'lease {{\n'
+            '  interface "valid3";\n'
+            '  expire never;\n'
+            '}}\n'
+            'lease {{\n'
             '  interface "expired";\n'
             '  expire {2:%w %Y/%m/%d %H:%M:%S};\n'
             '}}\n'
@@ -351,6 +355,7 @@ class TestNetinfo(TestCaseBase):
 
         self.assertIn('valid', dhcp4)
         self.assertIn('valid2', dhcp4)
+        self.assertIn('valid3', dhcp4)
         self.assertNotIn('expired', dhcp4)
         self.assertNotIn('expired2', dhcp4)
 
