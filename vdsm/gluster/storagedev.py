@@ -79,10 +79,11 @@ def _getDeviceDict(device, createBrick=False):
         info['model'] = device.type
     if device.format:
         info['uuid'] = device.format.uuid or ''
+        # lvm vg will not have sysfs path
         if hasattr(udev, 'get_device'):
-            dev = udev.get_device(device.sysfsPath)
+            dev = udev.get_device(device.sysfsPath) or {}
         elif hasattr(udev, 'udev_get_device'):
-            dev = udev.udev_get_device(device.sysfsPath)
+            dev = udev.udev_get_device(device.sysfsPath) or {}
         else:
             dev = {}
         info['fsType'] = device.format.type or dev.get('ID_FS_TYPE', '')
