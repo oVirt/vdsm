@@ -166,21 +166,22 @@ class APITests(VdsmTestCase):
     def test_clear(self):
         self.connection.secrets = {
             "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
-                                      "name1", None),
+                                      "ovirt/name1", None),
             "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
                                       "name2", None),
         }
         secret.clear()
-        self.assertEqual({}, self.connection.secrets)
+        self.assertNotIn("uuid1", self.connection.secrets)
+        self.assertIn("uuid2", self.connection.secrets)
 
     def test_clear_skip_failed(self):
         def fail():
             raise vmfakelib.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
         self.connection.secrets = {
             "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
-                                      "name1", None),
+                                      "ovirt/name1", None),
             "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
-                                      "name2", None),
+                                      "ovirt/name2", None),
         }
         self.connection.secrets["uuid1"].undefine = fail
         secret.clear()
@@ -225,16 +226,23 @@ class APITests(VdsmTestCase):
         self.assertEqual("ovirt/domain_uuid/secret_uuid", virsec.usage_id)
 
     def test_register_clear(self):
-        # Register 2 secrets
-        sec1 = make_secret(password="sec1 password")
-        secret.register([sec1])
-        sec2 = make_secret(password="sec2 password")
-        # Rgister new secret, clearing other
-        res = secret.register([sec2], clear=True)
+        self.connection.secrets = {
+            "uuid1": vmfakelib.Secret(self.connection, "uuid1", "ceph",
+                                      "ovirt/name1", None),
+            "uuid2": vmfakelib.Secret(self.connection, "uuid2", "ceph",
+                                      "name2", None),
+        }
+        sec = make_secret()
+        res = secret.register([sec], clear=True)
+        # Should succeed
         self.assertEqual(res, response.success())
-        self.assertNotIn(sec1["uuid"], self.connection.secrets)
-        virsec2 = self.connection.secrets[sec2["uuid"]]
-        self.assertEqual("sec2 password", virsec2.value)
+        # Should remove existing ovirt secrets
+        self.assertNotIn("uuid1", self.connection.secrets)
+        # Should keep non-ovirt secrets
+        self.assertIn("uuid2", self.connection.secrets)
+        # Should register new secret
+        virsec = self.connection.secrets[sec["uuid"]]
+        self.assertEqual(sec["password"].value, virsec.value)
 
     def test_register_libvirt_error(self):
         def fail(xml):

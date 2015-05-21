@@ -43,7 +43,8 @@ def register(secrets, clear=False):
         if clear:
             uuids = frozenset(sec.uuid for sec in secrets)
             for virsecret in con.listAllSecrets():
-                if virsecret.UUIDString() not in uuids:
+                if (virsecret.UUIDString() not in uuids and
+                        _is_ovirt_secret(virsecret)):
                     virsecret.undefine()
     except libvirt.libvirtError as e:
         logging.error("Could not register secret %s: %s", secret, e)
@@ -81,7 +82,7 @@ def unregister(uuids):
 
 def clear():
     """
-    Clear all regsistered libvirt secrets.
+    Clear all regsistered ovirt secrets.
 
     Should be called during startup and shutdown to ensure that we don't leave
     around stale or unneeded secrets.
@@ -90,9 +91,14 @@ def clear():
     con = libvirtconnection.get()
     for virsecret in con.listAllSecrets():
         try:
-            virsecret.undefine()
+            if _is_ovirt_secret(virsecret):
+                virsecret.undefine()
         except libvirt.libvirtError as e:
             logging.error("Could not unregister %s: %s", virsecret, e)
+
+
+def _is_ovirt_secret(virsecret):
+    return virsecret.usageID().startswith("ovirt/")
 
 
 class Secret(object):
