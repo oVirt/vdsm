@@ -225,6 +225,10 @@ class TestNetinfo(TestCaseBase):
             '  expire epoch {active:.0f}; # Sat Jan 31 20:04:20 2037\n'
             '}}\n'                   # human-readable date is just a comment
             'lease {{\n'
+            '  interface "valid3";\n'
+            '  expire never;\n'
+            '}}\n'
+            'lease {{\n'
             '  interface "expired";\n'
             '  expire {expired_datetime:%w %Y/%m/%d %H:%M:%S};\n'
             '}}\n'
@@ -233,7 +237,7 @@ class TestNetinfo(TestCaseBase):
             '  expire epoch {expired:.0f}; # Fri Jan 31 20:04:20 2014\n'
             '}}\n'
             'lease6 {{\n'
-            '  interface "valid3";\n'
+            '  interface "valid4";\n'
             '  ia-na [some MAC address] {{\n'
             '    iaaddr [some IPv6 address] {{\n'
             '      starts {now:.0f};\n'
@@ -272,9 +276,10 @@ class TestNetinfo(TestCaseBase):
 
         self.assertIn('valid', dhcpv4_ifaces)
         self.assertIn('valid2', dhcpv4_ifaces)
+        self.assertIn('valid3', dhcpv4_ifaces)
         self.assertNotIn('expired', dhcpv4_ifaces)
         self.assertNotIn('expired2', dhcpv4_ifaces)
-        self.assertIn('valid3', dhcpv6_ifaces)
+        self.assertIn('valid4', dhcpv6_ifaces)
         self.assertNotIn('expired3', dhcpv6_ifaces)
 
     @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS

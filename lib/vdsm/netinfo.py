@@ -519,7 +519,9 @@ def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
 def _parse_expiry_time(expiry_time):
     EPOCH = 'epoch '
 
-    if expiry_time.startswith(EPOCH):
+    if expiry_time == 'never':
+        return None
+    elif expiry_time.startswith(EPOCH):
         since_epoch = expiry_time[len(EPOCH):]
         return datetime.utcfromtimestamp(float(since_epoch))
 
@@ -561,7 +563,7 @@ def _parse_lease_file(lease_file):
                     continue  # the line should always contain a ;
 
                 expiry_time = _parse_expiry_time(line[len(EXPIRE):end])
-                if datetime.utcnow() > expiry_time:
+                if expiry_time is not None and datetime.utcnow() > expiry_time:
                     family = None
                     continue
 
