@@ -631,7 +631,7 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             stats[dName].update(dLatency)
 
     def _getNumaStats(self, stats):
-        vmNumaNodeRuntimeMap, eInfo, sampleInterval = self.sampleNuma.getStats()
+        vmNumaNodeRuntimeMap, _, _ = self.sampleNuma.getStats()
         if vmNumaNodeRuntimeMap:
             stats['vNodeRuntimeInfo'] = vmNumaNodeRuntimeMap
 
