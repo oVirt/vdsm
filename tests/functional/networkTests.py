@@ -25,6 +25,7 @@ import os.path
 from nose import with_setup
 from nose.plugins.skip import SkipTest
 
+import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
@@ -2298,6 +2299,10 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @ValidateRunningAsRoot
     def test_setupNetworks_on_external_bond(self):
+        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
+            raise SkipTest(
+                "with ifcfg persistence, vdsm-restore-net-config "
+                "doesn't restore in-kernel state")
         with dummyIf(1) as (nic, ):
             with open(BONDING_MASTERS, 'w') as bonds:
                 bonds.write('+%s\n' % BONDING_NAME)
