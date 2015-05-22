@@ -154,14 +154,22 @@ def test():
           'host: %s' % getUsableNics())
 
 
+def _migration_script():
+    """Return true if this script runs as a migration destination script"""
+    dirname = os.path.split(
+        os.path.dirname(os.path.abspath(__file__)))[1]
+    return dirname == 'before_device_migrate_destination'
+
+
 def main():
     portProfile = os.environ.get('vmfex')
     if portProfile is not None:
         handleDirectPool(libvirtconnection.get())
-        doc = hooking.read_domxml()
-        interface, = doc.getElementsByTagName('interface')
-        attachProfileToInterfaceXml(interface, portProfile)
-        hooking.write_domxml(doc)
+        if not _migration_script():
+            doc = hooking.read_domxml()
+            interface, = doc.getElementsByTagName('interface')
+            attachProfileToInterfaceXml(interface, portProfile)
+            hooking.write_domxml(doc)
 
 
 if __name__ == '__main__':
