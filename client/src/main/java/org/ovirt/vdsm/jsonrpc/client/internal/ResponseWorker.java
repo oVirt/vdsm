@@ -151,6 +151,9 @@ public final class ResponseWorker extends Thread {
             JsonRpcEvent event = JsonRpcEvent.fromJsonNode(node);
             String method = client.getHostname() + event.getMethod();
             event.setMethod(method);
+            if (log.isDebugEnabled()) {
+                log.debug("Event arrived from " + client.getHostname() + " containing " + event.getParams());
+            }
             processNotifications(event);
             return;
         }
