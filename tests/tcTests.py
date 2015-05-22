@@ -36,7 +36,9 @@ from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
+from vdsm.netlink import monitor
 from vdsm.utils import execCmd
+
 from nose.plugins.skip import SkipTest
 
 from network import tc
@@ -65,7 +67,12 @@ class _Interface():
         check_call([EXT_IP, "link", "set", self.devName, "up"])
 
     def _ifDown(self):
-        check_call([EXT_IP, "link", "set", self.devName, "down"])
+        with monitor.Monitor(groups=('link',), timeout=2) as mon:
+            check_call([EXT_IP, "link", "set", self.devName, "down"])
+            for event in mon:
+                if (event.get('name') == self.devName and
+                        event.get('state') == 'down'):
+                    return
 
 
 class _Bridge(_Interface):
@@ -81,11 +88,6 @@ class _Bridge(_Interface):
 
     def delDevice(self):
         self._ifDown()
-        # FIXME: Sometimes _ifDown() is returned before the device is DOWN,
-        # in this case we are not able to delete UP device and delbr
-        # function ends with an error. We could prevent this in the future,
-        # when netlink-based event monitor will be available.
-        time.sleep(0.5)
         check_call([EXT_BRCTL, 'delbr', self.devName])
 
     def addIf(self, dev):
