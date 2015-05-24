@@ -36,6 +36,7 @@ from unittest import TestCase
 import tempfile
 import os
 import shutil
+import sys
 
 dirName = os.path.dirname(os.path.realpath(__file__))
 
@@ -286,6 +287,8 @@ class ExposedFunctionsFailuresTests(VdsmTestCase):
         self.assertRaises(InvalidRun, configurator.configure,
                           "configure", "--force")
 
+    # remove_config writes errors to stderr, breaking progress display
+    @monkeypatch.MonkeyPatch(sys, 'stderr', sys.stdout)
     def test_remove_config(self):
         self.assertRaises(InvalidRun, configurator.remove_config,
                           "remove-config")
