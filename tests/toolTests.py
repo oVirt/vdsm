@@ -24,6 +24,7 @@ from vdsm.tool.configurators import \
     NOT_SURE
 from vdsm.tool.configurators.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators.libvirt import Libvirt
+from vdsm.tool import service
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import utils
@@ -210,7 +211,12 @@ class LibvirtModuleConfigureTests(TestCase):
                 utils,
                 'isOvirtNode',
                 lambda: False
-            )
+            ),
+            (
+                service,
+                'chkconfigList',
+                lambda x: False
+            ),
         ])
 
         self.patch.apply()

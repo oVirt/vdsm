@@ -320,6 +320,14 @@ else:
 
     _srvDisableAlts.append(_chkconfigDisable)
 
+    @_sysvNative
+    def chkconfigList(srvName):
+        # We want --no-direct to make sure we report the native sysv state
+        # but el6 does not have this option
+        rc, out, err = execCmd([_CHKCONFIG.cmd, '--no-redirect', srvName])
+        if rc == 1 and '--no-redirect: unknown option\n' in err:
+            rc, out, err = execCmd([_CHKCONFIG.cmd, srvName])
+        return rc == 0
 
 try:
     _UPDATERC.cmd

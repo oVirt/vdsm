@@ -97,6 +97,14 @@ class Libvirt(ModuleConfigure):
             if not self._openConfig(path).hasConf():
                 ret = NOT_CONFIGURED
 
+        # hack for rhbz#1222154: we need to check whether we have forgotten to
+        # disabled libvirtd's sysv service. If chkconfig returns 0, it means
+        # that sysv would run libvirtd. If chkconfig returns 1 or does not
+        # exist (el7, fedora, debian), all is well.
+        if hasattr(service, 'chkconfigList'):
+            if service.chkconfigList('libvirtd'):
+                ret = NOT_CONFIGURED
+
         if ret == NOT_SURE:
             sys.stdout.write("libvirt is already configured for vdsm\n")
         else:
@@ -156,6 +164,8 @@ class Libvirt(ModuleConfigure):
                     break
 
             if os.path.isfile(packaged):
+                if hasattr(service, '_chkconfigDisable'):
+                    service._chkconfigDisable('libvirtd')
                 if not os.path.isfile(TARGET):
                     service.service_stop('libvirtd')
                 if (not os.path.isfile(TARGET) or
