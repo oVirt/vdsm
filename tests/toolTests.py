@@ -194,59 +194,6 @@ class ConfiguratorTests(VdsmTestCase):
             '--module=multipath'
         )
 
-    @ValidateRunningAsRoot
-    @patchConfigurators(
-        (
-            MockModuleConfigurator('a', should_succeed=False),
-            MockModuleConfigurator('b', should_succeed=False),
-
-        )
-    )
-    def testFailuresOnExposedFuncs(self):
-        self.assertRaises(
-            InvalidConfig,
-            configurator.validate_config,
-            'validate-config',
-        )
-        self.assertRaises(
-            InvalidRun,
-            configurator.isconfigured,
-            'is-configured',
-        )
-        # running configure with force flag to avoid validate check
-        self.assertRaises(
-            InvalidRun,
-            configurator.configure,
-            'configure',
-            '--force',
-        )
-        self.assertRaises(
-            InvalidRun,
-            configurator.remove_config,
-            'remove-config'
-        )
-
-    @ValidateRunningAsRoot
-    @patchConfigurators(
-        (
-            MockModuleConfigurator('a'),
-            MockModuleConfigurator('b'),
-        )
-    )
-    def testValidFlowOnExposedFuncs(self):
-        configurator.validate_config(
-            'validate-config',
-        )
-        configurator.isconfigured(
-            'is-configured',
-        )
-        configurator.configure(
-            'configure',
-        )
-        configurator.remove_config(
-            'remove-config',
-        )
-
     def testConfigureFiltering(self):
         class Dummy(object):
             pass
@@ -279,6 +226,69 @@ class ConfiguratorTests(VdsmTestCase):
                     InvalidConfig,
                     configurator._should_configure, c, force
                 )
+
+
+class ExposedFunctionsTests(VdsmTestCase):
+
+    @ValidateRunningAsRoot
+    def setUp(self):
+        configurators = {
+            "a": MockModuleConfigurator("a"),
+            "b": MockModuleConfigurator("b"),
+        }
+        self.patch = monkeypatch.Patch([
+            (configurator, "_CONFIGURATORS", configurators),
+        ])
+        self.patch.apply()
+
+    def tearDown(self):
+        self.patch.revert()
+
+    def test_validate_config(self):
+        configurator.validate_config("validate-config")
+
+    def test_isconfigured(self):
+        configurator.isconfigured("is-configured")
+
+    def test_configure(self):
+        configurator.configure("configure")
+
+    def test_remove_config(self):
+        configurator.remove_config("remove-config")
+
+
+class ExposedFunctionsFailuresTests(VdsmTestCase):
+
+    @ValidateRunningAsRoot
+    def setUp(self):
+        configurators = {
+            "a": MockModuleConfigurator("a", should_succeed=False),
+            "b": MockModuleConfigurator("b", should_succeed=False),
+        }
+        self.patch = monkeypatch.Patch([
+            (configurator, "_CONFIGURATORS", configurators),
+        ])
+        self.patch.apply()
+
+    def tearDown(self):
+        self.patch.revert()
+
+    def test_validate_config(self):
+        self.assertRaises(InvalidConfig, configurator.validate_config,
+                          "validate-config")
+
+    def test_isconfigured(self):
+        self.assertRaises(InvalidRun, configurator.isconfigured,
+                          "is-configured")
+
+    def test_configure(self):
+        # Using --force to avoid validation
+        self.assertRaises(InvalidRun, configurator.configure,
+                          "configure", "--force")
+
+    def test_remove_config(self):
+        self.assertRaises(InvalidRun, configurator.remove_config,
+                          "remove-config")
 
 
 class LibvirtModuleConfigureTests(TestCase):
