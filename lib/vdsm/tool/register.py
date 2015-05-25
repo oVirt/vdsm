@@ -20,12 +20,12 @@ import hashlib
 import logging
 import os
 import pwd
-import requests
 import socket
 import ssl
 import sys
 import tempfile
 
+import requests
 import selinux
 
 from . import expose
