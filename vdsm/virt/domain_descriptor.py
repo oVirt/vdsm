@@ -38,10 +38,6 @@ class DomainDescriptor(object):
         return self._xml
 
     @property
-    def dom(self):
-        return self._dom
-
-    @property
     def devices(self):
         return self._devices
 
