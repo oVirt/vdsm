@@ -899,7 +899,10 @@ class Vm(object):
             self.conf['clientIp'] = clientIp
 
     def _timedDesktopLock(self):
-        if not self.conf.get('clientIp', ''):
+        # This is not a definite fix, we're aware that there is still the
+        # possibility of a race condition, however this covers more cases
+        # than before and a quick gain
+        if not self.conf.get('clientIp', '') and not self._destroyed:
             delay = config.get('vars', 'user_shutdown_timeout')
             timeout = config.getint('vars', 'sys_shutdown_timeout')
             CDA = ConsoleDisconnectAction
