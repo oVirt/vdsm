@@ -41,6 +41,9 @@ from . import makePublic
 
 
 log = logging.getLogger("Gluster")
+_vgCreateCommandPath = utils.CommandPath("vgcreate",
+                                         "/sbin/vgcreate",
+                                         "/usr/sbin/vgcreate",)
 _lvconvertCommandPath = utils.CommandPath("lvconvert",
                                           "/sbin/lvconvert",
                                           "/usr/sbin/lvconvert",)
@@ -172,13 +175,20 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
 
     def _createVG(vgName, deviceList, stripeSize=0):
         if stripeSize:
-            vg = LVMVolumeGroupDevice(
-                vgName, peSize=blivet.size.Size('%s KiB' % stripeSize),
-                parents=deviceList)
+            # bz#1198568: Blivet always creates vg with 1MB stripe size
+            # Workaround: Till blivet fixes the issue, use vgcreate command
+            devices = ','.join([device.path for device in deviceList])
+            rc, out, err = utils.execCmd([_vgCreateCommandPath.cmd,
+                                          '-s', '%sk' % stripeSize,
+                                          vgName, devices])
+            if rc:
+                raise ge.GlusterHostStorageDeviceVGCreateFailedException(
+                    vgName, devices, stripeSize, rc, out, err)
+            blivetEnv.reset()
+            vg = blivetEnv.devicetree.getDeviceByName(vgName)
         else:
             vg = LVMVolumeGroupDevice(vgName, parents=deviceList)
-
-        blivetEnv.createDevice(vg)
+            blivetEnv.createDevice(vg)
         return vg
 
     def _createThinPool(poolName, vg, alignment=0,

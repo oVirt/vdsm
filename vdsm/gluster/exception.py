@@ -440,6 +440,19 @@ class GlusterHostStorageMountPointInUseException(GlusterHostException):
         self.message = "Mount point %s is in use" % mountPoint
 
 
+class GlusterHostStorageDeviceVGCreateFailedException(GlusterHostException):
+    code = 4518
+
+    def __init__(self, name=None, devices=None,
+                 stripeSize=None, rc=0, out=(), err=()):
+        GlusterHostException.__init__(self)
+        self.rc = rc
+        self.out = out
+        self.err = err
+        self.message = "Failed to create LVM VG:%s for devices %s with " \
+                       "stripe size %s" % (name, devices, stripeSize)
+
+
 # Hook
 class GlusterHookException(GlusterException):
     code = 4500
