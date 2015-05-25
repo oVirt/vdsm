@@ -403,6 +403,8 @@ class Vm(object):
                 if 'exitReason' in self.conf:
                     stats['exitReason'] = self.conf['exitReason']
 
+            self.log.debug('Last status %s and evaluated status %s',
+                           self.lastStatus, vm_status)
             self._notify('VM_status', stats)
 
     def _notify(self, operation, params):
