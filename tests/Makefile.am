@@ -66,6 +66,7 @@ test_modules = \
 	monkeypatchTests.py \
 	momPolicyTests.py \
 	mountTests.py \
+	netUnifiedPersistenceTests.py \
 	netconfpersistenceTests.py \
 	netconfTests.py \
 	netinfoTests.py \
