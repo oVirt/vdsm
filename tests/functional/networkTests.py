@@ -90,16 +90,14 @@ NOCHK = {'connectivityCheck': False}
 @RequireDummyMod
 def setupModule():
     """Persists network configuration."""
-    vdsm = VdsProxy()
-    vdsm.save_config()
+    VdsProxy().save_config()
     for _ in range(DUMMY_POOL_SIZE):
         dummyPool.add(dummy.create())
 
 
 def tearDownModule():
     """Restores the network configuration previous to running tests."""
-    vdsm = VdsProxy()
-    vdsm.restoreNetConfig()
+    VdsProxy().restoreNetConfig()
     for nic in dummyPool:
         dummy.remove(nic)
 
