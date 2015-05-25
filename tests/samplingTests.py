@@ -27,15 +27,20 @@ import shutil
 import threading
 import time
 
+import six
+
 from vdsm import ipwrapper
 from vdsm.password import ProtectedPassword
 import virt.sampling as sampling
+
+import caps
 
 from testValidation import brokentest, ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
 from functional import dummy
+import vmfakelib as fake
 
 
 class SamplingTests(TestCaseBase):
@@ -309,6 +314,39 @@ class HostStatsThreadTests(TestCaseBase):
                              sampling.HostStatsThread.AVERAGING_WINDOW)
             self.assertEqual(last.id,
                              FakeHostSample.counter - 1)
+
+    def testCpuCoreStats(self):
+        node_id, cpu_id = 0, 0
+        self._hs = sampling.HostStatsThread(self.log)
+        cpu_sample = {'user': 1.0, 'sys': 2.0}
+
+        # "5" is the size of the SampleWindow.
+        # there is no easy way to get SampleWindow, so
+        # we hardcode a magic number here.
+        for fake_ts in six.moves.xrange(5):
+            self._hs._samples.append(
+                fake.HostSample(fake_ts, {cpu_id: cpu_sample}))
+
+        def fakeNumaTopology():
+            return {
+                node_id: {
+                    'cpus': [cpu_id]
+                }
+            }
+
+        expected = {
+            '0': {
+                'cpuIdle': '100.00',
+                'cpuSys': '0.00',
+                'cpuUser': '0.00',
+                'nodeIndex': 0
+            }
+        }
+
+        with MonkeyPatchScope([(caps, 'getNumaTopology',
+                                fakeNumaTopology)]):
+            self.assertEqual(self._hs._getCpuCoresStats(),
+                             expected)
 
 
 class StatsCacheTests(TestCaseBase):

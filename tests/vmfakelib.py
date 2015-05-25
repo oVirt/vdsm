@@ -354,3 +354,19 @@ class SampleWindow:
 
     def last(self):
         return self._samples
+
+
+class CpuCoreSample(object):
+
+    def __init__(self, samples):
+        self._samples = samples
+
+    def getCoreSample(self, key):
+        return self._samples[key]
+
+
+class HostSample(object):
+
+    def __init__(self, timestamp, samples):
+        self.timestamp = timestamp
+        self.cpuCores = CpuCoreSample(samples)
