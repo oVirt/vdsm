@@ -729,13 +729,13 @@ class service:
 
     def getDeviceList(self, args):
         if len(args) == 0:
-            devices = self.s.getDeviceList()
+            res = self.s.getDeviceList()
         else:
-            devices = self.s.getDeviceList(args[0], args[1:])
+            res = self.s.getDeviceList(args[0], args[1:])
 
-        if devices['status']['code']:
-            return devices['status']['code'], devices['status']['message']
-        pp.pprint(devices['devList'])
+        if res['status']['code']:
+            return res['status']['code'], res['status']['message']
+        pp.pprint(res['devList'])
         return 0, ''
 
     def getDevicesVisibility(self, args):
