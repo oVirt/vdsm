@@ -353,7 +353,7 @@ class VM(APIBase):
             v = self._cif.vmContainer[self._UUID]
         except KeyError:
             return errCode['noVM']
-        return v.migrateStatus()
+        return {'status': doneCode, 'migrationStats': v.migrateStatus()}
 
     def getStats(self):
         """
