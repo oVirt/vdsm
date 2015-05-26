@@ -107,8 +107,8 @@ class SourceThread(threading.Thread):
         self.status['progress'] = self._progress
 
         stat = self._vm._dom.jobStats(libvirt.VIR_DOMAIN_JOB_STATS_COMPLETED)
-        if 'downtime' in stat:
-            self.status['downtime'] = stat['downtime']
+        if 'downtime_net' in stat:
+            self.status['downtime'] = stat['downtime_net']
 
         return self.status
 
