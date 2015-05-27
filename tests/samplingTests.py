@@ -25,6 +25,7 @@ import tempfile
 import random
 import shutil
 import threading
+import time
 
 from vdsm import ipwrapper
 from vdsm.password import ProtectedPassword
@@ -256,18 +257,19 @@ class HostStatsThread(TestCaseBase):
             self.assertTrue(self._sampleCount >= self.STOP_SAMPLE)
 
     def testOutputWithNoSamples(self):
-        self._hs = sampling.HostStatsThread(self.log)
         expected = {
             'cpuIdle': 100.0,
             'cpuSys': 0.0,
             'cpuSysVdsmd': 0.0,
             'cpuUser': 0.0,
             'cpuUserVdsmd': 0.0,
-            'elapsedTime': 0,
             'rxRate': 0.0,
-            'txRate': 0.0
+            'txRate': 0.0,
+            'elapsedTime': 0,
         }
-        self.assertEquals(self._hs.get(), expected)
+        with MonkeyPatchScope([(time, 'time', lambda: 0)]):
+            self._hs = sampling.HostStatsThread(self.log)
+            self.assertEquals(self._hs.get(), expected)
 
 
 class StatsCacheTests(TestCaseBase):
