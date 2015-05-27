@@ -1,6 +1,5 @@
 # Packages names
 %global vdsm_name vdsm
-%global vdsm_bootstrap vdsm-bootstrap
 %global vdsm_reg vdsm-reg
 
 # Required users and groups
@@ -320,13 +319,6 @@ Requires(post): hostname
 Requires(post): /bin/hostname
 %endif
 
-%if 0%{?rhev_build}
-# backward compatible with older bootstrap code
-# see bug#870079
-# can be removed when rhevm-3.0 hosts are
-# updated with latest vdsm-bootstrap
-Requires: %{name}-cli = %{version}-%{release}
-%endif
 Conflicts: vdsm-hook-sriov
 
 %description
@@ -389,19 +381,6 @@ Obsoletes:      python-zombiereaper
 
 %description infra
 Utilities and libraries for vdsm.
-
-%package bootstrap
-Summary:        VDSM bootstrapping package
-BuildArch:      noarch
-%if 0%{?rhel} < 7
-Requires: python-ethtool >= 0.6-3
-%else
-Requires: python-ethtool >= 0.8-1
-%endif
-
-%description bootstrap
-VDSM bootstrapping package. Used for delivering the bootstrap code onto the
-Virtualization Manager.
 
 %package reg
 Summary:        VDSM registration package
@@ -1639,11 +1618,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/infra/sigutils/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/zombiereaper/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/__init__.py*
-
-%files bootstrap
-%defattr(-, root, root, -)
-%license COPYING
-%{_datadir}/%{vdsm_bootstrap}
 
 %files reg
 %defattr(-, root, root, -)

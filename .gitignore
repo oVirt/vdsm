@@ -50,7 +50,6 @@ tests/server.key
 tests/other.crt
 tests/other.csr
 tests/other.key
-vds_bootstrap/deployUtil.py*
 vdsm-*.tar.gz
 vdsm.spec
 vdsm/dsaversion.py

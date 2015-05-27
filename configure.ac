@@ -372,7 +372,6 @@ AC_OUTPUT([
 	tests/devices/Makefile
 	tests/devices/parsing/Makefile
 	tests/devices/data/Makefile
-	vds_bootstrap/Makefile
 	vdsm-tool/Makefile
 	vdsm/Makefile
 	vdsm/gluster/Makefile
