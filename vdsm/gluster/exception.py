@@ -84,6 +84,7 @@ class GlusterMissingArgumentException(GlusterGeneralException):
     message = "Missing argument"
 
     def __init__(self, *args, **kwargs):
+        GlusterGeneralException.__init__(self)
         self.message = 'Missing argument: args=%s, kwargs=%s' % (args, kwargs)
 
 
@@ -369,6 +370,7 @@ class GlusterHostStorageDeviceNotFoundException(GlusterHostException):
     code = 4409
 
     def __init__(self, deviceList):
+        GlusterHostException.__init__(self)
         self.message = "Device(s) %s not found" % deviceList
 
 
@@ -376,6 +378,7 @@ class GlusterHostStorageDeviceInUseException(GlusterHostException):
     code = 4410
 
     def __init__(self, deviceList):
+        GlusterHostException.__init__(self)
         self.message = "Device(s) %s already in use" % deviceList
 
 
@@ -383,6 +386,7 @@ class GlusterHostStorageDeviceMountFailedException(GlusterHostException):
     code = 4411
 
     def __init__(self, device, mountPoint, fsType, mountOpts):
+        GlusterHostException.__init__(self)
         self.message = "Failed to mount device %s on mount point %s using " \
                        "fs-type %s with mount options %s" % (
                            device, mountPoint, fsType, mountOpts)
@@ -392,6 +396,7 @@ class GlusterHostStorageDeviceFsTabFoundException(GlusterHostException):
     code = 4412
 
     def __init__(self, device):
+        GlusterHostException.__init__(self)
         self.message = "fstab entry for device %s already exists" % device
 
 
@@ -429,23 +434,22 @@ class GlusterHostStorageDeviceLVChangeFailedException(GlusterHostException):
 
 
 class GlusterHostStorageDeviceMakeDirsFailedException(GlusterHostException):
-    code = 4516
+    code = 4416
     message = "Make directories failed"
 
 
 class GlusterHostStorageMountPointInUseException(GlusterHostException):
-    code = 4517
+    code = 4417
 
     def __init__(self, mountPoint):
+        GlusterHostException.__init__(self)
         self.message = "Mount point %s is in use" % mountPoint
 
 
 class GlusterHostStorageDeviceVGCreateFailedException(GlusterHostException):
-    code = 4518
+    code = 4418
 
-    def __init__(self, name=None, devices=None,
-                 stripeSize=None, rc=0, out=(), err=()):
-        GlusterHostException.__init__(self)
+    def __init__(self, name, devices, stripeSize, rc=0, out=(), err=()):
         self.rc = rc
         self.out = out
         self.err = err
@@ -454,7 +458,7 @@ class GlusterHostStorageDeviceVGCreateFailedException(GlusterHostException):
 
 
 class GlusterHostStorageDeviceVGScanFailedException(GlusterHostException):
-    code = 4519
+    code = 4419
     message = "vgscan failed"
 
 
@@ -482,7 +486,8 @@ class GlusterHookDisableFailedException(GlusterHookException):
 class GlusterHookNotFoundException(GlusterHookException):
     code = 4504
 
-    def __init__(self, glusterCmd=None, level=None, hookName=None):
+    def __init__(self, glusterCmd, level, hookName):
+        GlusterHookException.__init__(self)
         self.glusterCmd = glusterCmd
         self.level = level
         self.hookName = hookName
@@ -504,7 +509,8 @@ class GlusterHookUpdateFailedException(GlusterHookException):
 class GlusterHookAlreadyExistException(GlusterHookException):
     code = 4507
 
-    def __init__(self, glusterCmd=None, level=None, hookName=None):
+    def __init__(self, glusterCmd, level, hookName):
+        GlusterHookException.__init__(self)
         self.glusterCmd = glusterCmd
         self.level = level
         self.hookName = hookName
@@ -517,6 +523,7 @@ class GlusterHookCheckSumMismatchException(GlusterException):
     code = 4508
 
     def __init__(self, computedMd5Sum, expectedMd5Sum):
+        GlusterHookException.__init__(self)
         self.computedMd5Sum = computedMd5Sum
         self.expectedMd5Sum = expectedMd5Sum
         self.message = 'Hook file check sum:%s mismatch %s' % (computedMd5Sum,
@@ -542,6 +549,7 @@ class GlusterServiceActionNotSupportedException(GlusterServiceException):
     code = 4551
 
     def __init__(self, action=''):
+        GlusterServiceException.__init__(self)
         prefix = "%s: " % (action)
         self.message = prefix + "Service action is not supported"
         self.err = [self.message]
