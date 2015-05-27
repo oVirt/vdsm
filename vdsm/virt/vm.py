@@ -1536,7 +1536,10 @@ class Vm(object):
 
         for devType in self._devices:
             for dev in self._devices[devType]:
-                deviceXML = dev.getXML().toxml(encoding='utf-8')
+                try:
+                    deviceXML = dev.getXML().toxml(encoding='utf-8')
+                except hostdev.SkipIOMMUPLaceholderDevice:
+                    continue
 
                 if getattr(dev, "custom", {}):
                     deviceXML = hooks.before_device_create(

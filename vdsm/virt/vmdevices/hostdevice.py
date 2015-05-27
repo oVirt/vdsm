@@ -18,7 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-from hostdev import get_device_params, detach_detachable
+from vdsm import utils
+from hostdev import get_device_params, detach_detachable, \
+    SkipIOMMUPLaceholderDevice
 from . import core
 from . import hwclass
 
@@ -69,6 +71,10 @@ class HostDevice(core.Base):
                 </hostdev>
             </devices>
             """
+
+        if utils.tobool(self.specParams.get('iommuPlaceholder', False)):
+            raise SkipIOMMUPLaceholderDevice
+
         hostdev = self.createXmlElem(hwclass.HOSTDEV, None)
         hostdev.setAttrs(managed='no', mode='subsystem',
                          type=self._deviceParams['capability'])

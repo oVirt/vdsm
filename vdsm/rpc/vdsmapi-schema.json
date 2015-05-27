@@ -3436,10 +3436,15 @@
 #
 # Additional VM host device parameters.
 #
+# @iommuPlaceholder:       Flag identifying that the device should not be
+#                          passed through, but needs to be detached and
+#                          reattached in order not to violate IOMMU group
+#                          restrictions.
+#
 # Since: 4.17.0
 ##
 {'type': 'VmHostDeviceSpecParams',
- 'data': {}}
+ 'data': {'iommuPlaceholder': 'bool'}}
 
 ##
 # @VmHostDevice:

@@ -35,6 +35,11 @@ class DeviceMixin(object):
         """
         aliases = []
         for device in conf:
+            # IOMMU placeholder should be ignored
+            if device['type'] == hwclass.HOSTDEV and \
+                    device['specParams'].get('iommuPlaceholder', False):
+                continue
+
             # Graphics device is a bit specific in a sense that it doesn't
             # have alias or address. Port or tlsPort has to be present,
             # everything else is unrelated to graphics devices
