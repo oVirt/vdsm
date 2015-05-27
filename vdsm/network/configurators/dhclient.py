@@ -35,7 +35,7 @@ from vdsm.utils import rmFile
 class DhcpClient(object):
     PID_FILE = '/var/run/dhclient%s-%s.pid'
     LEASE_DIR = '/var/lib/dhclient'
-    LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient%s-%s.leases')
+    LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
     DHCLIENT = CommandPath('dhclient', '/sbin/dhclient')
 
     def __init__(self, iface, family=4):
@@ -44,7 +44,8 @@ class DhcpClient(object):
         self.pidFile = self.PID_FILE % (family, self.iface)
         if not os.path.exists(self.LEASE_DIR):
             os.mkdir(self.LEASE_DIR)
-        self.leaseFile = self.LEASE_FILE % (family, self.iface)
+        self.leaseFile = self.LEASE_FILE.format(
+            '' if family == 4 else '6', self.iface)
 
     def _dhclient(self):
         # Ask dhclient to stop any dhclient running for the device
