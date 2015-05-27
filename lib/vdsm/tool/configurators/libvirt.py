@@ -102,8 +102,11 @@ class Libvirt(ModuleConfigure):
         # that sysv would run libvirtd. If chkconfig returns 1 or does not
         # exist (el7, fedora, debian), all is well.
         if hasattr(service, 'chkconfigList'):
-            if service.chkconfigList('libvirtd'):
-                ret = NOT_CONFIGURED
+            try:
+                if service.chkconfigList('libvirtd'):
+                    ret = NOT_CONFIGURED
+            except service.ServiceNotExistError:
+                pass
 
         if ret == NOT_SURE:
             sys.stdout.write("libvirt is already configured for vdsm\n")
