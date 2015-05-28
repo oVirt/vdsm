@@ -165,22 +165,45 @@ class VmVolumeInfo(object):
     TYPE_NETWORK = "network"
 
 
-class Volume(object):
-    log = logging.getLogger('Storage.Volume')
+class VolumeMetadata(object):
+    log = logging.getLogger('Storage.VolumeMetadata')
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.repoPath = repoPath
         self.sdUUID = sdUUID
         self.imgUUID = imgUUID
         self.volUUID = volUUID
-        self.volumePath = None
-        self.imagePath = None
         if not imgUUID or imgUUID == BLANK_UUID:
             raise se.InvalidParameterException("imgUUID", imgUUID)
         if not volUUID or volUUID == BLANK_UUID:
             raise se.InvalidParameterException("volUUID", volUUID)
+
+
+class Volume(object):
+    log = logging.getLogger('Storage.Volume')
+
+    def __init__(self, md):
+        self._md = md
+        self.volumePath = None
+        self.imagePath = None
         self.voltype = None
         self.validate()
+
+    @property
+    def sdUUID(self):
+        return self._md.sdUUID
+
+    @property
+    def imgUUID(self):
+        return self._md.imgUUID
+
+    @property
+    def volUUID(self):
+        return self._md.volUUID
+
+    @property
+    def repoPath(self):
+        return self._md.repoPath
 
     @classmethod
     def _getModuleAndClass(cls):
@@ -666,7 +689,7 @@ class Volume(object):
 
     def setDomain(self, sdUUID):
         self.setMetaParam(DOMAIN, sdUUID)
-        self.sdUUID = sdUUID
+        self._md.sdUUID = sdUUID
         return self.sdUUID
 
     def setShared(self):

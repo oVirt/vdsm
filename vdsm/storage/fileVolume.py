@@ -51,11 +51,21 @@ def getDomUuidFromVolumePath(volPath):
     return sdUUID
 
 
+class FileVolumeMetadata(volume.VolumeMetadata):
+
+    def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
+        volume.VolumeMetadata.__init__(self, repoPath, sdUUID, imgUUID,
+                                       volUUID)
+
+
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
+    metadataClass = FileVolumeMetadata
+
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        volume.Volume.__init__(self, repoPath, sdUUID, imgUUID, volUUID)
+        md = self.metadataClass(repoPath, sdUUID, imgUUID, volUUID)
+        volume.Volume.__init__(self, md)
 
     @property
     def oop(self):
@@ -473,7 +483,7 @@ class FileVolume(volume.Volume):
         except OSError as e:
             if e.errno != os.errno.ENOENT:
                 raise
-        self.volUUID = newUUID
+        self._md.volUUID = newUUID
         self.volumePath = volPath
 
     def validateImagePath(self):

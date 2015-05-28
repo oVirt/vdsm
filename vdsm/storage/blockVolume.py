@@ -66,13 +66,22 @@ log = logging.getLogger('Storage.Volume')
 rmanager = rm.ResourceManager.getInstance()
 
 
+class BlockVolumeMetadata(volume.VolumeMetadata):
+
+    def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
+        volume.VolumeMetadata.__init__(self, repoPath, sdUUID, imgUUID,
+                                       volUUID)
+
+
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
+    metadataClass = BlockVolumeMetadata
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.metaoff = None
-        volume.Volume.__init__(self, repoPath, sdUUID, imgUUID, volUUID)
+        md = self.metadataClass(repoPath, sdUUID, imgUUID, volUUID)
+        volume.Volume.__init__(self, md)
         self.lvmActivationNamespace = sd.getNamespace(self.sdUUID,
                                                       LVM_ACTIVATION_NAMESPACE)
 
@@ -337,7 +346,7 @@ class BlockVolume(volume.Volume):
                 [self.sdUUID, newUUID, self.volUUID]))
 
         lvm.renameLV(self.sdUUID, self.volUUID, newUUID)
-        self.volUUID = newUUID
+        self._md.volUUID = newUUID
         self.volumePath = os.path.join(self.imagePath, newUUID)
 
     def getDevPath(self):

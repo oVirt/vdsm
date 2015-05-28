@@ -23,7 +23,7 @@ from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import recorded
 
-from storage import sd, blockSD, fileSD, image
+from storage import sd, blockSD, fileSD, image, volume, fileVolume, blockVolume
 
 
 class FakeDomainManifest(sd.StorageDomainManifest):
@@ -296,6 +296,45 @@ class FakeImage(image.Image):
         self._manifest = FakeImageManifest()
 
 
+class FakeVolumeMetadata(volume.VolumeMetadata):
+    def __init__(self):
+        self.sdUUID = 'b4502284-2101-4c5c-ada0-6a196fb30315'
+        self.imgUUID = 'e2a325e4-62be-4939-8145-72277c270e8e'
+        self.volUUID = '6aab5eb4-2a8b-4cb7-a0b7-bc6f61de3e18'
+        self.repoPath = '/rhev/data-center'
+        self._imagePath = '/a/b'
+        self._volumePath = '/a/b/c'
+        self.voltype = None
+
+    @recorded
+    def getVolumePath(self):
+        pass
+
+
+class FakeFileVolumeMetadata(FakeVolumeMetadata):
+    def __init__(self):
+        super(FakeFileVolumeMetadata, self).__init__()
+        self.oop = 'oop'
+
+    @recorded
+    def _getMetaVolumePath(self, vol_path=None):
+        pass
+
+
+class FakeFileVolume(fileVolume.FileVolume):
+    metadataClass = FakeFileVolumeMetadata
+
+    def __init__(self):
+        self._md = self.metadataClass()
+
+
+class FakeBlockVolume(blockVolume.BlockVolume):
+    metadataClass = FakeVolumeMetadata
+
+    def __init__(self):
+        self._md = self.metadataClass()
+
+
 class RedirectionChecker(object):
     """
     Checks whether a source class redirects method calls to a target class
@@ -449,3 +488,31 @@ class ImageTest(VdsmTestCase):
     ])
     def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)
+
+
+@expandPermutations
+class VolumeTestMixin(object):
+
+    @permutations([
+        ['sdUUID', 'b4502284-2101-4c5c-ada0-6a196fb30315'],
+        ['imgUUID', 'e2a325e4-62be-4939-8145-72277c270e8e'],
+        ['volUUID', '6aab5eb4-2a8b-4cb7-a0b7-bc6f61de3e18'],
+        ['repoPath', '/rhev/data-center'],
+        ])
+    def test_property(self, prop, val):
+        self.assertEqual(getattr(self.volume, prop), val)
+
+
+class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
+
+    def setUp(self):
+        self.volume = FakeBlockVolume()
+        self.checker = RedirectionChecker(self.volume, '_md')
+
+
+@expandPermutations
+class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
+
+    def setUp(self):
+        self.volume = FakeFileVolume()
+        self.checker = RedirectionChecker(self.volume, '_md')
