@@ -17,14 +17,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from errno import ENOENT, ESRCH
 import logging
 import os
 from signal import SIGKILL, SIGTERM
 from time import sleep, time
-from errno import ENOENT, ESRCH
 
-from vdsm.utils import CommandPath
-from vdsm.utils import execCmd
+from vdsm.utils import CommandPath, execCmd
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
 _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',
@@ -45,22 +44,20 @@ class Dnsmasq():
         self.proc = None
 
     def start(self, interface, dhcp_range_from, dhcp_range_to,
-              dhcpv6_range_from=None, dhcpv6_range_to=None, router=None,
-              bind_dynamic=True):
+              dhcpv6_range_from=None, dhcpv6_range_to=None, router=None):
         # -p 0                      don't act as a DNS server
         # --dhcp-option=3,<router>  advertise a specific gateway (or None)
         # --dhcp-option=6           don't reply with any DNS servers
         # -d                        don't daemonize and log to stderr
         # --bind-dynamic            bind only the testing veth iface
-        # (a better, and quiet, version of --bind-interfaces, but not on EL6)
         command = [
             _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
             '-p', '0',
             '--dhcp-range={0},{1},2m'.format(dhcp_range_from, dhcp_range_to),
             '--dhcp-option=3' + (',{0}'.format(router) if router else ''),
             '--dhcp-option=6',
-            '-i', interface, '-I', 'lo', '-d',
-            '--bind-dynamic' if bind_dynamic else '--bind-interfaces']
+            '-i', interface, '-I', 'lo', '-d', '--bind-dynamic',
+        ]
         if dhcpv6_range_from and dhcpv6_range_to:
             command += ['--dhcp-range={0},{1},2m'.format(dhcpv6_range_from,
                                                          dhcpv6_range_to)]
