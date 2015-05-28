@@ -1661,6 +1661,14 @@ class Global(APIBase):
         except:
             return errCode['momErr']
 
+    def setKsmTune(self, tuningParams):
+        try:
+            supervdsm.getProxy().ksmTune(tuningParams)
+            return dict(status=doneCode)
+        except:
+            self.log.exception('setKsmTune API call failed.')
+            return errCode['ksmErr']
+
     def setHaMaintenanceMode(self, mode, enabled):
         """
         Sets Hosted Engine HA maintenance mode ('global' or 'local') to

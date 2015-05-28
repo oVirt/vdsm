@@ -424,6 +424,7 @@ command_info = {
     'Host_getVMFullList': {'call': Host_getVMFullList_Call, 'ret': 'vmList'},
     'Host_getAllVmStats': {'ret': 'statsList'},
     'Host_setupNetworks': {'ret': 'status'},
+    'Host_setKsmTune': {'ret': 'taskStatus'},
     'Image_cloneStructure': {'ret': 'uuid'},
     'Image_delete': {'ret': 'uuid'},
     'Image_deleteVolumes': {'ret': 'uuid'},

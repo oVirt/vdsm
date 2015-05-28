@@ -166,6 +166,9 @@ errCode = {
     'hotplugMem': {'status': {
         'code': 70,
         'message': 'Failed to hotplug memory'}},
+    'ksmErr': {'status': {
+        'code': 71,
+        'message': 'Failed to update KSM values'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

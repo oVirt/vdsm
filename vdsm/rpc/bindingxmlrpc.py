@@ -529,6 +529,14 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.setIoTune(tunables)
 
+    def vmSetCpuTuneQuota(self, vmId, quota):
+        vm = API.VM(vmId)
+        return vm.setCpuTuneQuota(quota)
+
+    def vmSetCpuTunePeriod(self, vmId, period):
+        vm = API.VM(vmId)
+        return vm.setCpuTunePeriod(period)
+
     def vmMigrationCreate(self, params):
         vm = API.VM(params['vmId'])
         return vm.migrationCreate(params)
@@ -619,6 +627,10 @@ class BindingXMLRPC(object):
     def setMOMPolicyParameters(self, key_value_store):
         api = API.Global()
         return api.setMOMPolicyParameters(key_value_store)
+
+    def setKsmTune(self, tuningParams):
+        api = API.Global()
+        return api.setKsmTune(tuningParams)
 
     def setHaMaintenanceMode(self, mode, enabled):
         api = API.Global()
@@ -1048,6 +1060,7 @@ class BindingXMLRPC(object):
                 (self.setLogLevel, 'setLogLevel'),
                 (self.setMOMPolicy, 'setMOMPolicy'),
                 (self.setMOMPolicyParameters, 'setMOMPolicyParameters'),
+                (self.setKsmTune, 'setKsmTune'),
                 (self.setHaMaintenanceMode, 'setHaMaintenanceMode'),
                 (self.vmHotplugDisk, 'hotplugDisk'),
                 (self.vmHotunplugDisk, 'hotunplugDisk'),
@@ -1060,6 +1073,8 @@ class BindingXMLRPC(object):
                 (self.vmUpdateVmPolicy, 'updateVmPolicy'),
                 (self.vmSetIoTune, 'setIoTune'),
                 (self.vmGetIoTunePolicy, 'getIoTunePolicy'),
+                (self.vmSetCpuTuneQuota, 'vmSetCpuTuneQuota'),
+                (self.vmSetCpuTunePeriod, 'vmSetCpuTunePeriod'),
                 (self.getExternalVMs, 'getExternalVMs'),
                 (self.convertExternalVm, 'convertExternalVm'),
                 (self.getConvertedVm, 'getConvertedVm'),

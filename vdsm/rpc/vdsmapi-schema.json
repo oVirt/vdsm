@@ -532,6 +532,36 @@
  'data': {'key_value_store': 'dict'}}
 
 ##
+# @KsmTuneParams:
+#
+# Parameters for controling KSM.
+#
+# @run:              The action: 0 nothing, 1 merge pages, 2 unmerge pages.
+#
+# @sleep_millisecs:  The wait time between page scans.
+#
+# @pages_to_scan:    The amount of pages to scan during one cycle.
+#
+# Since: 4.17.0
+##
+{'type': 'KsmTuneParams',
+ 'data': {'run': 'int', 'sleep_millisecs': 'int', 'pages_to_scan': 'int'}}
+
+##
+# @Host.setKsmTune:
+#
+# Set variables for controlling KSM mode and aggresivity.
+#
+# @tuningParams:     A dictionary where keys represent variable
+#                    names and values contain the values for controlling KSM.
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'setKsmTune'},
+ 'data': {'tuningParams': 'KsmTuneParams'},
+ 'returns': 'TasksStatus'}
+
+##
 # @HaMaintenanceMode:
 #
 # An enumeration of recognized Hosted Engine maintenance modes.
