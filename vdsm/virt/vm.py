@@ -4534,7 +4534,7 @@ class Vm(object):
         # the volume on-demand but internal watermark information is not being
         # reported by libvirt so we must do the full extension up front.  In
         # the worst case, we'll need to extend 'base' to the same size as 'top'
-        # plus a bit more to accomodate additional writes to 'top' during the
+        # plus a bit more to accommodate additional writes to 'top' during the
         # live merge operation.
         if drive.chunked:
             capacity, alloc, physical = self._getExtendInfo(drive)
