@@ -954,6 +954,30 @@ class NetInfo(object):
 
         return lnics, vlan, bonding
 
+    @staticmethod
+    def getDefaultMtu():
+        return DEFAULT_MTU
+
+    @staticmethod
+    def getDefaultBondingOptions(mode=None):
+        return getDefaultBondingOptions(mode)
+
+    @staticmethod
+    def getDefaultBondingMode():
+        return _getAllDefaultBondingOptions()['0']['mode'][-1]
+
+    @staticmethod
+    def bondOptsForIfcfg(opts):
+        return _bondOptsForIfcfg(opts)
+
+    @staticmethod
+    def prefix2netmask(prefix):
+        return prefix2netmask(prefix)
+
+    @staticmethod
+    def stpBooleanize(value):
+        return stp_booleanize(value)
+
     def ifaceUsers(self, iface):
         "Returns a list of entities using the interface"
         users = set()

@@ -28,7 +28,7 @@ from testrunner import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                         expandPermutations, permutations)
 from testValidation import (brokentest, RequireDummyMod, RequireVethMod,
                             ValidateRunningAsRoot)
-
+from vdsm.netconfpersistence import KernelConfig
 import dhcp
 import dummy
 import firewall
@@ -65,7 +65,6 @@ IP_GATEWAY = '240.0.0.254'
 DHCP_RANGE_FROM = '240.0.0.10'
 DHCP_RANGE_TO = '240.0.0.100'
 CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
-
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 IPv6_GATEWAY = 'fdb3:84e5:4ff4:55e3::ff'
 
@@ -330,8 +329,17 @@ class NetworkTest(TestCaseBase):
             self.assertIn(b, self.vdsm_net.netinfo.bondings)
 
     def setupNetworks(self, *args, **kwargs):
+        test_kernel_config = kwargs.pop('test_kernel_config', True)
         status, msg = self.vdsm_net.setupNetworks(*args, **kwargs)
+        if test_kernel_config:
+            self._assert_kernel_config_matches_running_config()
         return status, msg
+
+    def _assert_kernel_config_matches_running_config(self):
+        netinfo = self.vdsm_net.netinfo
+        kernel_config = KernelConfig(netinfo)
+        running_config = self.vdsm_net.config
+        self.assertEqual(kernel_config, running_config)
 
     @cleanupNet
     @permutations([[True], [False]])
@@ -716,8 +724,6 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
-    @brokentest('This test is known to break until initscripts-9.03.41-1.el6 '
-                'is released to fix https://bugzilla.redhat.com/1086897')
     def testSetupNetworksAddVlan(self, bridged):
         BRIDGE_OPTS = {'multicast_router': '0', 'multicast_snooping': '0'}
         formattedOpts = ' '.join(
@@ -726,7 +732,8 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             attrs = {'vlan': VLAN_ID, 'nic': nic, 'bridged': bridged,
                      'custom': {'bridge_opts': formattedOpts}}
-            status, msg = self.setupNetworks({NETWORK_NAME: attrs}, {}, NOCHK)
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: attrs}, {}, NOCHK, test_kernel_config=False)
 
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME, bridgeOpts=BRIDGE_OPTS)
@@ -1087,6 +1094,9 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     @RequireDummyMod
     @ValidateRunningAsRoot
+    @brokentest("This test fails because the 2 different networks are getting"
+                " configured with the same MTU. The test should assert that "
+                "the reported MTUs are equal to the requested ones.")
     def testSetupNetworksMtus(self, bridged):
         JUMBO = '9000'
         MIDI = '4000'
@@ -1672,14 +1682,16 @@ class NetworkTest(TestCaseBase):
                                        'custom': CUSTOM_PROPS,
                                        'bootproto': 'none'}}
             with self.vdsm_net.pinger():
-                status, msg = self.setupNetworks(networks, {}, {})
+                status, msg = self.setupNetworks(
+                    networks, {}, {}, test_kernel_config=False)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME, bridged=True)
 
                 self.assertTrue(os.path.isfile(hook_cookiefile))
 
                 delete_networks = {NETWORK_NAME: {'remove': True}}
-                self.setupNetworks(delete_networks, {}, {})
+                self.setupNetworks(delete_networks, {}, {},
+                                   test_kernel_config=False)
 
     @cleanupNet
     @RequireDummyMod
@@ -1723,10 +1735,10 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             networks = {
                 NETWORK_NAME + '1':
-                {'nic': nic, 'bootproto': 'static', 'ipv6addr': IPv6_ADDRESS,
+                {'nic': nic, 'ipv6addr': IPv6_ADDRESS,
                  'ipv6gateway': IPv6_GATEWAY},
                 NETWORK_NAME + '2':
-                {'nic': nic, 'bootproto': 'static', 'ipv6addr': IPv6_ADDRESS,
+                {'nic': nic, 'ipv6addr': IPv6_ADDRESS,
                  'ipv6gateway': IPv6_GATEWAY, 'ipaddr': IP_ADDRESS,
                  'gateway': IP_GATEWAY,
                  'netmask': prefix2netmask(int(IP_CIDR))}}
@@ -2022,8 +2034,8 @@ class NetworkTest(TestCaseBase):
             # cleanup
             for network in networks.iterkeys():
                 networks[network] = {'remove': True}
-            bonds['BONDING_NAME'] = {'remove': True}
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
+            bonds[BONDING_NAME] = {'remove': True}
+            status, msg = self.setupNetworks(networks, bonds, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
 
     @cleanupNet

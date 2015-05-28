@@ -18,9 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import copy
 import errno
 import json
 import logging
+import netaddr
 import os
 
 from .config import config
@@ -28,12 +30,17 @@ from .tool.restore_nets import restore
 from . import constants
 from . import utils
 
-
 CONF_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
 # The persistent path is inside of an extra "persistence" dir in order to get
 # oVirt Node to persist the symbolic links that are necessary for the
 # atomic storage of running config into persistent config.
 CONF_PERSIST_DIR = constants.P_VDSM_LIB + 'persistence/netconf/'
+_BONDING_MODES = {
+    # TODO: this dictionary and the reverse mapping are duplicated in code
+    '0': 'balance-rr', '1': 'active-backup', '2': 'balance-xor',
+    '3': 'broadcast', '4': '802.3ad', '5': 'balance-tlb', '6': 'balance-alb'
+}
+_BONDING_MODES_REVERSED = dict((v, k) for k, v in _BONDING_MODES.iteritems())
 
 
 class BaseConfig(object):
@@ -180,6 +187,215 @@ class Config(BaseConfig):
             self._setConfig(attrs, self._networkPath(network))
         logging.info('Saved new config %r to %s and %s' %
                      (self, self.networksPath, self.bondingsPath))
+
+
+class KernelConfig(BaseConfig):
+    def __init__(self, netinfo):
+        super(KernelConfig, self).__init__({}, {})
+        self._netinfo = netinfo
+        for net, net_attr in self._analize_netinfo_nets(netinfo):
+            self.setNetwork(net, net_attr)
+        for bond, bond_attr in self._analize_netinfo_bonds(netinfo):
+            self.setBonding(bond, bond_attr)
+
+    def __eq__(self, other):
+        normalized_other = self._normalize(other)
+        return (self.networks == normalized_other.networks
+                and self.bonds == normalized_other.bonds)
+
+    def _analize_netinfo_nets(self, netinfo):
+        for net, net_attr in netinfo.networks.iteritems():
+            yield net, self._translate_netinfo_net(net, net_attr)
+
+    def _analize_netinfo_bonds(self, netinfo):
+        for bond, bond_attr in netinfo.bondings.iteritems():
+            yield bond, self._translate_netinfo_bond(bond_attr)
+
+    def _translate_netinfo_net(self, net, net_attr):
+        nics, vlan, bond = self._netinfo.getNicsVlanAndBondingForNetwork(net)
+        attributes = {}
+        self._translate_bridged(attributes, net_attr)
+        self._translate_mtu(attributes, net_attr)
+        self._translate_vlan(attributes, vlan)
+        if bond:
+            self._translate_bonding(attributes, bond)
+        elif nics:
+            self._translate_nics(attributes, nics)
+        self._translate_ipaddr(attributes, net_attr)
+        self._translate_hostqos(attributes, net_attr)
+
+        return attributes
+
+    def _translate_hostqos(self, attributes, net_attr):
+        if net_attr.get('hostQos'):
+            attributes['hostQos'] = self._remove_zero_values_in_net_qos(
+                net_attr['hostQos'])
+
+    def _translate_ipaddr(self, attributes, net_attr):
+        attributes['bootproto'] = net_attr['bootproto4']
+        ifcfg = net_attr.get('cfg')
+        # TODO: we must not depend on 'cfg', which is configurator-dependent.
+        # TODO: Look up in the routing table instead.
+        if ifcfg and ifcfg.get('DEFROUTE') == 'yes':
+            attributes['defaultRoute'] = True
+        else:
+            attributes['defaultRoute'] = False
+        # only static addresses are part of {Persistent,Running}Config.
+        if attributes['bootproto'] == 'none':
+            if net_attr['addr']:
+                attributes['ipaddr'] = net_attr['addr']
+            if net_attr['netmask']:
+                attributes['netmask'] = net_attr['netmask']
+            if net_attr['gateway']:
+                attributes['gateway'] = net_attr['gateway']
+        non_local_addresses = self._translate_ipv6_addr(net_attr['ipv6addrs'])
+        if non_local_addresses:
+            attributes['ipv6addr'] = non_local_addresses
+        if net_attr['ipv6gateway'] != '::':
+            attributes['ipv6gateway'] = net_attr['ipv6gateway']
+
+    def _translate_ipv6_addr(self, ipv6_addrs):
+        return [
+            addr for addr in ipv6_addrs
+            if not netaddr.IPAddress(addr.split('/')[0]).is_link_local()]
+
+    def _translate_nics(self, attributes, nics):
+        nic, = nics
+        attributes['nic'] = nic
+
+    def _translate_bonding(self, attributes, bond):
+        attributes['bonding'] = bond
+
+    def _translate_vlan(self, attributes, vlan):
+        if vlan is not None:
+            attributes['vlan'] = str(vlan)
+
+    def _translate_mtu(self, attributes, net_attr):
+        attributes['mtu'] = net_attr['mtu']
+
+    def _translate_bridged(self, attributes, net_attr):
+        attributes['bridged'] = net_attr['bridged']
+        if net_attr['bridged']:
+            attributes['stp'] = self._netinfo.stpBooleanize(net_attr['stp'])
+
+    def _translate_netinfo_bond(self, bond_attr):
+        return {
+            'nics': sorted(bond_attr['slaves']),
+            'options': self._netinfo.bondOptsForIfcfg(bond_attr['opts'])
+        }
+
+    def _remove_zero_values_in_net_qos(self, net_qos):
+        """
+        net_qos = {'out': {
+                'ul': {'m1': 0, 'd': 0, 'm2': 8000000},
+                'ls': {'m1': 4000000, 'd': 100000, 'm2': 3000000}}}
+        stripped_qos = {'out': {
+                'ul': {'m2': 8000000},
+                'ls': {'m1': 4000000, 'd': 100000, 'm2': 3000000}}}"""
+        stripped_qos = {}
+        for part, part_config in net_qos.iteritems():
+            stripped_qos[part] = dict(part_config)  # copy
+            for curve, curve_config in part_config.iteritems():
+                stripped_qos[part][curve] = dict((k, v) for k, v
+                                                 in curve_config.iteritems()
+                                                 if v != 0)
+        return stripped_qos
+
+    def _normalize(self, running_config):
+        # TODO: normalize* methods can become class functions, as they are only
+        # TODO: dependent in self._netinfo, which is only needed to access
+        # TODO: netinfo module level functions, that cannot be imported here
+        # TODO: because of a circular import.
+        config_copy = copy.deepcopy(running_config)
+
+        self._normalize_bridge(config_copy)
+        self._normalize_vlan(config_copy)
+        self._normalize_mtu(config_copy)
+        self._normalize_blockingdhcp(config_copy)
+        self._normalize_dhcp(config_copy)
+        self._normalize_bonding_opts(config_copy)
+        self._normalize_bonding_nics(config_copy)
+        self._normalize_address(config_copy)
+
+        return config_copy
+
+    def _normalize_vlan(self, config_copy):
+        for net_attr in config_copy.networks.itervalues():
+            if 'vlan' in net_attr:
+                net_attr['vlan'] = str(net_attr['vlan'])
+
+    def _normalize_bridge(self, config_copy):
+        for net_attr in config_copy.networks.itervalues():
+            if net_attr.get('bridged', True):
+                net_attr['bridged'] = True
+                self._normalize_stp(net_attr)
+
+    def _normalize_stp(self, net_attr):
+        stp = net_attr.pop('stp', net_attr.pop('STP', None))
+        net_attr['stp'] = self._netinfo.stpBooleanize(
+            stp)
+
+    def _normalize_mtu(self, config_copy):
+        for net_attr in config_copy.networks.itervalues():
+            if 'mtu' in net_attr:
+                net_attr['mtu'] = str(net_attr['mtu'])
+            else:
+                net_attr['mtu'] = self._netinfo.getDefaultMtu()
+
+    def _normalize_blockingdhcp(self, config_copy):
+        for net_attr in config_copy.networks.itervalues():
+            if 'blockingdhcp' in net_attr:
+                net_attr.pop('blockingdhcp')
+
+    def _normalize_dhcp(self, config_copy):
+        for net_attr in config_copy.networks.itervalues():
+            dhcp = net_attr.get('bootproto')
+            if dhcp is None:
+                net_attr['bootproto'] = 'none'
+            else:
+                net_attr['bootproto'] = dhcp
+        return config_copy
+
+    def _normalize_bonding_opts(self, config_copy):
+        for bond, bond_attr in config_copy.bonds.iteritems():
+            # TODO: globalize default bond options from Bond in models.py
+            normalized_opts = self._parse_bond_options(
+                bond_attr.get('options'))
+            bond_attr['options'] = self._netinfo.bondOptsForIfcfg(
+                normalized_opts)
+
+    def _normalize_bonding_nics(self, config_copy):
+        for bond_attr in config_copy.bonds.itervalues():
+            if 'nics' in bond_attr:
+                bond_attr['nics'].sort()
+
+    def _normalize_address(self, config_copy):
+        for net_attr in config_copy.networks.itervalues():
+            prefix = net_attr.pop('prefix', None)
+            if prefix is not None:
+                net_attr['netmask'] = self._netinfo.prefix2netmask(int(prefix))
+            if 'ipv6addr' in net_attr:
+                net_attr['ipv6addr'] = [net_attr['ipv6addr']]
+            if 'defaultRoute' not in net_attr:
+                net_attr['defaultRoute'] = False
+
+    def _parse_bond_options(self, opts):
+        if not opts:
+            return {}
+
+        opts = dict((pair.split('=', 1) for pair in opts.split()))
+
+        # force a numeric bonding mode
+        mode = opts.get('mode', self._netinfo.getDefaultBondingMode())
+        if mode in _BONDING_MODES:
+            numeric_mode = mode
+        else:
+            numeric_mode = _BONDING_MODES_REVERSED[mode]
+            opts['mode'] = numeric_mode
+
+        defaults = self._netinfo.getDefaultBondingOptions(numeric_mode)
+        return dict(
+            (k, v) for k, v in opts.iteritems() if v != defaults.get(k))
 
 
 class RunningConfig(Config):
