@@ -30,6 +30,7 @@ from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable)
+from vdsm.netconfpersistence import KernelConfig
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
                           BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,
@@ -354,8 +355,17 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(netinfo.bondings[bondName]['active_slave'], '')
 
     def setupNetworks(self, *args, **kwargs):
+        test_kernel_config = kwargs.pop('test_kernel_config', True)
         status, msg = self.vdsm_net.setupNetworks(*args, **kwargs)
+        if test_kernel_config:
+            self._assert_kernel_config_matches_running_config()
         return status, msg
+
+    def _assert_kernel_config_matches_running_config(self):
+        netinfo = self.vdsm_net.netinfo
+        kernel_config = KernelConfig(netinfo)
+        running_config = self.vdsm_net.config
+        self.assertEqual(kernel_config, running_config)
 
     @cleanupNet
     @RequireVethMod
@@ -826,8 +836,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    @brokentest('This test is known to break until initscripts-9.03.41-1.el6 '
-                'is released to fix https://bugzilla.redhat.com/1086897')
     def testSetupNetworksAddVlan(self, bridged):
         BRIDGE_OPTS = {'multicast_router': '0', 'multicast_snooping': '0'}
         formattedOpts = ' '.join(
@@ -836,7 +844,8 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             attrs = {'vlan': VLAN_ID, 'nic': nic, 'bridged': bridged,
                      'custom': {'bridge_opts': formattedOpts}}
-            status, msg = self.setupNetworks({NETWORK_NAME: attrs}, {}, NOCHK)
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: attrs}, {}, NOCHK, test_kernel_config=False)
 
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME, bridgeOpts=BRIDGE_OPTS)
@@ -1064,6 +1073,9 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
+    @brokentest("This test fails because the 2 different networks are getting"
+                " configured with the same MTU. The test should assert that "
+                "the reported MTUs are equal to the requested ones.")
     def testSetupNetworksMtus(self, bridged):
         JUMBO = '9000'
         MIDI = '4000'
@@ -1612,7 +1624,8 @@ class NetworkTest(TestCaseBase):
                                        'custom': CUSTOM_PROPS,
                                        'bootproto': 'none'}}
             with self.vdsm_net.pinger():
-                status, msg = self.setupNetworks(networks, {}, {})
+                status, msg = self.setupNetworks(
+                    networks, {}, {}, test_kernel_config=False)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME, bridged=True)
 
