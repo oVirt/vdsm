@@ -671,10 +671,12 @@ class GlusterService(service):
         remoteUserName = params.get('remoteUserName', '')
         remoteVolumeName = params.get('remoteVolumeName', '')
         remoteGroupName = params.get('remoteGroupName', '')
+        partial = (params.get('partial', 'no').upper() == 'YES')
 
         status = self.s.glusterGeoRepMountBrokerSetup(remoteUserName,
                                                       remoteGroupName,
-                                                      remoteVolumeName)
+                                                      remoteVolumeName,
+                                                      partial)
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
@@ -1193,6 +1195,7 @@ def getGlusterCmdDict(serv):
              ('remoteUserName=remote_user_name'
               'remoteVolumeName=remote_volume_name'
               'remoteGroupName=remote_group_name',
+              '[partial={yes|no}]'
               'setup mount broker for geo replication'
               )),
          'glusterVolumeGeoRepSessionCreate': (

@@ -2113,11 +2113,13 @@
 #
 # @remoteVolumeName:       Name of the remote volume
 #
+# @partial:                #optional if partial mount broker setup
+#
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'geoRepMountBrokerSetup'},
  'data': {'remoteUserName': 'str', 'remoteGroupName': 'str',
-          'remoteVolumeName': 'str'}}
+          'remoteVolumeName': 'str', '*partial': 'bool'}}
 
 ##
 # @VolumeEmptyCheck:
