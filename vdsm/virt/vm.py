@@ -154,7 +154,7 @@ class ConsoleDisconnectAction:
 
 
 # These strings are representing libvirt virDomainEventType values
-# http://libvirt.org/html/libvirt-libvirt.html#virDomainEventType
+# http://libvirt.org/html/libvirt-libvirt-domain.html#virDomainEventType
 _EVENT_STRINGS = ("Defined",
                   "Undefined",
                   "Started",
