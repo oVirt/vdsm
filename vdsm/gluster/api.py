@@ -644,16 +644,17 @@ class GlusterApi(object):
 
     @exportAsVerb
     def geoRepMountBrokerSetup(self, remoteUserName, remoteGroupName,
-                               remoteVolumeName, options=None):
+                               remoteVolumeName, partial=False, options=None):
         self.svdsmProxy.glusterCreateMountBrokerRoot(remoteUserName)
-        mountBrokerOptions = {'mountbroker-root': MOUNT_BROKER_ROOT,
-                              'geo-replication-log-group': remoteGroupName,
-                              'rpc-auth-allow-insecure': 'on'}
-        for optionName, optionValue in mountBrokerOptions.iteritems():
-            self.svdsmProxy.glusterExecuteMountBrokerOpt(optionName,
-                                                         optionValue)
-        self.svdsmProxy.glusterExecuteMountBrokerUserAdd(remoteUserName,
-                                                         remoteVolumeName)
+        if not partial:
+            mountBrokerOptions = {'mountbroker-root': MOUNT_BROKER_ROOT,
+                                  'geo-replication-log-group': remoteGroupName,
+                                  'rpc-auth-allow-insecure': 'on'}
+            for optionName, optionValue in mountBrokerOptions.iteritems():
+                self.svdsmProxy.glusterExecuteMountBrokerOpt(optionName,
+                                                             optionValue)
+            self.svdsmProxy.glusterExecuteMountBrokerUserAdd(remoteUserName,
+                                                             remoteVolumeName)
 
     @exportAsVerb
     def volumeGeoRepSessionCreate(self, volumeName, remoteHost,
