@@ -64,6 +64,7 @@ test_modules = \
 	miscTests.py \
 	mkimageTests.py \
 	monkeypatchTests.py \
+	momTests.py \
 	momPolicyTests.py \
 	mountTests.py \
 	netUnifiedPersistenceTests.py \

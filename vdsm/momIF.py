@@ -19,13 +19,14 @@
 #
 
 import logging
-import threading
+import socket
 from vdsm.config import config
 from caps import PAGE_SIZE_BYTES
 from vdsm.define import Mbytes
 
 try:
     import mom
+    from mom import unixrpc
     _momAvailable = True
 except ImportError:
     _momAvailable = False
@@ -35,37 +36,53 @@ class MomNotAvailableError(RuntimeError):
     pass
 
 
-class MomThread(threading.Thread):
+class MomClient(object):
 
-    def __init__(self, momconf):
+    def __init__(self, momconf, conf_overrides=None):
         if not _momAvailable:
             raise MomNotAvailableError()
 
         self.log = logging.getLogger("MOM")
-        self.log.info("Starting up MOM")
-        self._mom = mom.MOM(momconf)
+        self.log.info("Preparing MOM interface")
+
+        # MOM instance is needed to load the config file and get the RPC port
+        _mom = mom.MOM(momconf, conf_overrides)
+        port = _mom.config.get('main', 'rpc-port')
+        if port == "-1":
+            self.log.error("MOM's RPC interface is disabled")
+            raise MomNotAvailableError()
+
+        self.log.info("Using named unix socket " + port)
+        self._mom = unixrpc.UnixXmlRpcClient(port)
         self._policy = {}
-        threading.Thread.__init__(self, target=self._mom.run, name="MOM")
-        self.start()
 
     def getKsmStats(self):
         """
         Get information about KSM and convert memory data from page
         based values to MiB.
         """
-        stats = self._mom.getStatistics()['host']
+
         ret = {}
-        ret['ksmState'] = bool(stats['ksm_run'])
-        ret['ksmMergeAcrossNodes'] = bool(stats['ksm_merge_across_nodes'])
-        ret['ksmPages'] = stats['ksm_pages_to_scan']
-        ret['memShared'] = stats['ksm_pages_sharing'] * PAGE_SIZE_BYTES
-        ret['memShared'] /= Mbytes
-        ret['ksmCpu'] = stats['ksmd_cpu_usage']
+
+        try:
+            stats = self._mom.getStatistics()['host']
+            ret['ksmState'] = bool(stats['ksm_run'])
+            ret['ksmPages'] = stats['ksm_pages_to_scan']
+            ret['ksmMergeAcrossNodes'] = bool(stats['ksm_merge_across_nodes'])
+            ret['memShared'] = stats['ksm_pages_sharing'] * PAGE_SIZE_BYTES
+            ret['memShared'] /= Mbytes
+            ret['ksmCpu'] = stats['ksmd_cpu_usage']
+        except (AttributeError, socket.error):
+            self.log.warning("MOM not available, KSM stats will be missing.")
+
         return ret
 
     def setPolicy(self, policyStr):
-        # mom.setPolicy will raise an exception on failure.
-        self._mom.setPolicy(policyStr)
+        try:
+            # mom.setPolicy will raise an exception on failure.
+            self._mom.setPolicy(policyStr)
+        except (AttributeError, socket.error):
+            self.log.warning("MOM not available, Policy could not be set.")
 
     def setPolicyParameters(self, key_value_store):
         # mom.setNamedPolicy will raise an exception on failure.
@@ -80,16 +97,18 @@ class MomThread(threading.Thread):
         policy_string = "\n".join(["(set %s %r)" % (k, v)
                                    for k, v in self._policy.iteritems()])
 
-        self._mom.setNamedPolicy(config.get("mom", "tuning_policy"),
-                                 policy_string)
-
-    def stop(self):
-        if self._mom is not None:
-            self.log.info("Shutting down MOM")
-            self._mom.shutdown()
+        try:
+            self._mom.setNamedPolicy(config.get("mom", "tuning_policy"),
+                                     policy_string)
+        except (AttributeError, socket.error):
+            self.log.warning("MOM not available, Policy could not be set.")
 
     def getStatus(self):
-        if self.isAlive():
-            return 'active'
-        else:
+        try:
+            if self._mom.ping():
+                return 'active'
+            else:
+                return 'inactive'
+        except (AttributeError, socket.error):
+            self.log.warning("MOM not available.")
             return 'inactive'

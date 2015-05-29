@@ -33,7 +33,7 @@ from yajsonrpc.stompreactor import StompClient, StompRpcServer
 from yajsonrpc import Notification
 import alignmentScan
 from vdsm.config import config
-from momIF import MomThread
+from momIF import MomClient
 from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode
 import libvirt
@@ -126,8 +126,6 @@ class clientIF(object):
                            'shutting down storage dispatcher')
             if self.irs:
                 self.irs.prepareForShutdown()
-            if self.mom:
-                self.mom.stop()
             raise
 
     def getVMs(self):
@@ -253,7 +251,7 @@ class clientIF(object):
     def _prepareMOM(self):
         momconf = config.get("mom", "conf")
 
-        self.mom = MomThread(momconf)
+        self.mom = MomClient(momconf)
 
     def prepareForShutdown(self):
         """
@@ -276,8 +274,6 @@ class clientIF(object):
             self._enabled = False
             self.channelListener.stop()
             self._hostStats.stop()
-            if self.mom:
-                self.mom.stop()
             if self.irs:
                 return self.irs.prepareForShutdown()
             else:

@@ -17,7 +17,7 @@ guest-manager-interval: 5
 
 # The interface MOM using to discover active guests and collect guest memory
 # statistics. There're two choices for it: libvirt or vdsm.
-hypervisor-interface: VDSM
+hypervisor-interface: vdsmxmlrpc
 
 # The wake up frequency of the policy engine (in seconds).  During each
 # interval the policy engine evaluates the policy and passes the results
@@ -39,10 +39,20 @@ plot-dir:
 
 # Activate the RPC server on the designated port (-1 to disable).  RPC is
 # disabled by default until authentication is added to the protocol.
-rpc-port: -1
+rpc-port: /var/run/vdsm/mom-vdsm.sock
 
 # At startup, load a policy from the given directory.  If empty, no policy is loaded
 policy-dir: @CONFDIR@/mom.d
+
+# Configuration of remote VDSM interfaces
+[vdsm]
+pki-dir=/etc/pki/vdsm
+key-file=keys/vdsmkey.pem
+cert-file=certs/vdsmcert.pem
+ca-cert-file=certs/cacert.pem
+host=127.0.0.1
+port=54321
+request-timeout=10
 
 [logging]
 # Set the destination for program log messages.  This can be either 'stdio' or

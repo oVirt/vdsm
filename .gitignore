@@ -27,6 +27,7 @@ init/systemd/systemd-vdsmd
 init/systemd/vdsm-tmpfiles.d.conf
 init/systemd/vdsmd.service
 init/systemd/vdsm-network.service
+init/systemd/mom-vdsm.service
 init/sysvinit/supervdsmd.init
 init/sysvinit/vdsmd.init
 init/upstart/supervdsmd.upstart

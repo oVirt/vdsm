@@ -1174,7 +1174,7 @@ def wrapApiMethod(f):
         try:
             logLevel = logging.DEBUG
             if f.__name__ in ('getVMList', 'getAllVmStats', 'getStats',
-                              'fenceNode'):
+                              'fenceNode', 'setKsmTune'):
                 logLevel = logging.TRACE
 
             # TODO: This password protection code is fragile and ugly. Password

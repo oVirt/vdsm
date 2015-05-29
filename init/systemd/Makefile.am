@@ -21,6 +21,7 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 nodist_noinst_DATA = \
+	mom-vdsm.service \
 	supervdsmd.service \
 	systemd-vdsmd \
 	vdsmd.service \
@@ -34,6 +35,7 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
+	mom-vdsm.service.in \
 	supervdsmd.service.in \
 	systemd-vdsmd.in \
 	vdsmd.service.in \

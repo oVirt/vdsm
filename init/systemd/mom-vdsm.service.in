@@ -1,0 +1,18 @@
+[Unit]
+Description=MOM instance configured for VDSM purposes
+Requires=vdsmd.service
+After=vdsmd.service
+Conflicts=momd.service ksmtuned.service
+
+[Service]
+Type=simple
+LimitCORE=infinity
+ExecStart=/usr/sbin/momd -c /etc/vdsm/mom.conf
+Restart=on-failure
+RestartSec=10
+User=@VDSMUSER@
+Group=@VDSMGROUP@
+TimeoutStopSec=@SERVICE_STOP_TIMEOUT@
+
+[Install]
+WantedBy=multi-user.target
