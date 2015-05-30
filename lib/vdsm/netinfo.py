@@ -383,7 +383,7 @@ def _getAllDefaultBondingOptions():
 
 
 @memoized
-def _getDefaultBondingOptions(mode=None):
+def getDefaultBondingOptions(mode=None):
     """
     Return default options for the given mode. If it is None, return options
     for the default mode (usually '0').
@@ -403,7 +403,7 @@ def _getBondingOptions(bond):
     """
     opts = bondOpts(bond)
     mode = opts['mode'][-1] if 'mode' in opts else None
-    defaults = _getDefaultBondingOptions(mode)
+    defaults = getDefaultBondingOptions(mode)
 
     return dict(((opt, val[-1]) for (opt, val) in opts.iteritems()
                  if val and val != defaults.get(opt)))

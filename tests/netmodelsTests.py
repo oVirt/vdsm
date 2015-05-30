@@ -29,8 +29,6 @@ from network.models import hierarchy_backing_device, hierarchy_vlan_tag
 from network.models import _nicSort
 
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import ValidateRunningAsRoot
-from nose.plugins.skip import SkipTest
 
 from monkeypatch import MonkeyPatch
 
@@ -81,18 +79,17 @@ class TestNetmodels(TestCaseBase):
         self.assertEqual(Bond.validateName('bond11'), None)
         self.assertEqual(Bond.validateName('bond11128421982'), None)
 
-    @ValidateRunningAsRoot
+    @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
+                 if os.path.exists(netinfo.BONDING_DEFAULTS)
+                 else '../vdsm/bonding-defaults.json')
     def testValidateBondingOptions(self):
-        if not os.path.exists(netinfo.BONDING_MASTERS):
-            raise SkipTest("bonding kernel module could not be found.")
-
         opts = 'mode=802.3ad miimon=150'
         badOpts = 'foo=bar badopt=one'
 
         with self.assertRaises(errors.ConfigNetworkError) as cne:
-            Bond.validateOptions('bond0', badOpts)
+            Bond.validateOptions(badOpts)
         self.assertEqual(cne.exception.errCode, errors.ERR_BAD_BONDING)
-        self.assertEqual(Bond.validateOptions('bond0', opts), None)
+        self.assertEqual(Bond.validateOptions(opts), None)
 
     def testIsIpValid(self):
         addresses = ('10.18.1.254', '10.50.25.177', '250.0.0.1',
@@ -135,7 +132,6 @@ class TestNetmodels(TestCaseBase):
             self.assertEqual(IPv6.validateAddress(address), None)
 
     @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
-    @MonkeyPatch(Bond, 'validateOptions', lambda *x: 0)
     def testTextualRepr(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
@@ -172,7 +168,6 @@ class TestNetmodels(TestCaseBase):
         self.assertEqual(inverted, 'mode=4 miimon=250')
 
     @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
-    @MonkeyPatch(Bond, 'validateOptions', lambda *x: 0)
     def testIterNetworkHierarchy(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],

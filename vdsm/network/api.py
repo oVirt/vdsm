@@ -556,7 +556,7 @@ def _validateNetworkSetup(networks, bondings):
     for bonding, bondingAttrs in bondings.iteritems():
         Bond.validateName(bonding)
         if 'options' in bondingAttrs:
-            Bond.validateOptions(bonding, bondingAttrs['options'])
+            Bond.validateOptions(bondingAttrs['options'])
 
         if bondingAttrs.get('remove', False):
             continue

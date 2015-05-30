@@ -16,9 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from contextlib import contextmanager
 import logging
-import os
 import re
 import socket
 import struct
@@ -214,7 +212,7 @@ class Bond(NetDevice):
         if options is None:
             self.options = 'mode=802.3ad miimon=150'
         else:
-            self.validateOptions(name, options)
+            self.validateOptions(options)
             self.options = self._reorderOptions(options)
         self.destroyOnMasterRemoval = destroyOnMasterRemoval
         super(Bond, self).__init__(name, configurator, ipv4, ipv6,
@@ -308,39 +306,37 @@ class Bond(NetDevice):
                                      name)
 
     @classmethod
-    def validateOptions(cls, bonding, bondingOptions):
+    def validateOptions(cls, bondingOptions):
         'Example: BONDING_OPTS="mode=802.3ad miimon=150"'
-        with cls._validationBond(bonding) as bond:
-            try:
-                for option in bondingOptions.split():
-                    key, _ = option.split('=')
-                    if not os.path.exists('/sys/class/net/%s/bonding/%s' %
-                                          (bond, key)):
-                        raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is '
-                                                 'not a valid bonding option' %
-                                                 key)
-            except ValueError:
-                raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
-                                         'bonding options: %r' %
-                                         bondingOptions)
+        mode = 'balance-rr'
+        try:
+            for option in bondingOptions.split():
+                key, value = option.split('=', 1)
+                if key == 'mode':
+                    mode = value
+        except ValueError:
+            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
+                                     'bonding options: %r' % bondingOptions)
 
-    @staticmethod
-    @contextmanager
-    def _validationBond(bonding):
-        bond_created = False
-        try:
-            with open(netinfo.BONDING_MASTERS, 'r') as info:
-                bonding = info.read().split()[0]
-        except IndexError:
-            with open(netinfo.BONDING_MASTERS, 'w') as info:
-                info.write('+%s\n' % bonding)
-            bond_created = True
-        try:
-            yield bonding
-        finally:
-            if bond_created:
-                with open(netinfo.BONDING_MASTERS, 'w') as info:
-                    info.write('-%s\n' % bonding)
+        MODE_NAME_TO_NUMBER = {
+            'balance-rr': '0',
+            'active-backup': '1',
+            'balance-xor': '2',
+            'broadcast': '3',
+            '802.3ad': '4',
+            'balance-tlb': '5',
+            'balance-alb': '6',
+        }
+
+        if mode in MODE_NAME_TO_NUMBER:
+            mode = MODE_NAME_TO_NUMBER[mode]
+        defaults = netinfo.getDefaultBondingOptions(mode)
+
+        for option in bondingOptions.split():
+            key, _ = option.split('=', 1)
+            if key not in defaults:
+                raise ConfigNetworkError(ne.ERR_BAD_BONDING, '%r is not a '
+                                         'valid bonding option' % key)
 
     @staticmethod
     def _reorderOptions(options):
