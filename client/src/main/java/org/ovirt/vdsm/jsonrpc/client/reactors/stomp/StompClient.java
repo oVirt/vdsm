@@ -6,6 +6,7 @@ import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_D
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_REPLY_TO;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.isEmpty;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.nio.channels.Selector;
@@ -46,9 +47,13 @@ public class StompClient extends PlainClient {
                 send(new Message().subscribe().withHeader(HEADER_DESTINATION, getResponseQueue())
                         .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
 
+                String eventQueue = getEventQueue();
+                if (!isEmpty(eventQueue)) {
+                    send(new Message().subscribe().withHeader(HEADER_DESTINATION, eventQueue)
+                            .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
+                }
+
                 connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
-                // TODO wait for the mini broker to be finished
-                // subscribed.await();
             } catch (InterruptedException e) {
                 disconnect("Waiting for connect interrupted");
                 throw new ClientConnectionException("Timeout during connection", e);

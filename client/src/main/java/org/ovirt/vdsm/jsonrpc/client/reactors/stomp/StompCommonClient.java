@@ -203,4 +203,8 @@ public abstract class StompCommonClient extends ReactorClient {
     public String getResponseQueue() {
         return ((StompClientPolicy)this.policy).getResponseQueue();
     }
+
+    public String getEventQueue() {
+        return ((StompClientPolicy)this.policy).getEventQueue();
+    }
 }

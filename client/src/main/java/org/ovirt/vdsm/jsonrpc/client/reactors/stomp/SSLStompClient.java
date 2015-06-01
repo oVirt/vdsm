@@ -6,6 +6,7 @@ import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_D
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_REPLY_TO;
+import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.isEmpty;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.nio.channels.Selector;
@@ -51,6 +52,12 @@ public class SSLStompClient extends SSLClient {
 
             send(new Message().subscribe().withHeader(HEADER_DESTINATION, getResponseQueue())
                     .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
+
+            String eventQueue = getEventQueue();
+            if (!isEmpty(eventQueue)) {
+                send(new Message().subscribe().withHeader(HEADER_DESTINATION, eventQueue)
+                        .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
+            }
         }
 
     };

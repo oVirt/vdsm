@@ -8,6 +8,7 @@ public class StompClientPolicy extends ClientPolicy {
 
     private String requestQueue;
     private String responseQueue;
+    private String eventQueue;
 
     public StompClientPolicy(int retryTimeOut,
             int retryNumber,
@@ -44,14 +45,24 @@ public class StompClientPolicy extends ClientPolicy {
         return responseQueue;
     }
 
+    public String getEventQueue() {
+        return this.eventQueue;
+    }
+
+    public void setEventQueue(String eventQueue) {
+        this.eventQueue = eventQueue;
+    }
+
     @Override
     public ClientPolicy clone() throws CloneNotSupportedException {
-        return new StompClientPolicy(this.getRetryTimeOut(),
+        StompClientPolicy policy = new StompClientPolicy(this.getRetryTimeOut(),
                 this.getRetryNumber(),
                 this.getIncomingHeartbeat(),
                 this.getOutgoingHeartbeat(),
                 this.getExceptions(),
                 this.requestQueue,
                 this.responseQueue);
+        policy.setEventQueue(this.eventQueue);
+        return policy;
     }
 }
