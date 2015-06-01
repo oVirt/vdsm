@@ -292,6 +292,12 @@ class Volume(object):
         """
         return self._md.getMetadata(metaId)
 
+    def getParent(self):
+        """
+        Return parent volume UUID
+        """
+        return self._md.getParent()
+
     @classmethod
     def formatMetadata(cls, meta):
         return cls.metadataClass.formatMetadata(meta)

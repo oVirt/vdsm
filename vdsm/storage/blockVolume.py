@@ -160,6 +160,21 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
             raise se.VolumeDoesNotExist(self.volUUID)
         volume.VolumeMetadata.validate(self)
 
+    def getVolumeTag(self, tagPrefix):
+        return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
+
+    def getParentTag(self):
+        return self.getVolumeTag(TAG_PREFIX_PARENT)
+
+    def getParentMeta(self):
+        return self.getMetaParam(volume.PUUID)
+
+    def getParent(self):
+        """
+        Return parent volume UUID
+        """
+        return self.getParentTag()
+
     def setMetadata(self, meta, metaId=None):
         """
         Set the meta data hash as the new meta data of the Volume
@@ -184,6 +199,39 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
         with fileUtils.DirectFile(metavol, "r+d") as f:
             f.seek(offs * volume.METADATA_SIZE)
             f.write(data)
+
+    def changeVolumeTag(self, tagPrefix, uuid):
+
+        if tagPrefix not in VOLUME_TAGS:
+            raise se.LogicalVolumeWrongTagError(tagPrefix)
+
+        oldTag = ""
+        for tag in lvm.getLV(self.sdUUID, self.volUUID).tags:
+            if tag.startswith(tagPrefix):
+                oldTag = tag
+                break
+
+        if not oldTag:
+            raise se.MissingTagOnLogicalVolume(self.volUUID, tagPrefix)
+
+        newTag = tagPrefix + uuid
+        if oldTag != newTag:
+            lvm.replaceLVTag(self.sdUUID, self.volUUID, oldTag, newTag)
+
+    def setParentMeta(self, puuid):
+        """
+        Set parent volume UUID in Volume metadata.  This operation can be done
+        by an HSM while it is using the volume and by an SPM when no one is
+        using the volume.
+        """
+        self.setMetaParam(volume.PUUID, puuid)
+
+    def setParentTag(self, puuid):
+        """
+        Set parent volume UUID in Volume tags.  Since this operation modifies
+        LV metadata it may only be performed by an SPM.
+        """
+        self.changeVolumeTag(TAG_PREFIX_PARENT, puuid)
 
 
 class BlockVolume(volume.Volume):
@@ -560,37 +608,16 @@ class BlockVolume(volume.Volume):
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
 
     def getVolumeTag(self, tagPrefix):
-        return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
+        return self._md.getVolumeTag(tagPrefix)
 
     def changeVolumeTag(self, tagPrefix, uuid):
-
-        if tagPrefix not in VOLUME_TAGS:
-            raise se.LogicalVolumeWrongTagError(tagPrefix)
-
-        oldTag = ""
-        for tag in lvm.getLV(self.sdUUID, self.volUUID).tags:
-            if tag.startswith(tagPrefix):
-                oldTag = tag
-                break
-
-        if not oldTag:
-            raise se.MissingTagOnLogicalVolume(self.volUUID, tagPrefix)
-
-        newTag = tagPrefix + uuid
-        if oldTag != newTag:
-            lvm.replaceLVTag(self.sdUUID, self.volUUID, oldTag, newTag)
+        return self._md.changeVolumeTag(tagPrefix, uuid)
 
     def getParentMeta(self):
-        return self.getMetaParam(volume.PUUID)
+        return self._md.getParentMeta()
 
     def getParentTag(self):
-        return self.getVolumeTag(TAG_PREFIX_PARENT)
-
-    def getParent(self):
-        """
-        Return parent volume UUID
-        """
-        return self.getParentTag()
+        return self._md.getParentTag()
 
     def getImage(self):
         """
@@ -599,19 +626,10 @@ class BlockVolume(volume.Volume):
         return self.getVolumeTag(TAG_PREFIX_IMAGE)
 
     def setParentMeta(self, puuid):
-        """
-        Set parent volume UUID in Volume metadata.  This operation can be done
-        by an HSM while it is using the volume and by an SPM when no one is
-        using the volume.
-        """
-        self.setMetaParam(volume.PUUID, puuid)
+        return self._md.setParentMeta(puuid)
 
     def setParentTag(self, puuid):
-        """
-        Set parent volume UUID in Volume tags.  Since this operation modifies
-        LV metadata it may only be performed by an SPM.
-        """
-        self.changeVolumeTag(TAG_PREFIX_PARENT, puuid)
+        return self._md.setParentTag(puuid)
 
     def setImage(self, imgUUID):
         """

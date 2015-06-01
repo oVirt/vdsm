@@ -343,6 +343,10 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
     def setMetadata(self, meta, metaId=None):
         pass
 
+    @recorded
+    def getParent(self):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -351,6 +355,30 @@ class FakeBlockVolumeMetadata(FakeVolumeMetadata):
 
     @recorded
     def getMetaOffset(self):
+        pass
+
+    @recorded
+    def getParentMeta(self):
+        pass
+
+    @recorded
+    def getParentTag(self):
+        pass
+
+    @recorded
+    def getVolumeTag(self, tagPrefix):
+        pass
+
+    @recorded
+    def changeVolumeTag(self, tagPrefix, uuid):
+        pass
+
+    @recorded
+    def setParentMeta(self, puuid):
+        pass
+
+    @recorded
+    def setParentTag(self, puuid):
         pass
 
 
@@ -554,6 +582,7 @@ class VolumeTestMixin(object):
         ['getMetadata', 0],
         ['getMetaParam', 1],
         ['setMetadata', 2],
+        ['getParent', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)
@@ -581,6 +610,12 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     @permutations([
         ['getMetaOffset', 0],
+        ['getParentMeta', 0],
+        ['getParentTag', 0],
+        ['getVolumeTag', 1],
+        ['changeVolumeTag', 2],
+        ['setParentMeta', 1],
+        ['setParentTag', 1],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)

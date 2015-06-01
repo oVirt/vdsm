@@ -165,6 +165,12 @@ class FileVolumeMetadata(volume.VolumeMetadata):
 
         return out
 
+    def getParent(self):
+        """
+        Return parent volume UUID
+        """
+        return self.getMetaParam(volume.PUUID)
+
     @classmethod
     def _putMetadata(cls, metaId, meta):
         volPath, = metaId
@@ -466,12 +472,6 @@ class FileVolume(volume.Volume):
         cls.file_setrw(leasePath, rw=True)
         sanlock.init_resource(sdUUID, volUUID, [(leasePath,
                                                  LEASE_FILEOFFSET)])
-
-    def getParent(self):
-        """
-        Return parent volume UUID
-        """
-        return self.getMetaParam(volume.PUUID)
 
     def getImage(self):
         """
