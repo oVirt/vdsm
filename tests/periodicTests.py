@@ -209,6 +209,22 @@ class VmDispatcherTests(TestCaseBase):
         for vm_id in failed_ids:
             self.assertEqual(_Visitor.VMS.get(vm_id), None)
 
+    def test_dispatch_fails(self):
+        """
+        make sure that VmDispatcher attempts to dispatch work
+        for every registered VMs, and doesn't exit prematurely
+        when one dispatch() fails.
+        """
+        exc = _FakeExecutor(fail=True)
+
+        op = periodic.VmDispatcher(
+            self.cif.getVMs, exc, _Nop, 0)
+
+        skipped = op()
+
+        self.assertEqual(set(skipped),
+                         set(self.cif.getVMs().keys()))
+
     def _make_fake_vms(self):
         for i in range(VM_NUM):
             vm_id = _fake_vm_id(i)
@@ -244,10 +260,32 @@ class _Visitor(object):
         _Visitor.VMS[self._vm.id] += 1
 
 
+class _Nop(object):
+    def __init__(self, _):
+        pass
+
+    @property
+    def required(self):
+        return True
+
+    @property
+    def runnable(self):
+        return True
+
+    def __call__(self):
+        pass
+
+
 class _FakeExecutor(object):
 
+    def __init__(self, fail=False):
+        self._fail = fail
+
     def dispatch(self, func, timeout):
-        func()
+        if self._fail:
+            raise executor.TooManyTasks()
+        else:
+            func()
 
 
 # fake.VM is a quite complex beast. We need only the bare minimum here,

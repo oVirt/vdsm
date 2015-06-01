@@ -246,11 +246,15 @@ class VmDispatcher(object):
                 self._log.exception("while dispatching %s to VM '%s'",
                                     self._create, vm_id)
             else:
-                self._executor.dispatch(op, self._timeout)
+                try:
+                    self._executor.dispatch(op, self._timeout)
+                except executor.TooManyTasks:
+                    skipped.append(vm_id)
 
         if skipped:
             self._log.warning('could not run %s on %s',
                               self._create, skipped)
+        return skipped  # for testing purposes
 
     def __repr__(self):
         return 'VmDispatcher(%s)' % self._create
