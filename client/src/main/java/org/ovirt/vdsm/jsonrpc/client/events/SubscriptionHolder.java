@@ -8,8 +8,11 @@ import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcEvent;
+import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
 
 /**
  * Holds subscription information such as amount of messages requested by {@link EventSubscriber}. When events are not
@@ -22,6 +25,7 @@ public class SubscriptionHolder {
     private volatile AtomicInteger count;
     private String[] parsedId;
     private List<String> filteredId;
+    private Lock lock = new ReentrantLock();
 
     /**
      * Creates a holder which subscriber instance and count and it prepares subscription id representation for event
@@ -81,10 +85,12 @@ public class SubscriptionHolder {
      * @return An event for processing if there is any and if subscriber is willing to process more events.
      */
     public JsonRpcEvent canProcessMore() {
-        if (!this.events.isEmpty() && this.count.getAndDecrement() > 0) {
-            return this.events.removeLast();
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (!this.events.isEmpty() && this.count.getAndDecrement() > 0) {
+                return this.events.removeLast();
+            }
+            return null;
         }
-        return null;
     }
 
     /**
@@ -94,7 +100,9 @@ public class SubscriptionHolder {
      *            An event to be queued.
      */
     public void putEvent(JsonRpcEvent event) {
-        this.events.addFirst(event);
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            this.events.addFirst(event);
+        }
     }
 
     /**
@@ -108,6 +116,8 @@ public class SubscriptionHolder {
      * Clean event queue.
      */
     public void clean() {
-        this.events.clear();
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            this.events.clear();
+        }
     }
 }
