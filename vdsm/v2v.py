@@ -157,7 +157,7 @@ def get_external_vms(uri, username, password):
 
 
 def convert_external_vm(uri, username, password, vminfo, job_id, irs):
-    job = ImportVm(uri, username, password, vminfo, job_id, irs)
+    job = ImportVm.from_libvirt(uri, username, password, vminfo, job_id, irs)
     job.start()
     _add_job(job_id, job)
     return {'status': doneCode}
@@ -283,13 +283,14 @@ class ImportVm(object):
     TERM_DELAY = 30
     PROC_WAIT_TIMEOUT = 30
 
-    def __init__(self, uri, username, password, vminfo, job_id, irs):
-        self._uri = uri
-        self._username = username
-        self._password = password
+    def __init__(self, vminfo, job_id, irs):
+        '''
+        do not use directly, use a factory method instead!
+        '''
         self._vminfo = vminfo
         self._id = job_id
         self._irs = irs
+
         self._status = STATUS.STARTING
         self._description = ''
         self._disk_progress = 0
@@ -297,7 +298,21 @@ class ImportVm(object):
         self._current_disk = 1
         self._aborted = False
         self._prepared_volumes = []
-        self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % job_id)
+
+        self._uri = None
+        self._username = None
+        self._password = None
+        self._passwd_file = None
+
+    @classmethod
+    def from_libvirt(cls, uri, username, password, vminfo, job_id, irs):
+        obj = cls(vminfo, job_id, irs)
+
+        obj._uri = uri
+        obj._username = username
+        obj._password = password
+        obj._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % job_id)
+        return obj
 
     def start(self):
         t = threading.Thread(target=self._run)
