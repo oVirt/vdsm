@@ -171,6 +171,26 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         """
         return self.getMetaParam(volume.PUUID)
 
+    def getChildren(self):
+        """ Return children volume UUIDs.
+
+        This API is not suitable for use with a template's base volume.
+        """
+        domPath = self.imagePath.split('images')[0]
+        metaPattern = os.path.join(domPath, 'images', self.imgUUID, '*.meta')
+        metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
+        pattern = "%s.*%s" % (volume.PUUID, self.volUUID)
+        matches = grepCmd(pattern, metaPaths)
+        if matches:
+            children = []
+            for line in matches:
+                volMeta = os.path.basename(line.rsplit(':', 1)[0])
+                children.append(os.path.splitext(volMeta)[0])  # volUUID
+        else:
+            children = tuple()
+
+        return tuple(children)
+
     @classmethod
     def file_setrw(cls, volPath, rw):
         sdUUID = getDomUuidFromVolumePath(volPath)
@@ -446,26 +466,6 @@ class FileVolume(volume.Volume):
                     getImage() == imgUUID):
                 volList.append(volid)
         return volList
-
-    def getChildren(self):
-        """ Return children volume UUIDs.
-
-        This API is not suitable for use with a template's base volume.
-        """
-        domPath = self.imagePath.split('images')[0]
-        metaPattern = os.path.join(domPath, 'images', self.imgUUID, '*.meta')
-        metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
-        pattern = "%s.*%s" % (volume.PUUID, self.volUUID)
-        matches = grepCmd(pattern, metaPaths)
-        if matches:
-            children = []
-            for line in matches:
-                volMeta = os.path.basename(line.rsplit(':', 1)[0])
-                children.append(os.path.splitext(volMeta)[0])  # volUUID
-        else:
-            children = tuple()
-
-        return tuple(children)
 
     @classmethod
     def newVolumeLease(cls, metaId, sdUUID, volUUID):

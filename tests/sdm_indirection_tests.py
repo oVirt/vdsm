@@ -339,6 +339,22 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
     def getVolType(self):
         pass
 
+    @recorded
+    def getChildren(self):
+        pass
+
+    @recorded
+    def isShared(self):
+        pass
+
+    @recorded
+    def setInternal(self):
+        pass
+
+    @recorded
+    def recheckIfLeaf(self):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -596,6 +612,10 @@ class VolumeTestMixin(object):
         ['setLeaf', 0],
         ['isLeaf', 0],
         ['getVolType', 0],
+        ['getChildren', 0],
+        ['isShared', 0],
+        ['setInternal', 0],
+        ['recheckIfLeaf', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
