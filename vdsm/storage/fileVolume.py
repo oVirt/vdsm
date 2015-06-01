@@ -83,6 +83,19 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         else:
             return None
 
+    def setMetadata(self, meta, metaId=None):
+        """
+        Set the meta data hash as the new meta data of the Volume
+        """
+        if not metaId:
+            metaId = self.getMetadataId()
+
+        try:
+            self._putMetadata(metaId, meta)
+        except Exception as e:
+            self.log.error(e, exc_info=True)
+            raise se.VolumeMetadataWriteError(str(metaId) + str(e))
+
     def _getMetaVolumePath(self, vol_path=None):
         """
         Get the volume metadata file/link path
@@ -151,6 +164,19 @@ class FileVolumeMetadata(volume.VolumeMetadata):
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
         return out
+
+    @classmethod
+    def _putMetadata(cls, metaId, meta):
+        volPath, = metaId
+        metaPath = cls._metaVolumePath(volPath)
+
+        data = cls.formatMetadata(meta)
+
+        with open(metaPath + ".new", "w") as f:
+            f.write(data)
+
+        sdUUID = getDomUuidFromVolumePath(volPath)
+        oop.getProcessPool(sdUUID).os.rename(metaPath + ".new", metaPath)
 
 
 class FileVolume(volume.Volume):
@@ -388,34 +414,8 @@ class FileVolume(volume.Volume):
             self.oop.os.unlink(metaPath)
 
     @classmethod
-    def __putMetadata(cls, metaId, meta):
-        volPath, = metaId
-        metaPath = cls.metadataClass._metaVolumePath(volPath)
-
-        data = cls.formatMetadata(meta)
-
-        with open(metaPath + ".new", "w") as f:
-            f.write(data)
-
-        sdUUID = getDomUuidFromVolumePath(volPath)
-        oop.getProcessPool(sdUUID).os.rename(metaPath + ".new", metaPath)
-
-    @classmethod
     def createMetadata(cls, metaId, meta):
-        cls.__putMetadata(metaId, meta)
-
-    def setMetadata(self, meta, metaId=None):
-        """
-        Set the meta data hash as the new meta data of the Volume
-        """
-        if not metaId:
-            metaId = self.getMetadataId()
-
-        try:
-            self.__putMetadata(metaId, meta)
-        except Exception as e:
-            self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataWriteError(str(metaId) + str(e))
+        cls._putMetadata(metaId, meta)
 
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):

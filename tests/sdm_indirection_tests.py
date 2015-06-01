@@ -305,6 +305,23 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
         self._imagePath = '/a/b'
         self._volumePath = '/a/b/c'
         self.voltype = None
+        self.__class__._classmethod_calls = []
+
+    @classmethod
+    def record_classmethod_call(cls, fn, args):
+        cls._classmethod_calls.append((fn, args))
+
+    @classmethod
+    def get_classmethod_calls(cls):
+        return cls._classmethod_calls
+
+    @classmethod
+    def formatMetadata(cls, *args):
+        cls.record_classmethod_call('formatMetadata', args)
+
+    @classmethod
+    def _putMetadata(cls, *args):
+        cls.record_classmethod_call('_putMetadata', args)
 
     @recorded
     def getVolumePath(self):
@@ -320,6 +337,10 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
 
     @recorded
     def getMetaParam(self, key):
+        pass
+
+    @recorded
+    def setMetadata(self, meta, metaId=None):
         pass
 
 
@@ -532,9 +553,17 @@ class VolumeTestMixin(object):
         ['getMetadataId', 0],
         ['getMetadata', 0],
         ['getMetaParam', 1],
+        ['setMetadata', 2],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)
+
+    @permutations([
+        ['formatMetadata', 1],
+        ['_putMetadata', 2],
+        ])
+    def test_class_methods(self, fn, nargs):
+        self.checker.check_classmethod_call(fn, nargs)
 
 
 @expandPermutations
