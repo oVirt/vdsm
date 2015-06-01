@@ -188,6 +188,13 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
 
+    @deprecated  # valid only for domain version < 3, see volume.setrw
+    def _setrw(self, rw):
+        """
+        Set the read/write permission on the volume (deprecated)
+        """
+        lvm.setrwLV(self.sdUUID, self.volUUID, rw)
+
     @classmethod
     def _putMetadata(cls, metaId, meta):
         vgname, offs = metaId
@@ -556,13 +563,6 @@ class BlockVolume(volume.Volume):
     def shareVolumeRollback(cls, taskObj, volPath):
         cls.log.info("Volume rollback for volPath=%s", volPath)
         utils.rmFile(volPath)
-
-    @deprecated  # valid only for domain version < 3, see volume.setrw
-    def _setrw(self, rw):
-        """
-        Set the read/write permission on the volume (deprecated)
-        """
-        lvm.setrwLV(self.sdUUID, self.volUUID, rw)
 
     @logskip("ResourceManager")
     def llPrepare(self, rw=False, setrw=False):

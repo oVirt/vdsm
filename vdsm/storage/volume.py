@@ -220,6 +220,14 @@ class VolumeMetadata(object):
             raise se.VolumeAccessError(self.volUUID)
         return self._volumePath
 
+    def getVolType(self):
+        if not self.voltype:
+            self.voltype = self.getMetaParam(VOLTYPE)
+        return self.voltype
+
+    def isLeaf(self):
+        return self.getVolType() == type2name(LEAF_VOL)
+
     def setMetaParam(self, key, value):
         """
         Set a value of a specific key
@@ -247,6 +255,25 @@ class VolumeMetadata(object):
         if len(data) > METADATA_SIZE:
             raise se.MetadataOverflowError(data)
         return data
+
+    @deprecated  # valid for domain version < 3
+    def setrw(self, rw):
+        # Since domain version 3 (V3) VDSM is not changing the internal volumes
+        # permissions to read-only because it would interfere with the live
+        # snapshots and the live merge processes. E.g.: during a live snapshot
+        # if the VM is running on the SPM it would lose the ability to write to
+        # the current volume.
+        # However to avoid lvm MDA corruption we still need to set the volume
+        # as read-only on domain version 2. The corruption is triggered on the
+        # HSMs that are using the resource manager to prepare the volume chain.
+        if int(sdCache.produce(self.sdUUID).getVersion()) < 3:
+            self._setrw(rw=rw)
+
+    def setLeaf(self):
+        self.setMetaParam(VOLTYPE, type2name(LEAF_VOL))
+        self.voltype = type2name(LEAF_VOL)
+        self.setrw(rw=True)
+        return self.voltype
 
 
 class Volume(object):
@@ -297,6 +324,13 @@ class Volume(object):
         Return parent volume UUID
         """
         return self._md.getParent()
+
+    @deprecated  # valid only for domain version < 3, see volume.setrw
+    def _setrw(self, rw):
+        """
+        Set the read/write permission on the volume (deprecated)
+        """
+        self._md._setrw(rw)
 
     @classmethod
     def formatMetadata(cls, meta):
@@ -809,22 +843,10 @@ class Volume(object):
 
     @deprecated  # valid for domain version < 3
     def setrw(self, rw):
-        # Since domain version 3 (V3) VDSM is not changing the internal volumes
-        # permissions to read-only because it would interfere with the live
-        # snapshots and the live merge processes. E.g.: during a live snapshot
-        # if the VM is running on the SPM it would lose the ability to write to
-        # the current volume.
-        # However to avoid lvm MDA corruption we still need to set the volume
-        # as read-only on domain version 2. The corruption is triggered on the
-        # HSMs that are using the resource manager to prepare the volume chain.
-        if int(sdCache.produce(self.sdUUID).getVersion()) < 3:
-            self._setrw(rw=rw)
+        self._md.setrw(rw)
 
     def setLeaf(self):
-        self.setMetaParam(VOLTYPE, type2name(LEAF_VOL))
-        self._md.voltype = type2name(LEAF_VOL)
-        self.setrw(rw=True)
-        return self.voltype
+        return self._md.setLeaf()
 
     def setInternal(self):
         self.setMetaParam(VOLTYPE, type2name(INTERNAL_VOL))
@@ -833,9 +855,7 @@ class Volume(object):
         return self.voltype
 
     def getVolType(self):
-        if not self.voltype:
-            self._md.voltype = self.getMetaParam(VOLTYPE)
-        return self.voltype
+        return self._md.getVolType()
 
     def getSize(self):
         size = int(self.getMetaParam(SIZE))
@@ -892,7 +912,7 @@ class Volume(object):
         return self.getVolType() == type2name(SHARED_VOL)
 
     def isLeaf(self):
-        return self.getVolType() == type2name(LEAF_VOL)
+        return self._md.isLeaf()
 
     def isInternal(self):
         return self.getVolType() == type2name(INTERNAL_VOL)

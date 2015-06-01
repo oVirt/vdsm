@@ -172,6 +172,23 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         return self.getMetaParam(volume.PUUID)
 
     @classmethod
+    def file_setrw(cls, volPath, rw):
+        sdUUID = getDomUuidFromVolumePath(volPath)
+        mode = 0o440
+        if rw:
+            mode |= 0o220
+        if oop.getProcessPool(sdUUID).os.path.isdir(volPath):
+            mode |= 0o110
+        oop.getProcessPool(sdUUID).os.chmod(volPath, mode)
+
+    @deprecated  # valid only for domain version < 3, see volume.setrw
+    def _setrw(self, rw):
+        """
+        Set the read/write permission on the volume (deprecated)
+        """
+        self.file_setrw(self.getVolumePath(), rw=rw)
+
+    @classmethod
     def _putMetadata(cls, metaId, meta):
         volPath, = metaId
         metaPath = cls._metaVolumePath(volPath)
@@ -198,15 +215,10 @@ class FileVolume(volume.Volume):
     def oop(self):
         return self._md.oop
 
-    @staticmethod
-    def file_setrw(volPath, rw):
-        sdUUID = getDomUuidFromVolumePath(volPath)
-        mode = 0o440
-        if rw:
-            mode |= 0o220
-        if oop.getProcessPool(sdUUID).os.path.isdir(volPath):
-            mode |= 0o110
-        oop.getProcessPool(sdUUID).os.chmod(volPath, mode)
+    # Must be class method for redirection tests.
+    @classmethod
+    def file_setrw(cls, volPath, rw):
+        cls.metadataClass.file_setrw(volPath, rw)
 
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, *args):
@@ -382,13 +394,6 @@ class FileVolume(volume.Volume):
         procPool.utils.rmFile(volPath)
         procPool.utils.rmFile(cls.metadataClass._metaVolumePath(volPath))
         procPool.utils.rmFile(cls.__leaseVolumePath(volPath))
-
-    @deprecated  # valid only for domain version < 3, see volume.setrw
-    def _setrw(self, rw):
-        """
-        Set the read/write permission on the volume (deprecated)
-        """
-        self.file_setrw(self.getVolumePath(), rw=rw)
 
     def llPrepare(self, rw=False, setrw=False):
         """

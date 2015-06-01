@@ -339,6 +339,18 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
     def getParent(self):
         pass
 
+    @recorded
+    def setLeaf(self):
+        pass
+
+    @recorded
+    def isLeaf(self):
+        pass
+
+    @recorded
+    def getVolType(self):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -373,6 +385,10 @@ class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def setParentTag(self, puuid):
         pass
 
+    @recorded
+    def _setrw(self, rw):
+        pass
+
 
 class FakeFileVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -381,6 +397,14 @@ class FakeFileVolumeMetadata(FakeVolumeMetadata):
 
     @recorded
     def _getMetaVolumePath(self, vol_path=None):
+        pass
+
+    @classmethod
+    def file_setrw(cls, *args):
+        pass
+
+    @recorded
+    def _setrw(self, rw):
         pass
 
 
@@ -574,6 +598,9 @@ class VolumeTestMixin(object):
         ['getMetaParam', 1],
         ['setMetadata', 2],
         ['getParent', 0],
+        ['setLeaf', 0],
+        ['isLeaf', 0],
+        ['getVolType', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)
@@ -607,6 +634,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['changeVolumeTag', 2],
         ['setParentMeta', 1],
         ['setParentTag', 1],
+        ['_setrw', 1],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)
@@ -627,6 +655,13 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     @permutations([
         ['_getMetaVolumePath', 1],
+        ['_setrw', 1],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)
+
+    @permutations([
+        ['file_setrw', 2],
+        ])
+    def test_class_methods(self, fn, nargs):
+        self.checker.check_classmethod_call(fn, nargs)
