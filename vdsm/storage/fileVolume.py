@@ -118,6 +118,40 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         if not fileSD.FileStorageDomainManifest(domainPath).isISO():
             self.validateMetaVolumePath()
 
+    def getMetadataId(self):
+        """
+        Get the metadata Id
+        """
+        return (self.getVolumePath(),)
+
+    def getMetadata(self, metaId=None):
+        """
+        Get Meta data array of key,values lines
+        """
+        if not metaId:
+            metaId = self.getMetadataId()
+
+        volPath, = metaId
+        metaPath = self._getMetaVolumePath(volPath)
+
+        try:
+            f = self.oop.directReadLines(metaPath)
+            # TODO: factor out logic below for sharing with block volumes
+            out = {}
+            for l in f:
+                if l.startswith("EOF"):
+                    return out
+                if l.find("=") < 0:
+                    continue
+                key, value = l.split("=", 1)
+                out[key.strip()] = value.strip()
+
+        except Exception as e:
+            self.log.error(e, exc_info=True)
+            raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
+
+        return out
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -352,39 +386,6 @@ class FileVolume(volume.Volume):
         if self.oop.os.path.lexists(metaPath):
             self.log.debug("Removing: %s", metaPath)
             self.oop.os.unlink(metaPath)
-
-    def getMetadataId(self):
-        """
-        Get the metadata Id
-        """
-        return (self.getVolumePath(),)
-
-    def getMetadata(self, metaId=None):
-        """
-        Get Meta data array of key,values lines
-        """
-        if not metaId:
-            metaId = self.getMetadataId()
-
-        volPath, = metaId
-        metaPath = self._getMetaVolumePath(volPath)
-
-        try:
-            f = self.oop.directReadLines(metaPath)
-            out = {}
-            for l in f:
-                if l.startswith("EOF"):
-                    return out
-                if l.find("=") < 0:
-                    continue
-                key, value = l.split("=", 1)
-                out[key.strip()] = value.strip()
-
-        except Exception as e:
-            self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
-
-        return out
 
     @classmethod
     def __putMetadata(cls, metaId, meta):

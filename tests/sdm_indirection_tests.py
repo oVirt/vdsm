@@ -310,6 +310,28 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
     def getVolumePath(self):
         pass
 
+    @recorded
+    def getMetadataId(self):
+        pass
+
+    @recorded
+    def getMetadata(self, metaId=None):
+        pass
+
+    @recorded
+    def getMetaParam(self, key):
+        pass
+
+
+class FakeBlockVolumeMetadata(FakeVolumeMetadata):
+    def __init__(self):
+        super(FakeBlockVolumeMetadata, self).__init__()
+        self.metaoff = None
+
+    @recorded
+    def getMetaOffset(self):
+        pass
+
 
 class FakeFileVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -329,7 +351,7 @@ class FakeFileVolume(fileVolume.FileVolume):
 
 
 class FakeBlockVolume(blockVolume.BlockVolume):
-    metadataClass = FakeVolumeMetadata
+    metadataClass = FakeBlockVolumeMetadata
 
     def __init__(self):
         self._md = self.metadataClass()
@@ -507,16 +529,32 @@ class VolumeTestMixin(object):
 
     @permutations([
         ['getVolumePath', 0],
+        ['getMetadataId', 0],
+        ['getMetadata', 0],
+        ['getMetaParam', 1],
         ])
-    def test_common_functions(self, fn, nargs):
+    def test_functions(self, fn, nargs):
         self.checker.check_call(fn, nargs)
 
 
+@expandPermutations
 class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     def setUp(self):
         self.volume = FakeBlockVolume()
         self.checker = RedirectionChecker(self.volume, '_md')
+
+    @permutations([
+        ['metaoff', None],
+        ])
+    def test_block_property(self, prop, val):
+        self.assertEqual(getattr(self.volume, prop), val)
+
+    @permutations([
+        ['getMetaOffset', 0],
+        ])
+    def test_functions(self, fn, nargs):
+        self.checker.check_call(fn, nargs)
 
 
 @expandPermutations
