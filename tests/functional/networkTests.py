@@ -606,7 +606,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @permutations([[True], [False]])
     def testFailWithInvalidBondingName(self, bridged):
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             invalid_bond_names = ('bond', 'bonda', 'bond0a', 'jamesbond007')
             for bond_name in invalid_bond_names:
                 status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
@@ -711,7 +711,7 @@ class NetworkTest(TestCaseBase):
         VLAN_COUNT = 5
         NET_VLANS = [(NETWORK_NAME + str(index), str(index))
                      for index in range(VLAN_COUNT)]
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             firstVlan, firstVlanId = NET_VLANS[0]
             status, msg = self.vdsm_net.addNetwork(firstVlan, vlan=firstVlanId,
                                                    bond=BONDING_NAME,
@@ -740,7 +740,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @permutations([[True], [False]])
     def testAddNetworkVlanBond(self, bridged):
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             vlan_id = '42'
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME,
                                                    vlan=vlan_id,
@@ -780,7 +780,7 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     def testDelNetworkWithMTU(self, bridged):
         MTU = '1234'
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, vlan=VLAN_ID,
                                                    bond=BONDING_NAME,
                                                    nics=nics,
@@ -1335,7 +1335,7 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     def testDelNetworkBondAccumulation(self):
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             for bigBond in ('bond555', 'bond666', 'bond777'):
                 status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, VLAN_ID,
                                                        bigBond, nics)
@@ -1353,15 +1353,15 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @permutations([[True], [False]])
     def testSetupNetworksResizeBond(self, bridged):
-        with dummyIf(3) as nics:
+        with dummyIf(4) as nics:
             with self.vdsm_net.pinger():
-                bondings = {BONDING_NAME: dict(nics=nics[:1],
+                bondings = {BONDING_NAME: dict(nics=nics[:2],
                                                bridged=bridged)}
                 status, msg = self.setupNetworks({}, bondings, {})
 
                 self.assertEquals(status, SUCCESS, msg)
 
-                self.assertBondExists(BONDING_NAME, nics=nics[:1])
+                self.assertBondExists(BONDING_NAME, nics=nics[:2])
                 self._assert_exact_bond_opts(BONDING_NAME, [])
 
                 # Increase bond size
@@ -1375,14 +1375,14 @@ class NetworkTest(TestCaseBase):
 
                 # Reduce bond size
                 REQMODE_BROADCAST = '3'
-                bondings[BONDING_NAME]['nics'] = nics[:2]
+                bondings[BONDING_NAME]['nics'] = nics[:3]
                 bondings[BONDING_NAME]['options'] = ('mode=%s' %
                                                      REQMODE_BROADCAST)
                 status, msg = self.setupNetworks({}, bondings, {})
 
                 self.assertEquals(status, SUCCESS, msg)
 
-                self.assertBondExists(BONDING_NAME, nics[:2])
+                self.assertBondExists(BONDING_NAME, nics[:3])
                 self._assert_exact_bond_opts(
                     BONDING_NAME, [bondings[BONDING_NAME]['options']])
 
@@ -2164,7 +2164,7 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     @cleanupNet
     def testSetupNetworksEmergencyDevicesCleanupVlanOverwrite(self, bridged):
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             nic, = nics
             network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': bridged,
                                       'nic': nic}}
@@ -2189,7 +2189,7 @@ class NetworkTest(TestCaseBase):
     @permutations([[True], [False]])
     @cleanupNet
     def testSetupNetworksEmergencyDevicesCleanupBondOverwrite(self, bridged):
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             nic, = nics
             network = {NETWORK_NAME: {'bridged': bridged,
                                       'bonding': BONDING_NAME}}
@@ -2314,7 +2314,7 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     def testSetupNetworksRemoveSlavelessBond(self):
-        with dummyIf(1) as nics:
+        with dummyIf(2) as nics:
             status, msg = self.setupNetworks(
                 {NETWORK_NAME:
                     {'bonding': BONDING_NAME, 'bridged': False}},
@@ -2323,9 +2323,9 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkExists(NETWORK_NAME)
             self.assertBondExists(BONDING_NAME, nics)
 
-            nic, = nics
             with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
-                f.write('-%s\n' % nic)
+                for nic in nics:
+                    f.write('-%s\n' % nic)
 
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
@@ -2363,19 +2363,20 @@ class NetworkTest(TestCaseBase):
             raise SkipTest(
                 "with ifcfg persistence, vdsm-restore-net-config "
                 "doesn't restore in-kernel state")
-        with dummyIf(1) as (nic, ):
+        with dummyIf(2) as nics:
             with open(BONDING_MASTERS, 'w') as bonds:
                 bonds.write('+%s\n' % BONDING_NAME)
             try:
                 with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
-                    f.write('+%s\n' % nic)
+                    for nic in nics:
+                        f.write('+%s\n' % nic)
                 status, msg = self.setupNetworks(
                     {NETWORK_NAME:
                         {'bonding': BONDING_NAME, 'bridged': False}},
-                    {BONDING_NAME: {'nics': [nic]}}, NOCHK)
+                    {BONDING_NAME: {'nics': nics}}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
-                self.assertBondExists(BONDING_NAME, [nic])
+                self.assertBondExists(BONDING_NAME, nics)
             finally:
                 with open(BONDING_MASTERS, 'w') as bonds:
                     bonds.write('-%s\n' % BONDING_NAME)
@@ -2384,27 +2385,34 @@ class NetworkTest(TestCaseBase):
             self.vdsm_net.restoreNetConfig()
 
             self.assertNetworkExists(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, [nic])
+            self.assertBondExists(BONDING_NAME, nics)
 
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
                 {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
-            self.assertBondDoesntExist(BONDING_NAME, [nic])
+            self.assertBondDoesntExist(BONDING_NAME, nics)
             self.vdsm_net.save_config()
 
     @cleanupNet
     @ValidateRunningAsRoot
     def test_setupNetworks_on_external_vlaned_bond(self):
-        with dummyIf(1) as (nic, ):
-            with open(NET_CONF_PREF + nic, 'w') as f:
+        with dummyIf(2) as nics:
+            with open(NET_CONF_PREF + nics[0], 'w') as f:
                 f.write("""DEVICE=%s
 MASTER=%s
 SLAVE=yes
 ONBOOT=yes
 MTU=1500
-NM_CONTROLLED=no""" % (nic, BONDING_NAME))
+NM_CONTROLLED=no""" % (nics[0], BONDING_NAME))
+            with open(NET_CONF_PREF + nics[1], 'w') as f:
+                f.write("""DEVICE=%s
+MASTER=%s
+SLAVE=yes
+ONBOOT=yes
+MTU=1500
+NM_CONTROLLED=no""" % (nics[1], BONDING_NAME))
             with open(NET_CONF_PREF + BONDING_NAME, 'w') as f:
                 f.write("""DEVICE=%s
 BONDING_OPTS='mode=802.3ad miimon=150'
@@ -2436,7 +2444,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.vdsm_net.restoreNetConfig()
 
             self.assertNetworkExists(NETWORK_NAME)
-            self.assertBondExists(BONDING_NAME, [nic])
+            self.assertBondExists(BONDING_NAME, nics)
             self.assertVlanExists(BONDING_NAME + '.' + VLAN_ID)
 
             status, msg = self.setupNetworks(
@@ -2444,7 +2452,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
                 {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
-            self.assertBondDoesntExist(BONDING_NAME, [nic])
+            self.assertBondDoesntExist(BONDING_NAME, nics)
             self.vdsm_net.save_config()
 
     @cleanupNet
