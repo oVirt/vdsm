@@ -184,6 +184,18 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
                            "%s%s" % (TAG_PREFIX_PARENT, self.volUUID))
         return tuple(lv.name for lv in lvs)
 
+    def getImage(self):
+        """
+        Return image UUID
+        """
+        return self.getVolumeTag(TAG_PREFIX_IMAGE)
+
+    def getDevPath(self):
+        """
+        Return the underlying device (for sharing)
+        """
+        return lvm.lvPath(self.sdUUID, self.volUUID)
+
     def setMetadata(self, meta, metaId=None):
         """
         Set the meta data hash as the new meta data of the Volume
@@ -248,6 +260,15 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
         LV metadata it may only be performed by an SPM.
         """
         self.changeVolumeTag(TAG_PREFIX_PARENT, puuid)
+
+    def setImage(self, imgUUID):
+        """
+        Set image UUID
+        """
+        self.changeVolumeTag(TAG_PREFIX_IMAGE, imgUUID)
+        # FIXME In next version we should remove imgUUID, as it is saved on lvm
+        # tags
+        self.setMetaParam(volume.IMAGE, imgUUID)
 
 
 class BlockVolume(volume.Volume):
@@ -554,10 +575,7 @@ class BlockVolume(volume.Volume):
         self._md.volumePath = os.path.join(self.imagePath, newUUID)
 
     def getDevPath(self):
-        """
-        Return the underlying device (for sharing)
-        """
-        return lvm.lvPath(self.sdUUID, self.volUUID)
+        return self._md.getDevPath()
 
     def _share(self, dstImgPath):
         """
@@ -566,7 +584,7 @@ class BlockVolume(volume.Volume):
         dstPath = os.path.join(dstImgPath, self.volUUID)
 
         self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
-        os.symlink(self.getDevPath(), dstPath)
+        os.symlink(self._md.getDevPath(), dstPath)
 
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
@@ -628,26 +646,11 @@ class BlockVolume(volume.Volume):
     def getParentTag(self):
         return self._md.getParentTag()
 
-    def getImage(self):
-        """
-        Return image UUID
-        """
-        return self.getVolumeTag(TAG_PREFIX_IMAGE)
-
     def setParentMeta(self, puuid):
         return self._md.setParentMeta(puuid)
 
     def setParentTag(self, puuid):
         return self._md.setParentTag(puuid)
-
-    def setImage(self, imgUUID):
-        """
-        Set image UUID
-        """
-        self.changeVolumeTag(TAG_PREFIX_IMAGE, imgUUID)
-        # FIXME In next version we should remove imgUUID, as it is saved on lvm
-        # tags
-        self.setMetaParam(volume.IMAGE, imgUUID)
 
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):

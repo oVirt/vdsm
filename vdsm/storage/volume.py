@@ -231,6 +231,57 @@ class VolumeMetadata(object):
     def isShared(self):
         return self.getVolType() == type2name(SHARED_VOL)
 
+    def getDescription(self):
+        """
+        Return volume description
+        """
+        return self.getMetaParam(DESCRIPTION)
+
+    def getLegality(self):
+        """
+        Return volume legality
+        """
+        try:
+            legality = self.getMetaParam(LEGALITY)
+            return legality
+        except se.MetaDataKeyNotFoundError:
+            return LEGAL_VOL
+
+    def isLegal(self):
+        try:
+            legality = self.getMetaParam(LEGALITY)
+            return legality != ILLEGAL_VOL
+        except se.MetaDataKeyNotFoundError:
+            return True
+
+    def isFake(self):
+        try:
+            legality = self.getMetaParam(LEGALITY)
+            return legality == FAKE_VOL
+        except se.MetaDataKeyNotFoundError:
+            return False
+
+    def getSize(self):
+        size = int(self.getMetaParam(SIZE))
+        if size < 1:  # Size stored in the metadata is not valid
+            raise se.MetaDataValidationError()
+        return size
+
+    def getFormat(self):
+        return name2type(self.getMetaParam(FORMAT))
+
+    def getType(self):
+        return name2type(self.getMetaParam(TYPE))
+
+    def getDiskType(self):
+        return self.getMetaParam(DISKTYPE)
+
+    def isInternal(self):
+        return self.getVolType() == type2name(INTERNAL_VOL)
+
+    def isSparse(self):
+        return self.getType() == SPARSE_VOL
+
     def setMetaParam(self, key, value):
         """
         Set a value of a specific key
@@ -302,6 +353,69 @@ class VolumeMetadata(object):
 
         return self.isLeaf()
 
+    @classmethod
+    def validateDescription(cls, desc):
+        desc = str(desc)
+        # We cannot fail when the description is too long, since we must
+        # support older engine that may send such values, or old disks
+        # with long description.
+        if len(desc) > DESCRIPTION_SIZE:
+            cls.log.warning("Description is too long, truncating to %d bytes",
+                            DESCRIPTION_SIZE)
+            desc = desc[:DESCRIPTION_SIZE]
+        return desc
+
+    def setDescription(self, descr):
+        """
+        Set Volume Description
+            'descr' - volume description
+        """
+        descr = self.validateDescription(descr)
+        self.log.info("volUUID = %s descr = %s ", self.volUUID, descr)
+        self.setMetaParam(DESCRIPTION, descr)
+
+    def setLegality(self, legality):
+        """
+        Set Volume Legality
+            'legality' - volume legality
+        """
+        self.log.info("sdUUID=%s imgUUID=%s volUUID = %s legality = %s ",
+                      self.sdUUID, self.imgUUID, self.volUUID, legality)
+        self.setMetaParam(LEGALITY, legality)
+
+    def setDomain(self, sdUUID):
+        self.setMetaParam(DOMAIN, sdUUID)
+        self.sdUUID = sdUUID
+        return self.sdUUID
+
+    def setShared(self):
+        self.setMetaParam(VOLTYPE, type2name(SHARED_VOL))
+        self.voltype = type2name(SHARED_VOL)
+        self.setrw(rw=False)
+        return self.voltype
+
+    def setSize(self, size):
+        self.setMetaParam(SIZE, size)
+
+    def updateInvalidatedSize(self):
+        # During some complex flows the volume size might have been marked as
+        # invalidated (e.g. during a transaction). Here we are checking
+        # NOTE: the prerequisite to run this is that the volume is accessible
+        # (e.g. lv active) and not in use by another process (e.g. dd, qemu).
+        # Going directly to the metadata parameter as we should skip the size
+        # validation in getSize.
+        if int(self.getMetaParam(SIZE)) < 1:
+            volInfo = qemuimg.info(
+                self.getVolumePath(), fmt2str(self.getFormat()))
+            # qemu/qemu-img rounds down
+            self.setSize(volInfo['virtualsize'] / BLOCK_SIZE)
+
+    def setType(self, prealloc):
+        self.setMetaParam(TYPE, type2name(prealloc))
+
+    def setFormat(self, volFormat):
+        self.setMetaParam(FORMAT, type2name(volFormat))
+
 
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
@@ -358,6 +472,9 @@ class Volume(object):
         Children can be found in any image of the volume SD.
         """
         return self._md.getChildren()
+
+    def getImage(self):
+        return self._md.getImage()
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):
@@ -830,50 +947,27 @@ class Volume(object):
 
         self.syncMetadata()  # update the metadata
 
+    @classmethod
+    def validateDescription(cls, desc):
+        return cls.metadataClass.validateDescription(desc)
+
     def setDescription(self, descr):
-        """
-        Set Volume Description
-            'descr' - volume description
-        """
-        descr = self.validateDescription(descr)
-        self.log.info("volUUID = %s descr = %s ", self.volUUID, descr)
-        self.setMetaParam(DESCRIPTION, descr)
+        self._md.setDescription(descr)
 
     def getDescription(self):
-        """
-        Return volume description
-        """
-        return self.getMetaParam(DESCRIPTION)
+        return self._md.getDescription()
 
     def getLegality(self):
-        """
-        Return volume legality
-        """
-        try:
-            legality = self.getMetaParam(LEGALITY)
-            return legality
-        except se.MetaDataKeyNotFoundError:
-            return LEGAL_VOL
+        return self._md.getLegality()
 
     def setLegality(self, legality):
-        """
-        Set Volume Legality
-            'legality' - volume legality
-        """
-        self.log.info("sdUUID=%s imgUUID=%s volUUID = %s legality = %s ",
-                      self.sdUUID, self.imgUUID, self.volUUID, legality)
-        self.setMetaParam(LEGALITY, legality)
+        self._md.setLegality(legality)
 
     def setDomain(self, sdUUID):
-        self.setMetaParam(DOMAIN, sdUUID)
-        self._md.sdUUID = sdUUID
-        return self.sdUUID
+        return self._md.setDomain(sdUUID)
 
     def setShared(self):
-        self.setMetaParam(VOLTYPE, type2name(SHARED_VOL))
-        self._md.voltype = type2name(SHARED_VOL)
-        self.setrw(rw=False)
-        return self.voltype
+        return self._md.setShared()
 
     @deprecated  # valid for domain version < 3
     def setrw(self, rw):
@@ -889,55 +983,34 @@ class Volume(object):
         return self._md.getVolType()
 
     def getSize(self):
-        size = int(self.getMetaParam(SIZE))
-        if size < 1:  # Size stored in the metadata is not valid
-            raise se.MetaDataValidationError()
-        return size
+        return self._md.getSize()
 
     def setSize(self, size):
-        self.setMetaParam(SIZE, size)
+        self._md.setSize(size)
 
     def updateInvalidatedSize(self):
-        # During some complex flows the volume size might have been marked as
-        # invalidated (e.g. during a transaction). Here we are checking
-        # NOTE: the prerequisite to run this is that the volume is accessible
-        # (e.g. lv active) and not in use by another process (e.g. dd, qemu).
-        # Going directly to the metadata parameter as we should skip the size
-        # validation in getSize.
-        if int(self.getMetaParam(SIZE)) < 1:
-            volInfo = qemuimg.info(
-                self.getVolumePath(), fmt2str(self.getFormat()))
-            # qemu/qemu-img rounds down
-            self.setSize(volInfo['virtualsize'] / BLOCK_SIZE)
+        self._md.updateInvalidatedSize()
 
     def getType(self):
-        return name2type(self.getMetaParam(TYPE))
+        return self._md.getType()
 
     def setType(self, prealloc):
-        self.setMetaParam(TYPE, type2name(prealloc))
+        self._md.setType(prealloc)
 
     def getDiskType(self):
-        return self.getMetaParam(DISKTYPE)
+        return self._md.getDiskType()
 
     def getFormat(self):
-        return name2type(self.getMetaParam(FORMAT))
+        return self._md.getFormat()
 
     def setFormat(self, volFormat):
-        self.setMetaParam(FORMAT, type2name(volFormat))
+        self._md.setFormat(volFormat)
 
     def isLegal(self):
-        try:
-            legality = self.getMetaParam(LEGALITY)
-            return legality != ILLEGAL_VOL
-        except se.MetaDataKeyNotFoundError:
-            return True
+        return self._md.isLegal()
 
     def isFake(self):
-        try:
-            legality = self.getMetaParam(LEGALITY)
-            return legality == FAKE_VOL
-        except se.MetaDataKeyNotFoundError:
-            return False
+        return self._md.isFake()
 
     def isShared(self):
         return self._md.isShared()
@@ -946,10 +1019,10 @@ class Volume(object):
         return self._md.isLeaf()
 
     def isInternal(self):
-        return self.getVolType() == type2name(INTERNAL_VOL)
+        return self._md.isInternal()
 
     def isSparse(self):
-        return self.getType() == SPARSE_VOL
+        return self._md.isSparse()
 
     def recheckIfLeaf(self):
         """
@@ -1056,18 +1129,6 @@ class Volume(object):
 
         cls.createMetadata(metaId, meta)
         return meta
-
-    @classmethod
-    def validateDescription(cls, desc):
-        desc = str(desc)
-        # We cannot fail when the description is too long, since we must
-        # support older engine that may send such values, or old disks
-        # with long description.
-        if len(desc) > DESCRIPTION_SIZE:
-            cls.log.warning("Description is too long, truncating to %d bytes",
-                            DESCRIPTION_SIZE)
-            desc = desc[:DESCRIPTION_SIZE]
-        return desc
 
     def getInfo(self):
         """

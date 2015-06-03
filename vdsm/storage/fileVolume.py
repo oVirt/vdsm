@@ -83,19 +83,6 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         else:
             return None
 
-    def setMetadata(self, meta, metaId=None):
-        """
-        Set the meta data hash as the new meta data of the Volume
-        """
-        if not metaId:
-            metaId = self.getMetadataId()
-
-        try:
-            self._putMetadata(metaId, meta)
-        except Exception as e:
-            self.log.error(e, exc_info=True)
-            raise se.VolumeMetadataWriteError(str(metaId) + str(e))
-
     def _getMetaVolumePath(self, vol_path=None):
         """
         Get the volume metadata file/link path
@@ -191,6 +178,31 @@ class FileVolumeMetadata(volume.VolumeMetadata):
 
         return tuple(children)
 
+    def getImage(self):
+        """
+        Return image UUID
+        """
+        return self.getMetaParam(volume.IMAGE)
+
+    def getDevPath(self):
+        """
+        Return the underlying device (for sharing)
+        """
+        return self.getVolumePath()
+
+    def setMetadata(self, meta, metaId=None):
+        """
+        Set the meta data hash as the new meta data of the Volume
+        """
+        if not metaId:
+            metaId = self.getMetadataId()
+
+        try:
+            self._putMetadata(metaId, meta)
+        except Exception as e:
+            self.log.error(e, exc_info=True)
+            raise se.VolumeMetadataWriteError(str(metaId) + str(e))
+
     @classmethod
     def file_setrw(cls, volPath, rw):
         sdUUID = getDomUuidFromVolumePath(volPath)
@@ -220,6 +232,12 @@ class FileVolumeMetadata(volume.VolumeMetadata):
 
         sdUUID = getDomUuidFromVolumePath(volPath)
         oop.getProcessPool(sdUUID).os.rename(metaPath + ".new", metaPath)
+
+    def setImage(self, imgUUID):
+        """
+        Set image UUID
+        """
+        self.setMetaParam(volume.IMAGE, imgUUID)
 
 
 class FileVolume(volume.Volume):
@@ -372,12 +390,6 @@ class FileVolume(volume.Volume):
 
         raise eFound
 
-    def getDevPath(self):
-        """
-        Return the underlying device (for sharing)
-        """
-        return self.getVolumePath()
-
     def _shareLease(self, dstImgPath):
         """
         Internal utility method used to share the template volume lease file
@@ -478,12 +490,6 @@ class FileVolume(volume.Volume):
         sanlock.init_resource(sdUUID, volUUID, [(leasePath,
                                                  LEASE_FILEOFFSET)])
 
-    def getImage(self):
-        """
-        Return image UUID
-        """
-        return self.getMetaParam(volume.IMAGE)
-
     def setParentMeta(self, puuid):
         """
         Set parent volume UUID in Volume metadata.  This operation can be done
@@ -497,12 +503,6 @@ class FileVolume(volume.Volume):
         For file volumes we do not use any LV tags
         """
         pass
-
-    def setImage(self, imgUUID):
-        """
-        Set image UUID
-        """
-        self.setMetaParam(volume.IMAGE, imgUUID)
 
     @classmethod
     def renameVolumeRollback(cls, taskObj, oldPath, newPath):

@@ -308,6 +308,11 @@ class FakeVolumeMetadata(object):
 
     @classmethod
     @recorded
+    def validateDescription(cls, desc):
+        pass
+
+    @classmethod
+    @recorded
     def _putMetadata(cls, *args):
         pass
 
@@ -363,6 +368,82 @@ class FakeVolumeMetadata(object):
     def recheckIfLeaf(self):
         pass
 
+    @recorded
+    def getImage(self):
+        pass
+
+    @recorded
+    def setDescription(self, descr):
+        pass
+
+    @recorded
+    def getDescription(self):
+        pass
+
+    @recorded
+    def getLegality(self):
+        pass
+
+    @recorded
+    def setLegality(self, legality):
+        pass
+
+    @recorded
+    def setDomain(self, sdUUID):
+        pass
+
+    @recorded
+    def setShared(self):
+        pass
+
+    @recorded
+    def getSize(self):
+        pass
+
+    @recorded
+    def setSize(self, size):
+        pass
+
+    @recorded
+    def updateInvalidatedSize(self):
+        pass
+
+    @recorded
+    def getType(self):
+        pass
+
+    @recorded
+    def setType(self, prealloc):
+        pass
+
+    @recorded
+    def getDiskType(self):
+        pass
+
+    @recorded
+    def getFormat(self):
+        pass
+
+    @recorded
+    def setFormat(self, volFormat):
+        pass
+
+    @recorded
+    def isLegal(self):
+        pass
+
+    @recorded
+    def isFake(self):
+        pass
+
+    @recorded
+    def isInternal(self):
+        pass
+
+    @recorded
+    def isSparse(self):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -399,6 +480,10 @@ class FakeBlockVolumeMetadata(FakeVolumeMetadata):
 
     @recorded
     def _setrw(self, rw):
+        pass
+
+    @recorded
+    def getDevPath(self):
         pass
 
 
@@ -624,12 +709,32 @@ class VolumeTestMixin(object):
         ['isShared', 0],
         ['setInternal', 0],
         ['recheckIfLeaf', 0],
+        ['getImage', 0],
+        ['setDescription', 1],
+        ['getDescription', 0],
+        ['getLegality', 0],
+        ['setLegality', 1],
+        ['setDomain', 1],
+        ['setShared', 0],
+        ['getSize', 0],
+        ['setSize', 1],
+        ['updateInvalidatedSize', 0],
+        ['getType', 0],
+        ['setType', 1],
+        ['getDiskType', 0],
+        ['getFormat', 0],
+        ['setFormat', 1],
+        ['isLegal', 0],
+        ['isFake', 0],
+        ['isInternal', 0],
+        ['isSparse', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
 
     @permutations([
         ['formatMetadata', 1],
+        ['validateDescription', 1],
         ['_putMetadata', 2],
         ])
     def test_class_methods(self, fn, nargs):
@@ -658,6 +763,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['setParentMeta', 1],
         ['setParentTag', 1],
         ['_setrw', 1],
+        ['getDevPath', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
