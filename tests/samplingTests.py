@@ -216,7 +216,7 @@ class SampleWindowTests(TestCaseBase):
                          (self._VALUES[-2], self._VALUES[-1], 1))
 
 
-class HostStatsThread(TestCaseBase):
+class HostStatsThreadTests(TestCaseBase):
     FAILED_SAMPLE = 3  # random 'small' value
     STOP_SAMPLE = 6  # ditto
 
