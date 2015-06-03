@@ -1226,7 +1226,11 @@ class Vm(object):
         # reattach host devices
         for dev in self._devices[hwclass.HOSTDEV]:
             self.log.debug('Reattaching device %s to host.' % dev.device)
-            hostdev.reattach_detachable(dev.device)
+            try:
+                hostdev.reattach_detachable(dev.device)
+            except hostdev.NoIOMMUSupportException:
+                self.log.exception('Could not reattach device %s back to host '
+                                   'due to missing IOMMU support.')
 
     def setDownStatus(self, code, exitReasonCode, exitMessage=''):
         if not exitMessage:
