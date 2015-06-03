@@ -11,8 +11,6 @@ Generate vdsm lvm udev rule
 """
 import sys
 
-enable_chown_hack = "@CHOWN_HACK@"
-
 env = {
     "uuid": "-".join(("[a-f0-9]" * 8,
                       "[a-f0-9]" * 4,
@@ -46,21 +44,10 @@ ACTION!="add|change", GOTO="lvm_end"
 ENV{DM_VG_NAME}!="%(uuid)s", GOTO="lvm_end"
 
 # Volumes used as vdsm images
-""")
-
-if enable_chown_hack == "yes":
-    write("""\
 # WARNING: we cannot use OWNER, GROUP and MODE since using any of them will
 # change the selinux label to the default, causing vms to pause after extending
 # disks. https://bugzilla.redhat.com/1147910
 ENV{DM_LV_NAME}=="%(uuid)s", RUN+="@CHOWN_PATH@ @VDSMUSER@:@QEMUGROUP@ $env{DEVNAME}", GOTO="lvm_end"
-""")
-else:
-    write("""\
-ENV{DM_LV_NAME}=="%(uuid)s", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
-""")
-
-write("""\
 
 # Temporary volumes - not accessed by libvirt/qemu
 ENV{DM_LV_NAME}=="%(uuid)s_MERGE", OWNER:="@VDSMUSER@", GROUP:="@QEMUGROUP@", GOTO="lvm_end"
@@ -73,8 +60,6 @@ ENV{DM_LV_NAME}=="metadata|inbox|outbox", MODE:="0600", OWNER:="@VDSMUSER@", GRO
 
 # Special volumes used by sanlock
 ENV{DM_LV_NAME}=="ids|leases", MODE:="0660", OWNER:="@VDSMUSER@", GROUP:="@SNLKGROUP@", GOTO="lvm_end"
-
-# FIXME: make special lvs vdsm-only readable, MODE doesn't work on rhel6
 
 LABEL="lvm_end"
 """)
