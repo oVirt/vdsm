@@ -372,6 +372,15 @@ parameters = [
 
     ]),
 
+    # Section: [gluster]
+    ('gluster', [
+
+        ('allowed_replica_counts', '3',
+            'Only replica 3 is supported, this configuration is for '
+            'development. Value is comma separated. For example, '
+            'to allow replica 1 and replica 3, use 1,3.'),
+    ]),
+
 ]
 
 

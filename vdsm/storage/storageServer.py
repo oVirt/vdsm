@@ -210,6 +210,8 @@ class MountConnection(object):
         if self._mount.isMounted():
             return
 
+        self.validate()
+
         fileUtils.createdir(self._getLocalPath())
 
         try:
@@ -233,6 +235,11 @@ class MountConnection(object):
                 except OSError:
                     self.log.exception("Error disconnecting")
                 six.reraise(t, v, tb)
+
+    def validate(self):
+        """
+        This method may be overriden by derived classes to perform validation.
+        """
 
     def isConnected(self):
         return self._mount.isMounted()
@@ -272,6 +279,8 @@ class GlusterFSConnection(MountConnection):
     #
     CGROUP = "vdsm-glusterfs"
     DIR = "glusterSD"
+    ALLOWED_REPLICA_COUNTS = tuple(
+        config.get("gluster", "allowed_replica_counts").split(","))
 
     def __init__(self,
                  spec,
@@ -297,6 +306,11 @@ class GlusterFSConnection(MountConnection):
         if self._volinfo is None:
             self._volinfo = self._get_gluster_volinfo()
         return self._volinfo
+
+    def validate(self):
+        replicaCount = self.volinfo['replicaCount']
+        if replicaCount not in self.ALLOWED_REPLICA_COUNTS:
+            raise se.UnsupportedGlusterVolumeReplicaCountError(replicaCount)
 
     def _get_backup_servers_option(self):
         if "backup-volfile-servers" in self._options:

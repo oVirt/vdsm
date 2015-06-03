@@ -19,11 +19,13 @@
 #
 
 from monkeypatch import MonkeyPatch
+from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 from storage.storageServer import GlusterFSConnection
 from storage.storageServer import IscsiConnection
 from storage.storageServer import MountConnection
 from storage import storageServer
+from storage import storage_exception as se
 
 
 class FakeSupervdsm(object):
@@ -63,6 +65,7 @@ class MountConnectionTests(VdsmTestCase):
         self.assertEquals(mount_con._mount.fs_file, "/tmp/dummy-spec")
 
 
+@expandPermutations
 class GlusterFSConnectionTests(VdsmTestCase):
 
     def test_mountpoint(self):
@@ -118,7 +121,28 @@ class GlusterFSConnectionTests(VdsmTestCase):
         self.assertEquals(gluster.options, "")
 
     def test_user_provided_gluster_mount_options(self):
+
+        def glusterVolumeInfo(volname=None, volfileServer=None):
+            return None
+
         user_options = "backup-volfile-servers=server1:server2"
         gluster = GlusterFSConnection(spec="192.168.122.1:/music",
                                       options=user_options)
         self.assertEquals(gluster.options, user_options)
+
+    @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
+    @MonkeyPatch(GlusterFSConnection, 'ALLOWED_REPLICA_COUNTS', ('3',))
+    @permutations([['1', False], ['2', False], ['3', True], ['4', False]])
+    def test_allowed_gluster_replica_count(self, replica_count, supported):
+
+        def glusterVolumeInfo(volumeName=None, remoteServer=None):
+            return {'music': {'replicaCount': replica_count}}
+
+        storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
+
+        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        if supported:
+            gluster.validate()
+        else:
+            self.assertRaises(se.UnsupportedGlusterVolumeReplicaCountError,
+                              gluster.validate)

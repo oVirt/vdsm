@@ -1196,6 +1196,14 @@ class StorageServerConnectionRefIdDoesNotExist(StorageException):
     message = "Connection Reference ID was not registered"
 
 
+class UnsupportedGlusterVolumeReplicaCountError(StorageException):
+    code = 480
+    message = "Gluster volume replica count is not supported"
+
+    def __init__(self, replicaCount):
+        self.value = "replica count = %s" % replicaCount
+
+
 #################################################
 #  LVM related Exceptions
 #################################################
