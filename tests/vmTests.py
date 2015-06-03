@@ -941,6 +941,12 @@ class TestVm(XMLTestCase):
 
             self.assertEqual(machine.sdIds, set([domainID]))
 
+    def testVmGuestSocketFile(self):
+        with fake.VM(self.conf) as testvm:
+            self.assertEqual(
+                testvm._guestSocketFile,
+                testvm._makeChannelPath(vm._VMCHANNEL_DEVICE_NAME))
+
 
 @expandPermutations
 class TestVmOperations(TestCaseBase):
