@@ -29,6 +29,10 @@ CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'usb_device': 'usb'}
 
 
+class NoIOMMUSupportException(Exception):
+    pass
+
+
 def _name_to_pci_path(device_name):
     return device_name[4:].replace('_', '.').replace('.', ':', 2)
 
@@ -171,7 +175,10 @@ def detach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
 
     if CAPABILITY_TO_XML_ATTR[device_params['capability']] == 'pci':
-        iommu_group = device_params['iommu_group']
+        try:
+            iommu_group = device_params['iommu_group']
+        except KeyError:
+            raise NoIOMMUSupportException('hostdev passthrough without iommu')
         supervdsm.getProxy().appropriateIommuGroup(iommu_group)
         libvirt_device.detachFlags(None)
 
