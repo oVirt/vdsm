@@ -428,7 +428,6 @@ AC_OUTPUT([
 ],[
     chmod +x tests/run_tests.sh
     chmod +x tests/run_tests_local.sh
-    chmod +x vdsm/storage/protect/spmprotect.sh
 ])
 
 
