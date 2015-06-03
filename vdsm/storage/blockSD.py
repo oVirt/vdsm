@@ -395,14 +395,29 @@ def metadataValidity(vg):
     return {'mdathreshold': mda_free_ok, 'mdavalid': mda_size_ok}
 
 
-class BlockStorageDomain(sd.StorageDomain):
+class BlockStorageDomainManifest(sd.StorageDomainManifest):
     mountpoint = os.path.join(sd.StorageDomain.storage_repository,
                               sd.DOMAIN_MNT_POINT, sd.BLOCKSD_DIR)
 
-    def __init__(self, sdUUID):
+    def __init__(self, sdUUID, metadata=None):
         domaindir = os.path.join(self.mountpoint, sdUUID)
-        metadata = selectMetadata(sdUUID)
-        sd.StorageDomain.__init__(self, sdUUID, domaindir, metadata)
+        sd.StorageDomainManifest.__init__(self, sdUUID, domaindir)
+
+        if metadata is None:
+            metadata = selectMetadata(self.sdUUID)
+        self.replaceMetadata(metadata)
+
+    def getReadDelay(self):
+        stats = misc.readspeed(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
+        return stats['seconds']
+
+
+class BlockStorageDomain(sd.StorageDomain):
+    manifestClass = BlockStorageDomainManifest
+
+    def __init__(self, sdUUID):
+        manifest = self.manifestClass(sdUUID)
+        sd.StorageDomain.__init__(self, manifest)
         lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
         self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
 
@@ -592,10 +607,6 @@ class BlockStorageDomain(sd.StorageDomain):
         bsd.initSPMlease()
 
         return bsd
-
-    def getReadDelay(self):
-        stats = misc.readspeed(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
-        return stats['seconds']
 
     def getVolumeClass(self):
         """
@@ -1323,7 +1334,7 @@ class BlockStorageDomain(sd.StorageDomain):
     def refresh(self):
         self.refreshDirTree()
         lvm.invalidateVG(self.sdUUID)
-        self._metadata = selectMetadata(self.sdUUID)
+        self.replaceMetadata(selectMetadata(self.sdUUID))
 
     @staticmethod
     def findDomainPath(sdUUID):

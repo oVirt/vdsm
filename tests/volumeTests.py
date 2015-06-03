@@ -17,65 +17,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
-import shutil
-import tempfile
 import uuid
 
 from testlib import VdsmTestCase as TestCaseBase
 
-from storage import blockSD, fileSD, outOfProcess
+from storage import blockSD
 
 SDBLKSZ = 512
-
-
-class FileDomainMockObject(fileSD.FileStorageDomain):
-    def __init__(self, mountpoint, sdUUID):
-        self._mountpoint = mountpoint
-        self._sdUUID = sdUUID
-
-    @property
-    def mountpoint(self):
-        return self._mountpoint
-
-    @property
-    def sdUUID(self):
-        return self._sdUUID
-
-    @property
-    def stat(self):
-        return None
-
-    @property
-    def oop(self):
-        return outOfProcess.getProcessPool(self.sdUUID)
-
-
-class FileVolumeGetVSizeTest(TestCaseBase):
-    VOLSIZE = 1024
-
-    def setUp(self):
-        self.mountpoint = tempfile.mkdtemp()
-
-        self.sdUUID = str(uuid.uuid4())
-        self.imgUUID = str(uuid.uuid4())
-        self.volUUID = str(uuid.uuid4())
-
-        imgPath = os.path.join(self.mountpoint, self.sdUUID, "images",
-                               self.imgUUID)
-        volPath = os.path.join(imgPath, self.volUUID)
-
-        os.makedirs(imgPath)
-        open(volPath, "w").truncate(self.VOLSIZE * SDBLKSZ)
-        self.sdobj = FileDomainMockObject(self.mountpoint, self.sdUUID)
-
-    def tearDown(self):
-        shutil.rmtree(self.mountpoint)
-
-    def test(self):
-        volSize = int(
-            self.sdobj.getVSize(self.imgUUID, self.volUUID) / SDBLKSZ)
-        assert volSize == self.VOLSIZE
 
 
 class FakeBlockStorageDomain(blockSD.BlockStorageDomain):

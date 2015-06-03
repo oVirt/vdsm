@@ -60,7 +60,7 @@ def __convertDomainMetadataToTags(domain, targetVersion):
     if chkMetadata[sd.DMDK_VERSION] == int(targetVersion):
         # Switching to the newMetadata (successful upgrade), the oldMetadata
         # was cleared after all.
-        domain._metadata = chkMetadata
+        domain.replaceMetadata(chkMetadata)
         log.debug("Conversion of domain %s to tag based metadata completed, "
                   "target version = %s", domain.sdUUID, targetVersion)
     else:

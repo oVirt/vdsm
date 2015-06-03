@@ -145,8 +145,8 @@ FileSDMetadata = lambda metafile: DictValidator(
     PersistentDict(FileMetadataRW(metafile)), FILE_SD_MD_FIELDS)
 
 
-class FileStorageDomain(sd.StorageDomain):
-    def __init__(self, domainPath):
+class FileStorageDomainManifest(sd.StorageDomainManifest):
+    def __init__(self, domainPath, metadata=None):
         # Using glob might look like the simplest thing to do but it isn't
         # If one of the mounts is stuck it'll cause the entire glob to fail
         # and you wouldn't be able to access any domain
@@ -155,16 +155,32 @@ class FileStorageDomain(sd.StorageDomain):
         self.remotePath = os.path.basename(self.mountpoint)
         self.metafile = os.path.join(domainPath, sd.DOMAIN_META_DATA,
                                      sd.METADATA)
-
         sdUUID = os.path.basename(domainPath)
-        validateFileSystemFeatures(sdUUID, self.mountpoint)
-
-        metadata = FileSDMetadata(self.metafile)
         domaindir = os.path.join(self.mountpoint, sdUUID)
-        sd.StorageDomain.__init__(self, sdUUID, domaindir, metadata)
+        sd.StorageDomainManifest.__init__(self, sdUUID, domaindir)
 
+        if metadata is None:
+            metadata = FileSDMetadata(self.metafile)
+        self.replaceMetadata(metadata)
         if not self.oop.fileUtils.pathExists(self.metafile):
-            raise se.StorageDomainMetadataNotFound(sdUUID, self.metafile)
+            raise se.StorageDomainMetadataNotFound(self.sdUUID, self.metafile)
+
+    def getReadDelay(self):
+        stats = misc.readspeed(self.metafile, 4096)
+        return stats['seconds']
+
+
+class FileStorageDomain(sd.StorageDomain):
+    manifestClass = FileStorageDomainManifest
+
+    def __init__(self, domainPath):
+        manifest = self.manifestClass(domainPath)
+
+        # We perform validation here since filesystem features are relevant to
+        # construction of an actual Storage Domain.  Direct users of
+        # FileStorageDomainManifest should call this explicitly if required.
+        validateFileSystemFeatures(manifest.sdUUID, manifest.mountpoint)
+        sd.StorageDomain.__init__(self, manifest)
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
 
@@ -257,10 +273,6 @@ class FileStorageDomain(sd.StorageDomain):
             sd.DEFAULT_LEASE_PARAMS[sd.DMDK_LEASE_RETRIES],
             REMOTE_PATH: remotePath
         })
-
-    def getReadDelay(self):
-        stats = misc.readspeed(self.metafile, 4096)
-        return stats['seconds']
 
     def getFileList(self, pattern, caseSensitive):
         """
@@ -537,7 +549,7 @@ class FileStorageDomain(sd.StorageDomain):
         return True
 
     def getRemotePath(self):
-        return self.remotePath
+        return self._manifest.remotePath
 
     def getRealPath(self):
         """

@@ -291,6 +291,22 @@ SD_MD_FIELDS = {
 }
 
 
+class StorageDomainManifest(object):
+    log = logging.getLogger("Storage.StorageDomainManifest")
+
+    def __init__(self, sdUUID, domaindir):
+        self.sdUUID = sdUUID
+        self.domaindir = domaindir
+        self._metadata = None
+
+    @property
+    def oop(self):
+        return oop.getProcessPool(self.sdUUID)
+
+    def replaceMetadata(self, md):
+        self._metadata = md
+
+
 class StorageDomain(object):
     log = logging.getLogger("Storage.StorageDomain")
     storage_repository = config.get('irs', 'repository')
@@ -304,10 +320,8 @@ class StorageDomain(object):
         3: (clusterlock.SANLock, True),
     }
 
-    def __init__(self, sdUUID, domaindir, metadata):
-        self.sdUUID = sdUUID
-        self.domaindir = domaindir
-        self._metadata = metadata
+    def __init__(self, manifest):
+        self._manifest = manifest
         self._lock = threading.Lock()
         self.stat = None
         self._clusterLock = self._makeClusterLock()
@@ -315,6 +329,32 @@ class StorageDomain(object):
     def __del__(self):
         if self.stat:
             threading.Thread(target=self.stat.stop).start()
+
+    @property
+    def sdUUID(self):
+        return self._manifest.sdUUID
+
+    @property
+    def domaindir(self):
+        return self._manifest.domaindir
+
+    @property
+    def _metadata(self):
+        # TODO: Remove this once refactoring is complete and it has no callers
+        return self._manifest._metadata
+
+    @property
+    def mountpoint(self):
+        return self._manifest.mountpoint
+
+    def replaceMetadata(self, md):
+        """
+        Used by FormatConverter to replace the metadata reader/writer
+        """
+        self._manifest.replaceMetadata(md)
+
+    def getReadDelay(self):
+        return self._manifest.getReadDelay()
 
     def prepareMailbox(self):
         """
@@ -337,7 +377,7 @@ class StorageDomain(object):
 
     @property
     def oop(self):
-        return oop.getProcessPool(self.sdUUID)
+        return self._manifest.oop
 
     def _makeClusterLock(self, domVersion=None):
         if not domVersion:
