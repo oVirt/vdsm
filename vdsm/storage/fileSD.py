@@ -169,6 +169,12 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         stats = misc.readspeed(self.metafile, 4096)
         return stats['seconds']
 
+    def getVSize(self, imgUUID, volUUID):
+        """ Returns file volume size in bytes. """
+        volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',
+                               imgUUID, volUUID)
+        return self.oop.os.stat(volPath).st_size
+
 
 class FileStorageDomain(sd.StorageDomain):
     manifestClass = FileStorageDomainManifest
@@ -314,12 +320,6 @@ class FileStorageDomain(sd.StorageDomain):
         Return a type specific volume generator object
         """
         return fileVolume.FileVolume
-
-    def getVSize(self, imgUUID, volUUID):
-        """ Returns file volume size in bytes. """
-        volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',
-                               imgUUID, volUUID)
-        return self.oop.os.stat(volPath).st_size
 
     def getVAllocSize(self, imgUUID, volUUID):
         """ Returns file volume allocated size in bytes. """

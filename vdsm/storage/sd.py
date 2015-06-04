@@ -356,6 +356,9 @@ class StorageDomain(object):
     def getReadDelay(self):
         return self._manifest.getReadDelay()
 
+    def getVSize(self, imgUUID, volUUID):
+        return self._manifest.getVSize(imgUUID, volUUID)
+
     def prepareMailbox(self):
         """
         This method has been introduced in order to prepare the mailbox

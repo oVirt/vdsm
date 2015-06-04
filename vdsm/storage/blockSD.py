@@ -411,6 +411,21 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         stats = misc.readspeed(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
         return stats['seconds']
 
+    def getVSize(self, imgUUUID, volUUID):
+        """ Return the block volume size in bytes. """
+        try:
+            size = _tellEnd(lvm.lvPath(self.sdUUID, volUUID))
+        except IOError as e:
+            if e.errno == os.errno.ENOENT:
+                # Inactive volume has no /dev entry. Fallback to lvm way.
+                size = lvm.getLV(self.sdUUID, volUUID).size
+            else:
+                self.log.warn("Could not get size for vol %s/%s",
+                              self.sdUUID, volUUID, exc_info=True)
+                raise
+
+        return int(size)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -614,22 +629,8 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         return blockVolume.BlockVolume
 
-    def getVSize(self, imgUUID, volUUID):
-        """ Return the block volume size in bytes. """
-        try:
-            size = _tellEnd(lvm.lvPath(self.sdUUID, volUUID))
-        except IOError as e:
-            if e.errno == os.errno.ENOENT:
-                # Inactive volume has no /dev entry. Fallback to lvm way.
-                size = lvm.getLV(self.sdUUID, volUUID).size
-            else:
-                self.log.warn("Could not get size for vol %s/%s",
-                              self.sdUUID, volUUID, exc_info=True)
-                raise
-
-        return int(size)
-
-    getVAllocSize = getVSize
+    def getVAllocSize(self, imgUUID, volUUID):
+        return self._manifest.getVSize(imgUUID, volUUID)
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID,
                                    preallocate=None):
