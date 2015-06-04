@@ -517,9 +517,35 @@ class VolumeMetadata(object):
         if self.getChildren():
             raise se.VolumeImageHasChildren(self)
 
+    @classmethod
+    def createMetadata(cls, metaId, meta):
+        cls._putMetadata(metaId, meta)
+
+    @classmethod
+    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
+                    voltype, disktype, desc="", legality=ILLEGAL_VOL):
+        meta = {
+            FORMAT: str(format),
+            TYPE: str(type),
+            VOLTYPE: str(voltype),
+            DISKTYPE: str(disktype),
+            SIZE: int(size),
+            CTIME: int(time.time()),
+            sd.DMDK_POOLS: "",  # obsolete
+            DOMAIN: str(sdUUID),
+            IMAGE: str(imgUUID),
+            DESCRIPTION: cls.validateDescription(desc),
+            PUUID: str(puuid),
+            MTIME: 0,
+            LEGALITY: str(legality),
+            }
+        cls.createMetadata(metaId, meta)
+        return meta
+
 
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
+    metadataClass = VolumeMetadata
 
     def __init__(self, md):
         self._md = md
@@ -583,6 +609,9 @@ class Volume(object):
         Set the read/write permission on the volume (deprecated)
         """
         self._md._setrw(rw)
+
+    def removeMetadata(self):
+        self._md.removeMetadata()
 
     @classmethod
     def formatMetadata(cls, meta):
@@ -1188,24 +1217,9 @@ class Volume(object):
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
                     voltype, disktype, desc="", legality=ILLEGAL_VOL):
-        meta = {
-            FORMAT: str(format),
-            TYPE: str(type),
-            VOLTYPE: str(voltype),
-            DISKTYPE: str(disktype),
-            SIZE: int(size),
-            CTIME: int(time.time()),
-            sd.DMDK_POOLS: "",  # obsolete
-            DOMAIN: str(sdUUID),
-            IMAGE: str(imgUUID),
-            DESCRIPTION: cls.validateDescription(desc),
-            PUUID: str(puuid),
-            MTIME: 0,
-            LEGALITY: str(legality),
-        }
-
-        cls.createMetadata(metaId, meta)
-        return meta
+        return cls.metadataClass.newMetadata(
+            metaId, sdUUID, imgUUID, puuid, size, format, type, voltype,
+            disktype, desc, legality)
 
     def getInfo(self):
         return self._md.getInfo()
@@ -1255,3 +1269,7 @@ class Volume(object):
         by reducing the lv to minimal size required
         """
         pass
+
+    @classmethod
+    def createMetadata(cls, metaId, meta):
+        return cls.metadataClass.createMetadata(metaId, meta)

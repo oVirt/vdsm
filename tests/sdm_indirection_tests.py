@@ -316,6 +316,17 @@ class FakeVolumeMetadata(object):
     def _putMetadata(cls, *args):
         pass
 
+    @classmethod
+    @recorded
+    def createMetadata(cls, metaId, meta):
+        pass
+
+    @classmethod
+    @recorded
+    def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
+                    voltype, disktype, desc="", legality=None):
+        pass
+
     @recorded
     def getVolumePath(self):
         pass
@@ -470,6 +481,10 @@ class FakeVolumeMetadata(object):
 
     @recorded
     def validateDelete(self):
+        pass
+
+    @recorded
+    def removeMetadata(self):
         pass
 
 
@@ -763,6 +778,7 @@ class VolumeTestMixin(object):
         ['getVmVolumeInfo', 0],
         ['getVolumeParams', 1],
         ['validateDelete', 0],
+        ['removeMetadata', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
@@ -771,6 +787,8 @@ class VolumeTestMixin(object):
         ['formatMetadata', 1],
         ['validateDescription', 1],
         ['_putMetadata', 2],
+        ['createMetadata', 2],
+        ['newMetadata', 11],
         ])
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
