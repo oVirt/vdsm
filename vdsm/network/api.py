@@ -155,7 +155,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
         elif 'STP' in opts:
             stp = opts.pop('STP')
         try:
-            stp = _stpBooleanize(stp)
+            stp = netinfo.stp_booleanize(stp)
         except ValueError:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not a valid '
                                      'bridge STP value.' % stp)
@@ -170,19 +170,6 @@ def _objectivizeNetwork(bridge=None, vlan=None, bonding=None,
     topNetDev.blockingdhcp = (configurator._inRollback or
                               utils.tobool(blockingdhcp))
     return topNetDev
-
-
-def _stpBooleanize(value):
-    if value is None:
-        return False
-    if type(value) is bool:
-        return value
-    if value.lower() in ('true', 'on', 'yes'):
-        return True
-    elif value.lower() in ('false', 'off', 'no'):
-        return False
-    else:
-        raise ValueError('Invalid value for bridge stp')
 
 
 def _validateInterNetworkCompatibility(ni, vlan, iface):

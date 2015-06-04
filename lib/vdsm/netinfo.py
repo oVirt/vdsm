@@ -215,6 +215,19 @@ def bridge_stp_state(bridge):
         return 'off'
 
 
+def stp_booleanize(value):
+    if value is None:
+        return False
+    if type(value) is bool:
+        return value
+    if value.lower() in ('true', 'on', 'yes'):
+        return True
+    elif value.lower() in ('false', 'off', 'no'):
+        return False
+    else:
+        raise ValueError('Invalid value for bridge stp')
+
+
 def isvirtio(dev):
     return 'virtio' in os.readlink('/sys/class/net/%s/device' % dev)
 
