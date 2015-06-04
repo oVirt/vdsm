@@ -139,6 +139,7 @@
 ./usr/share/vdsm/storage/volume.py
 ./usr/share/vdsm/supervdsm.py
 ./usr/share/vdsm/supervdsmServer
+./usr/share/vdsm/v2v.py
 ./usr/share/vdsm/vdsm
 ./usr/share/vdsm/vdsm-restore-net-config
 ./usr/share/vdsm/vdsm-store-net-config
