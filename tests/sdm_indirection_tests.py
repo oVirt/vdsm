@@ -468,6 +468,10 @@ class FakeVolumeMetadata(object):
     def getVolumeParams(self, bs=0):
         pass
 
+    @recorded
+    def validateDelete(self):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -758,6 +762,7 @@ class VolumeTestMixin(object):
         ['getInfo', 0],
         ['getVmVolumeInfo', 0],
         ['getVolumeParams', 1],
+        ['validateDelete', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
