@@ -196,6 +196,18 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
         """
         return lvm.lvPath(self.sdUUID, self.volUUID)
 
+    def getVolumeSize(self, bs=BLOCK_SIZE):
+        """
+        Return the volume size in blocks
+        """
+        # Just call the SD Manifest method getVSize() - apparently it does what
+        # we need. We consider incurred overhead of producing the object
+        # to be a small price for code de-duplication.
+        manifest = sdCache.produce(self.sdUUID).manifest
+        return int(manifest.getVSize(self.imgUUID, self.volUUID) / bs)
+
+    getVolumeTrueSize = getVolumeSize
+
     def setMetadata(self, meta, metaId=None):
         """
         Set the meta data hash as the new meta data of the Volume
@@ -690,18 +702,6 @@ class BlockVolume(volume.Volume):
                        * dom.logBlkSize * sd.LEASE_BLOCKS)
 
         sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
-
-    def getVolumeSize(self, bs=BLOCK_SIZE):
-        """
-        Return the volume size in blocks
-        """
-        # Just call the SD method getVSize() - apparently it does what
-        # we need. We consider incurred overhead of producing the SD object
-        # to be a small price for code de-duplication.
-        sdobj = sdCache.produce(sdUUID=self.sdUUID)
-        return int(sdobj.getVSize(self.imgUUID, self.volUUID) / bs)
-
-    getVolumeTrueSize = getVolumeSize
 
     def _extendSizeRaw(self, newSize):
         # Since this method relies on lvm.extendLV (lvextend) when the
