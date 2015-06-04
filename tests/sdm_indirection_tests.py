@@ -452,6 +452,22 @@ class FakeVolumeMetadata(object):
     def getVolumeTrueSize(self, bs=0):
         pass
 
+    @recorded
+    def metadata2info(self, meta):
+        pass
+
+    @recorded
+    def getInfo(self):
+        pass
+
+    @recorded
+    def getVmVolumeInfo(self):
+        pass
+
+    @recorded
+    def getVolumeParams(self, bs=0):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -738,6 +754,10 @@ class VolumeTestMixin(object):
         ['isSparse', 0],
         ['getVolumeSize', 1],
         ['getVolumeTrueSize', 1],
+        ['metadata2info', 1],
+        ['getInfo', 0],
+        ['getVmVolumeInfo', 0],
+        ['getVolumeParams', 1],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)

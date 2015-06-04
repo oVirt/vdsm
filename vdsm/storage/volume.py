@@ -282,6 +282,89 @@ class VolumeMetadata(object):
     def isSparse(self):
         return self.getType() == SPARSE_VOL
 
+    def metadata2info(self, meta):
+        return {
+            "uuid": self.volUUID,
+            "type": meta.get(TYPE, ""),
+            "format": meta.get(FORMAT, ""),
+            "disktype": meta.get(DISKTYPE, ""),
+            "voltype": meta.get(VOLTYPE, ""),
+            "size": int(meta.get(SIZE, "0")),
+            "parent": self.getParent(),
+            "description": meta.get(DESCRIPTION, ""),
+            "pool": meta.get(sd.DMDK_POOLS, ""),
+            "domain": meta.get(DOMAIN, ""),
+            "image": self.getImage(),
+            "ctime": meta.get(CTIME, ""),
+            "mtime": "0",
+            "legality": meta.get(LEGALITY, ""),
+            }
+
+    def getInfo(self):
+        """
+        Get volume info
+        """
+        self.log.info("Info request: sdUUID=%s imgUUID=%s volUUID = %s ",
+                      self.sdUUID, self.imgUUID, self.volUUID)
+        info = {}
+        try:
+            meta = self.getMetadata()
+            info = self.metadata2info(meta)
+            info["capacity"] = str(int(info["size"]) * BLOCK_SIZE)
+            del info["size"]
+            # Get the image actual size on disk
+            vsize = self.getVolumeSize(bs=1)
+            avsize = self.getVolumeTrueSize(bs=1)
+            info['apparentsize'] = str(vsize)
+            info['truesize'] = str(avsize)
+            info['status'] = "OK"
+        except se.StorageException as e:
+            self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
+            info['apparentsize'] = "0"
+            info['truesize'] = "0"
+            info['status'] = "INVALID"
+
+        # Both engine and dumpStorageTable don't use this option so
+        # only keeping it to not break existing scripts that look for the key
+        info['children'] = []
+
+        # If image was set to illegal, mark the status same
+        # (because of VDC constraints)
+        if info.get('legality', None) == ILLEGAL_VOL:
+            info['status'] = ILLEGAL_VOL
+        self.log.info("%s/%s/%s info is %s",
+                      self.sdUUID, self.imgUUID, self.volUUID, str(info))
+        return info
+
+    def getVolumeParams(self, bs=BLOCK_SIZE):
+        volParams = {}
+        volParams['volUUID'] = self.volUUID
+        volParams['imgUUID'] = self.getImage()
+        volParams['path'] = self.getVolumePath()
+        volParams['disktype'] = self.getDiskType()
+        volParams['prealloc'] = self.getType()
+        volParams['volFormat'] = self.getFormat()
+        # TODO: getSize returns size in 512b multiples, should move all sizes
+        # to byte multiples everywhere to avoid conversion errors and change
+        # only at the end
+        volParams['size'] = self.getSize()
+        volParams['apparentsize'] = self.getVolumeSize(bs=bs)
+        volParams['truesize'] = self.getVolumeTrueSize(bs=bs)
+        volParams['parent'] = self.getParent()
+        volParams['descr'] = self.getDescription()
+        volParams['legality'] = self.getLegality()
+        return volParams
+
+    def getVmVolumeInfo(self):
+        """
+        Get volume path/info as dict.
+        Derived classes can use this if they want to represent the
+        volume to the VM in a different way than the standard 'path' way.
+        """
+        # By default, send path
+        return {'volType': VmVolumeInfo.TYPE_PATH,
+                'path': self.getVolumePath()}
+
     def setMetaParam(self, key, value):
         """
         Set a value of a specific key
@@ -1097,22 +1180,7 @@ class Volume(object):
         pass
 
     def metadata2info(self, meta):
-        return {
-            "uuid": self.volUUID,
-            "type": meta.get(TYPE, ""),
-            "format": meta.get(FORMAT, ""),
-            "disktype": meta.get(DISKTYPE, ""),
-            "voltype": meta.get(VOLTYPE, ""),
-            "size": int(meta.get(SIZE, "0")),
-            "parent": self.getParent(),
-            "description": meta.get(DESCRIPTION, ""),
-            "pool": meta.get(sd.DMDK_POOLS, ""),
-            "domain": meta.get(DOMAIN, ""),
-            "image": self.getImage(),
-            "ctime": meta.get(CTIME, ""),
-            "mtime": "0",
-            "legality": meta.get(LEGALITY, ""),
-        }
+        return self._md.metadata2info(meta)
 
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
@@ -1137,40 +1205,7 @@ class Volume(object):
         return meta
 
     def getInfo(self):
-        """
-        Get volume info
-        """
-        self.log.info("Info request: sdUUID=%s imgUUID=%s volUUID = %s ",
-                      self.sdUUID, self.imgUUID, self.volUUID)
-        info = {}
-        try:
-            meta = self.getMetadata()
-            info = self.metadata2info(meta)
-            info["capacity"] = str(int(info["size"]) * BLOCK_SIZE)
-            del info["size"]
-            # Get the image actual size on disk
-            vsize = self.getVolumeSize(bs=1)
-            avsize = self.getVolumeTrueSize(bs=1)
-            info['apparentsize'] = str(vsize)
-            info['truesize'] = str(avsize)
-            info['status'] = "OK"
-        except se.StorageException as e:
-            self.log.debug("exception: %s:%s" % (str(e.message), str(e.value)))
-            info['apparentsize'] = "0"
-            info['truesize'] = "0"
-            info['status'] = "INVALID"
-
-        # Both engine and dumpStorageTable don't use this option so
-        # only keeping it to not break existing scripts that look for the key
-        info['children'] = []
-
-        # If image was set to illegal, mark the status same
-        # (because of VDC constraints)
-        if info.get('legality', None) == ILLEGAL_VOL:
-            info['status'] = ILLEGAL_VOL
-        self.log.info("%s/%s/%s info is %s",
-                      self.sdUUID, self.imgUUID, self.volUUID, str(info))
-        return info
+        return self._md.getInfo()
 
     def getParentVolume(self):
         """
@@ -1194,14 +1229,7 @@ class Volume(object):
         return self._md.getVolumePath()
 
     def getVmVolumeInfo(self):
-        """
-        Get volume path/info as dict.
-        Derived classes can use this if they want to represent the
-        volume to the VM in a different way than the standard 'path' way.
-        """
-        # By default, send path
-        return {'volType': VmVolumeInfo.TYPE_PATH,
-                'path': self.getVolumePath()}
+        return self._md.getVmVolumeInfo()
 
     def getMetaParam(self, key):
         """
@@ -1216,23 +1244,7 @@ class Volume(object):
         self._md.setMetaParam(key, value)
 
     def getVolumeParams(self, bs=BLOCK_SIZE):
-        volParams = {}
-        volParams['volUUID'] = self.volUUID
-        volParams['imgUUID'] = self.getImage()
-        volParams['path'] = self.getVolumePath()
-        volParams['disktype'] = self.getDiskType()
-        volParams['prealloc'] = self.getType()
-        volParams['volFormat'] = self.getFormat()
-        # TODO: getSize returns size in 512b multiples, should move all sizes
-        # to byte multiples everywhere to avoid conversion errors and change
-        # only at the end
-        volParams['size'] = self.getSize()
-        volParams['apparentsize'] = self.getVolumeSize(bs=bs)
-        volParams['truesize'] = self.getVolumeTrueSize(bs=bs)
-        volParams['parent'] = self.getParent()
-        volParams['descr'] = self.getDescription()
-        volParams['legality'] = self.getLegality()
-        return volParams
+        return self._md.getVolumeParams(bs)
 
     def shrinkToOptimalSize(self):
         """
