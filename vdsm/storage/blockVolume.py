@@ -306,6 +306,9 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
 
         sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
 
+    def refreshVolume(self):
+        lvm.refreshLVs(self.sdUUID, (self.volUUID,))
+
 
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -323,7 +326,7 @@ class BlockVolume(volume.Volume):
         return self._md.metaoff
 
     def refreshVolume(self):
-        lvm.refreshLVs(self.sdUUID, (self.volUUID,))
+        self._md.refreshVolume()
 
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, sdUUID, volUUID, volPath):

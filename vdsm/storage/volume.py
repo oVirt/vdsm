@@ -542,6 +542,9 @@ class VolumeMetadata(object):
         cls.createMetadata(metaId, meta)
         return meta
 
+    def refreshVolume(self):
+        pass
+
 
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
@@ -783,10 +786,7 @@ class Volume(object):
             raise se.CannotShareVolume(self.getVolumePath(), dstPath, str(e))
 
     def refreshVolume(self):
-        """
-        Refresh volume
-        """
-        pass
+        return self._md.refreshVolume()
 
     @classmethod
     def parentVolumeRollback(cls, taskObj, sdUUID, pimgUUID, pvolUUID):

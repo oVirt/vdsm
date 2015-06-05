@@ -496,6 +496,10 @@ class FakeVolumeMetadata(object):
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
         pass
 
+    @recorded
+    def refreshVolume(self):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -793,6 +797,7 @@ class VolumeTestMixin(object):
         ['getVolumeParams', 1],
         ['validateDelete', 0],
         ['removeMetadata', 0],
+        ['refreshVolume', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
