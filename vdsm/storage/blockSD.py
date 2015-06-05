@@ -407,6 +407,17 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             metadata = selectMetadata(self.sdUUID)
         self.replaceMetadata(metadata)
 
+        try:
+            self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
+            self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
+        except KeyError:
+            # 512 by Saggi "Trust me (Smoch Alai (sic))"
+            # *blkSize keys may be missing from metadata only for domains that
+            # existed before the introduction of the keys.
+            # Such domains supported only 512 sizes
+            self.logBlkSize = 512
+            self.phyBlkSize = 512
+
     def getReadDelay(self):
         stats = misc.readspeed(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
         return stats['seconds']
@@ -446,17 +457,6 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
         self.metavol = lvm.lvPath(self.sdUUID, sd.METADATA)
 
-        try:
-            self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
-            self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
-        except KeyError:
-            # 512 by Saggi "Trust me (Smoch Alai (sic))"
-            # *blkSize keys may be missing from metadata only for domains that
-            # existed before the introduction of the keys.
-            # Such domains supported only 512 sizes
-            self.logBlkSize = 512
-            self.phyBlkSize = 512
-
         # Check that all devices in the VG have the same logical and physical
         # block sizes.
         lvm.checkVGBlockSizes(sdUUID, (self.logBlkSize, self.phyBlkSize))
@@ -467,6 +467,14 @@ class BlockStorageDomain(sd.StorageDomain):
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
         self._lastUncachedSelftest = 0
+
+    @property
+    def logBlkSize(self):
+        return self._manifest.logBlkSize
+
+    @property
+    def phyBlkSize(self):
+        return self._manifest.phyBlkSize
 
     def _registerResourceNamespaces(self):
         """

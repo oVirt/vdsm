@@ -57,6 +57,14 @@ class FileManifestTests(VdsmTestCase):
             mdpath = os.path.join(manifest.domaindir, sd.DOMAIN_META_DATA)
             self.assertEquals(mdpath, manifest.getMDPath())
 
+    def test_getmetaparam(self):
+        with namedTemporaryDir() as tmpdir:
+            metadata = {}
+            manifest = self.make_manifest(tmpdir, metadata)
+            metadata[sd.DMDK_SDUUID] = manifest.sdUUID
+            self.assertEquals(manifest.sdUUID,
+                              manifest.getMetaParam(sd.DMDK_SDUUID))
+
     def make_manifest(self, tmpdir, metadata=None):
         sduuid = str(uuid.uuid4())
         domain_path = os.path.join(tmpdir, sduuid)
@@ -108,6 +116,28 @@ class BlockManifestTests(VdsmTestCase):
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
                 self.assertEqual(VOLSIZE,
                                  manifest.getVSize('<imgUUID>', lv_name))
+
+    def test_getmetaparam(self):
+        with namedTemporaryDir():
+            metadata = {}
+            manifest = self.make_manifest(metadata)
+            metadata[sd.DMDK_SDUUID] = manifest.sdUUID
+            self.assertEquals(manifest.sdUUID,
+                              manifest.getMetaParam(sd.DMDK_SDUUID))
+
+    def test_getblocksize_defaults(self):
+        with namedTemporaryDir():
+            manifest = self.make_manifest()
+            self.assertEquals(512, manifest.logBlkSize)
+            self.assertEquals(512, manifest.phyBlkSize)
+
+    def test_getblocksize(self):
+        with namedTemporaryDir():
+            metadata = {blockSD.DMDK_LOGBLKSIZE: 2048,
+                        blockSD.DMDK_PHYBLKSIZE: 1024}
+            manifest = self.make_manifest(metadata)
+            self.assertEquals(2048, manifest.logBlkSize)
+            self.assertEquals(1024, manifest.phyBlkSize)
 
     def make_manifest(self, metadata=None):
         sduuid = str(uuid.uuid4())

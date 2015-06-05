@@ -317,6 +317,9 @@ class StorageDomainManifest(object):
             return os.path.join(self.domaindir, DOMAIN_META_DATA)
         return None
 
+    def getMetaParam(self, key):
+        return self._metadata[key]
+
 
 class StorageDomain(object):
     log = logging.getLogger("Storage.StorageDomain")
@@ -796,7 +799,7 @@ class StorageDomain(object):
         self._metadata.invalidate()
 
     def getMetaParam(self, key):
-        return self._metadata[key]
+        return self._manifest.getMetaParam(key)
 
     def getStorageType(self):
         return self.getMetaParam(DMDK_TYPE)
