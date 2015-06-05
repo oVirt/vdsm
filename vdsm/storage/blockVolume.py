@@ -30,6 +30,7 @@ import storage_exception as se
 import volume
 import image
 import sd
+import blockSD
 import misc
 from misc import logskip
 from misc import deprecated
@@ -291,6 +292,19 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataWriteError("%s: %s" % (metaId, e))
+
+    @classmethod
+    def newVolumeLease(cls, metaId, sdUUID, volUUID):
+        cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
+                      "metaId=%s", volUUID, sdUUID, metaId)
+        manifest = blockSD.BlockStorageDomainManifest(sdUUID)
+        metaSdUUID, mdSlot = metaId
+
+        leasePath = manifest.getLeasesFilePath()
+        leaseOffset = ((mdSlot + RESERVED_LEASES)
+                       * manifest.logBlkSize * sd.LEASE_BLOCKS)
+
+        sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
 
 
 class BlockVolume(volume.Volume):
@@ -685,19 +699,6 @@ class BlockVolume(volume.Volume):
 
     def getMetaOffset(self):
         return self._md.getMetaOffset()
-
-    @classmethod
-    def newVolumeLease(cls, metaId, sdUUID, volUUID):
-        cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
-                      "metaId=%s", volUUID, sdUUID, metaId)
-        dom = sdCache.produce(sdUUID)
-        metaSdUUID, mdSlot = metaId
-
-        leasePath = dom.getLeasesFilePath()
-        leaseOffset = ((mdSlot + RESERVED_LEASES)
-                       * dom.logBlkSize * sd.LEASE_BLOCKS)
-
-        sanlock.init_resource(sdUUID, volUUID, [(leasePath, leaseOffset)])
 
     def _extendSizeRaw(self, newSize):
         # Since this method relies on lvm.extendLV (lvextend) when the

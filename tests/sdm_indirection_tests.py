@@ -491,6 +491,11 @@ class FakeVolumeMetadata(object):
     def removeMetadata(self):
         pass
 
+    @classmethod
+    @recorded
+    def newVolumeLease(cls, metaId, sdUUID, volUUID):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -550,6 +555,10 @@ class FakeFileVolumeMetadata(FakeVolumeMetadata):
 
     @recorded
     def _setrw(self, rw):
+        pass
+
+    @recorded
+    def _getLeaseVolumePath(self, vol_path):
         pass
 
 
@@ -794,6 +803,7 @@ class VolumeTestMixin(object):
         ['_putMetadata', 2],
         ['createMetadata', 2],
         ['newMetadata', 11],
+        ['newVolumeLease', 3],
         ])
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
@@ -842,6 +852,7 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     @permutations([
         ['_getMetaVolumePath', 1],
+        ['_getLeaseVolumePath', 1],
         ['_setrw', 1],
         ])
     def test_functions(self, fn, nargs):
