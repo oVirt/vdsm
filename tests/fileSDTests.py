@@ -35,9 +35,17 @@ class TestingFileStorageDomain(fileSD.FileStorageDomain):
     stat = None  # Accessed in __del__
 
     def __init__(self, uuid, mountpoint, oop):
-        self.sdUUID = uuid
-        self.mountpoint = mountpoint
+        self._uuid = uuid
+        self._mountpoint = mountpoint
         self._oop = oop
+
+    @property
+    def sdUUID(self):
+        return self._uuid
+
+    @property
+    def mountpoint(self):
+        return self._mountpoint
 
     @property
     def oop(self):

@@ -31,9 +31,20 @@ SDBLKSZ = 512
 
 class FileDomainMockObject(fileSD.FileStorageDomain):
     def __init__(self, mountpoint, sdUUID):
-        self.mountpoint = mountpoint
-        self.sdUUID = sdUUID
-        self.stat = None
+        self._mountpoint = mountpoint
+        self._sdUUID = sdUUID
+
+    @property
+    def mountpoint(self):
+        return self._mountpoint
+
+    @property
+    def sdUUID(self):
+        return self._sdUUID
+
+    @property
+    def stat(self):
+        return None
 
     @property
     def oop(self):
@@ -71,10 +82,17 @@ class FakeBlockStorageDomain(blockSD.BlockStorageDomain):
     DOMAIN_VERSION = 3
 
     def __init__(self, sdUUID, occupiedMetadataSlots=None):
-        self.sdUUID = sdUUID
-        self.stat = None
+        self._sdUUID = sdUUID
         self.logBlkSize = SDBLKSZ
         self.occupiedMetadataSlots = occupiedMetadataSlots
+
+    @property
+    def sdUUID(self):
+        return self._sdUUID
+
+    @property
+    def stat(self):
+        return None
 
     def getVersion(self):
         return self.DOMAIN_VERSION
