@@ -500,6 +500,14 @@ class FakeVolumeMetadata(object):
     def refreshVolume(self):
         pass
 
+    @recorded
+    def _share(self, dstImgPath):
+        pass
+
+    @recorded
+    def _shareLease(self, dstImgPath):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -798,6 +806,8 @@ class VolumeTestMixin(object):
         ['validateDelete', 0],
         ['removeMetadata', 0],
         ['refreshVolume', 0],
+        ['_share', 1],
+        ['_shareLease', 1],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)

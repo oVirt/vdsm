@@ -545,6 +545,13 @@ class VolumeMetadata(object):
     def refreshVolume(self):
         pass
 
+    def _shareLease(self, dstImgPath):
+        """
+        Internal utility method used during the share process and by the
+        domain V3 upgrade.
+        """
+        pass  # Do not remove this method or the V3 upgrade will fail.
+
 
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
@@ -615,6 +622,9 @@ class Volume(object):
 
     def removeMetadata(self):
         self._md.removeMetadata()
+
+    def _share(self, dstImgPath):
+        return self._md._share(dstImgPath)
 
     @classmethod
     def formatMetadata(cls, meta):
@@ -753,11 +763,7 @@ class Volume(object):
             raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
 
     def _shareLease(self, dstImgPath):
-        """
-        Internal utility method used during the share process and by the
-        domain V3 upgrade.
-        """
-        pass  # Do not remove this method or the V3 upgrade will fail.
+        self._md._shareLease(dstImgPath)
 
     def share(self, dstImgPath):
         """

@@ -309,6 +309,15 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
     def refreshVolume(self):
         lvm.refreshLVs(self.sdUUID, (self.volUUID,))
 
+    def _share(self, dstImgPath):
+        """
+        Share this volume to dstImgPath
+        """
+        dstPath = os.path.join(dstImgPath, self.volUUID)
+
+        self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
+        os.symlink(self.getDevPath(), dstPath)
+
 
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -615,15 +624,6 @@ class BlockVolume(volume.Volume):
 
     def getDevPath(self):
         return self._md.getDevPath()
-
-    def _share(self, dstImgPath):
-        """
-        Share this volume to dstImgPath
-        """
-        dstPath = os.path.join(dstImgPath, self.volUUID)
-
-        self.log.debug("Share volume %s to %s", self.volUUID, dstImgPath)
-        os.symlink(self._md.getDevPath(), dstPath)
 
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
