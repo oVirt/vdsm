@@ -175,6 +175,12 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                                imgUUID, volUUID)
         return self.oop.os.stat(volPath).st_size
 
+    def getLeasesFilePath(self):
+        return os.path.join(self.getMDPath(), sd.LEASES)
+
+    def getIdsFilePath(self):
+        return os.path.join(self.getMDPath(), sd.IDS)
+
 
 class FileStorageDomain(sd.StorageDomain):
     manifestClass = FileStorageDomainManifest

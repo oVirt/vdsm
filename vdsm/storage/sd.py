@@ -306,6 +306,17 @@ class StorageDomainManifest(object):
     def replaceMetadata(self, md):
         self._metadata = md
 
+    def getIsoDomainImagesDir(self):
+        """
+        Get 'images' directory from Iso domain
+        """
+        return os.path.join(self.domaindir, DOMAIN_IMAGES, ISO_IMAGE_UUID)
+
+    def getMDPath(self):
+        if self.domaindir:
+            return os.path.join(self.domaindir, DOMAIN_META_DATA)
+        return None
+
 
 class StorageDomain(object):
     log = logging.getLogger("Storage.StorageDomain")
@@ -473,9 +484,7 @@ class StorageDomain(object):
             preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID)
 
     def getMDPath(self):
-        if self.domaindir:
-            return os.path.join(self.domaindir, DOMAIN_META_DATA)
-        return None
+        return self._manifest.getMDPath()
 
     def initSPMlease(self):
         """
@@ -508,10 +517,10 @@ class StorageDomain(object):
         return pools
 
     def getIdsFilePath(self):
-        return os.path.join(self.getMDPath(), IDS)
+        return self._manifest.getIdsFilePath()
 
     def getLeasesFilePath(self):
-        return os.path.join(self.getMDPath(), LEASES)
+        return self._manifest.getLeasesFilePath()
 
     def getReservedId(self):
         return self._clusterLock.getReservedId()
@@ -715,10 +724,7 @@ class StorageDomain(object):
                     .getImageDir(self.sdUUID, imgUUID)
 
     def getIsoDomainImagesDir(self):
-        """
-        Get 'images' directory from Iso domain
-        """
-        return os.path.join(self.domaindir, DOMAIN_IMAGES, ISO_IMAGE_UUID)
+        return self._manifest.getIsoDomainImagesDir()
 
     def supportsUnicode(self):
         return supportsUnicode(self.getVersion())

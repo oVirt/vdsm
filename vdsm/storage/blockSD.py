@@ -426,6 +426,16 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
         return int(size)
 
+    def getLeasesFilePath(self):
+        # TODO: Determine the path without activating the LV
+        lvm.activateLVs(self.sdUUID, [sd.LEASES])
+        return lvm.lvPath(self.sdUUID, sd.LEASES)
+
+    def getIdsFilePath(self):
+        # TODO: Determine the path without activating the LV
+        lvm.activateLVs(self.sdUUID, [sd.IDS])
+        return lvm.lvPath(self.sdUUID, sd.IDS)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -821,14 +831,6 @@ class BlockStorageDomain(sd.StorageDomain):
 
         self.log.info("META MAPPING: %s" % meta)
         return meta
-
-    def getIdsFilePath(self):
-        lvm.activateLVs(self.sdUUID, [sd.IDS])
-        return lvm.lvPath(self.sdUUID, sd.IDS)
-
-    def getLeasesFilePath(self):
-        lvm.activateLVs(self.sdUUID, [sd.LEASES])
-        return lvm.lvPath(self.sdUUID, sd.LEASES)
 
     def getLeasesFileSize(self):
         lv = lvm.getLV(self.sdUUID, sd.LEASES)

@@ -44,6 +44,19 @@ class FileManifestTests(VdsmTestCase):
             imguuid, voluuid = make_volume(manifest.domaindir, VOLSIZE)
             self.assertEqual(VOLSIZE, manifest.getVSize(imguuid, voluuid))
 
+    def test_getisodomainimagesdir(self):
+        with namedTemporaryDir() as tmpdir:
+            manifest = self.make_manifest(tmpdir)
+            isopath = os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES,
+                                   sd.ISO_IMAGE_UUID)
+            self.assertEquals(isopath, manifest.getIsoDomainImagesDir())
+
+    def test_getmdpath(self):
+        with namedTemporaryDir() as tmpdir:
+            manifest = self.make_manifest(tmpdir)
+            mdpath = os.path.join(manifest.domaindir, sd.DOMAIN_META_DATA)
+            self.assertEquals(mdpath, manifest.getMDPath())
+
     def make_manifest(self, tmpdir, metadata=None):
         sduuid = str(uuid.uuid4())
         domain_path = os.path.join(tmpdir, sduuid)
