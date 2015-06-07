@@ -46,7 +46,7 @@ class BaseConfig(object):
         cleanAttrs = dict((key, value) for key, value in attributes.iteritems()
                           if value is not None and key not in
                           ('configurator', '_netinfo', 'force',
-                           'implicitBonding'))
+                           'bondingOptions', 'implicitBonding'))
         self.networks[network] = cleanAttrs
         logging.info('Adding network %s(%s)', network, cleanAttrs)
 
