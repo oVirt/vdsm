@@ -100,7 +100,8 @@ class clientIF(object):
             self.gluster = None
         try:
             self.vmContainer = {}
-            self._hostStats = sampling.HostStatsThread(log=log)
+            self._hostStats = sampling.HostStatsThread(
+                log, sampling.host_samples)
             self._hostStats.start()
             self.lastRemoteAccess = 0
             self._enabled = True

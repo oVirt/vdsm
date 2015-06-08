@@ -136,3 +136,17 @@ class HostStatsThreadTests(TestCaseBase):
             self.assertEqual(
                 hoststats._get_cpu_core_stats(first_sample, last_sample),
                 expected)
+
+    def testOutputWithNoSamples(self):
+        expected = {
+            'cpuIdle': 100.0,
+            'cpuSys': 0.0,
+            'cpuSysVdsmd': 0.0,
+            'cpuUser': 0.0,
+            'cpuUserVdsmd': 0.0,
+            'rxRate': 0.0,
+            'txRate': 0.0,
+            'elapsedTime': 0,
+        }
+        hoststats.start(lambda: 0)
+        self.assertEquals(hoststats.produce(None, None), expected)

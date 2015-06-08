@@ -171,22 +171,11 @@ class HostStatsThreadTests(TestCaseBase):
             self.assertTrue(self._samplingDone.is_set())
             self.assertTrue(self._sampleCount >= self.STOP_SAMPLE)
 
-    def testOutputWithNoSamples(self):
-        expected = {
-            'cpuIdle': 100.0,
-            'cpuSys': 0.0,
-            'cpuSysVdsmd': 0.0,
-            'cpuUser': 0.0,
-            'cpuUserVdsmd': 0.0,
-            'rxRate': 0.0,
-            'txRate': 0.0,
-            'elapsedTime': 0,
-        }
-        self._hs = sampling.HostStatsThread(self.log, clock=lambda: 0)
-        self.assertEquals(self._hs.get(), expected)
-
     def testSamplesWraparound(self):
-        NUM = sampling.HostStatsThread.AVERAGING_WINDOW + 1
+        NUM = sampling.HOST_STATS_AVERAGING_WINDOW + 1
+
+        samples = sampling.SampleWindow(
+            sampling.HOST_STATS_AVERAGING_WINDOW)
 
         class FakeEvent(object):
             def __init__(self, *args):
@@ -219,16 +208,16 @@ class HostStatsThreadTests(TestCaseBase):
                 pass
 
         with MonkeyPatchScope([(sampling, 'HostSample', FakeHostSample)]):
-            self._hs = sampling.HostStatsThread(self.log)
+            self._hs = sampling.HostStatsThread(self.log, samples)
             self._hs._sampleInterval = 0
             # we cannot monkey patch, it will interfer on threading internals
             self._hs._stopEvent = FakeEvent()
             self._hs.start()
             self._hs.join()
-            first, last, _ = self._hs._samples.stats()
+            first, last, _ = samples.stats()
             self.assertEqual(first.id,
                              FakeHostSample.counter -
-                             sampling.HostStatsThread.AVERAGING_WINDOW)
+                             sampling.HOST_STATS_AVERAGING_WINDOW)
             self.assertEqual(last.id,
                              FakeHostSample.counter - 1)
 

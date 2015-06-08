@@ -36,9 +36,9 @@ from vdsm import netinfo
 from vdsm import utils
 from vdsm.config import config
 
+from . import hoststats
 from . import virdomain
 from .utils import ExpiringCache
-from . import hoststats
 
 import caps
 
@@ -535,19 +535,24 @@ class VMBulkSampler(object):
         return doms
 
 
+HOST_STATS_AVERAGING_WINDOW = 5
+
+
+host_samples = SampleWindow(size=HOST_STATS_AVERAGING_WINDOW)
+
+
 class HostStatsThread(threading.Thread):
     """
     A thread that periodically samples host statistics.
     """
-    AVERAGING_WINDOW = 5
     _CONNLOG = logging.getLogger('connectivity')
 
-    def __init__(self, log, clock=utils.monotonic_time):
+    def __init__(self, log, samples=host_samples, clock=utils.monotonic_time):
         threading.Thread.__init__(self)
         self.daemon = True
         self._log = log
         self._stopEvent = threading.Event()
-        self._samples = SampleWindow(size=self.AVERAGING_WINDOW)
+        self._samples = samples
 
         self._pid = os.getpid()
 
@@ -580,10 +585,6 @@ class HostStatsThread(threading.Thread):
         except:
             if not self._stopEvent.isSet():
                 self._log.exception("Error while sampling stats")
-
-    def get(self):
-        first_sample, last_sample, _ = self._samples.stats()
-        return hoststats.produce(first_sample, last_sample)
 
 
 def _getLinkSpeed(dev):

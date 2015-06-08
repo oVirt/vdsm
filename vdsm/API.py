@@ -45,6 +45,8 @@ import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
+from virt import hoststats
+from virt import sampling
 from virt import vmstatus
 from virt import secret
 from virt.vmdevices import graphics
@@ -1355,7 +1357,9 @@ class Global(APIBase):
 
         hooks.before_get_stats()
         stats = {}
-        decStats = self._cif._hostStats.get()
+
+        first_sample, last_sample, _ = sampling.host_samples.stats()
+        decStats = hoststats.produce(first_sample, last_sample)
 
         if self._irs:
             decStats['storageDomains'] = self._irs.repoStats()
