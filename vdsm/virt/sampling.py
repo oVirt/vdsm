@@ -247,6 +247,7 @@ class HostSample(TimedSample):
         super(HostSample, self).__init__()
         self.interfaces = _get_interfaces_and_samples()
         self.pidcpu = PidCpuSample(pid)
+        self.ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
         self.totcpu = TotalCpuSample()
         meminfo = utils.readMemInfo()
         freeOrCached = (meminfo['MemFree'] +
@@ -549,7 +550,6 @@ class HostStatsThread(threading.Thread):
         self._samples = SampleWindow(size=self.AVERAGING_WINDOW)
 
         self._pid = os.getpid()
-        self._ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
 
         self._sampleInterval = \
             config.getint('vars', 'host_sample_stats_interval')
@@ -583,7 +583,7 @@ class HostStatsThread(threading.Thread):
 
     def get(self):
         first_sample, last_sample, _ = self._samples.stats()
-        return hoststats.produce(self._ncpus, first_sample, last_sample)
+        return hoststats.produce(first_sample, last_sample)
 
 
 def _getLinkSpeed(dev):

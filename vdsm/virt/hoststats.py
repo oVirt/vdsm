@@ -47,7 +47,7 @@ def start(clock=utils.monotonic_time):
     _start_time = _clock()
 
 
-def produce(ncpus, first_sample, last_sample):
+def produce(first_sample, last_sample):
     stats = _empty_stats()
 
     if first_sample is None:
@@ -69,11 +69,11 @@ def produce(ncpus, first_sample, last_sample):
     jiffies = (
         last_sample.totcpu.user - first_sample.totcpu.user
     ) % JIFFIES_BOUND
-    stats['cpuUser'] = jiffies / interval / ncpus
+    stats['cpuUser'] = jiffies / interval / last_sample.ncpus
     jiffies = (
         last_sample.totcpu.sys - first_sample.totcpu.sys
     ) % JIFFIES_BOUND
-    stats['cpuSys'] = jiffies / interval / ncpus
+    stats['cpuSys'] = jiffies / interval / last_sample.ncpus
     stats['cpuIdle'] = max(0.0,
                            100.0 - stats['cpuUser'] - stats['cpuSys'])
     stats['memUsed'] = last_sample.memUsed
