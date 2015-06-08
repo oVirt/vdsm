@@ -83,12 +83,16 @@ class FakeBlockStorageDomain(blockSD.BlockStorageDomain):
 
     def __init__(self, sdUUID, occupiedMetadataSlots=None):
         self._sdUUID = sdUUID
-        self.logBlkSize = SDBLKSZ
+        self._logBlkSize = SDBLKSZ
         self.occupiedMetadataSlots = occupiedMetadataSlots
 
     @property
     def sdUUID(self):
         return self._sdUUID
+
+    @property
+    def logBlkSize(self):
+        return self._logBlkSize
 
     @property
     def stat(self):
