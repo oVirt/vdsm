@@ -140,6 +140,7 @@
 ./usr/share/vdsm/virt/__init__.py
 ./usr/share/vdsm/virt/domain_descriptor.py
 ./usr/share/vdsm/virt/guestagent.py
+./usr/share/vdsm/virt/hoststats.py
 ./usr/share/vdsm/virt/migration.py
 ./usr/share/vdsm/virt/periodic.py
 ./usr/share/vdsm/virt/sampling.py

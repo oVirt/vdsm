@@ -30,26 +30,21 @@ import re
 import threading
 import time
 
-import six
-
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import utils
 from vdsm.config import config
-import v2v
 
 from . import virdomain
 from .utils import ExpiringCache
+from . import hoststats
 
 import caps
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
     _THP_STATE_PATH = '/sys/kernel/mm/redhat_transparent_hugepage/enabled'
-
-JIFFIES_BOUND = 2 ** 32
-NETSTATS_BOUND = 2 ** 32
 
 
 class InterfaceSample(object):
@@ -206,27 +201,6 @@ class PidCpuSample(object):
 class TimedSample(object):
     def __init__(self):
         self.timestamp = time.time()
-
-
-_PROC_STAT_PATH = '/proc/stat'
-
-
-def getBootTime():
-    """
-    Returns the boot time of the machine in seconds since epoch.
-
-    Raises IOError if file access fails, or ValueError if boot time not
-    present in file.
-    """
-    with open(_PROC_STAT_PATH) as proc_stat:
-        for line in proc_stat:
-            if line.startswith('btime'):
-                parts = line.split()
-                if len(parts) > 1:
-                    return int(parts[1])
-                else:
-                    break
-    raise ValueError('Boot time not present')
 
 
 def _get_interfaces_and_samples():
@@ -567,9 +541,7 @@ class HostStatsThread(threading.Thread):
     AVERAGING_WINDOW = 5
     _CONNLOG = logging.getLogger('connectivity')
 
-    def __init__(self, log):
-        self.startTime = time.time()
-
+    def __init__(self, log, clock=utils.monotonic_time):
         threading.Thread.__init__(self)
         self.daemon = True
         self._log = log
@@ -581,6 +553,8 @@ class HostStatsThread(threading.Thread):
 
         self._sampleInterval = \
             config.getint('vars', 'host_sample_stats_interval')
+
+        hoststats.start(clock)
 
     def stop(self):
         self._stopEvent.set()
@@ -607,163 +581,9 @@ class HostStatsThread(threading.Thread):
             if not self._stopEvent.isSet():
                 self._log.exception("Error while sampling stats")
 
-    @utils.memoized
-    def _boot_time(self):
-        # Try to get boot time only once, if N/A just log the error and never
-        # include it in the response.
-        try:
-            return getBootTime()
-        except (IOError, ValueError):
-            self._log.exception('Failed to get boot time')
-            return None
-
     def get(self):
-        stats = self._empty_stats()
-
         first_sample, last_sample, _ = self._samples.stats()
-        if first_sample is None:
-            return stats
-
-        stats.update(_get_interfaces_stats(first_sample, last_sample))
-
-        interval = last_sample.timestamp - first_sample.timestamp
-
-        jiffies = (
-            last_sample.pidcpu.user - first_sample.pidcpu.user
-        ) % JIFFIES_BOUND
-        stats['cpuUserVdsmd'] = jiffies / interval
-        jiffies = (
-            last_sample.pidcpu.sys - first_sample.pidcpu.sys
-        ) % JIFFIES_BOUND
-        stats['cpuSysVdsmd'] = jiffies / interval
-
-        jiffies = (
-            last_sample.totcpu.user - first_sample.totcpu.user
-        ) % JIFFIES_BOUND
-        stats['cpuUser'] = jiffies / interval / self._ncpus
-        jiffies = (
-            last_sample.totcpu.sys - first_sample.totcpu.sys
-        ) % JIFFIES_BOUND
-        stats['cpuSys'] = jiffies / interval / self._ncpus
-        stats['cpuIdle'] = max(0.0,
-                               100.0 - stats['cpuUser'] - stats['cpuSys'])
-        stats['memUsed'] = last_sample.memUsed
-        stats['anonHugePages'] = last_sample.anonHugePages
-        stats['cpuLoad'] = last_sample.cpuLoad
-
-        stats['diskStats'] = last_sample.diskStats
-        stats['thpState'] = last_sample.thpState
-
-        if self._boot_time():
-            stats['bootTime'] = self._boot_time()
-
-        stats['numaNodeMemFree'] = last_sample.numaNodeMem.nodesMemSample
-        stats['cpuStatistics'] = _get_cpu_core_stats(
-            first_sample, last_sample)
-
-        stats['v2vJobs'] = v2v.get_jobs_status()
-        return stats
-
-    def _empty_stats(self):
-        return {
-            'cpuUser': 0.0,
-            'cpuSys': 0.0,
-            'cpuIdle': 100.0,
-            'rxRate': 0.0,  # REQUIRED_FOR: engine < 3.6
-            'txRate': 0.0,  # REQUIRED_FOR: engine < 3.6
-            'cpuSysVdsmd': 0.0,
-            'cpuUserVdsmd': 0.0,
-            'elapsedTime': int(time.time() - self.startTime)
-        }
-
-
-def _get_cpu_core_stats(first_sample, last_sample):
-    interval = last_sample.timestamp - first_sample.timestamp
-
-    def compute_cpu_usage(cpu_core, mode):
-        jiffies = (
-            last_sample.cpuCores.getCoreSample(cpu_core)[mode] -
-            first_sample.cpuCores.getCoreSample(cpu_core)[mode]
-        ) % JIFFIES_BOUND
-        return ("%.2f" % (jiffies / interval))
-
-    cpu_core_stats = {}
-    for node_index, numa_node in six.iteritems(caps.getNumaTopology()):
-        cpu_cores = numa_node['cpus']
-        for cpu_core in cpu_cores:
-            core_stat = {
-                'nodeIndex': int(node_index),
-                'cpuUser': compute_cpu_usage(cpu_core, 'user'),
-                'cpuSys': compute_cpu_usage(cpu_core, 'sys'),
-            }
-            core_stat['cpuIdle'] = (
-                "%.2f" % max(0.0,
-                             100.0 -
-                             float(core_stat['cpuUser']) -
-                             float(core_stat['cpuSys'])))
-            cpu_core_stats[str(cpu_core)] = core_stat
-    return cpu_core_stats
-
-
-def _get_interfaces_stats(first_sample, last_sample):
-    interval = last_sample.timestamp - first_sample.timestamp
-
-    rx = tx = rxDropped = txDropped = 0
-    stats = {'network': {}}
-    total_rate = 0
-    for ifid in last_sample.interfaces:
-        # it skips hot-plugged devices if we haven't enough information
-        # to count stats from it
-        if ifid not in first_sample.interfaces:
-            continue
-
-        ifrate = last_sample.interfaces[ifid].speed or 1000
-        Mbps2Bps = (10 ** 6) / 8
-        thisRx = (
-            last_sample.interfaces[ifid].rx -
-            first_sample.interfaces[ifid].rx
-            ) % NETSTATS_BOUND
-        thisTx = (
-            last_sample.interfaces[ifid].tx -
-            first_sample.interfaces[ifid].tx
-            ) % NETSTATS_BOUND
-        rxRate = 100.0 * thisRx / interval / ifrate / Mbps2Bps
-        txRate = 100.0 * thisTx / interval / ifrate / Mbps2Bps
-        if txRate > 100 or rxRate > 100:
-            txRate = min(txRate, 100.0)
-            rxRate = min(rxRate, 100.0)
-            logging.debug('Rate above 100%%.')
-        iface = last_sample.interfaces[ifid]
-        stats['network'][ifid] = {
-            'name': ifid, 'speed': str(ifrate),
-            'rxDropped': str(iface.rxDropped),
-            'txDropped': str(iface.txDropped),
-            'rxErrors': str(iface.rxErrors),
-            'txErrors': str(iface.txErrors),
-            'state': iface.operstate,
-            'rxRate': '%.1f' % rxRate,
-            'txRate': '%.1f' % txRate,
-            'rx': str(iface.rx),
-            'tx': str(iface.tx),
-            'sampleTime': last_sample.timestamp,
-        }
-        rx += thisRx
-        tx += thisTx
-        rxDropped += last_sample.interfaces[ifid].rxDropped
-        txDropped += last_sample.interfaces[ifid].txDropped
-        total_rate += ifrate
-
-    total_bytes_per_sec = (total_rate or 1000) * (10 ** 6) / 8
-    stats['rxRate'] = 100.0 * rx / interval / total_bytes_per_sec
-    stats['txRate'] = 100.0 * tx / interval / total_bytes_per_sec
-    if stats['txRate'] > 100 or stats['rxRate'] > 100:
-        stats['txRate'] = min(stats['txRate'], 100.0)
-        stats['rxRate'] = min(stats['rxRate'], 100.0)
-        logging.debug(stats)
-    stats['rxDropped'] = rxDropped
-    stats['txDropped'] = txDropped
-
-    return stats
+        return hoststats.produce(self._ncpus, first_sample, last_sample)
 
 
 def _getLinkSpeed(dev):

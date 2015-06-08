@@ -27,6 +27,7 @@ dist_vdsm_virt_PYTHON = \
 	__init__.py \
 	domain_descriptor.py \
 	guestagent.py \
+	hoststats.py \
 	migration.py \
 	periodic.py \
 	sampling.py \

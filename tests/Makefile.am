@@ -55,6 +55,7 @@ test_modules = \
 	guestagentTests.py \
 	hooksTests.py \
 	hostdevTests.py \
+	hoststatsTests.py \
 	iproute2Tests.py \
 	ipwrapperTests.py \
 	iscsiTests.py \
