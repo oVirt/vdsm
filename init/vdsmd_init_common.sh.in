@@ -206,11 +206,22 @@ _mk_run_path() {
     done
 }
 
+_mk_console_path() {
+    local console_path=/var/run/ovirt-vmconsole-console
+    if ! [ -d "${console_path}" ]; then
+        @MKDIR_P@ "${console_path}" > /dev/null 2>&1
+    fi
+    "@CHOWN_PATH@" @VDSMUSER@:@QEMUGROUP@ "${console_path}"
+    "@CHMOD_PATH@" 0775 "${console_path}" > /dev/null 2>&1
+    "@CHCON_PATH@" "system_u:object_r:qemu_var_run_t:s0" "${console_path}" > /dev/null 2>&1
+}
+
 task_mkdirs(){
     _mk_data_center
     _mk_core_path
     _mk_dom_backup
     _mk_run_path
+    _mk_console_path
     "@CHMOD_PATH@" 1777 /dev/shm
 }
 
