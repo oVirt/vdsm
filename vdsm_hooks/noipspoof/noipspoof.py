@@ -1,12 +1,21 @@
 #!/usr/bin/python2
 """
-This hook allows to replace the default no-mac-spoof filter with a the stricter
-clean-traffic. To activate this hook
+This hook allows to replace the default no-mac-spoof filter with the stricter
+clean-traffic filter that is defined by libvirt and explained in
+https://libvirt.org/formatnwfilter.html#nwfconceptsvars.
+
+To activate this hook:
 - install this file as a before_vm_start hook
-- define the noipspoof custom property
-sudo engine-config -s "UserDefinedVMProperties=noipspoof=^[0-9.]*$"
-- enabled per a specfic VM by setting its noipspoof to a comman-separated list
-  of valid IP addresses for it.
+- check which custom properties are currently defined
+
+sudo engine-config -g UserDefinedVMProperties
+
+- add the noipspoof custom property to them
+
+sudo engine-config -s "UserDefinedVMProperties=$PREVIOUS;noipspoof=^[0-9.,]*$"
+
+- enable the hook on a specific VM by setting its noipspoof custom property to
+  a comma-separated list of valid IP addresses for it.
 """
 from __future__ import print_function
 
