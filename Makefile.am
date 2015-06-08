@@ -78,6 +78,11 @@ PEP8_BLACKLIST = \
 	vdsm.py \
 	$(NULL)
 
+ABS_IMPORT_WHITELIST = \
+	lib
+	vdsm/network
+	$(NULL)
+
 WHITELIST = \
 	contrib/logdb \
 	contrib/profile-stats \
@@ -104,6 +109,12 @@ gitignore:
 	  done; \
 	fi;
 
+.PHONY: abs_imports
+abs_imports:
+	@for f in `git ls-files $(ABS_IMPORT_WHITELIST) |grep '.py$$\|.py.in$$'`; do\
+	  if ! grep -q '^from __future__ import absolute_import$$' "$$f"; then \
+	    echo "Missing absolute_import in $$f"; exit 1; fi; \
+	done;
 
 SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 	'lv' from line .*"

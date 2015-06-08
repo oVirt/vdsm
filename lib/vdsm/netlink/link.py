@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 from contextlib import contextmanager
 from ctypes import (CFUNCTYPE, byref, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, sizeof)

@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 try:
     import cPickle as pickle
     pickle  # make pyflakes happy

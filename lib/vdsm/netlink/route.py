@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 from ctypes import CFUNCTYPE, c_int, c_void_p, byref
 from functools import partial
 from socket import AF_UNSPEC

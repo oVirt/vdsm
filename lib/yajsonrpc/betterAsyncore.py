@@ -16,6 +16,7 @@
 # Asyncore uses inheritance all around which makes it not flexible enought for
 # us to use. This does tries to reuse enought code from the original asyncore
 # while enabling compositing instead of inheritance.
+from __future__ import absolute_import
 import asyncore
 import socket
 from errno import EWOULDBLOCK

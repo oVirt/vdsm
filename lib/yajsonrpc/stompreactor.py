@@ -13,17 +13,18 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
+from __future__ import absolute_import
 import logging
 from collections import deque, defaultdict
 from uuid import uuid4
 import functools
 
-import stomp
 from vdsm import utils
 from vdsm.compat import json
-from betterAsyncore import Dispatcher, Reactor
 from vdsm.sslutils import SSLSocket
-from yajsonrpc import JsonRpcClient
+from . import JsonRpcClient
+from . import stomp
+from .betterAsyncore import Dispatcher, Reactor
 
 _STATE_LEN = "Waiting for message length"
 _STATE_MSG = "Waiting for message"

@@ -20,6 +20,7 @@
 #
 # Description:    Constants definitions for vdsm and utilities.
 
+from __future__ import absolute_import
 import os
 
 # VDSM management networks

@@ -19,6 +19,7 @@
 #
 
 
+from __future__ import absolute_import
 _RPFILTER_STRICT = '1'
 _RPFILTER_LOOSE = '2'
 

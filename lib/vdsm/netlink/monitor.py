@@ -16,6 +16,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 from contextlib import closing, contextmanager
 from ctypes import CFUNCTYPE, c_int, c_void_p, py_object
 import Queue

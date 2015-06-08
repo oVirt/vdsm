@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 """
 This module provides a Scheduler class scheduling execution of
 a callable on a background thread.

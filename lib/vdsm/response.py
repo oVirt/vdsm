@@ -19,6 +19,7 @@
 #
 
 
+from __future__ import absolute_import
 from vdsm.define import doneCode
 from vdsm.define import errCode
 

@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 """
 This is a module to implement a python wrapper for eventfd(2).
 
