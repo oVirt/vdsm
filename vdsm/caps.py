@@ -408,6 +408,11 @@ def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
     # must be used
     if arch == Architecture.X86_64:
         arch = 'x86'
+
+    # Same goes for ppc64le
+    if arch == Architecture.PPC64LE:
+        arch = 'ppc64'
+
     architectureElement = None
 
     architectureElements = cpu_map.findall('arch')
