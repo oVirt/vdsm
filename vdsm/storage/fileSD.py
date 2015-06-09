@@ -193,11 +193,45 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
     def getIdsFilePath(self):
         return os.path.join(self.getMDPath(), sd.IDS)
 
+    def getImagePath(self, imgUUID):
+        return os.path.join(self.domaindir, sd.DOMAIN_IMAGES, imgUUID)
+
     def getVolumeClass(self):
         """
         Return a type specific volume generator object
         """
         return fileVolume.FileVolume
+
+    def deleteImage(self, sdUUID, imgUUID, volsImgs):
+        currImgDir = self.getImagePath(imgUUID)
+        dirName, baseName = os.path.split(currImgDir)
+        toDelDir = os.path.join(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
+        self.log.debug("Renaming dir %s to %s", currImgDir, toDelDir)
+        try:
+            self.oop.os.rename(currImgDir, toDelDir)
+        except OSError as e:
+            self.log.error("image: %s can't be moved", currImgDir)
+            raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
+        for volUUID in volsImgs:
+            volPath = os.path.join(toDelDir, volUUID)
+            try:
+                self.log.debug("Removing file: %s", volPath)
+                self.oop.os.remove(volPath)
+                metaFile = volPath + '.meta'
+                self.log.debug("Removing file: %s", metaFile)
+                self.oop.os.remove(metaFile)
+                leaseFile = volPath + '.lease'
+                self.log.debug("Removing file: %s", leaseFile)
+                self.oop.os.remove(leaseFile)
+            except OSError:
+                self.log.error("vol: %s can't be removed.",
+                               volPath, exc_info=True)
+        self.log.debug("Removing directory: %s", toDelDir)
+        try:
+            self.oop.os.rmdir(toDelDir)
+        except OSError as e:
+            self.log.error("removed image dir: %s can't be removed", toDelDir)
+            raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
 
 class FileStorageDomain(sd.StorageDomain):
@@ -379,40 +413,6 @@ class FileStorageDomain(sd.StorageDomain):
             if self.oop.os.path.isdir(i):
                 images.add(os.path.basename(i))
         return images
-
-    def getImagePath(self, imgUUID):
-        return os.path.join(self.domaindir, sd.DOMAIN_IMAGES, imgUUID)
-
-    def deleteImage(self, sdUUID, imgUUID, volsImgs):
-        currImgDir = self.getImagePath(imgUUID)
-        dirName, baseName = os.path.split(currImgDir)
-        toDelDir = os.path.join(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
-        self.log.debug("Renaming dir %s to %s", currImgDir, toDelDir)
-        try:
-            self.oop.os.rename(currImgDir, toDelDir)
-        except OSError as e:
-            self.log.error("image: %s can't be moved", currImgDir)
-            raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
-        for volUUID in volsImgs:
-            volPath = os.path.join(toDelDir, volUUID)
-            try:
-                self.log.debug("Removing file: %s", volPath)
-                self.oop.os.remove(volPath)
-                metaFile = volPath + '.meta'
-                self.log.debug("Removing file: %s", metaFile)
-                self.oop.os.remove(metaFile)
-                leaseFile = volPath + '.lease'
-                self.log.debug("Removing file: %s", leaseFile)
-                self.oop.os.remove(leaseFile)
-            except OSError:
-                self.log.error("vol: %s can't be removed.",
-                               volPath, exc_info=True)
-        self.log.debug("Removing directory: %s", toDelDir)
-        try:
-            self.oop.os.rmdir(toDelDir)
-        except OSError as e:
-            self.log.error("removed image dir: %s can't be removed", toDelDir)
-            raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
         self.log.warning("image %s on a fileSD %s won't be zeroed." %

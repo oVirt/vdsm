@@ -589,6 +589,64 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         return blockVolume.BlockVolume
 
+    def _getImgExclusiveVols(self, imgUUID, volsImgs):
+        """Filter vols belonging to imgUUID only."""
+        exclusives = dict((vName, v) for vName, v in volsImgs.iteritems()
+                          if v.imgs[0] == imgUUID)
+        return exclusives
+
+    def _markForDelVols(self, sdUUID, imgUUID, volUUIDs, opTag):
+        """
+        Mark volumes that will be zeroed or removed.
+
+        Mark for delete just in case that lvremove [lvs] success partialy.
+        Mark for zero just in case that zero process is interrupted.
+
+        Tagging is preferable to rename since it can be done in a single lvm
+        operation and is resilient to open LVs, etc.
+        """
+        try:
+            lvm.changelv(sdUUID, volUUIDs,
+                         (("-a", "y"),
+                          ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
+                          ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
+                           opTag + imgUUID)))
+        except se.StorageException as e:
+            log.error("Can't activate or change LV tags in SD %s. "
+                      "failing Image %s %s operation for vols: %s. %s",
+                      sdUUID, imgUUID, opTag, volUUIDs, e)
+            raise
+
+    def _rmDCVolLinks(self, imgPath, volsImgs):
+        for vol in volsImgs:
+            lPath = os.path.join(imgPath, vol)
+            removedPaths = []
+            try:
+                os.unlink(lPath)
+            except OSError as e:
+                self.log.warning("Can't unlink %s. %s", lPath, e)
+            else:
+                removedPaths.append(lPath)
+        self.log.debug("removed: %s", removedPaths)
+        return tuple(removedPaths)
+
+    def rmDCImgDir(self, imgUUID, volsImgs):
+        imgPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES, imgUUID)
+        self._rmDCVolLinks(imgPath, volsImgs)
+        try:
+            os.rmdir(imgPath)
+        except OSError:
+            self.log.warning("Can't rmdir %s", imgPath, exc_info=True)
+        else:
+            self.log.debug("removed image dir: %s", imgPath)
+        return imgPath
+
+    def deleteImage(self, sdUUID, imgUUID, volsImgs):
+        toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
+        self._markForDelVols(sdUUID, imgUUID, toDel, sd.REMOVED_IMAGE_PREFIX)
+        deleteVolumes(sdUUID, toDel)
+        self.rmDCImgDir(imgUUID, volsImgs)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -985,66 +1043,13 @@ class BlockStorageDomain(sd.StorageDomain):
             images.update(imgs)
         return images
 
-    def rmDCVolLinks(self, imgPath, volsImgs):
-        for vol in volsImgs:
-            lPath = os.path.join(imgPath, vol)
-            removedPaths = []
-            try:
-                os.unlink(lPath)
-            except OSError as e:
-                self.log.warning("Can't unlink %s. %s", lPath, e)
-            else:
-                removedPaths.append(lPath)
-        self.log.debug("removed: %s", removedPaths)
-        return tuple(removedPaths)
-
     def rmDCImgDir(self, imgUUID, volsImgs):
-        imgPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES, imgUUID)
-        self.rmDCVolLinks(imgPath, volsImgs)
-        try:
-            os.rmdir(imgPath)
-        except OSError:
-            self.log.warning("Can't rmdir %s", imgPath, exc_info=True)
-        else:
-            self.log.debug("removed image dir: %s", imgPath)
-        return imgPath
-
-    def _getImgExclusiveVols(self, imgUUID, volsImgs):
-        """Filter vols belonging to imgUUID only."""
-        exclusives = dict((vName, v) for vName, v in volsImgs.iteritems()
-                          if v.imgs[0] == imgUUID)
-        return exclusives
-
-    def __markForDelVols(self, sdUUID, imgUUID, volUUIDs, opTag):
-        """
-        Mark volumes that will be zeroed or removed.
-
-        Mark for delete just in case that lvremove [lvs] success partialy.
-        Mark for zero just in case that zero process is interrupted.
-
-        Tagging is preferable to rename since it can be done in a single lvm
-        operation and is resilient to open LVs, etc.
-        """
-        try:
-            lvm.changelv(sdUUID, volUUIDs, (("-a", "y"),
-                         ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
-                         ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
-                          opTag + imgUUID)))
-        except se.StorageException as e:
-            log.error("Can't activate or change LV tags in SD %s. "
-                      "failing Image %s %s operation for vols: %s. %s",
-                      sdUUID, imgUUID, opTag, volUUIDs, e)
-            raise
-
-    def deleteImage(self, sdUUID, imgUUID, volsImgs):
-        toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
-        self.__markForDelVols(sdUUID, imgUUID, toDel, sd.REMOVED_IMAGE_PREFIX)
-        deleteVolumes(sdUUID, toDel)
-        self.rmDCImgDir(imgUUID, volsImgs)
+        return self._manifest.rmDCImgDir(imgUUID, volsImgs)
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
-        toZero = self._getImgExclusiveVols(imgUUID, volsImgs)
-        self.__markForDelVols(sdUUID, imgUUID, toZero, sd.ZEROED_IMAGE_PREFIX)
+        toZero = self._manifest._getImgExclusiveVols(imgUUID, volsImgs)
+        self._manifest._markForDelVols(sdUUID, imgUUID, toZero,
+                                       sd.ZEROED_IMAGE_PREFIX)
         zeroImgVolumes(sdUUID, imgUUID, toZero)
         self.rmDCImgDir(imgUUID, volsImgs)
 
@@ -1058,7 +1063,7 @@ class BlockStorageDomain(sd.StorageDomain):
         deactivated.
         """
         allVols = self.getAllVolumes()
-        volUUIDs = self._getImgExclusiveVols(imgUUID, allVols)
+        volUUIDs = self._manifest._getImgExclusiveVols(imgUUID, allVols)
         lvm.deactivateLVs(self.sdUUID, volUUIDs)
 
     def getAllVolumesImages(self):

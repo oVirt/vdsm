@@ -100,6 +100,10 @@ class FakeDomainManifest(sd.StorageDomainManifest):
     def isData(self):
         pass
 
+    @recorded
+    def deleteImage(self, sdUUID, imgUUID, volsImgs):
+        pass
+
 
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -153,6 +157,14 @@ class FakeBlockDomainManifest(FakeDomainManifest):
 
     @recorded
     def getVolumeClass(self):
+        pass
+
+    @recorded
+    def rmDCImgDir(self, imgUUID, volsImgs):
+        pass
+
+    @recorded
+    def _getImgExclusiveVols(self, imgUUID, volsImgs):
         pass
 
 
@@ -262,6 +274,7 @@ class DomainTestMixin(object):
         ['isISO', 0],
         ['isBackup', 0],
         ['isData', 0],
+        ['deleteImage', 3],
         ])
     def test_common_functions(self, fn, nargs):
         self.check_call(fn, nargs)
@@ -280,6 +293,7 @@ class BlockTests(DomainTestMixin, VdsmTestCase):
         ['resizePV', 1],
         ['readMetadataMapping', 0],
         ['extendVolume', 3],
+        ['rmDCImgDir', 2],
     ])
     def test_block_functions(self, fn, nargs=0):
         self.check_call(fn, nargs)

@@ -434,6 +434,9 @@ class StorageDomain(object):
     def getVAllocSize(self, imgUUID, volUUID):
         return self._manifest.getVAllocSize(imgUUID, volUUID)
 
+    def deleteImage(self, sdUUID, imgUUID, volsImgs):
+        self._manifest.deleteImage(sdUUID, imgUUID, volsImgs)
+
     def prepareMailbox(self):
         """
         This method has been introduced in order to prepare the mailbox
