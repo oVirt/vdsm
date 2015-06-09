@@ -232,9 +232,22 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(set(nics),
                              set(config.bonds[bondName].get('nics')))
         if options is not None:
-            active = (opt + '=' + val for (opt, val)
-                      in netinfo.bondings[bondName]['opts'].iteritems())
-            self.assertTrue(set(options.split()) <= set(active))
+            active_opts = self._get_active_bond_opts(bondName)
+            self.assertTrue(set(options.split()) <= set(active_opts))
+
+    def _assert_exact_bond_opts(self, bond, opts):
+        """:param opts: list of strings e.g. ['miimon=150', 'mode=4']"""
+        # TODO: we should try and call this logic always during
+        # TODO: assertBondExists and be stricter. Will probably need to fix a
+        # TODO: few tests
+        self.assertEqual(set(self._get_active_bond_opts(bond)),
+                         set(opts))
+
+    def _get_active_bond_opts(self, bondName):
+        netinfo = self.vdsm_net.netinfo
+        active_options = [opt + '=' + val for (opt, val)
+                          in netinfo.bondings[bondName]['opts'].iteritems()]
+        return active_options
 
     def assertBondDoesntExist(self, bondName, nics=None):
         netinfo = self.vdsm_net.netinfo
@@ -1369,6 +1382,8 @@ class NetworkTest(TestCaseBase):
                 self.assertEquals(status, SUCCESS, msg)
 
                 self.assertBondExists(BONDING_NAME, nics=nics[:1])
+                self._assert_exact_bond_opts(BONDING_NAME,
+                                             ['miimon=150', 'mode=4'])
 
                 # Increase bond size
                 bondings[BONDING_NAME]['nics'] = nics
@@ -1377,6 +1392,8 @@ class NetworkTest(TestCaseBase):
                 self.assertEquals(status, SUCCESS, msg)
 
                 self.assertBondExists(BONDING_NAME, nics)
+                self._assert_exact_bond_opts(BONDING_NAME,
+                                             ['miimon=150', 'mode=4'])
 
                 # Reduce bond size
                 REQMODE_BROADCAST = '3'
@@ -1387,8 +1404,9 @@ class NetworkTest(TestCaseBase):
 
                 self.assertEquals(status, SUCCESS, msg)
 
-                self.assertBondExists(BONDING_NAME, nics[:2],
-                                      bondings[BONDING_NAME]['options'])
+                self.assertBondExists(BONDING_NAME, nics[:2])
+                self._assert_exact_bond_opts(
+                    BONDING_NAME, [bondings[BONDING_NAME]['options']])
 
                 bondings = {BONDING_NAME: dict(remove=True)}
                 status, msg = self.setupNetworks({}, bondings, {})

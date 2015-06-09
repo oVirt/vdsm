@@ -18,6 +18,7 @@
 #
 from __future__ import absolute_import
 
+import errno
 import glob
 import logging
 import os
@@ -142,6 +143,7 @@ class Ifcfg(Configurator):
 
         if bondIfcfgWritten:
             ifdown(bond.name)
+            _restore_default_bond_options(bond.name, bond.options)
             ifup(bond.name)
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
@@ -830,3 +832,61 @@ def ifup(iface, async=False):
     else:
         rc, out, err = _ifup(iface)
         return rc
+
+
+def _restore_default_bond_options(bond_name, desired_options):
+    """Restore bond options to the default options of the desired mode. First
+    we change the bond mode to the desired mode (if needed) to avoid
+    'Operation not permitted' errors and then reset the non-default options
+    """
+
+    desired_options = dict(p.split('=', 1) for p in desired_options.split())
+    current_opts = netinfo.bondOpts(bond_name)
+    current_mode = current_opts['mode']
+    desired_mode = (_get_mode_from_desired_options(desired_options)
+                    or current_mode)
+
+    if desired_mode != current_mode:
+        try:
+            with open(netinfo.BONDING_OPT % (bond_name, 'mode'), 'w') as f:
+                f.write(' '.join(desired_mode))
+        except IOError as e:
+            if e.errno == errno.EPERM:
+                # give up here since this bond was probably not configured by
+                # VDSM and ifdown it leaves active slave interfaces
+                logging.warning('Failed resetting bond %s options to default. '
+                                'This happens probably because this is an '
+                                'external bond and still has slaves even after'
+                                'calling ifdown on it', bond_name)
+                return
+            raise
+
+    diff = {}
+    default_opts = netinfo.getDefaultBondingOptions(desired_mode[1])
+    for k, v in default_opts.iteritems():
+        if k != 'mode' and k in current_opts and v != current_opts[k]:
+            diff[k] = default_opts[k]
+    for k, v in diff.iteritems():
+        with open(netinfo.BONDING_OPT % (bond_name, k), 'w') as f:
+            f.write(' '.join(v))
+
+
+def _get_mode_from_desired_options(desired_options):
+    if 'mode' not in desired_options:
+        return None
+
+    MODE_NAME_TO_NUMBER = {
+        'balance-rr': '0',
+        'active-backup': '1',
+        'balance-xor': '2',
+        'broadcast': '3',
+        '802.3ad': '4',
+        'balance-tlb': '5',
+        'balance-alb': '6',
+    }
+
+    desired_mode = desired_options['mode']
+    for k, v in MODE_NAME_TO_NUMBER.iteritems():
+        if desired_mode in (k, v):
+            return [k, v]
+    raise Exception('Error translating bond mode.')
