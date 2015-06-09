@@ -62,7 +62,7 @@ public class SubscriptionHolder {
         this.filteredId = new ArrayList<>();
         for (String id : ids) {
             if (!ALL.equals(id)) {
-                filteredId.add(id);
+                this.filteredId.add(id);
             }
         }
     }
