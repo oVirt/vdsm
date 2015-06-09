@@ -317,8 +317,20 @@ class StorageDomainManifest(object):
             return os.path.join(self.domaindir, DOMAIN_META_DATA)
         return None
 
+    def getMetadata(self):
+        """
+        Unified Metadata accessor/mutator
+        """
+        return self._metadata.copy()
+
     def getMetaParam(self, key):
         return self._metadata[key]
+
+    def getVersion(self):
+        return self.getMetaParam(DMDK_VERSION)
+
+    def resizePV(self, guid):
+        pass
 
 
 class StorageDomain(object):
@@ -505,7 +517,7 @@ class StorageDomain(object):
                           exc_info=True)
 
     def getVersion(self):
-        return self.getMetaParam(DMDK_VERSION)
+        return self._manifest.getVersion()
 
     def getFormat(self):
         return str(self.getVersion())
@@ -781,10 +793,7 @@ class StorageDomain(object):
         pass
 
     def getMetadata(self):
-        """
-        Unified Metadata accessor/mutator
-        """
-        return self._metadata.copy()
+        return self._manifest.getMetadata()
 
     def setMetadata(self, newMetadata):
         # Backup old md (rotate old backup files)
@@ -847,9 +856,6 @@ class StorageDomain(object):
         pass
 
     def extend(self, devlist, force):
-        pass
-
-    def resizePV(self, guid):
         pass
 
     def isMaster(self):

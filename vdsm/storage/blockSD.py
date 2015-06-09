@@ -408,6 +408,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             metadata = selectMetadata(self.sdUUID)
         self.replaceMetadata(metadata)
 
+        # _extendlock is used to prevent race between
+        # VG extend and LV extend.
+        self._extendlock = threading.Lock()
+
         try:
             self.logBlkSize = self.getMetaParam(DMDK_LOGBLKSIZE)
             self.phyBlkSize = self.getMetaParam(DMDK_PHYBLKSIZE)
@@ -418,6 +422,15 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             # Such domains supported only 512 sizes
             self.logBlkSize = 512
             self.phyBlkSize = 512
+
+    def readMetadataMapping(self):
+        meta = self.getMetadata()
+        for key in meta.keys():
+            if not DMDK_PV_REGEX.match(key):
+                del meta[key]
+
+        self.log.info("META MAPPING: %s" % meta)
+        return meta
 
     def getReadDelay(self):
         stats = misc.readspeed(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
@@ -450,6 +463,126 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         lvm.activateLVs(self.sdUUID, [sd.IDS])
         return lvm.lvPath(self.sdUUID, sd.IDS)
 
+    def extendVolume(self, volumeUUID, size, isShuttingDown=None):
+        self._extendlock.acquire()
+        try:
+            # FIXME: following line.
+            lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
+        finally:
+            self._extendlock.release()
+
+    @classmethod
+    def getMetaDataMapping(cls, vgName, oldMapping={}):
+        firstDev, firstExtent = lvm.getFirstExt(vgName, sd.METADATA)
+        firstExtent = int(firstExtent)
+        if firstExtent != 0:
+            cls.log.error("INTERNAL: metadata ext is not 0")
+            raise se.MetaDataMappingError("vg %s: metadata extent is not the "
+                                          "first extent" % vgName)
+
+        pvlist = list(lvm.listPVNames(vgName))
+
+        pvlist.remove(firstDev)
+        pvlist.insert(0, firstDev)
+        cls.log.info("Create: SORT MAPPING: %s" % pvlist)
+
+        mapping = {}
+        devNum = len(oldMapping)
+        for dev in pvlist:
+            knownDev = False
+            for pvID, oldInfo in oldMapping.iteritems():
+                if os.path.basename(dev) == oldInfo["guid"]:
+                    mapping[pvID] = oldInfo
+                    knownDev = True
+                    break
+
+            if knownDev:
+                continue
+
+            pv = lvm.getPV(dev)
+            pvInfo = {}
+            pvInfo["guid"] = os.path.basename(pv.name)
+            pvInfo["uuid"] = pv.uuid
+            # this is another trick, it's not the
+            # the pestart value you expect, it's just
+            # 0, always
+            pvInfo["pestart"] = 0
+            pvInfo["pecount"] = pv.pe_count
+            if devNum == 0:
+                mapOffset = 0
+            else:
+                prevDevNum = devNum - 1
+                try:
+                    prevInfo = mapping["PV%d" % (prevDevNum,)]
+                except KeyError:
+                    prevInfo = oldMapping["PV%d" % (prevDevNum,)]
+
+                mapOffset = int(prevInfo["mapoffset"]) + \
+                    int(prevInfo["pecount"])
+
+            pvInfo["mapoffset"] = mapOffset
+            mapping["PV%d" % devNum] = pvInfo
+            devNum += 1
+
+        return mapping
+
+    def updateMapping(self):
+        # First read existing mapping from metadata
+        with self._metadata.transaction():
+            mapping = self.getMetaDataMapping(self.sdUUID,
+                                              self.readMetadataMapping())
+            for key in set(self._metadata.keys() + mapping.keys()):
+                if DMDK_PV_REGEX.match(key):
+                    if key in mapping:
+                        self._metadata[key] = mapping[key]
+                    else:
+                        del self._metadata[key]
+
+    @classmethod
+    def metaSize(cls, vgroup):
+        ''' Calc the minimal meta volume size in MB'''
+        # In any case the metadata volume cannot be less than 512MB for the
+        # case of 512 bytes per volume metadata, 2K for domain metadata and
+        # extent size of 128MB. In any case we compute the right size on line.
+        vg = lvm.getVG(vgroup)
+        minmetasize = (SD_METADATA_SIZE / sd.METASIZE * int(vg.extent_size) +
+                       (1024 * 1024 - 1)) / (1024 * 1024)
+        metaratio = int(vg.extent_size) / sd.METASIZE
+        metasize = (int(vg.extent_count) * sd.METASIZE +
+                    (1024 * 1024 - 1)) / (1024 * 1024)
+        metasize = max(minmetasize, metasize)
+        if metasize > int(vg.free) / (1024 * 1024):
+            raise se.VolumeGroupSizeError(
+                "volume group has not enough extents %s (Minimum %s), VG may "
+                "be too small" % (vg.extent_count,
+                                  (1024 * 1024) / sd.METASIZE))
+        cls.log.info("size %s MB (metaratio %s)" % (metasize, metaratio))
+        return metasize
+
+    def extend(self, devlist, force):
+        with self._extendlock:
+            if self.getVersion() in VERS_METADATA_LV:
+                mapping = self.readMetadataMapping().values()
+                if len(mapping) + len(devlist) > MAX_PVS:
+                    raise se.StorageDomainIsMadeFromTooManyPVs()
+
+            knowndevs = set(multipath.getMPDevNamesIter())
+            unknowndevs = set(devlist) - knowndevs
+            if unknowndevs:
+                raise se.InaccessiblePhysDev(unknowndevs)
+
+            lvm.extendVG(self.sdUUID, devlist, force)
+            self.updateMapping()
+            newsize = self.metaSize(self.sdUUID)
+            lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
+
+    def resizePV(self, guid):
+        with self._extendlock:
+            lvm.resizePV(self.sdUUID, guid)
+            self.updateMapping()
+            newsize = self.metaSize(self.sdUUID)
+            lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -464,9 +597,6 @@ class BlockStorageDomain(sd.StorageDomain):
         # block sizes.
         lvm.checkVGBlockSizes(sdUUID, (self.logBlkSize, self.phyBlkSize))
 
-        # _extendlock is used to prevent race between
-        # VG extend and LV extend.
-        self._extendlock = threading.Lock()
         self.imageGarbageCollector()
         self._registerResourceNamespaces()
         self._lastUncachedSelftest = 0
@@ -501,24 +631,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     @classmethod
     def metaSize(cls, vgroup):
-        ''' Calc the minimal meta volume size in MB'''
-        # In any case the metadata volume cannot be less than 512MB for the
-        # case of 512 bytes per volume metadata, 2K for domain metadata and
-        # extent size of 128MB. In any case we compute the right size on line.
-        vg = lvm.getVG(vgroup)
-        minmetasize = (SD_METADATA_SIZE / sd.METASIZE * int(vg.extent_size) +
-                       (1024 * 1024 - 1)) / (1024 * 1024)
-        metaratio = int(vg.extent_size) / sd.METASIZE
-        metasize = (int(vg.extent_count) * sd.METASIZE +
-                    (1024 * 1024 - 1)) / (1024 * 1024)
-        metasize = max(minmetasize, metasize)
-        if metasize > int(vg.free) / (1024 * 1024):
-            raise se.VolumeGroupSizeError(
-                "volume group has not enough extents %s (Minimum %s), VG may "
-                "be too small" % (vg.extent_count,
-                                  (1024 * 1024) / sd.METASIZE))
-        cls.log.info("size %s MB (metaratio %s)" % (metasize, metaratio))
-        return metasize
+        return cls.manifestClass.metaSize(vgroup)
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, vgUUID, storageType,
@@ -660,94 +773,13 @@ class BlockStorageDomain(sd.StorageDomain):
 
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
-        firstDev, firstExtent = lvm.getFirstExt(vgName, sd.METADATA)
-        firstExtent = int(firstExtent)
-        if firstExtent != 0:
-            cls.log.error("INTERNAL: metadata ext is not 0")
-            raise se.MetaDataMappingError("vg %s: metadata extent is not the "
-                                          "first extent" % vgName)
-
-        pvlist = list(lvm.listPVNames(vgName))
-
-        pvlist.remove(firstDev)
-        pvlist.insert(0, firstDev)
-        cls.log.info("Create: SORT MAPPING: %s" % pvlist)
-
-        mapping = {}
-        devNum = len(oldMapping)
-        for dev in pvlist:
-            knownDev = False
-            for pvID, oldInfo in oldMapping.iteritems():
-                if os.path.basename(dev) == oldInfo["guid"]:
-                    mapping[pvID] = oldInfo
-                    knownDev = True
-                    break
-
-            if knownDev:
-                continue
-
-            pv = lvm.getPV(dev)
-            pvInfo = {}
-            pvInfo["guid"] = os.path.basename(pv.name)
-            pvInfo["uuid"] = pv.uuid
-            # this is another trick, it's not the
-            # the pestart value you expect, it's just
-            # 0, always
-            pvInfo["pestart"] = 0
-            pvInfo["pecount"] = pv.pe_count
-            if devNum == 0:
-                mapOffset = 0
-            else:
-                prevDevNum = devNum - 1
-                try:
-                    prevInfo = mapping["PV%d" % (prevDevNum,)]
-                except KeyError:
-                    prevInfo = oldMapping["PV%d" % (prevDevNum,)]
-
-                mapOffset = int(prevInfo["mapoffset"]) + \
-                    int(prevInfo["pecount"])
-
-            pvInfo["mapoffset"] = mapOffset
-            mapping["PV%d" % devNum] = pvInfo
-            devNum += 1
-
-        return mapping
-
-    def updateMapping(self):
-        # First read existing mapping from metadata
-        with self._metadata.transaction():
-            mapping = self.getMetaDataMapping(self.sdUUID,
-                                              self.readMetadataMapping())
-            for key in set(self._metadata.keys() + mapping.keys()):
-                if DMDK_PV_REGEX.match(key):
-                    if key in mapping:
-                        self._metadata[key] = mapping[key]
-                    else:
-                        del self._metadata[key]
+        return cls.manifestClass.getMetaDataMapping(vgName, oldMapping)
 
     def extend(self, devlist, force):
-        with self._extendlock:
-            if self.getVersion() in VERS_METADATA_LV:
-                mapping = self.readMetadataMapping().values()
-                if len(mapping) + len(devlist) > MAX_PVS:
-                    raise se.StorageDomainIsMadeFromTooManyPVs()
-
-            knowndevs = set(multipath.getMPDevNamesIter())
-            unknowndevs = set(devlist) - knowndevs
-            if unknowndevs:
-                raise se.InaccessiblePhysDev(unknowndevs)
-
-            lvm.extendVG(self.sdUUID, devlist, force)
-            self.updateMapping()
-            newsize = self.metaSize(self.sdUUID)
-            lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
+        self._manifest.extend(devlist, force)
 
     def resizePV(self, guid):
-        with self._extendlock:
-            lvm.resizePV(self.sdUUID, guid)
-            self.updateMapping()
-            newsize = self.metaSize(self.sdUUID)
-            lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
+        self._manifest.resizePV(guid)
 
     _lvTagMetaSlotLock = threading.Lock()
 
@@ -832,13 +864,7 @@ class BlockStorageDomain(sd.StorageDomain):
                                       (self.sdUUID, dev, ext))
 
     def readMetadataMapping(self):
-        meta = self.getMetadata()
-        for key in meta.keys():
-            if not DMDK_PV_REGEX.match(key):
-                del meta[key]
-
-        self.log.info("META MAPPING: %s" % meta)
-        return meta
+        return self._manifest.readMetadataMapping()
 
     def getLeasesFileSize(self):
         lv = lvm.getLV(self.sdUUID, sd.LEASES)
@@ -1335,12 +1361,7 @@ class BlockStorageDomain(sd.StorageDomain):
                 os.symlink(src, dst)
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
-        self._extendlock.acquire()
-        try:
-            # FIXME: following line.
-            lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
-        finally:
-            self._extendlock.release()
+        return self._manifest.extendVolume(volumeUUID, size, isShuttingDown)
 
     def refresh(self):
         self.refreshDirTree()

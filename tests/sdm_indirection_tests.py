@@ -30,6 +30,15 @@ class FakeDomainManifest(sd.StorageDomainManifest):
         self.domaindir = '/a/b/c'
         self.mountpoint = '/a/b'
         self._metadata = {}
+        self.__class__._classmethod_calls = []
+
+    @classmethod
+    def record_classmethod_call(cls, fn, args):
+        cls._classmethod_calls.append((fn, args))
+
+    @classmethod
+    def get_classmethod_calls(cls):
+        return cls._classmethod_calls
 
     @recorded
     def replaceMetadata(self, md):
@@ -45,6 +54,14 @@ class FakeDomainManifest(sd.StorageDomainManifest):
 
     @recorded
     def getMetaParam(self, key):
+        pass
+
+    @recorded
+    def getVersion(self):
+        pass
+
+    @recorded
+    def getMetadata(self):
         pass
 
 
@@ -72,6 +89,30 @@ class FakeBlockDomainManifest(FakeDomainManifest):
 
     @recorded
     def getIdsFilePath(self):
+        pass
+
+    @recorded
+    def readMetadataMapping(self):
+        pass
+
+    @classmethod
+    def metaSize(cls, *args):
+        cls.record_classmethod_call('metaSize', args)
+
+    @classmethod
+    def getMetaDataMapping(cls, *args):
+        cls.record_classmethod_call('getMetaDataMapping', args)
+
+    @recorded
+    def resizePV(self, guid):
+        pass
+
+    @recorded
+    def extend(self, devlist, force):
+        pass
+
+    @recorded
+    def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         pass
 
 
@@ -133,6 +174,12 @@ class DomainTestMixin(object):
         args = tuple(range(nr_args))
         self._check(fn, args, [(fn, args, {})])
 
+    def check_classmethod_call(self, fn, nr_args=0):
+        args = tuple(range(nr_args))
+        getattr(self.dom, fn)(*args)
+        self.assertEquals(self.dom._manifest.get_classmethod_calls(),
+                          [(fn, args)])
+
     @permutations([
         ['sdUUID', 'a6ecac0a-5c6b-46d7-9ba5-df8b34df2d01'],
         ['domaindir', '/a/b/c'],
@@ -155,17 +202,36 @@ class DomainTestMixin(object):
         ['getIsoDomainImagesDir', 0],
         ['getMDPath', 0],
         ['getMetaParam', 1],
+        ['getVersion', 0],
+        ['getMetadata', 0],
         ])
     def test_common_functions(self, fn, nargs):
         self.check_call(fn, nargs)
 
 
+@expandPermutations
 class BlockTests(DomainTestMixin, VdsmTestCase):
     fakeDomClass = FakeBlockStorageDomain
 
     def test_block_properties(self):
         self.assertEqual(512, self.dom.logBlkSize)
         self.assertEqual(512, self.dom.phyBlkSize)
+
+    @permutations([
+        ['extend', 2],
+        ['resizePV', 1],
+        ['readMetadataMapping', 0],
+        ['extendVolume', 3],
+    ])
+    def test_block_functions(self, fn, nargs=0):
+        self.check_call(fn, nargs)
+
+    @permutations([
+        ['metaSize', 1],
+        ['getMetaDataMapping', 2],
+    ])
+    def test_block_classmethod(self, fn, nargs=0):
+        self.check_classmethod_call(fn, nargs)
 
 
 class FileTests(DomainTestMixin, VdsmTestCase):
