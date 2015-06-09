@@ -389,7 +389,15 @@ def _getEmulatedMachines(arch, capabilities=None):
 
     for archTag in caps.iter(tag='arch'):
         if archTag.get('name') == arch:
-            return [m.text for m in archTag.iterfind('machine')]
+            # We have to make sure to inspect 'canonical' attribute where
+            # libvirt puts the real machine name. Relevant bug:
+            # https://bugzilla.redhat.com/show_bug.cgi?id=1229666
+            return list(set((itertools.chain.from_iterable(
+                (
+                    (m.text, m.get('canonical')) if
+                    m.get('canonical') else (m.text,)
+                )
+                for m in archTag.iterfind('machine')))))
 
     return []
 

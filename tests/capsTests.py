@@ -127,9 +127,8 @@ class TestCaps(TestCaseBase):
         capsData = self._readCaps("caps_libvirt_amd_6274.out")
         machines = caps._getEmulatedMachines(caps.Architecture.X86_64,
                                              capsData)
-        expectedMachines = ['pc-0.15', 'pc', 'pc-1.0', 'pc-0.14',
-                            'pc-0.13', 'pc-0.12', 'pc-0.11',
-                            'pc-0.10', 'isapc']
+        expectedMachines = ['pc-1.0', 'pc', 'isapc', 'pc-0.12', 'pc-0.13',
+                            'pc-0.10', 'pc-0.11', 'pc-0.14', 'pc-0.15']
         self.assertEqual(machines, expectedMachines)
 
     def test_parseKeyVal(self):
@@ -295,9 +294,27 @@ class TestCaps(TestCaseBase):
     def test_getEmulatedMachines(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
         result = caps._getEmulatedMachines('x86_64', capsData)
-        expected = ['rhel6.5.0', 'pc', 'rhel6.4.0', 'rhel6.3.0', 'rhel6.2.0',
-                    'rhel6.1.0', 'rhel6.0.0', 'rhel5.5.0', 'rhel5.4.4',
-                    'rhel5.4.0']
+        expected = ['rhel6.3.0', 'rhel6.1.0', 'rhel6.2.0', 'pc', 'rhel5.4.0',
+                    'rhel5.4.4', 'rhel6.4.0', 'rhel6.0.0', 'rhel6.5.0',
+                    'rhel5.5.0']
+        self.assertEqual(expected, result)
+
+    def test_getEmulatedMachinesCanonical(self):
+        capsData = self._readCaps("caps_libvirt_intel_E5606.out")
+        result = caps._getEmulatedMachines('x86_64', capsData)
+        expected = ['pc-i440fx-rhel7.1.0',
+                    'rhel6.3.0',
+                    'pc-q35-rhel7.0.0',
+                    'rhel6.1.0',
+                    'rhel6.6.0',
+                    'rhel6.2.0',
+                    'pc',
+                    'pc-q35-rhel7.1.0',
+                    'q35',
+                    'rhel6.4.0',
+                    'rhel6.0.0',
+                    'rhel6.5.0',
+                    'pc-i440fx-rhel7.0.0']
         self.assertEqual(expected, result)
 
     def test_getNumaTopology(self):
