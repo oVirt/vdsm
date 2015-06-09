@@ -306,6 +306,25 @@ class StorageDomainManifest(object):
     def replaceMetadata(self, md):
         self._metadata = md
 
+    def getDomainRole(self):
+        return self.getMetaParam(DMDK_ROLE)
+
+    def getDomainClass(self):
+        return self.getMetaParam(DMDK_CLASS)
+
+    def getStorageType(self):
+        return self.getMetaParam(DMDK_TYPE)
+
+    def getRepoPath(self):
+        # This is here to make sure no one tries to get a repo
+        # path from an ISO domain.
+        if self.getDomainClass() == ISO_DOMAIN:
+            raise se.ImagesNotSupportedError()
+
+        # Get the datacenter ID.  When using storage pools this will be the
+        # spUUID.  Else, it's just a UUID to establish a storage namespace.
+        return os.path.join(storage_repository, self.getPools()[0])
+
     def getIsoDomainImagesDir(self):
         """
         Get 'images' directory from Iso domain
@@ -331,6 +350,33 @@ class StorageDomainManifest(object):
 
     def resizePV(self, guid):
         pass
+
+    def getFormat(self):
+        return str(self.getVersion())
+
+    def getPools(self):
+        try:
+            pools = self.getMetaParam(key=DMDK_POOLS)
+        except KeyError:
+            pools = []
+        else:
+            # Old pool MD marked SDs not belonging to any pool with
+            # BLANK_UUID as the pool uuid.
+            if BLANK_UUID in pools:
+                pools.remove(BLANK_UUID)
+        return pools
+
+    def getVolumeClass(self):
+        pass
+
+    def isISO(self):
+        return self.getMetaParam(DMDK_CLASS) == ISO_DOMAIN
+
+    def isBackup(self):
+        return self.getMetaParam(DMDK_CLASS) == BACKUP_DOMAIN
+
+    def isData(self):
+        return self.getMetaParam(DMDK_CLASS) == DATA_DOMAIN
 
 
 class StorageDomain(object):
@@ -472,10 +518,7 @@ class StorageDomain(object):
                                      volUUID)
 
     def getVolumeClass(self):
-        """
-        Return a type specific volume generator object
-        """
-        pass
+        return self._manifest.getVolumeClass()
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID,
                                    preallocate=None):
@@ -520,19 +563,10 @@ class StorageDomain(object):
         return self._manifest.getVersion()
 
     def getFormat(self):
-        return str(self.getVersion())
+        return self._manifest.getFormat()
 
     def getPools(self):
-        try:
-            pools = self.getMetaParam(key=DMDK_POOLS)
-        except KeyError:
-            pools = []
-        else:
-            # Old pool MD marked SDs not belonging to any pool with
-            # BLANK_UUID as the pool uuid.
-            if BLANK_UUID in pools:
-                pools.remove(BLANK_UUID)
-        return pools
+        return self._manifest.getPools()
 
     def getIdsFilePath(self):
         return self._manifest.getIdsFilePath()
@@ -729,13 +763,7 @@ class StorageDomain(object):
             self.createMasterTree()
 
     def _getRepoPath(self):
-        # This is here to make sure no one tries to get a repo
-        # path from an ISO domain.
-        if self.getDomainClass() == ISO_DOMAIN:
-            raise se.ImagesNotSupportedError()
-
-        # If it has a repo we don't have multiple domains. Assume single pool
-        return os.path.join(self.storage_repository, self.getPools()[0])
+        return self._manifest.getRepoPath()
 
     def getLinkBCImagePath(self, imgUUID):
         return image.Image(self._getRepoPath()) \
@@ -814,13 +842,13 @@ class StorageDomain(object):
         return self._manifest.getMetaParam(key)
 
     def getStorageType(self):
-        return self.getMetaParam(DMDK_TYPE)
+        return self._manifest.getStorageType()
 
     def getDomainRole(self):
-        return self.getMetaParam(DMDK_ROLE)
+        return self._manifest.getDomainRole()
 
     def getDomainClass(self):
-        return self.getMetaParam(DMDK_CLASS)
+        return self._manifest.getDomainClass()
 
     def getRemotePath(self):
         pass
@@ -874,13 +902,13 @@ class StorageDomain(object):
             self.changeRole(MASTER_DOMAIN)
 
     def isISO(self):
-        return self.getMetaParam(DMDK_CLASS) == ISO_DOMAIN
+        return self._manifest.isISO()
 
     def isBackup(self):
-        return self.getMetaParam(DMDK_CLASS) == BACKUP_DOMAIN
+        return self._manifest.isBackup()
 
     def isData(self):
-        return self.getMetaParam(DMDK_CLASS) == DATA_DOMAIN
+        return self._manifest.isData()
 
     def imageGarbageCollector(self):
         """

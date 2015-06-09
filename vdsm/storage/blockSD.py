@@ -583,6 +583,12 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             newsize = self.metaSize(self.sdUUID)
             lvm.extendLV(self.sdUUID, sd.METADATA, newsize)
 
+    def getVolumeClass(self):
+        """
+        Return a type specific volume generator object
+        """
+        return blockVolume.BlockVolume
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -756,12 +762,6 @@ class BlockStorageDomain(sd.StorageDomain):
         bsd.initSPMlease()
 
         return bsd
-
-    def getVolumeClass(self):
-        """
-        Return a type specific volume generator object
-        """
-        return blockVolume.BlockVolume
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID,
                                    preallocate=None):

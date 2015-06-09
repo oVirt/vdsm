@@ -64,6 +64,42 @@ class FakeDomainManifest(sd.StorageDomainManifest):
     def getMetadata(self):
         pass
 
+    @recorded
+    def getFormat(self):
+        pass
+
+    @recorded
+    def getPools(self):
+        pass
+
+    @recorded
+    def getRepoPath(self):
+        pass
+
+    @recorded
+    def getStorageType(self):
+        pass
+
+    @recorded
+    def getDomainRole(self):
+        pass
+
+    @recorded
+    def getDomainClass(self):
+        pass
+
+    @recorded
+    def isISO(self):
+        pass
+
+    @recorded
+    def isBackup(self):
+        pass
+
+    @recorded
+    def isData(self):
+        pass
+
 
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -115,6 +151,10 @@ class FakeBlockDomainManifest(FakeDomainManifest):
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         pass
 
+    @recorded
+    def getVolumeClass(self):
+        pass
+
 
 class FakeFileDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -139,6 +179,10 @@ class FakeFileDomainManifest(FakeDomainManifest):
 
     @recorded
     def getIdsFilePath(self):
+        pass
+
+    @recorded
+    def getVolumeClass(self):
         pass
 
 
@@ -189,6 +233,11 @@ class DomainTestMixin(object):
     def test_property(self, prop, val):
         self.assertEqual(getattr(self.dom, prop), val)
 
+    def test_getrepopath(self):
+        # The private method _getRepoPath in StorageDomain calls the public
+        # method getRepoPath in the StorageDomainManifest.
+        self._check('_getRepoPath', (), [('getRepoPath', (), {})])
+
     def test_nonexisting_function(self):
         self.assertRaises(AttributeError, self.check_call, 'foo')
 
@@ -204,6 +253,15 @@ class DomainTestMixin(object):
         ['getMetaParam', 1],
         ['getVersion', 0],
         ['getMetadata', 0],
+        ['getVolumeClass', 0],
+        ['getFormat', 0],
+        ['getPools', 0],
+        ['getStorageType', 0],
+        ['getDomainRole', 0],
+        ['getDomainClass', 0],
+        ['isISO', 0],
+        ['isBackup', 0],
+        ['isData', 0],
         ])
     def test_common_functions(self, fn, nargs):
         self.check_call(fn, nargs)

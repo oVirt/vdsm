@@ -193,6 +193,12 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
     def getIdsFilePath(self):
         return os.path.join(self.getMDPath(), sd.IDS)
 
+    def getVolumeClass(self):
+        """
+        Return a type specific volume generator object
+        """
+        return fileVolume.FileVolume
+
 
 class FileStorageDomain(sd.StorageDomain):
     manifestClass = FileStorageDomainManifest
@@ -332,12 +338,6 @@ class FileStorageDomain(sd.StorageDomain):
             fileName = entry[filePrefixLen:]
             filesDict[fileName] = stats
         return filesDict
-
-    def getVolumeClass(self):
-        """
-        Return a type specific volume generator object
-        """
-        return fileVolume.FileVolume
 
     def getVolumeLease(self, imgUUID, volUUID):
         """
