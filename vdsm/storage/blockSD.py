@@ -647,6 +647,43 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         deleteVolumes(sdUUID, toDel)
         self.rmDCImgDir(imgUUID, volsImgs)
 
+    def getAllVolumesImages(self):
+        """
+        Return all the images that depend on a volume.
+
+        Return dicts:
+        vols = {volUUID: ([imgUUID1, imgUUID2], parentUUID)]}
+        for complete images.
+        remnants (same) for broken imgs, orphan volumes, etc.
+        """
+        vols = {}  # The "legal" volumes: not half deleted/removed volumes.
+        remnants = {}  # Volumes which are part of failed image deletes.
+        allVols = getAllVolumes(self.sdUUID)
+        for volName, ip in allVols.iteritems():
+            if (volName.startswith(sd.REMOVED_IMAGE_PREFIX) or
+                    ip.imgs[0].startswith(sd.REMOVED_IMAGE_PREFIX)):
+                remnants[volName] = ip
+            else:
+                # Deleted images are not dependencies of valid volumes.
+                images = [img for img in ip.imgs
+                          if not img.startswith(sd.REMOVED_IMAGE_PREFIX)]
+                vols[volName] = sd.ImgsPar(images, ip.parent)
+        return vols, remnants
+
+    def getAllVolumes(self):
+        vols, rems = self.getAllVolumesImages()
+        return vols
+
+    def getAllImages(self):
+        """
+        Get the set of all images uuids in the SD.
+        """
+        vols = self.getAllVolumes()  # {volName: ([imgs], parent)}
+        images = set()
+        for imgs, parent in vols.itervalues():
+            images.update(imgs)
+        return images
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -1033,16 +1070,6 @@ class BlockStorageDomain(sd.StorageDomain):
                     mdavalid=vgMetadataStatus['mdavalid'],
                     mdathreshold=vgMetadataStatus['mdathreshold'])
 
-    def getAllImages(self):
-        """
-        Get the set of all images uuids in the SD.
-        """
-        vols = self.getAllVolumes()  # {volName: ([imgs], parent)}
-        images = set()
-        for imgs, parent in vols.itervalues():
-            images.update(imgs)
-        return images
-
     def rmDCImgDir(self, imgUUID, volsImgs):
         return self._manifest.rmDCImgDir(imgUUID, volsImgs)
 
@@ -1065,37 +1092,6 @@ class BlockStorageDomain(sd.StorageDomain):
         allVols = self.getAllVolumes()
         volUUIDs = self._manifest._getImgExclusiveVols(imgUUID, allVols)
         lvm.deactivateLVs(self.sdUUID, volUUIDs)
-
-    def getAllVolumesImages(self):
-        """
-        Return all the images that depend on a volume.
-
-        Return dicts:
-        vols = {volUUID: ([imgUUID1, imgUUID2], parentUUID)]}
-        for complete images.
-        remnants (same) for broken imgs, orphan volumes, etc.
-        """
-        vols = {}  # The "legal" volumes: not half deleted/removed volumes.
-        remnants = {}  # Volumes which are part of failed image deletes.
-        allVols = getAllVolumes(self.sdUUID)
-        for volName, ip in allVols.iteritems():
-            if (volName.startswith(sd.REMOVED_IMAGE_PREFIX) or
-                    ip.imgs[0].startswith(sd.REMOVED_IMAGE_PREFIX)):
-                        remnants[volName] = ip
-            else:
-                # Deleted images are not dependencies of valid volumes.
-                images = [img for img in ip.imgs
-                          if not img.startswith(sd.REMOVED_IMAGE_PREFIX)]
-                vols[volName] = sd.ImgsPar(images, ip.parent)
-        return vols, remnants
-
-    def getAllVolumes(self):
-        vols, rems = self.getAllVolumesImages()
-        return vols
-
-    def getAllRemnants(self):
-        vols, rems = self.getAllVolumesImages()
-        return rems
 
     def linkBCImage(self, imgPath, imgUUID):
         dst = self.getLinkBCImagePath(imgUUID)

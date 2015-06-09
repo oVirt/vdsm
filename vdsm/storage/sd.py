@@ -437,6 +437,12 @@ class StorageDomain(object):
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         self._manifest.deleteImage(sdUUID, imgUUID, volsImgs)
 
+    def getAllImages(self):
+        return self._manifest.getAllImages()
+
+    def getAllVolumes(self):
+        return self._manifest.getAllVolumes()
+
     def prepareMailbox(self):
         """
         This method has been introduced in order to prepare the mailbox

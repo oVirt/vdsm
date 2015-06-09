@@ -233,6 +233,87 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
             self.log.error("removed image dir: %s can't be removed", toDelDir)
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
 
+    def getAllVolumes(self):
+        """
+        Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
+
+        (imgUUIDs,) is a tuple of all the images that contain a certain
+        volUUID.  For non-templates volumes, this tuple consists of a single
+        image.  For template volume it consists of all the images that are
+        based on the template volume. In that case, the first imgUUID in the
+        tuple is the self-image of the template.
+
+        The parent of a non-template volume cannot be determined in file domain
+        without reading  the metadata. However, in order to have an output
+        compatible to block domain, we report parent as None.
+
+        Template volumes have no parent, and thus we report BLANK_UUID as their
+        parentUUID.
+        """
+        volMetaPattern = os.path.join(self.mountpoint, self.sdUUID,
+                                      sd.DOMAIN_IMAGES, "*", "*.meta")
+        volMetaPaths = self.oop.glob.glob(volMetaPattern)
+
+        # First create mapping from images to volumes
+        images = collections.defaultdict(list)
+        for metaPath in volMetaPaths:
+            head, tail = os.path.split(metaPath)
+            volUUID, volExt = os.path.splitext(tail)
+            imgUUID = os.path.basename(head)
+            images[imgUUID].append(volUUID)
+
+        # Using images to volumes mapping, we can create volumes to images
+        # mapping, detecting template volumes and template images, based on
+        # these rules:
+        #
+        # Template volumes are hard linked in every image directory
+        # which is derived from that template, therefore:
+        #
+        # 1. A template volume which is in use will appear at least twice
+        #    (in the template image dir and in the derived image dir)
+        #
+        # 2. Any volume which appears more than once in the dir tree is
+        #    by definition a template volume.
+        #
+        # 3. Any image which has more than 1 volume is not a template
+        #    image.
+
+        volumes = {}
+        for imgUUID, volUUIDs in images.iteritems():
+            for volUUID in volUUIDs:
+                if volUUID in volumes:
+                    # This must be a template volume (rule 2)
+                    volumes[volUUID]['parent'] = sd.BLANK_UUID
+                    if len(volUUIDs) > 1:
+                        # This image is not a template (rule 3)
+                        volumes[volUUID]['imgs'].append(imgUUID)
+                    else:
+                        # This image is a template (rule 3)
+                        volumes[volUUID]['imgs'].insert(0, imgUUID)
+                else:
+                    volumes[volUUID] = {'imgs': [imgUUID], 'parent': None}
+
+        return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
+                    for k, v in volumes.iteritems())
+
+    def getAllImages(self):
+        """
+        Fetch the set of the Image UUIDs in the SD.
+        """
+        # Get Volumes of an image
+        pattern = os.path.join(sd.storage_repository,
+                               # ISO domains don't have images,
+                               # we can assume single domain
+                               self.getPools()[0],
+                               self.sdUUID, sd.DOMAIN_IMAGES)
+        pattern = os.path.join(pattern, constants.UUID_GLOB_PATTERN)
+        files = self.oop.glob.glob(pattern)
+        images = set()
+        for i in files:
+            if self.oop.os.path.isdir(i):
+                images.add(os.path.basename(i))
+        return images
+
 
 class FileStorageDomain(sd.StorageDomain):
     manifestClass = FileStorageDomainManifest
@@ -396,24 +477,6 @@ class FileStorageDomain(sd.StorageDomain):
     def validateMasterMount(self):
         return self.oop.fileUtils.pathExists(self.getMasterDir())
 
-    def getAllImages(self):
-        """
-        Fetch the set of the Image UUIDs in the SD.
-        """
-        # Get Volumes of an image
-        pattern = os.path.join(self.storage_repository,
-                               # ISO domains don't have images,
-                               # we can assume single domain
-                               self.getPools()[0],
-                               self.sdUUID, sd.DOMAIN_IMAGES)
-        pattern = os.path.join(pattern, constants.UUID_GLOB_PATTERN)
-        files = self.oop.glob.glob(pattern)
-        images = set()
-        for i in files:
-            if self.oop.os.path.isdir(i):
-                images.add(os.path.basename(i))
-        return images
-
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
         self.log.warning("image %s on a fileSD %s won't be zeroed." %
                          (imgUUID, sdUUID))
@@ -426,69 +489,6 @@ class FileStorageDomain(sd.StorageDomain):
         imgUUID: the image to be deactivated.
         """
         pass
-
-    def getAllVolumes(self):
-        """
-        Return dict {volUUID: ((imgUUIDs,), parentUUID)} of the domain.
-
-        (imgUUIDs,) is a tuple of all the images that contain a certain
-        volUUID.  For non-templates volumes, this tuple consists of a single
-        image.  For template volume it consists of all the images that are
-        based on the template volume. In that case, the first imgUUID in the
-        tuple is the self-image of the template.
-
-        The parent of a non-template volume cannot be determined in file domain
-        without reading  the metadata. However, in order to have an output
-        compatible to block domain, we report parent as None.
-
-        Template volumes have no parent, and thus we report BLANK_UUID as their
-        parentUUID.
-        """
-        volMetaPattern = os.path.join(self.mountpoint, self.sdUUID,
-                                      sd.DOMAIN_IMAGES, "*", "*.meta")
-        volMetaPaths = self.oop.glob.glob(volMetaPattern)
-
-        # First create mapping from images to volumes
-        images = collections.defaultdict(list)
-        for metaPath in volMetaPaths:
-            head, tail = os.path.split(metaPath)
-            volUUID, volExt = os.path.splitext(tail)
-            imgUUID = os.path.basename(head)
-            images[imgUUID].append(volUUID)
-
-        # Using images to volumes mapping, we can create volumes to images
-        # mapping, detecting template volumes and template images, based on
-        # these rules:
-        #
-        # Template volumes are hard linked in every image directory
-        # which is derived from that template, therefore:
-        #
-        # 1. A template volume which is in use will appear at least twice
-        #    (in the template image dir and in the derived image dir)
-        #
-        # 2. Any volume which appears more than once in the dir tree is
-        #    by definition a template volume.
-        #
-        # 3. Any image which has more than 1 volume is not a template
-        #    image.
-
-        volumes = {}
-        for imgUUID, volUUIDs in images.iteritems():
-            for volUUID in volUUIDs:
-                if volUUID in volumes:
-                    # This must be a template volume (rule 2)
-                    volumes[volUUID]['parent'] = sd.BLANK_UUID
-                    if len(volUUIDs) > 1:
-                        # This image is not a template (rule 3)
-                        volumes[volUUID]['imgs'].append(imgUUID)
-                    else:
-                        # This image is a template (rule 3)
-                        volumes[volUUID]['imgs'].insert(0, imgUUID)
-                else:
-                    volumes[volUUID] = {'imgs': [imgUUID], 'parent': None}
-
-        return dict((k, sd.ImgsPar(tuple(v['imgs']), v['parent']))
-                    for k, v in volumes.iteritems())
 
     def linkBCImage(self, imgPath, imgUUID):
         # Nothing to do here other than returning the path

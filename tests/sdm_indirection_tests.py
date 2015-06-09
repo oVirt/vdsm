@@ -104,6 +104,14 @@ class FakeDomainManifest(sd.StorageDomainManifest):
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         pass
 
+    @recorded
+    def getAllImages(self):
+        pass
+
+    @recorded
+    def getAllVolumes(self):
+        pass
+
 
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -275,6 +283,8 @@ class DomainTestMixin(object):
         ['isBackup', 0],
         ['isData', 0],
         ['deleteImage', 3],
+        ['getAllImages', 0],
+        ['getAllVolumes', 0],
         ])
     def test_common_functions(self, fn, nargs):
         self.check_call(fn, nargs)

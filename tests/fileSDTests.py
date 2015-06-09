@@ -30,26 +30,25 @@ from storage import fileSD
 from storage import sd
 
 
+class TestingFileStorageDomainManifest(fileSD.FileStorageDomainManifest):
+
+    def __init__(self, domainpath, oop):
+        self.mountpoint = os.path.dirname(domainpath)
+        self.sdUUID = os.path.basename(domainpath)
+        self._oop = oop
+
+    @property
+    def oop(self):
+        return self._oop
+
+
 class TestingFileStorageDomain(fileSD.FileStorageDomain):
 
     stat = None  # Accessed in __del__
 
     def __init__(self, uuid, mountpoint, oop):
-        self._uuid = uuid
-        self._mountpoint = mountpoint
-        self._oop = oop
-
-    @property
-    def sdUUID(self):
-        return self._uuid
-
-    @property
-    def mountpoint(self):
-        return self._mountpoint
-
-    @property
-    def oop(self):
-        return self._oop
+        domainpath = os.path.join(mountpoint, uuid)
+        self._manifest = TestingFileStorageDomainManifest(domainpath, oop)
 
 
 class FakeGlob(object):
