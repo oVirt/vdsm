@@ -58,8 +58,8 @@ def main():
     IPs = os.environ.get('noipspoof', '').split(',')
     if IPs:
         domxml = hooking.read_domxml()
-        interface, = domxml.getElementsByTagName('interface')
-        replaceMacSpoofingFilter(interface, IPs)
+        for interface in domxml.getElementsByTagName('interface'):
+            replaceMacSpoofingFilter(interface, IPs)
         hooking.write_domxml(domxml)
 
 
