@@ -308,10 +308,6 @@ parameters = [
             'Port on which the vdsmd XMPRPC server listens to network '
             'clients.'),
 
-        ('json_port', '4044',
-            'Port on which the vdsmd Json RPC server listens to network '
-            'clients.'),
-
         ('management_ip', '0.0.0.0', 'Set to "::" to listen on IPv6.'),
 
         ('guests_gateway_ip', '', None),
