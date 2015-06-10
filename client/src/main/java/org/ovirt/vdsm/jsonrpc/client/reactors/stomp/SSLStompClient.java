@@ -4,6 +4,7 @@ import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_A
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ACK;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HOST;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_ID;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_REPLY_TO;
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.isEmpty;
@@ -34,7 +35,7 @@ public class SSLStompClient extends SSLClient {
                 subscribed = new CountDownLatch(1);
             }
 
-            Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2");
+            Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HOST, policy.getIdentifier());
             int outgoing = 0;
             int incoming = 0;
             if (policy.isIncomingHeartbeat()) {

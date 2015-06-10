@@ -2,6 +2,7 @@ package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_DESTINATION;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HEART_BEAT;
+import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.HEADER_HOST;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -52,6 +53,9 @@ public class StompListener extends StompClient implements Sender {
         Message response = executor.execute(message);
         if (Command.CONNECT.toString().equals(command)) {
             updatePolicyWithHeartbeat(response.getHeaders().get(HEADER_HEART_BEAT), false);
+            if (message.getHeaders().get(HEADER_HOST) != null) {
+                policy.setIdentifier(message.getHeaders().get(HEADER_HOST));
+            }
         }
         if (response != null) {
             this.send(response.build());

@@ -13,7 +13,9 @@ public class StompClientPolicy extends ClientPolicy {
     public StompClientPolicy(int retryTimeOut,
             int retryNumber,
             int heartbeat,
-            Class<? extends Exception> retryableException, String requestQueue, String responseQueue) {
+            Class<? extends Exception> retryableException,
+            String requestQueue,
+            String responseQueue) {
         super(retryTimeOut, retryNumber, heartbeat, retryableException);
         this.requestQueue = requestQueue;
         this.responseQueue = responseQueue;

@@ -41,6 +41,7 @@ public class Message {
     public static final String HEADER_CONTENT_LENGTH = "content-length";
     public static final String HEADER_CONTENT_TYPE = "content-type";
     public static final String HEADER_HEART_BEAT = "heart-beat";
+    public static final String HEADER_HOST = "host";
     public static final String END_OF_MESSAGE = "\000";
     public static final byte[] HEARTBEAT_FRAME = "\n".getBytes();
     private static final String CHARSET = ";charset=";

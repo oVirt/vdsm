@@ -20,6 +20,7 @@ public class ClientPolicy {
     private TimeUnit timeUnit = TimeUnit.MILLISECONDS;
     private AtomicBoolean isIncomingHeartbeat = new AtomicBoolean();
     private AtomicBoolean isOutgoingHeartbeat = new AtomicBoolean();
+    private String identifier;
 
     /**
      * Create policy using provided values.
@@ -120,6 +121,14 @@ public class ClientPolicy {
 
     public TimeUnit getTimeUnit() {
         return this.timeUnit;
+    }
+
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    public void setIdentifier(String identifier){
+        this.identifier = identifier;
     }
 
     public void setTimeUnit(TimeUnit timeUnit) {
