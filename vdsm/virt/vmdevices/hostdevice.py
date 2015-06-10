@@ -20,7 +20,7 @@
 
 from vdsm import utils
 from hostdev import get_device_params, detach_detachable, \
-    SkipIOMMUPLaceholderDevice, CAPABILITY_TO_XML_ATTR
+    CAPABILITY_TO_XML_ATTR
 from . import core
 from . import hwclass
 
@@ -77,7 +77,7 @@ class HostDevice(core.Base):
         if (CAPABILITY_TO_XML_ATTR[
                 self._deviceParams['capability']] == 'pci' and
                 utils.tobool(self.specParams.get('iommuPlaceholder', False))):
-            raise SkipIOMMUPLaceholderDevice
+            raise core.SkipDevice
 
         hostdev = self.createXmlElem(hwclass.HOSTDEV, None)
         hostdev.setAttrs(

@@ -30,6 +30,10 @@ from ..utils import cleanup_guest_socket
 from .. import vmxml
 
 
+class SkipDevice(Exception):
+    pass
+
+
 class Base(vmxml.Device):
     __slots__ = ('deviceType', 'device', 'alias', 'specParams', 'deviceId',
                  'conf', 'log', '_deviceXML', 'type', 'custom')

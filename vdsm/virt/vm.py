@@ -1583,7 +1583,7 @@ class Vm(object):
             for dev in self._devices[devType]:
                 try:
                     deviceXML = dev.getXML().toxml(encoding='utf-8')
-                except hostdev.SkipIOMMUPLaceholderDevice:
+                except vmdevices.core.SkipDevice:
                     continue
 
                 if getattr(dev, "custom", {}):

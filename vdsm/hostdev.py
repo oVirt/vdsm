@@ -33,14 +33,6 @@ class NoIOMMUSupportException(Exception):
     pass
 
 
-class SkipIOMMUPLaceholderDevice(Exception):
-    """
-    This exception is raised when the device is considered as a placeholder,
-    that is the device must be detached from the host to satisfy IOMMU group
-    constraint, but it is not passed further to VM.
-    """
-
-
 def name_to_pci_path(device_name):
     return device_name[4:].replace('_', '.').replace('.', ':', 2)
 
