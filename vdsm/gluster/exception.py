@@ -453,6 +453,11 @@ class GlusterHostStorageDeviceVGCreateFailedException(GlusterHostException):
                        "stripe size %s" % (name, devices, stripeSize)
 
 
+class GlusterHostStorageDeviceVGScanFailedException(GlusterHostException):
+    code = 4519
+    message = "vgscan failed"
+
+
 # Hook
 class GlusterHookException(GlusterException):
     code = 4500

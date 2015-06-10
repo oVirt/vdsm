@@ -50,6 +50,9 @@ _lvconvertCommandPath = utils.CommandPath("lvconvert",
 _lvchangeCommandPath = utils.CommandPath("lvchange",
                                          "/sbin/lvchange",
                                          "/usr/sbin/lvchange",)
+_vgscanCommandPath = utils.CommandPath("vgscan",
+                                       "/sbin/vgscan",
+                                       "/usr/sbin/vgscan",)
 
 # All size are in MiB unless otherwise specified
 DEFAULT_CHUNK_SIZE_KB = 256
@@ -317,5 +320,11 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
                 err=[errMsg])
     thinlv.format.setup(mountpoint=mountPoint)
     blivetEnv.doIt()
+
+    # bz#1230495: lvm devices are invisible and appears only after vgscan
+    # Workaround: Till the bz gets fixed, We use vgscan to refresh LVM devices
+    rc, out, err = utils.execCmd([_vgscanCommandPath.cmd])
+    if rc:
+        raise ge.GlusterHostStorageDeviceVGScanFailedException(rc, out, err)
     fstab.FsTab().add(thinlv.path, mountPoint, DEFAULT_FS_TYPE)
     return _getDeviceDict(thinlv)
