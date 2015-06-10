@@ -49,6 +49,7 @@ defaults {
     max_fds                     4096
 }
 
+# Remove devices entries when overrides section is available.
 devices {
     device {
         vendor                  "HITACHI"
@@ -75,6 +76,16 @@ devices {
         no_path_retry           fail
     }
 }
+
+# Enable when this section is available on all supported platforms.
+# Options defined here override device specific options embedded into
+# multipathd.
+#
+# overrides {
+#      features                "0"
+#      no_path_retry           fail
+# }
+
 """ % {"current_tag": _MPATH_CONF_TAG}
 
 _MAX_CONF_COPIES = 5
