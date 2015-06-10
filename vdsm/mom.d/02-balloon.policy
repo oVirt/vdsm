@@ -116,7 +116,7 @@
 })
 
 (with Guests guest
-    (if (valid guest.balloon_cur (guest.StatAvg "mem_unused"))
+    (if (valid guest.balloon_cur (guest.Stat "mem_unused"))
         (balloon_logic guest)
         (debug "Memory information is missing, ballooning for" guest "disabled")))
 
