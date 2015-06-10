@@ -103,8 +103,8 @@ class DaemonAdapter(object):
 
             os.execve(cmd[0], cmd, env)
 
-        except:
-            self._log("Error in daemonAdapater: %s" % traceback.print_exc())
+        except Exception:
+            self._log("Error in daemonAdapater: %s " % traceback.format_exc())
 
         finally:
             return 1
