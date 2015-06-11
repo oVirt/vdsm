@@ -222,6 +222,7 @@ Requires: sanlock >= 2.8, sanlock-python
 Requires: device-mapper-multipath >= 0.4.9-68
 Requires: e2fsprogs
 Requires: fence-agents-all
+Requires: kernel >= 3.10.0-132.el7
 Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
@@ -241,7 +242,7 @@ Requires: logrotate < 3.8.0
 %endif
 %else
 Requires: fence-agents-all
-Requires: kernel >= 3.11.3-201
+Requires: kernel >= 3.15.0
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
 Requires: initscripts >= 9.42.2-1
