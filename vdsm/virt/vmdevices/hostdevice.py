@@ -74,7 +74,9 @@ class HostDevice(core.Base):
             </devices>
             """
 
-        if utils.tobool(self.specParams.get('iommuPlaceholder', False)):
+        if (CAPABILITY_TO_XML_ATTR[
+                self._deviceParams['capability']] == 'pci' and
+                utils.tobool(self.specParams.get('iommuPlaceholder', False))):
             raise SkipIOMMUPLaceholderDevice
 
         hostdev = self.createXmlElem(hwclass.HOSTDEV, None)
