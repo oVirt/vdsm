@@ -22,6 +22,8 @@
 This module provides DSA software versioning information for
 python based components
 """
+import os
+
 version_name = "Snow Man"
 # FIXME: As soon as we can provide a long version/release to oVirt-Engine
 #        remove from vdsm.spec the sed to replace the below macros
@@ -29,11 +31,47 @@ software_version = "@PACKAGE_VERSION@"
 software_revision = "@PACKAGE_RELEASE@"
 raw_version_revision = "@PACKAGE_VERSION@.@PACKAGE_RELEASE@"
 
+
+def is_el6():
+    def _parseKeyVal(lines, delim='='):
+        d = {}
+        for line in lines:
+            kv = line.split(delim, 1)
+            if len(kv) != 2:
+                continue
+            k, v = map(str.strip, kv)
+            d[k] = v
+        return d
+
+    out = False
+    ver = None
+    if os.path.exists('/etc/rhev-hypervisor-release'):
+        ver = _parseKeyVal(file('/etc/default/version')).get('VERSION', '')
+    elif os.path.exists('/etc/redhat-release'):
+        import rpm
+        ts = rpm.TransactionSet()
+        for er in ts.dbMatch('basenames', '/etc/redhat-release'):
+            ver = er['version']
+
+    if ver and ver.startswith('6'):
+        out = True
+
+    return out
+
+
 version_info = {
     'version_name': version_name,
     'software_version': software_version,
     'software_revision': software_revision,
-    'supportedENGINEs': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
     'supportedProtocols': ['2.2', '2.3'],
-    'clusterLevels': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
 }
+if is_el6():
+    version_info.update({
+                'supportedENGINEs': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
+                'clusterLevels': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
+            })
+else:
+    version_info.update({
+            'supportedENGINEs': ['3.4', '3.5'],
+            'clusterLevels': ['3.4', '3.5'],
+        })
