@@ -26,6 +26,8 @@ from vdsm.utils import monotonic_time, traceback
 
 __all__ = ["betterAsyncore", "stompreactor", "stomp"]
 
+CALL_TIMEOUT = 15
+
 _STATE_INCOMING = 1
 _STATE_OUTGOING = 2
 _STATE_ONESHOT = 4
@@ -319,9 +321,9 @@ class JsonRpcClient(object):
 
         return resp.result
 
-    def call(self, *reqs):
+    def call(self, *reqs, **kwargs):
         call = self.call_async(*reqs)
-        call.wait()
+        call.wait(kwargs.get('timeout', CALL_TIMEOUT))
         return call.responses
 
     def call_async(self, *reqs):
