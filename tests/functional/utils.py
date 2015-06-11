@@ -160,7 +160,9 @@ class VdsProxy(object):
     @netinfo_altering
     def setupNetworks(self, networks, bonds, options):
         stack = inspect.stack()
-        options['_caller'] = stack[2][3]  # add calling method for logs
+        # add calling method for logs
+        test_method, code_line = stack[2][3], stack[2][2]
+        options['_caller'] = '{}:{}'.format(test_method, code_line)
         result = self.vdscli.setupNetworks(networks, bonds, options)
         return _parse_result(result)
 
