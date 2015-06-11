@@ -79,8 +79,8 @@ PEP8_BLACKLIST = \
 	$(NULL)
 
 ABS_IMPORT_WHITELIST = \
-	lib
-	vdsm/network
+	lib \
+	vdsm/network \
 	$(NULL)
 
 WHITELIST = \
