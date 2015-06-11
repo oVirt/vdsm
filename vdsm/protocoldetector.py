@@ -224,8 +224,8 @@ class MultiProtocolAcceptor:
 
         try:
             data = client_socket.recv(self._required_size, socket.MSG_PEEK)
-        except socket.error as e:
-            if e.errno not in (errno.EAGAIN, errno.EWOULDBLOCK):
+        except (SSL.SSLError, socket.error) as e:
+            if getattr(e, "errno", 0) not in (errno.EAGAIN, errno.EWOULDBLOCK):
                 self.log.warning("Unable to read data: %s", e)
                 self._remove_connection(client_socket)
                 client_socket.close()
