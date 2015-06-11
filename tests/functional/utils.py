@@ -18,6 +18,7 @@
 #
 from contextlib import contextmanager
 from functools import wraps
+import inspect
 import socket
 import time
 import threading
@@ -152,6 +153,10 @@ class VdsProxy(object):
 
     @netinfo_altering
     def setupNetworks(self, networks, bonds, options):
+        stack = inspect.stack()
+        # add calling method for logs
+        test_method, code_line = stack[3][3], stack[3][2]
+        options['_caller'] = '{}:{}'.format(test_method, code_line)
         result = self.vdscli.setupNetworks(networks, bonds, options)
         return result['status']['code'], result['status']['message']
 
