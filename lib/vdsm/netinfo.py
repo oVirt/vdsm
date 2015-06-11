@@ -294,7 +294,7 @@ def getaddr(dev):
 def prefix2netmask(prefix):
     if not 0 <= prefix <= 32:
         raise ValueError('%s is not a valid prefix value. It must be between '
-                         '0 and 32')
+                         '0 and 32' % prefix)
     return socket.inet_ntoa(
         struct.pack("!I", int('1' * prefix + '0' * (32 - prefix), 2)))
 
