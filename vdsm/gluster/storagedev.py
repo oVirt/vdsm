@@ -107,10 +107,18 @@ def _canCreateBrick(device):
     return True
 
 
+def _reset_blivet(blivetEnv):
+    try:
+        blivetEnv.reset()
+    except (blivet.errors.UnusableConfigurationError,
+            blivet.errors.StorageError) as e:
+        log.error("Error: %s" % e.message)
+
+
 @makePublic
 def storageDevicesList():
     blivetEnv = blivet.Blivet()
-    blivetEnv.reset()
+    _reset_blivet(blivetEnv)
     return _parseDevices(blivetEnv.devices)
 
 
@@ -148,8 +156,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
                 if rc:
                     raise ge.GlusterHostStorageDevicePVCreateFailedException(
                         dev.path, alignment, rc, out, err)
-
-            blivetEnv.reset()
+            _reset_blivet(blivetEnv)
             return _getDeviceList([dev.name for dev in deviceList])
 
         if alignment:
@@ -218,8 +225,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
             if rc:
                 raise ge.GlusterHostStorageDeviceLVChangeFailedException(
                     vgPoolName, rc, out, err)
-
-            blivetEnv.reset()
+            _reset_blivet(blivetEnv)
             return blivetEnv.devicetree.getDeviceByName(poolLv.name)
 
     if os.path.ismount(mountPoint):
@@ -242,7 +248,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         chunkSize = DEFAULT_CHUNK_SIZE_KB
 
     blivetEnv = blivet.Blivet()
-    blivetEnv.reset()
+    _reset_blivet(blivetEnv)
 
     deviceList = _getDeviceList(devNameList)
 
