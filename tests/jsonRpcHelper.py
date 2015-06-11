@@ -25,7 +25,6 @@ import threading
 from xmlrpclib import Transport, dumps, Fault
 from contextlib import contextmanager
 from itertools import product
-from M2Crypto import SSL
 from rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompDetector, StompRpcClient
@@ -36,6 +35,7 @@ from yajsonrpc.stomp import (
 from yajsonrpc import Notification
 from protocoldetector import MultiProtocolAcceptor
 from rpc.bindingjsonrpc import BindingJsonRpc
+from vdsm import utils
 from sslhelper import DEAFAULT_SSL_CONTEXT
 
 PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
@@ -136,24 +136,14 @@ def constructClient(log, bridge, ssl, type):
                 )
 
         def clientFactory():
-            return client(create_socket(
-                sslctx,
+            return client(utils.create_connected_socket(
                 acceptor._host,
-                acceptor._port
+                acceptor._port,
+                sslctx=sslctx,
+                timeout=TIMEOUT
             ))
 
         yield clientFactory
-
-
-def create_socket(sslctx, host, port):
-    sock = None
-    if sslctx:
-        sock = SSL.Connection(sslctx.context)
-    else:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(TIMEOUT)
-    sock.connect((host, port))
-    return sock
 
 
 class XMLClient():
