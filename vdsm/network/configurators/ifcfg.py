@@ -483,16 +483,9 @@ class ConfigWriter(object):
     def _ownedIfcfg(self, fpath):
         if not os.path.isfile(fpath):
             return False
-        try:
-            with open(fpath) as confFile:
-                content = confFile.readline()
-        except IOError as e:
-            if e.errno == os.errno.ENOENT:
-                return False
-            else:
-                raise
-        if content.startswith(self.CONFFILE_HEADER_BASE):
-            return True
+        with open(fpath) as confFile:
+            content = confFile.readline()
+            return content.startswith(self.CONFFILE_HEADER_BASE)
 
     def loadBackups(self):
         """ Load persistent backups into memory """
