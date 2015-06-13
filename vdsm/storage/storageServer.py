@@ -194,11 +194,11 @@ class MountConnection(object):
     def getLocalPathBase(cls):
         return cls.localPathBase
 
-    def __init__(self, spec, vfsType=None, options=""):
+    def __init__(self, spec, vfsType=None, options="", mountClass=mount.Mount):
         self._vfsType = vfsType
         self._remotePath = spec
         self._options = options
-        self._mount = mount.Mount(spec, self._getLocalPath())
+        self._mount = mountClass(spec, self._getLocalPath())
 
     def _getLocalPath(self):
         return os.path.join(self.getLocalPathBase(),

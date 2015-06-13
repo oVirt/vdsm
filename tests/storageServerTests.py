@@ -19,7 +19,15 @@
 #
 
 from testlib import VdsmTestCase
+from storage.storageServer import GlusterFSConnection
 from storage.storageServer import IscsiConnection
+from storage.storageServer import MountConnection
+
+
+class FakeMount(object):
+    def __init__(self, fs_spec, fs_file):
+        self.fs_spec = fs_spec
+        self.fs_file = fs_file
 
 
 class IscsiConnectionMismatchTests(VdsmTestCase):
@@ -37,3 +45,21 @@ class IscsiConnectionMismatchTests(VdsmTestCase):
                   IscsiConnection.Mismatch("error 2")]
         expected = "%s" % ["error 1", "error 2"]
         self.assertEqual(str(errors), expected)
+
+
+class MountConnectionTests(VdsmTestCase):
+
+    def test_mountpoint(self):
+        mount_con = MountConnection("dummy-spec", mountClass=FakeMount)
+        self.assertEquals(mount_con._mount.fs_spec, "dummy-spec")
+        self.assertEquals(mount_con._mount.fs_file, "/tmp/dummy-spec")
+
+
+class GlusterFSConnectionTests(VdsmTestCase):
+
+    def test_mountpoint(self):
+        mount_con = GlusterFSConnection("server:/volume", mountClass=FakeMount)
+        self.assertEquals(mount_con._mount.fs_spec,
+                          "server:/volume")
+        self.assertEquals(mount_con._mount.fs_file,
+                          "/tmp/glusterSD/server:_volume")
