@@ -530,7 +530,10 @@ class JsonRpcServer(object):
             # Empty batch request
             if len(rawRequests) == 0:
                 ctx.addResponse(
-                    JsonRpcResponse(None, JsonRpcInvalidRequestError(),
+                    JsonRpcResponse(None,
+                                    JsonRpcInvalidRequestError(
+                                        'request batch is empty',
+                                        rawRequests),
                                     None))
                 ctx.sendReply()
                 return
