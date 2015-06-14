@@ -407,6 +407,14 @@ class clientIF(object):
     def getAllVmStats(self):
         return [v.getStats() for v in self.vmContainer.values()]
 
+    def createStompClient(self, client_socket):
+        if 'jsonrpc' in self.bindings:
+            json_binding = self.bindings['jsonrpc']
+            reactor = json_binding.reactor
+            return reactor.createClient(client_socket)
+        else:
+            raise RuntimeError("json rpc server is not available")
+
     @utils.traceback()
     def _recoverThread(self):
         # Trying to run recover process until it works. During that time vdsm
