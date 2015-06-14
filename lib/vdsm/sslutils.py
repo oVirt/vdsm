@@ -20,12 +20,15 @@
 from __future__ import absolute_import
 import httplib
 import logging
+import os
 import socket
 import ssl
 import xmlrpclib
+
 from vdsm.utils import (
     monotonic_time,
 )
+from .config import config
 
 from M2Crypto import SSL, X509, threading
 
@@ -335,3 +338,17 @@ class SSLHandshakeDispatcher(object):
 
         if not self._is_handshaking:
             self._handshake_finished_handler(dispatcher)
+
+
+def create_ssl_context():
+    if config.getboolean('vars', 'ssl'):
+        truststore_path = config.get('vars', 'trust_store_path')
+        key_file = os.path.join(truststore_path, 'keys', 'vdsmkey.pem')
+        cert_file = os.path.join(truststore_path, 'certs', 'vdsmcert.pem')
+        ca_cert = os.path.join(truststore_path, 'certs', 'cacert.pem')
+        protocol = config.get('vars', 'ssl_protocol')
+        sslctx = SSLContext(cert_file, key_file, ca_cert=ca_cert,
+                            protocol=protocol)
+        return sslctx
+    else:
+        return None

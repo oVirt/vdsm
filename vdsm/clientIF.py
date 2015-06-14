@@ -34,7 +34,7 @@ from momIF import MomThread
 from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode
 import libvirt
-from vdsm.sslutils import SSLContext
+from vdsm import sslutils
 from vdsm import libvirtconnection
 from vdsm import constants
 from vdsm import utils
@@ -184,23 +184,11 @@ class clientIF(object):
         return cls._instance
 
     def _createAcceptor(self, host, port):
-        sslctx = self._createSSLContext()
+        sslctx = sslutils.create_ssl_context()
         self._reactor = Reactor()
 
         self._acceptor = MultiProtocolAcceptor(self._reactor, host,
                                                port, sslctx)
-
-    def _createSSLContext(self):
-        sslctx = None
-        if config.getboolean('vars', 'ssl'):
-            truststore_path = config.get('vars', 'trust_store_path')
-            key_file = os.path.join(truststore_path, 'keys', 'vdsmkey.pem')
-            cert_file = os.path.join(truststore_path, 'certs', 'vdsmcert.pem')
-            ca_cert = os.path.join(truststore_path, 'certs', 'cacert.pem')
-            protocol = config.get('vars', 'ssl_protocol')
-            sslctx = SSLContext(cert_file, key_file, ca_cert=ca_cert,
-                                protocol=protocol)
-        return sslctx
 
     def _prepareXMLRPCBinding(self):
         if config.getboolean('vars', 'xmlrpc_enable'):
