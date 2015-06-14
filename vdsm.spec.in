@@ -1246,6 +1246,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/exception.py*
 %{python_sitelib}/%{vdsm_name}/executor.py*
 %{python_sitelib}/%{vdsm_name}/ipwrapper.py*
+%{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/netinfo.py*
 %{python_sitelib}/%{vdsm_name}/netlink/__init__.py*

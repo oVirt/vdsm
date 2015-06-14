@@ -30,6 +30,7 @@ dist_vdsmpylib_PYTHON = \
 	exception.py \
 	executor.py \
 	ipwrapper.py \
+	jsonrpcvdscli.py \
 	libvirtconnection.py \
 	netconfpersistence.py \
 	netinfo.py \
