@@ -60,13 +60,8 @@
 %global with_systemd 1
 %endif
 
-%if 0%{?rhel} == 6
-%global _udevrulesdir /lib/udev/rules.d/
-%global _udevexecdir /lib/udev/
-%else
 %global _udevrulesdir /usr/lib/udev/rules.d/
 %global _udevexecdir /usr/lib/udev/
-%endif
 
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
@@ -108,15 +103,7 @@ BuildRequires: python-ioprocess >= 0.14
 BuildRequires: python-pthreading
 BuildRequires: qemu-img
 BuildRequires: rpm-python
-%if 0%{?rhel} == 6
-BuildRequires: python-simplejson >= 2.0.9
-BuildRequires: policycoreutils-python > 2.0.83-19.47
-BuildRequires: python-argparse
-BuildRequires: python-ordereddict
-%endif
-%if 0%{?rhel} > 6 || 0%{?fedora}
 BuildRequires: python-blivet
-%endif
 
 # Autotools BuildRequires
 %if 0%{?enable_autotools}
@@ -167,14 +154,12 @@ Requires: libguestfs-tools-c >= 1:1.20.11-10
 Requires: libguestfs-tools-c >= 1:1.26.7-2
 %endif
 
-%if 0%{?rhel} >= 7 || 0%{?fedora}
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-daemon-driver-network
 Requires: libvirt-daemon-driver-nwfilter
 Requires: libvirt-daemon-driver-qemu
-%endif
 
-%if 0%{?rhel} >= 7
+%if 0%{?rhel}
 %if 0%{?rhev_build}
 Requires: libvirt-daemon >= 1.2.8-16.el7_1.2
 Requires: libvirt-python >= 1.2.8-7.el7_1.1
@@ -182,12 +167,7 @@ Requires: libvirt-python >= 1.2.8-7.el7_1.1
 Requires: libvirt-daemon >= 1.2.8-15.el7
 Requires: libvirt-python >= 1.2.8-5.el7
 %endif # rhev_build
-%endif # rhel 7
-
-%if 0%{?rhel} == 6
-Requires: libvirt >= 0.10.2-29.el6_5.4
-Requires: libvirt-python
-%endif
+%endif # rhel
 
 %if 0%{?fedora} >= 22
 Requires: libvirt-daemon >= 1.2.13
@@ -203,11 +183,7 @@ Requires: libvirt-lock-sanlock, libvirt-client
 
 # iscsi-intiator versions
 %if 0%{?rhel}
-%if 0%{?rhel} >= 7
 Requires: iscsi-initiator-utils
-%else
-Requires: iscsi-initiator-utils >= 6.2.0.872-15
-%endif # rhel 7
 %else # fedora
 Requires: iscsi-initiator-utils >= 6.2.0.873-21
 %endif
@@ -215,7 +191,6 @@ Requires: iscsi-initiator-utils >= 6.2.0.873-21
 Requires: sanlock >= 2.8, sanlock-python
 
 %if 0%{?rhel}
-%if 0%{?rhel} >= 7
 Requires: device-mapper-multipath >= 0.4.9-68
 Requires: e2fsprogs
 Requires: fence-agents-all
@@ -224,19 +199,6 @@ Requires: lvm2
 Requires: python
 Requires: policycoreutils-python
 Requires: selinux-policy-targeted >= 3.13.1-16.el7
-%else
-Requires: python
-Requires: device-mapper-multipath >= 0.4.9-75
-Requires: e2fsprogs >= 1.41.12-11
-Requires: fence-agents
-Requires: kernel >= 2.6.32-465
-Requires: initscripts >= 9.03.31-2.el6_3.1
-Requires: policycoreutils >= 2.0.83-19.30
-Requires: policycoreutils-python >= 2.0.83-19.47.el6_6.1
-Requires: selinux-policy-targeted >= 3.7.19-260.el6_6.2
-Requires: lvm2 >= 2.02.100-5
-Requires: logrotate < 3.8.0
-%endif
 %else
 Requires: fence-agents-all
 Requires: kernel >= 3.15.0
@@ -265,13 +227,8 @@ Requires: systemd >= 197-1.fc18.2
 %endif  # !%{fedora_koji_build}
 
 %if 0%{?rhel}
-%if 0%{?rhel} >= 7
 Requires: qemu-kvm%{?qemu_suffix} >= 10:2.1.2-23.el7_1.2
 Requires: qemu-img%{?qemu_suffix} >= 10:2.1.2-23.el7_1.2
-%else
-Requires: qemu-kvm%{?qemu_suffix} >= 2:0.12.1.2-2.422
-Requires: qemu-img%{?qemu_suffix} >= 2:0.12.1.2-2.422
-%endif  # rhel > = 7
 %else
 Requires: qemu-kvm >= 2:2.0.0-1
 Requires: qemu-img >= 2:2.0.0-1
@@ -293,7 +250,7 @@ Requires: pyparted
 
 Requires(post): /usr/sbin/saslpasswd2
 
-%if 0%{?fedora} >= 21
+%if 0%{?fedora}
 Requires(post): hostname
 %else
 Requires(post): /bin/hostname
@@ -329,10 +286,6 @@ Summary:        VDSM API Server
 Requires:       %{name}-python = %{version}-%{release}
 Requires:       %{name}-yajsonrpc = %{version}-%{release}
 Obsoletes:      vdsm-api < 4.16
-%if 0%{?rhel} == 6
-Requires:       python-ordereddict
-Requires:       python-simplejson >= 2.0.9
-%endif
 
 %description jsonrpc
 A Json-based RPC interface that serves as the protocol for libvdsm.
@@ -636,9 +589,7 @@ Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
 Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: python-magic
-%if 0%{?rhel} > 6 || 0%{?fedora}
 Requires: python-blivet
-%endif
 Requires: xfsprogs
 
 %description gluster
@@ -647,9 +598,6 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 
 %prep
 %setup -q
-%if 0%{?rhel} == 6
-sed -i '/ su /d' vdsm/vdsm-logrotate.conf.in
-%endif
 
 %build
 %if 0%{?enable_autotools}
@@ -732,19 +680,12 @@ install -dDm 1777 %{buildroot}%{_localstatedir}/log/core
 %endif
 
 # Install the polkit for libvirt
-%if 0%{?fedora} || 0%{?rhel} >= 7
 install -Dm 0644 vdsm/vdsm-libvirt-access.rules \
                  %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.rules
-%else
-install -Dm 0644 vdsm/vdsm-libvirt-access.pkla \
-                 %{buildroot}%{_polkitdir}/10-vdsm-libvirt-access.pkla
-%endif
 
 # Install the libvirt hook for cleaning up the XML
-%if 0%{?fedora} || 0%{?rhel} >= 7
 install -Dm 0755 vdsm/virt/libvirt-hook.sh \
                  %{buildroot}%{_sysconfdir}/libvirt/hooks/qemu
-%endif
 
 %check
 %if 0%{?with_check}
@@ -881,21 +822,6 @@ if [ "$1" -ge 1 ]; then
 fi
 exit 0
 
-%if 0%{?rhel} == 6
-# In el6, We configure libvirt to use upstart without the libvirt.rpm's
-# awareness. Thus, we must stop/restart libvirt ourselves when the
-# libvirt.rpm is removed/upgraded.
-%triggerun -- libvirt
-if [ "$2" -eq "0" ]; then
-    /sbin/initctl stop libvirtd > /dev/null 2>&1 || :
-fi
-
-%triggerpostun -- libvirt
-if [ "$2" -ge "1" ]; then
-    /sbin/initctl restart libvirtd > /dev/null 2>&1 || :
-fi
-%endif
-
 %post reg
 %if ! 0%{?with_systemd}
 if [ "$1" -eq 1 ] ; then
@@ -1027,9 +953,7 @@ exit 0
 %{_sysconfdir}/dhcp/dhclient.d/sourceRoute.sh
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
-%if 0%{?fedora} || 0%{?rhel} >= 7
 %{_sysconfdir}/libvirt/hooks/qemu
-%endif
 %{_datadir}/%{vdsm_name}/logUtils.py*
 %{_datadir}/%{vdsm_name}/dsaversion.py*
 %{_libexecdir}/%{vdsm_name}/curl-img-wrap
@@ -1190,11 +1114,7 @@ exit 0
 %if 0%{?rhel}
 %dir %{_localstatedir}/log/core
 %endif
-%if 0%{?fedora} || 0%{?rhel} >= 7
 %{_polkitdir}/10-vdsm-libvirt-access.rules
-%else
-%{_polkitdir}/10-vdsm-libvirt-access.pkla
-%endif
 
 %defattr(-, %{vdsm_user}, %{qemu_group}, -)
 %dir %{_localstatedir}/lib/libvirt/qemu/channels
