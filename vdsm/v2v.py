@@ -304,6 +304,7 @@ class ImportVm(object):
         self._username = None
         self._password = None
         self._passwd_file = None
+        self._create_command = None
 
     @classmethod
     def from_libvirt(cls, uri, username, password, vminfo, job_id, irs):
@@ -313,6 +314,7 @@ class ImportVm(object):
         obj._username = username
         obj._password = password
         obj._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % job_id)
+        obj._create_command = obj._from_libvirt_command
         return obj
 
     def start(self):
@@ -419,7 +421,7 @@ class ImportVm(object):
                 raise RuntimeError("Job %r got unexpected parser event: %s" %
                                    (self._id, event))
 
-    def _create_command(self):
+    def _from_libvirt_command(self):
         cmd = [_VIRT_V2V.cmd,
                '-ic', self._uri,
                '-o', 'vdsm',
