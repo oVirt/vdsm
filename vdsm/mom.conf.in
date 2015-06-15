@@ -2,18 +2,18 @@
 
 [main]
 # The wake up frequency of the main daemon (in seconds)
-main-loop-interval: 5
+main-loop-interval: 15
 
 # The data collection interval for host statistics (in seconds)
-host-monitor-interval: 5
+host-monitor-interval: 15
 
 # The data collection interval for guest statistics (in seconds)
-guest-monitor-interval: 5
+guest-monitor-interval: 15
 
 # The wake up frequency of the guest manager (in seconds).  The guest manager
 # sets up monitoring and control for newly-created guests and cleans up after
 # deleted guests.
-guest-manager-interval: 5
+guest-manager-interval: 15
 
 # The interface MOM using to discover active guests and collect guest memory
 # statistics. There're two choices for it: libvirt or vdsm.
@@ -22,7 +22,7 @@ hypervisor-interface: vdsmxmlrpc
 # The wake up frequency of the policy engine (in seconds).  During each
 # interval the policy engine evaluates the policy and passes the results
 # to each enabled controller plugin.
-policy-engine-interval: 10
+policy-engine-interval: 15
 
 # A comma-separated list of Controller plugins to enable
 controllers: Balloon, KSM, CpuTune
