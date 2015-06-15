@@ -20,13 +20,14 @@
 
 import threading
 import time
-
 import libvirt
 
 import hooks
 import kaxmlrpclib
 from vdsm import utils
 from vdsm import vdscli
+from vdsm import jsonrpcvdscli
+from vdsm import sslutils
 from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import NORMAL, errCode, Mbytes
@@ -112,24 +113,36 @@ class SourceThread(threading.Thread):
 
         return self.status
 
+    def _createClient(self, port):
+        sslctx = sslutils.create_ssl_context()
+        client_socket = utils.create_connected_socket(
+            self.remoteHost, int(port), sslctx)
+        return self._vm.cif.createStompClient(client_socket)
+
     def _setupVdsConnection(self):
         if self.hibernating:
             return
 
-        # FIXME: The port will depend on the binding being used.
-        # This assumes xmlrpc
         hostPort = vdscli.cannonizeHostPort(
             self._dst,
             config.getint('addresses', 'management_port'))
-        self.remoteHost, _ = hostPort.rsplit(':', 1)
+        self.remoteHost, port = hostPort.rsplit(':', 1)
 
-        if config.getboolean('vars', 'ssl'):
-            self._destServer = vdscli.connect(
-                hostPort,
-                useSSL=True,
-                TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
-        else:
-            self._destServer = kaxmlrpclib.Server('http://' + hostPort)
+        try:
+            client = self._createClient(port)
+            self._destServer = jsonrpcvdscli.connect(client)
+            self.log.debug('Initiating connection with destination')
+            self._destServer.ping()
+
+        except RuntimeError:
+            if config.getboolean('vars', 'ssl'):
+                self._destServer = vdscli.connect(
+                    hostPort,
+                    useSSL=True,
+                    TransportClass=kaxmlrpclib.TcpkeepSafeTransport)
+            else:
+                self._destServer = kaxmlrpclib.Server('http://' + hostPort)
+
         self.log.debug('Destination server is: ' + hostPort)
 
     def _setupRemoteMachineParams(self):
