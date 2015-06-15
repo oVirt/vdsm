@@ -79,6 +79,19 @@ class JsonRpcInternalError(JsonRpcError):
         JsonRpcError.__init__(self, -32603, msg)
 
 
+class JsonRpcBindingsError(JsonRpcError):
+    def __init__(self):
+        JsonRpcError.__init__(self, -32604,
+                              "Missing bindings for JSON-RPC.")
+
+
+class JsonRpcNoResponseError(JsonRpcError):
+    def __init__(self, method=''):
+        JsonRpcError.__init__(self, -32605,
+                              "No response for JSON-RPC "
+                              "%s request." % method)
+
+
 class JsonRpcRequest(object):
     def __init__(self, method, params=(), reqId=None):
         self.method = method

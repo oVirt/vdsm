@@ -31,6 +31,10 @@ from vdsm import sslutils
 from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import NORMAL, errCode, Mbytes
+from yajsonrpc import \
+    JsonRpcNoResponseError, \
+    JsonRpcBindingsError
+
 
 from . import vmexitreason
 from . import vmstatus
@@ -136,7 +140,7 @@ class SourceThread(threading.Thread):
             self.log.debug('Initiating connection with destination')
             self._destServer.ping()
 
-        except RuntimeError:
+        except (JsonRpcBindingsError, JsonRpcNoResponseError):
             if config.getboolean('vars', 'ssl'):
                 self._destServer = vdscli.connect(
                     hostPort,

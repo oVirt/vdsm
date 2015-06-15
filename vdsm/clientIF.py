@@ -30,7 +30,7 @@ from collections import defaultdict
 
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompClient, StompRpcServer
-from yajsonrpc import Notification
+from yajsonrpc import Notification, JsonRpcBindingsError
 import alignmentScan
 from vdsm.config import config
 from momIF import MomClient
@@ -439,7 +439,7 @@ class clientIF(object):
             reactor = json_binding.reactor
             return reactor.createClient(client_socket)
         else:
-            raise RuntimeError("json rpc server is not available")
+            raise JsonRpcBindingsError()
 
     @utils.traceback()
     def _recoverThread(self):

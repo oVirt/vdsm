@@ -24,7 +24,8 @@ from uuid import uuid4
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcError, \
-    JsonRpcRequest
+    JsonRpcRequest, \
+    JsonRpcNoResponseError
 
 
 _COMMAND_CONVERTER = {
@@ -53,8 +54,7 @@ class _Server(object):
         if responses:
             resp = responses[0]
         else:
-            raise RuntimeError('No response after calling method %s '
-                               'over json rpc' % method)
+            raise JsonRpcNoResponseError(method)
 
         if resp.error is not None:
             raise JsonRpcError(resp.error['code'], resp.error['message'])
