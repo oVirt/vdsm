@@ -387,7 +387,7 @@ def _delBrokenNetwork(network, netAttr, configurator):
         try:
             nets = configurator.runningConfig.networks
         except AttributeError:
-            nets = None  # ifcfg does not need net definitions
+            nets = {}  # ifcfg does not need net definitions
         _netinfo.networks[network]['ports'] = persistence.configuredPorts(
             nets, network)
     elif not os.path.exists('/sys/class/net/' + netAttr['iface']):

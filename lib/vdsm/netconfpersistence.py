@@ -198,7 +198,7 @@ class KernelConfig(BaseConfig):
             self.setBonding(bond, bond_attr)
 
     def __eq__(self, other):
-        normalized_other = self._normalize(other)
+        normalized_other = self.normalize(other)
         return (self.networks == normalized_other.networks
                 and self.bonds == normalized_other.bonds)
 
@@ -303,7 +303,7 @@ class KernelConfig(BaseConfig):
                                                  if v != 0)
         return stripped_qos
 
-    def _normalize(self, running_config):
+    def normalize(self, running_config):
         # TODO: normalize* methods can become class functions, as they are only
         # TODO: dependent in self._netinfo, which is only needed to access
         # TODO: netinfo module level functions, that cannot be imported here
@@ -418,6 +418,9 @@ class PersistentConfig(Config):
 
 def configuredPorts(nets, bridge):
     """Return the configured ports for the bridge"""
+    if bridge not in nets:
+        return []
+
     network = nets[bridge]
     nic = network.get('nic')
     bond = network.get('bonding')

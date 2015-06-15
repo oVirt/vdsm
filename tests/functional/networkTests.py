@@ -29,8 +29,8 @@ import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
-                            getLinks, routeShowTable)
-from vdsm.netconfpersistence import KernelConfig
+                            getLinks, routeShowTable, linkDel, linkSet)
+from vdsm.netconfpersistence import KernelConfig, RunningConfig
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
                           BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,
@@ -207,7 +207,7 @@ class NetworkTest(TestCaseBase):
         return wrapper
 
     def assertNetworkExists(self, networkName, bridged=None, bridgeOpts=None,
-                            hostQos=None):
+                            hostQos=None, assert_in_running_conf=True):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
         self.assertIn(networkName, netinfo.networks)
@@ -225,7 +225,7 @@ class NetworkTest(TestCaseBase):
             reported_qos = netinfo.networks[networkName]['hostQos']
             _cleanup_qos_definition(reported_qos)
             self.assertEqual(reported_qos, hostQos)
-        if config is not None:
+        if assert_in_running_conf and config is not None:
             self.assertIn(networkName, config.networks)
             if bridged is not None:
                 self.assertEqual(config.networks[networkName].get('bridged'),
@@ -246,14 +246,15 @@ class NetworkTest(TestCaseBase):
         netinfo = self.vdsm_net.netinfo
         self.assertNotIn(bridgeName, netinfo.bridges)
 
-    def assertBondExists(self, bondName, nics=None, options=None):
+    def assertBondExists(self, bondName, nics=None, options=None,
+                         assert_in_running_conf=True):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
         self.assertIn(bondName, netinfo.bondings)
         if nics is not None:
             self.assertEqual(set(nics),
                              set(netinfo.bondings[bondName]['slaves']))
-        if config is not None:
+        if assert_in_running_conf and config is not None:
             self.assertIn(bondName, config.bonds)
             self.assertEqual(set(nics),
                              set(config.bonds[bondName].get('nics')))
@@ -1474,6 +1475,91 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
+
+    @cleanupNet
+    def testRestoreNetworksOnlyRestoreUnchangedDevices(self):
+        BOND_UNCHANGED = 'bond100'
+        BOND_MISSING = 'bond102'
+        IP_ADD_UNCHANGED = '240.0.0.100'
+        VLAN_UNCHANGED = 100
+        NET_UNCHANGED = NETWORK_NAME + '100'
+        NET_CHANGED = NETWORK_NAME + '101'
+        NET_MISSING = NETWORK_NAME + '102'
+        IP_ADDR_NET_CHANGED = '240.0.0.101'
+        IP_ADDR_MISSING = '204.0.0.102'
+        nets = {
+            NET_UNCHANGED:
+                {'bootproto': 'none', 'ipaddr': IP_ADD_UNCHANGED,
+                 'vlan': str(VLAN_UNCHANGED), 'netmask': IP_MASK,
+                 'bonding': BOND_UNCHANGED, 'defaultRoute': True},
+            NET_CHANGED:
+                {'bootproto': 'none',
+                 'ipaddr': IP_ADDR_NET_CHANGED,
+                 'vlan': str(VLAN_UNCHANGED + 1),
+                 'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
+                 'defaultRoute': False},
+            NET_MISSING:
+                {'bootproto': 'none',
+                 'ipaddr': IP_ADDR_MISSING,
+                 'vlan': str(VLAN_UNCHANGED + 2),
+                 'netmask': IP_MASK, 'bonding': BOND_MISSING},
+        }
+
+        def _assert_all_nets_exist(in_running_conf=True):
+            self.vdsm_net.refreshNetinfo()
+            self.assertNetworkExists(
+                NET_UNCHANGED, assert_in_running_conf=in_running_conf)
+            self.assertNetworkExists(
+                NET_CHANGED, assert_in_running_conf=in_running_conf)
+            self.assertNetworkExists(
+                NET_MISSING, assert_in_running_conf=in_running_conf)
+            self.assertBondExists(
+                BOND_UNCHANGED, [nic_a],
+                assert_in_running_conf=in_running_conf)
+            self.assertBondExists(
+                BOND_MISSING, [nic_b],
+                assert_in_running_conf=in_running_conf)
+
+        with dummyIf(2) as nics:
+            nic_a, nic_b = nics
+            bonds = {BOND_UNCHANGED: {'nics': [nic_a]},
+                     BOND_MISSING: {'nics': [nic_b]}
+                     }
+            status, msg = self.setupNetworks(nets, bonds, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            _assert_all_nets_exist()
+            try:
+                self.vdsm_net.save_config()
+
+                addrFlush(NET_CHANGED)
+                linkSet(NET_MISSING, ['down'])
+                execCmd([EXT_BRCTL, 'delbr', NET_MISSING])
+                linkDel(BOND_MISSING)
+                self.vdsm_net.refreshNetinfo()
+                self.assertEqual(
+                    self.vdsm_net.netinfo.networks[NET_CHANGED]['addr'], '')
+                self.assertNotIn(NET_MISSING, self.vdsm_net.netinfo.networks)
+                self.assertNotIn(BOND_MISSING, self.vdsm_net.netinfo.bondings)
+
+                RunningConfig().delete()
+                with nonChangingOperstate(NET_UNCHANGED):
+                    self.vdsm_net.restoreNetConfig()
+
+                _assert_all_nets_exist(False)
+            finally:
+                self.setupNetworks(
+                    {NET_UNCHANGED: {'remove': True},
+                     NET_CHANGED: {'remove': True},
+                     NET_MISSING: {'remove': True}},
+                    {BOND_MISSING: {'remove': True},
+                     BOND_UNCHANGED: {'remove': True}},
+                    NOCHK)
+                self.vdsm_net.save_config()
+                self.assertNetworkDoesntExist(NET_UNCHANGED)
+                self.assertNetworkDoesntExist(NET_CHANGED)
+                self.assertNetworkDoesntExist(NET_MISSING)
+                self.assertBondDoesntExist(BOND_MISSING, [nic_b])
+                self.assertBondDoesntExist(BOND_UNCHANGED, [nic_a])
 
     @cleanupNet
     @permutations([[True], [False]])
