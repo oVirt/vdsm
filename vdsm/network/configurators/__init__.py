@@ -24,7 +24,6 @@ from vdsm import netinfo
 from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
 
-from . import libvirt
 from ..models import Bond, Bridge
 from ..sourceroute import StaticSourceRoute
 
@@ -65,9 +64,6 @@ class Configurator(object):
         # self.runningConfig will have all the changes that were applied before
         # we needed to rollback.
         return RunningConfig().diffFrom(self.runningConfig)
-
-    def flush(self):
-        libvirt.flush()
 
     def configureBridge(self, bridge, **opts):
         raise NotImplementedError
