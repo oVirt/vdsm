@@ -21,9 +21,9 @@
 from functools import partial
 from uuid import uuid4
 
+from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcError, \
-    JsonRpcClient, \
     JsonRpcRequest
 
 
@@ -74,7 +74,9 @@ class _Server(object):
         self._client.close()
 
 
-def connect(client):
-    client = JsonRpcClient(client)
+def connect(client, requestQueue):
+    client = stompreactor.StompRpcClient(client,
+                                         requestQueue,
+                                         str(uuid4()))
 
     return _Server(client)
