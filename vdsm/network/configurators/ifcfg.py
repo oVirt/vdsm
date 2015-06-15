@@ -597,8 +597,7 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bridge.stp is not None:
             conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
-        conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
-            not self.unifiedPersistence or bridge.ipv4.defaultRoute)
+        conf += 'ONBOOT=yes\n'
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             opts['bridging_opts'] = opts['custom']['bridge_opts']
@@ -611,8 +610,7 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if vlan.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(vlan.bridge.name)
-        conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
-            not self.unifiedPersistence or vlan.serving_default_route)
+        conf += 'ONBOOT=yes\n'
         self._createConfFile(conf, vlan.name, vlan.ipv4, vlan.ipv6, vlan.mtu,
                              **opts)
 
@@ -622,8 +620,7 @@ class ConfigWriter(object):
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bond.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)
-        conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
-            not self.unifiedPersistence or bond.serving_default_route)
+        conf += 'ONBOOT=yes\n'
 
         ipv4, ipv6, mtu = self._getIfaceConfValues(bond)
         self._createConfFile(conf, bond.name, ipv4, ipv6, mtu, **opts)
@@ -650,8 +647,7 @@ class ConfigWriter(object):
             conf += 'BRIDGE=%s\n' % pipes.quote(nic.bridge.name)
         if nic.bond:
             conf += 'MASTER=%s\nSLAVE=yes\n' % pipes.quote(nic.bond.name)
-        conf += 'ONBOOT=%s\n' % _to_ifcfg_bool(
-            not self.unifiedPersistence or nic.serving_default_route)
+        conf += 'ONBOOT=yes\n'
 
         ethtool_opts = getEthtoolOpts(nic.name)
         if ethtool_opts:

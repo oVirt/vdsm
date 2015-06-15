@@ -67,15 +67,6 @@ class NetDevice(object):
         return None
 
     @property
-    def serving_default_route(self):
-        device = self
-        while device:
-            if device.ipv4.defaultRoute:
-                return True
-            device = device.master
-        return False
-
-    @property
     def backing_device(self):
         return False
 
