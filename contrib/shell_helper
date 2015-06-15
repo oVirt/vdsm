@@ -129,13 +129,16 @@ del_bridges() {
 
 del_test_nets() {
     cat << EOF | sudo python -
+from __future__ import print_function
 from vdsm import libvirtconnection
 c = libvirtconnection.get()
 nets = c.listAllNetworks(0)
 for net in nets:
-    if net.name().startswith('vdsm-test-network'):
+    net_name = net.name()
+    if net_name.startswith('vdsm-test-network'):
         net.destroy()
         net.undefine()
+        print('net %s removed from libvirt' % net_name)
 EOF
 }
 
