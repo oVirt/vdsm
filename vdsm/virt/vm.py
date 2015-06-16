@@ -1584,6 +1584,7 @@ class Vm(object):
                 try:
                     deviceXML = dev.getXML().toxml(encoding='utf-8')
                 except vmdevices.core.SkipDevice:
+                    self.log.info('Skipping device %s.', dev.device)
                     continue
 
                 if getattr(dev, "custom", {}):
