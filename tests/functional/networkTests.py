@@ -2014,8 +2014,8 @@ class NetworkTest(TestCaseBase):
             # cleanup
             for network in networks.iterkeys():
                 networks[network] = {'remove': True}
-            bonds['BONDING_NAME'] = {'remove': True}
-            status, msg = self.setupNetworks(networks, {}, NOCHK)
+            bonds[BONDING_NAME] = {'remove': True}
+            status, msg = self.setupNetworks(networks, bonds, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
 
     @slowtest
