@@ -11,6 +11,9 @@
 %global snlk_user @SNLKUSER@
 %global cdrom_group @CDROMGROUP@
 
+# Glusterfs package version
+%global gluster_version 3.7.1
+
 # koji build - overridable using rpmbuild --define "fedora_koji_build 1"
 %{!?fedora_koji_build: %global fedora_koji_build 0}
 
@@ -276,12 +279,8 @@ Requires: qemu-img >= 2:2.0.0-1
 
 # GlusterFS client-side RPMs needed for Gluster SD
 %if 0%{?with_gluster}
-Requires: glusterfs >= 3.7.1
-Requires: glusterfs-cli
-Requires: glusterfs-api
-Requires: glusterfs-fuse
-Requires: glusterfs-geo-replication
-Requires: glusterfs-rdma
+Requires: glusterfs-cli >= %{gluster_version}
+Requires: glusterfs-fuse >= %{gluster_version}
 %endif
 
 Requires: psmisc >= 22.6-15
@@ -635,7 +634,9 @@ properties
 %package gluster
 Summary:        Gluster Plugin for VDSM
 Requires: %{name} = %{version}-%{release}
-Requires: glusterfs-server
+Requires: glusterfs-server >= %{gluster_version}
+Requires: glusterfs-api >= %{gluster_version}
+Requires: glusterfs-geo-replication >= %{gluster_version}
 Requires: python-magic
 %if 0%{?rhel} > 6 || 0%{?fedora}
 Requires: python-blivet
