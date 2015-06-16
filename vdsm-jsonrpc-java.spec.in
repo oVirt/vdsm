@@ -184,39 +184,11 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
-* Sun Nov 2 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.10
-- Reduced verbosity of logging
+* Wed Jun 10 2015 Piotr Kliczewski <pkliczew@redhat.com> 1.1.2-1
+- Introduced new queue for events
 
-* Thu Oct 23 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.9
-- Events based on networking issues
-- handle unrecognized messages
+* Mon Apr 20 2015 Piotr Kliczewski <pkliczew@redhat.com> 1.1.1
+- Introduction of Events
 
-* Mon Oct  6 2014 Sandro Bonazzola <sbonazzo@redhat.com> - 1.0.8-1
-- 1.0.8-1
-* Wed Oct 1 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.7
-- Fixed reconnection issues
-- Added timeout to CONNECT call
-* Wed Sep 10 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.6
-- Fixed SSL errors after resetting the retry policy
-* Mon Sep 8 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.5
-- Add ability to change the retry policy of a connection
-* Tue Aug 26 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.3
-- Fix numerous races in package
-* Mon Aug 18 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.2
-- Log json message without logging stomp part of a frame
-- json serialization optimization
-- single tracking thread
-- test: Mitigate test failures on loaded machines
-- coverity fix
-- build: update version for mvn as well
-- Junit fail on heavy loaded machines
-- Buffer overflow in ssl
-
-* Tue Jun 24 2014 Piotr Kliczewski <pkliczew@redhat.com> 1.0.1
-- Make jackson dependency conditional for rhel and centos
-
-* Thu Dec 19 2013 Piotr Kliczewski <pkliczew@redhat.com> 1.0
-- Initial template for vdsm-jsonrpc-java.
-
-* Wed Nov 20 2013 Alon Bar-Lev <alonbl@redhat.com> - 1.1.0-1
-- Initial template.
+* Tue Apr 7 2015 Piotr Kliczewski <pkliczew@redhat.com> 1.1.0
+- Initial release for 3.6
