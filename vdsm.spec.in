@@ -157,12 +157,7 @@ Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-5
 Requires: ceph-common
-
-%if 0%{?rhev_build}
 Requires: mom >= 0.4.5
-%else
-Requires: mom >= 0.4.5
-%endif
 
 %if 0%{?rhel}
 Requires: libguestfs-tools-c >= 1:1.20.11-10
