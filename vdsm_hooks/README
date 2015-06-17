@@ -9,26 +9,26 @@ Do not rely on their existence here.
 Working with VDSM hooks
 =======================
 To work with VDSM hooks you need first to do the following:
-1. Update UserDefinedVMProperties property by using the rhevm-config tool:
-   # rhevm-config -s UserDefinedVMProperties='pincpu=^[0-9]+$' --cver=3.0
+1. Update UserDefinedVMProperties property by using the engine-config tool:
+   # engine-config -s UserDefinedVMProperties='pincpu=^[0-9]+$' --cver=3.0
    * Note: for simplification we use pincpu=^[0-9]+$ which enable only numbers, the actual
            regex need to be pincpu=^[\^]?\d+(-\d+)?(,[\^]?\d+(-\d+)?)*$ which enable range of CPUs.
 
    That command will enable VMs to use pincpu custom hook.
    * Please note that this command will override the existing value of UserDefinedVMProperties
      you can concatenate the old value by getting it with the following command:
-     # rhevm-config -g UserDefinedVMProperties --cver=3.0
-   * note for the version in rhevm-config tool, the current version is 3.0 and its the first
+     # engine-config -g UserDefinedVMProperties --cver=3.0
+   * note for the version in engine-config tool, the current version is 3.0 and its the first
      version that use custom hooks, to use the version you can do the following:
-     # rhevm-config -g UserDefinedVMProperties --cver=3.0
+     # engine-config -g UserDefinedVMProperties --cver=3.0
 
    If you want to enable more then one custom hook use the semicolon as
    a separator:
-   # rhevm-config -s UserDefinedVMProperties='pincpu=^[0-9]+$;sap_agent=^(true|false)$' --cver=3.0
+   # engine-config -s UserDefinedVMProperties='pincpu=^[0-9]+$;sap_agent=^(true|false)$' --cver=3.0
 
    The convention is [hook name]=[value], the value is evaluate with regular expression,
    If you find regular expression too complex, you can always use the following command:
-   # rhevm-config -s UserDefinedVMProperties='pincpu=.*' --cver=3.0
+   # engine-config -s UserDefinedVMProperties='pincpu=.*' --cver=3.0
 
    Which mean that RHEV-M validation will get any input - but please note that giving
    a bad input - the hook will probably fail or run with unexpected results!
@@ -45,7 +45,7 @@ To work with VDSM hooks you need first to do the following:
       select the last option from the left option list with the label "Custom Properties"
       add your custom property value, in our pincpu hook case:
       pincpu=1
-      if you want to use more then on hook and you did enable it with the rhevm-config
+      if you want to use more then on hook and you did enable it with the engine-config
       tool, you can use the semicolon as a separator:
       pincpu=1;sap_agent=true
    b. Another option is to use "Run Once" dialog which mean that you add a custom property
