@@ -38,11 +38,13 @@
 %global _udevrulesdir /usr/lib/udev/rules.d/
 %global _udevexecdir /usr/lib/udev/
 
+# Disable debuginfo package, since vdsm is a meta-package
+%global debug_package %{nil}
+
 Name:           %{vdsm_name}
 Version:        @PACKAGE_VERSION@
 Release:        @PACKAGE_RELEASE@%{?dist}%{?extra_release}
 Summary:        Virtual Desktop Server Manager
-BuildArch:      noarch
 
 Group:          Applications/System
 License:        GPLv2+
@@ -268,6 +270,7 @@ tasks, statistics gathering, and log collection.
 
 %package cli
 Summary:        VDSM command line interface
+BuildArch:      noarch
 Requires: %{name}-python = %{version}-%{release}
 Requires: %{name}-xmlrpc = %{version}-%{release}
 
@@ -276,6 +279,7 @@ Call VDSM commands from the command line. Used for testing and debugging.
 
 %package xmlrpc
 Summary:        VDSM xmlrpc API
+BuildArch:      noarch
 Requires: %{name}-python = %{version}-%{release}
 
 
@@ -291,6 +295,7 @@ Contains api schema files
 
 %package jsonrpc
 Summary:        VDSM API Server
+BuildArch:      noarch
 Requires:       %{name}-python = %{version}-%{release}
 Requires:       %{name}-api = %{version}-%{release}
 Requires:       %{name}-yajsonrpc = %{version}-%{release}
@@ -301,6 +306,7 @@ A Json-based RPC interface that serves as the protocol for libvdsm.
 
 %package yajsonrpc
 Summary:        JSON RPC server and client implementation
+BuildArch:      noarch
 Requires:       python >= 2.6
 
 %description yajsonrpc
@@ -308,6 +314,7 @@ A JSON RPC server and client implementation.
 
 %package infra
 Summary:        Utilities and libraries for vdsm
+BuildArch:      noarch
 Requires:       python >= 2.6
 Obsoletes:      %{name}-python-zombiereaper
 
@@ -316,6 +323,7 @@ Utilities and libraries for vdsm.
 
 %package reg
 Summary:        VDSM registration package
+BuildArch:      noarch
 Requires: %{name} = %{version}-%{release}
 Requires: m2crypto
 Requires: openssl
@@ -328,6 +336,7 @@ Manager.
 %package python
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
+BuildArch:      noarch
 Requires:       %{name}-infra = %{version}-%{release}
 Requires:       python-cpopen >= 1.4
 Requires:       m2crypto
@@ -351,6 +360,7 @@ fi
 
 %package tests
 Summary:        VDSM Test Suite
+BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
 Requires:       dracut
 Requires:       python-nose
@@ -360,6 +370,7 @@ A test suite for verifying the functionality of a running vdsm instance
 
 %package hook-allocate_net
 Summary:        random_network allocation hook for VDSM
+BuildArch:      noarch
 Requires:       %{name}
 
 %description hook-allocate_net
@@ -367,6 +378,7 @@ VDSM hook used to allocate networks for vms in a random fashion
 
 %package hook-checkimages
 Summary:        Qcow2 disk image format check hook for VDSM
+BuildArch:      noarch
 Requires:       %{name}
 
 %description hook-checkimages
@@ -396,6 +408,7 @@ VDSM hooks which allow to activate disk UNMAP.
 
 %package hook-ethtool-options
 Summary:        Allow setting custom ethtool options for vdsm controlled nics
+BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
 
 %description hook-ethtool-options
@@ -412,6 +425,7 @@ addresses for vdsm networks.
 %if 0%{?with_vhostmd}
 %package hook-vhostmd
 Summary:        VDSM hook set for interaction with vhostmd
+BuildArch:      noarch
 Requires:       vhostmd
 
 %description hook-vhostmd
@@ -420,6 +434,7 @@ VDSM hook to use vhostmd per VM according to Virtualization Manager requests.
 
 %package hook-faqemu
 Summary:        Fake qemu process for VDSM quality assurance
+BuildArch:      noarch
 Requires:       %{name}
 
 %description hook-faqemu
@@ -430,6 +445,7 @@ To enable this hook on your host, set vars.fake_kvm_support=True in your
 
 %package hook-macbind
 Summary:        Bind a vNIC to a Bridge
+BuildArch:      noarch
 Requires:       %{name} >= 4.14
 
 %description hook-macbind
@@ -437,6 +453,7 @@ VDSM hooks which allow to bind a vNIC to a Bridge, managed or not by engine.
 
 %package hook-macspoof
 Summary:        Disables MAC spoofing filtering
+BuildArch:      noarch
 
 %description hook-macspoof
 VDSM hooks which allow to disable mac spoof filtering
@@ -445,6 +462,7 @@ specific vnics.
 
 %package hook-noipspoof
 Summary:        Enables strict anti-spoofing filtering
+BuildArch:      noarch
 
 %description hook-noipspoof
 VDSM hook which allows to enable strict anti-spoofing filtering
@@ -452,6 +470,7 @@ on all of the the VM's interfaces.
 
 %package hook-extnet
 Summary:        Force a vNIC to connect to a specific libvirt network
+BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
 
 %description hook-extnet
@@ -460,6 +479,7 @@ outside of oVirt, such as an openvswitch network.
 
 %package hook-fakevmstats
 Summary:        Generate random VM statistics
+BuildArch:      noarch
 Requires:       %{name}
 
 %description hook-fakevmstats
@@ -479,6 +499,7 @@ To enable this hook on your host, set vars.fake_sriov_enable=true in your
 
 %package hook-fileinject
 Summary:        Allow uploading file to VMs disk
+BuildArch:      noarch
 Requires:       python-libguestfs
 
 %description hook-fileinject
@@ -487,12 +508,14 @@ create that file in target machine.
 
 %package hook-floppy
 Summary:        Allow adding floppy to VM
+BuildArch:      noarch
 
 %description hook-floppy
 Allow adding floppy to VM
 
 %package hook-hostusb
 Summary:        Allow attaching USB device from host
+BuildArch:      noarch
 Requires:       usbutils
 
 %description hook-hostusb
@@ -513,6 +536,7 @@ It doesn't support plain http.
 
 %package hook-hugepages
 Summary:        Huge pages enable user to handle VM with 2048KB page files.
+BuildArch:      noarch
 
 %description hook-hugepages
 Hook is getting number of huge pages reserve them for the VM,
@@ -520,6 +544,7 @@ and enable user to handle VM with 2048KB page files.
 
 %package hook-isolatedprivatevlan
 Summary:        Isolated network environment for VMs
+BuildArch:      noarch
 
 %description hook-isolatedprivatevlan
 limit VM traffic to a specific gateway by its mac address,
@@ -529,6 +554,7 @@ and by adding custom filter: isolatedprivatevlan-vdsm.xml
 
 %package hook-nestedvt
 Summary:        Nested Virtualization support for VDSM
+BuildArch:      noarch
 
 %description hook-nestedvt
 If the nested virtualization is enabled in your kvm module
@@ -536,6 +562,7 @@ this hook will expose it to the guests.
 
 %package hook-numa
 Summary:        NUMA support for VDSM
+BuildArch:      noarch
 
 %description hook-numa
 Hooks is getting number/rage of NUMA nodes and NUMA mode,
@@ -543,6 +570,7 @@ and update the VM xml.
 
 %package hook-openstacknet
 Summary:        OpenStack Network vNICs support for VDSM
+BuildArch:      noarch
 
 %description hook-openstacknet
 Hook for OpenStack Network vNICs.
@@ -558,6 +586,7 @@ Hook for Open vSwitch support.
 
 %package hook-pincpu
 Summary:        Hook pin VM so specific CPUs
+BuildArch:      noarch
 
 %description hook-pincpu
 pincpu is hook for VDSM.
@@ -565,6 +594,7 @@ pincpu enable to pin virtual machine to a specific CPUs.
 
 %package hook-promisc
 Summary:        Network interface promiscuous mode support for VDSM
+BuildArch:      noarch
 
 %description hook-promisc
 VDSM promiscuous mode let user define a VM interface that will capture
@@ -572,6 +602,7 @@ all network traffic.
 
 %package hook-qemucmdline
 Summary:        QEMU cmdline hook for VDSM
+BuildArch:      noarch
 Requires:       %{name}
 
 %description hook-qemucmdline
@@ -581,12 +612,14 @@ qemu xml namespace.
 
 %package hook-qos
 Summary:        QoS network in/out traffic support for VDSM
+BuildArch:      noarch
 
 %description hook-qos
 Hook adds QoS in/out traffic to VMs interfaces
 
 %package hook-scratchpad
 Summary:        One time disk creation for VDSM
+BuildArch:      noarch
 
 %description hook-scratchpad
 scratchpad hook for VDSM
@@ -596,6 +629,7 @@ VM cannot be migrated when using scratchpad hook
 
 %package hook-smbios
 Summary:        Adding custom smbios entries to libvirt domain via VDSM
+BuildArch:      noarch
 
 %description hook-smbios
 Adding custom smbios entries to libvirt domain via VDSM
@@ -603,6 +637,7 @@ such as: vendor, version, date and release
 
 %package hook-spiceoptions
 Summary:        To configure spice options for vm
+BuildArch:      noarch
 
 %description hook-spiceoptions
 This vdsm hook can be used to configure some of
@@ -610,6 +645,7 @@ the spice optimization attributes and values..
 
 %package hook-vmfex
 Summary:        vmfex support for VDSM
+BuildArch:      noarch
 Conflicts:      hook-vmfex-dev
 
 %description hook-vmfex
@@ -617,6 +653,7 @@ Hook for vmfex.
 
 %package hook-vmfex-dev
 Summary:        VM-FEX vNIC support for VDSM
+BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
 Conflicts:      hook-vmfex
 
@@ -626,12 +663,14 @@ VM-FEX Virtual Function (SR-IOV with macvtap mode).
 
 %package hook-vmdisk
 Summary:        External disk support for VDSM
+BuildArch:      noarch
 
 %description hook-vmdisk
 Hook adds additional disk image for a VM (raw or qcow2)
 
 %package hook-ipv6
 Summary:        Set IPv6 configuration through custom network properties
+BuildArch:      noarch
 Requires:       %{name} >= 4.16.7
 
 %description hook-ipv6
@@ -641,6 +680,7 @@ properties
 %if 0%{?with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
+BuildArch:      noarch
 Requires: %{name} = %{version}-%{release}
 Requires: glusterfs-server >= %{gluster_version}
 Requires: glusterfs-api >= %{gluster_version}
