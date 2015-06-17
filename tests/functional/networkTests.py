@@ -1502,7 +1502,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     def testAddVlanedBridgeless(self):
         # BZ# 980174
-        vlan_name = 'vlan_net'
+        vlan_name = NETWORK_NAME + '-v'
         with dummyIf(1) as nics:
             nic, = nics
             # net NETWORK_NAME has bootproto:none because we can't use dhcp
