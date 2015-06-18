@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import logging
+import time
 from clientIF import clientIF
 from contextlib import contextmanager
 from monkeypatch import MonkeyPatch
@@ -35,11 +36,12 @@ from jsonRpcHelper import \
 from yajsonrpc import \
     JsonRpcError, \
     JsonRpcMethodNotFoundError, \
+    JsonRpcNoResponseError, \
     JsonRpcInternalError, \
     JsonRpcRequest
 
 
-CALL_TIMEOUT = 15
+CALL_TIMEOUT = 3
 CALL_ID = '2c8134fd-7dd4-4cfc-b7f8-6b7549399cb6'
 
 
@@ -49,7 +51,8 @@ class _DummyBridge(object):
 
     def getBridgeMethods(self):
         return ((self.echo, 'echo'),
-                (self.ping, 'ping'))
+                (self.ping, 'ping'),
+                (self.slow_response, 'slow_response'))
 
     def echo(self, text):
         self.log.info("ECHO: '%s'", text)
@@ -57,6 +60,9 @@ class _DummyBridge(object):
 
     def ping(self):
         return None
+
+    def slow_response(self):
+        time.sleep(CALL_TIMEOUT + 2)
 
     def double_response(self):
         self.cif.notify('vdsm.double_response', content=True)
@@ -77,9 +83,11 @@ def getInstance():
 class JsonRpcServerTests(TestCaseBase):
     def _callTimeout(self, client, methodName, params=None, rid=None,
                      timeout=None):
-        call = client.call_async(JsonRpcRequest(methodName, params, rid))
-        self.assertTrue(call.wait(timeout))
-        resp = call.responses[0]
+        responses = client.call(JsonRpcRequest(methodName, params, rid),
+                                timeout=CALL_TIMEOUT)
+        if not responses:
+            raise JsonRpcNoResponseError(methodName)
+        resp = responses[0]
         if resp.error is not None:
             raise JsonRpcError(resp.error['code'], resp.error['message'])
 
@@ -107,8 +115,7 @@ class JsonRpcServerTests(TestCaseBase):
                     self.assertEquals(response, data)
                 else:
                     self.assertEquals(self._callTimeout(client, "echo",
-                                      (data,), CALL_ID,
-                                      CALL_TIMEOUT), data)
+                                      (data,), CALL_ID), data)
 
     @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
@@ -123,8 +130,7 @@ class JsonRpcServerTests(TestCaseBase):
                         self.assertEquals(response, data)
                 else:
                     self.assertEquals(self._callTimeout(client, "echo",
-                                      {'text': data}, CALL_ID,
-                                      CALL_TIMEOUT), data)
+                                      {'text': data}, CALL_ID), data)
 
     @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
@@ -139,7 +145,7 @@ class JsonRpcServerTests(TestCaseBase):
                 else:
                     with self.assertRaises(JsonRpcError) as cm:
                         self._callTimeout(client, "I.DO.NOT.EXIST :(", [],
-                                          CALL_ID, CALL_TIMEOUT)
+                                          CALL_ID)
 
                     self.assertEquals(cm.exception.code,
                                       JsonRpcMethodNotFoundError().code)
@@ -159,7 +165,7 @@ class JsonRpcServerTests(TestCaseBase):
                 else:
                     with self.assertRaises(JsonRpcError) as cm:
                         self._callTimeout(client, "echo", [],
-                                          CALL_ID, timeout=CALL_TIMEOUT)
+                                          CALL_ID)
 
                     self.assertEquals(cm.exception.code,
                                       JsonRpcInternalError().code)
@@ -177,7 +183,7 @@ class JsonRpcServerTests(TestCaseBase):
                                     in response)
                 else:
                     res = self._callTimeout(client, "ping", [],
-                                            CALL_ID, timeout=CALL_TIMEOUT)
+                                            CALL_ID)
                     self.assertEquals(res, True)
 
     @MonkeyPatch(clientIF, 'getInstance', getInstance)
@@ -196,5 +202,21 @@ class JsonRpcServerTests(TestCaseBase):
 
                     client.registerEventCallback(callback)
                     res = self._callTimeout(client, "double_response", [],
-                                            CALL_ID, timeout=CALL_TIMEOUT)
+                                            CALL_ID)
                     self.assertEquals(res, 'sent')
+
+    @MonkeyPatch(clientIF, 'getInstance', getInstance)
+    @permutations(PERMUTATIONS)
+    def testSlowMethod(self, ssl, type):
+        bridge = _DummyBridge()
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+            with self._client(clientFactory) as client:
+                if type == "xml":
+                    # we do not provide timeout for xmlrpc
+                    pass
+                else:
+                    with self.assertRaises(JsonRpcError) as cm:
+                        self._callTimeout(client, "slow_response", [], CALL_ID)
+
+                    self.assertEquals(cm.exception.code,
+                                      JsonRpcNoResponseError().code)

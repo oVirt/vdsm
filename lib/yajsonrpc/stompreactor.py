@@ -278,6 +278,9 @@ class _StompConnection(object):
         if self._messageHandler is not None:
             self._messageHandler((self._server, self, data))
 
+    def is_closed(self):
+        return not self._dispatcher.connected
+
 
 class StompServer(object):
     log = logging.getLogger("yajsonrpc.StompServer")
@@ -324,7 +327,9 @@ class StompServer(object):
                 },
                 message
             )
-            connection.client.send_raw(res)
+            # we need to check whether the channel is not closed
+            if not connection.client.is_closed():
+                connection.client.send_raw(res)
 
 
 class StompClient(object):
