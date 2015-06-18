@@ -216,6 +216,7 @@ class clientIF(object):
                     self._broker_client,
                     destination,
                     broker_address,
+                    config.getint('vars', 'connection_stats_timeout')
                 )
 
     def _prepareXMLRPCBinding(self):
@@ -243,7 +244,9 @@ class clientIF(object):
                               'Please make sure it is installed.')
             else:
                 bridge = Bridge.DynamicBridge()
-                json_binding = BindingJsonRpc(bridge, self._subscriptions)
+                json_binding = BindingJsonRpc(
+                    bridge, self._subscriptions,
+                    config.getint('vars', 'connection_stats_timeout'))
                 self.bindings['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)

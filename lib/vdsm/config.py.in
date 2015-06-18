@@ -198,6 +198,9 @@ parameters = [
 
         ('ssl_protocol', 'sslv23',
             'SSL protocol used by encrypted connection'),
+
+        ('connection_stats_timeout', '3600',
+            'Time in seconds defining how frequently we log transport stats'),
     ]),
 
     # Section: [mom]

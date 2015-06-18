@@ -455,15 +455,37 @@ class JsonRpcClient(object):
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
-    def __init__(self, bridge, threadFactory=None):
+    """
+    Creates new JsonrRpcServer by providing a bridge, timeout in seconds
+    which defining how often we should log connections stats and thread
+    factory.
+    """
+    def __init__(self, bridge, timeout, threadFactory=None):
         self._bridge = bridge
         self._workQueue = Queue()
         self._threadFactory = threadFactory
+        self._timeout = timeout
+        self._next_report = monotonic_time() + self._timeout
+        self._counter = 0
 
     def queueRequest(self, req):
         self._workQueue.put_nowait(req)
 
+    """
+    Aggregates number of requests received by vdsm. Each request from
+    a batch is added separately. After time defined by timeout we log
+    number of requests.
+    """
+    def _attempt_log_stats(self):
+        self._counter += 1
+        if monotonic_time() > self._next_report:
+            self.log.info('%s requests processed during %s seconds',
+                          self._counter, self._timeout)
+            self._next_report += self._timeout
+            self._counter = 0
+
     def _serveRequest(self, ctx, req):
+        self._attempt_log_stats()
         mangledMethod = req.method.replace(".", "_")
         logLevel = logging.DEBUG
         if mangledMethod in ('Host_getVMList', 'Host_getAllVmStats',

@@ -536,8 +536,8 @@ def StompRpcClient(stomp_client, request_queue, response_queue):
     )
 
 
-def StompRpcServer(bridge, stomp_client, request_queue, address):
-    server = JsonRpcServer(bridge)
+def StompRpcServer(bridge, stomp_client, request_queue, address, timeout):
+    server = JsonRpcServer(bridge, timeout)
 
     return stomp_client.subscribe(
         request_queue,

@@ -85,7 +85,7 @@ def constructAcceptor(log, ssl, jsonBridge):
         0,
         sslctx,
     )
-    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list))
+    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list), 60)
     json_binding.start()
 
     cif = FakeClientIf(json_binding)

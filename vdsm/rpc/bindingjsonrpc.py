@@ -29,8 +29,8 @@ def _simpleThreadFactory(func):
 class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
-    def __init__(self, bridge, subs):
-        self._server = JsonRpcServer(bridge, _simpleThreadFactory)
+    def __init__(self, bridge, subs, timeout):
+        self._server = JsonRpcServer(bridge, timeout, _simpleThreadFactory)
         self._reactor = StompReactor(subs)
         self.startReactor()
 
