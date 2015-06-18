@@ -130,16 +130,14 @@ def _resize_map(name):
     """
     log.debug("Resizing map %r", name)
     cmd = [_MULTIPATHD.cmd, "resize", "map", name]
-    start = utils.monotonic_time()
-    rc, out, err = utils.execCmd(cmd, raw=True, execCmdLogger=log)
-    # multipathd reports some errors using non-zero exit code and stderr (need
-    # to be root), but the command may return 0, and the result is reported
-    # using stdout.
-    if rc != 0 or out != "ok\n":
-        raise Error("Resizing map %r failed: out=%r err=%r"
-                    % (name, out, err))
-    elapsed = utils.monotonic_time() - start
-    log.debug("Resized map %r in %.2f seconds", name, elapsed)
+    with utils.stopwatch("Resized map %r" % name, log=log):
+        rc, out, err = utils.execCmd(cmd, raw=True, execCmdLogger=log)
+        # multipathd reports some errors using non-zero exit code and stderr
+        # (need to be root), but the command may return 0, and the result is
+        # reported using stdout.
+        if rc != 0 or out != "ok\n":
+            raise Error("Resizing map %r failed: out=%r err=%r"
+                        % (name, out, err))
 
 
 def deduceType(a, b):
