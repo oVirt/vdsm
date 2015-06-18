@@ -188,11 +188,8 @@ class Bond(NetDevice):
         for slave in slaves:
             slave.master = self
         self.slaves = slaves
-        if options is None:
-            self.options = 'mode=802.3ad miimon=150'
-        else:
-            self.validateOptions(name, options)
-            self.options = options
+        self.options = options or ''
+        self.validateOptions(name, self.options)
         self.destroyOnMasterRemoval = destroyOnMasterRemoval
         super(Bond, self).__init__(name, configurator, ipconfig, mtu)
 
@@ -217,6 +214,11 @@ class Bond(NetDevice):
         self.configurator.configureBond(self, **opts)
 
     def areOptionsApplied(self):
+        # TODO: this method returns True iff self.options are a subset of the
+        # TODO: current bonding options. VDSM should probably compute if the
+        # TODO: non-default settings are equal to the non-default state.
+        if not self.options:
+            return True
         confOpts = [option.split('=', 1) for option in self.options.split(' ')]
         activeOpts = netinfo.bondOpts(self.name,
                                       (name for name, value in confOpts))

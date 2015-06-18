@@ -1382,8 +1382,7 @@ class NetworkTest(TestCaseBase):
                 self.assertEquals(status, SUCCESS, msg)
 
                 self.assertBondExists(BONDING_NAME, nics=nics[:1])
-                self._assert_exact_bond_opts(BONDING_NAME,
-                                             ['miimon=150', 'mode=4'])
+                self._assert_exact_bond_opts(BONDING_NAME, [])
 
                 # Increase bond size
                 bondings[BONDING_NAME]['nics'] = nics
@@ -1392,8 +1391,7 @@ class NetworkTest(TestCaseBase):
                 self.assertEquals(status, SUCCESS, msg)
 
                 self.assertBondExists(BONDING_NAME, nics)
-                self._assert_exact_bond_opts(BONDING_NAME,
-                                             ['miimon=150', 'mode=4'])
+                self._assert_exact_bond_opts(BONDING_NAME, [])
 
                 # Reduce bond size
                 REQMODE_BROADCAST = '3'
