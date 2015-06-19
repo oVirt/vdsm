@@ -444,12 +444,12 @@ class DowntimeThread(threading.Thread):
 
     def _set_downtime_by_steps(self, max_downtime):
         for downtime in exponential_downtime(max_downtime, self._steps):
-            self._stop.wait(self._wait / self._steps)
-
             if self._stop.isSet():
                 break
 
             self._set_downtime(downtime)
+
+            self._stop.wait(self._wait / self._steps)
 
     def _set_downtime(self, downtime):
         self._vm.log.debug('setting migration downtime to %d', downtime)
