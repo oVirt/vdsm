@@ -779,6 +779,7 @@ class Vm(object):
             else:
                 self.log.exception("The vm start process failed")
                 self.setDownStatus(ERROR, vmexitreason.GENERIC_ERROR, str(e))
+        self.send_status_event()
 
     def _incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
