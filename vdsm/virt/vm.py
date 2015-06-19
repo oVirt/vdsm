@@ -304,6 +304,7 @@ class Vm(object):
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
         self._evaluatedStatus = None
+        self._eventLock = threading.Lock()
         self._migrationSourceThread = migration.SourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._incomingMigrationFinished = threading.Event()
@@ -379,30 +380,28 @@ class Vm(object):
 
     def send_status_event(self):
         vm_status = self._getVmStatus()['status']
+        stats = {}
+        with self._eventLock:
+            if vm_status != self._evaluatedStatus:
+                self._evaluatedStatus = vm_status
+                current_status = self.lastStatus
+                stats['status'] = vm_status,
+                stats['hash'] = str(hash((self._domain.devices_hash,
+                                    self.guestAgent.diskMappingHash)))
 
-        # this check is to reduce number of send events
-        # It is not safe since evaluatedStatus can change but
-        # in the worst case we will send the same event twice
-        if vm_status != self._evaluatedStatus:
-            self._evaluatedStatus = vm_status
-            stats = {
-                'status': vm_status,
-                'hash': str(hash((self._domain.devices_hash,
-                                  self.guestAgent.diskMappingHash))),
-            }
+                # TODO: DOWN and exitCode must be set atomically. Once this is
+                # done we can remove the multiple conditions from this code.
+                if vm_status == vmstatus.DOWN:
+                    if 'exitCode' in self.conf:
+                        stats['exitCode'] = self.conf['exitCode']
+                    if 'exitMessage' in self.conf:
+                        stats['exitMessage'] = self.conf['exitMessage']
+                    if 'exitReason' in self.conf:
+                        stats['exitReason'] = self.conf['exitReason']
 
-            # TODO: DOWN and exitCode must be set atomically. Once this is done
-            # we can remove the multiple conditions from this code.
-            if vm_status == vmstatus.DOWN:
-                if 'exitCode' in self.conf:
-                    stats['exitCode'] = self.conf['exitCode']
-                if 'exitMessage' in self.conf:
-                    stats['exitMessage'] = self.conf['exitMessage']
-                if 'exitReason' in self.conf:
-                    stats['exitReason'] = self.conf['exitReason']
-
+        if stats:
             self.log.debug('Last status %s and evaluated status %s',
-                           self.lastStatus, vm_status)
+                           current_status, vm_status)
             self._notify('VM_status', stats)
 
     def _notify(self, operation, params):
