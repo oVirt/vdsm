@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import traceback
+import stat
 
 import hooking
 
@@ -38,6 +39,7 @@ def create_image(path, size):
         sys.stderr.write('scratchpad: error running command %s, err = %s\n' %
                          (' '.join(command), err))
         sys.exit(2)
+    os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP)
 
 
 def indexToDiskName(i):
@@ -47,7 +49,7 @@ def indexToDiskName(i):
         i = i / 26
         if i == 0:
             break
-    return 'hd' + (s or 'a')
+    return 'vd' + (s or 'a')
 
 
 def add_disk(domxml, path):

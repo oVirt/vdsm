@@ -4,6 +4,10 @@ Hook creates a disk for a VM onetime usage,
 the disk will be erased when the VM destroyed.
 VM cannot be migrated when using scratchpad hook
 
+Hook explicitly adds scratch disk as virtio 
+device and thus will not work on systems without
+virtio support.
+
 syntax:
     scratchpad=size,path
     ie:
