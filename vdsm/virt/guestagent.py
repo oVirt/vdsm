@@ -27,6 +27,7 @@ import unicodedata
 
 # TODO: in future import from ..
 import supervdsm
+from vdsm import utils
 
 from . import vmstatus
 
@@ -97,6 +98,13 @@ def _filterObject(obj):
     return filt(obj)
 
 
+def _create_socket():
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    utils.closeOnExec(sock.fileno())
+    sock.setblocking(0)
+    return sock
+
+
 class MessageState:
     NORMAL = 'normal'
     TOO_BIG = 'too-big'
@@ -117,7 +125,7 @@ class GuestAgent ():
         self.effectiveApiVersion = _IMPLICIT_API_VERSION_ZERO
         self.log = log
         self._socketName = socketName
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._sock = _create_socket()
         self._stopped = True
         self.guestStatus = None
         self.guestDiskMapping = {}
@@ -189,8 +197,7 @@ class GuestAgent ():
     @staticmethod
     def _create(self):
         self._sock.close()
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self._sock.setblocking(0)
+        self._sock = _create_socket()
         return self._sock.fileno()
 
     @staticmethod
