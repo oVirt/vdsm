@@ -84,3 +84,30 @@ class TestNumaUtils(TestCaseBase):
                                   lambda vm: sample)]):
                 vm_numa_info = numaUtils.getVmNumaNodeRuntimeInfo(testvm)
                 self.assertEqual(expectedResult, vm_numa_info)
+
+
+class NumaUtilsHelperTests(TestCaseBase):
+    """
+    Good practice dictates not to test non-public APIs.
+    Here, we add this tests for the sake of practicality.
+
+    TODO: overhaul the numaUtils API to make these tests
+    redundant.
+    """
+
+    def test_get_mapping_vcpu_to_pcpu(self):
+        # stolen from real libvirt
+        vcpu_output = (
+            [(0, 1, 20050000000, 0), (1, 1, 11300000000, 1)],
+            [(True, True, True, True), (True, True, True, True)]
+        )
+        mapping = {0: 0, 1: 1}
+
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain()
+            testvm._dom.vcpus = lambda: vcpu_output
+
+            self.assertEqual(
+                numaUtils._get_mapping_vcpu_to_pcpu(
+                    numaUtils._get_vcpu_positioning(testvm)),
+                mapping)

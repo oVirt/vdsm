@@ -126,7 +126,7 @@ def getVmNumaNodeRuntimeInfo(vm):
 
 def _get_vcpu_positioning(vm):
     try:
-        return vm._dom.vcpus()
+        return vm._dom.vcpus()[0]
     except AttributeError:
         # _dom may be reset to none asynchronously
         return None
