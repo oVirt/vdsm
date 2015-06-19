@@ -190,6 +190,7 @@ dist_vdsmtests_PYTHON = \
 	hookValidation.py \
 	monkeypatch.py \
 	storagefakelib.py \
+	storagetestlib.py \
 	testlib.py \
 	testrunner.py \
 	testValidation.py \

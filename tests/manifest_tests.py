@@ -20,72 +20,60 @@
 import os
 import uuid
 
-from testlib import VdsmTestCase, namedTemporaryDir
+from testlib import VdsmTestCase, namedTemporaryDir, make_file
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeLVM
+from storagetestlib import make_filesd_manifest, make_blocksd_manifest, \
+    make_file_volume, make_vg
 
-from storage import sd, blockSD, fileSD
+from storage import sd, blockSD
 
-MDSIZE = 524288
 VOLSIZE = 1048576
 
 
 class FileManifestTests(VdsmTestCase):
-    MDSIZE = 524288
 
     def test_getreaddelay(self):
         with namedTemporaryDir() as tmpdir:
-            manifest = self.make_manifest(tmpdir)
+            manifest = make_filesd_manifest(tmpdir)
             self.assertIsInstance(manifest.getReadDelay(), float)
 
     def test_getvsize(self):
         with namedTemporaryDir() as tmpdir:
-            manifest = self.make_manifest(tmpdir)
-            imguuid, voluuid = make_volume(manifest.domaindir, VOLSIZE)
+            manifest = make_filesd_manifest(tmpdir)
+            imguuid, voluuid = make_file_volume(manifest.domaindir, VOLSIZE)
             self.assertEqual(VOLSIZE, manifest.getVSize(imguuid, voluuid))
 
     def test_getisodomainimagesdir(self):
         with namedTemporaryDir() as tmpdir:
-            manifest = self.make_manifest(tmpdir)
+            manifest = make_filesd_manifest(tmpdir)
             isopath = os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES,
                                    sd.ISO_IMAGE_UUID)
             self.assertEquals(isopath, manifest.getIsoDomainImagesDir())
 
     def test_getmdpath(self):
         with namedTemporaryDir() as tmpdir:
-            manifest = self.make_manifest(tmpdir)
+            manifest = make_filesd_manifest(tmpdir)
             mdpath = os.path.join(manifest.domaindir, sd.DOMAIN_META_DATA)
             self.assertEquals(mdpath, manifest.getMDPath())
 
     def test_getmetaparam(self):
         with namedTemporaryDir() as tmpdir:
             metadata = {}
-            manifest = self.make_manifest(tmpdir, metadata)
+            manifest = make_filesd_manifest(tmpdir, metadata)
             metadata[sd.DMDK_SDUUID] = manifest.sdUUID
             self.assertEquals(manifest.sdUUID,
                               manifest.getMetaParam(sd.DMDK_SDUUID))
-
-    def make_manifest(self, tmpdir, metadata=None):
-        sduuid = str(uuid.uuid4())
-        domain_path = os.path.join(tmpdir, sduuid)
-        make_fake_metafile(self.get_metafile_path(domain_path))
-        if metadata is None:
-            metadata = dict()
-        manifest = fileSD.FileStorageDomainManifest(domain_path, metadata)
-        return manifest
-
-    def get_metafile_path(self, domaindir):
-        return os.path.join(domaindir, sd.DOMAIN_META_DATA, sd.METADATA)
 
 
 class BlockManifestTests(VdsmTestCase):
 
     def test_getreaddelay(self):
         with namedTemporaryDir() as tmpdir:
-            manifest = self.make_manifest()
+            manifest = make_blocksd_manifest(tmpdir)
             vg_name = manifest.sdUUID
             lvm = FakeLVM(tmpdir)
-            make_fake_metafile(lvm.lvPath(vg_name, 'metadata'))
+            make_file(lvm.lvPath(vg_name, 'metadata'))
 
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
                 self.assertIsInstance(manifest.getReadDelay(), float)
@@ -93,10 +81,9 @@ class BlockManifestTests(VdsmTestCase):
     def test_getvsize_active_lv(self):
         # Tests the path when the device file is present
         with namedTemporaryDir() as tmpdir:
-            manifest = self.make_manifest()
-            vg_name = manifest.sdUUID
+            manifest = make_blocksd_manifest(tmpdir)
             lvm = FakeLVM(tmpdir)
-            self.make_vg(lvm, vg_name)
+            vg_name = make_vg(lvm, manifest)
             lv_name = str(uuid.uuid4())
             lvm.createLV(vg_name, lv_name, VOLSIZE)
             lvm.fake_lv_symlink_create(vg_name, lv_name)
@@ -107,10 +94,9 @@ class BlockManifestTests(VdsmTestCase):
     def test_getvsize_inactive_lv(self):
         # Tests the path when the device file is not present
         with namedTemporaryDir() as tmpdir:
-            manifest = self.make_manifest()
-            vg_name = manifest.sdUUID
+            manifest = make_blocksd_manifest(tmpdir)
             lvm = FakeLVM(tmpdir)
-            self.make_vg(lvm, vg_name)
+            vg_name = make_vg(lvm, manifest)
             lv_name = str(uuid.uuid4())
             lvm.createLV(vg_name, lv_name, VOLSIZE)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
@@ -118,56 +104,23 @@ class BlockManifestTests(VdsmTestCase):
                                  manifest.getVSize('<imgUUID>', lv_name))
 
     def test_getmetaparam(self):
-        with namedTemporaryDir():
+        with namedTemporaryDir() as tmpdir:
             metadata = {}
-            manifest = self.make_manifest(metadata)
+            manifest = make_blocksd_manifest(tmpdir, metadata)
             metadata[sd.DMDK_SDUUID] = manifest.sdUUID
             self.assertEquals(manifest.sdUUID,
                               manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getblocksize_defaults(self):
-        with namedTemporaryDir():
-            manifest = self.make_manifest()
+        with namedTemporaryDir() as tmpdir:
+            manifest = make_blocksd_manifest(tmpdir)
             self.assertEquals(512, manifest.logBlkSize)
             self.assertEquals(512, manifest.phyBlkSize)
 
     def test_getblocksize(self):
-        with namedTemporaryDir():
+        with namedTemporaryDir() as tmpdir:
             metadata = {blockSD.DMDK_LOGBLKSIZE: 2048,
                         blockSD.DMDK_PHYBLKSIZE: 1024}
-            manifest = self.make_manifest(metadata)
+            manifest = make_blocksd_manifest(tmpdir, metadata)
             self.assertEquals(2048, manifest.logBlkSize)
             self.assertEquals(1024, manifest.phyBlkSize)
-
-    def make_manifest(self, metadata=None):
-        sduuid = str(uuid.uuid4())
-        if metadata is None:
-            metadata = dict()
-        manifest = blockSD.BlockStorageDomainManifest(sduuid, metadata)
-        return manifest
-
-    def make_vg(self, fakeLvm, vg_name):
-        devices = self.get_device_list(10)
-        fakeLvm.createVG(vg_name, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
-                         blockSD.VG_METADATASIZE)
-
-    def get_device_list(self, count):
-        return ['/dev/mapper/{0}'.format(os.urandom(16).encode('hex'))
-                for _ in range(count)]
-
-
-def make_fake_metafile(metafile):
-    os.makedirs(os.path.dirname(metafile))
-    with open(metafile, "w") as f:
-        f.truncate(MDSIZE)
-
-
-def make_volume(domaindir, size):
-    imguuid = str(uuid.uuid4())
-    voluuid = str(uuid.uuid4())
-    imgpath = os.path.join(domaindir, "images", imguuid)
-    volpath = os.path.join(imgpath, voluuid)
-    os.makedirs(imgpath)
-    with open(volpath, "w") as f:
-        f.truncate(size)
-    return imguuid, voluuid

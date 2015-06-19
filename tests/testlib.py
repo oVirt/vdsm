@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import ConfigParser
 import logging
 import os
@@ -137,6 +138,17 @@ def namedTemporaryDir(dir=TEMPDIR):
         yield tmpDir
     finally:
         shutil.rmtree(tmpDir)
+
+
+def make_file(path, size=0):
+    dirname = os.path.dirname(path)
+    try:
+        os.makedirs(dirname)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+    with open(path, "w") as f:
+        f.truncate(size)
 
 
 class VdsmTestCase(unittest.TestCase):
