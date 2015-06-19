@@ -26,6 +26,7 @@ import json
 import re
 
 from vdsm import supervdsm
+from vdsm.infra import filecontrol
 
 from . import vmstatus
 
@@ -91,6 +92,13 @@ def _filterObject(obj):
     return filt(obj)
 
 
+def _create_socket():
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    filecontrol.set_close_on_exec(sock.fileno())
+    sock.setblocking(0)
+    return sock
+
+
 class MessageState:
     NORMAL = 'normal'
     TOO_BIG = 'too-big'
@@ -112,7 +120,7 @@ class GuestAgent(object):
         self._onStatusChange = onStatusChange
         self.log = log
         self._socketName = socketName
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self._sock = _create_socket()
         self._stopped = True
         self._status = None
         self.guestDiskMapping = {}
@@ -205,8 +213,7 @@ class GuestAgent(object):
     @staticmethod
     def _create(self):
         self._sock.close()
-        self._sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self._sock.setblocking(0)
+        self._sock = _create_socket()
         return self._sock.fileno()
 
     @staticmethod
