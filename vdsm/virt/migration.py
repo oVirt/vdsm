@@ -428,22 +428,32 @@ class DowntimeThread(threading.Thread):
         self.daemon = True
 
     def run(self):
-        self._vm.log.debug('migration downtime thread started')
+        self._vm.log.debug('migration downtime thread started (%i steps)',
+                           self._steps)
 
-        for downtime in exponential_downtime(self._downtime, self._steps):
-            self._stop.wait(self._wait / self._steps)
-
-            if self._stop.isSet():
-                break
-
-            self._vm.log.debug('setting migration downtime to %d', downtime)
-            self._vm._dom.migrateSetMaxDowntime(downtime, 0)
+        if self._steps > 1:
+            self._set_downtime_by_steps(self._downtime)
+        else:
+            self._set_downtime(self._downtime)
 
         self._vm.log.debug('migration downtime thread exiting')
 
     def stop(self):
         self._vm.log.debug('stopping migration downtime thread')
         self._stop.set()
+
+    def _set_downtime_by_steps(self, max_downtime):
+        for downtime in exponential_downtime(max_downtime, self._steps):
+            self._stop.wait(self._wait / self._steps)
+
+            if self._stop.isSet():
+                break
+
+            self._set_downtime(downtime)
+
+    def _set_downtime(self, downtime):
+        self._vm.log.debug('setting migration downtime to %d', downtime)
+        self._vm._dom.migrateSetMaxDowntime(downtime, 0)
 
 
 class MonitorThread(threading.Thread):

@@ -45,22 +45,25 @@ _PARAMS = tuple(product((_DOWNTIME_MIN, _DOWNTIME, _DOWNTIME_HUGE),
                         (_STEPS_MIN, _STEPS, _STEPS_HUGE)))
 
 
+@expandPermutations
 class DowntimeThreadTests(TestCaseBase):
 
     # No special meaning, But steps just need to be >= 2
-    STEPS = 10
     DOWNTIME = 1000
 
-    def test_update_downtime_using_n_steps(self):
-        downtimes = _update_downtime_repeatedly(self.DOWNTIME, self.STEPS)
-        self.assertEqual(len(downtimes), self.STEPS)
+    @permutations([[1], [2], [10]])
+    def test_update_downtime_using_n_steps(self, steps):
+        downtimes = _update_downtime_repeatedly(self.DOWNTIME, steps)
+        self.assertEqual(len(downtimes), steps)
 
-    def test_update_downtime_monotonic_increasing(self):
-        downtimes = _update_downtime_repeatedly(self.DOWNTIME, self.STEPS)
+    @permutations([[1], [2], [10]])
+    def test_update_downtime_monotonic_increasing(self, steps):
+        downtimes = _update_downtime_repeatedly(self.DOWNTIME, steps)
         self.assertTrue(sorted(downtimes), downtimes)
 
-    def test_update_downtime_converges(self):
-        downtimes = _update_downtime_repeatedly(self.DOWNTIME, self.STEPS)
+    @permutations([[1], [2], [10]])
+    def test_update_downtime_converges(self, steps):
+        downtimes = _update_downtime_repeatedly(self.DOWNTIME, steps)
         self.assertEqual(downtimes[-1], self.DOWNTIME)
 
 
