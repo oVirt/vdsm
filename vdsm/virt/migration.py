@@ -342,7 +342,10 @@ class SourceThread(threading.Thread):
             self._vm.log.info('starting migration to %s '
                               'with miguri %s', duri, muri)
 
-            downtimeThread = DowntimeThread(self._vm, int(self._downtime))
+            downtimeThread = DowntimeThread(
+                self._vm,
+                int(self._downtime),
+                config.getint('vars', 'migration_downtime_steps'))
             self._monitorThread = MonitorThread(self._vm, startTime)
             with utils.running(downtimeThread):
                 with utils.running(self._monitorThread):
@@ -410,13 +413,12 @@ def exponential_downtime(downtime, steps):
 
 
 class DowntimeThread(threading.Thread):
-    DOWNTIME_STEPS = config.getint('vars', 'migration_downtime_steps')
-
-    def __init__(self, vm, downtime):
+    def __init__(self, vm, downtime, steps):
         super(DowntimeThread, self).__init__()
 
         self._vm = vm
         self._downtime = downtime
+        self._steps = steps
         self._stop = threading.Event()
 
         delay_per_gib = config.getint('vars', 'migration_downtime_delay')
@@ -428,9 +430,8 @@ class DowntimeThread(threading.Thread):
     def run(self):
         self._vm.log.debug('migration downtime thread started')
 
-        for downtime in exponential_downtime(self._downtime,
-                                             self.DOWNTIME_STEPS):
-            self._stop.wait(self._wait / self.DOWNTIME_STEPS)
+        for downtime in exponential_downtime(self._downtime, self._steps):
+            self._stop.wait(self._wait / self._steps)
 
             if self._stop.isSet():
                 break

@@ -172,6 +172,7 @@ class Domain(object):
         self._vmId = vmId
         self.calls = {}
         self._diskErrors = {}
+        self._downtimes = []
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
@@ -232,6 +233,12 @@ class Domain(object):
 
     def controlInfo(self):
         return (libvirt.VIR_DOMAIN_CONTROL_OK, 0, 0)
+
+    def migrateSetMaxDowntime(self, downtime, flags):
+        self._downtimes.append(downtime)
+
+    def getDowntimes(self):
+        return self._downtimes
 
 
 class GuestAgent(object):

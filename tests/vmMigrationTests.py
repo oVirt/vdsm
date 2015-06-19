@@ -23,8 +23,11 @@ from itertools import tee, izip, product
 from vdsm.config import config
 from virt import migration
 
+from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
+from testlib import make_config
+import vmfakelib as fake
 
 
 # defaults
@@ -40,6 +43,25 @@ _DOWNTIME_HUGE = 10000
 
 _PARAMS = tuple(product((_DOWNTIME_MIN, _DOWNTIME, _DOWNTIME_HUGE),
                         (_STEPS_MIN, _STEPS, _STEPS_HUGE)))
+
+
+class DowntimeThreadTests(TestCaseBase):
+
+    # No special meaning, But steps just need to be >= 2
+    STEPS = 10
+    DOWNTIME = 1000
+
+    def test_update_downtime_using_n_steps(self):
+        downtimes = _update_downtime_repeatedly(self.DOWNTIME, self.STEPS)
+        self.assertEqual(len(downtimes), self.STEPS)
+
+    def test_update_downtime_monotonic_increasing(self):
+        downtimes = _update_downtime_repeatedly(self.DOWNTIME, self.STEPS)
+        self.assertTrue(sorted(downtimes), downtimes)
+
+    def test_update_downtime_converges(self):
+        downtimes = _update_downtime_repeatedly(self.DOWNTIME, self.STEPS)
+        self.assertEqual(downtimes[-1], self.DOWNTIME)
 
 
 @expandPermutations
@@ -117,3 +139,18 @@ def _linear_downtime(downtime, steps):
         # however, it makes no sense to have less than 1 ms
         # we want to avoid anyway downtime = 0
         yield max(1, downtime * (i + 1) / steps)
+
+
+def _update_downtime_repeatedly(downtime, steps):
+        dom = fake.Domain()
+
+        with fake.VM({'memSize': 1024}) as testvm:
+            testvm._dom = dom
+
+            cfg = make_config([('vars', 'migration_downtime_delay', '0')])
+            with MonkeyPatchScope([(migration, 'config', cfg)]):
+                dt = migration.DowntimeThread(testvm, downtime, steps)
+                dt.start()
+                dt.join()
+
+                return dom.getDowntimes()
