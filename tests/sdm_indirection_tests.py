@@ -23,7 +23,7 @@ from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import recorded
 
-from storage import sd, blockSD, fileSD
+from storage import sd, blockSD, fileSD, image
 
 
 class FakeDomainManifest(sd.StorageDomainManifest):
@@ -282,6 +282,20 @@ class FakeFileStorageDomain(fileSD.FileStorageDomain):
         self._manifest = self.manifestClass()
 
 
+class FakeImageManifest(image.ImageManifest):
+    def __init__(self):
+        self._repoPath = '/rhev/data-center'
+
+    @recorded
+    def getImageDir(self, sdUUID, imgUUID):
+        pass
+
+
+class FakeImage(image.Image):
+    def __init__(self):
+        self._manifest = FakeImageManifest()
+
+
 class RedirectionChecker(object):
     """
     Checks whether a source class redirects method calls to a target class
@@ -419,3 +433,19 @@ class FileDomainTests(DomainTestMixin, VdsmTestCase):
 
     def test_getremotepath(self):
         self.assertEqual('b', self.domain.getRemotePath())
+
+
+@expandPermutations
+class ImageTest(VdsmTestCase):
+    def setUp(self):
+        self.image = FakeImage()
+        self.checker = RedirectionChecker(self.image, '_manifest')
+
+    def test_properties(self):
+        self.assertEqual('/rhev/data-center', self.image.repoPath)
+
+    @permutations([
+        ['getImageDir', 2],
+    ])
+    def test_functions(self, fn, nargs):
+        self.checker.check_call(fn, nargs)

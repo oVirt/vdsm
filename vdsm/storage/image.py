@@ -87,6 +87,21 @@ def _deleteImage(dom, imgUUID, postZero):
         dom.deleteImage(dom.sdUUID, imgUUID, imgVols)
 
 
+class ImageManifest(object):
+    def __init__(self, repoPath):
+        self._repoPath = repoPath
+
+    @property
+    def repoPath(self):
+        return self._repoPath
+
+    def getImageDir(self, sdUUID, imgUUID):
+        """
+        Return image directory
+        """
+        return os.path.join(self.repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID)
+
+
 class Image:
     """ Actually represents a whole virtual disk.
         Consist from chain of volumes.
@@ -109,7 +124,11 @@ class Image:
                               "folder %s" % (imageDir))
 
     def __init__(self, repoPath):
-        self.repoPath = repoPath
+        self._manifest = ImageManifest(repoPath)
+
+    @property
+    def repoPath(self):
+        return self._manifest.repoPath
 
     def _wait_for_qemuimg_operation(self, operation):
         self.log.debug('waiting for qemu-img operation to complete')
@@ -140,10 +159,7 @@ class Image:
         return imageDir
 
     def getImageDir(self, sdUUID, imgUUID):
-        """
-        Return image directory
-        """
-        return os.path.join(self.repoPath, sdUUID, sd.DOMAIN_IMAGES, imgUUID)
+        return self._manifest.getImageDir(sdUUID, imgUUID)
 
     def deletedVolumeName(self, uuid):
         """
