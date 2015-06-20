@@ -38,6 +38,7 @@ from vdsm import utils
 from clientIF import clientIF
 from vdsm import netinfo
 from vdsm import constants
+from vdsm import response
 import storage.misc
 import storage.clusterlock
 import storage.volume
@@ -368,7 +369,12 @@ class VM(APIBase):
             return errCode['noVM']
 
         if runHooks:
-            hooks.before_get_vm_stats()
+            try:
+                hooks.before_get_vm_stats()
+            except hooks.HookError as e:
+                return response.error('hookError',
+                                      'Hook error: ' + str(e))
+
         stats = v.getStats().copy()
         if runHooks:
             stats = hooks.after_get_vm_stats([stats])[0]
@@ -578,9 +584,14 @@ class VM(APIBase):
 
         v = self._cif.vmContainer.get(self._UUID)
 
-        if not v.waitForMigrationDestinationPrepare():
-            return errCode['createErr']
-
+        try:
+            if not v.waitForMigrationDestinationPrepare():
+                return errCode['createErr']
+        except hooks.HookError as e:
+            self.log.debug('Destination VM creation failed due to hook' +
+                           ' error:' + str(e))
+            return response.error('hookError', 'Destination hook failed: ' +
+                                  str(e))
         self.log.debug('Destination VM creation succeeded')
         return {'status': doneCode, 'migrationPort': 0,
                 'params': result['vmList']}
@@ -1461,6 +1472,9 @@ class Global(APIBase):
             with self._rollback() as rollbackCtx:
                 supervdsm.getProxy().setupNetworks(networks, bondings, options)
             return rollbackCtx
+        except hooks.HookError as e:
+            return response.error('hookError', 'Hook error: ' + str(e))
+
         finally:
             self._cif._networkSemaphore.release()
 

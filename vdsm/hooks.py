@@ -108,7 +108,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
                 logging.warn('hook returned unexpected return code %s', rc)
 
         if errorSeen and raiseError:
-            raise HookError()
+            raise HookError(err)
 
         with open(data_filename) as f:
             final_data = f.read()

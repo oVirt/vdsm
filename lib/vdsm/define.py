@@ -187,6 +187,9 @@ errCode = {
     'thawErr': {'status': {
         'code': 77,
         'message': 'Unable to thaw guest filesystems'}},
+    'hookError': {'status': {
+        'code': 78,
+        'message': 'Hook error'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

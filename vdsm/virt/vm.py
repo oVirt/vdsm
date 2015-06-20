@@ -1290,7 +1290,8 @@ class Vm(object):
                 self.conf['exitCode'] = code
                 if 'restoreState' in self.conf:
                     self.conf['exitMessage'] = (
-                        "Wake up from hibernation failed")
+                        "Wake up from hibernation failed" +
+                        ((":" + exitMessage) if exitMessage else ''))
                 else:
                     self.conf['exitMessage'] = exitMessage
                 self.conf['exitReason'] = exitReasonCode
