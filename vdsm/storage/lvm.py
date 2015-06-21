@@ -877,7 +877,7 @@ def resizePV(vgName, guid):
     """
     pvName = _fqpvname(guid)
     cmd = ["pvresize", pvName]
-    rc, out, err = _lvminfo.cmd(cmd, (pvName,))
+    rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
     if rc != 0:
         raise se.CouldNotResizePhysicalVolume(pvName, err)
     _lvminfo._invalidatepvs(pvName)
