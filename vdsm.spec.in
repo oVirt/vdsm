@@ -156,7 +156,6 @@ Requires: curl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-5
-Requires: ceph-common
 Requires: mom >= 0.4.5
 
 %if 0%{?rhel}
