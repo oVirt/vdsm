@@ -22,6 +22,7 @@ import os
 import math
 import tempfile
 import logging
+import platform
 from stat import S_IROTH
 from functools import partial, wraps
 
@@ -33,6 +34,7 @@ from testlib import temporaryPath
 
 import verify
 
+import caps
 from vdsm.utils import CommandPath, RollbackContext
 import storageTests as storage
 from storage.misc import execCmd
@@ -56,6 +58,9 @@ _initramfsPaths = ["/boot/initramfs-%s.img" % _kernelVer,  # Fedora, RHEL
 _tmpinitramfs = False
 
 VM_MINIMAL_UPTIME = 30
+
+_GRAPHICS_FOR_ARCH = {caps.Architecture.PPC64LE: 'vnc',
+                      caps.Architecture.X86_64: 'qxl'}
 
 
 class VDSMConnectionError(Exception):
@@ -227,7 +232,7 @@ class VirtTest(VirtTestBase):
     def testSimpleVm(self):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'vmName': 'testSimpleVm',
-                         'display': 'qxl'}
+                         'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
@@ -237,7 +242,8 @@ class VirtTest(VirtTestBase):
     def testComplexVm(self):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'vmName': 'testComplexVm',
-                         'display': 'qxl', 'devices': [
+                         'display': _GRAPHICS_FOR_ARCH[platform.machine()],
+                         'devices': [
                              {'type': 'sound', 'device': 'ac97'},
                              {'type': 'sound', 'device': 'ich6'},
                              {'type': 'video', 'device': 'qxl'},
@@ -283,7 +289,7 @@ class VirtTest(VirtTestBase):
         customization = {'vmId': '88888888-eeee-ffff-aaaa-111111111111',
                          'vmName': 'testVmWithStorage' + backendType,
                          'drives': drives,
-                         'display': 'vnc'}
+                         'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
 
         with RollbackContext() as rollback:
             disk.createVdsmStorageLayout(conf, 3, rollback)
@@ -296,7 +302,8 @@ class VirtTest(VirtTestBase):
                    ['hotplugDisk'], ['virtioRng']])
     def testVmWithDevice(self, *devices):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
-                         'vmName': 'testVm', 'devices': [], 'display': 'vnc'}
+                         'vmName': 'testVm', 'devices': [],
+                         'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
         storageLayout = storage.storageLayouts['localfs']
         diskSpecs = storage.StorageTest.generateDriveConf(storageLayout)
         pciSpecs = {'bus': '0x00', 'domain': '0x0000',
@@ -367,7 +374,7 @@ class VirtTest(VirtTestBase):
                          'devices': [],
                          'vmName':
                          'testVmWithCdrom_%s' % pathLocation,
-                         'display': 'vnc'}
+                         'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
 
         # echo -n testPayload | md5sum
         # d37e46c24c78b1aed33496107afdb44b
@@ -460,7 +467,7 @@ class VirtTest(VirtTestBase):
     def testVmWithSla(self):
         customization = {'vmId': '99999999-aaaa-ffff-bbbb-111111111111',
                          'vmName': 'testVmWithSla',
-                         'display': 'vnc'}
+                         'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
 
         with RunningVm(self.vdsm, customization) as vm:
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
