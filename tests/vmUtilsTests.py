@@ -19,6 +19,8 @@
 #
 
 from virt import utils
+from virt import vm
+from virt import vmexitreason
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -125,3 +127,16 @@ class ExpirationTests(TestCaseBase):
 
         clock.now = 3.0
         self.assertFalse(cache)
+
+
+class ExceptionsTests(TestCaseBase):
+
+    def test_MissingLibvirtDomainError(self):
+        try:
+            raise vm.MissingLibvirtDomainError()
+        except vm.MissingLibvirtDomainError as e:
+            self.assertEqual(e.reason,
+                             vmexitreason.LIBVIRT_DOMAIN_MISSING)
+            self.assertEqual(str(e),
+                             vmexitreason.exitReasons.get(
+                             vmexitreason.LIBVIRT_DOMAIN_MISSING))

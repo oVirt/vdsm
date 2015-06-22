@@ -226,8 +226,8 @@ class StorageUnavailableError(Exception):
 
 class MissingLibvirtDomainError(Exception):
     def __init__(self, reason=vmexitreason.LIBVIRT_DOMAIN_MISSING):
-        super(Exception, self).__init__(
-            self, vmexitreason.exitReasons.get(reason, 'Missing VM'))
+        super(MissingLibvirtDomainError, self).__init__(
+            vmexitreason.exitReasons.get(reason, 'Missing VM'))
         self.reason = reason
 
 
