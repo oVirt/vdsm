@@ -126,7 +126,7 @@ class Operation(object):
     It would be called again even if a former call is blocked.
     """
 
-    _log = logging.getLogger("periodic.Operation")
+    _log = logging.getLogger("virt.periodic.Operation")
 
     def __init__(self, func, period, timeout=0,
                  scheduler=None, executor=None):
@@ -205,7 +205,7 @@ class VmDispatcher(object):
     isolation among them.
     """
 
-    _log = logging.getLogger("periodic.VmDispatcher")
+    _log = logging.getLogger("virt.periodic.VmDispatcher")
 
     def __init__(self, get_vms, executor, create, timeout):
         """

@@ -1,5 +1,5 @@
 [loggers]
-keys=root,vds,Storage,ovirt_hosted_engine_ha,IOProcess,connectivity
+keys=root,vds,Storage,virt,ovirt_hosted_engine_ha,IOProcess,connectivity
 
 [handlers]
 keys=console,syslog,logfile,connlogfile
@@ -40,6 +40,12 @@ propagate=1
 level=DEBUG
 handlers=connlogfile
 qualname=connectivity
+propagate=0
+
+[logger_virt]
+level=DEBUG
+handlers=logfile
+qualname=virt
 propagate=0
 
 [handler_syslog]

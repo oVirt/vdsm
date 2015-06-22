@@ -240,7 +240,7 @@ class Vm(object):
     its behaviour.
     """
 
-    log = logging.getLogger("vm.Vm")
+    log = logging.getLogger("virt.vm")
     # limit threads number until the libvirt lock will be fixed
     _ongoingCreations = threading.BoundedSemaphore(4)
     DeviceMapping = ((hwclass.DISK, vmdevices.storage.Drive),

@@ -25,7 +25,7 @@ from vdsm import utils
 
 from . import vmxml
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('virt.vmtune')
 
 
 def io_tune_values_to_dom(values, dom):

@@ -405,7 +405,7 @@ class StatsCache(object):
     between a well behaving call and an unblocked stuck call.
     """
 
-    _log = logging.getLogger("sampling.StatsCache")
+    _log = logging.getLogger("virt.sampling.StatsCache")
 
     def __init__(self, clock=utils.monotonic_time):
         self._clock = clock
@@ -506,7 +506,7 @@ class VMBulkSampler(object):
         self._stats_flags = stats_flags
         self._skip_doms = ExpiringCache(timeout)
         self._sampling = threading.Semaphore()  # used as glorified counter
-        self._log = logging.getLogger("sampling.VMBulkSampler")
+        self._log = logging.getLogger("virt.sampling.VMBulkSampler")
 
     def __call__(self):
         timestamp = self._stats_cache.clock()
