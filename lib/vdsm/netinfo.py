@@ -81,6 +81,8 @@ LIBVIRT_NET_PREFIX = 'vdsm-'
 DEFAULT_MTU = '1500'
 
 OPERSTATE_UP = 'up'
+OPERSTATE_UNKNOWN = 'unknown'
+OPERSTATE_DOWN = 'down'
 DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 
 

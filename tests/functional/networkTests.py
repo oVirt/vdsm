@@ -32,7 +32,8 @@ from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable)
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
-                          BONDING_MASTERS, NET_CONF_PREF)
+                          BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,
+                          OPERSTATE_UP)
 from vdsm.netlink import monitor
 from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
@@ -133,10 +134,20 @@ def dummyIf(num):
 
 def _waitForKnownOperstate(device, timeout=1):
     with monitor.Monitor(groups=('link',), timeout=timeout) as mon:
-        state = operstate(device).lower()
-        if state == 'unknown':
+        if operstate(device) == OPERSTATE_UNKNOWN:
             for event in mon:
-                if event['name'] == device and event['state'] != 'unknown':
+                if (event['name'] == device and
+                        event['state'] != OPERSTATE_UNKNOWN):
+                    break
+
+
+def _waitForOperstate(device, state, timeout=1):
+    """ :param state: please use OPERSTATE_* from lib/vdsm/netinfo
+    """
+    with monitor.Monitor(groups=('link',), timeout=timeout) as mon:
+        if state != operstate(device):
+            for event in mon:
+                if event['name'] == device and event['state'] == state:
                     break
 
 
@@ -477,7 +488,7 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondExists(BONDING_NAME, nics)
 
-            _waitForKnownOperstate(BONDING_NAME)
+            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
             with nonChangingOperstate(BONDING_NAME):
                 status, msg = self.setupNetworks(
                     {NETWORK_NAME:
@@ -702,7 +713,7 @@ class NetworkTest(TestCaseBase):
                                                    bond=BONDING_NAME,
                                                    nics=nics, opts=opts)
             self.assertEquals(status, SUCCESS, msg)
-            _waitForKnownOperstate(BONDING_NAME)
+            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
             with nonChangingOperstate(BONDING_NAME):
                 for netVlan, vlanId in NET_VLANS[1:]:
                     status, msg = self.vdsm_net.addNetwork(netVlan,
@@ -1030,7 +1041,7 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BONDING_NAME, nics)
 
             # Reduce bond size and create Network on detached NIC
-            _waitForKnownOperstate(BONDING_NAME)
+            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
             with nonChangingOperstate(BONDING_NAME):
                 netName = NETWORK_NAME + '-2'
                 networks = {netName: dict(nic=nics[0],
