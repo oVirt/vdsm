@@ -757,6 +757,7 @@ def _getKeyPackages():
                         'spice-server': ('spice-server',),
                         'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
                         'mom': ('mom',),
+                        'librbd1': ('librbd1',),
                         }
 
         if _glusterEnabled:
