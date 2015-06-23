@@ -322,7 +322,7 @@ class Register(object):
             calculated_fprint = self._calculate_fingerprint(f.name)
             temp_ca_file = True
 
-        if self.fprint and self.fprint != calculated_fprint:
+        if self.fprint and self.fprint.lower() != calculated_fprint.lower():
             msg = "The fingeprints doesn't match:\n" \
                   "Calculated fingerprint: [{c}]\n" \
                   "Attribute fingerprint:  [{a}]".format(c=calculated_fprint,
