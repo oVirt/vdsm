@@ -72,3 +72,32 @@ class ResponseTests(TestCaseBase):
         self.assertEqual(res['status']['message'], 'Done')
         for key in args:
             self.assertEqual(res[key], args[key])
+
+    def test_is_error(self):
+        NAME = 'noVM'  # no special meaning, any error is fine
+        self.assertTrue(response.is_error(response.error(NAME)))
+
+    def test_malformed_empty(self):
+        self.assertRaises(response.MalformedResponse,
+                          response.is_error,
+                          {})
+
+    def test_malformed_missing_code(self):
+        self.assertRaises(response.MalformedResponse,
+                          response.is_error,
+                          {'status': {}})
+
+    def test_malformed_exception_contains_response(self):
+        bad_res = {}
+        try:
+            response.is_error(bad_res)
+        except response.MalformedResponse as ex:
+            self.assertEqual(ex.response, bad_res)
+
+    def test_malformed_exception_str(self):
+        bad_res = {}
+        try:
+            response.is_error(bad_res)
+        except response.MalformedResponse as ex:
+            self.assertEqual(str(ex),
+                             "Missing required key in {}")

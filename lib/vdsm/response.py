@@ -24,6 +24,15 @@ from vdsm.define import doneCode
 from vdsm.define import errCode
 
 
+class MalformedResponse(Exception):
+
+    def __init__(self, response):
+        self.response = response
+
+    def __str__(self):
+        return "Missing required key in %r" % self.response
+
+
 def success(message=None, **kwargs):
     kwargs["status"] = {
         "code": doneCode["code"],
@@ -49,3 +58,12 @@ def error_raw(code, message):
             "message": message
         }
     }
+
+
+def is_error(res):
+    try:
+        code = res["status"]["code"]
+    except KeyError:
+        raise MalformedResponse(res)
+    else:
+        return code != doneCode["code"]

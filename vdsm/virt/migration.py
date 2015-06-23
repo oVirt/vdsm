@@ -203,7 +203,7 @@ class SourceThread(threading.Thread):
             self._vm.lastStatus = vmstatus.MIGRATION_SOURCE
 
     def _recover(self, message):
-        if not self.status['status']['code']:
+        if not response.is_error(self.status):
             self.status = response.error('migrateErr')
         self.log.error(message)
         if not self.hibernating:
@@ -333,7 +333,7 @@ class SourceThread(threading.Thread):
             self.log.info('Creation of destination VM took: %d seconds',
                           destCreationTime)
 
-            if result['status']['code']:
+            if response.is_error(result):
                 self.status = result
                 raise MigrationDestinationSetupError(
                     'migration destination error: ' +
