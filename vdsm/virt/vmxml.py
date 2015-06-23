@@ -359,6 +359,33 @@ class Domain(object):
             <feature policy="require" name="sse2"/>
             <feature policy="disable" name="svm"/>
         </cpu>
+
+        For POWER8, there is no point in trying to use baseline CPU for flags
+        since there are only HW features. There are 2 ways of creating a valid
+        POWER8 element that we support:
+
+            <cpu>
+                <model>POWER{X}</model>
+            </cpu>
+
+        This translates to -cpu POWER{X} (where {X} is version of the
+        processor - 7 and 8), which tells qemu to emulate the CPU in POWER8
+        family that it's capable of emulating - in case of hardware
+        virtualization, that will be the host cpu (so an equivalent of
+        -cpu host). Using this option does not limit migration between POWER8
+        machines - it is still possible to migrate from e.g. POWER8 to
+        POWER8e. The second option is not supported and serves only for
+        reference:
+
+            <cpu mode="host-model">
+                <model>power{X}</model>
+            </cpu>
+
+        where {X} is the binary compatibility version of POWER that we
+        require (6, 7, 8). This translates to qemu's -cpu host,compat=power{X}.
+
+        Using the second option also does not limit migration between POWER8
+        machines - it is still possible to migrate from e.g. POWER8 to POWER8e.
         """
 
         cpu = Element('cpu')
@@ -392,6 +419,10 @@ class Domain(object):
                     elif feature[0] == '-':
                         featureAttrs['policy'] = 'disable'
                     cpu.appendChildWithArgs('feature', **featureAttrs)
+        elif self.arch in caps.Architecture.POWER:
+            features = self.conf.get('cpuType', 'POWER8').split(',')
+            model = features[0]
+            cpu.appendChildWithArgs('model', text=model)
 
         if ('smpCoresPerSocket' in self.conf or
                 'smpThreadsPerCore' in self.conf):

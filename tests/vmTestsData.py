@@ -92,7 +92,7 @@ CONF_TO_DOMXML_PPC64 = [({
     'displayPort': '-1', 'vmName': 'testVm',
     'display': 'vnc', 'emulatedMachine': 'pc',
     'boot': '', 'timeOffset': 0,
-    'acpiEnable': 'true', 'cpuType': 'qemu64',
+    'acpiEnable': 'true', 'cpuType': 'POWER8',
     'smpCoresPerSocket': 1, 'smpThreadsPerCore': 1,
     'smp': '1', 'cpuPinning': {}, 'numaTune': {}, 'maxVCpus': '160',
     'tabletEnable': False,
@@ -133,6 +133,7 @@ CONF_TO_DOMXML_PPC64 = [({
                 </clock>
                 <cputune/>
                 <cpu>
+                    <model>POWER8</model>
                     <topology cores="1" sockets="160" threads="1"/>
                     <numa/>
                 </cpu>
