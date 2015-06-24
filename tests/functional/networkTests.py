@@ -366,7 +366,11 @@ class NetworkTest(TestCaseBase):
         netinfo = self.vdsm_net.netinfo
         kernel_config = KernelConfig(netinfo)
         running_config = self.vdsm_net.config
-        self.assertEqual(kernel_config, running_config)
+        # do not use KernelConfig.__eq__ to get better exception if something
+        # breaks here
+        normalized_config = kernel_config.normalize(running_config)
+        self.assertEqual(normalized_config.networks, kernel_config.networks)
+        self.assertEqual(normalized_config.bonds, kernel_config.bonds)
 
     @cleanupNet
     @RequireVethMod
