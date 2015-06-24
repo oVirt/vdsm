@@ -4668,16 +4668,20 @@ class Vm(object):
             self.log.error("merge: top volume '%s' not found", topVolUUID)
             return response.error('mergeErr')
 
+        try:
+            baseInfo = self._getVolumeInfo(drive.domainID, drive.poolID,
+                                           drive.imageID, baseVolUUID)
+            topInfo = self._getVolumeInfo(drive.domainID, drive.poolID,
+                                          drive.imageID, topVolUUID)
+        except StorageUnavailableError:
+            self.log.error("Unable to get volume information")
+            return errCode['mergeErr']
+
         # If base is a shared volume then we cannot allow a merge.  Otherwise
         # We'd corrupt the shared volume for other users.
-        res = self.cif.irs.getVolumeInfo(drive.domainID, drive.poolID,
-                                         drive.imageID, baseVolUUID)
-        if res['status']['code'] != 0:
-            self.log.error("Unable to get volume info for '%s'", baseVolUUID)
-            return response.error('mergeErr')
-        if res['info']['voltype'] == 'SHARED':
-            self.log.error("merge: Refusing to merge into a shared volume")
-            return response.error('mergeErr')
+        if baseInfo['voltype'] == 'SHARED':
+            self.log.error("Refusing to merge into a shared volume")
+            return errCode['mergeErr']
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files.  This is necessary to ensure that a volume chain is
@@ -4692,18 +4696,9 @@ class Vm(object):
             # pivot to the new active layer (baseVolUUID).
             flags |= libvirt.VIR_DOMAIN_BLOCK_COMMIT_ACTIVE
 
-            # If top is the active layer, it's allocated size is stored in
-            # drive.apparentsize.
-            topSize = drive.apparentsize
-        else:
-            # If top is an internal volume, we must call getVolumeInfo
-            res = self.cif.irs.getVolumeInfo(drive.domainID, drive.poolID,
-                                             drive.imageID, topVolUUID)
-            if res['status']['code'] != 0:
-                self.log.error("Unable to get volume info for '%s'",
-                               topVolUUID)
-                return response.error('mergeErr')
-            topSize = int(res['info']['apparentsize'])
+        # Make sure we can merge into the base in case the drive was enlarged.
+        if not self._can_merge_into(drive, baseInfo, topInfo):
+            return errCode['destVolumeTooSmall']
 
         # Take the jobs lock here to protect the new job we are tracking from
         # being cleaned up by queryBlockJobs() since it won't exist right away
@@ -4736,6 +4731,7 @@ class Vm(object):
         # live merge operation.
         if drive.chunked:
             capacity, alloc, physical = self._getExtendInfo(drive)
+            topSize = int(topInfo['apparentsize'])
             self.extendDriveVolume(drive, baseVolUUID, topSize, capacity)
 
         # Trigger the collection of stats before returning so that callers
@@ -4743,6 +4739,22 @@ class Vm(object):
         self.updateVmJobs()
 
         return {'status': doneCode}
+
+    def _can_merge_into(self, drive, base_info, top_info):
+        # If the drive was resized the top volume could be larger than the
+        # base volume.  Libvirt can handle this situation for file-based
+        # volumes and block qcow volumes (where extension happens dynamically).
+        # Raw block volumes cannot be extended by libvirt so we require ovirt
+        # engine to extend them before calling merge.  Check here.
+        if not drive.blockDev or base_info['format'] != 'RAW':
+            return True
+
+        if int(base_info['capacity']) < int(top_info['capacity']):
+            self.log.warning("The base volume is undersized and cannot be "
+                             "extended (base capacity: %s, top capacity: %s)",
+                             base_info['capacity'], top_info['capacity'])
+            return False
+        return True
 
     def _diskXMLGetVolumeChainInfo(self, diskXML, drive):
         def find_element_by_name(doc, name):

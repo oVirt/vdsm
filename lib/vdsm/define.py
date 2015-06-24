@@ -190,6 +190,9 @@ errCode = {
     'hookError': {'status': {
         'code': 78,
         'message': 'Hook error'}},
+    'destVolumeTooSmall': {'status': {
+        'code': 79,
+        'message': 'Destination volume is too small'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},
