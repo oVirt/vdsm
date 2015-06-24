@@ -21,6 +21,7 @@
 import errno
 import fcntl
 import os
+import selinux
 from functools import wraps
 from vdsm.define import doneCode
 from vdsm import constants, utils
@@ -129,6 +130,8 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         try:
             os.makedirs(sshDir, 0700)
             os.chown(sshDir, uid, gid)
+            if selinux.is_selinux_enabled():
+                selinux.restorecon(sshDir)
         except OSError as e:
             raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
@@ -155,7 +158,9 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         safeWrite(authKeysFile, ''.join(outLines))
         os.chmod(authKeysFile, 0600)
         os.chown(authKeysFile, uid, gid)
-    except IOError as e:
+        if selinux.is_selinux_enabled():
+            selinux.restorecon(authKeysFile)
+    except (IOError, OSError) as e:
         raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
 
