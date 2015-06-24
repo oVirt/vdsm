@@ -32,7 +32,6 @@ from blivet.devices import LVMLogicalVolumeDevice
 from blivet.devices import LVMThinLogicalVolumeDevice
 from blivet import udev
 
-import storage.lvm as lvm
 from vdsm import utils
 
 import fstab
@@ -41,6 +40,9 @@ from . import makePublic
 
 
 log = logging.getLogger("Gluster")
+_pvCreateCommandPath = utils.CommandPath("pvcreate",
+                                         "/sbin/pvcreate",
+                                         "/usr/sbin/pvcreate",)
 _vgCreateCommandPath = utils.CommandPath("vgcreate",
                                          "/sbin/vgcreate",
                                          "/usr/sbin/vgcreate",)
@@ -156,9 +158,12 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     def _createPV(deviceList, alignment=0):
         def _createAlignedPV(deviceList, alignment):
             for dev in deviceList:
-                rc, out, err = lvm._createpv(
-                    [dev.path], metadataSize=0,
-                    options=('--dataalignment', '%sK' % alignment))
+                # bz#1178705: Blivet always creates pv with 1MB dataalignment
+                # Workaround: Till blivet fixes the issue, we use lvm pvcreate
+                rc, out, err = utils.execCmd([_pvCreateCommandPath.cmd,
+                                              '--dataalignment',
+                                              '%sk' % alignment,
+                                              dev.path])
                 if rc:
                     raise ge.GlusterHostStorageDevicePVCreateFailedException(
                         dev.path, alignment, rc, out, err)
