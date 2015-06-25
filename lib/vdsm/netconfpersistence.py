@@ -192,9 +192,9 @@ class KernelConfig(BaseConfig):
     def __init__(self, netinfo):
         super(KernelConfig, self).__init__({}, {})
         self._netinfo = netinfo
-        for net, net_attr in self._analize_netinfo_nets(netinfo):
+        for net, net_attr in self._analyze_netinfo_nets(netinfo):
             self.setNetwork(net, net_attr)
-        for bond, bond_attr in self._analize_netinfo_bonds(netinfo):
+        for bond, bond_attr in self._analyze_netinfo_bonds(netinfo):
             self.setBonding(bond, bond_attr)
 
     def __eq__(self, other):
@@ -202,11 +202,11 @@ class KernelConfig(BaseConfig):
         return (self.networks == normalized_other.networks
                 and self.bonds == normalized_other.bonds)
 
-    def _analize_netinfo_nets(self, netinfo):
+    def _analyze_netinfo_nets(self, netinfo):
         for net, net_attr in netinfo.networks.iteritems():
             yield net, self._translate_netinfo_net(net, net_attr)
 
-    def _analize_netinfo_bonds(self, netinfo):
+    def _analyze_netinfo_bonds(self, netinfo):
         for bond, bond_attr in netinfo.bondings.iteritems():
             yield bond, self._translate_netinfo_bond(bond_attr)
 
