@@ -328,9 +328,9 @@ class VM(APIBase):
         """
         Destroy the specified VM.
         """
-        self._cif.vmContainerLock.acquire()
-        self.log.info("vmContainerLock acquired by vm %s", self._UUID)
-        try:
+        self.log.debug('About to destroy VM %s', self._UUID)
+
+        with self._cif.vmContainerLock:
             v = self._cif.vmContainer.get(self._UUID)
             if not v:
                 return errCode['noVM']
@@ -339,8 +339,6 @@ class VM(APIBase):
             if status['status']['code'] == 0:
                 status['status']['message'] = "Machine destroyed"
             return status
-        finally:
-            self._cif.vmContainerLock.release()
 
     def getMigrationStatus(self):
         """
