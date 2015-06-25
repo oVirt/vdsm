@@ -95,6 +95,7 @@ test_modules = \
 	sourceroutingTests.py \
 	sslhelper.py \
 	sslTests.py \
+	stompTests.py \
 	storageMailboxTests.py \
 	storageMonitorTests.py \
 	storageServerTests.py \

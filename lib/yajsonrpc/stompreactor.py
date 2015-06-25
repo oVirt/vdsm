@@ -18,6 +18,7 @@ import logging
 from collections import deque
 from uuid import uuid4
 import functools
+import threading
 
 from vdsm import utils
 from vdsm.config import config
@@ -539,6 +540,40 @@ def StompRpcClient(stomp_client, request_queue, response_queue):
             stomp_client,
         )
     )
+
+
+def StandAloneRpcClient(host, port, request_queue, response_queue,
+                        sslctx=None, lazy_start=True):
+    """
+    Returns JsonRpcClient able to receive jsonrpc messages and notifications.
+    It is required to provide host and port where we want to connect and
+    request and response queues that we want to use during communication.
+    We can provide ssl context if we want to secure connection.
+    """
+    reactor = Reactor()
+
+    def start():
+        thread = threading.Thread(target=reactor.process_requests,
+                                  name='Client %s:%s' % (host, port))
+        thread.setDaemon(True)
+        thread.start()
+
+    client = StompClient(utils.create_connected_socket(host, port, sslctx),
+                         reactor)
+
+    jsonclient = JsonRpcClient(
+        ClientRpcTransportAdapter(
+            client.subscribe(response_queue, sub_id=str(uuid4())),
+            request_queue,
+            client)
+    )
+
+    if lazy_start:
+        setattr(jsonclient, 'start', start)
+    else:
+        start()
+
+    return jsonclient
 
 
 def StompRpcServer(bridge, stomp_client, request_queue, address, timeout):

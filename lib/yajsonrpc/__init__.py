@@ -435,6 +435,8 @@ class JsonRpcClient(object):
     def close(self):
         self._transport.close()
 
+    stop = close
+
     def registerEventCallback(self, eventcb):
         self._eventcbs.append(ref(eventcb))
 
