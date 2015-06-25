@@ -30,9 +30,12 @@ from network.models import _nicSort
 
 from testlib import VdsmTestCase as TestCaseBase
 
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyClass
 
 
+@MonkeyClass(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
+             if os.path.exists(netinfo.BONDING_DEFAULTS)
+             else '../vdsm/bonding-defaults.json')
 class TestNetmodels(TestCaseBase):
 
     def testIsVlanIdValid(self):
@@ -79,9 +82,6 @@ class TestNetmodels(TestCaseBase):
         self.assertEqual(Bond.validateName('bond11'), None)
         self.assertEqual(Bond.validateName('bond11128421982'), None)
 
-    @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
-                 if os.path.exists(netinfo.BONDING_DEFAULTS)
-                 else '../vdsm/bonding-defaults.json')
     def testValidateBondingOptions(self):
         opts = 'mode=802.3ad miimon=150'
         badOpts = 'foo=bar badopt=one'
