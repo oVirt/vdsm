@@ -390,3 +390,46 @@ def recorded(meth):
         recording.append((meth.func_name, args, kwargs))
         return meth(self, *args, **kwargs)
     return wrapper
+
+
+class LockingThread(object):
+    """
+    A thread that locks the given context, for testing locks.
+
+    When starting this thead, you should wait on its ready event, to make sure
+    the thread was started.  Then you should sleep some time to make sure the
+    thread tried to acquire the context.
+
+    To check if the thread did acquire the context, wait on the the thread
+    acquired event with timeout=0.
+
+    To check that the thread is blocked on the context, wait on the acquired
+    event with bigger timeout (e.g, 0.5).
+    """
+
+    def __init__(self, context):
+        self.ready = threading.Event()
+        self.acquired = threading.Event()
+        self.done = threading.Event()
+        self._context = context
+        self._thread = None
+
+    def start(self):
+        self._thread = start_thread(self._run)
+
+    def stop(self):
+        self.done.set()
+        self._thread.join()
+
+    def _run(self):
+        self.ready.set()
+        with self._context:
+            self.acquired.set()
+            self.done.wait()
+
+
+def start_thread(func, *args, **kwargs):
+    t = threading.Thread(target=func, args=args, kwargs=kwargs)
+    t.daemon = True
+    t.start()
+    return t

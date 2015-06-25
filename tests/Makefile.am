@@ -87,6 +87,7 @@ test_modules = \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
 	responseTests.py \
+	rwlock_test.py \
 	samplingTests.py \
 	scheduleTests.py \
 	schemaTests.py \
