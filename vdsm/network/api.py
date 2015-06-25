@@ -771,8 +771,7 @@ def _apply_hook(bondings, networks, options):
     return bondings, networks, options
 
 
-def _should_keep_bridge(network_attrs, currently_bridged,
-                        network_running_config):
+def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
     marked_for_removal = 'remove' in network_attrs
     if marked_for_removal:
         return False
@@ -788,11 +787,11 @@ def _should_keep_bridge(network_attrs, currently_bridged,
             (k, v) for k, v in conf.iteritems()
             if k not in ('bonding', 'nic', 'mtu'))
 
-    def _bridge_reconfigured(current_conf, required_conf):
-        return (_bridge_only_config(current_conf) !=
-                _bridge_only_config(required_conf))
+    def _bridge_reconfigured(current_net_conf, required_net_conf):
+        return (_bridge_only_config(current_net_conf) !=
+                _bridge_only_config(required_net_conf))
 
-    if currently_bridged and _bridge_reconfigured(network_running_config,
+    if currently_bridged and _bridge_reconfigured(net_kernel_config,
                                                   network_attrs):
         logging.debug("the bridge is being reconfigured")
         return False
@@ -861,16 +860,18 @@ def setupNetworks(networks, bondings, **options):
 
     logger.debug("Applying...")
     in_rollback = options.get('_inRollback', False)
+    kernel_config = netconfpersistence.KernelConfig(_netinfo)
+    normalized_config = kernel_config.normalize(
+        netconfpersistence.BaseConfig(networks, bondings))
     with ConfiguratorClass(in_rollback) as configurator:
         # Remove edited networks and networks with 'remove' attribute
         for network, attrs in networks.items():
             if network in _netinfo.networks:
                 logger.debug("Removing network %r", network)
-                running_conf = configurator.runningConfig.networks.get(network)
                 keep_bridge = _should_keep_bridge(
-                    network_attrs=attrs,
+                    network_attrs=normalized_config.networks[network],
                     currently_bridged=_netinfo.networks[network]['bridged'],
-                    network_running_config=running_conf
+                    net_kernel_config=kernel_config.networks[network]
                 )
 
                 _delNetwork(network, configurator=configurator, force=force,

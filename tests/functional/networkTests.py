@@ -1005,14 +1005,14 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
-    def testSetupNetworksDoesNotDeleteTheBridge(self):
+    def testSetupNetworksDeletesTheBridgeOnlyWhenItIsReconfigured(self):
         def get_bridge_index():
             link = ipwrapper.getLink(NETWORK_NAME)
             return link.index
 
+        STANDARD, BIG = 1500, 2000
         with dummyIf(2) as nics:
             first, second = nics
-            STANDARD = 1500
             first_net = {NETWORK_NAME: dict(bridged=True, nic=first,
                                             mtu=STANDARD)}
             status, msg = self.setupNetworks(first_net, {}, NOCHK)
@@ -1020,12 +1020,12 @@ class NetworkTest(TestCaseBase):
             self.assertMtu(STANDARD, NETWORK_NAME, first)
             bridge_index = get_bridge_index()
 
-            BIG = 2000
             second_net = {NETWORK_NAME: dict(bridged=True, nic=second,
                                              mtu=BIG)}
             status, msg = self.setupNetworks(second_net, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
-            self.assertEquals(bridge_index, get_bridge_index())
+            second_bridge_index = get_bridge_index()
+            self.assertEquals(bridge_index, second_bridge_index)
             # the kernel bridge driver automatically updates the bridge to the
             # new minimum MTU of all of its connected interfaces
             self.assertMtu(BIG, NETWORK_NAME, second)
@@ -1039,6 +1039,13 @@ class NetworkTest(TestCaseBase):
                 self.assertEquals(rc, 0, 'ifup failed: rc=%s' % (rc,))
                 self.vdsm_net.refreshNetinfo()
                 self.assertMtu(BIG, NETWORK_NAME, second)
+
+            third_net = {
+                NETWORK_NAME: dict(bridged=True, nic=second, mtu=BIG,
+                                   ipaddr=IP_ADDRESS, netmask=IP_MASK)}
+            status, msg = self.setupNetworks(third_net, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            self.assertNotEqual(second_bridge_index, get_bridge_index())
 
     @cleanupNet
     @permutations([[True], [False]])
