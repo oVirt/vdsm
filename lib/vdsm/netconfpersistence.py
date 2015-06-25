@@ -330,8 +330,12 @@ class KernelConfig(BaseConfig):
         for net_attr in config_copy.networks.itervalues():
             if net_attr.get('bridged', True):
                 net_attr['bridged'] = True
-                net_attr['stp'] = self._netinfo.stpBooleanize(
-                    net_attr.get('stp'))
+                self._normalize_stp(net_attr)
+
+    def _normalize_stp(self, net_attr):
+        stp = net_attr.pop('stp', net_attr.pop('STP', None))
+        net_attr['stp'] = self._netinfo.stpBooleanize(
+            stp)
 
     def _normalize_mtu(self, config_copy):
         for net_attr in config_copy.networks.itervalues():
