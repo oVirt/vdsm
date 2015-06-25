@@ -784,7 +784,6 @@ class TestVm(XMLTestCase):
             </qos>
             """)
 
-            self.maxDiff = None
             self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
 
     def testGetIoTune(self):

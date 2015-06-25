@@ -150,6 +150,7 @@ class VdsmTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
         self.log = logging.getLogger(self.__class__.__name__)
+        self.maxDiff = None  # disable truncating diff in assert error messages
 
     def retryAssert(self, *args, **kwargs):
         '''Keep retrying an assertion if AssertionError is raised.

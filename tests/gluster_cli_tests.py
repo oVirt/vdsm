@@ -26,7 +26,6 @@ import glusterTestData
 
 
 class GlusterCliTests(TestCaseBase):
-    maxDiff = None
 
     def _parseVolumeInfo_empty_test(self):
         out = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
