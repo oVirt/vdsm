@@ -122,7 +122,6 @@ test_modules = \
 	qemuimgTests.py \
 	resourceManagerTests.py \
 	responseTests.py \
-	rwlock_test.py \
 	samplingTests.py \
 	scheduleTests.py \
 	schemaTests.py \
@@ -143,6 +142,7 @@ test_modules = \
 	storage_sdm_api_test.py \
 	storage_sdm_create_volume_test.py \
 	storage_volume_artifacts_test.py \
+	storage_rwlock_test.py \
 	tasksetTests.py \
 	testlibTests.py \
 	toolTests.py \

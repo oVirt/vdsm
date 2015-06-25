@@ -27,6 +27,7 @@ dist_vdsmstorage_PYTHON = \
 	exception.py \
 	mount.py \
 	persistent.py \
+	rwlock.py \
 	securable.py \
 	sync.py \
 	$(NULL)
