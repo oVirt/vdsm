@@ -66,12 +66,16 @@ version_info = {
     'supportedProtocols': ['2.2', '2.3'],
 }
 if is_el6():
-    version_info.update({
-                'supportedENGINEs': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
-                'clusterLevels': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
-            })
+    version_info.update(
+        {
+            'supportedENGINEs': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
+            'clusterLevels': ['3.0', '3.1', '3.2', '3.3', '3.4', '3.5'],
+        }
+    )
 else:
-    version_info.update({
+    version_info.update(
+        {
             'supportedENGINEs': ['3.4', '3.5'],
             'clusterLevels': ['3.4', '3.5'],
-        })
+        }
+    )
