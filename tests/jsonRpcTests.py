@@ -22,6 +22,7 @@ import time
 from clientIF import clientIF
 from contextlib import contextmanager
 from monkeypatch import MonkeyPatch
+from testValidation import slowtest
 
 from testlib import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -205,6 +206,7 @@ class JsonRpcServerTests(TestCaseBase):
                                             CALL_ID)
                     self.assertEquals(res, 'sent')
 
+    @slowtest
     @MonkeyPatch(clientIF, 'getInstance', getInstance)
     @permutations(PERMUTATIONS)
     def testSlowMethod(self, ssl, type):
