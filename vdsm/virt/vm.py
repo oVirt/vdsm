@@ -4574,7 +4574,7 @@ class Vm(object):
 
     def queryBlockJobs(self):
         def startCleanup(job, drive, needPivot):
-            t = LiveMergeCleanupThread(self, job['jobID'], drive, needPivot)
+            t = LiveMergeCleanupThread(self, job, drive, needPivot)
             t.start()
             self._liveMergeCleanupThreads[job['jobID']] = t
 
@@ -4945,11 +4945,11 @@ class Vm(object):
 
 
 class LiveMergeCleanupThread(threading.Thread):
-    def __init__(self, vm, jobId, drive, doPivot):
+    def __init__(self, vm, job, drive, doPivot):
         threading.Thread.__init__(self)
         self.setDaemon(True)
         self.vm = vm
-        self.jobId = jobId
+        self.job = job
         self.drive = drive
         self.doPivot = doPivot
         self.success = False
@@ -4973,7 +4973,7 @@ class LiveMergeCleanupThread(threading.Thread):
         self.vm.stopDisksStatsCollection()
 
         self.vm.log.info("Requesting pivot to complete active layer commit "
-                         "(job %s)", self.jobId)
+                         "(job %s)", self.job['jobID'])
         try:
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             ret = self.vm._dom.blockJobAbort(self.drive.name, flags)
@@ -4983,22 +4983,39 @@ class LiveMergeCleanupThread(threading.Thread):
         else:
             if ret != 0:
                 self.vm.log.error("Pivot failed for job %s (rc=%i)",
-                                  self.jobId, ret)
+                                  self.job['jobID'], ret)
                 raise RuntimeError("pivot failed")
             self._waitForXMLUpdate()
-        self.vm.log.info("Pivot completed (job %s)", self.jobId)
+        self.vm.log.info("Pivot completed (job %s)", self.job['jobID'])
+
+    def update_base_size(self):
+        # If the drive size was extended just after creating the snapshot which
+        # we are removing, the size of the top volume might be larger than the
+        # size of the base volume.  In that case libvirt has enlarged the base
+        # volume automatically as part of the blockCommit operation.  Update
+        # our metadata to reflect this change.
+        topVolUUID = self.job['topVolume']
+        baseVolUUID = self.job['baseVolume']
+        topVolInfo = self.vm._getVolumeInfo(self.drive.domainID,
+                                            self.drive.poolID,
+                                            self.drive.imageID, topVolUUID)
+        self.vm._setVolumeSize(self.drive.domainID, self.drive.poolID,
+                               self.drive.imageID, baseVolUUID,
+                               topVolInfo['capacity'])
 
     @utils.traceback()
     def run(self):
+        self.update_base_size()
         if self.doPivot:
             self.tryPivot()
         self.vm.log.info("Synchronizing volume chain after live merge "
-                         "(job %s)", self.jobId)
+                         "(job %s)", self.job['jobID'])
         self.vm._syncVolumeChain(self.drive)
         if self.doPivot:
             self.vm.startDisksStatsCollection()
         self.success = True
-        self.vm.log.info("Synchronization completed (job %s)", self.jobId)
+        self.vm.log.info("Synchronization completed (job %s)",
+                         self.job['jobID'])
 
     def isSuccessful(self):
         """
