@@ -189,7 +189,6 @@ class VmDispatcherTests(TestCaseBase):
                    [((VM_NUM-1,))],
                    [((VM_NUM-2, VM_NUM-1))]])
     def test_dispatch(self, failed_ids):
-        failed_ids = (0, 2)
         for i in failed_ids:
             with self.cif.vmContainerLock:
                 vm_id = _fake_vm_id(i)
