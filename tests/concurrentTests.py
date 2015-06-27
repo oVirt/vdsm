@@ -20,10 +20,136 @@
 
 import time
 import random
+import threading
 
-from testlib import VdsmTestCase
+from testlib import VdsmTestCase, expandPermutations, permutations
+from testValidation import slowtest, stresstest
 
 from vdsm import concurrent
+
+
+@expandPermutations
+class BarrierTests(VdsmTestCase):
+
+    def test_invalid_count(self):
+        self.assertRaises(ValueError, concurrent.Barrier, 0)
+
+    def test_last_thread(self):
+        barrier = concurrent.Barrier(1)
+        barrier.wait(timeout=0)
+
+    def test_timeout(self):
+        barrier = concurrent.Barrier(2)
+        self.assertRaises(concurrent.Timeout, barrier.wait, 0.1)
+
+    @slowtest
+    def test_no_timeout(self):
+        barrier = concurrent.Barrier(2)
+        done = threading.Event()
+
+        def waiter():
+            barrier.wait()
+            done.set()
+
+        t = threading.Thread(target=waiter)
+        t.daemon = True
+        t.start()
+        barrier.wait()
+        self.assertTrue(done.wait(timeout=0.5))
+
+    @slowtest
+    def test_block_thread(self):
+        barrier = concurrent.Barrier(2)
+        done = threading.Event()
+
+        def waiter():
+            barrier.wait(timeout=1)
+            done.set()
+
+        t = threading.Thread(target=waiter)
+        t.daemon = True
+        t.start()
+        try:
+            self.assertFalse(done.wait(timeout=0.5))
+        finally:
+            barrier.wait(timeout=0)
+            t.join()
+
+    @slowtest
+    def test_wake_up_blocked_thread(self):
+        barrier = concurrent.Barrier(2)
+        done = threading.Event()
+
+        def waiter():
+            barrier.wait(timeout=2)
+            done.set()
+
+        t = threading.Thread(target=waiter)
+        t.daemon = True
+        t.start()
+        try:
+            if done.wait(timeout=0.5):
+                raise RuntimeError("Thread did not block")
+            barrier.wait(timeout=0)
+            self.assertTrue(done.wait(timeout=0.5))
+        finally:
+            t.join()
+
+    @slowtest
+    def test_wake_up_exactly_count_threads(self):
+        barrier = concurrent.Barrier(2)
+        lock = threading.Lock()
+        done = [0]
+
+        def waiter():
+            barrier.wait(timeout=2)
+            with lock:
+                done[0] += 1
+
+        threads = []
+        for i in range(3):
+            t = threading.Thread(target=waiter)
+            t.daemon = True
+            t.start()
+            threads.append(t)
+        try:
+            time.sleep(0.5)
+            # The first 2 threads waiting should be done now
+            self.assertEqual(done[0], 2)
+            # This should wake up the last thread waiting
+            barrier.wait(timeout=0)
+            time.sleep(0.5)
+            self.assertEqual(done[0], 3)
+        finally:
+            for t in threads:
+                t.join()
+
+    @stresstest
+    @permutations([[2], [4], [8], [16], [32], [64], [128], [256]])
+    def test_multiple_threads(self, count):
+        timeout = 5.0
+        # Wait for count threads + test thread
+        barrier = concurrent.Barrier(count + 1)
+        threads = []
+
+        def waiter():
+            time.sleep(0.1)
+            barrier.wait(timeout=timeout)
+
+        try:
+            # Start count threads waiting on the barrier
+            for i in range(count):
+                t = threading.Thread(target=waiter)
+                t.daemon = True
+                t.start()
+                threads.append(t)
+            # Wait until all threads entered the barrier. Timeout is considerd
+            # a failure.
+            with self.assertNotRaises():
+                barrier.wait(timeout=timeout)
+        finally:
+            for t in threads:
+                t.join()
 
 
 class TMapTests(VdsmTestCase):
