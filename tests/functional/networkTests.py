@@ -343,7 +343,9 @@ class NetworkTest(TestCaseBase):
     def setupNetworks(self, *args, **kwargs):
         test_kernel_config = kwargs.pop('test_kernel_config', True)
         status, msg = self.vdsm_net.setupNetworks(*args, **kwargs)
-        if test_kernel_config:
+        unified = (
+            vdsm.config.config.get('vars', 'net_persistence') == 'unified')
+        if unified and test_kernel_config:
             self._assert_kernel_config_matches_running_config()
         return status, msg
 
