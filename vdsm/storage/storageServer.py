@@ -282,31 +282,38 @@ class GlusterFSConnection(MountConnection):
                                                   vfsType=vfsType,
                                                   options=options,
                                                   mountClass=mountClass)
-        self._backup_servers_option = None
+        self._volinfo = None
+        self._volfileserver, volname = self._remotePath.split(":", 1)
+        self._volname = volname.strip('/')
 
     @property
     def options(self):
-        if self._backup_servers_option is None:
-            self._backup_servers_option = self._get_backup_servers_option()
+        backup_servers_option = self._get_backup_servers_option()
         return ",".join(
-            p for p in (self._options, self._backup_servers_option) if p)
+            p for p in (self._options, backup_servers_option) if p)
+
+    @property
+    def volinfo(self):
+        if self._volinfo is None:
+            self._volinfo = self._get_gluster_volinfo()
+        return self._volinfo
 
     def _get_backup_servers_option(self):
         if "backup-volfile-servers" in self._options:
             self.log.warn("Using user specified backup-volfile-servers option")
             return ""
 
-        volfileServer, volname = self._remotePath.split(":", 1)
-        volname = volname.strip('/')
-        volInfo = supervdsm.getProxy().glusterVolumeInfo(volname,
-                                                         volfileServer)
-        servers = [brick.split(":")[0]
-                   for brick in volInfo[volname]['bricks']]
-        servers.remove(volfileServer)
+        servers = [brick.split(":")[0] for brick in self.volinfo['bricks']]
+        servers.remove(self._volfileserver)
         if not servers:
             return ""
 
         return "backup-volfile-servers=" + ":".join(servers)
+
+    def _get_gluster_volinfo(self):
+        volinfo = supervdsm.getProxy().glusterVolumeInfo(self._volname,
+                                                         self._volfileserver)
+        return volinfo[self._volname]
 
 
 class NFSConnection(object):
