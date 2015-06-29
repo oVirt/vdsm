@@ -297,7 +297,11 @@ class GlusterFSConnection(MountConnection):
 
     @property
     def options(self):
-        backup_servers_option = self._get_backup_servers_option()
+        if "backup-volfile-servers" in self._options:
+            self.log.warn("Using user specified backup-volfile-servers option")
+            backup_servers_option = ""
+        else:
+            backup_servers_option = self._get_backup_servers_option()
         return ",".join(
             p for p in (self._options, backup_servers_option) if p)
 
@@ -313,10 +317,6 @@ class GlusterFSConnection(MountConnection):
             raise se.UnsupportedGlusterVolumeReplicaCountError(replicaCount)
 
     def _get_backup_servers_option(self):
-        if "backup-volfile-servers" in self._options:
-            self.log.warn("Using user specified backup-volfile-servers option")
-            return ""
-
         servers = [brick.split(":")[0] for brick in self.volinfo['bricks']]
         servers.remove(self._volfileserver)
         if not servers:
