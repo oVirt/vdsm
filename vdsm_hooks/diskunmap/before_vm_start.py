@@ -73,13 +73,13 @@ name="qemu" type="raw"/>
     xmldom = minidom.parseString(text)
 
     disk = xmldom.getElementsByTagName('disk')[0]
-    print "\nDisk device definition before execution: \n%s"\
-          % disk.toxml(encoding='UTF-8')
+    print("\nDisk device definition before execution: \n%s"
+          % disk.toxml(encoding='UTF-8'))
 
     addDiscardUnmap(xmldom)
 
-    print "\nDisk device after setting discard attribute: \n%s"\
-          % disk.toxml(encoding='UTF-8')
+    print("\nDisk device after setting discard attribute: \n%s"
+          % disk.toxml(encoding='UTF-8'))
 
 
 if __name__ == '__main__':
