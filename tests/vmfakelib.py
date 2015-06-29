@@ -243,6 +243,16 @@ class Domain(object):
     def getDowntimes(self):
         return self._downtimes
 
+    @recorded
+    def fsFreeze(self, mountpoints=None, flags=0):
+        self._failIfRequested()
+        return 3  # frozen filesystems
+
+    @recorded
+    def fsThaw(self, mountpoints=None, flags=0):
+        self._failIfRequested()
+        return 3  # thawed filesystems
+
 
 class GuestAgent(object):
     def __init__(self):

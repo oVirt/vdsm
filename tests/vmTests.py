@@ -20,6 +20,7 @@
 #
 
 from itertools import product
+import logging
 import re
 import threading
 import time
@@ -1547,6 +1548,92 @@ class ChangeBlockDevTests(TestCaseBase):
 
                 expected_status = define.errCode['changeDisk']['status']
                 self.assertEqual(res['status'], expected_status)
+
+
+class TestingVm(vm.Vm):
+    """
+    Fake Vm required for testing code that does not care about vm state,
+    invoking libvirt apis via Vm._dom, and logging via Vm.log.
+    """
+
+    log = logging.getLogger()
+
+    def __init__(self, dom):
+        self._dom = dom
+
+
+class FreezingTests(TestCaseBase):
+
+    def setUp(self):
+        self.dom = fake.Domain()
+        self.vm = TestingVm(self.dom)
+
+    def test_freeze(self):
+        res = self.vm.freeze()
+        self.assertEqual(res, response.success())
+        self.assertEqual(self.dom.__recording__, [("fsFreeze", (), {})])
+
+    def test_thaw(self):
+        res = self.vm.thaw()
+        self.assertEqual(res, response.success())
+        self.assertEqual(self.dom.__recording__, [("fsThaw", (), {})])
+
+
+class FreezingGuestAgentUnresponsiveTests(TestCaseBase):
+
+    expected = response.error("nonresp", message="fake error")
+
+    def setUp(self):
+        self.dom = fake.Domain(
+            virtError=libvirt.VIR_ERR_AGENT_UNRESPONSIVE,
+            errorMessage="fake error")
+        self.vm = TestingVm(self.dom)
+
+    def test_freeze(self):
+        res = self.vm.freeze()
+        self.assertEqual(res, self.expected)
+
+    def test_thaw(self):
+        res = self.vm.thaw()
+        self.assertEqual(res, self.expected)
+
+
+class FreezingUnsupportedTests(TestCaseBase):
+
+    expected = response.error("unsupportedOperationErr", message="fake error")
+
+    def setUp(self):
+        self.dom = fake.Domain(
+            virtError=libvirt.VIR_ERR_NO_SUPPORT,
+            errorMessage="fake error")
+        self.vm = TestingVm(self.dom)
+
+    def test_freeze(self):
+        res = self.vm.freeze()
+        self.assertEqual(res, self.expected)
+
+    def test_thaw(self):
+        res = self.vm.thaw()
+        self.assertEqual(res, self.expected)
+
+
+class FreezingUnexpectedErrorTests(TestCaseBase):
+
+    def setUp(self):
+        self.dom = fake.Domain(
+            virtError=libvirt.VIR_ERR_INTERNAL_ERROR,
+            errorMessage="fake error")
+        self.vm = TestingVm(self.dom)
+
+    def test_freeze(self):
+        res = self.vm.freeze()
+        self.assertEqual(res, response.error("freezeErr",
+                                             message="fake error"))
+
+    def test_thaw(self):
+        res = self.vm.thaw()
+        self.assertEqual(res, response.error("thawErr",
+                                             message="fake error"))
 
 
 def raise_libvirt_error(code, message):

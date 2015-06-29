@@ -2871,6 +2871,52 @@ class Vm(object):
                 conf.update(driveParams)
             self.saveState()
 
+    def freeze(self):
+        """
+        Freeze every mounted filesystems within the guest (hence guest agent
+        may be required depending on hypervisor used).
+        """
+        self.log.info("Freezing guest filesystems")
+
+        try:
+            frozen = self._dom.fsFreeze()
+        except libvirt.libvirtError as e:
+            self.log.warning("Unable to freeze guest filesystems: %s", e)
+            code = e.get_error_code()
+            if code == libvirt.VIR_ERR_AGENT_UNRESPONSIVE:
+                name = "nonresp"
+            elif code == libvirt.VIR_ERR_NO_SUPPORT:
+                name = "unsupportedOperationErr"
+            else:
+                name = "freezeErr"
+            return response.error(name, message=e.get_error_message())
+
+        self.log.info("%d guest filesystems frozen", frozen)
+        return response.success()
+
+    def thaw(self):
+        """
+        Thaw every mounted filesystems within the guest (hence guest agent may
+        be required depending on hypervisor used).
+        """
+        self.log.info("Thawing guest filesystems")
+
+        try:
+            thawed = self._dom.fsThaw()
+        except libvirt.libvirtError as e:
+            self.log.warning("Unable to thaw guest filesystems: %s", e)
+            code = e.get_error_code()
+            if code == libvirt.VIR_ERR_AGENT_UNRESPONSIVE:
+                name = "nonresp"
+            elif code == libvirt.VIR_ERR_NO_SUPPORT:
+                name = "unsupportedOperationErr"
+            else:
+                name = "thawErr"
+            return response.error(name, message=e.get_error_message())
+
+        self.log.info("%d guest filesystems thawed", thawed)
+        return response.success()
+
     def snapshot(self, snapDrives, memoryParams):
         """Live snapshot command"""
 

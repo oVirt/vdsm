@@ -178,6 +178,15 @@ errCode = {
     'secretUnregisterErr': {'status': {
         'code': 74,
         'message': 'Error unregistering Libvirt secret'}},
+    'unsupportedOperationErr': {'status': {
+        'code': 75,
+        'message': 'Operation not supported'}},
+    'freezeErr': {'status': {
+        'code': 76,
+        'message': 'Unable to freeze guest filesystems'}},
+    'thawErr': {'status': {
+        'code': 77,
+        'message': 'Unable to thaw guest filesystems'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},
