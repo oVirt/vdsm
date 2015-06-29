@@ -151,4 +151,8 @@ public class SSLEngineNioHelper {
     public void clearBuff() {
         this.packetBuffer.clear();
     }
+
+    public SSLEngine getSSLEngine() {
+        return this.engine;
+    }
 }

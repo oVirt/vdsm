@@ -1,5 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
+import static org.ovirt.vdsm.jsonrpc.client.reactors.SSLClient.CertCallback;
+
 import java.io.IOException;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -25,9 +27,13 @@ public class SSLStompReactor extends Reactor {
     }
 
     @Override
-    public ReactorClient createClient(Reactor reactor, Selector selector, String hostname, int port)
+    public ReactorClient createClient(Reactor reactor,
+            Selector selector,
+            String hostname,
+            int port,
+            CertCallback certCallback)
             throws ClientConnectionException {
-        return new SSLStompClient(reactor, selector, hostname, port, this.sslContext);
+        return new SSLStompClient(reactor, selector, hostname, port, this.sslContext, certCallback);
     }
 
     @Override

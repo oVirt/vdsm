@@ -8,6 +8,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -15,6 +17,8 @@ import java.util.concurrent.FutureTask;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,21 +37,29 @@ public abstract class SSLClient extends StompCommonClient {
     protected SSLEngineNioHelper nioEngine;
     private SSLContext sslContext;
     private boolean client;
+    private CertCallback certCallback;
 
     public SSLClient(Reactor reactor, Selector selector,
-            String hostname, int port, SSLContext sslctx) throws ClientConnectionException {
+            String hostname, int port, SSLContext sslctx, CertCallback certCallback) throws ClientConnectionException {
         super(reactor, hostname, port);
         this.selector = selector;
         this.sslContext = sslctx;
         this.client = true;
+        this.certCallback = certCallback;
     }
 
-    public SSLClient(Reactor reactor, Selector selector, String hostname, int port,
-            SSLContext sslctx, SocketChannel socketChannel) throws ClientConnectionException {
+    public SSLClient(Reactor reactor,
+            Selector selector,
+            String hostname,
+            int port,
+            SSLContext sslctx,
+            SocketChannel socketChannel,
+            CertCallback certCallback) throws ClientConnectionException {
         super(reactor, hostname, port);
         this.selector = selector;
         this.sslContext = sslctx;
         this.client = false;
+        this.certCallback = certCallback;
         channel = socketChannel;
 
         postConnect(null);
@@ -71,6 +83,10 @@ public abstract class SSLClient extends StompCommonClient {
     private Runnable pendingOperations() throws IOException, ClientConnectionException {
         if (this.nioEngine == null) {
             return null;
+        }
+
+        if (this.certCallback != null) {
+            this.certCallback.registerSslSession(this.nioEngine.getSSLEngine().getSession());
         }
 
         return nioEngine.process();
@@ -132,7 +148,8 @@ public abstract class SSLClient extends StompCommonClient {
 
             key = task.get();
 
-            this.nioEngine = new SSLEngineNioHelper(channel, createSSLEngine(this.client), callback, this);
+            SSLEngine sslEngine = createSSLEngine(this.client);
+            this.nioEngine = new SSLEngineNioHelper(channel, sslEngine, callback, this);
             this.nioEngine.beginHandshake();
         } catch (SSLException | InterruptedException | ExecutionException e) {
             logException(log, "Connection issues during ssl client creation", e);
@@ -150,5 +167,31 @@ public abstract class SSLClient extends StompCommonClient {
         }
         outbox.clear();
         this.nioEngine = null;
+    }
+
+    public interface CertCallback {
+        Date getCertificationExpirationDate();
+
+        void registerSslSession(final SSLSession sslSession);
+    }
+
+    public static class CertCallbackImpl implements CertCallback{
+        private SSLSession sslSession;
+
+        public void registerSslSession(final SSLSession sslSession) {
+            this.sslSession = sslSession;
+        }
+
+        public Date getCertificationExpirationDate() {
+            if (this.sslSession == null || !this.sslSession.isValid()) {
+                throw new IllegalStateException("SSL session is not available");
+            }
+            try {
+                return ((X509Certificate)this.sslSession.getPeerCertificates()[0]).getNotAfter();
+            } catch (SSLPeerUnverifiedException e) {
+                logException(log, "Failed to get peer certificates", e);
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

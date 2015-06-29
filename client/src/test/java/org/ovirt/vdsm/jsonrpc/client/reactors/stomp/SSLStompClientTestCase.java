@@ -28,6 +28,7 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
+import org.ovirt.vdsm.jsonrpc.client.reactors.SSLClient.CertCallbackImpl;
 
 public class SSLStompClientTestCase {
     private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -160,7 +161,8 @@ public class SSLStompClientTestCase {
         ReactorListener listener = futureListener.get();
         assertNotNull(listener);
 
-        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
+        CertCallbackImpl certCallback = new CertCallbackImpl();
+        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort(), certCallback);
         client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
@@ -179,6 +181,8 @@ public class SSLStompClientTestCase {
 
         client.sendMessage(message.getBytes());
         response = queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertNotNull(certCallback.getCertificationExpirationDate());
 
         client.close();
         listener.close();
