@@ -97,19 +97,16 @@ class Libvirt(ModuleConfigure):
             if not self._openConfig(path).hasConf():
                 ret = NOT_CONFIGURED
 
-        # #1 hack: node doesn't install upstarts file which is under docs,
-        # therefore we avoid initctl hack
-        if not utils.isOvirtNode():
-            # #2 hack for rhbz#1222154: we need to check whether we have
-            # forgotten to disabled libvirtd's sysv service. If chkconfig
-            # returns 0, it means that sysv would run libvirtd. If chkconfig
-            # returns 1 or does not exist (el7, fedora, debian), all is well.
-            if hasattr(service, 'chkconfigList'):
-                try:
-                    if service.chkconfigList('libvirtd'):
-                        ret = NOT_CONFIGURED
-                except service.ServiceNotExistError:
-                    pass
+        # hack for rhbz#1222154: we need to check whether we have
+        # forgotten to disabled libvirtd's sysv service. If chkconfig
+        # returns 0, it means that sysv would run libvirtd. If chkconfig
+        # returns 1 or does not exist (el7, fedora, debian), all is well.
+        if hasattr(service, 'chkconfigList'):
+            try:
+                if service.chkconfigList('libvirtd'):
+                    ret = NOT_CONFIGURED
+            except service.ServiceNotExistError:
+                pass
 
         if ret == NOT_SURE:
             sys.stdout.write("libvirt is already configured for vdsm\n")
