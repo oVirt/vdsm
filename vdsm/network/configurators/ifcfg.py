@@ -33,6 +33,7 @@ import threading
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm.config import config
+from vdsm import cmdutils
 from vdsm import constants
 from vdsm import ipwrapper
 from vdsm import netinfo
@@ -740,9 +741,14 @@ def ifdown(iface):
     return rc
 
 
-def _exec_ifup(iface_name):
+def _exec_ifup(iface_name, cgroup=dhclient.DHCLIENT_CGROUP):
     """Bring up an interface"""
-    rc, out, err = utils.execCmd([constants.EXT_IFUP, iface_name], raw=False)
+    cmd = [constants.EXT_IFUP, iface_name]
+
+    if cgroup is not None:
+        cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
+
+    rc, out, err = utils.execCmd(cmd, raw=False)
 
     if rc != 0:
         # In /etc/sysconfig/network-scripts/ifup* the last line usually
@@ -750,16 +756,16 @@ def _exec_ifup(iface_name):
         raise ConfigNetworkError(ERR_FAILED_IFUP, out[-1] if out else '')
 
 
-def _ifup(iface):
+def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
     if not iface.blockingdhcp and (iface.ipv4.bootproto == 'dhcp' or
                                    iface.ipv6.dhcpv6):
         # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
         t = threading.Thread(target=_exec_ifup, name='ifup-waiting-on-dhcp',
-                             args=(iface.name,))
+                             args=(iface.name, cgroup))
         t.daemon = True
         t.start()
     else:
-        _exec_ifup(iface.name)
+        _exec_ifup(iface.name, cgroup)
 
 
 def _restore_default_bond_options(bond_name, desired_options):

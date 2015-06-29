@@ -25,12 +25,15 @@ import os
 import signal
 import threading
 
+from vdsm import cmdutils
 from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
 from vdsm.utils import pgrep
 from vdsm.utils import rmFile
+
+DHCLIENT_CGROUP = 'vdsm-dhclient'
 
 
 class DhcpClient(object):
@@ -39,7 +42,7 @@ class DhcpClient(object):
     LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
     DHCLIENT = CommandPath('dhclient', '/sbin/dhclient')
 
-    def __init__(self, iface, family=4):
+    def __init__(self, iface, family=4, cgroup=DHCLIENT_CGROUP):
         self.iface = iface
         self.family = family
         self.pidFile = self.PID_FILE % (family, self.iface)
@@ -47,14 +50,16 @@ class DhcpClient(object):
             os.mkdir(self.LEASE_DIR)
         self.leaseFile = self.LEASE_FILE.format(
             '' if family == 4 else '6', self.iface)
+        self._cgroup = cgroup
 
     def _dhclient(self):
         # Ask dhclient to stop any dhclient running for the device
         if os.path.exists(os.path.join(netinfo.NET_PATH, self.iface)):
             kill_dhclient(self.iface, self.family)
-        rc, out, err = execCmd([self.DHCLIENT.cmd, '-%s' % self.family,
-                                '-1', '-pf', self.pidFile,
-                                '-lf', self.leaseFile, self.iface])
+        cmd = [self.DHCLIENT.cmd, '-%s' % self.family, '-1', '-pf',
+               self.pidFile, '-lf', self.leaseFile, self.iface]
+        cmd = cmdutils.systemd_run(cmd, scope=True, slice=self._cgroup)
+        rc, out, err = execCmd(cmd)
         return rc, out, err
 
     def start(self, blocking):
