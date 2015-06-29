@@ -35,6 +35,7 @@ CLEANFILES = \
 	$(NULL)
 
 EXTRA_DIST = \
+	85-vdsmd.preset \
 	mom-vdsm.service.in \
 	supervdsmd.service.in \
 	systemd-vdsmd.in \

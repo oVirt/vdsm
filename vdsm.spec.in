@@ -655,6 +655,7 @@ install -Dm 0644 vdsm/limits.conf \
 
 %if 0%{?with_systemd}
 install -Dm 0755 init/systemd/systemd-vdsmd %{buildroot}/usr/lib/systemd/systemd-vdsmd
+install -Dm 0644 init/systemd/85-vdsmd.preset %{buildroot}/usr/lib/systemd/system-preset/85-vdsmd.preset
 install -Dm 0644 init/systemd/vdsmd.service %{buildroot}%{_unitdir}/vdsmd.service
 install -Dm 0644 init/systemd/vdsm-network.service %{buildroot}%{_unitdir}/vdsm-network.service
 install -Dm 0644 init/systemd/supervdsmd.service %{buildroot}%{_unitdir}/supervdsmd.service
@@ -743,64 +744,26 @@ fi
 /sbin/restorecon -R /var/log/core >/dev/null 2>&1
 # hack until we replace core dump with abrt
 
-%if ! 0%{?with_systemd}
-if [ "$1" -eq 1 ] ; then
-    /sbin/chkconfig --add vdsmd
-    /sbin/chkconfig --add supervdsmd
-fi
-%else
+# VDSM installs vdsm-modules-load.d.conf file - the following command will
+# refresh vdsm kernel modules requirements to start on boot
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
-if [ "$1" -eq 1 ] ; then
-    /bin/systemctl enable vdsmd.service >/dev/null 2>&1 || :
-    /bin/systemctl enable vdsm-network.service >/dev/null 2>&1 || :
-    /bin/systemctl enable supervdsmd.service >/dev/null 2>&1 || :
-    /bin/systemctl enable mom-vdsm.service >/dev/null 2>&1 || :
-fi
+
+# The following triggers vdsmd.preset file and enables vdsm required services
+%systemd_post vdsmd.service
+
+# VDSM installs unit files - daemon-reload will refresh systemd
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 exit 0
-%endif
 
 %preun
 if [ "$1" -eq 0 ]; then
         %{_bindir}/vdsm-tool remove-config
 fi
-
-%if ! 0%{?with_systemd}
-if [ "$1" -eq 0 ]
-then
-    /sbin/service vdsmd stop > /dev/null 2>&1 || :
-    /sbin/chkconfig --del vdsmd
-    /sbin/service supervdsmd stop > /dev/null 2>&1 || :
-    /sbin/chkconfig --del supervdsmd
-
-    /bin/sed -i '/# VDSM section begin/,/# VDSM section end/d' \
-        /etc/sysctl.conf
-
-    if /sbin/initctl status libvirtd >/dev/null 2>/dev/null ; then
-        /sbin/initctl stop libvirtd  >/dev/null 2>/dev/null
-        rm -f /etc/init/libvirtd.conf
-
-        /sbin/chkconfig libvirtd on
-        /sbin/service libvirtd start >/dev/null
-    fi
-fi
-%else
-%if 0%{?with_systemd}
 %systemd_preun vdsmd.service
 %systemd_preun vdsm-network.service
 %systemd_preun supervdsmd.service
 %systemd_preun mom-vdsm.service
-%else
-if [ "$1" -eq 0 ]; then
-    /bin/systemctl --no-reload disable vdsmd.service > /dev/null 2>&1 || :
-    /bin/systemctl --no-reload disable supervdsmd.service > /dev/null 2>&1 || :
-    /bin/systemctl stop vdsmd.service > /dev/null 2>&1 || :
-    /bin/systemctl stop vdsm-network.service > /dev/null 2>&1 || :
-    /bin/systemctl stop supervdsmd.service > /dev/null 2>&1 || :
-fi
 exit 0
-%endif
-%endif
 
 %postun
 if [ "$1" -ge 1 ]; then
@@ -873,6 +836,7 @@ exit 0
 %license COPYING
 %if 0%{?with_systemd}
 /usr/lib/systemd/systemd-vdsmd
+/usr/lib/systemd/system-preset/85-vdsmd.preset
 %{_unitdir}/vdsmd.service
 %{_unitdir}/vdsm-network.service
 %{_unitdir}/supervdsmd.service

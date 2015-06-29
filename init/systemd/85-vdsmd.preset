@@ -1,0 +1,10 @@
+# VDSM preset file enables and disables services which relate to
+# hypervisor operations
+
+enable vdsmd.service
+enable supervdsmd.service
+enable vdsm-network.service
+enable mom-vdsm.service
+
+disable ksmtuned.service
+
