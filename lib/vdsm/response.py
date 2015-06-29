@@ -40,3 +40,12 @@ def error(name, message=None):
             "message": message or status["message"]
         }
     }
+
+
+def error_raw(code, message):
+    return {
+        "status": {
+            "code": code,
+            "message": message
+        }
+    }

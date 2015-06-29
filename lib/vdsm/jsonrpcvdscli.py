@@ -23,9 +23,10 @@ from uuid import uuid4
 
 from yajsonrpc import stompreactor
 from yajsonrpc import \
-    JsonRpcError, \
     JsonRpcRequest, \
     JsonRpcNoResponseError
+
+from vdsm import response
 
 
 _COMMAND_CONVERTER = {
@@ -57,7 +58,8 @@ class _Server(object):
             raise JsonRpcNoResponseError(method)
 
         if resp.error is not None:
-            raise JsonRpcError(resp.error['code'], resp.error['message'])
+            return response.error_raw(resp.error["code"],
+                                      resp.error["message"])
 
         return resp.result
 
