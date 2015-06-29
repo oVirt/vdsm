@@ -173,7 +173,7 @@ class Domain(object):
         self._domState = domState
         self._domReason = domReason
         self._vmId = vmId
-        self.calls = {}
+        self.calls = []
         self._diskErrors = {}
         self._downtimes = []
 
@@ -226,7 +226,7 @@ class Domain(object):
 
     def setMemory(self, target):
         self._failIfRequested()
-        self.calls['setMemory'] = (target,)
+        self.calls.append(('setMemory', (target,), {}))
 
     def setDiskErrors(self, diskErrors):
         self._diskErrors = diskErrors
