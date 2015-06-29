@@ -163,12 +163,14 @@ class ClientIF(clientIF.clientIF):
 class Domain(object):
     def __init__(self, xml='',
                  virtError=libvirt.VIR_ERR_OK,
+                 errorMessage="",
                  domState=libvirt.VIR_DOMAIN_RUNNING,
                  domReason=0,
                  vmId=''):
         self._xml = xml
         self.devXml = ''
         self._virtError = virtError
+        self._errorMessage = errorMessage
         self._metadata = ""
         self._io_tune = {}
         self._domState = domState
@@ -179,9 +181,7 @@ class Domain(object):
 
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
-            err = libvirt.libvirtError(defmsg='')
-            err.err = [self._virtError]
-            raise err
+            raise Error(self._virtError, self._errorMessage)
 
     def UUIDString(self):
         return self._vmId
