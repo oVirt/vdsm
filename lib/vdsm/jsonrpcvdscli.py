@@ -61,13 +61,16 @@ class _Server(object):
             return response.error_raw(resp.error["code"],
                                       resp.error["message"])
 
-        return resp.result
+        if resp.result and resp.result is not True:
+            # None is translated to True inside our JSONRPC implementation
+            return response.success(**resp.result)
+
+        return response.success()
 
     def migrationCreate(self, params):
-        self._callMethod('migrationCreate',
-                         params['vmId'],
-                         params)
-        return {'status': {'code': 0}}
+        return self._callMethod('migrationCreate',
+                                params['vmId'],
+                                params)
 
     def __getattr__(self, methodName):
         return partial(self._callMethod, methodName)
