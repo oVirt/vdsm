@@ -4960,9 +4960,10 @@ class LiveMergeCleanupThread(threading.Thread):
                 self.vm.log.info("The XML update has been completed")
                 break
             else:
-                self.log.error("Bad volume chain found for drive %s. Previous "
-                               "chain: %s, Expected chain: %s, Actual chain: "
-                               "%s", alias, origVols, expectedVols, curVols)
+                self.vm.log.error("Bad volume chain found for drive %s. "
+                                  "Previous chain: %s, Expected chain: %s, "
+                                  "Actual chain: %s", alias, origVols,
+                                  expectedVols, curVols)
                 raise RuntimeError("Bad volume chain found")
 
 
