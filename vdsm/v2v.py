@@ -369,7 +369,7 @@ class ImportVm(object):
         logging.info('Job %r starting import', self._id)
 
         self._proc = execCmd(cmd, sync=False, deathSignal=15,
-                             env={'LIBGUESTFS_BACKEND': 'direct'})
+                             env=self._execution_environments())
 
         self._proc.blocking = True
         self._watch_process_output()
@@ -383,6 +383,12 @@ class ImportVm(object):
 
         logging.info('Job %r finished import successfully', self._id)
         self._status = STATUS.DONE
+
+    def _execution_environments(self):
+        env = {'LIBGUESTFS_BACKEND': 'direct'}
+        if 'virtio_iso_path' in self._vminfo:
+            env['VIRTIO_WIN'] = self._vminfo['virtio_iso_path']
+        return env
 
     def _wait_for_process(self):
         if self._proc.returncode is not None:
