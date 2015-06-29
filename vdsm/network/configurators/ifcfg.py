@@ -32,6 +32,7 @@ import threading
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm.config import config
+from vdsm import cmdutils
 from vdsm import constants
 from vdsm import ipwrapper
 from vdsm import netinfo
@@ -46,6 +47,8 @@ from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, IpConfig
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 import dsaversion  # TODO: Make parent package import when vdsm is a package
+
+EL6 = dsaversion.is_el6()
 
 
 def _hwaddr_required():
@@ -793,10 +796,15 @@ def ifdown(iface):
     return rc
 
 
-def ifup(iface, async=False):
+def ifup(iface, async=False, cgroup=dhclient.DHCLIENT_CGROUP):
     "Bring up an interface"
     def _ifup(netIf):
-        rc, out, err = utils.execCmd([constants.EXT_IFUP, netIf], raw=False)
+        cmd = [constants.EXT_IFUP, netIf]
+
+        if not EL6 and cgroup is not None:
+            cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
+
+        rc, out, err = utils.execCmd(cmd, raw=False)
 
         if rc != 0:
             # In /etc/sysconfig/network-scripts/ifup* the last line usually
