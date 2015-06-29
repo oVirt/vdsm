@@ -381,3 +381,15 @@ def make_config(tunables):
     for (section, key, value) in tunables:
         cfg.set(section, key, value)
     return cfg
+
+
+def recorded(meth):
+    """
+    Method decorator recording calls to instance's __recording__ list.
+    """
+    @wraps(meth)
+    def wrapper(self, *args, **kwargs):
+        recording = self.__dict__.setdefault("__recording__", [])
+        recording.append((meth.func_name, args, kwargs))
+        return meth(self, *args, **kwargs)
+    return wrapper

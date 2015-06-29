@@ -1487,7 +1487,8 @@ class TestVmBalloon(TestCaseBase):
             target = 256
             res = testvm.setBalloonTarget(target)  # just to fit in 80 cols
             self.assertEqual(res['status']['code'], 0)
-            self.assertEqual(testvm._dom.calls, [('setMemory', (target,), {})])
+            self.assertEqual(testvm._dom.__recording__,
+                             [('setMemory', (target,), {})])
 
     def testVmWithoutDom(self):
         with fake.VM() as testvm:

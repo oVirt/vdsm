@@ -36,6 +36,7 @@ from virt import sampling
 from virt import vm
 
 from testlib import namedTemporaryDir
+from testlib import recorded
 from monkeypatch import MonkeyPatchScope
 
 
@@ -173,7 +174,6 @@ class Domain(object):
         self._domState = domState
         self._domReason = domReason
         self._vmId = vmId
-        self.calls = []
         self._diskErrors = {}
         self._downtimes = []
 
@@ -224,9 +224,9 @@ class Domain(object):
         self._io_tune[name] = io_tune
         return 1
 
+    @recorded
     def setMemory(self, target):
         self._failIfRequested()
-        self.calls.append(('setMemory', (target,), {}))
 
     def setDiskErrors(self, diskErrors):
         self._diskErrors = diskErrors

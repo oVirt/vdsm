@@ -20,6 +20,7 @@
 
 from testlib import AssertingLock
 from testlib import VdsmTestCase
+from testlib import recorded
 
 
 class AssertNotRaisesTests(VdsmTestCase):
@@ -58,3 +59,71 @@ class AssertingLockTests(VdsmTestCase):
             with lock:
                 with lock:
                     pass
+
+
+class RecordedTests(VdsmTestCase):
+
+    def test_no_args(self):
+        obj = Recorded()
+        obj.no_args()
+        self.assertEqual(obj.__recording__, [("no_args", (), {})])
+
+    def test_args(self):
+        obj = Recorded()
+        obj.args(1, 2)
+        self.assertEqual(obj.__recording__, [("args", (1, 2), {})])
+
+    def test_kwargs(self):
+        obj = Recorded()
+        obj.kwargs(a=1, b=2)
+        self.assertEqual(obj.__recording__, [("kwargs", (), {"a": 1, "b": 2})])
+
+    def test_kwargs_as_args(self):
+        obj = Recorded()
+        obj.kwargs(1, 2)
+        self.assertEqual(obj.__recording__, [("kwargs", (1, 2), {})])
+
+    def test_no_kwargs(self):
+        obj = Recorded()
+        obj.args_and_kwargs(1, 2)
+        self.assertEqual(obj.__recording__, [("args_and_kwargs", (1, 2), {})])
+
+    def test_some_kwargs(self):
+        obj = Recorded()
+        obj.args_and_kwargs(1, 2, c=3)
+        self.assertEqual(obj.__recording__,
+                         [("args_and_kwargs", (1, 2), {"c": 3})])
+
+    def test_args_as_kwargs(self):
+        obj = Recorded()
+        obj.args_and_kwargs(a=1, b=2)
+        self.assertEqual(obj.__recording__,
+                         [("args_and_kwargs", (), {"a": 1, "b": 2})])
+
+    def test_flow(self):
+        obj = Recorded()
+        obj.no_args()
+        obj.kwargs(a=1)
+        self.assertEqual(obj.__recording__, [
+            ("no_args", (), {}),
+            ("kwargs", (), {"a": 1}),
+        ])
+
+
+class Recorded(object):
+
+    @recorded
+    def args_and_kwargs(self, a, b, c=3, d=4):
+        pass
+
+    @recorded
+    def args(self, a, b):
+        pass
+
+    @recorded
+    def kwargs(self, a=1, b=2):
+        pass
+
+    @recorded
+    def no_args(self):
+        pass
