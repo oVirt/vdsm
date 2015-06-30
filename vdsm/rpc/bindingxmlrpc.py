@@ -478,6 +478,14 @@ class BindingXMLRPC(object):
         vm = API.VM(params['vmId'])
         return vm.updateVmPolicy(params)
 
+    def vmFreeze(self, vmId):
+        vm = API.VM(vmId)
+        return vm.freeze()
+
+    def vmThaw(self, vmId):
+        vm = API.VM(vmId)
+        return vm.thaw()
+
     def vmSnapshot(self, vmId, snapDrives, snapMemVolHandle=''):
         """
         Take snapshot of VM
@@ -1037,6 +1045,8 @@ class BindingXMLRPC(object):
                 (self.getVMList, 'list'),
                 (self.vmPause, 'pause'),
                 (self.vmCont, 'cont'),
+                (self.vmFreeze, 'freeze'),
+                (self.vmThaw, 'thaw'),
                 (self.vmSnapshot, 'snapshot'),
                 (self.vmSetBalloonTarget, 'setBalloonTarget'),
                 (self.vmReset, 'reset'),

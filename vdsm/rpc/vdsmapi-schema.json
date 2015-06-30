@@ -7783,6 +7783,32 @@
           '*reboot': 'bool', '*timeout': 'int', '*force': 'bool'}}
 
 ##
+# @VM.freeze:
+#
+# Freeze mounted filesystems within the guest (hence guest agent may be
+# required depending on hypervisor used).
+#
+# @vmID:         The UUID of the VM
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'VM', 'name': 'freeze'},
+ 'data': {'vmID': 'UUID'}}
+
+##
+# @VM.thaw:
+#
+# Thaw mounted filesystems within the guest (hence guest agent may be
+# required depending on hypervisor used).
+#
+# @vmID:         The UUID of the VM
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'VM', 'name': 'thaw'},
+ 'data': {'vmID': 'UUID'}}
+
+##
 # @SnapshotVolumeDriveInfo:
 #
 # Snapshot information for a Volume-based VM disk.

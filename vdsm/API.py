@@ -720,6 +720,18 @@ class VM(APIBase):
                  imageID=paramImageID, volumeID=paramVolumeID,
                  device='disk')
 
+    def freeze(self):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.freeze()
+
+    def thaw(self):
+        v = self._cif.vmContainer.get(self._UUID)
+        if not v:
+            return errCode['noVM']
+        return v.thaw()
+
     def snapshot(self, snapDrives, snapMemory=None):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
