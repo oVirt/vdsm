@@ -1491,6 +1491,10 @@ class NetworkTest(TestCaseBase):
     @RequireDummyMod
     @ValidateRunningAsRoot
     def testRestoreNetworksOnlyRestoreUnchangedDevices(self):
+        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
+            raise SkipTest(
+                "with ifcfg persistence, vdsm-restore-net-config selective"
+                "restoration is not supported")
         BOND_UNCHANGED = 'bond100'
         BOND_MISSING = 'bond102'
         IP_ADD_UNCHANGED = '240.0.0.100'
