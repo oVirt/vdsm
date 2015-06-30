@@ -53,6 +53,12 @@ VIR_MIGRATE_PARAM_BANDWIDTH = 'bandwidth'
 VIR_MIGRATE_PARAM_GRAPHICS_URI = 'graphics_uri'
 
 
+class MigrationDestinationSetupError(RuntimeError):
+    """
+    Failed to create migration destination VM.
+    """
+
+
 class SourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
@@ -295,6 +301,9 @@ class SourceThread(threading.Thread):
                 if '_migrationParams' in self._vm.conf:
                     del self._vm.conf['_migrationParams']
                 SourceThread._ongoingMigrations.release()
+        except MigrationDestinationSetupError as e:
+            self._recover(str(e))
+            # we know what happened, no need to dump hollow stack trace
         except Exception as e:
             self._recover(str(e))
             self.log.exception("Failed to migrate")
@@ -326,8 +335,9 @@ class SourceThread(threading.Thread):
 
             if result['status']['code']:
                 self.status = result
-                raise RuntimeError('migration destination error: ' +
-                                   result['status']['message'])
+                raise MigrationDestinationSetupError(
+                    'migration destination error: ' +
+                    result['status']['message'])
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
