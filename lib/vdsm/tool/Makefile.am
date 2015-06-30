@@ -22,12 +22,10 @@ SUBDIRS=configurators
 include $(top_srcdir)/build-aux/Makefile.subs
 
 EXTRA_DIST = \
-	load_needed_modules.py.in \
 	validate_ovirt_certs.py.in \
 	$(NULL)
 
 nodist_vdsmtool_PYTHON = \
-	load_needed_modules.py \
 	validate_ovirt_certs.py \
 	$(NULL)
 

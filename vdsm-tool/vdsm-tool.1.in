@@ -72,13 +72,6 @@ Options for the \fIdummybr\fP module:
 Defines a dummy bridge on a libvirt network.
 .RE
 .TP
-Options for the \fIload_needed_modules\fP module:
-.RS
-.TP
-.B load-needed-modules
-Loads the required modules.
-.RE
-.TP
 Options for the \fInwfilter\fP module:
 .RS
 .TP

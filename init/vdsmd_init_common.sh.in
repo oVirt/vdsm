@@ -153,13 +153,6 @@ _has_systemd() {
 }
 
 
-task_load_needed_modules(){
-    if ! _has_systemd; then
-        "${VDSM_TOOL}" load-needed-modules
-    fi
-}
-
-
 task_dump_bonding_defaults(){
     "${VDSM_TOOL}" dump-bonding-defaults
 }
@@ -301,10 +294,6 @@ run_tasks(){
 
 case "$1" in
     --pre-start)
-        # If dump_bonding_defaults is desired (for the uneliminable possibility
-        # of added bonding options or tweaked kernel defaults) it has to be run
-        # after load_needed_modules (modprobe bonding).
-        # NetworkManager must not crash on nmcli conn delete.
         run_tasks " \
             mkdirs \
             configure_coredump \
@@ -318,7 +307,6 @@ case "$1" in
             syslog_available \
             nwfilter \
             dummybr \
-            load_needed_modules \
             tune_system \
             test_space \
             test_lo \
