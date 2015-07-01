@@ -116,6 +116,21 @@ _DEVICE_XML = {
             </source>
             %s
     </hostdev>
+    ''',
+    _SRIOV_VF:
+    '''
+    <interface managed="no" type="hostdev">
+            <driver name="vfio"/>
+            <source>
+                    <address bus="5" domain="0" function="7" slot="16"
+                    type="pci"/>
+            </source>
+            <mac address="ff:ff:ff:ff:ff:ff"/>
+            <vlan>
+                    <tag id="3"/>
+            </vlan>
+            <boot order="9"/>
+    </interface>
     '''}
 
 DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
@@ -390,3 +405,11 @@ class HostdevCreationTests(XMLTestCase):
             _DEVICE_XML[device_name] %
             ('<address bus="0x01" domain="0x0000" function="0x0" slot="0x02" \
              type="pci"/>'))
+
+    def testCreateSRIOVVF(self):
+        dev_spec = {'type': 'hostdev', 'device': _SRIOV_VF,
+                    'specParams':
+                    {'macAddr': 'ff:ff:ff:ff:ff:ff', 'vlanId': 3},
+                    'bootOrder': '9'}
+        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        self.assertXMLEqual(device.getXML().toxml(), _DEVICE_XML[_SRIOV_VF])
