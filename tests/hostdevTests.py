@@ -382,6 +382,12 @@ class HostdevTests(TestCaseBase):
 @MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
 class HostdevCreationTests(XMLTestCase):
 
+    _PCI_ADDRESS = {'slot': '0x02', 'bus': '0x01', 'domain': '0x0000',
+                    'function': '0x0', 'type': 'pci'}
+
+    _PCI_ADDRESS_XML = '<address bus="0x01" domain="0x0000" function="0x0" \
+        slot="0x02" type="pci"/>'
+
     def setUp(self):
         self.conf = {
             'vmName': 'testVm',
@@ -399,14 +405,12 @@ class HostdevCreationTests(XMLTestCase):
     @permutations([[device] for device in _PCI_DEVICES])
     def testCreatePCIHostDeviceWithAddress(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name, 'address':
-                    {'slot': '0x02', 'bus': '0x01', 'domain': '0x0000',
-                     'function': '0x0', 'type': 'pci'}}
+                    self._PCI_ADDRESS}
         device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
         self.assertXMLEqual(
             device.getXML().toxml(),
             _DEVICE_XML[device_name] %
-            ('<address bus="0x01" domain="0x0000" function="0x0" slot="0x02" \
-             type="pci"/>'))
+            (self._PCI_ADDRESS_XML))
 
     def testCreateSRIOVVF(self):
         dev_spec = {'type': 'hostdev', 'device': _SRIOV_VF,
@@ -427,6 +431,4 @@ class HostdevCreationTests(XMLTestCase):
         device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
         self.assertXMLEqual(
             device.getXML().toxml(),
-            _DEVICE_XML[_SRIOV_VF] %
-            ('<address bus="0x01" domain="0x0000" function="0x0" slot="0x02" \
-             type="pci"/>'))
+            _DEVICE_XML[_SRIOV_VF] % (self._PCI_ADDRESS_XML))
