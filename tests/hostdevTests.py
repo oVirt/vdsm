@@ -47,6 +47,7 @@ _DEVICE_XML = {
                     <address bus="0" domain="0" function="0" slot="2"
                     type="pci"/>
             </source>
+            %s
     </hostdev>
     ''',
     'pci_0000_00_19_0':
@@ -56,6 +57,7 @@ _DEVICE_XML = {
                     <address bus="0" domain="0" function="0" slot="25"
                     type="pci"/>
             </source>
+            %s
     </hostdev>
     ''',
     'pci_0000_00_1a_0':
@@ -65,6 +67,7 @@ _DEVICE_XML = {
                     <address bus="0" domain="0" function="0" slot="26"
                     type="pci"/>
             </source>
+            %s
     </hostdev>
     ''',
     'pci_0000_00_1b_0':
@@ -74,6 +77,7 @@ _DEVICE_XML = {
                     <address bus="0" domain="0" function="0" slot="27"
                     type="pci"/>
             </source>
+            %s
     </hostdev>
     ''',
     'pci_0000_00_1f_2':
@@ -83,6 +87,7 @@ _DEVICE_XML = {
                     <address bus="0" domain="0" function="2" slot="31"
                     type="pci"/>
             </source>
+            %s
     </hostdev>
     ''',
     'usb_1_1':
@@ -91,6 +96,7 @@ _DEVICE_XML = {
             <source>
                     <address bus="1" device="2" type="usb"/>
             </source>
+            %s
     </hostdev>
     ''',
     'usb_1_1_4':
@@ -99,6 +105,7 @@ _DEVICE_XML = {
             <source>
                     <address bus="1" device="10" type="usb"/>
             </source>
+            %s
     </hostdev>
     ''',
     'usb_usb1':
@@ -107,6 +114,7 @@ _DEVICE_XML = {
             <source>
                     <address bus="1" device="1" type="usb"/>
             </source>
+            %s
     </hostdev>
     '''}
 
@@ -368,4 +376,17 @@ class HostdevCreationTests(XMLTestCase):
     def testCreateHostDevice(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name}
         device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
-        self.assertXMLEqual(device.getXML().toxml(), _DEVICE_XML[device_name])
+        self.assertXMLEqual(device.getXML().toxml(),
+                            _DEVICE_XML[device_name] % ('',))
+
+    @permutations([[device] for device in _PCI_DEVICES])
+    def testCreatePCIHostDeviceWithAddress(self, device_name):
+        dev_spec = {'type': 'hostdev', 'device': device_name, 'address':
+                    {'slot': '0x02', 'bus': '0x01', 'domain': '0x0000',
+                     'function': '0x0', 'type': 'pci'}}
+        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        self.assertXMLEqual(
+            device.getXML().toxml(),
+            _DEVICE_XML[device_name] %
+            ('<address bus="0x01" domain="0x0000" function="0x0" slot="0x02" \
+             type="pci"/>'))
