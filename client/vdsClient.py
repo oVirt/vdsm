@@ -1865,6 +1865,18 @@ class service:
         status = self.s.stopMonitoringDomain(sdUUID)
         return status['status']['code'], status['status']['message']
 
+    def freeze(self, args):
+        validateArgTypes(args, [str], requiredArgsNumber=1)
+        vmUUID = args[0]
+        res = self.s.freeze(vmUUID)
+        return res['status']['code'], res['status']['message']
+
+    def thaw(self, args):
+        validateArgTypes(args, [str], requiredArgsNumber=1)
+        vmUUID = args[0]
+        res = self.s.thaw(vmUUID)
+        return res['status']['code'], res['status']['message']
+
     def snapshot(self, args):
         vmUUID, sdUUID, imgUUID, baseVolUUID, volUUID = args
 
@@ -2806,6 +2818,14 @@ if __name__ == '__main__':
                                  ('<sdUUID>',
                                   'Stop monitoring SD: sdUUID'
                                   )),
+        'freeze': (serv.freeze,
+                   ('<vmId>',
+                    'Freeze guest mounted filesystems.'
+                    )),
+        'thaw': (serv.thaw,
+                 ('<vmId>',
+                  'Thaw guest mounted filesystems.'
+                  )),
         'snapshot': (serv.snapshot,
                      ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
                       'Take a live snapshot'
