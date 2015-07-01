@@ -208,6 +208,33 @@ public class MatcherTestCase {
     }
 
     @Test
+    public void testReceiverWithComponentAndOperationSubscription() {
+        EventSubscriber subscriber = mock(EventSubscriber.class);
+        when(subscriber.getSubsctibtionId()).thenReturn("localhost|*|VM_status|*");
+        SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
+
+        EventSubscriber differentSubscriber = mock(EventSubscriber.class);
+        when(differentSubscriber.getSubsctibtionId()).thenReturn("remote|*|VM_status|*");
+        SubscriptionHolder differentHolder = new SubscriptionHolder(differentSubscriber, new AtomicInteger());
+
+        SubscriptionMatcher matcher = new SubscriptionMatcher();
+        matcher.add(holder);
+        matcher.add(differentHolder);
+
+        JsonRpcEvent event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("remote|virt|VM_status|uuid");
+
+        Set<SubscriptionHolder> holders = matcher.match(event);
+        assertEquals(1, holders.size());
+
+        event = mock(JsonRpcEvent.class);
+        when(event.getMethod()).thenReturn("remote|virt|VM_status|uuid");
+
+        holders = matcher.match(event);
+        assertEquals(1, holders.size());
+    }
+
+    @Test
     public void testReceiverOnlySubscription() {
         EventSubscriber subscriber = mock(EventSubscriber.class);
         when(subscriber.getSubsctibtionId()).thenReturn("localhost|*|VM.list|*");

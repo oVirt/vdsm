@@ -71,7 +71,7 @@ public class SubscriptionHolder {
      * @return Filtered subscription id which do not contains all filter '*'
      */
     public List<String> getFilteredId() {
-        return this.filteredId;
+        return new ArrayList<String>(this.filteredId);
     }
 
     /**
