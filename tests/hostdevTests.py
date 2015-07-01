@@ -130,6 +130,7 @@ _DEVICE_XML = {
                     <tag id="3"/>
             </vlan>
             <boot order="9"/>
+            %s
     </interface>
     '''}
 
@@ -413,4 +414,19 @@ class HostdevCreationTests(XMLTestCase):
                     {'macAddr': 'ff:ff:ff:ff:ff:ff', 'vlanId': 3},
                     'bootOrder': '9'}
         device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
-        self.assertXMLEqual(device.getXML().toxml(), _DEVICE_XML[_SRIOV_VF])
+        self.assertXMLEqual(device.getXML().toxml(),
+                            _DEVICE_XML[_SRIOV_VF] % ('',))
+
+    def testCreateSRIOVVFWithAddress(self):
+        dev_spec = {'type': 'hostdev', 'device': _SRIOV_VF,
+                    'specParams':
+                    {'macAddr': 'ff:ff:ff:ff:ff:ff', 'vlanId': 3},
+                    'bootOrder': '9', 'address':
+                    {'slot': '0x02', 'bus': '0x01', 'domain': '0x0000',
+                     'function': '0x0', 'type': 'pci'}}
+        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        self.assertXMLEqual(
+            device.getXML().toxml(),
+            _DEVICE_XML[_SRIOV_VF] %
+            ('<address bus="0x01" domain="0x0000" function="0x0" slot="0x02" \
+             type="pci"/>'))
