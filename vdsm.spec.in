@@ -236,8 +236,10 @@ Requires: qemu-img >= 2:2.0.0-1
 %endif # rhel
 
 # GlusterFS client-side RPMs needed for Gluster SD
+%if 0%{?with_gluster}
 Requires: glusterfs-cli >= %{gluster_version}
 Requires: glusterfs-fuse >= %{gluster_version}
+%endif
 
 Requires: psmisc >= 22.6-15
 Requires: bridge-utils
