@@ -1435,6 +1435,18 @@ class Global(APIBase):
         """
         return v2v.get_external_vms(uri, username, password)
 
+    def getExternalVmFromOva(self, ova_path):
+        """
+        Return information regarding a VM that is a part of the ova:
+        getExternalVmFromOva return information on a VM that is a part
+        of the provided ova file.
+        The return value is a VM with the following information:
+            vm: vmName, state, memSize, smp, disks and network list,
+            disk: type, capacity, alias, allocation
+            network: dev, model, type, bridge
+        """
+        return v2v.get_ova_info(ova_path)
+
     def convertExternalVm(self, uri, username, password, vminfo, jobid):
         return v2v.convert_external_vm(uri, username, password, vminfo, jobid,
                                        self._irs)

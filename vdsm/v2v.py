@@ -38,7 +38,7 @@ import libvirt
 
 from vdsm.constants import P_VDSM_RUN
 from vdsm.define import errCode, doneCode
-from vdsm import libvirtconnection
+from vdsm import libvirtconnection, response
 from vdsm.infra import zombiereaper
 from vdsm.utils import traceback, CommandPath, execCmd
 
@@ -50,6 +50,15 @@ _jobs = {}
 
 _V2V_DIR = os.path.join(P_VDSM_RUN, 'v2v')
 _VIRT_V2V = CommandPath('virt-v2v', '/usr/bin/virt-v2v')
+_OVF_RESOURCE_CPU = 3
+_OVF_RESOURCE_MEMORY = 4
+_OVF_RESOURCE_NETWORK = 10
+
+# OVF Specification:
+# https://www.iso.org/obp/ui/#iso:std:iso-iec:17203:ed-1:v1:en
+_OVF_NS = 'http://schemas.dmtf.org/ovf/envelope/1'
+_RASD_NS = 'http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/' \
+           'CIM_ResourceAllocationSettingData'
 
 ImportProgress = namedtuple('ImportProgress',
                             ['current_disk', 'disk_count', 'description'])
@@ -162,6 +171,22 @@ def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     job.start()
     _add_job(job_id, job)
     return {'status': doneCode}
+
+
+def get_ova_info(ova_path):
+    ns = {'ovf': _OVF_NS, 'rasd': _RASD_NS}
+
+    try:
+        root = ET.fromstring(_read_ovf_from_ova(ova_path))
+    except ET.ParseError as e:
+        raise V2VError('Error reading ovf from ova, position: %r' % e.position)
+
+    vm = {}
+    _add_general_ovf_info(vm, root, ns)
+    _add_disks_ovf_info(vm, root, ns)
+    _add_networks_ovf_info(vm, root, ns)
+
+    return response.success(vmList=vm)
 
 
 def get_converted_vm(job_id):
@@ -658,3 +683,80 @@ def _add_networks(root, params):
         if model is not None:
             i['model'] = model.get('type')
         params['networks'].append(i)
+
+
+def _read_ovf_from_ova(ova_path):
+    # FIXME: change to tarfile package when support --to-stdout
+    cmd = ['/usr/bin/tar', 'xf', ova_path, '*.ovf', '--to-stdout']
+    rc, output, error = execCmd(cmd)
+    if rc:
+        raise V2VError(error)
+
+    return ''.join(output)
+
+
+def _add_general_ovf_info(vm, node, ns):
+    vm['status'] = 'Down'
+    vmName = node.find('./ovf:VirtualSystem/ovf:Name', ns)
+    if vmName is not None:
+        vm['vmName'] = vmName.text
+    else:
+        raise V2VError('Error parsing ovf information: no ovf:Name')
+
+    memSize = node.find('.//ovf:Item[rasd:ResourceType="%d"]/'
+                        'rasd:VirtualQuantity' % _OVF_RESOURCE_MEMORY, ns)
+    if memSize is not None:
+        vm['memSize'] = int(memSize.text)
+    else:
+        raise V2VError('Error parsing ovf information: no memory size')
+
+    smp = node.find('.//ovf:Item[rasd:ResourceType="%d"]/'
+                    'rasd:VirtualQuantity' % _OVF_RESOURCE_CPU, ns)
+    if smp is not None:
+        vm['smp'] = int(smp.text)
+    else:
+        raise V2VError('Error parsing ovf information: no cpu info')
+
+
+def _add_disks_ovf_info(vm, node, ns):
+    vm['disks'] = []
+    for d in node.findall(".//ovf:DiskSection/ovf:Disk", ns):
+        disk = {'type': 'disk'}
+        capacity = d.attrib.get('{%s}capacity' % _OVF_NS)
+        disk['capacity'] = str(int(capacity) * 1024 * 1024 * 1024)
+        fileref = d.attrib.get('{%s}fileRef' % _OVF_NS)
+        alias = node.find('.//ovf:References/ovf:File[@ovf:id="%s"]' %
+                          fileref, ns)
+        if alias is not None:
+            disk['alias'] = alias.attrib.get('{%s}href' % _OVF_NS)
+            disk['allocation'] = str(alias.attrib.get('{%s}size' % _OVF_NS))
+        else:
+            raise V2VError('Error parsing ovf information: disk href info')
+        vm['disks'].append(disk)
+
+
+def _add_networks_ovf_info(vm, node, ns):
+    vm['networks'] = []
+    for n in node.findall('.//ovf:Item[rasd:ResourceType="%d"]'
+                          % _OVF_RESOURCE_NETWORK, ns):
+        net = {}
+        dev = n.find('./rasd:ElementName', ns)
+        if dev is not None:
+            net['dev'] = dev.text
+        else:
+            raise V2VError('Error parsing ovf information: '
+                           'network element name')
+
+        model = n.find('./rasd:ResourceSubType', ns)
+        if model is not None:
+            net['model'] = model.text
+        else:
+            raise V2VError('Error parsing ovf information: network model')
+
+        bridge = n.find('./rasd:Connection', ns)
+        if bridge is not None:
+            net['bridge'] = bridge.text
+            net['type'] = 'bridge'
+        else:
+            net['type'] = 'interface'
+        vm['networks'].append(net)
