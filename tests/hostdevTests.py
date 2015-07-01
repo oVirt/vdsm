@@ -22,7 +22,9 @@ import hooks
 import hostdev
 import vmfakelib as fake
 
-from testlib import VdsmTestCase as TestCaseBase
+from virt.vmdevices import hostdevice
+
+from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
 from monkeypatch import MonkeyClass
 
@@ -36,6 +38,77 @@ _SRIOV_PF = 'pci_0000_05_00_1'
 _SRIOV_VF = 'pci_0000_05_10_7'
 _ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
 _NET_DEVICE = 'net_em1_28_d2_44_55_66_88'
+
+_DEVICE_XML = {
+    'pci_0000_00_02_0':
+    '''
+    <hostdev managed="no" mode="subsystem" type="pci">
+            <source>
+                    <address bus="0" domain="0" function="0" slot="2"
+                    type="pci"/>
+            </source>
+    </hostdev>
+    ''',
+    'pci_0000_00_19_0':
+    '''
+    <hostdev managed="no" mode="subsystem" type="pci">
+            <source>
+                    <address bus="0" domain="0" function="0" slot="25"
+                    type="pci"/>
+            </source>
+    </hostdev>
+    ''',
+    'pci_0000_00_1a_0':
+    '''
+    <hostdev managed="no" mode="subsystem" type="pci">
+            <source>
+                    <address bus="0" domain="0" function="0" slot="26"
+                    type="pci"/>
+            </source>
+    </hostdev>
+    ''',
+    'pci_0000_00_1b_0':
+    '''
+    <hostdev managed="no" mode="subsystem" type="pci">
+            <source>
+                    <address bus="0" domain="0" function="0" slot="27"
+                    type="pci"/>
+            </source>
+    </hostdev>
+    ''',
+    'pci_0000_00_1f_2':
+    '''
+    <hostdev managed="no" mode="subsystem" type="pci">
+            <source>
+                    <address bus="0" domain="0" function="2" slot="31"
+                    type="pci"/>
+            </source>
+    </hostdev>
+    ''',
+    'usb_1_1':
+    '''
+    <hostdev managed="no" mode="subsystem" type="usb">
+            <source>
+                    <address bus="1" device="2" type="usb"/>
+            </source>
+    </hostdev>
+    ''',
+    'usb_1_1_4':
+    '''
+    <hostdev managed="no" mode="subsystem" type="usb">
+            <source>
+                    <address bus="1" device="10" type="usb"/>
+            </source>
+    </hostdev>
+    ''',
+    'usb_usb1':
+    '''
+    <hostdev managed="no" mode="subsystem" type="usb">
+            <source>
+                    <address bus="1" device="1" type="usb"/>
+            </source>
+    </hostdev>
+    '''}
 
 DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'Chipset Family High Definition '
@@ -278,3 +351,21 @@ class HostdevTests(TestCaseBase):
         for cap in caps:
             self.assertTrue(set(DEVICES_BY_CAPS[cap].keys()).
                             issubset(devices.keys()))
+
+
+@expandPermutations
+@MonkeyClass(libvirtconnection, 'get', Connection)
+class HostdevCreationTests(XMLTestCase):
+
+    def setUp(self):
+        self.conf = {
+            'vmName': 'testVm',
+            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
+            'smp': '8', 'maxVCpus': '160',
+            'memSize': '1024', 'memGuaranteedSize': '512'}
+
+    @permutations([[device] for device in _PCI_DEVICES + _USB_DEVICES])
+    def testCreateHostDevice(self, device_name):
+        dev_spec = {'type': 'hostdev', 'device': device_name}
+        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        self.assertXMLEqual(device.getXML().toxml(), _DEVICE_XML[device_name])
