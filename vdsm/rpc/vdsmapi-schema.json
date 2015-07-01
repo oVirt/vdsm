@@ -3950,6 +3950,24 @@
   'data': {'uri': 'str', 'username': 'str', 'password': 'str'},
   'returns': ['ExternalVmInfo']}
 
+
+##
+# @Host.getExternalVmFromOva:
+#
+# Get VM information (disks, interfaces, memory etc) from OVA file
+#
+# @ova_path: path to the ova file
+#
+# Returns:
+# ExternalVmInfo with information regarding the VM
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'Host', 'name': 'getExternalVmFromOva'},
+  'data': {'ova_path': 'str'},
+  'returns': 'ExternalVmInfo'}
+
+
 ##
 # @Host.convertExternalVm:
 #

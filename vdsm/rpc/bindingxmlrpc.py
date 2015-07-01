@@ -372,6 +372,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getExternalVMs(uri, username, password)
 
+    def getExternalVmFromOva(self, ova_path):
+        api = API.Global()
+        return api.getExternalVmFromOva(ova_path)
+
     def convertExternalVm(self, uri, username, password, vminfo, jobid):
         password = ProtectedPassword(password)
         api = API.Global()
@@ -1103,6 +1107,7 @@ class BindingXMLRPC(object):
                 (self.vmSetCpuTuneQuota, 'vmSetCpuTuneQuota'),
                 (self.vmSetCpuTunePeriod, 'vmSetCpuTunePeriod'),
                 (self.getExternalVMs, 'getExternalVMs'),
+                (self.getExternalVmFromOva, 'getExternalVmFromOva'),
                 (self.convertExternalVm, 'convertExternalVm'),
                 (self.getConvertedVm, 'getConvertedVm'),
                 (self.abortV2VJob, 'abortV2VJob'),
