@@ -328,11 +328,16 @@ class JsonRpcClient(object):
         self._eventcbs = []
 
     def callMethod(self, methodName, params=[], rid=None):
-        resp = self.call(JsonRpcRequest(methodName, params, rid))[0]
-        if resp.error:
-            raise JsonRpcError(resp.error['code'], resp.error['message'])
+        responses = self.call(JsonRpcRequest(methodName, params, rid))
+        if responses is None:
+            raise JsonRpcNoResponseError(methodName)
 
-        return resp.result
+        response = responses[0]
+        if response.error:
+            raise JsonRpcError(response.error['code'],
+                               response.error['message'])
+        else:
+            return response.result
 
     def call(self, *reqs, **kwargs):
         call = self.call_async(*reqs)
