@@ -47,8 +47,9 @@ TIMEOUT = 3
 class FakeClientIf(object):
     log = logging.getLogger("FakeClientIf")
 
-    def __init__(self, binding):
+    def __init__(self, binding, dest):
         self.threadLocal = threading.local()
+        self.dest = dest
         self.json_binding = binding
         self.irs = True
         self.gluster = None
@@ -72,11 +73,12 @@ class FakeClientIf(object):
 
     def _send_notification(self, message):
         server = self.json_binding.reactor.server
-        server.send(message, LEGACY_SUBSCRIPTION_ID_RESPONSE)
+        server.send(message, self.dest)
 
 
 @contextmanager
-def constructAcceptor(log, ssl, jsonBridge):
+def constructAcceptor(log, ssl, jsonBridge,
+                      dest=LEGACY_SUBSCRIPTION_ID_RESPONSE):
     sslctx = DEAFAULT_SSL_CONTEXT if ssl else None
     reactor = Reactor()
     acceptor = MultiProtocolAcceptor(
@@ -88,7 +90,7 @@ def constructAcceptor(log, ssl, jsonBridge):
     json_binding = BindingJsonRpc(jsonBridge, defaultdict(list), 60)
     json_binding.start()
 
-    cif = FakeClientIf(json_binding)
+    cif = FakeClientIf(json_binding, dest)
 
     xml_binding = BindingXMLRPC(cif, cif.log)
     xml_binding.start()
