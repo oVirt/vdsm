@@ -3404,6 +3404,18 @@
           'specParams': 'VmSmartcardDeviceSpecParams'}}
 
 ##
+# @VmRngDeviceType:
+#
+# An enumeration of VM rng device types
+#
+# @virtio:  supported by qemu and virtio-rng kernel module
+#
+# Since: 4.17.0
+##
+{'enum': 'VmRngDeviceType',
+ 'data': ['virtio']}
+
+##
 # @VmRngDeviceModel:
 #
 # An enumeration of VM rng device models
@@ -3455,6 +3467,8 @@
 #
 # @deviceType:  The device type (always @rng)
 #
+# @device:      The the type of rng device
+#
 # @model:       The model of rng device
 #
 # @specParams:  Additional device parameters
@@ -3462,8 +3476,8 @@
 # Since: 4.14.0
 ##
 {'type': 'VmRngDevice',
- 'data': {'deviceType': 'VmDeviceType', 'model': 'VmRngDeviceModel',
-          'specParams': 'VmRngDeviceSpecParams'}}
+ 'data': {'deviceType': 'VmDeviceType', 'device': 'VmRngDeviceType',
+          'model': 'VmRngDeviceModel', 'specParams': 'VmRngDeviceSpecParams'}}
 
 
 ##
