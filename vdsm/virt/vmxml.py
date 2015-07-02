@@ -337,7 +337,7 @@ class Domain(object):
 
         cpu = Element('cpu')
 
-        if self.arch in (caps.Architecture.X86_64):
+        if self.arch in (caps.Architecture.X86_64,):
             cpu.setAttrs(match='exact')
 
             features = self.conf.get('cpuType', 'qemu64').split(',')
