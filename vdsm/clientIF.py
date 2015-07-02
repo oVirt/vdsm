@@ -583,9 +583,10 @@ class clientIF(object):
                             'authScheme %s subject %s',
                             phase, localAddr, remoteAddr, authScheme, subject)
                 if phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_INITIALIZE:
-                    v.onConnect(remoteAddr['node'])
+                    v.onConnect(remoteAddr['node'], remoteAddr['service'])
                 elif phase == libvirt.VIR_DOMAIN_EVENT_GRAPHICS_DISCONNECT:
-                    v.onDisconnect()
+                    v.onDisconnect(clientIp=remoteAddr['node'],
+                                   clientPort=remoteAddr['service'])
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
                 action, = args[:-1]
                 v.onWatchdogEvent(action)

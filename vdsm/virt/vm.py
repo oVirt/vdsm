@@ -350,6 +350,7 @@ class Vm(object):
         self._vcpuTuneInfo = {}
         self._numaInfo = {}
         self._vmJobs = None
+        self._clientPort = ''
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -888,9 +889,10 @@ class Vm(object):
         except Exception:
             self.log.exception("Reboot event failed")
 
-    def onConnect(self, clientIp=''):
+    def onConnect(self, clientIp='', clientPort=''):
         if clientIp:
             self.conf['clientIp'] = clientIp
+            self._clientPort = clientPort
 
     def _timedDesktopLock(self):
         # This is not a definite fix, we're aware that there is still the
@@ -913,7 +915,14 @@ class Vm(object):
                               message='Scheduled shutdown on disconnect',
                               force=True)
 
-    def onDisconnect(self, detail=None):
+    def onDisconnect(self, detail=None, clientIp='', clientPort=''):
+        if self.conf['clientIp'] != clientIp:
+            self.log.debug('Ignoring disconnect event because ip differs')
+            return
+        if self._clientPort and self._clientPort != clientPort:
+            self.log.debug('Ignoring disconnect event because ports differ')
+            return
+
         self.conf['clientIp'] = ''
         # This is a hack to mitigate the issue of spice-gtk not respecting the
         # configured secure channels. Spice-gtk is always connecting first to
