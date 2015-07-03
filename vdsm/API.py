@@ -571,10 +571,10 @@ class VM(APIBase):
         self.log.debug('Migration create')
 
         params['vmId'] = self._UUID
-        response = self.create(params)
-        if response['status']['code']:
+        result = self.create(params)
+        if result['status']['code']:
             self.log.debug('Migration create - Failed')
-            return response
+            return result
 
         v = self._cif.vmContainer.get(self._UUID)
 
@@ -583,7 +583,7 @@ class VM(APIBase):
 
         self.log.debug('Destination VM creation succeeded')
         return {'status': doneCode, 'migrationPort': 0,
-                'params': response['vmList']}
+                'params': result['vmList']}
 
     def monitorCommand(self, command):
         """
