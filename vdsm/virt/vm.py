@@ -389,16 +389,6 @@ class Vm(object):
                 stats['hash'] = str(hash((self._domain.devices_hash,
                                     self.guestAgent.diskMappingHash)))
 
-                # TODO: DOWN and exitCode must be set atomically. Once this is
-                # done we can remove the multiple conditions from this code.
-                if vm_status == vmstatus.DOWN:
-                    if 'exitCode' in self.conf:
-                        stats['exitCode'] = self.conf['exitCode']
-                    if 'exitMessage' in self.conf:
-                        stats['exitMessage'] = self.conf['exitMessage']
-                    if 'exitReason' in self.conf:
-                        stats['exitReason'] = self.conf['exitReason']
-
                 stats.update(kwargs)
         if stats:
             self.log.debug('Last status %s and evaluated status %s',
@@ -794,7 +784,6 @@ class Vm(object):
             else:
                 self.log.exception("The vm start process failed")
                 self.setDownStatus(ERROR, vmexitreason.GENERIC_ERROR, str(e))
-        self.send_status_event()
 
     def _incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
@@ -1293,6 +1282,7 @@ class Vm(object):
         if not exitMessage:
             exitMessage = vmexitreason.exitReasons.get(exitReasonCode,
                                                        'VM terminated')
+        event_data = {}
         try:
             self.lastStatus = vmstatus.DOWN
             with self._confLock:
@@ -1305,6 +1295,12 @@ class Vm(object):
                 self.conf['exitReason'] = exitReasonCode
             self.log.info("Changed state to Down: %s (code=%i)",
                           exitMessage, exitReasonCode)
+            # Engine doesn't like duplicated events (e.g. Down, Down).
+            # but this cannot happen in this flow, because
+            # if some flows tries to setDownStatus a VM already Down,
+            # it will explode with DoubleDownError, thus this code
+            # will never reach this point and no event will be emitted.
+            event_data = self._getExitedVmStats()
         except DoubleDownError:
             pass
         try:
@@ -1312,6 +1308,8 @@ class Vm(object):
         except Exception:
             pass
         self.saveState()
+        if event_data:
+            self.send_status_event(**event_data)
 
     def status(self, fullStatus=True):
         # used by API.Global.getVMList
@@ -1339,7 +1337,7 @@ class Vm(object):
 
         stats = {'statusTime': self._get_status_time()}
         if self.lastStatus == vmstatus.DOWN:
-            stats.update(self._getExitedVmStats())
+            stats.update(self._getDownVmStats())
         else:
             stats.update(self._getConfigVmStats())
             stats.update(self._getRunningVmStats())
@@ -1347,11 +1345,17 @@ class Vm(object):
             stats.update(self._getGuestStats())
         return stats
 
-    def _getExitedVmStats(self):
+    def _getDownVmStats(self):
         stats = {
             'vmId': self.conf['vmId'],
+            'status': self.lastStatus
+        }
+        stats.update(self._getExitedVmStats())
+        return stats
+
+    def _getExitedVmStats(self):
+        stats = {
             'exitCode': self.conf['exitCode'],
-            'status': self.lastStatus,
             'exitMessage': self.conf['exitMessage'],
             'exitReason': self.conf['exitReason']}
         if 'timeOffset' in self.conf:
