@@ -19,7 +19,6 @@
 #
 
 from __future__ import absolute_import
-from Queue import Queue
 from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 import SocketServer
@@ -27,6 +26,7 @@ import sys
 import traceback
 
 from .config import config
+from .executor import TaskQueue
 
 
 class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
@@ -118,20 +118,23 @@ class ConnectedTCPServer(SocketServer.TCPServer, object):
     for TCPServer to process. New connections are put to the queue
     and TCPServers gets them by calling get_request method.
     """
+    _STOP = (None, None)
 
     def __init__(self, RequestHandlerClass):
         super(ConnectedTCPServer, self).__init__(None, RequestHandlerClass,
                                                  bind_and_activate=False)
-        self.queue = Queue()
+        # TODO provide proper limit for this queue
+        self.queue = TaskQueue(sys.maxint)
 
     def add(self, connected_socket, socket_address):
         self.queue.put((connected_socket, socket_address))
 
     def get_request(self):
-        return self.queue.get(True)
+        return self.queue.get()
 
     def server_close(self):
-        self.queue.put((None, None))
+        self.queue.clear()
+        self.queue.put(self._STOP)
 
     def verify_request(self, request, client_address):
         if not request or not client_address:

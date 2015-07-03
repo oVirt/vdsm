@@ -53,7 +53,7 @@ class Executor(object):
     def __init__(self, name, workers_count, max_tasks, scheduler):
         self._name = name
         self._workers_count = workers_count
-        self._tasks = _TaskQueue(max_tasks)
+        self._tasks = TaskQueue(max_tasks)
         self._scheduler = scheduler
         self._workers = set()
         self._lock = threading.Lock()
@@ -208,7 +208,7 @@ class _Worker(object):
         self._executor._worker_discarded(self)
 
 
-class _TaskQueue(object):
+class TaskQueue(object):
     """
     Replacement for Queue.Queue, with two important changes:
 
