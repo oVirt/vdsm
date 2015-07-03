@@ -772,6 +772,9 @@ class Vm(object):
 
             self.recovering = False
             self.saveState()
+
+            self.send_status_event(**self._getRunningVmStats())
+
         except MissingLibvirtDomainError as e:
             # we cannot ever deal with this error, not even on recovery.
             self.setDownStatus(
