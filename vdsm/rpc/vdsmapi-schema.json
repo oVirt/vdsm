@@ -79,7 +79,7 @@
 #
 # Add a new network to this host.
 #
-# @network: The name of the network to add
+# @bridge:  The name of the network to add
 #
 # @vlan:    #optional The name of a VLAN to create on the device
 #
@@ -92,7 +92,7 @@
 # Since: 4.10.0
 ##
 {'command': {'class': 'Host', 'name': 'addNetwork'},
- 'data': {'network': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
+ 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
           '*options': 'NetworkOptions'}}
 
 ##
@@ -100,7 +100,7 @@
 #
 # Remove a network from this host.
 #
-# @network:  The name of the network to remove
+# @bridge:   The name of the network to remove
 #
 # @vlan:     #optional The name of an associated vlan to remove
 #
@@ -114,7 +114,7 @@
 ##
 
 {'command': {'class': 'Host', 'name': 'delNetwork'},
- 'data': {'network': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
+ 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
           '*options': 'NetworkOptions'}}
 
 ##

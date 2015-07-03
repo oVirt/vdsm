@@ -1453,13 +1453,14 @@ class Global(APIBase):
         finally:
             self._cif._networkSemaphore.release()
 
-    def addNetwork(self, network, vlan=None, bond=None, nics=None,
+    def addNetwork(self, bridge, vlan=None, bond=None, nics=None,
                    options=None):
         """Add a new network to this vds.
 
         Network topology is network--[vlan--][bond--]nics.
         vlan(number) and bond are optional - pass the empty string to discard
         them.  """
+        network = bridge
         if options is None:
             options = {}
 
@@ -1501,9 +1502,10 @@ class Global(APIBase):
         finally:
             self._cif._networkSemaphore.release()
 
-    def delNetwork(self, network, vlan=None, bond=None, nics=None,
+    def delNetwork(self, bridge, vlan=None, bond=None, nics=None,
                    options=None):
         """Delete a network from this vds."""
+        network = bridge
         if options is None:
             options = {}
         self.translateNetOptionsToNew(options)
