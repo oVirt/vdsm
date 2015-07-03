@@ -379,7 +379,7 @@ class Vm(object):
                 self._lastStatus = value
 
     def send_status_event(self):
-        vm_status = self._getVmStatus()['status']
+        vm_status = self._getVmStatus()
         stats = {}
         with self._eventLock:
             if vm_status != self._evaluatedStatus:
@@ -1327,7 +1327,7 @@ class Vm(object):
         else:
             stats.update(self._getConfigVmStats())
             stats.update(self._getRunningVmStats())
-            stats.update(self._getVmStatus())
+            stats['status'] = self._getVmStatus()
             stats.update(self._getGuestStats())
         return stats
 
@@ -1474,16 +1474,16 @@ class Vm(object):
                     vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
                     vmstatus.PAUSED)
         if self.lastStatus in statuses:
-            return {'status': self.lastStatus}
+            return self.lastStatus
         elif self.isMigrating():
             if self._migrationSourceThread.hibernating:
-                return {'status': vmstatus.SAVING_STATE}
+                return vmstatus.SAVING_STATE
             else:
-                return {'status': vmstatus.MIGRATION_SOURCE}
+                return vmstatus.MIGRATION_SOURCE
         elif self.lastStatus == vmstatus.UP:
-            return {'status': _getVmStatusFromGuest()}
+            return _getVmStatusFromGuest()
         else:
-            return {'status': self.lastStatus}
+            return self.lastStatus
 
     def _getGraphicsStats(self):
         def getInfo(dev):
