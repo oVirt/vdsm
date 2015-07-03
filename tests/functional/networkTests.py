@@ -929,8 +929,8 @@ class NetworkTest(TestCaseBase):
             # Try to add additional VLANed bridged network, should succeed
             netNameVlanBridged = NETWORK_NAME + '-5'
             d['vlan'], d['bridged'] = '200', True
-            status, msg = self.setupNetworks({netNameVlanBridged:
-                                                       d}, {}, NOCHK)
+            status, msg = self.setupNetworks(
+                {netNameVlanBridged: d}, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkDoesntExist(netNameBridgeless)
@@ -1003,9 +1003,8 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkDoesntExist(netNameBridged)
 
             # Clean all
-            status, msg = self.setupNetworks({NETWORK_NAME:
-                                                       dict(remove=True)},
-                                                      {}, NOCHK)
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: dict(remove=True)}, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
 
