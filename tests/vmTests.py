@@ -338,6 +338,7 @@ class TestVm(XMLTestCase):
         clockXML = """
             <clock adjustment="-3600" offset="variable">
                 <timer name="hypervclock"/>
+                <timer name="rtc" tickpolicy="catchup"/>
                 <timer name="pit" tickpolicy="delay"/>
                 <timer name="hpet" present="no"/>
             </clock>"""
