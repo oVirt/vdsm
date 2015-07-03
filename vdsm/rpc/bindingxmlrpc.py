@@ -59,6 +59,7 @@ class BindingXMLRPC(object):
         """
         @utils.traceback(on=self.log.name)
         def threaded_start():
+            self.log.info("XMLRPC server running")
             self._registerFunctions()
             self.server.timeout = 1
             self._enabled = True
@@ -70,6 +71,8 @@ class BindingXMLRPC(object):
                     if e[0] != EINTR:
                         self.log.error("xml-rpc handler exception",
                                        exc_info=True)
+            self.log.info("XMLRPC server stopped")
+
         self._thread = threading.Thread(target=threaded_start,
                                         name='BindingXMLRPC')
         self._thread.daemon = True
@@ -79,6 +82,7 @@ class BindingXMLRPC(object):
         self.server.add(connected_socket, socket_address)
 
     def stop(self):
+        self.log.info("Stopping XMLRPC server")
         self._enabled = False
         self.server.server_close()
         self._thread.join()
