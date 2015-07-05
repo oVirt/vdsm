@@ -112,6 +112,13 @@ del_dummies() {
     sudo rm /etc/sysconfig/network-scripts/ifcfg-dummy*
 }
 
+del_veths() {
+    for nic in `ip l | awk '{print $2;}' | egrep "^veth"`; do
+        sudo ip link del dev ${nic%:*}
+    done
+    sudo rm /etc/sysconfig/network-scripts/ifcfg-veth*
+}
+
 del_bonds() {
     for nic in `ip l | awk '{print $2;}' | egrep "^bond"`; do
         echo "-${nic%:*}" | sudo tee /sys/class/net/bonding_masters
@@ -173,6 +180,7 @@ EOF
 
 emergency_net_cleanup() {
     del_dummies
+    del_veths
     del_bonds
     del_bridges
     del_test_nets
