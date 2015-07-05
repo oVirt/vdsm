@@ -518,7 +518,7 @@ class clientIF(object):
                         'recovery: waiting for %d domains to go up',
                         launching)
                 time.sleep(1)
-            self._cleanOldFiles()
+            self._cleanRecoveryFiles()
             self._recovery = False
 
             # Now if we have VMs to restore we should wait pool connection
@@ -577,17 +577,17 @@ class clientIF(object):
             self.log.debug("Error recovering VM", exc_info=True)
         return None
 
-    def _cleanOldFiles(self):
+    def _cleanRecoveryFiles(self):
         for f in os.listdir(constants.P_VDSM_RUN):
             try:
                 vmId, fileType = f.split(".", 1)
-                exts = ["guest.socket", "monitor.socket",
-                        "stdio.dump", "recovery"]
-                if fileType in exts and vmId not in self.vmContainer:
-                    self.log.debug("removing old file " + f)
-                    utils.rmFile(constants.P_VDSM_RUN + f)
-            except:
+            except ValueError:
+                # If file is missing type extention - ignore it
                 pass
+            else:
+                if fileType == "recovery" and vmId not in self.vmContainer:
+                    self.log.debug("cleaning old file " + f)
+                    utils.rmFile(constants.P_VDSM_RUN + f)
 
     def dispatchLibvirtEvents(self, conn, dom, *args):
         try:
