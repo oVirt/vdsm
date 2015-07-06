@@ -1,5 +1,6 @@
 #!/bin/sh
 # Copyright 2013 IBM, Inc.
+# Copyright 2017 Redhat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,13 +36,7 @@ task_wait_for_network() {
 }
 
 task_configure_coredump() {
-    local conf_file="@CONFDIR@/vdsm.conf"
-    local getconfitem="@VDSMDIR@/get-conf-item"
-
-    if "${getconfitem}" "${conf_file}" vars core_dump_enable false |
-      tr A-Z a-z | grep -q true; then
-        echo "/var/log/core/core.%p.%t.dump" > /proc/sys/kernel/core_pattern
-    fi
+    echo "|/usr/libexec/abrt-hook-ccpp %s %c %p %u %g %t %e %i" > /proc/sys/kernel/core_pattern
 }
 
 task_configure_vdsm_logs() {

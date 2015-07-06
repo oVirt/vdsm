@@ -20,6 +20,7 @@
 from vdsm.tool import configurator
 from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
+from vdsm.tool.configurators import abrt
 from vdsm.tool.configurators import libvirt
 from vdsm.tool import UsageError
 from vdsm.tool import upgrade
@@ -36,7 +37,20 @@ import sys
 
 dirName = os.path.dirname(os.path.realpath(__file__))
 
-FakeFiles = libvirt.FILES
+FakeLibvirtFiles = libvirt.FILES
+FakeAbrtFiles = abrt.FILES
+
+
+# helpers
+def _setConfig(obj, *configurations):
+    for file_, type_ in configurations:
+        with open(os.path.join(dirName,
+                               'toolTests_%s.conf' % type_)) as template:
+            data = template.read()
+            data = data % {
+                'LATEST_CONF_VERSION': libvirt.CONF_VERSION}
+        with open(obj.test_env[file_], 'w') as testConf:
+            testConf.write(data)
 
 
 class MockModuleConfigurator(object):
@@ -293,6 +307,68 @@ class ExposedFunctionsFailuresTests(VdsmTestCase):
                           "remove-config")
 
 
+class AbrtModuleConfigureTests(TestCase):
+    srcPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    test_env = {}
+
+    def setUp(self):
+        self._test_dir = tempfile.mkdtemp()
+        self.test_env['ABRT_CONF'] = self._test_dir + '/abrt.conf'
+        self.test_env['CCPP_CONF'] = self._test_dir + '/CCPP.conf'
+        self.test_env['VMCORE_CONF'] = self._test_dir + '/vmcore.conf'
+        self.test_env['PKG_CONF'] = self._test_dir + \
+            '/abrt-action-save-package-data.conf'
+
+        for key, val in self.test_env.items():
+            FakeAbrtFiles[key]['path'] = val
+
+        self.patch = monkeypatch.Patch([
+            (
+                abrt,
+                'FILES',
+                FakeAbrtFiles
+            )
+        ])
+
+        self.patch.apply()
+
+    def tearDown(self):
+        self.patch.revert()
+        utils.rmTree(self._test_dir)
+
+    def testIsConfiguredNegative(self):
+        _setConfig(self,
+                   ('ABRT_CONF', 'abrt'),
+                   ('CCPP_CONF', 'CCPP'),
+                   ('VMCORE_CONF', 'empty'),
+                   ('PKG_CONF', 'abrt-action-save-package-data'),
+                   )
+        self.assertEqual(
+            abrt.isconfigured(),
+            NO
+        )
+
+    def testAbrtConfigure(self):
+        _setConfig(self,
+                   ('ABRT_CONF', 'empty'),
+                   ('CCPP_CONF', 'empty'),
+                   ('VMCORE_CONF', 'empty'),
+                   ('PKG_CONF', 'empty'),
+                   )
+
+        self.assertEqual(
+            abrt.isconfigured(),
+            NO
+        )
+
+        abrt.configure()
+
+        self.assertEqual(
+            abrt.isconfigured(),
+            MAYBE
+        )
+
+
 class LibvirtModuleConfigureTests(TestCase):
 
     test_env = {}
@@ -311,12 +387,12 @@ class LibvirtModuleConfigureTests(TestCase):
 
         for key, val in self.test_env.items():
             if not key == 'VDSM_CONF':
-                FakeFiles[key]['path'] = val
+                FakeLibvirtFiles[key]['path'] = val
 
-        self._setConfig(
-            ('QLCONF', 'libvirtd'),
-            ('LDCONF', 'qemu_sanlock'),
-        )
+        _setConfig(self,
+                   ('QLCONF', 'libvirtd'),
+                   ('LDCONF', 'qemu_sanlock'),
+                   )
         self.vdsm_cfg = make_config(())
 
         self.patch = monkeypatch.Patch([
@@ -333,7 +409,7 @@ class LibvirtModuleConfigureTests(TestCase):
             (
                 libvirt,
                 'FILES',
-                FakeFiles
+                FakeLibvirtFiles
             )
         ])
 
@@ -343,51 +419,39 @@ class LibvirtModuleConfigureTests(TestCase):
         self.patch.revert()
         utils.rmTree(self._test_dir)
 
-    # helpers
-    def _setConfig(self, *configurations):
-        for file_, type_ in configurations:
-            with open(os.path.join(dirName,
-                                   'toolTests_%s.conf' % type_)) as template:
-                data = template.read()
-                data = data % {
-                    'LATEST_CONF_VERSION': libvirt.CONF_VERSION}
-            with open(self.test_env[file_], 'w') as testConf:
-                testConf.write(data)
-
     def testValidatePositive(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
-        self._setConfig(
-            ('LCONF', 'lconf_ssl'),
-            ('QCONF', 'qemu_ssl'),
-        )
+        _setConfig(self,
+                   ('LCONF', 'lconf_ssl'),
+                   ('QCONF', 'qemu_ssl'),
+                   )
 
         self.assertTrue(libvirt.validate())
 
     def testValidateNegative(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
-        self._setConfig(
-            ('LCONF', 'lconf_ssl'),
-            ('QCONF', 'qemu_ssl'),
-        )
+        _setConfig(self,
+                   ('LCONF', 'lconf_ssl'),
+                   ('QCONF', 'qemu_ssl'),
+                   )
 
         self.assertFalse(libvirt.validate())
 
     def testIsConfiguredPositive(self):
-        self._setConfig(
-            ('LCONF', 'lconf_ssl'),
-            ('QCONF', 'qemu_ssl'),
-
-        )
+        _setConfig(self,
+                   ('LCONF', 'lconf_ssl'),
+                   ('QCONF', 'qemu_ssl'),
+                   )
         self.assertEqual(
             libvirt.isconfigured(),
             MAYBE
         )
 
     def testIsConfiguredNegative(self):
-        self._setConfig(
-            ('LCONF', 'lconf_ssl'),
-            ('QCONF', 'empty'),
-        )
+        _setConfig(self,
+                   ('LCONF', 'lconf_ssl'),
+                   ('QCONF', 'empty'),
+                   )
         self.assertEqual(
             libvirt.isconfigured(),
             NO
@@ -395,10 +459,10 @@ class LibvirtModuleConfigureTests(TestCase):
 
     def testLibvirtConfigureToSSLTrue(self):
         self.vdsm_cfg.set('vars', 'ssl', 'true')
-        self._setConfig(
-            ('LCONF', 'empty'),
-            ('QCONF', 'empty'),
-        )
+        _setConfig(self,
+                   ('LCONF', 'empty'),
+                   ('QCONF', 'empty'),
+                   )
 
         self.assertEqual(
             libvirt.isconfigured(),
@@ -414,10 +478,10 @@ class LibvirtModuleConfigureTests(TestCase):
 
     def testLibvirtConfigureToSSLFalse(self):
         self.vdsm_cfg.set('vars', 'ssl', 'false')
-        self._setConfig(
-            ('LCONF', 'empty'),
-            ('QCONF', 'empty'),
-        )
+        _setConfig(self,
+                   ('LCONF', 'empty'),
+                   ('QCONF', 'empty'),
+                   )
         self.assertEqual(
             libvirt.isconfigured(),
             NO
