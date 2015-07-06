@@ -51,9 +51,10 @@ class ProtectedPasswordTests(VdsmTestCase):
         p2 = ProtectedPassword("12345678")
         self.assertFalse(p1 != p2)
 
-    def test_no_pickle(self):
+    def test_pickle_copy(self):
         p1 = ProtectedPassword("12345678")
-        self.assertRaises(TypeError, pickle.dumps, p1)
+        p2 = pickle.loads(pickle.dumps(p1))
+        self.assertEqual(p1, p2)
 
     def test_no_marshal(self):
         p1 = ProtectedPassword("12345678")

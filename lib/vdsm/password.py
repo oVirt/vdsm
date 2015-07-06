@@ -33,10 +33,6 @@ class ProtectedPassword(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __getstate__(self):
-        """ Do not serialize the the real password """
-        raise TypeError("ProtectedPassword object cannot be pickled")
-
     def __str__(self):
         return "********"
 
