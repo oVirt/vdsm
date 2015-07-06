@@ -550,6 +550,9 @@ class VMBulkSampler(object):
             elif not vm_obj.isDomainReadyForCommands():
                 self._skip_doms[vm_id] = True
             else:
+                # TODO: This racy check may fail if the underlying libvirt
+                # domain has died just after checking isDomainReadyForCommands
+                # succeeded.
                 doms.append(vm_obj._dom._dom)
         return doms
 

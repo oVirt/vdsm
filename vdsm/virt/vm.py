@@ -138,6 +138,13 @@ class BlockJobExistsError(Exception):
     pass
 
 
+class NotConnectedError(Exception):
+    """
+    Raised when trying to talk with a vm that was not started yet or was shut
+    down.
+    """
+
+
 VALID_STATES = (vmstatus.DOWN, vmstatus.MIGRATION_DESTINATION,
                 vmstatus.MIGRATION_SOURCE, vmstatus.PAUSED,
                 vmstatus.POWERING_DOWN, vmstatus.REBOOT_IN_PROGRESS,
@@ -188,6 +195,20 @@ class TimeoutError(libvirt.libvirtError):
     pass
 
 
+class DisconnectedVirDomain(object):
+
+    def __init__(self, vmid):
+        self.vmid = vmid
+
+    @property
+    def connected(self):
+        return False
+
+    def __getattr__(self, name):
+        raise NotConnectedError("VM %r was not started yet or was shut down"
+                                % self.vmid)
+
+
 class NotifyingVirDomain:
     # virDomain wrapper that notifies vm when a method raises an exception with
     # get_error_code() = VIR_ERR_OPERATION_TIMEOUT
@@ -195,6 +216,10 @@ class NotifyingVirDomain:
     def __init__(self, dom, tocb):
         self._dom = dom
         self._cb = tocb
+
+    @property
+    def connected(self):
+        return True
 
     def __getattr__(self, name):
         attr = getattr(self._dom, name)
@@ -277,7 +302,7 @@ class Vm(object):
         :param recover: Signal if the Vm is recovering;
         :type recover: bool
         """
-        self._dom = None
+        self._dom = DisconnectedVirDomain(params["vmId"])
         self.recovering = recover
         self.conf = {'pid': '0', '_blockJobs': {}, 'clientIp': ''}
         self.conf.update(params)
@@ -805,7 +830,7 @@ class Vm(object):
 
     def _onQemuDeath(self):
         self.log.info('underlying process disconnected')
-        self._dom = None
+        self._dom = DisconnectedVirDomain(self.id)
         # Try release VM resources first, if failed stuck in 'Powering Down'
         # state
         result = self.releaseVm()
@@ -1565,10 +1590,8 @@ class Vm(object):
             if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
                 return response.error('migCancelErr')
             raise
-        except AttributeError:
-            if self._dom is None:
-                return response.error('migCancelErr')
-            raise
+        except NotConnectedError:
+            return response.error('migCancelErr')
         finally:
             self._guestCpuLock.release()
 
@@ -1683,10 +1706,10 @@ class Vm(object):
     def _isDomainRunning(self):
         try:
             status = self._dom.info()
-        except AttributeError:
+        except NotConnectedError:
             # Known reasons for this:
             # * on migration destination, and migration not yet completed.
-            # * self._dom may be set to None asynchronously (_onQemuDeath).
+            # * self._dom may be disconnected asynchronously (_onQemuDeath).
             #   If so, the VM is shutting down or already shut down.
             return False
         else:
@@ -1754,7 +1777,7 @@ class Vm(object):
                 pass
             raise Exception('destroy() called before Vm started')
 
-        if self._dom is None:
+        if not self._dom.connected:
             raise MissingLibvirtDomainError(vmexitreason.LIBVIRT_START_FAILED)
 
         self._updateDomainDescriptor()
@@ -1862,7 +1885,7 @@ class Vm(object):
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
         elif 'migrationDest' in self.conf:
-            pass  # self._dom will be None until migration ends.
+            pass  # self._dom will be disconnected until migration ends.
         elif 'restoreState' in self.conf:
             fromSnapshot = self.conf.get('restoreFromSnapshot', False)
             srcDomXML = self.conf.pop('_srcDomXML')
@@ -2686,14 +2709,14 @@ class Vm(object):
         """
         try:
             state, details, stateTime = self._dom.controlInfo()
-        except AttributeError:
+        except NotConnectedError:
             # this method may be called asynchronously by periodic
             # operations. Thus, we must use a try/except block
             # to avoid racy checks.
             return False
         except libvirt.libvirtError as e:
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                # same as AttributeError above: possible race on shutdown
+                # same as NotConnectedError above: possible race on shutdown
                 return False
             else:
                 raise
@@ -3689,7 +3712,7 @@ class Vm(object):
             # Terminate the VM's creation thread.
             self._incomingMigrationFinished.set()
             self.guestAgent.stop()
-            if self._dom:
+            if self._dom.connected:
                 result = self._destroyVmGraceful()
                 if result['status']['code']:
                     return result
@@ -3781,7 +3804,7 @@ class Vm(object):
 
     def setBalloonTarget(self, target):
 
-        if self._dom is None:
+        if not self._dom.connected:
             return self._reportError(key='balloonErr')
         try:
             target = int(target)
@@ -4437,11 +4460,11 @@ class Vm(object):
                 # Libvirt sometimes send the SUSPENDED/SUSPENDED_PAUSED event
                 # after RESUMED/RESUMED_MIGRATED (when VM status is PAUSED
                 # when migration completes, see qemuMigrationFinish function).
-                # In this case self._dom is None because the function
+                # In this case self._dom is disconnected because the function
                 # _completeIncomingMigration didn't update it yet.
                 try:
                     domxml = self._dom.XMLDesc(0)
-                except AttributeError:
+                except NotConnectedError:
                     pass
                 else:
                     hooks.after_vm_pause(domxml, self.conf)
@@ -4457,7 +4480,7 @@ class Vm(object):
                 # callback however we do not use it.
                 try:
                     domxml = self._dom.XMLDesc(0)
-                except AttributeError:
+                except NotConnectedError:
                     pass
                 else:
                     hooks.after_vm_cont(domxml, self.conf)
