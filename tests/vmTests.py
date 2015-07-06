@@ -1058,7 +1058,6 @@ class TestVmOperations(TestCaseBase):
 
     def testDomainNotRunningWithoutDomain(self):
         with fake.VM() as testvm:
-            self.assertEqual(testvm._dom, None)
             self.assertFalse(testvm._isDomainRunning())
 
     def testDomainNotRunningByState(self):
@@ -1089,7 +1088,6 @@ class TestVmOperations(TestCaseBase):
 
     def testDomainNoneNotReadyForCommands(self):
         with fake.VM() as testvm:
-            testvm._dom = None
             self.assertFalse(testvm.isDomainReadyForCommands())
 
     def testReadyForCommandsRaisesLibvirtError(self):
@@ -1496,7 +1494,6 @@ class TestVmBalloon(TestCaseBase):
 
     def testVmWithoutDom(self):
         with fake.VM() as testvm:
-            self.assertTrue(testvm._dom is None)
             self.assertAPIFailed(testvm.setBalloonTarget(128))
 
     def testTargetValueNotInteger(self):

@@ -179,6 +179,10 @@ class Domain(object):
         self._diskErrors = {}
         self._downtimes = []
 
+    @property
+    def connected(self):
+        return True
+
     def _failIfRequested(self):
         if self._virtError != libvirt.VIR_ERR_OK:
             raise Error(self._virtError, self._errorMessage)
