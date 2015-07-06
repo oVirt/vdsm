@@ -25,6 +25,7 @@ from vdsm import ipwrapper
 from vdsm.constants import EXT_BRCTL
 from vdsm.ipwrapper import routeAdd, routeDel, ruleAdd, ruleDel, IPRoute2Error
 from vdsm.netconfpersistence import RunningConfig
+from vdsm import sysctl
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
 
@@ -72,6 +73,9 @@ class Iproute2(Configurator):
             self.configApplier.addBridgePort(bridge)
         DynamicSourceRoute.addInterfaceTracking(bridge)
         self.configApplier.setIfaceConfigAndUp(bridge)
+        if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
+                not bridge.ipv6.dhcpv6):
+            sysctl.disable_ipv6(bridge.name)
         self._addSourceRoute(bridge)
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             self.configApplier._setBridgeOpts(bridge,

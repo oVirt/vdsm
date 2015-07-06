@@ -37,6 +37,7 @@ from vdsm import cmdutils
 from vdsm import constants
 from vdsm import ipwrapper
 from vdsm import netinfo
+from vdsm import sysctl
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig
 
@@ -95,6 +96,9 @@ class Ifcfg(Configurator):
             bridge.port.configure(**opts)
         self._addSourceRoute(bridge)
         _ifup(bridge)
+        if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
+                not bridge.ipv6.dhcpv6):
+            sysctl.disable_ipv6(bridge.name)
 
     def configureVlan(self, vlan, **opts):
         self.configApplier.addVlan(vlan, **opts)

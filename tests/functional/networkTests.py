@@ -1785,6 +1785,8 @@ class NetworkTest(TestCaseBase):
                 if 6 in families:
                     self.assertIn(IPv6_ADDRESS_AND_CIDR, test_net['ipv6addrs'])
                     self.assertEqual(IPv6_GATEWAY, test_net['ipv6gateway'])
+                else:
+                    self.assertEqual([], test_net['ipv6addrs'])
                 delete = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.setupNetworks(delete, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
