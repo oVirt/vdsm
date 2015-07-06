@@ -329,6 +329,9 @@ dist_vdsmtests_DATA = \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	lvs_f9e55e18-67c4-4377-8e39-5833ca422bef.out \
 	mem_info.out \
+	toolTests_abrt-action-save-package-data.conf \
+	toolTests_abrt.conf \
+	toolTests_CCPP.conf \
 	toolTests_empty.conf \
 	toolTests_lconf_ssl.conf \
 	toolTests_libvirtd.conf \
@@ -336,6 +339,7 @@ dist_vdsmtests_DATA = \
 	toolTests_qemu_ssl.conf \
 	toolTests_vdsm_no_ssl.conf \
 	toolTests_vdsm_ssl.conf \
+	toolTests_vmcore.conf \
 	$(NULL)
 
 dist_vdsmtests_PYTHON = \

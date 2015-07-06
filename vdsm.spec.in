@@ -109,6 +109,9 @@ Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
 Requires: libnl3
+Requires: abrt-addon-vmcore
+Requires: abrt-addon-ccpp
+Requires: abrt-addon-python
 Requires: curl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
@@ -811,13 +814,6 @@ if grep -q "# VDSM section begin" /etc/sysctl.conf; then
         /etc/sysctl.conf
 fi
 
-# hack until we replace core dump with abrt
-if /usr/sbin/selinuxenabled; then
-    /usr/sbin/semanage fcontext -a -t virt_cache_t '/var/log/core(/.*)?'
-fi
-/sbin/restorecon -R /var/log/core >/dev/null 2>&1
-# hack until we replace core dump with abrt
-
 # VDSM installs vdsm-modules-load.d.conf file - the following command will
 # refresh vdsm kernel modules requirements to start on boot
 /bin/systemctl restart systemd-modules-load.service >/dev/null 2>&1 || :
@@ -1294,6 +1290,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/nwfilter.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurator.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/__init__*
+%{python_sitelib}/%{vdsm_name}/tool/configurators/abrt.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/certificates.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/libvirt.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/lvm.py*
@@ -1385,6 +1382,10 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
 %{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
+%{_datadir}/%{vdsm_name}/tests/toolTests_abrt-action-save-package-data.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_abrt.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_CCPP.conf
+%{_datadir}/%{vdsm_name}/tests/toolTests_vmcore.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_empty.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_lconf_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_libvirtd.conf
