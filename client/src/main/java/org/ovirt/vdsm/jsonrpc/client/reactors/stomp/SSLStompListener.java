@@ -32,7 +32,7 @@ public class SSLStompListener extends SSLStompClient implements Sender {
 
     public SSLStompListener(Reactor reactor, Selector selector, String hostname, int port,
             SocketChannel socketChannel, SSLContext sslContext) throws ClientConnectionException {
-        super(reactor, selector, hostname, port, sslContext, null);
+        super(reactor, selector, hostname, port, sslContext);
 
         channel = socketChannel;
         this.commandFactory = new CommandFactory(this, eventListeners);

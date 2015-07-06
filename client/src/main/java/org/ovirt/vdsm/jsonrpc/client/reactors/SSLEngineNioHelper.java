@@ -34,7 +34,6 @@ public class SSLEngineNioHelper {
         this.callback = callback;
         this.client = client;
         SSLSession session = engine.getSession();
-
         this.appBuffer = ByteBuffer.allocate(session.getApplicationBufferSize());
         this.packetBuffer = ByteBuffer.allocate(session.getPacketBufferSize());
         this.appPeerBuffer = ByteBuffer.allocate(session.getApplicationBufferSize());
@@ -124,6 +123,12 @@ public class SSLEngineNioHelper {
         if (!handshakeInProgress()) {
             if (this.callback != null) {
                 this.callback.checkAndExecute();
+            }
+
+            try {
+                client.getPeerCertificates();
+            } catch (Exception e) {
+                // ignore
             }
             return null;
         }

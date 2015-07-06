@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.rmi.ConnectException;
+import java.security.cert.Certificate;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -330,4 +331,11 @@ public abstract class ReactorClient {
      * Validates policy when it is set.
      */
     public abstract void validate();
+
+    /**
+     * @return the peer certificates of the current session
+     */
+    public List<Certificate> getPeerCertificates(){
+        throw new UnsupportedOperationException();
+    }
 }

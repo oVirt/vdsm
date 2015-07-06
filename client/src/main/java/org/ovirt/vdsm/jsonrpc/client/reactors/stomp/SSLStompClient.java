@@ -63,13 +63,9 @@ public class SSLStompClient extends SSLClient {
 
     };
 
-    public SSLStompClient(Reactor reactor,
-            Selector selector,
-            String hostname,
-            int port,
-            SSLContext sslContext,
-            CertCallback certCallback) throws ClientConnectionException {
-        super(reactor, selector, hostname, port, sslContext, certCallback);
+    public SSLStompClient(Reactor reactor, Selector selector, String hostname, int port, SSLContext sslContext)
+            throws ClientConnectionException {
+        super(reactor, selector, hostname, port, sslContext);
         setWaitForConnect();
     }
 

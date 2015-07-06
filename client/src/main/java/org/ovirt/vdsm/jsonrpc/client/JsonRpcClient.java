@@ -108,7 +108,7 @@ public class JsonRpcClient {
         }
     }
 
-    private ReactorClient getClient() throws ClientConnectionException {
+    public ReactorClient getClient() throws ClientConnectionException {
         if (this.client.isOpen()) {
             return this.client;
         }

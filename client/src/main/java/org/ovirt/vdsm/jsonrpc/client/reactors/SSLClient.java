@@ -8,8 +8,9 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
-import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -37,15 +38,13 @@ public abstract class SSLClient extends StompCommonClient {
     protected SSLEngineNioHelper nioEngine;
     private SSLContext sslContext;
     private boolean client;
-    private CertCallback certCallback;
 
-    public SSLClient(Reactor reactor, Selector selector,
-            String hostname, int port, SSLContext sslctx, CertCallback certCallback) throws ClientConnectionException {
+    public SSLClient(Reactor reactor, Selector selector, String hostname, int port, SSLContext sslctx)
+            throws ClientConnectionException {
         super(reactor, hostname, port);
         this.selector = selector;
         this.sslContext = sslctx;
         this.client = true;
-        this.certCallback = certCallback;
     }
 
     public SSLClient(Reactor reactor,
@@ -53,13 +52,11 @@ public abstract class SSLClient extends StompCommonClient {
             String hostname,
             int port,
             SSLContext sslctx,
-            SocketChannel socketChannel,
-            CertCallback certCallback) throws ClientConnectionException {
+            SocketChannel socketChannel) throws ClientConnectionException {
         super(reactor, hostname, port);
         this.selector = selector;
         this.sslContext = sslctx;
         this.client = false;
-        this.certCallback = certCallback;
         channel = socketChannel;
 
         postConnect(null);
@@ -85,12 +82,7 @@ public abstract class SSLClient extends StompCommonClient {
             return null;
         }
 
-        if (this.certCallback != null) {
-            this.certCallback.registerSslSession(this.nioEngine.getSSLEngine().getSession());
-        }
-
         return nioEngine.process();
-
     }
 
     @Override
@@ -169,29 +161,17 @@ public abstract class SSLClient extends StompCommonClient {
         this.nioEngine = null;
     }
 
-    public interface CertCallback {
-        Date getCertificationExpirationDate();
-
-        void registerSslSession(final SSLSession sslSession);
-    }
-
-    public static class CertCallbackImpl implements CertCallback{
-        private SSLSession sslSession;
-
-        public void registerSslSession(final SSLSession sslSession) {
-            this.sslSession = sslSession;
+    public List<Certificate> getPeerCertificates() {
+        try {
+            SSLSession sslSession = nioEngine.getSSLEngine().getSession();
+            if (sslSession == null || !sslSession.isValid()) {
+                throw new IllegalStateException("SSL session is invalid");
+            }
+            return Arrays.asList(sslSession.getPeerCertificates());
+        } catch (SSLPeerUnverifiedException e) {
+            logException(log, "Failed to get peer certificates", e);
         }
 
-        public Date getCertificationExpirationDate() {
-            if (this.sslSession == null || !this.sslSession.isValid()) {
-                throw new IllegalStateException("SSL session is not available");
-            }
-            try {
-                return ((X509Certificate)this.sslSession.getPeerCertificates()[0]).getNotAfter();
-            } catch (SSLPeerUnverifiedException e) {
-                logException(log, "Failed to get peer certificates", e);
-                throw new RuntimeException(e);
-            }
-        }
+        return null;
     }
 }

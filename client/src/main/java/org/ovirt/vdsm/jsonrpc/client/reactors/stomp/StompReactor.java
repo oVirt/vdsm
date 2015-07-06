@@ -7,7 +7,6 @@ import java.nio.channels.SocketChannel;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
-import org.ovirt.vdsm.jsonrpc.client.reactors.SSLClient.CertCallback;
 
 public class StompReactor extends Reactor {
 
@@ -24,8 +23,7 @@ public class StompReactor extends Reactor {
     public ReactorClient createClient(Reactor reactor,
             Selector selector,
             String hostname,
-            int port,
-            CertCallback certCallback) throws ClientConnectionException {
+            int port) throws ClientConnectionException {
         return new StompClient(reactor, selector, hostname, port);
     }
 

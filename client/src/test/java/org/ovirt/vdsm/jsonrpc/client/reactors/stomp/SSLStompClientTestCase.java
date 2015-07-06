@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.reactors.stomp;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient.DEFAULT_REQUEST_QUEUE;
@@ -9,6 +10,8 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.UTF8;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.cert.Certificate;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -28,7 +31,6 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorListener.EventListener;
-import org.ovirt.vdsm.jsonrpc.client.reactors.SSLClient.CertCallbackImpl;
 
 public class SSLStompClientTestCase {
     private static final String CHAR_LIST = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
@@ -58,12 +60,14 @@ public class SSLStompClientTestCase {
     }
 
     @Test
-    public void testShortMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
+    public void testShortMessage() throws InterruptedException, ExecutionException, ClientConnectionException,
+            IllegalAccessException {
         testEcho(generateRandomMessage(16));
     }
 
     @Test
-    public void testLongMessage() throws InterruptedException, ExecutionException, ClientConnectionException {
+    public void testLongMessage() throws InterruptedException, ExecutionException, ClientConnectionException,
+            IllegalAccessException {
         testEcho(generateRandomMessage(524288));
     }
 
@@ -138,7 +142,8 @@ public class SSLStompClientTestCase {
                 PASSWORD);
     }
 
-    public void testEcho(String message) throws InterruptedException, ExecutionException, ClientConnectionException {
+    public void testEcho(String message) throws InterruptedException, ExecutionException, ClientConnectionException,
+            IllegalAccessException {
         final BlockingQueue<byte[]> queue = new ArrayBlockingQueue<>(5);
         Future<ReactorListener> futureListener =
                 this.listeningReactor.createListener(HOSTNAME, 0, new EventListener() {
@@ -161,8 +166,7 @@ public class SSLStompClientTestCase {
         ReactorListener listener = futureListener.get();
         assertNotNull(listener);
 
-        CertCallbackImpl certCallback = new CertCallbackImpl();
-        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort(), certCallback);
+        ReactorClient client = this.sendingReactor.createClient(HOSTNAME, listener.getPort());
         client.setClientPolicy(new StompClientPolicy(180000, 0, 1000000, DEFAULT_REQUEST_QUEUE, DEFAULT_RESPONSE_QUEUE));
         client.addEventListener(new ReactorClient.MessageListener() {
 
@@ -182,7 +186,9 @@ public class SSLStompClientTestCase {
         client.sendMessage(message.getBytes());
         response = queue.poll(TIMEOUT_SEC, TimeUnit.SECONDS);
 
-        assertNotNull(certCallback.getCertificationExpirationDate());
+        List<Certificate> peerCertificates = client.getPeerCertificates();
+        assertNotNull(peerCertificates);
+        assertFalse(peerCertificates.isEmpty());
 
         client.close();
         listener.close();

@@ -18,7 +18,6 @@ import java.util.concurrent.FutureTask;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
-import org.ovirt.vdsm.jsonrpc.client.reactors.SSLClient.CertCallback;
 import org.ovirt.vdsm.jsonrpc.client.utils.ReactorScheduler;
 
 /**
@@ -143,13 +142,8 @@ public abstract class Reactor extends Thread {
         return task;
     }
 
-    public ReactorClient createClient(String hostname, int port, CertCallback certCallback)
-            throws ClientConnectionException {
-        return createClient(this, this.selector, hostname, port, certCallback);
-    }
-
     public ReactorClient createClient(String hostname, int port) throws ClientConnectionException {
-        return createClient(this, this.selector, hostname, port, null);
+        return createClient(this, this.selector, hostname, port);
     }
 
     public void close() throws IOException {
@@ -160,8 +154,7 @@ public abstract class Reactor extends Thread {
     protected abstract ReactorClient createClient(Reactor reactor,
             Selector selector,
             String hostname,
-            int port,
-            CertCallback certCallback) throws ClientConnectionException;
+            int port) throws ClientConnectionException;
 
     protected abstract ReactorClient createConnectedClient(Reactor reactor, Selector selector, String hostname,
             int port, SocketChannel channel) throws ClientConnectionException;
