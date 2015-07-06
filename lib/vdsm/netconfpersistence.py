@@ -363,6 +363,12 @@ class KernelConfig(BaseConfig):
                 bond_attr.get('options'))
             bond_attr['options'] = self._netinfo.bondOptsForIfcfg(
                 normalized_opts)
+        # before d18e2f10 bondingOptions were also part of networks, so in case
+        # we are upgrading from an older version, they should be ignored if
+        # they exist.
+        # REQUIRED_FOR upgrade from vdsm<=4.16.20
+        for net_attr in config_copy.networks.itervalues():
+            net_attr.pop('bondingOptions', None)
 
     def _normalize_bonding_nics(self, config_copy):
         for bond_attr in config_copy.bonds.itervalues():
