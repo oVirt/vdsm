@@ -233,7 +233,6 @@ class StompAdapterImpl(object):
         self._req_dest[request.get("id")] = req_dest
 
     def handle_frame(self, dispatcher, frame):
-        self.log.debug("Handling message %s", frame)
         try:
             self._commands[frame.command](dispatcher, frame)
         except KeyError:
