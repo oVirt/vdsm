@@ -95,7 +95,6 @@ class StompAdapterImpl(object):
         self._messageHandler(self, frame.body)
 
     def handle_frame(self, dispatcher, frame):
-        self.log.debug("Handling message %s", frame)
         try:
             self._commands[frame.command](dispatcher, frame)
         except KeyError:

@@ -527,7 +527,6 @@ class JsonRpcServer(object):
     @traceback(on=log.name)
     def serve_requests(self):
         while True:
-            self.log.debug("Waiting for request")
             obj = self._workQueue.get()
             if obj is None:
                 break
