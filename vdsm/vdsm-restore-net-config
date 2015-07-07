@@ -57,10 +57,11 @@ def unified_restoration():
         removeNetworks[network] = {'remove': True}
     for bond in runningConfig.bonds:
         removeBonds[bond] = {'remove': True}
-    logging.debug('Removing all networks (%s) and bonds (%s) in running '
-                  'config.', removeNetworks, removeBonds)
-    setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
-                  _inRollback=True)
+    if removeNetworks or removeBonds:
+        logging.debug('Removing all networks (%s) and bonds (%s) in running '
+                      'config.', removeNetworks, removeBonds)
+        setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
+                      _inRollback=True)
 
     # Restore non-VDSM network devices (BZ#1188251)
     configWriter = ifcfg.ConfigWriter()
@@ -72,9 +73,10 @@ def unified_restoration():
     nets = changed_config.networks
     bonds = changed_config.bonds
     _convert_to_blocking_dhcp(nets)
-    logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
-                  nets, bonds)
-    setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
+    if nets or bonds:
+        logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
+                      nets, bonds)
+        setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
 
 
 def _convert_to_blocking_dhcp(networks):
