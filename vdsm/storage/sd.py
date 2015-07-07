@@ -385,11 +385,11 @@ class StorageDomain(object):
     mdBackupVersions = config.get('irs', 'md_backup_versions')
     mdBackupDir = config.get('irs', 'md_backup_dir')
 
-    # version: (clusterLockClass, hasVolumeLeases)
+    # version: clusterLockClass
     _clusterLockTable = {
-        0: (clusterlock.SafeLease, False),
-        2: (clusterlock.SafeLease, False),
-        3: (clusterlock.SANLock, True),
+        0: clusterlock.SafeLease,
+        2: clusterlock.SafeLease,
+        3: clusterlock.SANLock,
     }
 
     def __init__(self, manifest):
@@ -478,7 +478,7 @@ class StorageDomain(object):
         )
 
         try:
-            clusterLockClass = self._clusterLockTable[domVersion][0]
+            clusterLockClass = self._clusterLockTable[domVersion]
         except KeyError:
             raise se.UnsupportedDomainVersion(domVersion)
 
@@ -599,11 +599,7 @@ class StorageDomain(object):
         return self._clusterLock.getHostStatus(hostId)
 
     def hasVolumeLeases(self):
-        domVersion = self.getVersion()
-        try:
-            return self._clusterLockTable[domVersion][1]
-        except KeyError:
-            raise se.UnsupportedDomainVersion(domVersion)
+        return self._clusterLock.supports_volume_leases
 
     def getVolumeLease(self, volUUID):
         """

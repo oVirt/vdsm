@@ -89,6 +89,10 @@ class SafeLease(object):
         self.setParams(lockRenewalIntervalSec, leaseTimeSec, leaseFailRetry,
                        ioOpTimeoutSec)
 
+    @property
+    def supports_volume_leases(self):
+        return False
+
     def initLock(self):
         lockUtil = constants.EXT_SAFELEASE
         initCommand = [lockUtil, "release", "-f", self._leasesPath, "0"]
@@ -203,6 +207,10 @@ class SANLock(object):
         self._idsPath = idsPath
         self._leasesPath = leasesPath
         self._sanlockfd = None
+
+    @property
+    def supports_volume_leases(self):
+        return True
 
     def initLock(self):
         initSANLock(self._sdUUID, self._idsPath, self._leasesPath)
@@ -361,6 +369,10 @@ class LocalLock(object):
         self._sdUUID = sdUUID
         self._idsPath = idsPath
         self._leasesPath = leasesPath
+
+    @property
+    def supports_volume_leases(self):
+        return True
 
     def initLock(self):
         # The LocalLock initialization is based on SANLock to maintain on-disk

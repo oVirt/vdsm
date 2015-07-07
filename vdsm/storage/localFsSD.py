@@ -30,11 +30,11 @@ import clusterlock
 
 
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
-    # version: (clusterLockClass, hasVolumeLeases)
+    # version: clusterLockClass
     _clusterLockTable = {
-        0: (clusterlock.SafeLease, False),
-        2: (clusterlock.SafeLease, False),
-        3: (clusterlock.LocalLock, True),
+        0: clusterlock.SafeLease,
+        2: clusterlock.SafeLease,
+        3: clusterlock.LocalLock,
     }
 
     @property
