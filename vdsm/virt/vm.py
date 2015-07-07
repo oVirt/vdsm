@@ -332,7 +332,7 @@ class Vm(object):
         self._qemuguestSocketFile = self._makeChannelPath(_QEMU_GA_DEVICE_NAME)
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log,
-            self.send_status_event)
+            self._onGuestStatusChange)
         self._domain = DomainDescriptor.from_id(self.id)
         self._released = False
         self._releaseLock = threading.Lock()
@@ -398,6 +398,9 @@ class Vm(object):
     def _notify(self, operation, params):
         sub_id = '|virt|%s|%s' % (operation, self.id)
         self.cif.notify(sub_id, **{self.id: params})
+
+    def _onGuestStatusChange(self):
+        self.send_status_event(**self._getGuestStats())
 
     def _get_status_time(self):
         """
