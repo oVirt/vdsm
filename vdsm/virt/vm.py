@@ -3107,7 +3107,9 @@ class Vm(object):
             snap.appendChild(_memorySnapshot(memoryVolPath))
         else:
             snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
-            snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
+
+        # When creating memory snapshot libvirt will pause the vm
+        should_freeze = not memoryParams
 
         snapxml = snap.toprettyxml()
         # TODO: this is debug information. For 3.6.x we still need to
@@ -3122,25 +3124,19 @@ class Vm(object):
         self.stopDisksStatsCollection()
 
         try:
+            if should_freeze:
+                freezed = self.freeze()
             try:
                 self._dom.snapshotCreateXML(snapxml, snapFlags)
-            except Exception as e:
-                # Trying again without VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE.
-                # At the moment libvirt is returning two generic errors
-                # (INTERNAL_ERROR, ARGUMENT_UNSUPPORTED) which are too broad
-                # to be caught (BZ#845635).
-                snapFlags &= (~libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)
-                # Here we don't need a full stacktrace (exc_info) but it's
-                # still interesting knowing what was the error
-                self.log.debug("Snapshot failed using the quiesce flag, "
-                               "trying again without it (%s)", e)
-                try:
-                    self._dom.snapshotCreateXML(snapxml, snapFlags)
-                except Exception as e:
-                    self.log.exception("Unable to take snapshot")
-                    if memoryParams:
-                        self.cif.teardownVolumePath(memoryVol)
-                    return errCode['snapshotErr']
+            except libvirt.libvirtError:
+                self.log.exception("Unable to take snapshot")
+                return errCode['snapshotErr']
+            finally:
+                # Must always thaw, even if freeze failed; in case the guest
+                # did freeze the filesystems, but failed to reply in time.
+                # Libvirt is using same logic (see src/qemu/qemu_driver.c).
+                if should_freeze:
+                    self.thaw()
 
             # We are padding the memory volume with block size of zeroes
             # because qemu-img truncates files such that their size is
@@ -3166,9 +3162,8 @@ class Vm(object):
 
         # Returning quiesce to notify the manager whether the guest agent
         # froze and flushed the filesystems or not.
-        return {'status': doneCode, 'quiesce':
-                (snapFlags & libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE
-                    == libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE)}
+        return {'status': doneCode,
+                'quiesce': should_freeze and freezed["status"]["code"] == 0}
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
