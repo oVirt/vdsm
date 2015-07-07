@@ -732,7 +732,7 @@ class VM(APIBase):
             return errCode['noVM']
         return v.thaw()
 
-    def snapshot(self, snapDrives, snapMemory=None):
+    def snapshot(self, snapDrives, snapMemory=None, frozen=False):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
             return errCode['noVM']
@@ -740,7 +740,7 @@ class VM(APIBase):
         if snapMemory:
             memoryParams['dst'], memoryParams['dstparams'] = \
                 self._getHibernationPaths(snapMemory)
-        return v.snapshot(snapDrives, memoryParams)
+        return v.snapshot(snapDrives, memoryParams, frozen=frozen)
 
     def setBalloonTarget(self, target):
         v = self._cif.vmContainer.get(self._UUID)

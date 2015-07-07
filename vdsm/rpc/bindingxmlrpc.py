@@ -486,7 +486,7 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.thaw()
 
-    def vmSnapshot(self, vmId, snapDrives, snapMemVolHandle=''):
+    def vmSnapshot(self, vmId, snapDrives, snapMemVolHandle='', frozen=False):
         """
         Take snapshot of VM
 
@@ -499,7 +499,7 @@ class BindingXMLRPC(object):
         :type snapMemVolHandle: string
         """
         vm = API.VM(vmId)
-        return vm.snapshot(snapDrives, snapMemVolHandle)
+        return vm.snapshot(snapDrives, snapMemVolHandle, frozen=frozen)
 
     def merge(self, vmId, drive, baseVolUUID, topVolUUID, bandwidth=0,
               jobUUID=None):

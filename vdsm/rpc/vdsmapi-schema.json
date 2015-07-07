@@ -7896,11 +7896,15 @@
 # @snapMemory:  #optional str representation of the volumes in which
 #               the memory dump and vm configuration should be saved
 #
+# @frozen:      #optional Boolean value set to true if the vm is frozen
+#               and does not need to be freezed during the snapshot.
+#               (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'snapshot'},
  'data': {'vmID': 'UUID', 'snapDrives': ['SnapshotDriveInfo'],
-          '*snapMemory': 'str'}}
+          '*snapMemory': 'str', '*frozen': 'bool'}}
 
 ##
 # @VM.setBalloonTarget:

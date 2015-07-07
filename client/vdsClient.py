@@ -1878,15 +1878,18 @@ class service:
         return res['status']['code'], res['status']['message']
 
     def snapshot(self, args):
-        vmUUID, sdUUID, imgUUID, baseVolUUID, volUUID = args
-
-        status = self.s.snapshot(vmUUID, [
-            {'domainID': sdUUID,
-             'imageID': imgUUID,
-             'baseVolumeID': baseVolUUID,
-             'volumeID': volUUID},
-        ])
-
+        validateArgTypes(args, [str, str, str, str, str, utils.tobool],
+                         requiredArgsNumber=5)
+        vmUUID = args[0]
+        drives = [{
+            'domainID': args[1],
+            'imageID': args[2],
+            'baseVolumeID': args[3],
+            'volumeID': args[4]
+        }]
+        memory = ''  # No memory snapshot
+        frozen = args[5] if len(args) == 6 else False
+        status = self.s.snapshot(vmUUID, drives, memory, frozen)
         return status['status']['code'], status['status']['message']
 
     def setBalloonTarget(self, args):
@@ -2827,7 +2830,8 @@ if __name__ == '__main__':
                   'Thaw guest mounted filesystems.'
                   )),
         'snapshot': (serv.snapshot,
-                     ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID>',
+                     ('<vmId> <sdUUID> <imgUUID> <baseVolUUID> <volUUID> '
+                      '[<frozen>]',
                       'Take a live snapshot'
                       )),
         'setBalloonTarget': (serv.setBalloonTarget,

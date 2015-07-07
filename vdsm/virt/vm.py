@@ -2932,7 +2932,7 @@ class Vm(object):
         self.log.info("%d guest filesystems thawed", thawed)
         return response.success()
 
-    def snapshot(self, snapDrives, memoryParams):
+    def snapshot(self, snapDrives, memoryParams, frozen=False):
         """Live snapshot command"""
 
         def _diskSnapshot(vmDev, newPath, sourceType):
@@ -3109,7 +3109,7 @@ class Vm(object):
             snapFlags |= libvirt.VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY
 
         # When creating memory snapshot libvirt will pause the vm
-        should_freeze = not memoryParams
+        should_freeze = not (memoryParams or frozen)
 
         snapxml = snap.toprettyxml()
         # TODO: this is debug information. For 3.6.x we still need to
@@ -3162,8 +3162,8 @@ class Vm(object):
 
         # Returning quiesce to notify the manager whether the guest agent
         # froze and flushed the filesystems or not.
-        return {'status': doneCode,
-                'quiesce': should_freeze and freezed["status"]["code"] == 0}
+        quiesce = should_freeze and freezed["status"]["code"] == 0
+        return {'status': doneCode, 'quiesce': quiesce}
 
     def diskReplicateStart(self, srcDisk, dstDisk):
         try:
