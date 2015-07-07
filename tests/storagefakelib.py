@@ -89,6 +89,9 @@ class FakeLVM(object):
         vg_dict = self.lvmd.setdefault(vgName, {})
         vg_dict[lvName] = lv_md
 
+    def activateLVs(self, vgName, lvNames):
+        pass
+
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
 

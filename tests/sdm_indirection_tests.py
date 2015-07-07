@@ -112,6 +112,46 @@ class FakeDomainManifest(sd.StorageDomainManifest):
     def getAllVolumes(self):
         pass
 
+    @recorded
+    def getReservedId(self):
+        pass
+
+    @recorded
+    def acquireHostId(self, hostId, async=False):
+        pass
+
+    @recorded
+    def releaseHostId(self, hostId, async=False):
+        pass
+
+    @recorded
+    def hasHostId(self, hostId):
+        pass
+
+    @recorded
+    def getHostStatus(self, hostId):
+        pass
+
+    @recorded
+    def acquireDomainLock(self, hostID):
+        pass
+
+    @recorded
+    def releaseDomainLock(self):
+        pass
+
+    @recorded
+    def inquireDomainLock(self):
+        pass
+
+    @recorded
+    def hasVolumeLeases(self):
+        pass
+
+    @recorded
+    def _makeDomainLock(self, domVersion):
+        pass
+
 
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -262,6 +302,17 @@ class DomainTestMixin(object):
         self.assertRaises(AttributeError, self.check_call, 'foo')
 
     @permutations([
+        # dom method, manifest method, nargs
+        ['acquireClusterLock', 'acquireDomainLock', 1],
+        ['releaseClusterLock', 'releaseDomainLock', 0],
+        ['inquireClusterLock', 'inquireDomainLock', 0],
+        ['_makeClusterLock', '_makeDomainLock', 1],
+    ])
+    def test_clusterlock(self, dom_method, manifest_method, nr_args):
+        args = tuple(range(nr_args))
+        self._check(dom_method, args, [(manifest_method, args, {})])
+
+    @permutations([
         ['getReadDelay', 0],
         ['replaceMetadata', 1],
         ['getVSize', 2],
@@ -285,6 +336,12 @@ class DomainTestMixin(object):
         ['deleteImage', 3],
         ['getAllImages', 0],
         ['getAllVolumes', 0],
+        ['getReservedId', 0],
+        ['acquireHostId', 2],
+        ['releaseHostId', 2],
+        ['hasHostId', 1],
+        ['getHostStatus', 1],
+        ['hasVolumeLeases', 0],
         ])
     def test_common_functions(self, fn, nargs):
         self.check_call(fn, nargs)

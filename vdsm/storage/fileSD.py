@@ -161,11 +161,10 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                                      sd.METADATA)
         sdUUID = os.path.basename(domainPath)
         domaindir = os.path.join(self.mountpoint, sdUUID)
-        sd.StorageDomainManifest.__init__(self, sdUUID, domaindir)
-
         if metadata is None:
             metadata = FileSDMetadata(self.metafile)
-        self.replaceMetadata(metadata)
+        sd.StorageDomainManifest.__init__(self, sdUUID, domaindir, metadata)
+
         if not self.oop.fileUtils.pathExists(self.metafile):
             raise se.StorageDomainMetadataNotFound(self.sdUUID, self.metafile)
 

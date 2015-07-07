@@ -402,11 +402,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
     def __init__(self, sdUUID, metadata=None):
         domaindir = os.path.join(self.mountpoint, sdUUID)
-        sd.StorageDomainManifest.__init__(self, sdUUID, domaindir)
 
         if metadata is None:
-            metadata = selectMetadata(self.sdUUID)
-        self.replaceMetadata(metadata)
+            metadata = selectMetadata(sdUUID)
+        sd.StorageDomainManifest.__init__(self, sdUUID, domaindir, metadata)
 
         # _extendlock is used to prevent race between
         # VG extend and LV extend.

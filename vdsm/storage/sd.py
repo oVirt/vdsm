@@ -294,10 +294,18 @@ SD_MD_FIELDS = {
 class StorageDomainManifest(object):
     log = logging.getLogger("Storage.StorageDomainManifest")
 
-    def __init__(self, sdUUID, domaindir):
+    # version: clusterLockClass
+    _domainLockTable = {
+        0: clusterlock.SafeLease,
+        2: clusterlock.SafeLease,
+        3: clusterlock.SANLock,
+    }
+
+    def __init__(self, sdUUID, domaindir, metadata):
         self.sdUUID = sdUUID
         self.domaindir = domaindir
-        self._metadata = None
+        self.replaceMetadata(metadata)
+        self._domainLock = self._makeDomainLock()
 
     @property
     def oop(self):
@@ -378,6 +386,71 @@ class StorageDomainManifest(object):
     def isData(self):
         return self.getMetaParam(DMDK_CLASS) == DATA_DOMAIN
 
+    def getReservedId(self):
+        return self._domainLock.getReservedId()
+
+    def acquireHostId(self, hostId, async=False):
+        self._domainLock.acquireHostId(hostId, async)
+
+    def releaseHostId(self, hostId, async=False):
+        self._domainLock.releaseHostId(hostId, async, False)
+
+    def hasHostId(self, hostId):
+        return self._domainLock.hasHostId(hostId)
+
+    def getHostStatus(self, hostId):
+        return self._domainLock.getHostStatus(hostId)
+
+    def hasVolumeLeases(self):
+        return self._domainLock.supports_volume_leases
+
+    def acquireDomainLock(self, hostID):
+        self.refresh()
+        self._domainLock.setParams(
+            self.getMetaParam(DMDK_LOCK_RENEWAL_INTERVAL_SEC),
+            self.getMetaParam(DMDK_LEASE_TIME_SEC),
+            self.getMetaParam(DMDK_LEASE_RETRIES),
+            self.getMetaParam(DMDK_IO_OP_TIMEOUT_SEC)
+        )
+        self._domainLock.acquire(hostID)
+
+    def releaseDomainLock(self):
+        self._domainLock.release()
+
+    def inquireDomainLock(self):
+        return self._domainLock.inquire()
+
+    def _makeDomainLock(self, domVersion=None):
+        if not domVersion:
+            domVersion = self.getVersion()
+
+        leaseParams = (
+            DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC],
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
+            DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
+            DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC],
+        )
+
+        try:
+            lockClass = self._domainLockTable[domVersion]
+        except KeyError:
+            raise se.UnsupportedDomainVersion(domVersion)
+
+        return lockClass(self.sdUUID, self.getIdsFilePath(),
+                         self.getLeasesFilePath(), *leaseParams)
+
+    def initDomainLock(self):
+        """
+        Initialize the SPM lease
+        """
+        try:
+            self._domainLock.initLock()
+            self.log.debug("lease initialized successfully")
+        except:
+            # Original code swallowed the errors
+            self.log.warn("lease did not initialize successfully",
+                          exc_info=True)
+
 
 class StorageDomain(object):
     log = logging.getLogger("Storage.StorageDomain")
@@ -385,18 +458,10 @@ class StorageDomain(object):
     mdBackupVersions = config.get('irs', 'md_backup_versions')
     mdBackupDir = config.get('irs', 'md_backup_dir')
 
-    # version: clusterLockClass
-    _clusterLockTable = {
-        0: clusterlock.SafeLease,
-        2: clusterlock.SafeLease,
-        3: clusterlock.SANLock,
-    }
-
     def __init__(self, manifest):
         self._manifest = manifest
         self._lock = threading.Lock()
         self.stat = None
-        self._clusterLock = self._makeClusterLock()
 
     def __del__(self):
         if self.stat:
@@ -467,23 +532,7 @@ class StorageDomain(object):
         return self._manifest.oop
 
     def _makeClusterLock(self, domVersion=None):
-        if not domVersion:
-            domVersion = self.getVersion()
-
-        leaseParams = (
-            DEFAULT_LEASE_PARAMS[DMDK_LOCK_RENEWAL_INTERVAL_SEC],
-            DEFAULT_LEASE_PARAMS[DMDK_LEASE_TIME_SEC],
-            DEFAULT_LEASE_PARAMS[DMDK_LEASE_RETRIES],
-            DEFAULT_LEASE_PARAMS[DMDK_IO_OP_TIMEOUT_SEC],
-        )
-
-        try:
-            clusterLockClass = self._clusterLockTable[domVersion]
-        except KeyError:
-            raise se.UnsupportedDomainVersion(domVersion)
-
-        return clusterLockClass(self.sdUUID, self.getIdsFilePath(),
-                                self.getLeasesFilePath(), *leaseParams)
+        return self._manifest._makeDomainLock(domVersion)
 
     @classmethod
     def create(cls, sdUUID, domainName, domClass, typeSpecificArg, version):
@@ -557,16 +606,7 @@ class StorageDomain(object):
         return self._manifest.getMDPath()
 
     def initSPMlease(self):
-        """
-        Initialize the SPM lease
-        """
-        try:
-            self._clusterLock.initLock()
-            self.log.debug("lease initialized successfully")
-        except:
-            # Original code swallowed the errors
-            self.log.warn("lease did not initialize successfully",
-                          exc_info=True)
+        return self._manifest.initDomainLock()
 
     def getVersion(self):
         return self._manifest.getVersion()
@@ -584,22 +624,22 @@ class StorageDomain(object):
         return self._manifest.getLeasesFilePath()
 
     def getReservedId(self):
-        return self._clusterLock.getReservedId()
+        return self._manifest.getReservedId()
 
     def acquireHostId(self, hostId, async=False):
-        self._clusterLock.acquireHostId(hostId, async)
+        self._manifest.acquireHostId(hostId, async)
 
     def releaseHostId(self, hostId, async=False, unused=False):
-        self._clusterLock.releaseHostId(hostId, async, unused)
+        self._manifest.releaseHostId(hostId, async)
 
     def hasHostId(self, hostId):
-        return self._clusterLock.hasHostId(hostId)
+        return self._manifest.hasHostId(hostId)
 
     def getHostStatus(self, hostId):
-        return self._clusterLock.getHostStatus(hostId)
+        return self._manifest.getHostStatus(hostId)
 
     def hasVolumeLeases(self):
-        return self._clusterLock.supports_volume_leases
+        return self._manifest.hasVolumeLeases()
 
     def getVolumeLease(self, volUUID):
         """
@@ -608,20 +648,13 @@ class StorageDomain(object):
         return None, None
 
     def acquireClusterLock(self, hostID):
-        self.refresh()
-        self._clusterLock.setParams(
-            self.getMetaParam(DMDK_LOCK_RENEWAL_INTERVAL_SEC),
-            self.getMetaParam(DMDK_LEASE_TIME_SEC),
-            self.getMetaParam(DMDK_LEASE_RETRIES),
-            self.getMetaParam(DMDK_IO_OP_TIMEOUT_SEC)
-        )
-        self._clusterLock.acquire(hostID)
+        self._manifest.acquireDomainLock(hostID)
 
     def releaseClusterLock(self):
-        self._clusterLock.release()
+        self._manifest.releaseDomainLock()
 
     def inquireClusterLock(self):
-        return self._clusterLock.inquire()
+        return self._manifest.inquireDomainLock()
 
     def attach(self, spUUID):
         self.invalidateMetadata()

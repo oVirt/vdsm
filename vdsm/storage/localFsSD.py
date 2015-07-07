@@ -29,14 +29,16 @@ import misc
 import clusterlock
 
 
-class LocalFsStorageDomain(fileSD.FileStorageDomain):
+class LocalFsStorageDomainManifest(fileSD.FileStorageDomainManifest):
     # version: clusterLockClass
-    _clusterLockTable = {
+    _domainLockTable = {
         0: clusterlock.SafeLease,
         2: clusterlock.SafeLease,
         3: clusterlock.LocalLock,
     }
 
+
+class LocalFsStorageDomain(fileSD.FileStorageDomain):
     @property
     def supportsMailbox(self):
         return False

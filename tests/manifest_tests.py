@@ -65,7 +65,7 @@ class FileManifestTests(VdsmTestCase):
 
     def test_getmetaparam(self):
         with namedTemporaryDir() as tmpdir:
-            metadata = {}
+            metadata = {sd.DMDK_VERSION: 3}
             manifest = make_filesd_manifest(tmpdir, metadata)
             metadata[sd.DMDK_SDUUID] = manifest.sdUUID
             self.assertEquals(manifest.sdUUID,
@@ -76,57 +76,63 @@ class BlockManifestTests(VdsmTestCase):
 
     def test_getreaddelay(self):
         with namedTemporaryDir() as tmpdir:
-            manifest = make_blocksd_manifest(tmpdir)
-            vg_name = manifest.sdUUID
             lvm = FakeLVM(tmpdir)
-            make_file(lvm.lvPath(vg_name, 'metadata'))
-
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
+                manifest = make_blocksd_manifest(tmpdir)
+                vg_name = manifest.sdUUID
+                make_file(lvm.lvPath(vg_name, 'metadata'))
                 self.assertIsInstance(manifest.getReadDelay(), float)
 
     def test_getvsize_active_lv(self):
         # Tests the path when the device file is present
         with namedTemporaryDir() as tmpdir:
-            manifest = make_blocksd_manifest(tmpdir)
             lvm = FakeLVM(tmpdir)
-            vg_name = make_vg(lvm, manifest)
-            lv_name = str(uuid.uuid4())
-            lvm.createLV(vg_name, lv_name, VOLSIZE)
-            lvm.fake_lv_symlink_create(vg_name, lv_name)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
+                manifest = make_blocksd_manifest(tmpdir)
+                vg_name = make_vg(lvm, manifest)
+                lv_name = str(uuid.uuid4())
+                lvm.createLV(vg_name, lv_name, VOLSIZE)
+                lvm.fake_lv_symlink_create(vg_name, lv_name)
                 self.assertEqual(VOLSIZE,
                                  manifest.getVSize('<imgUUID>', lv_name))
 
     def test_getvsize_inactive_lv(self):
         # Tests the path when the device file is not present
         with namedTemporaryDir() as tmpdir:
-            manifest = make_blocksd_manifest(tmpdir)
             lvm = FakeLVM(tmpdir)
-            vg_name = make_vg(lvm, manifest)
-            lv_name = str(uuid.uuid4())
-            lvm.createLV(vg_name, lv_name, VOLSIZE)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
+                manifest = make_blocksd_manifest(tmpdir)
+                vg_name = make_vg(lvm, manifest)
+                lv_name = str(uuid.uuid4())
+                lvm.createLV(vg_name, lv_name, VOLSIZE)
                 self.assertEqual(VOLSIZE,
                                  manifest.getVSize('<imgUUID>', lv_name))
 
     def test_getmetaparam(self):
         with namedTemporaryDir() as tmpdir:
-            metadata = {}
-            manifest = make_blocksd_manifest(tmpdir, metadata)
-            metadata[sd.DMDK_SDUUID] = manifest.sdUUID
-            self.assertEquals(manifest.sdUUID,
-                              manifest.getMetaParam(sd.DMDK_SDUUID))
+            lvm = FakeLVM(tmpdir)
+            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
+                metadata = {sd.DMDK_VERSION: 3}
+                manifest = make_blocksd_manifest(tmpdir, metadata)
+                metadata[sd.DMDK_SDUUID] = manifest.sdUUID
+                self.assertEquals(manifest.sdUUID,
+                                  manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getblocksize_defaults(self):
         with namedTemporaryDir() as tmpdir:
-            manifest = make_blocksd_manifest(tmpdir)
-            self.assertEquals(512, manifest.logBlkSize)
-            self.assertEquals(512, manifest.phyBlkSize)
+            lvm = FakeLVM(tmpdir)
+            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
+                manifest = make_blocksd_manifest(tmpdir)
+                self.assertEquals(512, manifest.logBlkSize)
+                self.assertEquals(512, manifest.phyBlkSize)
 
     def test_getblocksize(self):
         with namedTemporaryDir() as tmpdir:
-            metadata = {blockSD.DMDK_LOGBLKSIZE: 2048,
-                        blockSD.DMDK_PHYBLKSIZE: 1024}
-            manifest = make_blocksd_manifest(tmpdir, metadata)
-            self.assertEquals(2048, manifest.logBlkSize)
-            self.assertEquals(1024, manifest.phyBlkSize)
+            lvm = FakeLVM(tmpdir)
+            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
+                metadata = {sd.DMDK_VERSION: 3,
+                            blockSD.DMDK_LOGBLKSIZE: 2048,
+                            blockSD.DMDK_PHYBLKSIZE: 1024}
+                manifest = make_blocksd_manifest(tmpdir, metadata)
+                self.assertEquals(2048, manifest.logBlkSize)
+                self.assertEquals(1024, manifest.phyBlkSize)
