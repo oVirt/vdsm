@@ -23,6 +23,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 SUBDIRS = \
 	  functional \
 	  devices \
+	  integration \
 	  $(NULL)
 
 device_modules = \
@@ -56,8 +57,6 @@ test_modules = \
 	iproute2Tests.py \
 	ipwrapperTests.py \
 	iscsiTests.py \
-	jsonRpcHelper.py \
-	jsonRpcTests.py \
 	libvirtconnectionTests.py \
 	lvmTests.py \
 	main.py \
