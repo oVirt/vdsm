@@ -60,6 +60,7 @@ test_modules = \
 	libvirtconnectionTests.py \
 	lvmTests.py \
 	main.py \
+	manifest_tests.py \
 	miscTests.py \
 	mkimageTests.py \
 	monkeypatchTests.py \
@@ -186,6 +187,7 @@ dist_vdsmtests_PYTHON = \
 	apiData.py \
 	hookValidation.py \
 	monkeypatch.py \
+	storagefakelib.py \
 	testlib.py \
 	testrunner.py \
 	testValidation.py \
