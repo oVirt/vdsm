@@ -53,7 +53,7 @@ class Configurator(object):
             # If we failed the rollback transaction, the networking system
             # is in no good state and we fail hard
             logging.error('Failed rollback transaction last known good '
-                          'network. ERR=%s', exc_info=(type, value, traceback))
+                          'network.', exc_info=(type, value, traceback))
         else:
             leftover = self.rollback()
             if leftover:
