@@ -394,50 +394,6 @@ class ConfigWriter(object):
                     confFile.write(content)
             logging.info('Restored %s', confFilePath)
 
-    def _devType(self, content):
-        if re.search('^TYPE=Bridge$', content, re.MULTILINE):
-            return "Bridge"
-        elif re.search('^VLAN=yes$', content, re.MULTILINE):
-            return "Vlan"
-        elif re.search('^SLAVE=yes$', content, re.MULTILINE):
-            return "Slave"
-        else:
-            return "Other"
-
-    def _sortDeviceIfcfgs(self, deviceIfcfgs):
-        devdict = {'Bridge': [],
-                   'Vlan': [],
-                   'Slave': [],
-                   'Other': []}
-        for confFile in deviceIfcfgs:
-            if not confFile.startswith(netinfo.NET_CONF_PREF):
-                continue
-            try:
-                with open(confFile) as f:
-                    content = f.read()
-            except IOError as e:
-                if e.errno == os.errno.ENOENT:
-                    continue
-                else:
-                    raise
-            dev = confFile[len(netinfo.NET_CONF_PREF):]
-
-            devdict[self._devType(content)].append(dev)
-
-        return devdict['Other'] + devdict['Vlan'] + devdict['Bridge']
-
-    def _stopDevices(self, deviceIfcfgs):
-        for dev in reversed(deviceIfcfgs):
-            ifdown(dev)
-
-    def _startDevices(self, deviceIfcfgs):
-        for dev in deviceIfcfgs:
-            try:
-                _exec_ifup(dev)
-            except ConfigNetworkError:
-                logging.error('Failed to ifup device %s during rollback.', dev,
-                              exc_info=True)
-
     @classmethod
     def _persistentBackup(cls, filename):
         """ Persistently backup ifcfg-* config files """
@@ -504,12 +460,12 @@ class ConfigWriter(object):
         if not self._backups and not self._networksBackups:
             return
 
-        self._stopDevices(self._sortDeviceIfcfgs(self._backups.iterkeys()))
+        stop_devices(self._backups.iterkeys())
 
         self.restoreAtomicNetworkBackup()
         self.restoreAtomicBackup()
 
-        self._startDevices(self._sortDeviceIfcfgs(self._backups.iterkeys()))
+        start_devices(self._backups.iterkeys())
 
     @classmethod
     def clearBackups(cls):
@@ -737,6 +693,54 @@ class ConfigWriter(object):
         slaves = netinfo.slaves(bonding)
         for slave in slaves:
             self.setIfaceMtu(slave, newmtu)
+
+
+def stop_devices(device_ifcfgs):
+    for dev in reversed(_sort_device_ifcfgs(device_ifcfgs)):
+        ifdown(dev)
+
+
+def start_devices(device_ifcfgs):
+    for dev in _sort_device_ifcfgs(device_ifcfgs):
+        try:
+            _exec_ifup(dev)
+        except ConfigNetworkError:
+            logging.error('Failed to ifup device %s during rollback.', dev,
+                          exc_info=True)
+
+
+def _sort_device_ifcfgs(device_ifcfgs):
+    devices = {'Bridge': [],
+               'Vlan': [],
+               'Slave': [],
+               'Other': []}
+    for conf_file in device_ifcfgs:
+        if not conf_file.startswith(netinfo.NET_CONF_PREF):
+            continue
+        try:
+            with open(conf_file) as f:
+                content = f.read()
+        except IOError as e:
+            if e.errno == os.errno.ENOENT:
+                continue
+            else:
+                raise
+        dev = conf_file[len(netinfo.NET_CONF_PREF):]
+
+        devices[_dev_type(content)].append(dev)
+
+    return devices['Other'] + devices['Vlan'] + devices['Bridge']
+
+
+def _dev_type(content):
+    if re.search('^TYPE=Bridge$', content, re.MULTILINE):
+        return "Bridge"
+    elif re.search('^VLAN=yes$', content, re.MULTILINE):
+        return "Vlan"
+    elif re.search('^SLAVE=yes$', content, re.MULTILINE):
+        return "Slave"
+    else:
+        return "Other"
 
 
 def ifdown(iface):
