@@ -947,7 +947,7 @@ class Vm(object):
         timer = threading.Timer(_DESKTOP_LOCK_TIMEOUT, self._timedDesktopLock)
         timer.start()
 
-    def _rtcUpdate(self, timeOffset):
+    def onRTCUpdate(self, timeOffset):
         newTimeOffset = str(self._initTimeRTC + int(timeOffset))
         self.log.debug('new rtc offset %s', newTimeOffset)
         with self._confLock:
@@ -3478,7 +3478,7 @@ class Vm(object):
                                drive.name, newSizeBytes)
             return errCode['updateDevice']
 
-    def _onWatchdogEvent(self, action):
+    def onWatchdogEvent(self, action):
         def actionToString(action):
             # the following action strings come from the comments of
             # virDomainEventWatchdogAction in include/libvirt/libvirt.h
@@ -3597,7 +3597,7 @@ class Vm(object):
         # no graphics device configured
         return None
 
-    def _onIOError(self, blockDevAlias, err, action):
+    def onIOError(self, blockDevAlias, err, action):
         """
         Called back by IO_ERROR_REASON event
 
@@ -4401,7 +4401,7 @@ class Vm(object):
         """
         pass
 
-    def _onLibvirtLifecycleEvent(self, event, detail, opaque):
+    def onLibvirtLifecycleEvent(self, event, detail, opaque):
         self.log.debug('event %s detail %s opaque %s',
                        eventToString(event), detail, opaque)
         if event == libvirt.VIR_DOMAIN_EVENT_STOPPED:

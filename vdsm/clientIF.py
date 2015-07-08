@@ -567,15 +567,15 @@ class clientIF(object):
 
             if eventid == libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE:
                 event, detail = args[:-1]
-                v._onLibvirtLifecycleEvent(event, detail, None)
+                v.onLibvirtLifecycleEvent(event, detail, None)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_REBOOT:
                 v.onReboot()
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_RTC_CHANGE:
                 utcoffset, = args[:-1]
-                v._rtcUpdate(utcoffset)
+                v.onRTCUpdate(utcoffset)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_IO_ERROR_REASON:
                 srcPath, devAlias, action, reason = args[:-1]
-                v._onIOError(devAlias, reason, action)
+                v.onIOError(devAlias, reason, action)
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_GRAPHICS:
                 phase, localAddr, remoteAddr, authScheme, subject = args[:-1]
                 v.log.debug('graphics event phase '
@@ -588,7 +588,7 @@ class clientIF(object):
                     v.onDisconnect()
             elif eventid == libvirt.VIR_DOMAIN_EVENT_ID_WATCHDOG:
                 action, = args[:-1]
-                v._onWatchdogEvent(action)
+                v.onWatchdogEvent(action)
             else:
                 v.log.warning('unknown eventid %s args %s', eventid, args)
 

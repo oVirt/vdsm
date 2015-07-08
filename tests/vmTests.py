@@ -982,7 +982,7 @@ class TestVmOperations(TestCaseBase):
         lastOffset = 0
         for offset in self.UPDATE_OFFSETS:
             with fake.VM({'timeOffset': lastOffset}) as testvm:
-                testvm._rtcUpdate(offset)
+                testvm.onRTCUpdate(offset)
                 testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
                 vmOffset = testvm.getStats()['timeOffset']
                 self.assertEqual(vmOffset, str(lastOffset + offset))
@@ -995,7 +995,7 @@ class TestVmOperations(TestCaseBase):
         # bz956741 (-like, simpler case)
         with fake.VM() as testvm:
             for offset in self.UPDATE_OFFSETS:
-                testvm._rtcUpdate(offset)
+                testvm.onRTCUpdate(offset)
             # beware of type change!
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
             self.assertEqual(testvm.getStats()['timeOffset'],
@@ -1006,7 +1006,7 @@ class TestVmOperations(TestCaseBase):
     def testTimeOffsetUpdateIfPresent(self, exitCode):
         with fake.VM({'timeOffset': self.BASE_OFFSET}) as testvm:
             for offset in self.UPDATE_OFFSETS:
-                testvm._rtcUpdate(offset)
+                testvm.onRTCUpdate(offset)
             # beware of type change!
             testvm.setDownStatus(exitCode, vmexitreason.GENERIC_ERROR)
             self.assertEqual(testvm.getStats()['timeOffset'],
@@ -1356,16 +1356,16 @@ class TestLibVirtCallbacks(TestCaseBase):
     def test_onIOErrorPause(self):
         with fake.VM(runCpu=True) as testvm:
             self.assertTrue(testvm._guestCpuRunning)
-            testvm._onIOError('fakedev', self.FAKE_ERROR,
-                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
+            testvm.onIOError('fakedev', self.FAKE_ERROR,
+                             libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
             self.assertFalse(testvm._guestCpuRunning)
             self.assertEqual(testvm.conf.get('pauseCode'), self.FAKE_ERROR)
 
     def test_onIOErrorReport(self):
         with fake.VM(runCpu=True) as testvm:
             self.assertTrue(testvm._guestCpuRunning)
-            testvm._onIOError('fakedev', self.FAKE_ERROR,
-                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
+            testvm.onIOError('fakedev', self.FAKE_ERROR,
+                             libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
             self.assertTrue(testvm._guestCpuRunning)
             self.assertNotEquals(testvm.conf.get('pauseCode'), self.FAKE_ERROR)
 
@@ -1373,8 +1373,8 @@ class TestLibVirtCallbacks(TestCaseBase):
         """action not explicitely handled, must be skipped"""
         with fake.VM(runCpu=True) as testvm:
             self.assertTrue(testvm._guestCpuRunning)
-            testvm._onIOError('fakedev', self.FAKE_ERROR,
-                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
+            testvm.onIOError('fakedev', self.FAKE_ERROR,
+                             libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)
             self.assertTrue(testvm._guestCpuRunning)
             self.assertNotIn('pauseCode', testvm.conf)  # no error recorded
 
@@ -1450,7 +1450,7 @@ class TestVmStatusTransitions(TestCaseBase):
             testvm._dom = fake.Domain(domState=libvirt.VIR_DOMAIN_RUNNING)
 
             def _asyncEvent():
-                testvm._onLibvirtLifecycleEvent(
+                testvm.onLibvirtLifecycleEvent(
                     libvirt.VIR_DOMAIN_EVENT_SUSPENDED,
                     -1, -1)
 
