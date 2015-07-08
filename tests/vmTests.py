@@ -1356,7 +1356,7 @@ class TestLibVirtCallbacks(TestCaseBase):
     FAKE_ERROR = 'EFAKERROR'
 
     def test_onIOErrorPause(self):
-        with fake.VM(runCpu=True) as testvm:
+        with fake.VM(_VM_PARAMS, runCpu=True) as testvm:
             self.assertTrue(testvm._guestCpuRunning)
             testvm.onIOError('fakedev', self.FAKE_ERROR,
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE)
@@ -1364,7 +1364,7 @@ class TestLibVirtCallbacks(TestCaseBase):
             self.assertEqual(testvm.conf.get('pauseCode'), self.FAKE_ERROR)
 
     def test_onIOErrorReport(self):
-        with fake.VM(runCpu=True) as testvm:
+        with fake.VM(_VM_PARAMS, runCpu=True) as testvm:
             self.assertTrue(testvm._guestCpuRunning)
             testvm.onIOError('fakedev', self.FAKE_ERROR,
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT)
@@ -1373,7 +1373,7 @@ class TestLibVirtCallbacks(TestCaseBase):
 
     def test_onIOErrorNotSupported(self):
         """action not explicitely handled, must be skipped"""
-        with fake.VM(runCpu=True) as testvm:
+        with fake.VM(_VM_PARAMS, runCpu=True) as testvm:
             self.assertTrue(testvm._guestCpuRunning)
             testvm.onIOError('fakedev', self.FAKE_ERROR,
                              libvirt.VIR_DOMAIN_EVENT_IO_ERROR_NONE)

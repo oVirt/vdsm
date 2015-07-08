@@ -3608,6 +3608,9 @@ class Vm(object):
             if reason == 'ENOSPC':
                 if not self.extendDrivesIfNeeded():
                     self.log.info("No VM drives were extended")
+
+            self._send_ioerror_status_event(reason, blockDevAlias)
+
         elif action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT:
             self.log.info('I/O error %s device %s reported to guest OS',
                           reason, blockDevAlias)
@@ -3615,6 +3618,18 @@ class Vm(object):
             # we do not support and do not expect other values
             self.log.warning('unexpected action %i on device %s error %s',
                              action, blockDevAlias, reason)
+
+    def _send_ioerror_status_event(self, reason, alias):
+        io_error_info = {'alias': alias}
+        try:
+            drive = self._lookupDeviceByAlias(hwclass.DISK, alias)
+        except LookupError:
+            self.log.warning('unknown disk alias: %s', alias)
+        else:
+            io_error_info['name'] = drive.name
+            io_error_info['path'] = drive.path
+
+        self.send_status_event(pauseCode=reason, ioerror=io_error_info)
 
     @property
     def hasSpice(self):
