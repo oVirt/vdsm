@@ -891,6 +891,8 @@ class Vm(object):
             self._guestEvent = vmstatus.REBOOT_IN_PROGRESS
             self._powerDownEvent.set()
             self.saveState()
+            # this always triggers onStatusChange event, which
+            # also sends back status event to Engine.
             self.guestAgent.onReboot()
             if self.conf.get('volatileFloppy'):
                 self._ejectFloppy()
