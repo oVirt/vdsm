@@ -22,7 +22,6 @@ import argparse
 import logging
 import logging.config
 import os
-import sys
 import threading
 import time
 import errno
@@ -41,9 +40,7 @@ from network.configurators import ifcfg
 
 # Unified persistence restoration
 from network.api import setupNetworks, change_numvfs
-from network import configurators
 
-import pkgutil
 
 _ALL_DEVICES_UP_TIMEOUT = 5
 
@@ -307,18 +304,6 @@ def _ifcfg_predicate(link_name, predicate):
             raise
     else:
         return predicate(content)
-
-
-def _get_all_configurators():
-    """Returns the class objects of all the configurators in the netconf pkg"""
-    prefix = configurators.__name__ + '.'
-    for importer, moduleName, isPackage in pkgutil.iter_modules(
-            configurators.__path__, prefix):
-        __import__(moduleName, fromlist="_")
-
-    for cls in configurators.Configurator.__subclasses__():
-        if sys.modules[cls.__module__].is_available():
-            yield cls
 
 
 def _nets_already_restored(nets_restored_mark):
