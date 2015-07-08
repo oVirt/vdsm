@@ -162,6 +162,11 @@ class FakeDomainManifest(sd.StorageDomainManifest):
     def refresh(self):
         pass
 
+    @recorded
+    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+                                   preallocate=None):
+        pass
+
 
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -359,6 +364,7 @@ class DomainTestMixin(object):
         ['hasVolumeLeases', 0],
         ['refreshDirTree', 0],
         ['refresh', 0],
+        ['validateCreateVolumeParams', 3],
         ])
     def test_common_functions(self, fn, nargs):
         self.check_call(fn, nargs)

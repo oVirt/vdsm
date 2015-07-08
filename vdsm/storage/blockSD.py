@@ -787,6 +787,14 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         occupiedSlots.sort(key=itemgetter(0))
         return occupiedSlots
 
+    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
+                                   preallocate=None):
+        super(BlockStorageDomainManifest, self).validateCreateVolumeParams(
+            volFormat, srcVolUUID, preallocate=preallocate)
+        # Sparse-Raw not supported for block volumes
+        if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
+            raise se.IncorrectFormat(volume.type2name(volFormat))
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -960,14 +968,6 @@ class BlockStorageDomain(sd.StorageDomain):
         bsd.initSPMlease()
 
         return bsd
-
-    def validateCreateVolumeParams(self, volFormat, srcVolUUID,
-                                   preallocate=None):
-        super(BlockStorageDomain, self).validateCreateVolumeParams(
-            volFormat, srcVolUUID, preallocate=preallocate)
-        # Sparse-Raw not supported for block volumes
-        if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
-            raise se.IncorrectFormat(volume.type2name(volFormat))
 
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
