@@ -19,6 +19,7 @@
 from contextlib import contextmanager
 from functools import wraps
 import json
+import re
 import netaddr
 import os.path
 
@@ -40,7 +41,7 @@ from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
 
 from network import api, errors, sourceroute, tc
-from network.configurators.ifcfg import Ifcfg
+from network.configurators.ifcfg import Ifcfg, stop_devices
 
 from hookValidation import ValidatesHook
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
@@ -1509,20 +1510,13 @@ class NetworkTest(TestCaseBase):
                  'netmask': IP_MASK, 'bonding': BOND_MISSING},
         }
 
-        def _assert_all_nets_exist(in_running_conf=True):
+        def _assert_all_nets_exist():
             self.vdsm_net.refreshNetinfo()
-            self.assertNetworkExists(
-                NET_UNCHANGED, assert_in_running_conf=in_running_conf)
-            self.assertNetworkExists(
-                NET_CHANGED, assert_in_running_conf=in_running_conf)
-            self.assertNetworkExists(
-                NET_MISSING, assert_in_running_conf=in_running_conf)
-            self.assertBondExists(
-                BOND_UNCHANGED, [nic_a],
-                assert_in_running_conf=in_running_conf)
-            self.assertBondExists(
-                BOND_MISSING, [nic_b],
-                assert_in_running_conf=in_running_conf)
+            self.assertNetworkExists(NET_UNCHANGED)
+            self.assertNetworkExists(NET_CHANGED)
+            self.assertNetworkExists(NET_MISSING)
+            self.assertBondExists(BOND_UNCHANGED, [nic_a])
+            self.assertBondExists(BOND_MISSING, [nic_b])
 
         with dummyIf(2) as nics:
             nic_a, nic_b = nics
@@ -1549,7 +1543,7 @@ class NetworkTest(TestCaseBase):
                 with nonChangingOperstate(NET_UNCHANGED):
                     self.vdsm_net.restoreNetConfig()
 
-                _assert_all_nets_exist(False)
+                _assert_all_nets_exist()
             finally:
                 self.setupNetworks(
                     {NET_UNCHANGED: {'remove': True},
@@ -1563,6 +1557,115 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkDoesntExist(NET_CHANGED)
                 self.assertNetworkDoesntExist(NET_MISSING)
                 self.assertBondDoesntExist(BOND_MISSING, [nic_b])
+                self.assertBondDoesntExist(BOND_UNCHANGED, [nic_a])
+
+    @cleanupNet
+    def testSelectiveRestoreDuringUpgrade(self):
+        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
+            raise SkipTest(
+                "with ifcfg persistence, vdsm-restore-net-config selective"
+                "restoration is not supported")
+
+        BOND_UNCHANGED = 'bond100'
+        BOND_CHANGED = 'bond101'
+        IP_MGMT = '240.0.0.100'
+        NET_MGMT = NETWORK_NAME + '100'
+        NET_UNCHANGED = NETWORK_NAME + '101'
+        NET_CHANGED = NETWORK_NAME + '102'
+        NET_ADDITIONAL = NETWORK_NAME + '103'
+        IP_ADDR_UNCHANGED = '240.0.0.101'
+        IP_ADDR_CHANGED = '204.0.0.102'
+        IP_ADDR_ADDITIONAL = '204.0.0.102'
+        nets = {
+            NET_MGMT:
+                {'bootproto': 'none', 'ipaddr': IP_MGMT,
+                 'netmask': IP_MASK, 'defaultRoute': True},
+            NET_UNCHANGED:
+                {'bootproto': 'none',
+                 'ipaddr': IP_ADDR_UNCHANGED,
+                 'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
+                 'defaultRoute': False},
+            NET_CHANGED:
+                {'bootproto': 'none',
+                 'ipaddr': IP_ADDR_CHANGED,
+                 'netmask': IP_MASK, 'bonding': BOND_CHANGED},
+        }
+        net_additional_attrs = {
+            'bootproto': 'none', 'ipaddr': IP_ADDR_ADDITIONAL,
+            'netmask': IP_MASK}
+
+        def _assert_all_nets_exist():
+            self.vdsm_net.refreshNetinfo()
+            self.assertNetworkExists(NET_MGMT)
+            self.assertNetworkExists(NET_UNCHANGED)
+            self.assertNetworkExists(NET_CHANGED)
+            self.assertBondExists(BOND_UNCHANGED, [nic_b])
+            self.assertBondExists(BOND_CHANGED, [nic_c], options='mode=4')
+
+        def _simulate_boot_after_upgrade():
+            # all non-management devices are down and have ONBOOT=no from older
+            # vdsm versions.
+            device_names = (NET_UNCHANGED, BOND_UNCHANGED, nic_b, NET_CHANGED,
+                            BOND_CHANGED, nic_c)
+            stop_devices((NET_CONF_PREF + name for name in device_names))
+            for dev in device_names:
+                with open(NET_CONF_PREF + dev) as f:
+                    content = f.read()
+                # also test the case that a bond is different from it's
+                # backup
+                content = re.sub('ONBOOT=yes', 'ONBOOT=no', content)
+                if dev == BOND_CHANGED:
+                    content = re.sub('mode=4', 'mode=0', content)
+                with open(NET_CONF_PREF + dev, 'w') as f:
+                    f.write(content)
+            # we don't have running config during boot
+            RunningConfig().delete()
+
+        with dummyIf(4) as nics:
+            nic_a, nic_b, nic_c, nic_d = nics
+            nets[NET_MGMT]['nic'] = nic_a
+            net_additional_attrs['nic'] = nic_d
+            bonds = {BOND_UNCHANGED: {'nics': [nic_b]},
+                     BOND_CHANGED: {'nics': [nic_c], 'options': "mode=4"}
+                     }
+            status, msg = self.setupNetworks(nets, bonds, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            _assert_all_nets_exist()
+            try:
+                self.vdsm_net.save_config()
+
+                _simulate_boot_after_upgrade()
+
+                with nonChangingOperstate(NET_MGMT):
+                    self.vdsm_net.restoreNetConfig()
+
+                status, msg = self.setupNetworks(
+                    {NET_ADDITIONAL: net_additional_attrs}, {}, NOCHK)
+                self.assertEquals(status, SUCCESS, msg)
+                _assert_all_nets_exist()
+                # verify that the running config now has all desired networks
+                self.assertEqual({NET_MGMT, NET_CHANGED, NET_UNCHANGED,
+                                  NET_ADDITIONAL},
+                                 set(self.vdsm_net.config.networks.keys()))
+                self.assertEqual({BOND_CHANGED, BOND_UNCHANGED},
+                                 set(self.vdsm_net.config.bonds.keys()))
+
+            finally:
+                status, msg = self.setupNetworks(
+                    {NET_MGMT: {'remove': True},
+                     NET_UNCHANGED: {'remove': True},
+                     NET_CHANGED: {'remove': True},
+                     NET_ADDITIONAL: {'remove': True}},
+                    {BOND_CHANGED: {'remove': True},
+                     BOND_UNCHANGED: {'remove': True}},
+                    NOCHK)
+                self.assertEquals(status, SUCCESS, msg)
+                self.vdsm_net.save_config()
+                self.assertNetworkDoesntExist(NET_MGMT)
+                self.assertNetworkDoesntExist(NET_UNCHANGED)
+                self.assertNetworkDoesntExist(NET_CHANGED)
+                self.assertNetworkDoesntExist(NET_ADDITIONAL)
+                self.assertBondDoesntExist(BOND_CHANGED, [nic_b])
                 self.assertBondDoesntExist(BOND_UNCHANGED, [nic_a])
 
     @cleanupNet
