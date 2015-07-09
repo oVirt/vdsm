@@ -78,7 +78,7 @@ class HostDevice(core.Base):
             xml.appendChildWithArgs('boot', order=self.bootOrder)
 
         if hasattr(self, 'address'):
-            self._add_source_address(xml, self.address)
+            xml.appendChildWithArgs('address', **self.address)
 
         return xml
 
@@ -108,7 +108,7 @@ class HostDevice(core.Base):
             type=CAPABILITY_TO_XML_ATTR[self._deviceParams['capability']])
         source = hostdev.appendChildWithArgs('source')
 
-        self._add_source_address(source, self.hostAddress)
+        source.appendChildWithArgs('address', **self.hostAddress)
 
         return hostdev
 
@@ -135,7 +135,7 @@ class HostDevice(core.Base):
         interface.setAttrs(managed='no')
         interface.appendChildWithArgs('driver', name='vfio')
         source = interface.appendChildWithArgs('source')
-        self._add_source_address(source, self.hostAddress)
+        source.appendChildWithArgs('address', **self.hostAddress)
 
         if self.macAddr is not None:
             interface.appendChildWithArgs('mac', address=self.macAddr)
@@ -144,6 +144,3 @@ class HostDevice(core.Base):
             vlan.appendChildWithArgs('tag', id=str(self.vlanId))
 
         return interface
-
-    def _add_source_address(self, parent_element, address):
-        parent_element.appendChildWithArgs('address', **address)
