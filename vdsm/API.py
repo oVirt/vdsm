@@ -1451,6 +1451,9 @@ class Global(APIBase):
         return v2v.convert_external_vm(uri, username, password, vminfo, jobid,
                                        self._irs)
 
+    def convertExternalVmFromOva(self, ova_path, vminfo, jobid):
+        return v2v.convert_ova(ova_path, vminfo, jobid, self._cif.irs)
+
     def getConvertedVm(self, jobid):
         return v2v.get_converted_vm(jobid)
 

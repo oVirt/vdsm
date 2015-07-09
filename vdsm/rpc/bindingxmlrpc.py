@@ -381,6 +381,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.convertExternalVm(uri, username, password, vminfo, jobid)
 
+    def convertExternalVmFromOva(self, ova_path, vminfo, jobid):
+        api = API.Global()
+        return api.convertExternalVmFromOva(ova_path, vminfo, jobid)
+
     def getConvertedVm(self, jobid):
         api = API.Global()
         return api.getConvertedVm(jobid)
@@ -1109,6 +1113,7 @@ class BindingXMLRPC(object):
                 (self.getExternalVMs, 'getExternalVMs'),
                 (self.getExternalVmFromOva, 'getExternalVmFromOva'),
                 (self.convertExternalVm, 'convertExternalVm'),
+                (self.convertExternalVmFromOva, 'convertExternalVmFromOva'),
                 (self.getConvertedVm, 'getConvertedVm'),
                 (self.abortV2VJob, 'abortV2VJob'),
                 (self.deleteV2VJob, 'deleteV2VJob'),
