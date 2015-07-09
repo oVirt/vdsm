@@ -310,7 +310,8 @@ def VM(params=None, devices=None, runCpu=False,
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get', Connection),
-                               (vm.Vm, 'send_status_event', lambda x: None)]):
+                               (vm.Vm, 'send_status_event',
+                                   lambda _, **kwargs: None)]):
             vmParams = {'vmId': 'TESTING'}
             vmParams.update({} if params is None else params)
             cif = ClientIF() if cif is None else cif

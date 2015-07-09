@@ -378,7 +378,7 @@ class Vm(object):
                 self.saveState()
                 self._lastStatus = value
 
-    def send_status_event(self):
+    def send_status_event(self, **kwargs):
         vm_status = self._getVmStatus()
         stats = {}
         with self._eventLock:
@@ -399,6 +399,7 @@ class Vm(object):
                     if 'exitReason' in self.conf:
                         stats['exitReason'] = self.conf['exitReason']
 
+                stats.update(kwargs)
         if stats:
             self.log.debug('Last status %s and evaluated status %s',
                            current_status, vm_status)
