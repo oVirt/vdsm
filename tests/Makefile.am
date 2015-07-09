@@ -101,6 +101,7 @@ test_modules = \
 	sslTests.py \
 	stompAdapterTests.py \
 	stompAsyncClientTests.py \
+	stompAsyncDispatcherTests.py \
 	stompTests.py \
 	storageMailboxTests.py \
 	storageMonitorTests.py \
