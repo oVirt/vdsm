@@ -216,6 +216,7 @@ class SourceThread(threading.Thread):
             self._vm.cont()
         # either way, migration has finished
         self._vm.lastStatus = vmstatus.UP
+        self._vm.send_status_event()
 
     def _finishSuccessfully(self):
         self._progress = 100

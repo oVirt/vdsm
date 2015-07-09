@@ -1544,6 +1544,7 @@ class Vm(object):
                 self, **params)
             self._migrationSourceThread.start()
             self._migrationSourceThread.getStat()
+            self.send_status_event()
             return self._migrationSourceThread.status
         finally:
             self._guestCpuLock.release()
