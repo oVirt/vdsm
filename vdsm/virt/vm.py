@@ -1170,10 +1170,12 @@ class Vm(object):
                     del self.conf['pauseCode']
             except KeyError:
                 pass
-            return {'status': doneCode, 'output': ['']}
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
+
+        self.send_status_event()
+        return {'status': doneCode, 'output': ['']}
 
     def pause(self, afterState=vmstatus.PAUSED, guestCpuLocked=False,
               pauseCode='NOERR'):
@@ -1187,10 +1189,12 @@ class Vm(object):
                                      guestCpuLocked=True)
             self._logGuestCpuStatus('pause')
             self._lastStatus = afterState
-            return {'status': doneCode, 'output': ['']}
         finally:
             if not guestCpuLocked:
                 self._guestCpuLock.release()
+
+        self.send_status_event()
+        return {'status': doneCode, 'output': ['']}
 
     def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False):
         """
