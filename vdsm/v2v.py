@@ -173,6 +173,13 @@ def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     return {'status': doneCode}
 
 
+def convert_ova(ova_path, vminfo, job_id, irs):
+    job = ImportVm.from_ova(ova_path, vminfo, job_id, irs)
+    job.start()
+    _add_job(job_id, job)
+    return response.success()
+
+
 def get_ova_info(ova_path):
     ns = {'ovf': _OVF_NS, 'rasd': _RASD_NS}
 
@@ -329,6 +336,9 @@ class ImportVm(object):
         self._password = None
         self._passwd_file = None
         self._create_command = None
+        self._run_command = None
+
+        self._ova_path = None
 
     @classmethod
     def from_libvirt(cls, uri, username, password, vminfo, job_id, irs):
@@ -339,10 +349,20 @@ class ImportVm(object):
         obj._password = password
         obj._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % job_id)
         obj._create_command = obj._from_libvirt_command
+        obj._run_command = obj._run_with_password
+        return obj
+
+    @classmethod
+    def from_ova(cls, ova_path, vminfo, job_id, irs):
+        obj = cls(vminfo, job_id, irs)
+
+        obj._ova_path = ova_path
+        obj._create_command = obj._from_ova_command
+        obj._run_command = obj._run
         return obj
 
     def start(self):
-        t = threading.Thread(target=self._run)
+        t = threading.Thread(target=self._run_command)
         t.daemon = True
         t.start()
 
@@ -369,25 +389,28 @@ class ImportVm(object):
         completed = (self._disk_count - 1) * 100
         return (completed + self._disk_progress) / self._disk_count
 
+    def _run_with_password(self):
+        with password_file(self._id, self._passwd_file, self._password):
+            self._run()
+
     @traceback(msg="Error importing vm")
     def _run(self):
-        with password_file(self._id, self._passwd_file, self._password):
-            try:
-                self._import()
-            except Exception as ex:
-                if self._aborted:
-                    logging.debug("Job %r was aborted", self._id)
-                else:
-                    logging.exception("Job %r failed", self._id)
-                    self._status = STATUS.FAILED
-                    self._description = ex.message
-                    try:
-                        self._abort()
-                    except Exception as e:
-                        logging.exception('Job %r, error trying to abort: %r',
-                                          self._id, e)
-            finally:
-                self._teardown_volumes()
+        try:
+            self._import()
+        except Exception as ex:
+            if self._aborted:
+                logging.debug("Job %r was aborted", self._id)
+            else:
+                logging.exception("Job %r failed", self._id)
+                self._status = STATUS.FAILED
+                self._description = ex.message
+                try:
+                    self._abort()
+                except Exception as e:
+                    logging.exception('Job %r, error trying to abort: %r',
+                                      self._id, e)
+        finally:
+            self._teardown_volumes()
 
     def _import(self):
         # TODO: use the process handling http://gerrit.ovirt.org/#/c/33909/
@@ -463,6 +486,22 @@ class ImportVm(object):
                     '-os',
                     get_storage_domain_path(self._prepared_volumes[0]['path']),
                     self._vminfo['vmName']])
+        return cmd
+
+    def _from_ova_command(self):
+        cmd = [_VIRT_V2V.cmd,
+               '-i', 'ova', self._ova_path,
+               '-o', 'vdsm',
+               '-of', self._get_disk_format(),
+               '-oa', self._vminfo.get('allocation', 'sparse').lower(),
+               '--vdsm-vm-uuid',
+               self._id,
+               '--vdsm-ovf-output',
+               _V2V_DIR,
+               '--machine-readable',
+               '-os',
+               get_storage_domain_path(self._prepared_volumes[0]['path'])]
+        cmd.extend(self._generate_disk_parameters())
         return cmd
 
     def abort(self):
