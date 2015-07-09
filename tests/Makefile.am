@@ -98,6 +98,7 @@ test_modules = \
 	sourceroutingTests.py \
 	sslTests.py \
 	stompAdapterTests.py \
+	stompAsyncClientTests.py \
 	stompTests.py \
 	storageMailboxTests.py \
 	storageMonitorTests.py \
