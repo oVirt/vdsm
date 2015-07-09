@@ -22,16 +22,17 @@
 """
 Usage: fc-scan [-v|-h]
 
-Perform SCSI scan on Fibre Channel scsi_hosts, adding new LUNs. This procedure
-will not remove existing LUNs. Must run as root.
+Perform SCSI scan on Fibre Channel scsi_hosts and devices, adding new LUNs and
+updating sizes of existing devices. This procedure will not remove existing
+LUNs. Must run as root.
 
 Options:
   -v        enable verbose logging
   -h        display this help and exit
 
 Exit codes:
-  0         found fc_hosts scanned successfully
-  1         scaning some hosts failed
+  0         scanned fc_hosts and devices successfully
+  1         scanning some hosts or devices failed
 """
 
 import glob
@@ -49,7 +50,7 @@ class Scan(object):
 
     def __init__(self, host):
         self.host = host
-        self.succeeded = False
+        self._errors = 0
         self.thread = None
 
     def start(self):
@@ -60,7 +61,18 @@ class Scan(object):
     def wait(self):
         self.thread.join()
 
+    @property
+    def succeeded(self):
+        return self._errors == 0
+
     def run(self):
+        self._rescan_host()
+        self._rescan_devices()
+
+    def _rescan_host(self):
+        """
+        Scans the host in order to detect new devices
+        """
         try:
             path = "/sys/class/scsi_host/%s/scan" % self.host
             log.debug("Scanning %s", path)
@@ -70,11 +82,41 @@ class Scan(object):
                     os.write(fd, "- - -")
                 finally:
                     os.close(fd)
-            self.succeeded = True
         except OSError as e:
+            self._errors += 1
             log.error("Scanning %s failed: %s", path, e)
         except Exception:
+            self._errors += 1
             log.exception("Scanning %s failed", path)
+
+    def _rescan_devices(self):
+        """
+        Scans host's devices in order to detect changes in devices size
+        """
+        for device_path in self._find_host_devices():
+            rescan_path = os.path.join(device_path, "../../rescan")
+            path = os.path.normpath(rescan_path)
+            try:
+                log.debug("Rescanning device %s", path)
+                with utils.stopwatch("Rescanned device %s" % path, log=log):
+                    fd = os.open(path, os.O_WRONLY)
+                    try:
+                        os.write(fd, "1")
+                    finally:
+                        os.close(fd)
+            except OSError as e:
+                self._errors += 1
+                log.error("Rescanning %s failed: %s", path, e)
+            except Exception:
+                self._errors += 1
+                log.exception("Rescanning %s failed", path)
+
+    def _find_host_devices(self):
+        host_path = os.path.realpath("/sys/class/fc_host/%s/../.." % self.host)
+        for device_path in glob.iglob("/sys/class/scsi_device/*"):
+            real_device_path = os.path.realpath(device_path)
+            if real_device_path.startswith(host_path):
+                yield real_device_path
 
 
 def main(args):
