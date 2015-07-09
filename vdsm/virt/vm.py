@@ -386,8 +386,6 @@ class Vm(object):
                 self._evaluatedStatus = vm_status
                 current_status = self.lastStatus
                 stats['status'] = vm_status
-                stats['hash'] = str(hash((self._domain.devices_hash,
-                                    self.guestAgent.diskMappingHash)))
 
                 stats.update(kwargs)
         if stats:
