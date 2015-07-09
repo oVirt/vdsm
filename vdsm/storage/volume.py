@@ -548,17 +548,24 @@ class Volume(object):
         """
         Extend the size (virtual disk size seen by the guest) of the volume.
         """
-        if not self.isLeaf() or self.isShared():
+        if self.isShared():
             raise se.VolumeNonWritable(self.volUUID)
 
         volFormat = self.getFormat()
-
         if volFormat == COW_FORMAT:
             self.log.debug("skipping cow size extension for volume %s to "
                            "size %s", self.volUUID, newSize)
             return
         elif volFormat != RAW_FORMAT:
             raise se.IncorrectFormat(self.volUUID)
+
+        # Note: This function previously prohibited extending non-leaf volumes.
+        # If a disk is enlarged a volume may become larger than its parent.  In
+        # order to support live merge of a larger volume into its raw parent we
+        # must permit extension of this raw volume prior to starting the merge.
+        isBase = self.getParent() == BLANK_UUID
+        if not (isBase or self.isLeaf()):
+            raise se.VolumeNonWritable(self.volUUID)
 
         curRawSize = self.getVolumeSize()
 
