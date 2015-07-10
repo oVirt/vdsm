@@ -303,8 +303,6 @@ class Vm(object):
             self._lastStatus = vmstatus.RESTORING_STATE
         else:
             self._lastStatus = vmstatus.WAIT_FOR_LAUNCH
-        self._evaluatedStatus = None
-        self._eventLock = threading.Lock()
         self._migrationSourceThread = migration.SourceThread(self)
         self._kvmEnable = self.conf.get('kvmEnable', 'true')
         self._incomingMigrationFinished = threading.Event()
@@ -379,19 +377,9 @@ class Vm(object):
                 self._lastStatus = value
 
     def send_status_event(self, **kwargs):
-        vm_status = self._getVmStatus()
-        stats = {}
-        with self._eventLock:
-            if vm_status != self._evaluatedStatus:
-                self._evaluatedStatus = vm_status
-                current_status = self.lastStatus
-                stats['status'] = vm_status
-
-                stats.update(kwargs)
-        if stats:
-            self.log.debug('Last status %s and evaluated status %s',
-                           current_status, vm_status)
-            self._notify('VM_status', stats)
+        stats = {'status': self._getVmStatus()}
+        stats.update(kwargs)
+        self._notify('VM_status', stats)
 
     def _notify(self, operation, params):
         sub_id = '|virt|%s|%s' % (operation, self.id)
