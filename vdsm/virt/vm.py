@@ -385,7 +385,7 @@ class Vm(object):
             if vm_status != self._evaluatedStatus:
                 self._evaluatedStatus = vm_status
                 current_status = self.lastStatus
-                stats['status'] = vm_status,
+                stats['status'] = vm_status
                 stats['hash'] = str(hash((self._domain.devices_hash,
                                     self.guestAgent.diskMappingHash)))
 
