@@ -413,7 +413,7 @@ class ResourceManager(object):
         with self._syncRoot.exclusive:
             if (namespace in self._namespaces):
                 if force:
-                    self.unregisterNamespace(namespace)
+                    self._unregisterNamespaceLocked(namespace)
                 else:
                     raise KeyError("Namespace '%s' already exists." %
                                    namespace)
@@ -427,15 +427,22 @@ class ResourceManager(object):
             if namespace not in self._namespaces:
                 raise KeyError("Namespace '%s' doesn't exist" % namespace)
 
-            self._log.debug("Unregistering namespace '%s'", namespace)
-            namespaceObj = self._namespaces[namespace]
-            with namespaceObj.lock:
-                if len(namespaceObj.resources) > 0:
-                    raise ResourceManagerError("Cannot unregister Resource "
-                                               "Factory '%s'. It has active "
-                                               "resources." % (namespace))
+            self._unregisterNamespaceLocked(namespace)
 
-                del self._namespaces[namespace]
+    def _unregisterNamespaceLocked(self, namespace):
+        """
+        Must be called when holding self._syncRoot.exclusive, and namespace
+        exists in self._namespaces.
+        """
+        self._log.debug("Unregistering namespace '%s'", namespace)
+        namespaceObj = self._namespaces[namespace]
+        with namespaceObj.lock:
+            if len(namespaceObj.resources) > 0:
+                raise ResourceManagerError("Cannot unregister Resource "
+                                           "Factory '%s'. It has active "
+                                           "resources." % (namespace))
+
+            del self._namespaces[namespace]
 
     def getResourceStatus(self, namespace, name):
         if not self._resourceNameValidator.match(name):
