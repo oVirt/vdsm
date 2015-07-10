@@ -32,6 +32,7 @@ from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
 from vdsm import utils
 from vdsm.storage import exception as se
+from vdsm.storage import rwlock
 
 
 # Errors
@@ -289,7 +290,7 @@ class ResourceRef(object):
 
         self.autoRelease = True
         self._isValid = True
-        self._syncRoot = misc.RWLock()
+        self._syncRoot = rwlock.RWLock()
 
     def __wrapObj(self):
         for attr in dir(self.__wrappedObject):
@@ -384,11 +385,11 @@ class ResourceManager(object):
         """
         def __init__(self, factory):
             self.resources = {}
-            self.lock = threading.Lock()  # misc.RWLock()
+            self.lock = threading.Lock()  # rwlock.RWLock()
             self.factory = factory
 
     def __init__(self):
-        self._syncRoot = misc.RWLock()
+        self._syncRoot = rwlock.RWLock()
         self._namespaces = {}
 
     @classmethod

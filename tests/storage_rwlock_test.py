@@ -29,19 +29,13 @@ from testlib import start_thread, LockingThread
 
 from vdsm import utils
 from vdsm.concurrent import Barrier
-
-# Temporary import of both implementations, to make sure that the test pass
-# with both before we drop the old one and use the new.
-from storage.misc import RWLock as OldRWLock
-from vdsm.storage.rwlock import RWLock as NewRWLock
+from vdsm.storage.rwlock import RWLock
 
 
-@expandPermutations
 class RWLockTests(VdsmTestCase):
 
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_concurrent_readers(self, lock_class):
-        lock = lock_class()
+    def test_concurrent_readers(self):
+        lock = RWLock()
         readers = []
         try:
             for i in range(5):
@@ -55,9 +49,8 @@ class RWLockTests(VdsmTestCase):
                 t.stop()
 
     @slowtest
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_wakeup_blocked_writer(self, lock_class):
-        lock = lock_class()
+    def test_wakeup_blocked_writer(self):
+        lock = RWLock()
         reader = LockingThread(lock.shared)
         with utils.running(reader):
             if not reader.acquired.wait(2):
@@ -71,9 +64,8 @@ class RWLockTests(VdsmTestCase):
                 self.assertTrue(writer.acquired.wait(2))
 
     @slowtest
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_wakeup_blocked_reader(self, lock_class):
-        lock = lock_class()
+    def test_wakeup_blocked_reader(self):
+        lock = RWLock()
         writer = LockingThread(lock.exclusive)
         with utils.running(writer):
             if not writer.acquired.wait(2):
@@ -87,9 +79,8 @@ class RWLockTests(VdsmTestCase):
                 self.assertTrue(reader.acquired.wait(2))
 
     @slowtest
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_wakeup_all_blocked_readers(self, lock_class):
-        lock = lock_class()
+    def test_wakeup_all_blocked_readers(self):
+        lock = RWLock()
         readers = 10
         ready = Barrier(readers + 1)
         done = Barrier(readers + 1)
@@ -119,18 +110,16 @@ class RWLockTests(VdsmTestCase):
             for t in threads:
                 t.join()
 
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_release_other_thread_write_lock(self, lock_class):
-        lock = lock_class()
+    def test_release_other_thread_write_lock(self):
+        lock = RWLock()
         writer = LockingThread(lock.exclusive)
         with utils.running(writer):
             if not writer.acquired.wait(2):
                 raise RuntimeError("Timeout waiting for writer thread")
             self.assertRaises(RuntimeError, lock.release)
 
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_release_other_thread_read_lock(self, lock_class):
-        lock = lock_class()
+    def test_release_other_thread_read_lock(self):
+        lock = RWLock()
         reader = LockingThread(lock.shared)
         with utils.running(reader):
             if not reader.acquired.wait(2):
@@ -138,9 +127,8 @@ class RWLockTests(VdsmTestCase):
             self.assertRaises(RuntimeError, lock.release)
 
     @slowtest
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_fifo(self, lock_class):
-        lock = lock_class()
+    def test_fifo(self):
+        lock = RWLock()
         threads = []
         try:
             with lock.shared:
@@ -167,9 +155,8 @@ class RWLockTests(VdsmTestCase):
                 t.stop()
 
     @slowtest
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_shared_context_blocks_writer(self, lock_class):
-        lock = lock_class()
+    def test_shared_context_blocks_writer(self):
+        lock = RWLock()
         writer = LockingThread(lock.exclusive)
         try:
             with lock.shared:
@@ -181,18 +168,16 @@ class RWLockTests(VdsmTestCase):
         finally:
             writer.stop()
 
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_shared_context_allows_reader(self, lock_class):
-        lock = lock_class()
+    def test_shared_context_allows_reader(self):
+        lock = RWLock()
         with lock.shared:
             reader = LockingThread(lock.shared)
             with utils.running(reader):
                 self.assertTrue(reader.acquired.wait(1))
 
     @slowtest
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_exclusive_context_blocks_writer(self, lock_class):
-        lock = lock_class()
+    def test_exclusive_context_blocks_writer(self):
+        lock = RWLock()
         writer = LockingThread(lock.exclusive)
         try:
             with lock.exclusive:
@@ -205,9 +190,8 @@ class RWLockTests(VdsmTestCase):
             writer.stop()
 
     @slowtest
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_exclusive_context_blocks_reader(self, lock_class):
-        lock = lock_class()
+    def test_exclusive_context_blocks_reader(self):
+        lock = RWLock()
         reader = LockingThread(lock.shared)
         try:
             with lock.exclusive:
@@ -219,53 +203,37 @@ class RWLockTests(VdsmTestCase):
         finally:
             reader.stop()
 
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_recursive_write_lock(self, lock_class):
-        lock = lock_class()
+    def test_recursive_write_lock(self):
+        lock = RWLock()
         with lock.exclusive:
             with lock.exclusive:
                 pass
 
-    @permutations([[OldRWLock], [NewRWLock]])
-    def test_recursive_read_lock(self, lock_class):
-        lock = lock_class()
+    def test_recursive_read_lock(self):
+        lock = RWLock()
         with lock.shared:
             with lock.shared:
                 pass
 
     def test_demotion_forbidden(self):
         # This was allowed in older implementation, but was broken.
-        lock = NewRWLock()
+        lock = RWLock()
         with lock.exclusive:
             self.assertRaises(RuntimeError, lock.acquire_read)
 
-    def test_promotion_forbidden_new(self):
-        lock = NewRWLock()
+    def test_promotion_forbidden(self):
+        lock = RWLock()
         with lock.shared:
             self.assertRaises(RuntimeError, lock.acquire_write)
-
-    def test_promotion_forbidden_old(self):
-        lock = OldRWLock()
-        with lock.shared:
-            self.assertRaises(RuntimeError, lock.acquireWrite)
 
 
 @expandPermutations
 class RWLockStressTests(VdsmTestCase):
 
     @stresstest
-    @permutations([
-        (1, 2, OldRWLock),
-        (1, 2, NewRWLock),
-        (2, 8, OldRWLock),
-        (2, 8, NewRWLock),
-        (3, 32, OldRWLock),
-        (3, 32, NewRWLock),
-        (4, 128, OldRWLock),
-        (4, 128, NewRWLock),
-    ])
-    def test_lock_contention(self, writers, readers, lock_class):
-        lock = lock_class()
+    @permutations([(1, 2), (2, 8), (3, 32), (4, 128)])
+    def test_lock_contention(self, writers, readers):
+        lock = RWLock()
         ready = Barrier(writers + readers + 1)
         done = threading.Event()
         reads = [0] * readers
@@ -310,26 +278,9 @@ class RWLockStressTests(VdsmTestCase):
               % (avg_reads, med_reads, min_reads, max_reads))
 
     @stresstest
-    @permutations([
-        (1, OldRWLock),
-        (1, NewRWLock),
-        (2, OldRWLock),
-        (2, NewRWLock),
-        (4, OldRWLock),
-        (4, NewRWLock),
-        (8, OldRWLock),
-        (8, NewRWLock),
-        (16, OldRWLock),
-        (16, NewRWLock),
-        (32, OldRWLock),
-        (32, NewRWLock),
-        (64, OldRWLock),
-        (64, NewRWLock),
-        (128, OldRWLock),
-        (128, NewRWLock),
-    ])
-    def test_readers(self, readers, lock_class):
-        lock = lock_class()
+    @permutations([(1,), (2,), (4,), (8,), (16,), (32,), (64,), (128,)])
+    def test_readers(self, readers):
+        lock = RWLock()
         ready = Barrier(readers + 1)
         done = threading.Event()
         reads = [0] * readers
