@@ -336,18 +336,12 @@ class AssertingLock(object):
 
 
 class VdsmTestRunner(core.TextTestRunner):
-    def __init__(self, *args, **kwargs):
-        core.TextTestRunner.__init__(self, *args, **kwargs)
 
     def _makeResult(self):
         return VdsmTestResult(self.stream,
                               self.descriptions,
                               self.verbosity,
                               self.config)
-
-    def run(self, test):
-        result_ = core.TextTestRunner.run(self, test)
-        return result_
 
 
 def run():
