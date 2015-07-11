@@ -66,12 +66,6 @@ def _getPermutation(f, args):
     return wrapper
 
 
-def _getFuncArgStr(f, args):
-    # [1:] Skips self
-    argNames = f.__code__.co_varnames[1:]
-    return ", ".join("%s=%r" % arg for arg in zip(argNames, args))
-
-
 def expandPermutations(cls):
     for attr in dir(cls):
         f = getattr(cls, attr)
@@ -80,9 +74,8 @@ def expandPermutations(cls):
 
         perm = getattr(f, PERMUTATION_ATTR)
         for args in perm:
-            argStr = _getFuncArgStr(f, args)
-
-            permName = "%s(%s)" % (f.__name__, argStr)
+            argsString = ", ".join(repr(s) for s in args)
+            permName = "%s(%s)" % (f.__name__, argsString)
             wrapper = _getPermutation(f, args)
             wrapper.__name__ = permName
 
