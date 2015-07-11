@@ -249,9 +249,6 @@ class VdsmTestResult(result.TextTestResult):
         result.TextTestResult.__init__(self, *args, **kwargs)
         self._last_case = None
 
-    def getDescription(self, test):
-        return str(test)
-
     def _writeResult(self, test, long_result, color, short_result, success):
         if self.showAll:
             colorWrite(self.stream, long_result, color)
