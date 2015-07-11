@@ -296,7 +296,8 @@ class VdsmTestResult(result.TextTestResult):
 
     def startTest(self, test):
         unittest.TestResult.startTest(self, test)
-        current_case = test.test.__class__.__name__
+        current_case = "%s.%s" % (test.test.__module__,
+                                  test.test.__class__.__name__)
 
         if self.showAll:
             if current_case != self._last_case:
