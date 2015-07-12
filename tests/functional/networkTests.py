@@ -1493,7 +1493,28 @@ class NetworkTest(TestCaseBase):
             self.assertEquals(status, SUCCESS, msg)
 
             self.vdsm_net.save_config()
-
+    
+    @cleanupNet
+    @RequireDummyMod
+    @ValidateRunningAsRoot
+    def testRemovingBridgeDoesNotLeaveBridge(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: {'nic': nic, 'STP': 'no', 'bridged': 'true',
+                                'mtu': 1500}}, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            bridge = ipwrapper.getLink(NETWORK_NAME)
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: {'nic': nic, 'bridged': 'false', 'mtu': 1500}},
+                {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            self.assertNotIn(
+                bridge.name, (l.name for l in ipwrapper.getLinks()))
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+    
     @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
