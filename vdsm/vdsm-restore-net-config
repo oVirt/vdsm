@@ -133,7 +133,11 @@ def _verify_all_devices_are_up(owned_ifcfg_files):
     """
     for ifcfg_file in owned_ifcfg_files:
         _upgrade_onboot(ifcfg_file)
-    ifcfg.start_devices(owned_ifcfg_files)
+    down_links = _get_links_with_state_down(
+        [os.path.basename(name) for name in owned_ifcfg_files])
+    if down_links:
+        logging.debug("Some of the devices are down (%s).", down_links)
+        ifcfg.start_devices(owned_ifcfg_files)
 
 
 def _upgrade_onboot(ifcfg_file):
