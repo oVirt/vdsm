@@ -24,7 +24,9 @@ Some tests are too slow to run on each build. these are marked in the source
 with the @slowtest decorator and are disabled by default.
 
 To enable slow tests:
-     NOSE_SLOW_TESTS=1 ./run_tests_local.sh filenme [...]
+     ./run_tests_local.sh --enable-slow-tests filenme [...]
+
+Slow tests are also enabled if NOSE_SLOW_TESTS environment variable is set.
 
 Enabling stress tests:
 ---------------------
@@ -35,7 +37,9 @@ running tests in parrallel. These tests are marked in the source with the
 @stresstest decorator and are disabled by default.
 
 To enable stress tests:
-     NOSE_STRESS_TESTS=1 ./run_tests_local.sh filename [...]
+     ./run_tests_local.sh --enable-stress-tests filename [...]
+
+Stress tests are also enabled if NOSE_STRESS_TESTS environment variable is set.
 
 Functional test suite:
 ----------------------
