@@ -202,7 +202,7 @@ parameters = [
         ('transient_disks_repository', '@VDSMLIBDIR@/transient',
             'Local path to the transient disks repository.'),
 
-        ('ssl_protocol', 'sslv23',
+        ('ssl_protocol', 'tlsv1',
             'SSL protocol used by encrypted connection'),
 
         ('connection_stats_timeout', '3600',
