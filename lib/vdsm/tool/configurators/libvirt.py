@@ -125,16 +125,19 @@ def _isSslConflict():
     lconf_p = ParserWrapper({
         'listen_tcp': '0',
         'auth_tcp': 'sasl',
+        'listen_tls': '1',
     })
     lconf_p.read(_getFile('LCONF'))
     listen_tcp = lconf_p.getint('listen_tcp')
     auth_tcp = lconf_p.get('auth_tcp')
+    listen_tls = lconf_p.getint('listen_tls')
     qconf_p = ParserWrapper({'spice_tls': '0'})
     qconf_p.read(_getFile('QCONF'))
     spice_tls = qconf_p.getboolean('spice_tls')
     ret = True
     if ssl:
-        if listen_tcp != 1 and auth_tcp != '"none"' and spice_tls != 0:
+        if listen_tls != 0 and listen_tcp != 1 and auth_tcp != '"none"' and \
+                spice_tls != 0:
             sys.stdout.write(
                 "SUCCESS: ssl configured to true. No conflicts\n")
         else:
@@ -143,12 +146,13 @@ def _isSslConflict():
                 "conflicting vdsm and libvirt-qemu tls configuration.\n"
                 "vdsm.conf with ssl=True "
                 "requires the following changes:\n"
-                "libvirtd.conf: listen_tcp=0, auth_tcp=\"sasl\", \n"
-                "qemu.conf: spice_tls=1.\n"
+                "libvirtd.conf: listen_tcp=0, auth_tcp=\"sasl\", "
+                "listen_tls=1\nqemu.conf: spice_tls=1.\n"
             )
             ret = False
     else:
-        if listen_tcp == 1 and auth_tcp == '"none"' and spice_tls == 0:
+        if listen_tls == 0 and listen_tcp == 1 and auth_tcp == '"none"' and \
+                spice_tls == 0:
             sys.stdout.write(
                 "SUCCESS: ssl configured to false. No conflicts.\n")
         else:
@@ -157,8 +161,8 @@ def _isSslConflict():
                 "conflicting vdsm and libvirt-qemu tls configuration.\n"
                 "vdsm.conf with ssl=False "
                 "requires the following changes:\n"
-                "libvirtd.conf: listen_tcp=1, auth_tcp=\"none\", \n"
-                "qemu.conf: spice_tls=0.\n"
+                "libvirtd.conf: listen_tcp=1, auth_tcp=\"none\", "
+                "listen_tls=0\n qemu.conf: spice_tls=0.\n"
             )
             ret = False
     return ret
