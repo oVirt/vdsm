@@ -1448,6 +1448,14 @@ class NetworkTest(TestCaseBase):
     @RequireVethMod
     @ValidateRunningAsRoot
     def testRestoreToBlockingDHCP(self):
+        """test that regardless of what is written in the unified persistence,
+        restoration of bootprot=dhcp networks is down synchronously. with
+        ifcfg persistence, this is what happens thanks to initscripts,
+        regardless of vdsm. Hence, this test is irrelevant there. """
+        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
+            raise SkipTest(
+                "with ifcfg persistence, this test is irelevant")
+
         def _get_blocking_dhcp(net_name):
             self.vdsm_net.refreshNetinfo()
             return self.vdsm_net.config.networks[net_name].get('blockingdhcp')
