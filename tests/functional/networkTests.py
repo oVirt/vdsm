@@ -30,7 +30,7 @@ from testrunner import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                         expandPermutations, permutations)
 from testValidation import (brokentest, RequireDummyMod, RequireVethMod,
                             ValidateRunningAsRoot)
-from vdsm.ipwrapper import linkDel, linkSet
+from vdsm.ipwrapper import linkSet
 from vdsm.netconfpersistence import KernelConfig, RunningConfig
 import dhcp
 import dummy
@@ -1584,7 +1584,8 @@ class NetworkTest(TestCaseBase):
                 addrFlush(NET_CHANGED)
                 linkSet(NET_MISSING, ['down'])
                 execCmd([EXT_BRCTL, 'delbr', NET_MISSING])
-                linkDel(BOND_MISSING)
+                with open('/sys/class/net/bonding_masters', 'w') as masters:
+                    masters.write('-%s' % BOND_MISSING)
                 self.vdsm_net.refreshNetinfo()
                 self.assertEqual(
                     self.vdsm_net.netinfo.networks[NET_CHANGED]['addr'], '')
