@@ -6069,6 +6069,14 @@ class Vm(object):
             if dev['type'] == BALLOON_DEVICES:
                 yield dev
 
+    def _getVolumeInfo(self, domainID, poolID, imageID, volumeID):
+        res = self.cif.irs.getVolumeInfo(domainID, poolID, imageID, volumeID)
+        if res['status']['code'] != 0:
+            raise StorageUnavailableError(
+                "Unable to get volume info for domain %s volume %s" %
+                (domainID, volumeID))
+        return res['info']
+
 
 class LiveMergeCleanupThread(threading.Thread):
     def __init__(self, vm, jobId, drive, doPivot):
