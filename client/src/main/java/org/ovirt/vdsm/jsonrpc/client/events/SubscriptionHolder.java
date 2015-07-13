@@ -47,7 +47,7 @@ public class SubscriptionHolder {
      * @return subscription id as complete string e.q. <receiver>.<component>.<operation_id>.<unique_id>
      */
     public String getId() {
-        return this.subscriber.getSubsctibtionId();
+        return this.subscriber.getSubscriptionId();
     }
 
     /**

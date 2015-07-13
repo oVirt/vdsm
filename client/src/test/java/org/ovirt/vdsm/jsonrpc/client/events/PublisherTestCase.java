@@ -34,7 +34,7 @@ public class PublisherTestCase {
         setField(publisher, "decomposer", decomposer);
 
         EventSubscriber subscriber = mock(EventSubscriber.class);
-        when(subscriber.getSubsctibtionId()).thenReturn("*|*|*|uuid");
+        when(subscriber.getSubscriptionId()).thenReturn("*|*|*|uuid");
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
 
         publisher.subscribe(subscriber);
@@ -66,7 +66,7 @@ public class PublisherTestCase {
         setField(publisher, "decomposer", decomposer);
 
         EventSubscriber subscriber = mock(EventSubscriber.class);
-        when(subscriber.getSubsctibtionId()).thenReturn("*|*|test|*");
+        when(subscriber.getSubscriptionId()).thenReturn("*|*|test|*");
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
 
         publisher.subscribe(subscriber);
@@ -97,7 +97,7 @@ public class PublisherTestCase {
         setField(publisher, "decomposer", decomposer);
 
         EventSubscriber subscriber = mock(EventSubscriber.class);
-        when(subscriber.getSubsctibtionId()).thenReturn("*|*|test|*");
+        when(subscriber.getSubscriptionId()).thenReturn("*|*|test|*");
         ArgumentCaptor<Subscription> captor = ArgumentCaptor.forClass(Subscription.class);
 
         publisher.subscribe(subscriber);

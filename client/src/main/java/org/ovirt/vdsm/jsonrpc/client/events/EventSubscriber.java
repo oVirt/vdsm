@@ -12,13 +12,13 @@ import org.reactivestreams.Subscription;
  */
 public abstract class EventSubscriber implements Subscriber<Map<String, Object>> {
 
-    private String subsctibtionId;
+    private String subscriptionId;
 
     /**
-     * @param subsctibtionId subscription id which is used to match an event to subscription.
+     * @param subscriptionId subscription id which is used to match an event to subscription.
      */
-    public EventSubscriber(String subsctibtionId) {
-        this.subsctibtionId = subsctibtionId;
+    public EventSubscriber(String subscriptionId) {
+        this.subscriptionId = subscriptionId;
     }
 
     /*
@@ -49,7 +49,7 @@ public abstract class EventSubscriber implements Subscriber<Map<String, Object>>
     /**
      * @return subscription id which is used to match incoming events.
      */
-    public String getSubsctibtionId() {
-        return this.subsctibtionId;
+    public String getSubscriptionId() {
+        return this.subscriptionId;
     }
 }

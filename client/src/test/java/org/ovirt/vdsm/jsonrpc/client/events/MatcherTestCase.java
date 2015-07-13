@@ -162,11 +162,11 @@ public class MatcherTestCase {
     @Test
     public void testMixedSubscription() {
         EventSubscriber subscriber = mock(EventSubscriber.class);
-        when(subscriber.getSubsctibtionId()).thenReturn("*|testcase|*|uuid");
+        when(subscriber.getSubscriptionId()).thenReturn("*|testcase|*|uuid");
         SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
 
         EventSubscriber differentSubscriber = mock(EventSubscriber.class);
-        when(differentSubscriber.getSubsctibtionId()).thenReturn("*|testcase|test|*");
+        when(differentSubscriber.getSubscriptionId()).thenReturn("*|testcase|test|*");
         SubscriptionHolder differentHolder = new SubscriptionHolder(differentSubscriber, new AtomicInteger());
 
         SubscriptionMatcher matcher = new SubscriptionMatcher();
@@ -183,11 +183,11 @@ public class MatcherTestCase {
     @Test
     public void testReceiverSubscription() {
         EventSubscriber subscriber = mock(EventSubscriber.class);
-        when(subscriber.getSubsctibtionId()).thenReturn("localhost|testcase|*|uuid");
+        when(subscriber.getSubscriptionId()).thenReturn("localhost|testcase|*|uuid");
         SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
 
         EventSubscriber differentSubscriber = mock(EventSubscriber.class);
-        when(differentSubscriber.getSubsctibtionId()).thenReturn("remote|*|test|*");
+        when(differentSubscriber.getSubscriptionId()).thenReturn("remote|*|test|*");
         SubscriptionHolder differentHolder = new SubscriptionHolder(differentSubscriber, new AtomicInteger());
 
         SubscriptionMatcher matcher = new SubscriptionMatcher();
@@ -210,11 +210,11 @@ public class MatcherTestCase {
     @Test
     public void testReceiverWithComponentAndOperationSubscription() {
         EventSubscriber subscriber = mock(EventSubscriber.class);
-        when(subscriber.getSubsctibtionId()).thenReturn("localhost|*|VM_status|*");
+        when(subscriber.getSubscriptionId()).thenReturn("localhost|*|VM_status|*");
         SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
 
         EventSubscriber differentSubscriber = mock(EventSubscriber.class);
-        when(differentSubscriber.getSubsctibtionId()).thenReturn("remote|*|VM_status|*");
+        when(differentSubscriber.getSubscriptionId()).thenReturn("remote|*|VM_status|*");
         SubscriptionHolder differentHolder = new SubscriptionHolder(differentSubscriber, new AtomicInteger());
 
         SubscriptionMatcher matcher = new SubscriptionMatcher();
@@ -237,7 +237,7 @@ public class MatcherTestCase {
     @Test
     public void testReceiverOnlySubscription() {
         EventSubscriber subscriber = mock(EventSubscriber.class);
-        when(subscriber.getSubsctibtionId()).thenReturn("localhost|*|VM.list|*");
+        when(subscriber.getSubscriptionId()).thenReturn("localhost|*|VM.list|*");
         SubscriptionHolder holder = new SubscriptionHolder(subscriber, new AtomicInteger());
 
         SubscriptionMatcher matcher = new SubscriptionMatcher();
