@@ -104,8 +104,7 @@ def _verify_all_devices_are_up(owned_ifcfg_files):
 def _upgrade_onboot(ifcfg_file):
     with open(ifcfg_file) as f:
         old_content = f.read()
-    new_content = re.sub('^ONBOOT=no$', 'ONBOOT=yes', old_content,
-                         flags=re.MULTILINE)
+    new_content = re.sub('ONBOOT=no', 'ONBOOT=yes', old_content)
     if new_content != old_content:
         logging.debug("updating %s to ONBOOT=yes", ifcfg_file)
         with open(ifcfg_file, 'w') as f:
