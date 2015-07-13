@@ -111,6 +111,16 @@ class StoragePool(object):
         return self._backend.getSpmStatus()
 
     @unsecured
+    def validateSPM(self):
+        if self.spmRole != SPM_ACQUIRED:
+            raise se.SpmStatusError(self.spUUID)
+
+    @unsecured
+    def validateNotSPM(self):
+        if self.spmRole != SPM_FREE:
+            raise se.IsSpm(self.spUUID)
+
+    @unsecured
     def setBackend(self, backend):
         self.log.info('updating pool %s backend from type %s instance 0x%x '
                       'to type %s instance 0x%x', self.spUUID,

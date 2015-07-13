@@ -310,16 +310,6 @@ class HSM(object):
         except se.StorageDomainDoesNotExist:
             pass
 
-    def validateSPM(self, spUUID):
-        pool = self.getPool(spUUID)
-        if pool.spmRole != sp.SPM_ACQUIRED:
-            raise se.SpmStatusError(spUUID)
-
-    def validateNotSPM(self, spUUID):
-        pool = self.getPool(spUUID)
-        if pool.spmRole != sp.SPM_FREE:
-            raise se.IsSpm(spUUID)
-
     @classmethod
     def getPool(cls, spUUID):
         if spUUID not in cls.pools:
@@ -561,15 +551,14 @@ class HSM(object):
 
         # This code is repeated twice for performance reasons
         # Avoid waiting for the lock for validate.
-        self.getPool(spUUID)
-        self.validateNotSPM(spUUID)
+        self.getPool(spUUID).validateNotSPM()
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         # We should actually just return true if we are SPM after lock,
         # but seeing as it would break the API with Engine,
         # it's easiest to fail.
-        self.validateNotSPM(spUUID)
+        pool.validateNotSPM()
         self._hsmSchedule("spmStart", pool.startSpm, prevID, prevLVER,
                           maxHostID, domVersion)
 
@@ -865,8 +854,8 @@ class HSM(object):
                 pool.hsmMailer.sendExtendMsg(volDict, newSize, callbackFunc)
 
     def _spmSchedule(self, spUUID, name, func, *args):
-        self.validateSPM(spUUID)
         pool = self.getPool(spUUID)
+        pool.validateSPM()
         self.taskMng.scheduleJob("spm", pool.tasksDir, vars.task,
                                  name, func, *args)
 
@@ -904,7 +893,7 @@ class HSM(object):
             # should not be issued (and executed) on the SPM. At the
             # moment we just ignore it for legacy reasons but in the
             # future vdsm could raise an exception.
-            self.validateNotSPM(spUUID)
+            self.getPool(spUUID).validateNotSPM()
         except se.IsSpm:
             self.log.info("Ignoring the refreshStoragePool request "
                           "(the host is the SPM)")
@@ -1135,7 +1124,7 @@ class HSM(object):
                              spUUID, self.pools)
             return
 
-        self.validateNotSPM(spUUID)
+        self.getPool(spUUID).validateNotSPM()
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
@@ -1143,7 +1132,7 @@ class HSM(object):
         return self._disconnectPool(pool, hostID, remove)
 
     def _disconnectPool(self, pool, hostID, remove):
-        self.validateNotSPM(pool.spUUID)
+        pool.validateNotSPM()
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
             res = pool.disconnect()
