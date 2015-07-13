@@ -156,7 +156,7 @@ class VdsProxy(object):
         stack = inspect.stack()
         # add calling method for logs
         test_method, code_line = stack[3][3], stack[3][2]
-        options['_caller'] = '{}:{}'.format(test_method, code_line)
+        options['_caller'] = '%s:%s'.format(test_method, code_line)
         result = self.vdscli.setupNetworks(networks, bonds, options)
         return result['status']['code'], result['status']['message']
 

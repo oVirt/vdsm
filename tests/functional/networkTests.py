@@ -1686,10 +1686,10 @@ class NetworkTest(TestCaseBase):
                 self.assertEquals(status, SUCCESS, msg)
                 _assert_all_nets_exist()
                 # verify that the running config now has all desired networks
-                self.assertEqual({NET_MGMT, NET_CHANGED, NET_UNCHANGED,
-                                  NET_ADDITIONAL},
+                self.assertEqual(set([NET_MGMT, NET_CHANGED, NET_UNCHANGED,
+                                  NET_ADDITIONAL]),
                                  set(self.vdsm_net.config.networks.keys()))
-                self.assertEqual({BOND_CHANGED, BOND_UNCHANGED},
+                self.assertEqual(set([BOND_CHANGED, BOND_UNCHANGED]),
                                  set(self.vdsm_net.config.bonds.keys()))
 
             finally:
