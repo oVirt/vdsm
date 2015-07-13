@@ -61,21 +61,6 @@ SPM_ID_FREE = -1
 LVER_INVALID = -1
 
 
-def domainListEncoder(domDict):
-    domains = ','.join(['%s:%s' % (k, v) for k, v in domDict.iteritems()])
-    return domains
-
-
-def domainListDecoder(s):
-    domList = {}
-    if not s:
-        return domList
-    for domDecl in s.split(","):
-        k, v = domDecl.split(':')
-        domList[k.strip("'")] = v.strip("'").capitalize()
-    return domList
-
-
 @secured
 class StoragePool(object):
     '''

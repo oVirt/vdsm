@@ -35,8 +35,6 @@ from sp import LVER_INVALID
 from sp import SPM_ACQUIRED
 from sp import SPM_FREE
 from sp import SPM_ID_FREE
-from sp import domainListDecoder
-from sp import domainListEncoder
 from vdsm.config import config
 
 
@@ -56,9 +54,24 @@ MAX_DOMAINS -= blockSD.PVS_METADATA_SIZE
 MAX_DOMAINS /= 48
 
 
+def _domainListEncoder(domDict):
+    domains = ','.join(['%s:%s' % (k, v) for k, v in domDict.iteritems()])
+    return domains
+
+
+def _domainListDecoder(s):
+    domList = {}
+    if not s:
+        return domList
+    for domDecl in s.split(","):
+        k, v = domDecl.split(':')
+        domList[k.strip("'")] = v.strip("'").capitalize()
+    return domList
+
+
 # metadata_key: (metadata_decoder, metadata_encoder)
 SP_MD_FIELDS = {
-    PMDK_DOMAINS: (domainListDecoder, domainListEncoder),
+    PMDK_DOMAINS: (_domainListDecoder, _domainListEncoder),
     PMDK_POOL_DESCRIPTION: (unicodeDecoder, unicodeEncoder),
     PMDK_LVER: (int, str),
     PMDK_SPM_ID: (int, str),
@@ -314,7 +327,7 @@ class StoragePoolDiskBackend(StoragePoolBackendInterface):
 
         return {
             'name': pmd[PMDK_POOL_DESCRIPTION],
-            'domains': domainListEncoder(pmd[PMDK_DOMAINS]),
+            'domains': _domainListEncoder(pmd[PMDK_DOMAINS]),
             'master_ver': pmd[PMDK_MASTER_VER],
             'lver': pmd[PMDK_LVER],
             'spm_id': pmd[PMDK_SPM_ID],
@@ -471,7 +484,7 @@ class StoragePoolMemoryBackend(StoragePoolBackendInterface):
         lVer, spmId = self.getSpmStatus()
         return {
             'name': 'No Description',
-            'domains': domainListEncoder(self.domainsMap),
+            'domains': _domainListEncoder(self.domainsMap),
             'master_ver': self.masterVersion,
             'lver': lVer,
             'spm_id': spmId,
