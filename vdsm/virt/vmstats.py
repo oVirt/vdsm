@@ -62,7 +62,9 @@ def translate(vm_stats):
         elif type(vm_stats[var]) is not dict:
             stats[var] = convertToStr(vm_stats[var])
         elif var in ('network', 'balloonInfo'):
-            stats[var] = vm_stats[var]
+            value = vm_stats[var]
+            if value:
+                stats[var] = value
         else:
             # avoid to add empty values
             if 'disks' not in stats:
