@@ -1392,8 +1392,8 @@ class Vm(object):
             'monitorResponse': str(self._monitorResponse),
             'timeOffset': self.conf.get('timeOffset', '0'),
             'clientIp': self.conf.get('clientIp', ''),
-            'network': {},
-            'disks': {}}
+        }
+
         if 'pauseCode' in self.conf:
             stats['pauseCode'] = self.conf['pauseCode']
         if self.isMigrating():
