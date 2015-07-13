@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from contextlib import contextmanager
+import copy
 from functools import wraps
 import os.path
 import json
@@ -58,7 +59,7 @@ from network.configurators.ifcfg import stop_devices
 
 NETWORK_NAME = 'test-network'
 VLAN_ID = '27'
-BONDING_NAME = 'bond0'
+BONDING_NAME = 'bond11'
 IP_ADDRESS = '240.0.0.1'
 IP_NETWORK = '240.0.0.0'
 IP_ADDRESS_IN_NETWORK = '240.0.0.50'
@@ -352,7 +353,7 @@ class NetworkTest(TestCaseBase):
         return status, msg
 
     def _assert_kernel_config_matches_running_config(self):
-        netinfo = self.vdsm_net.netinfo
+        netinfo = self._clean_legacy_bonds(self.vdsm_net.netinfo)
         kernel_config = KernelConfig(netinfo)
         running_config = self.vdsm_net.config
         # do not use KernelConfig.__eq__ to get better exception if something
@@ -360,6 +361,17 @@ class NetworkTest(TestCaseBase):
         normalized_config = kernel_config.normalize(running_config)
         self.assertEqual(normalized_config.networks, kernel_config.networks)
         self.assertEqual(normalized_config.bonds, kernel_config.bonds)
+
+    def _clean_legacy_bonds(self, netinfo):
+        """VdsProxy netinfo is built from getVdsCapabilities which reports
+        fake legacy bonds in el6. Remove them from here to avoid lying to
+        KernelConfig. Assuming here that no tests that call setupNetworks
+        expect bond0-bond4 to be reported.
+        """
+        netinfo = copy.deepcopy(netinfo)
+        for bond in caps._REQUIRED_BONDINGS:
+            netinfo.bondings.pop(bond, None)
+        return netinfo
 
     @cleanupNet
     @permutations([[True], [False]])
