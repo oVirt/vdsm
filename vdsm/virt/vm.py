@@ -1389,7 +1389,6 @@ class Vm(object):
         if self.isMigrating():
             stats['migrationProgress'] = self.migrateStatus()['progress']
 
-        decStats = {}
         try:
             vm_sample = sampling.stats_cache.get(self.id)
             decStats = vmstats.produce(self,
@@ -1399,26 +1398,8 @@ class Vm(object):
             self._setUnresponsiveIfTimeout(stats, vm_sample.stats_age)
         except Exception:
             self.log.exception("Error fetching vm stats")
-        for var in decStats:
-            if var == "ioTune":
-                # Convert ioTune numbers to strings to avoid xml-rpc issue
-                # with numbers bigger than int32_t
-                for ioTune in decStats["ioTune"]:
-                    ioTune["ioTune"] = dict((k, utils.convertToStr(v)) for k, v
-                                            in ioTune["ioTune"].iteritems())
-                stats[var] = decStats[var]
-            elif type(decStats[var]) is not dict:
-                stats[var] = utils.convertToStr(decStats[var])
-            elif var in ('network', 'balloonInfo'):
-                stats[var] = decStats[var]
-            else:
-                try:
-                    stats['disks'][var] = {}
-                    for value in decStats[var]:
-                        stats['disks'][var][value] = \
-                            utils.convertToStr(decStats[var][value])
-                except Exception:
-                    self.log.exception("Error setting vm disk stats")
+        else:
+            stats.update(vmstats.translate(decStats))
 
         stats.update(self._getGraphicsStats())
         stats['hash'] = str(hash((self._domain.devices_hash,

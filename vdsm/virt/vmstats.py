@@ -20,6 +20,7 @@
 
 import logging
 
+from vdsm.utils import convertToStr
 from vdsm.utils import monotonic_time
 from .utils import isVdsmImage
 
@@ -40,6 +41,36 @@ def produce(vm, first_sample, last_sample, interval):
     balloon(vm, stats, last_sample)
     cpu_count(stats, last_sample)
     tune_io(vm, stats)
+
+    return stats
+
+
+def translate(vm_stats):
+    stats = {}
+
+    for var in vm_stats:
+        if var == "ioTune":
+            # Convert ioTune numbers to strings to avoid xml-rpc issue
+            # with numbers bigger than int32_t
+            for ioTune in vm_stats["ioTune"]:
+                ioTune["ioTune"] = dict((k, convertToStr(v)) for k, v
+                                        in ioTune["ioTune"].iteritems())
+            stats[var] = vm_stats[var]
+        elif type(vm_stats[var]) is not dict:
+            stats[var] = convertToStr(vm_stats[var])
+        elif var in ('network', 'balloonInfo'):
+            stats[var] = vm_stats[var]
+        else:
+            # avoid to add empty values
+            if 'disks' not in stats:
+                stats['disks'] = {}
+            try:
+                stats['disks'][var] = {}
+                for value in vm_stats[var]:
+                    stats['disks'][var][value] = \
+                        convertToStr(vm_stats[var][value])
+            except Exception:
+                logging.exception("Error setting vm disk stats")
 
     return stats
 
