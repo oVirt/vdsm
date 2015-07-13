@@ -4904,6 +4904,14 @@ class Vm(object):
                 (domainID, volumeID))
         return VolumeSize(int(res['apparentsize']), int(res['truesize']))
 
+    def _getVolumeInfo(self, domainID, poolID, imageID, volumeID):
+        res = self.cif.irs.getVolumeInfo(domainID, poolID, imageID, volumeID)
+        if res['status']['code'] != 0:
+            raise StorageUnavailableError(
+                "Unable to get volume info for domain %s volume %s" %
+                (domainID, volumeID))
+        return res['info']
+
     def _setVolumeSize(self, domainID, poolID, imageID, volumeID, size):
         res = self.cif.irs.setVolumeSize(domainID, poolID, imageID, volumeID,
                                          size)
