@@ -1474,7 +1474,7 @@ class Vm(object):
 
         statuses = (vmstatus.SAVING_STATE, vmstatus.RESTORING_STATE,
                     vmstatus.MIGRATION_SOURCE, vmstatus.MIGRATION_DESTINATION,
-                    vmstatus.PAUSED)
+                    vmstatus.PAUSED, vmstatus.DOWN)
         if self.lastStatus in statuses:
             return self.lastStatus
         elif self.isMigrating():
