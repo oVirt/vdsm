@@ -1353,8 +1353,8 @@ class Global(APIBase):
         stats = {}
         decStats = self._cif._hostStats.get()
 
-        if self._cif.irs:
-            decStats['storageDomains'] = self._cif.irs.repoStats()
+        if self._irs:
+            decStats['storageDomains'] = self._irs.repoStats()
             del decStats['storageDomains']['status']
         else:
             decStats['storageDomains'] = {}
@@ -1431,7 +1431,7 @@ class Global(APIBase):
 
     def convertExternalVm(self, uri, username, password, vminfo, jobid):
         return v2v.convert_external_vm(uri, username, password, vminfo, jobid,
-                                       self._cif.irs)
+                                       self._irs)
 
     def getConvertedVm(self, jobid):
         return v2v.get_converted_vm(jobid)
