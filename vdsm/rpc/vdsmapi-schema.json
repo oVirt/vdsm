@@ -1208,8 +1208,6 @@
 #
 # @supportedENGINEs:    A list of supported ovirt-engine versions
 #
-# @supportedProtocols:  A list of supported xmlrpc protocol versions
-#
 # @clusterLevels:       A list of supported cluster versions
 #
 # @networks:            Information about configured VDSM networks
@@ -1275,7 +1273,7 @@
 #                       supported in this host.
 #                       (new in version 4.17.0)
 #
-# Since: 4.15.0
+# Since: 4.17.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
 #        the current API truncates @software_version to 'x.y'.
@@ -1286,7 +1284,7 @@
           'cpuSpeed': 'float', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedENGINEs': ['str'],
-          'supportedProtocols': ['str'], 'clusterLevels': ['str'],
+          'clusterLevels': ['str'],
           'networks': 'NetInfoNetworkMap', 'bridges': 'NetInfoBridgeMap',
           'nics': 'NetInfoNicMap', 'bondings': 'NetInfoBondMap',
           'vlans': 'NetInfoVlanMap', '*hooks': 'HookScriptInfoMap',
