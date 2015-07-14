@@ -87,7 +87,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
                         bondingOptions=None, nics=None, mtu=None, ipaddr=None,
                         netmask=None, gateway=None, bootproto=None,
                         ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
-                        dhcpv6=None, defaultRoute=None, _netinfo=None,
+                        dhcpv6=None, defaultRoute=False, _netinfo=None,
                         configurator=None, blockingdhcp=None,
                         implicitBonding=None, opts=None):
     """
@@ -246,7 +246,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                 ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
                 force=False, configurator=None, bondingOptions=None,
                 bridged=True, _netinfo=None, hostQos=None,
-                defaultRoute=None, blockingdhcp=False, **options):
+                defaultRoute=False, blockingdhcp=False, **options):
     nics = nics or ()
     if _netinfo is None:
         _netinfo = netinfo.NetInfo()
@@ -284,13 +284,6 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         else:
             for nic in nics:
                 _validateInterNetworkCompatibility(_netinfo, vlan, nic)
-
-    # defaultRoute is set either explicitly by the client, OR if we're adding
-    # the management network.
-    # TODO: When oVirt 3.3 is deprecated, change the default to False and
-    #       remove reference to constants.LEGACY_MANAGEMENT_NETWORKS
-    if defaultRoute is None:
-        defaultRoute = network in constants.LEGACY_MANAGEMENT_NETWORKS
 
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
                  " bondingOptions=%s, mtu=%s, bridged=%s, defaultRoute=%s,"
