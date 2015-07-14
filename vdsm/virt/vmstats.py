@@ -53,12 +53,15 @@ def translate(vm_stats):
 
     for var in vm_stats:
         if var == "ioTune":
-            # Convert ioTune numbers to strings to avoid xml-rpc issue
-            # with numbers bigger than int32_t
-            for ioTune in vm_stats["ioTune"]:
-                ioTune["ioTune"] = dict((k, convertToStr(v)) for k, v
-                                        in ioTune["ioTune"].iteritems())
-            stats[var] = vm_stats[var]
+            value = vm_stats[var]
+            if value:
+                # Convert ioTune numbers to strings to avoid xml-rpc issue
+                # with numbers bigger than int32_t
+                for ioTune in value:
+                    ioTune["ioTune"] = dict(
+                        (k, convertToStr(v)) for k, v
+                        in ioTune["ioTune"].iteritems())
+                stats[var] = vm_stats[var]
         elif type(vm_stats[var]) is not dict:
             stats[var] = convertToStr(vm_stats[var])
         elif var in ('network', 'balloonInfo'):
