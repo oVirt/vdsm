@@ -44,7 +44,7 @@ from vdsm.netconfpersistence import RunningConfig, PersistentConfig
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
 
-from . import Configurator, dhclient, getEthtoolOpts, libvirt
+from . import Configurator, dhclient, getEthtoolOpts, libvirt, wait_for_device
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, IPv4, IPv6
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
@@ -99,6 +99,7 @@ class Ifcfg(Configurator):
         _ifup(bridge)
         if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
                 not bridge.ipv6.dhcpv6):
+            wait_for_device(bridge.name)
             sysctl.disable_ipv6(bridge.name)
 
     def configureVlan(self, vlan, **opts):

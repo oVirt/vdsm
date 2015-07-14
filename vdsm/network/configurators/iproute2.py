@@ -29,7 +29,8 @@ from vdsm import sysctl
 from vdsm.utils import CommandPath
 from vdsm.utils import execCmd
 
-from . import Configurator, runDhclient, getEthtoolOpts, libvirt
+from . import (Configurator, runDhclient, getEthtoolOpts, libvirt,
+               wait_for_device)
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
@@ -76,6 +77,7 @@ class Iproute2(Configurator):
         self.configApplier.setIfaceConfigAndUp(bridge)
         if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
                 not bridge.ipv6.dhcpv6):
+            wait_for_device(bridge.name)
             sysctl.disable_ipv6(bridge.name)
         self._addSourceRoute(bridge)
         if 'custom' in opts and 'bridge_opts' in opts['custom']:

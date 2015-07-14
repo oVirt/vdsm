@@ -21,9 +21,11 @@ from __future__ import absolute_import
 import ConfigParser
 import logging
 
-from vdsm import netinfo
 from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
+from vdsm import ipwrapper
+from vdsm import netinfo
+from vdsm.netlink import monitor
 
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
@@ -178,3 +180,19 @@ def runDhclient(iface, family=4, default_route=False):
     if iface.blockingdhcp and rc:
         raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed',
                                  family)
+
+
+def wait_for_device(name, timeout=1):
+    """
+    Wait for a network device to appear in a given timeout. If the device is
+    not created by then, raise a ConfigNetworkError.
+    """
+    with monitor.Monitor(timeout=timeout, groups=('link',),
+                         silent_timeout=True) as mon:
+        if name in (link.name for link in ipwrapper.getLinks()):
+            return
+        for event in mon:
+            if event.get('name') == name and event.get('event') == 'new_link':
+                return
+    raise ConfigNetworkError(ERR_FAILED_IFUP, 'Device %s was not created '
+                             'during a %ss timeout.' % (name, timeout))
