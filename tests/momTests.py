@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license.
 
 from unittest import TestCase
+import logging
 import threading
 import ConfigParser
 from momIF import MomClient
@@ -25,6 +26,7 @@ from caps import PAGE_SIZE_BYTES
 from vdsm.define import Mbytes
 from mom import unixrpc
 import os.path
+import monkeypatch
 
 MOM_CONF = "/dev/null"
 MOM_PORT = os.path.join(os.path.dirname(__file__), "test_mom_vdsm.sock")
@@ -59,6 +61,10 @@ class BrokenMomApi(object):
         return False
 
 
+# Each time mom server or client is created, a new logging.StreamHanlder is
+# added to the "mom" logger. This monkey-patching remove loggers and handlers
+# added during the tests.
+@monkeypatch.MonkeyClass(logging.getLogger().manager, "loggerDict", {})
 class MomPolicyTests(TestCase):
     def setUp(self):
         self.config_overrides = ConfigParser.SafeConfigParser()
