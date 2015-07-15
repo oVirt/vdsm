@@ -238,6 +238,9 @@ def disks(vm, stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
         return
 
+    first_indexes = _find_bulk_stats_reverse_map(first_sample, 'block')
+    last_indexes = _find_bulk_stats_reverse_map(last_sample, 'block')
+
     for vm_drive in vm.getDiskDevices():
         drive_stats = {}
         try:
@@ -252,15 +255,20 @@ def disks(vm, stats, first_sample, last_sample, interval):
                 drive_stats['imageID'] = vm_drive.imageID
             elif "GUID" in vm_drive:
                 drive_stats['lunGUID'] = vm_drive.GUID
-            first_disk = first_sample.get('block', {}).get(vm_drive.name, {})
-            last_disk = last_sample.get('block', {}).get(vm_drive.name, {})
-            if first_disk and last_disk:
+
+            if (vm_drive.name in first_indexes and
+               vm_drive.name in last_indexes):
                 # will be None if sampled during recovery
                 if interval > 0:
                     drive_stats.update(
-                        _disk_rate(first_disk, last_disk, interval))
+                        _disk_rate(
+                            first_sample, first_indexes[vm_drive.name],
+                            last_sample, last_indexes[vm_drive.name],
+                            interval))
                     drive_stats.update(
-                        _disk_latency(first_disk, last_disk))
+                        _disk_latency(
+                            first_sample, first_indexes[vm_drive.name],
+                            last_sample, last_indexes[vm_drive.name]))
                 else:
                     logging.warning(
                         'invalid interval %i when calculating '
@@ -268,7 +276,9 @@ def disks(vm, stats, first_sample, last_sample, interval):
                         interval, vm.id, vm_drive.name)
 
                 drive_stats.update(
-                    _disk_iops_bytes(last_sample[vm_drive.name]))
+                    _disk_iops_bytes(
+                        first_sample, first_indexes[vm_drive.name],
+                        last_sample, last_indexes[vm_drive.name]))
 
         except AttributeError:
             logging.exception("Disk %s stats not available",
@@ -277,24 +287,30 @@ def disks(vm, stats, first_sample, last_sample, interval):
         stats[vm_drive.name] = drive_stats
 
 
-def _disk_rate(first_sample, last_sample, interval):
+def _disk_rate(first_sample, first_index, last_sample, last_index, interval):
     return {
         'readRate': (
-            (last_sample['rd.bytes'] - first_sample['rd.bytes'])
+            (last_sample['block.%d.rd.bytes' % last_index] -
+             first_sample['block.%d.rd.bytes' % first_index])
             / interval),
         'writeRate': (
-            (last_sample['wr.bytes'] - first_sample['wr.bytes'])
+            (last_sample['block.%d.wr.bytes' % last_index] -
+             first_sample['block.%d.wr.bytes' % first_index])
             / interval)}
 
 
-def _disk_latency(first_sample, last_sample):
+def _disk_latency(first_sample, first_index, last_sample, last_index):
     def compute_latency(ltype):
-        ops = ltype + '.reqs'
-        operations = last_sample[ops] - first_sample[ops]
+        operations = (
+            last_sample['block.%d.%s.reqs' % (last_index, ltype)] -
+            first_sample['block.%d.%s.reqs' % (first_index, ltype)]
+        )
         if not operations:
             return 0
-        times = ltype + '.times'
-        elapsed_time = last_sample[times] - first_sample[times]
+        elapsed_time = (
+            last_sample['block.%d.%s.times' % (last_index, ltype)] -
+            first_sample['block.%d.%s.times' % (first_index, ltype)]
+        )
         return elapsed_time / operations
 
     return {'readLatency': str(compute_latency('rd')),
@@ -302,12 +318,12 @@ def _disk_latency(first_sample, last_sample):
             'flushLatency': str(compute_latency('fl'))}
 
 
-def _disk_iops_bytes(drive_info):
+def _disk_iops_bytes(first_sample, first_index, last_sample, last_index):
     return {
-        'readOps': str(drive_info['rd.reqs']),
-        'writeOps': str(drive_info['wr.reqs']),
-        'readBytes': str(drive_info['rd.bytes']),
-        'writtenBytes': str(drive_info['wr.bytes']),
+        'readOps': str(last_sample['block.%d.rd.reqs' % last_index]),
+        'writeOps': str(last_sample['block.%d.wr.reqs' % last_index]),
+        'readBytes': str(last_sample['block.%d.rd.bytes' % last_index]),
+        'writtenBytes': str(last_sample['block.%d.wr.bytes' % last_index]),
     }
 
 

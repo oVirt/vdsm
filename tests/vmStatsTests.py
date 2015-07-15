@@ -262,6 +262,37 @@ class NetworkStatsTests(VmStatsTestCase):
         self.assertRepeatedStatsHaveKeys(nics, stats['network'])
 
 
+class DiskStatsTests(VmStatsTestCase):
+
+    # TODO: grab them from the schema
+    _EXPECTED_KEYS = (
+        'truesize',
+        'apparentsize',
+        'readLatency',
+        'writeLatency',
+        'flushLatency',
+        'imageID',
+        # TODO: add test for 'lunGUID'
+        'readRate',
+        'writeRate',
+        'readOps',
+        'writeOps',
+        'readBytes',
+        'writtenBytes',
+    )
+
+    def test_disk_all_keys_present(self):
+        interval = 10  # seconds
+        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        testvm = FakeVM(drives=drives)
+
+        stats = {}
+        vmstats.disks(testvm, stats,
+                      self.bulk_stats, self.bulk_stats,
+                      interval)
+        self.assertRepeatedStatsHaveKeys(drives, stats)
+
+
 # helpers
 
 class FakeNic(object):
@@ -270,6 +301,23 @@ class FakeNic(object):
         self.name = name
         self.nicModel = model
         self.macAddr = mac_addr
+
+
+class FakeDrive(object):
+
+    def __init__(self, name, size):
+        self.name = name
+        self.apparentsize = size
+        self.truesize = size
+        self.GUID = str(uuid.uuid4())
+        self.imageID = str(uuid.uuid4())
+        self.domainID = str(uuid.uuid4())
+        self.poolID = str(uuid.uuid4())
+        self.volumeID = str(uuid.uuid4())
+
+    def __contains__(self, item):
+        # isVdsmImage support
+        return item in ('imageID', 'domainID', 'poolID', 'volumeID')
 
 
 class FakeVM(object):
