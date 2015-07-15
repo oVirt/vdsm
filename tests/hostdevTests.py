@@ -378,6 +378,7 @@ class HostdevTests(TestCaseBase):
 
 @expandPermutations
 @MonkeyClass(libvirtconnection, 'get', Connection)
+@MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
 class HostdevCreationTests(XMLTestCase):
 
     def setUp(self):
