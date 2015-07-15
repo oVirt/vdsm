@@ -35,7 +35,7 @@ from vdsm.netconfpersistence import KernelConfig, RunningConfig
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
                           BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,
-                          OPERSTATE_UP)
+                          OPERSTATE_UP, NET_CONF_BACK_DIR)
 from vdsm.netlink import monitor
 from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
@@ -1565,6 +1565,15 @@ class NetworkTest(TestCaseBase):
                     self.vdsm_net.restoreNetConfig()
 
                 _assert_all_nets_exist()
+                # no ifcfg backups should be left now that all ifcfgs are owned
+                # by vdsm
+                self.assertEqual([], os.listdir(NET_CONF_BACK_DIR))
+                # another 'boot' should restore nothing
+                RunningConfig().delete()
+                with nonChangingOperstate(NET_UNCHANGED):
+                    with nonChangingOperstate(NET_CHANGED):
+                        with nonChangingOperstate(NET_MISSING):
+                            self.vdsm_net.restoreNetConfig()
             finally:
                 self.setupNetworks(
                     {NET_UNCHANGED: {'remove': True},
@@ -1623,24 +1632,33 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BOND_UNCHANGED, [nic_b])
             self.assertBondExists(BOND_CHANGED, [nic_c], options='mode=4')
 
-        def _simulate_boot_after_upgrade():
-            # all non-management devices are down and have ONBOOT=no from older
-            # vdsm versions.
+        def _simulate_boot(change_bond=False, after_upgrade=False):
             device_names = (NET_UNCHANGED, BOND_UNCHANGED, nic_b, NET_CHANGED,
                             BOND_CHANGED, nic_c)
-            stop_devices((NET_CONF_PREF + name for name in device_names))
+            if after_upgrade:
+                stop_devices((NET_CONF_PREF + name for name in device_names))
             for dev in device_names:
                 with open(NET_CONF_PREF + dev) as f:
                     content = f.read()
-                # also test the case that a bond is different from it's
-                # backup
-                content = re.sub('ONBOOT=yes', 'ONBOOT=no', content)
-                if dev == BOND_CHANGED:
+                if after_upgrade:
+                    # all non-management devices are down and have ONBOOT=no
+                    # from older vdsm versions.
+                    content = re.sub('ONBOOT=yes', 'ONBOOT=no', content)
+                if change_bond and dev == BOND_CHANGED:
+                    # also test the case that a bond is different from it's
+                    # backup
                     content = re.sub('mode=4', 'mode=0', content)
                 with open(NET_CONF_PREF + dev, 'w') as f:
                     f.write(content)
             # we don't have running config during boot
             RunningConfig().delete()
+
+        def _verify_running_config_intact():
+            self.assertEqual({NET_MGMT, NET_CHANGED, NET_UNCHANGED,
+                              NET_ADDITIONAL},
+                             set(self.vdsm_net.config.networks.keys()))
+            self.assertEqual({BOND_CHANGED, BOND_UNCHANGED},
+                             set(self.vdsm_net.config.bonds.keys()))
 
         with dummyIf(4) as nics:
             nic_a, nic_b, nic_c, nic_d = nics
@@ -1655,21 +1673,32 @@ class NetworkTest(TestCaseBase):
             try:
                 self.vdsm_net.save_config()
 
-                _simulate_boot_after_upgrade()
+                _simulate_boot(change_bond=True, after_upgrade=True)
 
                 with nonChangingOperstate(NET_MGMT):
                     self.vdsm_net.restoreNetConfig()
+                # no ifcfg backups should be left now that all ifcfgs are owned
+                # by vdsm
+                self.assertEqual([], os.listdir(NET_CONF_BACK_DIR))
 
                 status, msg = self.setupNetworks(
                     {NET_ADDITIONAL: net_additional_attrs}, {}, NOCHK)
                 self.assertEquals(status, SUCCESS, msg)
                 _assert_all_nets_exist()
-                # verify that the running config now has all desired networks
-                self.assertEqual({NET_MGMT, NET_CHANGED, NET_UNCHANGED,
-                                  NET_ADDITIONAL},
-                                 set(self.vdsm_net.config.networks.keys()))
-                self.assertEqual({BOND_CHANGED, BOND_UNCHANGED},
-                                 set(self.vdsm_net.config.bonds.keys()))
+                _verify_running_config_intact()
+                self.assertEqual({'ifcfg-%s' % NET_ADDITIONAL,
+                                  'ifcfg-%s' % nic_d},
+                                 set(os.listdir(NET_CONF_BACK_DIR)))
+
+                # another 'boot' should restore nothing
+                _simulate_boot()
+                with nonChangingOperstate(NET_MGMT):
+                    with nonChangingOperstate(NET_UNCHANGED):
+                        with nonChangingOperstate(NET_CHANGED):
+                            self.vdsm_net.restoreNetConfig()
+
+                _assert_all_nets_exist()
+                self.assertEqual([], os.listdir(NET_CONF_BACK_DIR))
 
             finally:
                 status, msg = self.setupNetworks(
