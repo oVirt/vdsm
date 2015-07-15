@@ -254,11 +254,8 @@ def disks(vm, stats, first_sample, last_sample, interval):
                         'stats for vm %s disk %s',
                         interval, vm.id, vm_drive.name)
 
-                drive_info = last_sample[vm_drive.name]
-                drive_stats['readOps'] = str(drive_info['rd.reqs'])
-                drive_stats['writeOps'] = str(drive_info['wr.reqs'])
-                drive_stats['readBytes'] = str(drive_info['rd.bytes'])
-                drive_stats['writtenBytes'] = str(drive_info['wr.bytes'])
+                drive_stats.update(
+                    _disk_iops_bytes(last_sample[vm_drive.name]))
 
         except AttributeError:
             logging.exception("Disk %s stats not available",
@@ -290,6 +287,15 @@ def _disk_latency(first_sample, last_sample):
     return {'readLatency': str(compute_latency('rd')),
             'writeLatency': str(compute_latency('wr')),
             'flushLatency': str(compute_latency('fl'))}
+
+
+def _disk_iops_bytes(drive_info):
+    return {
+        'readOps': str(drive_info['rd.reqs']),
+        'writeOps': str(drive_info['wr.reqs']),
+        'readBytes': str(drive_info['rd.bytes']),
+        'writtenBytes': str(drive_info['wr.bytes']),
+    }
 
 
 def _diff(prev, curr, val):
