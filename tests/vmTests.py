@@ -1265,7 +1265,7 @@ class TestVmStats(TestCaseBase):
         GBPS = 10 ** 9 / 8
         MAC = '52:54:00:59:F5:3F'
         pretime = utils.monotonic_time()
-        res = vmstats.nic(
+        res = vmstats.nic_traffic(
             name='vnettest', model='virtio', mac=MAC,
             start_sample={'rx.bytes': 2 ** 64 - 15 * GBPS,
                           'rx.pkts': 1,
