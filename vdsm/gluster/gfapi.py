@@ -285,8 +285,12 @@ def parse_cmdargs():
 if __name__ == '__main__':
     args = parse_cmdargs()
     if args.command.upper() == 'STATVFS':
-        res = volumeStatvfsGet(args.volume, args.host,
-                               int(args.port), args.protocol)
+        try:
+            res = volumeStatvfsGet(args.volume, args.host,
+                                   int(args.port), args.protocol)
+        except ge.GlusterException as e:
+            sys.stderr.write(str(e))
+            sys.exit(1)
         json.dump({'f_blocks': res.f_blocks, 'f_bfree': res.f_bfree,
                    'f_bsize': res.f_bsize, 'f_frsize': res.f_frsize,
                    'f_bavail': res.f_bavail, 'f_files': res.f_files,
