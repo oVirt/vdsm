@@ -36,7 +36,7 @@ from vdsm import constants
 from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm import utils
-from vdsm.netconfpersistence import RunningConfig
+from vdsm.netconfpersistence import RunningConfig, PersistentConfig
 
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
@@ -346,10 +346,7 @@ class ConfigWriter(object):
 
     def _backup(self, filename):
         self._atomicBackup(filename)
-        if config.get('vars', 'net_persistence') != 'unified':
-            self._persistentBackup(filename)
-        elif not self._ownedIfcfg(filename):
-            # Backup non-VDSM network devices (BZ#1188251)
+        if filename not in _get_unified_persistence_ifcfg():
             self._persistentBackup(filename)
 
     def _atomicBackup(self, filename):
@@ -866,3 +863,50 @@ def _get_mode_from_desired_options(desired_options):
         if desired_mode in (k, v):
             return [k, v]
     raise Exception('Error translating bond mode.')
+
+
+def _get_unified_persistence_ifcfg():
+    """generate the set of ifcfg files that result of the current unified
+    persistent networks"""
+    persistent_config = PersistentConfig()
+    if not persistent_config:
+        return set()
+
+    IFCFG_PATH = netinfo.NET_CONF_PREF + '%s'
+    RULE_PATH = os.path.join(netinfo.NET_CONF_DIR, 'rule-%s')
+    ROUTE_PATH = os.path.join(netinfo.NET_CONF_DIR, 'route-%s')
+    ifcfgs = set()
+
+    for bonding, bonding_attr in persistent_config.bonds.iteritems():
+        bond_nics = set(bonding_attr.get('nics', []))
+        ifcfgs.add(IFCFG_PATH % bonding)
+        for nic in bond_nics:
+            ifcfgs.add(IFCFG_PATH % nic)
+
+    for network, network_attr in persistent_config.networks.iteritems():
+        top_level_device = None
+
+        nic = network_attr.get('nic')
+        if nic:
+            ifcfgs.add(IFCFG_PATH % nic)
+            top_level_device = nic
+
+        network_bonding = network_attr.get('bonding', None)
+        if network_bonding:
+            top_level_device = network_bonding
+
+        vlan_id = network_attr.get('vlan')
+        if vlan_id is not None:
+            underlying_device = network_bonding or network_attr.get('nic', '')
+            vlan_device = '.'.join([underlying_device, str(vlan_id)])
+            top_level_device = vlan_device
+            ifcfgs.add(IFCFG_PATH % vlan_device)
+
+        if utils.tobool(network_attr.get('bridged', True)):
+            ifcfgs.add(IFCFG_PATH % network)
+            top_level_device = network
+
+        ifcfgs.add(RULE_PATH % top_level_device)
+        ifcfgs.add(ROUTE_PATH % top_level_device)
+
+    return ifcfgs
