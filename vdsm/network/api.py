@@ -404,13 +404,14 @@ def _delBrokenNetwork(network, netAttr, configurator):
                 implicitBonding=False, _netinfo=_netinfo)
 
 
-def _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo):
+def _validateDelNetwork(network, vlan, bonding, nics, bridge_should_be_clean,
+                        _netinfo):
     if bonding:
         if set(nics) != set(_netinfo.bondings[bonding]["slaves"]):
             raise ConfigNetworkError(ne.ERR_BAD_NIC, '_delNetwork: %s are '
                                      'not all nics enslaved to %s' %
                                      (nics, bonding))
-    if bridged:
+    if bridge_should_be_clean:
         assertBridgeClean(network, vlan, bonding, nics)
 
 
@@ -458,7 +459,8 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None, force=False,
                  nics, keep_bridge, options)
 
     if not utils.tobool(force):
-        _validateDelNetwork(network, vlan, bonding, nics, bridged, _netinfo)
+        _validateDelNetwork(network, vlan, bonding, nics,
+                            bridged and not keep_bridge, _netinfo)
 
     net_ent = _objectivizeNetwork(bridge=network if bridged else None,
                                   vlan=vlan, vlan_id=vlan_id, bonding=bonding,
@@ -792,7 +794,7 @@ def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
     def _bridge_only_config(conf):
         return dict(
             (k, v) for k, v in conf.iteritems()
-            if k not in ('bonding', 'nic', 'mtu'))
+            if k not in ('bonding', 'nic', 'mtu', 'vlan'))
 
     def _bridge_reconfigured(current_net_conf, required_net_conf):
         return (_bridge_only_config(current_net_conf) !=

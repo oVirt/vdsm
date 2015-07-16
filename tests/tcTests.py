@@ -120,7 +120,7 @@ def _listenOnDevice(fd, icmp):
                 return
 
 
-class _Tap(_Interface):
+class Tap(_Interface):
 
     _IFF_TAP = 0x0002
     _IFF_NO_PI = 0x1000
@@ -437,9 +437,9 @@ class TestPortMirror(TestCaseBase):
         '080028750000000'  # ICMP
         '00123456789')  # Payload
 
-    _tap0 = _Tap()
-    _tap1 = _Tap()
-    _tap2 = _Tap()
+    _tap0 = Tap()
+    _tap1 = Tap()
+    _tap2 = Tap()
     _bridge0 = _Bridge('src-')
     _bridge1 = _Bridge('target-')
     _bridge2 = _Bridge('target2-')

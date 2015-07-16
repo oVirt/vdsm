@@ -48,6 +48,7 @@ from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import (brokentest, slowtest, RequireDummyMod,
                             RequireVethMod, ValidateRunningAsRoot)
+from tcTests import Tap
 
 import dhcp
 import dummy
@@ -1002,6 +1003,17 @@ class NetworkTest(TestCaseBase):
             link = ipwrapper.getLink(NETWORK_NAME)
             return link.index
 
+        def add_tap_to_bridge():
+            tap = Tap()
+            tap.addDevice()
+            rc, _, _ = execCmd([EXT_BRCTL, 'addif', NETWORK_NAME, tap.devName])
+            self.assertEquals(rc, 0, 'brctl addif failed: rc=%s' % (rc,))
+            return tap.devName
+
+        def remove_tap_from_bridge(tap_name):
+            rc, _, _ = execCmd([EXT_BRCTL, 'delif', NETWORK_NAME, tap_name])
+            self.assertEquals(rc, 0, 'brctl delif failed: rc=%s' % (rc,))
+
         STANDARD, BIG = 1500, 2000
         with dummyIf(2) as nics:
             first, second = nics
@@ -1011,9 +1023,11 @@ class NetworkTest(TestCaseBase):
             self.assertEquals(status, SUCCESS, msg)
             self.assertMtu(STANDARD, NETWORK_NAME, first)
             bridge_index = get_bridge_index()
+            # simulate a vm connected to the bridge
+            tap_name = add_tap_to_bridge()
 
             second_net = {NETWORK_NAME: dict(bridged=True, nic=second,
-                                             mtu=BIG)}
+                                             mtu=BIG, vlan=VLAN_ID)}
             status, msg = self.setupNetworks(second_net, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
             second_bridge_index = get_bridge_index()
@@ -1038,6 +1052,11 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(third_net, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
             self.assertNotEqual(second_bridge_index, get_bridge_index())
+
+            remove_tap_from_bridge(tap_name)
+            status, msg = self.setupNetworks({NETWORK_NAME: {'remove': True}},
+                                             {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
