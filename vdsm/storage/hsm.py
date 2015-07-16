@@ -549,8 +549,10 @@ class HSM(object):
             domVersion = int(domVersion)
             sd.validateDomainVersion(domVersion)
 
-        # This code is repeated twice for performance reasons
-        # Avoid waiting for the lock for validate.
+        # We validate SPM status twice - once before taking the lock, so we can
+        # return immediately if the SPM was already started, and once after
+        # taking the lock, in case the SPM was stopped while we were waiting
+        # for the lock.
         self.getPool(spUUID).validateNotSPM()
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
