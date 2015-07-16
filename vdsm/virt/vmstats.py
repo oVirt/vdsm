@@ -289,14 +289,15 @@ def disks(vm, stats, first_sample, last_sample, interval):
 
 def _disk_rate(first_sample, first_index, last_sample, last_index, interval):
     return {
-        'readRate': (
+        'readRate': str(
             (last_sample['block.%d.rd.bytes' % last_index] -
              first_sample['block.%d.rd.bytes' % first_index])
             / interval),
-        'writeRate': (
+        'writeRate': str(
             (last_sample['block.%d.wr.bytes' % last_index] -
              first_sample['block.%d.wr.bytes' % first_index])
-            / interval)}
+            / interval)
+    }
 
 
 def _disk_latency(first_sample, first_index, last_sample, last_index):
