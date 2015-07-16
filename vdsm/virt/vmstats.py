@@ -68,17 +68,6 @@ def translate(vm_stats):
             value = vm_stats[var]
             if value:
                 stats[var] = value
-        else:
-            # avoid to add empty values
-            if 'disks' not in stats:
-                stats['disks'] = {}
-            try:
-                stats['disks'][var] = {}
-                for value in vm_stats[var]:
-                    stats['disks'][var][value] = \
-                        convertToStr(vm_stats[var][value])
-            except Exception:
-                logging.exception("Error setting vm disk stats")
 
     return stats
 
