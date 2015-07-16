@@ -293,7 +293,13 @@ class _JsonRpcServeRequestContext(object):
         self._responses.append(response)
 
     def requestDone(self, response):
-        del self._requests[response.id]
+        try:
+            del self._requests[response.id]
+        except KeyError:
+            # ignore when response had no id
+            # we wouldn't be able to match it
+            # with request on the client side
+            pass
         self.addResponse(response)
         self.sendReply()
 
