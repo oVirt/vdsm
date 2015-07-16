@@ -19,7 +19,7 @@ import socket
 from uuid import uuid4
 from collections import deque
 
-from vdsm.utils import monotonic_time
+from vdsm import utils
 import re
 
 # REQUIRED_FOR: engine-3.5
@@ -323,13 +323,15 @@ class AsyncDispatcher(object):
     - StompAdapterImpl - responsible for server side
     - AsyncClient - responsible for client side
     """
-    def __init__(self, connection, frame_handler, bufferSize=4096):
+    def __init__(self, connection, frame_handler, bufferSize=4096,
+                 clock=utils.monotonic_time):
         self._frame_handler = frame_handler
         self.connection = connection
         self._bufferSize = bufferSize
         self._parser = Parser()
         self._outbuf = None
         self._outgoing_heartbeat_in_milis = 0
+        self._clock = clock
 
     def setHeartBeat(self, outgoing, incoming=0):
         if incoming != 0:
@@ -361,10 +363,10 @@ class AsyncDispatcher(object):
         return self._parser.popFrame()
 
     def _update_outgoing_heartbeat(self):
-        self._lastOutgoingTimeStamp = monotonic_time()
+        self._lastOutgoingTimeStamp = self._clock()
 
     def _outgoing_heartbeat_expiration_interval(self):
-        since_last_update = (monotonic_time() - self._lastOutgoingTimeStamp)
+        since_last_update = (self._clock() - self._lastOutgoingTimeStamp)
         return (self._outgoing_heartbeat_in_milis / 1000.0) - since_last_update
 
     def next_check_interval(self):
@@ -411,7 +413,7 @@ class AsyncDispatcher(object):
         return True
 
     def _milis(self):
-        return int(round(monotonic_time() * 1000))
+        return int(round(self._clock() * 1000))
 
     def handle_close(self, dispatcher):
         self.connection.close()
