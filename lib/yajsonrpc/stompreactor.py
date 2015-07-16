@@ -195,6 +195,11 @@ class StompAdapterImpl(object):
                                  dispatcher.connection)
                 return
 
+            if not subs:
+                self._send_error("Subscription not available",
+                                 dispatcher.connection)
+                return
+
             for subscription in subs:
                 headers = utils.picklecopy(frame.headers)
                 headers = {stomp.Headers.SUBSCRIPTION: subscription.id}
