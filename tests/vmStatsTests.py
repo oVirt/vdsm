@@ -290,7 +290,7 @@ class DiskStatsTests(VmStatsTestCase):
         vmstats.disks(testvm, stats,
                       self.bulk_stats, self.bulk_stats,
                       interval)
-        self.assertRepeatedStatsHaveKeys(drives, stats)
+        self.assertRepeatedStatsHaveKeys(drives, stats['disks'])
 
 
 # helpers

@@ -64,7 +64,7 @@ def translate(vm_stats):
                 stats[var] = vm_stats[var]
         elif type(vm_stats[var]) is not dict:
             stats[var] = convertToStr(vm_stats[var])
-        elif var in ('network', 'balloonInfo'):
+        elif var in ('disks', 'network', 'balloonInfo'):
             value = vm_stats[var]
             if value:
                 stats[var] = value
@@ -245,6 +245,7 @@ def disks(vm, stats, first_sample, last_sample, interval):
 
     first_indexes = _find_bulk_stats_reverse_map(first_sample, 'block')
     last_indexes = _find_bulk_stats_reverse_map(last_sample, 'block')
+    disk_stats = {}
 
     for vm_drive in vm.getDiskDevices():
         drive_stats = {}
@@ -289,7 +290,10 @@ def disks(vm, stats, first_sample, last_sample, interval):
             logging.exception("Disk %s stats not available",
                               vm_drive.name)
 
-        stats[vm_drive.name] = drive_stats
+        disk_stats[vm_drive.name] = drive_stats
+
+    if disk_stats:
+        stats['disks'] = disk_stats
 
 
 def _disk_rate(first_sample, first_index, last_sample, last_index, interval):
