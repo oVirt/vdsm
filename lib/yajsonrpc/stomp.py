@@ -525,8 +525,13 @@ class AsyncClient(object):
         return sub
 
     def unsubscribe(self, sub):
-        self.queue_frame(Frame(Command.UNSUBSCRIBE,
-                               {"id": sub.id}))
+        try:
+            del self._subscriptions[sub.id]
+        except KeyError:
+            self.log.warning('No subscription with %s id', sub.id)
+        else:
+            self.queue_frame(Frame(Command.UNSUBSCRIBE,
+                                   {"id": sub.id}))
 
 
 class _Subscription(object):
