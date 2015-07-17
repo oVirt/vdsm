@@ -20,7 +20,9 @@
 import logging
 import time
 from contextlib import contextmanager
+from monkeypatch import MonkeyPatch
 from testValidation import slowtest
+from vdsm import executor
 
 from testlib import VdsmTestCase as TestCaseBase, \
     expandPermutations, \
@@ -71,6 +73,10 @@ class _DummyBridge(object):
 
     def unregister_server_address(self):
         self.server_address = None
+
+
+def dispatch(callable, timeout=None):
+    raise executor.TooManyTasks
 
 
 @expandPermutations
@@ -208,3 +214,19 @@ class JsonRpcServerTests(TestCaseBase):
 
                     self.assertEquals(cm.exception.code,
                                       JsonRpcNoResponseError().code)
+
+    @MonkeyPatch(executor.Executor, 'dispatch', dispatch)
+    @permutations(PERMUTATIONS)
+    def testFullExecutor(self, ssl, type):
+        bridge = _DummyBridge()
+        with constructClient(self.log, bridge, ssl, type) as clientFactory:
+            with self._client(clientFactory) as client:
+                if type == "xml":
+                    # TODO start using executor for xmlrpc
+                    pass
+                else:
+                    with self.assertRaises(JsonRpcError) as cm:
+                        self._callTimeout(client, "no_method", [], CALL_ID)
+
+                    self.assertEquals(cm.exception.code,
+                                      JsonRpcInternalError().code)
