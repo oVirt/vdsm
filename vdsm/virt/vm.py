@@ -759,7 +759,7 @@ class Vm(object):
                 self.log.exception("The vm start process failed")
                 self.setDownStatus(ERROR, vmexitreason.GENERIC_ERROR, str(e))
 
-    def _incomingMigrationPending(self):
+    def incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
 
     def stopDisksStatsCollection(self):

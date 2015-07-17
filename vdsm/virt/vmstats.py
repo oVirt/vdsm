@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import contextlib
 import logging
 
 import six
@@ -144,11 +145,16 @@ def balloon(vm, stats, sample):
     # MOM will ignore VMs with missing balloon information instead
     # using incomplete data and computing wrong balloon targets
     if balloon_target is not None and sample is not None:
+
+        balloon_cur = 0
+        with _skip_if_missing_stats(vm):
+            balloon_cur = sample['balloon.current']
+
         stats['balloonInfo'].update({
             'balloon_max': str(max_mem),
             'balloon_min': str(
                 int(vm.conf.get('memGuaranteedSize', '0')) * 1024),
-            'balloon_cur': str(sample['balloon.current']),
+            'balloon_cur': str(balloon_cur),
             'balloon_target': str(balloon_target)
         })
 
@@ -166,7 +172,7 @@ def cpu_count(stats, sample):
             logging.error('Failed to get VM cpu count')
 
 
-def _nic_traffic(name, model, mac,
+def _nic_traffic(vm_obj, name, model, mac,
                  start_sample, start_index,
                  end_sample, end_index, interval):
     ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
@@ -176,22 +182,25 @@ def _nic_traffic(name, model, mac,
                'speed': str(ifSpeed),
                'state': 'unknown'}
 
-    ifStats['rxErrors'] = str(end_sample['net.%d.rx.errs' % end_index])
-    ifStats['rxDropped'] = str(end_sample['net.%d.rx.drop' % end_index])
-    ifStats['txErrors'] = str(end_sample['net.%d.tx.errs' % end_index])
-    ifStats['txDropped'] = str(end_sample['net.%d.tx.drop' % end_index])
+    with _skip_if_missing_stats(vm_obj):
+        ifStats['rxErrors'] = str(end_sample['net.%d.rx.errs' % end_index])
+        ifStats['rxDropped'] = str(end_sample['net.%d.rx.drop' % end_index])
+        ifStats['txErrors'] = str(end_sample['net.%d.tx.errs' % end_index])
+        ifStats['txDropped'] = str(end_sample['net.%d.tx.drop' % end_index])
 
-    rxDelta = (
-        end_sample['net.%d.rx.bytes' % end_index] -
-        start_sample['net.%d.rx.bytes' % start_index]
-    )
+    with _skip_if_missing_stats(vm_obj):
+        rxDelta = (
+            end_sample['net.%d.rx.bytes' % end_index] -
+            start_sample['net.%d.rx.bytes' % start_index]
+        )
+        txDelta = (
+            end_sample['net.%d.tx.bytes' % end_index] -
+            start_sample['net.%d.tx.bytes' % start_index]
+        )
+
     ifRxBytes = (100.0 *
                  (rxDelta % 2 ** 32) /
                  interval / ifSpeed / _MBPS_TO_BPS)
-    txDelta = (
-        end_sample['net.%d.tx.bytes' % end_index] -
-        start_sample['net.%d.tx.bytes' % start_index]
-    )
     ifTxBytes = (100.0 *
                  (txDelta % 2 ** 32) /
                  interval / ifSpeed / _MBPS_TO_BPS)
@@ -229,7 +238,7 @@ def networks(vm, stats, first_sample, last_sample, interval):
             continue
 
         stats['network'][nic.name] = _nic_traffic(
-            nic.name, nic.nicModel, nic.macAddr,
+            vm, nic.name, nic.nicModel, nic.macAddr,
             first_sample, first_indexes[nic.name],
             last_sample, last_indexes[nic.name],
             interval)
@@ -263,26 +272,28 @@ def disks(vm, stats, first_sample, last_sample, interval):
             if (vm_drive.name in first_indexes and
                vm_drive.name in last_indexes):
                 # will be None if sampled during recovery
-                if interval > 0:
-                    drive_stats.update(
-                        _disk_rate(
-                            first_sample, first_indexes[vm_drive.name],
-                            last_sample, last_indexes[vm_drive.name],
-                            interval))
-                    drive_stats.update(
-                        _disk_latency(
-                            first_sample, first_indexes[vm_drive.name],
-                            last_sample, last_indexes[vm_drive.name]))
-                else:
+                if interval <= 0:
                     logging.warning(
                         'invalid interval %i when calculating '
                         'stats for vm %s disk %s',
                         interval, vm.id, vm_drive.name)
-
-                drive_stats.update(
-                    _disk_iops_bytes(
-                        first_sample, first_indexes[vm_drive.name],
-                        last_sample, last_indexes[vm_drive.name]))
+                else:
+                    with _skip_if_missing_stats(vm):
+                        drive_stats.update(
+                            _disk_rate(
+                                first_sample, first_indexes[vm_drive.name],
+                                last_sample, last_indexes[vm_drive.name],
+                                interval))
+                with _skip_if_missing_stats(vm):
+                    drive_stats.update(
+                        _disk_latency(
+                            first_sample, first_indexes[vm_drive.name],
+                            last_sample, last_indexes[vm_drive.name]))
+                with _skip_if_missing_stats(vm):
+                    drive_stats.update(
+                        _disk_iops_bytes(
+                            first_sample, first_indexes[vm_drive.name],
+                            last_sample, last_indexes[vm_drive.name]))
 
         except AttributeError:
             logging.exception("Disk %s stats not available",
@@ -359,3 +370,16 @@ def _find_bulk_stats_reverse_map(stats, group):
         else:
             name_to_idx[name] = idx
     return name_to_idx
+
+
+@contextlib.contextmanager
+def _skip_if_missing_stats(vm_obj):
+    try:
+        yield
+    except KeyError:
+        if vm_obj.incomingMigrationPending():
+            # If a VM is migration destination,
+            # libvirt doesn't give any disk stat.
+            pass
+        else:
+            raise
