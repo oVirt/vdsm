@@ -21,8 +21,11 @@
 import threading
 import time
 
+from vdsm import concurrent
 from vdsm import executor
+from vdsm import pthread
 from vdsm import schedule
+from vdsm import utils
 
 from testValidation import slowtest
 from testlib import VdsmTestCase as TestCaseBase
@@ -128,6 +131,46 @@ class ExecutorTests(TestCaseBase):
         time.sleep(0.3)
         for task in tasks:
             self.assertTrue(task.executed.is_set())
+
+
+class TestWorkerSystemNames(TestCaseBase):
+
+    def test_worker_thread_system_name(self):
+        names = []
+        workers = 2
+        done = concurrent.Barrier(workers + 1)
+
+        def get_worker_name():
+            names.append(pthread.getname())
+            done.wait()
+
+        foo = executor.Executor('foo', workers, workers, None)
+        with utils.running(foo):
+            for i in range(workers):
+                foo.dispatch(get_worker_name)
+            done.wait()
+
+        self.assertEqual(sorted(names), ["foo/0", "foo/1"])
+
+    def test_multiple_executors(self):
+        names = []
+        workers = 2
+        done = concurrent.Barrier(2 * workers + 1)
+
+        def get_worker_name():
+            names.append(pthread.getname())
+            done.wait()
+
+        foo = executor.Executor('foo', workers, workers, None)
+        bar = executor.Executor('bar', workers, workers, None)
+        with utils.running(foo), utils.running(bar):
+            for i in range(workers):
+                foo.dispatch(get_worker_name)
+                bar.dispatch(get_worker_name)
+            done.wait()
+
+        self.assertEqual(sorted(names),
+                         ["bar/0", "bar/1", "foo/0", "foo/1"])
 
 
 class Task(object):

@@ -27,6 +27,7 @@ import collections
 import logging
 import threading
 
+from . import pthread
 from . import utils
 
 
@@ -53,6 +54,7 @@ class Executor(object):
     def __init__(self, name, workers_count, max_tasks, scheduler):
         self._name = name
         self._workers_count = workers_count
+        self._worker_id = 0
         self._tasks = TaskQueue(max_tasks)
         self._scheduler = scheduler
         self._workers = set()
@@ -129,7 +131,9 @@ class Executor(object):
     # Private
 
     def _add_worker(self):
-        worker = _Worker(self, self._scheduler)
+        name = "%s/%d" % (self.name, self._worker_id)
+        self._worker_id += 1
+        worker = _Worker(self, self._scheduler, name)
         self._workers.add(worker)
 
 
@@ -143,14 +147,11 @@ class _WorkerDiscarded(Exception):
 class _Worker(object):
 
     _log = logging.getLogger('Executor')
-    _id = 0
 
-    def __init__(self, executor, scheduler):
+    def __init__(self, executor, scheduler, name):
         self._executor = executor
         self._scheduler = scheduler
         self._discarded = False
-        _Worker._id += 1
-        name = "%s-worker-%d" % (self._executor.name, _Worker._id)
         self._thread = threading.Thread(target=self._run, name=name)
         self._thread.daemon = True
         self._log.debug('Starting worker %s' % name)
@@ -166,6 +167,7 @@ class _Worker(object):
 
     @utils.traceback(on=_log.name)
     def _run(self):
+        pthread.setname(self.name[:15])
         self._log.debug('Worker started')
         try:
             while True:
