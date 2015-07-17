@@ -240,8 +240,10 @@ class NetworkStatsTests(VmStatsTestCase):
     def test_nic_have_all_keys(self):
         nic = FakeNic(name='vnet0', model='virtio',
                       mac_addr='00:1a:4a:16:01:51')
+        testvm = FakeVM(nics=(nic,))
 
         stats = vmstats._nic_traffic(
+            testvm,
             nic.name, nic.nicModel, nic.macAddr,
             self.bulk_stats, 0,
             self.bulk_stats, 0,

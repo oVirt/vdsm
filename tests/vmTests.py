@@ -1263,27 +1263,29 @@ class TestVmStats(TestCaseBase):
         GBPS = 10 ** 9 / 8
         MAC = '52:54:00:59:F5:3F'
         pretime = utils.monotonic_time()
-        res = vmstats._nic_traffic(
-            name='vnettest', model='virtio', mac=MAC,
-            start_sample={'net.0.rx.bytes': 2 ** 64 - 15 * GBPS,
-                          'net.0.rx.pkts': 1,
-                          'net.0.rx.errs': 2,
-                          'net.0.rx.drop': 3,
-                          'net.0.tx.bytes': 0,
-                          'net.0.tx.pkts': 4,
-                          'net.0.tx.errs': 5,
-                          'net.0.tx.drop': 6},
-            start_index=0,
-            end_sample={'net.0.rx.bytes': 0,
-                        'net.0.rx.pkts': 7,
-                        'net.0.rx.errs': 8,
-                        'net.0.rx.drop': 9,
-                        'net.0.tx.bytes': 5 * GBPS,
-                        'net.0.tx.pkts': 10,
-                        'net.0.tx.errs': 11,
-                        'net.0.tx.drop': 12},
-            end_index=0,
-            interval=15.0)
+        with fake.VM(_VM_PARAMS) as testvm:
+            res = vmstats._nic_traffic(
+                testvm,
+                name='vnettest', model='virtio', mac=MAC,
+                start_sample={'net.0.rx.bytes': 2 ** 64 - 15 * GBPS,
+                              'net.0.rx.pkts': 1,
+                              'net.0.rx.errs': 2,
+                              'net.0.rx.drop': 3,
+                              'net.0.tx.bytes': 0,
+                              'net.0.tx.pkts': 4,
+                              'net.0.tx.errs': 5,
+                              'net.0.tx.drop': 6},
+                start_index=0,
+                end_sample={'net.0.rx.bytes': 0,
+                            'net.0.rx.pkts': 7,
+                            'net.0.rx.errs': 8,
+                            'net.0.rx.drop': 9,
+                            'net.0.tx.bytes': 5 * GBPS,
+                            'net.0.tx.pkts': 10,
+                            'net.0.tx.errs': 11,
+                            'net.0.tx.drop': 12},
+                end_index=0,
+                interval=15.0)
         posttime = utils.monotonic_time()
         self.assertIn('sampleTime', res)
         self.assertTrue(pretime <= res['sampleTime'] <= posttime,
