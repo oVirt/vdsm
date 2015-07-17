@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.codehaus.jackson.JsonEncoding;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -32,7 +32,7 @@ public class JsonUtils {
     private static final double GRACE_PERIOD = 0.2;
     public static final String ALL = "*";
     public static final String SUBSCRIPTION_ALL = "*|*|*|*";
-    private static Log log = LogFactory.getLog(JsonUtils.class);
+    private static Logger log = LoggerFactory.getLogger(JsonUtils.class);
     private static ObjectMapper mapper = new ObjectMapper();
     private static JsonFactory factory = mapper.getJsonFactory();
     static {
@@ -129,7 +129,7 @@ public class JsonUtils {
         return new Date().getTime() + TimeUnit.MILLISECONDS.convert(timeout, unit);
     }
 
-    public static void logException(Log logger, String message, Throwable throwable) {
+    public static void logException(Logger logger, String message, Throwable throwable) {
         if (logger.isDebugEnabled()) {
             logger.debug(message, throwable);
         } else {

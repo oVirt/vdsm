@@ -66,9 +66,10 @@ BuildRequires:	java-devel >= 1.7.0
 
 Requires:	java-openjdk >= 1.7.0
 
+BuildRequires:	slf4j >= 1.6.1
+Requires:	slf4j >= 1.6.1
 
 %if %{_use_maven}
-BuildRequires:	apache-commons-logging
 BuildRequires:	jackson
 BuildRequires:	junit
 BuildRequires:	maven-compiler-plugin
@@ -82,10 +83,8 @@ BuildRequires:	maven-surefire-provider-junit
 %if %{_use_mockito}
 BuildRequires:	mockito
 %endif
-Requires:	apache-commons-logging
 Requires:	jackson
 %else
-BuildRequires:	jakarta-commons-logging
 BuildRequires:	junit4
 # Package not in rhel. it is only build time, at this point (until rhel-7) we can accept that
 # BuildRequires:	mockito
@@ -94,7 +93,6 @@ BuildRequires:	codehaus-jackson-core-asl
 BuildRequires:	codehaus-jackson-mapper-asl
 Requires:	jackson >= 1.9
 %endif
-Requires:	jakarta-commons-logging
 %endif
 
 %description
@@ -129,7 +127,7 @@ Summary:	%{name} maven repo
 %global conf \\\
 	JACKSON_CORE_ASL=$(build-classpath codehaus-jackson/jackson-core-asl) \\\
 	JACKSON_MAPPER_ASL=$(build-classpath codehaus-jackson/jackson-mapper-asl) \\\
-	COMMONS_LOGGING_JAR=$(build-classpath commons-logging) \\\
+	SLF4J_JAR=$(build-classpath slf4j) \\\
 	JAVAC=/usr/lib/jvm/java-1.7.0/bin/javac \\\
 	JAR=/usr/lib/jvm/java-1.7.0/bin/jar \\\
 	%{?null}

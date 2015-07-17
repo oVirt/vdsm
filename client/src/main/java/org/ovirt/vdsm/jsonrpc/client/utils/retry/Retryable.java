@@ -2,9 +2,9 @@ package org.ovirt.vdsm.jsonrpc.client.utils.retry;
 
 import java.util.concurrent.Callable;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Wrapper of any {@link Callable} which retries call method execution based on provided <code>RetryPolicy</code>.
@@ -12,7 +12,7 @@ import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
  * @param <T> Result type.
  */
 public class Retryable<T> implements Callable<T> {
-    private static Log log = LogFactory.getLog(Retryable.class);
+    private static Logger log = LoggerFactory.getLogger(Retryable.class);
     private Callable<T> callable;
     private RetryContext context;
 

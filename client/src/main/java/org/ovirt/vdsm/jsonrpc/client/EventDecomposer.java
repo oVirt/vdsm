@@ -5,18 +5,18 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.logException;
 import java.io.IOException;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Decomposes events as <code>Map</code>.
  *
  */
 public class EventDecomposer {
-    private static Log log = LogFactory.getLog(ResponseDecomposer.class);
+    private static Logger log = LoggerFactory.getLogger(ResponseDecomposer.class);
     private static ObjectMapper mapper = new ObjectMapper();
 
     public EventDecomposer() {

@@ -7,19 +7,19 @@ import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.ovirt.vdsm.jsonrpc.client.internal.JsonRpcError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Decomposes of the response as objects which type is provided.
  *
  */
 public class ResponseDecomposer {
-    private static Log log = LogFactory.getLog(ResponseDecomposer.class);
+    private static Logger log = LoggerFactory.getLogger(ResponseDecomposer.class);
     private static ObjectMapper mapper = new ObjectMapper();
     private JsonRpcResponse response;
 

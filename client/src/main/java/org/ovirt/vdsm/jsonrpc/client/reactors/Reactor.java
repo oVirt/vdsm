@@ -15,10 +15,10 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.utils.ReactorScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides <code>Reactor</code> abstraction which reacts on
@@ -27,7 +27,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.ReactorScheduler;
  *
  */
 public abstract class Reactor extends Thread {
-    private static final Log LOG = LogFactory.getLog(Reactor.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Reactor.class);
     private static final int TIMEOUT = 1000;
     private final AbstractSelector selector;
     private final ReactorScheduler scheduler;

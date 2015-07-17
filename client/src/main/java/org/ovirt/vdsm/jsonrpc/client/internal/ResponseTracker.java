@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.NullNode;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
@@ -38,7 +38,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
  *
  */
 public class ResponseTracker implements Runnable {
-    private static Log log = LogFactory.getLog(ResponseTracker.class);
+    private static Logger log = LoggerFactory.getLogger(ResponseTracker.class);
     private static final int TRACKING_TIMEOUT = 500;
     private AtomicBoolean isTracking;
     private final ConcurrentMap<JsonNode, JsonRpcCall> runningCalls = new ConcurrentHashMap<>();

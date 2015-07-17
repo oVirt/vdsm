@@ -21,19 +21,19 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompCommonClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.Retryable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>ReactorClient</code> implementation to provide encrypted communication.
  *
  */
 public abstract class SSLClient extends StompCommonClient {
-    private static Log log = LogFactory.getLog(SSLClient.class);
+    private static Logger log = LoggerFactory.getLogger(SSLClient.class);
     protected final Selector selector;
     protected SSLEngineNioHelper nioEngine;
     private SSLContext sslContext;

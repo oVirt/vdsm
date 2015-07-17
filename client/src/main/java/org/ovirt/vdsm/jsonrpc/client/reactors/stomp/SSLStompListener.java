@@ -14,8 +14,6 @@ import java.nio.channels.SocketChannel;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
@@ -25,9 +23,11 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.Command;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Sender;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SSLStompListener extends SSLStompClient implements Sender {
-    private static Log log = LogFactory.getLog(SSLStompListener.class);
+    private static Logger log = LoggerFactory.getLogger(SSLStompListener.class);
     private CommandFactory commandFactory;
 
     public SSLStompListener(Reactor reactor, Selector selector, String hostname, int port,

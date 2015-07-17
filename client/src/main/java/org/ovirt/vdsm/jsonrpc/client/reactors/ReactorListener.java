@@ -11,9 +11,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>NioListener</code> provides a way to react on incoming messages.
@@ -24,7 +24,7 @@ public final class ReactorListener {
         public void onAcccept(ReactorClient client);
     }
 
-    private static Log log = LogFactory.getLog(ReactorListener.class);
+    private static Logger log = LoggerFactory.getLogger(ReactorListener.class);
     private final EventListener eventListener;
     private final ServerSocketChannel channel;
     private final Reactor reactor;

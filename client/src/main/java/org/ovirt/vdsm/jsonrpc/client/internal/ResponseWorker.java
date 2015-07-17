@@ -11,8 +11,6 @@ import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -25,6 +23,8 @@ import org.ovirt.vdsm.jsonrpc.client.events.EventPublisher;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient.MessageListener;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>ResponseWorker</code> is responsible to process responses for all the {@link JsonRpcClient} and it is produced
@@ -36,7 +36,7 @@ public final class ResponseWorker extends Thread {
     private final static ObjectMapper MAPPER = new ObjectMapper();
     private ResponseTracker tracker;
     private EventPublisher publisher;
-    private static Log log = LogFactory.getLog(ResponseWorker.class);
+    private static Logger log = LoggerFactory.getLogger(ResponseWorker.class);
     static {
         MAPPER.configure(JsonParser.Feature.INTERN_FIELD_NAMES, false);
         MAPPER.configure(JsonParser.Feature.CANONICALIZE_FIELD_NAMES, false);

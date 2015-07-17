@@ -20,14 +20,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 import org.ovirt.vdsm.jsonrpc.client.reactors.Reactor;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.impl.Message.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class StompCommonClient extends ReactorClient {
     public final static String DEFAULT_REQUEST_QUEUE = "jms.queue.requests";
@@ -37,7 +37,7 @@ public abstract class StompCommonClient extends ReactorClient {
     protected CountDownLatch connected;
     protected CountDownLatch subscribed;
     protected String subscribtionId;
-    private static final Log LOG = LogFactory.getLog(StompCommonClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StompCommonClient.class);
 
     public StompCommonClient(Reactor reactor, String hostname, int port) {
         super(reactor, hostname, port);

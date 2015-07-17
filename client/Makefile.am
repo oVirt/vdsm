@@ -43,7 +43,7 @@ vdsm-jsonrpc-java-client-$(PACKAGE_MAVEN_VERSION).jar: \
 	$(MKDIR_P) target
 	$(JAVAC) \
 		-source 1.7 -target 1.7 \
-		-cp $(JACKSON_MAPPER_ASL):$(JACKSON_CORE_ASL):${COMMONS_LOGGING_JAR} \
+		-cp $(JACKSON_MAPPER_ASL):$(JACKSON_CORE_ASL):${SLF4J_JAR} \
 		-d target \
 		$$(find src/main -name '*.java')
 	$(JAR) -cmf "$(srcdir)/MANIFEST.MF" "vdsm-jsonrpc-java-client-$(PACKAGE_MAVEN_VERSION).jar" -C target .

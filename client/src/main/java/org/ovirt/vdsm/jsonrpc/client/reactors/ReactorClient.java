@@ -22,14 +22,14 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.internal.ClientPolicy;
 import org.ovirt.vdsm.jsonrpc.client.utils.LockWrapper;
 import org.ovirt.vdsm.jsonrpc.client.utils.OneTimeCallback;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.DefaultConnectionRetryPolicy;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.Retryable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Abstract implementation of <code>JsonRpcClient</code> which handles low level networking.
@@ -41,7 +41,7 @@ public abstract class ReactorClient {
     }
     public static final String CLIENT_CLOSED = "Client close";
     public static final int BUFFER_SIZE = 1024;
-    private static Log log = LogFactory.getLog(ReactorClient.class);
+    private static Logger log = LoggerFactory.getLogger(ReactorClient.class);
     private final String hostname;
     private final int port;
     private final Lock lock;

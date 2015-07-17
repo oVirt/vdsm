@@ -8,9 +8,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Message {
     public enum Command {
@@ -45,7 +45,7 @@ public class Message {
     public static final String END_OF_MESSAGE = "\000";
     public static final byte[] HEARTBEAT_FRAME = "\n".getBytes();
     private static final String CHARSET = ";charset=";
-    private static final Log LOG = LogFactory.getLog(Message.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Message.class);
     private String command;
     private Map<String, String> headers = new HashMap<>();
     private byte[] content = new byte[0];
