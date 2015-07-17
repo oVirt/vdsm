@@ -455,7 +455,10 @@ class clientIF(object):
         utils.retry(self._recoverExistingVms, sleep=5)
 
     def _recoverExistingVms(self):
+        start_time = utils.monotonic_time()
         try:
+            self.log.debug('recovery: started')
+
             # Starting up libvirt might take long when host under high load,
             # we prefer running this code in external thread to avoid blocking
             # API response.
@@ -463,36 +466,57 @@ class clientIF(object):
                       caps.CpuTopology().cores())
             migration.SourceThread.setMaxOutgoingMigrations(mog)
 
-            # Recover
-            for v in getVDSMDomains():
+            # Recover stage 1: domains from libvirt
+            doms = getVDSMDomains()
+            num_doms = len(doms)
+            for idx, v in enumerate(doms):
                 vmId = v.UUIDString()
-                if not self._recoverVm(vmId):
-                    # RH qemu proc without recovery
-                    self.log.info('loose qemu process with id: '
-                                  '%s found, killing it.', vmId)
+                if self._recoverVm(vmId):
+                    self.log.info(
+                        'recovery [1:%d/%d]: recovered domain %s from libvirt',
+                        idx+1, num_doms, vmId)
+                else:
+                    self.log.info(
+                        'recovery [1:%d/%d]: loose domain %s found,'
+                        ' killing it.', idx+1, num_doms, vmId)
                     try:
                         v.destroy()
                     except libvirt.libvirtError:
-                        self.log.error('failed to kill loose qemu '
-                                       'process with id: %s',
-                                       vmId, exc_info=True)
+                        self.log.exception(
+                            'recovery [1:%d/%d]: failed to kill loose'
+                            ' domain %s', idx+1, num_doms, vmId)
 
+            # Recover stage 2: domains from recovery files
             # we do this to safely handle VMs which disappeared
             # from the host while VDSM was down/restarting
-            recVms = self._getVDSMVmsFromRecovery()
-            if recVms:
-                self.log.warning('Found %i VMs from recovery files not'
-                                 ' reported by libvirt.'
-                                 ' This should not happen!'
-                                 ' Will try to recover them.', len(recVms))
-            for vmId in recVms:
-                if not self._recoverVm(vmId):
-                    self.log.warning('VM %s failed to recover from recovery'
-                                     ' file, reported as Down', vmId)
+            rec_vms = self._getVDSMVmsFromRecovery()
+            num_rec_vms = len(rec_vms)
+            if rec_vms:
+                self.log.warning(
+                    'recovery: found %i VMs from recovery files not'
+                    ' reported by libvirt. This should not happen!'
+                    ' Will try to recover them.', num_rec_vms)
 
-            while (self._enabled and
-                   vmstatus.WAIT_FOR_LAUNCH in [v.lastStatus for v in
-                                                self.vmContainer.values()]):
+            for idx, vmId in enumerate(rec_vms):
+                if self._recoverVm(vmId):
+                    self.log.info(
+                        'recovery [2:%d/%d]: recovered domain %s'
+                        ' from data file', idx+1, num_rec_vms, vmId)
+                else:
+                    self.log.warning(
+                        'recovery [2:%d/%d]: VM %s failed to recover from data'
+                        ' file, reported as Down', idx+1, num_rec_vms, vmId)
+
+            # recover stage 3: waiting for domains to go up
+            while self._enabled:
+                launching = sum(int(v.lastStatus == vmstatus.WAIT_FOR_LAUNCH)
+                                for v in self.vmContainer.values())
+                if not launching:
+                    break
+                else:
+                    self.log.info(
+                        'recovery: waiting for %d domains to go up',
+                        launching)
                 time.sleep(1)
             self._cleanOldFiles()
             self._recovery = False
@@ -503,20 +527,31 @@ class clientIF(object):
             # volumes manipulations
             while self._enabled and self.vmContainer and \
                     not self.irs.getConnectedStoragePoolsList()['poollist']:
+                self.log.info('recovery: waiting for storage pool to go up')
                 time.sleep(5)
 
-            for vmId, vmObj in self.vmContainer.items():
+            vm_objects = self.vmContainer.values()
+            num_vm_objects = len(vm_objects)
+            for idx, vm_obj in enumerate(vm_objects):
                 # Let's recover as much VMs as possible
                 try:
                     # Do not prepare volumes when system goes down
                     if self._enabled:
-                        vmObj.preparePaths(
-                            vmObj.devSpecMapFromConf()[hwclass.DISK])
+                        self.log.info(
+                            'recovery [%d/%d]: preparing paths for'
+                            ' domain %s',  idx+1, num_vm_objects, vm_obj.id)
+                        vm_obj.preparePaths(
+                            vm_obj.devSpecMapFromConf()[hwclass.DISK])
                 except:
-                    self.log.error("Vm %s recovery failed",
-                                   vmId, exc_info=True)
+                    self.log.exception(
+                        "recovery [%d/%d]: failed for vm %s",
+                        idx+1, num_vm_objects, vm_obj.id)
+
+            self.log.info('recovery: completed in %is',
+                          utils.monotonic_time() - start_time)
+
         except:
-            self.log.error("Vm's recovery failed", exc_info=True)
+            self.log.exception("recovery: failed")
             raise
 
     def _getVDSMVmsFromRecovery(self):
