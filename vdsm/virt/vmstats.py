@@ -20,7 +20,10 @@
 
 import logging
 
+import six
+
 from vdsm.utils import convertToStr
+
 from vdsm.utils import monotonic_time
 from .utils import isVdsmImage
 
@@ -167,7 +170,9 @@ def cpu_count(stats, sample):
             logging.error('Failed to get VM cpu count')
 
 
-def nic_traffic(name, model, mac, start_sample, end_sample, interval):
+def nic_traffic(name, model, mac,
+                start_sample, start_index,
+                end_sample, end_index, interval):
     ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
 
     ifStats = {'macAddr': mac,
@@ -175,18 +180,22 @@ def nic_traffic(name, model, mac, start_sample, end_sample, interval):
                'speed': str(ifSpeed),
                'state': 'unknown'}
 
-    ifStats['rxErrors'] = str(end_sample['rx.errs'])
-    ifStats['rxDropped'] = str(end_sample['rx.drop'])
-    ifStats['txErrors'] = str(end_sample['tx.errs'])
-    ifStats['txDropped'] = str(end_sample['tx.drop'])
+    ifStats['rxErrors'] = str(end_sample['net.%d.rx.errs' % end_index])
+    ifStats['rxDropped'] = str(end_sample['net.%d.rx.drop' % end_index])
+    ifStats['txErrors'] = str(end_sample['net.%d.tx.errs' % end_index])
+    ifStats['txDropped'] = str(end_sample['net.%d.tx.drop' % end_index])
 
     rxDelta = (
-        end_sample['rx.bytes'] - start_sample['rx.bytes'])
+        end_sample['net.%d.rx.bytes' % end_index] -
+        start_sample['net.%d.rx.bytes' % start_index]
+    )
     ifRxBytes = (100.0 *
                  (rxDelta % 2 ** 32) /
                  interval / ifSpeed / _MBPS_TO_BPS)
     txDelta = (
-        end_sample['tx.bytes'] - start_sample['tx.bytes'])
+        end_sample['net.%d.tx.bytes' % end_index] -
+        start_sample['net.%d.tx.bytes' % start_index]
+    )
     ifTxBytes = (100.0 *
                  (txDelta % 2 ** 32) /
                  interval / ifSpeed / _MBPS_TO_BPS)
@@ -194,8 +203,8 @@ def nic_traffic(name, model, mac, start_sample, end_sample, interval):
     ifStats['rxRate'] = '%.1f' % ifRxBytes
     ifStats['txRate'] = '%.1f' % ifTxBytes
 
-    ifStats['rx'] = str(end_sample['rx.bytes'])
-    ifStats['tx'] = str(end_sample['tx.bytes'])
+    ifStats['rx'] = str(end_sample['net.%d.rx.bytes' % end_index])
+    ifStats['tx'] = str(end_sample['net.%d.tx.bytes' % end_index])
     ifStats['sampleTime'] = monotonic_time()
 
     return ifStats
@@ -207,18 +216,22 @@ def networks(vm, stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
         return
 
+    first_indexes = _find_bulk_stats_reverse_map(first_sample, 'net')
+    last_indexes = _find_bulk_stats_reverse_map(last_sample, 'net')
+
     for nic in vm.getNicDevices():
         if nic.name.startswith('hostdev'):
             continue
 
-        first_nic = first_sample.get('net', {}).get(nic.name, {})
-        last_nic = last_sample.get('net', {}).get(nic.name, {})
         # may happen if nic is a new hot-plugged one
-        if not first_nic or not last_nic:
+        if nic.name not in first_indexes or nic.name not in last_indexes:
             continue
+
         stats['network'][nic.name] = nic_traffic(
             nic.name, nic.nicModel, nic.macAddr,
-            first_nic, last_nic, interval)
+            first_sample, first_indexes[nic.name],
+            last_sample, last_indexes[nic.name],
+            interval)
 
 
 def disks(vm, stats, first_sample, last_sample, interval):
@@ -304,3 +317,10 @@ def _diff(prev, curr, val):
 
 def _usage_percentage(val, interval):
     return 100 * val / interval / 1000 ** 3
+
+
+def _find_bulk_stats_reverse_map(stats, group):
+    name_to_idx = {}
+    for idx in six.moves.xrange(stats.get('%s.count' % group, 0)):
+        name_to_idx[stats['%s.%d.name' % (group, idx)]] = idx
+    return name_to_idx
