@@ -93,14 +93,15 @@ def serve_clients(log):
             except:
                 utils.panic("Error initializing IRS")
 
-        from clientIF import clientIF  # must import after config is read
-        cif = clientIF.getInstance(irs, log)
-
-        install_manhole({'irs': irs, 'cif': cif})
-
         scheduler = schedule.Scheduler(name="vdsm.Scheduler",
                                        clock=utils.monotonic_time)
         scheduler.start()
+
+        from clientIF import clientIF  # must import after config is read
+        cif = clientIF.getInstance(irs, log, scheduler)
+
+        install_manhole({'irs': irs, 'cif': cif})
+
         cif.start()
         periodic.start(cif, scheduler)
         try:

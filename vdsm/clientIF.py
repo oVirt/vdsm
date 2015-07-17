@@ -71,7 +71,7 @@ class clientIF(object):
     _instance = None
     _instanceLock = threading.Lock()
 
-    def __init__(self, irs, log):
+    def __init__(self, irs, log, scheduler):
         """
         Initialize the (single) clientIF instance
 
@@ -95,6 +95,7 @@ class clientIF(object):
         self.bindings = {}
         self._broker_client = None
         self._subscriptions = defaultdict(list)
+        self._scheduler = scheduler
         if _glusterEnabled:
             self.gluster = gapi.GlusterApi(self, log)
         else:
@@ -182,14 +183,14 @@ class clientIF(object):
                         vmObj.cont()
 
     @classmethod
-    def getInstance(cls, irs=None, log=None):
+    def getInstance(cls, irs=None, log=None, scheduler=None):
         with cls._instanceLock:
             if cls._instance is None:
                 if log is None:
                     raise Exception("Logging facility is required to create "
                                     "the single clientIF instance")
                 else:
-                    cls._instance = clientIF(irs, log)
+                    cls._instance = clientIF(irs, log, scheduler)
         return cls._instance
 
     def _createAcceptor(self, host, port):
@@ -248,7 +249,8 @@ class clientIF(object):
                 bridge = Bridge.DynamicBridge()
                 json_binding = BindingJsonRpc(
                     bridge, self._subscriptions,
-                    config.getint('vars', 'connection_stats_timeout'))
+                    config.getint('vars', 'connection_stats_timeout'),
+                    self._scheduler)
                 self.bindings['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)

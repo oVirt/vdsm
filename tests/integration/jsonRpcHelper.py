@@ -37,6 +37,7 @@ from yajsonrpc import Notification
 from protocoldetector import MultiProtocolAcceptor
 from rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm.config import config
+from vdsm import schedule
 from vdsm import utils
 
 if config.get('vars', 'ssl_implementation') == 'm2c':
@@ -92,7 +93,11 @@ def constructAcceptor(log, ssl, jsonBridge,
         0,
         sslctx,
     )
-    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list), 60)
+
+    scheduler = schedule.Scheduler(name="test.Scheduler",
+                                   clock=utils.monotonic_time)
+    scheduler.start()
+    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list), 60, scheduler)
     json_binding.start()
 
     cif = FakeClientIf(json_binding, dest)
@@ -118,6 +123,7 @@ def constructAcceptor(log, ssl, jsonBridge,
         acceptor.stop()
         json_binding.stop()
         xml_binding.stop()
+        scheduler.stop(wait=False)
 
 
 @contextmanager
