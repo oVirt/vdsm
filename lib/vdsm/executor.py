@@ -231,13 +231,10 @@ class TaskQueue(object):
         Put a new task in the queue.
         Do not block when full, raises TooManyTasks instead.
         """
-        # There is a race here but we don't really mind. Worst case scenario,
-        # we will have a bit more task then the configured maximum, but we
-        # just want to avoid to have indefinite amount of tasks.
-        if len(self._tasks) == self._max_tasks:
-            raise TooManyTasks()
-        self._tasks.append(task)
         with self._cond:
+            if len(self._tasks) == self._max_tasks:
+                raise TooManyTasks()
+            self._tasks.append(task)
             self._cond.notify()
 
     def get(self):
