@@ -21,11 +21,14 @@
 from __future__ import absolute_import
 from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
-import SocketServer
+import logging
+import socket
 import sys
+import threading
 
 from .config import config
 from .executor import TaskQueue
+from .utils import traceback
 
 
 class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
@@ -36,66 +39,62 @@ class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
         protocol_version = "HTTP/1.0"
 
 
-class ConnectedTCPServer(SocketServer.TCPServer, object):
+class SimpleThreadedXMLRPCServer(SimpleXMLRPCDispatcher):
     """
-    ConnectedTCPServer provides ability to add connected sockets
-    for TCPServer to process. New connections are put to the queue
-    and TCPServers gets them by calling get_request method.
-    """
-    _STOP = (None, None)
+    This server does not listen to to connections; the user is responsible for
+    accepting connections and adding them to the server.
 
-    def __init__(self, RequestHandlerClass):
-        super(ConnectedTCPServer, self).__init__(None, RequestHandlerClass,
-                                                 bind_and_activate=False)
+    For each connection added, request_handler is invoked in a new thread,
+    handling all requests sent over this connection.
+    """
+
+    _STOP = object()
+
+    log = logging.getLogger("vds.XMLRPCServer")
+
+    def __init__(self, requestHandler=IPXMLRPCRequestHandler,
+                 logRequests=False, allow_none=False, encoding=None):
+        SimpleXMLRPCDispatcher.__init__(self, allow_none=allow_none,
+                                        encoding=encoding)
+
+        self.requestHandler = requestHandler
+        self.logRequests = logRequests
+
         # TODO provide proper limit for this queue
         self.queue = TaskQueue(sys.maxint)
 
     def add(self, connected_socket, socket_address):
         self.queue.put((connected_socket, socket_address))
 
-    def get_request(self):
-        return self.queue.get()
+    def handle_request(self):
+        sock, addr = self.queue.get()
+        if sock is self._STOP:
+            return
+        self.log.info("Starting request handler for %s:%d", addr[0], addr[1])
+        t = threading.Thread(target=self._process_requests, args=(sock, addr))
+        t.daemon = True
+        t.start()
 
     def server_close(self):
         self.queue.clear()
-        self.queue.put(self._STOP)
+        self.queue.put((self._STOP, self._STOP))
 
-    def verify_request(self, request, client_address):
-        if not request or not client_address:
-            return False
-        return True
+    @traceback(on=log.name)
+    def _process_requests(self, sock, addr):
+        self.log.info("Request handler for %s:%d started", addr[0], addr[1])
+        try:
+            self.requestHandler(sock, addr, self)
+        except Exception:
+            self.log.exception("Unhandled exception in request handler for "
+                               "%s:%d", addr[0], addr[1])
+        finally:
+            self._shutdown_connection(sock)
+        self.log.info("Request handler for %s:%d stopped", addr[0], addr[1])
 
-
-class ConnectedSimpleXmlRPCServer(ConnectedTCPServer,
-                                  SimpleXMLRPCDispatcher):
-    """
-    Code based on Python 2.7's SimpleXMLRPCServer.SimpleXMLRPCServer.__init__
-    """
-
-    def __init__(self, requestHandler, logRequests=True, allow_none=False,
-                 encoding=None):
-        self.logRequests = logRequests
-
-        SimpleXMLRPCDispatcher.__init__(self, allow_none=allow_none,
-                                        encoding=encoding)
-        ConnectedTCPServer.__init__(self, requestHandler)
-
-
-class IPXMLRPCServer(ConnectedSimpleXmlRPCServer):
-
-    # Create daemon threads when mixed with SocketServer.ThreadingMixIn
-    daemon_threads = True
-
-    def __init__(self, requestHandler=IPXMLRPCRequestHandler,
-                 logRequests=True, allow_none=False, encoding=None,
-                 bind_and_activate=False):
-        ConnectedSimpleXmlRPCServer.__init__(
-            self, requestHandler=requestHandler,
-            logRequests=logRequests, allow_none=allow_none,
-            encoding=encoding)
-
-
-# Threaded version of SimpleXMLRPCServer
-class SimpleThreadedXMLRPCServer(SocketServer.ThreadingMixIn,
-                                 IPXMLRPCServer):
-    pass
+    def _shutdown_connection(self, sock):
+        try:
+            sock.shutdown(socket.SHUT_WR)
+        except socket.error:
+            pass  # Some platforms may raise ENOTCONN here
+        finally:
+            sock.close()
