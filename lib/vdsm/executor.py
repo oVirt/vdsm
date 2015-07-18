@@ -220,9 +220,10 @@ class _TaskQueue(object):
     def __init__(self, max_tasks):
         self._max_tasks = max_tasks
         self._tasks = collections.deque()
-        # deque is thread safe - we can append and pop from both ends without
-        # additional locking. We need this condition only for waiting. See:
-        # https://docs.python.org/2.6/library/queue.html#Queue.Full
+        # Deque supports thread-safe append and pop from both ends. We need
+        # this condition for waking up threads waiting on an empty queue and
+        # protecting other methods which are not documented as thread-safe.
+        # https://docs.python.org/2/library/collections.html#deque-objects
         self._cond = threading.Condition(threading.Lock())
 
     def put(self, task):
@@ -252,4 +253,5 @@ class _TaskQueue(object):
                         self._cond.wait()
 
     def clear(self):
-        self._tasks.clear()
+        with self._cond:
+            self._tasks.clear()
