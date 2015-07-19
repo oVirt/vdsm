@@ -41,10 +41,10 @@ _TASK_PER_WORKER = config.getint('sampling', 'periodic_task_per_worker')
 _TASKS = _WORKERS * _TASK_PER_WORKER
 
 
-_scheduler = schedule.Scheduler(name="periodic.Scheduler",
+_scheduler = schedule.Scheduler(name="periodic-sched",
                                 clock=monotonic_time)
 
-_executor = executor.Executor(name="periodic.Executor",
+_executor = executor.Executor(name="periodic",
                               workers_count=_WORKERS,
                               max_tasks=_TASKS,
                               scheduler=_scheduler)
