@@ -459,8 +459,8 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
     data = {}
     try:
         if bridged:
-            data.update({'ports': ports(iface), 'stp': bridge_stp_state(iface),
-                         'cfg': getIfaceCfg(iface)})
+            data.update({'ports': ports(iface),
+                         'stp': bridge_stp_state(iface)})
         else:
             # ovirt-engine-3.1 expects to see the "interface" attribute iff the
             # network is bridgeless. Please remove the attribute and this
@@ -704,13 +704,6 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4_ifaces=None,
     return d
 
 
-def _cfgBootprotoCompat(networks):
-    """Set network 'cfg' 'BOOTPROTO' for backwards engine compatibility."""
-    for attrs in networks.itervalues():
-        if attrs['bridged'] and 'BOOTPROTO' not in attrs['cfg']:
-            attrs['cfg']['BOOTPROTO'] = 'dhcp' if attrs['dhcpv4'] else 'none'
-
-
 def get(vdsmnets=None):
     d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
          'vlans': {}}
@@ -742,7 +735,9 @@ def get(vdsmnets=None):
         if dev.isBOND():
             _bondOptsCompat(devinfo)
 
-    _cfgBootprotoCompat(d['networks'])
+    for net, attrs in d['networks'].iteritems():
+        if attrs['bridged']:
+            attrs['cfg'] = d['bridges'][net]['cfg']
 
     return d
 

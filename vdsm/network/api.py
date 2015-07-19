@@ -877,8 +877,8 @@ def setupNetworks(networks, bondings, **options):
                 _delNetwork(network, configurator=configurator, force=force,
                             implicitBonding=False, _netinfo=_netinfo,
                             keep_bridge=keep_bridge)
-                _netinfo.updateDevices()
                 del _netinfo.networks[network]
+                _netinfo.updateDevices()
             elif network in libvirt_nets:
                 # If the network was not in _netinfo but is in the networks
                 # returned by libvirt, it means that we are dealing with
