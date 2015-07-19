@@ -40,7 +40,7 @@ from vdsm.constants import P_VDSM_RUN
 from vdsm.define import errCode, doneCode
 from vdsm import libvirtconnection, response
 from vdsm.infra import zombiereaper
-from vdsm.utils import traceback, CommandPath, execCmd
+from vdsm.utils import traceback, CommandPath, execCmd, NICENESS, IOCLASS
 
 import caps
 
@@ -418,7 +418,10 @@ class ImportVm(object):
         cmd = self._create_command()
         logging.info('Job %r starting import', self._id)
 
+        # This is the way we run qemu-img convert jobs. virt-v2v is invoking
+        # qemu-img convert to perform the migration.
         self._proc = execCmd(cmd, sync=False, deathSignal=signal.SIGTERM,
+                             nice=NICENESS.HIGH, ioclass=IOCLASS.IDLE,
                              env=self._execution_environments())
 
         self._proc.blocking = True
