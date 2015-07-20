@@ -27,9 +27,7 @@ import threading
 
 from vdsm import executor
 from vdsm import libvirtconnection
-from vdsm import schedule
 from vdsm.config import config
-from vdsm.utils import monotonic_time
 
 from . import sampling
 
@@ -41,14 +39,8 @@ _TASK_PER_WORKER = config.getint('sampling', 'periodic_task_per_worker')
 _TASKS = _WORKERS * _TASK_PER_WORKER
 
 
-_scheduler = schedule.Scheduler(name="periodic-sched",
-                                clock=monotonic_time)
-
-_executor = executor.Executor(name="periodic",
-                              workers_count=_WORKERS,
-                              max_tasks=_TASKS,
-                              scheduler=_scheduler)
 _operations = []
+_executor = None
 
 
 def _timeout_from(interval):
@@ -58,16 +50,20 @@ def _timeout_from(interval):
     return interval / 2.
 
 
-def start(cif):
+def start(cif, scheduler):
     global _operations
+    global _executor
 
-    _scheduler.start()
+    _executor = executor.Executor(name="periodic",
+                                  workers_count=_WORKERS,
+                                  max_tasks=_TASKS,
+                                  scheduler=scheduler)
     _executor.start()
 
     def per_vm_operation(func, period):
         disp = VmDispatcher(
             cif.getVMs, _executor, func, _timeout_from(period))
-        return Operation(disp, period)
+        return Operation(disp, period, scheduler)
 
     _operations = [
         # needs dispatching becuse updating the volume stats needs the
@@ -94,7 +90,8 @@ def start(cif):
                 libvirtconnection.get(cif),
                 cif.getVMs,
                 sampling.stats_cache),
-            config.getint('vars', 'vm_sample_interval')),
+            config.getint('vars', 'vm_sample_interval'),
+            scheduler),
 
         # we do this only until we get high water mark notifications
         # from qemu. Access storage and/or qemu monitor, so can block,
@@ -114,7 +111,6 @@ def stop():
         op.stop()
 
     _executor.stop(wait=False)
-    _scheduler.stop(wait=False)
 
 
 class Operation(object):
@@ -128,8 +124,7 @@ class Operation(object):
 
     _log = logging.getLogger("virt.periodic.Operation")
 
-    def __init__(self, func, period, timeout=0,
-                 scheduler=None, executor=None):
+    def __init__(self, func, period, scheduler, timeout=0, executor=None):
         """
         parameters:
 
@@ -144,7 +139,7 @@ class Operation(object):
         self._func = func
         self._period = period
         self._timeout = _timeout_from(period) if timeout == 0 else timeout
-        self._scheduler = _scheduler if scheduler is None else scheduler
+        self._scheduler = scheduler
         self._executor = _executor if executor is None else executor
         self._lock = threading.Lock()
         self._running = False

@@ -32,6 +32,7 @@ from logging import config as lconfig
 import warnings
 
 from vdsm import constants
+from vdsm import schedule
 from vdsm import utils
 from vdsm.config import config
 from vdsm import libvirtconnection
@@ -63,6 +64,7 @@ def usage():
 def serve_clients(log):
     cif = None
     irs = None
+    scheduler = None
     running = [True]
 
     def sigtermHandler(signum, frame):
@@ -96,8 +98,11 @@ def serve_clients(log):
 
         install_manhole({'irs': irs, 'cif': cif})
 
+        scheduler = schedule.Scheduler(name="vdsm.Scheduler",
+                                       clock=utils.monotonic_time)
+        scheduler.start()
         cif.start()
-        periodic.start(cif)
+        periodic.start(cif, scheduler)
         try:
             while running[0]:
                 sigutils.wait_for_signal()
@@ -106,6 +111,7 @@ def serve_clients(log):
         finally:
             periodic.stop()
             cif.prepareForShutdown()
+            scheduler.stop()
     finally:
         libvirtconnection.stop_event_loop(wait=False)
 
