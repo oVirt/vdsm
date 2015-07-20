@@ -1299,6 +1299,15 @@
  'returns': 'bool'}
 
 ##
+# @GlusterHost.processesStop:
+#
+# Stops the gluster processes on the host
+#
+# Since: 4.17.0
+##
+{'command': {'class': 'GlusterHost', 'name': 'processesStop'}}
+
+##
 # @GlusterVolumeStatsInfo:
 #
 # Gluster Volumes disk usage statistics
