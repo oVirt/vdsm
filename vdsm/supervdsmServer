@@ -34,6 +34,7 @@ import logging.config
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
 
+from caps import Architecture
 import numaUtils
 
 LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
@@ -133,7 +134,7 @@ class _SuperVdsm(object):
         if platform.machine() in ('x86_64', 'i686'):
             from dmidecodeUtil import getHardwareInfoStructure
             return getHardwareInfoStructure()
-        elif platform.machine() in ('ppc64', ):
+        elif platform.machine() in Architecture.POWER:
             from ppc64HardwareInfo import getHardwareInfoStructure
             return getHardwareInfoStructure()
         else:
