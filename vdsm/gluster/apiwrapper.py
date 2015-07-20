@@ -86,6 +86,9 @@ class GlusterHost(GlusterApiBase):
         return self._gluster.createBrick(name, mountPoint,
                                          devList, fsType, raidParams)
 
+    def processesStop(self):
+        return self._gluster.processesStop()
+
 
 class GlusterService(GlusterApiBase):
     def __init__(self):

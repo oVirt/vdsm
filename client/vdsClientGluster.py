@@ -740,6 +740,11 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterProcessesStop(self, args):
+        status = self.s.glusterProcessesStop()
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1252,5 +1257,10 @@ def getGlusterCmdDict(serv):
              serv.do_glusterSnapshotScheduleReset,
              ('',
               'Reset gluster snapshot scheduling'
+              )),
+         'glusterProcessesStop': (
+             serv.do_glusterProcessesStop,
+             ('',
+              'Stop gluster processes'
               ))
          }

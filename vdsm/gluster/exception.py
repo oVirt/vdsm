@@ -103,6 +103,11 @@ class GlusterCmdFailedException(GlusterGeneralException):
     message = "Command failed"
 
 
+class GlusterProcessesStopFailedException(GlusterGeneralException):
+    code = 4579
+    message = "Failed to stop gluster processes"
+
+
 # Volume
 class GlusterVolumeException(GlusterException):
     code = 4111

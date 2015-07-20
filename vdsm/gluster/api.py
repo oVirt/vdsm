@@ -52,6 +52,12 @@ _snapSchedulerPath = utils.CommandPath(
     "/usr/sbin/snap_scheduler.py",
 )
 
+_stopAllProcessesPath = utils.CommandPath(
+    "stop-all-gluster-processes.sh",
+    "/usr/share/glusterfs/scripts/stop-all-gluster-processes.sh",
+)
+
+
 GLUSTER_RPM_PACKAGES = (
     ('glusterfs', ('glusterfs',)),
     ('glusterfs-fuse', ('glusterfs-fuse',)),
@@ -263,6 +269,14 @@ def snapshotScheduleFlagUpdate(value):
         raise ge.GlusterSnapshotScheduleFlagUpdateFailedException(
             err=[str(e)])
     return True
+
+
+@makePublic
+def processesStop():
+    command = ["/bin/sh", _stopAllProcessesPath.cmd]
+    rc, out, err = utils.execCmd(command)
+    if rc:
+        raise ge.GlusterProcessesStopFailedException(rc)
 
 
 class GlusterApi(object):
@@ -751,6 +765,10 @@ class GlusterApi(object):
     @exportAsVerb
     def snapshotScheduleReset(self, options=None):
         self.svdsmProxy.glusterSnapshotScheduleFlagUpdate("none")
+
+    @exportAsVerb
+    def processesStop(self):
+        self.svdsmProxy.glusterProcessesStop()
 
 
 def getGlusterMethods(gluster):
