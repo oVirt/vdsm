@@ -524,7 +524,22 @@ class VolumeManifest(object):
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
                     voltype, disktype, desc="", legality=ILLEGAL_VOL):
-        meta = {
+        """
+        Creates the metadata for a volume and writes it to storage.
+        """
+        meta_dict = cls.new_metadata_dict(sdUUID, imgUUID, puuid, size, format,
+                                          type, voltype, disktype, desc,
+                                          legality)
+        cls.createMetadata(metaId, meta_dict)
+        return meta_dict
+
+    @classmethod
+    def new_metadata_dict(cls, sdUUID, imgUUID, puuid, size, format, type,
+                          voltype, disktype, desc="", legality=ILLEGAL_VOL):
+        """
+        Produce a metadata dictionary from a set of arguments.
+        """
+        return {
             FORMAT: str(format),
             TYPE: str(type),
             VOLTYPE: str(voltype),
@@ -537,10 +552,7 @@ class VolumeManifest(object):
             DESCRIPTION: cls.validateDescription(desc),
             PUUID: str(puuid),
             MTIME: 0,
-            LEGALITY: str(legality),
-            }
-        cls.createMetadata(metaId, meta)
-        return meta
+            LEGALITY: str(legality)}
 
     def refreshVolume(self):
         pass
