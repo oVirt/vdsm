@@ -155,13 +155,8 @@ Requires: libvirt-daemon-driver-nwfilter
 Requires: libvirt-daemon-driver-qemu
 
 %if 0%{?rhel}
-%if 0%{?rhev_build}
 Requires: libvirt-daemon >= 1.2.8-16.el7_1.2
 Requires: libvirt-python >= 1.2.8-7.el7_1.1
-%else
-Requires: libvirt-daemon >= 1.2.8-15.el7
-Requires: libvirt-python >= 1.2.8-5.el7
-%endif # rhev_build
 %endif # rhel
 
 %if 0%{?fedora} >= 22
