@@ -263,13 +263,16 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     blivetEnv = blivet.Blivet()
     _reset_blivet(blivetEnv)
 
+    # get the devices list from the device name
     deviceList = _getDeviceList(devNameList)
 
+    # raise an error when any device not actually found in the given list
     notFoundList = set(devNameList).difference(
         set([dev.name for dev in deviceList]))
     if notFoundList:
         raise ge.GlusterHostStorageDeviceNotFoundException(notFoundList)
 
+    # raise an error when any device is used already in the given list
     inUseList = set(devNameList).difference(set([not _canCreateBrick(
         dev) or dev.name for dev in deviceList]))
     if inUseList:
@@ -283,6 +286,11 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     # http://docbuilder.usersys.redhat.com/22522
     # /#chap-Configuring_Red_Hat_Storage_for_Enhancing_Performance
 
+    # create ~16GB metadata LV (metaDataSize) that has a size which is
+    # a multiple of RAID stripe width if it is > minimum vg size
+    # otherwise allocate a minimum of 0.5% of the data device size
+    # and create data LV (poolDataSize) that has a size which is
+    # a multiple of stripe width
     if alignment:
         vgSizeKib = int(vg.size.convertTo(spec="KiB"))
         if vg.size.convertTo(spec='MiB') < MIN_VG_SIZE:
@@ -291,6 +299,9 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         metaDataSize = (metaDataSize - (metaDataSize % alignment))
         poolDataSize = (poolDataSize - (poolDataSize % alignment))
 
+    # Creating a thin pool from the data LV and the metadata LV
+    # lvconvert --chunksize alignment --thinpool VOLGROUP/thin_pool
+    #     --poolmetadata VOLGROUP/metadata_device_name
     pool = _createThinPool(poolName, vg, chunkSize, metaDataSize, poolDataSize)
     thinlv = LVMThinLogicalVolumeDevice(brickName, parents=[pool],
                                         size=pool.size, grow=True)
@@ -303,11 +314,10 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
             thinlv.path, alignment, raidParams.get('stripeSize', 0), fsType)
 
     format = blivet.formats.getFormat(DEFAULT_FS_TYPE, device=thinlv.path)
-    if alignment:
-        format._defaultFormatOptions = [
-            "-f", "-K", "-i", "size=512",
-            "-d", "sw=%s,su=%sk" % (count, raidParams.get('stripeSize')),
-            "-n", "size=8192"]
+    format._defaultFormatOptions = ["-f", "-i", "size=512", "-n", "size=8192"]
+    if raidParams.get('type') == '6':
+        format._defaultFormatOptions += ["-d", "sw=%s,su=%sk" % (
+            count, raidParams.get('stripeSize'))]
     blivetEnv.formatDevice(thinlv, format)
     blivetEnv.doIt()
 
