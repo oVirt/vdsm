@@ -430,7 +430,6 @@ AC_OUTPUT([
 	vdsm_hooks/vmfex/Makefile
 	vdsm_hooks/vmfex_dev/Makefile
 	vdsm_reg/Makefile
-	vdsm_compat/Makefile
 ])
 
 AC_OUTPUT([

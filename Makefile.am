@@ -34,10 +34,6 @@ SUBDIRS = \
 # prepared before running.
 SUBDIRS += tests
 
-if RHEV
-SUBDIRS += vdsm_compat
-endif
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
 # This is an *exception*, we ship also vdsm.spec so it's possible to build the
@@ -122,10 +118,9 @@ SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 .PHONY: pyflakes
 pyflakes:
 	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
-	( find . -path './.git' -prune -type f -o \
-		-path './vdsm_compat' -prune -type f -o \
-		-name '*.py' -o -name '*.py.in' && \
-		echo $(WHITELIST) ) | xargs $(PYFLAKES) | \
+	find . -path './.git' -prune -type f -o \
+		-name '*.py' -o -name '*.py.in' | \
+		echo $(WHITELIST) | xargs $(PYFLAKES) | \
 		grep -w -v $(SKIP_PYFLAKES_ERR) | \
 		while read LINE; do echo "$$LINE"; false; done
 
@@ -149,7 +144,7 @@ python3:
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check-recursive: gitignore python3 pyflakes pep8
+check-recursive: gitignore python3 pyflakes
 
 .PHONY: check-all
 check-all:
