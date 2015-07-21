@@ -246,10 +246,7 @@ class GuestAgent(object):
 
     def _handleMessage(self, message, args):
         self.log.log(logging.TRACE, "Guest's message %s: %s", message, args)
-        if self.guestStatus is None:
-            self.guestStatus = vmstatus.UP
         if message == 'heartbeat':
-            self.guestStatus = vmstatus.UP
             self.guestInfo['memUsage'] = int(args['free-ram'])
             # ovirt-guest-agent reports the following fields in 'memory-stat':
             # 'mem_total', 'mem_free', 'mem_unused', 'swap_in', 'swap_out',
@@ -270,6 +267,9 @@ class GuestAgent(object):
                 # downgrade of the guest agent)
                 self.log.debug("API versioning no longer reported by guest.")
                 self.effectiveApiVersion = _IMPLICIT_API_VERSION_ZERO
+            # Only change the state AFTER all data of the heartbeat has been
+            # consumed
+            self.guestStatus = vmstatus.UP
         elif message == 'host-name':
             self.guestInfo['guestName'] = args['name']
         elif message == 'os-version':
