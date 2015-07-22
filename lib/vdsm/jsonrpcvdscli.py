@@ -33,17 +33,33 @@ from .config import config
 
 
 _COMMAND_CONVERTER = {
-    'ping': 'Host.ping',
+    'addNetwork': 'Host.addNetwork',
+    'create': 'VM.create',
+    'delNetwork': 'Host.delNetwork',
     'destroy': 'VM.destroy',
+    'editNetwork': 'Host.editNetwork',
+    'getAllVmStats': 'Host.getAllVmStats',
+    'getVdsCapabilities': 'Host.getCapabilities',
+    'getVdsStats': 'Host.getStats',
     'getVmStats': 'VM.getStats',
+    'list': 'Host.getVMList',
     'migrationCreate': 'VM.migrationCreate',
+    'ping': 'Host.ping',
+    'setBalloonTarget': 'VM.setBalloonTarget',
+    'setCpuTunePeriod': 'VM.setCpuTunePeriod',
+    'setCpuTuneQuota': 'VM.setCpuTuneQuota',
+    'setMOMPolicy': 'Host.setMOMPolicy',
+    'setSafeNetworkConfig': 'Host.setSafeNetworkConfig',
+    'setupNetworks': 'Host.setupNetworks',
+    'updateVmPolicy': 'VM.updateVmPolicy',
 }
 
 
 class _Server(object):
 
-    def __init__(self, client):
+    def __init__(self, client, compat):
         self._client = client
+        self._compat = compat
 
     def _callMethod(self, methodName, *args):
         try:
@@ -64,6 +80,9 @@ class _Server(object):
             return response.error_raw(resp.error["code"],
                                       resp.error["message"])
 
+        if not self._compat:
+            return response.success_raw(resp.result)
+
         if resp.result and resp.result is not True:
             # None is translated to True inside our JSONRPC implementation
             return response.success(**resp.result)
@@ -72,6 +91,11 @@ class _Server(object):
 
     def migrationCreate(self, params):
         return self._callMethod('migrationCreate',
+                                params['vmId'],
+                                params)
+
+    def create(self, params):
+        return self._callMethod('create',
                                 params['vmId'],
                                 params)
 
@@ -107,7 +131,7 @@ def _create(requestQueue,
 def connect(requestQueue, stompClient=None,
             host=None, port=None,
             useSSL=None,
-            responseQueue=None):
+            responseQueue=None, compat=True):
     if not stompClient:
         client = _create(requestQueue,
                          host, port, useSSL,
@@ -119,4 +143,4 @@ def connect(requestQueue, stompClient=None,
             str(uuid4())
         )
 
-    return _Server(client)
+    return _Server(client, compat)
