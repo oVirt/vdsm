@@ -26,6 +26,7 @@ from vdsm import netinfo
 
 from .errors import ConfigNetworkError
 from . import errors as ne
+from .utils import remove_custom_bond_option
 
 
 class NetDevice(object):
@@ -241,9 +242,11 @@ class Bond(NetDevice):
         # TODO: this method returns True iff self.options are a subset of the
         # TODO: current bonding options. VDSM should probably compute if the
         # TODO: non-default settings are equal to the non-default state.
-        if not self.options:
+        # 'custom' is not a real bond option, it just piggybacks custom values
+        options = remove_custom_bond_option(self.options)
+        if options == '':
             return True
-        confOpts = [option.split('=', 1) for option in self.options.split(' ')]
+        confOpts = [option.split('=', 1) for option in options.split(' ')]
         activeOpts = netinfo.bondOpts(self.name,
                                       (name for name, value in confOpts))
         return all(value in activeOpts[name] for name, value in confOpts)
@@ -267,22 +270,9 @@ class Bond(NetDevice):
                               _netinfo=_netinfo))
         return slaves
 
-    @staticmethod
-    def remove_custom_option(options):
-        """ 'custom' property should not be exposed to configurator, it is
-        only for purpose of hooks """
-        d_opts = dict(opt.split('=', 1) for opt in options.split())
-        if d_opts.pop('custom', None) is not None:
-            options = ' '.join(['%s=%s' % (key, value)
-                                for key, value in d_opts.items()])
-        return options
-
     @classmethod
     def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
                     destroyOnMasterRemoval=None):
-
-        if options:
-            options = cls.remove_custom_option(options)
 
         if nics:  # New bonding or edit bonding.
             slaves = cls._objectivizeSlaves(name, configurator, _nicSort(nics),

@@ -34,6 +34,7 @@ from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
 from ..sourceroute import DynamicSourceRoute
+from ..utils import remove_custom_bond_option
 
 _BRIDGING_OPT_PATH = '/sys/class/net/%s/bridge/%s'
 _ETHTOOL_BINARY = CommandPath(
@@ -340,7 +341,9 @@ class ConfigApplier(object):
 
     def addBondOptions(self, bond):
         logging.debug('Add bond options %s', bond.options)
-        for option in bond.options.split():
+        # 'custom' is not a real bond option, it just piggybacks custom values
+        options = remove_custom_bond_option(bond.options)
+        for option in options:
             key, value = option.split('=')
             with open(netinfo.BONDING_OPT % (bond.name, key), 'w') as f:
                 f.write(value)

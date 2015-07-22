@@ -1,5 +1,4 @@
-#
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,17 +17,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = configurators tc
 
-include $(top_srcdir)/build-aux/Makefile.subs
+def remove_custom_bond_option(options):
+    """ Removes 'custom' option from bond options string.
 
-vdsmnetworkdir = $(vdsmdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	models.py \
-	sourceroute.py \
-	sourceroutethread.py \
-	utils.py \
-	$(NULL)
+    >>> remove_custom_bond_option('custom=foo=bar mode=1')
+    'mode=1'
+    """
+    return ' '.join((option for option in options.split()
+                     if not option.startswith('custom=')))

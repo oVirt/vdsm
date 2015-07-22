@@ -27,6 +27,7 @@ from vdsm.netconfpersistence import RunningConfig
 from . import libvirt, runDhclient
 from .dhclient import DhcpClient
 from .iproute2 import Iproute2
+from ..utils import remove_custom_bond_option
 
 try:
     from pyroute2 import IPDB
@@ -153,7 +154,9 @@ class ConfigApplier(object):
 
     def addBondOptions(self, bond):
         logging.debug('Add bond options %s', bond.options)
-        for option in bond.options.split():
+        # 'custom' is not a real bond option, it just piggybacks custom values
+        options = remove_custom_bond_option(bond.options)
+        for option in options:
             key, value = option.split('=')
             with open(netinfo.BONDING_OPT % (bond.name, key), 'w') as f:
                 f.write(value)

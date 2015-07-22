@@ -48,6 +48,7 @@ from . import Configurator, dhclient, getEthtoolOpts, libvirt
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, IPv4, IPv6
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
+from ..utils import remove_custom_bond_option
 import dsaversion  # TODO: Make parent package import when vdsm is a package
 
 NET_LOGICALNET_CONF_BACK_DIR = netinfo.NET_CONF_BACK_DIR + 'logicalnetworks/'
@@ -567,7 +568,9 @@ class ConfigWriter(object):
 
     def addBonding(self, bond, **opts):
         """ Create ifcfg-* file with proper fields for bond """
-        conf = 'BONDING_OPTS=%s\n' % pipes.quote(bond.options or '')
+        # 'custom' is not a real bond option, it just piggybacks custom values
+        options = remove_custom_bond_option(bond.options)
+        conf = 'BONDING_OPTS=%s\n' % pipes.quote(options)
         opts['hotplug'] = 'no'  # So that udev doesn't trigger an ifup
         if bond.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(bond.bridge.name)

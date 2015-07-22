@@ -72,8 +72,7 @@ _BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 _BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 _EXCLUDED_BONDING_ENTRIES = frozenset((
     'slaves', 'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
-    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac',
-    'custom'
+    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac'
 ))
 _IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
@@ -512,6 +511,15 @@ def _bondOptsCompat(info):
         info['cfg']['BONDING_OPTS'] = _bondOptsForIfcfg(info['opts'])
 
 
+def _bondCustomOpts(dev, devinfo, running_config):
+    """Add custom bonding options read from running_config."""
+    if dev.name in running_config.bonds:
+        for option in running_config.bonds[dev.name]['options'].split():
+            if option.startswith('custom='):
+                devinfo['opts']['custom'] = option.split('=', 1)[1]
+                break
+
+
 def _vlaninfo(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
@@ -711,6 +719,7 @@ def get(vdsmnets=None):
     ipaddrs = _getIpAddrs()
     dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces()
     routes = _get_routes()
+    running_config = RunningConfig()
 
     if vdsmnets is None:
         libvirt_nets = networks()
@@ -734,6 +743,7 @@ def get(vdsmnets=None):
                                 dhcpv6_ifaces))
         if dev.isBOND():
             _bondOptsCompat(devinfo)
+            _bondCustomOpts(dev, devinfo, running_config)
 
     for net, attrs in d['networks'].iteritems():
         if attrs['bridged']:

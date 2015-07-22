@@ -2645,12 +2645,18 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             status, msg = self.setupNetworks(
                 {},
                 {BONDING_NAME: {'nics': nics,
-                                'options': 'custom=foo mode=balance-rr'}},
-                NOCHK, test_kernel_config=False)
+                                'options': 'custom=foo=bar mode=4'}},
+                NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondExists(BONDING_NAME, nics)
-            opts = self.vdsm_net.config.bonds.get(BONDING_NAME).get('options')
-            self.assertEquals(opts, 'mode=balance-rr')
+            if vdsm.config.config.get('vars', 'net_persistence') == 'unified':
+                # custom property has to be shown in netinfo and persisted (if
+                # unified persistence is used).
+                self._assert_exact_bond_opts(BONDING_NAME,
+                                             ['mode=4', 'custom=foo=bar'])
+                bond = self.vdsm_net.config.bonds.get(BONDING_NAME)
+                self.assertSetEqual(set(['mode=4', 'custom=foo=bar']),
+                                    set(bond.get('options').split()))
 
             status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: {'remove': True}}, NOCHK)
