@@ -163,11 +163,13 @@ public abstract class SSLClient extends StompCommonClient {
 
     public List<Certificate> getPeerCertificates() {
         try {
-            SSLSession sslSession = nioEngine.getSSLEngine().getSession();
-            if (sslSession == null || !sslSession.isValid()) {
-                throw new IllegalStateException("SSL session is invalid");
+            if (nioEngine != null && nioEngine.getSSLEngine() != null) {
+                SSLSession sslSession = nioEngine.getSSLEngine().getSession();
+                if (sslSession == null || !sslSession.isValid()) {
+                    throw new IllegalStateException("SSL session is invalid");
+                }
+                return Arrays.asList(sslSession.getPeerCertificates());
             }
-            return Arrays.asList(sslSession.getPeerCertificates());
         } catch (SSLPeerUnverifiedException e) {
             logException(log, "Failed to get peer certificates", e);
         }
