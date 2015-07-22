@@ -1283,3 +1283,7 @@ class Volume(object):
     @classmethod
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
         return cls.metadataClass.newVolumeLease(metaId, sdUUID, volUUID)
+
+    @classmethod
+    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
+        return cls.metadataClass.getImageVolumes(repoPath, sdUUID, imgUUID)

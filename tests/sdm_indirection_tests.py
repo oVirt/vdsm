@@ -508,6 +508,11 @@ class FakeVolumeMetadata(object):
     def _shareLease(self, dstImgPath):
         pass
 
+    @classmethod
+    @recorded
+    def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
+        pass
+
 
 class FakeBlockVolumeMetadata(FakeVolumeMetadata):
     def __init__(self):
@@ -819,6 +824,7 @@ class VolumeTestMixin(object):
         ['createMetadata', 2],
         ['newMetadata', 11],
         ['newVolumeLease', 3],
+        ['getImageVolumes', 3],
         ])
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)
