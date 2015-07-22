@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import platform
+
 """
 This module provides DSA software versioning information for
 python based components
@@ -36,3 +38,6 @@ version_info = {
     'supportedENGINEs': ['3.4', '3.5', '3.6'],
     'clusterLevels': ['3.4', '3.5', '3.6'],
 }
+
+if platform.machine() == 'ppc64le':
+    version_info['clusterLevels'] = ['3.6']
