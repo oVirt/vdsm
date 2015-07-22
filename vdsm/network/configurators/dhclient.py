@@ -42,9 +42,11 @@ class DhcpClient(object):
     LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
     DHCLIENT = CommandPath('dhclient', '/sbin/dhclient')
 
-    def __init__(self, iface, family=4, cgroup=DHCLIENT_CGROUP):
+    def __init__(self, iface, family=4, default_route=False,
+                 cgroup=DHCLIENT_CGROUP):
         self.iface = iface
         self.family = family
+        self.default_route = default_route
         self.pidFile = self.PID_FILE % (family, self.iface)
         if not os.path.exists(self.LEASE_DIR):
             os.mkdir(self.LEASE_DIR)
@@ -58,6 +60,9 @@ class DhcpClient(object):
             kill_dhclient(self.iface, self.family)
         cmd = [self.DHCLIENT.cmd, '-%s' % self.family, '-1', '-pf',
                self.pidFile, '-lf', self.leaseFile, self.iface]
+        if not self.default_route:
+            # Instruct Fedora/EL's dhclient-script not to set gateway on iface
+            cmd += ['-e', 'DEFROUTE=no']
         cmd = cmdutils.systemd_run(cmd, scope=True, slice=self._cgroup)
         rc, out, err = execCmd(cmd)
         return rc, out, err
