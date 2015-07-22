@@ -20,13 +20,16 @@
 
 from functools import partial
 from uuid import uuid4
+import socket
 
+from . import sslutils
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcRequest, \
     JsonRpcNoResponseError
 
 from vdsm import response
+from .config import config
 
 
 _COMMAND_CONVERTER = {
@@ -79,9 +82,41 @@ class _Server(object):
         self._client.close()
 
 
-def connect(client, requestQueue):
-    client = stompreactor.StompRpcClient(client,
-                                         requestQueue,
-                                         str(uuid4()))
+def _create(requestQueue,
+            host=None, port=None,
+            useSSL=None,
+            responseQueue=None):
+    if host is None:
+        host = socket.gethostname()
+    if port is None:
+        port = int(config.getint('addresses', 'management_port'))
+
+    if useSSL is None:
+        useSSL = config.getboolean('vars', 'ssl')
+
+    if useSSL:
+        sslctx = sslutils.create_ssl_context()
+    else:
+        sslctx = None
+
+    return stompreactor.StandAloneRpcClient(
+        host, port, requestQueue, str(uuid4()), sslctx,
+        lazy_start=False)
+
+
+def connect(requestQueue, stompClient=None,
+            host=None, port=None,
+            useSSL=None,
+            responseQueue=None):
+    if not stompClient:
+        client = _create(requestQueue,
+                         host, port, useSSL,
+                         responseQueue)
+    else:
+        client = stompreactor.StompRpcClient(
+            stompClient,
+            requestQueue,
+            str(uuid4())
+        )
 
     return _Server(client)
