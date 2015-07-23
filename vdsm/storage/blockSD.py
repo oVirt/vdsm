@@ -583,7 +583,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         Return a type specific volume generator object
         """
-        return blockVolume.BlockVolume
+        return blockVolume.BlockVolumeMetadata
 
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         """Filter vols belonging to imgUUID only."""
@@ -1384,6 +1384,12 @@ class BlockStorageDomain(sd.StorageDomain):
             return vg.name
 
         raise se.StorageDomainDoesNotExist(sdUUID)
+
+    def getVolumeClass(self):
+        """
+        Return a type specific volume generator object
+        """
+        return blockVolume.BlockVolume
 
 
 def _createVMSfs(dev):

@@ -219,10 +219,6 @@ class FakeBlockDomainManifest(FakeDomainManifest):
         pass
 
     @recorded
-    def getVolumeClass(self):
-        pass
-
-    @recorded
     def rmDCImgDir(self, imgUUID, volsImgs):
         pass
 
@@ -259,10 +255,6 @@ class FakeFileDomainManifest(FakeDomainManifest):
 
     @recorded
     def getIdsFilePath(self):
-        pass
-
-    @recorded
-    def getVolumeClass(self):
         pass
 
 
@@ -475,7 +467,6 @@ class DomainTestMixin(object):
         ['getMetaParam', 1],
         ['getVersion', 0],
         ['getMetadata', 0],
-        ['getVolumeClass', 0],
         ['getFormat', 0],
         ['getPools', 0],
         ['getStorageType', 0],

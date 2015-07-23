@@ -375,8 +375,12 @@ class StorageDomainManifest(object):
                 pools.remove(BLANK_UUID)
         return pools
 
-    def getVolumeClass(self):
-        pass
+    def produceVolume(self, imgUUID, volUUID):
+        """
+        Produce a type specific volume object
+        """
+        return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
+                                     volUUID)
 
     def isISO(self):
         return self.getMetaParam(DMDK_CLASS) == ISO_DOMAIN
@@ -596,9 +600,6 @@ class StorageDomain(object):
         """
         return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
                                      volUUID)
-
-    def getVolumeClass(self):
-        return self._manifest.getVolumeClass()
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID,
                                    preallocate=None):

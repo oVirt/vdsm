@@ -199,7 +199,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         """
         Return a type specific volume generator object
         """
-        return fileVolume.FileVolume
+        return fileVolume.FileVolumeMetadata
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         currImgDir = self.getImagePath(imgUUID)
@@ -671,6 +671,12 @@ class FileStorageDomain(sd.StorageDomain):
                 tVol = os.path.join(basePath, templateImage, volFile)
                 self.log.debug("Force linking %s to %s", tVol, tLink)
                 self.oop.utils.forceLink(tVol, tLink)
+
+    def getVolumeClass(self):
+        """
+        Return a type specific volume generator object
+        """
+        return fileVolume.FileVolume
 
 
 def _getMountsList(pattern="*"):
