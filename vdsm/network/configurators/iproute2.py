@@ -264,9 +264,9 @@ class ConfigApplier(object):
     def ifup(self, iface):
         ipwrapper.linkSet(iface.name, ['up'])
         if iface.ipv4.bootproto == 'dhcp':
-            runDhclient(iface)
+            runDhclient(iface, 4, iface.ipv4.defaultRoute)
         if iface.ipv6.dhcpv6:
-            runDhclient(iface, 6)
+            runDhclient(iface, 6, iface.ipv6.defaultRoute)
 
     def ifdown(self, iface):
         ipwrapper.linkSet(iface.name, ['down'])
