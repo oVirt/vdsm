@@ -199,6 +199,8 @@ Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
 Description: Generate random statistics for vms running on the host. The hook
  intercepts statistics returned on getAllVmStats.
+ To enable this hook on your host, set vars.fake_vmstats_enable=true in your
+ /etc/vdsm/vdsm.conf.
 
 Package: vdsm-hook-fileinject
 Architecture: all

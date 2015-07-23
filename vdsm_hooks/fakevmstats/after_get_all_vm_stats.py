@@ -18,8 +18,19 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+"""
+To Enable this set fake_vmstats_enable=true in /etv/vdsm/vdsm.conf.
+To set this automatically via ovirt-host-deploy
+
+/etc/ovirt-host-deploy.conf.d/50-fake-stats.conf
+    VDSM/configOverride=bool:False
+    VDSM_CONFIG/fake_vmstats_enable=str:true
+"""
 import hooking
 import random
+
+from vdsm.config import config
 
 QUARTER_GB = 1024*1024*256
 GB = QUARTER_GB * 4
@@ -177,7 +188,8 @@ def randomizeRuntimeStats(stats):
 
 
 if __name__ == '__main__':
-    statsList = hooking.read_json()
-    for stats in statsList:
-        randomizeRuntimeStats(stats)
-    hooking.write_json(statsList)
+    if config.getboolean('vars', 'fake_vmstats_enable'):
+        statsList = hooking.read_json()
+        for stats in statsList:
+            randomizeRuntimeStats(stats)
+        hooking.write_json(statsList)

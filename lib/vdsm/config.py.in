@@ -175,6 +175,8 @@ parameters = [
         ('fake_kvm_memory', '0', 'Set memory of fake KVM hosts. '
          'Set to \'0\' to use supplied memory value'),
 
+        ('fake_vmstats_enable', 'false', 'Enable reporting of fake VM stats.'),
+
         ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
 
         ('xmlrpc_http11', 'true',
