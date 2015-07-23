@@ -60,17 +60,18 @@ from utils import SUCCESS, VdsProxy
 NETWORK_NAME = 'test-network'
 VLAN_ID = '27'
 BONDING_NAME = 'bond11'
-IP_ADDRESS = '240.0.0.1'
-IP_NETWORK = '240.0.0.0'
-IP_ADDRESS_IN_NETWORK = '240.0.0.50'
+# Use TEST-NET network (RFC 5737)
+IP_ADDRESS = '192.0.2.1'
+IP_NETWORK = '192.0.2.0'
+IP_ADDRESS_IN_NETWORK = '192.0.2.2'
 IP_CIDR = '24'
 IP_ADDRESS_AND_CIDR = IP_ADDRESS + '/' + IP_CIDR
 IP_NETWORK_AND_CIDR = IP_NETWORK + '/' + IP_CIDR
 _ip_network = netaddr.IPNetwork(IP_NETWORK_AND_CIDR)
 IP_MASK = str(_ip_network.netmask)
 IP_GATEWAY = str(_ip_network.broadcast - 1)
-DHCP_RANGE_FROM = '240.0.0.10'
-DHCP_RANGE_TO = '240.0.0.100'
+DHCP_RANGE_FROM = '192.0.2.10'
+DHCP_RANGE_TO = '192.0.2.100'
 DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
 DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 CUSTOM_PROPS = {'linux': 'rules', 'vdsm': 'as well'}
