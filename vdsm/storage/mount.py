@@ -206,10 +206,7 @@ class Mount(object):
         return not self == other
 
     def __hash__(self):
-        hsh = hash(type(self))
-        hsh ^= hash(self.fs_spec)
-        hsh ^= hash(self.fs_file)
-        return hsh
+        return hash((self.__class__, self.fs_spec, self.fs_file))
 
     def mount(self, mntOpts=None, vfstype=None, timeout=None, cgroup=None):
         cmd = [constants.EXT_MOUNT]
