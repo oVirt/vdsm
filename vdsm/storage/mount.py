@@ -198,14 +198,9 @@ class Mount(object):
         self.fs_file = normpath(fs_file)
 
     def __eq__(self, other):
-        if not isinstance(other, Mount):
-            return False
-
-        try:
-            return (other.fs_spec == self.fs_spec and
-                    other.fs_file == self.fs_file)
-        except Exception:
-            return False
+        return (self.__class__ == other.__class__ and
+                self.fs_spec == other.fs_spec and
+                self.fs_file == other.fs_file)
 
     def __hash__(self):
         hsh = hash(type(self))

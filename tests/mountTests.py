@@ -70,7 +70,6 @@ class TestMountEquality(TestCaseBase):
         m2 = mount.Mount("spec", "file")
         self.assertTrue(m1 == m2, "%s should equal %s" % (m1, m2))
 
-    @brokentest("__eq__ checking isinstance instead of class")
     def test_eq_subclass(self):
         class Subclass(mount.Mount):
             pass
