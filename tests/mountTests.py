@@ -31,7 +31,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir, expandPermutations, permutations
 from storage.misc import execCmd
 import storage.mount as mount
-from testValidation import checkSudo, brokentest
+from testValidation import checkSudo
 import monkeypatch
 
 FLOPPY_SIZE = (2 ** 20) * 4
@@ -86,7 +86,6 @@ class TestMountEquality(TestCaseBase):
         m2 = mount.Mount(spec2, file2)
         self.assertFalse(m1 == m2, "%s should not equal %s" % (m1, m2))
 
-    @brokentest("__ne__ not implemented")
     def test_ne_equal(self):
         m1 = mount.Mount("spec", "file")
         m2 = mount.Mount("spec", "file")

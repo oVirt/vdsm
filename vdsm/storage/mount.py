@@ -202,6 +202,9 @@ class Mount(object):
                 self.fs_spec == other.fs_spec and
                 self.fs_file == other.fs_file)
 
+    def __ne__(self, other):
+        return not self == other
+
     def __hash__(self):
         hsh = hash(type(self))
         hsh ^= hash(self.fs_spec)
