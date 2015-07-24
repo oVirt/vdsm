@@ -150,7 +150,7 @@ class _SuperVdsm(object):
         return _getScsiSerial(*args, **kwargs)
 
     @logDecorator
-    def resizeMap(selfself, devName):
+    def resizeMap(self, devName):
         return multipath._resize_map(devName)
 
     @logDecorator
