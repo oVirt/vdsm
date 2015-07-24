@@ -213,13 +213,13 @@ class Mount(object):
 
     def mount(self, mntOpts=None, vfstype=None, timeout=None, cgroup=None):
         mount = supervdsm.getProxy().mount if os.geteuid() != 0 else _mount
-        return mount(self.fs_spec, self.fs_file, mntOpts=mntOpts,
-                     vfstype=vfstype, timeout=timeout, cgroup=cgroup)
+        mount(self.fs_spec, self.fs_file, mntOpts=mntOpts, vfstype=vfstype,
+              timeout=timeout, cgroup=cgroup)
 
     def umount(self, force=False, lazy=False, freeloop=False, timeout=None):
         umount = supervdsm.getProxy().umount if os.geteuid() != 0 else _umount
-        return umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop,
-                      timeout=timeout)
+        umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop,
+               timeout=timeout)
 
     def isMounted(self):
         try:
@@ -268,7 +268,7 @@ def _mount(fs_spec, fs_file, mntOpts=None, vfstype=None, timeout=None,
     if cgroup:
         cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
 
-    return _runcmd(cmd, timeout)
+    _runcmd(cmd, timeout)
 
 
 def _umount(fs_file, force=False, lazy=False, freeloop=False, timeout=None):
@@ -287,7 +287,7 @@ def _umount(fs_file, force=False, lazy=False, freeloop=False, timeout=None):
 
     cmd.append(fs_file)
 
-    return _runcmd(cmd, timeout)
+    _runcmd(cmd, timeout)
 
 
 def _runcmd(cmd, timeout):
