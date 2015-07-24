@@ -28,10 +28,10 @@ import stat
 from nose.plugins.skip import SkipTest
 
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import namedTemporaryDir
+from testlib import namedTemporaryDir, expandPermutations, permutations
 from storage.misc import execCmd
 import storage.mount as mount
-from testValidation import checkSudo
+from testValidation import checkSudo, brokentest
 import monkeypatch
 
 FLOPPY_SIZE = (2 ** 20) * 4
@@ -60,6 +60,63 @@ def createFloppyImage(size):
         yield path
     finally:
         os.unlink(path)
+
+
+@expandPermutations
+class TestMountEquality(TestCaseBase):
+
+    def test_eq_equal(self):
+        m1 = mount.Mount("spec", "file")
+        m2 = mount.Mount("spec", "file")
+        self.assertTrue(m1 == m2, "%s should equal %s" % (m1, m2))
+
+    @brokentest("__eq__ checking isinstance instead of class")
+    def test_eq_subclass(self):
+        class Subclass(mount.Mount):
+            pass
+        m1 = mount.Mount("spec", "file")
+        m2 = Subclass("spec", "file")
+        self.assertFalse(m1 == m2, "%s should not equal %s" % (m1, m2))
+
+    @permutations([
+        ("spec", "spec", "file1", "file2"),
+        ("spec1", "spec2", "file", "file"),
+    ])
+    def test_eq_different(self, spec1, spec2, file1, file2):
+        m1 = mount.Mount(spec1, file1)
+        m2 = mount.Mount(spec2, file2)
+        self.assertFalse(m1 == m2, "%s should not equal %s" % (m1, m2))
+
+    @brokentest("__ne__ not implemented")
+    def test_ne_equal(self):
+        m1 = mount.Mount("spec", "file")
+        m2 = mount.Mount("spec", "file")
+        self.assertFalse(m1 != m2, "%s should equal %s" % (m1, m2))
+
+
+@expandPermutations
+class TestMountHash(TestCaseBase):
+
+    def test_equal_same_hash(self):
+        m1 = mount.Mount("spec", "file")
+        m2 = mount.Mount("spec", "file")
+        self.assertEqual(hash(m1), hash(m2))
+
+    def test_subclass_different_hash(self):
+        class Subclass(mount.Mount):
+            pass
+        m1 = mount.Mount("spec", "file")
+        m2 = Subclass("spec", "file")
+        self.assertNotEqual(hash(m1), hash(m2))
+
+    @permutations([
+        ("spec", "spec", "file1", "file2"),
+        ("spec1", "spec2", "file", "file"),
+    ])
+    def test_not_equal_different_hash(self, spec1, spec2, file1, file2):
+        m1 = mount.Mount(spec1, file1)
+        m2 = mount.Mount(spec2, file2)
+        self.assertNotEqual(hash(m1), hash(m2))
 
 
 class MountTests(TestCaseBase):

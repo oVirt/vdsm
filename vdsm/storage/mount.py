@@ -285,5 +285,5 @@ class Mount(object):
                       (self.fs_spec, self.fs_file))
 
     def __repr__(self):
-        return ("<Mount fs_spec='%s' fs_file='%s'>" %
-                (self.fs_spec, self.fs_file))
+        return ("<%s fs_spec='%s' fs_file='%s'>" %
+                (self.__class__.__name__, self.fs_spec, self.fs_file))
