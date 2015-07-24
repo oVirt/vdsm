@@ -30,6 +30,7 @@ import threading
 from vdsm import cmdutils
 from vdsm import constants
 from vdsm import commands
+from vdsm import supervdsm
 
 # Common vfs types
 
@@ -211,51 +212,14 @@ class Mount(object):
         return hash((self.__class__, self.fs_spec, self.fs_file))
 
     def mount(self, mntOpts=None, vfstype=None, timeout=None, cgroup=None):
-        cmd = [constants.EXT_MOUNT]
-
-        if vfstype is not None:
-            cmd.extend(("-t", vfstype))
-
-        if mntOpts:
-            cmd.extend(("-o", mntOpts))
-
-        cmd.extend((self.fs_spec, self.fs_file))
-
-        if cgroup:
-            cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
-
-        return self._runcmd(cmd, timeout)
-
-    def _runcmd(self, cmd, timeout):
-        isRoot = os.geteuid() == 0
-        p = commands.execCmd(cmd, sudo=not isRoot, sync=False)
-        if not p.wait(timeout):
-            p.kill()
-            raise OSError(errno.ETIMEDOUT,
-                          "%s operation timed out" % os.path.basename(cmd[0]))
-
-        out, err = p.communicate()
-        rc = p.returncode
-
-        if rc == 0:
-            return
-
-        raise MountError(rc, ";".join((out, err)))
+        mount = supervdsm.getProxy().mount if os.geteuid() != 0 else _mount
+        return mount(self.fs_spec, self.fs_file, mntOpts=mntOpts,
+                     vfstype=vfstype, timeout=timeout, cgroup=cgroup)
 
     def umount(self, force=False, lazy=False, freeloop=False, timeout=None):
-        cmd = [constants.EXT_UMOUNT]
-        if force:
-            cmd.append("-f")
-
-        if lazy:
-            cmd.append("-l")
-
-        if freeloop:
-            cmd.append("-d")
-
-        cmd.append(self.fs_file)
-
-        return self._runcmd(cmd, timeout)
+        umount = supervdsm.getProxy().umount if os.geteuid() != 0 else _umount
+        return umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop,
+                      timeout=timeout)
 
     def isMounted(self):
         try:
@@ -284,3 +248,59 @@ class Mount(object):
     def __repr__(self):
         return ("<%s fs_spec='%s' fs_file='%s'>" %
                 (self.__class__.__name__, self.fs_spec, self.fs_file))
+
+
+def _mount(fs_spec, fs_file, mntOpts=None, vfstype=None, timeout=None,
+           cgroup=None):
+    """
+    Called from supervdsm for running the mount command as root.
+    """
+    cmd = [constants.EXT_MOUNT]
+
+    if vfstype is not None:
+        cmd.extend(("-t", vfstype))
+
+    if mntOpts:
+        cmd.extend(("-o", mntOpts))
+
+    cmd.extend((fs_spec, fs_file))
+
+    if cgroup:
+        cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
+
+    return _runcmd(cmd, timeout)
+
+
+def _umount(fs_file, force=False, lazy=False, freeloop=False, timeout=None):
+    """
+    Called from supervdsm for running the umount command as root.
+    """
+    cmd = [constants.EXT_UMOUNT]
+    if force:
+        cmd.append("-f")
+
+    if lazy:
+        cmd.append("-l")
+
+    if freeloop:
+        cmd.append("-d")
+
+    cmd.append(fs_file)
+
+    return _runcmd(cmd, timeout)
+
+
+def _runcmd(cmd, timeout):
+    p = commands.execCmd(cmd, sync=False)
+    if not p.wait(timeout):
+        p.kill()
+        raise OSError(errno.ETIMEDOUT,
+                      "%s operation timed out" % os.path.basename(cmd[0]))
+
+    out, err = p.communicate()
+    rc = p.returncode
+
+    if rc == 0:
+        return
+
+    raise MountError(rc, ";".join((out, err)))

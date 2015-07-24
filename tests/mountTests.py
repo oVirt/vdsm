@@ -35,7 +35,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
 from storage.misc import execCmd
-from testValidation import checkSudo
+from testValidation import ValidateRunningAsRoot
 import monkeypatch
 
 FLOPPY_SIZE = (2 ** 20) * 4
@@ -122,9 +122,9 @@ class TestMountHash(TestCaseBase):
 
 
 class MountTests(TestCaseBase):
+
+    @ValidateRunningAsRoot
     def testLoopMount(self):
-        checkSudo(["mount", "-o", "loop", "somefile", "target"])
-        checkSudo(["umount", "target"])
         with namedTemporaryDir() as mpath:
             # two nested with blocks to be python 2.6 friendly
             with createFloppyImage(FLOPPY_SIZE) as path:
@@ -138,9 +138,8 @@ class MountTests(TestCaseBase):
                     with stopwatch("Wait for udev events"):
                         udevadm.settle(5)
 
+    @ValidateRunningAsRoot
     def testSymlinkMount(self):
-        checkSudo(["mount", "-o", "loop", "somefile", "target"])
-        checkSudo(["umount", "target"])
         with namedTemporaryDir() as root_dir:
             backing_image = os.path.join(root_dir, 'backing.img')
             link_to_image = os.path.join(root_dir, 'link_to_image')

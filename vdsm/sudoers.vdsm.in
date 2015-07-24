@@ -1,7 +1,7 @@
 Cmnd_Alias VDSM_LIFECYCLE = \
     @DMIDECODE_PATH@ -s system-uuid, \
     @VDSMDIR@/mk_sysprep_floppy
-Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
+Cmnd_Alias VDSM_STORAGE = \
     @FSCK_PATH@ -p *, \
     @TUNE2FS_PATH@ -j *, \
     @MKFS_PATH@ -q -j *, \
@@ -17,8 +17,7 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @MULTIPATH_PATH@, \
     @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
     @SERVICE_PATH@ vdsmd *, \
-    @REBOOT_PATH@ -f, \
-    @SYSTEMD_RUN_PATH@ --scope --slice=vdsm-glusterfs @MOUNT_PATH@ *
+    @REBOOT_PATH@ -f
 
 vdsm  ALL=(ALL) NOPASSWD: VDSM_LIFECYCLE, VDSM_STORAGE
 Defaults:vdsm !requiretty

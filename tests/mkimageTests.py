@@ -180,13 +180,12 @@ class MkimageTestCase(VdsmTestCase):
             with stopwatch("Wait for udev events"):
                 udevadm.settle(5)
 
+    @ValidateRunningAsRoot
     @permutations([[None], ['fslabel']])
     def test_mkIsoFs(self, label):
         """
         Tests mkimage.mkIsoFs creating an image and checking its content
         """
-        checkSudo(["mount", "-o", "loop", "somefile", "target"])
-        checkSudo(["umount", "target"])
         iso_img = mkimage.mkIsoFs("vmId_iso", self.files, label)
         self.assertTrue(os.path.exists(iso_img))
         m = mount.Mount(iso_img, self.workdir)
