@@ -21,6 +21,7 @@ from __future__ import absolute_import
 
 from collections import namedtuple
 import errno
+import logging
 from os.path import normpath
 import re
 import os
@@ -31,6 +32,7 @@ from vdsm import cmdutils
 from vdsm import constants
 from vdsm import commands
 from vdsm import supervdsm
+from vdsm import utils
 
 # Common vfs types
 
@@ -196,6 +198,9 @@ def getMountFromDevice(device):
 
 
 class Mount(object):
+
+    log = logging.getLogger("storage.Mount")
+
     def __init__(self, fs_spec, fs_file):
         self.fs_spec = normpath(fs_spec)
         self.fs_file = normpath(fs_file)
@@ -213,13 +218,17 @@ class Mount(object):
 
     def mount(self, mntOpts=None, vfstype=None, timeout=None, cgroup=None):
         mount = supervdsm.getProxy().mount if os.geteuid() != 0 else _mount
-        mount(self.fs_spec, self.fs_file, mntOpts=mntOpts, vfstype=vfstype,
-              timeout=timeout, cgroup=cgroup)
+        self.log.info("mounting %s at %s", self.fs_spec, self.fs_file)
+        with utils.stopwatch("%s mounted" % self.fs_file, log=self.log):
+            mount(self.fs_spec, self.fs_file, mntOpts=mntOpts, vfstype=vfstype,
+                  timeout=timeout, cgroup=cgroup)
 
     def umount(self, force=False, lazy=False, freeloop=False, timeout=None):
         umount = supervdsm.getProxy().umount if os.geteuid() != 0 else _umount
-        umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop,
-               timeout=timeout)
+        self.log.info("unmounting %s", self.fs_file)
+        with utils.stopwatch("%s unmounted" % self.fs_file, log=self.log):
+            umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop,
+                   timeout=timeout)
 
     def isMounted(self):
         try:
