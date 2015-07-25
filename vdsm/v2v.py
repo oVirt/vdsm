@@ -30,6 +30,7 @@ import errno
 import logging
 import os
 import re
+import signal
 import threading
 import xml.etree.ElementTree as ET
 
@@ -368,7 +369,7 @@ class ImportVm(object):
         cmd = self._create_command()
         logging.info('Job %r starting import', self._id)
 
-        self._proc = execCmd(cmd, sync=False, deathSignal=15,
+        self._proc = execCmd(cmd, sync=False, deathSignal=signal.SIGTERM,
                              env=self._execution_environments())
 
         self._proc.blocking = True
