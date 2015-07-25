@@ -21,6 +21,7 @@
 from monkeypatch import MonkeyPatch
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
+from testValidation import brokentest
 from storage.storageServer import GlusterFSConnection
 from storage.storageServer import IscsiConnection
 from storage.storageServer import MountConnection
@@ -63,6 +64,67 @@ class MountConnectionTests(VdsmTestCase):
         mount_con = MountConnection("dummy-spec", mountClass=FakeMount)
         self.assertEquals(mount_con._mount.fs_spec, "dummy-spec")
         self.assertEquals(mount_con._mount.fs_file, "/tmp/dummy-spec")
+
+
+@expandPermutations
+class TestMountConnectionEquality(VdsmTestCase):
+
+    def test_eq_equal(self):
+        c1 = MountConnection("spec", "vfstype", "options")
+        c2 = MountConnection("spec", "vfstype", "options")
+        self.assertTrue(c1 == c2, "%s should equal %s" % (c1, c2))
+
+    @brokentest("__eq__ check isinstance instead fo class")
+    def test_eq_subclass(self):
+        class Subclass(MountConnection):
+            pass
+        c1 = MountConnection("spec", "vfstype", "options")
+        c2 = Subclass("spec", "vfstype", "options")
+        self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
+
+    @brokentest("__eq__ not using all object state")
+    @permutations([
+        ("s1", "s2", "t", "t", "o", "o"),
+        ("s", "s", "t1", "t2", "o", "o"),
+        ("s", "s", "t", "t", "o1", "o2"),
+    ])
+    def test_eq_different(self, s1, s2, t1, t2, o1, o2):
+        c1 = MountConnection(s1, t1, o1)
+        c2 = MountConnection(s2, t2, o2)
+        self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
+
+    @brokentest("__ne__ not implemented")
+    def test_ne_equal(self):
+        c1 = MountConnection("spec", "vfstype", "options")
+        c2 = MountConnection("spec", "vfstype", "options")
+        self.assertFalse(c1 != c2, "%s should equal %s" % (c1, c2))
+
+
+@expandPermutations
+class TestMountConnectionHash(VdsmTestCase):
+
+    def test_equal_same_hash(self):
+        c1 = MountConnection("spec", "vfstype", "options")
+        c2 = MountConnection("spec", "vfstype", "options")
+        self.assertEqual(hash(c1), hash(c2))
+
+    def test_subclass_different_hash(self):
+        class Subclass(MountConnection):
+            pass
+        c1 = MountConnection("spec", "vfstype", "options")
+        c2 = Subclass("spec", "vfstype", "options")
+        self.assertNotEqual(hash(c1), hash(c2))
+
+    @brokentest("__hash__ not using all object state")
+    @permutations([
+        ("s1", "s2", "t", "t", "o", "o"),
+        ("s", "s", "t1", "t2", "o", "o"),
+        ("s", "s", "t", "t", "o1", "o2"),
+    ])
+    def test_not_equal_different_hash(self, s1, s2, t1, t2, o1, o2):
+        c1 = MountConnection(s1, t1, o1)
+        c2 = MountConnection(s2, t2, o2)
+        self.assertNotEqual(hash(c1), hash(c2))
 
 
 @expandPermutations

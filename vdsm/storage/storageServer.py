@@ -264,6 +264,13 @@ class MountConnection(object):
     def __hash__(self):
         return hash(type(self)) ^ hash(self._mount)
 
+    def __str__(self):
+        return "<{0} spec={1!r} vfstype={2!r} options={3!r}>".format(
+            self.__class__.__name__,
+            self._remotePath,
+            self._vfsType,
+            self._options)
+
 
 class GlusterFSConnection(MountConnection):
 
