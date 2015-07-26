@@ -116,9 +116,7 @@ CON_TYPE_ID_2_CON_TYPE = {
     sd.LOCALFS_DOMAIN: 'localfs',
     sd.NFS_DOMAIN: 'nfs',
     sd.ISCSI_DOMAIN: 'iscsi',
-    # FCP domain shouldn't even be on the list but VDSM use to just
-    # accept this type as iscsi so we are stuck with it
-    sd.FCP_DOMAIN: 'iscsi',
+    sd.FCP_DOMAIN: 'fcp',
     sd.POSIXFS_DOMAIN: 'posixfs',
     sd.GLUSTERFS_DOMAIN: 'glusterfs'}
 
@@ -241,6 +239,8 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
             cred = iscsi.ChapCredentials(username, password)
 
         params = storageServer.IscsiConnectionParameters(target, iface, cred)
+    elif typeName == 'fcp':
+        params = storageServer.FcpConnectionParameters()
     else:
         raise se.StorageServerActionError()
 
