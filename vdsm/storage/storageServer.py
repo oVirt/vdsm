@@ -69,6 +69,8 @@ NfsConnectionParameters = namedtuple("NfsConnectionParameters",
                                      "export, retrans, timeout, version, "
                                      "extraOptions")
 
+FcpConnectionParameters = namedtuple("FcpConnectionParameters", "")
+
 ConnectionInfo = namedtuple("ConnectionInfo", "type, params")
 
 
@@ -555,6 +557,27 @@ class IscsiConnection(object):
         return hsh
 
 
+class FcpConnection(object):
+
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
+
+    def isConnected(self):
+        return True
+
+    def __eq__(self, other):
+        return self.__class__ == other.__class
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(self.__class__)
+
+
 class LocalDirectoryConnection(object):
     @property
     def path(self):
@@ -707,6 +730,7 @@ class ConnectionFactory(object):
         "glusterfs": GlusterFSConnection,
         "iscsi": IscsiConnection,
         "localfs": LocalDirectoryConnection,
+        "fcp": FcpConnection,
     }
 
     @classmethod
