@@ -203,17 +203,9 @@ Requires: policycoreutils >= 2.1.13-55
 Requires: systemd >= 197-1.fc18.2
 %endif
 
-%if !%{fedora_koji_build}
-%if 0%{?rhev_build}
-%global qemu_suffix -rhev
-%else
-%global qemu_suffix -ev
-%endif  # rhev_build
-%endif  # !%{fedora_koji_build}
-
 %if 0%{?rhel}
-Requires: qemu-kvm%{?qemu_suffix} >= 10:2.1.2-23.el7_1.2
-Requires: qemu-img%{?qemu_suffix} >= 10:2.1.2-23.el7_1.2
+Requires: qemu-kvm-rhev >= 10:2.1.2-23.el7_1.2
+Requires: qemu-img-rhev >= 10:2.1.2-23.el7_1.2
 %else
 Requires: qemu-kvm >= 2:2.0.0-1
 Requires: qemu-img >= 2:2.0.0-1
@@ -452,7 +444,7 @@ disconnect it from host and attach it to VM
 Summary:        Allow directly booting from an https available ISO
 BuildArch:      noarch
 %if 0%{?rhel}
-Requires:       qemu-kvm%{?qemu_suffix} >= 10:2.1.2-3
+Requires:       qemu-kvm-rhev >= 10:2.1.2-3
 %endif
 
 %description hook-httpsisoboot
