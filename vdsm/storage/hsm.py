@@ -2388,7 +2388,6 @@ class HSM(object):
         uuidPatern = "????????-????-????-????-????????????"
 
         if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
-            sdCache.refreshStorage()
             uuids = tuple(blockSD.getStorageDomainsList())
         elif domType is sd.NFS_DOMAIN:
             lPath = conObj._mountCon._getLocalPath()
@@ -2456,6 +2455,11 @@ class HSM(object):
                 status, _ = self._translateConnectionError(err)
             else:
                 status = 0
+                # In case there were changes in devices size
+                # while the VDSM was not connected, we need to
+                # call refreshStorage.
+                if domType in (sd.FCP_DOMAIN, sd.ISCSI_DOMAIN):
+                    sdCache.refreshStorage()
                 try:
                     doms = self.__prefetchDomains(domType, conObj)
                 except:
