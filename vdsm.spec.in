@@ -204,6 +204,9 @@ Requires: device-mapper-multipath >= 0.4.9-73.fc22.1
 Requires: device-mapper-multipath >= 0.4.9-56
 %endif
 Requires: e2fsprogs >= 1.41.14
+%if 0%{?fedora} >= 23
+Requires: policycoreutils-python-utils
+%endif # fedora 23
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
 Requires: ed
