@@ -165,7 +165,7 @@ class TestVm(XMLTestCase):
                  <cmdline>console=ttyS0 1</cmdline>
                  <smbios mode="sysinfo"/>
                  <bootmenu enable="yes"/>
-            </os>""",  """
+            </os>""", """
             <os>
                  <type arch="x86_64" machine="pc">hvm</type>
                  <cmdline>console=ttyS0 1</cmdline>

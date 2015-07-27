@@ -4660,7 +4660,7 @@ class Vm(object):
         res = self.cif.irs.getVolumeInfo(drive.domainID, drive.poolID,
                                          drive.imageID, baseVolUUID)
         if res['status']['code'] != 0:
-            self.log.error("Unable to get volume info for '%s'",  baseVolUUID)
+            self.log.error("Unable to get volume info for '%s'", baseVolUUID)
             return errCode['mergeErr']
         if res['info']['voltype'] == 'SHARED':
             self.log.error("merge: Refusing to merge into a shared volume")

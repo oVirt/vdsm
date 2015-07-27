@@ -176,8 +176,8 @@ _none_proto = CFUNCTYPE(None, c_void_p)
 _socket_memberships_proto = CFUNCTYPE(c_int, c_void_p,
                                       *((c_int,) * (len(_GROUPS) + 1)))
 
-LIBNL = CDLL('libnl-3.so.200',  use_errno=True)
-LIBNL_ROUTE = CDLL('libnl-route-3.so.200',  use_errno=True)
+LIBNL = CDLL('libnl-3.so.200', use_errno=True)
+LIBNL_ROUTE = CDLL('libnl-route-3.so.200', use_errno=True)
 
 _nl_socket_alloc = CFUNCTYPE(c_void_p)(('nl_socket_alloc', LIBNL))
 _nl_socket_free = _none_proto(('nl_socket_free', LIBNL))
