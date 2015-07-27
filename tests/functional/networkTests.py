@@ -1505,7 +1505,7 @@ class NetworkTest(TestCaseBase):
             self.assertEquals(status, SUCCESS, msg)
 
             self.vdsm_net.save_config()
-    
+
     @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
@@ -1526,7 +1526,7 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
-    
+
     @cleanupNet
     @RequireDummyMod
     @ValidateRunningAsRoot
@@ -1689,7 +1689,7 @@ class NetworkTest(TestCaseBase):
 
         def _verify_running_config_intact():
             self.assertEqual(set([NET_MGMT, NET_CHANGED, NET_UNCHANGED,
-                              NET_ADDITIONAL]),
+                                  NET_ADDITIONAL]),
                              set(self.vdsm_net.config.networks.keys()))
             self.assertEqual(set([BOND_CHANGED, BOND_UNCHANGED]),
                              set(self.vdsm_net.config.bonds.keys()))
@@ -1721,7 +1721,7 @@ class NetworkTest(TestCaseBase):
                 _assert_all_nets_exist()
                 _verify_running_config_intact()
                 self.assertEqual(set(['ifcfg-%s' % NET_ADDITIONAL,
-                                  'ifcfg-%s' % nic_d]),
+                                      'ifcfg-%s' % nic_d]),
                                  set(os.listdir(NET_CONF_BACK_DIR)))
 
                 # another 'boot' should restore nothing
