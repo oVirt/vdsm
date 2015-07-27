@@ -212,13 +212,13 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             self.assertFalse(os.path.exists(lvm.lvPath(self.VG_NAME,
                                                        self.LV_NAME)))
 
-    def test_lv_initialtag(self):
+    def test_lv_initialtags(self):
         """
-        Create a logical volume with an initial tag.
+        Create a logical volume with multiple tags.
 
         lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
-                     '1024', initialTag=blockVolume.TAG_VOL_UNINIT)
+                     '1024', initialTags=(blockVolume.TAG_VOL_UNINIT, "FOO"))
 
         print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                         '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
@@ -229,14 +229,14 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
                         fixedminor='-', state='a', devopen='-', target='-',
                         zero='-'), size='1073741824', seg_start_pe='0',
            devices='/dev/mapper/360014054d75cb132d474c0eae9825766(0)',
-           tags=('OVIRT_VOL_INITIALIZING',), writeable=True, opened=False,
-           active=True)
+           tags=('OVIRT_VOL_INITIALIZING', 'FOO'), writeable=True,
+           opened=False, active=True)
         """
         with self.base_config() as lvm:
             lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
-                         initialTag=blockVolume.TAG_VOL_UNINIT)
+                         initialTags=(blockVolume.TAG_VOL_UNINIT, "FOO"))
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
-            self.assertEqual((blockVolume.TAG_VOL_UNINIT,), lv.tags)
+            self.assertEqual((blockVolume.TAG_VOL_UNINIT, "FOO"), lv.tags)
 
     def test_changelvtags(self):
         """
@@ -244,7 +244,7 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
         """
         with self.base_config() as lvm:
             lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
-                         initialTag=blockVolume.TAG_VOL_UNINIT)
+                         initialTags=(blockVolume.TAG_VOL_UNINIT,))
             deltags = (blockVolume.TAG_VOL_UNINIT,)
             addtags = ("FOO",)
             lvm.changeLVTags(self.VG_NAME, self.LV_NAME,

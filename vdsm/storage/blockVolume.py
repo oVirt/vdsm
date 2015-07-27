@@ -419,7 +419,7 @@ class BlockVolume(volume.Volume):
                                                  size, initialSize)
 
         lvm.createLV(dom.sdUUID, volUUID, "%s" % lvSize, activate=True,
-                     initialTag=TAG_VOL_UNINIT)
+                     initialTags=(TAG_VOL_UNINIT,))
 
         utils.rmFile(volPath)
         os.symlink(lvm.lvPath(dom.sdUUID, volUUID), volPath)

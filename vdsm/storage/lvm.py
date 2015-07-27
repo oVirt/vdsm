@@ -1071,7 +1071,7 @@ def getVGBlockSizes(vgUUID):
 
 
 def createLV(vgName, lvName, size, activate=True, contiguous=False,
-             initialTag=None):
+             initialTags=()):
     """
     Size units: MB (1024 ** 2 = 2 ** 20)B.
     """
@@ -1085,8 +1085,8 @@ def createLV(vgName, lvName, size, activate=True, contiguous=False,
     cmd = ["lvcreate"]
     cmd.extend(LVM_NOBACKUP)
     cmd.extend(("--contiguous", cont, "--size", "%sm" % size))
-    if initialTag is not None:
-        cmd.extend(("--addtag", initialTag))
+    for tag in initialTags:
+        cmd.extend(("--addtag", tag))
     cmd.extend(("--name", lvName, vgName))
     rc, out, err = _lvminfo.cmd(cmd, _lvminfo._getVGDevs((vgName, )))
 
