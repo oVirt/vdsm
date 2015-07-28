@@ -601,7 +601,7 @@ autoreconf -if
 %endif
 %configure %{?with_hooks:--enable-hooks} \
 %if 0%{?rhev_build}
-        --enable-rhev
+        --enable-rhev \
         --with-reg-bridge-name='rhevm' \
         --with-engine-name='RHEV-M' \
         --with-smbios-manufacturer='Red Hat' \
