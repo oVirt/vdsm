@@ -91,6 +91,7 @@ test_modules = \
 	scheduleTests.py \
 	schemaTests.py \
 	schemaValidationTest.py \
+	sdm_indirection_tests.py \
 	securableTests.py \
 	sourceroutingTests.py \
 	sslhelper.py \
