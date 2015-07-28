@@ -44,6 +44,12 @@ class FileManifestTests(VdsmTestCase):
             imguuid, voluuid = make_file_volume(manifest.domaindir, VOLSIZE)
             self.assertEqual(VOLSIZE, manifest.getVSize(imguuid, voluuid))
 
+    def test_getvallocsize(self):
+        with namedTemporaryDir() as tmpdir:
+            manifest = make_filesd_manifest(tmpdir)
+            imguuid, voluuid = make_file_volume(manifest.domaindir, VOLSIZE)
+            self.assertEqual(0, manifest.getVAllocSize(imguuid, voluuid))
+
     def test_getisodomainimagesdir(self):
         with namedTemporaryDir() as tmpdir:
             manifest = make_filesd_manifest(tmpdir)

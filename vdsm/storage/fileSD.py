@@ -175,6 +175,14 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                                imgUUID, volUUID)
         return self.oop.os.stat(volPath).st_size
 
+    def getVAllocSize(self, imgUUID, volUUID):
+        """ Returns file volume allocated size in bytes. """
+        volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',
+                               imgUUID, volUUID)
+        stat = self.oop.os.stat(volPath)
+
+        return stat.st_blocks * ST_BYTES_PER_BLOCK
+
     def getLeasesFilePath(self):
         return os.path.join(self.getMDPath(), sd.LEASES)
 
@@ -328,12 +336,7 @@ class FileStorageDomain(sd.StorageDomain):
         return fileVolume.FileVolume
 
     def getVAllocSize(self, imgUUID, volUUID):
-        """ Returns file volume allocated size in bytes. """
-        volPath = os.path.join(self.mountpoint, self.sdUUID, 'images',
-                               imgUUID, volUUID)
-        stat = self.oop.os.stat(volPath)
-
-        return stat.st_blocks * ST_BYTES_PER_BLOCK
+        return self._manifest.getVAllocSize(imgUUID, volUUID)
 
     def getVolumeLease(self, imgUUID, volUUID):
         """
