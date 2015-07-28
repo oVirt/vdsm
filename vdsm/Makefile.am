@@ -71,8 +71,6 @@ nodist_noinst_DATA = \
 	$(NULL)
 
 dist_vdsm_SCRIPTS = \
-	addNetwork \
-	delNetwork \
 	get-conf-item \
 	set-conf-item \
 	supervdsmServer \

@@ -27,7 +27,6 @@ SUBDIRS = \
 	vdsm \
 	vdsm-tool \
 	vdsm_hooks \
-	vdsm_reg \
 	$(NULL)
 
 # The tests should be always last as they need the rest of the source to be
@@ -91,7 +90,6 @@ WHITELIST = \
 	vdsm/storage/curl-img-wrap \
 	vdsm/storage/fc-scan \
 	vdsm-tool/vdsm-tool \
-	vdsm_reg/vdsm-reg-setup.in \
 	$(NULL)
 
 

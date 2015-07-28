@@ -3,7 +3,6 @@
 ./etc/init/supervdsmd.conf
 ./etc/init/vdsm-tmpfiles.conf
 ./etc/init/vdsmd.conf
-./etc/ovirt-config-boot.d/vdsm-config
 ./etc/pki/vdsm/keys/libvirt_password
 ./etc/rwtab.d/vdsm
 ./etc/security/limits.d/99-vdsm.conf
@@ -34,14 +33,12 @@
 ./usr/libexec/vdsm/vdsmd_init_common.sh
 ./usr/share/man/man8/vdsmd.8
 ./usr/share/vdsm/API.py
-./usr/share/vdsm/addNetwork
 ./usr/share/vdsm/alignmentScan.py
 ./usr/share/vdsm/blkid.py
 ./usr/share/vdsm/caps.py
 ./usr/share/vdsm/clientIF.py
 ./usr/share/vdsm/daemonAdapter
 ./usr/share/vdsm/debugPluginClient.py
-./usr/share/vdsm/delNetwork
 ./usr/share/vdsm/dmidecodeUtil.py
 ./usr/share/vdsm/dsaversion.py
 ./usr/share/vdsm/dumpStorageTable.py

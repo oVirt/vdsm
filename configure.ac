@@ -192,24 +192,6 @@ AC_SUBST([vdsmupgradedir], ['/data/updates'])
 # VDSM service
 AC_SUBST([SERVICE_STOP_TIMEOUT], ['10'])
 
-# Network
-AC_ARG_WITH(
-    [reg-bridge-name],
-    [AS_HELP_STRING([--with-reg-bridge-name=NAME],
-                    [name of bridge vdsm_reg will use @<:@default=ovirtmgmt@:>@])],
-    [VDSM_REG_BRIDGE="${withval}"],
-    [VDSM_REG_BRIDGE="ovirtmgmt"])
-AC_SUBST([VDSM_REG_BRIDGE])
-
-# Engine Name
-AC_ARG_WITH(
-    [engine-name],
-    [AS_HELP_STRING([--with-engine-name=NAME],
-                    [name of the engine @<:@default=oVirt Engine@:>@])],
-    [ENGINENAME="${withval}"],
-    [ENGINENAME="oVirt Engine"])
-AC_SUBST([ENGINENAME])
-
 # SMBIOS names
 AC_ARG_WITH(
     [smbios-manufacturer],
@@ -243,16 +225,6 @@ AC_ARG_WITH(
     [QEMU_IMG_PKG="${withval}"],
     [QEMU_IMG_PKG="qemu-img"])
 AC_SUBST([QEMU_IMG_PKG])
-
-AC_ARG_WITH(
-    [register-uri],
-    [AS_HELP_STRING([--with-register-uri=URI],
-                    [registration URI on engine side]
-                    [@<:@default=/OvirtEngineWeb/register@:>@])],
-    [VDSM_REG_URI="${withval}"],
-    [VDSM_REG_URI="/OvirtEngineWeb/register"])
-AC_SUBST([VDSM_REG_URI])
-
 
 # Checking for pyflakes
 AC_PATH_PROG([PYFLAKES], [pyflakes])
@@ -297,7 +269,6 @@ AX_PYTHON_MODULE([six], [fatal])
 AC_PATH_PROG([BLKID_PATH], [blkid], [/sbin/blkid])
 AC_PATH_PROG([BRCTL_PATH], [brctl], [/usr/sbin/brctl])
 AC_PATH_PROG([CAT_PATH], [cat], [/bin/cat])
-AC_PATH_PROG([CHKCONFIG_PATH], [chkconfig], [/sbin/chkconfig])
 AC_PATH_PROG([CHCON_PATH], [chcon], [/bin/chcon])
 AC_PATH_PROG([CHMOD_PATH], [chmod], [/bin/chmod])
 AC_PATH_PROG([CHOWN_PATH], [chown], [/bin/chown])
@@ -305,12 +276,10 @@ AC_PATH_PROG([CP_PATH], [cp], [/bin/cp])
 AC_PATH_PROG([DD_PATH], [dd], [/bin/dd])
 AC_PATH_PROG([DMIDECODE_PATH], [dmidecode], [/usr/sbin/dmidecode])
 AC_PATH_PROG([DMSETUP_PATH], [dmsetup], [/sbin/dmsetup])
-AC_PATH_PROG([ECHO_PATH], [echo], [/bin/echo])
 AC_PATH_PROG([FSCK_PATH], [fsck], [/sbin/fsck])
 AC_PATH_PROG([FENCE_AGENT_PATH], [fence_ilo], [/usr/sbin/fence_ilo])
 AC_PATH_PROG([FUSER_PATH], [fuser], [/sbin/fuser])
 AC_PATH_PROG([GREP_PATH], [grep], [/bin/grep])
-AC_PATH_PROG([GRUBBY_PATH], [grubby], [/sbin/grubby])
 AC_PATH_PROG([HWCLOCK_PATH], [hwclock], [/usr/sbin/hwclock])
 AC_PATH_PROG([IFDOWN_PATH], [ifdown], [/sbin/ifdown])
 AC_PATH_PROG([IFUP_PATH], [ifup], [/sbin/ifup])
@@ -335,16 +304,13 @@ AC_PATH_PROG([QEMUIMG_PATH], [qemu-img], [/usr/bin/qemu-img])
 AC_PATH_PROG([REBOOT_PATH], [reboot], [/usr/bin/reboot])
 AC_PATH_PROG([RESTORECON_PATH], [restorecon], [/sbin/restorecon])
 AC_PATH_PROG([RM_PATH], [rm], [/bin/rm])
-AC_PATH_PROG([RPM_PATH], [rpm], [/bin/rpm])
 AC_PATH_PROG([RSYNC_PATH], [rsync], [/usr/bin/rsync])
 AC_PATH_PROG([SAFELEASE_PATH], [safelease], [/usr/libexec/safelease/safelease])
-AC_PATH_PROG([SED_PATH], [sed], [/bin/sed])
 AC_PATH_PROG([SERVICE_PATH], [service], [/sbin/service])
 AC_PATH_PROG([SETSID_PATH], [setsid], [/usr/bin/setsid])
 AC_PATH_PROG([SUDO_PATH], [sudo], [/usr/bin/sudo])
 AC_PATH_PROG([SU_PATH], [su], [/bin/su])
 AC_PATH_PROG([SYSCTL_PATH], [sysctl], [/sbin/sysctl])
-AC_PATH_PROG([SYSTEMCTL_PATH], [systemctl], [/bin/systemctl])
 AC_PATH_PROG([SYSTEMD_RUN_PATH], [systemd-run], [/usr/bin/systemd-run])
 AC_PATH_PROG([TAR_PATH], [tar], [/bin/tar])
 AC_PATH_PROG([TC_PATH], [tc], [/sbin/tc])
@@ -354,7 +320,6 @@ AC_PATH_PROG([TUNE2FS_PATH], [tune2fs], [/sbin/tune2fs])
 AC_PATH_PROG([UDEVADM_PATH], [udevadm], [/sbin/udevadm])
 AC_PATH_PROG([UMOUNT_PATH], [umount], [/bin/umount])
 AC_PATH_PROG([WGET_PATH], [wget], [/usr/bin/wget])
-AC_PATH_PROG([YUM_PATH], [yum], [/usr/bin/yum])
 
 # Keep sorted
 AC_OUTPUT([
@@ -429,7 +394,6 @@ AC_OUTPUT([
 	vdsm_hooks/vmdisk/Makefile
 	vdsm_hooks/vmfex/Makefile
 	vdsm_hooks/vmfex_dev/Makefile
-	vdsm_reg/Makefile
 ])
 
 AC_OUTPUT([
