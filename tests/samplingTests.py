@@ -349,6 +349,52 @@ class HostStatsThreadTests(TestCaseBase):
                              expected)
 
 
+class NumaNodeMemorySampleTests(TestCaseBase):
+
+    def _monkeyPatchedMemorySample(self, freeMemory, totalMemory):
+        node_id, cpu_id = 0, 0
+
+        def fakeMemoryStats():
+            return {
+                'free': freeMemory,
+                'total': totalMemory
+            }
+
+        def fakeNumaTopology():
+            return {
+                node_id: {
+                    'cpus': [cpu_id]
+                }
+            }
+
+        return MonkeyPatchScope([(caps, 'getNumaTopology',
+                                  fakeNumaTopology),
+                                 (caps, 'getUMAHostMemoryStats',
+                                  fakeMemoryStats)])
+
+    def testMemoryStatsWithZeroMemoryAsString(self):
+        expected = {0: {'memPercent': 100, 'memFree': '0'}}
+
+        with self._monkeyPatchedMemorySample(freeMemory='0', totalMemory='0'):
+            memorySample = sampling.NumaNodeMemorySample()
+            self.assertEqual(memorySample.nodesMemSample, expected)
+
+    def testMemoryStatsWithZeroMemoryAsInt(self):
+        expected = {0: {'memPercent': 100, 'memFree': '0'}}
+
+        with self._monkeyPatchedMemorySample(freeMemory='0', totalMemory=0):
+            memorySample = sampling.NumaNodeMemorySample()
+            self.assertEqual(memorySample.nodesMemSample, expected)
+
+    def testMemoryStats(self):
+        expected = {0: {'memPercent': 40, 'memFree': '600'}}
+
+        with self._monkeyPatchedMemorySample(freeMemory='600',
+                                             totalMemory='1000'):
+            memorySample = sampling.NumaNodeMemorySample()
+            self.assertEqual(memorySample.nodesMemSample, expected)
+
+
 class StatsCacheTests(TestCaseBase):
 
     FAKE_CLOCK_STEP = 1
