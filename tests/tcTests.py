@@ -19,6 +19,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import random
 import time
 import string
@@ -173,18 +174,18 @@ def _checkDependencies():
     dev = _Bridge()
     try:
         dev.addDevice()
-    except:
-        raise SkipTest("'brctl' has failed. Do you have bridge-utils "
-                       "installed?")
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            raise SkipTest("Cannot run %r: %s\nDo you have bridge-utils "
+                           "installed?" % (EXT_BRCTL, e))
+        raise
 
-    null = open("/dev/null", "a")
     try:
         check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'])
-    except:
-        raise SkipTest("'tc' has failed. Do you have Traffic Control kernel "
-                       "modules installed?")
+    except ExecError as e:
+        raise SkipTest("%r has failed: %s\nDo you have Traffic Control kernel "
+                       "modules installed?" % (EXT_TC, e.err))
     finally:
-        null.close()
         dev.delDevice()
 
 
