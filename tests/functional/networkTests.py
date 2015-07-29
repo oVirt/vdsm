@@ -1744,6 +1744,27 @@ class NetworkTest(TestCaseBase):
                 self.assertBondDoesntExist(BOND_UNCHANGED, [nic_a])
 
     @cleanupNet
+    def testSelectiveRestoreIgnoresVdsmRegParams(self):
+        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
+            raise SkipTest(
+                "with ifcfg persistence, vdsm-restore-net-config selective"
+                "restoration is not supported")
+
+        with dummyIf(1) as nics:
+            nic,  = nics
+            # let _assert_kernel_config_matches_running_config do the job
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: {'nic': nic, 'IPV6_AUTOCONF': 'no',
+                                'PEERNTP': 'yes', 'IPV6INIT': 'no'}},
+                {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            self.assertNetworkExists(NETWORK_NAME)
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
+            self.assertEquals(status, SUCCESS, msg)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+
+    @cleanupNet
     @permutations([[True], [False]])
     def testVolatileConfig(self, bridged):
         """

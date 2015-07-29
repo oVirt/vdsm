@@ -25,6 +25,7 @@ import json
 import logging
 import netaddr
 import os
+import string
 
 from .config import config
 from .tool.restore_nets import restore
@@ -319,6 +320,7 @@ class KernelConfig(BaseConfig):
         self._normalize_bonding_opts(config_copy)
         self._normalize_bonding_nics(config_copy)
         self._normalize_address(config_copy)
+        self._normalize_ifcfg_keys(config_copy)
 
         return config_copy
 
@@ -390,6 +392,23 @@ class KernelConfig(BaseConfig):
                 net_attr['ipv6addr'] = [net_attr['ipv6addr']]
             if 'defaultRoute' not in net_attr:
                 net_attr['defaultRoute'] = False
+
+    def _normalize_ifcfg_keys(self, config_copy):
+        # ignore keys in persisted networks that might originate from vdsm-reg.
+        # these might be a result of calling setupNetworks with ifcfg values
+        # that come from the original interface that is serving the management
+        # network. for 3.5, VDSM still supports passing arbitrary values
+        # directly to the ifcfg files, e.g. 'IPV6_AUTOCONF=no'. we filter them
+        # out here since kernelConfig will never report them.
+        # TODO: remove when 3.5 is unsupported.
+        def unsupported(key):
+            return set(key) <= set(
+                string.ascii_uppercase + string.digits + '_')
+
+        for net_attr in config_copy.networks.itervalues():
+            for k in net_attr.keys():
+                if unsupported(k):
+                    net_attr.pop(k)
 
     def _parse_bond_options(self, opts):
         if not opts:
