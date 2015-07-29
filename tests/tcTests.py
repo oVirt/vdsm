@@ -24,6 +24,8 @@ import random
 import time
 import os
 import signal
+import six
+import sys
 
 from multiprocessing import Process
 from binascii import unhexlify
@@ -77,6 +79,9 @@ class _Interface():
                 if (event.get('name') == self.devName and
                         event.get('state') == 'down'):
                     return
+
+    def __str__(self):
+        return "<{1} {2!r}>".format(self.__class__.__name__, self.devName)
 
 
 class _Bridge(_Interface):
@@ -186,11 +191,11 @@ def _checkDependencies():
 
 
 class TestQdisc(TestCaseBase):
-    _bridge = _Bridge()
 
     @ValidateRunningAsRoot
     def setUp(self):
         _checkDependencies()
+        self._bridge = _Bridge()
         self._bridge.addDevice()
 
     def tearDown(self):
@@ -434,33 +439,46 @@ class TestPortMirror(TestCaseBase):
         '080028750000000'  # ICMP
         '00123456789')  # Payload
 
-    _tap0 = Tap()
-    _tap1 = Tap()
-    _tap2 = Tap()
-    _bridge0 = _Bridge('src-')
-    _bridge1 = _Bridge('target-')
-    _bridge2 = _Bridge('target2-')
-
     @ValidateRunningAsRoot
     def setUp(self):
         _checkDependencies()
-        self._tap0.addDevice()
-        self._tap1.addDevice()
-        self._tap2.addDevice()
-        self._bridge0.addDevice()
-        self._bridge1.addDevice()
-        self._bridge2.addDevice()
-        self._bridge0.addIf(self._tap0.devName)
-        self._bridge1.addIf(self._tap1.devName)
-        self._bridge2.addIf(self._tap2.devName)
+        self._tap0 = Tap()
+        self._tap1 = Tap()
+        self._tap2 = Tap()
+        self._bridge0 = _Bridge('src-')
+        self._bridge1 = _Bridge('target-')
+        self._bridge2 = _Bridge('target2-')
+        self._devices = [self._tap0, self._tap1, self._tap2,
+                         self._bridge0, self._bridge1, self._bridge2]
+        # If setUp raise, teardown is not called, so we should either succeed,
+        # or fail without leaving junk around.
+        cleanup = []
+        try:
+            for iface in self._devices:
+                iface.addDevice()
+                cleanup.append(iface)
+            self._bridge0.addIf(self._tap0.devName)
+            self._bridge1.addIf(self._tap1.devName)
+            self._bridge2.addIf(self._tap2.devName)
+        except:
+            t, v, tb = sys.exc_info()
+            for iface in cleanup:
+                try:
+                    iface.delDevice()
+                except Exception:
+                    self.log.exception("Error removing device %s" % iface)
+            six.reraise(t, v, tb)
 
     def tearDown(self):
-        self._tap0.delDevice()
-        self._tap1.delDevice()
-        self._tap2.delDevice()
-        self._bridge0.delDevice()
-        self._bridge1.delDevice()
-        self._bridge2.delDevice()
+        failed = False
+        for iface in self._devices:
+            try:
+                iface.delDevice()
+            except Exception:
+                self.log.exception("Error removing device %s" % iface)
+                failed = True
+        if failed:
+            raise RuntimeError("Error tearing down interfaces")
 
     def _sendPing(self):
         self._tap1.startListener(self._ICMP)
