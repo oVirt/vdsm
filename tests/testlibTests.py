@@ -21,6 +21,7 @@
 from testlib import AssertingLock
 from testlib import VdsmTestCase
 from testlib import recorded
+from testlib import permutations, expandPermutations, PERMUTATION_ATTR
 
 
 class AssertNotRaisesTests(VdsmTestCase):
@@ -127,3 +128,24 @@ class Recorded(object):
     @recorded
     def no_args(self):
         pass
+
+
+class TestPermutationExpansion(VdsmTestCase):
+    @expandPermutations
+    class _Permutations(object):
+        @permutations([[False], [True]])
+        def fn(self, param):
+            return param
+
+    def test_expansion(self):
+        self.assertNotIn('fn', dir(self._Permutations))
+        self.assertIn('fn(False)', dir(self._Permutations))
+        self.assertIn('fn(True)', dir(self._Permutations))
+
+    def test_parameter_values(self):
+        self.assertFalse(getattr(self._Permutations(), 'fn(False)')())
+        self.assertTrue(getattr(self._Permutations(), 'fn(True)')())
+
+    def test_expanded_attributes(self):
+        fn = getattr(self._Permutations, 'fn(False)')
+        self.assertNotIn(PERMUTATION_ATTR, dir(fn))

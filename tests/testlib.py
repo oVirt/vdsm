@@ -79,7 +79,7 @@ def expandPermutations(cls):
             permName = "%s(%s)" % (f.__name__, argsString)
             wrapper = _getPermutation(f, args)
             wrapper.__name__ = permName
-
+            delattr(wrapper, PERMUTATION_ATTR)
             setattr(cls, permName, wrapper)
 
         delattr(cls, f.__name__)
