@@ -92,11 +92,11 @@ class TestIpwrapper(TestCaseBase):
 
 
 class TestLinks(TestCaseBase):
-    _bridge = tcTests._Bridge()
 
     @ValidateRunningAsRoot
     def setUp(self):
         tcTests._checkDependencies()
+        self._bridge = tcTests._Bridge()
         self._bridge.addDevice()
 
     def tearDown(self):
@@ -110,34 +110,46 @@ class TestLinks(TestCaseBase):
 
 
 class TestDrvinfo(TestCaseBase):
-    _bridge = tcTests._Bridge()
-    _unicode_bridge = tcTests._Bridge()
 
     @ValidateRunningAsRoot
     def setUp(self):
         tcTests._checkDependencies()
+        self._bridge = tcTests._Bridge()
         self._bridge.addDevice()
-        self._unicode_bridge.devName = 'test-トトロ'
-        self._unicode_bridge.addDevice()
 
     def tearDown(self):
         self._bridge.delDevice()
-        self._unicode_bridge.delDevice()
 
     def testBridgeEthtoolDrvinfo(self):
         self.assertEqual(ipwrapper.drv_name(self._bridge.devName),
                          ipwrapper.LinkType.BRIDGE)
 
-    def testUtf8BridgeEthtoolDrvinfo(self):
-        self.assertEqual(
-            ipwrapper.drv_name(self._unicode_bridge.devName.decode('utf8')),
-            ipwrapper.LinkType.BRIDGE)
-
-    def testTogglePromisc(self):
+    def testEnablePromisc(self):
         ipwrapper.getLink(self._bridge.devName).promisc = True
         self.assertTrue(ipwrapper.getLink(self._bridge.devName).promisc,
                         "Could not enable promiscuous mode.")
 
+    def testDisablePromisc(self):
+        ipwrapper.getLink(self._bridge.devName).promisc = True
         ipwrapper.getLink(self._bridge.devName).promisc = False
         self.assertFalse(ipwrapper.getLink(self._bridge.devName).promisc,
                          "Could not disable promiscuous mode.")
+
+
+class TestUnicodeDrvinfo(TestCaseBase):
+
+    @ValidateRunningAsRoot
+    def setUp(self):
+        tcTests._checkDependencies()
+        # First 3 Hebrew letters
+        # See http://unicode.org/charts/PDF/U0590.pdf
+        self._bridge = tcTests._Bridge("\xd7\x90\xd7\x91\xd7\x92")
+        self._bridge.addDevice()
+
+    def tearDown(self):
+        self._bridge.delDevice()
+
+    def testUtf8BridgeEthtoolDrvinfo(self):
+        self.assertEqual(
+            ipwrapper.drv_name(self._bridge.devName.decode('utf8')),
+            ipwrapper.LinkType.BRIDGE)
