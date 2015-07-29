@@ -3590,25 +3590,31 @@ class Vm(object):
         """
         Called back by IO_ERROR_REASON event
 
-        :param err: one of "eperm", "eio", "enospc" or "eother"
-        Note the different API from that of Vm._onAbnormalStop
+        Old -rhev versions of QEMU provided detailed reason ('eperm', 'eio',
+        'enospc', 'eother'), but they are been obsoleted and patches moved
+        upstream.
+        Newer QEMUs distinguish only between 'enospc' and 'anything else',
+        and modern libvirts follow through reporting only two reasons:
+        'enospc' or '' (empty string) for 'anything else'.
         """
+        reason = err.upper() if err else "EOTHER"
+
         if action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE:
             self.log.info('abnormal vm stop device %s error %s',
                           blockDevAlias, err)
-            self.conf['pauseCode'] = err.upper()
+            self.conf['pauseCode'] = reason
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onIOError')
-            if err.upper() == 'ENOSPC':
+            if reason == 'ENOSPC':
                 if not self.extendDrivesIfNeeded():
                     self.log.info("No VM drives were extended")
         elif action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_REPORT:
             self.log.info('I/O error %s device %s reported to guest OS',
-                          err, blockDevAlias)
+                          reason, blockDevAlias)
         else:
             # we do not support and do not expect other values
             self.log.warning('unexpected action %i on device %s error %s',
-                             action, blockDevAlias, err)
+                             action, blockDevAlias, reason)
 
     @property
     def hasSpice(self):
