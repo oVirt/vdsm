@@ -143,7 +143,7 @@ class SourceThread(threading.Thread):
             client = self._createClient(port)
             requestQueues = config.get('addresses', 'request_queues')
             requestQueue = requestQueues.split(",")[0]
-            self._destServer = jsonrpcvdscli.connect(client, requestQueue)
+            self._destServer = jsonrpcvdscli.connect(requestQueue, client)
             self.log.debug('Initiating connection with destination')
             self._destServer.ping()
 
