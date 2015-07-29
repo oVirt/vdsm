@@ -1197,7 +1197,7 @@ class Vm(object):
                 self._guestCpuLock.release()
 
         self.send_status_event()
-        return {'status': doneCode, 'output': ['']}
+        return response.success()
 
     def pause(self, afterState=vmstatus.PAUSED, guestCpuLocked=False,
               pauseCode='NOERR'):
@@ -1216,7 +1216,7 @@ class Vm(object):
                 self._guestCpuLock.release()
 
         self.send_status_event()
-        return {'status': doneCode, 'output': ['']}
+        return response.success()
 
     def _setGuestCpuRunning(self, isRunning, guestCpuLocked=False):
         """
