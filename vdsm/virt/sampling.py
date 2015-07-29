@@ -179,8 +179,12 @@ class NumaNodeMemorySample(object):
             else:
                 memInfo = caps.getMemoryStatsByNumaCell(int(nodeIndex))
             nodeMemSample['memFree'] = memInfo['free']
-            nodeMemSample['memPercent'] = 100 - \
-                int(100.0 * int(memInfo['free']) / int(memInfo['total']))
+            # in case the numa node has zero memory assigned, report the whole
+            # memory as used
+            nodeMemSample['memPercent'] = 100
+            if int(memInfo['total']) != 0:
+                nodeMemSample['memPercent'] = 100 - \
+                    int(100.0 * int(memInfo['free']) / int(memInfo['total']))
             self.nodesMemSample[nodeIndex] = nodeMemSample
 
 
