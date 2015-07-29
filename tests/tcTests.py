@@ -22,7 +22,6 @@
 import errno
 import random
 import time
-import string
 import os
 import signal
 
@@ -38,7 +37,7 @@ from testValidation import ValidateRunningAsRoot
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
 from vdsm.netlink import monitor
-from vdsm.utils import execCmd
+from vdsm.utils import execCmd, random_iface_name
 
 from nose.plugins.skip import SkipTest
 
@@ -64,12 +63,9 @@ def check_call(cmd):
 
 
 class _Interface():
-    def __init__(self, prefix='vdsmtest-'):
-        self.devName = self._generateRandomName(prefix)
 
-    def _generateRandomName(self, prefix):
-        char_set = string.ascii_letters + string.digits
-        return prefix + ''.join(random.sample(char_set, 5))
+    def __init__(self, prefix='vdsm-'):
+        self.devName = random_iface_name(prefix)
 
     def _ifUp(self):
         check_call([EXT_IP, "link", "set", self.devName, "up"])
@@ -226,7 +222,7 @@ class TestQdisc(TestCaseBase):
 
     def testException(self):
         self.assertRaises(tc.TrafficControlException, tc._qdisc_del,
-                          self._bridge.devName + "A", 'ingress')
+                          "__nosuchiface__", 'ingress')
 
 
 class TestFilters(TestCaseBase):
