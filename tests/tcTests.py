@@ -87,17 +87,7 @@ class _Interface():
 class _Bridge(_Interface):
 
     def addDevice(self):
-        try:
-            check_call([EXT_BRCTL, 'addbr', self.devName])
-        except ExecError as e:
-            # FIXME: we do not know why we sometime see the same bridge names
-            # on jenkins slaves. This is an ugly hack to mitigate the issue,
-            # since it is certainly not the fault of the test case
-            if "can't create bridge with the same name" in e.err:
-                raise SkipTest(e.err)
-            else:
-                raise
-
+        check_call([EXT_BRCTL, 'addbr', self.devName])
         # learning interval is different on different kernels, so set it
         # explicit for 2.x kernels
         if os.uname()[2].startswith("2"):
