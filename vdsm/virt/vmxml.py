@@ -188,7 +188,7 @@ class Domain(object):
 
         for hyperv:
         <clock offset="variable" adjustment="-3600">
-            <timer name="hypervclock">
+            <timer name="hypervclock" present="yes">
             <timer name="rtc" tickpolicy="catchup">
         </clock>
         """
@@ -196,7 +196,7 @@ class Domain(object):
         m = Element('clock', offset='variable',
                     adjustment=str(self.conf.get('timeOffset', 0)))
         if utils.tobool(self.conf.get('hypervEnable', 'false')):
-            m.appendChildWithArgs('timer', name='hypervclock')
+            m.appendChildWithArgs('timer', name='hypervclock', present='yes')
         m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
         m.appendChildWithArgs('timer', name='pit', tickpolicy='delay')
 

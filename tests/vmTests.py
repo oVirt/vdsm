@@ -338,7 +338,7 @@ class TestVm(XMLTestCase):
     def testHyperVClockXML(self):
         clockXML = """
             <clock adjustment="-3600" offset="variable">
-                <timer name="hypervclock"/>
+                <timer name="hypervclock" present="yes"/>
                 <timer name="rtc" tickpolicy="catchup"/>
                 <timer name="pit" tickpolicy="delay"/>
                 <timer name="hpet" present="no"/>
