@@ -22,8 +22,8 @@ from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
-import tcTests
 
+from nettestlib import Bridge, checkDependencies
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -95,8 +95,8 @@ class TestLinks(TestCaseBase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        tcTests._checkDependencies()
-        self._bridge = tcTests._Bridge()
+        checkDependencies()
+        self._bridge = Bridge()
         self._bridge.addDevice()
 
     def tearDown(self):
@@ -113,8 +113,8 @@ class TestDrvinfo(TestCaseBase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        tcTests._checkDependencies()
-        self._bridge = tcTests._Bridge()
+        checkDependencies()
+        self._bridge = Bridge()
         self._bridge.addDevice()
 
     def tearDown(self):
@@ -140,10 +140,10 @@ class TestUnicodeDrvinfo(TestCaseBase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        tcTests._checkDependencies()
+        checkDependencies()
         # First 3 Hebrew letters
         # See http://unicode.org/charts/PDF/U0590.pdf
-        self._bridge = tcTests._Bridge("\xd7\x90\xd7\x91\xd7\x92")
+        self._bridge = Bridge("\xd7\x90\xd7\x91\xd7\x92")
         self._bridge.addDevice()
 
     def tearDown(self):

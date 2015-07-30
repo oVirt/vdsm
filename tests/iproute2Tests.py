@@ -26,15 +26,15 @@ from testValidation import ValidateRunningAsRoot
 from vdsm.constants import EXT_BRCTL
 from network.configurators.iproute2 import _BRCTL_DEV_EXISTS
 
-from tcTests import _Bridge, _checkDependencies
+from nettestlib import Bridge, checkDependencies
 
 
 class TestBridgeOverwrite(TestCaseBase):
-    _bridge = _Bridge()
+    _bridge = Bridge()
 
     @ValidateRunningAsRoot
     def setUp(self):
-        _checkDependencies()
+        checkDependencies()
         self._bridge.addDevice()
 
     def tearDown(self):

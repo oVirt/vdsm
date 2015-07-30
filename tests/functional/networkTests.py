@@ -48,7 +48,7 @@ from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import (brokentest, slowtest, RequireDummyMod,
                             RequireVethMod, ValidateRunningAsRoot)
-from tcTests import Tap
+from nettestlib import Tap
 
 import dhcp
 import dummy

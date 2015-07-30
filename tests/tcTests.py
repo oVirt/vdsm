@@ -19,173 +19,29 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import errno
-import random
 import time
 import os
-import signal
 import six
 import sys
 
-from multiprocessing import Process
 from binascii import unhexlify
 from itertools import izip_longest
 from subprocess import Popen, PIPE
-import fcntl
-import struct
 
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
+from nettestlib import Bridge, Tap, checkDependencies
 
-from vdsm.constants import EXT_BRCTL, EXT_TC
-from vdsm.netlink import monitor
-from vdsm.utils import execCmd, random_iface_name
-
-from nose.plugins.skip import SkipTest
-
+from vdsm.constants import EXT_TC
 from network import tc
-import platform
-
-EXT_IP = "/sbin/ip"
-
-
-class ExecError(RuntimeError):
-    def __init__(self, msg, out, err):
-        super(ExecError, self).__init__(msg)
-        self.out = out
-        self.err = err
-
-
-def check_call(cmd):
-    rc, out, err = execCmd(cmd, raw=True)
-    if rc != 0:
-        raise ExecError(
-            'Command %s returned non-zero exit status %s.' % (cmd, rc),
-            out, err)
-
-
-class _Interface():
-
-    def __init__(self, prefix='vdsm-'):
-        self.devName = random_iface_name(prefix)
-
-    def _ifUp(self):
-        check_call([EXT_IP, "link", "set", self.devName, "up"])
-
-    def _ifDown(self):
-        with monitor.Monitor(groups=('link',), timeout=2) as mon:
-            check_call([EXT_IP, "link", "set", self.devName, "down"])
-            for event in mon:
-                if (event.get('name') == self.devName and
-                        event.get('state') == 'down'):
-                    return
-
-    def __str__(self):
-        return "<{1} {2!r}>".format(self.__class__.__name__, self.devName)
-
-
-class _Bridge(_Interface):
-
-    def addDevice(self):
-        check_call([EXT_BRCTL, 'addbr', self.devName])
-        # learning interval is different on different kernels, so set it
-        # explicit for 2.x kernels
-        if os.uname()[2].startswith("2"):
-            check_call([EXT_BRCTL, 'setfd', self.devName, '0'])
-            check_call([EXT_BRCTL, 'setageing', self.devName, '0'])
-        self._ifUp()
-
-    def delDevice(self):
-        self._ifDown()
-        check_call([EXT_BRCTL, 'delbr', self.devName])
-
-    def addIf(self, dev):
-        check_call([EXT_BRCTL, 'addif', self.devName, dev])
-
-
-def _listenOnDevice(fd, icmp):
-    while True:
-        packet = os.read(fd, 2048)
-        # check if it is an IP packet
-        if (packet[12:14] == chr(0x08) + chr(0x00)):
-            if packet == icmp:
-                return
-
-
-class Tap(_Interface):
-
-    _IFF_TAP = 0x0002
-    _IFF_NO_PI = 0x1000
-    arch = platform.machine()
-    if arch == 'x86_64':
-        _TUNSETIFF = 0x400454ca
-    elif arch == 'ppc64':
-        _TUNSETIFF = 0x800454ca
-    else:
-        raise SkipTest("Unsupported Architecture %s" % arch)
-
-    _deviceListener = None
-
-    def addDevice(self):
-        self._cloneDevice = open('/dev/net/tun', 'r+b')
-        ifr = struct.pack('16sH', self.devName, self._IFF_TAP |
-                          self._IFF_NO_PI)
-        fcntl.ioctl(self._cloneDevice, self._TUNSETIFF, ifr)
-        self._ifUp()
-
-    def delDevice(self):
-        self._ifDown()
-        self._cloneDevice.close()
-
-    def startListener(self, icmp):
-        self._deviceListener = Process(target=_listenOnDevice,
-                                       args=(self._cloneDevice.fileno(), icmp))
-        self._deviceListener.start()
-
-    def isListenerAlive(self):
-        if self._deviceListener:
-            return self._deviceListener.is_alive()
-        else:
-            return False
-
-    def stopListener(self):
-        if self._deviceListener:
-            os.kill(self._deviceListener.pid, signal.SIGKILL)
-            self._deviceListener.join()
-
-    def writeToDevice(self, icmp):
-        os.write(self._cloneDevice.fileno(), icmp)
-
-
-def _checkDependencies():
-
-    # hack to avoid name collision in concurrently-running mock-based tests
-    random.jumpahead(os.getpid())
-
-    dev = _Bridge()
-    try:
-        dev.addDevice()
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            raise SkipTest("Cannot run %r: %s\nDo you have bridge-utils "
-                           "installed?" % (EXT_BRCTL, e))
-        raise
-
-    try:
-        check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'])
-    except ExecError as e:
-        raise SkipTest("%r has failed: %s\nDo you have Traffic Control kernel "
-                       "modules installed?" % (EXT_TC, e.err))
-    finally:
-        dev.delDevice()
 
 
 class TestQdisc(TestCaseBase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        _checkDependencies()
-        self._bridge = _Bridge()
+        checkDependencies()
+        self._bridge = Bridge()
         self._bridge.addDevice()
 
     def tearDown(self):
@@ -431,13 +287,13 @@ class TestPortMirror(TestCaseBase):
 
     @ValidateRunningAsRoot
     def setUp(self):
-        _checkDependencies()
+        checkDependencies()
         self._tap0 = Tap()
         self._tap1 = Tap()
         self._tap2 = Tap()
-        self._bridge0 = _Bridge('src-')
-        self._bridge1 = _Bridge('target-')
-        self._bridge2 = _Bridge('target2-')
+        self._bridge0 = Bridge('src-')
+        self._bridge1 = Bridge('target-')
+        self._bridge2 = Bridge('target2-')
         self._devices = [self._tap0, self._tap1, self._tap2,
                          self._bridge0, self._bridge1, self._bridge2]
         # If setUp raise, teardown is not called, so we should either succeed,

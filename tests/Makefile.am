@@ -189,6 +189,7 @@ dist_vdsmtests_PYTHON = \
 	apiData.py \
 	hookValidation.py \
 	monkeypatch.py \
+	nettestlib.py \
 	storagefakelib.py \
 	storagetestlib.py \
 	testlib.py \
