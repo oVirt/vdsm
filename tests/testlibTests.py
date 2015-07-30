@@ -130,22 +130,56 @@ class Recorded(object):
         pass
 
 
+@expandPermutations
+class Permutated(object):
+
+    @permutations([[1, 2], [3, 4]])
+    def fn(self, a, b):
+        return a, b
+
+
+@expandPermutations
+class SubPermuated(Permutated):
+
+    @permutations([[1], [2]])
+    def fn2(self, param):
+        return param
+
+
 class TestPermutationExpansion(VdsmTestCase):
-    @expandPermutations
-    class _Permutations(object):
-        @permutations([[False], [True]])
-        def fn(self, param):
-            return param
 
-    def test_expansion(self):
-        self.assertNotIn('fn', dir(self._Permutations))
-        self.assertIn('fn(False)', dir(self._Permutations))
-        self.assertIn('fn(True)', dir(self._Permutations))
+    def setUp(self):
+        self.instance = Permutated()
 
-    def test_parameter_values(self):
-        self.assertFalse(getattr(self._Permutations(), 'fn(False)')())
-        self.assertTrue(getattr(self._Permutations(), 'fn(True)')())
+    def test_expand_new_methods(self):
+        self.assertTrue(hasattr(self.instance, 'fn(1, 2)'))
+        self.assertTrue(hasattr(self.instance, 'fn(3, 4)'))
 
-    def test_expanded_attributes(self):
-        fn = getattr(self._Permutations, 'fn(False)')
-        self.assertNotIn(PERMUTATION_ATTR, dir(fn))
+    def test_remove_expanded_method(self):
+        self.assertFalse(hasattr(self.instance, "fn"))
+
+    def test_invoke_expanded_1(self):
+        expanded_method = getattr(self.instance, "fn(1, 2)")
+        self.assertEqual((1, 2), expanded_method())
+
+    def test_invoke_expanded_2(self):
+        expanded_method = getattr(self.instance, "fn(3, 4)")
+        self.assertEqual((3, 4), expanded_method())
+
+    def test_clear_permuations_attribute(self):
+        fn = getattr(Permutated, 'fn(1, 2)')
+        self.assertFalse(hasattr(fn, PERMUTATION_ATTR))
+
+
+class TestSubPermuated(VdsmTestCase):
+
+    def setUp(self):
+        self.instance = SubPermuated()
+
+    def test_super_method(self):
+        expanded_method = getattr(self.instance, "fn(1, 2)")
+        self.assertEqual((1, 2), expanded_method())
+
+    def test_sub_method(self):
+        expanded_method = getattr(self.instance, "fn2(1)")
+        self.assertEqual(1, expanded_method())
