@@ -135,8 +135,10 @@ class ExceptionsTests(TestCaseBase):
         try:
             raise vm.MissingLibvirtDomainError()
         except vm.MissingLibvirtDomainError as e:
-            self.assertEqual(e.reason,
-                             vmexitreason.LIBVIRT_DOMAIN_MISSING)
-            self.assertEqual(str(e),
-                             vmexitreason.exitReasons.get(
-                             vmexitreason.LIBVIRT_DOMAIN_MISSING))
+            self.assertEqual(
+                e.reason,
+                vmexitreason.LIBVIRT_DOMAIN_MISSING)
+            self.assertEqual(
+                str(e),
+                vmexitreason.exitReasons.get(
+                    vmexitreason.LIBVIRT_DOMAIN_MISSING))

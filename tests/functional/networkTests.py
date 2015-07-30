@@ -1539,21 +1539,21 @@ class NetworkTest(TestCaseBase):
         IP_ADDR_NET_CHANGED = '240.0.0.101'
         IP_ADDR_MISSING = '204.0.0.102'
         nets = {
-            NET_UNCHANGED:
-                {'bootproto': 'none', 'ipaddr': IP_ADD_UNCHANGED,
-                 'vlan': str(VLAN_UNCHANGED), 'netmask': IP_MASK,
-                 'bonding': BOND_UNCHANGED, 'defaultRoute': True},
-            NET_CHANGED:
-                {'bootproto': 'none',
-                 'ipaddr': IP_ADDR_NET_CHANGED,
-                 'vlan': str(VLAN_UNCHANGED + 1),
-                 'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
-                 'defaultRoute': False},
-            NET_MISSING:
-                {'bootproto': 'none',
-                 'ipaddr': IP_ADDR_MISSING,
-                 'vlan': str(VLAN_UNCHANGED + 2),
-                 'netmask': IP_MASK, 'bonding': BOND_MISSING},
+            NET_UNCHANGED: {
+                'bootproto': 'none', 'ipaddr': IP_ADD_UNCHANGED,
+                'vlan': str(VLAN_UNCHANGED), 'netmask': IP_MASK,
+                'bonding': BOND_UNCHANGED, 'defaultRoute': True},
+            NET_CHANGED: {
+                'bootproto': 'none',
+                'ipaddr': IP_ADDR_NET_CHANGED,
+                'vlan': str(VLAN_UNCHANGED + 1),
+                'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
+                'defaultRoute': False},
+            NET_MISSING: {
+                'bootproto': 'none',
+                'ipaddr': IP_ADDR_MISSING,
+                'vlan': str(VLAN_UNCHANGED + 2),
+                'netmask': IP_MASK, 'bonding': BOND_MISSING},
         }
 
         def _assert_all_nets_exist():
@@ -1632,18 +1632,18 @@ class NetworkTest(TestCaseBase):
         IP_ADDR_CHANGED = '204.0.0.102'
         IP_ADDR_ADDITIONAL = '204.0.0.102'
         nets = {
-            NET_MGMT:
-                {'bootproto': 'none', 'ipaddr': IP_MGMT,
-                 'netmask': IP_MASK, 'defaultRoute': True},
-            NET_UNCHANGED:
-                {'bootproto': 'none',
-                 'ipaddr': IP_ADDR_UNCHANGED,
-                 'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
-                 'defaultRoute': False},
-            NET_CHANGED:
-                {'bootproto': 'none',
-                 'ipaddr': IP_ADDR_CHANGED,
-                 'netmask': IP_MASK, 'bonding': BOND_CHANGED},
+            NET_MGMT: {
+                'bootproto': 'none', 'ipaddr': IP_MGMT,
+                'netmask': IP_MASK, 'defaultRoute': True},
+            NET_UNCHANGED: {
+                'bootproto': 'none',
+                'ipaddr': IP_ADDR_UNCHANGED,
+                'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
+                'defaultRoute': False},
+            NET_CHANGED: {
+                'bootproto': 'none',
+                'ipaddr': IP_ADDR_CHANGED,
+                'netmask': IP_MASK, 'bonding': BOND_CHANGED},
         }
         net_additional_attrs = {
             'bootproto': 'none', 'ipaddr': IP_ADDR_ADDITIONAL,
