@@ -88,8 +88,8 @@ def unified_restoration():
     bonds = changed_config.bonds
     _convert_to_blocking_dhcp(nets)
     if nets or bonds:
-        logging.debug('Calling setupNetworks with networks (%s) and bond (%s).',
-                      nets, bonds)
+        logging.debug('Calling setupNetworks with networks (%s) '
+                      'and bond (%s).', nets, bonds)
         setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
 
 
