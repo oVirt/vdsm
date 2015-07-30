@@ -1,4 +1,4 @@
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-import errno
 import os
 import uuid
 import sys
@@ -25,7 +24,9 @@ import sys
 from vdsm.config import config
 
 from . import NO, MAYBE
-from vdsm.tool.configfile import ConfigFile, ParserWrapper
+
+from vdsm.tool import confutils
+from vdsm.tool.configfile import ParserWrapper
 from vdsm import constants
 
 
@@ -34,13 +35,9 @@ requires = frozenset(('certificates',))
 services = ("vdsmd", "supervdsmd", "libvirtd")
 
 
-def _getFile(fname):
-    return FILES[fname]['path']
-
-
 def configure():
     # Remove a previous configuration (if present)
-    removeConf()
+    confutils.remove_conf(FILES, CONF_VERSION)
 
     vdsmConfiguration = {
         'ssl_enabled': config.getboolean('vars', 'ssl'),
@@ -50,7 +47,7 @@ def configure():
 
     # write configuration
     for cfile, content in FILES.items():
-        content['configure'](content, vdsmConfiguration)
+        content['configure'](content, CONF_VERSION, vdsmConfiguration)
 
 
 def validate():
@@ -65,8 +62,8 @@ def isconfigured():
     Check if libvirt is already configured for vdsm
     """
     ret = MAYBE
-    for path in (_getPersistedFiles()):
-        if not _openConfig(path).hasConf():
+    for path in (confutils.get_persisted_files(FILES)):
+        if not confutils.open_config(path, CONF_VERSION).hasConf():
             ret = NO
 
     if ret == MAYBE:
@@ -74,21 +71,6 @@ def isconfigured():
     else:
         sys.stdout.write("libvirt is not configured for vdsm yet\n")
     return ret
-
-
-def removeConf():
-    for cfile, content in FILES.items():
-        content['removeConf'](content['path'])
-
-
-def _getPersistedFiles():
-    """
-    get files where vdsm is expected to add a section.
-    """
-    return [
-        cfile['path'] for cfile in FILES.values()
-        if cfile['persisted']
-    ]
 
 
 def _isSslConflict():
@@ -103,12 +85,12 @@ def _isSslConflict():
         'auth_tcp': 'sasl',
         'listen_tls': '1',
     })
-    lconf_p.read(_getFile('LCONF'))
+    lconf_p.read(confutils.get_file_path('LCONF', FILES))
     listen_tcp = lconf_p.getint('listen_tcp')
     auth_tcp = lconf_p.get('auth_tcp')
     listen_tls = lconf_p.getint('listen_tls')
     qconf_p = ParserWrapper({'spice_tls': '0'})
-    qconf_p.read(_getFile('QCONF'))
+    qconf_p.read(confutils.get_file_path('QCONF', FILES))
     spice_tls = qconf_p.getboolean('spice_tls')
     ret = True
     if ssl:
@@ -144,59 +126,6 @@ def _isSslConflict():
     return ret
 
 
-def _isApplicable(fragment, vdsmConfiguration):
-        """
-        Return true if 'fragment' should be included for current
-        configuration. An applicable fragment is a fragment who's list
-        of conditions are met according to vdsmConfiguration.
-        """
-        applyFragment = True
-        for key, booleanValue in fragment['conditions'].items():
-            if vdsmConfiguration[key] != booleanValue:
-                applyFragment = False
-        return applyFragment
-
-
-def _openConfig(path):
-    return ConfigFile(path, CONF_VERSION)
-
-
-def _addSection(content, vdsmConfiguration):
-    """
-    Add a 'configuration section by vdsm' part to a config file.
-    This section contains only keys not originally defined
-    The section headers will include the current configuration version.
-    """
-    configuration = {}
-    for fragment in content['fragments']:
-        if _isApplicable(fragment, vdsmConfiguration):
-            configuration.update(fragment['content'])
-    if configuration:
-        with _openConfig(content['path']) as conff:
-            for key, val in configuration.items():
-                conff.addEntry(key, val)
-
-
-def _removeFile(content, vdsmConfiguration):
-    """
-    delete a file if it exists.
-    """
-    try:
-        os.unlink(content['path'])
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-
-
-def _removeSection(path):
-    """
-    remove entire 'configuration section by vdsm' section.
-    section is removed regardless of it's version.
-    """
-    if os.path.exists(path):
-        with _openConfig(path) as conff:
-            conff.removeConf()
-
 # version != PACKAGE_VERSION since we do not want to update configuration
 # on every update. see 'configuration versioning:' at Configfile.py for
 # details.
@@ -212,8 +141,8 @@ FILES = {
             constants.SYSCONF_PATH,
             'libvirt/libvirtd.conf'
         ),
-        'configure': _addSection,
-        'removeConf': _removeSection,
+        'configure': confutils.add_section,
+        'removeConf': confutils.remove_section,
         'persisted': True,
         'fragments': [
             {
@@ -257,8 +186,8 @@ FILES = {
             constants.SYSCONF_PATH,
             'libvirt/qemu.conf',
         ),
-        'configure': _addSection,
-        'removeConf': _removeSection,
+        'configure': confutils.add_section,
+        'removeConf': confutils.remove_section,
         'persisted': True,
         'fragments': [
             {
@@ -318,8 +247,8 @@ FILES = {
             constants.SYSCONF_PATH,
             'sysconfig/libvirtd',
         ),
-        'configure': _addSection,
-        'removeConf': _removeSection,
+        'configure': confutils.add_section,
+        'removeConf': confutils.remove_section,
         'persisted': True,
         'fragments': [
             {
@@ -337,8 +266,8 @@ FILES = {
             constants.SYSCONF_PATH,
             'libvirt/qemu-sanlock.conf',
         ),
-        'configure': _addSection,
-        'removeConf': _removeSection,
+        'configure': confutils.add_section,
+        'removeConf': confutils.remove_section,
         'persisted': True,
         'fragments': [
             {
@@ -367,8 +296,8 @@ FILES = {
             constants.SYSCONF_PATH,
             'libvirt/qemu/networks/autostart/default.xml',
         ),
-        'configure': _removeFile,
-        'removeConf': lambda x: True,
+        'configure': confutils.remove_file,
+        'removeConf': lambda x, y: True,
         'persisted': False,
     }
 }

@@ -24,6 +24,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 dist_vdsmtool_PYTHON = \
 	__init__.py \
 	confmeta.py \
+	confutils.py \
 	dummybr.py \
 	dump_bonding_opts.py \
 	dump_volume_chains.py \

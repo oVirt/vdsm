@@ -1255,6 +1255,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tool/configfile.py*
 %{python_sitelib}/%{vdsm_name}/tool/confmeta.py*
+%{python_sitelib}/%{vdsm_name}/tool/confutils.py*
 %{python_sitelib}/%{vdsm_name}/tool/dummybr.py*
 %{python_sitelib}/%{vdsm_name}/tool/dump_bonding_opts.py*
 %{python_sitelib}/%{vdsm_name}/tool/nwfilter.py*
