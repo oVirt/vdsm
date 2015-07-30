@@ -24,6 +24,7 @@ import logging
 import logging.config
 import os
 import re
+import threading
 import time
 import errno
 
@@ -318,6 +319,7 @@ def restore(args):
 
 
 if __name__ == '__main__':
+    threading.current_thread().setName('restore-net')
     try:
         logging.config.fileConfig('/etc/vdsm/svdsm.logger.conf',
                                   disable_existing_loggers=False)
