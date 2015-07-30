@@ -21,7 +21,6 @@ import errno
 import fcntl
 import os
 import platform
-import random
 import signal
 import struct
 from multiprocessing import Process
@@ -144,10 +143,6 @@ class Tap(Interface):
 
 
 def checkDependencies():
-
-    # hack to avoid name collision in concurrently-running mock-based tests
-    random.jumpahead(os.getpid())
-
     dev = Bridge()
     try:
         dev.addDevice()
