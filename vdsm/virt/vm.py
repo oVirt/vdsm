@@ -4758,13 +4758,15 @@ class Vm(object):
         # copy all the required data.  Normally we'd use monitoring to extend
         # the volume on-demand but internal watermark information is not being
         # reported by libvirt so we must do the full extension up front.  In
-        # the worst case, we'll need to extend 'base' to the same size as 'top'
-        # plus a bit more to accommodate additional writes to 'top' during the
-        # live merge operation.
+        # the worst case, the allocated size of 'base' should be increased by
+        # the allocated size of 'top' plus one additional chunk to accomodate
+        # additional writes to 'top' during the live merge operation.
         if drive.chunked:
             capacity, alloc, physical = self._getExtendInfo(drive)
+            baseSize = int(baseInfo['apparentsize'])
             topSize = int(topInfo['apparentsize'])
-            self.extendDriveVolume(drive, baseVolUUID, topSize, capacity)
+            maxAlloc = baseSize + topSize
+            self.extendDriveVolume(drive, baseVolUUID, maxAlloc, capacity)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
