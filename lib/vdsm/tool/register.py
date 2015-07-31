@@ -87,16 +87,10 @@ class Register(object):
         self.fprint = fingerprint
         self.logger.debug("Fingerprint: {fp}".format(fp=self.fprint))
 
-        if node_fqdn is None:
-            self.node_fqdn = socket.gethostname()
-        else:
-            self.node_fqdn = node_fqdn
+        self.node_fqdn = node_fqdn
         self.logger.debug("Node FQDN: {nf}".format(nf=self.node_fqdn))
 
-        if node_name is None:
-            self.node_name = socket.gethostname().split(".")[0]
-        else:
-            self.node_name = node_name
+        self.node_name = node_name
         self.logger.debug("Node name: {na}".format(na=self.node_name))
 
         if ssh_user is None:
@@ -148,13 +142,17 @@ class Register(object):
                                                uc=ucmd,
                                                c="get-ssh-trust")
 
-        ureg = "{uc}register&name={name}&address={fqdn}&sshUser={sshu}&" \
+        ureg = "{uc}register&sshUser={sshu}&" \
                "sshPort={sshp}&port={mp}".format(uc=ucmd,
-                                                 name=self.node_name,
-                                                 fqdn=self.node_fqdn,
                                                  sshu=self.ssh_user,
                                                  sshp=self.ssh_port,
                                                  mp=self.vdsm_port)
+
+        if self.node_name is not None:
+            ureg += "&name={name}".format(name=self.node_name)
+
+        if self.node_fqdn is not None:
+            ureg += "&address={fqdn}".format(fqdn=self.node_fqdn)
 
         self.url_reg = "{e}{u}".format(e=self.engine_url, u=ureg)
 
