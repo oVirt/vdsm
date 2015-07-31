@@ -1773,7 +1773,6 @@ class NetworkTest(TestCaseBase):
             self.assertEquals(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
 
-
     @cleanupNet
     @permutations([[True], [False]])
     @RequireDummyMod
