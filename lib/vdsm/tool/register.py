@@ -121,57 +121,42 @@ class Register(object):
         self.ca_engine = "{d}{f}".format(d=self.ca_dir, f="ca.pem")
         self.logger.debug("Engine CA: {ca}".format(ca=self.ca_engine))
 
-    def get_protocol(self):
+    def handshake(self):
         """
-        Determine if Engine is running in registration
-        protocol version legacy or service
-        REQUIRED_FOR: Engine 3.3
+        Initial communication with Engine to validate
+        the registration.
         """
 
-        self.logger.info("Identifying the registration protocol...")
+        self.logger.info("Starting registration...")
 
         ucmd = "/ovirt-engine/services/host-register?version=1&command="
         __GET_VERSION = "https://{e}{u}{c}".format(e=self.engine_fqdn,
                                                    u=ucmd,
                                                    c="get-version")
 
+        self.logger.debug("Get version via: {0}".format(__GET_VERSION))
+
         res = requests.get(__GET_VERSION, verify=False)
         if res.status_code != 200:
-            self.reg_protocol = "legacy"
-            self.url_CA = self.engine_url
+            raise RuntimeError("Cannot get registration version from Engine!")
 
-            self.url_ssh_key = "{e}{k}".format(e=self.engine_url,
-                                               k="/engine.ssh.key.txt")
+        self.url_CA = "{e}{uc}{c}".format(e=self.engine_url,
+                                          uc=ucmd,
+                                          c="get-pki-trust")
 
-            ureg = "/OvirtEngineWeb/register?vds_ip={fqdn}" \
-                "&vds_name={name}&port={mp}".format(fqdn=self.node_fqdn,
-                                                    name=self.node_name,
-                                                    mp=self.vdsm_port)
+        self.url_ssh_key = "{e}{uc}{c}".format(e=self.engine_url,
+                                               uc=ucmd,
+                                               c="get-ssh-trust")
 
-            self.url_reg = "{e}{u}".format(e=self.engine_url, u=ureg)
-        else:
-            self.reg_protocol = "service"
+        ureg = "{uc}register&name={name}&address={fqdn}&sshUser={sshu}&" \
+               "sshPort={sshp}&port={mp}".format(uc=ucmd,
+                                                 name=self.node_name,
+                                                 fqdn=self.node_fqdn,
+                                                 sshu=self.ssh_user,
+                                                 sshp=self.ssh_port,
+                                                 mp=self.vdsm_port)
 
-            self.url_CA = "{e}{uc}{c}".format(e=self.engine_url,
-                                              uc=ucmd,
-                                              c="get-pki-trust")
-
-            self.url_ssh_key = "{e}{uc}{c}".format(e=self.engine_url,
-                                                   uc=ucmd,
-                                                   c="get-ssh-trust")
-
-            ureg = "{uc}register&name={name}&address={fqdn}&sshUser={sshu}&" \
-                   "sshPort={sshp}&port={mp}".format(uc=ucmd,
-                                                     name=self.node_name,
-                                                     fqdn=self.node_fqdn,
-                                                     sshu=self.ssh_user,
-                                                     sshp=self.ssh_port,
-                                                     mp=self.vdsm_port)
-
-            self.url_reg = "{e}{u}".format(e=self.engine_url, u=ureg)
-
-        self.logger.info("Registration procotol selected: {p}".format(
-                         p=self.reg_protocol))
+        self.url_reg = "{e}{u}".format(e=self.engine_url, u=ureg)
 
         self.logger.debug("Download CA via: {u}".format(u=self.url_CA))
         self.logger.debug("Download SSH via: {u}".format(u=self.url_ssh_key))
@@ -264,15 +249,8 @@ class Register(object):
         Determine host UUID and if there is no existing /etc/vdsm/vdsm.id
         it will genereate UUID and save/persist in /etc/vdsm/vdsm.id
         """
-        if self.reg_protocol == "legacy":
-            # REQUIRED_FOR: Engine 3.3
-            # The legacy version uses the format: UUID_MACADDRESS
-            self.uuid = getHostUUID(legacy=True)
-            self.url_reg += "&vds_unique_id={u}".format(u=self.uuid)
-        else:
-            # Non legacy version uses the format: UUID
-            self.uuid = getHostUUID(legacy=False)
-            self.url_reg += "&uniqueId={u}".format(u=self.uuid)
+        self.uuid = getHostUUID(legacy=False)
+        self.url_reg += "&uniqueId={u}".format(u=self.uuid)
 
         self.logger.debug("Registration via: {u}".format(u=self.url_reg))
 
@@ -304,14 +282,8 @@ class Register(object):
                     from ovirt.node.utils.fs import Config
                     Config().persist(self.ca_dir)
 
-            if self.reg_protocol == "legacy":
-                # REQUIRED_FOR: Engine 3.3
-                res = ssl.get_server_certificate(
-                    (self.engine_fqdn, int(self.engine_port))
-                )
-            else:
-                res = self._execute_http_request(self.url_CA,
-                                                 cert_validation=False)
+            res = self._execute_http_request(self.url_CA,
+                                             cert_validation=False)
 
             with tempfile.NamedTemporaryFile(
                 dir=os.path.dirname(self.ca_dir),
@@ -479,7 +451,7 @@ def main(*args):
                    check_fqdn=args.check_fqdn)
 
     try:
-        reg.get_protocol()
+        reg.handshake()
         reg.host_uuid()
         reg.download_ca()
         reg.download_ssh()
@@ -504,30 +476,6 @@ UUID
 
     - In case, there is no UUID, use auxiliary function from VDSM
       to generate it and store in /etc/vdsm/vdsm.id
-
-Legacy reg:
-============
-    - REQUIRED_FOR: Engine 3.3
-
-    - Process UUID
-
-    - Download CA via
-      https://ENGINE_FQDN
-
-    - Download ssh pub key
-      https://ENGINE_FQDN/engine.ssh.key.txt
-
-    - Register via URL:
-      (Original .NET version and earlier Linux versions)
-      https://ENGINE_FQDN/RHEVManagerWeb/VdsAutoRegistration.aspx
-      ?vds_ip=NODE_FQDN_OR_IP&vds_name=NODE_NAME
-      &vds_unique_id=NODE_UUID&port=54321
-
-      or
-
-      https://ENGINE_FQDN/OvirtEngineWeb/register?vds_ip=NODE_FQDN_OR_IP
-      &vds_name=NODE_NAME
-      &vds_unique_id=NODE_UUID&port=54321
 
 Service reg:
 ============
