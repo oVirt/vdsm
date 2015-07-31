@@ -660,16 +660,21 @@ def get():
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
     # Verify that our libvirt supports virtio RNG (since 10.0.2-31)
-    libvirtVer = LooseVersion(
-        '-'.join((caps['packages2']['libvirt']['version'],
-                  caps['packages2']['libvirt']['release'])))
     requiredVer = LooseVersion('0.10.2-31')
-
-    if libvirtVer >= requiredVer:
-        caps['rngSources'] = _getRngSources()
+    if 'libvirt' not in caps['packages2']:
+        libvirtVer = None
     else:
+        libvirtVer = LooseVersion(
+            '-'.join((caps['packages2']['libvirt']['version'],
+                      caps['packages2']['libvirt']['release'])))
+
+    if libvirtVer is None:
+        logging.debug('VirtioRNG DISABLED: unknown libvirt version')
+    elif libvirtVer < requiredVer:
         logging.debug('VirtioRNG DISABLED: libvirt version %s required >= %s',
                       libvirtVer, requiredVer)
+    else:
+        caps['rngSources'] = _getRngSources()
 
     caps['numaNodes'] = getNumaTopology()
     caps['numaNodeDistance'] = getNumaNodeDistance()
