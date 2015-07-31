@@ -19,6 +19,7 @@
 
 import errno
 import fcntl
+import functools
 import os
 import platform
 import signal
@@ -142,7 +143,25 @@ class Tap(Interface):
         os.write(self._cloneDevice.fileno(), icmp)
 
 
-def checkDependencies():
+def check_brctl():
+    try:
+        execCmd([EXT_BRCTL, "show"])
+    except OSError as e:
+        if e.errno == errno.ENOENT:
+            raise SkipTest("Cannot run %r: %s\nDo you have bridge-utils "
+                           "installed?" % (EXT_BRCTL, e))
+        raise
+
+
+def requires_brctl(f):
+    @functools.wraps(f)
+    def wrapper(*a, **kw):
+        check_brctl()
+        return f(*a, **kw)
+    return wrapper
+
+
+def check_tc():
     dev = Bridge()
     try:
         dev.addDevice()
@@ -159,3 +178,11 @@ def checkDependencies():
                        "modules installed?" % (EXT_TC, e.err))
     finally:
         dev.delDevice()
+
+
+def requires_tc(f):
+    @functools.wraps(f)
+    def wrapper(*a, **kw):
+        check_tc()
+        return f(*a, **kw)
+    return wrapper

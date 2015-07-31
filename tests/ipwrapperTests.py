@@ -23,7 +23,7 @@ from vdsm import ipwrapper
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
 
-from nettestlib import Bridge, checkDependencies
+from nettestlib import Bridge, requires_brctl
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -94,8 +94,8 @@ class TestIpwrapper(TestCaseBase):
 class TestLinks(TestCaseBase):
 
     @ValidateRunningAsRoot
+    @requires_brctl
     def setUp(self):
-        checkDependencies()
         self._bridge = Bridge()
         self._bridge.addDevice()
 
@@ -112,8 +112,8 @@ class TestLinks(TestCaseBase):
 class TestDrvinfo(TestCaseBase):
 
     @ValidateRunningAsRoot
+    @requires_brctl
     def setUp(self):
-        checkDependencies()
         self._bridge = Bridge()
         self._bridge.addDevice()
 
@@ -139,8 +139,8 @@ class TestDrvinfo(TestCaseBase):
 class TestUnicodeDrvinfo(TestCaseBase):
 
     @ValidateRunningAsRoot
+    @requires_brctl
     def setUp(self):
-        checkDependencies()
         # First 3 Hebrew letters
         # See http://unicode.org/charts/PDF/U0590.pdf
         self._bridge = Bridge("\xd7\x90\xd7\x91\xd7\x92")

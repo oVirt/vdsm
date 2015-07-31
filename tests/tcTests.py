@@ -30,7 +30,7 @@ from subprocess import Popen, PIPE
 
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
-from nettestlib import Bridge, Tap, checkDependencies
+from nettestlib import Bridge, Tap, requires_brctl, requires_tc
 
 from vdsm.constants import EXT_TC
 from network import tc
@@ -39,8 +39,8 @@ from network import tc
 class TestQdisc(TestCaseBase):
 
     @ValidateRunningAsRoot
+    @requires_tc
     def setUp(self):
-        checkDependencies()
         self._bridge = Bridge()
         self._bridge.addDevice()
 
@@ -286,8 +286,8 @@ class TestPortMirror(TestCaseBase):
         '00123456789')  # Payload
 
     @ValidateRunningAsRoot
+    @requires_tc
     def setUp(self):
-        checkDependencies()
         self._tap0 = Tap()
         self._tap1 = Tap()
         self._tap2 = Tap()
