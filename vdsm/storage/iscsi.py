@@ -300,7 +300,9 @@ class ChapCredentials(object):
         return res
 
     def __eq__(self, other):
-        return hash(self) == hash(other)
+        return (self.__class__ == other.__class__ and
+                self.username == other.username and
+                self.password.value == other.password.value)
 
     def __hash__(self):
         return (hash(self.__class__) ^
