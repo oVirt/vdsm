@@ -74,7 +74,6 @@ class TestMountConnectionEquality(VdsmTestCase):
         c2 = MountConnection("spec", "vfstype", "options")
         self.assertTrue(c1 == c2, "%s should equal %s" % (c1, c2))
 
-    @brokentest("__eq__ check isinstance instead fo class")
     def test_eq_subclass(self):
         class Subclass(MountConnection):
             pass
@@ -82,7 +81,6 @@ class TestMountConnectionEquality(VdsmTestCase):
         c2 = Subclass("spec", "vfstype", "options")
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
-    @brokentest("__eq__ not using all object state")
     @permutations([
         ("s1", "s2", "t", "t", "o", "o"),
         ("s", "s", "t1", "t2", "o", "o"),

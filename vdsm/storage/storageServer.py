@@ -255,10 +255,10 @@ class MountConnection(object):
                 raise
 
     def __eq__(self, other):
-        if not isinstance(other, MountConnection):
-            return False
-
-        return self._mount.__eq__(other._mount)
+        return (self.__class__ == other.__class__ and
+                self._vfsType == other._vfsType and
+                self._remotePath == other._remotePath and
+                self._options == other._options)
 
     def getMountObj(self):
         return self._mount
