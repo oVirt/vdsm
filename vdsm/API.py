@@ -1131,8 +1131,8 @@ class StoragePool(APIBase):
         return self._irs.validateStorageServerConnection(
             domainType, self._UUID, connectionParams)
 
-    def updateVMs(self, vmList, sdUUID):
-        return self._irs.updateVM(self._UUID, vmList, sdUUID)
+    def updateVMs(self, vmList, storagedomainID=None):
+        return self._irs.updateVM(self._UUID, vmList, storagedomainID)
 
     def removeVM(self, vmUUID, sdUUID):
         return self._irs.removeVM(self._UUID, vmUUID, sdUUID)
