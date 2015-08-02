@@ -91,7 +91,6 @@ class TestMountConnectionEquality(VdsmTestCase):
         c2 = MountConnection(s2, t2, o2)
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
-    @brokentest("__ne__ not implemented")
     def test_ne_equal(self):
         c1 = MountConnection("spec", "vfstype", "options")
         c2 = MountConnection("spec", "vfstype", "options")

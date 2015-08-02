@@ -165,6 +165,10 @@ class ExampleConnection(object):
         the same target"""
         pass
 
+    def __ne__(self):
+        """Must be implemented otherwise != operator will return True for equal
+        objects"""
+
     def __hash__(self):
         """All connection objects mush be hashable so they can be used as keys
         of dictionaries"""
@@ -259,6 +263,9 @@ class MountConnection(object):
                 self._vfsType == other._vfsType and
                 self._remotePath == other._remotePath and
                 self._options == other._options)
+
+    def __ne__(self, other):
+        return not self == other
 
     def getMountObj(self):
         return self._mount
