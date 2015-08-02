@@ -21,7 +21,6 @@
 from monkeypatch import MonkeyPatch
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
-from testValidation import brokentest
 from storage.storageServer import GlusterFSConnection
 from storage.storageServer import IscsiConnection
 from storage.storageServer import MountConnection
@@ -112,7 +111,6 @@ class TestMountConnectionHash(VdsmTestCase):
         c2 = Subclass("spec", "vfstype", "options")
         self.assertNotEqual(hash(c1), hash(c2))
 
-    @brokentest("__hash__ not using all object state")
     @permutations([
         ("s1", "s2", "t", "t", "o", "o"),
         ("s", "s", "t1", "t2", "o", "o"),

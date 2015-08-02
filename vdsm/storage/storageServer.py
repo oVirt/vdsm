@@ -271,7 +271,10 @@ class MountConnection(object):
         return self._mount
 
     def __hash__(self):
-        return hash(type(self)) ^ hash(self._mount)
+        return hash((self.__class__,
+                     self._vfsType,
+                     self._remotePath,
+                     self._options))
 
     def __str__(self):
         return "<{0} spec={1!r} vfstype={2!r} options={3!r}>".format(
