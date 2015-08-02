@@ -258,6 +258,9 @@ class MountConnection(object):
             if e.errno != errno.ENOENT:
                 raise
 
+    def getMountObj(self):
+        return self._mount
+
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
                 self._vfsType == other._vfsType and
@@ -266,9 +269,6 @@ class MountConnection(object):
 
     def __ne__(self, other):
         return not self == other
-
-    def getMountObj(self):
-        return self._mount
 
     def __hash__(self):
         return hash((self.__class__,
