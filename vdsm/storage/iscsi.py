@@ -304,6 +304,9 @@ class ChapCredentials(object):
                 self.username == other.username and
                 self.password.value == other.password.value)
 
+    def __ne__(self, other):
+        return not self == other
+
     def __hash__(self):
         return (hash(self.__class__) ^
                 hash(self.username) ^

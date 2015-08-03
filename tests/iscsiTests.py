@@ -5,7 +5,6 @@ from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import make_config
 from testlib import expandPermutations, permutations
-from testValidation import brokentest
 
 from vdsm import utils
 from vdsm.password import ProtectedPassword
@@ -88,7 +87,6 @@ class TestChapCredentialsEquality(TestCaseBase):
         c2 = iscsi.ChapCredentials(user2, ProtectedPassword(pass2))
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
-    @brokentest("__ne__ not implemented")
     def test_ne_equal(self):
         c1 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
         c2 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
