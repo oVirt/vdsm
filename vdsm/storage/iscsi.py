@@ -308,9 +308,7 @@ class ChapCredentials(object):
         return not self == other
 
     def __hash__(self):
-        return (hash(self.__class__) ^
-                hash(self.username) ^
-                hash(self.password.value))
+        return hash((self.__class__, self.username, self.password.value))
 
 
 # Technically there are a lot more interface properties but VDSM doesn't
