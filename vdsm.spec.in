@@ -1036,6 +1036,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/ipwrapper.py*
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
+%{python_sitelib}/%{vdsm_name}/m2cutils.py*
 %{python_sitelib}/%{vdsm_name}/netinfo.py*
 %{python_sitelib}/%{vdsm_name}/netlink/__init__.py*
 %{python_sitelib}/%{vdsm_name}/netlink/addr.py*
@@ -1054,7 +1055,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/response.py*
 %{python_sitelib}/%{vdsm_name}/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/schedule.py*
-%{python_sitelib}/%{vdsm_name}/sslutils.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm.py*
 %{python_sitelib}/%{vdsm_name}/sysctl.py*
 %{python_sitelib}/%{vdsm_name}/udevadm.py*

@@ -95,7 +95,6 @@ test_modules = \
 	sdm_indirection_tests.py \
 	securableTests.py \
 	sourceroutingTests.py \
-	sslhelper.py \
 	sslTests.py \
 	stompTests.py \
 	storageMailboxTests.py \

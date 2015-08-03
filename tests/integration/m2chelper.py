@@ -19,9 +19,9 @@
 #
 
 import os
-from vdsm.sslutils import SSLContext
+from vdsm.m2cutils import SSLContext
 
-CERT_DIR = os.path.abspath(os.path.dirname(__file__))
+CERT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
 CRT_FILE = os.path.join(CERT_DIR, "server.crt")
 KEY_FILE = os.path.join(CERT_DIR, "server.key")
 OTHER_CRT_FILE = os.path.join(CERT_DIR, "other.crt")

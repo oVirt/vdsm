@@ -22,7 +22,7 @@ from functools import partial
 from uuid import uuid4
 import socket
 
-from . import sslutils
+from . import m2cutils
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcRequest, \
@@ -95,7 +95,7 @@ def _create(requestQueue,
         useSSL = config.getboolean('vars', 'ssl')
 
     if useSSL:
-        sslctx = sslutils.create_ssl_context()
+        sslctx = m2cutils.create_ssl_context()
     else:
         sslctx = None
 
