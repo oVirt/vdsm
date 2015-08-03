@@ -125,7 +125,7 @@ def constructClient(log, bridge, ssl, type):
             for (method, name) in bridge.getBridgeMethods():
                 xml_handler[0].xml_binding.server.register_function(method,
                                                                     name)
-            client = XMLClient(socket)
+            client = XMLClient
         else:
             for handler in acceptor._handlers:
                 if handler.NAME == type:
