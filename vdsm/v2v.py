@@ -193,7 +193,6 @@ def abort_job(job_id):
     try:
         job = _get_job(job_id)
         job.abort()
-        _remove_job(job_id)
     except ClientError as e:
         logging.info('Cannot abort job, error: %s', e)
         return errCode[e.err_name]
