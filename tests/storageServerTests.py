@@ -193,8 +193,8 @@ class GlusterFSConnectionTests(VdsmTestCase):
         self.assertEquals(gluster.options, user_options)
 
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
-    @MonkeyPatch(GlusterFSConnection, 'ALLOWED_REPLICA_COUNTS', ('3',))
-    @permutations([['1', False], ['2', False], ['3', True], ['4', False]])
+    @MonkeyPatch(GlusterFSConnection, 'ALLOWED_REPLICA_COUNTS', ('1', '3'))
+    @permutations([['1', True], ['2', False], ['3', True], ['4', False]])
     def test_allowed_gluster_replica_count(self, replica_count, supported):
 
         def glusterVolumeInfo(volumeName=None, remoteServer=None):
