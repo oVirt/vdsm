@@ -26,7 +26,7 @@ from testlib import VdsmTestCase as TestCaseBase, \
     dummyTextGenerator
 
 from integration.jsonRpcHelper import constructAcceptor
-from sslhelper import DEAFAULT_SSL_CONTEXT
+from integration.m2chelper import DEAFAULT_SSL_CONTEXT
 from yajsonrpc.stompreactor import StandAloneRpcClient
 from vdsm.utils import running
 

@@ -22,7 +22,7 @@ import logging
 import socket
 from errno import EWOULDBLOCK
 
-from vdsm.sslutils import SSL
+from vdsm.m2cutils import SSL
 from vdsm.infra.eventfd import EventFD
 
 

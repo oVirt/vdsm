@@ -37,7 +37,7 @@ from yajsonrpc import Notification
 from protocoldetector import MultiProtocolAcceptor
 from rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm import utils
-from sslhelper import DEAFAULT_SSL_CONTEXT
+from m2chelper import DEAFAULT_SSL_CONTEXT
 
 PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
 

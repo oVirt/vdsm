@@ -32,6 +32,7 @@ dist_vdsmpylib_PYTHON = \
 	ipwrapper.py \
 	jsonrpcvdscli.py \
 	libvirtconnection.py \
+	m2cutils.py \
 	netconfpersistence.py \
 	netinfo.py \
 	password.py \
@@ -39,7 +40,6 @@ dist_vdsmpylib_PYTHON = \
 	qemuimg.py \
 	response.py \
 	schedule.py \
-	sslutils.py \
 	sysctl.py \
 	taskset.py \
 	udevadm.py \

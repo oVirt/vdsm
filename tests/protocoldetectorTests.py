@@ -26,9 +26,9 @@ import time
 from contextlib import contextmanager
 
 from yajsonrpc.betterAsyncore import Reactor
-from vdsm import sslutils
+from vdsm import m2cutils
 from protocoldetector import MultiProtocolAcceptor
-from sslhelper import KEY_FILE, CRT_FILE
+from integration.m2chelper import KEY_FILE, CRT_FILE
 from testlib import VdsmTestCase, expandPermutations, permutations
 
 
@@ -97,7 +97,7 @@ class AcceptorTests(VdsmTestCase):
     GRACETIME = 0.5
     CONCURRENCY = 5
     PERMUTATIONS = ((False,), (True,))
-    SSLCTX = sslutils.SSLContext(CRT_FILE, KEY_FILE, ca_cert=CRT_FILE)
+    SSLCTX = m2cutils.SSLContext(CRT_FILE, KEY_FILE, ca_cert=CRT_FILE)
     BUFSIZE = 512
 
     def setUp(self):

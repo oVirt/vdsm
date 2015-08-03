@@ -32,10 +32,11 @@ import xmlrpclib
 
 from contextlib import contextmanager, closing
 from M2Crypto import SSL
-from sslhelper import KEY_FILE, CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
+from integration.m2chelper import KEY_FILE, \
+    CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
 from testlib import VdsmTestCase as TestCaseBase
-from vdsm.sslutils import SSLServerSocket
-from vdsm.sslutils import VerifyingSafeTransport
+from vdsm.m2cutils import SSLServerSocket
+from vdsm.m2cutils import VerifyingSafeTransport
 
 HOST = '127.0.0.1'
 

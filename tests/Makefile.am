@@ -94,7 +94,6 @@ test_modules = \
 	schemaValidationTest.py \
 	securableTests.py \
 	sourceroutingTests.py \
-	sslhelper.py \
 	sslTests.py \
 	stompTests.py \
 	storageMailboxTests.py \

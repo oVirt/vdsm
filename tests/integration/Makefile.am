@@ -24,4 +24,5 @@ dist_vdsmintegrationtests_PYTHON = \
 	__init__.py \
 	jsonRpcHelper.py \
 	jsonRpcTests.py \
+	m2chelper.py \
 	$(NULL)
