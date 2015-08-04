@@ -67,7 +67,7 @@ class Interface():
                     return
 
     def __str__(self):
-        return "<{1} {2!r}>".format(self.__class__.__name__, self.devName)
+        return "<{0} {1!r}>".format(self.__class__.__name__, self.devName)
 
 
 class Bridge(Interface):
