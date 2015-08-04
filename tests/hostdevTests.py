@@ -44,8 +44,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
             <source>
-                    <address bus="0" domain="0" function="0" slot="2"
-                    type="pci"/>
+                    <address bus="0" domain="0" function="0" slot="2"/>
             </source>
             %s
     </hostdev>
@@ -54,8 +53,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
             <source>
-                    <address bus="0" domain="0" function="0" slot="25"
-                    type="pci"/>
+                    <address bus="0" domain="0" function="0" slot="25"/>
             </source>
             %s
     </hostdev>
@@ -64,8 +62,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
             <source>
-                    <address bus="0" domain="0" function="0" slot="26"
-                    type="pci"/>
+                    <address bus="0" domain="0" function="0" slot="26"/>
             </source>
             %s
     </hostdev>
@@ -74,8 +71,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
             <source>
-                    <address bus="0" domain="0" function="0" slot="27"
-                    type="pci"/>
+                    <address bus="0" domain="0" function="0" slot="27"/>
             </source>
             %s
     </hostdev>
@@ -84,8 +80,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="pci">
             <source>
-                    <address bus="0" domain="0" function="2" slot="31"
-                    type="pci"/>
+                    <address bus="0" domain="0" function="2" slot="31"/>
             </source>
             %s
     </hostdev>
@@ -94,7 +89,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="usb">
             <source>
-                    <address bus="1" device="2" type="usb"/>
+                    <address bus="1" device="2"/>
             </source>
             %s
     </hostdev>
@@ -103,7 +98,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="usb">
             <source>
-                    <address bus="1" device="10" type="usb"/>
+                    <address bus="1" device="10"/>
             </source>
             %s
     </hostdev>
@@ -112,7 +107,7 @@ _DEVICE_XML = {
     '''
     <hostdev managed="no" mode="subsystem" type="usb">
             <source>
-                    <address bus="1" device="1" type="usb"/>
+                    <address bus="1" device="1"/>
             </source>
             %s
     </hostdev>
