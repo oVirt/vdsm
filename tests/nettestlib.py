@@ -74,11 +74,6 @@ class Bridge(Interface):
 
     def addDevice(self):
         check_call([EXT_BRCTL, 'addbr', self.devName])
-        # learning interval is different on different kernels, so set it
-        # explicit for 2.x kernels
-        if os.uname()[2].startswith("2"):
-            check_call([EXT_BRCTL, 'setfd', self.devName, '0'])
-            check_call([EXT_BRCTL, 'setageing', self.devName, '0'])
         self._ifUp()
 
     def delDevice(self):
