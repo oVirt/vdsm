@@ -1697,8 +1697,12 @@ class Global(APIBase):
             try:
                 instance = haClient.HAClient()
                 host_id = instance.get_local_host_id()
+
                 # If a host id is available, consider HA configured
-                i['configured'] = True
+                if host_id:
+                    i['configured'] = True
+                else:
+                    return i
 
                 stats = instance.get_all_stats()
                 if 0 in stats:

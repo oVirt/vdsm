@@ -1,5 +1,5 @@
 [loggers]
-keys=root,vds,Storage,ovirt_hosted_engine_ha,IOProcess,connectivity
+keys=root,vds,Storage,ovirt_hosted_engine_ha,ovirt_hosted_engine_ha_config,IOProcess,connectivity
 
 [handlers]
 keys=console,syslog,logfile,connlogfile
@@ -29,6 +29,12 @@ level=ERROR
 handlers=
 qualname=ovirt_hosted_engine_ha
 propagate=1
+
+[logger_ovirt_hosted_engine_ha_config]
+level=ERROR
+handlers=
+qualname=ovirt_hosted_engine_ha.env.config
+propagate=0
 
 [logger_IOProcess]
 level=INFO
