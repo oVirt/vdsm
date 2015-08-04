@@ -776,37 +776,15 @@ def tobool(s):
         return False
 
 
-def _getAllMacs():
-
-    # (
-    #     find /sys/class/net/*/device | while read f; do \
-    #         cat "$(dirname "$f")/address"; \
-    #     done; \
-    #     [ -d /proc/net/bonding ] && \
-    #         find /proc/net/bonding -type f -exec cat '{}' \; | \
-    #         grep 'Permanent HW addr:' | \
-    #         sed 's/.* //'
-    # ) | sed -e '/00:00:00:00/d' -e '/^$/d'
-
-    macs = []
-    for b in glob.glob('/sys/class/net/*/device'):
-        with open(os.path.join(os.path.dirname(b), "address")) as a:
-            mac = a.readline().replace("\n", "")
-        macs.append(mac)
-
-    for b in glob.glob('/proc/net/bonding/*'):
-        with open(b) as bond:
-            for line in bond:
-                if line.startswith("Permanent HW addr: "):
-                    macs.append(line.split(": ")[1].replace("\n", ""))
-
-    return set(macs) - set(["", "00:00:00:00:00:00"])
-
 __hostUUID = None
 
 
-def getHostUUID(legacy=True):
+def getHostUUID(legacy=False):
     global __hostUUID
+
+    if legacy:
+        raise NotImplementedError
+
     if __hostUUID:
         return __hostUUID
 
@@ -841,24 +819,9 @@ def getHostUUID(legacy=True):
                 except IOError:
                     logging.warning('Could not find host UUID.')
 
-            if legacy:
-                try:
-                    mac = sorted(_getAllMacs())[0]
-                except:
-                    mac = ""
-                    logging.warning('Could not find host MAC.', exc_info=True)
-
-                # __hostUUID might contain the string 'None' returned
-                # from dmidecode call
-                if __hostUUID and __hostUUID is not 'None':
-                    __hostUUID += "_" + mac
-                else:
-                    __hostUUID = "_" + mac
     except:
         logging.error("Error retrieving host UUID", exc_info=True)
 
-    if legacy and not __hostUUID:
-        return 'None'
     return __hostUUID
 
 symbolerror = {}
