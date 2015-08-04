@@ -26,7 +26,7 @@ from . import hwclass
 
 
 class HostDevice(core.Base):
-    __slots__ = ('_address', 'hostAddress', 'bootOrder', '_deviceParams',
+    __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
                  'macAddr', 'vlanId')
 
     def __init__(self, conf, log, **kwargs):
@@ -36,29 +36,7 @@ class HostDevice(core.Base):
 
         self.macAddr = self.specParams.get('macAddr')
         self.vlanId = self.specParams.get('vlanId')
-        self.hostAddress = self._update_address(
-            self._deviceParams.get('address')
-        )
-
-    @property
-    def address(self):
-        return self._address
-
-    @address.setter
-    def address(self, val):
-        self._address = self._update_address(val)
-
-    def _update_address(self, address):
-        '''
-        This method ensures that the address contains type field. It works
-        by mutating the address. The address is then returned for convenience.
-        '''
-        if 'type' not in address:
-            address['type'] = CAPABILITY_TO_XML_ATTR[
-                self._deviceParams['capability']
-            ]
-
-        return address
+        self.hostAddress = self._deviceParams.get('address')
 
     def detach(self):
         """
@@ -66,7 +44,6 @@ class HostDevice(core.Base):
         called before getXML in order to populate _deviceParams.
         """
         self._deviceParams = detach_detachable(self.device)
-        self.hostAddress = self._update_address(self.hostAddress)
 
     def getXML(self):
         if any((self.macAddr, self.vlanId)):
@@ -135,7 +112,7 @@ class HostDevice(core.Base):
         interface.setAttrs(managed='no')
         interface.appendChildWithArgs('driver', name='vfio')
         source = interface.appendChildWithArgs('source')
-        source.appendChildWithArgs('address', **self.hostAddress)
+        source.appendChildWithArgs('address', type='pci', **self.hostAddress)
 
         if self.macAddr is not None:
             interface.appendChildWithArgs('mac', address=self.macAddr)
