@@ -31,7 +31,8 @@ from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet)
-from vdsm.netconfpersistence import KernelConfig, RunningConfig
+from vdsm.netconfpersistence import (KernelConfig, RunningConfig,
+                                     PersistentConfig)
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
                           BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,
@@ -187,6 +188,17 @@ def _cleanup_qos_definition(qos):
 def _get_source_route(device_name, ipv4_address):
     return sourceroute.StaticSourceRoute(
         device_name, None, ipv4_address, IP_MASK, IP_GATEWAY)
+
+
+def requiresUnifiedPersistence(reason):
+    def wrapper(test_method):
+        @wraps(test_method)
+        def wrapped_test_method(*args, **kwargs):
+            if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
+                raise SkipTest(reason)
+            test_method(*args, **kwargs)
+        return wrapped_test_method
+    return wrapper
 
 
 @expandPermutations
@@ -1461,6 +1473,8 @@ class NetworkTest(TestCaseBase):
 
             self.vdsm_net.save_config()
 
+    @requiresUnifiedPersistence("with ifcfg persistence, this test is "
+                                "irrelevant")
     @cleanupNet
     @RequireVethMod
     @ValidateRunningAsRoot
@@ -1469,9 +1483,6 @@ class NetworkTest(TestCaseBase):
         restoration of bootprot=dhcp networks is down synchronously. with
         ifcfg persistence, this is what happens thanks to initscripts,
         regardless of vdsm. Hence, this test is irrelevant there. """
-        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
-            raise SkipTest(
-                "with ifcfg persistence, this test is irelevant")
 
         def _get_blocking_dhcp(net_name):
             self.vdsm_net.refreshNetinfo()
@@ -1523,12 +1534,11 @@ class NetworkTest(TestCaseBase):
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
 
+    @requiresUnifiedPersistence("with ifcfg persistence, "
+                                "vdsm-restore-net-config selective restoration"
+                                "is not supported")
     @cleanupNet
     def testRestoreNetworksOnlyRestoreUnchangedDevices(self):
-        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
-            raise SkipTest(
-                "with ifcfg persistence, vdsm-restore-net-config selective"
-                "restoration is not supported")
         BOND_UNCHANGED = 'bond100'
         BOND_MISSING = 'bond102'
         IP_ADD_UNCHANGED = '240.0.0.100'
@@ -1614,13 +1624,11 @@ class NetworkTest(TestCaseBase):
                 self.assertBondDoesntExist(BOND_MISSING, [nic_b])
                 self.assertBondDoesntExist(BOND_UNCHANGED, [nic_a])
 
+    @requiresUnifiedPersistence("with ifcfg persistence, "
+                                "vdsm-restore-net-config selective restoration"
+                                "is not supported")
     @cleanupNet
     def testSelectiveRestoreDuringUpgrade(self):
-        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
-            raise SkipTest(
-                "with ifcfg persistence, vdsm-restore-net-config selective"
-                "restoration is not supported")
-
         BOND_UNCHANGED = 'bond100'
         BOND_CHANGED = 'bond101'
         IP_MGMT = '240.0.0.100'
@@ -1743,13 +1751,11 @@ class NetworkTest(TestCaseBase):
                 self.assertBondDoesntExist(BOND_UNCHANGED, [nic_b])
                 self.assertBondDoesntExist(BOND_CHANGED, [nic_c])
 
+    @requiresUnifiedPersistence("with ifcfg persistence, "
+                                "vdsm-restore-net-config selective restoration"
+                                "is not supported")
     @cleanupNet
     def testSelectiveRestoreIgnoresVdsmRegParams(self):
-        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
-            raise SkipTest(
-                "with ifcfg persistence, vdsm-restore-net-config selective"
-                "restoration is not supported")
-
         with dummyIf(1) as nics:
             nic, = nics
             # let _assert_kernel_config_matches_running_config do the job
@@ -2556,13 +2562,12 @@ class NetworkTest(TestCaseBase):
         self.assertNetworkDoesntExist(NETWORK_NAME)
         self.assertBondDoesntExist(BONDING_NAME, nics)
 
+    @requiresUnifiedPersistence("with ifcfg persistence, "
+                                "vdsm-restore-net-config doesn't restore "
+                                "in-kernel state")
     @cleanupNet
     @ValidateRunningAsRoot
     def test_setupNetworks_on_external_bond(self):
-        if vdsm.config.config.get('vars', 'net_persistence') == 'ifcfg':
-            raise SkipTest(
-                "with ifcfg persistence, vdsm-restore-net-config "
-                "doesn't restore in-kernel state")
         with dummyIf(2) as nics:
             with open(BONDING_MASTERS, 'w') as bonds:
                 bonds.write('+%s\n' % BONDING_NAME)
