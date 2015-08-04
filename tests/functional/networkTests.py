@@ -2366,7 +2366,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     def testSetupNetworksEmergencyDevicesCleanupVlanOverwrite(self, bridged):
         with dummyIf(2) as nics:
-            nic, = nics
+            nic = nics[0]
             network = {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': bridged,
                                       'nic': nic}}
             status, msg = self.setupNetworks(network, {}, NOCHK)
@@ -2391,7 +2391,6 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     def testSetupNetworksEmergencyDevicesCleanupBondOverwrite(self, bridged):
         with dummyIf(2) as nics:
-            nic, = nics
             network = {NETWORK_NAME: {'bridged': bridged,
                                       'bonding': BONDING_NAME}}
             bonding = {BONDING_NAME: {'nics': nics}}
