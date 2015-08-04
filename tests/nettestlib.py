@@ -73,15 +73,16 @@ class Interface():
 class Bridge(Interface):
 
     def addDevice(self):
-        check_call([EXT_BRCTL, 'addbr', self.devName])
+        check_call([EXT_IP, 'link', 'add', 'dev', self.devName, 'type',
+                    'bridge'])
         self._ifUp()
 
     def delDevice(self):
         self._ifDown()
-        check_call([EXT_BRCTL, 'delbr', self.devName])
+        check_call([EXT_IP, 'link', 'del', self.devName])
 
     def addIf(self, dev):
-        check_call([EXT_BRCTL, 'addif', self.devName, dev])
+        check_call([EXT_IP, 'link', 'set', 'dev', dev, 'master', self.devName])
 
 
 def _listenOnDevice(fd, icmp):
@@ -158,14 +159,7 @@ def requires_brctl(f):
 
 def check_tc():
     dev = Bridge()
-    try:
-        dev.addDevice()
-    except OSError as e:
-        if e.errno == errno.ENOENT:
-            raise SkipTest("Cannot run %r: %s\nDo you have bridge-utils "
-                           "installed?" % (EXT_BRCTL, e))
-        raise
-
+    dev.addDevice()
     try:
         check_call([EXT_TC, 'qdisc', 'add', 'dev', dev.devName, 'ingress'])
     except ExecError as e:
