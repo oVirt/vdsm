@@ -21,7 +21,6 @@ import hashlib
 import logging
 import os
 import pwd
-import socket
 import ssl
 import sys
 import tempfile
@@ -40,13 +39,13 @@ class Register(object):
     def __init__(self, engine_fqdn, engine_https_port=None,
                  fingerprint=None, ssh_port=None,
                  ssh_user=None, check_fqdn=True,
-                 vdsm_port=None, node_fqdn=None,
+                 vdsm_port=None, node_address=None,
                  node_name=None):
         """
         Attributes:
 
-        engine_fqdn       - Engine FQDN
-        engine_https_port - Engine http port
+        engine_fqdn       - Engine FQDN or IP address
+        engine_https_port - Engine https port
         fingeprint        - Fingerprint to be validated
         ssh_user          - SSH user that will establish the connection
                             from Engine
@@ -54,7 +53,7 @@ class Register(object):
         check_fqdn        - Validate Engine FQDN against CA (True or False)
                             Default is TRUE
         vdsm_port         - VDSM listen port
-        node_fqdn         - Specify node FQDN
+        node_address      - Specify node address or FQDN
         node_name         - Specify node name
         """
         self.logger = self._set_logger()
@@ -87,8 +86,8 @@ class Register(object):
         self.fprint = fingerprint
         self.logger.debug("Fingerprint: {fp}".format(fp=self.fprint))
 
-        self.node_fqdn = node_fqdn
-        self.logger.debug("Node FQDN: {nf}".format(nf=self.node_fqdn))
+        self.node_address = node_address
+        self.logger.debug("Node address: {nf}".format(nf=self.node_address))
 
         self.node_name = node_name
         self.logger.debug("Node name: {na}".format(na=self.node_name))
@@ -151,8 +150,8 @@ class Register(object):
         if self.node_name is not None:
             ureg += "&name={name}".format(name=self.node_name)
 
-        if self.node_fqdn is not None:
-            ureg += "&address={fqdn}".format(fqdn=self.node_fqdn)
+        if self.node_address is not None:
+            ureg += "&address={addr}".format(addr=self.node_address)
 
         self.url_reg = "{e}{u}".format(e=self.engine_url, u=ureg)
 
@@ -378,7 +377,7 @@ def main(*args):
     )
 
     parser.add_argument(
-        '--node-fqdn',
+        '--node-address',
         help="Define node FQDN or IP address."
              " If not provided, will be used system host name",
     )
@@ -392,7 +391,7 @@ def main(*args):
 
     parser.add_argument(
         '--engine-fqdn',
-        help="Engine FQDN (See also: --check-fqdn)",
+        help="Engine FQDN or IP address (See also: --check-fqdn)",
         required=True
     )
 
@@ -441,7 +440,7 @@ def main(*args):
     reg = Register(engine_fqdn=args.engine_fqdn,
                    engine_https_port=args.engine_https_port,
                    vdsm_port=args.vdsm_port,
-                   node_fqdn=args.node_fqdn,
+                   node_address=args.node_address,
                    node_name=args.node_name,
                    ssh_user=args.ssh_user,
                    ssh_port=args.ssh_port,
