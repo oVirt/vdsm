@@ -9,21 +9,15 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @CHOWN_PATH@ @VDSMUSER@\:@QEMUGROUP@ *, \
     @CHOWN_PATH@ @METADATAUSER@\:@METADATAGROUP@ *, \
     @MV_PATH@ /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.*, \
-    @MV_PATH@ /etc/multipath.conf *, \
     @CP_PATH@ * /etc/iscsi/iscsid.conf, \
     @SERVICE_PATH@ iscsid *, \
-    @BINDIR@/vdsm-tool service-restart multipathd, \
-    @BINDIR@/vdsm-tool service-reload multipathd, \
     @ISCSIADM_PATH@ *, \
     @LVM_PATH@, \
     @CAT_PATH@ /sys/block/*/device/../../*, \
     @CAT_PATH@ /sys/devices/platform/host*, \
     @CAT_PATH@ /etc/iscsi/iscsid.conf, \
-    @CAT_PATH@ /etc/multipath.conf, \
     @DD_PATH@ of=/sys/class/scsi_host/host*/scan, \
     @DD_PATH@, \
-    @CP_PATH@ /etc/multipath.conf *, \
-    @CP_PATH@ * /etc/multipath.conf, \
     @MULTIPATH_PATH@, \
     @SETSID_PATH@ @IONICE_PATH@ -c ? -n ? @SU_PATH@ vdsm -s /bin/sh -c /usr/libexec/vdsm/spmprotect.sh*, \
     @SERVICE_PATH@ vdsmd *, \
