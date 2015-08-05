@@ -141,6 +141,7 @@
 ./usr/share/vdsm/virt/hoststats.py
 ./usr/share/vdsm/virt/migration.py
 ./usr/share/vdsm/virt/periodic.py
+./usr/share/vdsm/virt/recovery.py
 ./usr/share/vdsm/virt/sampling.py
 ./usr/share/vdsm/virt/secret.py
 ./usr/share/vdsm/virt/virdomain.py

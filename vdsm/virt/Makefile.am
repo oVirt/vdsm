@@ -30,6 +30,7 @@ dist_vdsm_virt_PYTHON = \
 	hoststats.py \
 	migration.py \
 	periodic.py \
+	recovery.py \
 	sampling.py \
 	secret.py \
 	virdomain.py \

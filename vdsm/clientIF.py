@@ -34,12 +34,10 @@ from yajsonrpc import Notification, JsonRpcBindingsError
 import alignmentScan
 from vdsm.config import config
 from momIF import MomClient
-from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode
 from vdsm.sslcompat import sslutils
 import libvirt
 from vdsm import libvirtconnection
-from vdsm import constants
 from vdsm import utils
 from vdsm import supervdsm
 import caps
@@ -47,11 +45,12 @@ import blkid
 from protocoldetector import MultiProtocolAcceptor
 
 from virt import migration
+from virt import recovery
 from virt import sampling
 from virt import secret
 from virt import vm
 from virt import vmstatus
-from virt.vm import Vm, getVDSMDomains
+from virt.vm import Vm
 from virt.vmchannels import Listener
 from virt.vmdevices import hwclass
 from virt.utils import isVdsmImage
@@ -466,46 +465,7 @@ class clientIF(object):
                       caps.CpuTopology().cores())
             migration.SourceThread.setMaxOutgoingMigrations(mog)
 
-            # Recover stage 1: domains from libvirt
-            doms = getVDSMDomains()
-            num_doms = len(doms)
-            for idx, v in enumerate(doms):
-                vmId = v.UUIDString()
-                if self._recoverVm(vmId):
-                    self.log.info(
-                        'recovery [1:%d/%d]: recovered domain %s from libvirt',
-                        idx+1, num_doms, vmId)
-                else:
-                    self.log.info(
-                        'recovery [1:%d/%d]: loose domain %s found,'
-                        ' killing it.', idx+1, num_doms, vmId)
-                    try:
-                        v.destroy()
-                    except libvirt.libvirtError:
-                        self.log.exception(
-                            'recovery [1:%d/%d]: failed to kill loose'
-                            ' domain %s', idx+1, num_doms, vmId)
-
-            # Recover stage 2: domains from recovery files
-            # we do this to safely handle VMs which disappeared
-            # from the host while VDSM was down/restarting
-            rec_vms = self._getVDSMVmsFromRecovery()
-            num_rec_vms = len(rec_vms)
-            if rec_vms:
-                self.log.warning(
-                    'recovery: found %i VMs from recovery files not'
-                    ' reported by libvirt. This should not happen!'
-                    ' Will try to recover them.', num_rec_vms)
-
-            for idx, vmId in enumerate(rec_vms):
-                if self._recoverVm(vmId):
-                    self.log.info(
-                        'recovery [2:%d/%d]: recovered domain %s'
-                        ' from data file', idx+1, num_rec_vms, vmId)
-                else:
-                    self.log.warning(
-                        'recovery [2:%d/%d]: VM %s failed to recover from data'
-                        ' file, reported as Down', idx+1, num_rec_vms, vmId)
+            recovery.all_vms(self)
 
             # recover stage 3: waiting for domains to go up
             while self._enabled:
@@ -518,7 +478,9 @@ class clientIF(object):
                         'recovery: waiting for %d domains to go up',
                         launching)
                 time.sleep(1)
-            self._cleanRecoveryFiles()
+
+            recovery.clean_vm_files(self)
+
             self._recovery = False
 
             # Now if we have VMs to restore we should wait pool connection
@@ -553,41 +515,6 @@ class clientIF(object):
         except:
             self.log.exception("recovery: failed")
             raise
-
-    def _getVDSMVmsFromRecovery(self):
-        vms = []
-        for f in os.listdir(constants.P_VDSM_RUN):
-            vmId, fileType = os.path.splitext(f)
-            if fileType == ".recovery":
-                if vmId not in self.vmContainer:
-                    vms.append(vmId)
-        return vms
-
-    def _recoverVm(self, vmid):
-        try:
-            recoveryFile = constants.P_VDSM_RUN + vmid + ".recovery"
-            params = pickle.load(file(recoveryFile))
-            now = time.time()
-            pt = float(params.pop('startTime', now))
-            params['elapsedTimeOffset'] = now - pt
-            self.log.debug("Trying to recover " + params['vmId'])
-            if not self.createVm(params, vmRecover=True)['status']['code']:
-                return recoveryFile
-        except:
-            self.log.debug("Error recovering VM", exc_info=True)
-        return None
-
-    def _cleanRecoveryFiles(self):
-        for f in os.listdir(constants.P_VDSM_RUN):
-            try:
-                vmId, fileType = f.split(".", 1)
-            except ValueError:
-                # If file is missing type extention - ignore it
-                pass
-            else:
-                if fileType == "recovery" and vmId not in self.vmContainer:
-                    self.log.debug("cleaning old file " + f)
-                    utils.rmFile(constants.P_VDSM_RUN + f)
 
     def dispatchLibvirtEvents(self, conn, dom, *args):
         try:

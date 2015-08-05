@@ -829,6 +829,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/hoststats.py*
 %{_datadir}/%{vdsm_name}/virt/migration.py*
 %{_datadir}/%{vdsm_name}/virt/periodic.py*
+%{_datadir}/%{vdsm_name}/virt/recovery.py*
 %{_datadir}/%{vdsm_name}/virt/sampling.py*
 %{_datadir}/%{vdsm_name}/virt/secret.py*
 %{_datadir}/%{vdsm_name}/virt/virdomain.py*
