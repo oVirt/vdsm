@@ -67,6 +67,10 @@ def validateDirAccess(dirPath):
     try:
         getProcPool().fileUtils.validateAccess(dirPath)
         supervdsm.getProxy().validateAccess(
+            constants.VDSM_USER,
+            (constants.VDSM_GROUP,), dirPath,
+            (os.R_OK | os.W_OK | os.X_OK))
+        supervdsm.getProxy().validateAccess(
             constants.QEMU_PROCESS_USER,
             (constants.DISKIMAGE_GROUP, constants.METADATA_GROUP), dirPath,
             (os.R_OK | os.X_OK))
