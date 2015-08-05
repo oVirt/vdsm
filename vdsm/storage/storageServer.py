@@ -628,7 +628,6 @@ class LocalDirectoryConnection(object):
 
         lnPath = self._getLocalPath()
         os.symlink(self._path, lnPath)
-        os.chmod(lnPath, 0o775)
 
     def isConnected(self):
         return os.path.exists(self._getLocalPath())
