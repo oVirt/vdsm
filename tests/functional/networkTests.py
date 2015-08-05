@@ -784,7 +784,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @permutations([[True], [False]])
     def testDelNetworkWithMTU(self, bridged):
-        MTU = '1234'
+        MTU = '1280'  # required for sysctl.disable_ipv6() on the bridge
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.addNetwork(NETWORK_NAME, vlan=VLAN_ID,
                                                    bond=BONDING_NAME,
