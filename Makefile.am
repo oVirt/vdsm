@@ -142,7 +142,7 @@ python3:
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check-recursive: gitignore python3 pyflakes
+check-recursive: gitignore python3 pyflakes pep8
 
 .PHONY: check-all
 check-all:
