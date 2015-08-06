@@ -383,8 +383,9 @@ class ImportVm(object):
                                   (self._id, self._proc.returncode,
                                    self._proc.stderr.read(1024)))
 
-        logging.info('Job %r finished import successfully', self._id)
-        self._status = STATUS.DONE
+        if self._status != STATUS.ABORTED:
+            self._status = STATUS.DONE
+            logging.info('Job %r finished import successfully', self._id)
 
     def _execution_environments(self):
         env = {'LIBGUESTFS_BACKEND': 'direct'}
