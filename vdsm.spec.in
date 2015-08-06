@@ -979,6 +979,9 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}/hooks/before_get_stats
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats
 %dir %{_libexecdir}/%{vdsm_name}/hooks/after_hostdev_list_by_caps
+%dir %{_libexecdir}/%{vdsm_name}/hooks/before_ifcfg_write
+%dir %{_libexecdir}/%{vdsm_name}/hooks/after_ifcfg_write
+
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/get-conf-item
 %{_datadir}/%{vdsm_name}/kaxmlrpclib.py*

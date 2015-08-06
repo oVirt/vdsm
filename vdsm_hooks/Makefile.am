@@ -130,6 +130,8 @@ VDSMHOOKS = \
 	after_hostdev_list_by_caps \
 	before_memory_hotplug \
 	after_memory_hotplug \
+	before_ifcfg_write \
+	after_ifcfg_write \
 	$(NULL)
 
 all-local: \

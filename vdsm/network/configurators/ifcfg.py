@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import copy
 import errno
 import glob
+import hooks
 import logging
 import os
 import pipes
@@ -543,7 +544,15 @@ class ConfigWriter(object):
                 cfg += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
             else:
                 logging.debug('ignoring variable %s', k)
-        self.writeConfFile(netinfo.NET_CONF_PREF + name, cfg)
+
+        ifcfg_file = netinfo.NET_CONF_PREF + name
+        hook_dict = _build_ifcfg_write_hook_dict(name,
+                                                 netinfo.NET_CONF_PREF + name,
+                                                 cfg)
+        hook_return = hooks.before_ifcfg_write(hook_dict)
+        ifcfg_file = hook_return['ifcfg_file']
+        cfg = hook_return['config']
+        self.writeConfFile(ifcfg_file, cfg)
 
     def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
@@ -936,3 +945,10 @@ def _get_unified_persistence_ifcfg():
         ifcfgs.add(ROUTE_PATH % top_level_device)
 
     return ifcfgs
+
+
+def _build_ifcfg_write_hook_dict(name, ifcfg_file, conf):
+    hook_dict = {'name': name,
+                 'ifcfg_file': ifcfg_file,
+                 'config': conf}
+    return hook_dict

@@ -39,6 +39,7 @@ usr/libexec/vdsm/hooks/after_vm_migrate_source
 usr/libexec/vdsm/hooks/after_vm_pause
 usr/libexec/vdsm/hooks/after_vm_set_ticket
 usr/libexec/vdsm/hooks/after_vm_start
+usr/libexec/vdsm/hooks/after_ifcfg_write
 usr/libexec/vdsm/hooks/before_device_create
 usr/libexec/vdsm/hooks/before_device_destroy
 usr/libexec/vdsm/hooks/before_device_migrate_destination
@@ -65,6 +66,7 @@ usr/libexec/vdsm/hooks/before_vm_migrate_source
 usr/libexec/vdsm/hooks/before_vm_pause
 usr/libexec/vdsm/hooks/before_vm_set_ticket
 usr/libexec/vdsm/hooks/before_vm_start
+usr/libexec/vdsm/hooks/before_ifcfg_write
 var/lib/libvirt/qemu/channels
 var/lib/vdsm
 var/lib/vdsm/netconfback
