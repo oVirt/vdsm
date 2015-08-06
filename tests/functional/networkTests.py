@@ -2113,6 +2113,58 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @RequireVethMod
+    def testDhcpReplaceNicWithBridge(self):
+        with veth.pair() as (left, right):
+            veth.setIP(left, IP_ADDRESS, IP_CIDR)
+            veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
+            veth.setLinkUp(left)
+            with dnsmasqDhcp(left):
+
+                # first, a network without a bridge should get a certain
+                # address
+
+                network = {NETWORK_NAME: {'nic': right, 'bridged': False,
+                                          'bootproto': 'dhcp',
+                                          'blockingdhcp': True}}
+                try:
+                    status, msg = self.setupNetworks(network, {}, NOCHK)
+                    self.assertEqual(status, SUCCESS, msg)
+                    self.assertNetworkExists(NETWORK_NAME)
+
+                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                    self.assertEqual(test_net['dhcpv4'], True)
+                    devs = self.vdsm_net.netinfo.nics
+                    device_name = right
+
+                    self.assertIn(device_name, devs)
+                    net_attrs = devs[device_name]
+                    self.assertEqual(net_attrs['dhcpv4'], True)
+
+                    self.assertEqual(test_net['gateway'], IP_GATEWAY)
+                    ip_addr = test_net['addr']
+                    self.assertSourceRoutingConfiguration(device_name, ip_addr)
+
+                    # now, a bridged network should get the same address
+                    # (because dhclient should send the same dhcp-client-
+                    #  identifier)
+
+                    network[NETWORK_NAME]['bridged'] = True
+                    status, msg = self.setupNetworks(network, {}, NOCHK)
+                    self.assertEqual(status, SUCCESS, msg)
+                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
+                    self.assertEqual(ip_addr, test_net['addr'])
+
+                    network = {NETWORK_NAME: {'remove': True}}
+                    status, msg = self.setupNetworks(network, {}, NOCHK)
+                    self.assertEqual(status, SUCCESS, msg)
+                    self.assertNetworkDoesntExist(NETWORK_NAME)
+
+                finally:
+                    dhcp.delete_dhclient_leases(right, True, False)
+                    dhcp.delete_dhclient_leases(NETWORK_NAME, True, False)
+
+    @cleanupNet
+    @RequireVethMod
     def testSetupNetworksReconfigureBridge(self):
         def setup_test_network(dhcp=True):
             network_params = {'nic': right, 'bridged': True}

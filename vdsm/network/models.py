@@ -39,6 +39,7 @@ class NetDevice(object):
         self.mtu = mtu
         self.configurator = configurator
         self.master = None
+        self.duid_source = None
 
     def __iter__(self):
         raise NotImplementedError
