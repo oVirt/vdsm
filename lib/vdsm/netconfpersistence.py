@@ -318,6 +318,7 @@ class KernelConfig(BaseConfig):
         self._normalize_bonding_nics(config_copy)
         self._normalize_address(config_copy)
         self._normalize_ifcfg_keys(config_copy)
+        self._normalize_default_route(config_copy)
 
         return config_copy
 
@@ -386,8 +387,15 @@ class KernelConfig(BaseConfig):
                 net_attr['netmask'] = self._netinfo.prefix2netmask(int(prefix))
             if 'ipv6addr' in net_attr:
                 net_attr['ipv6addr'] = [net_attr['ipv6addr']]
+
+    def _normalize_default_route(self, config_copy):
+        # make sure that management networks have a defaultRoute parameter.
+        # engine will usually do this, but engine registration in rhev-h can
+        # skip this and then (on vdsm3.5) it is done internally by VDSM.
+        for net, net_attr in config_copy.networks.iteritems():
             if 'defaultRoute' not in net_attr:
-                net_attr['defaultRoute'] = False
+                net_attr['defaultRoute'] = (
+                    net in constants.LEGACY_MANAGEMENT_NETWORKS)
 
     def _normalize_ifcfg_keys(self, config_copy):
         # ignore keys in persisted networks that might originate from vdsm-reg.
