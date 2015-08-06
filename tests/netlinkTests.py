@@ -164,6 +164,12 @@ class NetlinkEventMonitorTests(TestCaseBase):
         self.assertTrue((monotonic_time() - time_start) <= self.TIMEOUT)
         self.assertTrue(mon.is_stopped())
 
+    def test_passing_invalid_groups(self):
+        with self.assertRaises(AttributeError):
+            monitor.Monitor(groups=('blablabla',))
+        with self.assertNotRaises():
+            monitor.Monitor(groups=('link',))
+
 
 def _is_subdict(subset, superset):
     return all(item in superset.items() for item in subset.items())

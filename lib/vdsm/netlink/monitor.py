@@ -85,7 +85,7 @@ class Monitor(object):
         handle event
 
     Possible groups: link, notify, neigh, tc, ipv4-ifaddr, ipv4-mroute,
-    ipv4-route ipv6-ifaddr, ipv6-mroute, ipv6-route, ipv6-ifinfo,
+    ipv4-route, ipv6-ifaddr, ipv6-mroute, ipv6-route, ipv6-ifinfo,
     decnet-ifaddr, decnet-route, ipv6-prefix
     """
     def __init__(self, groups=frozenset(), timeout=None, silent_timeout=False):
@@ -93,6 +93,10 @@ class Monitor(object):
         self._timeout = timeout
         self._silent_timeout = silent_timeout
         if groups:
+            unknown_groups = frozenset(groups).difference(frozenset(_GROUPS))
+            if unknown_groups:
+                raise AttributeError('Invalid groups: %s' %
+                                     str(unknown_groups))
             self._groups = groups
         else:
             self._groups = _GROUPS.keys()
