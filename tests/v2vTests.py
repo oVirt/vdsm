@@ -91,6 +91,39 @@ def hypervisorConnect(uri, username, passwd):
     return LibvirtMock()
 
 
+def read_ovf(ovf_path):
+    return """<?xml version="1.0" encoding="UTF-8"?>
+<Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1"
+          xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1"
+          xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData">
+  <References>
+    <File ovf:href="First-disk1.vmdk" ovf:id="file1" ovf:size="349405696"/>
+  </References>
+  <DiskSection>
+    <Disk ovf:capacity="32" ovf:fileRef="file1"/>
+  </DiskSection>
+  <VirtualSystem ovf:id="First">
+    <Name>First</Name>
+    <VirtualHardwareSection>
+      <Item>
+        <rasd:ResourceType>4</rasd:ResourceType>
+        <rasd:VirtualQuantity>2048</rasd:VirtualQuantity>
+      </Item>
+      <Item>
+        <rasd:ResourceType>3</rasd:ResourceType>
+        <rasd:VirtualQuantity>1</rasd:VirtualQuantity>
+      </Item>
+      <Item>
+        <rasd:Connection>VM Network</rasd:Connection>
+        <rasd:ElementName>Ethernet 1</rasd:ElementName>
+        <rasd:ResourceSubType>E1000</rasd:ResourceSubType>
+        <rasd:ResourceType>10</rasd:ResourceType>
+      </Item>
+    </VirtualHardwareSection>
+  </VirtualSystem>
+</Envelope>"""
+
+
 class v2vTests(TestCaseBase):
     @MonkeyPatch(libvirtconnection, 'open_connection', hypervisorConnect)
     def testGetExternalVMs(self):
@@ -139,3 +172,23 @@ class v2vTests(TestCaseBase):
             (v2v.DiskProgress(0)),
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100))])
+
+    @MonkeyPatch(v2v, '_read_ovf_from_ova', read_ovf)
+    def testGetOvaInfo(self):
+        ret = v2v.get_ova_info("dummy")
+        vm = ret['vmList']
+        self.assertEquals(vm['vmName'], 'First')
+        self.assertEquals(vm['memSize'], 2048)
+        self.assertEquals(vm['smp'], 1)
+
+        disk = vm['disks'][0]
+        self.assertEquals(disk['allocation'], '349405696')
+        self.assertEquals(disk['capacity'], '34359738368')
+        self.assertEquals(disk['type'], 'disk')
+        self.assertEquals(disk['alias'], 'First-disk1.vmdk')
+
+        network = vm['networks'][0]
+        self.assertEquals(network['bridge'], 'VM Network')
+        self.assertEquals(network['model'], 'E1000')
+        self.assertEquals(network['type'], 'bridge')
+        self.assertEquals(network['dev'], 'Ethernet 1')
