@@ -34,23 +34,25 @@ from vdsm.utils import pgrep
 from vdsm.utils import rmFile
 
 DHCLIENT_CGROUP = 'vdsm-dhclient'
+LEASE_DIR = '/var/lib/dhclient'
+LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
 
 
 class DhcpClient(object):
     PID_FILE = '/var/run/dhclient%s-%s.pid'
-    LEASE_DIR = '/var/lib/dhclient'
-    LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
     DHCLIENT = CommandPath('dhclient', '/sbin/dhclient')
 
-    def __init__(self, iface, family=4, default_route=False,
+    def __init__(self, iface, family=4, default_route=False, duid_source=None,
                  cgroup=DHCLIENT_CGROUP):
         self.iface = iface
         self.family = family
         self.default_route = default_route
+        self.duid_source_file = None if duid_source is None else (
+            LEASE_FILE.format('' if family == 4 else '6', duid_source))
         self.pidFile = self.PID_FILE % (family, self.iface)
-        if not os.path.exists(self.LEASE_DIR):
-            os.mkdir(self.LEASE_DIR)
-        self.leaseFile = self.LEASE_FILE.format(
+        if not os.path.exists(LEASE_DIR):
+            os.mkdir(LEASE_DIR)
+        self.leaseFile = LEASE_FILE.format(
             '' if family == 4 else '6', self.iface)
         self._cgroup = cgroup
 
@@ -63,6 +65,8 @@ class DhcpClient(object):
         if not self.default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
             cmd += ['-e', 'DEFROUTE=no']
+        if self.duid_source_file:
+            cmd += ['-df', self.duid_source_file]
         cmd = cmdutils.systemd_run(cmd, scope=True, slice=self._cgroup)
         rc, out, err = execCmd(cmd)
         return rc, out, err

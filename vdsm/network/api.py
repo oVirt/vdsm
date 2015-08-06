@@ -166,6 +166,9 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
                                      'bridge STP value.' % stp)
         topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
                            stp=stp)
+        # inherit DUID from the port's existing DHCP lease (BZ#1219429)
+        if topNetDev.port and bootproto == 'dhcp':
+            _inherit_dhcp_unique_identifier(topNetDev, _netinfo)
     if topNetDev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
@@ -598,6 +601,18 @@ def _validateNetworkSetup(networks, bondings):
         if not set(nics).issubset(currentNicsSet):
             raise ConfigNetworkError(ne.ERR_BAD_NIC,
                                      "Unknown nics in: %r" % list(nics))
+
+
+def _inherit_dhcp_unique_identifier(bridge, _netinfo):
+    """
+    If there is dhclient already running on a bridge's port we have to use the
+    same DHCP unique identifier (DUID) in order to get the same IP address.
+    """
+    for devices in (_netinfo.nics, _netinfo.bondings, _netinfo.vlans):
+        port = devices.get(bridge.port.name)
+        if port and port['dhcpv4']:
+            bridge.duid_source = bridge.port.name
+            break
 
 
 def _handleBondings(bondings, configurator, in_rollback):

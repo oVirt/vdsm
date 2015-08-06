@@ -552,6 +552,10 @@ class ConfigWriter(object):
         if bridge.stp is not None:
             conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
         conf += 'ONBOOT=yes\n'
+        if bridge.duid_source:
+            duid_source_file = dhclient.LEASE_FILE.format(
+                '', bridge.duid_source)
+            conf += 'DHCLIENTARGS="-df %s"\n' % duid_source_file
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             opts['bridging_opts'] = opts['custom']['bridge_opts']
