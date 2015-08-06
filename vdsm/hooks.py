@@ -391,6 +391,16 @@ def after_get_stats(caps):
                         hookType=_JSON_HOOK)
 
 
+def before_ifcfg_write(hook_dict):
+    return _runHooksDir(hook_dict, 'before_ifcfg_write', raiseError=True,
+                        hookType=_JSON_HOOK)
+
+
+def after_ifcfg_write(hook_dict):
+    return _runHooksDir(hook_dict, 'after_ifcfg_write', raiseError=False,
+                        hookType=_JSON_HOOK)
+
+
 def after_hostdev_list_by_caps(devices):
     return _runHooksDir(devices, 'after_hostdev_list_by_caps',
                         raiseError=False, hookType=_JSON_HOOK)
