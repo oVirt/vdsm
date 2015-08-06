@@ -8,14 +8,10 @@ Cmnd_Alias VDSM_STORAGE = @MOUNT_PATH@, @UMOUNT_PATH@, \
     @KILL_PATH@, \
     @CHOWN_PATH@ @VDSMUSER@\:@QEMUGROUP@ *, \
     @CHOWN_PATH@ @METADATAUSER@\:@METADATAGROUP@ *, \
-    @MV_PATH@ /etc/iscsi/iscsid.conf /etc/iscsi/iscsid.conf.*, \
-    @CP_PATH@ * /etc/iscsi/iscsid.conf, \
-    @SERVICE_PATH@ iscsid *, \
     @ISCSIADM_PATH@ *, \
     @LVM_PATH@, \
     @CAT_PATH@ /sys/block/*/device/../../*, \
     @CAT_PATH@ /sys/devices/platform/host*, \
-    @CAT_PATH@ /etc/iscsi/iscsid.conf, \
     @DD_PATH@ of=/sys/class/scsi_host/host*/scan, \
     @DD_PATH@, \
     @MULTIPATH_PATH@, \
