@@ -255,18 +255,21 @@ class VmDispatcher(object):
         return 'VmDispatcher(%s)' % self._create
 
 
-class UpdateVolumes(object):
+class _RunnableOnVm(object):
     def __init__(self, vm):
         self._vm = vm
+
+    @property
+    def runnable(self):
+        return self._vm.isDomainReadyForCommands()
+
+
+class UpdateVolumes(_RunnableOnVm):
 
     @property
     def required(self):
         # Avoid queries from storage during recovery process
         return self._vm.isDisksStatsCollectionEnabled()
-
-    @property
-    def runnable(self):
-        return self._vm.isDomainReadyForCommands()
 
     def __call__(self):
         for drive in self._vm.getDiskDevices():
@@ -276,9 +279,7 @@ class UpdateVolumes(object):
             self._vm.updateDriveVolume(drive)
 
 
-class NumaInfoMonitor(object):
-    def __init__(self, vm):
-        self._vm = vm
+class NumaInfoMonitor(_RunnableOnVm):
 
     @property
     def required(self):
@@ -286,15 +287,15 @@ class NumaInfoMonitor(object):
 
     @property
     def runnable(self):
+        # NUMA operations don't require QEMU monitor access
+        # (inspected libvirt sources v1.2.17)
         return True
 
     def __call__(self):
         self._vm.updateNumaInfo()
 
 
-class BlockjobMonitor(object):
-    def __init__(self, vm):
-        self._vm = vm
+class BlockjobMonitor(_RunnableOnVm):
 
     @property
     def required(self):
@@ -305,26 +306,16 @@ class BlockjobMonitor(object):
         # monitor (most often true).
         return self._vm.hasVmJobs
 
-    @property
-    def runnable(self):
-        return self._vm.isDomainReadyForCommands()
-
     def __call__(self):
         self._vm.updateVmJobs()
 
 
-class DriveWatermarkMonitor(object):
-    def __init__(self, vm):
-        self._vm = vm
+class DriveWatermarkMonitor(_RunnableOnVm):
 
     @property
     def required(self):
         # Avoid queries from storage during recovery process
         return self._vm.isDisksStatsCollectionEnabled()
-
-    @property
-    def runnable(self):
-        return self._vm.isDomainReadyForCommands()
 
     def __call__(self):
         self._vm.extendDrivesIfNeeded()

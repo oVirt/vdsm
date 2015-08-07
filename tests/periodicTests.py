@@ -237,12 +237,9 @@ def _fake_vm_id(i):
     return 'VM-%03i' % i
 
 
-class _Visitor(object):
+class _Visitor(periodic._RunnableOnVm):
 
     VMS = defaultdict(int)
-
-    def __init__(self, vm):
-        self._vm = vm
 
     @property
     def required(self):
@@ -260,9 +257,7 @@ class _Visitor(object):
         _Visitor.VMS[self._vm.id] += 1
 
 
-class _Nop(object):
-    def __init__(self, _):
-        pass
+class _Nop(periodic._RunnableOnVm):
 
     @property
     def required(self):
