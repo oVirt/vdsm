@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from pwd import getpwnam
+import importlib
 import platform
 import sys
 import os
@@ -473,6 +474,33 @@ class _SuperVdsm(object):
 
     def __udevOperationReload(self):
         return self.__udevVersion() > self.UDEV_WITH_RELOAD_VERSION
+
+    def proxied_call(self, mod_name, func_name, args, kwargs):
+        self.log.debug(
+            'proxied call of %s.%s with %s, %s',
+            mod_name,
+            func_name,
+            args,
+            kwargs,
+        )
+
+        if mod_name not in sys.modules:
+            self.log.debug('importing module %s', mod_name)
+            importlib.import_module(mod_name)
+
+        mod = sys.modules.get(mod_name)
+        func = getattr(mod, func_name)
+        if not getattr(func, 'allow_supervdsm_invocation', False):
+            raise RuntimeError('This function cannot be called by supervdsm')
+
+        try:
+            ret = func(*args, **kwargs)
+        except:
+            self.log.exception('error in %s.%s', mod_name, func_name)
+            raise
+
+        self.log.debug('%s.%s returned with %s', mod_name, func_name, ret)
+        return ret
 
 
 def terminate(signo, frame):
