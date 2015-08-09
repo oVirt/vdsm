@@ -763,6 +763,7 @@ def _getKeyPackages():
                         'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
                         'mom': ('mom',),
                         'librbd1': ('librbd1',),
+                        'glusterfs-cli': ('glusterfs-cli',),
                         }
 
         if _glusterEnabled:
@@ -790,7 +791,8 @@ def _getKeyPackages():
     elif getos() == OSName.DEBIAN and python_apt:
         KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm', 'qemu-img': 'qemu-utils',
                         'vdsm': 'vdsmd', 'spice-server': 'libspice-server1',
-                        'libvirt': 'libvirt0', 'mom': 'mom'}
+                        'libvirt': 'libvirt0', 'mom': 'mom',
+                        'glusterfs-cli': 'glusterfs-cli'}
 
         if _glusterEnabled:
             KEY_PACKAGES.update(GLUSTER_DEB_PACKAGES)
