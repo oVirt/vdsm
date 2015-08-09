@@ -1,7 +1,7 @@
 from volume import VmVolumeInfo
 import fileVolume
 from sdc import sdCache
-import supervdsm as svdsm
+import vdsm.supervdsm as svdsm
 try:
     from gluster.exception import GlusterException
     _glusterEnabled = True

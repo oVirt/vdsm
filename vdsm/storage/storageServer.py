@@ -32,9 +32,9 @@ import sys
 
 from vdsm.compat import pickle
 from vdsm.config import config
+from vdsm import supervdsm
 from vdsm import udevadm
 
-import supervdsm
 import mount
 import fileUtils
 import fileSD

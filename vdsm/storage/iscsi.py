@@ -30,6 +30,7 @@ import errno
 from collections import namedtuple
 
 import misc
+from vdsm import supervdsm
 from vdsm.password import ProtectedPassword
 from vdsm.config import config
 from vdsm.netinfo import getRouteDeviceTo
@@ -37,7 +38,6 @@ import devicemapper
 from threading import RLock
 
 import iscsiadm
-import supervdsm
 
 IscsiPortal = namedtuple("IscsiPortal", "hostname, port")
 IscsiTarget = namedtuple("IscsiTarget", "portal, tpgt, iqn")

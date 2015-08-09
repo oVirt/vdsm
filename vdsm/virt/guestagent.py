@@ -26,8 +26,7 @@ import errno
 import json
 import unicodedata
 
-# TODO: in future import from ..
-import supervdsm
+from vdsm import supervdsm
 
 from . import vmstatus
 

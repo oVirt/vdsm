@@ -23,8 +23,9 @@ from collections import defaultdict
 import os.path
 import xml.etree.cElementTree as ET
 
+from vdsm import supervdsm
+
 import caps
-import supervdsm
 
 # xml file name -> (last mtime, cached value)
 _libvirt_vcpu_pids_cache = {}

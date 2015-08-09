@@ -27,9 +27,9 @@ from vdsm.config import config
 from vdsm.utils import retry
 from vdsm import ipwrapper
 from vdsm import netinfo
+from vdsm import supervdsm
 from vdsm import vdscli
 from vdsm.netconfpersistence import RunningConfig
-import supervdsm
 
 
 SUCCESS = 0

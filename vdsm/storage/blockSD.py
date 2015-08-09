@@ -35,6 +35,8 @@ from operator import itemgetter
 from vdsm.config import config
 from vdsm import constants
 from vdsm import utils
+import vdsm.supervdsm as svdsm
+
 import misc
 import fileUtils
 import sd
@@ -50,7 +52,6 @@ import storage_exception as se
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
 import mount
-import supervdsm as svdsm
 import volume
 
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"

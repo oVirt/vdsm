@@ -39,6 +39,7 @@ from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import qemuimg
 from vdsm import response
+from vdsm import supervdsm
 from vdsm import utils
 from vdsm.compat import pickle
 from vdsm.config import config
@@ -55,7 +56,6 @@ import caps
 import hooks
 import hostdev
 import numaUtils
-import supervdsm
 
 # local package imports
 from .domain_descriptor import DomainDescriptor

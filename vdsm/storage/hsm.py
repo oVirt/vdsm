@@ -71,8 +71,8 @@ import devicemapper
 import logUtils
 import mount
 import dispatcher
-import supervdsm
 import storageServer
+from vdsm import supervdsm
 from vdsm import utils
 from vdsm import qemuimg
 

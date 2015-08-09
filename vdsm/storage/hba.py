@@ -26,12 +26,12 @@ import logging
 import os
 
 from vdsm import constants
+from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
 from vdsm.infra import zombiereaper
 
 import misc
-import supervdsm
 
 log = logging.getLogger("Storage.HBA")
 

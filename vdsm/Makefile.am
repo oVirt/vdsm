@@ -41,7 +41,6 @@ dist_vdsm_PYTHON = \
 	parted_utils.py \
 	ppc64HardwareInfo.py \
 	protocoldetector.py \
-	supervdsm.py \
 	v2v.py \
 	vdsmDebugPlugin.py \
 	$(NULL)

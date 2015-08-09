@@ -22,7 +22,7 @@ import xml.etree.ElementTree as etree
 
 import hooks
 from vdsm import libvirtconnection
-import supervdsm
+from vdsm import supervdsm
 
 CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'scsi': 'scsi',

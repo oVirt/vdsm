@@ -40,6 +40,7 @@ dist_vdsmpylib_PYTHON = \
 	response.py \
 	schedule.py \
 	sslutils.py \
+	supervdsm.py \
 	sysctl.py \
 	udevadm.py \
 	utils.py \

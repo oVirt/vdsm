@@ -41,9 +41,9 @@ from vdsm import sslutils
 from vdsm import libvirtconnection
 from vdsm import constants
 from vdsm import utils
+from vdsm import supervdsm
 import caps
 import blkid
-import supervdsm
 from protocoldetector import MultiProtocolAcceptor
 
 from virt import migration

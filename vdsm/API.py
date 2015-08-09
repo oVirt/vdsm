@@ -39,6 +39,7 @@ from clientIF import clientIF
 from vdsm import netinfo
 from vdsm import constants
 from vdsm import response
+from vdsm import supervdsm
 import storage.misc
 import storage.clusterlock
 import storage.volume
@@ -57,7 +58,6 @@ import hostdev
 from caps import PAGE_SIZE_BYTES
 import v2v
 
-import supervdsm
 
 haClient = None  # Define here to work around pyflakes issue #13
 try:

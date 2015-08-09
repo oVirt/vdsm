@@ -18,7 +18,7 @@
 #
 from testlib import VdsmTestCase as TestCaseBase
 import testValidation
-import supervdsm
+from vdsm import supervdsm
 from vdsm.constants import VDSM_USER
 from pwd import getpwnam
 import os

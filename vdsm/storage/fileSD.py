@@ -36,7 +36,7 @@ from remoteFileHandler import Timeout
 from persistentDict import PersistentDict, DictValidator
 from vdsm import constants
 from vdsm.utils import stripNewLines
-import supervdsm
+from vdsm import supervdsm
 import mount
 
 REMOTE_PATH = "REMOTE_PATH"

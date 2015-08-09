@@ -57,6 +57,7 @@ except ImportError:
 
 from vdsm import utils
 from vdsm import sysctl
+from vdsm.supervdsm import _SuperVdsmManager
 from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
@@ -68,7 +69,6 @@ from network.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
-from supervdsm import _SuperVdsmManager
 from storage import hba
 from storage import multipath
 from storage.fileUtils import chown, resolveGid, resolveUid

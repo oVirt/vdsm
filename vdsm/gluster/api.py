@@ -25,10 +25,10 @@ import selinux
 from functools import wraps
 from vdsm.define import doneCode
 from vdsm import constants, utils
+from vdsm import supervdsm as svdsm
 from pwd import getpwnam
 from storage import mount
 
-import supervdsm as svdsm
 import exception as ge
 from . import makePublic
 from . import safeWrite

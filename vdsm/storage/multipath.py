@@ -30,6 +30,7 @@ import re
 from collections import namedtuple
 
 from vdsm import constants
+from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
 from vdsm.config import config
@@ -37,7 +38,6 @@ from vdsm.config import config
 import hba
 import misc
 import iscsi
-import supervdsm
 import devicemapper
 
 DEV_ISCSI = "iSCSI"
