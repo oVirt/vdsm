@@ -1740,8 +1740,8 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkDoesntExist(NET_UNCHANGED)
                 self.assertNetworkDoesntExist(NET_CHANGED)
                 self.assertNetworkDoesntExist(NET_ADDITIONAL)
-                self.assertBondDoesntExist(BOND_CHANGED, [nic_b])
-                self.assertBondDoesntExist(BOND_UNCHANGED, [nic_a])
+                self.assertBondDoesntExist(BOND_UNCHANGED, [nic_b])
+                self.assertBondDoesntExist(BOND_CHANGED, [nic_c])
 
     @cleanupNet
     def testSelectiveRestoreIgnoresVdsmRegParams(self):
@@ -1751,7 +1751,7 @@ class NetworkTest(TestCaseBase):
                 "restoration is not supported")
 
         with dummyIf(1) as nics:
-            nic,  = nics
+            nic, = nics
             # let _assert_kernel_config_matches_running_config do the job
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'nic': nic, 'IPV6_AUTOCONF': 'no',
