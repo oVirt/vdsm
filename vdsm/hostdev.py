@@ -173,28 +173,38 @@ def get_device_params(device_name):
 
 def detach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
+    capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if CAPABILITY_TO_XML_ATTR[device_params['capability']] == 'pci':
+    if capability == 'pci':
         try:
             iommu_group = device_params['iommu_group']
         except KeyError:
             raise NoIOMMUSupportException('hostdev passthrough without iommu')
         supervdsm.getProxy().appropriateIommuGroup(iommu_group)
         libvirt_device.detachFlags(None)
+    elif capability == 'usb':
+        supervdsm.getProxy().appropriateUSBDevice(
+            device_params['address']['bus'],
+            device_params['address']['device'])
 
     return device_params
 
 
 def reattach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
+    capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if CAPABILITY_TO_XML_ATTR[device_params['capability']] == 'pci':
+    if capability == 'pci':
         try:
             iommu_group = device_params['iommu_group']
         except KeyError:
             raise NoIOMMUSupportException
         supervdsm.getProxy().rmAppropriateIommuGroup(iommu_group)
         libvirt_device.reAttach()
+    elif capability == 'usb':
+        supervdsm.getProxy().rmAppropriateUSBDevice(
+            device_params['address']['bus'],
+            device_params['address']['device'])
 
 
 def change_numvfs(device_name, numvfs):
