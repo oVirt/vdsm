@@ -91,6 +91,10 @@ _UDEV_RULE_FILE_NAME = os.path.join(
 _UDEV_RULE_FILE_NAME_VFIO = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "iommu_group_%s" +
     _UDEV_RULE_FILE_EXT)
+_UDEV_RULE_FILE_NAME_USB = os.path.join(
+    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "usb_%s_%s" +
+    _UDEV_RULE_FILE_EXT)
+_USB_DEVICE_PATH = '/dev/bus/usb/%03d/%03d'
 
 RUN_AS_TIMEOUT = config.getint("irs", "process_pool_timeout")
 
@@ -386,6 +390,47 @@ class _SuperVdsm(object):
 
         if not error:
             self._udevTrigger(subsystem_matches=('vfio',))
+
+    @logDecorator
+    def appropriateUSBDevice(self, bus, device):
+        rule_file = _UDEV_RULE_FILE_NAME_USB % (bus, device)
+        rule = ('SUBSYSTEM=="usb", ATTRS{{busnum}}=="{}", '
+                'ATTRS{{devnum}}=="{}", OWNER:="{}", GROUP:="{}"\n').format(
+                    bus, device, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP)
+
+        self.log.debug("Creating rule %s: %r", rule_file, rule)
+
+        with open(rule_file, "w") as rf:
+            rf.write(rule)
+
+        self._udevTrigger(attr_matches=(('busnum', int(bus)),
+                                        ('devnum', int(device))))
+
+    @logDecorator
+    def rmAppropriateUSBDevice(self, bus, device):
+        rule_file = _UDEV_RULE_FILE_NAME_USB % (bus, device)
+        self.log.debug("Removing rule %s", rule_file)
+        try:
+            os.remove(rule_file)
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+
+            self.log.warning('Rule %s missing', rule_file)
+
+        self.log.debug('Changing ownership (to root:root) of device '
+                       'bus: %s, device:: %s', bus, device)
+        device_path = _USB_DEVICE_PATH % (int(bus), int(device))
+        cmd = [EXT_CHOWN, 'root:root', device_path]
+        rc, out, err = utils.execCmd(cmd)
+        if err:
+            raise OSError(errno.EINVAL, 'Could not change ownership'
+                          'out %s\nerr %s' % (out, err))
+
+        # It's possible that the device was in input class or had rule
+        # matched against it, trigger to make sure everything is fine.
+        self._udevTrigger(attr_matches=(('busnum', int(bus)),
+                                        ('devnum', int(device))))
 
     @logDecorator
     def ksmTune(self, tuningParams):
