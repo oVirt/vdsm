@@ -754,17 +754,16 @@ def _getKeyPackages():
 
     if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL,
                    OSName.POWERKVM):
-        KEY_PACKAGES = {'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev',
-                                     'qemu-kvm-ev'),
-                        'qemu-img': ('qemu-img', 'qemu-img-rhev',
-                                     'qemu-img-ev'),
-                        'vdsm': ('vdsm',),
-                        'spice-server': ('spice-server',),
-                        'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
-                        'mom': ('mom',),
-                        'librbd1': ('librbd1',),
-                        'glusterfs-cli': ('glusterfs-cli',),
-                        }
+        KEY_PACKAGES = {
+            'glusterfs-cli': ('glusterfs-cli',),
+            'librbd1': ('librbd1',),
+            'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
+            'mom': ('mom',),
+            'qemu-img': ('qemu-img', 'qemu-img-rhev', 'qemu-img-ev'),
+            'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev', 'qemu-kvm-ev'),
+            'spice-server': ('spice-server',),
+            'vdsm': ('vdsm',),
+        }
 
         if _glusterEnabled:
             KEY_PACKAGES.update(GLUSTER_RPM_PACKAGES)
@@ -789,10 +788,15 @@ def _getKeyPackages():
             logging.error('', exc_info=True)
 
     elif getos() == OSName.DEBIAN and python_apt:
-        KEY_PACKAGES = {'qemu-kvm': 'qemu-kvm', 'qemu-img': 'qemu-utils',
-                        'vdsm': 'vdsmd', 'spice-server': 'libspice-server1',
-                        'libvirt': 'libvirt0', 'mom': 'mom',
-                        'glusterfs-cli': 'glusterfs-cli'}
+        KEY_PACKAGES = {
+            'glusterfs-cli': 'glusterfs-cli',
+            'libvirt': 'libvirt0',
+            'mom': 'mom',
+            'qemu-img': 'qemu-utils',
+            'qemu-kvm': 'qemu-kvm',
+            'spice-server': 'libspice-server1',
+            'vdsm': 'vdsmd',
+        }
 
         if _glusterEnabled:
             KEY_PACKAGES.update(GLUSTER_DEB_PACKAGES)
