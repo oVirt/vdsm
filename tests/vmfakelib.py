@@ -257,6 +257,9 @@ class Domain(object):
         self._failIfRequested()
         return 3  # thawed filesystems
 
+    def shutdownFlags(self, flags):
+        pass
+
 
 class GuestAgent(object):
     def __init__(self):

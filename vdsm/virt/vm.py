@@ -3744,7 +3744,16 @@ class Vm(object):
     def acpiShutdown(self):
         with self._shutdownLock:
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
-        self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
+        try:
+            self._dom.shutdownFlags(libvirt.VIR_DOMAIN_SHUTDOWN_ACPI_POWER_BTN)
+        except virdomain.NotConnectedError:
+            # the VM was already shut off asynchronously,
+            # so ignore error and quickly exit
+            self.log.warning('failed to invoke acpiShutdown: '
+                             'domain not connected')
+            return response.error('down')
+        else:
+            return response.success()
 
     def setBalloonTarget(self, target):
 
