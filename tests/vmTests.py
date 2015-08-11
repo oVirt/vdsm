@@ -1201,6 +1201,16 @@ class TestVmOperations(TestCaseBase):
             self.assertEqual(res,
                              response.error('ticketErr', message))
 
+    def testAcpiShutdownDisconnected(self):
+        with fake.VM() as testvm:
+            testvm._dom = virdomain.Disconnected(vmid='testvm')
+            self.assertTrue(response.is_error(testvm.acpiShutdown()))
+
+    def testAcpiShutdownConnected(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(vmId='testvm')
+            self.assertFalse(response.is_error(testvm.acpiShutdown()))
+
 
 class ChangingSchedulerDomain(object):
 

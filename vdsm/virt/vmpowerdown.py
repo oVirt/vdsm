@@ -19,6 +19,7 @@
 #
 import libvirt
 
+from vdsm import response
 from vdsm import utils
 from vdsm.define import doneCode, errCode
 
@@ -88,7 +89,8 @@ class VmShutdown(VmPowerDown):
         return self.event.wait(self.delay + self.timeout)
 
     def acpiCallback(self):
-        self.vm.acpiShutdown()
+        if response.is_error(self.vm.acpiShutdown()):
+            return False
         return self.event.wait(self.timeout)
 
     def forceCallback(self):
@@ -104,9 +106,11 @@ class VmReboot(VmPowerDown):
         return self.event.wait(self.delay + self.timeout)
 
     def acpiCallback(self):
+        # TODO: fix like acpiShutdown
         self.vm._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_ACPI_POWER_BTN)
         return self.event.wait(self.timeout)
 
     def forceCallback(self):
+        # TODO: fix like acpiShutdown
         self.vm._dom.reset(0)
         return self.event.wait(self.timeout)
