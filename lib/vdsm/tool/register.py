@@ -40,7 +40,7 @@ class Register(object):
                  fingerprint=None, ssh_port=None,
                  ssh_user=None, check_fqdn=True,
                  vdsm_port=None, node_address=None,
-                 node_name=None):
+                 vdsm_uuid=None, node_name=None):
         """
         Attributes:
 
@@ -55,6 +55,8 @@ class Register(object):
         vdsm_port         - VDSM listen port
         node_address      - Specify node address or FQDN
         node_name         - Specify node name
+        vdsm_uuid         - Provide host UUID to be used instead vdsm.utils.
+                            Useful for hosts with blank or buggy DMI
         """
         self.logger = self._set_logger()
         self.logger.debug("=======================================")
@@ -109,6 +111,10 @@ class Register(object):
         else:
             self.vdsm_port = vdsm_port
         self.logger.debug("VDSM Port: {sp}".format(sp=self.vdsm_port))
+
+        self.vdsm_uuid = vdsm_uuid
+        self.logger.debug("VDSM UUID: {uuid_provided}".format(
+                          uuid_provided=self.vdsm_uuid))
 
         self.ca_dir = "/etc/pki/ovirt-engine/"
         self.ca_engine = "{d}{f}".format(d=self.ca_dir, f="ca.pem")
@@ -246,12 +252,24 @@ class Register(object):
         Determine host UUID and if there is no existing /etc/vdsm/vdsm.id
         it will genereate UUID and save/persist in /etc/vdsm/vdsm.id
         """
-        self.uuid = getHostUUID(legacy=False)
+
+        if self.vdsm_uuid:
+            self.uuid = self.vdsm_uuid
+        else:
+            self.uuid = getHostUUID(legacy=False)
+
         self.url_reg += "&uniqueId={u}".format(u=self.uuid)
 
         self.logger.debug("Registration via: {u}".format(u=self.url_reg))
 
         __VDSM_ID = "/etc/vdsm/vdsm.id"
+
+        if self.vdsm_uuid and os.path.exists(__VDSM_ID):
+            if utils.isOvirtNode():
+                from ovirt.node.utils.fs import Config
+                Config().unpersist(__VDSM_ID)
+            os.unlink(__VDSM_ID)
+
         if not os.path.exists(__VDSM_ID):
             with open(__VDSM_ID, 'w') as f:
                 f.write(self.uuid)
@@ -433,6 +451,12 @@ def main(*args):
              " If not provided, will be used the default 54321",
     )
 
+    parser.add_argument(
+        '--vdsm-uuid',
+        help="Provide host UUID to be used instead vdsm.utils"
+             " Useful for hosts with blank or buggy DMI",
+    )
+
     # Using [1:] to remove the 'register' option from arguments
     # and avoid vdsm-tool recognize it as an unknown option
     args = parser.parse_args(args=args[1:])
@@ -445,7 +469,8 @@ def main(*args):
                    ssh_user=args.ssh_user,
                    ssh_port=args.ssh_port,
                    fingerprint=args.fingerprint,
-                   check_fqdn=args.check_fqdn)
+                   check_fqdn=args.check_fqdn,
+                   vdsm_uuid=args.vdsm_uuid)
 
     try:
         reg.handshake()
