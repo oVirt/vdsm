@@ -54,6 +54,10 @@ if config.getboolean('devel', 'python_warnings_enable'):
         logging.captureWarnings(True)
 
 
+class FatalError(Exception):
+    """ Raised when vdsm fail to start """
+
+
 def usage():
     print("Usage:  vdsm [OPTIONS]")
     print("     -h  - Display this help message")
@@ -113,8 +117,7 @@ def run(pidfile=None):
     try:
         lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
     except RuntimeError as e:
-        syslog.syslog('Failed to initialize logging: %s.' % e.message)
-        sys.exit(1)
+        raise FatalError("Cannot configure logging: %s" % e)
 
     logging.addLevelName(5, 'TRACE')
     logging.TRACE = 5  # impolite but helpful
@@ -209,8 +212,7 @@ def install_manhole(locals):
 
 def __assertLogPermission():
     if not os.access(constants.P_VDSM_LOG, os.W_OK):
-        syslog.syslog("vdsm log directory is not accessible")
-        sys.exit(1)
+        raise FatalError("Cannot access vdsm log dirctory")
 
     logfile = constants.P_VDSM_LOG + "/vdsm.log"
     if not os.path.exists(logfile):
@@ -218,21 +220,18 @@ def __assertLogPermission():
         return
 
     if not os.access(logfile, os.W_OK):
-        syslog.syslog("error in accessing vdsm log file")
-        sys.exit(1)
+        raise FatalError("Cannot access vdsm log file")
 
 
 def __assertVdsmUser():
     username = getpass.getuser()
     if username != constants.VDSM_USER:
-        syslog.syslog("VDSM failed to start: running user is not %s, trying "
-                      "to run from user %s" % (constants.VDSM_USER, username))
-        sys.exit(1)
+        raise FatalError("Not running as %r, trying to run as %r"
+                         % (constants.VDSM_USER, username))
     group = grp.getgrnam(constants.VDSM_GROUP)
     if (constants.VDSM_USER not in group.gr_mem) and \
        (pwd.getpwnam(constants.VDSM_USER).pw_gid != group.gr_gid):
-        syslog.syslog("VDSM failed to start: vdsm user is not in KVM group")
-        sys.exit(1)
+        raise FatalError("Vdsm user is not in KVM group")
 
 
 def __assertSudoerPermissions():
@@ -245,13 +244,12 @@ def __assertSudoerPermissions():
         rc, _, stderr = utils.execCmd(cmd, sudo=True)
 
     if rc != 0:
-        syslog.syslog("vdsm user could not manage to run sudo operation: "
-                      "(stderr: %s). Verify sudoer rules configuration" %
-                      (stderr))
-        sys.exit(1)
+        raise FatalError("Vdsm user could not manage to run sudo operation: "
+                         "(stderr: %s). Verify sudoer rules configuration" %
+                         (stderr))
 
 
-if __name__ == '__main__':
+def main():
     __assertVdsmUser()
     __assertLogPermission()
     __assertSudoerPermissions()
@@ -266,3 +264,12 @@ if __name__ == '__main__':
         os.setpgrp()
     argDict = parse_args()
     run(**argDict)
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except FatalError as e:
+        syslog.syslog("VDSM failed to start: %s" % e)
+        # Make it easy to debug via the shell
+        raise
