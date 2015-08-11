@@ -20,10 +20,8 @@ from contextlib import contextmanager
 
 from nose.plugins.skip import SkipTest
 
-from vdsm.ipwrapper import linkAdd, IPRoute2Error
+from vdsm.ipwrapper import linkAdd, IPRoute2Error, linkDel
 from vdsm.utils import random_iface_name
-
-import dummy
 
 
 @contextmanager
@@ -44,16 +42,4 @@ def pair(prefix='veth_', max_length=15):
         raise SkipTest('Failed to create a veth pair.')
     finally:
         # the peer device is removed by the kernel
-        dummy.remove(left_side)
-
-
-setIP = dummy.setIP
-setIP
-
-
-setLinkUp = dummy.setLinkUp
-setLinkUp
-
-
-setLinkDown = dummy.setLinkDown
-setLinkDown
+        linkDel(left_side)

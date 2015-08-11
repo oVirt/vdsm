@@ -30,7 +30,8 @@ import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
-                            getLinks, routeShowTable, linkDel, linkSet)
+                            getLinks, routeShowTable, linkDel, linkSet,
+                            addrAdd)
 from vdsm.netconfpersistence import (KernelConfig, RunningConfig)
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
@@ -96,14 +97,16 @@ def setupModule():
     """Persists network configuration."""
     VdsProxy().save_config()
     for _ in range(DUMMY_POOL_SIZE):
-        dummyPool.add(dummy.create())
+        iface = dummy.Dummy()
+        iface.create()
+        dummyPool.add(iface)
 
 
 def tearDownModule():
     """Restores the network configuration previous to running tests."""
     VdsProxy().restoreNetConfig()
     for nic in dummyPool:
-        dummy.remove(nic)
+        nic.remove()
 
 
 @contextmanager
@@ -130,7 +133,7 @@ def dummyIf(num):
     try:
         for _ in range(num):
             dummies.append(dummyPool.pop())
-        yield dummies
+        yield [d.devName for d in dummies]
     finally:
         for nic in dummies:
             dummyPool.add(nic)
@@ -433,8 +436,8 @@ class NetworkTest(TestCaseBase):
             # disabling IPv6 on Interface for removal of Router Solicitation
             sysctl.disable_ipv6(left)
             sysctl.disable_ipv6(right)
-            veth.setLinkUp(left)
-            veth.setLinkUp(right)
+            linkSet(left, ['up'])
+            linkSet(right, ['up'])
 
             # Vdsm scans for new devices every 15 seconds
             self.retryAssert(
@@ -1489,8 +1492,8 @@ class NetworkTest(TestCaseBase):
             return self.vdsm_net.config.networks[net_name].get('blockingdhcp')
 
         with veth.pair() as (server, client):
-            veth.setIP(server, IP_ADDRESS, IP_CIDR)
-            veth.setLinkUp(server)
+            addrAdd(server, IP_ADDRESS, IP_CIDR)
+            linkSet(server, ['up'])
             dhcp_async_net = {'nic': client, 'bridged': False,
                               'bootproto': 'dhcp', 'blockingdhcp': False}
             status, msg = self.setupNetworks(
@@ -2078,9 +2081,9 @@ class NetworkTest(TestCaseBase):
             return None, None
 
         with veth.pair() as (left, right):
-            veth.setIP(left, IP_ADDRESS, IP_CIDR)
-            veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
-            veth.setLinkUp(left)
+            addrAdd(left, IP_ADDRESS, IP_CIDR)
+            addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
+            linkSet(left, ['up'])
             with dnsmasqDhcp(left):
                 dhcpv4 = 4 in families
                 dhcpv6 = 6 in families
@@ -2206,8 +2209,8 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(bridges[NETWORK_NAME]['dhcpv4'], dhcp)
 
         with veth.pair() as (left, right):
-            veth.setIP(left, IP_ADDRESS, IP_CIDR)
-            veth.setLinkUp(left)
+            addrAdd(left, IP_ADDRESS, IP_CIDR)
+            linkSet(left, ['up'])
             with dnsmasqDhcp(left):
                 try:
                     setup_test_network(dhcp=True)
@@ -2223,9 +2226,9 @@ class NetworkTest(TestCaseBase):
         dhcpv4_ifaces = set()
         dhcpv6_ifaces = set()
         with veth.pair() as (server, client):
-            veth.setIP(server, IP_ADDRESS, IP_CIDR)
-            veth.setIP(server, IPv6_ADDRESS, IPv6_CIDR, 6)
-            veth.setLinkUp(server)
+            addrAdd(server, IP_ADDRESS, IP_CIDR)
+            addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, 6)
+            linkSet(server, ['up'])
 
             with dnsmasqDhcp(server):
 
@@ -2250,16 +2253,16 @@ class NetworkTest(TestCaseBase):
         with dummyIf(1) as nics:
             nic, = nics
 
-            dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
+            addrAdd(nic, IP_ADDRESS, IP_CIDR)
             try:
-                dummy.setLinkUp(nic)
+                linkSet(nic, ['up'])
                 self.assertEqual(getRouteDeviceTo(IP_ADDRESS_IN_NETWORK), nic)
             finally:
                 addrFlush(nic)
 
-            dummy.setIP(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
+            addrAdd(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
             try:
-                dummy.setLinkUp(nic)
+                linkSet(nic, ['up'])
                 self.assertEqual(getRouteDeviceTo(IPv6_ADDRESS_IN_NETWORK),
                                  nic)
             finally:
@@ -2490,8 +2493,8 @@ class NetworkTest(TestCaseBase):
                     .split('\0')[-1] for pid in pids]
 
         with veth.pair() as (server, client):
-            veth.setIP(server, IP_ADDRESS, IP_CIDR)
-            veth.setLinkUp(server)
+            addrAdd(server, IP_ADDRESS, IP_CIDR)
+            linkSet(server, ['up'])
             with dnsmasqDhcp(server):
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                     # Start a non-vdsm owned dhclient for the 'client' iface
@@ -2604,8 +2607,10 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     def testSetupNetworksRemoveBondWithKilledEnslavedNics(self):
-        nic = dummy.create()
-        nics = [nic]
+
+        nic = dummy.Dummy()
+        nic.create()
+        nics = [nic.devName]
         try:
             status, msg = self.setupNetworks(
                 {NETWORK_NAME:
@@ -2615,7 +2620,7 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkExists(NETWORK_NAME)
             self.assertBondExists(BONDING_NAME, nics)
         finally:
-            dummy.remove(nic)
+            nic.remove()
 
         status, msg = self.setupNetworks(
             {NETWORK_NAME: {'remove': True}},

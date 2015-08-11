@@ -24,65 +24,68 @@ from vdsm.ipwrapper import linkAdd, linkDel, addrAdd, linkSet, IPRoute2Error
 from vdsm.utils import random_iface_name
 
 
-def create(prefix='dummy_', max_length=11):
-    """
-    Create a dummy interface with a pseudo-random suffix, e.g. dummy_ilXaYiSn7.
-    Limit the name to 11 characters to make room for VLAN IDs.
-    This assumes root privileges.
-    """
-    dummy_name = random_iface_name(prefix, max_length)
-    try:
-        linkAdd(dummy_name, linkType='dummy')
-    except IPRoute2Error as e:
-        raise SkipTest('Failed to create a dummy interface %s: %s' %
-                       (dummy_name, e))
-    else:
-        return dummy_name
+class Dummy(object):
 
+    def __init__(self, prefix='dummy_', max_length=11):
+        self.devName = random_iface_name(prefix, max_length)
 
-def remove(dummy_name):
-    """
-    Remove the dummy interface. This assumes root privileges.
-    """
+    def create(self):
+        """
+        Create a dummy interface with a pseudo-random suffix, e.g.
+        dummy_ilXaYiSn7.
+        Limit the name to 11 characters to make room for VLAN IDs.
+        This assumes root privileges.
+        """
+        try:
+            linkAdd(self.devName, linkType='dummy')
+        except IPRoute2Error as e:
+            raise SkipTest('Failed to create a dummy interface %s: %s' %
+                           (self.devName, e))
+        else:
+            return self.devName
 
-    try:
-        linkDel(dummy_name)
-    except IPRoute2Error as e:
-        raise SkipTest("Unable to delete the dummy interface %s: %s" %
-                       (dummy_name, e))
+    def remove(self):
+        """
+        Remove the dummy interface. This assumes root privileges.
+        """
+
+        try:
+            linkDel(self.devName)
+        except IPRoute2Error as e:
+            raise SkipTest("Unable to delete the dummy interface %s: %s" %
+                           (self.devName, e))
+
+    def setLinkUp(self):
+        self._setLinkState('up')
+
+    def setLinkDown(self):
+        self._setLinkState('down')
+
+    def setIP(self, ipaddr, netmask, family=4):
+        try:
+            addrAdd(self.devName, ipaddr, netmask, family)
+        except IPRoute2Error as e:
+            message = ('Failed to add the IPv%s address %s/%s to device %s: %s'
+                       % (family, ipaddr, netmask, self.devName, e))
+            if family == 6:
+                message += ("; NetworkManager may have set the sysctl "
+                            "disable_ipv6 flag on the device, please see e.g. "
+                            "RH BZ #1102064")
+            raise SkipTest(message)
+
+    def _setLinkState(self, state):
+        try:
+            linkSet(self.devName, [state])
+        except IPRoute2Error:
+            raise SkipTest('Failed to bring %s to state %s' % (
+                self.devName, state))
 
 
 @contextmanager
 def device(prefix='dummy_', max_length=11):
-    dummy_name = create(prefix, max_length)
+    dummy_interface = Dummy(prefix, max_length)
+    dummy_name = dummy_interface.create()
     try:
         yield dummy_name
     finally:
-        remove(dummy_name)
-
-
-def setIP(dummy_name, ipaddr, netmask, family=4):
-    try:
-        addrAdd(dummy_name, ipaddr, netmask, family)
-    except IPRoute2Error as e:
-        message = ('Failed to add the IPv%s address %s/%s to device %s: %s'
-                   % (family, ipaddr, netmask, dummy_name, e))
-        if family == 6:
-            message += ('; NetworkManager may have set the sysctl disable_ipv6'
-                        ' flag on the device, please see e.g. RH BZ #1102064')
-        raise SkipTest(message)
-
-
-def setLinkUp(dummy_name):
-    _setLinkState(dummy_name, 'up')
-
-
-def setLinkDown(dummy_name):
-    _setLinkState(dummy_name, 'down')
-
-
-def _setLinkState(dummy_name, state):
-    try:
-        linkSet(dummy_name, [state])
-    except IPRoute2Error:
-        raise SkipTest('Failed to bring %s to state %s' % (dummy_name, state))
+        dummy_interface.remove()

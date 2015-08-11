@@ -19,8 +19,9 @@ class NetlinkEventMonitorTests(TestCaseBase):
     @ValidateRunningAsRoot
     def test_iterate_after_events(self):
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
-            dummy_name = dummy.create()
-            dummy.remove(dummy_name)
+            iface = dummy.Dummy()
+            dummy_name = iface.create()
+            iface.remove()
             for event in mon:
                 if event.get('name') == dummy_name:
                     break
@@ -31,12 +32,13 @@ class NetlinkEventMonitorTests(TestCaseBase):
         iteration we start _set_and_remove_device, which is delayed for .2
         seconds. Then iteration starts and wait for new dummy.
         """
-        dummy_name = dummy.create()
+        iface = dummy.Dummy()
+        dummy_name = iface.create()
 
         def _set_and_remove_device():
             time.sleep(.2)
-            dummy.setLinkUp(dummy_name)
-            dummy.remove(dummy_name)
+            iface.setLinkUp()
+            iface.remove()
         add_device_thread = threading.Thread(target=_set_and_remove_device)
 
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
@@ -49,8 +51,9 @@ class NetlinkEventMonitorTests(TestCaseBase):
     @ValidateRunningAsRoot
     def test_stopped(self):
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
-            dummy_name = dummy.create()
-            dummy.remove(dummy_name)
+            iface = dummy.Dummy()
+            dummy_name = iface.create()
+            iface.remove()
 
         found = any(event.get('name') == dummy_name for event in mon)
         self.assertTrue(found, 'Expected event was not caught.')
@@ -61,10 +64,11 @@ class NetlinkEventMonitorTests(TestCaseBase):
                              groups=('ipv4-ifaddr',)) as mon_a:
             with monitor.Monitor(timeout=self.TIMEOUT,
                                  groups=('link', 'ipv4-route')) as mon_l_r:
-                dummy_name = dummy.create()
-                dummy.setIP(dummy_name, IP_ADDRESS, IP_CIDR)
-                dummy.setLinkUp(dummy_name)
-                dummy.remove(dummy_name)
+                iface = dummy.Dummy()
+                iface.create()
+                iface.setIP(IP_ADDRESS, IP_CIDR)
+                iface.setLinkUp()
+                iface.remove()
 
         for event in mon_a:
             self.assertIn('_addr', event['event'], "Caught event '%s' is not "
@@ -82,10 +86,11 @@ class NetlinkEventMonitorTests(TestCaseBase):
             iterator = iter(mon)
 
             # Generate events to avoid blocking
-            dummy_name = dummy.create()
+            iface = dummy.Dummy()
+            iface.create()
             iterator.next()
 
-            dummy.remove(dummy_name)
+            iface.remove()
             iterator.next()
 
         with self.assertRaises(StopIteration):
@@ -121,10 +126,11 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
         with monitor.Monitor(timeout=self.TIMEOUT,
                              silent_timeout=True) as mon:
-            dummy_name = dummy.create()
-            dummy.setIP(dummy_name, IP_ADDRESS, IP_CIDR)
-            dummy.setLinkUp(dummy_name)
-            dummy.remove(dummy_name)
+            iface = dummy.Dummy()
+            dummy_name = iface.create()
+            iface.setIP(IP_ADDRESS, IP_CIDR)
+            iface.setLinkUp()
+            iface.remove()
 
             expected_events = _expected_events(dummy_name, IP_ADDRESS, IP_CIDR)
             _expected = list(expected_events)
@@ -168,8 +174,9 @@ class NetlinkEventMonitorTests(TestCaseBase):
     def test_timeout_not_triggered(self):
         time_start = monotonic_time()
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
-            dummy_name = dummy.create()
-            dummy.remove(dummy_name)
+            iface = dummy.Dummy()
+            iface.create()
+            iface.remove()
 
             for event in mon:
                 break
