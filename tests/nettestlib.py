@@ -29,6 +29,7 @@ from multiprocessing import Process
 from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
+from vdsm.ipwrapper import linkSet, linkAdd, linkDel
 from vdsm.netlink import monitor
 from vdsm.utils import execCmd, random_iface_name
 
@@ -56,11 +57,11 @@ class Interface(object):
         self.devName = random_iface_name(prefix)
 
     def _up(self):
-        check_call([EXT_IP, "link", "set", self.devName, "up"])
+        linkSet(self.devName, ['up'])
 
     def _down(self):
         with monitor.Monitor(groups=('link',), timeout=2) as mon:
-            check_call([EXT_IP, "link", "set", self.devName, "down"])
+            linkSet(self.devName, ['down'])
             for event in mon:
                 if (event.get('name') == self.devName and
                         event.get('state') == 'down'):
@@ -73,16 +74,15 @@ class Interface(object):
 class Bridge(Interface):
 
     def addDevice(self):
-        check_call([EXT_IP, 'link', 'add', 'dev', self.devName, 'type',
-                    'bridge'])
+        linkAdd(self.devName, 'bridge')
         self._up()
 
     def delDevice(self):
         self._down()
-        check_call([EXT_IP, 'link', 'del', self.devName])
+        linkDel(self.devName)
 
     def addIf(self, dev):
-        check_call([EXT_IP, 'link', 'set', 'dev', dev, 'master', self.devName])
+        linkSet(dev, ['master', self.devName])
 
 
 def _listenOnDevice(fd, icmp):
