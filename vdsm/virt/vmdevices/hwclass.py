@@ -35,3 +35,7 @@ SMARTCARD = 'smartcard'
 TPM = 'tpm'
 HOSTDEV = 'hostdev'
 MEMORY = 'memory'
+
+
+# libvirt is not giving back aliases
+WITHOUT_ALIAS = GRAPHICS

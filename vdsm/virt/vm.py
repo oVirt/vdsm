@@ -4502,6 +4502,10 @@ class Vm(object):
             for dev in self._devices[devType]:
                 if hasattr(dev, 'alias'):
                     aliasToDevice[dev.alias] = dev
+                elif devType == hwclass.WITHOUT_ALIAS:
+                    # we expect these failures, we don't log
+                    # to not confuse the user
+                    pass
                 else:
                     self.log.error("Alias not found for device type %s "
                                    "during migration at destination host" %
