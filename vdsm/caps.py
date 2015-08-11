@@ -790,6 +790,7 @@ def _getKeyPackages():
     elif getos() == OSName.DEBIAN and python_apt:
         KEY_PACKAGES = {
             'glusterfs-cli': 'glusterfs-cli',
+            'librbd1': 'librbd1',
             'libvirt': 'libvirt0',
             'mom': 'mom',
             'qemu-img': 'qemu-utils',
