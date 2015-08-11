@@ -50,7 +50,7 @@ def check_call(cmd):
             out, err)
 
 
-class Interface():
+class Interface(object):
 
     def __init__(self, prefix='vdsm-'):
         self.devName = random_iface_name(prefix)
