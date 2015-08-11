@@ -55,10 +55,10 @@ class Interface(object):
     def __init__(self, prefix='vdsm-'):
         self.devName = random_iface_name(prefix)
 
-    def _ifUp(self):
+    def _up(self):
         check_call([EXT_IP, "link", "set", self.devName, "up"])
 
-    def _ifDown(self):
+    def _down(self):
         with monitor.Monitor(groups=('link',), timeout=2) as mon:
             check_call([EXT_IP, "link", "set", self.devName, "down"])
             for event in mon:
@@ -75,10 +75,10 @@ class Bridge(Interface):
     def addDevice(self):
         check_call([EXT_IP, 'link', 'add', 'dev', self.devName, 'type',
                     'bridge'])
-        self._ifUp()
+        self._up()
 
     def delDevice(self):
-        self._ifDown()
+        self._down()
         check_call([EXT_IP, 'link', 'del', self.devName])
 
     def addIf(self, dev):
@@ -113,10 +113,10 @@ class Tap(Interface):
         ifr = struct.pack('16sH', self.devName, self._IFF_TAP |
                           self._IFF_NO_PI)
         fcntl.ioctl(self._cloneDevice, self._TUNSETIFF, ifr)
-        self._ifUp()
+        self._up()
 
     def delDevice(self):
-        self._ifDown()
+        self._down()
         self._cloneDevice.close()
 
     def startListener(self, icmp):
