@@ -305,14 +305,6 @@ Requires:       python-ioprocess >= 0.14
 %description python
 Shared libraries between the various VDSM packages.
 
-%package debug-plugin
-Summary:        VDSM Debug Plugin
-Requires:       %{name}
-Requires:       %{name}-xmlrpc = %{version}-%{release}
-
-%description debug-plugin
-Used by the trained monkeys at Red Hat to insert chaos and mayhem in to VDSM.
-
 %package tests
 Summary:        VDSM Test Suite
 Requires:       %{name} = %{version}-%{release}
@@ -1345,11 +1337,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_vmfex
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_vmfex
 %endif
-
-%files debug-plugin
-%defattr(-, root, root, -)
-%{_datadir}/%{vdsm_name}/vdsmDebugPlugin.py*
-%{_datadir}/%{vdsm_name}/debugPluginClient.py*
 
 %files cli
 %defattr(-, root, root, -)

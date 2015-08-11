@@ -28,7 +28,6 @@ dist_vdsm_PYTHON = \
 	blkid.py \
 	caps.py \
 	clientIF.py \
-	debugPluginClient.py \
 	hooking.py \
 	hooks.py \
 	hostdev.py \
@@ -41,7 +40,6 @@ dist_vdsm_PYTHON = \
 	parted_utils.py \
 	protocoldetector.py \
 	v2v.py \
-	vdsmDebugPlugin.py \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \

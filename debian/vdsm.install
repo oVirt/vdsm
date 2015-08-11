@@ -38,7 +38,6 @@
 ./usr/share/vdsm/caps.py
 ./usr/share/vdsm/clientIF.py
 ./usr/share/vdsm/daemonAdapter
-./usr/share/vdsm/debugPluginClient.py
 ./usr/share/vdsm/dsaversion.py
 ./usr/share/vdsm/dumpStorageTable.py
 ./usr/share/vdsm/get-conf-item
@@ -137,7 +136,6 @@
 ./usr/share/vdsm/vdsm
 ./usr/share/vdsm/vdsm-restore-net-config
 ./usr/share/vdsm/vdsm-store-net-config
-./usr/share/vdsm/vdsmDebugPlugin.py
 ./usr/share/vdsm/vdsmapi-schema.json
 ./usr/share/vdsm/virt/__init__.py
 ./usr/share/vdsm/virt/domain_descriptor.py
