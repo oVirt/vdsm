@@ -143,6 +143,9 @@ parameters = [
             'command, 30 secs is a nice default. Set to 300 if the vm is '
             'expected to freeze during cluster failover.'),
 
+        ('hotunplug_timeout', '30',
+            'Time to wait (in seconds) for a VM to detach its disk'),
+
         ('vm_watermark_interval', '2',
             'How often should we check drive watermark on block storage for '
             'automatic extension of thin provisioned volumes (seconds).'),
