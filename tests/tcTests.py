@@ -18,6 +18,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from collections import namedtuple
 
 import time
 import os
@@ -28,12 +29,18 @@ from binascii import unhexlify
 from itertools import izip_longest
 from subprocess import Popen, PIPE
 
-from testlib import VdsmTestCase as TestCaseBase
+from hostdevTests import Connection
+from testlib import (VdsmTestCase as TestCaseBase, permutations,
+                     expandPermutations)
 from testValidation import ValidateRunningAsRoot
-from nettestlib import Bridge, Tap, requires_tc, requires_tun
+from monkeypatch import MonkeyClass
+from nettestlib import (Bridge, Dummy, Tap, requires_tc, requires_tun,
+                        vlan_device)
 
 from vdsm.constants import EXT_TC
-from network import tc
+from network import api, tc
+from network.configurators import qos
+from vdsm import libvirtconnection
 
 
 class TestQdisc(TestCaseBase):
@@ -353,3 +360,228 @@ class TestPortMirror(TestCaseBase):
         tc.setPortMirroring(self._bridge0.devName, self._bridge2.devName)
         self.testMirroring()
         tc.unsetPortMirroring(self._bridge0.devName, self._bridge2.devName)
+
+HOST_QOS_OUTBOUND = {
+    'ls': {
+        'm1': 4 * 1000 ** 2,  # 4Mbit/s
+        'd': 100 * 1000,  # 100 microseconds
+        'm2': 3 * 1000 ** 2},  # 3Mbit/s
+    'ul': {
+        'm2': 8 * 1000 ** 2}}  # 8Mbit/s
+
+TcClasses = namedtuple('TcClasses', 'classes, default_class, root_class')
+TcQdiscs = namedtuple('TcQdiscs', 'leaf_qdiscs, ingress_qdisc, root_qdisc')
+TcFilters = namedtuple('TcFilters', 'untagged_filters, tagged_filters')
+
+
+@MonkeyClass(libvirtconnection, 'get', Connection)
+@expandPermutations
+class TestConfigureOutbound(TestCaseBase):
+    def setUp(self):
+        self.device = Dummy()
+        self.device.create()
+        self.device.up()
+        self.device_name = self.device.devName
+
+    # TODO:
+    # test remove_outbound
+
+    def tearDown(self):
+        self.device.remove()
+
+    def test_single_non_vlan(self):
+            net_ent = api._objectivizeNetwork(nics=(self.device_name, ))
+            qos.configure_outbound(HOST_QOS_OUTBOUND, top_device=net_ent)
+            tc_classes, tc_filters, tc_qdiscs = \
+                self._analyse_qos_and_general_assertions()
+            self.assertEqual(tc_classes.classes, [])
+
+            self.assertEqual(len(tc_qdiscs.leaf_qdiscs), 1)
+            self.assertIsNotNone(self._non_vlan_qdisc(tc_qdiscs.leaf_qdiscs))
+            self._assert_parent(tc_qdiscs.leaf_qdiscs,
+                                tc_classes.default_class)
+
+            self.assertEqual(len(tc_filters.tagged_filters), 0)
+
+    @permutations([[1], [2]])
+    def test_single_vlan(self, repeating_calls):
+        with vlan_device(self.device_name) as vlan:
+            net_ent = api._objectivizeNetwork(vlan_id=vlan.tag,
+                                              nics=(self.device_name, ))
+            for _ in range(repeating_calls):
+                qos.configure_outbound(HOST_QOS_OUTBOUND, top_device=net_ent)
+            tc_classes, tc_filters, tc_qdiscs = \
+                self._analyse_qos_and_general_assertions()
+            self.assertEqual(len(tc_classes.classes), 1)
+
+            self.assertEqual(len(tc_qdiscs.leaf_qdiscs), 2)
+            vlan_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan.tag)
+            vlan_class = self._vlan_class(tc_classes.classes, vlan.tag)
+            self._assert_parent([vlan_qdisc], vlan_class)
+
+            self.assertEqual(len(tc_filters.tagged_filters), 1)
+            self.assertEqual(tc_filters.tagged_filters[0]['u32']['flowid'],
+                             ':%x' % vlan.tag)
+
+    def test_multiple_vlans(self):
+        with vlan_device(self.device_name, tag=16) as vlan1:
+            with vlan_device(self.device_name, tag=17) as vlan2:
+                for v in (vlan1, vlan2):
+                    net_ent = api._objectivizeNetwork(
+                        vlan_id=v.tag, nics=(self.device_name, ))
+                    qos.configure_outbound(HOST_QOS_OUTBOUND,
+                                           top_device=net_ent)
+
+                tc_classes, tc_filters, tc_qdiscs = \
+                    self._analyse_qos_and_general_assertions()
+                self.assertEqual(len(tc_classes.classes), 2)
+
+                self.assertEqual(len(tc_qdiscs.leaf_qdiscs), 3)
+                v1_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan1.tag)
+                v2_qdisc = self._vlan_qdisc(tc_qdiscs.leaf_qdiscs, vlan2.tag)
+                v1_class = self._vlan_class(tc_classes.classes, vlan1.tag)
+                v2_class = self._vlan_class(tc_classes.classes, vlan2.tag)
+                self._assert_parent([v1_qdisc], v1_class)
+                self._assert_parent([v2_qdisc], v2_class)
+
+                self.assertEqual(len(tc_filters.tagged_filters), 2)
+                current_tagged_filters_flow_id = set(
+                    f['u32']['flowid'] for f in tc_filters.tagged_filters)
+                expected_flow_ids = set(':%x' % v.tag for v in (vlan1, vlan2))
+                self.assertEqual(current_tagged_filters_flow_id,
+                                 expected_flow_ids)
+
+    def _analyse_qos_and_general_assertions(self):
+        tc_classes = self._analyse_classes()
+        tc_qdiscs = self._analyse_qdiscs()
+        tc_filters = self._analyse_filters()
+        self._assertions_on_classes(tc_classes.classes,
+                                    tc_classes.default_class,
+                                    tc_classes.root_class)
+        self._assertions_on_qdiscs(tc_qdiscs.ingress_qdisc,
+                                   tc_qdiscs.root_qdisc)
+        self._assertions_on_filters(tc_filters.untagged_filters,
+                                    tc_filters.tagged_filters)
+        return tc_classes, tc_filters, tc_qdiscs
+
+    def _analyse_classes(self):
+        all_classes = list(tc.classes(self.device_name))
+        root_class = self._root_class(all_classes)
+        default_class = self._default_class(all_classes)
+        all_classes.remove(root_class)
+        all_classes.remove(default_class)
+        return TcClasses(all_classes, default_class, root_class)
+
+    def _analyse_qdiscs(self):
+        all_qdiscs = list(tc._qdiscs(self.device_name))
+        ingress_qdisc = self._ingress_qdisc(all_qdiscs)
+        root_qdisc = self._root_qdisc(all_qdiscs)
+        leaf_qdiscs = self._leaf_qdiscs(all_qdiscs)
+        self.assertEqual(len(leaf_qdiscs) + 2, len(all_qdiscs))
+        return TcQdiscs(leaf_qdiscs, ingress_qdisc, root_qdisc)
+
+    def _analyse_filters(self):
+        filters = list(tc._filters(self.device_name))
+        untagged_filters = self._untagged_filters(filters)
+        tagged_filters = self._tagged_filters(filters)
+        return TcFilters(untagged_filters, tagged_filters)
+
+    def _assertions_on_classes(self, all_classes, default_class, root_class):
+        self.assertTrue(all(cls.get('kind') == qos._SHAPING_QDISC_KIND
+                            for cls in all_classes), str(all_classes))
+
+        self._assertions_on_root_class(root_class)
+
+        self._assertions_on_default_class(default_class)
+
+        if not all_classes:  # only a default class
+            self._assert_upper_limit(default_class)
+        else:
+            for cls in all_classes:
+                self._assert_upper_limit(cls)
+
+    def _assertions_on_qdiscs(self, ingress_qdisc, root_qdisc):
+        self.assertEqual(root_qdisc['kind'], qos._SHAPING_QDISC_KIND)
+        self._assert_root_handle(root_qdisc)
+        self.assertEqual(ingress_qdisc['handle'], tc.QDISC_INGRESS)
+
+    def _assertions_on_filters(self, untagged_filters, tagged_filters):
+        self.assertTrue(all(f['protocol'] == '802.1Q' for f in tagged_filters))
+        self._assert_parent_handle(tagged_filters + untagged_filters,
+                                   qos._ROOT_QDISC_HANDLE)
+        self.assertEqual(len(untagged_filters), 1)
+        self.assertEqual(untagged_filters[0]['protocol'], 'all')
+
+    def _assert_upper_limit(self, default_class):
+        self.assertEqual(
+            default_class[qos._SHAPING_QDISC_KIND]['ul']['m2'],
+            HOST_QOS_OUTBOUND['ul']['m2'])
+
+    def _assertions_on_default_class(self, default_class):
+        self._assert_parent_handle([default_class], qos._ROOT_QDISC_HANDLE)
+        self.assertEqual(default_class['leaf'], qos._DEFAULT_CLASSID + ':')
+        self.assertEqual(default_class[qos._SHAPING_QDISC_KIND]['ls'],
+                         HOST_QOS_OUTBOUND['ls'])
+
+    def _assertions_on_root_class(self, root_class):
+        self.assertIsNotNone(root_class)
+        self._assert_root_handle(root_class)
+
+    def _assert_root_handle(self, entity):
+        self.assertEqual(entity['handle'], qos._ROOT_QDISC_HANDLE)
+
+    def _assert_parent(self, entities, parent):
+        self.assertTrue(all(e['parent'] == parent['handle'] for e in entities))
+
+    def _assert_parent_handle(self, entities, parent_handle):
+        self.assertTrue(all(e['parent'] == parent_handle for e in entities))
+
+    def _root_class(self, classes):
+        return _find_entity(lambda c: c.get('root'), classes)
+
+    def _default_class(self, classes):
+        default_cls_handle = qos._ROOT_QDISC_HANDLE + qos._DEFAULT_CLASSID
+        return _find_entity(lambda c: c['handle'] == default_cls_handle,
+                            classes)
+
+    def _ingress_qdisc(self, qdiscs):
+        return _find_entity(lambda q: q['kind'] == 'ingress', qdiscs)
+
+    def _root_qdisc(self, qdiscs):
+        return _find_entity(lambda q: q.get('root'), qdiscs)
+
+    def _leaf_qdiscs(self, qdiscs):
+        return [qdisc for qdisc in qdiscs
+                if qdisc['kind'] == qos._FAIR_QDISC_KIND]
+
+    def _untagged_filters(self, filters):
+        predicate = lambda f: f.get('u32', {}).get('match', {}) == {
+            'mask': 0, 'value': 0, 'offset': 0}
+        return list(f for f in filters if predicate(f))
+
+    def _tagged_filters(self, filters):
+        def tagged(f):
+            flow_id = f.get('u32', {}).get('flowid')
+            if flow_id is not None and flow_id != ':%x' % qos._NON_VLANNED_ID:
+                return True
+            return False
+
+        return list(f for f in filters if tagged(f))
+
+    def _vlan_qdisc(self, qdiscs, vlan_tag):
+        handle = '%x:' % vlan_tag
+        return _find_entity(lambda q: q['handle'] == handle, qdiscs)
+
+    def _vlan_class(self, classes, vlan_tag):
+        handle = qos._ROOT_QDISC_HANDLE + '%x' % vlan_tag
+        return _find_entity(lambda c: c['handle'] == handle, classes)
+
+    def _non_vlan_qdisc(self, qdiscs):
+        handle = qos._DEFAULT_CLASSID + ':'
+        return _find_entity(lambda q: q['handle'] == handle, qdiscs)
+
+
+def _find_entity(predicate, entities):
+    for ent in entities:
+        if predicate(ent):
+            return ent

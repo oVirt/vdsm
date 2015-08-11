@@ -86,6 +86,48 @@ class Bridge(Interface):
         linkSet(dev, ['master', self.devName])
 
 
+@contextmanager
+def bridge_device():
+    bridge = Bridge()
+    bridge.addDevice()
+    try:
+        yield bridge
+    finally:
+        bridge.delDevice()
+
+
+class Vlan(Interface):
+    def __init__(self, backing_device_name, tag):
+        self.tag = tag
+        self.backing_device_name = backing_device_name
+        super(Vlan, self).__init__(prefix='{}.{}'.format(
+            backing_device_name, tag))
+
+    def addDevice(self):
+        linkAdd(self.devName, 'vlan', link=self.backing_device_name,
+                args=['id', str(self.tag)])
+        self.up()
+
+    def delDevice(self):
+        self._down()
+        linkDel(self.devName)
+
+
+@contextmanager
+def vlan_device(link, tag=16):
+    vlan = Vlan(link, tag)
+    vlan.addDevice()
+    try:
+        yield vlan
+    finally:
+        try:
+            vlan.delDevice()
+        except IPRoute2Error:
+            # if the underlying device was removed beforehand, the vlan device
+            # would be gone by now.
+            pass
+
+
 def _listenOnDevice(fd, icmp):
     while True:
         packet = os.read(fd, 2048)
