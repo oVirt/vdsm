@@ -32,9 +32,10 @@ from vdsm.netinfo import OPERSTATE_UP
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 
-from functional import dummy, veth
+from functional import veth
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from nettestlib import dummy_device
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot, RequireBondingMod
 
@@ -202,14 +203,14 @@ class TestNetinfo(TestCaseBase):
         with MonkeyPatchScope([(ipwrapper.Link, '_fakeNics', ['veth_*',
                                                               'dummy_*'])]):
             with veth.pair() as (v1a, v1b):
-                with dummy.device() as d1:
+                with dummy_device() as d1:
                     fakes = set([d1, v1a, v1b])
                     nics = netinfo.nics()
                     self.assertTrue(fakes.issubset(nics), 'Fake devices %s are'
                                     ' not listed in nics %s' % (fakes, nics))
 
             with veth.pair(prefix='mehv_') as (v2a, v2b):
-                with dummy.device(prefix='mehd_') as d2:
+                with dummy_device(prefix='mehd_') as d2:
                     hiddens = set([d2, v2a, v2b])
                     nics = netinfo.nics()
                     self.assertFalse(hiddens.intersection(nics), 'Some of '
@@ -385,7 +386,7 @@ class TestNetinfo(TestCaseBase):
         IP_ADDR2_CIDR = self._cidr_form(IP_ADDR2, PREFIX_LENGTH)
         IP_ADDR3_CIDR = self._cidr_form(IP_ADDR3, 32)
         IPV6_ADDR_CIDR = self._cidr_form(IPV6_ADDR, IPV6_PREFIX_LENGTH)
-        with dummy.device() as device:
+        with dummy_device() as device:
             ipwrapper.addrAdd(device, IP_ADDR, PREFIX_LENGTH)
             ipwrapper.addrAdd(device, IP_ADDR_SECOND, PREFIX_LENGTH)
             ipwrapper.addrAdd(device, IP_ADDR2, PREFIX_LENGTH)

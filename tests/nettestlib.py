@@ -24,12 +24,13 @@ import os
 import platform
 import signal
 import struct
+from contextlib import contextmanager
 from multiprocessing import Process
 
 from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
-from vdsm.ipwrapper import linkSet, linkAdd, linkDel
+from vdsm.ipwrapper import addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error
 from vdsm.netlink import monitor
 from vdsm.utils import execCmd, random_iface_name
 
@@ -53,10 +54,10 @@ def check_call(cmd):
 
 class Interface(object):
 
-    def __init__(self, prefix='vdsm-'):
-        self.devName = random_iface_name(prefix)
+    def __init__(self, prefix='vdsm-', max_length=11):
+        self.devName = random_iface_name(prefix, max_length)
 
-    def _up(self):
+    def up(self):
         linkSet(self.devName, ['up'])
 
     def _down(self):
@@ -75,7 +76,7 @@ class Bridge(Interface):
 
     def addDevice(self):
         linkAdd(self.devName, 'bridge')
-        self._up()
+        self.up()
 
     def delDevice(self):
         self._down()
@@ -113,7 +114,7 @@ class Tap(Interface):
         ifr = struct.pack('16sH', self.devName, self._IFF_TAP |
                           self._IFF_NO_PI)
         fcntl.ioctl(self._cloneDevice, self._TUNSETIFF, ifr)
-        self._up()
+        self.up()
 
     def delDevice(self):
         self._down()
@@ -137,6 +138,58 @@ class Tap(Interface):
 
     def writeToDevice(self, icmp):
         os.write(self._cloneDevice.fileno(), icmp)
+
+
+class Dummy(Interface):
+    """
+    Create a dummy interface with a pseudo-random suffix, e.g. dummy_ilXaYiSn7.
+    Limit the name to 11 characters to make room for VLAN IDs. This assumes
+    root privileges.
+    """
+
+    def __init__(self, prefix='dummy_', max_length=11):
+        super(Dummy, self).__init__(prefix, max_length)
+
+    def create(self):
+        try:
+            linkAdd(self.devName, linkType='dummy')
+        except IPRoute2Error as e:
+            raise SkipTest('Failed to create a dummy interface %s: %s' %
+                           (self.devName, e))
+        else:
+            return self.devName
+
+    def remove(self):
+        """
+        Remove the dummy interface. This assumes root privileges.
+        """
+        try:
+            linkDel(self.devName)
+        except IPRoute2Error as e:
+            raise SkipTest("Unable to delete the dummy interface %s: %s" %
+                           (self.devName, e))
+
+    def set_ip(self, ipaddr, netmask, family=4):
+        try:
+            addrAdd(self.devName, ipaddr, netmask, family)
+        except IPRoute2Error as e:
+            message = ('Failed to add the IPv%s address %s/%s to device %s: %s'
+                       % (family, ipaddr, netmask, self.devName, e))
+            if family == 6:
+                message += ("; NetworkManager may have set the sysctl "
+                            "disable_ipv6 flag on the device, please see e.g. "
+                            "RH BZ #1102064")
+            raise SkipTest(message)
+
+
+@contextmanager
+def dummy_device(prefix='dummy_', max_length=11):
+    dummy_interface = Dummy(prefix, max_length)
+    dummy_name = dummy_interface.create()
+    try:
+        yield dummy_name
+    finally:
+        dummy_interface.remove()
 
 
 def check_brctl():

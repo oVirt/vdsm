@@ -49,10 +49,9 @@ from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import (brokentest, slowtest, RequireDummyMod,
                             RequireVethMod, ValidateRunningAsRoot)
-from nettestlib import Tap
+from nettestlib import Dummy, Tap
 
 import dhcp
-import dummy
 import firewall
 import veth
 from utils import SUCCESS, VdsProxy
@@ -97,9 +96,9 @@ def setupModule():
     """Persists network configuration."""
     VdsProxy().save_config()
     for _ in range(DUMMY_POOL_SIZE):
-        iface = dummy.Dummy()
-        iface.create()
-        dummyPool.add(iface)
+        dummy = Dummy()
+        dummy.create()
+        dummyPool.add(dummy)
 
 
 def tearDownModule():
@@ -2608,9 +2607,9 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     def testSetupNetworksRemoveBondWithKilledEnslavedNics(self):
 
-        nic = dummy.Dummy()
-        nic.create()
-        nics = [nic.devName]
+        dummy = Dummy()
+        dummy.create()
+        nics = [dummy.devName]
         try:
             status, msg = self.setupNetworks(
                 {NETWORK_NAME:
@@ -2620,7 +2619,7 @@ class NetworkTest(TestCaseBase):
             self.assertNetworkExists(NETWORK_NAME)
             self.assertBondExists(BONDING_NAME, nics)
         finally:
-            nic.remove()
+            dummy.remove()
 
         status, msg = self.setupNetworks(
             {NETWORK_NAME: {'remove': True}},
