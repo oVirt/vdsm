@@ -32,10 +32,9 @@ from vdsm.netinfo import OPERSTATE_UP
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 
-from functional import veth
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from nettestlib import dummy_device
+from nettestlib import dummy_device, veth_pair
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot, RequireBondingMod
 
@@ -202,14 +201,14 @@ class TestNetinfo(TestCaseBase):
     def testFakeNics(self):
         with MonkeyPatchScope([(ipwrapper.Link, '_fakeNics', ['veth_*',
                                                               'dummy_*'])]):
-            with veth.pair() as (v1a, v1b):
+            with veth_pair() as (v1a, v1b):
                 with dummy_device() as d1:
                     fakes = set([d1, v1a, v1b])
                     nics = netinfo.nics()
                     self.assertTrue(fakes.issubset(nics), 'Fake devices %s are'
                                     ' not listed in nics %s' % (fakes, nics))
 
-            with veth.pair(prefix='mehv_') as (v2a, v2b):
+            with veth_pair(prefix='mehv_') as (v2a, v2b):
                 with dummy_device(prefix='mehd_') as d2:
                     hiddens = set([d2, v2a, v2b])
                     nics = netinfo.nics()

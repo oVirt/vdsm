@@ -49,11 +49,10 @@ from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import (brokentest, slowtest, RequireDummyMod,
                             RequireVethMod, ValidateRunningAsRoot)
-from nettestlib import Dummy, Tap
+from nettestlib import Dummy, Tap, veth_pair
 
 import dhcp
 import firewall
-import veth
 from utils import SUCCESS, VdsProxy
 
 
@@ -431,7 +430,7 @@ class NetworkTest(TestCaseBase):
                             <= (ARP_REQUEST_SIZE + DHCP_PACKET_SIZE),
                             '%s is out of range' % diff)
 
-        with veth.pair() as (left, right):
+        with veth_pair() as (left, right):
             # disabling IPv6 on Interface for removal of Router Solicitation
             sysctl.disable_ipv6(left)
             sysctl.disable_ipv6(right)
@@ -1490,7 +1489,7 @@ class NetworkTest(TestCaseBase):
             self.vdsm_net.refreshNetinfo()
             return self.vdsm_net.config.networks[net_name].get('blockingdhcp')
 
-        with veth.pair() as (server, client):
+        with veth_pair() as (server, client):
             addrAdd(server, IP_ADDRESS, IP_CIDR)
             linkSet(server, ['up'])
             dhcp_async_net = {'nic': client, 'bridged': False,
@@ -2079,7 +2078,7 @@ class NetworkTest(TestCaseBase):
                 return device_name, ip_addr
             return None, None
 
-        with veth.pair() as (left, right):
+        with veth_pair() as (left, right):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             linkSet(left, ['up'])
@@ -2127,10 +2126,10 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testDhcpReplaceNicWithBridge(self):
-        with veth.pair() as (left, right):
-            veth.setIP(left, IP_ADDRESS, IP_CIDR)
-            veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
-            veth.setLinkUp(left)
+        with veth_pair() as (left, right):
+            addrAdd(left, IP_ADDRESS, IP_CIDR)
+            addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
+            linkSet(left, ['up'])
             with dnsmasqDhcp(left):
 
                 # first, a network without a bridge should get a certain
@@ -2207,7 +2206,7 @@ class NetworkTest(TestCaseBase):
                 ifcfg_bootproto)
             self.assertEqual(bridges[NETWORK_NAME]['dhcpv4'], dhcp)
 
-        with veth.pair() as (left, right):
+        with veth_pair() as (left, right):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             linkSet(left, ['up'])
             with dnsmasqDhcp(left):
@@ -2224,7 +2223,7 @@ class NetworkTest(TestCaseBase):
     def testDhclientLeases(self, family, dateFormat):
         dhcpv4_ifaces = set()
         dhcpv6_ifaces = set()
-        with veth.pair() as (server, client):
+        with veth_pair() as (server, client):
             addrAdd(server, IP_ADDRESS, IP_CIDR)
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, 6)
             linkSet(server, ['up'])
@@ -2491,7 +2490,7 @@ class NetworkTest(TestCaseBase):
             return [open('/proc/%s/cmdline' % pid).read().strip('\0')
                     .split('\0')[-1] for pid in pids]
 
-        with veth.pair() as (server, client):
+        with veth_pair() as (server, client):
             addrAdd(server, IP_ADDRESS, IP_CIDR)
             linkSet(server, ['up'])
             with dnsmasqDhcp(server):

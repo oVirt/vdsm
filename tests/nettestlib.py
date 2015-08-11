@@ -192,6 +192,27 @@ def dummy_device(prefix='dummy_', max_length=11):
         dummy_interface.remove()
 
 
+@contextmanager
+def veth_pair(prefix='veth_', max_length=15):
+    """
+    Yield a pair of veth devices. This assumes root privileges (currently
+    required by all tests anyway).
+
+    Both sides of the pair have a pseudo-random suffix (e.g. veth_m6Lz7uMK9c).
+    """
+    left_side = random_iface_name(prefix, max_length)
+    right_side = random_iface_name(prefix, max_length)
+    try:
+        linkAdd(left_side, linkType='veth',
+                args=('peer', 'name', right_side))
+        yield left_side, right_side
+    except IPRoute2Error:
+        raise SkipTest('Failed to create a veth pair.')
+    finally:
+        # the peer device is removed by the kernel
+        linkDel(left_side)
+
+
 def check_brctl():
     try:
         execCmd([EXT_BRCTL, "show"])

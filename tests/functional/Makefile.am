@@ -34,7 +34,6 @@ dist_vdsmfunctests_PYTHON = \
 	vmQoSTests.py \
 	vmRecoveryTests.py \
 	storageTests.py \
-	veth.py \
 	$(NULL)
 
 dist_vdsmfunctests_DATA = \
