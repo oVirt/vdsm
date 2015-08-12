@@ -284,7 +284,7 @@ class NumaInfoMonitor(object):
 
     @property
     def runnable(self):
-        return self._vm.isDomainReadyForCommands()
+        return True
 
     def __call__(self):
         self._vm.updateNumaInfo()
