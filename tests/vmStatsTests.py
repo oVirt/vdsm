@@ -287,6 +287,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
         self.assertTrue(indexes)
 
 
+@expandPermutations
 class NetworkStatsTests(VmStatsTestCase):
 
     # TODO: grab them from the schema
@@ -330,6 +331,35 @@ class NetworkStatsTests(VmStatsTestCase):
                          self.bulk_stats, self.bulk_stats,
                          self.interval)
         self.assertRepeatedStatsHaveKeys(nics, stats['network'])
+
+    def test_networks_good_interval(self):
+        nics = (
+            FakeNic(name='vnet0', model='virtio',
+                    mac_addr='00:1a:4a:16:01:51'),
+        )
+        vm = FakeVM(nics=nics)
+
+        stats = {}
+        self.assertTrue(
+            vmstats.networks(vm, stats,
+                             self.bulk_stats, self.bulk_stats,
+                             1)
+        )
+
+    @permutations([[-42], [0]])
+    def test_networks_bad_interval(self, interval):
+        nics = (
+            FakeNic(name='vnet0', model='virtio',
+                    mac_addr='00:1a:4a:16:01:51'),
+        )
+        vm = FakeVM(nics=nics)
+
+        stats = {}
+        self.assertTrue(
+            vmstats.networks(vm, stats,
+                             self.bulk_stats, self.bulk_stats,
+                             0) is None
+        )
 
 
 class DiskStatsTests(VmStatsTestCase):

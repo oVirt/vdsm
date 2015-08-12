@@ -101,12 +101,12 @@ def cpu(stats, first_sample, last_sample, interval):
     stats['cpuSys'] = 0.0
 
     if first_sample is None or last_sample is None:
-        return
+        return None
     if interval <= 0:
         logging.warning(
             'invalid interval %i when computing CPU stats',
             interval)
-        return
+        return None
 
     try:
         stats['cpuUsage'] = str(last_sample['cpu.system'] +
@@ -124,6 +124,8 @@ def cpu(stats, first_sample, last_sample, interval):
 
     except KeyError as e:
         logging.exception("CPU stats not available: %s", e)
+
+    return stats
 
 
 def balloon(vm, stats, sample):
@@ -208,7 +210,12 @@ def networks(vm, stats, first_sample, last_sample, interval):
     stats['network'] = {}
 
     if first_sample is None or last_sample is None:
-        return
+        return None
+    if interval <= 0:
+        logging.warning(
+            'invalid interval %i when computing network stats for vm %s',
+            interval, vm.id)
+        return None
 
     first_indexes = _find_bulk_stats_reverse_map(first_sample, 'net')
     last_indexes = _find_bulk_stats_reverse_map(last_sample, 'net')
@@ -227,10 +234,12 @@ def networks(vm, stats, first_sample, last_sample, interval):
             last_sample, last_indexes[nic.name],
             interval)
 
+    return stats
+
 
 def disks(vm, stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
-        return
+        return None
 
     first_indexes = _find_bulk_stats_reverse_map(first_sample, 'block')
     last_indexes = _find_bulk_stats_reverse_map(last_sample, 'block')
@@ -283,6 +292,8 @@ def disks(vm, stats, first_sample, last_sample, interval):
 
     if disk_stats:
         stats['disks'] = disk_stats
+
+    return stats
 
 
 def _disk_rate(first_sample, first_index, last_sample, last_index, interval):
