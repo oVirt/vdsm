@@ -301,14 +301,47 @@ class _SuperVdsm(object):
         return setSafeNetworkConfig()
 
     @logDecorator
-    def udevTrigger(self, guid):
+    def udevTriggerMultipath(self, guid):
+        self._udevTrigger(property_matches=(('DM_NAME', guid),))
+
+    def _udevTrigger(self, attr_matches=(), property_matches=()):
+        '''
+        Request device events from the kernel.
+
+        Arguments:
+
+        attr_matches        An iterable of attribute-value iterables,
+                            expanded like this:
+
+                            (('a', 'b'), ('c', 'd')) ~>
+                            --attr-match=a=b --attr-match=c=d
+
+                            and cause only events from devices that match
+                            given attributes to be triggered.
+
+        property_matches    Similar to attr_matches, it is an iterable of
+                            attribute-value iterables that expand
+                            in a similar fashion:
+
+                            (('a', 'b'), ('c', 'd')) ~>
+                            --property-match=a=b --property-match=c=d
+
+                            and cause only events from devices that match
+                            given properties to be triggered.
+        '''
         self.__udevReloadRules()
-        cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
-               '--property-match=DM_NAME=%s' % guid]
+        cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change']
+
+        for name, value in property_matches:
+            cmd.append('--property-match={}={}'.format(name, value))
+
+        for name, value in attr_matches:
+            cmd.append('--attr-match={}={}'.format(name, value))
+
         rc, out, err = utils.execCmd(cmd)
         if rc:
-            raise OSError(errno.EINVAL, "Could not trigger change for device \
-                          %s, out %s\nerr %s" % (guid, out, err))
+            raise OSError(errno.EINVAL, 'Could not trigger change '
+                          'out %s\nerr %s' % (out, err))
 
     @logDecorator
     def appropriateDevice(self, guid, thiefId):
@@ -363,7 +396,7 @@ class _SuperVdsm(object):
                 self.log.debug("Creating rule %s: %r", rule_file, rule)
                 rf.write(rule)
 
-            self.udevTrigger(iommu_group)
+            self._udevTrigger()
 
     @logDecorator
     def rmAppropriateIommuGroup(self, iommu_group):
@@ -390,7 +423,7 @@ class _SuperVdsm(object):
             self.log.debug("Removing rule %s", rule_file)
 
         if not error:
-            self.udevTrigger(iommu_group)
+            self._udevTrigger()
 
     @logDecorator
     def ksmTune(self, tuningParams):

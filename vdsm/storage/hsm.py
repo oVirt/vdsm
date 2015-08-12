@@ -3166,7 +3166,7 @@ class HSM(object):
         Warning: Internal use only.
         """
         supervdsm.getProxy().appropriateDevice(guid, thiefId)
-        supervdsm.getProxy().udevTrigger(guid)
+        supervdsm.getProxy().udevTriggerMultipath(guid)
         devPath = os.path.join(devicemapper.DMPATH_PREFIX, guid)
         utils.retry(partial(fileUtils.validateQemuReadable, devPath),
                     expectedException=OSError,
