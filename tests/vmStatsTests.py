@@ -316,7 +316,7 @@ class NetworkStatsTests(VmStatsTestCase):
         nic = FakeNic(name='vnet0', model='virtio',
                       mac_addr='00:1a:4a:16:01:51')
 
-        stats = vmstats.nic_traffic(
+        stats = vmstats._nic_traffic(
             nic.name, nic.nicModel, nic.macAddr,
             self.bulk_stats, 0,
             self.bulk_stats, 0,
