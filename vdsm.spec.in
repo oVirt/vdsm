@@ -786,7 +786,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/caps.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/daemonAdapter
-%{_datadir}/%{vdsm_name}/dmidecodeUtil.py*
 %{_datadir}/%{vdsm_name}/API.py*
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
@@ -1036,6 +1035,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
 %{python_sitelib}/%{vdsm_name}/define.py*
+%{python_sitelib}/%{vdsm_name}/dmidecodeUtil.py*
 %{python_sitelib}/%{vdsm_name}/exception.py*
 %{python_sitelib}/%{vdsm_name}/executor.py*
 %{python_sitelib}/%{vdsm_name}/ipwrapper.py*

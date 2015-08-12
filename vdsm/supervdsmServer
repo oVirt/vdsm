@@ -131,7 +131,7 @@ class _SuperVdsm(object):
     @logDecorator
     def getHardwareInfo(self, *args, **kwargs):
         if platform.machine() in ('x86_64', 'i686'):
-            from dmidecodeUtil import getHardwareInfoStructure
+            from vdsm.dmidecodeUtil import getHardwareInfoStructure
             return getHardwareInfoStructure()
         elif platform.machine() in Architecture.POWER:
             from ppc64HardwareInfo import getHardwareInfoStructure

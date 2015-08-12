@@ -7,6 +7,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/config.py
 ./usr/lib/python2.7/dist-packages/vdsm/constants.py
 ./usr/lib/python2.7/dist-packages/vdsm/define.py
+./usr/lib/python2.7/dist-packages/vdsm/dmidecodeUtil.py
 ./usr/lib/python2.7/dist-packages/vdsm/exception.py
 ./usr/lib/python2.7/dist-packages/vdsm/executor.py
 ./usr/lib/python2.7/dist-packages/vdsm/ipwrapper.py

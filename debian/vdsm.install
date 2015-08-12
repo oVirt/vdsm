@@ -39,7 +39,6 @@
 ./usr/share/vdsm/clientIF.py
 ./usr/share/vdsm/daemonAdapter
 ./usr/share/vdsm/debugPluginClient.py
-./usr/share/vdsm/dmidecodeUtil.py
 ./usr/share/vdsm/dsaversion.py
 ./usr/share/vdsm/dumpStorageTable.py
 ./usr/share/vdsm/get-conf-item

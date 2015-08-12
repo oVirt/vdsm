@@ -27,6 +27,7 @@ dist_vdsmpylib_PYTHON = \
 	compat.py \
 	concurrent.py \
 	define.py \
+	dmidecodeUtil.py \
 	exception.py \
 	executor.py \
 	ipwrapper.py \

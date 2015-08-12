@@ -29,7 +29,6 @@ dist_vdsm_PYTHON = \
 	caps.py \
 	clientIF.py \
 	debugPluginClient.py \
-	dmidecodeUtil.py \
 	hooking.py \
 	hooks.py \
 	hostdev.py \
