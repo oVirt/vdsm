@@ -794,7 +794,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/numaUtils.py*
-%{_datadir}/%{vdsm_name}/ppc64HardwareInfo.py*
 %{_datadir}/%{vdsm_name}/protocoldetector.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
 %{_datadir}/%{vdsm_name}/v2v.py*
@@ -1048,6 +1047,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/netlink/monitor.py*
 %{python_sitelib}/%{vdsm_name}/netlink/route.py*
 %{python_sitelib}/%{vdsm_name}/password.py*
+%{python_sitelib}/%{vdsm_name}/ppc64HardwareInfo.py*
 %{python_sitelib}/%{vdsm_name}/profiling/__init__.py*
 %{python_sitelib}/%{vdsm_name}/profiling/cpu.py*
 %{python_sitelib}/%{vdsm_name}/profiling/errors.py*

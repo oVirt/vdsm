@@ -134,7 +134,7 @@ class _SuperVdsm(object):
             from vdsm.dmidecodeUtil import getHardwareInfoStructure
             return getHardwareInfoStructure()
         elif platform.machine() in Architecture.POWER:
-            from ppc64HardwareInfo import getHardwareInfoStructure
+            from vdsm.ppc64HardwareInfo import getHardwareInfoStructure
             return getHardwareInfoStructure()
         else:
             #  not implemented over other architecture
