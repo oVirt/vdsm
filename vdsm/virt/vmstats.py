@@ -164,9 +164,9 @@ def cpu_count(stats, sample):
             logging.error('Failed to get VM cpu count')
 
 
-def nic_traffic(name, model, mac,
-                start_sample, start_index,
-                end_sample, end_index, interval):
+def _nic_traffic(name, model, mac,
+                 start_sample, start_index,
+                 end_sample, end_index, interval):
     ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
 
     ifStats = {'macAddr': mac,
@@ -221,7 +221,7 @@ def networks(vm, stats, first_sample, last_sample, interval):
         if nic.name not in first_indexes or nic.name not in last_indexes:
             continue
 
-        stats['network'][nic.name] = nic_traffic(
+        stats['network'][nic.name] = _nic_traffic(
             nic.name, nic.nicModel, nic.macAddr,
             first_sample, first_indexes[nic.name],
             last_sample, last_indexes[nic.name],
