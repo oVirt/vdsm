@@ -95,8 +95,7 @@ class Monitor(object):
         if groups:
             unknown_groups = frozenset(groups).difference(frozenset(_GROUPS))
             if unknown_groups:
-                raise AttributeError('Invalid groups: %s' %
-                                     str(unknown_groups))
+                raise AttributeError('Invalid groups: %s' % (unknown_groups,))
             self._groups = groups
         else:
             self._groups = _GROUPS.keys()
