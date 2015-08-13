@@ -283,7 +283,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def udevTrigger(self, guid):
-        self.__udevReloadRules(guid)
+        self.__udevReloadRules()
         cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change',
                '--property-match=DM_NAME=%s' % guid]
         rc, out, err = utils.execCmd(cmd)
@@ -447,14 +447,13 @@ class _SuperVdsm(object):
     def set_rp_filter_strict(self, dev):
         sysctl.set_rp_filter_strict(dev)
 
-    def __udevReloadRules(self, guid):
+    def __udevReloadRules(self):
         cmd = [EXT_UDEVADM, 'control', '--reload']
         rc, out, err = utils.execCmd(cmd)
         if rc:
             self.log.error("Udevadm reload-rules command failed rc=%s, "
                            "out=\"%s\", err=\"%s\"", rc, out, err)
-            raise OSError(errno.EINVAL, "Could not reload-rules for device "
-                          "%s" % guid)
+            raise OSError(errno.EINVAL, "Could not reload rules")
 
     def proxied_call(self, mod_name, func_name, args, kwargs):
         self.log.debug(
