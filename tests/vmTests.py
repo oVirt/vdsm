@@ -34,6 +34,7 @@ from virt import vmdevices
 from virt import vmexitreason
 from virt.vmdevices import hwclass
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
+from virt import virdomain
 from virt import vmxml
 from virt import vmstats
 from virt import vmstatus
@@ -1189,7 +1190,7 @@ class TestVmOperations(TestCaseBase):
                 </devices>''' % device
 
             def _fail(*args):
-                raise vm.TimeoutError(defmsg=message)
+                raise virdomain.TimeoutError(defmsg=message)
 
             domain = fake.Domain(domXml)
             domain.updateDeviceFlags = _fail

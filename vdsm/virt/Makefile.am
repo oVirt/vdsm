@@ -31,6 +31,7 @@ dist_vdsm_virt_PYTHON = \
 	periodic.py \
 	sampling.py \
 	secret.py \
+	virdomain.py \
 	vm.py \
 	vmchannels.py \
 	vmexitreason.py \

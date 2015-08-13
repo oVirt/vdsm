@@ -37,6 +37,7 @@ from vdsm import utils
 from vdsm.config import config
 import v2v
 
+from . import virdomain
 from .utils import ExpiringCache
 
 import caps
@@ -583,7 +584,6 @@ class HostStatsThread(threading.Thread):
         self._stopEvent.set()
 
     def run(self):
-        import vm
         try:
             # wait a bit before starting to sample
             time.sleep(self._sampleInterval)
@@ -598,7 +598,7 @@ class HostStatsThread(threading.Thread):
                         diff = sample.connlog_diff(second_last)
                         if diff:
                             self._CONNLOG.debug('%s', diff)
-                except vm.TimeoutError:
+                except virdomain.TimeoutError:
                     self._log.exception("Timeout while sampling stats")
                 self._stopEvent.wait(self._sampleInterval)
         except:
