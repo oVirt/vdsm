@@ -437,6 +437,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
 
         return int(size)
 
+    getVAllocSize = getVSize
+
     def getLeasesFilePath(self):
         # TODO: Determine the path without activating the LV
         lvm.activateLVs(self.sdUUID, [sd.LEASES])
@@ -646,9 +648,6 @@ class BlockStorageDomain(sd.StorageDomain):
         Return a type specific volume generator object
         """
         return blockVolume.BlockVolume
-
-    def getVAllocSize(self, imgUUID, volUUID):
-        return self._manifest.getVSize(imgUUID, volUUID)
 
     def validateCreateVolumeParams(self, volFormat, srcVolUUID,
                                    preallocate=None):

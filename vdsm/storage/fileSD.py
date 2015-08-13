@@ -335,9 +335,6 @@ class FileStorageDomain(sd.StorageDomain):
         """
         return fileVolume.FileVolume
 
-    def getVAllocSize(self, imgUUID, volUUID):
-        return self._manifest.getVAllocSize(imgUUID, volUUID)
-
     def getVolumeLease(self, imgUUID, volUUID):
         """
         Return the volume lease (leasePath, leaseOffset)
