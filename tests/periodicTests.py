@@ -253,7 +253,7 @@ class _Visitor(periodic._RunnableOnVm):
             raise ValueError('runnable failed')
         return True
 
-    def __call__(self):
+    def _execute(self):
         _Visitor.VMS[self._vm.id] += 1
 
 
@@ -267,7 +267,7 @@ class _Nop(periodic._RunnableOnVm):
     def runnable(self):
         return True
 
-    def __call__(self):
+    def _execute(self):
         pass
 
 

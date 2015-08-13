@@ -30,6 +30,7 @@ from vdsm import libvirtconnection
 from vdsm.config import config
 
 from . import sampling
+from . import virdomain
 
 
 # just a made up number. Maybe should be equal to number of cores?
@@ -263,6 +264,19 @@ class _RunnableOnVm(object):
     def runnable(self):
         return self._vm.isDomainReadyForCommands()
 
+    def __call__(self):
+        try:
+            self._execute()
+        except virdomain.NotConnectedError:
+            # race on startup:  no worries, let's retry again next cycle.
+            # race on shutdown: next cycle won't pick up this VM.
+            # both cases: let's reduce the log spam.
+            self._vm.log.warning('could not run on %s: domain not connected',
+                                 self._vm.id)
+
+    def _execute(self):
+        raise NotImplementedError
+
 
 class UpdateVolumes(_RunnableOnVm):
 
@@ -271,7 +285,7 @@ class UpdateVolumes(_RunnableOnVm):
         # Avoid queries from storage during recovery process
         return self._vm.isDisksStatsCollectionEnabled()
 
-    def __call__(self):
+    def _execute(self):
         for drive in self._vm.getDiskDevices():
             # TODO: If this block (it is actually possible?)
             # we must make sure we don't overwrite good data
@@ -291,7 +305,7 @@ class NumaInfoMonitor(_RunnableOnVm):
         # (inspected libvirt sources v1.2.17)
         return True
 
-    def __call__(self):
+    def _execute(self):
         self._vm.updateNumaInfo()
 
 
@@ -306,7 +320,7 @@ class BlockjobMonitor(_RunnableOnVm):
         # monitor (most often true).
         return self._vm.hasVmJobs
 
-    def __call__(self):
+    def _execute(self):
         self._vm.updateVmJobs()
 
 
@@ -317,5 +331,5 @@ class DriveWatermarkMonitor(_RunnableOnVm):
         # Avoid queries from storage during recovery process
         return self._vm.isDisksStatsCollectionEnabled()
 
-    def __call__(self):
+    def _execute(self):
         self._vm.extendDrivesIfNeeded()
