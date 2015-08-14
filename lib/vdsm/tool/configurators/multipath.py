@@ -34,7 +34,30 @@ from ... import constants
 
 _CONF_FILE = "/etc/multipath.conf"
 
+# The first line of multipath.conf configured by vdsm must contain a
+# "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
+# format.
+
 _CURRENT_TAG = "# VDSM REVISION 1.2"
+
+_OLD_TAGS = [
+    "# RHAT REVISION 0.2",
+    "# RHEV REVISION 0.3",
+    "# RHEV REVISION 0.4",
+    "# RHEV REVISION 0.5",
+    "# RHEV REVISION 0.6",
+    "# RHEV REVISION 0.7",
+    "# RHEV REVISION 0.8",
+    "# RHEV REVISION 0.9",
+    "# RHEV REVISION 1.0",
+    "# RHEV REVISION 1.1",
+]
+
+# The second line of multipath.conf may contain PRIVATE_TAG. This means
+# vdsm-tool should never change the conf file even when using the --force flag.
+
+_PRIVATE_TAG = "# VDSM PRIVATE"
+_OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 
 _CONF_DATA = """\
 %(current_tag)s
@@ -87,27 +110,6 @@ devices {
 # }
 
 """ % {"current_tag": _CURRENT_TAG}
-
-# conf file configured by vdsm should contain a tag
-# in form of "RHEV REVISION X.Y"
-_OLD_TAGS = [
-    "# RHAT REVISION 0.2",
-    "# RHEV REVISION 0.3",
-    "# RHEV REVISION 0.4",
-    "# RHEV REVISION 0.5",
-    "# RHEV REVISION 0.6",
-    "# RHEV REVISION 0.7",
-    "# RHEV REVISION 0.8",
-    "# RHEV REVISION 0.9",
-    "# RHEV REVISION 1.0",
-    "# RHEV REVISION 1.1",
-]
-
-# Having the PRIVATE_TAG in the conf file means
-# vdsm-tool should never change the conf file
-# even when using the --force flag
-_PRIVATE_TAG = "# VDSM PRIVATE"
-_OLD_PRIVATE_TAG = "# RHEV PRIVATE"
 
 # If multipathd is up, it will be reloaded after configuration,
 # or started before vdsm starts, so service should not be stopped
