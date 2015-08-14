@@ -31,6 +31,7 @@ import tempfile
 import threading
 import time
 import xml.dom.minidom
+import xml.etree.ElementTree as ET
 import uuid
 
 # 3rd party libs imports
@@ -1648,9 +1649,7 @@ class GraphicsDevice(VmDevice):
         if self.device == 'spice':
             graphicsAttrs['tlsPort'] = self.tlsPort
 
-        if not utils.tobool(self.specParams.get('disableTicketing', False)):
-            graphicsAttrs['passwd'] = '*****'
-            graphicsAttrs['passwdValidTo'] = '1970-01-01T00:00:01'
+        self._setPasswd(graphicsAttrs)
 
         if 'keyMap' in self.specParams:
             graphicsAttrs['keymap'] = self.specParams['keyMap']
@@ -1675,6 +1674,14 @@ class GraphicsDevice(VmDevice):
             graphics.setAttrs(listen='0')
 
         return graphics
+
+    def _setPasswd(self, attrs):
+        if not utils.tobool(self.specParams.get('disableTicketing', False)):
+            attrs['passwd'] = '*****'
+            attrs['passwdValidTo'] = '1970-01-01T00:00:01'
+
+    def setupPassword(self, devXML):
+        self._setPasswd(devXML.attrib)
 
 
 class BalloonDevice(VmDevice):
@@ -3323,6 +3330,7 @@ class Vm(object):
             srcDomXML = self.conf.pop('_srcDomXML')
             if fromSnapshot:
                 srcDomXML = self._correctDiskVolumes(srcDomXML)
+                srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
             hooks.before_vm_dehibernate(srcDomXML, self.conf,
                                         {'FROM_SNAPSHOT': str(fromSnapshot)})
 
@@ -3388,6 +3396,25 @@ class Vm(object):
             self._changeDisk(snappableDiskDeviceXmlElement)
 
         return parsedSrcDomXML.toxml()
+
+    def _correctGraphicsConfiguration(self, domXML):
+        """
+        Fix the configuration of graphics device after resume.
+        Make sure the ticketing settings are right
+        """
+
+        domObj = ET.fromstring(domXML)
+        for devXml in domObj.findall('.//devices/graphics'):
+            try:
+                devObj = self._lookupDeviceByIdentification(
+                    'graphics', devXml.get('type'))
+            except LookupError:
+                self.log.warning('configuration mismatch: graphics device '
+                                 'type %s found in domain XML, but not among '
+                                 'VM devices' % devXml.get('type'))
+            else:
+                devObj.setupPassword(devXml)
+        return ET.tostring(domObj)
 
     def _changeDisk(self, diskDeviceXmlElement):
         diskType = diskDeviceXmlElement.getAttribute('type')
@@ -3471,6 +3498,16 @@ class Vm(object):
                          'message': e.message}}
 
         return {'status': doneCode, 'vmList': self.status()}
+
+    def _lookupDeviceByIdentification(self, devType, devIdent):
+        for dev in self._devices[devType][:]:
+            try:
+                if dev.device == devIdent:
+                    return dev
+            except AttributeError:
+                continue
+        raise LookupError('Device object for device identified as %s '
+                          'of type %s not found' % (devIdent, devType))
 
     def _lookupDeviceByAlias(self, devType, alias):
         for dev in self._devices[devType][:]:
