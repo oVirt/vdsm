@@ -88,8 +88,6 @@ devices {
 
 """ % {"current_tag": _MPATH_CONF_TAG}
 
-_MAX_CONF_COPIES = 5
-
 # conf file configured by vdsm should contain a tag
 # in form of "RHEV REVISION X.Y"
 _OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
