@@ -243,7 +243,7 @@ Requires: logrotate < 3.8.0
 %endif
 %else
 Requires: fence-agents-all
-Requires: kernel >= 3.11.3-201
+Requires: kernel >= 4.1.6
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
 Requires: python-ethtool >= 0.8-1
