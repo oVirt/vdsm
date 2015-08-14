@@ -32,11 +32,11 @@ from ... import utils
 from ... import constants
 
 
-_MPATH_CONF = "/etc/multipath.conf"
+_CONF_FILE = "/etc/multipath.conf"
 
-_MPATH_CONF_TAG = "# VDSM REVISION 1.2"
+_CURRENT_TAG = "# VDSM REVISION 1.2"
 
-_MPATH_CONF_DATA = """\
+_CONF_DATA = """\
 %(current_tag)s
 
 defaults {
@@ -86,7 +86,7 @@ devices {
 #      no_path_retry           fail
 # }
 
-""" % {"current_tag": _MPATH_CONF_TAG}
+""" % {"current_tag": _CURRENT_TAG}
 
 # conf file configured by vdsm should contain a tag
 # in form of "RHEV REVISION X.Y"
@@ -99,8 +99,8 @@ _OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
 # Having the PRIVATE_TAG in the conf file means
 # vdsm-tool should never change the conf file
 # even when using the --force flag
+_PRIVATE_TAG = "# VDSM PRIVATE"
 _OLD_PRIVATE_TAG = "# RHEV PRIVATE"
-_MPATH_CONF_PRIVATE_TAG = "# VDSM PRIVATE"
 
 # If multipathd is up, it will be reloaded after configuration,
 # or started before vdsm starts, so service should not be stopped
@@ -114,22 +114,22 @@ def configure():
     supported state. The original configuration, if any, is saved
     """
 
-    if os.path.exists(_MPATH_CONF):
-        backup = _MPATH_CONF + '.' + time.strftime("%Y%m%d%H%M")
-        shutil.copyfile(_MPATH_CONF, backup)
+    if os.path.exists(_CONF_FILE):
+        backup = _CONF_FILE + '.' + time.strftime("%Y%m%d%H%M")
+        shutil.copyfile(_CONF_FILE, backup)
         utils.persist(backup)
 
     with tempfile.NamedTemporaryFile() as f:
-        f.write(_MPATH_CONF_DATA)
+        f.write(_CONF_DATA)
         f.flush()
         os.chmod(f.name, 0o644)
         cmd = [constants.EXT_CP, f.name,
-               _MPATH_CONF]
+               _CONF_FILE]
         rc, out, err = utils.execCmd(cmd)
 
         if rc != 0:
             raise RuntimeError("Failed to perform Multipath config.")
-    utils.persist(_MPATH_CONF)
+    utils.persist(_CONF_FILE)
 
     # Flush all unused multipath device maps
     utils.execCmd([constants.EXT_MULTIPATH, "-F"])
@@ -151,26 +151,26 @@ def isconfigured():
     should be preserved at all cost.
     """
 
-    if os.path.exists(_MPATH_CONF):
+    if os.path.exists(_CONF_FILE):
         first = second = ''
-        with open(_MPATH_CONF) as f:
+        with open(_CONF_FILE) as f:
             mpathconf = [x.strip("\n") for x in f.readlines()]
         try:
             first = mpathconf[0]
             second = mpathconf[1]
         except IndexError:
             pass
-        if _MPATH_CONF_PRIVATE_TAG in second or _OLD_PRIVATE_TAG in second:
+        if _PRIVATE_TAG in second or _OLD_PRIVATE_TAG in second:
             sys.stdout.write("Manual override for multipath.conf detected"
                              " - preserving current configuration\n")
-            if _MPATH_CONF_TAG not in first:
+            if _CURRENT_TAG not in first:
                 sys.stdout.write("This manual override for multipath.conf "
                                  "was based on downrevved template. "
                                  "You are strongly advised to "
                                  "contact your support representatives\n")
             return YES
 
-        if _MPATH_CONF_TAG in first:
+        if _CURRENT_TAG in first:
             sys.stdout.write("Current revision of multipath.conf detected,"
                              " preserving\n")
             return YES
