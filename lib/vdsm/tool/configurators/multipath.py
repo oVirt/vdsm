@@ -90,11 +90,18 @@ devices {
 
 # conf file configured by vdsm should contain a tag
 # in form of "RHEV REVISION X.Y"
-_OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
-             "# RHEV REVISION 0.4", "# RHEV REVISION 0.5",
-             "# RHEV REVISION 0.6", "# RHEV REVISION 0.7",
-             "# RHEV REVISION 0.8", "# RHEV REVISION 0.9",
-             "# RHEV REVISION 1.0", "# RHEV REVISION 1.1"]
+_OLD_TAGS = [
+    "# RHAT REVISION 0.2",
+    "# RHEV REVISION 0.3",
+    "# RHEV REVISION 0.4",
+    "# RHEV REVISION 0.5",
+    "# RHEV REVISION 0.6",
+    "# RHEV REVISION 0.7",
+    "# RHEV REVISION 0.8",
+    "# RHEV REVISION 0.9",
+    "# RHEV REVISION 1.0",
+    "# RHEV REVISION 1.1",
+]
 
 # Having the PRIVATE_TAG in the conf file means
 # vdsm-tool should never change the conf file
