@@ -61,6 +61,43 @@ def settle(timeout, exit_if_exists=None):
         logging.error("%s", e)
 
 
+def trigger(attr_matches=(), property_matches=()):
+    '''
+    Request device events from the kernel.
+
+    Arguments:
+
+    attr_matches        List of 2-tuples that contain attribute name and
+                        it's value. These are expanded like this:
+
+                        [('a', 'b'), ('c', 'd')] ~>
+                        --attr-match=a=b --attr-match=c=d
+
+                        and causes only events from devices that match
+                        given attributes to be triggered.
+
+    property_matches    Similar to attr_matches. Expects list of 2-tuples
+                        that expand in similar fashion, that is
+
+                        [('a', 'b'), ('c', 'd')] ~>
+                        --property-match=a=b --property-match=c=d
+
+                        and causes only events from devices that match
+                        given property to be triggered.
+    '''
+    _run_command(['control', '--reload'])
+
+    cmd = ['trigger', '--verbose', '--action', 'change']
+
+    for name, value in property_matches:
+        cmd.append('--property-match={}={}'.format(name, value))
+
+    for name, value in attr_matches:
+        cmd.append('--attr-match={}={}'.format(name, value))
+
+    _run_command(cmd)
+
+
 def _run_command(args):
     cmd = [_UDEVADM.cmd]
     cmd.extend(args)
