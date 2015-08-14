@@ -186,7 +186,7 @@ Requires: policycoreutils-python
 Requires: selinux-policy-targeted >= 3.13.1-16.el7
 %else
 Requires: fence-agents-all
-Requires: kernel >= 3.15.0
+Requires: kernel >= 4.1.6
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
 Requires: initscripts >= 9.42.2-1
