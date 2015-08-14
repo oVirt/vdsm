@@ -36,9 +36,10 @@ _CONF_FILE = "/etc/multipath.conf"
 # "VDSM REVISION X.Y" tag.  Note that older version used "RHEV REVISION X.Y"
 # format.
 
-_CURRENT_TAG = "# VDSM REVISION 1.2"
+_CURRENT_TAG = "# VDSM REVISION 1.3"
 
 _OLD_TAGS = (
+    "# VDSM REVISION 1.2",
     "# RHEV REVISION 1.1",
     "# RHEV REVISION 1.0",
     "# RHEV REVISION 0.9",
@@ -73,26 +74,12 @@ defaults {
 # Remove devices entries when overrides section is available.
 devices {
     device {
-        vendor                  "HITACHI"
-        product                 "DF.*"
-    }
-    device {
-        vendor                  "COMPELNT"
-        product                 "Compellent Vol"
-        no_path_retry           fail
-    }
-    device {
-        # multipath.conf.default
-        vendor                  "DGC"
-        product                 ".*"
-        product_blacklist       "LUNZ"
-        path_grouping_policy    "group_by_prio"
-        path_checker            "emc_clariion"
-        hardware_handler        "1 emc"
-        prio                    "emc"
-        failback                immediate
-        rr_weight               "uniform"
-        # vdsm required configuration
+        # These settings overrides built-in devices settings. It does not apply
+        # to devices without built-in settings (these use the settings in the
+        # "defaults" section), or to devices defined in the "devices" section.
+        # Note: This is not available yet on Fedora 21. For more info see
+        # https://bugzilla.redhat.com/1253799
+        all_devs                yes
         no_path_retry           fail
     }
 }
