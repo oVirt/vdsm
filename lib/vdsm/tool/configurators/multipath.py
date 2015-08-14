@@ -34,7 +34,7 @@ from ... import constants
 
 _MPATH_CONF = "/etc/multipath.conf"
 
-_MPATH_CONF_TAG = "# VDSM REVISION 1.2"
+_MPATH_CONF_TAG = "# VDSM REVISION 1.3"
 
 _MPATH_CONF_DATA = """\
 %(current_tag)s
@@ -52,26 +52,12 @@ defaults {
 # Remove devices entries when overrides section is available.
 devices {
     device {
-        vendor                  "HITACHI"
-        product                 "DF.*"
-    }
-    device {
-        vendor                  "COMPELNT"
-        product                 "Compellent Vol"
-        no_path_retry           fail
-    }
-    device {
-        # multipath.conf.default
-        vendor                  "DGC"
-        product                 ".*"
-        product_blacklist       "LUNZ"
-        path_grouping_policy    "group_by_prio"
-        path_checker            "emc_clariion"
-        hardware_handler        "1 emc"
-        prio                    "emc"
-        failback                immediate
-        rr_weight               "uniform"
-        # vdsm required configuration
+        # These settings overrides built-in devices settings. It does not apply
+        # to devices without built-in settings (these use the settings in the
+        # "defaults" section), or to devices defined in the "devices" section.
+        # Note: This is not available yet on Fedora 21. For more info see
+        # https://bugzilla.redhat.com/1253799
+        all_devs                yes
         no_path_retry           fail
     }
 }
@@ -94,7 +80,8 @@ _OLD_TAGS = ["# RHAT REVISION 0.2", "# RHEV REVISION 0.3",
              "# RHEV REVISION 0.4", "# RHEV REVISION 0.5",
              "# RHEV REVISION 0.6", "# RHEV REVISION 0.7",
              "# RHEV REVISION 0.8", "# RHEV REVISION 0.9",
-             "# RHEV REVISION 1.0", "# RHEV REVISION 1.1"]
+             "# RHEV REVISION 1.0", "# RHEV REVISION 1.1",
+             "# VDSM REVISION 1.2"]
 
 # Having the PRIVATE_TAG in the conf file means
 # vdsm-tool should never change the conf file
