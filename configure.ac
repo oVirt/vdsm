@@ -317,7 +317,6 @@ AC_PATH_PROG([TC_PATH], [tc], [/sbin/tc])
 AC_PATH_PROG([TEE_PATH], [tee], [/usr/bin/tee])
 AC_PATH_PROG([TOUCH_PATH], [touch], [/bin/touch])
 AC_PATH_PROG([TUNE2FS_PATH], [tune2fs], [/sbin/tune2fs])
-AC_PATH_PROG([UDEVADM_PATH], [udevadm], [/sbin/udevadm])
 AC_PATH_PROG([UMOUNT_PATH], [umount], [/bin/umount])
 AC_PATH_PROG([WGET_PATH], [wget], [/usr/bin/wget])
 

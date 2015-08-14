@@ -55,6 +55,7 @@ try:
 except ImportError:
     _glusterEnabled = False
 
+from vdsm import udevadm
 from vdsm import utils
 from vdsm import sysctl
 from vdsm.supervdsm import _SuperVdsmManager
@@ -73,7 +74,7 @@ from storage import hba
 from storage import multipath
 from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
-from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
+from vdsm.constants import METADATA_GROUP, EXT_CHOWN, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, \
     P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES, \
     VDSM_USER, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, RHEV_ENABLED
@@ -282,46 +283,11 @@ class _SuperVdsm(object):
 
     @logDecorator
     def udevTriggerMultipath(self, guid):
-        self._udevTrigger(property_matches=(('DM_NAME', guid),))
-
-    def _udevTrigger(self, attr_matches=(), property_matches=()):
-        '''
-        Request device events from the kernel.
-
-        Arguments:
-
-        attr_matches        An iterable of attribute-value iterables,
-                            expanded like this:
-
-                            (('a', 'b'), ('c', 'd')) ~>
-                            --attr-match=a=b --attr-match=c=d
-
-                            and cause only events from devices that match
-                            given attributes to be triggered.
-
-        property_matches    Similar to attr_matches, it is an iterable of
-                            attribute-value iterables that expand
-                            in a similar fashion:
-
-                            (('a', 'b'), ('c', 'd')) ~>
-                            --property-match=a=b --property-match=c=d
-
-                            and cause only events from devices that match
-                            given properties to be triggered.
-        '''
-        self.__udevReloadRules()
-        cmd = [EXT_UDEVADM, 'trigger', '--verbose', '--action', 'change']
-
-        for name, value in property_matches:
-            cmd.append('--property-match={}={}'.format(name, value))
-
-        for name, value in attr_matches:
-            cmd.append('--attr-match={}={}'.format(name, value))
-
-        rc, out, err = utils.execCmd(cmd)
-        if rc:
+        try:
+            udevadm.trigger(property_matches=(('DM_NAME', guid),))
+        except udevadm.Error as e:
             raise OSError(errno.EINVAL, 'Could not trigger change '
-                          'out %s\nerr %s' % (out, err))
+                          'out %s\nerr %s' % (e.out, e.err))
 
     @logDecorator
     def appropriateDevice(self, guid, thiefId):
@@ -376,7 +342,7 @@ class _SuperVdsm(object):
                 self.log.debug("Creating rule %s: %r", rule_file, rule)
                 rf.write(rule)
 
-            self._udevTrigger()
+            udevadm.trigger()
 
     @logDecorator
     def rmAppropriateIommuGroup(self, iommu_group):
@@ -403,7 +369,7 @@ class _SuperVdsm(object):
             self.log.debug("Removing rule %s", rule_file)
 
         if not error:
-            self._udevTrigger()
+            udevadm.trigger()
 
     @logDecorator
     def ksmTune(self, tuningParams):
@@ -478,14 +444,6 @@ class _SuperVdsm(object):
     @logDecorator
     def set_rp_filter_strict(self, dev):
         sysctl.set_rp_filter_strict(dev)
-
-    def __udevReloadRules(self):
-        cmd = [EXT_UDEVADM, 'control', '--reload']
-        rc, out, err = utils.execCmd(cmd)
-        if rc:
-            self.log.error("Udevadm reload-rules command failed rc=%s, "
-                           "out=\"%s\", err=\"%s\"", rc, out, err)
-            raise OSError(errno.EINVAL, "Could not reload rules")
 
 
 def terminate(signo, frame):
