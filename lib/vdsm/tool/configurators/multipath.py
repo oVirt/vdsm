@@ -122,6 +122,7 @@ def configure():
     with tempfile.NamedTemporaryFile() as f:
         f.write(_MPATH_CONF_DATA)
         f.flush()
+        os.chmod(f.name, 0o644)
         cmd = [constants.EXT_CP, f.name,
                _MPATH_CONF]
         rc, out, err = utils.execCmd(cmd)
