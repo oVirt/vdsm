@@ -140,8 +140,6 @@ def safe_poll(mp_connection, timeout):
 
 class _SuperVdsm(object):
 
-    UDEV_WITH_RELOAD_VERSION = 181
-
     log = logging.getLogger("SuperVdsm.ServerCallback")
 
     @logDecorator
@@ -469,30 +467,13 @@ class _SuperVdsm(object):
         sysctl.set_rp_filter_strict(dev)
 
     def __udevReloadRules(self, guid):
-        if self.__udevOperationReload():
-            reload = "--reload"
-        else:
-            reload = "--reload-rules"
-        cmd = [EXT_UDEVADM, 'control', reload]
+        cmd = [EXT_UDEVADM, 'control', '--reload']
         rc, out, err = utils.execCmd(cmd)
         if rc:
             self.log.error("Udevadm reload-rules command failed rc=%s, "
                            "out=\"%s\", err=\"%s\"", rc, out, err)
             raise OSError(errno.EINVAL, "Could not reload-rules for device "
                           "%s" % guid)
-
-    @utils.memoized
-    def __udevVersion(self):
-        cmd = [EXT_UDEVADM, '--version']
-        rc, out, err = utils.execCmd(cmd)
-        if rc:
-            self.log.error("Udevadm version command failed rc=%s, "
-                           " out=\"%s\", err=\"%s\"", rc, out, err)
-            raise RuntimeError("Could not get udev version number")
-        return int(out[0])
-
-    def __udevOperationReload(self):
-        return self.__udevVersion() > self.UDEV_WITH_RELOAD_VERSION
 
 
 def terminate(signo, frame):
