@@ -1837,6 +1837,7 @@ class Vm(object):
             srcDomXML = self.conf.pop('_srcDomXML')
             if fromSnapshot:
                 srcDomXML = self._correctDiskVolumes(srcDomXML)
+                srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
             hooks.before_vm_dehibernate(srcDomXML, self.conf,
                                         {'FROM_SNAPSHOT': str(fromSnapshot)})
 
@@ -1911,6 +1912,25 @@ class Vm(object):
             self._changeDisk(snappableDiskDeviceXmlElement)
 
         return parsedSrcDomXML.toxml()
+
+    def _correctGraphicsConfiguration(self, domXML):
+        """
+        Fix the configuration of graphics device after resume.
+        Make sure the ticketing settings are right
+        """
+
+        domObj = ET.fromstring(domXML)
+        for devXml in domObj.findall('.//devices/graphics'):
+            try:
+                devObj = self._lookupDeviceByIdentification(
+                    hwclass.GRAPHICS, devXml.get('type'))
+            except LookupError:
+                self.log.warning('configuration mismatch: graphics device '
+                                 'type %s found in domain XML, but not among '
+                                 'VM devices' % devXml.get('type'))
+            else:
+                devObj.setupPassword(devXml)
+        return ET.tostring(domObj)
 
     def _changeDisk(self, diskDeviceXmlElement):
         diskType = diskDeviceXmlElement.getAttribute('type')
@@ -1993,6 +2013,16 @@ class Vm(object):
                 return response.error('hotplugNic', e.message)
 
         return {'status': doneCode, 'vmList': self.status()}
+
+    def _lookupDeviceByIdentification(self, devType, devIdent):
+        for dev in self._devices[devType][:]:
+            try:
+                if dev.device == devIdent:
+                    return dev
+            except AttributeError:
+                continue
+        raise LookupError('Device object for device identified as %s '
+                          'of type %s not found' % (devIdent, devType))
 
     def _lookupDeviceByAlias(self, devType, alias):
         for dev in self._devices[devType][:]:

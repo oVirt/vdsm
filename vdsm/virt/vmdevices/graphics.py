@@ -109,9 +109,7 @@ class Graphics(Base):
         if self.device == 'spice':
             graphicsAttrs['tlsPort'] = self.tlsPort
 
-        if not utils.tobool(self.specParams.get('disableTicketing', False)):
-            graphicsAttrs['passwd'] = '*****'
-            graphicsAttrs['passwdValidTo'] = '1970-01-01T00:00:01'
+        self._setPasswd(graphicsAttrs)
 
         if 'keyMap' in self.specParams:
             graphicsAttrs['keymap'] = self.specParams['keyMap']
@@ -140,6 +138,14 @@ class Graphics(Base):
             graphics.setAttrs(listen='0')
 
         return graphics
+
+    def _setPasswd(self, attrs):
+        if not utils.tobool(self.specParams.get('disableTicketing', False)):
+            attrs['passwd'] = '*****'
+            attrs['passwdValidTo'] = '1970-01-01T00:00:01'
+
+    def setupPassword(self, devXML):
+        self._setPasswd(devXML.attrib)
 
 
 def isSupportedDisplayType(vmParams):
