@@ -40,7 +40,7 @@ _CONF_FILE = "/etc/multipath.conf"
 
 _CURRENT_TAG = "# VDSM REVISION 1.2"
 
-_OLD_TAGS = [
+_OLD_TAGS = (
     "# RHEV REVISION 1.1",
     "# RHEV REVISION 1.0",
     "# RHEV REVISION 0.9",
@@ -51,7 +51,7 @@ _OLD_TAGS = [
     "# RHEV REVISION 0.4",
     "# RHEV REVISION 0.3",
     "# RHAT REVISION 0.2",
-]
+)
 
 # The second line of multipath.conf may contain PRIVATE_TAG. This means
 # vdsm-tool should never change the conf file even when using the --force flag.
