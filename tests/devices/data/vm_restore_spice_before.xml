@@ -1,0 +1,145 @@
+<domain type='kvm' id='6'>
+  <name>ftest1</name>
+  <uuid>42e30017-b29c-4646-aa75-e42c4d0fe659</uuid>
+  <memory unit='KiB'>4194304</memory>
+  <currentMemory unit='KiB'>4194304</currentMemory>
+  <vcpu placement='static' current='2'>16</vcpu>
+  <cputune>
+    <shares>1020</shares>
+  </cputune>
+  <numatune>
+    <memory mode='interleave' nodeset='0'/>
+  </numatune>
+  <resource>
+    <partition>/machine</partition>
+  </resource>
+    <sysinfo type='smbios'>
+      <system>
+        <entry name='manufacturer'>Red Hat</entry>
+        <entry name='product'>RHEV Hypervisor</entry>
+        <entry name='version'>7.2-1.el7</entry>
+        <entry name='serial'>4C4C4544-0059-4410-8043-B6C04F4E5A31</entry>
+        <entry name='uuid'>42e30017-b29c-4646-aa75-e42c4d0fe659</entry>
+      </system>
+    </sysinfo>
+  <os>
+    <type arch='x86_64' machine='pc-i440fx-rhel7.1.0'>hvm</type>
+    <smbios mode='sysinfo'/>
+  </os>
+  <features>
+    <acpi/>
+  </features>
+  <cpu mode='custom' match='exact'>
+    <model fallback='allow'>SandyBridge</model>
+    <topology sockets='16' cores='1' threads='1'/>
+    <numa>
+      <cell id='0' cpus='0,1,2,3,4,5,6,7' memory='4194304'/>
+    </numa>
+  </cpu>
+  <clock offset='variable' adjustment='0' basis='utc'>
+    <timer name='rtc' tickpolicy='catchup'/>
+    <timer name='pit' tickpolicy='delay'/>
+    <timer name='hpet' present='no'/>
+  </clock>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>destroy</on_crash>
+  <devices>
+    <emulator>/usr/libexec/qemu-kvm</emulator>
+    <disk type='file' device='cdrom'>
+      <driver name='qemu' type='raw'/>
+      <source file='/rhev/data-center/mnt/192.168.1.20:_srv_virtstore_nfs_generic_iso/b0390d9e-2f1d-43c0-a56c-a20af032e934/images/11111111-1111-1111-1111-111111111111/Fedora-Live-Workstation-x86_64-21-5.iso' startupPolicy='optional'>
+        <seclabel model='selinux' labelskip='yes'/>
+      </source>
+      <backingStore/>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+      <serial></serial>
+      <boot order='1'/>
+      <alias name='ide0-1-0'/>
+      <address type='drive' controller='0' bus='1' target='0' unit='0'/>
+    </disk>
+    <disk type='file' device='disk' snapshot='no'>
+      <driver name='qemu' type='raw' cache='none' error_policy='stop' io='threads'/>
+      <source file='/rhev/data-center/00000001-0001-0001-0001-000000000178/f856ad64-22a3-4460-bdd7-5846573b3c01/images/c088d8c8-2599-46c9-aeb8-2e33671a4237/b267133d-fe7b-4d7d-b9ea-b0fed7db4490'>
+        <seclabel model='selinux' labelskip='yes'/>
+      </source>
+      <backingStore/>
+      <target dev='vda' bus='virtio'/>
+      <serial>c088d8c8-2599-46c9-aeb8-2e33671a4237</serial>
+      <boot order='2'/>
+      <alias name='virtio-disk0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x05' function='0x0'/>
+    </disk>
+    <controller type='usb' index='0'>
+      <alias name='usb0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x2'/>
+    </controller>
+    <controller type='pci' index='0' model='pci-root'>
+      <alias name='pci.0'/>
+    </controller>
+    <controller type='ide' index='0'>
+      <alias name='ide0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x01' function='0x1'/>
+    </controller>
+    <controller type='virtio-serial' index='0'>
+      <alias name='virtio-serial0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
+    </controller>
+    <interface type='bridge'>
+      <mac address='00:1a:4a:16:01:51'/>
+      <source bridge='ovirtmgmt'/>
+      <bandwidth>
+      </bandwidth>
+      <target dev='vnet0'/>
+      <model type='virtio'/>
+      <filterref filter='vdsm-no-mac-spoofing'/>
+      <link state='up'/>
+      <boot order='3'/>
+      <alias name='net0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x03' function='0x0'/>
+    </interface>
+    <console type='unix'>
+      <source mode='bind' path='/var/run/ovirt-vmconsole-console/42e30017-b29c-4646-aa75-e42c4d0fe659.sock'/>
+      <target type='virtio' port='0'/>
+      <alias name='console0'/>
+    </console>
+    <channel type='unix'>
+      <source mode='bind' path='/var/lib/libvirt/qemu/channels/42e30017-b29c-4646-aa75-e42c4d0fe659.com.redhat.rhevm.vdsm'/>
+      <target type='virtio' name='com.redhat.rhevm.vdsm' state='disconnected'/>
+      <alias name='channel0'/>
+      <address type='virtio-serial' controller='0' bus='0' port='1'/>
+    </channel>
+    <channel type='unix'>
+      <source mode='bind' path='/var/lib/libvirt/qemu/channels/42e30017-b29c-4646-aa75-e42c4d0fe659.org.qemu.guest_agent.0'/>
+      <target type='virtio' name='org.qemu.guest_agent.0' state='connected'/>
+      <alias name='channel1'/>
+      <address type='virtio-serial' controller='0' bus='0' port='2'/>
+    </channel>
+    <channel type='spicevmc'>
+      <target type='virtio' name='com.redhat.spice.0' state='connected'/>
+      <alias name='channel2'/>
+      <address type='virtio-serial' controller='0' bus='0' port='3'/>
+    </channel>
+    <input type='mouse' bus='ps2'/>
+    <input type='keyboard' bus='ps2'/>
+    <graphics type='spice' port='5900' tlsPort='5901' autoport='yes' listen='0' passwdValidTo='1970-01-01T00:00:01'>
+      <listen type='address' address='0'/>
+    </graphics>
+    <video>
+      <model type='qxl' ram='65536' vram='32768' vgamem='16384' heads='1'/>
+      <alias name='video0'/>
+      <address type='pci' domain='0x0000' bus='0x00' slot='0x02' function='0x0'/>
+    </video>
+    <memballoon model='none'>
+      <alias name='balloon0'/>
+    </memballoon>
+  </devices>
+  <seclabel type='dynamic' model='selinux' relabel='yes'>
+    <label>system_u:system_r:svirt_t:s0:c215,c257</label>
+    <imagelabel>system_u:object_r:svirt_image_t:s0:c215,c257</imagelabel>
+  </seclabel>
+</domain>
+
+
+

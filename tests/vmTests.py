@@ -21,6 +21,7 @@
 
 from itertools import product
 import logging
+import os.path
 import re
 import threading
 import time
@@ -965,6 +966,29 @@ class TestVm(XMLTestCase):
                 testvm._guestSocketFile,
                 testvm._makeChannelPath(vm._VMCHANNEL_DEVICE_NAME))
 
+    def test_spice_restore_set_passwd(self):
+        # stolen from VDSM logs
+        conf = {
+            'tlsPort': u'5901',
+            u'specParams': {
+                u'fileTransferEnable': u'true',
+                u'copyPasteEnable': u'true',
+                'displayIp': '0'
+            },
+            'deviceType': u'graphics',
+            u'deviceId': u'dbb9db4e-1a30-45b7-b76d-608afc797be9',
+            u'device': u'spice',
+            u'type': u'graphics',
+            'port': u'5900'
+        }
+
+        with fake.VM(devices=[conf], create_device_objects=True) as testvm:
+            out_dom_xml = testvm._correctGraphicsConfiguration(
+                _load_xml('vm_restore_spice_before.xml'))
+
+        self.assertXMLEqual(out_dom_xml,
+                            _load_xml('vm_restore_spice_after.xml'))
+
 
 @expandPermutations
 class TestVmOperations(TestCaseBase):
@@ -1664,3 +1688,11 @@ def raise_libvirt_error(code, message):
     err = libvirt.libvirtError(defmsg=message)
     err.err = [code]
     raise err
+
+
+def _load_xml(name):
+    test_path = os.path.realpath(__file__)
+    data_path = os.path.join(os.path.split(test_path)[0], 'devices', 'data')
+
+    with open(os.path.join(data_path, name), 'r') as f:
+        return f.read()

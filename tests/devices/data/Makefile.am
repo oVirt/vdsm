@@ -37,4 +37,6 @@ dist_vdsmdevdatatests_DATA = \
 	usb_1_1.xml \
 	usb_1_1_4.xml \
 	usb_usb1.xml \
+	vm_restore_spice_after.xml \
+	vm_restore_spice_before.xml \
 	$(NULL)
