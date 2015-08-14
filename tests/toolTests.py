@@ -18,12 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from vdsm.tool import configurator
-from vdsm.tool.configurators import \
-    NO,\
-    MAYBE,\
-    YES,\
-    InvalidConfig,\
-    InvalidRun
+from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.configurators import libvirt
 from vdsm.tool import UsageError

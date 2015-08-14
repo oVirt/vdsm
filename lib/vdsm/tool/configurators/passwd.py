@@ -22,9 +22,7 @@ from ... import constants
 from ... import utils
 
 
-from .import \
-    YES, \
-    NO
+from . import YES, NO
 
 
 _SASLDBLISTUSERS2 = utils.CommandPath("sasldblistusers2",

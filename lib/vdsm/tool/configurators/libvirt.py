@@ -24,19 +24,9 @@ import sys
 
 from vdsm.config import config
 
-from . import \
-    InvalidRun, \
-    NO, \
-    MAYBE
-from . certificates import (
-    CA_FILE,
-    CERT_FILE,
-    KEY_FILE,
-)
-from .. configfile import (
-    ConfigFile,
-    ParserWrapper,
-)
+from . import InvalidRun, NO, MAYBE
+from . certificates import CA_FILE, CERT_FILE, KEY_FILE
+from .. configfile import ConfigFile, ParserWrapper
 from .. validate_ovirt_certs import validate_ovirt_certs
 from ... import utils
 from ... import constants

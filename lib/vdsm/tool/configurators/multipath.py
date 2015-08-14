@@ -24,9 +24,7 @@ import sys
 import tempfile
 import time
 
-from .import \
-    YES, \
-    NO
+from . import YES, NO
 from .. import service
 from ... import utils
 from ... import constants

@@ -22,11 +22,7 @@ import sys
 import grp
 import pwd
 
-from .import \
-    YES, \
-    InvalidConfig, \
-    NO, \
-    MAYBE
+from . import YES, NO, MAYBE, InvalidConfig
 from ... import utils
 from ... import constants
 

@@ -18,11 +18,7 @@
 #
 
 from __future__ import absolute_import
-from .import \
-    YES, \
-    NO, \
-    MAYBE
-
+from . import YES, NO, MAYBE
 from ... import utils
 
 

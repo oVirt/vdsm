@@ -22,16 +22,10 @@ import sys
 
 from vdsm.config import config
 
-from . import \
-    YES, \
-    NO
-from ..validate_ovirt_certs import validate_ovirt_certs
-from ...constants import \
-    P_VDSM_EXEC, \
-    SYSCONF_PATH
-from ...utils import \
-    execCmd, \
-    isOvirtNode
+from . import YES, NO
+from .. validate_ovirt_certs import validate_ovirt_certs
+from ... constants import P_VDSM_EXEC, SYSCONF_PATH
+from ... utils import execCmd, isOvirtNode
 
 PKI_DIR = os.path.join(SYSCONF_PATH, 'pki/vdsm')
 CA_FILE = os.path.join(PKI_DIR, 'certs/cacert.pem')
