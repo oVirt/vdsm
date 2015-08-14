@@ -112,16 +112,20 @@ def configure():
         sys.stdout.write("Backup previous multipath.conf to %r\n" % backup)
         utils.persist(backup)
 
-    with tempfile.NamedTemporaryFile() as f:
-        f.write(_CONF_DATA)
-        f.flush()
-        os.chmod(f.name, 0o644)
-        cmd = [constants.EXT_CP, f.name,
-               _CONF_FILE]
-        rc, out, err = utils.execCmd(cmd)
+    with tempfile.NamedTemporaryFile(
+            mode="wb",
+            prefix=os.path.basename(_CONF_FILE) + ".tmp",
+            dir=os.path.dirname(_CONF_FILE),
+            delete=False) as f:
+        try:
+            f.write(_CONF_DATA)
+            f.flush()
+            os.chmod(f.name, 0o644)
+            os.rename(f.name, _CONF_FILE)
+        except:
+            os.unlink(f.name)
+            raise
 
-        if rc != 0:
-            raise RuntimeError("Failed to perform Multipath config.")
     utils.persist(_CONF_FILE)
 
     # Flush all unused multipath device maps
