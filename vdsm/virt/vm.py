@@ -1873,13 +1873,6 @@ class Vm(object):
                                dev.device)
                 dev.detach()
 
-            if initDomain:
-                domxml = hooks.before_vm_start(self._buildDomainXML(),
-                                               self.conf)
-                # TODO: this is debug information. For 3.6.x we still need to
-                # see the XML even with 'info' as default level.
-                self.log.info(domxml)
-
         if self.recovering:
             self._dom = NotifyingVirDomain(
                 self._connection.lookupByUUIDString(self.id),
@@ -1887,12 +1880,23 @@ class Vm(object):
         elif 'migrationDest' in self.conf:
             pass  # self._dom will be disconnected until migration ends.
         elif 'restoreState' in self.conf:
+            # TODO: for unknown historical reasons, we call this hook also
+            # on this flow. Issues:
+            # - we will also call the more specific before_vm_dehibernate
+            # - we feed the hook with wrong XML
+            # - we ignore the output of the hook
+            hooks.before_vm_start(self._buildDomainXML(), self.conf)
+
             fromSnapshot = self.conf.get('restoreFromSnapshot', False)
             srcDomXML = self.conf.pop('_srcDomXML')
             if fromSnapshot:
                 srcDomXML = self._correctDiskVolumes(srcDomXML)
             hooks.before_vm_dehibernate(srcDomXML, self.conf,
                                         {'FROM_SNAPSHOT': str(fromSnapshot)})
+
+            # TODO: this is debug information. For 3.6.x we still need to
+            # see the XML even with 'info' as default level.
+            self.log.info(srcDomXML)
 
             fname = self.cif.prepareVolumePath(self.conf['restoreState'])
             try:
@@ -1907,6 +1911,11 @@ class Vm(object):
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
         else:
+            domxml = hooks.before_vm_start(self._buildDomainXML(), self.conf)
+            # TODO: this is debug information. For 3.6.x we still need to
+            # see the XML even with 'info' as default level.
+            self.log.info(domxml)
+
             flags = libvirt.VIR_DOMAIN_NONE
             if 'launchPaused' in self.conf:
                 flags |= libvirt.VIR_DOMAIN_START_PAUSED
