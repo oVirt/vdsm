@@ -57,6 +57,7 @@ test_modules = \
 	iproute2Tests.py \
 	ipwrapperTests.py \
 	iscsiTests.py \
+	jobsTests.py \
 	libvirtconnectionTests.py \
 	lvmTests.py \
 	main.py \

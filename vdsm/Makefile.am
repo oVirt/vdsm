@@ -32,6 +32,7 @@ dist_vdsm_PYTHON = \
 	hooking.py \
 	hooks.py \
 	hostdev.py \
+	jobs.py \
 	kaxmlrpclib.py \
 	logUtils.py \
 	mkimage.py \
