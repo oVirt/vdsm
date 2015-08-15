@@ -126,6 +126,7 @@ def configure():
     if os.path.exists(_CONF_FILE):
         backup = _CONF_FILE + '.' + time.strftime("%Y%m%d%H%M")
         shutil.copyfile(_CONF_FILE, backup)
+        sys.stdout.write("Backup previous multipath.conf to %r\n" % backup)
         utils.persist(backup)
 
     with tempfile.NamedTemporaryFile() as f:
