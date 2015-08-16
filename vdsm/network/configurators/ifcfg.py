@@ -481,15 +481,12 @@ class ConfigWriter(object):
         self._backup(fileName)
         configuration = self.CONFFILE_HEADER + '\n' + configuration
 
-        # make sure that ifcfg files are never persisted by the node
-        if self.unifiedPersistence and utils.isOvirtNode():
-            node_fs.Config().unpersist(fileName)
-
         logging.debug('Writing to file %s configuration:\n%s', fileName,
                       configuration)
         with open(fileName, 'w') as confFile:
             confFile.write(configuration)
         os.chmod(fileName, 0o664)
+
         try:
             # filname can be of 'unicode' type. restorecon calls into a C API
             # that needs a char *. Thus, it is necessary to encode unicode to
@@ -498,6 +495,10 @@ class ConfigWriter(object):
         except:
             logging.debug('ignoring restorecon error in case '
                           'SElinux is disabled', exc_info=True)
+
+        # make sure that ifcfg files are always persisted by the node
+        if self.unifiedPersistence and utils.isOvirtNode():
+            node_fs.Config().persist(fileName)
 
     @staticmethod
     def _toIfcfgFormat(defaultRoute):
