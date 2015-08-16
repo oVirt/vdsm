@@ -1413,3 +1413,29 @@ def weakmethod(meth):
         return func(inst, *args, **kwargs)
 
     return wrapper
+
+
+def thread(func, args=(), name=None, daemon=True, logger=None):
+    """
+    Create a thread for runnning func with args.
+
+    Arguments:
+
+    func        Function to run in a new thread.
+
+    args        Arguments to pass to func
+
+    name        If set, set thread name.
+
+    daemon      If True, create a daemon thread.
+
+    logger      If set, unhandled exception will be logged on this logger.
+                Otherwise the root logger will be used.
+    """
+    @traceback(on=logger)
+    def run():
+        return func(*args)
+
+    thread = threading.Thread(target=run, name=name)
+    thread.daemon = daemon
+    return thread

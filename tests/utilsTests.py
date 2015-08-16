@@ -808,3 +808,48 @@ class StopwatchTests(TestCaseBase):
         with utils.stopwatch("message", log=log):
             pass
         self.assertEqual(log.messages, [])
+
+
+class ThreadTests(TestCaseBase):
+
+    def test_run_callable_in_thread(self):
+        self.thread = threading.current_thread()
+
+        def run():
+            self.thread = threading.current_thread()
+
+        t = utils.thread(run)
+        t.start()
+        t.join()
+        self.assertEqual(t, self.thread)
+
+    def test_default_daemon_thread(self):
+        t = utils.thread(lambda: None)
+        t.start()
+        try:
+            self.assertTrue(t.daemon)
+        finally:
+            t.join()
+
+    def test_non_daemon_thread(self):
+        t = utils.thread(lambda: None, daemon=False)
+        t.start()
+        try:
+            self.assertFalse(t.daemon)
+        finally:
+            t.join()
+
+    def test_name(self):
+        t = utils.thread(lambda: None, name="foobar")
+        self.assertEqual("foobar", t.name)
+
+    def test_pass_args(self):
+        self.args = ()
+
+        def run(*args):
+            self.args = args
+
+        t = utils.thread(run, args=(1, 2, 3))
+        t.start()
+        t.join()
+        self.assertEqual((1, 2, 3), self.args)
