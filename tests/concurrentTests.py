@@ -184,3 +184,48 @@ class TMapTests(VdsmTestCase):
         results = concurrent.tmap(func, range(10))
         expected = [concurrent.Result(False, error)] * 10
         self.assertEqual(results, expected)
+
+
+class ThreadTests(VdsmTestCase):
+
+    def test_run_callable_in_thread(self):
+        self.thread = threading.current_thread()
+
+        def run():
+            self.thread = threading.current_thread()
+
+        t = concurrent.thread(run)
+        t.start()
+        t.join()
+        self.assertEqual(t, self.thread)
+
+    def test_default_daemon_thread(self):
+        t = concurrent.thread(lambda: None)
+        t.start()
+        try:
+            self.assertTrue(t.daemon)
+        finally:
+            t.join()
+
+    def test_non_daemon_thread(self):
+        t = concurrent.thread(lambda: None, daemon=False)
+        t.start()
+        try:
+            self.assertFalse(t.daemon)
+        finally:
+            t.join()
+
+    def test_name(self):
+        t = concurrent.thread(lambda: None, name="foobar")
+        self.assertEqual("foobar", t.name)
+
+    def test_pass_args(self):
+        self.args = ()
+
+        def run(*args):
+            self.args = args
+
+        t = concurrent.thread(run, args=(1, 2, 3))
+        t.start()
+        t.join()
+        self.assertEqual((1, 2, 3), self.args)
