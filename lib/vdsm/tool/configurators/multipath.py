@@ -72,7 +72,6 @@ devices {
         failback                immediate
         rr_weight               "uniform"
         # vdsm required configuration
-        features                "0"
         no_path_retry           fail
     }
 }
@@ -82,7 +81,6 @@ devices {
 # multipathd.
 #
 # overrides {
-#      features                "0"
 #      no_path_retry           fail
 # }
 
