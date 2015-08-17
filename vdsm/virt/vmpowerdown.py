@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import libvirt
 
 from vdsm import response
 from vdsm import utils
@@ -106,8 +105,8 @@ class VmReboot(VmPowerDown):
         return self.event.wait(self.delay + self.timeout)
 
     def acpiCallback(self):
-        # TODO: fix like acpiShutdown
-        self.vm._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_ACPI_POWER_BTN)
+        if response.is_error(self.vm.acpiReboot()):
+            return False
         return self.event.wait(self.timeout)
 
     def forceCallback(self):

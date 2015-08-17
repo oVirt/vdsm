@@ -260,6 +260,9 @@ class Domain(object):
     def shutdownFlags(self, flags):
         pass
 
+    def reboot(self, flags):
+        pass
+
 
 class GuestAgent(object):
     def __init__(self):

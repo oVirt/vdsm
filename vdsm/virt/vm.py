@@ -3764,6 +3764,18 @@ class Vm(object):
         else:
             return response.success()
 
+    def acpiReboot(self):
+        try:
+            self._dom.reboot(libvirt.VIR_DOMAIN_REBOOT_ACPI_POWER_BTN)
+        except virdomain.NotConnectedError:
+            # the VM was already shut off asynchronously,
+            # so ignore error and quickly exit
+            self.log.warning('failed to invoke acpiReboot: '
+                             'domain not connected')
+            return response.error('down')
+        else:
+            return response.success()
+
     def setBalloonTarget(self, target):
 
         if not self._dom.connected:

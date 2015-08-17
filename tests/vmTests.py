@@ -1211,6 +1211,16 @@ class TestVmOperations(TestCaseBase):
             testvm._dom = fake.Domain(vmId='testvm')
             self.assertFalse(response.is_error(testvm.acpiShutdown()))
 
+    def testAcpiRebootDisconnected(self):
+        with fake.VM() as testvm:
+            testvm._dom = virdomain.Disconnected(vmid='testvm')
+            self.assertTrue(response.is_error(testvm.acpiReboot()))
+
+    def testAcpiRebootConnected(self):
+        with fake.VM() as testvm:
+            testvm._dom = fake.Domain(vmId='testvm')
+            self.assertFalse(response.is_error(testvm.acpiReboot()))
+
 
 class ChangingSchedulerDomain(object):
 
