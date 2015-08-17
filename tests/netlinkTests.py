@@ -94,6 +94,13 @@ class NetlinkEventMonitorTests(TestCaseBase):
 
     @ValidateRunningAsRoot
     def test_events_keys(self):
+        def _simplify_event(event):
+            """ Strips event keys except event, address, name, destination,
+            family.
+            """
+            allow = set(['event', 'address', 'name', 'destination', 'family'])
+            return {k: v for (k, v) in event.items() if k in allow}
+
         def _expected_events(nic, address, cidr):
             events_add = [
                 {'event': 'new_link', 'name': nic},
@@ -120,17 +127,23 @@ class NetlinkEventMonitorTests(TestCaseBase):
             dummy.remove(dummy_name)
 
             expected_events = _expected_events(dummy_name, IP_ADDRESS, IP_CIDR)
+            _expected = list(expected_events)
+            _caught = []
 
             expected = expected_events.popleft()
             for event in mon:
+                _caught.append(event)
                 if _is_subdict(expected, event):
                     expected = expected_events.popleft()
                     if len(expected_events) == 0:
                         break
 
-        self.assertEqual(0, len(expected_events), '%d expected events have not'
-                         ' been caught (in the right order)'
-                         % (1 + len(expected_events)))
+        self.assertEqual(0, len(expected_events), 'Expected events have not '
+                         'been caught (in the right order).\n'
+                         'Expected:\n%s.\nCaught:\n%s.' %
+                         ('\n'.join([str(d) for d in _expected]),
+                          '\n'.join([str(_simplify_event(d))
+                                     for d in _caught])))
 
     def test_timeout(self):
         with self.assertRaises(monitor.MonitorError):
