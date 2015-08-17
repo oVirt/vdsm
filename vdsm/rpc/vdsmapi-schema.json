@@ -1970,6 +1970,36 @@
           'score': 'uint'}}
 
 ##
+# @V2VJobInfo:
+#
+# Structure for current v2v jobs status
+#
+# @id:          An ID that was associated with the job when it was started
+#
+# @status:      Indicates jobs status (done, error, aborted, copying_disk,
+#               starting)
+#
+# @description: Description for the current status such as error or copying
+#               disk description.
+#
+# @progress:    Job progress between 0-100
+#
+# Since: 4.17.0
+##
+{'type': 'V2VJobInfo',
+ 'data': {'id': 'UUID', 'status': 'str', 'description': 'str',
+          'progress': 'uint'}}
+
+##
+# @V2VJobs:
+#
+# A mapping of VM job information indexed by job UUID.
+#
+# Since: 4.17.0
+##
+{'map': 'V2VJobs', 'key': 'UUID', 'value': 'V2VJobInfo'}
+
+##
 # @HostStats:
 #
 # Statistics about this host.
@@ -2065,6 +2095,9 @@
 # @outgoingVmMigrations:   The number of VMs migrating away from this host
 #                          (new in version 4.17.0)
 #
+# @v2vJobs:                #optional Current v2v jobs that running/ended on
+#                          current host (new in version 4.17.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'HostStats',
@@ -2086,7 +2119,8 @@
            'haStatus': 'HostedEngineStatus', '*bootTime': 'uint',
            'numaNodeMemFree': 'NumaNodeMemoryStatsMap',
            'cpuStatistics': 'CpuCoreStatsMap',
-           'incomingVmMigrations': 'uint', 'outgoingVmMigrations': 'uint'}}
+           'incomingVmMigrations': 'uint', 'outgoingVmMigrations': 'uint',
+           '*v2vJobs': ['V2VJobs']}}
 
 ##
 # @Host.getStats:
