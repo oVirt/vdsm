@@ -739,6 +739,14 @@ def stop_devices(device_ifcfgs):
 def start_devices(device_ifcfgs):
     for dev in _sort_device_ifcfgs(device_ifcfgs):
         try:
+            # this is an ugly way to check if this is a bond but picking into
+            # the ifcfg files is even worse.
+            if dev.startswith('bond') and '.' not in dev:
+                with open(netinfo.BONDING_MASTERS) as info:
+                    names = info.read().split()
+                if dev not in names:
+                    with open(netinfo.BONDING_MASTERS, 'w') as bonding_masters:
+                        bonding_masters.write('+%s\n' % dev)
             ifup(dev)
         except ConfigNetworkError:
             logging.error('Failed to ifup device %s during rollback.', dev,
