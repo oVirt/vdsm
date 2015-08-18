@@ -2596,19 +2596,6 @@ class Vm(object):
         # see the XML even with 'info' as default level.
         self.log.info("Hotunplug disk xml: %s", driveXml)
 
-        self._devices[hwclass.DISK].remove(drive)
-        # Find and remove disk device from vm's conf
-        diskDev = None
-        for dev in self.conf['devices'][:]:
-            if (dev['type'] == hwclass.DISK and
-                    dev['path'] == drive.path):
-                with self._confLock:
-                    self.conf['devices'].remove(dev)
-                diskDev = dev
-                break
-
-        self.saveState()
-
         hooks.before_disk_hotunplug(driveXml, self.conf,
                                     params=drive.custom)
         try:
@@ -2617,14 +2604,18 @@ class Vm(object):
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return response.error('noVM')
-            self._devices[hwclass.DISK].append(drive)
-            # Restore disk device in vm's conf and _devices
-            if diskDev:
-                with self._confLock:
-                    self.conf['devices'].append(diskDev)
-            self.saveState()
             return response.error('hotunplugDisk', e.message)
         else:
+            self._devices[hwclass.DISK].remove(drive)
+
+            # Find and remove disk device from vm's conf
+            for dev in self.conf['devices'][:]:
+                if dev['type'] == hwclass.DISK and dev['path'] == drive.path:
+                    with self._confLock:
+                        self.conf['devices'].remove(dev)
+                    break
+
+            self.saveState()
             hooks.after_disk_hotunplug(driveXml, self.conf,
                                        params=drive.custom)
             self._cleanupDrives(drive)
