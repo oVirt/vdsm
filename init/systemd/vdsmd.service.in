@@ -21,6 +21,7 @@ User=@VDSMUSER@
 Group=@VDSMGROUP@
 PermissionsStartOnly=true
 TimeoutStopSec=@SERVICE_STOP_TIMEOUT@
+KillMode=mixed
 
 [Install]
 WantedBy=multi-user.target
