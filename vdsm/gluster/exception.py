@@ -369,7 +369,7 @@ class GlusterHostUUIDNotFoundException(GlusterHostException):
 class GlusterHostStorageDeviceNotFoundException(GlusterHostException):
     code = 4409
 
-    def __init__(self, deviceList):
+    def __init__(self, deviceList=None):
         GlusterHostException.__init__(self)
         self.message = "Device(s) %s not found" % deviceList
 
@@ -377,7 +377,7 @@ class GlusterHostStorageDeviceNotFoundException(GlusterHostException):
 class GlusterHostStorageDeviceInUseException(GlusterHostException):
     code = 4410
 
-    def __init__(self, deviceList):
+    def __init__(self, deviceList=None):
         GlusterHostException.__init__(self)
         self.message = "Device(s) %s already in use" % deviceList
 
@@ -385,7 +385,8 @@ class GlusterHostStorageDeviceInUseException(GlusterHostException):
 class GlusterHostStorageDeviceMountFailedException(GlusterHostException):
     code = 4411
 
-    def __init__(self, device, mountPoint, fsType, mountOpts):
+    def __init__(self, device=None, mountPoint=None,
+                 fsType=None, mountOpts=None):
         GlusterHostException.__init__(self)
         self.message = "Failed to mount device %s on mount point %s using " \
                        "fs-type %s with mount options %s" % (
@@ -395,7 +396,7 @@ class GlusterHostStorageDeviceMountFailedException(GlusterHostException):
 class GlusterHostStorageDeviceFsTabFoundException(GlusterHostException):
     code = 4412
 
-    def __init__(self, device):
+    def __init__(self, device=None):
         GlusterHostException.__init__(self)
         self.message = "fstab entry for device %s already exists" % device
 
@@ -403,7 +404,7 @@ class GlusterHostStorageDeviceFsTabFoundException(GlusterHostException):
 class GlusterHostStorageDevicePVCreateFailedException(GlusterHostException):
     code = 4413
 
-    def __init__(self, device, alignment, rc=0, out=(), err=()):
+    def __init__(self, device=None, alignment=None, rc=0, out=(), err=()):
         self.rc = rc
         self.out = out
         self.err = err
@@ -414,7 +415,7 @@ class GlusterHostStorageDevicePVCreateFailedException(GlusterHostException):
 class GlusterHostStorageDeviceLVConvertFailedException(GlusterHostException):
     code = 4414
 
-    def __init__(self, device, alignment, rc=0, out=(), err=()):
+    def __init__(self, device=None, alignment=None, rc=0, out=(), err=()):
         self.rc = rc
         self.out = out
         self.err = err
@@ -425,7 +426,7 @@ class GlusterHostStorageDeviceLVConvertFailedException(GlusterHostException):
 class GlusterHostStorageDeviceLVChangeFailedException(GlusterHostException):
     code = 4415
 
-    def __init__(self, poolName, rc=0, out=(), err=()):
+    def __init__(self, poolName=None, rc=0, out=(), err=()):
         self.rc = rc
         self.out = out
         self.err = err
@@ -441,7 +442,7 @@ class GlusterHostStorageDeviceMakeDirsFailedException(GlusterHostException):
 class GlusterHostStorageMountPointInUseException(GlusterHostException):
     code = 4417
 
-    def __init__(self, mountPoint):
+    def __init__(self, mountPoint=None):
         GlusterHostException.__init__(self)
         self.message = "Mount point %s is in use" % mountPoint
 
@@ -449,7 +450,8 @@ class GlusterHostStorageMountPointInUseException(GlusterHostException):
 class GlusterHostStorageDeviceVGCreateFailedException(GlusterHostException):
     code = 4418
 
-    def __init__(self, name, devices, stripeSize, rc=0, out=(), err=()):
+    def __init__(self, name=None, devices=None, stripeSize=None,
+                 rc=0, out=(), err=()):
         self.rc = rc
         self.out = out
         self.err = err
@@ -486,7 +488,7 @@ class GlusterHookDisableFailedException(GlusterHookException):
 class GlusterHookNotFoundException(GlusterHookException):
     code = 4504
 
-    def __init__(self, glusterCmd, level, hookName):
+    def __init__(self, glusterCmd=None, level=None, hookName=None):
         GlusterHookException.__init__(self)
         self.glusterCmd = glusterCmd
         self.level = level
@@ -509,7 +511,7 @@ class GlusterHookUpdateFailedException(GlusterHookException):
 class GlusterHookAlreadyExistException(GlusterHookException):
     code = 4507
 
-    def __init__(self, glusterCmd, level, hookName):
+    def __init__(self, glusterCmd=None, level=None, hookName=None):
         GlusterHookException.__init__(self)
         self.glusterCmd = glusterCmd
         self.level = level
@@ -522,7 +524,7 @@ class GlusterHookAlreadyExistException(GlusterHookException):
 class GlusterHookCheckSumMismatchException(GlusterException):
     code = 4508
 
-    def __init__(self, computedMd5Sum, expectedMd5Sum):
+    def __init__(self, computedMd5Sum=None, expectedMd5Sum=None):
         GlusterHookException.__init__(self)
         self.computedMd5Sum = computedMd5Sum
         self.expectedMd5Sum = expectedMd5Sum
