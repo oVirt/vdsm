@@ -1417,6 +1417,26 @@
           'initiatorname': 'str', '*username': 'str', '*password': 'str'}}
 
 ##
+# @BlockDeviceStatus:
+#
+# Enumeration of possible status for a block device.
+#
+# @free:     The device is free
+#
+# @used:     The device is in use.
+#            A device will be considered used on the following cases:
+#            - a PV exists on this device and is part of a VG
+#            - a partition table is found on the device
+#            - The device may have a mounted file system
+#
+# @unknown:  The device status is unknown
+#            (new in version 4.17.5)
+#
+# Since: 4.10.0
+##
+{'enum': 'BlockDeviceStatus', 'data': ['free', 'used', 'unknown']}
+
+##
 # @BlockDeviceInfo:
 #
 # Block device information.
@@ -1451,6 +1471,8 @@
 # @pvsize:             The LVM physical volume size (in bytes)
 #                      (new in version 4.17)
 #
+# @status:             The device status (free/used/unknown)
+#
 # Since: 4.10.0
 #
 # Notes:  The value of @serial may be dependent on the current host so this
@@ -1468,7 +1490,7 @@
           'pathstatus': ['BlockDevicePathInfo'],
           'pathlist': ['IscsiSessionInfo'], 'logicalblocksize': 'uint',
           'physicalblocksize': 'uint', 'partitioned': 'bool',
-          'pvsize': 'uint'}}
+          'pvsize': 'uint', 'status': 'BlockDeviceStatus'}}
 
 ##
 # @Host.getDeviceList:
@@ -1480,6 +1502,9 @@
 # @guids:        #optional Only return info on specific list of block device
 #                 GUIDs  (new in version 4.17)
 #
+# @checkStatus:  #optional Indicates if device status should be checked
+#                 (new in version 4.17.5)
+#
 # Returns:
 # An array of @BlockDeviceInfo
 #
@@ -1487,7 +1512,8 @@
 ##
 {'command': {'class': 'Host', 'name': 'getDeviceList'},
  'data': {'*storageType': 'BlockDeviceType',
-          '*guids': ['str']},
+          '*guids': ['str'],
+          '*checkStatus': 'bool'},
  'returns': ['BlockDeviceInfo']}
 
 ##

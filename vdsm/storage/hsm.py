@@ -1957,7 +1957,8 @@ class HSM(object):
                                       masterVersion, leaseParams)
 
     @public
-    def getDeviceList(self, storageType=None, guids=(), options={}):
+    def getDeviceList(self, storageType=None, guids=(), checkStatus=True,
+                      options={}):
         """
         List all Block Devices.
 
@@ -1965,6 +1966,12 @@ class HSM(object):
         :type storageType: Some enum?
         :param guids: List of device GUIDs to retrieve info.
         :type guids: list
+        :param checkStatus: if true the status will be checked for the given
+                            devices. This operation is an expensive operation
+                            and should be used only with specific devices
+                            using the guids argument.The default is True for
+                            backward compatibility.
+        :type checkStatus: bool
         :param options: ?
 
         :returns: Dict containing a list of all the devices of the storage
@@ -1972,10 +1979,11 @@ class HSM(object):
         :rtype: dict
         """
         vars.task.setDefaultException(se.BlockDeviceActionError())
-        devices = self._getDeviceList(storageType=storageType, guids=guids)
+        devices = self._getDeviceList(storageType=storageType, guids=guids,
+                                      checkStatus=checkStatus)
         return dict(devList=devices)
 
-    def _getDeviceList(self, storageType=None, guids=()):
+    def _getDeviceList(self, storageType=None, guids=(), checkStatus=True):
         sdCache.refreshStorage()
         typeFilter = lambda dev: True
         if storageType:
@@ -2028,24 +2036,27 @@ class HSM(object):
                        'pathlist': dev.get("connections", []),
                        'logicalblocksize': dev.get("logicalblocksize", ""),
                        'physicalblocksize': dev.get("physicalblocksize", "")}
+            if not checkStatus:
+                devInfo["status"] = "unknown"
             devices.append(devInfo)
 
-        # Look for devices that will probably fail if pvcreated.
-        devNamesToPVTest = tuple(dev["GUID"] for dev in devices)
-        unusedDevs, usedDevs = lvm.testPVCreate(
-            devNamesToPVTest, metadataSize=blockSD.VG_METADATASIZE)
-        # Assuming that unusables v unusables = None
-        free = tuple(os.path.basename(d) for d in unusedDevs)
-        used = tuple(os.path.basename(d) for d in usedDevs)
-        for dev in devices:
-            guid = dev['GUID']
-            if guid in free:
-                dev['status'] = "free"
-            elif guid in used:
-                dev['status'] = "used"
-            else:
-                raise KeyError("pvcreate response foresight is "
-                               "can not be determined for %s", dev)
+        if checkStatus:
+            # Look for devices that will probably fail if pvcreated.
+            devNamesToPVTest = tuple(dev["GUID"] for dev in devices)
+            unusedDevs, usedDevs = lvm.testPVCreate(
+                devNamesToPVTest, metadataSize=blockSD.VG_METADATASIZE)
+            # Assuming that unusables v unusables = None
+            free = tuple(os.path.basename(d) for d in unusedDevs)
+            used = tuple(os.path.basename(d) for d in usedDevs)
+            for dev in devices:
+                guid = dev['GUID']
+                if guid in free:
+                    dev['status'] = "free"
+                elif guid in used:
+                    dev['status'] = "used"
+                else:
+                    raise KeyError("pvcreate response foresight is "
+                                   "can not be determined for %s", dev)
 
         return devices
 

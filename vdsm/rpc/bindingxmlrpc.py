@@ -1029,9 +1029,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getLVMVolumeGroups(storageType)
 
-    def devicesGetList(self, storageType=None, guids=(), options=None):
+    def devicesGetList(self, storageType=None, guids=(),
+                       checkStatus=True, options=None):
         api = API.Global()
-        res = api.getDeviceList(storageType, guids)
+        res = api.getDeviceList(storageType, guids, checkStatus)
         return unprotect_passwords(res)
 
     def devicesGetVisibility(self, guids, options=None):
