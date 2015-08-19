@@ -22,12 +22,16 @@ include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmglusterdir = $(vdsmdir)/gluster
 
-dist_vdsmgluster_PYTHON = \
+common = \
 	__init__.py \
+	cli.py \
+	exception.py
+	$(NULL)
+
+if !RHEV
+gluster_only = \
 	api.py \
 	apiwrapper.py \
-	cli.py \
-	exception.py \
 	fstab.py \
 	gfapi.py \
 	hooks.py \
@@ -35,3 +39,6 @@ dist_vdsmgluster_PYTHON = \
 	storagedev.py \
 	tasks.py \
 	$(NULL)
+endif
+
+dist_vdsmgluster_PYTHON = $(common) $(gluster_only)
