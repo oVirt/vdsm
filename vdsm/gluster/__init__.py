@@ -20,19 +20,14 @@
 
 import os
 import tempfile
-from functools import wraps
 
 MODULE_LIST = ('cli', 'hooks', 'services', 'tasks',
                'gfapi', 'storagedev', 'api')
 
 
 def makePublic(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    wrapper.superVdsm = True
-    return wrapper
+    func.superVdsm = True
+    return func
 
 
 def listPublicFunctions():
