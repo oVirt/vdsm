@@ -221,7 +221,11 @@ Requires: sanlock >= 2.8, sanlock-python
 %if 0%{?rhel}
 Requires: python-ethtool >= 0.6-3
 %if 0%{?rhel} >= 7
-Requires: device-mapper-multipath
+%if 0%{centos}
+Requires: device-mapper-multipath >= 0.4.9-68
+%else
+Requires: device-mapper-multipath >= 0.4.9-77.el7_1.2
+%endif
 Requires: e2fsprogs
 Requires: fence-agents-all
 Requires: lvm2
@@ -253,7 +257,11 @@ Requires: kernel >= 4.1.6
 Requires: python >= 2.7.3
 Requires: python-ethtool >= 0.8-1
 Requires: initscripts >= 9.42.2-1
-Requires: device-mapper-multipath >= 0.4.9-18
+%if 0%{?fedora} >= 22
+Requires: device-mapper-multipath >= 0.4.9-73.fc22.1
+%else
+Requires: device-mapper-multipath >= 0.4.9-56
+%endif
 Requires: e2fsprogs >= 1.41.14
 Requires: policycoreutils-python
 Requires: sed >= 4.2.1-10
