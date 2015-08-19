@@ -732,8 +732,12 @@ class service:
     def getDeviceList(self, args):
         if len(args) == 0:
             res = self.s.getDeviceList()
+        elif len(args) == 1:
+            res = self.s.getDeviceList(args[0])
         else:
-            res = self.s.getDeviceList(args[0], args[1:])
+            # 'checkStatus' arg should be last
+            res = self.s.getDeviceList(args[0], args[2:],
+                                       utils.tobool(args[1]))
 
         if res['status']['code']:
             return res['status']['code'], res['status']['message']
@@ -2277,16 +2281,22 @@ if __name__ == '__main__':
                        )),
         'getDeviceList': (serv.getDeviceList,
                           ('[storageType]',
+                           '[checkStatus]',
                            '[<devlist>]',
                            'List of all block devices (optionally - matching '
-                           'storageType, optionally - of each device listed).',
+                           'storageType, optionally - check device status'
+                           'optionally - of each device listed).',
                            '    getDeviceList',
                            '        return all devices',
                            '    getDeviceList FCP',
                            '        return only FCP devices',
-                           '    getDeviceList ISCSI guid1 guid2',
+                           '    getDeviceList FCP True',
+                           '        return only FCP devices and perform ',
+                           '        PV creation test',
+                           '    getDeviceList ISCSI False guid1 guid2',
                            '        return info for guid1 and guid2',
-                           '        , assuming ISCSI type'
+                           '        , assuming ISCSI type and skip PV ',
+                           '        creation test'
                            )),
         'getDevicesVisibility': (serv.getDevicesVisibility,
                                  ('<devlist>',
