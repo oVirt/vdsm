@@ -133,9 +133,9 @@ TODO
     even after `ip link set ovsbond up`
   + Check if it OK or a BUG.
 - Call `sysctl enable openvswitch` on hook installation
-- Implement bridgeOpts:
-  + We need to implement at least some of bridgeOpts, it is not possible to be
-    read the way we do it with native Linux bridges.
+- Report bridge options (like netinfo._bridge_options):
+  + We need to report at least some of bridge options. It is not possible to
+    read them the same way as with native Linux bridges.
 - Implement ports:
   + We should report NICs and VM nets attached to bridge/network in caps.
 - Move needed VDSM non-libraries to vdsm/lib:

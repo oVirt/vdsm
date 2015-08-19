@@ -149,7 +149,7 @@ def slaves(bonding):
         return f.readline().split()
 
 
-def active_slave(bonding):
+def _active_slave(bonding):
     """
     :param bonding:
     :return: active slave when one exists or '' otherwise
@@ -183,7 +183,7 @@ def bondOpts(bond, keys=None):
                  if opt not in _EXCLUDED_BONDING_ENTRIES))
 
 
-def bridgeOpts(bridge, keys=None):
+def _bridge_options(bridge, keys=None):
     """Returns a dictionary of bridge option name and value. E.g.,
     {'max_age': '2000', 'gc_timer': '332'}"""
     BR_KEY_BLACKLIST = ('flush',)
@@ -227,7 +227,7 @@ def getMaxMtu(devs, mtu):
     return max([getMtu(dev) for dev in devs] + [mtu])
 
 
-def bridge_stp_state(bridge):
+def _bridge_stp_state(bridge):
     with open('/sys/class/net/%s/bridge/stp_state' % bridge) as stp_file:
         stp = stp_file.readline()
     if stp == '1\n':
@@ -249,14 +249,6 @@ def stp_booleanize(value):
         raise ValueError('Invalid value for bridge stp')
 
 
-def isvirtio(dev):
-    return 'virtio' in os.readlink('/sys/class/net/%s/device' % dev)
-
-
-def isbonding(dev):
-    return os.path.exists('/sys/class/net/%s/bonding' % dev)
-
-
 def operstate(dev):
     with open('/sys/class/net/%s/operstate' % dev) as operstateFile:
         return operstateFile.read().strip()
@@ -264,7 +256,7 @@ def operstate(dev):
 
 def vlanSpeed(vlanName):
     """Returns the vlan's underlying device speed."""
-    vlanDevName = getVlanDevice(vlanName)
+    vlanDevName = _vlan_device(vlanName)
     vlanDev = getLink(vlanDevName)
     if vlanDev.isNIC():
         speed = nicSpeed(vlanDevName)
@@ -381,25 +373,6 @@ def gethwaddr(dev):
         return addr.read().strip()
 
 
-def getVlanBondingNic(bridge):
-    """Return the (vlan, bonding, nics) tuple that belongs to bridge."""
-
-    if bridge not in bridges():
-        raise ValueError('unknown bridge %s' % bridge)
-    vlan = bonding = ''
-    nics = []
-    for iface in ports(bridge):
-        if iface in vlans():
-            vlan = getVlanID(iface)
-            iface = getVlanDevice(iface)
-        if iface in bondings():
-            bonding = iface
-            nics = slaves(iface)
-        else:
-            nics = [iface]
-    return vlan, bonding, nics
-
-
 def getIfaceCfg(iface):
     ifaceCfg = {}
     try:
@@ -414,7 +387,7 @@ def getIfaceCfg(iface):
     return ifaceCfg
 
 
-def permAddr():
+def _permanent_address():
     paddr = {}
     for b in bondings():
         slave = ''
@@ -501,7 +474,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
     try:
         if bridged:
             data.update({'ports': ports(iface),
-                         'stp': bridge_stp_state(iface)})
+                         'stp': _bridge_stp_state(iface)})
         else:
             # ovirt-engine-3.1 expects to see the "interface" attribute iff the
             # network is bridgeless. Please remove the attribute and this
@@ -540,8 +513,8 @@ def _netinfo_by_device(networks):
 
 def _bridgeinfo(link):
     return {'ports': ports(link.name),
-            'stp': bridge_stp_state(link.name),
-            'opts': bridgeOpts(link.name)}
+            'stp': _bridge_stp_state(link.name),
+            'opts': _bridge_options(link.name)}
 
 
 def _nicinfo(link, paddr):
@@ -553,7 +526,7 @@ def _nicinfo(link, paddr):
 
 def _bondinfo(link):
     return {'hwaddr': link.address, 'slaves': slaves(link.name),
-            'active_slave': active_slave(link.name),
+            'active_slave': _active_slave(link.name),
             'opts': _getBondingOptions(link.name)}
 
 
@@ -771,7 +744,7 @@ def libvirtNets2vdsm(nets, running_config=None, routes=None, ipAddrs=None,
 def get(vdsmnets=None):
     d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
          'vlans': {}}
-    paddr = permAddr()
+    paddr = _permanent_address()
     ipaddrs = _getIpAddrs()
     dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces()
     routes = _get_routes()
@@ -815,7 +788,7 @@ def isVlanned(dev):
     return any(vlan.startswith(dev + '.') for vlan in vlans())
 
 
-def getVlanDevice(vlan):
+def _vlan_device(vlan):
     """ Return the device of the given VLAN. """
     vlanLink = getLink(vlan)
     return vlanLink.device
@@ -899,10 +872,10 @@ class NetInfo(object):
 
     def getNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (bridge/network, vlan) connected to  nic/bond """
-        return chain(self.getBridgedNetworksAndVlansForIface(iface),
-                     self.getBridgelessNetworksAndVlansForIface(iface))
+        return chain(self._getBridgedNetworksAndVlansForIface(iface),
+                     self._getBridgelessNetworksAndVlansForIface(iface))
 
-    def getBridgedNetworksAndVlansForIface(self, iface):
+    def _getBridgedNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (bridge, vlan) connected to nic/bond """
         for network, netdict in self.networks.iteritems():
             if netdict['bridged']:
@@ -912,7 +885,7 @@ class NetInfo(object):
                     elif interface.startswith(iface + '.'):
                         yield (network, getVlanID(interface))
 
-    def getBridgelessNetworksAndVlansForIface(self, iface):
+    def _getBridgelessNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (network, vlan) connected to nic/bond """
         for network, netdict in self.networks.iteritems():
             if not netdict['bridged']:
@@ -922,10 +895,10 @@ class NetInfo(object):
                     yield (network, getVlanID(netdict['iface']))
 
     def getVlansForIface(self, iface):
-        for vlanDevName in self.getVlanDevsForIface(iface):
+        for vlanDevName in self._getVlanDevsForIface(iface):
             yield getVlanID(vlanDevName)
 
-    def getVlanDevsForIface(self, iface):
+    def _getVlanDevsForIface(self, iface):
         for v, vdict in self.vlans.iteritems():
             if iface == vdict['iface']:
                 yield v
@@ -936,12 +909,6 @@ class NetInfo(object):
             if ('ports' in netdict and iface in netdict['ports'] or
                     iface == netdict['iface']):
                 return network
-
-    def getBridgelessNetworks(self):
-        """ Return all bridgless networks."""
-        for network, netdict in self.networks.iteritems():
-            if not netdict['bridged']:
-                yield network
 
     def getBridgedNetworkForIface(self, iface):
         """ Return all bridged networks attached to nic/bond """
@@ -978,7 +945,7 @@ class NetInfo(object):
         for port in ports:
             if port in self.vlans:
                 assert vlan is None
-                nic = getVlanDevice(port)
+                nic = _vlan_device(port)
                 vlanid = getVlanID(port)
                 vlan = port  # vlan devices can have an arbitrary name
                 assert self.vlans[port]['iface'] == nic

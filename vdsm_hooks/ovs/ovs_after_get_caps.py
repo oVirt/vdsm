@@ -94,7 +94,8 @@ def bridges_caps(running_config):
                                      dhcpv6ifaces, routes)
             net_info['bridged'] = True
             net_info['ports'] = []  # TODO attached nics + vms nets
-            net_info['opts'] = {}  # TODO netinfo.bridgeOpts does not work here
+            # TODO netinfo._bridge_options does not work here
+            net_info['opts'] = {}
             net_info['stp'] = _get_stp(interface)
             ovs_bridges_caps[network] = net_info
     return ovs_bridges_caps
