@@ -27,7 +27,7 @@ import xml.etree.cElementTree as etree
 from vdsm import utils
 from vdsm import netinfo
 import exception as ge
-from . import makePublic
+from . import makePublic, makePublicRHEV
 
 _glusterCommandPath = utils.CommandPath("gluster",
                                         "/usr/sbin/gluster",
@@ -473,6 +473,7 @@ def _parseVolumeProfileInfo(tree, nfs):
 
 
 @makePublic
+@makePublicRHEV
 def volumeInfo(volumeName=None, remoteServer=None):
     """
     Returns:

@@ -76,7 +76,7 @@ from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_CHOWN, EXT_UDEVADM, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, \
     P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES, \
-    VDSM_USER, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP
+    VDSM_USER, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, RHEV_ENABLED
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
 import mkimage
@@ -473,7 +473,7 @@ def main(sockfile, pidfile=None):
         return wrapper
 
     if _glusterEnabled:
-        for name, func in listPublicFunctions():
+        for name, func in listPublicFunctions(RHEV_ENABLED):
             setattr(_SuperVdsm, name, logDecorator(bind(func)))
 
     try:

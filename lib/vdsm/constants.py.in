@@ -23,6 +23,8 @@
 from __future__ import absolute_import
 import os
 
+RHEV_ENABLED = False if '@RHEV_TRUE@' else True
+
 # SMBIOS manufacturer
 SMBIOS_MANUFACTURER = '@SMBIOS_MANUFACTURER@'
 SMBIOS_OSNAME = '@SMBIOS_OSNAME@'

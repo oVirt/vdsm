@@ -30,19 +30,31 @@ def makePublic(func):
     return func
 
 
-def listPublicFunctions():
+def makePublicRHEV(func):
+    func.superVdsmRHEV = True
+    return func
+
+
+def listPublicFunctions(rhev=False):
     methods = []
     for modName in MODULE_LIST:
         try:
             module = __import__('gluster.' + modName, fromlist=['gluster'])
             for name in dir(module):
                 func = getattr(module, name)
-                if getattr(func, 'superVdsm', False):
+                if _shouldPublish(func, rhev):
                     funcName = 'gluster%s%s' % (name[0].upper(), name[1:])
                     methods.append((funcName, func))
         except ImportError:
             pass
     return methods
+
+
+def _shouldPublish(func, rhev):
+    if rhev:
+        return getattr(func, 'superVdsmRHEV', False)
+    else:
+        return getattr(func, 'superVdsm', False)
 
 
 def safeWrite(fileName, content):
