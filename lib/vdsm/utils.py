@@ -1252,3 +1252,15 @@ def stopwatch(message, log=logging.getLogger('vds.stopwatch')):
         log.debug("%s: %.2f seconds", message, elapsed)
     else:
         yield
+
+
+def kill_and_rm_pid(pid, pid_file):
+    try:
+        os.kill(pid, signal.SIGTERM)
+    except OSError as e:
+        if e.errno == os.errno.ESRCH:  # Already exited
+            pass
+        else:
+            raise
+    if pid_file is not None:
+        rmFile(pid_file)

@@ -22,13 +22,12 @@ from __future__ import absolute_import
 import errno
 import logging
 import os
-import signal
 import threading
 
 from vdsm import cmdutils
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm.utils import CommandPath, execCmd, memoized, pgrep, rmFile
+from vdsm.utils import CommandPath, execCmd, memoized, pgrep, kill_and_rm_pid
 
 DHCLIENT_CGROUP = 'vdsm-dhclient'
 LEASE_DIR = '/var/lib/dhclient'
@@ -85,7 +84,7 @@ class DhcpClient(object):
             else:
                 raise
         else:
-            _kill_and_rm_pid(pid, self.pidFile)
+            kill_and_rm_pid(pid, self.pidFile)
 
 
 def kill_dhclient(device_name, family=4):
@@ -113,25 +112,13 @@ def kill_dhclient(device_name, family=4):
             continue
         logging.info('Stopping dhclient -%s before running our own on %s',
                      family, device_name)
-        _kill_and_rm_pid(pid, pid_file)
+        kill_and_rm_pid(pid, pid_file)
 
     #  In order to be able to configure the device with dhclient again. It is
     #  necessary that dhclient does not find it configured with any IP address
     #  (except 0.0.0.0 which is fine, or IPv6 link-local address needed for
     #   DHCPv6).
     ipwrapper.addrFlush(device_name, family)
-
-
-def _kill_and_rm_pid(pid, pid_file):
-    try:
-        os.kill(pid, signal.SIGTERM)
-    except OSError as e:
-        if e.errno == os.errno.ESRCH:  # Already exited
-            pass
-        else:
-            raise
-    if pid_file is not None:
-        rmFile(pid_file)
 
 
 @memoized
