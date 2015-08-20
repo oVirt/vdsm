@@ -468,16 +468,7 @@ class clientIF(object):
             recovery.all_vms(self)
 
             # recover stage 3: waiting for domains to go up
-            while self._enabled:
-                launching = sum(int(v.lastStatus == vmstatus.WAIT_FOR_LAUNCH)
-                                for v in self.vmContainer.values())
-                if not launching:
-                    break
-                else:
-                    self.log.info(
-                        'recovery: waiting for %d domains to go up',
-                        launching)
-                time.sleep(1)
+            self._waitForDomainsUp()
 
             recovery.clean_vm_files(self)
 
@@ -487,27 +478,9 @@ class clientIF(object):
             # and then prepare all volumes.
             # Actually, we need it just to get the resources for future
             # volumes manipulations
-            while self._enabled and self.vmContainer and \
-                    not self.irs.getConnectedStoragePoolsList()['poollist']:
-                self.log.info('recovery: waiting for storage pool to go up')
-                time.sleep(5)
+            self._waitForStoragePool()
 
-            vm_objects = self.vmContainer.values()
-            num_vm_objects = len(vm_objects)
-            for idx, vm_obj in enumerate(vm_objects):
-                # Let's recover as much VMs as possible
-                try:
-                    # Do not prepare volumes when system goes down
-                    if self._enabled:
-                        self.log.info(
-                            'recovery [%d/%d]: preparing paths for'
-                            ' domain %s',  idx+1, num_vm_objects, vm_obj.id)
-                        vm_obj.preparePaths(
-                            vm_obj.devSpecMapFromConf()[hwclass.DISK])
-                except:
-                    self.log.exception(
-                        "recovery [%d/%d]: failed for vm %s",
-                        idx+1, num_vm_objects, vm_obj.id)
+            self._preparePathsForRecoveredVMs()
 
             self.log.info('recovery: completed in %is',
                           utils.monotonic_time() - start_time)
@@ -557,3 +530,39 @@ class clientIF(object):
 
         except:
             self.log.error("Error running VM callback", exc_info=True)
+
+    def _waitForDomainsUp(self):
+        while self._enabled:
+            launching = sum(int(v.lastStatus == vmstatus.WAIT_FOR_LAUNCH)
+                            for v in self.vmContainer.values())
+            if not launching:
+                break
+            else:
+                self.log.info(
+                    'recovery: waiting for %d domains to go up',
+                    launching)
+            time.sleep(1)
+
+    def _waitForStoragePool(self):
+        while (self._enabled and self.vmContainer and
+               not self.irs.getConnectedStoragePoolsList()['poollist']):
+            self.log.info('recovery: waiting for storage pool to go up')
+            time.sleep(5)
+
+    def _preparePathsForRecoveredVMs(self):
+        vm_objects = self.vmContainer.values()
+        num_vm_objects = len(vm_objects)
+        for idx, vm_obj in enumerate(vm_objects):
+            # Let's recover as much VMs as possible
+            try:
+                # Do not prepare volumes when system goes down
+                if self._enabled:
+                    self.log.info(
+                        'recovery [%d/%d]: preparing paths for'
+                        ' domain %s',  idx+1, num_vm_objects, vm_obj.id)
+                    vm_obj.preparePaths(
+                        vm_obj.devSpecMapFromConf()[hwclass.DISK])
+            except:
+                self.log.exception(
+                    "recovery [%d/%d]: failed for vm %s",
+                    idx+1, num_vm_objects, vm_obj.id)
