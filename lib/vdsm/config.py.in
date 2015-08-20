@@ -144,7 +144,8 @@ parameters = [
             'expected to freeze during cluster failover.'),
 
         ('vm_watermark_interval', '2',
-            'How often should we sample each vm for statistics (seconds).'),
+            'How often should we check drive watermark on block storage for '
+            'automatic extension of thin provisioned volumes (seconds).'),
 
         ('vm_sample_interval', '15', None),
 
@@ -230,9 +231,15 @@ parameters = [
 
         ('irsd', '%(images)s/irsd', None),
 
-        ('volume_utilization_percent', '50', None),
+        ('volume_utilization_percent', '50',
+            'Together with volume_utilization_chunk_mb, set the minimal free '
+            'space before a thin provisioned block volume is extended. Use '
+            'lower values to extend earlier.'),
 
-        ('volume_utilization_chunk_mb', '1024', None),
+        ('volume_utilization_chunk_mb', '1024',
+            'Size of extension chunk in megabytes, and together with '
+            'volume_utilization_percent, set the free space limit. Use higher '
+            'values to extend in bigger chunks.'),
 
         ('vol_size_sample_interval', '60',
             'How often should the volume size be checked (seconds).'),
