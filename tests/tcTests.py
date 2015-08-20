@@ -38,7 +38,7 @@ from nettestlib import (Bridge, Dummy, Tap, requires_tc, requires_tun,
                         vlan_device)
 
 from vdsm.constants import EXT_TC
-from network import api, tc
+from network import tc
 from network.configurators import qos
 from vdsm import libvirtconnection
 
@@ -390,8 +390,7 @@ class TestConfigureOutbound(TestCaseBase):
         self.device.remove()
 
     def test_single_non_vlan(self):
-            net_ent = api._objectivizeNetwork(nics=(self.device_name, ))
-            qos.configure_outbound(HOST_QOS_OUTBOUND, top_device=net_ent)
+            qos.configure_outbound(HOST_QOS_OUTBOUND, self.device_name, None)
             tc_classes, tc_filters, tc_qdiscs = \
                 self._analyse_qos_and_general_assertions()
             self.assertEqual(tc_classes.classes, [])
@@ -406,10 +405,9 @@ class TestConfigureOutbound(TestCaseBase):
     @permutations([[1], [2]])
     def test_single_vlan(self, repeating_calls):
         with vlan_device(self.device_name) as vlan:
-            net_ent = api._objectivizeNetwork(vlan_id=vlan.tag,
-                                              nics=(self.device_name, ))
             for _ in range(repeating_calls):
-                qos.configure_outbound(HOST_QOS_OUTBOUND, top_device=net_ent)
+                qos.configure_outbound(HOST_QOS_OUTBOUND, self.device_name,
+                                       vlan.tag)
             tc_classes, tc_filters, tc_qdiscs = \
                 self._analyse_qos_and_general_assertions()
             self.assertEqual(len(tc_classes.classes), 1)
@@ -427,10 +425,8 @@ class TestConfigureOutbound(TestCaseBase):
         with vlan_device(self.device_name, tag=16) as vlan1:
             with vlan_device(self.device_name, tag=17) as vlan2:
                 for v in (vlan1, vlan2):
-                    net_ent = api._objectivizeNetwork(
-                        vlan_id=v.tag, nics=(self.device_name, ))
                     qos.configure_outbound(HOST_QOS_OUTBOUND,
-                                           top_device=net_ent)
+                                           self.device_name, v.tag)
 
                 tc_classes, tc_filters, tc_qdiscs = \
                     self._analyse_qos_and_general_assertions()

@@ -30,7 +30,7 @@ from vdsm.netlink import monitor
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from . import qos
-from ..models import Bond, Bridge
+from ..models import Bond, Bridge, hierarchy_vlan_tag, hierarchy_backing_device
 from ..sourceroute import StaticSourceRoute
 
 
@@ -116,10 +116,14 @@ class Configurator(object):
     def configureQoS(self, hostQos, top_device):
         out = hostQos.get('out')
         if out is not None:
-            qos.configure_outbound(out, top_device)
+            dev_name = hierarchy_backing_device(top_device).name
+            vlan_tag = hierarchy_vlan_tag(top_device)
+            qos.configure_outbound(out, dev_name, vlan_tag)
 
     def removeQoS(self, top_device):
-        qos.remove_outbound(top_device)
+        dev_name = hierarchy_backing_device(top_device).name
+        vlan_tag = hierarchy_vlan_tag(top_device)
+        qos.remove_outbound(dev_name, vlan_tag)
 
     def _addSourceRoute(self, netEnt):
         ipv4 = netEnt.ipv4

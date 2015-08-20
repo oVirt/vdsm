@@ -24,7 +24,6 @@ from distutils.version import StrictVersion
 from vdsm import netinfo
 
 from .. import tc
-from .. import models
 _NON_VLANNED_ID = 5000
 _DEFAULT_CLASSID = '%x' % _NON_VLANNED_ID
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0
@@ -33,11 +32,10 @@ _FAIR_QDISC_KIND = 'fq_codel' if (StrictVersion(os.uname()[2].split('-')[0]) >
 _SHAPING_QDISC_KIND = 'hfsc'
 
 
-def configure_outbound(qosOutbound, top_device):
+def configure_outbound(qosOutbound, device, vlan_tag):
     """Adds the qosOutbound configuration to the backing device (be it bond
-    or nic). Adds a class and filter for default traffic if necessary"""
-    vlan_tag = models.hierarchy_vlan_tag(top_device)
-    device = models.hierarchy_backing_device(top_device).name
+    or nic). Adds a class and filter for default traffic if necessary. vlan_tag
+    can be None"""
     root_qdisc = _root_qdisc(tc._qdiscs(device))
     class_id = '%x' % (_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
     if not root_qdisc or root_qdisc['kind'] != _SHAPING_QDISC_KIND:
@@ -47,11 +45,10 @@ def configure_outbound(qosOutbound, top_device):
                         qosOutbound)
 
 
-def remove_outbound(top_device):
+def remove_outbound(device, vlan_tag):
     """Removes the qosOutbound configuration from the device and restores
-    pfifo_fast if it was the last QoSed network on the device"""
-    vlan_tag = models.hierarchy_vlan_tag(top_device)
-    device = models.hierarchy_backing_device(top_device).name
+    pfifo_fast if it was the last QoSed network on the device. vlan_tag
+    can be None"""
     class_id = '%x' % (_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
     MISSING_OBJ_ERR_CODES = (errno.EINVAL, errno.ENOENT, errno.EOPNOTSUPP)
 
