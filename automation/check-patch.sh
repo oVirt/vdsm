@@ -7,17 +7,11 @@
 #export NOSE_WITH_XUNIT=1
 
 export NOSE_SKIP_STRESS_TESTS=1
-export NOSE_EXCLUDE=
+# this redefines 'ugly' but looks like NOSE_EXCLUDE works at test method level,
+# not at module neither at testcase level, so we have no choice but this.
+export NOSE_EXCLUDE=".*testGetBondingOptions.*|testMirroring.*|testToggleIngress|testException|testQdiscsOfDevice|testReplacePrio"
 # disable pep8 checks on unit test, since we have seperate job on it.
 export PEP8=$(which true)
-
-# really ugly and hopefully temporary fix
-# https://bugzilla.redhat.com/show_bug.cgi?id=1255142
-[[ -e /dev/net/tun ]] \
-|| {
-    [[ -e /dev/net ]] || mkdir /dev/net
-    mknod /dev/net/tun c 10 200
-}
 
 sh -x autogen.sh --system
 make all
