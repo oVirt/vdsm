@@ -32,7 +32,7 @@ from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet,
                             addrAdd)
-from vdsm.netconfpersistence import (KernelConfig, RunningConfig)
+from vdsm.netconfpersistence import KernelConfig, RunningConfig
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
                           BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,
@@ -381,13 +381,19 @@ class NetworkTest(TestCaseBase):
 
     def _assert_kernel_config_matches_running_config(self):
         netinfo = self.vdsm_net.netinfo
-        kernel_config = KernelConfig(netinfo)
-        running_config = self.vdsm_net.config
-        # do not use KernelConfig.__eq__ to get better exception if something
-        # breaks here
-        normalized_config = kernel_config.normalize(running_config)
-        self.assertEqual(normalized_config.networks, kernel_config.networks)
-        self.assertEqual(normalized_config.bonds, kernel_config.bonds)
+        bare_kernel_config = KernelConfig(netinfo)
+        bare_running_config = self.vdsm_net.config
+        normalized_running_config = bare_kernel_config.normalize(
+            bare_running_config)
+        # Unify strings to unicode instances so differences are easier to
+        # understand. This won't be needed once we move to Python 3.
+        running_config = normalized_running_config.as_unicode()
+        kernel_config = bare_kernel_config.as_unicode()
+
+        # Do not use KernelConfig.__eq__ to get a better exception if something
+        # breaks.
+        self.assertEqual(running_config['networks'], kernel_config['networks'])
+        self.assertEqual(running_config['bonds'], kernel_config['bonds'])
 
     @cleanupNet
     @RequireVethMod

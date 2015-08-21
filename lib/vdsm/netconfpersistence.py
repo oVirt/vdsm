@@ -106,6 +106,10 @@ class BaseConfig(object):
                 result[name] = lhs[name]
         return result
 
+    def as_unicode(self):
+        return {'networks': json.loads(json.dumps(self.networks)),
+                'bonds': json.loads(json.dumps(self.bonds))}
+
 
 class Config(BaseConfig):
     def __init__(self, savePath):
