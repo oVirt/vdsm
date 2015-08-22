@@ -70,13 +70,27 @@ stop(){
     return "$RETVAL"
 }
 
+lock_op() {
+    {
+        if ! flock -n 9; then
+            log_failure_msg $"cannot ${1} ${prog}, operation is locked"
+            false
+        elif ( "${1}" 9<&- ); then
+            log_success_msg $"${prog} ${1}"
+        else
+            log_failure_msg $"${prog} ${1}"
+            false
+        fi
+     } 9<$0
+}
+
 case "$1" in
      start)
-        start
+        lock_op start
         RETVAL=$?
         ;;
      stop)
-        stop
+        lock_op stop
         RETVAL=$?
         ;;
      status)
