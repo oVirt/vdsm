@@ -157,7 +157,7 @@ class ConfigApplier(object):
         logging.debug('Add bond options %s', bond.options)
         # 'custom' is not a real bond option, it just piggybacks custom values
         options = remove_custom_bond_option(bond.options)
-        for option in options:
+        for option in options.split():
             key, value = option.split('=')
             with open(netinfo.BONDING_OPT % (bond.name, key), 'w') as f:
                 f.write(value)
