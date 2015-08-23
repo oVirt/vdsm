@@ -43,6 +43,7 @@ def is_available():
 
 class PyrouteTwo(Iproute2):
     def __init__(self, inRollback=False):
+        self.unifiedPersistence = True
         super(Iproute2, self).__init__(ConfigApplier(), inRollback)
         self.runningConfig = RunningConfig()
 
