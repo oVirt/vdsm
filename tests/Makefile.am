@@ -157,6 +157,7 @@ dist_vdsmtests_DATA = \
 	caps_libvirt_intel_E5606.out \
 	caps_libvirt_intel_i73770.out \
 	caps_libvirt_intel_i73770_nosnap.out \
+	caps_libvirt_multiqemu.out \
 	cpu_map.xml \
 	caps_numactl_4_nodes.out \
 	glusterGeoRepStatus.xml \

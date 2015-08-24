@@ -381,25 +381,51 @@ def getAutoNumaBalancingInfo():
         return AutoNumaBalancingStatus.UNKNOWN
 
 
+def _get_emulated_machines_from_node(node):
+    # We have to make sure to inspect 'canonical' attribute where
+    # libvirt puts the real machine name. Relevant bug:
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1229666
+    return list(set((itertools.chain.from_iterable(
+        (
+            (m.text, m.get('canonical'))
+            if m.get('canonical') else
+            (m.text,)
+        )
+        for m in node.iterfind('machine')))))
+
+
+def _get_emulated_machines_from_arch(arch, caps):
+    arch_tag = caps.find('.//guest/arch[@name="%s"]' % arch)
+    if not arch_tag:
+        logging.error('Error while looking for architecture '
+                      '"%s" in libvirt capabilities', arch)
+        return []
+
+    return _get_emulated_machines_from_node(arch_tag)
+
+
+def _get_emulated_machines_from_domain(arch, caps):
+    domain_tag = caps.find(
+        './/guest/arch[@name="%s"]/domain[@type="kvm"]' % arch)
+    if not domain_tag:
+        logging.error('Error while looking for kvm domain (%s) '
+                      'libvirt capabilities', arch)
+        return []
+
+    return _get_emulated_machines_from_node(domain_tag)
+
+
 @utils.memoized
 def _getEmulatedMachines(arch, capabilities=None):
     if capabilities is None:
         capabilities = _getCapsXMLStr()
     caps = ET.fromstring(capabilities)
 
-    for archTag in caps.iter(tag='arch'):
-        if archTag.get('name') == arch:
-            # We have to make sure to inspect 'canonical' attribute where
-            # libvirt puts the real machine name. Relevant bug:
-            # https://bugzilla.redhat.com/show_bug.cgi?id=1229666
-            return list(set((itertools.chain.from_iterable(
-                (
-                    (m.text, m.get('canonical')) if
-                    m.get('canonical') else (m.text,)
-                )
-                for m in archTag.iterfind('machine')))))
-
-    return []
+    # machine list from domain can legally be empty
+    # (e.g. only qemu-kvm installed)
+    # in that case it is fine to use machines list from arch
+    return (_get_emulated_machines_from_domain(arch, caps) or
+            _get_emulated_machines_from_arch(arch, caps))
 
 
 def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):

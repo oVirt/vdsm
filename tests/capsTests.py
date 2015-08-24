@@ -317,6 +317,24 @@ class TestCaps(TestCaseBase):
                     'pc-i440fx-rhel7.0.0']
         self.assertEqual(expected, result)
 
+    def test_getEmulatedMachinesWithTwoQEMUInstalled(self):
+        capsData = self._readCaps("caps_libvirt_multiqemu.out")
+        result = caps._getEmulatedMachines('x86_64', capsData)
+        expected = ['pc-i440fx-rhel7.1.0',
+                    'rhel6.3.0',
+                    'pc-q35-rhel7.0.0',
+                    'rhel6.1.0',
+                    'rhel6.6.0',
+                    'rhel6.2.0',
+                    'pc',
+                    'pc-q35-rhel7.1.0',
+                    'q35',
+                    'rhel6.4.0',
+                    'rhel6.0.0',
+                    'rhel6.5.0',
+                    'pc-i440fx-rhel7.0.0']
+        self.assertEqual(expected, result)
+
     def test_getNumaTopology(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
         result = caps.getNumaTopology(capsData)
