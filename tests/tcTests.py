@@ -30,7 +30,7 @@ from subprocess import Popen, PIPE
 
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
-from nettestlib import Bridge, Tap, requires_brctl, requires_tc
+from nettestlib import Bridge, Tap, requires_tc
 
 from vdsm.constants import EXT_TC
 from network import tc
