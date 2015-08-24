@@ -26,9 +26,9 @@ import threading
 from vdsm.config import config
 from vdsm.utils import retry
 from vdsm import ipwrapper
-from vdsm import jsonrpcvdscli
 from vdsm import netinfo
 from vdsm import supervdsm
+from vdsm import vdscli
 from vdsm.netconfpersistence import RunningConfig
 
 
@@ -71,9 +71,7 @@ class VdsProxy(object):
         retry(self.start, (socket.error, KeyError), tries=30)
 
     def start(self):
-        requestQueues = config.get('addresses', 'request_queues')
-        requestQueue = requestQueues.split(",")[0]
-        self.vdscli = jsonrpcvdscli.connect(requestQueue, compat=False)
+        self.vdscli = vdscli.connect()
         self.netinfo = self._get_netinfo()
         if config.get('vars', 'net_persistence') == 'unified':
             self.config = RunningConfig()
@@ -206,40 +204,40 @@ class VdsProxy(object):
 
     def getVdsStats(self):
         result = self.vdscli.getVdsStats()
-        return _parse_result(result, True)
+        return _parse_result(result, 'info')
 
     def getAllVmStats(self):
         result = self.vdscli.getAllVmStats()
-        return _parse_result(result, True)
+        return _parse_result(result, 'statsList')
 
     def getVmStats(self, vmId):
         result = self.vdscli.getVmStats(vmId)
-        if 'result' in result:
-            code, msg, stats = _parse_result(result, True)
+        if 'statsList' in result:
+            code, msg, stats = _parse_result(result, 'statsList')
             return code, msg, stats[0]
         else:
             return _parse_result(result)
 
     def getVmList(self, vmId):
         result = self.vdscli.list('true', [vmId])
-        code, msg, vm_list = _parse_result(result, True)
+        code, msg, vm_list = _parse_result(result, 'vmList')
         return code, msg, vm_list[0]
 
     def getVdsCapabilities(self):
         result = self.vdscli.getVdsCapabilities()
-        return _parse_result(result, True)
+        return _parse_result(result, 'info')
 
     def updateVmPolicy(self, vmId, vcpuLimit):
         result = self.vdscli.updateVmPolicy([vmId, vcpuLimit])
         return _parse_result(result)
 
 
-def _parse_result(result, return_value=False):
+def _parse_result(result, return_value=None):
     status = result['status']
     code = status['code']
     msg = status['message']
 
-    if code == SUCCESS and return_value:
-        return code, msg, result['result']
+    if code == SUCCESS and return_value is not None:
+        return code, msg, result[return_value]
     else:
         return code, msg
