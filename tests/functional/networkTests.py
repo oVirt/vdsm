@@ -31,8 +31,7 @@ from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet)
-from vdsm.netconfpersistence import (KernelConfig, RunningConfig,
-                                     PersistentConfig)
+from vdsm.netconfpersistence import (KernelConfig, RunningConfig)
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
                           BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,

@@ -18,7 +18,6 @@
 #
 from testlib import VdsmTestCase as TestCaseBase
 import monkeypatch
-from vdsm import hwinfo
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.constants import VDSM_USER

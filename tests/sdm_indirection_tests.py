@@ -21,7 +21,7 @@ from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import recorded
 
-from storage import sd, blockSD, fileSD, glusterSD
+from storage import sd, blockSD, fileSD
 
 
 class FakeDomainManifest(sd.StorageDomainManifest):
