@@ -655,7 +655,7 @@ def get():
                 'model_Conroe,model_Penryn,model_Nehalem,model_Opteron_G1'
         elif targetArch in Architecture.POWER:
             caps['cpuModel'] = 'POWER 8 (fake)'
-            caps['cpuFlags'] = 'powernv,model_power8'
+            caps['cpuFlags'] = 'powernv,model_POWER8'
         else:
             raise RuntimeError('Unsupported architecture: %s' % targetArch)
     else:
