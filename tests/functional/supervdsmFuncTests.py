@@ -17,44 +17,23 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from testlib import VdsmTestCase as TestCaseBase
-import monkeypatch
+import testValidation
 from vdsm import supervdsm
-from vdsm import utils
 from vdsm.constants import VDSM_USER
 from pwd import getpwnam
 import os
 
-_test_list = []
 
+class TestSuperVdsmRemotly(TestCaseBase):
 
-@supervdsm.proxied_call
-def foo(arg):
-    _test_list.append(arg)
+    def dropPrivileges(self):
+        vdsm_uid, vdsm_gid = getpwnam(VDSM_USER)[2:4:]
+        os.setgroups([])
+        os.setgid(vdsm_gid)
+        os.setuid(vdsm_uid)
 
-
-def dropPrivileges():
-    vdsm_uid, vdsm_gid = getpwnam(VDSM_USER)[2:4:]
-    os.setgroups([])
-    os.setgid(vdsm_gid)
-    os.setuid(vdsm_uid)
-dropPrivileges()
-
-
-class TestSuperVdsmRemotely(TestCaseBase):
+    @testValidation.ValidateRunningAsRoot
     def testPingCall(self):
+        self.dropPrivileges()
         proxy = supervdsm.getProxy()
         self.assertTrue(proxy.ping())
-
-    @monkeypatch.MonkeyPatch(os, 'geteuid', lambda: 0)
-    def test_proxied_call_run_as_root(self):
-        o = object()
-        foo(o)
-        self.assertIn(o, _test_list)
-
-    def test_proxied_call_fails_on_unknown_function(self):
-        with self.assertRaises(ImportError):
-            foo()
-
-    def test_proxied_call_non_decorated_function(self):
-        with self.assertRaises(RuntimeError):
-            supervdsm.proxied_call(utils.tobool)(None)

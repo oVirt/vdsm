@@ -19,7 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import functools
 import os
 from multiprocessing.managers import BaseManager, RemoteError
 import logging
@@ -94,20 +93,3 @@ def getProxy():
             if _g_singletonSupervdsmInstance is None:
                 _g_singletonSupervdsmInstance = SuperVdsmProxy()
     return _g_singletonSupervdsmInstance
-
-
-def proxied_call(func):
-    func.allow_supervdsm_invocation = True
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if os.geteuid() == 0:
-            return func(*args, **kwargs)
-        else:
-            return getProxy().proxied_call(
-                func.__module__,
-                func.func_name,
-                args,
-                kwargs
-            )
-    return wrapper
