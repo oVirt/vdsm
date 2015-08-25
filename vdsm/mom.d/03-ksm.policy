@@ -47,7 +47,8 @@
     {        # else
         (Host.Control "ksm_run" 1)
         (Host.Control "ksm_sleep_millisecs"
-            (/ (* ksm_sleep_ms_baseline 16777216) Host.mem_available))
+            (max 10 (/ (* ksm_sleep_ms_baseline 16777216)
+                       Host.mem_available)))
        (if (< (Host.StatAvg "mem_free") ksm_pressure_threshold)
             (change_npages ksm_pages_boost)
            (change_npages ksm_pages_decay))
