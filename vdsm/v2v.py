@@ -98,7 +98,7 @@ class OutputParserError(V2VError):
 
 class JobExistsError(ClientError):
     ''' Job already exists in _jobs collection '''
-    err_name = 'V2VJobExistsError'
+    err_name = 'JobExistsError'
 
 
 class VolumeError(ClientError):
@@ -107,12 +107,12 @@ class VolumeError(ClientError):
 
 class NoSuchJob(ClientError):
     ''' Job not exists in _jobs collection '''
-    err_name = 'V2VNoSuchJob'
+    err_name = 'NoSuchJob'
 
 
 class JobNotDone(ClientError):
     ''' Import process still in progress '''
-    err_name = 'V2VJobNotDone'
+    err_name = 'JobNotDone'
 
 
 class NoSuchOvf(V2VError):
