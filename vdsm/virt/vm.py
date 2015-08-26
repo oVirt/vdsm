@@ -3675,13 +3675,6 @@ class Vm(object):
         Stop VM and release all resources
         """
 
-        # unsetting mirror network will clear both mirroring
-        # (on the same network).
-        for nic in self._devices[hwclass.NIC]:
-            if hasattr(nic, 'portMirroring'):
-                for network in nic.portMirroring:
-                    supervdsm.getProxy().unsetPortMirroring(network, nic.name)
-
         # delete the payload devices
         for drive in self._devices[hwclass.DISK]:
             if (hasattr(drive, 'specParams') and
@@ -3691,6 +3684,15 @@ class Vm(object):
         with self._releaseLock:
             if self._released:
                 return {'status': doneCode}
+
+            # unsetting mirror network will clear both mirroring
+            # (on the same network).
+            for nic in self._devices[hwclass.NIC]:
+                if hasattr(nic, 'portMirroring'):
+                    for network in nic.portMirroring[:]:
+                        supervdsm.getProxy().unsetPortMirroring(network,
+                                                                nic.name)
+                        nic.portMirroring.remove(network)
 
             self.log.info('Release VM resources')
             self.lastStatus = vmstatus.POWERING_DOWN
