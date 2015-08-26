@@ -61,7 +61,7 @@ def settle(timeout, exit_if_exists=None):
         logging.error("%s", e)
 
 
-def trigger(attr_matches=(), property_matches=()):
+def trigger(attr_matches=(), property_matches=(), subsystem_matches=()):
     '''
     Request device events from the kernel.
 
@@ -84,6 +84,13 @@ def trigger(attr_matches=(), property_matches=()):
 
                         and causes only events from devices that match
                         given property to be triggered.
+
+    subsystem_matches   Expects an iterable of subsystems.
+
+                        ('a', 'b') ~> --subsystem-match=a --subsystem-match=b
+
+                        Causes only events related to specified subsystem to
+                        be triggered.
     '''
     _run_command(['control', '--reload'])
 
@@ -94,6 +101,9 @@ def trigger(attr_matches=(), property_matches=()):
 
     for name, value in attr_matches:
         cmd.append('--attr-match={}={}'.format(name, value))
+
+    for name in subsystem_matches:
+        cmd.append('--subsystem-match={}'.format(name))
 
     _run_command(cmd)
 
