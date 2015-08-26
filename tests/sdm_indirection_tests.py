@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from contextlib import contextmanager
+
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import recorded
@@ -223,6 +225,11 @@ class FakeBlockDomainManifest(FakeDomainManifest):
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         pass
 
+    @recorded
+    @contextmanager
+    def acquireVolumeMetadataSlot(self, vol_name, slotSize):
+        yield
+
 
 class FakeFileDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -364,6 +371,11 @@ class BlockTests(DomainTestMixin, VdsmTestCase):
     def test_block_properties(self):
         self.assertEqual(512, self.dom.logBlkSize)
         self.assertEqual(512, self.dom.phyBlkSize)
+
+    def test_acquirevolumemetadataslot(self):
+        with self.dom.acquireVolumeMetadataSlot(0, 1):
+            result = [('acquireVolumeMetadataSlot', (0, 1), {})]
+            self.assertEqual(self.dom._manifest.__recording__, result)
 
     @permutations([
         ['extend', 2],

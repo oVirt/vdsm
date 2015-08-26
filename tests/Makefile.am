@@ -121,7 +121,6 @@ test_modules = \
 	vmTestsData.py \
 	vmUtilsTests.py \
 	vmXmlTests.py \
-	volumeTests.py \
 	v2vTests.py \
 	$(NULL)
 

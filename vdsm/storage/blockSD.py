@@ -705,6 +705,88 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         lvm.invalidateVG(self.sdUUID)
         self.replaceMetadata(selectMetadata(self.sdUUID))
 
+    _lvTagMetaSlotLock = threading.Lock()
+
+    @contextmanager
+    def acquireVolumeMetadataSlot(self, vol_name, slotSize):
+        # TODO: Check if the lock is needed when using
+        # getVolumeMetadataOffsetFromPvMapping()
+        with self._lvTagMetaSlotLock:
+            if self.getVersion() in VERS_METADATA_LV:
+                yield self._getVolumeMetadataOffsetFromPvMapping(vol_name)
+            else:
+                yield self._getFreeMetadataSlot(slotSize)
+
+    def _getVolumeMetadataOffsetFromPvMapping(self, vol_name):
+        dev, ext = lvm.getFirstExt(self.sdUUID, vol_name)
+        self.log.debug("vol %s dev %s ext %s" % (vol_name, dev, ext))
+        for pv in self.readMetadataMapping().values():
+            self.log.debug("MAPOFFSET: pv %s -- dev %s ext %s" %
+                           (pv, dev, ext))
+            pestart = int(pv["pestart"])
+            pecount = int(pv["pecount"])
+            if (os.path.basename(dev) == pv["guid"] and
+                    int(ext) in range(pestart, pestart + pecount)):
+
+                offs = int(ext) + int(pv["mapoffset"])
+                if offs < SD_METADATA_SIZE / sd.METASIZE:
+                    raise se.MetaDataMappingError(
+                        "domain %s: vol %s MD offset %s is bad - will "
+                        "overwrite SD's MD" % (self.sdUUID, vol_name, offs))
+                return offs
+        raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" %
+                                      (self.sdUUID, dev, ext))
+
+    def _getFreeMetadataSlot(self, slotSize):
+        occupiedSlots = self._getOccupiedMetadataSlots()
+
+        # It might look weird skipping the sd metadata when it has been moved
+        # to tags. But this is here because domain metadata and volume metadata
+        # look the same. The domain might get confused and think it has lv
+        # metadata if it finds something is written in that area.
+        freeSlot = (SD_METADATA_SIZE + self.logBlkSize - 1) / self.logBlkSize
+
+        for offset, size in occupiedSlots:
+            if offset - freeSlot > slotSize:
+                break
+
+            freeSlot = offset + size
+
+        self.log.debug("Found freeSlot %s in VG %s", freeSlot, self.sdUUID)
+        return freeSlot
+
+    def _getOccupiedMetadataSlots(self):
+        stripPrefix = lambda s, pfx: s[len(pfx):]
+        occupiedSlots = []
+        for lv in lvm.getLV(self.sdUUID):
+            if lv.name in SPECIAL_LVS:
+                # Special LVs have no mapping
+                continue
+
+            offset = None
+            size = blockVolume.VOLUME_MDNUMBLKS
+            for tag in lv.tags:
+                if tag.startswith(blockVolume.TAG_PREFIX_MD):
+                    offset = int(stripPrefix(tag, blockVolume.TAG_PREFIX_MD))
+
+                if tag.startswith(blockVolume.TAG_PREFIX_MDNUMBLKS):
+                    size = int(stripPrefix(tag,
+                                           blockVolume.TAG_PREFIX_MDNUMBLKS))
+
+                if offset is not None and size != blockVolume.VOLUME_MDNUMBLKS:
+                    # I've found everything I need
+                    break
+
+            if offset is None:
+                self.log.warn("Could not find mapping for lv %s/%s",
+                              self.sdUUID, lv.name)
+                continue
+
+            occupiedSlots.append((offset, size))
+
+        occupiedSlots.sort(key=itemgetter(0))
+        return occupiedSlots
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -901,83 +983,9 @@ class BlockStorageDomain(sd.StorageDomain):
 
     @contextmanager
     def acquireVolumeMetadataSlot(self, vol_name, slotSize):
-        # TODO: Check if the lock is needed when using
-        # getVolumeMetadataOffsetFromPvMapping()
-        with self._lvTagMetaSlotLock:
-            if self.getVersion() in VERS_METADATA_LV:
-                yield self.getVolumeMetadataOffsetFromPvMapping(vol_name)
-            else:
-                yield self.getFreeMetadataSlot(slotSize)
-
-    def _getOccupiedMetadataSlots(self):
-        stripPrefix = lambda s, pfx: s[len(pfx):]
-        occupiedSlots = []
-        for lv in lvm.getLV(self.sdUUID):
-            if lv.name in SPECIAL_LVS:
-                # Special LVs have no mapping
-                continue
-
-            offset = None
-            size = blockVolume.VOLUME_MDNUMBLKS
-            for tag in lv.tags:
-                if tag.startswith(blockVolume.TAG_PREFIX_MD):
-                    offset = int(stripPrefix(tag, blockVolume.TAG_PREFIX_MD))
-
-                if tag.startswith(blockVolume.TAG_PREFIX_MDNUMBLKS):
-                    size = int(stripPrefix(tag,
-                                           blockVolume.TAG_PREFIX_MDNUMBLKS))
-
-                if offset is not None and size != blockVolume.VOLUME_MDNUMBLKS:
-                    # I've found everything I need
-                    break
-
-            if offset is None:
-                self.log.warn("Could not find mapping for lv %s/%s",
-                              self.sdUUID, lv.name)
-                continue
-
-            occupiedSlots.append((offset, size))
-
-        occupiedSlots.sort(key=itemgetter(0))
-        return occupiedSlots
-
-    def getFreeMetadataSlot(self, slotSize):
-        occupiedSlots = self._getOccupiedMetadataSlots()
-
-        # It might look weird skipping the sd metadata when it has been moved
-        # to tags. But this is here because domain metadata and volume metadata
-        # look the same. The domain might get confused and think it has lv
-        # metadata if it finds something is written in that area.
-        freeSlot = (SD_METADATA_SIZE + self.logBlkSize - 1) / self.logBlkSize
-
-        for offset, size in occupiedSlots:
-            if offset - freeSlot > slotSize:
-                break
-
-            freeSlot = offset + size
-
-        self.log.debug("Found freeSlot %s in VG %s", freeSlot, self.sdUUID)
-        return freeSlot
-
-    def getVolumeMetadataOffsetFromPvMapping(self, vol_name):
-        dev, ext = lvm.getFirstExt(self.sdUUID, vol_name)
-        self.log.debug("vol %s dev %s ext %s" % (vol_name, dev, ext))
-        for pv in self.readMetadataMapping().values():
-            self.log.debug("MAPOFFSET: pv %s -- dev %s ext %s" %
-                           (pv, dev, ext))
-            pestart = int(pv["pestart"])
-            pecount = int(pv["pecount"])
-            if (os.path.basename(dev) == pv["guid"] and
-                    int(ext) in range(pestart, pestart + pecount)):
-
-                offs = int(ext) + int(pv["mapoffset"])
-                if offs < SD_METADATA_SIZE / sd.METASIZE:
-                    raise se.MetaDataMappingError(
-                        "domain %s: vol %s MD offset %s is bad - will "
-                        "overwrite SD's MD" % (self.sdUUID, vol_name, offs))
-                return offs
-        raise se.MetaDataMappingError("domain %s: can't map PV %s ext %s" %
-                                      (self.sdUUID, dev, ext))
+        with self._manifest.acquireVolumeMetadataSlot(vol_name, slotSize) \
+                as slot:
+            yield slot
 
     def readMetadataMapping(self):
         return self._manifest.readMetadataMapping()

@@ -81,7 +81,7 @@ class FakeLVM(object):
                      size=str(size),
                      seg_start_pe='0',
                      devices='',
-                     tags=(),
+                     tags=[],
                      writeable=True,
                      opened=False,
                      active=True)
@@ -92,6 +92,9 @@ class FakeLVM(object):
     def activateLVs(self, vgName, lvNames):
         pass
 
+    def addtag(self, vg, lv, tag):
+        self.lvmd[vg][lv]['tags'].append(tag)
+
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
 
@@ -101,11 +104,18 @@ class FakeLVM(object):
         vg_md['attr'] = vg_attr
         return real_lvm.VG(**vg_md)
 
-    def getLV(self, vgName, lvName):
+    def _getLV(self, vgName, lvName):
         lv_md = deepcopy(self.lvmd[vgName][lvName])
         lv_attr = real_lvm.LV_ATTR(**lv_md['attr'])
         lv_md['attr'] = lv_attr
         return real_lvm.LV(**lv_md)
+
+    def getLV(self, vgName, lvName=None):
+        if lvName is None:
+            return [self._getLV(vgName, lv_name)
+                    for lv_name in self.lvmd[vgName].keys()]
+        else:
+            return self._getLV(vgName, lvName)
 
     def fake_lv_symlink_create(self, vg_name, lv_name):
         volpath = self.lvPath(vg_name, lv_name)
