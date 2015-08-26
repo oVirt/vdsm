@@ -451,6 +451,12 @@ class StorageDomainManifest(object):
             self.log.warn("lease did not initialize successfully",
                           exc_info=True)
 
+    def refreshDirTree(self):
+        pass
+
+    def refresh(self):
+        pass
+
 
 class StorageDomain(object):
     log = logging.getLogger("Storage.StorageDomain")
@@ -916,10 +922,10 @@ class StorageDomain(object):
         self.setMetaParams({key: value})
 
     def refreshDirTree(self):
-        pass
+        self._manifest.refreshDirTree()
 
     def refresh(self):
-        pass
+        self._manifest.refresh()
 
     def extend(self, devlist, force):
         pass

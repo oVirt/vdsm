@@ -152,6 +152,14 @@ class FakeDomainManifest(sd.StorageDomainManifest):
     def _makeDomainLock(self, domVersion):
         pass
 
+    @recorded
+    def refreshDirTree(self):
+        pass
+
+    @recorded
+    def refresh(self):
+        pass
+
 
 class FakeBlockDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -342,6 +350,8 @@ class DomainTestMixin(object):
         ['hasHostId', 1],
         ['getHostStatus', 1],
         ['hasVolumeLeases', 0],
+        ['refreshDirTree', 0],
+        ['refresh', 0],
         ])
     def test_common_functions(self, fn, nargs):
         self.check_call(fn, nargs)

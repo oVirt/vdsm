@@ -683,6 +683,28 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
             images.update(imgs)
         return images
 
+    def refreshDirTree(self):
+        # create domain images folder
+        imagesPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES)
+        fileUtils.createdir(imagesPath)
+
+        # create domain special volumes folder
+        domMD = os.path.join(self.domaindir, sd.DOMAIN_META_DATA)
+        fileUtils.createdir(domMD)
+
+        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
+        for lvName in SPECIAL_LVS:
+            dst = os.path.join(domMD, lvName)
+            if not os.path.lexists(dst):
+                src = lvm.lvPath(self.sdUUID, lvName)
+                self.log.debug("Creating symlink from %s to %s", src, dst)
+                os.symlink(src, dst)
+
+    def refresh(self):
+        self.refreshDirTree()
+        lvm.invalidateVG(self.sdUUID)
+        self.replaceMetadata(selectMetadata(self.sdUUID))
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -1343,30 +1365,8 @@ class BlockStorageDomain(sd.StorageDomain):
         # It is time to deactivate the master LV now
         lvm.deactivateLVs(self.sdUUID, MASTERLV)
 
-    def refreshDirTree(self):
-        # create domain images folder
-        imagesPath = os.path.join(self.domaindir, sd.DOMAIN_IMAGES)
-        fileUtils.createdir(imagesPath)
-
-        # create domain special volumes folder
-        domMD = os.path.join(self.domaindir, sd.DOMAIN_META_DATA)
-        fileUtils.createdir(domMD)
-
-        lvm.activateLVs(self.sdUUID, SPECIAL_LVS)
-        for lvName in SPECIAL_LVS:
-            dst = os.path.join(domMD, lvName)
-            if not os.path.lexists(dst):
-                src = lvm.lvPath(self.sdUUID, lvName)
-                self.log.debug("Creating symlink from %s to %s", src, dst)
-                os.symlink(src, dst)
-
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         return self._manifest.extendVolume(volumeUUID, size, isShuttingDown)
-
-    def refresh(self):
-        self.refreshDirTree()
-        lvm.invalidateVG(self.sdUUID)
-        self.replaceMetadata(selectMetadata(self.sdUUID))
 
     @staticmethod
     def findDomainPath(sdUUID):
