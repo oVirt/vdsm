@@ -4944,8 +4944,11 @@ class Vm(object):
         self.log.debug("vdsm chain: %s, libvirt chain: %s", curVols, volumes)
 
         # Ask the storage to sync metadata according to the new chain
-        self.cif.irs.imageSyncVolumeChain(drive.domainID, drive.imageID,
-                                          drive['volumeID'], volumes)
+        res = self.cif.irs.imageSyncVolumeChain(drive.domainID, drive.imageID,
+                                                drive['volumeID'], volumes)
+        if res['status']['code'] != 0:
+            self.log.error("Unable to synchronize volume chain to storage")
+            raise StorageUnavailableError()
 
         if (set(curVols) == set(volumes)):
             return
