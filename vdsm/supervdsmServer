@@ -303,11 +303,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def udevTriggerMultipath(self, guid):
-        try:
-            udevadm.trigger(property_matches=(('DM_NAME', guid),))
-        except udevadm.Error as e:
-            raise OSError(errno.EINVAL, 'Could not trigger change '
-                          'out %s\nerr %s' % (e.out, e.err))
+        self._udevTrigger(property_matches=(('DM_NAME', guid),))
 
     @logDecorator
     def appropriateMultipathDevice(self, guid, thiefId):
@@ -362,7 +358,7 @@ class _SuperVdsm(object):
                 self.log.debug("Creating rule %s: %r", rule_file, rule)
                 rf.write(rule)
 
-            udevadm.trigger()
+            self._udevTrigger(subsystem_matches=('vfio',))
 
     @logDecorator
     def rmAppropriateIommuGroup(self, iommu_group):
@@ -389,7 +385,7 @@ class _SuperVdsm(object):
             self.log.debug("Removing rule %s", rule_file)
 
         if not error:
-            udevadm.trigger()
+            self._udevTrigger(subsystem_matches=('vfio',))
 
     @logDecorator
     def ksmTune(self, tuningParams):
@@ -464,6 +460,13 @@ class _SuperVdsm(object):
     @logDecorator
     def set_rp_filter_strict(self, dev):
         sysctl.set_rp_filter_strict(dev)
+
+    def _udevTrigger(self, *args, **kwargs):
+        try:
+            udevadm.trigger(*args, **kwargs)
+        except udevadm.Error as e:
+            raise OSError(errno.EINVAL, 'Could not trigger change '
+                          'out %s\nerr %s' % (e.out, e.err))
 
 
 def terminate(signo, frame):
