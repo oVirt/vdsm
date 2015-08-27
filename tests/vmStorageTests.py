@@ -465,7 +465,7 @@ class DriveVolumeSizeTests(VdsmTestCase):
 
 
 def drive_config(**kw):
-    """ Reutrn drive configuration updated from **kw """
+    """ Return drive configuration updated from **kw """
     conf = {
         'device': 'disk',
         'format': 'raw',
