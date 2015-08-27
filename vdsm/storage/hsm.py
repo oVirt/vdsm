@@ -2673,23 +2673,18 @@ class HSM(object):
         # getSharedLock(connectionsResource...)
         # getExclusiveLock(sdUUID...)
         if storageType in sd.BLOCK_DOMAIN_TYPES:
-            newSD = blockSD.BlockStorageDomain.create(
-                sdUUID, domainName, domClass, typeSpecificArg, storageType,
-                domVersion)
+            create = blockSD.BlockStorageDomain.create
         elif storageType in (sd.NFS_DOMAIN, sd.POSIXFS_DOMAIN):
-            newSD = nfsSD.NfsStorageDomain.create(
-                sdUUID, domainName, domClass, typeSpecificArg, storageType,
-                domVersion)
+            create = nfsSD.NfsStorageDomain.create
         elif storageType == sd.GLUSTERFS_DOMAIN:
-            newSD = glusterSD.GlusterStorageDomain.create(
-                sdUUID, domainName, domClass, typeSpecificArg, storageType,
-                domVersion)
+            create = glusterSD.GlusterStorageDomain.create
         elif storageType == sd.LOCALFS_DOMAIN:
-            newSD = localFsSD.LocalFsStorageDomain.create(
-                sdUUID, domainName, domClass, typeSpecificArg, storageType,
-                domVersion)
+            create = localFsSD.LocalFsStorageDomain.create
         else:
             raise se.StorageDomainTypeError(storageType)
+
+        newSD = create(sdUUID, domainName, domClass, typeSpecificArg,
+                       storageType, domVersion)
 
         findMethod = self.__getSDTypeFindMethod(storageType)
         sdCache.knownSDs[sdUUID] = findMethod
