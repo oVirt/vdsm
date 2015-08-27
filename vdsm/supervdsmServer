@@ -290,7 +290,7 @@ class _SuperVdsm(object):
                           'out %s\nerr %s' % (e.out, e.err))
 
     @logDecorator
-    def appropriateDevice(self, guid, thiefId):
+    def appropriateMultipathDevice(self, guid, thiefId):
         ruleFile = _UDEV_RULE_FILE_NAME % (guid, thiefId)
         # WARNING: we cannot use USER, GROUP and MODE since using any of them
         # will change the selinux label to the default, causing vms to pause.
@@ -302,7 +302,7 @@ class _SuperVdsm(object):
             rf.write(rule)
 
     @logDecorator
-    def rmAppropriateRules(self, thiefId):
+    def rmAppropriateMultipathRules(self, thiefId):
         re_apprDevRule = "^" + _UDEV_RULE_FILE_PREFIX + ".*?-" + thiefId + \
                          _UDEV_RULE_FILE_EXT + "$"
         rules = [os.path.join(_UDEV_RULE_FILE_DIR, r) for r in

@@ -3145,7 +3145,7 @@ class HSM(object):
 
         Warning: Internal use only.
         """
-        supervdsm.getProxy().appropriateDevice(guid, thiefId)
+        supervdsm.getProxy().appropriateMultipathDevice(guid, thiefId)
         supervdsm.getProxy().udevTriggerMultipath(guid)
         devPath = os.path.join(devicemapper.DMPATH_PREFIX, guid)
         utils.retry(partial(fileUtils.validateQemuReadable, devPath),
@@ -3164,7 +3164,7 @@ class HSM(object):
         """
         Warning: Internal use only.
         """
-        fails = supervdsm.getProxy().rmAppropriateRules(thiefId)
+        fails = supervdsm.getProxy().rmAppropriateMultipathRules(thiefId)
         if fails:
             self.log.error("Failed to remove the following rules: %s", fails)
 
