@@ -4021,6 +4021,80 @@
   'returns': 'str'}
 
 ##
+# @HostJobType:
+#
+# The type of a @HostJob (string)
+#
+# @storage:  Storage job
+#
+# @v2v:      v2v job
+#
+# Since: 4.18
+##
+{'enum': 'HostJobType', 'data': ['storage', 'v2v']}
+
+##
+# @HostJobStatus:
+#
+# The execution state of a @HostJob (string)
+#
+# @pending:  The job is has not started yet
+#
+# @running:  The job is running
+#
+# @done:     The job has finished successfully
+#
+# @aborted:  The job was aborted by user request
+#
+# @failed:   The job has failed
+#
+# Since: 4.18
+##
+{'enum': 'HostJobStatus',
+ 'data': ['pending', 'running', 'done', 'aborted', 'failed']}
+
+##
+# @ErrorInfo:
+#
+# Information about an error
+#
+# @code:         An error code
+#
+# @message:      A free-form description of the error
+#
+# Since: 4.18
+##
+{'type': 'ErrorInfo',
+ 'data': { 'code': 'int', 'message': 'str'}}
+
+##
+# @HostJobInfo:
+#
+# A discriminated record providing information about a long-running operation
+# on a host.
+#
+# @id:           The job UUID
+#
+# @description:  A description of the job or the current status of the job
+#                (for debugging purposes)
+#
+# @job_type:     The specific job type
+#
+# @status:       The job status
+#
+# @progress:     #optional If the job can report progress in the current
+#                state, an integer (0-100) indicating the progress
+#
+# @error:        #optional If the job has failed, information about the error
+#
+# Since: 4.18
+##
+{'type': 'HostJobInfo',
+ 'data': {'id': 'UUID', 'description': 'str', 'job_type': 'HostJobType',
+          'status': 'HostJobStatus', '*progress': 'uint',
+          '*error': 'ErrorInfo'}}
+
+##
 # @Host.abortV2VJob:
 #
 # Abort V2V importing process
