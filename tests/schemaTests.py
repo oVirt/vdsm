@@ -17,6 +17,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import textwrap
+from contextlib import contextmanager
+
+from testlib import temporaryPath
 from testlib import VdsmTestCase as TestCaseBase
 from api import vdsmapi
 
@@ -92,3 +96,87 @@ class SchemaTest(TestCaseBase):
     def testTokenizeRaiseOnInvalidData(self):
         generator = vdsmapi.tokenize("{'a': invalid, 'b': 'c'}")
         self.assertRaises(ValueError, list, generator)
+
+
+class ParseTest(TestCaseBase):
+    blank_schema = {'types': {}, 'enums': {}, 'aliases': {},
+                    'maps': {}, 'commands': {}, 'unions': {}}
+
+    @contextmanager
+    def load_api(self, data):
+        vdsmapi._api_info = None
+        data = textwrap.dedent(data)
+        with temporaryPath(data=data) as filename:
+            yield vdsmapi.get_api(filename)
+
+    def assertTypeRelation(self, api, type_a, type_b):
+        self.assertIn(type_b, api['unions'][type_a])
+        self.assertIn(type_a, api['unions'][type_b])
+
+    def test_empty_schema(self):
+        with self.load_api('') as api:
+            self.assertEqual(self.blank_schema, api)
+
+    def test_unknown_symbol_type(self):
+        with self.load_api('''
+        {'foo': 'bar', 'data': ['a', 'b', 'c']}
+        ''') as api:
+            self.assertEqual(self.blank_schema, api)
+
+    def test_single_type(self):
+        with self.load_api('''
+        {'type': 'foo', 'data': {'a': 'str'}}
+        ''') as api:
+            self.assertIn('foo', api['types'])
+            self.assertEqual('str', api['types']['foo']['data']['a'])
+
+    def test_single_enum(self):
+        with self.load_api('''
+        {'enum': 'foo', 'data': ['a', 'b', 'c']}
+        ''') as api:
+            self.assertEqual(['a', 'b', 'c'], api['enums']['foo']['data'])
+
+    def test_single_alias(self):
+        with self.load_api('''
+        {'alias': 'UUID', 'data': 'str'}
+        ''') as api:
+            self.assertEqual('str', api['aliases']['UUID']['data'])
+
+    def test_single_map(self):
+        map = {'map': 'foo', 'key': 'str', 'value': 'str'}
+        with self.load_api(str(map)) as api:
+            self.assertEqual(map, api['maps']['foo'])
+
+    def test_single_command(self):
+        cmd = {'command': {'class': 'foo', 'name': 'bar'},
+               'data': {'a': 'uint'}, 'returns': 'str'}
+        with self.load_api(str(cmd)) as api:
+            self.assertEqual(cmd, api['commands']['foo']['bar'])
+
+    def test_command_parameter_order(self):
+        # The parser will preserve the order of dict keys when loading
+        with self.load_api('''
+        {'command': {'class': 'foo', 'name': 'bar'},
+         'data': {'a': 'uint', 'b': 'str', 'c': 'int'}}
+        ''') as api:
+            self.assertEqual(['a', 'b', 'c'],
+                             api['commands']['foo']['bar']['data'].keys())
+
+    def test_type_union(self):
+        with self.load_api('''
+        {'enum': 'ThingTypes', 'data': ['person', 'place']}
+
+        {'type': 'Thing',
+         'data': {'specificType': 'ThingTypes', 'name': 'str'},
+         'union': ['Person', 'Place']}
+
+        {'type': 'Person',
+         'data': {'specificType': 'ThingTypes', 'name': 'str',
+                  'address': 'str'}}
+
+        {'type': 'Place',
+         'data': {'specificType': 'ThingTypes', 'name': 'str',
+                  'longitude': 'float', 'latitude': 'float'}}
+        ''') as api:
+            self.assertTypeRelation(api, 'Thing', 'Person')
+            self.assertTypeRelation(api, 'Thing', 'Place')
