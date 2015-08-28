@@ -193,6 +193,9 @@ errCode = {
     'destVolumeTooSmall': {'status': {
         'code': 79,
         'message': 'Destination volume is too small'}},
+    'AbortNotSupported': {'status': {
+        'code': 80,
+        'message': 'Job does not support aborting'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

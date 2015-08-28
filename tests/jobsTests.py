@@ -115,6 +115,12 @@ class JobsTests(VdsmTestCase):
         self.assertEqual(response.error(jobs.NoSuchJob.name),
                          jobs.abort('foo'))
 
+    def test_abort_not_supported(self):
+        job = jobs.Job(str(uuid.uuid4()))
+        jobs.add(job)
+        self.assertEqual(response.error(jobs.AbortNotSupported.name),
+                         jobs.abort(job.id))
+
     @permutations([
         [jobs.STATUS.ABORTED],
         [jobs.STATUS.DONE],

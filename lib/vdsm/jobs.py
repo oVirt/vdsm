@@ -60,6 +60,11 @@ class JobNotDone(ClientError):
     name = 'JobNotDone'
 
 
+class AbortNotSupported(ClientError):
+    ''' This type of job does not support aborting '''
+    name = 'AbortNotSupported'
+
+
 class Job(object):
     _JOB_TYPE = None
 
@@ -113,6 +118,7 @@ class Job(object):
         """
         May be implemented by child class
         """
+        raise AbortNotSupported()
 
 
 # This helper should only be called by test code.  Everything else should be
