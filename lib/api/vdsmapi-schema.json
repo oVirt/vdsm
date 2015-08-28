@@ -4095,6 +4095,33 @@
           '*error': 'ErrorInfo'}}
 
 ##
+# @HostJobInfoMap:
+#
+# A mapping of HostJobInfo records indexed by job UUID.
+#
+# Since: 4.18
+##
+{'map': 'HostJobInfoMap',
+ 'key': 'UUID', 'value': 'HostJobInfo'}
+
+##
+# @Host.getJobs:
+#
+# Get information about HostJobs on this host.
+#
+# @job_type:    #optional Return only jobs of this type
+#
+# @job_ids:     #optional Return only jobs matching the specified ids
+#
+# Returns: a dictionary of HostJob information indexed by job id.
+#
+# Since: 4.18
+##
+{'command': {'class': 'Host', 'name': 'getJobs'},
+ 'data': {'*job_type': 'HostJobType', '*job_ids': ['UUID']},
+ 'returns': 'HostJobInfoMap'}
+
+##
 # @Host.abortV2VJob:
 #
 # Abort V2V importing process

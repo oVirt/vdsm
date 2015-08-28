@@ -357,6 +357,11 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getVMList(fullStatus, vmList, False)
 
+    def hostGetJobs(self, job_type=None, job_ids=()):
+        api = API.Global()
+        job_type = None if job_type == '' else job_type
+        return api.getJobs(job_type=job_type, job_ids=job_ids)
+
     def getExternalVMs(self, uri, username, password):
         password = ProtectedPassword(password)
         api = API.Global()
@@ -1083,6 +1088,7 @@ class BindingXMLRPC(object):
                 (self.vmGetIoTunePolicy, 'getIoTunePolicy'),
                 (self.vmSetCpuTuneQuota, 'vmSetCpuTuneQuota'),
                 (self.vmSetCpuTunePeriod, 'vmSetCpuTunePeriod'),
+                (self.hostGetJobs, 'getHostJobs'),
                 (self.getExternalVMs, 'getExternalVMs'),
                 (self.getExternalVmFromOva, 'getExternalVmFromOva'),
                 (self.convertExternalVm, 'convertExternalVm'),

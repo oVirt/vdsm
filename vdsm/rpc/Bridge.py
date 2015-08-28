@@ -492,6 +492,7 @@ command_info = {
     'Volume_getSize': {'ret': Volume_getsize_Ret},
     'Volume_extendSize': {'ret': 'uuid'},
     'Host_getAllTasks': {'ret': 'tasks'},
+    'Host_getJobs': {'ret': 'jobs'},
 }
 
 

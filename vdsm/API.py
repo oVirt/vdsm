@@ -38,6 +38,7 @@ from vdsm import constants
 from vdsm import hooks
 from vdsm import response
 from vdsm import supervdsm
+from vdsm import jobs
 import storage.misc
 import storage.clusterlock
 import storage.volume
@@ -1460,6 +1461,10 @@ class Global(APIBase):
 
     def convertExternalVmFromOva(self, ova_path, vminfo, jobid):
         return v2v.convert_ova(ova_path, vminfo, jobid, self._cif.irs)
+
+    def getJobs(self, job_type=None, job_ids=()):
+        found = jobs.info(job_type=job_type, job_ids=job_ids)
+        return response.success(jobs=found)
 
     def getConvertedVm(self, jobid):
         return v2v.get_converted_vm(jobid)

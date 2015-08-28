@@ -86,7 +86,10 @@ class JobsTests(VdsmTestCase):
     def test_get_unknown_job(self):
         self.assertRaises(jobs.NoSuchJob, jobs.get, 'foo')
 
-    def test_get_jobs_info(self):
+    def test_get_jobs_info_empty(self):
+        self.assertEqual({}, jobs.info())
+
+    def test_get_jobs_info_any(self):
         foo = FooJob()
         jobs.add(foo)
         bar = BarJob()
@@ -94,16 +97,37 @@ class JobsTests(VdsmTestCase):
         self.assertEqual({foo.id: foo.info(), bar.id: bar.info()},
                          jobs.info())
 
-    def test_get_jobs_info_empty(self):
-        self.assertEqual({}, jobs.info())
-
-    def test_get_jobs_info_filter(self):
+    def test_get_jobs_info_by_type(self):
         foo = FooJob()
         jobs.add(foo)
         bar = BarJob()
         jobs.add(bar)
         self.assertEqual({bar.id: bar.info()},
-                         jobs.info(bar.job_type))
+                         jobs.info(job_type=bar.job_type))
+
+    def test_get_jobs_info_by_uuid_single(self):
+        foo = FooJob()
+        jobs.add(foo)
+        bar = BarJob()
+        jobs.add(bar)
+        self.assertEqual({foo.id: foo.info()},
+                         jobs.info(job_ids=[foo.id]))
+
+    def test_get_jobs_info_by_uuid_multi(self):
+        foo = FooJob()
+        jobs.add(foo)
+        bar = BarJob()
+        jobs.add(bar)
+        self.assertEqual({foo.id: foo.info(), bar.id: bar.info()},
+                         jobs.info(job_ids=[foo.id, bar.id]))
+
+    def test_get_jobs_info_by_type_and_uuid(self):
+        foo = FooJob()
+        jobs.add(foo)
+        bar = BarJob()
+        jobs.add(bar)
+        self.assertEqual({}, jobs.info(job_type=bar.job_type,
+                                       job_ids=[foo.id]))
 
     def test_abort_job(self):
         job = TestingJob()

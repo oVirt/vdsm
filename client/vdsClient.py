@@ -1898,6 +1898,15 @@ class service:
 
         return status['status']['code'], status['status']['message']
 
+    def getHostJobs(self, args):
+        job_type = args[0] if args else ''  # None not allowed
+        job_ids = args[1:]
+        res = self.s.getHostJobs(job_type, job_ids)
+        if res['status']['code'] != 0:
+            return res['status']['code'], res['status']['message']
+        pp.pprint(res['jobs'])
+        return 0, ''
+
     def getExternalVMs(self, args):
         if len(args) != 3:
             raise ValueError('Wrong number of arguments')
@@ -2838,6 +2847,11 @@ if __name__ == '__main__':
             serv.getExternalVMs, (
                 '<uri> <username> <password>',
                 'get VMs from external hypervisor'
+            )),
+        'getHostJobs': (
+            serv.getHostJobs, (
+                '[[<job_type>] <job_id> ...]',
+                'get information on active host jobs'
             )),
         'convertExternalVm': (
             serv.convertExternalVm, (

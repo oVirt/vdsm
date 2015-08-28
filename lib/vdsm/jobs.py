@@ -154,11 +154,18 @@ def abort(job_id):
     return response.success()
 
 
-def info(type_filter=None):
+def info(job_type=None, job_ids=()):
+    job_ids = frozenset(job_ids)
     with _lock:
         jobs = _jobs.values()
-    return {job.id: job.info() for job in jobs
-            if not type_filter or job.job_type == type_filter}
+    result = {}
+    for job in jobs:
+        if job_type and job.job_type != job_type:
+            continue
+        if job_ids and job.id not in job_ids:
+            continue
+        result[job.id] = job.info()
+    return result
 
 
 def add(job):
