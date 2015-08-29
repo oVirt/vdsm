@@ -540,15 +540,14 @@ class BlockVolume(volume.Volume):
         lines = ["%s=%s\n" % (key.strip(), str(value).strip())
                  for key, value in meta.iteritems()]
         lines.append("EOF\n")
+        data = "".join(lines)
+        if len(data) > VOLUME_METASIZE:
+            raise se.MetadataOverflowError(data)
+
+        data += "\0" * (VOLUME_METASIZE - len(data))
 
         metavol = lvm.lvPath(vgname, sd.METADATA)
         with fileUtils.DirectFile(metavol, "r+d") as f:
-            data = "".join(lines)
-            if len(data) > VOLUME_METASIZE:
-                raise se.MetadataOverflowError(data)
-
-            data += "\0" * (VOLUME_METASIZE - len(data))
-
             f.seek(offs * VOLUME_METASIZE)
             f.write(data)
 
