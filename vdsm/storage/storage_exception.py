@@ -1670,6 +1670,9 @@ class MetadataOverflowError(MetaDataGeneralError):
     code = 756
     message = "Metadata is too big. Cannot change Metadata"
 
+    def __init__(self, data):
+        self.value = "data=%r" % data
+
 
 #################################################
 #  Import/Export Exceptions
