@@ -1200,7 +1200,6 @@ class Global(APIBase):
            agent is one of (rsa, ilo, drac5, ipmilan, etc)
            action can be one of (status, on, off, reboot)."""
 
-        @utils.traceback(on=self.log.name)
         def fence(script, inp):
             # non-status actions are sent asyncronously. deathSignal is set to
             # make sure that no stray fencing scripts are left behind if Vdsm
