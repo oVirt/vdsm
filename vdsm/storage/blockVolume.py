@@ -545,10 +545,9 @@ class BlockVolume(volume.Volume):
         with fileUtils.DirectFile(metavol, "r+d") as f:
             data = "".join(lines)
             if len(data) > VOLUME_METASIZE:
-                cls.log.warn("Truncating volume metadata (%s)", data)
-                data = data[:VOLUME_METASIZE]
-            else:
-                data += "\0" * (VOLUME_METASIZE - len(data))
+                raise se.MetadataOverflowError(data)
+
+            data += "\0" * (VOLUME_METASIZE - len(data))
 
             f.seek(offs * VOLUME_METASIZE)
             f.write(data)
