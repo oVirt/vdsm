@@ -353,7 +353,7 @@ class LvMetadataRW(object):
             metaStr.write("\n")
 
         if metaStr.pos > self._size:
-            raise se.MetadataOverflowError()
+            raise se.MetadataOverflowError(metaStr.getvalue())
 
         # Clear out previous data - it is a volume, not a file
         metaStr.write('\0' * (self._size - metaStr.pos))
