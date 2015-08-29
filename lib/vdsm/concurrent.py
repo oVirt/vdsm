@@ -151,7 +151,7 @@ def tmap(func, iterable):
     return results
 
 
-def thread(func, args=(), name=None, daemon=True, logger=None):
+def thread(func, args=(), kwargs=None, name=None, daemon=True, logger=None):
     """
     Create a thread for runnning func with args.
 
@@ -161,6 +161,8 @@ def thread(func, args=(), name=None, daemon=True, logger=None):
 
     args        Arguments to pass to func
 
+    kwargs      Keyword arguments to pass to func
+
     name        If set, set thread name.
 
     daemon      If True, create a daemon thread.
@@ -168,9 +170,12 @@ def thread(func, args=(), name=None, daemon=True, logger=None):
     logger      If set, unhandled exception will be logged on this logger.
                 Otherwise the root logger will be used.
     """
+    if kwargs is None:
+        kwargs = {}
+
     @utils.traceback(on=logger)
     def run():
-        return func(*args)
+        return func(*args, **kwargs)
 
     thread = threading.Thread(target=run, name=name)
     thread.daemon = daemon
