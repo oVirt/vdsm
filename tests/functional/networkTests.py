@@ -2043,6 +2043,39 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testSetupNetworksAddDelDhcp(self, bridged, families):
+        def _assert_applied(network_name, requested, reported):
+            self.assertNetworkExists(network_name)
+            reported_network = reported.networks[network_name]
+
+            if requested['bridged']:
+                self.assertEqual(reported_network['cfg']['BOOTPROTO'],
+                                 requested['bootproto'])
+                reported_devices = reported.bridges
+                device_name = network_name
+            else:
+                reported_devices = reported.nics
+                device_name = requested['nic']
+            self.assertIn(device_name, reported_devices)
+            reported_device = reported_devices[device_name]
+
+            requested_dhcpv4 = requested['bootproto'] == 'dhcp'
+            self.assertEqual(reported_network['dhcpv4'], requested_dhcpv4)
+            self.assertEqual(reported_network['dhcpv6'], requested['dhcpv6'])
+
+            self.assertEqual(reported_device['cfg']['BOOTPROTO'],
+                             requested['bootproto'])
+            self.assertEqual(reported_device['dhcpv4'], requested_dhcpv4)
+            self.assertEqual(reported_device['dhcpv6'], requested['dhcpv6'])
+
+            if requested_dhcpv4:
+                self.assertEqual(reported_network['gateway'], IP_GATEWAY)
+                # TODO: source routing not ready for IPv6
+                ip_addr = reported_network['addr']
+                self.assertSourceRoutingConfiguration(device_name,
+                                                      ip_addr)
+                return device_name, ip_addr
+            return None, None
+
         with veth.pair() as (left, right):
             veth.setIP(left, IP_ADDRESS, IP_CIDR)
             veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
@@ -2058,42 +2091,19 @@ class NetworkTest(TestCaseBase):
                 try:
                     status, msg = self.setupNetworks(network, {}, NOCHK)
                     self.assertEqual(status, SUCCESS, msg)
-                    self.assertNetworkExists(NETWORK_NAME)
 
-                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                    self.assertEqual(test_net['dhcpv4'], dhcpv4)
-                    self.assertEqual(test_net['dhcpv6'], dhcpv6)
-
-                    if bridged:
-                        self.assertEqual(test_net['cfg']['BOOTPROTO'],
-                                         bootproto)
-                        devs = self.vdsm_net.netinfo.bridges
-                        device_name = NETWORK_NAME
-                    else:
-                        devs = self.vdsm_net.netinfo.nics
-                        device_name = right
-
-                    self.assertIn(device_name, devs)
-                    net_attrs = devs[device_name]
-                    self.assertEqual(net_attrs['cfg']['BOOTPROTO'], bootproto)
-                    self.assertEqual(net_attrs['dhcpv4'], dhcpv4)
-                    self.assertEqual(net_attrs['dhcpv6'], dhcpv6)
-
-                    if dhcpv4:
-                        self.assertEqual(test_net['gateway'], IP_GATEWAY)
-                        # TODO: source routing not ready for IPv6
-                        ip_addr = test_net['addr']
-                        self.assertSourceRoutingConfiguration(device_name,
-                                                              ip_addr)
+                    device_name, ip_addr = _assert_applied(
+                        NETWORK_NAME, network[NETWORK_NAME],
+                        self.vdsm_net.netinfo)
 
                     # Do not report DHCP from (typically still valid) leases
                     network[NETWORK_NAME]['bootproto'] = 'none'
                     network[NETWORK_NAME]['dhcpv6'] = False
                     status, msg = self.setupNetworks(network, {}, NOCHK)
                     self.assertEqual(status, SUCCESS, msg)
-                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                    self.assertEqual(test_net['dhcpv4'], False)
-                    self.assertEqual(test_net['dhcpv6'], False)
+
+                    _assert_applied(NETWORK_NAME, network[NETWORK_NAME],
+                                    self.vdsm_net.netinfo)
 
                     network = {NETWORK_NAME: {'remove': True}}
                     status, msg = self.setupNetworks(network, {}, NOCHK)
