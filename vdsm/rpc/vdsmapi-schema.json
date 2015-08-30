@@ -8203,6 +8203,7 @@
 # @dstVolUUID:       The UUID of the destination Volume
 #
 # @desc:             Set the destination Volume description
+#                    Up to 210 bytes; longer values will be truncated
 #
 # @volType:          (Unused) The role of the destination Volume
 #
@@ -8277,6 +8278,7 @@
 # @diskType:         An advisory disk usage type
 #
 # @desc:             The Volume description
+#                    Up to 210 bytes; longer values will be truncated
 #
 # @srcImgUUID:       If specified, create a snapshot from this Image
 #
@@ -8522,7 +8524,8 @@
 #
 # @imageID:          The Image associated with the Volume
 #
-# @description:      A human-readable Volume description
+# @description:      A human-readable Volume description.
+#                    Up to 210 bytes; longer values will be truncated
 #
 # Since: 4.10.0
 ##
