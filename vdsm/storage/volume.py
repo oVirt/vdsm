@@ -98,6 +98,8 @@ FMT2STR = {
 # it will depend on the storage domain.
 BLOCK_SIZE = 512
 
+METADATA_SIZE = BLOCK_SIZE
+
 # In block storage, metadata size is limited to BLOCK_SIZE (512), to
 # ensure that metadata is written atomically. This is big enough for the
 # actual metadata, but may not be big enough for the description field.
@@ -883,6 +885,21 @@ class Volume(object):
 
         cls.createMetadata(metaId, meta)
         return meta
+
+    @classmethod
+    def formatMetadata(cls, meta):
+        """
+        Format metadata string in storage format.
+
+        Raises MetadataOverflowError if formatted metadata is too long.
+        """
+        lines = ["%s=%s\n" % (key.strip(), str(value).strip())
+                 for key, value in meta.iteritems()]
+        lines.append("EOF\n")
+        data = "".join(lines)
+        if len(data) > METADATA_SIZE:
+            raise se.MetadataOverflowError(data)
+        return data
 
     @classmethod
     def validateDescription(cls, desc):

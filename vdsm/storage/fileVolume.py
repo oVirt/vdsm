@@ -314,10 +314,10 @@ class FileVolume(volume.Volume):
         volPath, = metaId
         metaPath = cls.__metaVolumePath(volPath)
 
+        data = cls.formatMetadata(meta)
+
         with open(metaPath + ".new", "w") as f:
-            for key, value in meta.iteritems():
-                f.write("%s=%s\n" % (key.strip(), str(value).strip()))
-            f.write("EOF\n")
+            f.write(data)
 
         sdUUID = getDomUuidFromVolumePath(volPath)
         oop.getProcessPool(sdUUID).os.rename(metaPath + ".new", metaPath)

@@ -52,9 +52,6 @@ VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_MDNUMBLKS]
 
 BLOCK_SIZE = volume.BLOCK_SIZE
-
-# volume meta data block size
-VOLUME_METASIZE = BLOCK_SIZE
 VOLUME_MDNUMBLKS = 1
 
 SECTORS_TO_MB = 2048
@@ -537,18 +534,12 @@ class BlockVolume(volume.Volume):
     def __putMetadata(cls, metaId, meta):
         vgname, offs = metaId
 
-        lines = ["%s=%s\n" % (key.strip(), str(value).strip())
-                 for key, value in meta.iteritems()]
-        lines.append("EOF\n")
-        data = "".join(lines)
-        if len(data) > VOLUME_METASIZE:
-            raise se.MetadataOverflowError(data)
-
-        data += "\0" * (VOLUME_METASIZE - len(data))
+        data = cls.formatMetadata(meta)
+        data += "\0" * (volume.METADATA_SIZE - len(data))
 
         metavol = lvm.lvPath(vgname, sd.METADATA)
         with fileUtils.DirectFile(metavol, "r+d") as f:
-            f.seek(offs * VOLUME_METASIZE)
+            f.seek(offs * volume.METADATA_SIZE)
             f.write(data)
 
     @classmethod
@@ -586,7 +577,8 @@ class BlockVolume(volume.Volume):
 
         try:
             meta = misc.readblock(lvm.lvPath(vgname, sd.METADATA),
-                                  offs * VOLUME_METASIZE, VOLUME_METASIZE)
+                                  offs * volume.METADATA_SIZE,
+                                  volume.METADATA_SIZE)
             out = {}
             for l in meta:
                 if l.startswith("EOF"):
