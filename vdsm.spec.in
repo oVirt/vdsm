@@ -150,7 +150,7 @@ Requires: libvirt-daemon-driver-nwfilter
 Requires: libvirt-daemon-driver-qemu
 
 %if 0%{?rhel}
-Requires: libvirt-daemon >= 1.2.8-16.el7_1.2
+Requires: libvirt-daemon >= 1.2.8-16.el7_1.4
 Requires: libvirt-python >= 1.2.8-7.el7_1.1
 %endif # rhel
 
