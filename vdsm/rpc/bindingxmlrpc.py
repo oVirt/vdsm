@@ -29,6 +29,7 @@ import re
 from vdsm.password import (ProtectedPassword,
                            protect_passwords,
                            unprotect_passwords)
+from vdsm import concurrent
 from vdsm import utils
 from vdsm import xmlrpc
 from vdsm.define import doneCode, errCode
@@ -56,7 +57,6 @@ class BindingXMLRPC(object):
         """
         Register xml-rpc functions and serve clients until stopped
         """
-        @utils.traceback(on=self.log.name)
         def threaded_start():
             self.log.info("XMLRPC server running")
             self._registerFunctions()
@@ -72,9 +72,8 @@ class BindingXMLRPC(object):
                                        exc_info=True)
             self.log.info("XMLRPC server stopped")
 
-        self._thread = threading.Thread(target=threaded_start,
-                                        name='BindingXMLRPC')
-        self._thread.daemon = True
+        self._thread = concurrent.thread(threaded_start, name='BindingXMLRPC',
+                                         logger=self.log.name)
         self._thread.start()
 
     def add_socket(self, connected_socket, socket_address):

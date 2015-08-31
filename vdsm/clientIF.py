@@ -38,6 +38,7 @@ from vdsm.define import doneCode, errCode
 from vdsm.sslcompat import sslutils
 import libvirt
 from vdsm import libvirtconnection
+from vdsm import concurrent
 from vdsm import utils
 from vdsm import supervdsm
 import caps
@@ -109,8 +110,7 @@ class clientIF(object):
             self._netConfigDirty = False
             self._prepareMOM()
             secret.clear()
-            threading.Thread(target=self._recoverThread,
-                             name='clientIFinit').start()
+            concurrent.thread(self._recoverThread, name='clientIFinit').start()
             self.channelListener.settimeout(
                 config.getint('vars', 'guest_agent_timeout'))
             self.channelListener.start()
@@ -292,9 +292,8 @@ class clientIF(object):
     def start(self):
         for binding in self.bindings.values():
             binding.start()
-        self.thread = threading.Thread(target=self._reactor.process_requests,
-                                       name='Reactor thread')
-        self.thread.setDaemon(True)
+        self.thread = concurrent.thread(self._reactor.process_requests,
+                                        name='Reactor thread')
         self.thread.start()
 
     def _getUUIDSpecPath(self, uuid):
@@ -449,7 +448,6 @@ class clientIF(object):
         else:
             raise JsonRpcBindingsError()
 
-    @utils.traceback()
     def _recoverThread(self):
         # Trying to run recover process until it works. During that time vdsm
         # stays in recovery mode (_recover=True), means all api requests

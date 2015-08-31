@@ -24,13 +24,13 @@ import os
 import stat
 import errno
 from functools import wraps
-import threading
 import re
 import getopt
 import resource
 import signal
 import logging
 import logging.config
+from vdsm import concurrent
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
 
@@ -563,8 +563,7 @@ def main(sockfile, pidfile=None):
             manager.register('instance', callable=_SuperVdsm)
 
             server = manager.get_server()
-            servThread = threading.Thread(target=server.serve_forever)
-            servThread.setDaemon(True)
+            servThread = concurrent.thread(server.serve_forever)
             servThread.start()
 
             chown(address, getpwnam(VDSM_USER).pw_uid, METADATA_GROUP)
