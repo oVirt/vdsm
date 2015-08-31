@@ -180,11 +180,10 @@ Requires: libvirt-daemon-driver-qemu
 %endif
 
 %if 0%{?rhel} >= 7
+Requires: libvirt-daemon >= 1.2.8-16.el7_1.4
 %if 0%{?rhev_build}
-Requires: libvirt-daemon >= 1.2.8-16.el7_1.2
 Requires: libvirt-python >= 1.2.8-7.el7_1.1
 %else
-Requires: libvirt-daemon >= 1.2.8-15.el7
 Requires: libvirt-python
 %endif # rhev_build
 %endif # rhel 7
