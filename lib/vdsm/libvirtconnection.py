@@ -27,6 +27,7 @@ import os
 import signal
 
 import libvirt
+from . import concurrent
 from . import utils
 from .password import ProtectedPassword
 from .tool.configurators import passwd
@@ -41,9 +42,8 @@ class _EventLoop:
 
     def start(self):
         assert not self.run
-        self.__thread = threading.Thread(target=self.__run,
-                                         name="libvirtEventLoop")
-        self.__thread.setDaemon(True)
+        self.__thread = concurrent.thread(self.__run, name="libvirtEventLoop",
+                                          logger=log.name)
         self.run = True
         self.__thread.start()
 
@@ -54,7 +54,6 @@ class _EventLoop:
                 self.__thread.join()
             self.__thread = None
 
-    @utils.traceback(on=log.name)
     def __run(self):
         try:
             libvirt.virEventRegisterDefaultImpl()

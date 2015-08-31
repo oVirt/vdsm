@@ -63,7 +63,7 @@ import logging
 import threading
 import time
 
-from . import utils
+from . import concurrent
 
 
 class Scheduler(object):
@@ -91,8 +91,8 @@ class Scheduler(object):
         self._cond = threading.Condition(threading.Lock())
         self._running = False
         self._calls = []
-        self._thread = threading.Thread(target=self._run, name=self._name)
-        self._thread.daemon = True
+        self._thread = concurrent.thread(self._run, name=self._name,
+                                         logger=self._log.name)
 
     def start(self):
         self._log.debug("Starting scheduler %s", self._name)
@@ -137,7 +137,6 @@ class Scheduler(object):
                 self._cond.notify()
         return call
 
-    @utils.traceback(on=_log.name)
     def _run(self):
         self._log.debug("started")
         try:

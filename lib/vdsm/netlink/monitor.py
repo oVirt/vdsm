@@ -26,6 +26,7 @@ import select
 import threading
 
 from vdsm.utils import NoIntrCall, NoIntrPoll, monotonic_time
+from vdsm import concurrent
 
 from . import (LIBNL, _GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,
@@ -100,8 +101,7 @@ class Monitor(object):
         else:
             self._groups = _GROUPS.keys()
         self._queue = Queue.Queue()
-        self._scan_thread = threading.Thread(target=self._scan)
-        self._scan_thread.daemon = True
+        self._scan_thread = concurrent.thread(self._scan)
         self._scanning_started = threading.Event()
         self._scanning_stopped = threading.Event()
 

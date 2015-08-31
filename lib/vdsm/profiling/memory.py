@@ -26,6 +26,7 @@ This module provides memory profiling.
 import logging
 import threading
 
+from vdsm import concurrent
 from vdsm.config import config
 from vdsm.utils import traceback
 
@@ -86,9 +87,7 @@ def _start_profiling():
     with _lock:
         if is_running():
             raise UsageError('Memory profiler is already running')
-        _thread = threading.Thread(name='memprofile',
-                                   target=_memory_viewer)
-        _thread.daemon = True
+        _thread = concurrent.thread(_memory_viewer, name='memprofile')
         _thread.start()
 
 

@@ -140,8 +140,7 @@ def tmap(func, iterable):
 
     threads = []
     for i, arg in enumerate(args):
-        t = threading.Thread(target=worker, args=(i, func, arg))
-        t.daemon = True
+        t = thread(worker, args=(i, func, arg))
         t.start()
         threads.append(t)
 

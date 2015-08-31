@@ -24,11 +24,10 @@ from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 import logging
 import socket
 import sys
-import threading
 
+from . import concurrent
 from .config import config
 from .executor import TaskQueue
-from .utils import traceback
 
 
 class IPXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
@@ -71,15 +70,14 @@ class SimpleThreadedXMLRPCServer(SimpleXMLRPCDispatcher):
         if sock is self._STOP:
             return
         self.log.info("Starting request handler for %s:%d", addr[0], addr[1])
-        t = threading.Thread(target=self._process_requests, args=(sock, addr))
-        t.daemon = True
+        t = concurrent.thread(self._process_requests, args=(sock, addr),
+                              logger=self.log.name)
         t.start()
 
     def server_close(self):
         self.queue.clear()
         self.queue.put((self._STOP, self._STOP))
 
-    @traceback(on=log.name)
     def _process_requests(self, sock, addr):
         self.log.info("Request handler for %s:%d started", addr[0], addr[1])
         try:

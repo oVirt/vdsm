@@ -27,8 +27,8 @@ import collections
 import logging
 import threading
 
+from . import concurrent
 from . import pthread
-from . import utils
 
 
 class NotRunning(Exception):
@@ -152,8 +152,8 @@ class _Worker(object):
         self._executor = executor
         self._scheduler = scheduler
         self._discarded = False
-        self._thread = threading.Thread(target=self._run, name=name)
-        self._thread.daemon = True
+        self._thread = concurrent.thread(self._run, name=name,
+                                         logger=self._log.name)
         self._log.debug('Starting worker %s' % name)
         self._thread.start()
         self._callable = None
@@ -166,7 +166,6 @@ class _Worker(object):
         self._log.debug('Waiting for worker %s', self.name)
         self._thread.join()
 
-    @utils.traceback(on=_log.name)
     def _run(self):
         pthread.setname(self.name[:15])
         self._log.debug('Worker started')
