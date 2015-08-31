@@ -18,6 +18,7 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 import copy
 import errno
 import glob
@@ -40,6 +41,7 @@ from vdsm import netinfo
 from vdsm import sysctl
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig
+from vdsm.netlink import monitor
 
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
@@ -787,7 +789,20 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
         t.daemon = True
         t.start()
     else:
-        _exec_ifup(iface.name, cgroup)
+        if not iface.master:
+            if iface.ipv4:
+                expected_event = {'label': iface.name, 'family': 'inet',
+                                  'scope': 'global'}
+            elif iface.ipv6:
+                expected_event = {'label': iface.name, 'family': 'inet6',
+                                  'scope': 'global'}
+            else:
+                expected_event = {'label': iface.name, 'family': 'inet6',
+                                  'scope': 'link'}
+            with _wait_for_event(iface, expected_event):
+                _exec_ifup(iface.name, cgroup)
+        else:
+            _exec_ifup(iface.name, cgroup)
 
 
 def _restore_default_bond_options(bond_name, desired_options):
@@ -916,3 +931,31 @@ def _get_unified_persistence_ifcfg():
         ifcfgs.add(ROUTE_PATH % top_level_device)
 
     return ifcfgs
+
+
+def _is_subdict(subdict, superdict):
+    return all(item in frozenset(superdict.items())
+               for item in frozenset(subdict.items()))
+
+
+@contextmanager
+def _wait_for_event(iface, expected_event, timeout=10):
+    with monitor.Monitor(groups=('ipv4-ifaddr', 'ipv6-ifaddr'),
+                         timeout=timeout) as mon:
+        try:
+            yield
+        finally:
+            caught_events = []
+            try:
+                for event in mon:
+                    caught_events.append(event)
+                    if _is_subdict(expected_event, event):
+                        mon.stop()
+            except monitor.MonitorError as e:
+                if e[0] == monitor.E_TIMEOUT:
+                    logging.warning('Expected event "%s" of interface "%s" '
+                                    'was not caught within the given timeout. '
+                                    'Caught events: %s', expected_event, iface,
+                                    caught_events)
+                else:
+                    raise
