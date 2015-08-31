@@ -31,6 +31,7 @@ from weakref import proxy
 
 from imageRepository.formatConverter import DefaultFormatConverter
 
+from vdsm import concurrent
 from vdsm import constants, utils
 import storage_mailbox
 import blockSD
@@ -440,9 +441,10 @@ class StoragePool(object):
                 self._upgradeCallback)
             self.log.debug("Running initial domain upgrade threads")
             for sdUUID in self._domainsToUpgrade:
-                threading.Thread(target=self._upgradeCallback,
-                                 args=(sdUUID, True),
-                                 kwargs={"__securityOverride": True}).start()
+                concurrent.thread(self._upgradeCallback,
+                                  args=(sdUUID, True),
+                                  kwargs={"__securityOverride": True},
+                                  logger=self.log.name).start()
 
     @unsecured
     def __createMailboxMonitor(self):

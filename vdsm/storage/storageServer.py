@@ -21,7 +21,7 @@ import errno
 import logging
 from os.path import normpath, basename, splitext
 import os
-from threading import RLock, Lock, Event, Thread
+from threading import RLock, Lock, Event
 import socket
 import glob
 from collections import namedtuple
@@ -32,6 +32,7 @@ import sys
 
 from vdsm.compat import pickle
 from vdsm.config import config
+from vdsm import concurrent
 from vdsm import supervdsm
 from vdsm import udevadm
 
@@ -777,8 +778,7 @@ class ConnectionMonitor(object):
             self._conDict[alias] = ConnectionFactory.createConnection(conInfo)
 
     def startMonitoring(self):
-        t = Thread(target=self._monitorConnections)
-        t.setDaemon(True)
+        t = concurrent.thread(self._monitorConnections, logger=self._log.name)
         self._stopEvent.clear()
         t.start()
 

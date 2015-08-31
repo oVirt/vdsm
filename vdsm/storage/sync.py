@@ -1,5 +1,6 @@
-from threading import Thread, Event
+from threading import Event
 from functools import wraps
+from vdsm import concurrent
 
 
 def AsyncCallStub(result):
@@ -42,8 +43,7 @@ class AsyncCall(object):
             self._event.set()
 
     def _call(self):
-        t = Thread(target=self._wrapper)
-        t.setDaemon(False)
+        t = concurrent.thread(self._wrapper)
         t.start()
 
 

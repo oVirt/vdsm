@@ -11,6 +11,7 @@ import threading
 from time import sleep
 from Queue import Queue, Empty
 import logging
+from vdsm import concurrent
 
 
 class ThreadPool:
@@ -165,7 +166,7 @@ class ThreadPool:
             self.__resizeLock.release()
 
 
-class WorkerThread(threading.Thread):
+class WorkerThread(object):
 
     """ Pooled thread class. """
 
@@ -174,10 +175,15 @@ class WorkerThread(threading.Thread):
     def __init__(self, pool):
 
         """ Initialize the thread and remember the pool. """
-        threading.Thread.__init__(self)
+        self._thread = concurrent.thread(self.run)
         self.__pool = pool
         self.__isDying = False
-        self.daemon = True
+
+    def start(self):
+        self._thread.start()
+
+    def join(self):
+        self._thread.join()
 
     def _processNextTask(self):
         id, cmd, args, callback = self.__pool.getNextTask()
@@ -189,14 +195,14 @@ class WorkerThread(threading.Thread):
                 self.__pool.__tasks.put((id, cmd, args, callback))
             elif callback is None:
                 self.__pool.setRunningTask(True)
-                self.setName(id)
+                self._thread.name = id
                 self.log.debug("Task: %s running: %s with: %s" %
                                (id, repr(cmd), repr(args)))
                 cmd(args)
                 self.__pool.setRunningTask(False)
             else:
                 self.__pool.setRunningTask(True)
-                self.setName(id)
+                self._thread.name = id
                 callback(cmd(args))
                 self.__pool.setRunningTask(False)
         except Exception:

@@ -23,6 +23,7 @@ import threading
 import time
 import weakref
 
+from vdsm import concurrent
 from vdsm import utils
 from vdsm.config import config
 
@@ -163,8 +164,7 @@ class MonitorThread(object):
     log = logging.getLogger('Storage.Monitor')
 
     def __init__(self, domainMonitor, sdUUID, hostId, interval):
-        self.thread = threading.Thread(target=self._run)
-        self.thread.setDaemon(True)
+        self.thread = concurrent.thread(self._run, logger=self.log.name)
         self.domainMonitor = domainMonitor
         self.stopEvent = threading.Event()
         self.domain = None
@@ -200,7 +200,6 @@ class MonitorThread(object):
         """ Accessed by methods decorated with @util.cancelpoint """
         return self.stopEvent.is_set()
 
-    @utils.traceback(on=log.name)
     def _run(self):
         self.log.debug("Domain monitor for %s started", self.sdUUID)
         try:

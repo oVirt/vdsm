@@ -34,8 +34,8 @@ import misc
 import task
 from threadPool import ThreadPool
 from storage_exception import InvalidParameterException
+from vdsm import concurrent
 from vdsm import constants
-from vdsm import utils
 
 __author__ = "ayalb"
 __date__ = "$Mar 9, 2009 5:25:07 PM$"
@@ -228,7 +228,7 @@ class HSM_Mailbox:
                              "available to flush")
 
 
-class HSM_MailMonitor(threading.Thread):
+class HSM_MailMonitor(object):
     log = logging.getLogger('Storage.MailBox.HsmMailMonitor')
 
     def __init__(self, inbox, outbox, hostID, queue, monitorInterval):
@@ -267,10 +267,9 @@ class HSM_MailMonitor(threading.Thread):
         self._initMailbox()  # Read initial mailbox state
         self._msgCounter = 0
         self._sendMail()  # Clear outgoing mailbox
-        threading.Thread.__init__(self)
-        self.daemon = True
-        self.name = "mailbox.HSMMonitor"
-        self.start()
+        self._thread = concurrent.thread(self.run, name="mailbox.HSMMonitor",
+                                         logger=self.log.name)
+        self._thread.start()
 
     def _initMailbox(self):
         # Sync initial incoming mail state with storage view
@@ -426,8 +425,6 @@ class HSM_MailMonitor(threading.Thread):
                         MESSAGES_PER_MAILBOX,
                         repr(self._outgoingMail[start:end])))
 
-    @utils.traceback(on=log.name,
-                     msg="Unhandled exception in HSM_MailMonitor thread")
     def run(self):
         try:
             failures = 0
@@ -581,9 +578,8 @@ class SPM_MailMonitor:
             self.log.warning("SPM_MailMonitor couldn't clear outgoing mail, "
                              "dd failed")
 
-        t = threading.Thread(target=self.run)
-        t.daemon = True
-        t.name = "mailbox.SPMMonitor"
+        t = concurrent.thread(self.run, name="mailbox.SPMMonitor",
+                              logger=self.log.name)
         t.start()
         self.log.debug('SPM_MailMonitor created for pool %s' % self._poolID)
 
@@ -782,8 +778,6 @@ class SPM_MailMonitor:
         finally:
             self._outLock.release()
 
-    @utils.traceback(on=log.name,
-                     msg="Unhandled exception in SPM_MailMonitor thread")
     def run(self):
         try:
             while not self._stop:

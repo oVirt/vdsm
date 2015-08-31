@@ -23,7 +23,6 @@ This is the Host Storage Manager module.
 """
 
 import os
-import threading
 import logging
 import glob
 from fnmatch import fnmatch
@@ -37,6 +36,7 @@ import math
 import numbers
 import stat
 
+from vdsm import concurrent
 from vdsm.config import config
 import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
@@ -363,16 +363,15 @@ class HSM(object):
         except Exception:
             self.log.warn("Failed to clean Storage Repository.", exc_info=True)
 
-        @utils.traceback(on=self.log.name)
         def storageRefresh():
             sdCache.refreshStorage()
             lvm.bootstrap(refreshlvs=blockSD.SPECIAL_LVS)
             self._ready = True
             self.log.debug("HSM is ready")
 
-        storageRefreshThread = threading.Thread(target=storageRefresh,
-                                                name="storageRefresh")
-        storageRefreshThread.daemon = True
+        storageRefreshThread = concurrent.thread(storageRefresh,
+                                                 name="storageRefresh",
+                                                 logger=self.log.name)
         storageRefreshThread.start()
 
         monitorInterval = config.getint('irs', 'sd_health_check_delay')

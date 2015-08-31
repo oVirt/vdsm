@@ -58,6 +58,7 @@ import misc
 import resourceManager
 from threadLocal import vars
 from weakref import proxy
+from vdsm import concurrent
 from vdsm.config import config
 import outOfProcess as oop
 from logUtils import SimpleLogAdapter
@@ -513,8 +514,8 @@ class Task:
             if (self.cleanPolicy == TaskCleanType.auto and
                     self.store is not None):
                 taskDir = os.path.join(self.store, self.id)
-            threading.Thread(target=finalize,
-                             args=(self.log, self.resOwner, taskDir)).start()
+            concurrent.thread(finalize,
+                              args=(self.log, self.resOwner, taskDir)).start()
 
     def _done(self):
         self.resOwner.releaseAll()

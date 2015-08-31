@@ -39,8 +39,8 @@ import glob
 import logging
 import os
 import sys
-import threading
 
+from vdsm import concurrent
 from vdsm import utils
 
 log = logging.getLogger("fc-scan")
@@ -54,8 +54,7 @@ class Scan(object):
         self.thread = None
 
     def start(self):
-        self.thread = threading.Thread(target=self.run)
-        self.thread.daemon = True
+        self.thread = concurrent.thread(self.run, logger=log.name)
         self.thread.start()
 
     def wait(self):

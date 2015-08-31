@@ -47,6 +47,7 @@ import types
 import weakref
 import inspect
 
+from vdsm import concurrent
 from vdsm import constants
 from vdsm import utils
 from storageConstants import SECTOR_SIZE
@@ -805,8 +806,8 @@ class Event(object):
                     if self._sync:
                         func(*args, **kwargs)
                     else:
-                        threading.Thread(target=func, args=args,
-                                         kwargs=kwargs).start()
+                        concurrent.thread(func, args=args,
+                                          kwargs=kwargs).start()
                 except:
                     self._log.warn("Could not run registered method because "
                                    "of an exception", exc_info=True)
@@ -815,8 +816,7 @@ class Event(object):
 
     def emit(self, *args, **kwargs):
         if len(self._registrar) > 0:
-            threading.Thread(target=self._emit, args=args,
-                             kwargs=kwargs).start()
+            concurrent.thread(self._emit, args=args, kwargs=kwargs).start()
 
 
 class OperationMutex(object):
@@ -938,7 +938,7 @@ def itmap(func, iterable, maxthreads=UNLIMITED_THREADS):
                     maxthreads += 1
                     threadsCount -= 1
 
-        t = threading.Thread(target=wrapper, args=(arg,))
+        t = concurrent.thread(wrapper, args=(arg,))
         t.start()
         threadsCount += 1
         maxthreads -= 1

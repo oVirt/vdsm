@@ -29,6 +29,7 @@ from Queue import Queue
 import storage_exception as se
 import misc
 from logUtils import SimpleLogAdapter
+from vdsm import concurrent
 from vdsm import utils
 
 
@@ -338,8 +339,8 @@ class ResourceRef(object):
                 # deadlock. This is why I need to use a timer. It will defer
                 # the operation and use a different context.
                 ResourceManager.getInstance().releaseResource(namespace, name)
-            threading.Thread(target=release, args=(self._log, self.namespace,
-                                                   self.name)).start()
+            concurrent.thread(release, args=(self._log, self.namespace,
+                                             self.name)).start()
             self._isValid = False
 
     def __repr__(self):

@@ -31,6 +31,7 @@ import misc
 import resourceFactories
 from resourceFactories import IMAGE_NAMESPACE, VOLUME_NAMESPACE
 import resourceManager as rm
+from vdsm import concurrent
 from vdsm import constants
 import clusterlock
 import outOfProcess as oop
@@ -486,7 +487,7 @@ class StorageDomain(object):
 
     def __del__(self):
         if self.stat:
-            threading.Thread(target=self.stat.stop).start()
+            concurrent.thread(self.stat.stop).start()
 
     @property
     def sdUUID(self):
