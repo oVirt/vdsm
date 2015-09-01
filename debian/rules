@@ -32,6 +32,9 @@ override_dh_auto_configure:
 		REBOOT_PATH=/sbin/reboot \
 		SERVICE_PATH=/usr/sbin/service
 
+override_dh_auto_build:
+		sed -i -e 's/@SSL_IMPLEMENTATION@/ssl/g' lib/vdsm/config.py
+		dh_auto_build
 
 destdir = debian/tmp
 

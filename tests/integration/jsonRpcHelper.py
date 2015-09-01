@@ -35,8 +35,13 @@ from yajsonrpc.stomp import (
 from yajsonrpc import Notification
 from protocoldetector import MultiProtocolAcceptor
 from rpc.bindingjsonrpc import BindingJsonRpc
+from vdsm.config import config
 from vdsm import utils
-from m2chelper import DEAFAULT_SSL_CONTEXT
+
+if config.get('vars', 'ssl_implementation') == 'm2c':
+    from integration.m2chelper import DEAFAULT_SSL_CONTEXT
+else:
+    from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 
 PERMUTATIONS = tuple(product((True, False), ("xml", "stomp")))
 

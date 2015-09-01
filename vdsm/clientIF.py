@@ -36,8 +36,8 @@ from vdsm.config import config
 from momIF import MomClient
 from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode
+from vdsm.sslcompat import sslutils
 import libvirt
-from vdsm import m2cutils
 from vdsm import libvirtconnection
 from vdsm import constants
 from vdsm import utils
@@ -193,7 +193,7 @@ class clientIF(object):
         return cls._instance
 
     def _createAcceptor(self, host, port):
-        sslctx = m2cutils.create_ssl_context()
+        sslctx = sslutils.create_ssl_context()
         self._reactor = Reactor()
 
         self._acceptor = MultiProtocolAcceptor(self._reactor, host,
@@ -205,7 +205,7 @@ class clientIF(object):
             broker_port = config.getint('addresses', 'broker_port')
             request_queues = config.get('addresses', 'request_queues')
 
-            sslctx = m2cutils.create_ssl_context()
+            sslctx = sslutils.create_ssl_context()
             sock = socket.socket()
             sock.connect((broker_address, broker_port))
             if sslctx:

@@ -110,7 +110,7 @@ class TcpkeepHTTP(httplib.HTTP):
 
 ###################
 # the same, for ssl
-from vdsm import m2cutils
+from vdsm.sslcompat import sslutils
 import ssl
 
 
@@ -122,7 +122,7 @@ def SslServer(url, ctx, *args, **kwargs):
 SslServerProxy = SslServer
 
 
-class TcpkeepSafeTransport(m2cutils.VerifyingSafeTransport):
+class TcpkeepSafeTransport(sslutils.VerifyingSafeTransport):
 
     def make_connection(self, host):
         chost, self._extra_headers, x509 = self.get_host_info(host)
@@ -139,17 +139,17 @@ class TcpkeepSafeTransport(m2cutils.VerifyingSafeTransport):
                 cert_reqs=self.cert_reqs)
 
 
-class TcpkeepHTTPSConnection(m2cutils.VerifyingHTTPSConnection):
+class TcpkeepHTTPSConnection(sslutils.VerifyingHTTPSConnection):
     def __init__(self, host, port=None, key_file=None, cert_file=None,
                  strict=None, timeout=CONNECTTIMEOUT,
                  ca_certs=None, cert_reqs=ssl.CERT_REQUIRED):
-        m2cutils.VerifyingHTTPSConnection.__init__(
+        sslutils.VerifyingHTTPSConnection.__init__(
             self, host, port=port, key_file=key_file, cert_file=cert_file,
             strict=strict, timeout=timeout,
             ca_certs=ca_certs, cert_reqs=cert_reqs)
 
     def connect(self):
-        m2cutils.VerifyingHTTPSConnection.connect(self)
+        sslutils.VerifyingHTTPSConnection.connect(self)
 
         # after TCP_KEEPIDLE seconds of silence, TCP_KEEPCNT probes would be
         # sent, TCP_KEEPINTVL seconds apart of each other. If all of them fail,
@@ -160,5 +160,5 @@ class TcpkeepHTTPSConnection(m2cutils.VerifyingHTTPSConnection):
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, KEEPCNT)
 
 
-class TcpkeepHTTPS(m2cutils.VerifyingHTTPS):
+class TcpkeepHTTPS(sslutils.VerifyingHTTPS):
     _connection_class = TcpkeepHTTPSConnection

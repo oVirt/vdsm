@@ -23,7 +23,7 @@ import threading
 from vdsm import utils
 from vdsm.config import config
 from vdsm.compat import json
-from vdsm.m2cutils import SSLSocket
+from vdsm.sslcompat import SSLSocket
 from . import JsonRpcClient, JsonRpcServer
 from . import stomp
 from .betterAsyncore import Dispatcher, Reactor

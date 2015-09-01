@@ -623,6 +623,8 @@ sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
        -e 's/^raw_version_revision =.*/raw_version_revision = "'"${rawversion}"'"/' \
        -e 's/^software_revision =.*/software_revision = "'"${baserelease}"'"/' vdsm/dsaversion.py
 
+sed -i -e 's/@SSL_IMPLEMENTATION@/m2c/g' lib/vdsm/config.py
+
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
@@ -1074,6 +1076,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/response.py*
 %{python_sitelib}/%{vdsm_name}/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/schedule.py*
+%{python_sitelib}/%{vdsm_name}/sslcompat.py*
+%{python_sitelib}/%{vdsm_name}/sslutils.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm.py*
 %{python_sitelib}/%{vdsm_name}/sysctl.py*
 %{python_sitelib}/%{vdsm_name}/taskset.py*

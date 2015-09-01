@@ -24,7 +24,7 @@ import socket
 import vdsm.infra.filecontrol as filecontrol
 
 from vdsm.utils import monotonic_time
-from vdsm.m2cutils import SSLHandshakeDispatcher
+from vdsm.sslcompat import SSLHandshakeDispatcher
 
 
 def _create_socket(host, port):

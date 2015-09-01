@@ -77,4 +77,8 @@ class CrossImportsTestCaseShould(TestCaseBase):
         else:
             mods = get_mods(os.path.join(get_python_lib(), pkg_name))
 
+        # skip the test for m2cutils as we cannot even import it on systems
+        # with no M2Crypto
+        mods.remove('m2cutils')
+
         __import__(pkg_name, fromlist=mods)

@@ -29,9 +29,14 @@ import time
 
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
-
-from vdsm import m2cutils
 from vdsm import vdscli
+try:
+    from vdsm import m2cutils as sslutils
+    from integration.m2chelper import get_server_socket
+except ImportError:
+    from vdsm import sslutils
+    from integration.sslhelper import get_server_socket
+
 
 HOST = '127.0.0.1'
 
@@ -51,11 +56,8 @@ class TestServer():
         if useSSL:
             KEY_FILE = os.path.join(path, 'keys/vdsmkey.pem')
             CRT_FILE = os.path.join(path, 'certs/vdsmcert.pem')
-            self.server.socket = m2cutils.SSLServerSocket(
-                raw=self.server.socket,
-                keyfile=KEY_FILE,
-                certfile=CRT_FILE,
-                ca_certs=CRT_FILE)
+            self.server.socket = get_server_socket(KEY_FILE, CRT_FILE,
+                                                   self.server.socket)
 
         _, self.port = self.server.socket.getsockname()
         self.server.register_instance(TestingService())
@@ -74,7 +76,7 @@ class TestServer():
 
 @contextmanager
 def setupclient(useSSL, tsPath,
-                timeout=m2cutils.SOCKET_DEFAULT_TIMEOUT):
+                timeout=sslutils.SOCKET_DEFAULT_TIMEOUT):
     server = TestServer(useSSL, tsPath)
     server.start()
     hostPort = '0:' + str(server.port)

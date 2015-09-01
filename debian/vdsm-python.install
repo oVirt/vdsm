@@ -13,7 +13,6 @@
 ./usr/lib/python2.7/dist-packages/vdsm/ipwrapper.py
 ./usr/lib/python2.7/dist-packages/vdsm/jsonrpcvdscli.py
 ./usr/lib/python2.7/dist-packages/vdsm/libvirtconnection.py
-./usr/lib/python2.7/dist-packages/vdsm/m2cutils.py
 ./usr/lib/python2.7/dist-packages/vdsm/netconfpersistence.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo.py
 ./usr/lib/python2.7/dist-packages/vdsm/netlink/__init__.py
@@ -32,6 +31,8 @@
 ./usr/lib/python2.7/dist-packages/vdsm/qemuimg.py
 ./usr/lib/python2.7/dist-packages/vdsm/response.py
 ./usr/lib/python2.7/dist-packages/vdsm/schedule.py
+./usr/lib/python2.7/dist-packages/vdsm/sslcompat.py
+./usr/lib/python2.7/dist-packages/vdsm/sslutils.py
 ./usr/lib/python2.7/dist-packages/vdsm/supervdsm.py
 ./usr/lib/python2.7/dist-packages/vdsm/taskset.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/__init__.py

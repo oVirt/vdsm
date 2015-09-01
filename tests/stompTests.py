@@ -26,9 +26,14 @@ from testlib import VdsmTestCase as TestCaseBase, \
     dummyTextGenerator
 
 from integration.jsonRpcHelper import constructAcceptor
-from integration.m2chelper import DEAFAULT_SSL_CONTEXT
 from yajsonrpc.stompreactor import StandAloneRpcClient
-from vdsm.utils import running
+from vdsm.config import config
+from vdsm import utils
+
+if config.get('vars', 'ssl_implementation') == 'm2c':
+    from integration.m2chelper import DEAFAULT_SSL_CONTEXT
+else:
+    from integration.sslhelper import DEAFAULT_SSL_CONTEXT
 
 
 CALL_TIMEOUT = 15
@@ -61,9 +66,11 @@ class StompTests(TestCaseBase):
         with constructAcceptor(self.log, use_ssl, _SampleBridge()) as acceptor:
             sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None
 
-            with running(StandAloneRpcClient(acceptor._host, acceptor._port,
-                                             'jms.topic.vdsm_requests',
-                                             str(uuid4()), sslctx)) as client:
+            with utils.running(StandAloneRpcClient(acceptor._host,
+                                                   acceptor._port,
+                                                   'jms.topic.vdsm_requests',
+                                                   str(uuid4()),
+                                                   sslctx)) as client:
                 self.assertEquals(client.callMethod('echo', (data,),
                                                     str(uuid4())),
                                   data)
@@ -75,7 +82,6 @@ class StompTests(TestCaseBase):
         with constructAcceptor(self.log, use_ssl, _SampleBridge(),
                                'jms.queue.events') as acceptor:
             sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None
-
             client = StandAloneRpcClient(acceptor._host, acceptor._port,
                                          'jms.topic.vdsm_requests',
                                          'jms.queue.events', sslctx, False)
