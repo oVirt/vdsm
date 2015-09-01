@@ -36,6 +36,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 # vdsm imports
+from vdsm import concurrent
 from vdsm import constants
 from vdsm import libvirtconnection
 from vdsm import netinfo
@@ -273,7 +274,7 @@ class Vm(object):
         self._confLock = threading.Lock()
         self._jobsLock = threading.Lock()
         self._statusLock = threading.Lock()
-        self._creationThread = threading.Thread(target=self._startUnderlyingVm)
+        self._creationThread = concurrent.thread(self._startUnderlyingVm)
         if 'migrationDest' in self.conf:
             self._lastStatus = vmstatus.MIGRATION_DESTINATION
         elif 'restoreState' in self.conf:
