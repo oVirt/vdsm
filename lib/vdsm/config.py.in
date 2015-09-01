@@ -212,8 +212,13 @@ parameters = [
             'Comma separated whitelist of CPU cores on which VDSM is allowed '
             'to run. The default is "", meaning VDSM can be scheduled by '
             ' the OS to run on any core. '
-            'Valid examples: "1", "0,1", "0,2,3"')
+            'Valid examples: "1", "0,1", "0,2,3"'),
 
+        ('ssl_implementation', '@SSL_IMPLEMENTATION@',
+            'Specifies which ssl implementation should be used. '
+            'There are 2 options: '
+            '"m2c" to use the m2crypto module '
+            '"ssl" to use the standard python ssl module'),
     ]),
 
     # Section: [mom]

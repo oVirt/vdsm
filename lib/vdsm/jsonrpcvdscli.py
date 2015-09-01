@@ -22,7 +22,6 @@ from functools import partial
 from uuid import uuid4
 import socket
 
-from . import m2cutils
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcRequest, \
@@ -30,6 +29,7 @@ from yajsonrpc import \
 
 from vdsm import response
 from .config import config
+from .sslcompat import sslutils
 
 
 _COMMAND_CONVERTER = {
@@ -95,7 +95,7 @@ def _create(requestQueue,
         useSSL = config.getboolean('vars', 'ssl')
 
     if useSSL:
-        sslctx = m2cutils.create_ssl_context()
+        sslctx = sslutils.create_ssl_context()
     else:
         sslctx = None
 

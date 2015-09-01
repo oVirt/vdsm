@@ -17,13 +17,18 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from .config import config
 
-vdsmintegrationtestsdir = ${vdsmtestsdir}/integration
+if config.get('vars', 'ssl_implementation') == 'm2c':
+    from . import m2cutils as sslutils
+    from .m2cutils import SSLHandshakeDispatcher
+    from .m2cutils import SSLSocket
+else:
+    from . import sslutils
+    from .sslutils import SSLHandshakeDispatcher
+    from ssl import SSLSocket
 
-dist_vdsmintegrationtests_PYTHON = \
-	__init__.py \
-	jsonRpcHelper.py \
-	jsonRpcTests.py \
-	m2chelper.py \
-	sslhelper.py \
-	$(NULL)
+# we need it to satisfy pyflakes
+sslutils
+SSLHandshakeDispatcher
+SSLSocket

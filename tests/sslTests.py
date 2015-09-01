@@ -22,7 +22,6 @@ from __future__ import print_function
 import errno
 import os
 import re
-import SimpleXMLRPCServer
 import socket
 import ssl
 import subprocess
@@ -31,12 +30,21 @@ import threading
 import xmlrpclib
 
 from contextlib import contextmanager, closing
-from M2Crypto import SSL
-from integration.m2chelper import KEY_FILE, \
-    CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
 from testlib import VdsmTestCase as TestCaseBase
-from vdsm.m2cutils import SSLServerSocket
-from vdsm.m2cutils import VerifyingSafeTransport
+from nose.plugins.skip import SkipTest
+try:
+    from vdsm.m2cutils import VerifyingSafeTransport
+    from integration.m2chelper import TestServer, \
+        get_server_socket, KEY_FILE, \
+        CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
+    _m2cEnabled = True
+except ImportError:
+    from vdsm.sslutils import VerifyingSafeTransport
+    from integration.sslhelper import TestServer, \
+        get_server_socket, KEY_FILE, \
+        CRT_FILE, OTHER_KEY_FILE, OTHER_CRT_FILE
+    _m2cEnabled = False
+
 
 HOST = '127.0.0.1'
 
@@ -45,35 +53,6 @@ class MathService():
 
     def add(self, x, y):
         return x + y
-
-
-class TestServer():
-
-    def __init__(self):
-        self.server = SimpleXMLRPCServer.SimpleXMLRPCServer((HOST, 0),
-                                                            logRequests=False)
-        self.server.socket = SSLServerSocket(raw=self.server.socket,
-                                             keyfile=KEY_FILE,
-                                             certfile=CRT_FILE,
-                                             ca_certs=CRT_FILE)
-        _, self.port = self.server.socket.getsockname()
-        self.server.register_instance(MathService())
-
-    def start(self):
-        self.thread = threading.Thread(target=self.serve_forever)
-        self.thread.daemon = True
-        self.thread.start()
-
-    def serve_forever(self):
-        try:
-            self.server.serve_forever()
-        except SSL.SSLError:
-            # expected sslerror is thrown in server side during test_invalid
-            # method we do not want to pollute test console output
-            pass
-
-    def stop(self):
-        self.server.shutdown()
 
 
 class VerifyingClient():
@@ -97,7 +76,7 @@ class VerifyingClient():
 
 @contextmanager
 def verifyingclient(key_file, crt_file):
-    server = TestServer()
+    server = TestServer(HOST, MathService())
     server.start()
     try:
         client = VerifyingClient(server.port, key_file, crt_file)
@@ -112,9 +91,8 @@ def verifyingclient(key_file, crt_file):
 class SocketTests(TestCaseBase):
 
     def test_block_socket(self):
-        server = TestServer()
-        server.server.socket.accept_timeout = 1
-        timeout = server.server.socket.accept_timeout + 1
+        server = TestServer(HOST, MathService())
+        timeout = server.get_timeout()
         server.start()
         try:
             with closing(socket.socket(socket.AF_INET,
@@ -222,11 +200,8 @@ class SSLTests(TestCaseBase):
 
         # Create the server socket:
         self.server = socket.socket()
-        self.server = SSLServerSocket(
-            raw=self.server,
-            keyfile=self.keyfile,
-            certfile=self.certfile,
-            ca_certs=self.certfile)
+        self.server = get_server_socket(self.keyfile, self.certfile,
+                                        self.server)
         self.address = self.tryBind(ADDRESS)
         self.server.listen(5)
 
@@ -357,6 +332,11 @@ class SSLTests(TestCaseBase):
         Verify that SSL the session identifier is preserved when
         connecting two times without stopping the server.
         """
+        if not _m2cEnabled:
+            raise SkipTest(
+                'support for SSL sessions discontinued and may be reintroduced'
+                ' when we move to python 3'
+            )
 
         # Create a temporary file to store the session details:
         sessionDetailsFile = tempfile.NamedTemporaryFile(delete=False)

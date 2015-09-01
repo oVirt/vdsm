@@ -26,7 +26,7 @@ import os
 import re
 import sys
 from xml.parsers.expat import ExpatError
-from . import m2cutils
+from .sslcompat import sslutils
 
 
 _USE_SSL = False
@@ -60,7 +60,7 @@ class SingleRequestTransport(xmlrpclib.Transport):
             self.timeout = kwargs['timeout']
             del kwargs['timeout']
         else:
-            self.timeout = m2cutils.SOCKET_DEFAULT_TIMEOUT
+            self.timeout = sslutils.SOCKET_DEFAULT_TIMEOUT
 
         xmlrpclib.Transport.__init__(self, *args, **kwargs)
 
@@ -107,8 +107,8 @@ def cannonizeHostPort(hostPort=None, port=PORT):
 
 
 def connect(hostPort=None, useSSL=None, tsPath=None,
-            TransportClass=m2cutils.VerifyingSafeTransport,
-            timeout=m2cutils.SOCKET_DEFAULT_TIMEOUT):
+            TransportClass=sslutils.VerifyingSafeTransport,
+            timeout=sslutils.SOCKET_DEFAULT_TIMEOUT):
 
     hostPort = cannonizeHostPort(hostPort)
     if useSSL is None:

@@ -26,10 +26,14 @@ import time
 from contextlib import contextmanager
 
 from yajsonrpc.betterAsyncore import Reactor
-from vdsm import m2cutils
+from vdsm.config import config
 from protocoldetector import MultiProtocolAcceptor
-from integration.m2chelper import KEY_FILE, CRT_FILE
 from testlib import VdsmTestCase, expandPermutations, permutations
+
+if config.get('vars', 'ssl_implementation') == 'm2c':
+    from integration.m2chelper import KEY_FILE, CRT_FILE, DEAFAULT_SSL_CONTEXT
+else:
+    from integration.sslhelper import KEY_FILE, CRT_FILE, DEAFAULT_SSL_CONTEXT
 
 
 class Detector(object):
@@ -97,7 +101,7 @@ class AcceptorTests(VdsmTestCase):
     GRACETIME = 0.5
     CONCURRENCY = 5
     PERMUTATIONS = ((False,), (True,))
-    SSLCTX = m2cutils.SSLContext(CRT_FILE, KEY_FILE, ca_cert=CRT_FILE)
+    SSLCTX = DEAFAULT_SSL_CONTEXT
     BUFSIZE = 512
 
     def setUp(self):

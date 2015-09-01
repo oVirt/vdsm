@@ -54,7 +54,6 @@ import string
 import threading
 import time
 import vdsm.infra.zombiereaper as zombiereaper
-from M2Crypto import SSL
 
 from cpopen import CPopen
 from .config import config
@@ -1266,11 +1265,10 @@ def round(n, size):
 
 
 def create_connected_socket(host, port, sslctx=None, timeout=None):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     if sslctx:
-        sock = SSL.Connection(sslctx.context)
-    else:
-        sock = socket.socket(socket.AF_INET,
-                             socket.SOCK_STREAM)
+        sock = sslctx.wrapSocket(sock)
+
     sock.settimeout(timeout)
     sock.connect((host, port))
     return sock

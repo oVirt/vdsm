@@ -22,7 +22,7 @@ import logging
 import socket
 from errno import EWOULDBLOCK
 
-from vdsm.m2cutils import SSL
+from vdsm.sslcompat import sslutils
 from vdsm.infra.eventfd import EventFD
 
 
@@ -120,8 +120,8 @@ class Dispatcher(asyncore.dispatcher):
                 return ''
             else:
                 raise
-        except SSL.SSLError as e:
-            self._log.info('SSL error during recv: %s, closing connection', e)
+        except sslutils.SSLError as e:
+            self._log.error('SSL error during reading data: %s', e)
             self.handle_close()
             return ''
 

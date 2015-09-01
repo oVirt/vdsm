@@ -28,10 +28,10 @@ from vdsm import response
 from vdsm import utils
 from vdsm import vdscli
 from vdsm import jsonrpcvdscli
-from vdsm import m2cutils
 from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import NORMAL, Mbytes
+from vdsm.sslcompat import sslutils
 from yajsonrpc import \
     JsonRpcNoResponseError, \
     JsonRpcBindingsError
@@ -125,7 +125,7 @@ class SourceThread(threading.Thread):
         return self.status
 
     def _createClient(self, port):
-        sslctx = m2cutils.create_ssl_context()
+        sslctx = sslutils.create_ssl_context()
         client_socket = utils.create_connected_socket(
             self.remoteHost, int(port), sslctx)
         return self._vm.cif.createStompClient(client_socket)

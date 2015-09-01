@@ -40,6 +40,8 @@ dist_vdsmpylib_PYTHON = \
 	qemuimg.py \
 	response.py \
 	schedule.py \
+	sslcompat.py \
+	sslutils.py \
 	sysctl.py \
 	taskset.py \
 	udevadm.py \

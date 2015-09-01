@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,163 +25,76 @@ import socket
 import ssl
 import xmlrpclib
 
-from vdsm.utils import (
-    monotonic_time,
-)
+from ssl import SSLError
+from vdsm.utils import monotonic_time
 from .config import config
-
-from M2Crypto import SSL, X509, threading
-from M2Crypto.SSL import SSLError
 
 
 DEFAULT_ACCEPT_TIMEOUT = 5
 SOCKET_DEFAULT_TIMEOUT = socket._GLOBAL_DEFAULT_TIMEOUT
 
-# M2Crypto.threading needs initialization.
-# See https://bugzilla.redhat.com/482420
-threading.init()
-
 
 class SSLSocket(object):
-    def __init__(self, connection):
-        self.connection = connection
+    def __init__(self, sock):
+        self.sock = sock
         self._data = ''
 
-    def gettimeout(self):
-        return self.connection.socket.gettimeout()
-
-    def settimeout(self, *args, **kwargs):
-        settimeout = getattr(self.connection, 'settimeout',
-                             self.connection.socket.settimeout)
-        return settimeout(*args, **kwargs)
-
-    def close(self):
-        self.connection.shutdown(socket.SHUT_RDWR)
-        self.connection.close()
-
-    def fileno(self):
-        return self.connection.fileno()
-
-    # M2C do not provide message peek so
-    # we buffer first consumed message
+    # ssl do not accept flag other than 0
     def read(self, size=4096, flag=None):
         result = None
-        if flag == socket.MSG_PEEK:
-            bytes_left = size - len(self._data)
-            if bytes_left > 0:
-                self._data += self.connection.read(bytes_left)
-            result = self._data
-        else:
-            if self._data:
+        try:
+            if flag == socket.MSG_PEEK:
+                bytes_left = size - len(self._data)
+                if bytes_left > 0:
+                    self._data += self.sock.read(bytes_left)
                 result = self._data
-                self._data = ''
             else:
-                result = self.connection.read(size)
+                if self._data:
+                    result = self._data
+                    self._data = ''
+                else:
+                    result = self.sock.read(size)
+        except SSLError as e:
+            if e.errno != ssl.SSL_ERROR_WANT_READ:
+                raise
+
         return result
     recv = read
 
     def pending(self):
-        pending = self.connection.pending()
+        pending = self.sock.pending()
         if self._data:
             pending = pending + len(self._data)
         return pending
+
+    def __getattr__(self, name):
+        return getattr(self.sock, name)
 
     def makefile(self, mode='rb', bufsize=-1):
         if mode == 'rb':
             return socket._fileobject(self, mode, bufsize)
         else:
-            return self.connection.makefile(mode, bufsize)
-
-    def __getattr__(self, name):
-        return getattr(self.connection, name)
-
-
-class SSLServerSocket(SSLSocket):
-    def __init__(self, raw, certfile=None, keyfile=None, ca_certs=None,
-                 session_id="vdsm", protocol="sslv23"):
-        self.context = SSL.Context(protocol)
-        self.context.set_session_id_ctx(session_id)
-
-        if certfile and keyfile:
-            self.context.load_cert_chain(certfile, keyfile)
-
-        def verify(context, certificate, error, depth, result):
-            if not result:
-                certificate = X509.X509(certificate)
-
-            return result
-
-        if ca_certs:
-            self.context.load_verify_locations(ca_certs)
-            self.context.set_verify(
-                mode=SSL.verify_peer | SSL.verify_fail_if_no_peer_cert,
-                depth=10,
-                callback=verify)
-
-        self.connection = SSL.Connection(self.context, sock=raw)
-
-        self.accept_timeout = DEFAULT_ACCEPT_TIMEOUT
-
-    def fileno(self):
-        return self.connection.socket.fileno()
-
-    def accept(self):
-        client, address = self.connection.socket.accept()
-        client = SSL.Connection(self.context, client)
-        client.addr = address
-        try:
-            client.setup_ssl()
-            client.set_accept_state()
-            client.settimeout(self.accept_timeout)
-            client.accept_ssl()
-            client.settimeout(None)
-        except SSLError as e:
-            raise SSLError("%s, client %s" % (e, address[0]))
-
-        client = SSLSocket(client)
-
-        return client, address
+            return self.sock.makefile(mode, bufsize)
 
 
 class SSLContext(object):
-    def __init__(self, cert_file, key_file, ca_cert=None, session_id="SSL",
-                 protocol="tlsv1"):
+    def __init__(self, cert_file, key_file, ca_certs=None,
+                 protocol=ssl.PROTOCOL_TLSv1):
         self.cert_file = cert_file
         self.key_file = key_file
-        self.ca_certs = ca_cert
-        self.session_id = session_id
+        self.ca_certs = ca_certs
         self.protocol = protocol
-        self._initContext()
-
-    def _loadCertChain(self):
-        if self.cert_file and self.key_file:
-            self.context.load_cert_chain(self.cert_file, self.key_file)
-
-    def _verify(self, context, certificate, error, depth, result):
-        if not result:
-            certificate = X509.X509(certificate)
-        return result
-
-    def _loadCAs(self):
-        context = self.context
-
-        if self.ca_certs:
-            context.load_verify_locations(self.ca_certs)
-            context.set_verify(
-                mode=SSL.verify_peer | SSL.verify_fail_if_no_peer_cert,
-                depth=10,
-                callback=self._verify)
-
-    def _initContext(self):
-        self.context = context = SSL.Context(self.protocol)
-        context.set_session_id_ctx(self.session_id)
-
-        self._loadCertChain()
-        self._loadCAs()
 
     def wrapSocket(self, sock):
-        context = self.context
-        return SSLSocket(SSL.Connection(context, sock=sock))
+        return SSLSocket(
+            ssl.wrap_socket(sock,
+                            keyfile=self.key_file,
+                            certfile=self.cert_file,
+                            server_side=False,
+                            cert_reqs=ssl.CERT_REQUIRED,
+                            ssl_version=self.protocol,
+                            ca_certs=self.ca_certs)
+        )
 
 
 class VerifyingHTTPSConnection(httplib.HTTPSConnection):
@@ -290,25 +203,25 @@ class SSLHandshakeDispatcher(object):
         self._give_up_at = monotonic_time() + handshake_timeout
         self._has_been_set_up = False
         self._is_handshaking = True
+        self.want_read = True
+        self.want_write = True
         self._sslctx = sslctx
         self._handshake_finished_handler = handshake_finished_handler
 
     def _set_up_socket(self, dispatcher):
         client_socket = dispatcher.socket
-        client_socket = self._sslctx.wrapSocket(client_socket)
-        # Older versions of M2Crypto ignore nbio and retry internally
-        # if timeout is set.
-        client_socket.settimeout(None)
-        client_socket.address = client_socket.getpeername()
-        try:
-            client_socket.setup_ssl()
-            client_socket.set_accept_state()
-        except SSLError as e:
-            self.log.error("Error setting up ssl: %s", e)
-            dispatcher.close()
-            return
+        client_socket = SSLSocket(
+            ssl.wrap_socket(client_socket,
+                            keyfile=self._sslctx.key_file,
+                            certfile=self._sslctx.cert_file,
+                            server_side=True,
+                            cert_reqs=ssl.CERT_REQUIRED,
+                            ssl_version=self._sslctx.protocol,
+                            ca_certs=self._sslctx.ca_certs,
+                            do_handshake_on_connect=False))
 
         dispatcher.socket = client_socket
+        self._has_been_set_up = True
 
     def next_check_interval(self):
         return max(self._give_up_at - monotonic_time(), 0)
@@ -318,38 +231,87 @@ class SSLHandshakeDispatcher(object):
             dispatcher.close()
             return False
 
-        return True
+        return self.want_read
 
     def writable(self, dispatcher):
-        return False
+        if self.has_expired():
+            dispatcher.close()
+            return False
+
+        return self.want_write
 
     def has_expired(self):
         return monotonic_time() >= self._give_up_at
 
     def handle_read(self, dispatcher):
+        self._handle_io(dispatcher)
+
+    def handle_write(self, dispatcher):
+        self._handle_io(dispatcher)
+
+    def _handle_io(self, dispatcher):
         if not self._has_been_set_up:
             self._set_up_socket(dispatcher)
 
         if self._is_handshaking:
-            try:
-                self._is_handshaking = (dispatcher.socket.accept_ssl() == 0)
-            except Exception as e:
-                self.log.error("Error during handshake: %s", e)
-                dispatcher.close()
+            self._handshake(dispatcher)
+        else:
+            if not self._verify_host(dispatcher.socket.getpeercert(),
+                                     dispatcher.socket.getpeername()[0]):
+                self.log.error("peer certificate does not match host name")
+                dispatcher.socket.close()
+                return
 
-        if not self._is_handshaking:
             self._handshake_finished_handler(dispatcher)
+
+    def _verify_host(self, peercert, addr):
+        if not peercert:
+            return False
+
+        for sub in peercert.get("subject", ()):
+            for key, value in sub:
+                if key == "commonName":
+                    return self._compare_names(addr, value)
+
+        return False
+
+    def _compare_names(self, addr, name):
+        if addr == name or addr == '127.0.0.1':
+            return True
+        else:
+            return name.lower() == socket.gethostbyaddr(addr)[0].lower()
+
+    def _handshake(self, dispatcher):
+        try:
+            dispatcher.socket.do_handshake()
+        except SSLError as err:
+            self.want_read = self.want_write = False
+            if err.args[0] == ssl.SSL_ERROR_WANT_READ:
+                self.want_read = True
+            elif err.args[0] == ssl.SSL_ERROR_WANT_WRITE:
+                self.want_write = True
+            else:
+                dispatcher.close()
+                raise
+        else:
+            self.want_read = self.want_write = True
+            self._is_handshaking = False
 
 
 def create_ssl_context():
-    if config.getboolean('vars', 'ssl'):
-        truststore_path = config.get('vars', 'trust_store_path')
-        key_file = os.path.join(truststore_path, 'keys', 'vdsmkey.pem')
-        cert_file = os.path.join(truststore_path, 'certs', 'vdsmcert.pem')
-        ca_cert = os.path.join(truststore_path, 'certs', 'cacert.pem')
-        protocol = config.get('vars', 'ssl_protocol')
-        sslctx = SSLContext(cert_file, key_file, ca_cert=ca_cert,
-                            protocol=protocol)
+        sslctx = None
+        if config.getboolean('vars', 'ssl'):
+            truststore_path = config.get('vars', 'trust_store_path')
+            protocol = (
+                ssl.PROTOCOL_SSLv23
+                if config.get('vars', 'ssl_protocol') == 'sslv23'
+                else ssl.PROTOCOL_TLSv1
+            )
+            sslctx = SSLContext(
+                key_file=os.path.join(truststore_path, 'keys', 'vdsmkey.pem'),
+                cert_file=os.path.join(truststore_path, 'certs',
+                                       'vdsmcert.pem'),
+                ca_certs=os.path.join(truststore_path, 'certs', 'cacert.pem'),
+                protocol=protocol
+            )
         return sslctx
-    else:
-        return None
