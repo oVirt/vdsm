@@ -243,14 +243,13 @@ class StompAdapterImpl(object):
 class _StompConnection(object):
 
     def __init__(self, server, aclient, sock, reactor):
-        self._socket = sock
         self._reactor = reactor
         self._server = server
         self._messageHandler = None
 
         self._async_client = aclient
-        adisp = self._adisp = stomp.AsyncDispatcher(self, aclient)
-        self._dispatcher = Dispatcher(adisp, sock=sock, map=reactor._map)
+        self._dispatcher = reactor.create_dispatcher(
+            sock, stomp.AsyncDispatcher(self, aclient))
 
     def send_raw(self, msg):
         self._async_client.queue_frame(msg)
@@ -268,7 +267,7 @@ class _StompConnection(object):
             self._async_client.remove_subscriptions()
 
     def get_local_address(self):
-        return self._socket.getsockname()[0]
+        return self._dispatcher.socket.getsockname()[0]
 
     def set_message_handler(self, msgHandler):
         self._messageHandler = msgHandler
@@ -276,7 +275,8 @@ class _StompConnection(object):
 
     def handleMessage(self, data):
         if self._messageHandler is not None:
-            self._messageHandler((self._server, self, data))
+            self._messageHandler((self._server, self.get_local_address(),
+                                  data))
 
     def is_closed(self):
         return not self._dispatcher.connected

@@ -245,10 +245,10 @@ class _JsonRpcClientRequestContext(object):
 
 
 class _JsonRpcServeRequestContext(object):
-    def __init__(self, client, conn):
+    def __init__(self, client, addr):
         self._requests = []
         self._client = client
-        self._conn = conn
+        self._addr = addr
         self._counter = 0
         self._requests = {}
         self._responses = []
@@ -266,8 +266,8 @@ class _JsonRpcServeRequestContext(object):
         return self._counter
 
     @property
-    def connection(self):
-        return self._conn
+    def address(self):
+        return self._addr
 
     def sendReply(self):
         if len(self._requests) > 0:
@@ -514,8 +514,7 @@ class JsonRpcServer(object):
 
         try:
             params = req.params
-            server_address = ctx.connection.get_local_address()
-            self._bridge.register_server_address(server_address)
+            self._bridge.register_server_address(ctx.address)
             if isinstance(req.params, list):
                 res = method(*params)
             else:
@@ -541,11 +540,11 @@ class JsonRpcServer(object):
             if obj is None:
                 break
 
-            client, conn, msg = obj
-            self._parseMessage(client, conn, msg)
+            client, addr, msg = obj
+            self._parseMessage(client, addr, msg)
 
-    def _parseMessage(self, client, conn, msg):
-        ctx = _JsonRpcServeRequestContext(client, conn)
+    def _parseMessage(self, client, addr, msg):
+        ctx = _JsonRpcServeRequestContext(client, addr)
 
         try:
             rawRequests = json.loads(msg)
