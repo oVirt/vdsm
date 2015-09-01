@@ -543,8 +543,10 @@ def _wait_for_udev_events():
     udevadm.settle(timeout=10)
 
 
-def _update_numvfs(device_name, numvfs):
-    with open(_SYSFS_SRIOV_NUMVFS.format(device_name), 'w', 0) as f:
+def _update_numvfs(pci_path, numvfs):
+    """pci_path is a string looking similar to "0000:00:19.0"
+    """
+    with open(_SYSFS_SRIOV_NUMVFS.format(pci_path), 'w', 0) as f:
         # Zero needs to be written first in order to remove previous VFs.
         # Trying to just write the number (if n > 0 VF's existed before)
         # results in 'write error: Device or resource busy'
@@ -566,18 +568,18 @@ def _persist_numvfs(device_name, numvfs):
         f.write(str(numvfs))
 
 
-def change_numvfs(device_name, numvfs):
+def change_numvfs(pci_path, numvfs):
     """Change number of virtual functions of a device.
     The persistence is stored in the same place as other network persistence is
     stored. A call to setSafeNetworkConfig() will persist it across reboots.
     """
     logging.info("changing number of vfs on device %s -> %s.",
-                 device_name, numvfs)
-    _update_numvfs(device_name, numvfs)
+                 pci_path, numvfs)
+    _update_numvfs(pci_path, numvfs)
 
     logging.info("changing number of vfs on device %s -> %s. succeeded.",
-                 device_name, numvfs)
-    _persist_numvfs(device_name, numvfs)
+                 pci_path, numvfs)
+    _persist_numvfs(pci_path, numvfs)
 
 
 def _validateNetworkSetup(networks, bondings):
