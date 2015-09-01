@@ -241,8 +241,8 @@ class _SuperVdsm(object):
         return setupNetworks(networks, bondings, **options)
 
     @logDecorator
-    def changeNumvfs(self, device_name, numvfs):
-        return change_numvfs(device_name, numvfs)
+    def changeNumvfs(self, pci_path, numvfs):
+        return change_numvfs(pci_path, numvfs)
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(pipe):
