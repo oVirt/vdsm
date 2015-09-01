@@ -595,7 +595,7 @@ class BlockVolume(volume.Volume):
                     return out
                 if l.find("=") < 0:
                     continue
-                key, value = l.split("=")
+                key, value = l.split("=", 1)
                 out[key.strip()] = value.strip()
 
         except Exception as e:
