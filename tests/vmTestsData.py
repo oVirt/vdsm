@@ -32,7 +32,8 @@ CONF_TO_DOMXML_X86_64 = [({
     'guestNumaNodes': []},
 
     """<?xml version="1.0" encoding="utf-8"?>
-        <domain type="kvm">
+        <domain type="kvm"
+        xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
             <name>testVm</name>
             <uuid>%(vmId)s</uuid>
             <memory>1048576</memory>
@@ -51,6 +52,9 @@ CONF_TO_DOMXML_X86_64 = [({
                 </channel>
                 <input bus="ps2" type="mouse"/>
                 </devices>
+                <metadata>
+                    <ovirt:qos/>
+                </metadata>
                 <os>
                     <type arch="x86_64" machine="pc">hvm</type>
                     <smbios mode="sysinfo"/>
@@ -97,6 +101,7 @@ CONF_TO_DOMXML_PPC64 = [({
 
     """<?xml version="1.0" encoding="utf-8"?>
         <domain type="kvm"
+        xmlns:ovirt="http://ovirt.org/vm/tune/1.0"
         xmlns:qemu="http://libvirt.org/schemas/domain/qemu/1.0">
             <name>testVm</name>
             <uuid>%(vmId)s</uuid>
@@ -117,6 +122,9 @@ CONF_TO_DOMXML_PPC64 = [({
                 <input bus="usb" type="mouse"/>
                 <emulator>/usr/bin/qemu-system-ppc64</emulator>
                 </devices>
+                <metadata>
+                    <ovirt:qos/>
+                </metadata>
                 <os>
                     <type arch="ppc64" machine="pc">hvm</type>
                 </os>

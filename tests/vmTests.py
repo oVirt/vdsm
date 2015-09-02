@@ -109,13 +109,16 @@ class TestVm(XMLTestCase):
 
     def testDomXML(self):
         expectedXML = """
-           <domain type="kvm">
+           <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0" type="kvm">
               <name>testVm</name>
               <uuid>9ffe28b6-6134-4b1e-8804-1185f49c436f</uuid>
               <memory>1048576</memory>
               <currentMemory>1048576</currentMemory>
               <vcpu current="8">160</vcpu>
               <devices/>
+              <metadata>
+                 <ns0:qos/>
+              </metadata>
            </domain>"""
 
         domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)

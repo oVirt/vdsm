@@ -73,6 +73,8 @@ from .vmdevices.storage import DISK_TYPE
 from .vmtune import update_io_tune_dom, collect_inner_elements
 from .vmtune import io_tune_values_to_dom, io_tune_dom_to_values
 from . import vmxml
+from .vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
+from .vmxml import METADATA_VM_TUNE_PREFIX
 
 from .utils import isVdsmImage, cleanup_guest_socket
 from vmpowerdown import VmShutdown, VmReboot
@@ -84,8 +86,6 @@ _QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
 _AGENT_CHANNEL_DEVICES = (_VMCHANNEL_DEVICE_NAME, _QEMU_GA_DEVICE_NAME)
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
-
-METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
 
 # A libvirt constant for undefined cpu quota
 _NO_CPU_QUOTA = 0
@@ -2377,7 +2377,7 @@ class Vm(object):
 
             try:
                 self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                                      metadata_xml, 'ovirt',
+                                      metadata_xml, METADATA_VM_TUNE_PREFIX,
                                       METADATA_VM_TUNE_URI, 0)
             except libvirt.libvirtError as e:
                 self.log.exception("updateVmPolicy failed")
@@ -2398,7 +2398,8 @@ class Vm(object):
         :return: XML DOM object representing the root qos element
         """
 
-        metadata_xml = "<qos></qos>"
+        metadata_xml = "<%s></%s>" % (METADATA_VM_TUNE_ELEMENT,
+                                      METADATA_VM_TUNE_ELEMENT)
 
         try:
             metadata_xml = self._dom.metadata(
@@ -2410,7 +2411,7 @@ class Vm(object):
                 return None
 
         metadata = _domParseStr(metadata_xml)
-        return metadata.getElementsByTagName("qos")[0]
+        return metadata.getElementsByTagName(METADATA_VM_TUNE_ELEMENT)[0]
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
         for device in self._devices[hwclass.DISK]:

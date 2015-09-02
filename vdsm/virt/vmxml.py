@@ -28,6 +28,10 @@ from vdsm import utils
 
 import caps
 
+METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
+METADATA_VM_TUNE_ELEMENT = 'qos'
+METADATA_VM_TUNE_PREFIX = 'ovirt'
+
 
 def has_channel(domXML, name):
     domObj = etree.fromstring(domXML)
@@ -91,8 +95,12 @@ class Device(object):
 
 class Element(object):
 
-    def __init__(self, tagName, text=None, **attrs):
-        self._elem = xml.dom.minidom.Document().createElement(tagName)
+    def __init__(self, tagName, text=None, namespaceUri=None, **attrs):
+        if namespaceUri is not None:
+            self._elem = xml.dom.minidom.Document().createElementNS(
+                namespaceUri, tagName)
+        else:
+            self._elem = xml.dom.minidom.Document().createElement(tagName)
         self.setAttrs(**attrs)
         if text is not None:
             self.appendTextNode(text)
@@ -103,6 +111,9 @@ class Element(object):
     def setAttrs(self, **attrs):
         for attrName, attrValue in attrs.iteritems():
             self._elem.setAttribute(attrName, attrValue)
+
+    def setAttr(self, attrName, attrValue):
+        self._elem.setAttribute(attrName, attrValue)
 
     def appendTextNode(self, text):
         textNode = xml.dom.minidom.Document().createTextNode(text)
@@ -178,6 +189,8 @@ class Domain(object):
         self._devices = Element('devices')
         self.dom.appendChild(self._devices)
 
+        self.appendMetadata()
+
     def appendClock(self):
         """
         Add <clock> element to domain:
@@ -204,6 +217,27 @@ class Domain(object):
             m.appendChildWithArgs('timer', name='hpet', present='no')
 
         self.dom.appendChild(m)
+
+    def appendMetadata(self):
+        """
+        Add the namespaced qos metadata element to the domain
+
+        <domain xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+        ...
+           <metadata>
+              <ovirt:qos xmlns:ovirt=>
+           </metadata>
+        ...
+        </domain>
+        """
+
+        self._metadata = Element('metadata')
+        self._metadata.appendChild(Element(METADATA_VM_TUNE_PREFIX + ':' +
+                                           METADATA_VM_TUNE_ELEMENT,
+                                           namespaceUri=METADATA_VM_TUNE_URI))
+        self.dom.setAttr('xmlns:' + METADATA_VM_TUNE_PREFIX,
+                         METADATA_VM_TUNE_URI)
+        self.dom.appendChild(self._metadata)
 
     def appendOs(self):
         """
