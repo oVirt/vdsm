@@ -568,11 +568,14 @@ def _persist_numvfs(device_name, numvfs):
         f.write(str(numvfs))
 
 
-def change_numvfs(pci_path, numvfs):
+def change_numvfs(pci_path, numvfs, net_name):
     """Change number of virtual functions of a device.
     The persistence is stored in the same place as other network persistence is
     stored. A call to setSafeNetworkConfig() will persist it across reboots.
     """
+    # TODO: net_name is here only because it is hard to call pf_to_net_name
+    # TODO: from here. once all our code will be under lib/vdsm this should be
+    # TODO: removed.
     logging.info("changing number of vfs on device %s -> %s.",
                  pci_path, numvfs)
     _update_numvfs(pci_path, numvfs)
@@ -580,6 +583,8 @@ def change_numvfs(pci_path, numvfs):
     logging.info("changing number of vfs on device %s -> %s. succeeded.",
                  pci_path, numvfs)
     _persist_numvfs(pci_path, numvfs)
+
+    ipwrapper.linkSet(net_name, ['up'])
 
 
 def _validateNetworkSetup(networks, bondings):
