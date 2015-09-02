@@ -95,6 +95,8 @@ SMARTCARD_DEVICES = 'smartcard'
 TPM_DEVICES = 'tpm'
 
 METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
+METADATA_VM_TUNE_ELEMENT = 'qos'
+METADATA_VM_TUNE_PREFIX = 'ovirt'
 
 # A libvirt constant for undefined cpu quota
 _NO_CPU_QUOTA = 0
@@ -769,6 +771,8 @@ class _DomXML:
         self._devices = XMLElement('devices')
         self.dom.appendChild(self._devices)
 
+        self.appendMetadata()
+
     def appendClock(self):
         """
         Add <clock> element to domain:
@@ -789,6 +793,28 @@ class _DomXML:
             m.appendChildWithArgs('timer', name='hpet', present='no')
 
         self.dom.appendChild(m)
+
+    def appendMetadata(self):
+        """
+        Add the namespaced qos metadata element to the domain
+
+        <domain xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+        ...
+           <metadata>
+              <ovirt:qos xmlns:ovirt=>
+           </metadata>
+        ...
+        </domain>
+        """
+
+        self._metadata = XMLElement('metadata')
+        self._metadata.appendChild(
+            XMLElement(METADATA_VM_TUNE_PREFIX + ':' +
+                       METADATA_VM_TUNE_ELEMENT,
+                       namespaceUri=METADATA_VM_TUNE_URI))
+        self.dom.setAttr('xmlns:' + METADATA_VM_TUNE_PREFIX,
+                         METADATA_VM_TUNE_URI)
+        self.dom.appendChild(self._metadata)
 
     def appendOs(self):
         """
@@ -3862,7 +3888,7 @@ class Vm(object):
 
             try:
                 self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
-                                      metadata_xml, 'ovirt',
+                                      metadata_xml, METADATA_VM_TUNE_PREFIX,
                                       METADATA_VM_TUNE_URI, 0)
             except libvirt.libvirtError as e:
                 self.log.exception("updateVmPolicy failed")
@@ -3883,7 +3909,8 @@ class Vm(object):
         :return: XML DOM object representing the root qos element
         """
 
-        metadata_xml = "<qos></qos>"
+        metadata_xml = "<%s></%s>" % (METADATA_VM_TUNE_ELEMENT,
+                                      METADATA_VM_TUNE_ELEMENT)
 
         try:
             metadata_xml = self._dom.metadata(
@@ -3895,7 +3922,7 @@ class Vm(object):
                 return None
 
         metadata = xml.dom.minidom.parseString(metadata_xml)
-        return metadata.getElementsByTagName("qos")[0]
+        return metadata.getElementsByTagName(METADATA_VM_TUNE_ELEMENT)[0]
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
         for device in self._devices[DISK_DEVICES]:

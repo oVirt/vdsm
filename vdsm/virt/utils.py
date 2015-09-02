@@ -39,8 +39,12 @@ def isVdsmImage(drive):
 
 class XMLElement(object):
 
-    def __init__(self, tagName, text=None, **attrs):
-        self._elem = xml.dom.minidom.Document().createElement(tagName)
+    def __init__(self, tagName, text=None, namespaceUri=None, **attrs):
+        if namespaceUri is not None:
+            self._elem = xml.dom.minidom.Document().createElementNS(
+                namespaceUri, tagName)
+        else:
+            self._elem = xml.dom.minidom.Document().createElement(tagName)
         self.setAttrs(**attrs)
         if text is not None:
             self.appendTextNode(text)
@@ -51,6 +55,9 @@ class XMLElement(object):
     def setAttrs(self, **attrs):
         for attrName, attrValue in attrs.iteritems():
             self._elem.setAttribute(attrName, attrValue)
+
+    def setAttr(self, attrName, attrValue):
+        self._elem.setAttribute(attrName, attrValue)
 
     def appendTextNode(self, text):
         textNode = xml.dom.minidom.Document().createTextNode(text)
