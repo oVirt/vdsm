@@ -55,6 +55,23 @@ def _sriov_totalvfs(device_name):
         return int(f.read())
 
 
+def physical_function_net_name(pf_pci_name):
+    """takes a pci path of a physical function (e.g. pci_0000_02_00_0) and returns
+    the network interface name associated with it (e.g. enp2s0f0)
+    """
+    devices = list_by_caps()
+    libvirt_device_names = [name for name, device in devices.iteritems()
+                            if device['params'].get('parent') == pf_pci_name]
+    if len(libvirt_device_names) > 1:
+        raise Exception('could not determine network name for %s. Possible'
+                        'devices: %s' % (pf_pci_name, libvirt_device_names))
+    if not libvirt_device_names:
+        raise Exception('could not determine network name for %s. There are no'
+                        'devices with this parent.' % (pf_pci_name,))
+
+    return libvirt_device_names[0].split('_')[1]
+
+
 def _parse_address(caps, children):
     params = {}
     for cap in children:
@@ -208,4 +225,6 @@ def reattach_detachable(device_name):
 
 
 def change_numvfs(device_name, numvfs):
-    supervdsm.getProxy().changeNumvfs(name_to_pci_path(device_name), numvfs)
+    net_name = physical_function_net_name(device_name)
+    supervdsm.getProxy().changeNumvfs(name_to_pci_path(device_name), numvfs,
+                                      net_name)

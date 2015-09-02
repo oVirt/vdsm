@@ -52,9 +52,9 @@ _VIRTUAL_FUNCTIONS_PATH = os.path.join(CONF_PERSIST_DIR, 'virtual_functions')
 
 def _get_sriov_devices():
     devices = hostdev.list_by_caps()
-    return [hostdev.name_to_pci_path(pci_path) for pci_path, device
+    return [device_name for device_name, device_info
             in devices.iteritems()
-            if 'totalvfs' in device['params']]
+            if 'totalvfs' in device_info['params']]
 
 
 def _get_persisted_numvfs(existing_sriov_devices):
@@ -78,20 +78,23 @@ def _restore_sriov_numvfs():
     sriov_devices = _get_sriov_devices()
     persisted_numvfs = _get_persisted_numvfs(sriov_devices)
 
-    for device in sriov_devices:
-        desired_numvfs = persisted_numvfs.get(device)
+    for device_libvirt_name in sriov_devices:
+        pci_path = hostdev.name_to_pci_path(device_libvirt_name)
+        desired_numvfs = persisted_numvfs.get(pci_path)
         if desired_numvfs is None:
             logging.info('SRIOV network device which is not persisted found '
-                         'at: %s.', device)
+                         'at: %s.', pci_path)
         else:
             logging.info('Changing number of virtual functions for device %s '
-                         '-> %s', device, desired_numvfs)
+                         '-> %s', pci_path, desired_numvfs)
             try:
-                change_numvfs(device, desired_numvfs)
+                net_name = hostdev.physical_function_net_name(
+                    device_libvirt_name)
+                change_numvfs(pci_path, desired_numvfs, net_name)
             except:
                 logging.exception('restoring vf configuration for device %s '
                                   'failed. Persisted networks built on this '
-                                  'device will fail to restore.', device)
+                                  'device will fail to restore.', pci_path)
 
 
 def ifcfg_restoration():
