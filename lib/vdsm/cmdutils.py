@@ -67,6 +67,12 @@ def systemd_run(cmd, scope=False, unit=None, slice=None):
     return command
 
 
+def taskset(cmd, cpu_list):
+    command = [constants.EXT_TASKSET, "--cpu-list", ",".join(cpu_list)]
+    command.extend(cmd)
+    return command
+
+
 # This function returns truthy value if its argument contains unsafe characters
 # for including in a command passed to the shell. The safe characters were
 # stolen from pipes._safechars.

@@ -35,6 +35,7 @@ from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 from vdsm import libvirtconnection
+from vdsm import taskset
 from vdsm.profiling import profile
 
 from storage.dispatcher import Dispatcher
@@ -154,6 +155,9 @@ def run(pidfile=None):
         sysname, nodename, release, version, machine = os.uname()
         log.info('(PID: %s) I am the actual vdsm %s %s (%s)',
                  pid, dsaversion.raw_version_revision, nodename, release)
+
+        __set_cpu_affinity()
+
         serve_clients(log)
     except:
         log.error("Exception raised", exc_info=True)
@@ -249,6 +253,18 @@ def __assertSudoerPermissions():
                       "(stderr: %s). Verify sudoer rules configuration" %
                       (stderr))
         sys.exit(1)
+
+
+def __set_cpu_affinity():
+    cpu_affinity = config.get('vars', 'cpu_affinity')
+    if cpu_affinity != "":
+        cpu_set = frozenset(int(cpu.strip())
+                            for cpu in cpu_affinity.split(","))
+
+        log = logging.getLogger('vds')
+        log.info('VDSM will run with cpu affinity: %s', cpu_set)
+
+        taskset.set(os.getpid(), cpu_set, all_tasks=True)
 
 
 if __name__ == '__main__':

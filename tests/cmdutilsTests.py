@@ -83,3 +83,13 @@ class List2CmdlineeTests(VdsmTestCase):
 
     def test_empty(self):
         self.assertEquals(cmdutils._list2cmdline([]), "")
+
+
+class TasksetTests(VdsmTestCase):
+
+    CPU_LIST = ['1', '2']
+
+    def test_defaults(self):
+        cmd = cmdutils.taskset(['a', 'b'], self.CPU_LIST)
+        res = [constants.EXT_TASKSET, '--cpu-list', '1,2', 'a', 'b']
+        self.assertEqual(cmd, res)

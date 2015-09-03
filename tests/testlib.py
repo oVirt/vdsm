@@ -20,8 +20,10 @@
 
 import errno
 import ConfigParser
+import functools
 import logging
 import os
+import pickle
 import unittest
 from functools import wraps
 import shutil
@@ -390,3 +392,36 @@ def recorded(meth):
         recording.append((meth.func_name, args, kwargs))
         return meth(self, *args, **kwargs)
     return wrapper
+
+
+def forked(f):
+    """
+    Decorator for running a test in a child process. Excpetions in the child
+    process will be re-raised in the parent.
+    """
+    @functools.wraps(f)
+    def wrapper(*a, **kw):
+        r, w = os.pipe()
+        try:
+            pid = os.fork()
+            if pid == 0:
+                try:
+                    f(*a, **kw)
+                    os._exit(0)
+                except Exception as e:
+                    os.write(w, pickle.dumps(e))
+                    os._exit(1)
+            else:
+                _, status = os.waitpid(pid, 0)
+                if status != 0:
+                    e = pickle.loads(os.read(r, 4006))
+                    raise e
+        finally:
+            os.close(r)
+            os.close(w)
+
+    return wrapper
+
+
+def online_cpus():
+    return frozenset(range(os.sysconf('SC_NPROCESSORS_ONLN')))
