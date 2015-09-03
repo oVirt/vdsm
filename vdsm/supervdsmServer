@@ -119,6 +119,26 @@ def logDecorator(func):
     return wrapper
 
 
+def safe_poll(mp_connection, timeout):
+    """
+    This is a workaround until we get the PEP-475 fix for EINTR.  It
+    ensures that a multiprocessing.connection.poll() will not return
+    before the timeout due to an interruption.
+
+    Returns True if there is any data to read from the pipe or if the
+    pipe was closed.  Returns False if the timeout expired.
+    """
+    deadline = utils.monotonic_time() + timeout
+    remaining = timeout
+
+    while not mp_connection.poll(remaining):
+        remaining = deadline - utils.monotonic_time()
+        if remaining <= 0:
+            return False
+
+    return True
+
+
 class _SuperVdsm(object):
 
     log = logging.getLogger("SuperVdsm.ServerCallback")
@@ -245,7 +265,7 @@ class _SuperVdsm(object):
 
         needReaping = True
         try:
-            if not pipe.poll(RUN_AS_TIMEOUT):
+            if not safe_poll(pipe, RUN_AS_TIMEOUT):
                 try:
 
                     os.kill(proc.pid, signal.SIGKILL)
