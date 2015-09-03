@@ -38,7 +38,6 @@ import errno
 import functools
 import glob
 import io
-import itertools
 import logging
 import six
 import sys
@@ -1027,15 +1026,6 @@ def panic(msg):
 def isOvirtNode():
     return (os.path.exists('/etc/rhev-hypervisor-release') or
             bool(glob.glob('/etc/ovirt-node-*-release')))
-
-
-# Copied from
-# http://docs.python.org/2.6/library/itertools.html?highlight=grouper#recipes
-def grouper(iterable, n, fillvalue=None):
-    "Collect data into fixed-length chunks or blocks"
-    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx
-    args = [iter(iterable)] * n
-    return itertools.izip_longest(fillvalue=fillvalue, *args)
 
 
 def anyFnmatch(name, patterns):

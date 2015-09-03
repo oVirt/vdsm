@@ -36,7 +36,6 @@ from .config import config
 from .utils import anyFnmatch
 from .utils import CommandPath
 from .utils import execCmd
-from .utils import grouper
 from .netlink import link
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
@@ -90,37 +89,6 @@ class LinkType(object):
     TEAM = 'team'
     VETH = 'veth'
     VF = 'vf'
-
-
-def _parseLinkLine(text):
-    """Returns the a link attribute dictionary resulting from parsing the
-    output of an iproute2 detailed link entry."""
-    attrs = {}
-    attrs['index'], attrs['name'], data = [el.strip() for el in
-                                           text.split(':', 2)]
-
-    processedData = [el.strip() for el in
-                     data.replace('\\', '', 1).split('\\')]
-
-    flags, values = processedData[0].split('>', 1)
-    attrs['flags'] = frozenset(flags[1:].split(','))
-
-    baseData = (el for el in values.strip().split(' ') if el and
-                el != 'link/none')
-    for key, value in grouper(baseData, 2):
-        if key.startswith('link/'):
-            key = 'address'
-        attrs[key] = value
-    if 'address' not in attrs:
-        attrs['address'] = None
-
-    if len(processedData) > 1:
-        tokens = [token for token in processedData[1].split(' ') if token]
-        linkType = tokens.pop(0)
-        attrs['linkType'] = linkType
-        attrs.update((linkType + tokens[i], tokens[i + 1]) for i in
-                     range(0, len(tokens) - 1, 2))
-    return attrs
 
 
 @equals
