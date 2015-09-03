@@ -35,6 +35,7 @@ from vdsm import schedule
 from vdsm import utils
 from vdsm.config import config
 from vdsm import libvirtconnection
+from vdsm import taskset
 from vdsm.profiling import profile
 
 from storage.dispatcher import Dispatcher
@@ -141,6 +142,8 @@ def run():
                  os.getpid(), dsaversion.raw_version_revision, nodename,
                  release)
 
+        __set_cpu_affinity()
+
         serve_clients(log)
     except:
         log.error("Exception raised", exc_info=True)
@@ -213,6 +216,18 @@ def __assertSudoerPermissions():
         raise FatalError("Vdsm user could not manage to run sudo operation: "
                          "(stderr: %s). Verify sudoer rules configuration" %
                          (stderr))
+
+
+def __set_cpu_affinity():
+    cpu_affinity = config.get('vars', 'cpu_affinity')
+    if cpu_affinity != "":
+        cpu_set = frozenset(int(cpu.strip())
+                            for cpu in cpu_affinity.split(","))
+
+        log = logging.getLogger('vds')
+        log.info('VDSM will run with cpu affinity: %s', cpu_set)
+
+        taskset.set(os.getpid(), cpu_set, all_tasks=True)
 
 
 def main():

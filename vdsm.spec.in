@@ -1063,6 +1063,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/schedule.py*
 %{python_sitelib}/%{vdsm_name}/supervdsm.py*
 %{python_sitelib}/%{vdsm_name}/sysctl.py*
+%{python_sitelib}/%{vdsm_name}/taskset.py*
 %{python_sitelib}/%{vdsm_name}/udevadm.py*
 %{python_sitelib}/%{vdsm_name}/utils.py*
 %{python_sitelib}/%{vdsm_name}/vdscli.py*

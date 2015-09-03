@@ -44,6 +44,7 @@ dist_vdsmpylib_PYTHON = \
 	schedule.py \
 	supervdsm.py \
 	sysctl.py \
+	taskset.py \
 	udevadm.py \
 	utils.py \
 	vdscli.py \

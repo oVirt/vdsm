@@ -26,6 +26,7 @@ import errno
 import fcntl
 import logging
 import operator
+import os
 import os.path
 import select
 import signal
@@ -37,9 +38,12 @@ import time
 import timeit
 
 from vdsm import constants
+from vdsm import taskset
 from vdsm import utils
 
+from monkeypatch import MonkeyPatch
 from vmTestsData import VM_STATUS_DUMP
+from testlib import forked, online_cpus
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import checkSudo
@@ -489,6 +493,50 @@ class ExecCmdTest(TestCaseBase):
                                    sudo=True)
         self.assertEquals(rc, 0)
         self.assertEquals(int(out[0].split()[2]), 0)
+
+
+class ExecCmdAffinityTests(TestCaseBase):
+
+    CPU_SET = frozenset([0])
+
+    @forked
+    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', False)
+    def testResetAffinityByDefault(self):
+        try:
+            proc = utils.execCmd((EXT_SLEEP, '30s'), sync=False)
+
+            self.assertEquals(taskset.get(proc.pid),
+                              taskset.get(os.getpid()))
+        finally:
+            proc.kill()
+
+    @forked
+    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', True)
+    def testResetAffinityWhenConfigured(self):
+        taskset.set(os.getpid(), self.CPU_SET)
+        self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
+
+        try:
+            proc = utils.execCmd((EXT_SLEEP, '30s'), sync=False)
+
+            self.assertEquals(taskset.get(proc.pid), online_cpus())
+        finally:
+            proc.kill()
+
+    @forked
+    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', True)
+    def testKeepAffinity(self):
+        taskset.set(os.getpid(), self.CPU_SET)
+        self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
+
+        try:
+            proc = utils.execCmd((EXT_SLEEP, '30s'),
+                                 sync=False,
+                                 resetCpuAffinity=False)
+
+            self.assertEquals(taskset.get(proc.pid), self.CPU_SET)
+        finally:
+            proc.kill()
 
 
 class ExecCmdStressTest(TestCaseBase):

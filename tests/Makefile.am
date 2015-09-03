@@ -101,6 +101,7 @@ test_modules = \
 	storageMailboxTests.py \
 	storageMonitorTests.py \
 	storageServerTests.py \
+	tasksetTests.py \
 	tcTests.py \
 	testlibTests.py \
 	toolTests.py \
