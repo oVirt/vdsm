@@ -36,7 +36,7 @@ from vdsm import udevadm
 from vdsm import utils
 from vdsm import ipwrapper
 
-from .configurators import libvirt
+from .configurators import dhclient, libvirt
 from .errors import ConfigNetworkError
 from . import errors as ne
 from .models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
@@ -608,6 +608,14 @@ def _inherit_dhcp_unique_identifier(bridge, _netinfo):
     If there is dhclient already running on a bridge's port we have to use the
     same DHCP unique identifier (DUID) in order to get the same IP address.
     """
+    # On EL7 dhclient doesn't have a -df option (to read DUID from the port's
+    # lease file). We must detect if the option is available, by running
+    # dhclient manually. To unbreak a beta4 release we just won't use the -df
+    # option in that case. A proper fix is probably to fall back to -lf,
+    # passing to it a modified NIC lease file.
+    if not dhclient.supports_duid_file():
+        return
+
     for devices in (_netinfo.nics, _netinfo.bondings, _netinfo.vlans):
         port = devices.get(bridge.port.name)
         if port and port['dhcpv4']:

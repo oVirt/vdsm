@@ -28,10 +28,7 @@ import threading
 from vdsm import cmdutils
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm.utils import CommandPath
-from vdsm.utils import execCmd
-from vdsm.utils import pgrep
-from vdsm.utils import rmFile
+from vdsm.utils import CommandPath, execCmd, memoized, pgrep, rmFile
 
 DHCLIENT_CGROUP = 'vdsm-dhclient'
 LEASE_DIR = '/var/lib/dhclient'
@@ -68,13 +65,11 @@ class DhcpClient(object):
         if self.duid_source_file:
             cmd += ['-df', self.duid_source_file]
         cmd = cmdutils.systemd_run(cmd, scope=True, slice=self._cgroup)
-        rc, out, err = execCmd(cmd)
-        return rc, out, err
+        return execCmd(cmd)
 
     def start(self, blocking):
         if blocking:
-            rc, _, _ = self._dhclient()
-            return rc
+            return self._dhclient()
         else:
             t = threading.Thread(target=self._dhclient, name='vdsm-dhclient-%s'
                                  % self.iface)
@@ -137,3 +132,16 @@ def _kill_and_rm_pid(pid, pid_file):
             raise
     if pid_file is not None:
         rmFile(pid_file)
+
+
+@memoized
+def supports_duid_file():
+    probe = DhcpClient('-invalid-option')  # dhclient doesn't have -h/--help
+    rc, out, err = probe.start(blocking=True)
+    if rc:  # -invalid-option should always fail, unlike --help if implemented
+        for line in err:
+            if '-df' in line:
+                return True
+        return False
+    else:
+        raise AssertionError("dhclient shouldn't succeed with invalid options")
