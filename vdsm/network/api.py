@@ -736,7 +736,7 @@ def _emergencyNetworkCleanup(network, networkAttrs, configurator):
         vlan_name = '%s.%s' % (topNetDev.name, networkAttrs['vlan'])
         if vlan_name in _netinfo.vlans:
             topNetDev = Vlan(topNetDev, networkAttrs['vlan'], configurator)
-    if networkAttrs['bridged']:
+    if networkAttrs.get('bridged', True):
         if network in _netinfo.bridges:
             topNetDev = Bridge(network, configurator, port=topNetDev)
 
