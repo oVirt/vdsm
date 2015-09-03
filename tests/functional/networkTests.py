@@ -2631,6 +2631,7 @@ class NetworkTest(TestCaseBase):
             try:
                 with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
                     for nic in nics:
+                        linkSet(nic, ['down'])
                         f.write('+%s\n' % nic)
                 status, msg = self.setupNetworks(
                     {NETWORK_NAME:
