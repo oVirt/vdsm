@@ -22,16 +22,22 @@ import os.path
 import contextlib
 import errno
 import logging
+import os
 import sys
 import threading
 
+from testrunner import forked, online_cpus
 from testrunner import VdsmTestCase as TestCaseBase
 from testrunner import permutations, expandPermutations
+
+from vdsm import constants
+from vdsm import taskset
+from vdsm import utils
+
+from monkeypatch import MonkeyPatch
 from testValidation import checkSudo
 from testValidation import stresstest
 from vmTestsData import VM_STATUS_DUMP
-from vdsm import utils
-from vdsm import constants
 import copy
 import time
 import timeit
@@ -490,6 +496,50 @@ class ExecCmdTest(TestCaseBase):
                                    sudo=True)
         self.assertEquals(rc, 0)
         self.assertEquals(int(out[0].split()[2]), 0)
+
+
+class ExecCmdAffinityTests(TestCaseBase):
+
+    CPU_SET = frozenset([0])
+
+    @forked
+    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', False)
+    def testResetAffinityByDefault(self):
+        try:
+            proc = utils.execCmd((EXT_SLEEP, '30s'), sync=False)
+
+            self.assertEquals(taskset.get(proc.pid),
+                              taskset.get(os.getpid()))
+        finally:
+            proc.kill()
+
+    @forked
+    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', True)
+    def testResetAffinityWhenConfigured(self):
+        taskset.set(os.getpid(), self.CPU_SET)
+        self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
+
+        try:
+            proc = utils.execCmd((EXT_SLEEP, '30s'), sync=False)
+
+            self.assertEquals(taskset.get(proc.pid), online_cpus())
+        finally:
+            proc.kill()
+
+    @forked
+    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', True)
+    def testKeepAffinity(self):
+        taskset.set(os.getpid(), self.CPU_SET)
+        self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
+
+        try:
+            proc = utils.execCmd((EXT_SLEEP, '30s'),
+                                 sync=False,
+                                 resetCpuAffinity=False)
+
+            self.assertEquals(taskset.get(proc.pid), self.CPU_SET)
+        finally:
+            proc.kill()
 
 
 class ExecCmdStressTest(TestCaseBase):

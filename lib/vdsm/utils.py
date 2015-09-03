@@ -56,6 +56,7 @@ import zombiereaper
 from cpopen import CPopen
 from .compat import pickle
 from .config import config
+from . import cmdutils
 from . import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If
@@ -700,10 +701,14 @@ def _list2cmdline(args):
     return ' '.join(parts)
 
 
+_ANY_CPU = ["0-%d" % (os.sysconf('SC_NPROCESSORS_ONLN') - 1)]
+_USING_CPU_AFFINITY = config.get('vars', 'cpu_affinity') != ""
+
+
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
             printable=None, env=None, sync=True, nice=None, ioclass=None,
             ioclassdata=None, setsid=False, execCmdLogger=logging.root,
-            deathSignal=0, childUmask=None):
+            deathSignal=0, childUmask=None, resetCpuAffinity=True):
     """
     Executes an external command, optionally via sudo.
 
@@ -732,6 +737,16 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     if sudo:
         if os.geteuid() != 0:
             command = [constants.EXT_SUDO, SUDO_NON_INTERACTIVE_FLAG] + command
+
+    # warning: the order of commands matters. If we add taskset
+    # after sudo, we'll need to configure sudoers to allow both
+    # 'sudo <command>' and 'sudo taskset <command>', which is
+    # impractical. On the other hand, using 'taskset sudo <command>'
+    # is much simpler and delivers the same end result.
+
+    if resetCpuAffinity and _USING_CPU_AFFINITY:
+        # only VDSM itself should be bound
+        command = cmdutils.taskset(command, _ANY_CPU)
 
     if not printable:
         printable = command

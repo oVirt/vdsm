@@ -38,6 +38,7 @@ dist_vdsmpylib_PYTHON = \
 	SecureXMLRPCServer.py \
 	sslutils.py \
 	sysctl.py \
+	taskset.py \
 	utils.py \
 	$(NULL)
 

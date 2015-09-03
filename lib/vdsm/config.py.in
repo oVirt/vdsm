@@ -231,6 +231,12 @@ parameters = [
 
         ('ssl_protocol', 'sslv23',
             'SSL protocol used by encrypted connection'),
+
+        ('cpu_affinity', '',
+            'Comma separated whitelist of CPU cores on which VDSM is allowed '
+            'to run. The default is "", meaning VDSM can be scheduled by '
+            ' the OS to run on any core. '
+            'Valid examples: "1", "0,1", "0,2,3"')
     ]),
 
     # Section: [ksm]

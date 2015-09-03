@@ -28,6 +28,7 @@ if sys.version_info[0] == 2:
 
 import logging
 import os
+import pickle
 import unittest
 from functools import wraps
 import re
@@ -51,6 +52,39 @@ zombiereaper.registerSignalHandler()
 TEMPDIR = '/var/tmp'
 
 PERMUTATION_ATTR = "_permutations_"
+
+
+def forked(f):
+    """
+    Decorator for running a test in a child process. Excpetions in the child
+    process will be re-raised in the parent.
+    """
+    @wraps(f)
+    def wrapper(*a, **kw):
+        r, w = os.pipe()
+        try:
+            pid = os.fork()
+            if pid == 0:
+                try:
+                    f(*a, **kw)
+                    os._exit(0)
+                except Exception as e:
+                    os.write(w, pickle.dumps(e))
+                    os._exit(1)
+            else:
+                _, status = os.waitpid(pid, 0)
+                if status != 0:
+                    e = pickle.loads(os.read(r, 4006))
+                    raise e
+        finally:
+            os.close(r)
+            os.close(w)
+
+    return wrapper
+
+
+def online_cpus():
+    return frozenset(range(os.sysconf('SC_NPROCESSORS_ONLN')))
 
 
 class FakeSanlock(object):

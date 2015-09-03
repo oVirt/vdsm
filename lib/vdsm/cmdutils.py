@@ -35,3 +35,9 @@ def systemd_run(cmd, scope=False, unit=None, slice=None):
         command.append('--slice=%s' % slice)
     command.extend(cmd)
     return command
+
+
+def taskset(cmd, cpu_list):
+    command = [constants.EXT_TASKSET, "--cpu-list", ",".join(cpu_list)]
+    command.extend(cmd)
+    return command

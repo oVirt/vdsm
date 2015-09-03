@@ -45,3 +45,13 @@ class SystemdRunTests(VdsmTestCase):
         cmd = cmdutils.systemd_run(['a', 'b'], slice='slice')
         res = [constants.EXT_SYSTEMD_RUN, '--slice=slice', 'a', 'b']
         self.assertEqual(cmd, res)
+
+
+class TasksetTests(VdsmTestCase):
+
+    CPU_LIST = ['1', '2']
+
+    def test_defaults(self):
+        cmd = cmdutils.taskset(['a', 'b'], self.CPU_LIST)
+        res = [constants.EXT_TASKSET, '--cpu-list', '1,2', 'a', 'b']
+        self.assertEqual(cmd, res)

@@ -72,6 +72,7 @@ test_modules = \
 	securableTests.py \
 	sslTests.py \
 	storageMailboxTests.py \
+	tasksetTests.py \
 	tcTests.py \
 	testrunnerTests.py \
 	toolTests.py \
