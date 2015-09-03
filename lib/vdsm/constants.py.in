@@ -25,6 +25,9 @@ import os
 
 RHEV_ENABLED = False if '@RHEV_TRUE@' else True
 
+# VDSM management networks
+LEGACY_MANAGEMENT_NETWORKS = ('ovirtmgmt', 'rhevm')
+
 # SMBIOS manufacturer
 SMBIOS_MANUFACTURER = '@SMBIOS_MANUFACTURER@'
 SMBIOS_OSNAME = '@SMBIOS_OSNAME@'
