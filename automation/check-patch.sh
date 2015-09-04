@@ -10,8 +10,6 @@ export NOSE_SKIP_STRESS_TESTS=1
 # this redefines 'ugly' but looks like NOSE_EXCLUDE works at test method level,
 # not at module neither at testcase level, so we have no choice but this.
 export NOSE_EXCLUDE=".*testGetBondingOptions.*|testMirroring.*|testToggleIngress|testException|testQdiscsOfDevice|testReplacePrio"
-# disable pep8 checks on unit test, since we have seperate job on it.
-export PEP8=$(which true)
 
 sh -x autogen.sh --system
 make all
