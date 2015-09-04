@@ -8,8 +8,6 @@
 
 export NOSE_SKIP_STRESS_TESTS=1
 export NOSE_EXCLUDE=
-# disable pep8 checks on unit test, since we have seperate job on it.
-export PEP8=$(which true)
 
 # really ugly and hopefully temporary fix
 # https://bugzilla.redhat.com/show_bug.cgi?id=1255142
