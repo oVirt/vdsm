@@ -242,7 +242,6 @@ class StoragePool(object):
                 raise se.MiscOperationInProgress("spm start %s" % self.spUUID)
 
             self.updateMonitoringThreads()
-            oldlver, oldid = self._backend.getSpmStatus()
             masterDomVersion = self.getVersion()
             # If no specific domain version was specified use current master
             # domain version
@@ -254,10 +253,17 @@ class StoragePool(object):
                     self.masterDomain.sdUUID, curVer=masterDomVersion,
                     expVer=expectedDomVersion)
 
-            if int(oldlver) != int(prevLVER) or int(oldid) != int(prevID):
-                self.log.info("expected previd:%s lver:%s got request for "
-                              "previd:%s lver:%s" %
-                              (oldid, oldlver, prevID, prevLVER))
+            try:
+                oldlver, oldid = self._backend.getSpmStatus()
+            except se.InquireNotSupportedError:
+                self.log.info("cluster lock inquire isn't supported. "
+                              "proceeding with startSpm()")
+                oldlver = LVER_INVALID
+            else:
+                if int(oldlver) != int(prevLVER) or int(oldid) != int(prevID):
+                    self.log.info("expected previd:%s lver:%s got request for "
+                                  "previd:%s lver:%s" %
+                                  (oldid, oldlver, prevID, prevLVER))
 
             self.spmRole = SPM_CONTEND
 
