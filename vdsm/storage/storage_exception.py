@@ -1618,6 +1618,11 @@ class ClusterLockInitError(StorageException):
     message = "Could not initialize cluster lock"
 
 
+class InquireNotSupportedError(StorageException):
+    code = 702
+    message = "Cluster lock inquire isnt supported"
+
+
 #################################################
 #  Meta data related Exceptions
 #################################################
