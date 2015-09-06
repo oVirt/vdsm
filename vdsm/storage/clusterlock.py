@@ -69,10 +69,6 @@ HOST_STATUS_FAIL = "fail"
 HOST_STATUS_DEAD = "dead"
 
 
-class InquireNotSupportedError(Exception):
-    """Raised when the clusterlock class is not supporting inquire"""
-
-
 class SafeLease(object):
     log = logging.getLogger("Storage.SafeLease")
 
@@ -147,7 +143,7 @@ class SafeLease(object):
             self.log.debug("Clustered lock acquired successfully")
 
     def inquire(self):
-        raise InquireNotSupportedError()
+        raise se.InquireNotSupportedError()
 
     def getLockUtilFullPath(self):
         return os.path.join(self.lockUtilPath, self.lockCmd)
