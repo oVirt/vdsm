@@ -114,7 +114,7 @@ start_network() {
 
     for static_dev in $static_devs; do
         if [[ $activated_devs != *"$static_dev"* ]]; then
-            service network start
+            service network restart
             ret_val=$?
             if [ "${ret_val}" -ne 0 ]; then
                 log_failure_msg "${prog}: Start dependent network"
