@@ -2031,18 +2031,22 @@ class HSM(object):
                 pvsize = ""
                 vguuid = ""
 
-            devInfo = {'GUID': dev.get("guid", ""), 'pvUUID': pvuuid,
-                       'pvsize': str(pvsize),
-                       'vgUUID': vguuid, 'vendorID': dev.get("vendor", ""),
-                       'productID': dev.get("product", ""),
-                       'fwrev': dev.get("fwrev", ""),
-                       "serial": dev.get("serial", ""),
-                       'capacity': dev.get("capacity", "0"),
-                       'devtype': dev.get("devtype", ""),
-                       'pathstatus': dev.get("paths", []),
-                       'pathlist': dev.get("connections", []),
-                       'logicalblocksize': dev.get("logicalblocksize", ""),
-                       'physicalblocksize': dev.get("physicalblocksize", "")}
+            devInfo = {
+                'GUID': dev.get("guid", ""),
+                'capacity': dev.get("capacity", "0"),
+                'devtype': dev.get("devtype", ""),
+                'fwrev': dev.get("fwrev", ""),
+                'logicalblocksize': dev.get("logicalblocksize", ""),
+                'pathlist': dev.get("connections", []),
+                'pathstatus': dev.get("paths", []),
+                'physicalblocksize': dev.get("physicalblocksize", ""),
+                'productID': dev.get("product", ""),
+                'pvUUID': pvuuid,
+                'pvsize': str(pvsize),
+                'serial': dev.get("serial", ""),
+                'vendorID': dev.get("vendor", ""),
+                'vgUUID': vguuid,
+            }
             if not checkStatus:
                 devInfo["status"] = "unknown"
             devices.append(devInfo)
