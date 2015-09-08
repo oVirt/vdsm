@@ -29,9 +29,9 @@ configurators interface is described below.
 
 
 from collections import deque
-from glob import iglob
 import argparse
 import os
+import re
 import sys
 import traceback
 
@@ -50,21 +50,18 @@ def _import_module(abspkg, mname):
     return __import__(pkg, globals(), locals(), [mname], level=0)
 
 
-def _listmodules(pkg):
+def _listmodules(path):
     """Return base file names for all modules under pkg."""
-    path = os.path.join(os.path.abspath(pkg.__path__[0]), '')
-    getmname = lambda x: os.path.basename(os.path.splitext(x)[0])
-    filter_ = lambda x: not x.startswith('_')
-
-    return [
-        getmname(module)
-        for module in iglob("%s*.py" % path)
-        if filter_(getmname(module))
-    ]
+    is_module = re.compile(r"^[^_].*\.pyc?$").search
+    return set(
+        os.path.splitext(name)[0]
+        for name in os.listdir(path)
+        if is_module(name)
+    )
 
 
 _CONFIGURATORS = {}
-for module in _listmodules(configurators):
+for module in _listmodules(configurators.__path__[0]):
     _CONFIGURATORS[module] = _import_module(configurators, module)
     if not hasattr(_CONFIGURATORS[module], 'name'):
         setattr(_CONFIGURATORS[module], 'name', module)
