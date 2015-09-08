@@ -188,14 +188,7 @@ class StoragePool(object):
                             return
 
                 self._domainsToUpgrade.remove(sdUUID)
-                if len(self._domainsToUpgrade) == 0:
-                    self.log.debug("All domains are upgraded, unregistering "
-                                   "from state change event")
-                    try:
-                        self.domainMonitor.onDomainStateChange.\
-                            unregister(self._upgradeCallback)
-                    except KeyError:
-                        pass
+                self._finalizePoolUpgradeIfNeeded()
 
     def _updateDomainsRole(self):
         for sdUUID in self.getDomains(activeOnly=True):
@@ -1120,6 +1113,22 @@ class StoragePool(object):
         domList[sdUUID] = sd.DOM_ATTACHED_STATUS
         self._backend.setDomainsMap(domList)
         self.updateMonitoringThreads()
+        try:
+            self._domainsToUpgrade.remove(sdUUID)
+        except ValueError:
+            return
+
+        self._finalizePoolUpgradeIfNeeded()
+
+    def _finalizePoolUpgradeIfNeeded(self):
+        if len(self._domainsToUpgrade) == 0:
+            self.log.debug("No domains left for upgrade, unregistering "
+                           "from state change event")
+            try:
+                self.domainMonitor.onDomainStateChange.unregister(
+                    self._upgradeCallback)
+            except KeyError:
+                pass
 
     @unsecured
     def _linkStorageDomain(self, linkTarget, linkName):
