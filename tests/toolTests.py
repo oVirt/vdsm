@@ -30,7 +30,8 @@ from vdsm.tool import UsageError
 from vdsm.tool import upgrade
 from vdsm import utils
 import monkeypatch
-from testlib import VdsmTestCase
+from testlib import (VdsmTestCase, namedTemporaryDir, permutations,
+                     expandPermutations)
 from testValidation import ValidateRunningAsRoot
 from unittest import TestCase
 import tempfile
@@ -83,7 +84,23 @@ def patchConfigurators(mockConfigurers):
         dict((m.name, m) for m in mockConfigurers))
 
 
+@expandPermutations
 class PatchConfiguratorsTests(VdsmTestCase):
+
+    @permutations([(('a.py', 'b.py'), ('a', 'b')),
+                   (('a.py', 'b.py', 'a.pyc', 'a.pyioas'), ('a', 'b')),
+                   (('a.py', 'b.py', 'a.pyc', 'a.py'), ('a', 'b')),
+                   (('a.py', 'b.py', 'a.pyc', '_my.py'), ('a', 'b'))])
+    def testListConfiguratorsModulesFolder(self, files, expected_modules):
+        expected = set(expected_modules)
+        with namedTemporaryDir() as path:
+            for f in files:
+                utils.touchFile(os.path.join(path, f))
+            result = configurator._listmodules(path)
+        self.assertEquals(
+            result,
+            expected,
+        )
 
     def testPatch(self):
         self.configurator = MockModuleConfigurator('a')
