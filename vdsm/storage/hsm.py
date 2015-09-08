@@ -3528,6 +3528,9 @@ class HSM(object):
     @public
     def upgradeStoragePool(self, spUUID, targetDomVersion):
         targetDomVersion = int(targetDomVersion)
+        # This lock has to be mutual with the pool metadata operations (like
+        # activateSD/deactivateSD) as the operation uses the pool metadata.
+        vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
         pool._upgradePool(targetDomVersion)
         return {"upgradeStatus": "started"}
