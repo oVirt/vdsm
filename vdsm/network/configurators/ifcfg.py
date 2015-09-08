@@ -647,11 +647,21 @@ class ConfigWriter(object):
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic
         self._backup(cf)
-        with open(cf) as nicFile:
-            hwlines = [line for line in nicFile if line.startswith('HWADDR=')]
+        try:
+            with open(cf) as nicFile:
+                hwlines = [line for line in nicFile if line.startswith(
+                    'HWADDR=')]
+        except IOError as e:
+            logging.warning("%s couldn't be read (errno %s)", cf, e.errno)
+            try:
+                hwlines = ['HWADDR=%s\n' % netinfo.gethwaddr(nic)]
+            except IOError as e:
+                logging.exception("couldn't determine hardware address of %s "
+                                  "(errno %s)", nic, e.errno)
+                hwlines = []
         l = [self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
              'MTU=%s\n' % netinfo.DEFAULT_MTU] + hwlines
-        l += 'NM_CONTROLLED=no\n'
+        l.append('NM_CONTROLLED=no\n')
         with open(cf, 'w') as nicFile:
             nicFile.writelines(l)
 
