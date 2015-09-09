@@ -21,15 +21,15 @@
 
 LOGFILE="/var/log/vdsm/spm-lock.log"
 KILL="/bin/kill"
-spUUID="$1"
+sdUUID="$1"
 DEBUG="$2"
 
 function usage() {
     if [ -n "$1" ]; then
         echo $1
     fi
-    echo "usage: $0 { spUUID }"
-    echo "  spUUID -                pool uuid"
+    echo "usage: $0 { sdUUID }"
+    echo "  sdUUID - storage domain uuid"
     exit 1
 }
 
@@ -51,7 +51,7 @@ if [ "$#" -lt 1 ]; then
 fi
 
 spmprotect_pgrps=$(
-    ps -o pgrp= -o cmd= -C spmprotect.sh | grep renew | grep "$spUUID" | \
+    ps -o pgrp= -o cmd= -C spmprotect.sh | grep renew | grep "$sdUUID" | \
 	awk '{ print -$1 }' | sort -n | uniq
 )
 spmprotect_pgrps_len=$(echo $spmprotect_pgrps | wc -w)
@@ -60,7 +60,7 @@ if [[ -z "$spmprotect_pgrps" ]]; then
     debug "No process found to kill"
     exit 0
 else
-    log "Stopping lease for pool: $spUUID pgrps: $spmprotect_pgrps"
+    log "Stopping lease for domain: $sdUUID pgrps: $spmprotect_pgrps"
     $KILL -USR1 -- $spmprotect_pgrps >/dev/null 2>&1
 fi
 
