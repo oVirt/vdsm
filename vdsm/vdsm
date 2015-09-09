@@ -18,7 +18,6 @@ if sys.version_info[0] == 2:
     pthreading.monkey_patch()
 
 import os
-import getopt
 import signal
 import getpass
 import pwd
@@ -57,11 +56,6 @@ if config.getboolean('devel', 'python_warnings_enable'):
 
 class FatalError(Exception):
     """ Raised when vdsm fail to start """
-
-
-def usage():
-    print("Usage:  vdsm [OPTIONS]")
-    print("     -h  - Display this help message")
 
 
 def serve_clients(log):
@@ -119,7 +113,7 @@ def serve_clients(log):
         libvirtconnection.stop_event_loop(wait=False)
 
 
-def run(pidfile=None):
+def run():
     try:
         lconfig.fileConfig(loggerConfFile, disable_existing_loggers=False)
     except RuntimeError as e:
@@ -154,15 +148,11 @@ def run(pidfile=None):
         logging.root.handlers.append(logging.StreamHandler())
         log.handlers.append(logging.StreamHandler())
 
-        pid = str(os.getpid())
-        if pidfile:
-            with open(pidfile, 'w') as f:
-                f.write(pid + "\n")
-            os.chmod(pidfile, 0o664)
-
         sysname, nodename, release, version, machine = os.uname()
         log.info('(PID: %s) I am the actual vdsm %s %s (%s)',
-                 pid, dsaversion.raw_version_revision, nodename, release)
+                 os.getpid(), dsaversion.raw_version_revision, nodename,
+                 release)
+
         serve_clients(log)
     except:
         log.error("Exception raised", exc_info=True)
@@ -173,24 +163,6 @@ def run(pidfile=None):
         if hasattr(t, 'stop'):
             t.stop()
         log.info(str(t))
-
-
-def parse_args():
-    argDict = {}
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help", "pidfile="])
-    for o, v in opts:
-        o = o.lower()
-        if o == "-h" or o == "--help":
-            usage()
-            sys.exit(0)
-        if o == "--pidfile":
-            argDict['pidfile'] = v
-
-    if len(args) >= 1:
-        usage()
-        sys.exit(1)
-
-    return argDict
 
 
 def install_manhole(locals):
@@ -268,8 +240,7 @@ def main():
         # environment. So we setpgrp only when run by traditional init system
         # that does not prepare the environment.
         os.setpgrp()
-    argDict = parse_args()
-    run(**argDict)
+    run()
 
 
 if __name__ == '__main__':
