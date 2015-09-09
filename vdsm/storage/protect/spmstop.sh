@@ -22,7 +22,6 @@
 LOGFILE="/var/log/vdsm/spm-lock.log"
 KILL="/bin/kill"
 sdUUID="$1"
-DEBUG="$2"
 
 function usage() {
     if [ -n "$1" ]; then
@@ -33,17 +32,8 @@ function usage() {
     exit 1
 }
 
-function debug() {
-    if [ -z "$DEBUG" ]; then
-            return
-    fi
-    echo "$*"
-}
-
 function log() {
-    #logger $*
     echo "[`date +"%F %T"`] $*" >> $LOGFILE
-    debug "$*"
 }
 
 if [ "$#" -lt 1 ]; then
@@ -57,7 +47,7 @@ spmprotect_pgrps=$(
 spmprotect_pgrps_len=$(echo $spmprotect_pgrps | wc -w)
 
 if [[ -z "$spmprotect_pgrps" ]]; then
-    debug "No process found to kill"
+    log "No process found to kill"
     exit 0
 else
     log "Stopping lease for domain: $sdUUID pgrps: $spmprotect_pgrps"
