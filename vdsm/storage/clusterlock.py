@@ -132,7 +132,8 @@ class SafeLease(object):
             acquireLockCommand = subprocess.list2cmdline([
                 lockUtil, "start", self._sdUUID, str(hostID),
                 str(self._lockRenewalIntervalSec), str(self._leasesPath),
-                str(leaseTimeMs), str(ioOpTimeoutMs), str(self._leaseFailRetry)
+                str(leaseTimeMs), str(ioOpTimeoutMs),
+                str(self._leaseFailRetry), str(os.getpid())
             ])
 
             cmd = [constants.EXT_SU, misc.IOUSER, '-s', constants.EXT_SH, '-c',

@@ -31,8 +31,6 @@ sdUUID=$2
 CHECKVDSM=${CHECKVDSM:-"/usr/bin/pgrep vdsm"}
 REBOOTCMD=${REBOOTCMD:-"sudo /sbin/reboot -f"}
 RENEWDIR="/var/run/vdsm/spmprotect/$$"
-VDSM_PIDFILE="/var/run/vdsm/vdsmd.pid"
-VDSM_PID=`/bin/cat "$VDSM_PIDFILE"`
 
 function usage() {
     if [ -n "$1" ]; then
@@ -41,7 +39,7 @@ function usage() {
     trap EXIT
     echo "usage: $0 COMMAND PARAMETERS"
     echo "Commands:"
-    echo "  start { sdUUID hostId renewal_interval_sec lease_path[:offset] lease_time_ms io_op_timeout_ms fail_retries }"
+    echo "  start { sdUUID hostId renewal_interval_sec lease_path[:offset] lease_time_ms io_op_timeout_ms fail_retries vdsm_pid [debug] }"
     echo "Parameters:"
     echo "  sdUUID -                domain uuid"
     echo "  hostId -                host id in pool"
@@ -51,6 +49,8 @@ function usage() {
     echo "  lease_time_ms -         time limit within which lease must be renewed (at least 2*renewal_interval_sec)"
     echo "  io_op_timeout_ms -      I/O operation timeout"
     echo "  fail_retries -          Maximal number of attempts to retry to renew the lease before fencing (<= lease_time_ms/renewal_interval_sec)"
+    echo "  vdsm_pid -              Vdsm process ID"
+    echo "  debug -                 enable debug mode (optional)"
     exit 1
 }
 
@@ -119,12 +119,14 @@ function validate_args() {
     LEASE_TIME_MS="$4"
     IO_OP_TIMEOUT_MS="$5"
     LAST_RENEWAL="$6"
+    VDSM_PID="$7"
 
     # Make sure params are integers
     [ "$RENEWAL_INTERVAL" -eq "$RENEWAL_INTERVAL" 2>/dev/null ] || usage "error - Renewal interval not an integer"
     [ "$LEASE_TIME_MS" -eq "$LEASE_TIME_MS" 2>/dev/null ] || usage "error - Lease time not an integer"
     [ "$LEASE_TIME_MS" -ge $((RENEWAL_INTERVAL*2)) ] || usage "error - Lease time too small"
     [ "$IO_OP_TIMEOUT_MS" -eq "$IO_OP_TIMEOUT_MS" 2>/dev/null ] || usage "error - IO op timeout not an integer"
+    [ "$VDSM_PID" -eq "$VDSM_PID" 2>/dev/null ] || usage "error - Vdsm PID is not a process ID"
 }
 
 function renew() {
@@ -195,12 +197,12 @@ function start_renewal_loop() {
 
 ####################################################### Main ###################################################
 
-if [ "$#" -lt 8 ]; then
+if [ "$#" -lt 9 ]; then
     usage "error - wrong number of arguments"
 fi
 
-validate_args $3 $4 $5 $6 $7 $8
-DEBUG="$9"
+validate_args $3 $4 $5 $6 $7 $8 $9
+DEBUG="${10}"
 dbg=""
 if [ "$DEBUG" -eq "$DEBUG" 2>/dev/null ]; then
     dbg="-d"
@@ -221,7 +223,7 @@ start)
     trap release USR1
 
     exec 0>&- && exec 1>&- && exec 2>&- # Close stdin, stdout and stderr
-    $SETSID $0 renew $sdUUID $ID $RENEWAL_INTERVAL $LEASE_FILE $LEASE_TIME_MS $IO_OP_TIMEOUT_MS $LAST_RENEWAL $DEBUG >> $LOGFILE 2>&1 &
+    $SETSID $0 renew $sdUUID $ID $RENEWAL_INTERVAL $LEASE_FILE $LEASE_TIME_MS $IO_OP_TIMEOUT_MS $LAST_RENEWAL $VDSM_PID $DEBUG >> $LOGFILE 2>&1 &
     trap EXIT
     exit 0
     ;;
