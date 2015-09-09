@@ -158,13 +158,17 @@ class SafeLease(object):
             releaseLockCommand = [freeLockUtil, self._sdUUID]
             self.log.info("Releasing cluster lock for domain %s" %
                           self._sdUUID)
-            (rc, out, err) = misc.execCmd(releaseLockCommand,
+            (rc, out, err) = misc.execCmd(releaseLockCommand, raw=True,
                                           cwd=self.lockUtilPath)
             if rc != 0:
-                self.log.error("Could not release cluster lock "
-                               "rc=%s out=%s, err=%s" % (str(rc), out, err))
+                # TODO: should raise
+                self.log.error("Could not release cluster lock for domain %s "
+                               "(rc=%d, out=%s, err=%s)" %
+                               (self._sdUUID, rc, out, err))
+                return
 
-            self.log.debug("Cluster lock released successfully")
+            self.log.debug("Cluster lock for domain %s released successfully",
+                           self._sdUUID)
 
 
 initSANLockLog = logging.getLogger("Storage.initSANLock")
