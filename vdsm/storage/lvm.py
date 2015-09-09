@@ -983,6 +983,13 @@ def extendVG(vgName, devices, force):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs, getVGBlockSizes(vgName))
     vg = _lvminfo.getVg(vgName)
+
+    member_pvs = set(vg.pv_name).intersection(pvs)
+    if member_pvs:
+        log.error("Cannot extend vg %s: pvs already belong to vg %s",
+                  vg.name, member_pvs)
+        raise se.VolumeGroupExtendError(vgName, pvs)
+
     # Format extension PVs as all the other already in the VG
     _initpvs(pvs, int(vg.vg_mda_size) / 2 ** 20, force)
 
