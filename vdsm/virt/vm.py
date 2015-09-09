@@ -4037,21 +4037,6 @@ class Vm(object):
 
         driveXml = drive.getXML().toprettyxml(encoding='utf-8')
         self.log.debug("Hotunplug disk xml: %s", driveXml)
-        # Remove found disk from vm's drives list
-        if isVdsmImage(drive):
-            self.sdIds.remove(drive.domainID)
-        self._devices[DISK_DEVICES].remove(drive)
-        # Find and remove disk device from vm's conf
-        diskDev = None
-        for dev in self.conf['devices'][:]:
-            if (dev['type'] == DISK_DEVICES and
-                    dev['path'] == drive.path):
-                with self._confLock:
-                    self.conf['devices'].remove(dev)
-                diskDev = dev
-                break
-
-        self.saveState()
 
         hooks.before_disk_hotunplug(driveXml, self.conf,
                                     params=drive.custom)
@@ -4061,16 +4046,24 @@ class Vm(object):
             self.log.error("Hotunplug failed", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return errCode['noVM']
-            self._devices[DISK_DEVICES].append(drive)
-            # Restore disk device in vm's conf and _devices
-            if diskDev:
-                with self._confLock:
-                    self.conf['devices'].append(diskDev)
-            self.saveState()
             return {
                 'status': {'code': errCode['hotunplugDisk']['status']['code'],
                            'message': e.message}}
         else:
+            # Remove found disk from vm's drives list
+            if isVdsmImage(drive):
+                self.sdIds.remove(drive.domainID)
+            self._devices[DISK_DEVICES].remove(drive)
+
+            # Find and remove disk device from vm's conf
+            for dev in self.conf['devices'][:]:
+                if (dev['type'] == DISK_DEVICES and
+                        dev['path'] == drive.path):
+                    with self._confLock:
+                        self.conf['devices'].remove(dev)
+                    break
+
+            self.saveState()
             hooks.after_disk_hotunplug(driveXml, self.conf,
                                        params=drive.custom)
             self._cleanupDrives(drive)
