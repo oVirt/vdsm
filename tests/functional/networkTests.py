@@ -380,6 +380,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     @ValidateRunningAsRoot
+    @brokentest('This test fails because of #1261457')
     def test_getVdsStats(self):
         """This Test will send an ARP request on a created veth interface
         and checks that the TX bytes is in range between 42 and 384 bytes
