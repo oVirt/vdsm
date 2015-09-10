@@ -714,7 +714,8 @@ class Vm(object):
 
             self.lastStatus = vmstatus.UP
             if self._initTimePauseCode:
-                self.conf['pauseCode'] = self._initTimePauseCode
+                with self._confLock:
+                    self.conf['pauseCode'] = self._initTimePauseCode
                 if self._initTimePauseCode == 'ENOSPC':
                     self.cont()
             else:
@@ -1371,8 +1372,9 @@ class Vm(object):
             'clientIp': self.conf.get('clientIp', ''),
         }
 
-        if 'pauseCode' in self.conf:
-            stats['pauseCode'] = self.conf['pauseCode']
+        with self._confLock:
+            if 'pauseCode' in self.conf:
+                stats['pauseCode'] = self.conf['pauseCode']
         if self.isMigrating():
             stats['migrationProgress'] = self.migrateStatus()['progress']
 
@@ -1754,7 +1756,8 @@ class Vm(object):
                                    vmstatus.RESTORING_STATE):
             self._initTimePauseCode = self._readPauseCode()
         if not self.recovering and self._initTimePauseCode:
-            self.conf['pauseCode'] = self._initTimePauseCode
+            with self._confLock:
+                self.conf['pauseCode'] = self._initTimePauseCode
             if self._initTimePauseCode == 'ENOSPC':
                 self.cont()
 
@@ -1864,10 +1867,11 @@ class Vm(object):
             self.log.info(domxml)
 
             flags = libvirt.VIR_DOMAIN_NONE
-            if 'launchPaused' in self.conf:
-                flags |= libvirt.VIR_DOMAIN_START_PAUSED
-                self.conf['pauseCode'] = 'NOERR'
-                del self.conf['launchPaused']
+            with self._confLock:
+                if 'launchPaused' in self.conf:
+                    flags |= libvirt.VIR_DOMAIN_START_PAUSED
+                    self.conf['pauseCode'] = 'NOERR'
+                    del self.conf['launchPaused']
             self._dom = virdomain.Notifying(
                 self._connection.createXML(domxml, flags),
                 self._timeoutExperienced)
@@ -3636,7 +3640,8 @@ class Vm(object):
         if action == libvirt.VIR_DOMAIN_EVENT_IO_ERROR_PAUSE:
             self.log.info('abnormal vm stop device %s error %s',
                           blockDevAlias, err)
-            self.conf['pauseCode'] = reason
+            with self._confLock:
+                self.conf['pauseCode'] = reason
             self._setGuestCpuRunning(False)
             self._logGuestCpuStatus('onIOError')
             if reason == 'ENOSPC':
