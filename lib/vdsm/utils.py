@@ -941,7 +941,7 @@ def retry(func, expectedException=Exception, tries=None,
     if timeout in [0, None]:
         timeout = -1
 
-    startTime = time.time()
+    startTime = monotonic_time()
 
     while True:
         tries -= 1
@@ -951,7 +951,7 @@ def retry(func, expectedException=Exception, tries=None,
             if tries == 0:
                 raise
 
-            if (timeout > 0) and ((time.time() - startTime) > timeout):
+            if (timeout > 0) and ((monotonic_time() - startTime) > timeout):
                 raise
 
             if stopCallback is not None and stopCallback():
