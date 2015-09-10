@@ -95,7 +95,8 @@ def read_ovf(ovf_path):
     return """<?xml version="1.0" encoding="UTF-8"?>
 <Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1"
           xmlns:ovf="http://schemas.dmtf.org/ovf/envelope/1"
-          xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData">
+          xmlns:rasd="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_Re\
+sourceAllocationSettingData">
   <References>
     <File ovf:href="First-disk1.vmdk" ovf:id="file1" ovf:size="349405696"/>
   </References>
