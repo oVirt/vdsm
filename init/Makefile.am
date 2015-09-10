@@ -30,6 +30,10 @@ dist_vdsm_SCRIPTS = \
 	daemonAdapter \
 	$(NULL)
 
+dist_vdsmexec_SCRIPTS = \
+	wait_for_ipv4s \
+	$(NULL)
+
 CLEANFILES = \
 	config.log \
 	$(nodist_vdsmexec_SCRIPTS) \

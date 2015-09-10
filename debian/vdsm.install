@@ -31,6 +31,7 @@
 ./usr/libexec/vdsm/unpersist-vdsm-hook
 ./usr/libexec/vdsm/vdsm-gencerts.sh
 ./usr/libexec/vdsm/vdsmd_init_common.sh
+./usr/libexec/vdsm/wait_for_ipv4s
 ./usr/share/man/man8/vdsmd.8
 ./usr/share/vdsm/API.py
 ./usr/share/vdsm/alignmentScan.py
