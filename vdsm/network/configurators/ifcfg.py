@@ -653,24 +653,31 @@ class ConfigWriter(object):
                     mtu = int(mtu)
         return ipv4, ipv6, mtu
 
-    def removeNic(self, nic):
-        cf = netinfo.NET_CONF_PREF + nic
-        self._backup(cf)
+    @staticmethod
+    def _hwaddr_from_ifcfg_or_system(nic, ifcfg):
+        if not _hwaddr_required():
+            return []
         try:
-            with open(cf) as nicFile:
-                hwlines = [line for line in nicFile if line.startswith(
+            with open(ifcfg) as ifcfg_file:
+                return [line for line in ifcfg_file if line.startswith(
                     'HWADDR=')]
         except IOError as e:
             if e.errno != errno.ENOENT:
-                logging.error("%s couldn't be read (errno %s)", cf, e.errno)
+                logging.error("%s couldn't be read (errno %s)", ifcfg, e.errno)
                 raise
-            logging.warning("%s doesn't exist, reading HWADDR from system", cf)
+            logging.warning("%s doesn't exist, reading HWADDR from the system",
+                            ifcfg)
             try:
-                hwlines = ['HWADDR=%s\n' % netinfo.gethwaddr(nic)]
+                return ['HWADDR=%s\n' % netinfo.gethwaddr(nic)]
             except IOError as e:
                 logging.exception("couldn't determine hardware address of %s "
                                   "(errno %s)", nic, e.errno)
-                hwlines = []
+                return []
+
+    def removeNic(self, nic):
+        cf = netinfo.NET_CONF_PREF + nic
+        self._backup(cf)
+        hwlines = self._hwaddr_from_ifcfg_or_system(nic, cf)
         l = [self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
              'MTU=%s\n' % netinfo.DEFAULT_MTU] + hwlines
         l.append('NM_CONTROLLED=no\n')
