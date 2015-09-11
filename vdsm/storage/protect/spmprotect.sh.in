@@ -71,12 +71,12 @@ function fence() {
     trap "" INT
 
     log "Fencing sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE"
-    (sleep 20 && echodo $REBOOTCMD) &
+    (sleep 60 && echodo $REBOOTCMD) &
     disown
-    (sleep 7
+    (sleep 10
         log "Trying to stop vdsm for sdUUID=$sdUUID id=$ID lease_path=$LEASE_FILE"
         echodo $KILL "$VDSM_PID"
-        sleep 2
+        sleep 10
         echodo $KILL -9 "$VDSM_PID"
     )&
     disown
