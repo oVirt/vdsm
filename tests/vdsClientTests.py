@@ -459,6 +459,12 @@ class vdsClientTest(TestCaseBase):
         self.assertEquals(args, {'key1': 'val1', 'key2': 'v,al2',
                                  'key3': 'val3'})
 
+    def testNoValueArgs(self):
+        fixture = "key1=val1,key2=,key3=val3"
+        args = vdsClient.parseArgs(fixture)
+        self.assertEquals(args, {'key1': 'val1', 'key2': '',
+                                 'key3': 'val3'})
+
 
 class CannonizeHostPortTest(TestCaseBase):
 

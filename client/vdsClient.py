@@ -27,7 +27,6 @@ import os
 import re
 import shlex
 import socket
-import string
 import pprint as pp
 
 from vdsm import utils, vdscli
@@ -155,11 +154,13 @@ def printStats(list):
 
 def parseArgs(args):
     lexer = shlex.shlex(args, posix=True)
-    lexer.wordchars = filter(lambda x: x not in list('=,\\"\''),
-                             string.printable)
-    results = list(lexer)
-    args = dict(zip(results[0::4], results[2::4]))
-    return args
+    lexer.whitespace = ','
+    lexer.whitespace_split = True
+    ret = {}
+    for c in list(lexer):
+        words = c.split('=', 2)
+        ret[words[0]] = '' if len(words) == 1 else words[1]
+    return ret
 
 
 def parseConList(args):
