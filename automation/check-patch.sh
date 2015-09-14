@@ -1,7 +1,6 @@
-#!/bin/bash -e
-#
-# Run on each patch to gerrit, should be faster than check-meged and require
-# less resources but thorough enough to provide relevant feedback
+#!/bin/bash
+
+set -xe
 
 # Nose 1.3.0 and later segatult with this flag
 #export NOSE_WITH_XUNIT=1
@@ -17,6 +16,12 @@ export NOSE_EXCLUDE=
     mknod /dev/net/tun c 10 200
 }
 
-sh -x autogen.sh --system
-make all
+./autogen.sh --system --enable-hooks
 make check
+
+./automation/build-artifacts.sh
+
+# if specfile was changed, try to install all created packages
+if git diff-tree --no-commit-id --name-only -r HEAD | grep --quiet 'vdsm.spec.in' ; then
+  yum -y install exported-artifacts/*.rpm
+fi

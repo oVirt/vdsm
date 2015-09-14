@@ -10,7 +10,6 @@ policycoreutils-python
 pyflakes
 python-blivet
 python-devel
-python-ethtool
 python-inotify
 python-ioprocess
 python-netaddr
@@ -19,5 +18,3 @@ python-pep8
 python-pthreading
 python-six
 rpm-build
-sudo
-yum
