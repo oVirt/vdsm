@@ -19,8 +19,7 @@
 
 import uuid
 
-import jobs
-from vdsm import response
+from vdsm import jobs, response
 
 from testlib import VdsmTestCase, expandPermutations, permutations
 

@@ -791,7 +791,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/hooking.py*
 %{_datadir}/%{vdsm_name}/hooks.py*
 %{_datadir}/%{vdsm_name}/hostdev.py*
-%{_datadir}/%{vdsm_name}/jobs.py*
 %{_datadir}/%{vdsm_name}/mk_sysprep_floppy
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
@@ -1040,6 +1039,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/exception.py*
 %{python_sitelib}/%{vdsm_name}/executor.py*
 %{python_sitelib}/%{vdsm_name}/ipwrapper.py*
+%{python_sitelib}/%{vdsm_name}/jobs.py*
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/m2cutils.py*

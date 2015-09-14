@@ -31,6 +31,7 @@ dist_vdsmpylib_PYTHON = \
 	exception.py \
 	executor.py \
 	ipwrapper.py \
+	jobs.py \
 	jsonrpcvdscli.py \
 	libvirtconnection.py \
 	m2cutils.py \
