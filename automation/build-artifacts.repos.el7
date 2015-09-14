@@ -1,0 +1,2 @@
+ovirt-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/$distro
+ovirt-glusterfs-epel,http://download.gluster.org/pub/gluster/glusterfs/LATEST/EPEL.repo/epel-7/x86_64
