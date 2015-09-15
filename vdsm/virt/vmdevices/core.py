@@ -123,8 +123,20 @@ class Console(Base):
         <serial type='pty'>
             <target port='0'>
         </serial>
+
+        or
+
+        <serial type='unix'>
+            <source mode='bind'
+              path='/var/run/ovirt-vmconsole-console/${VMID}.sock'/>
+            <target port='0'/>
+        </serial>
         """
-        s = self.createXmlElem('serial', 'pty')
+        if self._path:
+            s = self.createXmlElem('serial', 'unix')
+            s.appendChildWithArgs('source', mode='bind', path=self._path)
+        else:
+            s = self.createXmlElem('serial', 'pty')
         s.appendChildWithArgs('target', port='0')
         return s
 

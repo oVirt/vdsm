@@ -326,6 +326,17 @@ class TestVm(XMLTestCase):
         console = vmdevices.core.Console(self.conf, self.log, **dev)
         self.assertXMLEqual(console.getSerialDeviceXML().toxml(), serialXML)
 
+    def testUnixSocketSerialDeviceXML(self):
+        path = "/var/run/ovirt-vmconsole-console/%s.sock" % self.conf['vmId']
+        serialXML = """
+            <serial type="unix">
+                <source mode="bind" path="%s" />
+                <target port="0" />
+            </serial>""" % path
+        dev = {'device': 'console', 'specParams': {'enableSocket': True}}
+        console = vmdevices.core.Console(self.conf, self.log, **dev)
+        self.assertXMLEqual(console.getSerialDeviceXML().toxml(), serialXML)
+
     def testClockXML(self):
         clockXML = """
             <clock adjustment="-3600" offset="variable">
