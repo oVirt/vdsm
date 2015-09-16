@@ -56,8 +56,15 @@ class Graphics(Base):
         super(Graphics, self).__init__(conf, log, **kwargs)
         self.port = LIBVIRT_PORT_AUTOSELECT
         self.tlsPort = LIBVIRT_PORT_AUTOSELECT
-        self.specParams['displayIp'] = _getNetworkIp(
-            self.specParams.get('displayNetwork'))
+
+        # It's possible that the network is specified vm's conf
+        # and not in specParams. This is considered legacy.
+        self.specParams['displayNetwork'] = (
+            self.specParams.get('displayNetwork') or conf.get('displayNetwork')
+        )
+
+        self.specParams['displayIp'] = (
+            _getNetworkIp(self.specParams.get('displayNetwork')))
 
     def getSpiceVmcChannelsXML(self):
         vmc = vmxml.Element('channel', type='spicevmc')
