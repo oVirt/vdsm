@@ -662,7 +662,10 @@ class ConfigWriter(object):
                 hwlines = [line for line in nicFile if line.startswith(
                     'HWADDR=')]
         except IOError as e:
-            logging.warning("%s couldn't be read (errno %s)", cf, e.errno)
+            if e.errno != errno.ENOENT:
+                logging.error("%s couldn't be read (errno %s)", cf, e.errno)
+                raise
+            logging.warning("%s doesn't exist, reading HWADDR from system", cf)
             try:
                 hwlines = ['HWADDR=%s\n' % netinfo.gethwaddr(nic)]
             except IOError as e:
