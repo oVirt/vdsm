@@ -36,6 +36,7 @@ from . import bonding
 from . import bridges
 from .dhcp import (get_dhclient_ifaces, propose_updates_to_reported_dhcp,
                    update_reported_dhcp, dhcp_used)
+from .dns import get_host_nameservers
 from .misc import getIfaceCfg, ipv6_supported
 from .mtus import getMtu
 from . import nics
@@ -54,7 +55,7 @@ DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 
 def get(vdsmnets=None):
     networking = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
-                  'vlans': {}}
+                  'vlans': {}, 'dnss': get_host_nameservers()}
     paddr = bonding.permanent_address()
     ipaddrs = getIpAddrs()
     dhcpv4_ifaces, dhcpv6_ifaces = get_dhclient_ifaces()

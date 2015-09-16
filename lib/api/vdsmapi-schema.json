@@ -1210,6 +1210,9 @@
 #                       supported in this host.
 #                       (new in version 4.17.0)
 #
+# @dnss:                Provides host DNS servers from /etc/resolve.conf
+#                       (new in version 4.18.0)
+#
 # Since: 4.17.0
 #
 # Notes: Since ovirt-engine cannot parse software versions in 'x.y.z' format,
@@ -1236,7 +1239,8 @@
           'autoNumaBalancing': 'AutoNumaBalancingStatus',
           'selinux': 'SELinuxStatus', '*liveSnapshot': 'bool',
           'kdumpStatus': 'int', '*liveMerge': 'bool',
-          'directedPassthrough': 'bool', 'additionalFeatures': ['str']}}
+          'directedPassthrough': 'bool', 'additionalFeatures': ['str'],
+          'dnss': ['str']}}
 
 ##
 # @Host.getCapabilities:
