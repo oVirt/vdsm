@@ -282,27 +282,34 @@ class FakeFileStorageDomain(fileSD.FileStorageDomain):
         self._manifest = self.manifestClass()
 
 
-@expandPermutations
-class DomainTestMixin(object):
-    # Must be implemented by the sub class
-    fakeDomClass = None
+class RedirectionChecker(object):
+    """
+    Checks whether a source class redirects method calls to a target class
+    instance accessible via the 'target_name" attribute.  The target class
+    methods must use the @recorded decorator.
+    """
+    def __init__(self, source_instance, target_name):
+        self.source_instance = source_instance
+        self.target_name = target_name
 
-    def setUp(self):
-        self.dom = self.fakeDomClass()
-
-    def _check(self, fn, args, result):
-        getattr(self.dom, fn)(*args)
-        self.assertEqual(self.dom._manifest.__recording__, result)
+    def check(self, fn, args, result):
+        target = getattr(self.source_instance, self.target_name)
+        getattr(self.source_instance, fn)(*args)
+        return target.__recording__ == result
 
     def check_call(self, fn, nr_args=0):
         args = tuple(range(nr_args))
-        self._check(fn, args, [(fn, args, {})])
+        return self.check(fn, args, [(fn, args, {})])
 
     def check_classmethod_call(self, fn, nr_args=0):
         args = tuple(range(nr_args))
-        getattr(self.dom, fn)(*args)
-        self.assertEquals(self.dom._manifest.get_classmethod_calls(),
-                          [(fn, args)])
+        target = getattr(self.source_instance, self.target_name)
+        getattr(self.source_instance, fn)(*args)
+        return target.get_classmethod_calls() == [(fn, args)]
+
+
+@expandPermutations
+class DomainTestMixin(object):
 
     @permutations([
         ['sdUUID', 'a6ecac0a-5c6b-46d7-9ba5-df8b34df2d01'],
@@ -311,15 +318,15 @@ class DomainTestMixin(object):
         ['mountpoint', '/a/b'],
     ])
     def test_property(self, prop, val):
-        self.assertEqual(getattr(self.dom, prop), val)
+        self.assertEqual(getattr(self.domain, prop), val)
 
     def test_getrepopath(self):
         # The private method _getRepoPath in StorageDomain calls the public
         # method getRepoPath in the StorageDomainManifest.
-        self._check('_getRepoPath', (), [('getRepoPath', (), {})])
+        self.checker.check('_getRepoPath', (), [('getRepoPath', (), {})])
 
     def test_nonexisting_function(self):
-        self.assertRaises(AttributeError, self.check_call, 'foo')
+        self.assertRaises(AttributeError, self.checker.check_call, 'foo')
 
     @permutations([
         # dom method, manifest method, nargs
@@ -330,7 +337,7 @@ class DomainTestMixin(object):
     ])
     def test_clusterlock(self, dom_method, manifest_method, nr_args):
         args = tuple(range(nr_args))
-        self._check(dom_method, args, [(manifest_method, args, {})])
+        self.checker.check(dom_method, args, [(manifest_method, args, {})])
 
     @permutations([
         ['getReadDelay', 0],
@@ -367,21 +374,24 @@ class DomainTestMixin(object):
         ['validateCreateVolumeParams', 3],
         ])
     def test_common_functions(self, fn, nargs):
-        self.check_call(fn, nargs)
+        self.checker.check_call(fn, nargs)
 
 
 @expandPermutations
-class BlockTests(DomainTestMixin, VdsmTestCase):
-    fakeDomClass = FakeBlockStorageDomain
+class BlockDomainTests(DomainTestMixin, VdsmTestCase):
+
+    def setUp(self):
+        self.domain = FakeBlockStorageDomain()
+        self.checker = RedirectionChecker(self.domain, '_manifest')
 
     def test_block_properties(self):
-        self.assertEqual(512, self.dom.logBlkSize)
-        self.assertEqual(512, self.dom.phyBlkSize)
+        self.assertEqual(512, self.domain.logBlkSize)
+        self.assertEqual(512, self.domain.phyBlkSize)
 
     def test_acquirevolumemetadataslot(self):
-        with self.dom.acquireVolumeMetadataSlot(0, 1):
+        with self.domain.acquireVolumeMetadataSlot(0, 1):
             result = [('acquireVolumeMetadataSlot', (0, 1), {})]
-            self.assertEqual(self.dom._manifest.__recording__, result)
+            self.assertEqual(self.domain._manifest.__recording__, result)
 
     @permutations([
         ['extend', 2],
@@ -391,18 +401,21 @@ class BlockTests(DomainTestMixin, VdsmTestCase):
         ['rmDCImgDir', 2],
     ])
     def test_block_functions(self, fn, nargs=0):
-        self.check_call(fn, nargs)
+        self.checker.check_call(fn, nargs)
 
     @permutations([
         ['metaSize', 1],
         ['getMetaDataMapping', 2],
     ])
     def test_block_classmethod(self, fn, nargs=0):
-        self.check_classmethod_call(fn, nargs)
+        self.checker.check_classmethod_call(fn, nargs)
 
 
-class FileTests(DomainTestMixin, VdsmTestCase):
-    fakeDomClass = FakeFileStorageDomain
+class FileDomainTests(DomainTestMixin, VdsmTestCase):
+
+    def setUp(self):
+        self.domain = FakeFileStorageDomain()
+        self.checker = RedirectionChecker(self.domain, '_manifest')
 
     def test_getremotepath(self):
-        self.assertEqual('b', self.dom.getRemotePath())
+        self.assertEqual('b', self.domain.getRemotePath())
