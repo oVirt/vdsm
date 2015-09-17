@@ -476,7 +476,6 @@ def _bondOptsForIfcfg(opts):
 
 def _dhcp_used(iface, ifaces_with_active_leases, net_attrs, family=4):
     if net_attrs is None:
-        logging.debug('There is no VDSM network configured on %s.' % iface)
         return iface in ifaces_with_active_leases
     else:
         try:
