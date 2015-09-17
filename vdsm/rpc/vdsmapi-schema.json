@@ -8282,6 +8282,11 @@
 #
 # @srcVolUUID:       If specified, create a snapshot from this Volume
 #
+# @initialSize:      #optional if specified, initial size of volume in bytes
+#                    (as string). Allowed only when creating thin provisioned
+#                    volume on block storage.
+#                    (new in version 4.17.8)
+#
 # Returns:
 # A task UUID
 #
@@ -8292,7 +8297,8 @@
           'storagedomainID': 'UUID', 'imageID': 'UUID',
           'size': 'str', 'volFormat': 'VolumeFormat',
           'preallocate': 'VolumeAllocation', 'diskType': 'DiskType',
-          'desc': 'str', 'srcImgUUID': 'UUID', 'srcVolUUID': 'UUID'},
+          'desc': 'str', 'srcImgUUID': 'UUID', 'srcVolUUID': 'UUID',
+          '*initialSize': 'str'},
  'returns': 'UUID'}
 
 ##

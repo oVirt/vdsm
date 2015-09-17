@@ -918,10 +918,10 @@ class BindingXMLRPC(object):
     def volumeCreate(self, sdUUID, spUUID, imgUUID, size, volFormat,
                      preallocate, diskType, volUUID, desc,
                      srcImgUUID=API.Image.BLANK_UUID,
-                     srcVolUUID=API.Volume.BLANK_UUID):
+                     srcVolUUID=API.Volume.BLANK_UUID, initialSize=None):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)
         return volume.create(size, volFormat, preallocate, diskType, desc,
-                             srcImgUUID, srcVolUUID)
+                             srcImgUUID, srcVolUUID, initialSize=initialSize)
 
     def volumeExtendSize(self, spUUID, sdUUID, imgUUID, volUUID, newSize):
         volume = API.Volume(volUUID, spUUID, sdUUID, imgUUID)

@@ -49,6 +49,7 @@ import inspect
 
 from vdsm import constants
 from vdsm import utils
+from storageConstants import SECTOR_SIZE
 import storage_exception as se
 import logUtils
 
@@ -447,6 +448,22 @@ def validateN(number, name):
     if n < 0:
         raise se.InvalidParameterException(name, number)
     return n
+
+
+def validateSize(size, name):
+    """
+    Validate number of bytes as string and convert to number of sectors,
+    rounding up to next sectors.
+
+    Raises InvalidParameterException if value is not a string or if it could
+    not be converted to integer.
+    """
+    if not isinstance(size, basestring):
+        log.error("Number of sectors as int is not supported, use size in "
+                  "bytes as string")
+        raise se.InvalidParameterException("size", size)
+    size = validateN(size, name)
+    return (size + SECTOR_SIZE - 1) / SECTOR_SIZE
 
 
 def rotateFiles(directory, prefixName, gen, cp=False, persist=False):

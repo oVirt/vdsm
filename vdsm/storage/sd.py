@@ -478,13 +478,14 @@ class StorageDomain(object):
             raise se.IncorrectType(preallocate)
 
     def createVolume(self, imgUUID, size, volFormat, preallocate, diskType,
-                     volUUID, desc, srcImgUUID, srcVolUUID):
+                     volUUID, desc, srcImgUUID, srcVolUUID, initialSize=None):
         """
         Create a new volume
         """
         return self.getVolumeClass().create(
             self._getRepoPath(), self.sdUUID, imgUUID, size, volFormat,
-            preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID)
+            preallocate, diskType, volUUID, desc, srcImgUUID, srcVolUUID,
+            initialSize=initialSize)
 
     def getMDPath(self):
         return self._manifest.getMDPath()

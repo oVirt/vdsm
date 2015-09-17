@@ -395,7 +395,8 @@ class Volume(object):
 
     @classmethod
     def create(cls, repoPath, sdUUID, imgUUID, size, volFormat, preallocate,
-               diskType, volUUID, desc, srcImgUUID, srcVolUUID):
+               diskType, volUUID, desc, srcImgUUID, srcVolUUID,
+               initialSize=None):
         """
         Create a new volume with given size or snapshot
             'size' - in sectors
@@ -404,6 +405,8 @@ class Volume(object):
             'diskType' - enum (API.Image.DiskTypes)
             'srcImgUUID' - source image UUID
             'srcVolUUID' - source volume UUID
+            'initialSize' - initial volume size in sectors,
+                            in case of thin provisioning
         """
         dom = sdCache.produce(sdUUID)
         dom.validateCreateVolumeParams(volFormat, srcVolUUID,
@@ -469,8 +472,10 @@ class Volume(object):
             try:
                 metaId = cls._create(dom, imgUUID, volUUID, size, volFormat,
                                      preallocate, volParent, srcImgUUID,
-                                     srcVolUUID, volPath)
-            except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume) as e:
+                                     srcVolUUID, volPath,
+                                     initialSize=initialSize)
+            except (se.VolumeAlreadyExists, se.CannotCreateLogicalVolume,
+                    se.VolumeCreationError, se.InvalidParameterException) as e:
                 cls.log.error("Failed to create volume %s: %s", volPath, e)
                 vars.task.popRecovery()
                 raise

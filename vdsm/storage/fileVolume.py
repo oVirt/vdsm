@@ -99,11 +99,17 @@ class FileVolume(volume.Volume):
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath):
+                volParent, srcImgUUID, srcVolUUID, volPath,
+                initialSize=None):
         """
         Class specific implementation of volumeCreate. All the exceptions are
         properly handled and logged in volume.create()
         """
+        if initialSize:
+            cls.log.error("initialSize is not supported for file-based "
+                          "volumes")
+            raise se.InvalidParameterException("initial size",
+                                               initialSize)
 
         sizeBytes = size * BLOCK_SIZE
         truncSize = sizeBytes if volFormat == volume.RAW_FORMAT else 0

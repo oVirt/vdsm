@@ -1078,10 +1078,15 @@ class service:
             srcVolUUID = args[10]
         else:
             srcVolUUID = BLANK_UUID
-        image = self.s.createVolume(sdUUID, spUUID, imgUUID, size,
-                                    volFormat, preallocate,
-                                    diskType, newVol, descr,
-                                    srcImgUUID, srcVolUUID)
+        params = [sdUUID, spUUID, imgUUID, size, volFormat, preallocate,
+                  diskType, newVol, descr, srcImgUUID, srcVolUUID]
+        if len(args) > 11:
+            initialSizeGIB = int(args[11])
+            initialSize = str(initialSizeGIB * constants.GIB)
+            params.append(initialSize)
+
+        image = self.s.createVolume(*params)
+
         if image['status']['code']:
             return image['status']['code'], image['status']['message']
         return 0, image['uuid']
@@ -2520,7 +2525,7 @@ if __name__ == '__main__':
         'createVolume': (serv.createVolume,
                          ('<sdUUID> <spUUID> <imgUUID> <size> <volFormat> '
                           '<preallocate> <diskType> <newVolUUID> <descr> '
-                          '<srcImgUUID> <srcVolUUID>',
+                          '<srcImgUUID> <srcVolUUID> <initialSize>',
                           'Creates new volume or snapshot'
                           )),
         'extendVolumeSize': (serv.extendVolumeSize, (
