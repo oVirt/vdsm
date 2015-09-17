@@ -576,6 +576,32 @@ class ValidateInt(TestCaseBase):
         self.assertRaises(expectedException, misc.validateInt, "2-1", "a")
 
 
+@expandPermutations
+class ValidateSize(TestCaseBase):
+
+    @permutations([
+        # size, result
+        ("512", 1),
+        ("513", 2),
+        (u"1073741824", 2097152),
+        ])
+    def test_valid_size(self, size, result):
+        self.assertEqual(misc.validateSize(size, "size"), result)
+
+    @permutations([
+        # size
+        [2097152],  # 1GiB in sectors
+        [1000.14],
+        ["one"],
+        ["nan"],
+        ["3.14"],
+        ["-1"],
+    ])
+    def test_invalid_size(self, size):
+        self.assertRaises(misc.se.InvalidParameterException,
+                          misc.validateSize, size, "size")
+
+
 class ValidateUuid(TestCaseBase):
 
     def testValidInput(self):

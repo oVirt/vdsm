@@ -56,6 +56,8 @@ VOLUME_MDNUMBLKS = 1
 
 SECTORS_TO_MB = 2048
 
+QCOW_OVERHEAD_FACTOR = 1.1
+
 # Reserved leases for special purposes:
 #  - 0       SPM (Backward comapatibility with V0 and V2)
 #  - 1       SDM (SANLock V3)
@@ -124,18 +126,16 @@ class BlockVolume(volume.Volume):
 
     @classmethod
     def _create(cls, dom, imgUUID, volUUID, size, volFormat, preallocate,
-                volParent, srcImgUUID, srcVolUUID, volPath):
+                volParent, srcImgUUID, srcVolUUID, volPath, initialSize=None):
         """
         Class specific implementation of volumeCreate. All the exceptions are
         properly handled and logged in volume.create()
         """
 
-        if preallocate == volume.SPARSE_VOL:
-            volSize = "%s" % config.get("irs", "volume_utilization_chunk_mb")
-        else:
-            volSize = "%s" % ((size + SECTORS_TO_MB - 1) / SECTORS_TO_MB)
+        lvSize = cls._calculate_volume_alloc_size(preallocate,
+                                                  size, initialSize)
 
-        lvm.createLV(dom.sdUUID, volUUID, volSize, activate=True,
+        lvm.createLV(dom.sdUUID, volUUID, "%s" % lvSize, activate=True,
                      initialTag=TAG_VOL_UNINIT)
 
         utils.rmFile(volPath)
@@ -168,6 +168,39 @@ class BlockVolume(volume.Volume):
                          dom.sdUUID, volUUID, exc_info=True)
 
         return (dom.sdUUID, slot)
+
+    @classmethod
+    def _calculate_volume_alloc_size(cls, preallocate, capacity, initial_size):
+        """ Calculate the allocation size in mb of the volume
+        'preallocate' - Sparse or Preallocated
+        'capacity' - the volume size in sectors
+        'initial_size' - optional, if provided the initial allocated
+                         size in sectors for sparse volumes
+         """
+        if initial_size and initial_size > capacity:
+            log.error("The volume size %s is smaller "
+                      "than the requested initial size %s",
+                      capacity, initial_size)
+            raise se.InvalidParameterException("initial size",
+                                               initial_size)
+
+        if initial_size and preallocate == volume.PREALLOCATED_VOL:
+            log.error("Initial size is not supported for preallocated volumes")
+            raise se.InvalidParameterException("initial size",
+                                               initial_size)
+
+        if preallocate == volume.SPARSE_VOL:
+            if initial_size:
+                initial_size = int(initial_size * QCOW_OVERHEAD_FACTOR)
+                alloc_size = ((initial_size + SECTORS_TO_MB - 1)
+                              / SECTORS_TO_MB)
+            else:
+                alloc_size = config.getint("irs",
+                                           "volume_utilization_chunk_mb")
+        else:
+            alloc_size = (capacity + SECTORS_TO_MB - 1) / SECTORS_TO_MB
+
+        return alloc_size
 
     def delete(self, postZero, force):
         """ Delete volume

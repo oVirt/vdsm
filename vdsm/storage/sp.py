@@ -1804,7 +1804,8 @@ class StoragePool(object):
     def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate,
                      diskType, volUUID=None, desc="",
                      srcImgUUID=volume.BLANK_UUID,
-                     srcVolUUID=volume.BLANK_UUID):
+                     srcVolUUID=volume.BLANK_UUID,
+                     initialSize=None):
         """
         Creates a new volume.
 
@@ -1836,6 +1837,9 @@ class StoragePool(object):
         :param srcVolUUID: The UUID of the volume that will be the base of the
                            new volume.
         :type srcVolUUID: UUID
+        :param initialSize: The initial size of the volume in case of thin
+                            provisioning.
+        :type initialSize: int
 
         :returns: a dict with the UUID of the new volume.
         :rtype: dict
@@ -1864,7 +1868,8 @@ class StoragePool(object):
             newVolUUID = sdCache.produce(sdUUID).createVolume(
                 imgUUID=imgUUID, size=size, volFormat=volFormat,
                 preallocate=preallocate, diskType=diskType, volUUID=volUUID,
-                desc=desc, srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID)
+                desc=desc, srcImgUUID=srcImgUUID, srcVolUUID=srcVolUUID,
+                initialSize=initialSize)
         return dict(uuid=newVolUUID)
 
     def deleteVolume(self, sdUUID, imgUUID, volumes, postZero, force):

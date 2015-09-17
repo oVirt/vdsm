@@ -64,6 +64,7 @@ import storage_exception as se
 from threadLocal import vars
 from vdsm import constants
 from storageConstants import STORAGE
+from storageConstants import SECTOR_SIZE
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
 import devicemapper
@@ -89,8 +90,6 @@ logged = partial(
 
 rmanager = rm.ResourceManager.getInstance()
 
-# FIXME: moved from spm.py but this should be somewhere else
-SECTOR_SIZE = 512
 
 STORAGE_CONNECTION_DIR = os.path.join(constants.P_VDSM_LIB, "connections/")
 
@@ -1431,7 +1430,8 @@ class HSM(object):
     def createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat,
                      preallocate, diskType, volUUID, desc,
                      srcImgUUID=volume.BLANK_UUID,
-                     srcVolUUID=volume.BLANK_UUID):
+                     srcVolUUID=volume.BLANK_UUID,
+                     initialSize=None):
         """
         Create a new volume
             Function Type: SPM
@@ -1440,22 +1440,19 @@ class HSM(object):
         """
         argsStr = ("sdUUID=%s, spUUID=%s, imgUUID=%s, size=%s, volFormat=%s, "
                    "preallocate=%s, diskType=%s, volUUID=%s, desc=%s, "
-                   "srcImgUUID=%s, srcVolUUID=%s" %
+                   "srcImgUUID=%s, srcVolUUID=%s, initialSize=%s" %
                    (sdUUID, spUUID, imgUUID, size, volFormat, preallocate,
-                    diskType, volUUID, desc,
-                    srcImgUUID, srcVolUUID))
+                    diskType, volUUID, desc, srcImgUUID, srcVolUUID,
+                    initialSize))
         vars.task.setDefaultException(se.VolumeCreationError(argsStr))
         # Validates that the pool is connected. WHY?
         pool = self.getPool(spUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
-        if not isinstance(size, basestring):
-            self.log.error("Number of sectors as int is not supported, use "
-                           "size in bytes as string")
-            raise se.InvalidParameterException("size", size)
-        size = misc.validateN(size, "size")
-        size = (size + SECTOR_SIZE - 1) / SECTOR_SIZE
+        size = misc.validateSize(size, "size")
+        if initialSize:
+            initialSize = misc.validateSize(initialSize, "initialSize")
 
         if srcImgUUID:
             misc.validateUUID(srcImgUUID, 'srcImgUUID')
@@ -1468,7 +1465,7 @@ class HSM(object):
         vars.task.getSharedLock(STORAGE, sdUUID)
         self._spmSchedule(spUUID, "createVolume", pool.createVolume, sdUUID,
                           imgUUID, size, volFormat, preallocate, diskType,
-                          volUUID, desc, srcImgUUID, srcVolUUID)
+                          volUUID, desc, srcImgUUID, srcVolUUID, initialSize)
 
     @public
     def deleteVolume(self, sdUUID, spUUID, imgUUID, volumes, postZero=False,

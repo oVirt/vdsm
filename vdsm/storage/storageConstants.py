@@ -19,3 +19,4 @@
 #
 
 STORAGE = "Storage"
+SECTOR_SIZE = 512

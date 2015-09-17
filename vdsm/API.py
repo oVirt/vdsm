@@ -825,11 +825,12 @@ class Volume(APIBase):
                                    volFormat, preallocate, postZero, force)
 
     def create(self, size, volFormat, preallocate, diskType, desc,
-               srcImgUUID, srcVolUUID):
+               srcImgUUID, srcVolUUID, initialSize=None):
         return self._irs.createVolume(self._sdUUID, self._spUUID,
                                       self._imgUUID, size, volFormat,
                                       preallocate, diskType, self._UUID, desc,
-                                      srcImgUUID, srcVolUUID)
+                                      srcImgUUID, srcVolUUID,
+                                      initialSize=initialSize)
 
     def delete(self, postZero, force):
         return self._irs.deleteVolume(self._sdUUID, self._spUUID,

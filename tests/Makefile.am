@@ -33,6 +33,7 @@ device_modules = \
 test_modules = \
 	alignmentScanTests.py \
 	blocksdTests.py \
+	blockVolumeTests.py \
 	bridgeTests.py \
 	cPopenTests.py \
 	capsTests.py \
