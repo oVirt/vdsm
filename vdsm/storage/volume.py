@@ -173,6 +173,7 @@ class VolumeMetadata(object):
         self.sdUUID = sdUUID
         self.imgUUID = imgUUID
         self.volUUID = volUUID
+        self._volumePath = None
         self._imagePath = None
         self.voltype = None
 
@@ -187,13 +188,26 @@ class VolumeMetadata(object):
             self.validateImagePath()
         return self._imagePath
 
+    @property
+    def volumePath(self):
+        if self._volumePath is None:
+            self.validateVolumePath()
+        return self._volumePath
+
+    def getVolumePath(self):
+        """
+        Get the path of the volume file/link
+        """
+        if not self._volumePath:
+            raise se.VolumeAccessError(self.volUUID)
+        return self._volumePath
+
 
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
 
     def __init__(self, md):
         self._md = md
-        self.volumePath = None
         self.validate()
 
     @property
@@ -213,6 +227,10 @@ class Volume(object):
         return self._md.repoPath
 
     @property
+    def volumePath(self):
+        return self._md.volumePath
+
+    @property
     def imagePath(self):
         return self._md.imagePath
 
@@ -230,8 +248,8 @@ class Volume(object):
         """
         Validate that the volume can be accessed
         """
-        self.md.validateImagePath()
-        self.validateVolumePath()
+        self._md.validateImagePath()
+        self._md.validateVolumePath()
 
     def __str__(self):
         return str(self.volUUID)
@@ -1011,12 +1029,7 @@ class Volume(object):
         self.setParentMeta(puuid)
 
     def getVolumePath(self):
-        """
-        Get the path of the volume file/link
-        """
-        if not self.volumePath:
-            raise se.VolumeAccessError(self.volUUID)
-        return self.volumePath
+        return self._md.getVolumePath()
 
     def getVmVolumeInfo(self):
         """

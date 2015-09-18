@@ -499,10 +499,17 @@ class VolumeTestMixin(object):
         ['volUUID', '6aab5eb4-2a8b-4cb7-a0b7-bc6f61de3e18'],
         ['repoPath', '/rhev/data-center'],
         ['imagePath', '/a/b'],
+        ['volumePath', '/a/b/c'],
         ['voltype', None],
         ])
     def test_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
+
+    @permutations([
+        ['getVolumePath', 0],
+        ])
+    def test_common_functions(self, fn, nargs):
+        self.checker.check_call(fn, nargs)
 
 
 class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
@@ -524,3 +531,9 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
         ])
     def test_file_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
+
+    @permutations([
+        ['_getMetaVolumePath', 1],
+        ])
+    def test_functions(self, fn, nargs):
+        self.checker.check_call(fn, nargs)

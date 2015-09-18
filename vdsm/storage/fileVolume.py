@@ -30,6 +30,7 @@ import outOfProcess as oop
 import volume
 import image
 import sd
+import fileSD
 import misc
 from misc import deprecated
 import task
@@ -75,6 +76,48 @@ class FileVolumeMetadata(volume.VolumeMetadata):
             raise se.ImagePathError(imageDir)
         self._imagePath = imageDir
 
+    @classmethod
+    def _metaVolumePath(cls, volPath):
+        if volPath:
+            return volPath + META_FILEEXT
+        else:
+            return None
+
+    def _getMetaVolumePath(self, vol_path=None):
+        """
+        Get the volume metadata file/link path
+        """
+        if not vol_path:
+            vol_path = self.getVolumePath()
+        return self._metaVolumePath(vol_path)
+
+    def validateMetaVolumePath(self):
+        """
+        In file volume repositories,
+        the volume metadata must exists after the image/volume is created.
+        """
+        metaVolumePath = self._getMetaVolumePath()
+        if not self.oop.fileUtils.pathExists(metaVolumePath):
+            raise se.VolumeDoesNotExist(self.volUUID)
+
+    def validateVolumePath(self):
+        """
+        In file volume repositories,
+        the volume file and the volume md must exists after
+        the image/volume is created.
+        """
+        self.log.debug("validate path for %s" % self.volUUID)
+        if not self.imagePath:
+            self.validateImagePath()
+        volPath = os.path.join(self.imagePath, self.volUUID)
+        if not self.oop.fileUtils.pathExists(volPath):
+            raise se.VolumeDoesNotExist(self.volUUID)
+
+        self._volumePath = volPath
+        domainPath = os.path.join(self.repoPath, self.sdUUID)
+        if not fileSD.FileStorageDomainManifest(domainPath).isISO():
+            self.validateMetaVolumePath()
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -110,7 +153,7 @@ class FileVolume(volume.Volume):
             raise TypeError("halfbakedVolumeRollback takes 1 or 3 "
                             "arguments (%d given)" % len(args))
 
-        metaVolPath = cls.__metaVolumePath(volPath)
+        metaVolPath = cls.metadataClass._metaVolumePath(volPath)
         cls.log.info("Halfbaked volume rollback for volPath=%s", volPath)
 
         if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath) and not \
@@ -120,7 +163,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, volPath):
         cls.log.info("createVolumeMetadataRollback: volPath=%s" % (volPath))
-        metaPath = cls.__metaVolumePath(volPath)
+        metaPath = cls.metadataClass._metaVolumePath(volPath)
         sdUUID = getDomUuidFromVolumePath(volPath)
         if oop.getProcessPool(sdUUID).os.path.lexists(metaPath):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
@@ -271,7 +314,7 @@ class FileVolume(volume.Volume):
         cls.log.info("Volume rollback for volPath=%s", volPath)
         procPool = oop.getProcessPool(getDomUuidFromVolumePath(volPath))
         procPool.utils.rmFile(volPath)
-        procPool.utils.rmFile(cls.__metaVolumePath(volPath))
+        procPool.utils.rmFile(cls.metadataClass._metaVolumePath(volPath))
         procPool.utils.rmFile(cls.__leaseVolumePath(volPath))
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
@@ -346,7 +389,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def __putMetadata(cls, metaId, meta):
         volPath, = metaId
-        metaPath = cls.__metaVolumePath(volPath)
+        metaPath = cls.metadataClass._metaVolumePath(volPath)
 
         data = cls.formatMetadata(meta)
 
@@ -508,14 +551,7 @@ class FileVolume(volume.Volume):
             if e.errno != os.errno.ENOENT:
                 raise
         self._md.volUUID = newUUID
-        self.volumePath = volPath
-
-    @classmethod
-    def __metaVolumePath(cls, volPath):
-        if volPath:
-            return volPath + META_FILEEXT
-        else:
-            return None
+        self._md.volumePath = volPath
 
     @classmethod
     def __leaseVolumePath(cls, vol_path):
@@ -525,12 +561,7 @@ class FileVolume(volume.Volume):
             return None
 
     def _getMetaVolumePath(self, vol_path=None):
-        """
-        Get the volume metadata file/link path
-        """
-        if not vol_path:
-            vol_path = self.getVolumePath()
-        return self.__metaVolumePath(vol_path)
+        return self._md._getMetaVolumePath(vol_path)
 
     def _getLeaseVolumePath(self, vol_path=None):
         """
@@ -539,32 +570,6 @@ class FileVolume(volume.Volume):
         if not vol_path:
             vol_path = self.getVolumePath()
         return self.__leaseVolumePath(vol_path)
-
-    def validateVolumePath(self):
-        """
-        In file volume repositories,
-        the volume file and the volume md must exists after
-        the image/volume is created.
-        """
-        self.log.debug("validate path for %s" % self.volUUID)
-        if not self.imagePath:
-            self._md.validateImagePath()
-        volPath = os.path.join(self.imagePath, self.volUUID)
-        if not self.oop.fileUtils.pathExists(volPath):
-            raise se.VolumeDoesNotExist(self.volUUID)
-
-        self.volumePath = volPath
-        if not sdCache.produce(self.sdUUID).isISO():
-            self.validateMetaVolumePath()
-
-    def validateMetaVolumePath(self):
-        """
-        In file volume repositories,
-        the volume metadata must exists after the image/volume is created.
-        """
-        metaVolumePath = self._getMetaVolumePath()
-        if not self.oop.fileUtils.pathExists(metaVolumePath):
-            raise se.VolumeDoesNotExist(self.volUUID)
 
     def getVolumeSize(self, bs=BLOCK_SIZE):
         """

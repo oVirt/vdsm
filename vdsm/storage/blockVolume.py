@@ -88,6 +88,21 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
                 raise se.ImagePathError(imageDir)
         self._imagePath = imageDir
 
+    def validateVolumePath(self):
+        """
+        Block SD supports lazy volume link creation. Note that the volume can
+        be still inactive.
+        An explicit prepare is required to validate that the volume is active.
+        """
+        if not self._imagePath:
+            self.validateImagePath()
+        volPath = os.path.join(self._imagePath, self.volUUID)
+        if not os.path.lexists(volPath):
+            srcPath = lvm.lvPath(self.sdUUID, self.volUUID)
+            self.log.debug("Creating symlink from %s to %s", srcPath, volPath)
+            os.symlink(srcPath, volPath)
+        self._volumePath = volPath
+
 
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -394,7 +409,7 @@ class BlockVolume(volume.Volume):
 
         lvm.renameLV(self.sdUUID, self.volUUID, newUUID)
         self._md.volUUID = newUUID
-        self.volumePath = os.path.join(self.imagePath, newUUID)
+        self._md.volumePath = os.path.join(self.imagePath, newUUID)
 
     def getDevPath(self):
         """
@@ -465,21 +480,6 @@ class BlockVolume(volume.Volume):
 
             if pvolUUID != volume.BLANK_UUID:
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
-
-    def validateVolumePath(self):
-        """
-        Block SD supports lazy volume link creation. Note that the volume can
-        be still inactive.
-        An explicit prepare is required to validate that the volume is active.
-        """
-        if not self.imagePath:
-            self._md.validateImagePath()
-        volPath = os.path.join(self.imagePath, self.volUUID)
-        if not os.path.lexists(volPath):
-            srcPath = lvm.lvPath(self.sdUUID, self.volUUID)
-            self.log.debug("Creating symlink from %s to %s", srcPath, volPath)
-            os.symlink(srcPath, volPath)
-        self.volumePath = volPath
 
     def getVolumeTag(self, tagPrefix):
         return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
