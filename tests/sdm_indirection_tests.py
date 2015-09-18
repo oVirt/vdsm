@@ -498,6 +498,7 @@ class VolumeTestMixin(object):
         ['imgUUID', 'e2a325e4-62be-4939-8145-72277c270e8e'],
         ['volUUID', '6aab5eb4-2a8b-4cb7-a0b7-bc6f61de3e18'],
         ['repoPath', '/rhev/data-center'],
+        ['voltype', None],
         ])
     def test_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)

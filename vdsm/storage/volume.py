@@ -173,6 +173,8 @@ class VolumeMetadata(object):
         self.sdUUID = sdUUID
         self.imgUUID = imgUUID
         self.volUUID = volUUID
+        self.voltype = None
+
         if not imgUUID or imgUUID == BLANK_UUID:
             raise se.InvalidParameterException("imgUUID", imgUUID)
         if not volUUID or volUUID == BLANK_UUID:
@@ -186,7 +188,6 @@ class Volume(object):
         self._md = md
         self.volumePath = None
         self.imagePath = None
-        self.voltype = None
         self.validate()
 
     @property
@@ -204,6 +205,10 @@ class Volume(object):
     @property
     def repoPath(self):
         return self._md.repoPath
+
+    @property
+    def voltype(self):
+        return self._md.voltype
 
     @classmethod
     def _getModuleAndClass(cls):
@@ -694,7 +699,7 @@ class Volume(object):
 
     def setShared(self):
         self.setMetaParam(VOLTYPE, type2name(SHARED_VOL))
-        self.voltype = type2name(SHARED_VOL)
+        self._md.voltype = type2name(SHARED_VOL)
         self.setrw(rw=False)
         return self.voltype
 
@@ -713,19 +718,19 @@ class Volume(object):
 
     def setLeaf(self):
         self.setMetaParam(VOLTYPE, type2name(LEAF_VOL))
-        self.voltype = type2name(LEAF_VOL)
+        self._md.voltype = type2name(LEAF_VOL)
         self.setrw(rw=True)
         return self.voltype
 
     def setInternal(self):
         self.setMetaParam(VOLTYPE, type2name(INTERNAL_VOL))
-        self.voltype = type2name(INTERNAL_VOL)
+        self._md.voltype = type2name(INTERNAL_VOL)
         self.setrw(rw=False)
         return self.voltype
 
     def getVolType(self):
         if not self.voltype:
-            self.voltype = self.getMetaParam(VOLTYPE)
+            self._md.voltype = self.getMetaParam(VOLTYPE)
         return self.voltype
 
     def getSize(self):
