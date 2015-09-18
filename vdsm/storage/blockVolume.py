@@ -74,6 +74,20 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
         volume.VolumeMetadata.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
 
+    def validateImagePath(self):
+        """
+        Block SD supports lazy image dir creation
+        """
+        imageDir = image.ImageManifest(self.repoPath).getImageDir(self.sdUUID,
+                                                                  self.imgUUID)
+        if not os.path.isdir(imageDir):
+            try:
+                os.mkdir(imageDir, 0o755)
+            except Exception:
+                self.log.exception("Unexpected error")
+                raise se.ImagePathError(imageDir)
+        self._imagePath = imageDir
+
 
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -367,7 +381,7 @@ class BlockVolume(volume.Volume):
         """
         self.log.info("Rename volume %s as %s ", self.volUUID, newUUID)
         if not self.imagePath:
-            self.validateImagePath()
+            self._md.validateImagePath()
 
         if os.path.lexists(self.getVolumePath()):
             os.unlink(self.getVolumePath())
@@ -452,20 +466,6 @@ class BlockVolume(volume.Volume):
             if pvolUUID != volume.BLANK_UUID:
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
 
-    def validateImagePath(self):
-        """
-        Block SD supports lazy image dir creation
-        """
-        imageDir = image.Image(self.repoPath).getImageDir(self.sdUUID,
-                                                          self.imgUUID)
-        if not os.path.isdir(imageDir):
-            try:
-                os.mkdir(imageDir, 0o755)
-            except Exception:
-                self.log.error("Unexpected error", exc_info=True)
-                raise se.ImagePathError(imageDir)
-        self.imagePath = imageDir
-
     def validateVolumePath(self):
         """
         Block SD supports lazy volume link creation. Note that the volume can
@@ -473,7 +473,7 @@ class BlockVolume(volume.Volume):
         An explicit prepare is required to validate that the volume is active.
         """
         if not self.imagePath:
-            self.validateImagePath()
+            self._md.validateImagePath()
         volPath = os.path.join(self.imagePath, self.volUUID)
         if not os.path.lexists(volPath):
             srcPath = lvm.lvPath(self.sdUUID, self.volUUID)

@@ -61,6 +61,20 @@ class FileVolumeMetadata(volume.VolumeMetadata):
     def oop(self):
         return oop.getProcessPool(self.sdUUID)
 
+    def validateImagePath(self):
+        """
+        Validate that the image dir exists and valid.
+        In the file volume repositories,
+        the image dir must exists after creation its first volume.
+        """
+        imageDir = image.ImageManifest(self.repoPath).getImageDir(self.sdUUID,
+                                                                  self.imgUUID)
+        if not self.oop.os.path.isdir(imageDir):
+            raise se.ImagePathError(imageDir)
+        if not self.oop.os.access(imageDir, os.R_OK | os.W_OK | os.X_OK):
+            raise se.ImagePathError(imageDir)
+        self._imagePath = imageDir
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -458,7 +472,7 @@ class FileVolume(volume.Volume):
         """
         self.log.info("Rename volume %s as %s ", self.volUUID, newUUID)
         if not self.imagePath:
-            self.validateImagePath()
+            self._md.validateImagePath()
         volPath = os.path.join(self.imagePath, newUUID)
         metaPath = self._getMetaVolumePath(volPath)
         prevMetaPath = self._getMetaVolumePath()
@@ -495,20 +509,6 @@ class FileVolume(volume.Volume):
                 raise
         self._md.volUUID = newUUID
         self.volumePath = volPath
-
-    def validateImagePath(self):
-        """
-        Validate that the image dir exists and valid.
-        In the file volume repositories,
-        the image dir must exists after creation its first volume.
-        """
-        imageDir = image.Image(self.repoPath).getImageDir(self.sdUUID,
-                                                          self.imgUUID)
-        if not self.oop.os.path.isdir(imageDir):
-            raise se.ImagePathError(imageDir)
-        if not self.oop.os.access(imageDir, os.R_OK | os.W_OK | os.X_OK):
-            raise se.ImagePathError(imageDir)
-        self.imagePath = imageDir
 
     @classmethod
     def __metaVolumePath(cls, volPath):
@@ -548,7 +548,7 @@ class FileVolume(volume.Volume):
         """
         self.log.debug("validate path for %s" % self.volUUID)
         if not self.imagePath:
-            self.validateImagePath()
+            self._md.validateImagePath()
         volPath = os.path.join(self.imagePath, self.volUUID)
         if not self.oop.fileUtils.pathExists(volPath):
             raise se.VolumeDoesNotExist(self.volUUID)

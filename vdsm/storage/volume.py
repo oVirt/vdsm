@@ -173,12 +173,19 @@ class VolumeMetadata(object):
         self.sdUUID = sdUUID
         self.imgUUID = imgUUID
         self.volUUID = volUUID
+        self._imagePath = None
         self.voltype = None
 
         if not imgUUID or imgUUID == BLANK_UUID:
             raise se.InvalidParameterException("imgUUID", imgUUID)
         if not volUUID or volUUID == BLANK_UUID:
             raise se.InvalidParameterException("volUUID", volUUID)
+
+    @property
+    def imagePath(self):
+        if self._imagePath is None:
+            self.validateImagePath()
+        return self._imagePath
 
 
 class Volume(object):
@@ -187,7 +194,6 @@ class Volume(object):
     def __init__(self, md):
         self._md = md
         self.volumePath = None
-        self.imagePath = None
         self.validate()
 
     @property
@@ -207,6 +213,10 @@ class Volume(object):
         return self._md.repoPath
 
     @property
+    def imagePath(self):
+        return self._md.imagePath
+
+    @property
     def voltype(self):
         return self._md.voltype
 
@@ -220,7 +230,7 @@ class Volume(object):
         """
         Validate that the volume can be accessed
         """
-        self.validateImagePath()
+        self.md.validateImagePath()
         self.validateVolumePath()
 
     def __str__(self):
