@@ -60,8 +60,11 @@ class MkimageTestCase(VdsmTestCase):
             "DISKIMAGE_GROUP": mkimage.DISKIMAGE_GROUP,
             "_P_PAYLOAD_IMAGES": mkimage._P_PAYLOAD_IMAGES
         }
-        self.workdir = mkdtemp()
-        self.img_dir = mkdtemp()
+        self.tempdir = mkdtemp(prefix="vdsm-mkimage-tests.")
+        self.workdir = os.path.join(self.tempdir, "work")
+        os.mkdir(self.workdir)
+        self.img_dir = os.path.join(self.tempdir, "images")
+        os.mkdir(self.img_dir)
         mkimage.DISKIMAGE_USER = -1
         mkimage.DISKIMAGE_GROUP = -1
         mkimage._P_PAYLOAD_IMAGES = self.img_dir
@@ -82,8 +85,7 @@ class MkimageTestCase(VdsmTestCase):
         Removes the workdir and its content when finished.
         Restore original values of mkimage constants.
         """
-        rmtree(self.workdir)
-        rmtree(self.img_dir)
+        rmtree(self.tempdir)
         mkimage.DISKIMAGE_USER = self.orig_mkimage["DISKIMAGE_USER"]
         mkimage.DISKIMAGE_GROUP = self.orig_mkimage["DISKIMAGE_GROUP"]
         # pylint: disable=W0212
@@ -174,7 +176,6 @@ class MkimageTestCase(VdsmTestCase):
             self._check_label(floppy, label)
         finally:
             m.umount(force=True, freeloop=True)
-            os.unlink(floppy)
 
     @permutations([[None], ['fslabel']])
     def test_mkIsoFs(self, label):
@@ -204,7 +205,6 @@ class MkimageTestCase(VdsmTestCase):
                                      (stat.S_IXOTH, False)))
         finally:
             m.umount(force=True, freeloop=True)
-            os.unlink(iso_img)
 
     def test_removeFs(self):
         """
