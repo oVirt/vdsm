@@ -181,6 +181,7 @@ class VolumeMetadata(object):
             raise se.InvalidParameterException("imgUUID", imgUUID)
         if not volUUID or volUUID == BLANK_UUID:
             raise se.InvalidParameterException("volUUID", volUUID)
+        self.validate()
 
     @property
     def imagePath(self):
@@ -193,6 +194,13 @@ class VolumeMetadata(object):
         if self._volumePath is None:
             self.validateVolumePath()
         return self._volumePath
+
+    def validate(self):
+        """
+        Validate that the volume can be accessed
+        """
+        self.validateImagePath()
+        self.validateVolumePath()
 
     def getVolumePath(self):
         """
@@ -208,7 +216,6 @@ class Volume(object):
 
     def __init__(self, md):
         self._md = md
-        self.validate()
 
     @property
     def sdUUID(self):

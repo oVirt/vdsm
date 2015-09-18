@@ -103,6 +103,13 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
             os.symlink(srcPath, volPath)
         self._volumePath = volPath
 
+    def validate(self):
+        try:
+            lvm.getLV(self.sdUUID, self.volUUID)
+        except se.LogicalVolumeDoesNotExistError:
+            raise se.VolumeDoesNotExist(self.volUUID)
+        volume.VolumeMetadata.validate(self)
+
 
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -115,13 +122,6 @@ class BlockVolume(volume.Volume):
         volume.Volume.__init__(self, md)
         self.lvmActivationNamespace = sd.getNamespace(self.sdUUID,
                                                       LVM_ACTIVATION_NAMESPACE)
-
-    def validate(self):
-        try:
-            lvm.getLV(self.sdUUID, self.volUUID)
-        except se.LogicalVolumeDoesNotExistError:
-            raise se.VolumeDoesNotExist(self.volUUID)
-        volume.Volume.validate(self)
 
     def refreshVolume(self):
         lvm.refreshLVs(self.sdUUID, (self.volUUID,))
