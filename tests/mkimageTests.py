@@ -173,7 +173,7 @@ class MkimageTestCase(VdsmTestCase):
             self._check_content(checkPerms=False)
             self._check_label(floppy, label)
         finally:
-            m.umount(force=True)
+            m.umount(force=True, freeloop=True)
             os.unlink(floppy)
 
     @permutations([[None], ['fslabel']])
@@ -203,7 +203,7 @@ class MkimageTestCase(VdsmTestCase):
                                      (stat.S_IWOTH, False),
                                      (stat.S_IXOTH, False)))
         finally:
-            m.umount(force=True)
+            m.umount(force=True, freeloop=True)
             os.unlink(iso_img)
 
     def test_removeFs(self):
