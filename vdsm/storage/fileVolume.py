@@ -57,6 +57,10 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         volume.VolumeMetadata.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
 
+    @property
+    def oop(self):
+        return oop.getProcessPool(self.sdUUID)
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -69,7 +73,7 @@ class FileVolume(volume.Volume):
 
     @property
     def oop(self):
-        return oop.getProcessPool(self.sdUUID)
+        return self._md.oop
 
     @staticmethod
     def file_setrw(volPath, rw):

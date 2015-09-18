@@ -516,3 +516,9 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
     def setUp(self):
         self.volume = FakeFileVolume()
         self.checker = RedirectionChecker(self.volume, '_md')
+
+    @permutations([
+        ['oop', 'oop'],
+        ])
+    def test_file_property(self, prop, val):
+        self.assertEqual(getattr(self.volume, prop), val)
