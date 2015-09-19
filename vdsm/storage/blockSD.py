@@ -463,12 +463,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         return lvm.lvPath(self.sdUUID, sd.IDS)
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
-        self._extendlock.acquire()
-        try:
+        with self._extendlock:
             # FIXME: following line.
             lvm.extendLV(self.sdUUID, volumeUUID, size)  # , isShuttingDown)
-        finally:
-            self._extendlock.release()
 
     @classmethod
     def getMetaDataMapping(cls, vgName, oldMapping={}):
