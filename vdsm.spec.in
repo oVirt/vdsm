@@ -1016,7 +1016,6 @@ exit 0
 %dir %{_sysconfdir}/pki/%{vdsm_name}/certs
 %dir %{_sysconfdir}/pki/%{vdsm_name}/libvirt-spice
 %config(noreplace) %{_sysconfdir}/pki/%{vdsm_name}/keys/libvirt_password
-%{_localstatedir}/lib/%{vdsm_name}/bonding-defaults.json
 %dir %{_localstatedir}/lib/%{vdsm_name}
 %dir %{_localstatedir}/lib/%{vdsm_name}/netconfback
 %dir %{_localstatedir}/lib/%{vdsm_name}/persistence
@@ -1028,6 +1027,8 @@ exit 0
 %dir %{_localstatedir}/run/%{vdsm_name}/v2v
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
+%defattr(644, %{vdsm_user}, %{vdsm_group}, -)
+%{_localstatedir}/lib/%{vdsm_name}/bonding-defaults.json
 
 %files python
 %defattr(-, root, root, -)
