@@ -19,6 +19,7 @@
 
 from __future__ import absolute_import
 import os
+import selinux
 import shutil
 import sys
 import tempfile
@@ -120,6 +121,8 @@ def configure():
         try:
             f.write(_CONF_DATA)
             f.flush()
+            if selinux.is_selinux_enabled():
+                selinux.restorecon(f.name)
             os.chmod(f.name, 0o644)
             # On ovirt node multipath.conf is a bind mount and rename will fail
             # if we do not unpersist first, making this non-atomic.
