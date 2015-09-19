@@ -43,14 +43,38 @@ from vdsm import utils
 
 from monkeypatch import MonkeyPatch
 from vmTestsData import VM_STATUS_DUMP
+from monkeypatch import Patch
 from testlib import forked, online_cpus
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import checkSudo
-from testValidation import stresstest
+from testValidation import brokentest, stresstest
 from multiprocessing import Process
 
 EXT_SLEEP = "sleep"
+
+
+class FakeMonotonicTime(object):
+
+    def __init__(self, now):
+        self.now = now
+        self.patch = Patch([
+            (utils, 'monotonic_time', self.monotonic_time),
+            (time, 'sleep', self.sleep),
+        ])
+
+    def monotonic_time(self):
+        return self.now
+
+    def sleep(self, seconds):
+        self.now += seconds
+
+    def __enter__(self):
+        self.patch.apply()
+        return self
+
+    def __exit__(self, *_):
+        self.patch.revert()
 
 
 class RetryTests(TestCaseBase):
@@ -75,6 +99,69 @@ class RetryTests(TestCaseBase):
                           sleep=0, stopCallback=stopCallback)
         # Make sure we had the proper amount of iterations before failing
         self.assertEquals(counter[0], limit)
+
+    @brokentest("deadline is not respected")
+    def testTimeoutDeadlineReached(self):
+        # time  action
+        # 0     first attempt
+        # 1     sleep
+        # 2     second attempt
+        # 3     bail out (3 == deadline)
+        with FakeMonotonicTime(0):
+
+            def operation():
+                time.sleep(1)
+                raise RuntimeError
+
+            self.assertRaises(RuntimeError, utils.retry, operation,
+                              timeout=3, sleep=1)
+            self.assertEqual(utils.monotonic_time(), 3)
+
+    @brokentest("sleep is not considered in deadline calculation")
+    def testTimeoutNoTimeForSleep(self):
+        # time  action
+        # 0     first attempt
+        # 1     bail out (1 + 1 == deadline)
+        with FakeMonotonicTime(0):
+
+            def operation():
+                time.sleep(1)
+                raise RuntimeError
+
+            self.assertRaises(RuntimeError, utils.retry, operation,
+                              timeout=2, sleep=1)
+            self.assertEqual(utils.monotonic_time(), 1)
+
+    def testTimeoutSleepOnce(self):
+        # time  action
+        # 0     first attempt
+        # 2     sleep
+        # 3     second attempt
+        # 5     bail out (5 > deadline)
+        with FakeMonotonicTime(0):
+            counter = [0]
+
+            def operation():
+                time.sleep(2)
+                counter[0] += 1
+                raise RuntimeError
+
+            self.assertRaises(RuntimeError, utils.retry, operation,
+                              timeout=4, sleep=1)
+            self.assertEqual(counter[0], 2)
+            self.assertEqual(utils.monotonic_time(), 5)
+
+    def testTimeoutZero(self):
+        counter = [0]
+
+        def operation():
+            counter[0] += 1
+            raise RuntimeError
+
+        tries = 10
+        self.assertRaises(RuntimeError, utils.retry, operation,
+                          tries=tries, timeout=0.0, sleep=0.0)
+        self.assertEqual(counter[0], tries)
 
 
 class PidStatTests(TestCaseBase):
