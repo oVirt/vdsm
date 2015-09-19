@@ -55,7 +55,7 @@ class TestNetinfo(TestCaseBase):
         )
         dnss = ['192.168.0.100', '8.8.8.8', '8.8.4.4']
         with namedTemporaryDir() as temp_dir:
-            file_path = os.path.join(temp_dir, '/etc/resolv.conf')
+            file_path = os.path.join(temp_dir, 'resolv.conf')
 
             with MonkeyPatchScope([(netinfo, 'DNS_CONF_FILE', file_path)]):
                 with open(file_path, 'w') as file_object:
