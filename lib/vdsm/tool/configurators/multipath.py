@@ -121,6 +121,9 @@ def configure():
             f.write(_CONF_DATA)
             f.flush()
             os.chmod(f.name, 0o644)
+            # On ovirt node multipath.conf is a bind mount and rename will fail
+            # if we do not unpersist first, making this non-atomic.
+            utils.unpersist(_CONF_FILE)
             os.rename(f.name, _CONF_FILE)
         except:
             os.unlink(f.name)
