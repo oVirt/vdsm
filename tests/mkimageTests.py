@@ -32,6 +32,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from nose.plugins.skip import SkipTest
+from monkeypatch import Patch
 from testrunner import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 
@@ -54,20 +55,11 @@ class MkimageTestCase(VdsmTestCase):
         by mkimage._commonCleanFs.
         Avoid errors creating _P_PAYLOAD_IMAGES
         """
-        # pylint: disable=W0212
-        self.orig_mkimage = {
-            "DISKIMAGE_USER": mkimage.DISKIMAGE_USER,
-            "DISKIMAGE_GROUP": mkimage.DISKIMAGE_GROUP,
-            "_P_PAYLOAD_IMAGES": mkimage._P_PAYLOAD_IMAGES
-        }
-        self.tempdir = mkdtemp(prefix="vdsm-mkimage-tests.")
+        self.tempdir = mkdtemp(prefix="vdsm-mkimage-tests")
         self.workdir = os.path.join(self.tempdir, "work")
         os.mkdir(self.workdir)
         self.img_dir = os.path.join(self.tempdir, "images")
         os.mkdir(self.img_dir)
-        mkimage.DISKIMAGE_USER = -1
-        mkimage.DISKIMAGE_GROUP = -1
-        mkimage._P_PAYLOAD_IMAGES = self.img_dir
         self.files = {}
         self.expected_results = {}
         self.subdir = os.path.join('a', 'subdirectory', 'for', 'testing')
@@ -80,16 +72,22 @@ class MkimageTestCase(VdsmTestCase):
             self.expected_results[longpath] = content
             self.files[longpath] = b64encode(content)
 
+        self.patch = Patch([
+            (mkimage, "DISKIMAGE_USER", -1),
+            (mkimage, "DISKIMAGE_GROUP", -1),
+            (mkimage, "_P_PAYLOAD_IMAGES", self.img_dir),
+        ])
+
+        # Must be last; if setUp fails, tearDown is not invoked
+        self.patch.apply()
+
     def tearDown(self):
         """
         Removes the workdir and its content when finished.
         Restore original values of mkimage constants.
         """
+        self.patch.revert()
         rmtree(self.tempdir)
-        mkimage.DISKIMAGE_USER = self.orig_mkimage["DISKIMAGE_USER"]
-        mkimage.DISKIMAGE_GROUP = self.orig_mkimage["DISKIMAGE_GROUP"]
-        # pylint: disable=W0212
-        mkimage._P_PAYLOAD_IMAGES = self.orig_mkimage["_P_PAYLOAD_IMAGES"]
 
     def _check_permissions(self, filepath, permsMask):
         """
