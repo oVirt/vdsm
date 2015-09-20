@@ -442,10 +442,6 @@ def _dhcp_used(iface, ifaces_with_active_leases, net_attrs, family=4):
     else:
         try:
             if family == 4:
-                # Read dhcpv4 from an associated network's reported information
-                if 'dhcpv4' in net_attrs:
-                    return net_attrs['dhcpv4']
-                # Read the same information from RunningConfig
                 return net_attrs['bootproto'] == 'dhcp'
             else:
                 return net_attrs['dhcpv6']
@@ -490,14 +486,6 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
     return data
 
 
-def _netinfo_by_device(networks):
-    netinfo_by_device = {}
-    for net_attrs in networks.itervalues():
-        device = net_attrs['iface']
-        netinfo_by_device[device] = net_attrs
-    return netinfo_by_device
-
-
 def _bridgeinfo(link):
     return {'ports': ports(link.name),
             'stp': bridge_stp_state(link.name),
@@ -536,7 +524,7 @@ def _vlaninfo(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
 
-def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces, net_attrs):
+def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(link.name, ipaddrs)
     info = {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
@@ -544,14 +532,54 @@ def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces, net_attrs):
             'ipv6addrs': ipv6addrs,
             'gateway': _get_gateway(routes, link.name),
             'ipv6gateway': _get_gateway(routes, link.name, family=6),
-            'dhcpv4': _dhcp_used(link.name, dhcpv4_ifaces, net_attrs),
-            'dhcpv6': _dhcp_used(link.name, dhcpv6_ifaces, net_attrs,
-                                 family=6),
+            'dhcpv4': link.name in dhcpv4_ifaces,  # to be refined if a network
+            'dhcpv6': link.name in dhcpv6_ifaces,  # is not configured for DHCP
             'mtu': str(link.mtu),
             'netmask': ipv4netmask}
     if 'BOOTPROTO' not in info['cfg']:
         info['cfg']['BOOTPROTO'] = 'dhcp' if info['dhcpv4'] else 'none'
     return info
+
+
+def _propose_updates_to_reported_dhcp(network_info, networking):
+    """
+    Report DHCPv4/6 of a network's topmost device based on the network's
+    configuration, to fix bug #1184497 (DHCP still being reported for hours
+    after a network got static IP configuration, as reporting is based on
+    dhclient leases).
+    """
+    updated_networking = dict(bondings={}, bridges={}, nics={}, vlans={})
+    network_device = network_info['iface']
+
+    for devices in ('bridges', 'vlans', 'bondings', 'nics'):
+        dev_info = networking[devices].get(network_device)
+        if dev_info:
+            cfg = {}
+            updated_networking[devices][network_device] = {
+                'dhcpv4': network_info['dhcpv4'],
+                'dhcpv6': network_info['dhcpv6'],
+                'cfg': cfg,
+            }
+            cfg['BOOTPROTO'] = 'dhcp' if network_info['dhcpv4'] else 'none'
+            break
+
+    return updated_networking
+
+
+def _update_reported_dhcp(replacement, networking):
+    """
+    For each network device (representing a network), apply updates to reported
+    DHCP-related fields, as prepared by _propose_updates_to_reported_dhcp.
+    """
+    for device_type, devices in replacement.iteritems():
+        for device_name, replacement_device_info in devices.iteritems():
+            device_info = networking[device_type][device_name]
+            device_info['dhcpv4'] = replacement_device_info['dhcpv4']
+            device_info['dhcpv6'] = replacement_device_info['dhcpv6']
+            # Remove when cluster level < 3.6 is no longer supported and thus
+            # it is not necessary to report ifcfg-like BOOTPROTO field.
+            if replacement_device_info['cfg']:
+                device_info['cfg'].update(replacement_device_info['cfg'])
 
 
 def _parse_expiry_time(expiry_time):
@@ -742,8 +770,6 @@ def get(vdsmnets=None):
     else:
         networking['networks'] = vdsmnets
 
-    netinfo_by_device = _netinfo_by_device(networking['networks'])
-
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
             devinfo = networking['bridges'][dev.name] = _bridgeinfo(dev)
@@ -756,15 +782,16 @@ def get(vdsmnets=None):
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4_ifaces,
-                                dhcpv6_ifaces,
-                                netinfo_by_device.get(dev.name, None)))
+                                dhcpv6_ifaces))
         if dev.isBOND():
             _bondOptsCompat(devinfo)
             _bondCustomOpts(dev, devinfo, running_config)
 
-    for network, network_info in networking['networks'].iteritems():
+    for network_name, network_info in networking['networks'].iteritems():
         if network_info['bridged']:
-            network_info['cfg'] = networking['bridges'][network]['cfg']
+            network_info['cfg'] = networking['bridges'][network_name]['cfg']
+        updates = _propose_updates_to_reported_dhcp(network_info, networking)
+        _update_reported_dhcp(updates, networking)
 
     return networking
 
