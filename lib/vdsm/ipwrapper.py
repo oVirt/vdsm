@@ -595,9 +595,12 @@ def netns_delete(name):
     _execCmd([_IP_BINARY.cmd, 'netns', 'delete', name])
 
 
-def netns_exec(netns_name, command):
+def netns_exec(netns_name, command, sync=False):
     netns_command = [_IP_BINARY.cmd, 'netns', 'exec', netns_name]
-    _execCmd(netns_command + command)
+    if sync:
+        _execCmd(netns_command + command)
+    else:
+        return execCmd(netns_command + command, sync=sync)
 
 
 def link_set_netns(device, netns_name):

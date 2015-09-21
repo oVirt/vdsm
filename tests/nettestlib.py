@@ -20,10 +20,12 @@
 import errno
 import fcntl
 import functools
+import json
 import os
 import platform
 import signal
 import struct
+import time
 from contextlib import contextmanager
 from multiprocessing import Process
 
@@ -31,11 +33,12 @@ from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
 from vdsm.ipwrapper import (addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error,
-                            netns_add, netns_delete)
+                            netns_add, netns_delete, netns_exec)
 from vdsm.netlink import monitor
-from vdsm.utils import execCmd, random_iface_name
+from vdsm.utils import CommandPath, execCmd, random_iface_name
 
 EXT_IP = "/sbin/ip"
+_IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
 
 
 class ExecError(RuntimeError):
@@ -234,6 +237,68 @@ class Dummy(Interface):
             raise SkipTest(message)
 
 
+class IperfServer(object):
+    """Starts iperf as an async process"""
+
+    def __init__(self, host, network_ns=None):
+        """host: the IP address for the server to listen on.
+        network_ns: an optional network namespace for the server to run in.
+        """
+        self._bind_to = host
+        self._net_ns = network_ns
+        self._pid = None
+
+    def start(self):
+        cmd = [_IPERF3_BINARY.cmd, '--server', '--bind', self._bind_to]
+        if self._net_ns is not None:
+            p = netns_exec(self._net_ns, cmd)
+        else:
+            p = execCmd(cmd, sync=False)
+        self._pid = p.pid
+
+    def stop(self):
+        os.kill(self._pid, signal.SIGTERM)
+
+
+class IperfClient(object):
+    def __init__(self, server_ip, bind_to, test_time, threads=1):
+        """The client generates a machine readable json output that is set in
+        _raw_output upon completion, and can be read using the 'out' property.
+        server_ip: the ip of the corresponding iperf server
+        bind_to: IP address of the client
+        test_time: in seconds
+        """
+        self._server_ip = server_ip
+        self._bind_to = bind_to
+        self._test_time = test_time
+        self._threads = threads
+        self._raw_output = None
+
+    def start(self):
+        cmd = [_IPERF3_BINARY.cmd, '--client', self._server_ip,
+               '--version4',  # only IPv4
+               '--time', str(self._test_time), '--parallel',
+               str(self._threads), '--bind', self._bind_to,
+               '--zerocopy',  # use less cpu
+               '--json']
+        rc, self._raw_output, err = execCmd(cmd)
+        if rc == 1 and 'No route to host' in self.out['error']:
+            # it seems that it takes some time for the routes to get updated
+            # on the os so that we don't get this error, hence the horrific
+            # sleep here.
+            # TODO: Investigate, understand, and remove this sleep.
+            time.sleep(3)
+            rc, self._raw_output, err = execCmd(cmd)
+        if rc:
+            raise Exception('iperf3 client failed: cmd=%s, rc=%s, out=%s, '
+                            'err=%s' % (' '.join(cmd), rc, self._raw_output,
+                                        err))
+
+    @property
+    def out(self):
+        return json.loads(' '.join(self._raw_output))
+
+
 @contextmanager
 def dummy_device(prefix='dummy_', max_length=11):
     dummy_interface = Dummy(prefix, max_length)
@@ -299,6 +364,20 @@ def requires_tc(f):
     @functools.wraps(f)
     def wrapper(*a, **kw):
         check_tc()
+        return f(*a, **kw)
+    return wrapper
+
+
+def _check_iperf():
+    if not os.access(_IPERF3_BINARY.cmd, os.X_OK):
+        raise SkipTest("Cannot run %r: %s\nDo you have iperf3 installed?"
+                       % _IPERF3_BINARY._cmd)
+
+
+def requires_iperf3(f):
+    @functools.wraps(f)
+    def wrapper(*a, **kw):
+        _check_iperf()
         return f(*a, **kw)
     return wrapper
 
