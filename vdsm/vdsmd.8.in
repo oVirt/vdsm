@@ -113,11 +113,10 @@ in the setupNetworks VDSM API call.
 .fi
 
 The JSON format of this file for before_ifcfg_write and
-after_ifcfg_write has the following parameters: name, ifcfg_file and config.
+after_ifcfg_write has the following parameters: ifcfg_file and config.
 
 .nf
 {
- "name": "eth0",
  "ifcfg_file": "/etc/sysconfig/network-scripts/ifcfg-eth0",
  "config": "IPADDR=192.168.1.2\nNETMASK=255.255.255.0"
  }

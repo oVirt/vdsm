@@ -548,13 +548,12 @@ class ConfigWriter(object):
                 logging.debug('ignoring variable %s', k)
 
         ifcfg_file = netinfo.NET_CONF_PREF + name
-        hook_dict = _build_ifcfg_write_hook_dict(name,
-                                                 netinfo.NET_CONF_PREF + name,
-                                                 cfg)
+        hook_dict = {'ifcfg_file': ifcfg_file,
+                     'config': cfg}
         hook_return = hooks.before_ifcfg_write(hook_dict)
-        ifcfg_file = hook_return['ifcfg_file']
         cfg = hook_return['config']
         self.writeConfFile(ifcfg_file, cfg)
+        hooks.after_ifcfg_write(hook_return)
 
     def addBridge(self, bridge, **opts):
         """ Create ifcfg-* file with proper fields for bridge """
@@ -988,10 +987,3 @@ def _wait_for_event(iface, expected_event, timeout=10):
                                     caught_events)
                 else:
                     raise
-
-
-def _build_ifcfg_write_hook_dict(name, ifcfg_file, conf):
-    hook_dict = {'name': name,
-                 'ifcfg_file': ifcfg_file,
-                 'config': conf}
-    return hook_dict
