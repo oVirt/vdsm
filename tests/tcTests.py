@@ -32,15 +32,18 @@ from subprocess import Popen, PIPE
 from hostdevTests import Connection
 from testlib import (VdsmTestCase as TestCaseBase, permutations,
                      expandPermutations)
-from testValidation import ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot, stresstest
 from monkeypatch import MonkeyClass
-from nettestlib import (Bridge, Dummy, Tap, requires_tc, requires_tun,
-                        vlan_device)
+from nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
+                        bridge_device, network_namespace, requires_iperf3,
+                        requires_tc, requires_tun, veth_pair, vlan_device)
 
 from vdsm.constants import EXT_TC
 from network import tc
 from network.configurators import qos
+from vdsm.ipwrapper import addrAdd, linkSet, netns_exec, link_set_netns
 from vdsm import libvirtconnection
+from vdsm.utils import running
 
 
 class TestQdisc(TestCaseBase):
@@ -464,6 +467,48 @@ class TestConfigureOutbound(TestCaseBase):
                     for v in (vlan1, vlan2))
                 self.assertEqual(current_tagged_filters_flow_id,
                                  expected_flow_ids)
+
+    @stresstest
+    @requires_iperf3
+    @requires_tc
+    def test_iperf_upper_limit(self):
+        # Upper limit is not an accurate measure. This is because it converges
+        # over time and depends on current machine hardware (CPU).
+        # Hence, it is hard to make hard assertions on it. The test should run
+        # at least 60 seconds (the longer the better) and the user should
+        # inspect the computed average rate and optionally the additional
+        # traffic data that was collected in client.out in order to be
+        # convinced QOS is working properly.
+        limit_kbps = 1000  # 1 Mbps (in kbps)
+        server_ip = '192.0.2.1'
+        client_ip = '192.0.2.10'
+        qos_out = {'ul': {'m2': limit_kbps}, 'ls': {'m2': limit_kbps}}
+        # using a network namespace is essential since otherwise the kernel
+        # short-circuits the traffic and bypasses the veth devices and the
+        # classfull qdisc.
+        with network_namespace('server_ns') as ns, bridge_device() as bridge, \
+                veth_pair() as (server_peer, server_dev), \
+                veth_pair() as (client_dev, client_peer):
+            linkSet(server_peer, ['up'])
+            linkSet(client_peer, ['up'])
+            # iperf server and its veth peer lie in a separate network
+            # namespace
+            link_set_netns(server_dev, ns)
+            bridge.addIf(server_peer)
+            bridge.addIf(client_peer)
+            linkSet(client_dev, ['up'])
+            netns_exec(ns, ['ip', 'link', 'set', 'dev', server_dev, 'up'])
+            addrAdd(client_dev, client_ip, 24)
+            netns_exec(ns, ['ip', '-4', 'addr', 'add', 'dev', server_dev,
+                            '%s/24' % server_ip])
+            qos.configure_outbound(qos_out, client_peer, None)
+            with running(IperfServer(server_ip, network_ns=ns)):
+                client = IperfClient(server_ip, client_ip, test_time=60)
+                client.start()
+                max_rate = max([float(
+                    interval['streams'][0]['bits_per_second'])/(2**10)
+                    for interval in client.out['intervals']])
+                self.assertTrue(0 < max_rate < limit_kbps * 1.5)
 
     def _analyse_qos_and_general_assertions(self):
         tc_classes = self._analyse_classes()
