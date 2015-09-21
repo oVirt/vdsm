@@ -585,3 +585,20 @@ def linkSet(dev, linkArgs):
 def linkDel(dev):
     command = [_IP_BINARY.cmd, 'link', 'del', 'dev', dev]
     _execCmd(command)
+
+
+def netns_add(name):
+    _execCmd([_IP_BINARY.cmd, 'netns', 'add', name])
+
+
+def netns_delete(name):
+    _execCmd([_IP_BINARY.cmd, 'netns', 'delete', name])
+
+
+def netns_exec(netns_name, command):
+    netns_command = [_IP_BINARY.cmd, 'netns', 'exec', netns_name]
+    _execCmd(netns_command + command)
+
+
+def link_set_netns(device, netns_name):
+    return linkSet(device, ['netns', netns_name])

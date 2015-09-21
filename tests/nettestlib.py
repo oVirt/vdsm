@@ -30,7 +30,8 @@ from multiprocessing import Process
 from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
-from vdsm.ipwrapper import addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error
+from vdsm.ipwrapper import (addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error,
+                            netns_add, netns_delete)
 from vdsm.netlink import monitor
 from vdsm.utils import execCmd, random_iface_name
 
@@ -126,6 +127,15 @@ def vlan_device(link, tag=16):
             # if the underlying device was removed beforehand, the vlan device
             # would be gone by now.
             pass
+
+
+@contextmanager
+def network_namespace(name):
+    netns_add(name)
+    try:
+        yield name
+    finally:
+        netns_delete(name)
 
 
 def _listenOnDevice(fd, icmp):
