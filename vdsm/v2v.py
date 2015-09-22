@@ -683,9 +683,9 @@ def _add_disk_info(conn, disk):
             _, capacity, alloc = vol.info()
         except libvirt.libvirtError:
             logging.exception("Error getting disk size")
-
-        disk['capacity'] = str(capacity)
-        disk['allocation'] = str(alloc)
+        else:
+            disk['capacity'] = str(capacity)
+            disk['allocation'] = str(alloc)
 
 
 def _add_disks(root, params):
