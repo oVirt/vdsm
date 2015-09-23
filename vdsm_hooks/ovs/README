@@ -97,6 +97,7 @@ TODO
   + Linux HFSC QoS is supported by OVS and could be set up via ovs-vsctl
     as described here: [1]
 - Implement 'multicast_router' and 'multicast_snooping':
+  + This feature is not supported by openvswitch until 2.4.0
   + We need to be able to set and get those values. It should be possible
     via 'mcast_snooping_enable' records, described here [1]
 - Implement implicitBonding
