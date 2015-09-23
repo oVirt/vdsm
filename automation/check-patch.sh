@@ -2,17 +2,6 @@
 
 set -xe
 
-# this redefines 'ugly' but looks like NOSE_EXCLUDE works at test method level,
-# not at module neither at testcase level, so we have no choice but this.
-export NOSE_EXCLUDE="\
-.*testGetBondingOptions.*|\
-testMirroring.*|\
-testToggleIngress|\
-testException|\
-testQdiscsOfDevice|\
-testReplacePrio\
-"
-
 ./autogen.sh --system --enable-hooks
 make check
 

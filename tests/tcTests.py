@@ -30,7 +30,7 @@ from subprocess import Popen, PIPE
 
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
-from nettestlib import Bridge, Tap, requires_tc
+from nettestlib import Bridge, Tap, requires_tc, requires_tun
 
 from vdsm.constants import EXT_TC
 from network import tc
@@ -287,6 +287,7 @@ class TestPortMirror(TestCaseBase):
 
     @ValidateRunningAsRoot
     @requires_tc
+    @requires_tun
     def setUp(self):
         self._tap0 = Tap()
         self._tap1 = Tap()

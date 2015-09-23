@@ -249,3 +249,12 @@ def requires_tc(f):
         check_tc()
         return f(*a, **kw)
     return wrapper
+
+
+def requires_tun(f):
+    @functools.wraps(f)
+    def wrapper(*a, **kw):
+        if not os.path.exists("/dev/net/tun"):
+            raise SkipTest("This test requires tun device")
+        return f(*a, **kw)
+    return wrapper
