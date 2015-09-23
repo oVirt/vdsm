@@ -2,9 +2,6 @@
 
 set -xe
 
-# Nose 1.3.0 and later segatult with this flag
-#export NOSE_WITH_XUNIT=1
-
 # this redefines 'ugly' but looks like NOSE_EXCLUDE works at test method level,
 # not at module neither at testcase level, so we have no choice but this.
 export NOSE_EXCLUDE="\
