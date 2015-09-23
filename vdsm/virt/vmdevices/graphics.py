@@ -59,9 +59,12 @@ class Graphics(Base):
 
         # It's possible that the network is specified vm's conf
         # and not in specParams. This is considered legacy.
-        self.specParams['displayNetwork'] = (
-            self.specParams.get('displayNetwork') or conf.get('displayNetwork')
+        displayNetwork = (
+            self.specParams.get('displayNetwork') or
+            conf.get('displayNetwork')
         )
+        if displayNetwork:
+            self.specParams['displayNetwork'] = displayNetwork
 
         self.specParams['displayIp'] = (
             _getNetworkIp(self.specParams.get('displayNetwork')))

@@ -518,6 +518,43 @@ class TestVmDevices(XMLTestCase):
         memory = vmdevices.core.Memory(self.conf, self.log, **params)
         self.assertXMLEqual(memory.getXML().toxml(), memoryXML)
 
+    def testGraphicsNoDisplayNetwork(self):
+        with fake.VM() as testvm:
+            graphDev = vmdevices.graphics.Graphics(
+                testvm.conf, testvm.log)
+
+            self.assertNotIn('displayNetwork', graphDev.specParams)
+
+    def testGraphicsDisplayNetworkFromSpecParams(self):
+        with fake.VM() as testvm:
+            graphDev = vmdevices.graphics.Graphics(
+                testvm.conf, testvm.log,
+                specParams={'displayNetwork': 'vmDisplaySpecParams'})
+
+            self.assertEqual(graphDev.specParams['displayNetwork'],
+                             'vmDisplaySpecParams')
+
+    def testGraphicsDisplayNetworkFromVmConf(self):
+        conf = {'displayNetwork': 'vmDisplayConf'}
+        conf.update(self.conf)
+        with fake.VM(conf) as testvm:
+            graphDev = vmdevices.graphics.Graphics(
+                testvm.conf, testvm.log)
+
+            self.assertEqual(graphDev.specParams['displayNetwork'],
+                             'vmDisplayConf')
+
+    def testGraphicsDisplayNetworkFromSpecParamsOverridesVmConf(self):
+        conf = {'displayNetwork': 'vmDisplayConf'}
+        conf.update(self.conf)
+        with fake.VM(conf) as testvm:
+            graphDev = vmdevices.graphics.Graphics(
+                testvm.conf, testvm.log,
+                specParams={'displayNetwork': 'vmDisplaySpecParams'})
+
+            self.assertEqual(graphDev.specParams['displayNetwork'],
+                             'vmDisplaySpecParams')
+
 
 class ConsoleTests(TestCaseBase):
 
