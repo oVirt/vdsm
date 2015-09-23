@@ -21,6 +21,7 @@ import asyncore
 import socket
 from errno import EWOULDBLOCK
 
+from vdsm.sslutils import SSL
 from vdsm.infra.eventfd import EventFD
 
 
@@ -116,6 +117,10 @@ class Dispatcher(asyncore.dispatcher):
                 return ''
             else:
                 raise
+        except SSL.SSLError as e:
+            self.log.error('SSL error during reading data: %s', e)
+            self.handle_close()
+            return ''
 
     def send(self, data):
         try:
