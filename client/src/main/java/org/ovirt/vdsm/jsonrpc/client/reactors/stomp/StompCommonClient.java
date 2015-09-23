@@ -14,7 +14,9 @@ import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.reduceGracePeriod;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -36,7 +38,7 @@ public abstract class StompCommonClient extends ReactorClient {
     protected Message message;
     protected CountDownLatch connected;
     protected CountDownLatch subscribed;
-    protected String subscribtionId;
+    protected List<String> subscriptionIds = new ArrayList<>();
     private static final Logger LOG = LoggerFactory.getLogger(StompCommonClient.class);
 
     public StompCommonClient(Reactor reactor, String hostname, int port) {
@@ -85,7 +87,9 @@ public abstract class StompCommonClient extends ReactorClient {
 
     @Override
     public Future<Void> close() {
-        send(new Message().unsubscribe().withHeader(HEADER_ID, this.subscribtionId).build());
+        for (String subscribtionId: subscriptionIds) {
+            send(new Message().unsubscribe().withHeader(HEADER_ID, subscribtionId).build());
+        }
         send(new Message().disconnect().withHeader(HEADER_RECEIPT, UUID.randomUUID().toString()).build());
         return super.close();
     }

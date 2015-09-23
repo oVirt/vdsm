@@ -44,14 +44,11 @@ public class StompClient extends PlainClient {
                 }
                 send(message.build());
 
-                subscribtionId = UUID.randomUUID().toString();
-                send(new Message().subscribe().withHeader(HEADER_DESTINATION, getResponseQueue())
-                        .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
+                subscribe(getResponseQueue());
 
                 String eventQueue = getEventQueue();
                 if (!isEmpty(eventQueue)) {
-                    send(new Message().subscribe().withHeader(HEADER_DESTINATION, eventQueue)
-                            .withHeader(HEADER_ID, subscribtionId).withHeader(HEADER_ACK, "auto").build());
+                    subscribe(eventQueue);
                 }
 
                 connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
@@ -59,6 +56,13 @@ public class StompClient extends PlainClient {
                 disconnect("Waiting for connect interrupted");
                 throw new ClientConnectionException("Timeout during connection", e);
             }
+        }
+
+        private void subscribe(String queueName) {
+            String subId = UUID.randomUUID().toString();
+            subscriptionIds.add(subId);
+            send(new Message().subscribe().withHeader(HEADER_DESTINATION, queueName)
+                    .withHeader(HEADER_ID, subId).withHeader(HEADER_ACK, "auto").build());
         }
     };
 
