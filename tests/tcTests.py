@@ -20,6 +20,7 @@
 #
 
 import random
+import functools
 import time
 import string
 import os
@@ -42,6 +43,15 @@ from network import tc
 import platform
 
 EXT_IP = "/sbin/ip"
+
+
+def requires_tun(f):
+    @functools.wraps(f)
+    def wrapper(*a, **kw):
+        if not os.path.exists("/dev/net/tun"):
+            raise SkipTest("This test requires tun device")
+        return f(*a, **kw)
+    return wrapper
 
 
 class _Interface():
@@ -248,6 +258,7 @@ class TestPortMirror(TestCaseBase):
     _bridge2 = _Bridge('target2-')
 
     @ValidateRunningAsRoot
+    @requires_tun
     def setUp(self):
         _checkDependencies()
         self._tap0.addDevice()
