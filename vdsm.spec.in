@@ -520,7 +520,7 @@ Hook for OpenStack Network vNICs.
 Summary:        Open vSwitch support for VDSM
 BuildArch:      noarch
 Requires:       %{name} = %{version}-%{release}
-Requires:       openvswitch >= 2
+Requires:       openvswitch >= 2.0.0
 
 %description hook-ovs
 Hook for Open vSwitch support.
