@@ -70,9 +70,6 @@ TODO
   + We need to be able to set and get those values. It should be possible
     via 'mcast_snooping_enable' records, described here [1]
 - Implement implicitBonding
-- Remove IP configuration of nics attached to OVS networks:
-  + ifcfg removes IP addresses and stops dhclients running on NICs attached to
-    VDSM networks. We should do the same with OVS.
 - Defined multiple OVS Bridge instances:
   + Now custom network property 'ovs' is passing only True, we could change it
     to pass an integer and then create OVS network under 'ovsbr$INT'
