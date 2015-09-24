@@ -24,6 +24,7 @@ from warnings import filterwarnings, catch_warnings
 from threading import Lock
 
 from collections import deque
+from M2Crypto import SSL
 
 
 # This is a copy of the standard library asyncore converted to support
@@ -299,6 +300,8 @@ class Dispatcher(asyncore.dispatcher):
                 return ''
             else:
                 raise
+        except SSL.SSLError:
+            self.handle_close()
 
     def send(self, data):
         try:
