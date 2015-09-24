@@ -134,6 +134,11 @@ class StompAdapterImpl(object):
                              dispatcher.connection)
             return
 
+        if sub_id in self._sub_ids:
+            self._send_error("Subscription id already exists",
+                             dispatcher.connection)
+            return
+
         ack = frame.headers.get("ack", stomp.AckMode.AUTO)
         subscription = stomp._Subscription(dispatcher.connection, destination,
                                            sub_id, ack, None)
