@@ -747,15 +747,16 @@ def _get_routes():
     return routes
 
 
-def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4_ifaces=None,
-                     dhcpv6_ifaces=None):
+def libvirtNets2vdsm(nets, running_config=None, routes=None, ipAddrs=None,
+                     dhcpv4_ifaces=None, dhcpv6_ifaces=None):
+    if running_config is None:
+        running_config = RunningConfig()
     if routes is None:
         routes = _get_routes()
     if ipAddrs is None:
         ipAddrs = _getIpAddrs()
     if dhcpv4_ifaces is None or dhcpv6_ifaces is None:
         dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces()
-    running_config = RunningConfig()
     d = {}
     for net, netAttr in nets.iteritems():
         try:
@@ -779,8 +780,8 @@ def get(vdsmnets=None):
 
     if vdsmnets is None:
         libvirt_nets = networks()
-        d['networks'] = libvirtNets2vdsm(libvirt_nets, routes, ipaddrs,
-                                         dhcpv4_ifaces, dhcpv6_ifaces)
+        d['networks'] = libvirtNets2vdsm(libvirt_nets, running_config, routes,
+                                         ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces)
     else:
         d['networks'] = vdsmnets
 
