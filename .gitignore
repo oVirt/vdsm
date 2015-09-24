@@ -35,6 +35,7 @@ lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
 results.log
+tags
 tests/crossImportsTests.py
 tests/run_tests.sh
 tests/run_tests_local.sh
