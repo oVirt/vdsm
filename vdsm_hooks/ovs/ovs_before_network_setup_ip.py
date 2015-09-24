@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from collections import namedtuple
+import os
 import sys
 
 from vdsm import ipwrapper, sysctl
@@ -28,7 +29,7 @@ from ovs_utils import suppress, BRIDGE_NAME
 
 # TODO: move required modules into vdsm/lib
 sys.path.append('/usr/share/vdsm')
-from network.configurators.dhclient import DhcpClient
+from network.configurators.dhclient import DhcpClient, kill_dhclient
 from network.configurators.iproute2 import Iproute2
 from network.models import NetDevice, IPv4, IPv6
 from network.sourceroute import DynamicSourceRoute
@@ -113,6 +114,13 @@ def _remove_ip_config(ip_config):
             ipwrapper.addrFlush(iface)
 
 
+def _drop_ip_config(iface):
+    """Remove IP configuration of a new nic controlled by VDSM"""
+    if os.path.exists(os.path.join('/sys/class/net', iface)):
+        kill_dhclient(iface, family=4)  # kill_dhclient flushes IP
+        kill_dhclient(iface, family=6)
+
+
 def configure_ip(nets, init_nets):
 
     def _gather_ip_config(attrs):
@@ -126,14 +134,39 @@ def configure_ip(nets, init_nets):
     ip_config_to_set = {}
     ip_config_to_remove = {}
 
-    for net, attrs in nets.items():
-        if net in init_nets:
-            init_ip_config = _gather_ip_config(init_nets[net])
-            ip_config_to_remove[init_ip_config.top_dev] = init_ip_config
-        if 'remove' not in attrs:
+    for net, attrs in nets.iteritems():
+        if 'remove' in attrs:  # if network was removed
+            # remove network's IP configuration (running dhclient)
+            ip_config = _gather_ip_config(init_nets[net])
+            ip_config_to_remove[ip_config.top_dev] = ip_config
+        else:
             ip_config = _gather_ip_config(attrs)
-            if ip_config.ipv4 or ip_config.ipv6:
-                ip_config_to_set[ip_config.top_dev] = ip_config
+            if net in init_nets:  # if network was edited
+                init_ip_config = _gather_ip_config(init_nets[net])
+
+                # drop IP of newly attached nics
+                if init_nets[net].get('nic') != attrs.get('nic') is not None:
+                    _drop_ip_config(attrs.get('nic'))
+
+                # if IP config is to be changed or network's top device was
+                # changed, remove initial IP configuration and set the new one
+                # if there is any
+                if (ip_config.ipv4 != init_ip_config.ipv4 or
+                    ip_config.ipv6 != init_ip_config.ipv6 or
+                        attrs.get('vlan') != init_nets[net].get('vlan')):
+                    ip_config_to_remove[
+                        init_ip_config.top_dev] = init_ip_config
+                    if ip_config.ipv4 or ip_config.ipv6:
+                        ip_config_to_set[ip_config.top_dev] = ip_config
+            else:  # if network was added
+                # drop IP of newly attached nics
+                nic = attrs.get('nic')
+                if nic is not None:
+                    _drop_ip_config(nic)
+
+                # set networks IP configuration if any
+                if ip_config.ipv4 or ip_config.ipv6:
+                    ip_config_to_set[ip_config.top_dev] = ip_config
 
     hooking.log('Remove IP configuration of: %s' % ip_config_to_remove)
     hooking.log('Set IP configuration: %s' % ip_config_to_set)
