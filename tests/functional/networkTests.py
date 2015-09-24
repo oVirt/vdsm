@@ -2781,3 +2781,51 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NETWORK_NAME)
             self.assertBondDoesntExist(BONDING_NAME, nics)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_remove_initial_network_nic_ip_config(self):
+        with dummyIf(1) as nics:
+            nic, = nics
+            dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
+            dummy.setIP(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
+            try:
+                status, msg = self.setupNetworks(
+                    {NETWORK_NAME: {'nic': nic, 'bridged': True}}, {}, NOCHK)
+                self.assertEqual(status, SUCCESS, msg)
+
+                ipv4addrs = self.vdsm_net.netinfo.nics[nic]['ipv4addrs']
+                ipv6addrs = self.vdsm_net.netinfo.nics[nic]['ipv6addrs']
+                self.assertNotIn(IP_ADDRESS_AND_CIDR, ipv4addrs)
+                self.assertNotIn(IPv6_ADDRESS_AND_CIDR, ipv6addrs)
+
+                status, msg = self.vdsm_net.setupNetworks(
+                    {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertNetworkDoesntExist(NETWORK_NAME)
+            finally:
+                addrFlush(nic)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_keep_initial_bond_slaves_ip_config(self):
+        with dummyIf(2) as nics:
+            nic_1, nic_2 = nics
+            dummy.setIP(nic_1, IP_ADDRESS, IP_CIDR)
+            dummy.setIP(nic_1, IPv6_ADDRESS, IPv6_CIDR, family=6)
+            try:
+                status, msg = self.setupNetworks(
+                    {}, {BONDING_NAME: {'nics': [nic_1, nic_2]}}, NOCHK)
+                self.assertEqual(status, SUCCESS, msg)
+
+                ipv4addrs = self.vdsm_net.netinfo.nics[nic_1]['ipv4addrs']
+                ipv6addrs = self.vdsm_net.netinfo.nics[nic_1]['ipv6addrs']
+                self.assertIn(IP_ADDRESS_AND_CIDR, ipv4addrs)
+                self.assertIn(IPv6_ADDRESS_AND_CIDR, ipv6addrs)
+
+                status, msg = self.vdsm_net.setupNetworks(
+                    {}, {BONDING_NAME: {'remove': True}}, NOCHK)
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertBondDoesntExist(BONDING_NAME, nics)
+            finally:
+                addrFlush(nic_1)
