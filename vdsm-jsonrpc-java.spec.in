@@ -182,6 +182,9 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
+* Thu Sep 24 2015 Piotr Kliczewski <pkliczew@redhat.com> 1.1.5-1
+- Releasing for RC
+
 * Wed Jun 10 2015 Piotr Kliczewski <pkliczew@redhat.com> 1.1.2-1
 - Introduced new queue for events
 
