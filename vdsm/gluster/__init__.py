@@ -25,24 +25,24 @@ MODULE_LIST = ('cli', 'hooks', 'services', 'tasks',
                'gfapi', 'storagedev', 'api')
 
 
-def makePublic(func):
-    func.superVdsm = True
+def gluster_mgmt_api(func):
+    func.gluster_mgmt_api = True
     return func
 
 
-def makePublicRHEV(func):
-    func.superVdsmRHEV = True
+def gluster_api(func):
+    func.gluster_api = True
     return func
 
 
-def listPublicFunctions(rhev=False):
+def listPublicFunctions(gluster_mgmt_enabled=True):
     methods = []
     for modName in MODULE_LIST:
         try:
             module = __import__('gluster.' + modName, fromlist=['gluster'])
             for name in dir(module):
                 func = getattr(module, name)
-                if _shouldPublish(func, rhev):
+                if _shouldPublish(func, gluster_mgmt_enabled):
                     funcName = 'gluster%s%s' % (name[0].upper(), name[1:])
                     methods.append((funcName, func))
         except ImportError:
@@ -50,11 +50,11 @@ def listPublicFunctions(rhev=False):
     return methods
 
 
-def _shouldPublish(func, rhev):
-    if rhev:
-        return getattr(func, 'superVdsmRHEV', False)
+def _shouldPublish(func, gluster_mgmt_enabled):
+    if gluster_mgmt_enabled:
+        return getattr(func, 'gluster_mgmt_api', False)
     else:
-        return getattr(func, 'superVdsm', False)
+        return getattr(func, 'gluster_api', False)
 
 
 def safeWrite(fileName, content):

@@ -55,6 +55,17 @@ AC_ARG_ENABLE(
 AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
 
 AC_ARG_ENABLE(
+    [gluster-mgmt],
+    [AS_HELP_STRING(
+        [--enable-gluster-mgmt],
+        [build gluster management package @<:@default=yes@:>@]
+    )],
+    ,
+    [enable_gluster_mgmt="yes"]
+)
+AM_CONDITIONAL([GLUSTER_MGMT], [test "${enable_gluster_mgmt}" = "yes"])
+
+AC_ARG_ENABLE(
     [rhev],
     [AS_HELP_STRING(
         [--enable-rhev],

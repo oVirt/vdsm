@@ -28,8 +28,8 @@ common = \
 	exception.py
 	$(NULL)
 
-if !RHEV
-gluster_only = \
+if GLUSTER_MGMT
+gluster_mgmt = \
 	api.py \
 	apiwrapper.py \
 	fstab.py \
@@ -41,4 +41,4 @@ gluster_only = \
 	$(NULL)
 endif
 
-dist_vdsmgluster_PYTHON = $(common) $(gluster_only)
+dist_vdsmgluster_PYTHON = $(common) $(gluster_mgmt)

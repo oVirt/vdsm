@@ -13,6 +13,10 @@
 # Glusterfs package version
 %global gluster_version 3.7.1
 
+# Gluster managment - overridable using
+# rpmbuild --define "with_gluster_mgmt 0"
+%{!?with_gluster_mgmt: %global with_gluster_mgmt 1}
+
 # koji build - overridable using rpmbuild --define "fedora_koji_build 1"
 %{!?fedora_koji_build: %global fedora_koji_build 0}
 
@@ -40,11 +44,6 @@
 %global _polkitdir %{_datadir}/polkit-1/rules.d
 %else
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
-%endif
-
-# Gluster should not be shipped with RHEV
-%if ! 0%{?rhev_build}
-%global with_gluster 1
 %endif
 
 %if ! 0%{?rhel} || ! 0%{fedora_koji_build}
@@ -226,7 +225,7 @@ Requires: qemu-img >= 2:2.1.3-11
 %endif # rhel
 
 # GlusterFS client-side RPMs needed for Gluster SD
-%if 0%{?with_gluster}
+%if 0%{?with_gluster_mgmt}
 Requires: glusterfs-cli >= %{gluster_version}
 Requires: glusterfs-fuse >= %{gluster_version}
 %endif
@@ -596,7 +595,7 @@ Requires:       %{name} >= 4.16.7
 VDSM hook used for applying IPv6 configuration through custom network
 properties
 
-%if 0%{?with_gluster}
+%if 0%{?with_gluster_mgmt}
 %package gluster
 Summary:        Gluster Plugin for VDSM
 Requires: %{name} = %{version}-%{release}
@@ -619,6 +618,9 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 autoreconf -if
 %endif
 %configure %{?with_hooks:--enable-hooks} \
+%if ! 0%{?with_gluster_mgmt}
+        --disable-gluster-mgmt \
+%endif
 %if 0%{?rhev_build}
         --enable-rhev \
         --with-smbios-manufacturer='Red Hat' \
@@ -1412,7 +1414,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{python_sitelib}/api/vdsmapi.py*
 %{python_sitelib}/api/__init__.py*
-%if ! 0%{?with_gluster}
+%if ! 0%{?with_gluster_mgmt}
 %exclude %{_datadir}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
 %endif
 
@@ -1440,7 +1442,7 @@ exit 0
 %license COPYING
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/10_faqemu
 
-%if 0%{?with_gluster}
+%if 0%{?with_gluster_mgmt}
 %files gluster
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}

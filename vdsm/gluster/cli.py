@@ -27,7 +27,7 @@ import xml.etree.cElementTree as etree
 from vdsm import utils
 from vdsm import netinfo
 import exception as ge
-from . import makePublic, makePublicRHEV
+from . import gluster_mgmt_api, gluster_api
 
 _glusterCommandPath = utils.CommandPath("gluster",
                                         "/usr/sbin/gluster",
@@ -135,7 +135,7 @@ def _getGlusterHostName():
         return ''
 
 
-@makePublic
+@gluster_mgmt_api
 def hostUUIDGet():
     command = _getGlusterSystemCmd() + ["uuid", "get"]
     rc, out, err = _execGluster(command)
@@ -265,7 +265,7 @@ def _parseVolumeStatusMem(tree):
     return status
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeStatus(volumeName, brick=None, option=None):
     """
     Get volume status
@@ -472,8 +472,8 @@ def _parseVolumeProfileInfo(tree, nfs):
     return status
 
 
-@makePublic
-@makePublicRHEV
+@gluster_api
+@gluster_mgmt_api
 def volumeInfo(volumeName=None, remoteServer=None):
     """
     Returns:
@@ -501,7 +501,7 @@ def volumeInfo(volumeName=None, remoteServer=None):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
                  transportList=[], force=False):
     command = _getGlusterVolCmd() + ["create", volumeName]
@@ -526,7 +526,7 @@ def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeStart(volumeName, force=False):
     command = _getGlusterVolCmd() + ["start", volumeName]
     if force:
@@ -538,7 +538,7 @@ def volumeStart(volumeName, force=False):
         return True
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeStop(volumeName, force=False):
     command = _getGlusterVolCmd() + ["stop", volumeName]
     if force:
@@ -550,7 +550,7 @@ def volumeStop(volumeName, force=False):
         raise ge.GlusterVolumeStopFailedException(rc=e.rc, err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeDelete(volumeName):
     command = _getGlusterVolCmd() + ["delete", volumeName]
     try:
@@ -560,7 +560,7 @@ def volumeDelete(volumeName):
         raise ge.GlusterVolumeDeleteFailedException(rc=e.rc, err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeSet(volumeName, option, value):
     command = _getGlusterVolCmd() + ["set", volumeName, option, value]
     try:
@@ -581,7 +581,7 @@ def _parseVolumeSetHelpXml(out):
     return optionList
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeSetHelpXml():
     rc, out, err = _execGluster(_getGlusterVolCmd() + ["set", 'help-xml'])
     if rc:
@@ -590,7 +590,7 @@ def volumeSetHelpXml():
         return _parseVolumeSetHelpXml(out)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeReset(volumeName, option='', force=False):
     command = _getGlusterVolCmd() + ['reset', volumeName]
     if option:
@@ -604,7 +604,7 @@ def volumeReset(volumeName, option='', force=False):
         raise ge.GlusterVolumeResetFailedException(rc=e.rc, err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeAddBrick(volumeName, brickList,
                    replicaCount=0, stripeCount=0, force=False):
     command = _getGlusterVolCmd() + ["add-brick", volumeName]
@@ -622,7 +622,7 @@ def volumeAddBrick(volumeName, brickList,
         raise ge.GlusterVolumeBrickAddFailedException(rc=e.rc, err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
     command = _getGlusterVolCmd() + ["rebalance", volumeName]
     if rebalanceType:
@@ -641,7 +641,7 @@ def volumeRebalanceStart(volumeName, rebalanceType="", force=False):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRebalanceStop(volumeName, force=False):
     command = _getGlusterVolCmd() + ["rebalance", volumeName, "stop"]
     if force:
@@ -658,7 +658,7 @@ def volumeRebalanceStop(volumeName, force=False):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
     """
     returns {'hosts': [{'name': NAME,
@@ -714,7 +714,7 @@ def _parseVolumeRebalanceRemoveBrickStatus(xmltree, mode):
     return status
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRebalanceStatus(volumeName):
     command = _getGlusterVolCmd() + ["rebalance", volumeName, "status"]
     try:
@@ -728,7 +728,7 @@ def volumeRebalanceStatus(volumeName):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeReplaceBrickCommitForce(volumeName, existingBrick, newBrick):
     command = _getGlusterVolCmd() + ["replace-brick", volumeName,
                                      existingBrick, newBrick, "commit",
@@ -741,7 +741,7 @@ def volumeReplaceBrickCommitForce(volumeName, existingBrick, newBrick):
                                                                      err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -758,7 +758,7 @@ def volumeRemoveBrickStart(volumeName, brickList, replicaCount=0):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -776,7 +776,7 @@ def volumeRemoveBrickStop(volumeName, brickList, replicaCount=0):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -793,7 +793,7 @@ def volumeRemoveBrickStatus(volumeName, brickList, replicaCount=0):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRemoveBrickCommit(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -807,7 +807,7 @@ def volumeRemoveBrickCommit(volumeName, brickList, replicaCount=0):
                                                                err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
     command = _getGlusterVolCmd() + ["remove-brick", volumeName]
     if replicaCount:
@@ -821,7 +821,7 @@ def volumeRemoveBrickForce(volumeName, brickList, replicaCount=0):
                                                               err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def peerProbe(hostName):
     command = _getGlusterPeerCmd() + ["probe", hostName]
     try:
@@ -831,7 +831,7 @@ def peerProbe(hostName):
         raise ge.GlusterHostAddFailedException(rc=e.rc, err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def peerDetach(hostName, force=False):
     command = _getGlusterPeerCmd() + ["detach", hostName]
     if force:
@@ -865,7 +865,7 @@ def _parsePeerStatus(tree, gHostName, gUuid, gStatus):
     return hostList
 
 
-@makePublic
+@gluster_mgmt_api
 def peerStatus():
     """
     Returns:
@@ -884,7 +884,7 @@ def peerStatus():
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeProfileStart(volumeName):
     command = _getGlusterVolCmd() + ["profile", volumeName, "start"]
     try:
@@ -894,7 +894,7 @@ def volumeProfileStart(volumeName):
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeProfileStop(volumeName):
     command = _getGlusterVolCmd() + ["profile", volumeName, "stop"]
     try:
@@ -904,7 +904,7 @@ def volumeProfileStop(volumeName):
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeProfileInfo(volumeName, nfs=False):
     """
     Returns:
@@ -1010,7 +1010,7 @@ def _parseVolumeTasks(tree):
     return tasks
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeTasks(volumeName="all"):
     command = _getGlusterVolCmd() + ["status", volumeName, "tasks"]
     try:
@@ -1023,7 +1023,7 @@ def volumeTasks(volumeName="all"):
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepSessionStart(volumeName, remoteHost, remoteVolumeName,
                              remoteUserName=None, force=False):
     if remoteUserName:
@@ -1042,7 +1042,7 @@ def volumeGeoRepSessionStart(volumeName, remoteHost, remoteVolumeName,
                                                                 err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepSessionStop(volumeName, remoteHost, remoteVolumeName,
                             remoteUserName=None, force=False):
     if remoteUserName:
@@ -1141,7 +1141,7 @@ def _parseGeoRepStatus(tree):
     return status
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepStatus(volumeName=None, remoteHost=None,
                        remoteVolumeName=None, remoteUserName=None):
     if remoteUserName:
@@ -1165,7 +1165,7 @@ def volumeGeoRepStatus(volumeName=None, remoteHost=None,
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepSessionPause(volumeName, remoteHost, remoteVolumeName,
                              remoteUserName=None, force=False):
     if remoteUserName:
@@ -1184,7 +1184,7 @@ def volumeGeoRepSessionPause(volumeName, remoteHost, remoteVolumeName,
                                                                 err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepSessionResume(volumeName, remoteHost, remoteVolumeName,
                               remoteUserName=None, force=False):
     if remoteUserName:
@@ -1216,7 +1216,7 @@ def _parseVolumeGeoRepConfig(tree):
     return {'geoRepConfig': config}
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepConfig(volumeName, remoteHost,
                        remoteVolumeName, optionName=None,
                        optionValue=None,
@@ -1244,7 +1244,7 @@ def volumeGeoRepConfig(volumeName, remoteHost,
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotCreate(volumeName, snapName,
                    snapDescription=None,
                    force=False):
@@ -1266,7 +1266,7 @@ def snapshotCreate(volumeName, snapName,
         raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotDelete(volumeName=None, snapName=None):
     command = _getGlusterSnapshotCmd() + ["delete"]
     if snapName:
@@ -1282,7 +1282,7 @@ def snapshotDelete(volumeName=None, snapName=None):
         return True
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotActivate(snapName, force=False):
     command = _getGlusterSnapshotCmd() + ["activate", snapName]
 
@@ -1296,7 +1296,7 @@ def snapshotActivate(snapName, force=False):
         raise ge.GlusterSnapshotActivateFailedException(rc=e.rc, err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotDeactivate(snapName):
     command = _getGlusterSnapshotCmd() + ["deactivate", snapName]
 
@@ -1326,7 +1326,7 @@ def _parseRestoredSnapshot(tree):
     return snapshotRestore
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotRestore(snapName):
     command = _getGlusterSnapshotCmd() + ["restore", snapName]
 
@@ -1371,7 +1371,7 @@ def _parseSnapshotConfigList(tree):
     return {'system': systemConfig, 'volume': volumeConfig}
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotConfig(volumeName=None, optionName=None, optionValue=None):
     command = _getGlusterSnapshotCmd() + ["config"]
     if volumeName:
@@ -1491,7 +1491,7 @@ def _parseAllVolumeSnapshotList(tree):
     return volumes
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotInfo(volumeName=None):
     command = _getGlusterSnapshotCmd() + ["info"]
     if volumeName:
@@ -1509,7 +1509,7 @@ def snapshotInfo(volumeName=None):
         raise ge.GlusterXmlErrorInfoException(err=[etree.tostring(xmltree)])
 
 
-@makePublic
+@gluster_mgmt_api
 def executeGsecCreate():
     command = _getGlusterSystemCmd() + ["execute", "gsec_create"]
     rc, out, err = _execGluster(command)
@@ -1519,7 +1519,7 @@ def executeGsecCreate():
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def executeMountBrokerUserAdd(remoteUserName, remoteVolumeName):
     command = _getGlusterSystemCmd() + ["execute", "mountbroker",
                                         "user", remoteUserName,
@@ -1532,7 +1532,7 @@ def executeMountBrokerUserAdd(remoteUserName, remoteVolumeName):
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def executeMountBrokerOpt(optionName, optionValue):
     command = _getGlusterSystemCmd() + ["execute", "mountbroker",
                                         "opt", optionName,
@@ -1544,7 +1544,7 @@ def executeMountBrokerOpt(optionName, optionValue):
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepSessionCreate(volumeName, remoteHost,
                               remoteVolumeName,
                               remoteUserName=None, force=False):
@@ -1564,7 +1564,7 @@ def volumeGeoRepSessionCreate(volumeName, remoteHost,
         raise ge.GlusterGeoRepSessionCreateFailedException(rc=e.rc, err=e.err)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
                               remoteUserName=None):
     if remoteUserName:
