@@ -21,6 +21,7 @@ usr/libexec/vdsm/hooks/after_get_stats
 usr/libexec/vdsm/hooks/after_get_vm_stats
 usr/libexec/vdsm/hooks/after_hostdev_list_by_caps
 usr/libexec/vdsm/hooks/after_network_setup
+usr/libexec/vdsm/hooks/after_network_setup_fail
 usr/libexec/vdsm/hooks/after_nic_hotplug
 usr/libexec/vdsm/hooks/after_nic_hotplug_fail
 usr/libexec/vdsm/hooks/after_nic_hotunplug

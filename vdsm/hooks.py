@@ -351,6 +351,11 @@ def after_network_setup(network_config_dict):
                         raiseError=False, hookType=_JSON_HOOK)
 
 
+def after_network_setup_fail(network_config_dict):
+    return _runHooksDir(network_config_dict, 'after_network_setup_fail',
+                        raiseError=False, hookType=_JSON_HOOK)
+
+
 def before_get_vm_stats():
     return _runHooksDir({}, 'before_get_vm_stats', raiseError=True,
                         hookType=_JSON_HOOK)

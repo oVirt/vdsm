@@ -71,6 +71,15 @@ except ImportError:
 USER_SHUTDOWN_MESSAGE = 'System going down'
 
 
+def _after_network_setup_fail(networks, bondings, options):
+    # TODO: it might be useful to pass failure description in 'response' field
+    network_config_dict = {
+        'request': {'networks': dict(networks),
+                    'bondings': dict(bondings),
+                    'options': dict(options)}}
+    hooks.after_network_setup_fail(network_config_dict)
+
+
 def updateTimestamp():
     # The setup+editNetwork API uses this log file to
     # determine if this host is still accessible.  We use a
@@ -1483,10 +1492,16 @@ class Global(APIBase):
 
             with self._rollback() as rollbackCtx:
                 supervdsm.getProxy().setupNetworks(networks, bondings, options)
+
+            if rollbackCtx['status'] != doneCode:
+                _after_network_setup_fail(networks, bondings, options)
             return rollbackCtx
         except hooks.HookError as e:
+            _after_network_setup_fail(networks, bondings, options)
             return response.error('hookError', 'Hook error: ' + str(e))
-
+        except:
+            _after_network_setup_fail(networks, bondings, options)
+            raise
         finally:
             self._cif._networkSemaphore.release()
 

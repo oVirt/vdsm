@@ -119,6 +119,7 @@ VDSMHOOKS = \
 	after_vdsm_stop \
 	before_network_setup \
 	after_network_setup \
+	after_network_setup_fail \
 	before_set_num_of_cpus \
 	after_set_num_of_cpus \
 	before_get_vm_stats \
