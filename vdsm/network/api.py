@@ -149,7 +149,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
                                          'enslaved to %s' % (nic, bond))
             topNetDev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
     if vlan is not None:
-        tag = netinfo.getVlanID(vlan) if vlan_id is None else vlan_id
+        tag = _netinfo.vlans[vlan]['vlanid'] if vlan_id is None else vlan_id
         topNetDev = Vlan(topNetDev, tag, configurator, mtu=mtu, name=vlan)
     elif vlan_id is not None:
         topNetDev = Vlan(topNetDev, vlan_id, configurator, mtu=mtu)

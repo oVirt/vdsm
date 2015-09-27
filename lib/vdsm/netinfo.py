@@ -796,7 +796,7 @@ def _vlan_device(vlan):
     return vlanLink.device
 
 
-def getVlanID(vlan):
+def _vlan_id(vlan):
     """ Return the ID of the given VLAN. """
     vlanLink = getLink(vlan)
     return int(vlanLink.vlanid)
@@ -885,7 +885,7 @@ class NetInfo(object):
                     if iface == interface:
                         yield (network, None)
                     elif interface.startswith(iface + '.'):
-                        yield (network, getVlanID(interface))
+                        yield (network, _vlan_id(interface))
 
     def _getBridgelessNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (network, vlan) connected to nic/bond """
@@ -894,7 +894,7 @@ class NetInfo(object):
                 if iface == netdict['iface']:
                     yield (network, None)
                 elif netdict['iface'].startswith(iface + '.'):
-                    yield (network, getVlanID(netdict['iface']))
+                    yield (network, _vlan_id(netdict['iface']))
 
     def getVlansForIface(self, iface):
         for vlandict in six.itervalues(self.vlans):
@@ -944,7 +944,7 @@ class NetInfo(object):
             if port in self.vlans:
                 assert vlan is None
                 nic = _vlan_device(port)
-                vlanid = getVlanID(port)
+                vlanid = _vlan_id(port)
                 vlan = port  # vlan devices can have an arbitrary name
                 assert self.vlans[port]['iface'] == nic
                 port = nic
