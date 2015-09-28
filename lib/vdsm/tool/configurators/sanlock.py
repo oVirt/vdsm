@@ -84,7 +84,7 @@ class Sanlock(ModuleConfigure):
                         if status_line.startswith(proc_status_group_prefix):
                             groups = [int(x) for x in status_line[
                                 len(proc_status_group_prefix):]
-                                .strip().split(" ")]
+                                .strip().split()]
                             break
                     else:
                         raise InvalidConfig(
