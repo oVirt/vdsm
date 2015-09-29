@@ -18,18 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from contextlib import contextmanager
-import sys
-
-from libvirt import libvirtError
 
 from hooking import execCmd
 
 from vdsm.utils import CommandPath
-
-# TODO: move required modules into vdsm/lib
-sys.path.append('/usr/share/vdsm')
-from network.configurators import libvirt
-import supervdsm
 
 EXT_IP = CommandPath('ip', '/sbin/ip').cmd
 EXT_OVS_VSCTL = CommandPath('ovs-vsctl',
@@ -39,6 +31,8 @@ EXT_OVS_APPCTL = CommandPath('ovs-appctl',
                              '/usr/sbin/ovs-appctl',
                              '/usr/bin/ovs-appctl').cmd
 BRIDGE_NAME = 'ovsbr0'
+
+INIT_CONFIG_FILE = '/tmp/ovs_init_config'  # TODO: VDSM tmp folder
 
 
 def rget(dict, keys, default=None):
@@ -120,26 +114,3 @@ def destroy_ovs_bridge():
     rc, _, err = execCmd(commands)
     if rc != 0:
         raise Exception('\n'.join(err))
-
-
-def rollback(running_config, initial_config):
-    diff = running_config.diffFrom(initial_config)
-    if diff:
-        for libvirt_ovs_nets in (iter_ovs_nets(running_config.networks),
-                                 iter_ovs_nets(initial_config.networks)):
-            for net, attrs in libvirt_ovs_nets:
-                with suppress(libvirtError):  # network not found
-                    libvirt.removeNetwork(net)
-
-        destroy_ovs_bridge()
-        for net, attrs in running_config.networks.items():
-            if is_ovs_network(attrs):
-                running_config.networks.pop(net)
-        for bond, attrs in running_config.bonds.items():
-            if is_ovs_bond(attrs):
-                running_config.bonds.pop(bond)
-        running_config.save()
-
-        supervdsm.getProxy().setupNetworks(
-            initial_config.networks, initial_config.bonds,
-            {'connectivityCheck': False, '_inRollback': True})

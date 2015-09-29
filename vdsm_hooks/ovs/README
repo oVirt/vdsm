@@ -51,44 +51,13 @@ Limitations
 - Only one untagged network
 - STP only on untagged network
 - All networks are bridged
-
-
-Backporting
------------
-
-In case of backporting we need to backport following changes:
-
-- Id602b6cc87a663424d06c77d1847d2c2d60d289f
-    hooks: Open vSwitch configurator
-- I03fce903280d5eda817e713a51c8079dab9d7649
-    net: bonding: validate options based on pre-dumped ones
-- I9ace532d959bc3195a8a92b4536bdc0062bc7d1d
-    network: allow custom bondOption
-- I1763bc3409aa7da91dcd2e3b21dd8540870138ef
-    tests: network: when using bonding, attach at least 2 slaves
-- Ia4c3a7c5598f2a7b10670415714d980113bc72ae
-    network: add 'default_route' parameter to DhcpClient
-- Ic4f1564e19904cc1d53bc6d1cf732ca35375332e
-    net: configurators: persist custom bond option
-- I2fc4bd069d5c5980329dc4a53f5194625d8a767a
-    net: tests: fix testSelectiveRestoreDuringUpgrade
-    (not needed in 3.5)
-- Ifeb47c9df152b29926f40b9b41a3ad5b7e659ddd
-    net: sysctl: enable ipv6
+- Tested only with ifcfg configurator. OVS rollback probably won't be working
+  with iproute2 or pyroute2 configurators
 
 
 TODO
 ----
 
-- Implement rollback for case of failed non-ovs setup:
-  + When and error occurs during OVS networks setup, OVS hook is able to
-    rollback changes. When error happens during the following setup of non-OVS
-    networks, non-OVS networks are rolled back, but OVS has no idea about that
-    and is not able to rollback OVS networks.
-  + This could be implemented with after_network_fail hook (to be done).
-    Initial state of networks before OVS hook could be saved with Pickle to
-    /var/lib/vdsm and then, in case of a error, rolled back from the
-    after_network_fail hook.
 - Faster rollback:
   + Now in case of a rollback, we remove all OVS networks and bonds and then
     recreate them. This could be improved with changing just what have to
@@ -141,6 +110,9 @@ TODO
 - Move needed VDSM non-libraries to vdsm/lib:
   + Now we use hacky sys.path.append('/usr/share/vdsm') to access some VDSM
     modules. They should be moved to vdsm/lib.
+- When we configure dhclient over a network and then setup fails, dhclient
+  is not rolled back.
+- Handle dhclient return code
 
 
 [1] http://openvswitch.org/ovs-vswitchd.conf.db.5.pdf
