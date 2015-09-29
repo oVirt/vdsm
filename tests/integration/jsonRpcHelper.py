@@ -19,7 +19,6 @@
 #
 import httplib
 import logging
-import socket
 import threading
 from collections import defaultdict
 
