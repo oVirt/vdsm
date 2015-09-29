@@ -148,7 +148,7 @@ def constructClient(log, bridge, ssl, type):
         yield clientFactory
 
 
-class XMLClient():
+class XMLClient(object):
     def __init__(self, socket):
         self.socket = socket
         self.transport = CustomTransport(socket)
