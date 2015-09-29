@@ -465,8 +465,9 @@ class Vm(object):
                 try:
                     devices[dev['type']].append(dev)
                 except KeyError:
-                    self.log.warn("Unknown type found, device: '%s' "
-                                  "found", dev)
+                    if 'type' not in dev or dev['type'] != 'channel':
+                        self.log.warn("Unknown type found, device: '%s' "
+                                      "found", dev)
                     devices[hwclass.GENERAL].append(dev)
 
             if not devices[hwclass.GRAPHICS]:
