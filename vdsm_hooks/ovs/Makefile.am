@@ -37,6 +37,8 @@ EXTRA_DIST = \
 	ovs_before_network_setup_ip.py \
 	ovs_before_network_setup_mtu.py \
 	ovs_before_network_setup_libvirt.py \
+	ovs_after_network_setup.py \
+	ovs_after_network_setup_fail.py \
 	$(utilsfile) \
 	sudoers.in
 
@@ -62,6 +64,12 @@ install-data-local: install-data-utils install-data-sudoers
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_mtu.py
 	$(INSTALL_SCRIPT) $(srcdir)/ovs_before_network_setup_libvirt.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_libvirt.py
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_network_setup
+	$(INSTALL_SCRIPT) $(srcdir)/ovs_after_network_setup.py \
+		$(DESTDIR)$(vdsmhooksdir)/after_network_setup/50_ovs
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_network_setup_fail
+	$(INSTALL_SCRIPT) $(srcdir)/ovs_after_network_setup_fail.py \
+		$(DESTDIR)$(vdsmhooksdir)/after_network_setup_fail/50_ovs
 
 uninstall-local: uninstall-data-utils uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_caps/50_ovs
@@ -72,6 +80,8 @@ uninstall-local: uninstall-data-utils uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_ip.py
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_mtu.py
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_libvirt.py
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_network_setup/50_ovs
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_network_setup_fail/50_ovs
 
 install-data-utils:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_get_caps
@@ -86,12 +96,20 @@ install-data-utils:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_network_setup
 	$(INSTALL_SCRIPT) $(srcdir)/$(utilsfile) \
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/$(utilsfile)
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_network_setup
+	$(INSTALL_SCRIPT) $(srcdir)/$(utilsfile) \
+		$(DESTDIR)$(vdsmhooksdir)/after_network_setup/$(utilsfile)
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_network_setup_fail
+	$(INSTALL_SCRIPT) $(srcdir)/$(utilsfile) \
+		$(DESTDIR)$(vdsmhooksdir)/after_network_setup_fail/$(utilsfile)
 
 uninstall-data-utils:
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_caps/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_stats/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_device_create/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/$(utilsfile)
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_network_setup/$(utilsfile)
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_network_setup_fail/$(utilsfile)
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d

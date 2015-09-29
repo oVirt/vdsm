@@ -17,23 +17,41 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from contextlib import contextmanager
+try:
+    import cPickle as pickle
+except ImportError:
+    # Python 3 uses cPickle by default
+    import pickle
+
 from copy import deepcopy
+import errno
 import sys
 import traceback
+
+from libvirt import libvirtError
 
 from vdsm.netconfpersistence import RunningConfig
 
 from hooking import execCmd
 import hooking
 
-from ovs_utils import (is_ovs_network, is_ovs_bond, rollback, EXT_IP,
-                       EXT_OVS_VSCTL)
+from ovs_utils import (is_ovs_network, is_ovs_bond, iter_ovs_nets, suppress,
+                       destroy_ovs_bridge, EXT_IP, EXT_OVS_VSCTL,
+                       INIT_CONFIG_FILE)
 from ovs_setup_ovs import configure_ovs, prepare_ovs
 from ovs_setup_ip import configure_ip
 from ovs_setup_mtu import configure_mtu
 from ovs_setup_libvirt import (create_libvirt_nets, remove_libvirt_nets,
                                prepare_libvirt)
+
+# TODO: move required modules into vdsm/lib
+sys.path.append('/usr/share/vdsm')
+from network.configurators import libvirt
+
+
+def _set_nets_bonds(config, nets, bonds):
+    config['networks'] = nets
+    config['bondings'] = bonds
 
 
 def _separate_ovs_nets_bonds(nets, bonds, running_config):
@@ -61,35 +79,82 @@ def _separate_ovs_nets_bonds(nets, bonds, running_config):
     return ovs_nets, non_ovs_nets, ovs_bonds, non_ovs_bonds
 
 
-@contextmanager
-def _rollback(running_config, initial_config, in_rollback):
+def _destroy_ovs_libvirt_nets(initial_config, running_config):
+    hooking.log('Removing OVS and libvirt networks: %s %s' %
+                (initial_config, running_config))
+    for libvirt_ovs_nets in (iter_ovs_nets(running_config.networks),
+                             iter_ovs_nets(initial_config.networks)):
+        for net, attrs in libvirt_ovs_nets:
+            with suppress(libvirtError):  # network not found
+                libvirt.removeNetwork(net)
+
+    destroy_ovs_bridge()
+
+
+def _drop_ovs_nets_config(running_config):
+    for net, attrs in running_config.networks.items():
+        if is_ovs_network(attrs):
+            running_config.networks.pop(net)
+    for bond, attrs in running_config.bonds.items():
+        if is_ovs_bond(attrs):
+            running_config.bonds.pop(bond)
+    running_config.save()
+
+
+def _load_init_config():
     try:
-        yield
-    except:
-        if in_rollback:
-            hooking.log('Failed while trying to rollback:')
-        else:
-            hooking.log('Configuration failed. Entering rollback.')
-            rollback(running_config, initial_config)
-            hooking.log('Rollback finished. Initial error:')
-        raise
+        with open(INIT_CONFIG_FILE) as f:
+            init_config = pickle.load(f)
+    except IOError as e:
+        if e.errno != errno.ENOENT:
+            raise
+        return None
+    else:
+        return init_config
 
 
-def configure(nets, bonds, running_config, in_rollback):
+def _save_init_config(init_config):
+    with open(INIT_CONFIG_FILE, 'w') as f:
+        pickle.dump(init_config, f)
+
+
+def _rollback(running_config):
+    initial_config = _load_init_config()
+    if initial_config is None:
+        hooking.log('No needed OVS changes to be done.')
+    else:
+        hooking.log('Removing OVS networks.')
+        _destroy_ovs_libvirt_nets(initial_config, running_config)
+        _drop_ovs_nets_config(running_config)
+        hooking.log('Reconfiguring OVS networks according to initial_config.')
+        _configure(initial_config.networks, initial_config.bonds,
+                   running_config, save_init_config=False)
+
+
+def _configure(nets, bonds, running_config, save_init_config=True):
     initial_config = deepcopy(running_config)
 
     commands = prepare_ovs(nets, bonds, running_config)
     libvirt_create, libvirt_remove = prepare_libvirt(nets, running_config)
-    with _rollback(running_config, initial_config, in_rollback):
-        remove_libvirt_nets(libvirt_remove)
-        configure_ovs(commands, running_config)
-        configure_mtu(running_config)
-        configure_ip(nets, initial_config.networks)
-        create_libvirt_nets(libvirt_create)
+
+    if save_init_config:
+        hooking.log('Saving initial configuration for optional rollback: %s' %
+                    initial_config)
+        _save_init_config(initial_config)
+
+    remove_libvirt_nets(libvirt_remove)
+    configure_ovs(commands, running_config)
+    configure_mtu(running_config)
+    configure_ip(nets, initial_config.networks)
 
     hooking.log('Saving running configuration: %s %s' %
                 (running_config.networks, running_config.bonds))
     running_config.save()
+
+    # we have to create libvirt nets last. when an exception occurs, rollback
+    # will find created libvirt networks in running config and will be able to
+    # remove them
+    create_libvirt_nets(libvirt_create)
 
 
 def main():
@@ -99,16 +164,25 @@ def main():
     running_config = RunningConfig()
     networks = setup_nets_config['request']['networks']
     bondings = setup_nets_config['request']['bondings']
-    inRollback = setup_nets_config['request']['options'].get('_inRollback',
-                                                             False)
-    ovs_nets, non_ovs_nets, ovs_bonds, non_ovs_bonds = \
-        _separate_ovs_nets_bonds(networks, bondings, running_config)
-    configure(ovs_nets, ovs_bonds, running_config, inRollback)
 
-    setup_nets_config['request']['bondings'] = non_ovs_bonds
-    setup_nets_config['request']['networks'] = non_ovs_nets
-    hooking.log('Hook finished, returning non-OVS networks and bondings back '
-                'to VDSM: %s' % setup_nets_config)
+    in_ovs_rollback = setup_nets_config['request']['options'].get(
+        '_inOVSRollback')
+
+    if in_ovs_rollback:
+        hooking.log('OVS rollback is to be done.')
+        _rollback(running_config)
+        _set_nets_bonds(setup_nets_config['request'], {}, {})
+        hooking.log('OVS rollback finished, returning empty networks and '
+                    'bondings configuration back to VDSM.')
+    else:
+        ovs_nets, non_ovs_nets, ovs_bonds, non_ovs_bonds = \
+            _separate_ovs_nets_bonds(networks, bondings, running_config)
+        _configure(ovs_nets, ovs_bonds, running_config)
+        _set_nets_bonds(setup_nets_config['request'], non_ovs_nets,
+                        non_ovs_bonds)
+        hooking.log('Hook finished, returning non-OVS networks and bondings '
+                    'back to VDSM: %s' % setup_nets_config)
+
     hooking.write_json(setup_nets_config)
 
 
