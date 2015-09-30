@@ -726,8 +726,8 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None, dhcpv4_ifaces=None,
 
 
 def get(vdsmnets=None):
-    d = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
-         'vlans': {}}
+    networking = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
+                  'vlans': {}}
     paddr = permAddr()
     ipaddrs = _getIpAddrs()
     dhcpv4_ifaces, dhcpv6_ifaces = _get_dhclient_ifaces()
@@ -736,22 +736,23 @@ def get(vdsmnets=None):
 
     if vdsmnets is None:
         libvirt_nets = networks()
-        d['networks'] = libvirtNets2vdsm(libvirt_nets, routes, ipaddrs,
-                                         dhcpv4_ifaces, dhcpv6_ifaces)
+        networking['networks'] = libvirtNets2vdsm(libvirt_nets, routes,
+                                                  ipaddrs,
+                                                  dhcpv4_ifaces, dhcpv6_ifaces)
     else:
-        d['networks'] = vdsmnets
+        networking['networks'] = vdsmnets
 
-    netinfo_by_device = _netinfo_by_device(d['networks'])
+    netinfo_by_device = _netinfo_by_device(networking['networks'])
 
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
-            devinfo = d['bridges'][dev.name] = _bridgeinfo(dev)
+            devinfo = networking['bridges'][dev.name] = _bridgeinfo(dev)
         elif dev.isNICLike():
-            devinfo = d['nics'][dev.name] = _nicinfo(dev, paddr)
+            devinfo = networking['nics'][dev.name] = _nicinfo(dev, paddr)
         elif dev.isBOND():
-            devinfo = d['bondings'][dev.name] = _bondinfo(dev)
+            devinfo = networking['bondings'][dev.name] = _bondinfo(dev)
         elif dev.isVLAN():
-            devinfo = d['vlans'][dev.name] = _vlaninfo(dev)
+            devinfo = networking['vlans'][dev.name] = _vlaninfo(dev)
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4_ifaces,
@@ -761,11 +762,11 @@ def get(vdsmnets=None):
             _bondOptsCompat(devinfo)
             _bondCustomOpts(dev, devinfo, running_config)
 
-    for net, attrs in d['networks'].iteritems():
-        if attrs['bridged']:
-            attrs['cfg'] = d['bridges'][net]['cfg']
+    for network, network_info in networking['networks'].iteritems():
+        if network_info['bridged']:
+            network_info['cfg'] = networking['bridges'][network]['cfg']
 
-    return d
+    return networking
 
 
 def isVlanned(dev):
