@@ -1006,8 +1006,8 @@ def ifaceUsed(iface):
     for linkDict in nl_link.iter_links():
         if linkDict['name'] == iface and 'master' in linkDict:  # Is it a slave
             return True
-        if linkDict.get('device') == iface:  # Does it back a vlan
-            return True
+        if linkDict.get('device') == iface and linkDict.get('type') == 'vlan':
+            return True  # it backs a VLAN
     for name, info in networks().iteritems():
         if info.get('iface') == iface:
             return True
