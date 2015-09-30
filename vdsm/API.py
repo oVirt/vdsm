@@ -538,6 +538,7 @@ class VM(APIBase):
             *dstqemu* - remote host address dedicated for migration
             *compressed* - compress repeated pages during live migration
             *autoConverge* - force convergence during live migration
+            *maxBandwidth* - max bandwidth used by this specific migration
         """
         params['vmId'] = self._UUID
         self.log.debug(params)

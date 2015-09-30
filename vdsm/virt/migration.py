@@ -93,6 +93,10 @@ class SourceThread(threading.Thread):
         self._dstqemu = dstqemu
         self._downtime = kwargs.get('downtime') or \
             config.get('vars', 'migration_downtime')
+        self._maxBandwidth = int(
+            kwargs.get('maxBandwidth') or
+            config.getint('vars', 'migration_max_bandwidth')
+        )
         self._autoConverge = autoConverge
         self._compressed = compressed
         self.status = {
@@ -379,7 +383,6 @@ class SourceThread(threading.Thread):
             SPICE_MIGRATION_HANDOVER_TIME = 120
             self._vm._reviveTicket(SPICE_MIGRATION_HANDOVER_TIME)
 
-        maxBandwidth = config.getint('vars', 'migration_max_bandwidth')
         # FIXME: there still a race here with libvirt,
         # if we call stop() and libvirt migrateToURI3 didn't start
         # we may return migration stop but it will start at libvirt
@@ -388,7 +391,7 @@ class SourceThread(threading.Thread):
         if not self._migrationCanceledEvt:
             # TODO: use libvirt constants when bz#1222795 is fixed
             params = {VIR_MIGRATE_PARAM_URI: str(muri),
-                      VIR_MIGRATE_PARAM_BANDWIDTH: maxBandwidth}
+                      VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
             if self._consoleAddress:
                 if self._vm.hasSpice:
                     graphics = 'spice'

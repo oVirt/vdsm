@@ -7849,6 +7849,9 @@
 # @autoConverge:    #optional Force convergence during live migration.
 #                   (new in version 4.17.0)
 #
+# @maxBandwidth:    #optional maximal bandwidth used by the migration (MiB/s)
+#                   (new in version 4.18.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'MigrateParams',
@@ -7856,7 +7859,8 @@
           '*mode': 'MigrateMode', '*method': 'MigrateMethod',
           '*tunneled': 'bool', '*abortOnError': 'bool',
           'consoleAddress': 'str', 'dstqemu': 'str',
-          '*compressed': 'bool', '*autoConverge': 'bool'}}
+          '*compressed': 'bool', '*autoConverge': 'bool',
+          '*maxBandwidth': 'int'}}
 
 ##
 # @VM.migrate:

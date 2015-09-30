@@ -2211,13 +2211,15 @@ if __name__ == '__main__':
         'migrate': (serv.do_migrate,
                     ('vmId=<id> method=<offline|online> src=<host[:port]> '
                      'dst=<host[:port]>  dstqemu=<host> [consoleAddress:str] '
-                     '[autoConverge:bool] [compressed:bool]',
+                     '[autoConverge:bool] [compressed:bool] '
+                     '[maxBandwidth:int]',
                      'Migrate a desktop from src machine to dst host using '
                      'the specified ports and an optional address for '
                      'migration data traffic.',
                      'o consoleAddress: destination host grapics address',
                      'o autoConverge: force convergence during migration',
                      'o compressed: compress repeated pages during migration'
+                     'o maxBandwidth: max bandwidth used by this migration'
                      )),
         'migrateStatus': (serv.do_mStat,
                           ('<vmId>',
