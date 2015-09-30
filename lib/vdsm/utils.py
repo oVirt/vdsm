@@ -824,7 +824,7 @@ def getHostUUID(legacy=False):
                     __hostUUID = out.strip()
                 else:
                     logging.warning('Could not find host UUID.')
-            elif arch in ('ppc', 'ppc64'):
+            elif arch in ('ppc', 'ppc64', 'ppc64le'):
                 # eg. output IBM,03061C14A
                 try:
                     with open('/proc/device-tree/system-id') as f:
