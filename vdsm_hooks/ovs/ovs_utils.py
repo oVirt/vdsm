@@ -20,6 +20,7 @@
 from contextlib import contextmanager
 
 from hooking import execCmd
+import hooking
 
 from vdsm.utils import CommandPath
 
@@ -114,3 +115,7 @@ def destroy_ovs_bridge():
     rc, _, err = execCmd(commands)
     if rc != 0:
         raise Exception('\n'.join(err))
+
+
+def log(message, tag='OVS: '):
+    hooking.log('%s%s' % (tag, message))
