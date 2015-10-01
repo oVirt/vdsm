@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from functools import partial
 import errno
 import os
 import traceback
@@ -24,6 +25,9 @@ import traceback
 import hooking
 
 from ovs_utils import INIT_CONFIG_FILE
+import ovs_utils
+
+log = partial(ovs_utils.log, tag='ovs_after_network_setup: ')
 
 
 def _remove_init_config():
@@ -42,10 +46,9 @@ def main():
         '_inOVSRollback')
 
     if in_ovs_rollback:
-        hooking.log('Rollback is done. Removing OVS init_config backup.')
+        log('Rollback is done. Removing OVS init_config backup.')
     else:
-        hooking.log('Network setup was successful. Removing OVS init_config '
-                    'backup.')
+        log('Network setup was successful. Removing OVS init_config backup.')
 
     _remove_init_config()
 

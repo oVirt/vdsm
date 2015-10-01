@@ -17,14 +17,19 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from functools import partial
 import sys
 import traceback
 
 import hooking
 
+import ovs_utils
+
 # TODO: move required modules into vdsm/lib
 sys.path.append('/usr/share/vdsm')
 import supervdsm
+
+log = partial(ovs_utils.log, tag='ovs_after_network_setup_fail: ')
 
 
 def main():
@@ -33,10 +38,10 @@ def main():
     in_rollback = setup_nets_config['request']['options'].get('_inRollback')
 
     if in_rollback:
-        hooking.log('Configuration failed with _inRollback=True.')
+        log('Configuration failed with _inRollback=True.')
     else:
-        hooking.log('Configuration failed. At this point, non-OVS rollback '
-                    'should be done. Executing OVS rollback.')
+        log('Configuration failed. At this point, non-OVS rollback should be '
+            'done. Executing OVS rollback.')
         supervdsm.getProxy().setupNetworks(
             {}, {}, {'connectivityCheck': False, '_inRollback': True,
                      '_inOVSRollback': True})

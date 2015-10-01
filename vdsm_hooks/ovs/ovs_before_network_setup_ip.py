@@ -18,14 +18,14 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from collections import namedtuple
+from functools import partial
 import os
 import sys
 
 from vdsm import ipwrapper, sysctl
 
-import hooking
-
 from ovs_utils import suppress, BRIDGE_NAME
+import ovs_utils
 
 # TODO: move required modules into vdsm/lib
 sys.path.append('/usr/share/vdsm')
@@ -33,6 +33,8 @@ from network.configurators.dhclient import DhcpClient, kill_dhclient
 from network.configurators.iproute2 import Iproute2
 from network.models import NetDevice, IPv4, IPv6
 from network.sourceroute import DynamicSourceRoute
+
+log = partial(ovs_utils.log, tag='ovs_before_network_setup_ip: ')
 
 
 iproute2 = Iproute2()
@@ -63,7 +65,7 @@ def _run_dhclient(iface, blockingdhcp, default_route, family):
     dhclient = DhcpClient(iface, family, default_route)
     rc = dhclient.start(blockingdhcp)
     if blockingdhcp and rc:
-        hooking.log('failed to start dhclient%s on iface %s' % (family, iface))
+        log('failed to start dhclient%s on iface %s' % (family, iface))
 
 
 def _set_ip_config(ip_config):
@@ -168,8 +170,8 @@ def configure_ip(nets, init_nets):
                 if ip_config.ipv4 or ip_config.ipv6:
                     ip_config_to_set[ip_config.top_dev] = ip_config
 
-    hooking.log('Remove IP configuration of: %s' % ip_config_to_remove)
-    hooking.log('Set IP configuration: %s' % ip_config_to_set)
+    log('Remove IP configuration of: %s' % ip_config_to_remove)
+    log('Set IP configuration: %s' % ip_config_to_set)
     for iface, ip_config in ip_config_to_remove.iteritems():
         _remove_ip_config(ip_config)
     for iface, ip_config in ip_config_to_set.items():

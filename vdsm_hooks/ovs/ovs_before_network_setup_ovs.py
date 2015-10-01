@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from functools import partial
 import sys
 
 from vdsm.netinfo import NetInfo
@@ -26,10 +27,13 @@ import hooking
 from ovs_utils import (get_bond_options, is_ovs_bond, iter_ovs_nets,
                        iter_ovs_bonds, rget, suppress, destroy_ovs_bridge,
                        BRIDGE_NAME, EXT_OVS_VSCTL)
+import ovs_utils
 
 # TODO: move required modules into vdsm/lib
 sys.path.append('/usr/share/vdsm')
 from network.configurators import libvirt
+
+log = partial(ovs_utils.log, tag='ovs_before_network_setup_ovs: ')
 
 VALID_MODES = frozenset(['active-backup', 'balance-tcp', 'balance-slb'])
 VALID_LACP = frozenset(['active', 'passive', 'off'])
@@ -41,7 +45,7 @@ def _remove_redundant_ovs_bridge(running_config):
         return
     for bond, attr in iter_ovs_bonds(running_config.bonds):
         return
-    hooking.log('Removing redundant OVS bridge')
+    log('Removing redundant OVS bridge')
     destroy_ovs_bridge()
 
 
@@ -62,7 +66,7 @@ def _run_commands(commands):
     if commands:
         commands = [EXT_OVS_VSCTL, '--', '--may-exist', 'add-br',
                     BRIDGE_NAME] + commands
-        hooking.log('Executing commands: %s' % ' '.join(commands))
+        log('Executing commands: %s' % ' '.join(commands))
         rc, _, err = hooking.execCmd(commands)
         if rc != 0:
             raise Exception('Executing commands failed: %s' % '\n'.join(err))
