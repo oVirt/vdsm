@@ -84,23 +84,6 @@ class Dispatcher(asyncore.dispatcher):
         default_func = lambda: None
         return getattr(self.__impl, "next_check_interval", default_func)()
 
-    def handle_read_event(self):
-        if self.accepting:
-            self.handle_accept()
-            return
-
-        if not self.connected:
-            if self.connecting:
-                self.handle_connect_event()
-
-        self.handle_read()
-
-        # we need to check whether there is pending function on
-        # our fd because we use eventfds which do not provide it
-        if hasattr(self.socket, "pending"):
-            while self.socket.pending() > 0 and self.connected:
-                self.handle_read()
-
     def recv(self, buffer_size):
         try:
             data = self.socket.recv(buffer_size)
