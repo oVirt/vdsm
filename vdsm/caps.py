@@ -186,9 +186,6 @@ def _getLiveSnapshotSupport(arch, capabilities=None):
         if archTag.get('name') == arch:
             return _findLiveSnapshotSupport(guestTag)
 
-    if not config.getboolean('vars', 'fake_kvm_support'):
-        logging.error("missing guest arch tag in the capabilities XML")
-
     return None
 
 
@@ -530,9 +527,7 @@ def _getHostdevPassthorughSupport():
 def get():
     caps = {}
 
-    caps['kvmEnabled'] = \
-        str(config.getboolean('vars', 'fake_kvm_support') or
-            os.path.exists('/dev/kvm')).lower()
+    caps['kvmEnabled'] = str(os.path.exists('/dev/kvm')).lower()
 
     cpuTopology = CpuTopology()
     if config.getboolean('vars', 'report_host_threads_as_cores'):
@@ -544,31 +539,8 @@ def get():
     caps['cpuSockets'] = str(cpuTopology.sockets())
     caps['onlineCpus'] = ','.join(cpuTopology.onlineCpus())
     caps['cpuSpeed'] = cpuinfo.frequency()
-    if config.getboolean('vars', 'fake_kvm_support'):
-        if cpuarch.is_x86(cpuarch.effective()):
-            caps['cpuModel'] = 'Intel(Fake) CPU'
-
-            flagList = ['vmx', 'sse2', 'nx']
-
-            if cpuarch.effective() == cpuarch.real():
-                flagList += cpuinfo.flags()
-
-            flags = set(flagList)
-
-            caps['cpuFlags'] = ','.join(flags) + ',model_486,model_pentium,' \
-                'model_pentium2,model_pentium3,model_pentiumpro,' \
-                'model_qemu32,model_coreduo,model_core2duo,model_n270,' \
-                'model_Conroe,model_Penryn,model_Nehalem,model_Opteron_G1'
-        elif cpuarch.is_ppc(cpuarch.effective()):
-            caps['cpuModel'] = 'POWER 8 (fake)'
-            caps['cpuFlags'] = 'powernv,model_POWER8'
-        else:
-            raise RuntimeError('Unsupported architecture: %s' %
-                               cpuarch.effective())
-    else:
-        caps['cpuModel'] = cpuinfo.model()
-        caps['cpuFlags'] = ','.join(cpuinfo.flags() +
-                                    _getCompatibleCpuModels())
+    caps['cpuModel'] = cpuinfo.model()
+    caps['cpuFlags'] = ','.join(cpuinfo.flags() + _getCompatibleCpuModels())
 
     caps.update(_getVersionInfo())
 
