@@ -20,17 +20,18 @@ from functools import wraps
 
 from nose.plugins.skip import SkipTest
 
+from vdsm.ipwrapper import linkSet, addrAdd
 from vdsm.utils import RollbackContext
 
-from testlib import expandPermutations, permutations
+from nettestlib import veth_pair
 from testValidation import RequireVethMod
+from testlib import expandPermutations, permutations
 
 from networkTests import (setupModule, tearDownModule, NetworkTest, dummyIf,
                           _get_source_route, dnsmasqDhcp, NETWORK_NAME,
                           IP_ADDRESS, IP_MASK, IP_CIDR, IP_GATEWAY,
                           IPv6_ADDRESS, IPv6_CIDR, VLAN_ID, NOCHK, SUCCESS)
 from utils import VdsProxy
-import veth
 import dhcp
 
 # Make Pyflakes happy
@@ -215,10 +216,10 @@ class OVSNetworkTest(NetworkTest):
         # NOTE: without default route
         # TODO: more asserts
         """
-        with veth.pair() as (left, right):
-            veth.setIP(left, IP_ADDRESS, IP_CIDR)
-            veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
-            veth.setLinkUp(left)
+        with veth_pair() as (left, right):
+            addrAdd(left, IP_ADDRESS, IP_CIDR)
+            addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
+            linkSet(left, ['up'])
             with dnsmasqDhcp(left):
                 network = {
                     NETWORK_NAME: {'nic': right, 'bootproto': 'dhcp',
@@ -274,10 +275,10 @@ class OVSNetworkTest(NetworkTest):
         """ Copied from networkTests.py, source_route checking changed from
         device_name to BRIDGE_NAME.
         """
-        with veth.pair() as (left, right):
-            veth.setIP(left, IP_ADDRESS, IP_CIDR)
-            veth.setIP(left, IPv6_ADDRESS, IPv6_CIDR, 6)
-            veth.setLinkUp(left)
+        with veth_pair() as (left, right):
+            addrAdd(left, IP_ADDRESS, IP_CIDR)
+            addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
+            linkSet(left, ['up'])
             with dnsmasqDhcp(left):
                 dhcpv4 = 4 in families
                 dhcpv6 = 6 in families
