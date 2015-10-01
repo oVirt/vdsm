@@ -36,6 +36,7 @@ EXTRA_DIST = \
 	ovs_before_network_setup_ovs.py \
 	ovs_before_network_setup_ip.py \
 	ovs_before_network_setup_mtu.py \
+	ovs_before_network_setup_libvirt.py \
 	$(utilsfile) \
 	sudoers.in
 
@@ -59,6 +60,8 @@ install-data-local: install-data-utils install-data-sudoers
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_ip.py
 	$(INSTALL_SCRIPT) $(srcdir)/ovs_before_network_setup_mtu.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_mtu.py
+	$(INSTALL_SCRIPT) $(srcdir)/ovs_before_network_setup_libvirt.py \
+		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_libvirt.py
 
 uninstall-local: uninstall-data-utils uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_caps/50_ovs
@@ -68,6 +71,7 @@ uninstall-local: uninstall-data-utils uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_ovs.py
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_ip.py
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_mtu.py
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_libvirt.py
 
 install-data-utils:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/after_get_caps

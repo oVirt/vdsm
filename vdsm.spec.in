@@ -1176,6 +1176,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/ovs_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ovs
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_ip.py*
+%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_libvirt.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_mtu.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_ovs.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_utils.py*
