@@ -32,6 +32,8 @@ from ovs_utils import (is_ovs_network, is_ovs_bond, rollback, EXT_IP,
 from ovs_setup_ovs import configure_ovs, prepare_ovs
 from ovs_setup_ip import configure_ip
 from ovs_setup_mtu import configure_mtu
+from ovs_setup_libvirt import (create_libvirt_nets, remove_libvirt_nets,
+                               prepare_libvirt)
 
 
 def _separate_ovs_nets_bonds(nets, bonds, running_config):
@@ -76,12 +78,14 @@ def _rollback(running_config, initial_config, in_rollback):
 def configure(nets, bonds, running_config, in_rollback):
     initial_config = deepcopy(running_config)
 
-    commands, libvirt_create, libvirt_remove = prepare_ovs(
-        nets, bonds, running_config)
+    commands = prepare_ovs(nets, bonds, running_config)
+    libvirt_create, libvirt_remove = prepare_libvirt(nets, running_config)
     with _rollback(running_config, initial_config, in_rollback):
-        configure_ovs(commands, libvirt_create, libvirt_remove, running_config)
+        remove_libvirt_nets(libvirt_remove)
+        configure_ovs(commands, running_config)
         configure_mtu(running_config)
         configure_ip(nets, initial_config.networks)
+        create_libvirt_nets(libvirt_create)
 
     hooking.log('Saving running configuration: %s %s' %
                 (running_config.networks, running_config.bonds))

@@ -55,33 +55,6 @@ def _get_nets_by_nic(running_config):
     return nets_by_nic
 
 
-def _get_libvirt_changes(nets, running_config):
-    libvirt_create = {}
-    libvirt_remove = set()
-    for net, attrs in nets.iteritems():
-        if 'remove' in attrs:
-            libvirt_remove.add(net)
-    for net, attrs in nets.iteritems():
-        if 'remove' not in attrs:
-            if net in running_config.networks:
-                libvirt_remove.add(net)
-            libvirt_network_xml = libvirt.createNetworkDef(
-                net, True, attrs.get('nic') or attrs.get('bonding'))
-            libvirt_create[net] = libvirt_network_xml
-    return libvirt_create, libvirt_remove
-
-
-def _create_libvirt_nets(libvirt_create):
-    for net, net_xml in libvirt_create.items():
-        libvirt.createNetwork(net_xml)
-
-
-def _remove_libvirt_nets(libvirt_remove):
-    for net in libvirt_remove:
-        with suppress():
-            libvirt.removeNetwork(net)
-
-
 def _run_commands(commands):
     """ If there are any needed changes in OVS network listed in commands,
     apply them. Otherwise do nothing.
@@ -310,19 +283,13 @@ def _handle_removal(nets, bonds, running_config, nets_by_nic):
 
 
 def prepare_ovs(nets, bonds, running_config):
-    """ Prepare OVS commands and collect libvirt network to add and remove.
-    This function is separate because of no rollback is needed here.
-    """
-    libvirt_create, libvirt_remove = _get_libvirt_changes(nets, running_config)
     nets_by_nic = _get_nets_by_nic(running_config)
     commands = []
     commands.extend(_handle_removal(nets, bonds, running_config, nets_by_nic))
     commands.extend(_handle_setup(nets, bonds, running_config, nets_by_nic))
-    return commands, libvirt_create, libvirt_remove
+    return commands
 
 
-def configure_ovs(commands, libvirt_create, libvirt_remove, running_config):
-    _remove_libvirt_nets(libvirt_remove)
+def configure_ovs(commands, running_config):
     _run_commands(commands)
     _remove_redundant_ovs_bridge(running_config)
-    _create_libvirt_nets(libvirt_create)
