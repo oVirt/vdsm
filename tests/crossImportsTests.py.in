@@ -17,12 +17,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import collections
 import os
 import sys
 from distutils.sysconfig import get_python_lib
 
 from testlib import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 
 def path_without_vdsm_ext_mod():
@@ -35,9 +36,34 @@ def path_without_vdsm_ext_mod():
 
 
 def get_mods(path):
-    return [(file.strip('.py')).strip('.pyc') for file in
-            os.listdir(os.path.abspath(path))
-            if (file.endswith(".py") or file.endswith(".pyc"))]
+    return [os.path.splitext(entry)[0]
+            for entry in os.listdir(os.path.abspath(path))
+            if (entry.endswith(".py") or entry.endswith(".pyc"))]
+
+
+Mod = collections.namedtuple("Mod", ["filename", "modulename"])
+
+
+class CrossImportsHelpersTests(TestCaseBase):
+
+    def test_get_mods(self):
+        mods = (
+            # some random samples. Some names must include 'p', 'y', 'c'
+            Mod("response.py", "response"),
+            Mod("cmdutils.py", "cmdutils"),
+            Mod("virtsparsify.py", "virtsparsify"),
+            Mod("pthread.py", "pthread"),
+            Mod("constants.py", "constants"),
+            Mod("compat.py", "compat"),
+            Mod("udevadm.py", "udevadm")
+        )
+
+        def _listdir(unused):
+            return [mod.filename for mod in mods]
+
+        with MonkeyPatchScope([(os, "listdir", _listdir)]):
+            self.assertEqual(get_mods("/bogus/unused/path"),
+                             [mod.modulename for mod in mods])
 
 
 class CrossImportsTestCaseShould(TestCaseBase):
