@@ -75,7 +75,8 @@ class StompAdapterImpl(object):
             stomp.Command.CONNECT: self._cmd_connect,
             stomp.Command.SEND: self._cmd_send,
             stomp.Command.SUBSCRIBE: self._cmd_subscribe,
-            stomp.Command.UNSUBSCRIBE: self._cmd_unsubscribe}
+            stomp.Command.UNSUBSCRIBE: self._cmd_unsubscribe,
+            stomp.Command.DISCONNECT: self._cmd_disconnect}
 
     @property
     def has_outgoing_messages(self):
@@ -165,6 +166,18 @@ class StompAdapterImpl(object):
             return
         else:
             self._remove_subscription(subscription)
+
+    def _cmd_disconnect(self, dispatcher, frame):
+        self.log.info("Disconnect command received")
+        r_id = frame.headers[stomp.Headers.RECEIPT]
+        if not r_id:
+            self.log.debug("No receipt id for disconnect frame")
+            # it is not mandatory to send receipt frame
+            return
+
+        headers = {stomp.Headers.RECEIPT_ID: r_id}
+        dispatcher.connection.send_raw(stomp.Frame(stomp.Command.RECEIPT,
+                                                   headers))
 
     def _remove_subscription(self, subscription):
         subs = self._sub_dests[subscription.destination]
@@ -301,7 +314,6 @@ class StompServer(object):
     Sends message to all subscribes that subscribed to destination.
     """
     def send(self, message, destination=stomp.LEGACY_SUBSCRIPTION_ID_RESPONSE):
-        self.log.debug("Sending response")
         try:
             resp = json.loads(message)
             destination = self._req_dest[resp.get("id")]

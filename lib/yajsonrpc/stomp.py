@@ -55,12 +55,15 @@ class Command(object):
     CONNECTED = "CONNECTED"
     ERROR = "ERROR"
     RECEIPT = "RECEIPT"
+    DISCONNECT = "DISCONNECT"
 
 
 class Headers(object):
     CONTENT_LENGTH = "content-length"
     CONTENT_TYPE = "content-type"
     SUBSCRIPTION = "subscription"
+    RECEIPT = "receipt"
+    RECEIPT_ID = "receipt-id"
     DESTINATION = "destination"
     ACCEPT_VERSION = "accept-version"
     REPLY_TO = "reply-to"
@@ -430,6 +433,7 @@ class AsyncClient(object):
             Command.MESSAGE: self._process_message,
             Command.RECEIPT: self._process_receipt,
             Command.ERROR: self._process_error,
+            Command.DISCONNECT: self._process_disconnect
         }
 
     @property
@@ -488,7 +492,7 @@ class AsyncClient(object):
         sub.handle_message(frame)
 
     def _process_receipt(self, frame, dispatcher):
-        self.log.warning("Receipt frame received and ignored")
+        self.log.debug("Receipt frame received")
 
     def _process_error(self, frame, dispatcher):
         raise StompError(frame)
@@ -527,6 +531,16 @@ class AsyncClient(object):
     def unsubscribe(self, sub):
         self.queue_frame(Frame(Command.UNSUBSCRIBE,
                                {"id": sub.id}))
+
+    def _process_disconnect(self, frame, dispatcher):
+        r_id = frame.headers[Headers.RECEIPT]
+        if not r_id:
+            self.log.debug("No receipt id for disconnect frame")
+            # it is not mandatory to send receipt frame
+            return
+
+        headers = {Headers.RECEIPT_ID: r_id}
+        self.queue_frame(Frame(Command.RECEIPT, headers))
 
 
 class _Subscription(object):
