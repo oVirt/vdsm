@@ -396,7 +396,7 @@ class _SuperVdsm(object):
         rule_file = _UDEV_RULE_FILE_NAME_USB % (bus, device)
         rule = ('SUBSYSTEM=="usb", ATTRS{{busnum}}=="{}", '
                 'ATTRS{{devnum}}=="{}", OWNER:="{}", GROUP:="{}"\n').format(
-                    bus, device, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP)
+            bus, device, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP)
 
         self.log.debug("Creating rule %s: %r", rule_file, rule)
 
