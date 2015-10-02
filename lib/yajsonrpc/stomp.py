@@ -46,6 +46,7 @@ class Command:
     CONNECTED = "CONNECTED"
     ERROR = "ERROR"
     RECEIPT = "RECEIPT"
+    DISCONNECT = "DISCONNECT"
 
 
 class AckMode:
@@ -482,7 +483,8 @@ class AsyncClient(object):
             Command.CONNECTED: self._process_connected,
             Command.MESSAGE: self._process_message,
             Command.RECEIPT: self._process_receipt,
-            Command.ERROR: self._process_error}
+            Command.ERROR: self._process_error,
+            Command.DISCONNECT: self._process_disconnect}
 
     @property
     def connected(self):
@@ -518,7 +520,10 @@ class AsyncClient(object):
             frameHandler.handle_message(self, frame)
 
     def _process_receipt(self, frame, dispatcher):
-        self.log.warning("Receipt frame received and ignored")
+        self.log.debug("Receipt frame received")
+
+    def _process_disconnect(self, frame, dispatcher):
+        self.log.debug("Disconnect frame received")
 
     def _process_error(self, frame, dispatcher):
         raise StompError(frame)

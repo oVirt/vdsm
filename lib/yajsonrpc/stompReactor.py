@@ -60,7 +60,8 @@ class StompAdapterImpl(object):
             stomp.Command.CONNECT: self._cmd_connect,
             stomp.Command.SEND: self._cmd_send,
             stomp.Command.SUBSCRIBE: self._cmd_subscribe,
-            stomp.Command.UNSUBSCRIBE: self._cmd_unsubscribe}
+            stomp.Command.UNSUBSCRIBE: self._cmd_unsubscribe,
+            stomp.Command.DISCONNECT: self._cmd_disconnect}
 
     def _cmd_connect(self, dispatcher, frame):
         self.log.info("Processing CONNECT request")
@@ -86,10 +87,13 @@ class StompAdapterImpl(object):
         self._reactor.wakeup()
 
     def _cmd_subscribe(self, dispatcher, frame):
-        self.log.debug("Subscribe command ignored")
+        self.log.debug("Received subscribe command")
 
     def _cmd_unsubscribe(self, dispatcher, frame):
-        self.log.debug("Unsubscribe command ignored")
+        self.log.debug("Received unsubscribe command")
+
+    def _cmd_disconnect(self, dispatcher, frame):
+        self.log.debug("Received disconnect command")
 
     def _cmd_send(self, dispatcher, frame):
         self._messageHandler(self, frame.body)
@@ -159,7 +163,6 @@ class StompServer(object):
             self._stompConn._dispatcher.handle_read()
 
     def send(self, message):
-        self.log.debug("Sending response")
         res = stomp.Frame(stomp.Command.MESSAGE,
                           {"destination": _DEFAULT_RESPONSE_DESTINATIOM,
                            "content-type": "application/json"},
