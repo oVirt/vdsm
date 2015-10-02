@@ -7789,6 +7789,51 @@
  'returns': 'VmDefinition'}
 
 ##
+# @ConvergenceAction:
+#
+# Description of one action which has to be executed.
+#
+# @name:    The name of the action (e.g. abort, setDowntime)
+#
+# @params:  List of parameters of the action
+#
+# Since: 4.18.0
+##
+{'type': 'ConvergenceAction',
+ 'data': {'name': 'str', 'params': ['str']}}
+
+##
+# @ConvergenceItem:
+#
+# A convergence action which will be executed when the migration
+# is stalling longer than the first argument.
+#
+# @limit:   If the migration is stalling for this amount of time,
+#           execute the action.
+#
+# @action:  The specific action which has to be executed.
+#
+# Since: 4.18.0
+##
+{'type': 'ConvergenceItem',
+ 'data': {'limit': 'int', 'action': 'ConvergenceAction'}}
+
+##
+# @ConvergenceSchedule:
+#
+# Map of actions which will be executed before migration starts and list
+# of actions which will be executed as a reaction to stalling.
+#
+# @init:     The list of actions executed before migration
+#
+# @stalling: The list of actions executed as a reaction to stalling
+#
+# Since: 4.18.0
+##
+{'type': 'ConvergenceSchedule',
+ 'data': {'init': ['ConvergenceAction'], 'stalling': ['ConvergenceItem']}}
+
+##
 # @MigrateMode:
 #
 # An enumeration of VM migration modes.
@@ -7852,6 +7897,9 @@
 # @maxBandwidth:    #optional maximal bandwidth used by the migration (MiB/s)
 #                   (new in version 4.18.0)
 #
+# @convergenceSchedule: #optional initial actions and actions to
+#                   perform when stalling
+#                   (new in version 4.18.0)
 # Since: 4.10.0
 ##
 {'type': 'MigrateParams',
@@ -7860,7 +7908,8 @@
           '*tunneled': 'bool', '*abortOnError': 'bool',
           '*consoleAddress': 'str', '*dstqemu': 'str',
           '*compressed': 'bool', '*autoConverge': 'bool',
-          '*maxBandwidth': 'int'}}
+          '*maxBandwidth': 'int',
+          '*convergenceSchedule': 'ConvergenceSchedule'}}
 
 ##
 # @VM.migrate:

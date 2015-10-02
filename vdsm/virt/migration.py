@@ -56,6 +56,10 @@ incomingMigrations = threading.BoundedSemaphore(
     max(1, config.getint('vars', 'max_incoming_migrations')))
 
 
+CONVERGENCE_SCHEDULE_SET_DOWNTIME = "setDowntime"
+CONVERGENCE_SCHEDULE_SET_ABORT = "abort"
+
+
 class MigrationDestinationSetupError(RuntimeError):
     """
     Failed to create migration destination VM.
@@ -112,6 +116,29 @@ class SourceThread(threading.Thread):
         self._migrationCanceledEvt = False
         self._monitorThread = None
         self._destServer = None
+
+        progress_timeout = config.getint('vars', 'migration_progress_timeout')
+
+        self._convergence_schedule = {
+            'init': [],
+            'stalling': [
+                {
+                    'limit': progress_timeout,
+                    'action': {
+                        'name': CONVERGENCE_SCHEDULE_SET_ABORT,
+                        'params': []
+                    }
+                }
+            ]
+        }
+
+        self._use_convergence_schedule = False
+        if 'convergenceSchedule' in kwargs:
+            self._convergence_schedule = kwargs.get('convergenceSchedule')
+            self._use_convergence_schedule = True
+
+        self.log.debug('convergence schedule set to: %s',
+                       str(self._convergence_schedule))
 
     @property
     def hibernating(self):
@@ -369,15 +396,14 @@ class SourceThread(threading.Thread):
             self._vm.log.info('starting migration to %s '
                               'with miguri %s', duri, muri)
 
-            downtimeThread = DowntimeThread(
-                self._vm,
-                int(self._downtime),
-                config.getint('vars', 'migration_downtime_steps'))
-            self._monitorThread = MonitorThread(self._vm, startTime)
-            with utils.running(downtimeThread):
-                with utils.running(self._monitorThread):
-                    # we need to support python 2.6, so two nested with-s.
-                    self._perform_migration(duri, muri)
+            self._monitorThread = MonitorThread(self._vm, startTime,
+                                                self._convergence_schedule,
+                                                self._use_convergence_schedule)
+
+            if self._use_convergence_schedule:
+                self._perform_with_conv_schedule(duri, muri)
+            else:
+                self._perform_with_downtime_thread(duri, muri)
 
             self.log.info("migration took %d seconds to complete",
                           (time.time() - startTime) + destCreationTime)
@@ -418,6 +444,23 @@ class SourceThread(threading.Thread):
             self._vm._dom.migrateToURI3(duri, params, flags)
         else:
             self._raiseAbortError()
+
+    def _perform_with_downtime_thread(self, duri, muri):
+        self._vm.log.debug('performing migration with downtime thread')
+        downtimeThread = DowntimeThread(
+            self._vm,
+            int(self._downtime),
+            config.getint('vars', 'migration_downtime_steps'))
+
+        with utils.running(downtimeThread):
+            with utils.running(self._monitorThread):
+                # we need to support python 2.6, so two nested with-s.
+                self._perform_migration(duri, muri)
+
+    def _perform_with_conv_schedule(self, duri, muri):
+        self._vm.log.debug('performing migration with conv schedule')
+        with utils.running(self._monitorThread):
+            self._perform_migration(duri, muri)
 
     def set_max_bandwidth(self, bandwidth):
         self._vm.log.debug('setting migration max bandwidth to %d', bandwidth)
@@ -491,13 +534,15 @@ class MonitorThread(threading.Thread):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
         'vars', 'migration_monitor_interval')  # seconds
 
-    def __init__(self, vm, startTime):
+    def __init__(self, vm, startTime, conv_schedule, use_conv_schedule):
         super(MonitorThread, self).__init__()
         self._stop = threading.Event()
         self._vm = vm
         self._startTime = startTime
         self.daemon = True
         self.progress = 0
+        self._conv_schedule = conv_schedule
+        self._use_conv_schedule = use_conv_schedule
 
     @property
     def enabled(self):
@@ -525,7 +570,7 @@ class MonitorThread(threading.Thread):
         migrationMaxTime = (maxTimePerGiB * memSize + 1023) / 1024
         lastProgressTime = time.time()
         lowmark = None
-        progress_timeout = config.getint('vars', 'migration_progress_timeout')
+        self._execute_init(self._conv_schedule['init'])
 
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
@@ -535,37 +580,32 @@ class MonitorThread(threading.Thread):
              fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
             # from libvirt sources: data* = file* + mem*.
             # docs can be misleading due to misaligned lines.
-            abort = False
             now = time.time()
-            if 0 < migrationMaxTime < now - self._startTime:
+            if not self._use_conv_schedule and\
+                    (0 < migrationMaxTime < now - self._startTime):
                 self._vm.log.warn('The migration took %d seconds which is '
                                   'exceeding the configured maximum time '
                                   'for migrations of %d seconds. The '
                                   'migration will be aborted.',
                                   now - self._startTime,
                                   migrationMaxTime)
-                abort = True
-            elif (lowmark is None) or (lowmark > dataRemaining):
-                lowmark = dataRemaining
-                lastProgressTime = now
-            elif (now - lastProgressTime) > progress_timeout:
-                # Migration is stuck, abort
-                self._vm.log.warn(
-                    'Migration is stuck: Hasn\'t progressed in %s seconds. '
-                    'Aborting.' % (now - lastProgressTime))
-                abort = True
-
-            if abort:
                 self._vm._dom.abortJob()
                 self.stop()
                 break
-
-            if dataRemaining > lowmark:
+            elif (lowmark is None) or (lowmark > dataRemaining):
+                lowmark = dataRemaining
+                lastProgressTime = now
+            else:
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
                     ' > lowmark (%sMiB).'
                     ' Refer to RHBZ#919201.',
                     dataRemaining / Mbytes, lowmark / Mbytes)
+
+            self._next_action(now - lastProgressTime)
+
+            if self._stop.isSet():
+                break
 
             if jobType != libvirt.VIR_DOMAIN_JOB_NONE:
                 self.progress = update_progress(dataRemaining, dataTotal)
@@ -577,3 +617,31 @@ class MonitorThread(threading.Thread):
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
         self._stop.set()
+
+    def _next_action(self, stalling):
+        head = self._conv_schedule['stalling'][0]
+
+        self._vm.log.debug('Stalling for %d seconds, '
+                           'checking to make next action: '
+                           '%s', stalling, head)
+        if head['limit'] < stalling:
+            self._execute_action_with_params(head['action'])
+            self._conv_schedule['stalling'].pop(0)
+            self._vm.log.debug('setting conv schedule to: %s',
+                               self._conv_schedule)
+
+    def _execute_init(self, init_actions):
+        for action_with_params in init_actions:
+            self._execute_action_with_params(action_with_params)
+
+    def _execute_action_with_params(self, action_with_params):
+        action = str(action_with_params['name'])
+        if action == CONVERGENCE_SCHEDULE_SET_DOWNTIME:
+            downtime = int(action_with_params['params'][0])
+            self._vm.log.debug('Setting downtime to %d',
+                               downtime)
+            self._vm._dom.migrateSetMaxDowntime(downtime, 0)
+        elif action == CONVERGENCE_SCHEDULE_SET_ABORT:
+            self._vm.log.warn('Aborting migration')
+            self._vm._dom.abortJob()
+            self.stop()

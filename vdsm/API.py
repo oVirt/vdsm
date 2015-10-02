@@ -539,6 +539,7 @@ class VM(APIBase):
             *compressed* - compress repeated pages during live migration
             *autoConverge* - force convergence during live migration
             *maxBandwidth* - max bandwidth used by this specific migration
+            *convergenceSchedule* - actions to perform when stalling
         """
         params['vmId'] = self._UUID
         self.log.debug(params)

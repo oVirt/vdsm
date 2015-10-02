@@ -2208,7 +2208,7 @@ if __name__ == '__main__':
                     ('vmId=<id> method=<offline|online> src=<host[:port]> '
                      'dst=<host[:port]>  dstqemu=<host> [consoleAddress:str] '
                      '[autoConverge:bool] [compressed:bool] '
-                     '[maxBandwidth:int]',
+                     '[maxBandwidth:int], [convergenceSchedule]',
                      'Migrate a desktop from src machine to dst host using '
                      'the specified ports and an optional address for '
                      'migration data traffic.',
@@ -2216,6 +2216,7 @@ if __name__ == '__main__':
                      'o autoConverge: force convergence during migration',
                      'o compressed: compress repeated pages during migration'
                      'o maxBandwidth: max bandwidth used by this migration'
+                     'o convergenceSchedule: actions to perform when stalling'
                      )),
         'migrateStatus': (serv.do_mStat,
                           ('<vmId>',
