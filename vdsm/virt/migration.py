@@ -415,6 +415,11 @@ class SourceThread(threading.Thread):
         else:
             self._raiseAbortError()
 
+    def set_max_bandwidth(self, bandwidth):
+        self._vm.log.debug('setting migration max bandwidth to %d', bandwidth)
+        self._maxBandwidth = bandwidth
+        self._vm._dom.migrateSetMaxSpeed(bandwidth)
+
     def stop(self):
         # if its locks we are before the migrateToURI3()
         # call so no need to abortJob()

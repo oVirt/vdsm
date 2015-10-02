@@ -1546,6 +1546,31 @@ class Vm(object):
                 return console
         return None
 
+    def migrateChangeParams(self, params):
+        self._acquireCpuLockWithTimeout()
+
+        try:
+            if self._migrationSourceThread.hibernating:
+                return response.error('migNotInProgress')
+
+            if not self.isMigrating():
+                return response.error('migNotInProgress')
+
+            if 'maxBandwidth' in params:
+                self._migrationSourceThread.set_max_bandwidth(
+                    int(params['maxBandwidth']))
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
+                return response.error('migNotInProgress')
+            raise
+        except virdomain.NotConnectedError:
+            return response.error('migNotInProgress')
+
+        finally:
+            self._guestCpuLock.release()
+
+        return response.success()
+
     def _customDevices(self):
         """
             Get all devices that have custom properties

@@ -7894,6 +7894,32 @@
  'data': {'vmID': 'UUID'}}
 
 ##
+# @MigrationParameters:
+#
+# Parameters for @VM.migrateChangeParams
+#
+# @maxBandwidth:    #optional the new bandwidth
+#
+# Since: 4.18.0
+##
+{'type': 'MigrationParameters',
+ 'data': {'*maxBandwidth': 'int'}}
+
+##
+# @VM.migrateChangeParams:
+#
+# Change parameters of an ongoing migration
+#
+# @vmID:  The UUID of the VM
+#
+# @params:  The new parameters
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'VM', 'name': 'migrateChangeParams'},
+ 'data': {'vmID': 'UUID', 'params': 'MigrationParameters'}}
+
+##
 # @MigrationCreateState:
 #
 # Reports the state of a VM creation on the destination host.

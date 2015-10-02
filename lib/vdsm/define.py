@@ -196,6 +196,9 @@ errCode = {
     'AbortNotSupported': {'status': {
         'code': 80,
         'message': 'Job does not support aborting'}},
+    'migNotInProgress': {'status': {
+        'code': 81,
+        'message': 'Migration not in progress'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

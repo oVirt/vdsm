@@ -448,6 +448,10 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.migrateCancel()
 
+    def vmMigrateChangeParams(self, vmId, params):
+        vm = API.VM(vmId)
+        return vm.migrateChangeParams(params)
+
     def vmHotplugDisk(self, params):
         vm = API.VM(params['vmId'])
         return vm.hotplugDisk(params)
@@ -1059,6 +1063,7 @@ class BindingXMLRPC(object):
                 (self.vmMigrate, 'migrate'),
                 (self.vmGetMigrationStatus, 'migrateStatus'),
                 (self.vmMigrationCancel, 'migrateCancel'),
+                (self.vmMigrateChangeParams, 'migrateChangeParams'),
                 (self.getCapabilities, 'getVdsCapabilities'),
                 (self.getHardwareInfo, 'getVdsHardwareInfo'),
                 (self.diskGetAlignment, 'getDiskAlignment'),

@@ -558,6 +558,19 @@ class VM(APIBase):
             params['mode'] = 'remote'
         return v.migrate(params)
 
+    def migrateChangeParams(self, params):
+        """
+        Change parameters of an ongoing migration
+
+        :param params: a dictionary containing:
+            *maxBandwidth* - new max bandwidth
+        """
+        try:
+            v = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            return response.error('noVM')
+        return v.migrateChangeParams(params)
+
     def migrateCancel(self):
         """
         Cancel a currently outgoing migration process.
