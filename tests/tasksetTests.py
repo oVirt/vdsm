@@ -54,7 +54,8 @@ class AffinityTests(VdsmTestCase):
 
         self.proc = multiprocessing.Process(target=self._run_child)
         self.proc.start()
-        if not self.running.wait(0.5):
+        self.running.wait(0.5)
+        if not self.running.is_set():
             raise RuntimeError("helper child process not running!")
 
         self.assertEqual(taskset.get(self.proc.pid),
@@ -67,7 +68,8 @@ class AffinityTests(VdsmTestCase):
 
         self.proc = multiprocessing.Process(target=self._run_child)
         self.proc.start()
-        if not self.running.wait(0.5):
+        self.running.wait(0.5)
+        if not self.running.is_set():
             raise RuntimeError("helper child process not running!")
 
         taskset.set(self.proc.pid, cpu_set)
@@ -81,7 +83,8 @@ class AffinityTests(VdsmTestCase):
         self.proc = multiprocessing.Process(target=self._run_child,
                                             args=(cpu_set,))
         self.proc.start()
-        if not self.running.wait(0.5):
+        self.running.wait(0.5)
+        if not self.running.is_set():
             raise RuntimeError("helper child process not running!")
 
         self.assertEqual(taskset.get(self.proc.pid), cpu_set)
@@ -98,7 +101,15 @@ class AffinityTests(VdsmTestCase):
         if cpu_set:
             taskset.set(os.getpid(), cpu_set)
         self.running.set()
-        self.stop.wait()
+        self.stop.wait(0.5)
+
+
+@expandPermutations
+class BitLengthTests(VdsmTestCase):
+
+    @permutations([(0, 0), (1, 1), (-1, 1), (37, 6), (-37, 6)])
+    def test_length(self, value, result):
+        self.assertEqual(taskset._bit_length(value), result)
 
 
 # TODO: find a clean way to make this a decorator

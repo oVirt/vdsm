@@ -83,4 +83,12 @@ def _cpu_set_from_output(line):
     """
     hexmask = line.rsplit(":", 1)[1].strip()
     mask = int(hexmask, 16)
-    return frozenset(i for i in range(mask.bit_length()) if mask & (1 << i))
+    return frozenset(i for i in range(_bit_length(mask)) if mask & (1 << i))
+
+
+# stolen with minimal changes from
+# https://docs.python.org/2/library/stdtypes.html#int.bit_length
+def _bit_length(n):
+    s = bin(n)           # binary representation:  bin(-37) --> '-0b100101'
+    s = s.lstrip('-0b')  # remove leading zeros and minus sign
+    return len(s)        # len('100101') --> 6
