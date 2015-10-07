@@ -179,7 +179,11 @@ Requires: sanlock >= 2.8, sanlock-python
 Requires: device-mapper-multipath >= 0.4.9-68
 Requires: e2fsprogs
 Requires: fence-agents-all
+%if 0%{?centos}
 Requires: kernel >= 3.10.0-132.el7
+%else
+Requires: kernel >= 3.10.0-229.17.1.el7
+%endif
 Requires: lvm2 >= 2.02.107
 Requires: python >= 2.7.5-18.el7_1.1
 Requires: policycoreutils-python
