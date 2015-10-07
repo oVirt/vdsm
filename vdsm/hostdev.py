@@ -56,7 +56,8 @@ def _sriov_totalvfs(device_name):
 
 
 def physical_function_net_name(pf_pci_name):
-    """takes a pci path of a physical function (e.g. pci_0000_02_00_0) and returns
+    """
+    takes a pci path of a physical function (e.g. pci_0000_02_00_0) and returns
     the network interface name associated with it (e.g. enp2s0f0)
     """
     devices = list_by_caps()
