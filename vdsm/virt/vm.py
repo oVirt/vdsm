@@ -2754,16 +2754,7 @@ class Vm(object):
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
                                        {'FROM_SNAPSHOT': fromSnapshot})
         elif 'migrationDest' in self.conf:
-            waitMigration = True
-            if self.recovering:
-                try:
-                    if self._isDomainRunning():
-                        waitMigration = False
-                        self.log.info('migration completed while recovering!')
-                except libvirt.libvirtError:
-                    self.log.exception('migration failed while recovering!')
-                    raise MigrationError()
-            if waitMigration:
+            if self._needToWaitForMigrationToComplete():
                 usedTimeout = self._waitForUnderlyingMigration()
                 self._attachLibvirtDomainAfterMigration(
                     self._incomingMigrationFinished.isSet(), usedTimeout)
@@ -2784,6 +2775,23 @@ class Vm(object):
             del self.conf['username']
         self.saveState()
         self.log.info("End of migration")
+
+    def _needToWaitForMigrationToComplete(self):
+        if not self.recovering:
+            # if not recovering, we are in a base flow and need
+            # to wait for migration to complete
+            return True
+
+        try:
+            if not self._isDomainRunning():
+                # migration still in progress during recovery
+                return True
+        except libvirt.libvirtError:
+            self.log.exception('migration failed while recovering!')
+            raise MigrationError()
+        else:
+            self.log.info('migration completed while recovering!')
+            return False
 
     def _waitForUnderlyingMigration(self):
         timeout = config.getint('vars', 'migration_destination_timeout')
