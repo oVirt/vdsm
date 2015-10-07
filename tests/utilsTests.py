@@ -40,6 +40,7 @@ import timeit
 from vdsm import constants
 from vdsm import taskset
 from vdsm import utils
+from vdsm import cmdutils
 
 from monkeypatch import MonkeyPatch
 from vmTestsData import VM_STATUS_DUMP
@@ -587,7 +588,7 @@ class ExecCmdAffinityTests(TestCaseBase):
     CPU_SET = frozenset([0])
 
     @forked
-    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', False)
+    @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', False)
     def testResetAffinityByDefault(self):
         try:
             proc = utils.execCmd((EXT_SLEEP, '30s'), sync=False)
@@ -598,7 +599,7 @@ class ExecCmdAffinityTests(TestCaseBase):
             proc.kill()
 
     @forked
-    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', True)
+    @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', True)
     def testResetAffinityWhenConfigured(self):
         taskset.set(os.getpid(), self.CPU_SET)
         self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
@@ -611,7 +612,7 @@ class ExecCmdAffinityTests(TestCaseBase):
             proc.kill()
 
     @forked
-    @MonkeyPatch(utils, '_USING_CPU_AFFINITY', True)
+    @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', True)
     def testKeepAffinity(self):
         taskset.set(os.getpid(), self.CPU_SET)
         self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
