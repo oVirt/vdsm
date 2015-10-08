@@ -30,6 +30,7 @@ import sys
 import traceback
 
 from libvirt import libvirtError
+import six
 
 from vdsm.netconfpersistence import RunningConfig
 
@@ -66,14 +67,14 @@ def _separate_ovs_nets_bonds(nets, bonds, running_config):
     non_ovs_nets = {}
     ovs_bonds = {}
     non_ovs_bonds = {}
-    for net, attrs in nets.items():
+    for net, attrs in six.iteritems(nets):
         if (('remove' in attrs and net in running_config.networks and
                 is_ovs_network(running_config.networks[net])) or
                 is_ovs_network(attrs)):
             ovs_nets[net] = attrs
         else:
             non_ovs_nets[net] = attrs
-    for bond, attrs in bonds.items():
+    for bond, attrs in six.iteritems(bonds):
         if (('remove' in attrs and bond in running_config.bonds and
                 is_ovs_bond(running_config.bonds[bond])) or
                 is_ovs_bond(attrs)):
@@ -96,10 +97,10 @@ def _destroy_ovs_libvirt_nets(initial_config, running_config):
 
 
 def _drop_ovs_nets_config(running_config):
-    for net, attrs in running_config.networks.items():
+    for net, attrs in list(six.iteritems(running_config.networks)):
         if is_ovs_network(attrs):
             running_config.networks.pop(net)
-    for bond, attrs in running_config.bonds.items():
+    for bond, attrs in list(six.iteritems(running_config.bonds)):
         if is_ovs_bond(attrs):
             running_config.bonds.pop(bond)
     running_config.save()

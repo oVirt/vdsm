@@ -20,6 +20,8 @@
 from functools import partial
 import sys
 
+import six
+
 from vdsm.netinfo import NetInfo
 
 import hooking
@@ -52,7 +54,7 @@ def _remove_redundant_ovs_bridge(running_config):
 def _get_nets_by_nic(running_config):
     """ Transform running config into {nic: set(networks)}. """
     nets_by_nic = {}
-    for net, attrs in running_config.networks.iteritems():
+    for net, attrs in six.iteritems(running_config.networks):
         nic = attrs.get('nic')
         if nic is not None:
             nets_by_nic.setdefault(nic, set()).add(net)
@@ -173,7 +175,7 @@ def _validate_net_configuration(net, attrs, running_config, netinfo):
     if vlan is not None and bonding is None and nic is None:
         raise Exception('You can not create a nicless/bondless vlan')
 
-    for existing_net, existing_attrs in running_config.networks.items():
+    for existing_net, existing_attrs in six.iteritems(running_config.networks):
         if (existing_net != net and
                 existing_attrs.get('nic') == nic and
                 existing_attrs.get('bond') == bonding and
@@ -254,14 +256,14 @@ def _validate_bond_configuration(attrs, netinfo):
 def _handle_setup(nets, bonds, running_config, nets_by_nic):
     commands = []
     netinfo = NetInfo()
-    for bond, attrs in bonds.items():
+    for bond, attrs in six.iteritems(bonds):
         if 'remove' not in attrs:
             _validate_bond_configuration(attrs, netinfo)
             if bond in running_config.bonds:
                 commands.extend(_edit_ovs_bond(bond, attrs, running_config))
             else:
                 commands.extend(_setup_ovs_bond(bond, attrs, running_config))
-    for net, attrs in nets.iteritems():
+    for net, attrs in six.iteritems(nets):
         if 'remove' not in attrs:
             _validate_net_configuration(net, attrs, running_config, netinfo)
             if net in running_config.networks:
@@ -275,11 +277,11 @@ def _handle_setup(nets, bonds, running_config, nets_by_nic):
 
 def _handle_removal(nets, bonds, running_config, nets_by_nic):
     commands = []
-    for net, attrs in nets.iteritems():
+    for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
             commands.extend(_remove_ovs_network(net, running_config,
                                                 nets_by_nic))
-    for bond, attrs in bonds.items():
+    for bond, attrs in six.iteritems(bonds):
         if 'remove' in attrs:
             commands.extend(['--', 'del-port', BRIDGE_NAME, bond])
             running_config.removeBonding(bond)

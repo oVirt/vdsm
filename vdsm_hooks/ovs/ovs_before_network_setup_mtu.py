@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+import six
+
 from vdsm import ipwrapper, netinfo
 
 from ovs_utils import iter_ovs_nets, iter_ovs_bonds
@@ -88,5 +90,5 @@ def configure_mtu(running_config):
     changes_bonds = _mtus_bonds(running_config)
     changes_vlans = _mtus_vlans(running_config)
     for mtu_changes in (changes_nics, changes_bonds, changes_vlans):
-        for iface, mtu in mtu_changes.iteritems():
+        for iface, mtu in six.iteritems(mtu_changes):
             _set_iface_mtu(iface, mtu)
