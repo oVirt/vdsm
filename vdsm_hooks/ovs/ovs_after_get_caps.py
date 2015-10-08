@@ -21,6 +21,8 @@ import re
 import sys
 import traceback
 
+import six
+
 from vdsm.netconfpersistence import RunningConfig
 from vdsm import netinfo
 
@@ -70,7 +72,7 @@ def networks_caps(running_config):
     ovs_networks_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for network, attrs in running_config.networks.items():
+    for network, attrs in six.iteritems(running_config.networks):
         if is_ovs_network(attrs):
             interface = network if 'vlan' in attrs else BRIDGE_NAME
             net_info = _get_net_info(attrs, interface, dhcpv4ifaces,
@@ -87,7 +89,7 @@ def bridges_caps(running_config):
     ovs_bridges_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for network, attrs in running_config.networks.items():
+    for network, attrs in six.iteritems(running_config.networks):
         if is_ovs_network(attrs):
             interface = network if 'vlan' in attrs else BRIDGE_NAME
             net_info = _get_net_info(attrs, interface, dhcpv4ifaces,
@@ -104,7 +106,7 @@ def vlans_caps(running_config):
     ovs_vlans_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for network, attrs in running_config.networks.items():
+    for network, attrs in six.iteritems(running_config.networks):
         if is_ovs_network(attrs):
             vlan = attrs.get('vlan')
             if vlan is not None:
@@ -140,7 +142,7 @@ def bondings_caps(running_config):
     ovs_bonding_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for bonding, attrs in running_config.bonds.items():
+    for bonding, attrs in six.iteritems(running_config.bonds):
         if is_ovs_bond(attrs):
             options = get_bond_options(attrs.get('options'), keep_custom=True)
             net_info = _get_net_info(attrs, bonding, dhcpv4ifaces,

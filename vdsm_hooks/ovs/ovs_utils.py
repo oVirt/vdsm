@@ -19,6 +19,8 @@
 #
 from contextlib import contextmanager
 
+import six
+
 from hooking import execCmd
 import hooking
 
@@ -87,14 +89,14 @@ def is_ovs_bond(bond_attrs):
 
 def iter_ovs_nets(networks):
     """ Yields OVS networks (network, attrs) from networks dictionary. """
-    for network, attrs in networks.items():
+    for network, attrs in six.iteritems(networks):
         if is_ovs_network(attrs):
             yield network, attrs
 
 
 def iter_ovs_bonds(bondings):
     """ Yields OVS bondings (bonding, attrs) from bonds dictionary. """
-    for bond, attrs in bondings.items():
+    for bond, attrs in six.iteritems(bondings):
         if is_ovs_bond(attrs):
             yield bond, attrs
 

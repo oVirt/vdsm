@@ -20,6 +20,8 @@
 from functools import partial
 import traceback
 
+import six
+
 from vdsm.netconfpersistence import RunningConfig
 
 import hooking
@@ -38,7 +40,7 @@ def ovs_networks_stats(stats):
     ovs_networks_stats = {}
     running_config = RunningConfig()
 
-    for network, attrs in running_config.networks.items():
+    for network, attrs in six.iteritems(running_config.networks):
         if is_ovs_network(attrs):
             vlan = attrs.get('vlan')
             iface = attrs.get('nic') or attrs.get('bonding')

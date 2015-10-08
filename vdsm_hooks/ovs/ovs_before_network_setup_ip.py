@@ -22,6 +22,8 @@ from functools import partial
 import os
 import sys
 
+import six
+
 from vdsm import ipwrapper, sysctl
 
 from ovs_utils import suppress, BRIDGE_NAME
@@ -136,7 +138,7 @@ def configure_ip(nets, init_nets):
     ip_config_to_set = {}
     ip_config_to_remove = {}
 
-    for net, attrs in nets.iteritems():
+    for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:  # if network was removed
             # remove network's IP configuration (running dhclient)
             ip_config = _gather_ip_config(init_nets[net])
@@ -172,7 +174,7 @@ def configure_ip(nets, init_nets):
 
     log('Remove IP configuration of: %s' % ip_config_to_remove)
     log('Set IP configuration: %s' % ip_config_to_set)
-    for iface, ip_config in ip_config_to_remove.iteritems():
+    for iface, ip_config in six.iteritems(ip_config_to_remove):
         _remove_ip_config(ip_config)
-    for iface, ip_config in ip_config_to_set.items():
+    for iface, ip_config in six.iteritems(ip_config_to_set):
         _set_ip_config(ip_config)
