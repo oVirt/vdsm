@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Hat, Inc.
+# Copyright 2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,39 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS = api vdsm yajsonrpc
+vdsmpyrpcdir = $(pythondir)/api
+vdsmrpcdir = $(vdsmdir)/rpc
+
+CLEANFILES = \
+	vdsm-api.html \
+	$(NULL)
+
+EXTRA_DIST = \
+	process-schema.py \
+	vdsmapi-schema.json \
+	$(NULL)
+
+dist_vdsmpyrpc_PYTHON = \
+	__init__.py \
+	vdsmapi.py \
+	$(NULL)
+
+dist_vdsmrpc_DATA = \
+	vdsmapi-gluster-schema.json \
+	vdsmapi-schema.json \
+	$(NULL)
+
+nodist_noinst_DATA = \
+	vdsm-api.html \
+	$(NULL)
+
+vdsm-api.html: process-schema.py vdsmapi-schema.json
+	@echo "  Generate $@"
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(srcdir)/../lib \
+	    $(PYTHON) $(srcdir)/process-schema.py \
+	              $(srcdir)/vdsmapi-schema.json $(srcdir)/$@
+
+all-local: \
+	$(nodist_noinst_DATA)
+

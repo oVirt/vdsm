@@ -25,7 +25,7 @@ from virt import vmexitreason
 from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
 from vdsm import utils
-from rpc import vdsmapi
+from api import vdsmapi
 
 import API
 from clientIF import clientIF
@@ -41,7 +41,7 @@ class TestSchemaCompliancyBase(TestCaseBase):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
         apiPath = os.path.join(
-            dirName, '..', 'vdsm', 'rpc', 'vdsmapi-schema.json')
+            dirName, '..', 'lib', 'api', 'vdsmapi-schema.json')
         return vdsmapi.get_api(apiPath)
 
     def assertVmStatsSchemaCompliancy(self, schema, stats):

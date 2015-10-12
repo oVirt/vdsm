@@ -20,8 +20,8 @@ import threading
 import types
 
 import API
-import vdsmapi
 import yajsonrpc
+from api import vdsmapi
 
 from vdsm.netinfo import getDeviceByIP
 

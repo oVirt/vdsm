@@ -76,7 +76,7 @@ class SchemaValidation(TestCaseBase):
         dirName = os.path.split(testPath)[0]
         for tail in ('vdsmapi-schema.json', 'vdsmapi-gluster-schema.json'):
             yield os.path.join(
-                dirName, '..', 'vdsm', 'rpc', tail)
+                dirName, '..', 'lib', 'api', tail)
 
     def _validate(self, api_mod):
         bridge = Bridge.DynamicBridge()

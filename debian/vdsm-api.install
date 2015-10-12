@@ -1,0 +1,3 @@
+./usr/share/vdsm/rpc/process-schema.py
+./usr/share/vdsm/api/vdsmapi.py
+./usr/share/vdsm/api/__init__.py*

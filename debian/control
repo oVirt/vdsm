@@ -41,7 +41,7 @@ Description: JSON RPC server and client implementation
 
 Package: vdsm-python
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.7.3)
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}, python (>=2.7.3), vdsm-api (>= ${source:Version})
 Description: VDSM python libraries
  Shared libraries between the various VDSM packages.
 
@@ -337,6 +337,13 @@ Depends: ${shlibs:Depends},
  vdsm-python (>= ${source:Version}),
  vdsm-yajsonrpc (>= ${source:Version}),
  python-ordereddict,
- python-simplejson (>= 2.0.9)
+ python-simplejson (>= 2.0.9),
+ vdsm-api (>= ${source:Version})
 Description: VDSM API Server
  A Json-based RPC interface that serves as the protocol for libvdsm.
+
+Package: vdsm-api
+Architecture: all
+Depends: python (>=2.7.3)
+Description: VDSM API
+ Contains api schema files

@@ -335,6 +335,7 @@ AC_OUTPUT([
 	lib/vdsm/profiling/Makefile
 	lib/vdsm/tool/Makefile
 	lib/vdsm/tool/configurators/Makefile
+	lib/api/Makefile
 	lib/yajsonrpc/Makefile
 	lib/vdsm/infra/Makefile
 	lib/vdsm/infra/eventfd/Makefile

@@ -272,9 +272,16 @@ Requires: %{name}-python = %{version}-%{release}
 An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
+%package api
+Summary:       VDSM API
+
+%description api
+Contains api schema files
+
 %package jsonrpc
 Summary:        VDSM API Server
 Requires:       %{name}-python = %{version}-%{release}
+Requires:       %{name}-api = %{version}-%{release}
 Requires:       %{name}-yajsonrpc = %{version}-%{release}
 Obsoletes:      vdsm-api < 4.16
 
@@ -309,6 +316,7 @@ Manager.
 
 %package python
 Summary:        VDSM python libraries
+Requires:       %{name}-api = %{version}-%{release}
 Requires:       %{name}-infra = %{version}-%{release}
 Requires:       python-cpopen >= 1.2.3-5
 Requires:       m2crypto
@@ -1372,13 +1380,16 @@ exit 0
 %{_datadir}/%{vdsm_name}/rpc/bindingxmlrpc.py*
 
 %files jsonrpc
-%doc %{vdsm_name}/rpc/vdsm-api.html
 %{_datadir}/%{vdsm_name}/rpc/__init__.py*
 %{_datadir}/%{vdsm_name}/rpc/bindingjsonrpc.py*
 %{_datadir}/%{vdsm_name}/rpc/Bridge.py*
-%{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
-%{python_sitelib}/vdsmapi.py*
 %{python_sitelib}/yajsonrpc/__init__.py*
+
+%files api
+%doc lib/api/vdsm-api.html
+%{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
+%{python_sitelib}/api/vdsmapi.py*
+%{python_sitelib}/api/__init__.py*
 %if ! 0%{?with_gluster}
 %exclude %{_datadir}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
 %endif

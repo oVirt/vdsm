@@ -79,8 +79,6 @@
 ./usr/share/vdsm/rpc/bindingjsonrpc.py
 ./usr/share/vdsm/rpc/bindingxmlrpc.py
 ./usr/share/vdsm/rpc/Bridge.py
-./usr/share/vdsm/rpc/process-schema.py
-./usr/share/vdsm/rpc/vdsmapi.py
 ./usr/share/vdsm/set-conf-item
 ./usr/share/vdsm/storage/__init__.py
 ./usr/share/vdsm/storage/blockSD.py
