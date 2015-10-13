@@ -95,6 +95,21 @@ class TestFilters(TestCaseBase):
 
     def test_filters(self):
         filters = (
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:', 'basic': {}},
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:',
+             'basic': {'flowid': '1389:a8', 'handle': '0x1',
+                       'mask': 0, 'module': 'meta', 'object': 'vlan',
+                       'relation': 'eq', 'value': 168}},
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:',
+             'basic': {'flowid': '1389:a8', 'handle': '0x1',
+                       'mask': 0, 'module': 'meta', 'object': 'vlan'}},
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:',
+             'basic': {'module': 'meta', 'flowid': '1389:a8',
+                       'handle': '0x1'}},
             {'protocol': 'all', 'pref': 49149, 'kind': 'u32', 'u32': {}},
             {'protocol': 'all', 'pref': 49149, 'kind': 'u32', 'u32': {
                 'fh': '803:', 'ht_divisor': 1}},
