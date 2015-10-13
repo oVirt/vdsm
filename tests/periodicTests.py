@@ -55,10 +55,10 @@ class PeriodicOperationTests(TestCaseBase):
         self.exc.start()
 
     def tearDown(self):
-        self.exc.stop(wait=False)
+        self.exc.stop(wait=True)
         self.exc = None
 
-        self.sched.stop(wait=False)
+        self.sched.stop(wait=True)
         self.sched = None
 
     def test_start(self):
