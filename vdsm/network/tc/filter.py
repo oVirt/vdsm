@@ -17,6 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+import logging
 from . import _parser
 from . import _wrapper
 
@@ -130,6 +131,29 @@ def _parse_u32(tokens):
     return data
 
 
+def _parse_ematch(tokens):
+    """Parses tokens describing a raw ematch, (see man tc-ematch) e.g.,
+    'meta(vlan mask 0x00000000 eq 16)' into a data dictionary.
+    currently only a single 'meta' module predicate is supported"""
+    data = {}
+    for token in tokens:
+        if token == _parser.LINE_DELIMITER:  # line break
+            continue
+        elif token == 'handle':
+            data[token] = _parser.parse_str(tokens)
+        elif token == 'flowid':
+            data['flowid'] = _parser.parse_str(tokens)
+        elif '(' in token:
+            module, first_arg = token.split('(', 1)
+            if module != 'meta':
+                _parser.parse_skip_line(tokens)
+            data['module'] = module
+            data.update(_parse_ematch_match(first_arg, tokens))
+        else:
+            logging.info('could not parse ematch filter. token=%s', token)
+    return data
+
+
 _parse_match_ip = _parser.parse_skip_line  # Unimplemented, skip line
 
 
@@ -142,6 +166,26 @@ def _parse_match_raw(val_mask, tokens):
     _parser.consume(tokens, 'at')
     offset = _parser.parse_int(tokens)
     return {'value': value, 'mask': mask, 'offset': offset}
+
+
+def _parse_ematch_match(first_arg, tokens):
+    if first_arg != 'vlan':
+        _parser.parse_skip_line(tokens)
+        # empty data. currently we do not support other ematches than vlan
+        return {}
+
+    data = {'object': first_arg}
+    for token in tokens:
+        if token == _parser.LINE_DELIMITER:  # line break
+            return data
+        elif token in ('eq', 'lt', 'gt'):
+            data['relation'] = token
+            data['value'] = int(next(tokens).strip(')'))
+        elif token == 'mask':
+            data['mask'] = _parser.parse_hex(tokens)
+        else:
+            logging.debug('unsupported token for vlan: %s' % token)
+    return data
 
 
 def _parse_action(tokens):
@@ -199,5 +243,5 @@ _ACTIONS = {'csum': None, 'gact': None, 'ipt': None, 'mirred': _parse_mirred,
             'skbedit': None, 'xt': None}
 
 
-_CLASSES = {'basic': None, 'cgroup': None, 'flow': None, 'fw': None,
+_CLASSES = {'basic': _parse_ematch, 'cgroup': None, 'flow': None, 'fw': None,
             'route': None, 'rsvp': None, 'tcindex': None, 'u32': _parse_u32}

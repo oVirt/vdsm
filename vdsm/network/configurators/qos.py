@@ -127,9 +127,14 @@ def _fresh_qdisc_conf_out(dev, vlan_tag, class_id, qos):
 
 def _qdisc_conf_out(dev, root_qdisc_handle, vlan_tag, class_id, qos):
     """Adds the traffic class and filtering to the current hfsc qdisc"""
-    flow_id = ':' + class_id
+    flow_id = _ROOT_QDISC_HANDLE + class_id
+
+    def filt_flow_id(filt, kind):
+        return filt.get(kind, {}).get('flowid')
+
     filters = [filt for filt in tc._filters(dev, parent=root_qdisc_handle) if
-               'u32' in filt and filt['u32'].get('flowid') == flow_id]
+               flow_id in
+               (filt_flow_id(filt, 'basic'), filt_flow_id(filt, 'u32'))]
 
     # Clear up any previous filters to the class
     for filt in filters:
@@ -155,10 +160,11 @@ def _qdisc_conf_out(dev, root_qdisc_handle, vlan_tag, class_id, qos):
 
 
 def _add_vlan_filter(dev, vlan_tag, root_qdisc_handle, class_id):
-    tc.filter.replace(dev, parent=root_qdisc_handle, protocol='802.1q',
+    tc.filter.replace(dev, parent=root_qdisc_handle, protocol='all',
                       pref=vlan_tag,
-                      u32=['match', 'u16', '0x%x' % vlan_tag, '0xFFF', 'at',
-                           '-4', 'flowid', '0x' + class_id])
+                      basic=['match', 'meta(vlan eq %s)' % vlan_tag,
+                             'flowid', root_qdisc_handle + class_id]
+                      )
 
 
 def _add_non_vlanned_filter(dev, root_qdisc_handle):

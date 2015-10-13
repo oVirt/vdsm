@@ -102,6 +102,21 @@ class TestFilters(TestCaseBase):
 
     def test_filters(self):
         filters = (
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:', 'basic': {}},
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:',
+             'basic': {'flowid': '1389:a8', 'handle': '0x1',
+                       'mask': 0, 'module': 'meta', 'object': 'vlan',
+                       'relation': 'eq', 'value': 168}},
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:',
+             'basic': {'flowid': '1389:a8', 'handle': '0x1',
+                       'mask': 0, 'module': 'meta', 'object': 'vlan'}},
+            {'protocol': 'all', 'pref': 168, 'kind': 'basic',
+             'parent': '1389:',
+             'basic': {'module': 'meta', 'flowid': '1389:a8',
+                       'handle': '0x1'}},
             {'protocol': 'all', 'pref': 49149, 'kind': 'u32', 'u32': {}},
             {'protocol': 'all', 'pref': 49149, 'kind': 'u32', 'u32': {
                 'fh': '803:', 'ht_divisor': 1}},
@@ -418,8 +433,9 @@ class TestConfigureOutbound(TestCaseBase):
             self._assert_parent([vlan_qdisc], vlan_class)
 
             self.assertEqual(len(tc_filters.tagged_filters), 1)
-            self.assertEqual(tc_filters.tagged_filters[0]['u32']['flowid'],
-                             ':%x' % vlan.tag)
+            self.assertEqual(
+                int(tc_filters.tagged_filters[0]['basic']['value']),
+                vlan.tag)
 
     def test_multiple_vlans(self):
         with vlan_device(self.device_name, tag=16) as vlan1:
@@ -442,8 +458,10 @@ class TestConfigureOutbound(TestCaseBase):
 
                 self.assertEqual(len(tc_filters.tagged_filters), 2)
                 current_tagged_filters_flow_id = set(
-                    f['u32']['flowid'] for f in tc_filters.tagged_filters)
-                expected_flow_ids = set(':%x' % v.tag for v in (vlan1, vlan2))
+                    f['basic']['flowid'] for f in tc_filters.tagged_filters)
+                expected_flow_ids = set(
+                    '%s%x' % (qos._ROOT_QDISC_HANDLE, v.tag)
+                    for v in (vlan1, vlan2))
                 self.assertEqual(current_tagged_filters_flow_id,
                                  expected_flow_ids)
 
@@ -502,7 +520,7 @@ class TestConfigureOutbound(TestCaseBase):
         self.assertEqual(ingress_qdisc['handle'], tc.QDISC_INGRESS)
 
     def _assertions_on_filters(self, untagged_filters, tagged_filters):
-        self.assertTrue(all(f['protocol'] == '802.1Q' for f in tagged_filters))
+        self.assertTrue(all(f['protocol'] == 'all' for f in tagged_filters))
         self._assert_parent_handle(tagged_filters + untagged_filters,
                                    qos._ROOT_QDISC_HANDLE)
         self.assertEqual(len(untagged_filters), 1)
@@ -557,10 +575,7 @@ class TestConfigureOutbound(TestCaseBase):
 
     def _tagged_filters(self, filters):
         def tagged(f):
-            flow_id = f.get('u32', {}).get('flowid')
-            if flow_id is not None and flow_id != ':%x' % qos._NON_VLANNED_ID:
-                return True
-            return False
+            return f.get('basic', {}).get('object') == 'vlan'
 
         return list(f for f in filters if tagged(f))
 

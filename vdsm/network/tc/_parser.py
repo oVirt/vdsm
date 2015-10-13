@@ -99,6 +99,10 @@ def parse_str(tokens):
     return next(tokens)
 
 
+def parse_hex(tokens):
+    return parse_int(tokens, 16)
+
+
 def linearize(inp):
     """Generator of tc entries (that can span over multiple textual lines).
     Each entry is a """

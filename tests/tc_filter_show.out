@@ -1,3 +1,13 @@
+filter parent 1389: protocol all pref 168 basic
+filter parent 1389: protocol all pref 168 basic handle 0x1 flowid 1389:a8
+  meta(vlan mask 0x00000000 eq 168)
+
+filter parent 1389: protocol all pref 168 basic handle 0x1 flowid 1389:a8
+  meta(vlan mask 0x00000000 unsupported_token 168)
+
+filter parent 1389: protocol all pref 168 basic handle 0x1 flowid 1389:a8
+  meta(unsupported_module mask 0x00000000 eq 168)
+
 filter protocol all pref 49149 u32
 filter protocol all pref 49149 u32 fh 803: ht divisor 1
 filter protocol all pref 49149 u32 fh 803::800 order 2048 key ht 803 bkt 0 terminal flowid ???
