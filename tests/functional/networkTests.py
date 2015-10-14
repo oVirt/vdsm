@@ -2787,8 +2787,8 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
     def test_remove_initial_network_nic_ip_config(self):
         with dummyIf(1) as nics:
             nic, = nics
-            dummy.setIP(nic, IP_ADDRESS, IP_CIDR)
-            dummy.setIP(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
+            addrAdd(nic, IP_ADDRESS, IP_CIDR)
+            addrAdd(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
             try:
                 status, msg = self.setupNetworks(
                     {NETWORK_NAME: {'nic': nic, 'bridged': True}}, {}, NOCHK)
@@ -2811,8 +2811,8 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
     def test_keep_initial_bond_slaves_ip_config(self):
         with dummyIf(2) as nics:
             nic_1, nic_2 = nics
-            dummy.setIP(nic_1, IP_ADDRESS, IP_CIDR)
-            dummy.setIP(nic_1, IPv6_ADDRESS, IPv6_CIDR, family=6)
+            addrAdd(nic_1, IP_ADDRESS, IP_CIDR)
+            addrAdd(nic_1, IPv6_ADDRESS, IPv6_CIDR, family=6)
             try:
                 status, msg = self.setupNetworks(
                     {}, {BONDING_NAME: {'nics': [nic_1, nic_2]}}, NOCHK)
