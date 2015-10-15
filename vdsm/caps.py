@@ -33,7 +33,6 @@ import xml.etree.ElementTree as ET
 from distutils.version import LooseVersion
 
 import libvirt
-import rpm
 
 from vdsm.config import config
 from vdsm import libvirtconnection
@@ -51,6 +50,12 @@ try:
     python_apt = True
 except ImportError:
     python_apt = False
+
+# For systems without rpm support
+try:
+    import rpm
+except ImportError:
+    pass
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 CPU_MAP_FILE = '/usr/share/libvirt/cpu_map.xml'
