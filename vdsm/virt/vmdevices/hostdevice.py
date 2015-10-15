@@ -35,7 +35,7 @@ class HostDevice(core.Base):
         self._deviceParams = get_device_params(self.device)
 
         self.macAddr = self.specParams.get('macAddr')
-        self.vlanId = self.specParams.get('vlanId')
+        self.vlanId = self.specParams.get('vlanid')
         self.hostAddress = self._deviceParams.get('address')
 
     def detach(self):
