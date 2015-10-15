@@ -1279,6 +1279,9 @@ class Drive(VmDevice):
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
     VOLWM_CHUNK_REPLICATE_MULT = 2  # Chunk multiplier during replication
 
+    # Estimate of the additional space needed for qcow format internal data.
+    VOLWM_COW_OVERHEAD = 1.1
+
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
             self.serial = kwargs.get('imageID'[-20:]) or ''
@@ -5916,6 +5919,7 @@ class Vm(object):
         if res['info']['voltype'] == 'SHARED':
             self.log.error("merge: Refusing to merge into a shared volume")
             return errCode['mergeErr']
+        baseSize = int(res['info']['apparentsize'])
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files.  This is necessary to ensure that a volume chain is
@@ -5969,10 +5973,19 @@ class Vm(object):
         # copy all the required data.  Normally we'd use monitoring to extend
         # the volume on-demand but internal watermark information is not being
         # reported by libvirt so we must do the full extension up front.  In
-        # the worst case, we'll need to extend 'base' to the same size as 'top'
-        # plus a bit more to accomodate additional writes to 'top' during the
-        # live merge operation.
-        self.extendDriveVolume(drive, baseVolUUID, topSize)
+        # the worst case, the allocated size of 'base' should be increased by
+        # the allocated size of 'top' plus one additional chunk to accomodate
+        # additional writes to 'top' during the live merge operation.
+        maxAlloc = baseSize + topSize
+
+        # getNextVolumeSize is not properly capping volume extension requests
+        # to the drive capacity (plus cow overhead).  This was fixed in master
+        # by commit d17dc8 but has not been backported.  Work around the
+        # problem by capping it here.
+        capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+        maxAlloc = min(capacity, maxAlloc)
+        maxAlloc = maxAlloc * drive.VOLWM_COW_OVERHEAD
+        self.extendDriveVolume(drive, baseVolUUID, maxAlloc)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
