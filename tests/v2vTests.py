@@ -19,6 +19,7 @@
 
 from StringIO import StringIO
 
+import libvirt
 
 import v2v
 from vdsm import libvirtconnection
@@ -27,7 +28,9 @@ from vdsm.password import ProtectedPassword
 
 from nose.plugins.skip import SkipTest
 from testlib import VdsmTestCase as TestCaseBase
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
+
+import vmfakelib as fake
 
 
 class VmMock(object):
@@ -73,6 +76,7 @@ class VmMock(object):
 
 # FIXME: extend vmfakelib allowing to set predefined domain in Connection class
 class LibvirtMock(object):
+
     def close(self):
         pass
 
@@ -140,9 +144,13 @@ class v2vTests(TestCaseBase):
         self.assertEquals(vm['smp'], 1)
         self.assertEquals(len(vm['disks']), 1)
         self.assertEquals(len(vm['networks']), 1)
+
         disk = vm['disks'][0]
         self.assertEquals(disk['dev'], 'sda')
         self.assertEquals(disk['alias'], '[datastore1] RHEL/RHEL.vmdk')
+        self.assertIn('capacity', disk)
+        self.assertIn('allocation', disk)
+
         network = vm['networks'][0]
         self.assertEquals(network['type'], 'bridge')
         self.assertEquals(network['macAddr'], '00:0c:29:c6:a6:11')
@@ -193,3 +201,39 @@ class v2vTests(TestCaseBase):
         self.assertEquals(network['model'], 'E1000')
         self.assertEquals(network['type'], 'bridge')
         self.assertEquals(network['dev'], 'Ethernet 1')
+
+    def testGetExternalVMsWithoutDisksInfo(self):
+        if not v2v.supported():
+            raise SkipTest('v2v is not supported current os version')
+
+        def _connect(uri, username, passwd):
+            mock = LibvirtMock()
+
+            def internal_error(name):
+                raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+
+            mock.storageVolLookupByPath = internal_error
+            return mock
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms('esx://mydomain', 'user',
+                                       ProtectedPassword('password'))['vmList']
+        self.assertEquals(len(vms), 1)
+        vm = vms[0]
+        self.assertEquals(vm['vmId'], '564d7cb4-8e3d-06ec-ce82-7b2b13c6a611')
+        self.assertEquals(vm['memSize'], 2048)
+        self.assertEquals(vm['smp'], 1)
+
+        self.assertEquals(len(vm['disks']), 1)
+        disk = vm['disks'][0]
+        self.assertEquals(disk['dev'], 'sda')
+        self.assertEquals(disk['alias'], '[datastore1] RHEL/RHEL.vmdk')
+        self.assertNotIn('capacity', disk)
+        self.assertNotIn('allocation', disk)
+
+        self.assertEquals(len(vm['networks']), 1)
+        network = vm['networks'][0]
+        self.assertEquals(network['type'], 'bridge')
+        self.assertEquals(network['macAddr'], '00:0c:29:c6:a6:11')
+        self.assertEquals(network['bridge'], 'VM Network')
