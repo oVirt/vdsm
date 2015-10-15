@@ -17,7 +17,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from collections import namedtuple
 from StringIO import StringIO
+import uuid
 
 import libvirt
 
@@ -33,9 +35,24 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 import vmfakelib as fake
 
 
+VmSpec = namedtuple('VmSpec', ['name', 'vmid'])
+
+
+def _mac_from_uuid(vmid):
+    return "52:54:%s:%s:%s:%s" % (
+        vmid[:2], vmid[2:4], vmid[4:6], vmid[6:8])
+
+
 class VmMock(object):
+
+    def __init__(self, name="RHEL",
+                 vmid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"):
+        self._name = name
+        self._vmid = vmid
+        self._mac_address = _mac_from_uuid(vmid)
+
     def name(self):
-        return 'windows'
+        return self._name
 
     def state(self, flags=0):
         return [5, 0]
@@ -43,8 +60,8 @@ class VmMock(object):
     def XMLDesc(self, flags=0):
         return """
 <domain type='vmware' id='15'>
-    <name>RHEL</name>
-    <uuid>564d7cb4-8e3d-06ec-ce82-7b2b13c6a611</uuid>
+    <name>{name}</name>
+    <uuid>{vmid}</uuid>
     <memory unit='KiB'>2097152</memory>
     <currentMemory unit='KiB'>2097152</currentMemory>
     <vcpu placement='static'>1</vcpu>
@@ -57,13 +74,13 @@ class VmMock(object):
     <on_crash>destroy</on_crash>
     <devices>
         <disk type='file' device='disk'>
-            <source file='[datastore1] RHEL/RHEL.vmdk'/>
+            <source file='[datastore1] RHEL/RHEL_{name}.vmdk'/>
             <target dev='sda' bus='scsi'/>
             <address type='drive' controller='0' bus='0' target='0' unit='0'/>
         </disk>
         <controller type='scsi' index='0' model='vmpvscsi'/>
         <interface type='bridge'>
-            <mac address='00:0c:29:c6:a6:11'/>
+            <mac address='{mac}'/>
             <source bridge='VM Network'/>
             <model type='vmxnet3'/>
         </interface>
@@ -71,17 +88,24 @@ class VmMock(object):
             <model type='vmvga' vram='8192'/>
         </video>
     </devices>
-</domain>"""
+</domain>""".format(
+            name=self._name,
+            vmid=self._vmid,
+            mac=self._mac_address)
 
 
 # FIXME: extend vmfakelib allowing to set predefined domain in Connection class
 class LibvirtMock(object):
 
+    def __init__(self,
+                 vmspecs=(("RHEL", "564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"),)):
+        self._vmspecs = vmspecs
+
     def close(self):
         pass
 
     def listAllDomains(self):
-        return [VmMock()]
+        return [VmMock(*spec) for spec in self._vmspecs]
 
     def storageVolLookupByPath(self, name):
         return LibvirtMock.Volume()
@@ -89,10 +113,6 @@ class LibvirtMock(object):
     class Volume(object):
         def info(self):
             return [0, 0, 0]
-
-
-def hypervisorConnect(uri, username, passwd):
-    return LibvirtMock()
 
 
 def read_ovf(ovf_path):
@@ -130,31 +150,29 @@ sourceAllocationSettingData">
 
 
 class v2vTests(TestCaseBase):
-    @MonkeyPatch(libvirtconnection, 'open_connection', hypervisorConnect)
+
     def testGetExternalVMs(self):
         if not v2v.supported():
             raise SkipTest('v2v is not supported current os version')
 
-        vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                   ProtectedPassword('password'))['vmList']
-        self.assertEquals(len(vms), 1)
-        vm = vms[0]
-        self.assertEquals(vm['vmId'], '564d7cb4-8e3d-06ec-ce82-7b2b13c6a611')
-        self.assertEquals(vm['memSize'], 2048)
-        self.assertEquals(vm['smp'], 1)
-        self.assertEquals(len(vm['disks']), 1)
-        self.assertEquals(len(vm['networks']), 1)
+        vmspecs = (
+            VmSpec("RHEL_0", str(uuid.uuid4())),
+            VmSpec("RHEL_1", str(uuid.uuid4())),
+            VmSpec("RHEL_2", str(uuid.uuid4()))
+        )
 
-        disk = vm['disks'][0]
-        self.assertEquals(disk['dev'], 'sda')
-        self.assertEquals(disk['alias'], '[datastore1] RHEL/RHEL.vmdk')
-        self.assertIn('capacity', disk)
-        self.assertIn('allocation', disk)
+        def _connect(uri, username, passwd):
+            return LibvirtMock(vmspecs=vmspecs)
 
-        network = vm['networks'][0]
-        self.assertEquals(network['type'], 'bridge')
-        self.assertEquals(network['macAddr'], '00:0c:29:c6:a6:11')
-        self.assertEquals(network['bridge'], 'VM Network')
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms('esx://mydomain', 'user',
+                                       ProtectedPassword('password'))['vmList']
+
+        self.assertEqual(len(vms), len(vmspecs))
+
+        for vm, spec in zip(vms, vmspecs):
+            self._assertVmMatchesSpec(vm, spec)
 
     def testOutputParser(self):
         output = ''.join(['[   0.0] Opening the source -i libvirt ://roo...\n',
@@ -228,12 +246,31 @@ class v2vTests(TestCaseBase):
         self.assertEquals(len(vm['disks']), 1)
         disk = vm['disks'][0]
         self.assertEquals(disk['dev'], 'sda')
-        self.assertEquals(disk['alias'], '[datastore1] RHEL/RHEL.vmdk')
+        self.assertEquals(disk['alias'], '[datastore1] RHEL/RHEL_RHEL.vmdk')
         self.assertNotIn('capacity', disk)
         self.assertNotIn('allocation', disk)
 
         self.assertEquals(len(vm['networks']), 1)
         network = vm['networks'][0]
         self.assertEquals(network['type'], 'bridge')
-        self.assertEquals(network['macAddr'], '00:0c:29:c6:a6:11')
+        self.assertEquals(network['macAddr'], '52:54:56:4d:7c:b4')
+        self.assertEquals(network['bridge'], 'VM Network')
+
+    def _assertVmMatchesSpec(self, vm, spec):
+        self.assertEquals(vm['vmId'], spec.vmid)
+        self.assertEquals(vm['memSize'], 2048)
+        self.assertEquals(vm['smp'], 1)
+        self.assertEquals(len(vm['disks']), 1)
+        self.assertEquals(len(vm['networks']), 1)
+
+        disk = vm['disks'][0]
+        self.assertEquals(disk['dev'], 'sda')
+        self.assertEquals(disk['alias'],
+                          '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
+        self.assertIn('capacity', disk)
+        self.assertIn('allocation', disk)
+
+        network = vm['networks'][0]
+        self.assertEquals(network['type'], 'bridge')
+        self.assertEquals(network['macAddr'], _mac_from_uuid(spec.vmid))
         self.assertEquals(network['bridge'], 'VM Network')
