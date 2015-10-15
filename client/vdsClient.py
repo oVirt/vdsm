@@ -29,7 +29,7 @@ import shlex
 import socket
 import pprint as pp
 
-from vdsm import utils, vdscli
+from vdsm import utils, vdscli, constants
 from vdsm.compat import json
 
 try:
@@ -1063,9 +1063,8 @@ class service:
         sdUUID = args[0]
         spUUID = args[1]
         imgUUID = args[2]
-        diskSize = int(args[3])
-        convertFactor = 2097152
-        size = diskSize * convertFactor
+        sizeGIB = int(args[3])
+        size = str(sizeGIB * constants.GIB)
         volFormat = int(args[4])
         preallocate = int(args[5])
         diskType = int(args[6])

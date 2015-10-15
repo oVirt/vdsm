@@ -33,7 +33,6 @@ from functools import partial, wraps
 import errno
 import time
 import signal
-import types
 import math
 import numbers
 import stat
@@ -1451,12 +1450,12 @@ class HSM(object):
         dom = sdCache.produce(sdUUID=sdUUID)
         misc.validateUUID(imgUUID, 'imgUUID')
         misc.validateUUID(volUUID, 'volUUID')
-        # TODO: For backwards compatibility, we need to support accepting
-        # number of sectors as int type Updated interface is accepting string
-        # type in bytes (ugly, get rid of this when possible)
-        if not isinstance(size, types.IntType):
-            size = misc.validateN(size, "size")
-            size = (size + SECTOR_SIZE - 1) / SECTOR_SIZE
+        if not isinstance(size, basestring):
+            self.log.error("Number of sectors as int is not supported, use "
+                           "size in bytes as string")
+            raise se.InvalidParameterException("size", size)
+        size = misc.validateN(size, "size")
+        size = (size + SECTOR_SIZE - 1) / SECTOR_SIZE
 
         if srcImgUUID:
             misc.validateUUID(srcImgUUID, 'srcImgUUID')

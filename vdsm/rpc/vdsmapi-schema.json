@@ -8269,7 +8269,7 @@
 #
 # @imageID:          The Image associated with the Volume
 #
-# @size:             The Volume size in sectors
+# @size:             The Volume size in bytes (as string)
 #
 # @volFormat:        The data format to use for the destination Volume
 #
@@ -8292,7 +8292,7 @@
 {'command': {'class': 'Volume', 'name': 'create'},
  'data': {'volumeID': 'UUID', 'storagepoolID': 'UUID',
           'storagedomainID': 'UUID', 'imageID': 'UUID',
-          'size': 'int', 'volFormat': 'VolumeFormat',
+          'size': 'str', 'volFormat': 'VolumeFormat',
           'preallocate': 'VolumeAllocation', 'diskType': 'DiskType',
           'desc': 'str', 'srcImgUUID': 'UUID', 'srcVolUUID': 'UUID'},
  'returns': 'UUID'}

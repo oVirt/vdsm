@@ -68,6 +68,7 @@ SUPPORTED_DOMAIN_VERSIONS = DOMAIN_VERSIONS
 UUID_GLOB_PATTERN = '*-*-*-*-*'
 
 MEGAB = 2 ** 20  # = 1024 ** 2 = 1 MiB
+GIB = 1024 * MEGAB
 
 #
 # Path definitions
