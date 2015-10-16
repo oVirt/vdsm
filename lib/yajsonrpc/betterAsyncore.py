@@ -18,6 +18,7 @@
 # while enabling compositing instead of inheritance.
 from __future__ import absolute_import
 import asyncore
+import logging
 import socket
 from errno import EWOULDBLOCK
 
@@ -26,6 +27,8 @@ from vdsm.infra.eventfd import EventFD
 
 
 class Dispatcher(asyncore.dispatcher):
+
+    _log = logging.getLogger("vds.dispatcher")
 
     def __init__(self, impl=None, sock=None, map=None):
         # This has to be done before the super initialization because
@@ -118,7 +121,7 @@ class Dispatcher(asyncore.dispatcher):
             else:
                 raise
         except SSL.SSLError as e:
-            self.log.error('SSL error during reading data: %s', e)
+            self._log.info('SSL error during recv: %s, closing connection', e)
             self.handle_close()
             return ''
 
