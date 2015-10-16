@@ -382,8 +382,11 @@ class GuestAgent(object):
         try:
             self.log.debug("desktopLock called")
             self._forward("lock-screen")
-        except:
-            self.log.exception("desktopLock failed")
+        except Exception as e:
+            if isinstance(e, socket.error) and e.args[0] == errno.EBADF:
+                self.log.debug('desktopLock failed - Socket not connected')
+                return  # Expected when not connected/closed socket
+            self.log.exception("desktopLock failed with unexpected exception")
 
     def desktopLogin(self, domain, user, password):
         try:
