@@ -151,6 +151,10 @@ class Dispatcher(asyncore.dispatcher):
         else:
             return getattr(asyncore.dispatcher, name)(self)
 
+    # Override asyncore.dispatcher logging to use our logger
+    log = _log.debug
+    log_info = _log.info
+
 
 class AsyncoreEvent(asyncore.file_dispatcher):
     def __init__(self, map=None):
