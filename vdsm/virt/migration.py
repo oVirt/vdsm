@@ -257,7 +257,7 @@ class SourceThread(threading.Thread):
                 self.log.exception("Failed to destroy remote VM")
         # if the guest was stopped before migration, we need to cont it
         if self.hibernating:
-            self._vm.cont()
+            self._vm.cont(ignoreStatus=True)
             if self._enableGuestEvents:
                 self._vm.guestAgent.events.after_hibernation_failure()
         elif self._enableGuestEvents:

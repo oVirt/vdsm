@@ -1117,12 +1117,37 @@ class Vm(object):
                 raise RuntimeError('waiting more that %ss for _guestCpuLock' %
                                    timeout)
 
-    def cont(self, afterState=vmstatus.UP, guestCpuLocked=False):
+    def cont(self, afterState=vmstatus.UP, guestCpuLocked=False,
+             ignoreStatus=False):
+        """
+        Continue execution of the VM.
+
+        :param ignoreStatus: True, if the operation must be performed
+                             regardless of the VM's status, False otherwise.
+                             Default: False
+
+                             By default, cont() returns error if the VM is in
+                             one of the following states:
+
+                             vmstatus.MIGRATION_SOURCE
+                                 Migration is in progress, VM status should not
+                                 be changed till the migration finishes.
+
+                             vmstatus.SAVING_STATE
+                                 Hibernation is in progress, VM status should
+                                 not be changed till the hibernation finishes.
+
+                             vmstatus.DOWN
+                                 VM is down, continuing is not possible from
+                                 this state.
+        """
         if not guestCpuLocked:
             self._acquireCpuLockWithTimeout()
         try:
-            if self.lastStatus in (vmstatus.MIGRATION_SOURCE,
-                                   vmstatus.SAVING_STATE, vmstatus.DOWN):
+            if (not ignoreStatus and
+                    self.lastStatus in (vmstatus.MIGRATION_SOURCE,
+                                        vmstatus.SAVING_STATE,
+                                        vmstatus.DOWN)):
                 self.log.error('cannot cont while %s', self.lastStatus)
                 return response.error('unexpected')
             self._underlyingCont()
