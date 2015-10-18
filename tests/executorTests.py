@@ -98,7 +98,9 @@ class ExecutorTests(TestCaseBase):
         slow_tasks = [Task(wait=0.4) for n in range(5)]
         for task in slow_tasks:
             self.executor.dispatch(task, 1.0)
-        # Slow tasks block half of the workers
+        time.sleep(0.1)
+        # Slow tasks block 5 of the workers, so these tasks should finished
+        # after (20 * 0.1) / 5 seconds.
         tasks = [Task(wait=0.1) for n in range(20)]
         for task in tasks:
             self.executor.dispatch(task, 1.0)
@@ -110,7 +112,7 @@ class ExecutorTests(TestCaseBase):
 
     @slowtest
     def test_discarded_workers(self):
-        slow_tasks = [Task(wait=0.4) for n in range(10)]
+        slow_tasks = [Task(wait=0.3) for n in range(10)]
         for task in slow_tasks:
             self.executor.dispatch(task, 0.1)
         # All workers are blocked on slow tasks
