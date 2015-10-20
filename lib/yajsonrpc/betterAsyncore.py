@@ -136,7 +136,12 @@ class Dispatcher(asyncore.dispatcher):
 
     # Override asyncore.dispatcher logging to use our logger
     log = _log.debug
-    log_info = _log.info
+
+    def log_info(self, message, type='info'):
+        level = getattr(logging, type.upper(), None)
+        if not isinstance(level, int):
+            raise ValueError('Invalid log level: %s' % type)
+        self._log.log(level, message)
 
 
 class AsyncoreEvent(asyncore.file_dispatcher):
