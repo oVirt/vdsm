@@ -278,6 +278,7 @@ class DynamicBridge(object):
                 else:
                         result = fn(*methodArgs)
             except TypeError as e:
+                self.log.exception("TypeError raised by dispatched function")
                 raise InvalidCall(fn, methodArgs, e)
 
         if result['status']['code']:
