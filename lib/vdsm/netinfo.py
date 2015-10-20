@@ -463,8 +463,6 @@ def _dhcp_used(iface, ifaces_with_active_leases, net_attrs, family=4):
             else:
                 return net_attrs['dhcpv6']
         except KeyError:
-            logging.debug('DHCPv%s configuration not specified for %s.' %
-                          (family, iface))
             return False
 
 
