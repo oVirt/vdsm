@@ -16,6 +16,7 @@
 from functools import partial
 
 import inspect
+import logging
 import threading
 import types
 
@@ -58,6 +59,7 @@ class DynamicBridge(object):
     def __init__(self):
         self.api = vdsmapi.get_api()
         self._threadLocal = threading.local()
+        self.log = logging.getLogger('DynamicBridge')
 
     def register_server_address(self, server_address):
         self._threadLocal.server = server_address
@@ -77,7 +79,7 @@ class DynamicBridge(object):
             result = fn(argobj)
         except VdsmError as e:
             # TBD: Do we really want to always log here
-            self.log.debug("Operation failed, returning error", exc_info=True)
+            self.log.exception("Operation failed, returning error")
             raise yajsonrpc.JsonRpcError(e.code, e.message)
 
         return result
