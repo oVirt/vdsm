@@ -329,3 +329,14 @@ Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
 Description: External disk support for VDSM
  Hook adds additional disk image for a VM (raw or qcow2)
+
+Package: vdsm-jsonrpc
+Architecture: all
+Depends: ${shlibs:Depends},
+ ${misc:Depends}, python (>=2.7.3),
+ vdsm-python (>= ${source:Version}),
+ vdsm-yajsonrpc (>= ${source:Version}),
+ python-ordereddict,
+ python-simplejson (>= 2.0.9)
+Description: VDSM API Server
+ A Json-based RPC interface that serves as the protocol for libvdsm.
