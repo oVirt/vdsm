@@ -7108,6 +7108,28 @@
 ##
 {'map': 'VmJobsMap', 'key': 'UUID', 'value': 'VmJobInfo'}
 
+
+##
+# @GuestContainerInfo:
+#
+# Information about a container defined in the guest Vm
+#
+# @id:      Identifier of the container
+#
+# @names:   List of given names/aliases for the container
+#
+# @image:   Name of the image the container was started from
+#
+# @status:  Status message for the container (e.g. uptime in case of Docker)
+#
+# @command: Executed command in the container
+#
+# Since: 4.18.0
+##
+{'type': 'GuestContainerInfo',
+ 'data': {'id': 'str', 'names': ['str'], 'image': 'str', 'status': 'str',
+          'command': 'str'}}
+
 ##
 # @RunningVmStats:
 #
@@ -7221,6 +7243,9 @@
 #
 # @vmName:             The Name of the Vm (new in version 4.17.0)
 #
+# @guestContainers:    #optional A list of running containers in the Vm
+#                      (new in version 4.18.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'RunningVmStats',
@@ -7246,7 +7271,7 @@
           'displayInfo': ['VmDisplayInfo'], '*vcpuQuota': 'int',
           '*vcpuPeriod': 'int', '*vcpuCount': 'int', '*vcpuUserLimit': 'int',
           '*ioTune': ['VmDiskDeviceTuneParams'], 'vmName': 'str',
-          '*cpuUsage': 'uint'}}
+          '*cpuUsage': 'uint', '*guestContainers': ['GuestContainerInfo']}}
 
 ##
 # @VmStats:

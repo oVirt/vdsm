@@ -31,7 +31,7 @@ from vdsm import utils
 from vdsm.infra import filecontrol
 from vdsm.virt import vmstatus
 
-_MAX_SUPPORTED_API_VERSION = 2
+_MAX_SUPPORTED_API_VERSION = 3
 _IMPLICIT_API_VERSION_ZERO = 0
 
 _MESSAGE_API_VERSION_LOOKUP = {
@@ -324,6 +324,8 @@ class GuestAgent(object):
             self.guestInfo['guestFQDN'] = args['fqdn']
         elif message == 'session-shutdown':
             self.log.debug("Guest system shuts down.")
+        elif message == 'containers':
+            self.guestInfo['guestContainers'] = args['list']
         elif message == 'disks-usage':
             disks = []
             for disk in args['disks']:
