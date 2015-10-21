@@ -176,7 +176,7 @@ Requires: iscsi-initiator-utils >= 6.2.0.873-21
 Requires: sanlock >= 2.8, sanlock-python
 
 %if 0%{?rhel}
-%if 0%{centos}
+%if 0%{?centos}
 Requires: device-mapper-multipath >= 0.4.9-68
 %else
 Requires: device-mapper-multipath >= 0.4.9-77.el7_1.2
