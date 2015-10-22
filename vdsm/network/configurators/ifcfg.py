@@ -31,6 +31,7 @@ import re
 import selinux
 import shutil
 import threading
+import uuid
 
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
@@ -798,7 +799,11 @@ def _exec_ifup(iface_name, cgroup=dhclient.DHCLIENT_CGROUP):
     cmd = [constants.EXT_IFUP, iface_name]
 
     if cgroup is not None:
-        cmd = cmdutils.systemd_run(cmd, scope=True, slice=cgroup)
+        # TODO: We set unique uuid for every run to not use the same unit twice
+        # and prevent systemd_run race (BZ#1259468). This uuid could be dropped
+        # when BZ#1272368 will be solved or when we use systemd >= v220.
+        cmd = cmdutils.systemd_run(cmd, scope=True, unit=uuid.uuid4(),
+                                   slice=cgroup)
 
     rc, out, err = utils.execCmd(cmd, raw=False)
 
