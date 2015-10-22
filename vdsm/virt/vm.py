@@ -1250,13 +1250,20 @@ class Vm(object):
 
     def _reattachHostDevices(self):
         # reattach host devices
-        for dev in self._devices[hwclass.HOSTDEV]:
-            self.log.debug('Reattaching device %s to host.' % dev.device)
+        for dev_name, _ in self._host_devices():
+            self.log.debug('Reattaching device %s to host.' % dev_name)
             try:
-                hostdev.reattach_detachable(dev.device)
+                hostdev.reattach_detachable(dev_name)
             except hostdev.NoIOMMUSupportException:
                 self.log.exception('Could not reattach device %s back to host '
                                    'due to missing IOMMU support.')
+
+    def _host_devices(self):
+        for device in self._devices[hwclass.HOSTDEV][:]:
+            yield device.device, device
+        for device in self._devices[hwclass.NIC][:]:
+            if device.is_hostdevice:
+                yield device.hostdev, device
 
     def setDownStatus(self, code, exitReasonCode, exitMessage=''):
         if not exitMessage:
@@ -1818,9 +1825,8 @@ class Vm(object):
         # domDependentInit, after the migration is completed.
 
         if not self.recovering:
-            for dev in self._devices[hwclass.HOSTDEV]:
-                self.log.debug('Detaching device %s from the host.' %
-                               dev.device)
+            for dev_name, dev in self._host_devices():
+                self.log.debug('Detaching device %s from the host.' % dev_name)
                 dev.detach()
 
         if self.recovering:

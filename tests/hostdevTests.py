@@ -22,7 +22,7 @@ import hooks
 import hostdev
 import vmfakelib as fake
 
-from virt.vmdevices import hostdevice
+from virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
@@ -115,17 +115,17 @@ _DEVICE_XML = {
     _SRIOV_VF:
     '''
     <interface managed="no" type="hostdev">
-            <driver name="vfio"/>
+            %s
+            <mac address="ff:ff:ff:ff:ff:ff"/>
             <source>
                     <address bus="5" domain="0" function="7" slot="16"
                     type="pci"/>
             </source>
-            <mac address="ff:ff:ff:ff:ff:ff"/>
             <vlan>
                     <tag id="3"/>
             </vlan>
             <boot order="9"/>
-            %s
+            <driver name="vfio"/>
     </interface>
     '''}
 
@@ -407,23 +407,24 @@ class HostdevCreationTests(XMLTestCase):
             _DEVICE_XML[device_name] %
             (self._PCI_ADDRESS_XML))
 
+    # TODO: next 2 tests should reside in their own module (interfaceTests.py)
     def testCreateSRIOVVF(self):
-        dev_spec = {'type': 'hostdev', 'device': _SRIOV_VF,
-                    'specParams':
-                    {'macAddr': 'ff:ff:ff:ff:ff:ff', 'vlanid': 3},
+        dev_spec = {'type': hwclass.NIC, 'device': 'hostdev',
+                    'hostdev': _SRIOV_VF, 'macAddr': 'ff:ff:ff:ff:ff:ff',
+                    'specParams': {'vlanid': 3},
                     'bootOrder': '9'}
-        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        device = network.Interface(self.conf, self.log, **dev_spec)
         self.assertXMLEqual(device.getXML().toxml(),
                             _DEVICE_XML[_SRIOV_VF] % ('',))
 
     def testCreateSRIOVVFWithAddress(self):
-        dev_spec = {'type': 'hostdev', 'device': _SRIOV_VF,
-                    'specParams':
-                    {'macAddr': 'ff:ff:ff:ff:ff:ff', 'vlanid': 3},
+        dev_spec = {'type': hwclass.NIC, 'device': 'hostdev',
+                    'hostdev': _SRIOV_VF, 'macAddr': 'ff:ff:ff:ff:ff:ff',
+                    'specParams': {'vlanid': 3},
                     'bootOrder': '9', 'address':
                     {'slot': '0x02', 'bus': '0x01', 'domain': '0x0000',
                      'function': '0x0', 'type': 'pci'}}
-        device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)
+        device = network.Interface(self.conf, self.log, **dev_spec)
         self.assertXMLEqual(
             device.getXML().toxml(),
             _DEVICE_XML[_SRIOV_VF] % (self._PCI_ADDRESS_XML))

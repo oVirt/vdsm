@@ -22,12 +22,15 @@ from vdsm import utils
 from vdsm.netinfo import DUMMY_BRIDGE
 
 from .core import Base
+from . import hwclass
+from hostdev import get_device_params, detach_detachable
 
 
 class Interface(Base):
     __slots__ = ('nicModel', 'macAddr', 'network', 'bootOrder', 'address',
                  'linkActive', 'portMirroring', 'filter',
-                 'sndbufParam', 'driver', 'name')
+                 'sndbufParam', 'driver', 'name', 'vlanId', 'hostdev',
+                 'is_hostdevice')
 
     def __init__(self, conf, log, **kwargs):
         # pyLint can't tell that the Device.__init__() will
@@ -40,6 +43,8 @@ class Interface(Base):
                 kwargs[attr] = DUMMY_BRIDGE
         super(Interface, self).__init__(conf, log, **kwargs)
         self.sndbufParam = False
+        self.is_hostdevice = self.device == hwclass.HOSTDEV
+        self.vlanId = self.specParams.get('vlanid')
         self._customize()
 
     def _customize(self):
@@ -92,11 +97,42 @@ class Interface(Base):
               [<outbound average="int" [burst="int"]  [peak="int"]/>]
              </bandwidth>]
         </interface>
+
+        -- or -- a slightly different SR-IOV network interface
+        <interface type='hostdev' managed='no'>
+          <driver name='vfio'/>
+          <source>
+           <address type='pci' domain='0x0000' bus='0x00' slot='0x07'
+           function='0x0'/>
+          </source>
+          <mac address='52:54:00:6d:90:02'/>
+          <vlan>
+           <tag id=100/>
+          </vlan>
+          <address type='pci' domain='0x0000' bus='0x00' slot='0x07'
+          function='0x0'/>
+          <boot order='1'/>
+         </interface>
         """
         iface = self.createXmlElem('interface', self.device, ['address'])
+        if self.is_hostdevice:
+            iface.setAttrs(managed='no')
         iface.appendChildWithArgs('mac', address=self.macAddr)
-        iface.appendChildWithArgs('model', type=self.nicModel)
-        iface.appendChildWithArgs('source', bridge=self.network)
+
+        if hasattr(self, 'nicModel'):
+            iface.appendChildWithArgs('model', type=self.nicModel)
+
+        if self.is_hostdevice:
+            host_address = get_device_params(self.hostdev)['address']
+            source = iface.appendChildWithArgs('source')
+            source.appendChildWithArgs('address', type='pci', **host_address)
+        else:
+            iface.appendChildWithArgs('source', bridge=self.network)
+
+        if self.vlanId is not None:
+            vlan = iface.appendChildWithArgs('vlan')
+            vlan.appendChildWithArgs('tag', id=str(self.vlanId))
+
         if hasattr(self, 'filter'):
             iface.appendChildWithArgs('filterref', filter=self.filter)
 
@@ -110,14 +146,16 @@ class Interface(Base):
 
         if self.driver:
             iface.appendChildWithArgs('driver', **self.driver)
+        elif self.is_hostdevice:
+            iface.appendChildWithArgs('driver', name='vfio')
 
         if self.sndbufParam:
             tune = iface.appendChildWithArgs('tune')
             tune.appendChildWithArgs('sndbuf', text=self.sndbufParam)
 
-        if hasattr(self, 'specParams'):
-            if 'inbound' in self.specParams or 'outbound' in self.specParams:
-                iface.appendChild(self.paramsToBandwidthXML(self.specParams))
+        if 'inbound' in self.specParams or 'outbound' in self.specParams:
+            iface.appendChild(self.paramsToBandwidthXML(self.specParams))
+
         return iface
 
     def paramsToBandwidthXML(self, specParams, oldBandwidth=None):
@@ -135,3 +173,14 @@ class Interface(Base):
                 attrs = dict((key, str(value)) for key, value in elem.items())
                 bandwidth.appendChildWithArgs(key, **attrs)
         return bandwidth
+
+    def detach(self):
+        """
+        Detach the device from the host. This method *must* be
+        called before getXML in order to populate _deviceParams.
+        """
+        if self.is_hostdevice:
+            detach_detachable(self.hostdev)
+        else:
+            raise Exception('Tried to detach a non host device: %s' % (
+                self.conf,))
