@@ -97,8 +97,8 @@ class Nic(NetDevice):
 
         self.configurator.configureNic(self, **opts)
 
-    def remove(self):
-        self.configurator.removeNic(self)
+    def remove(self, remove_even_if_used=False):
+        self.configurator.removeNic(self, remove_even_if_used)
 
     @property
     def backing_device(self):

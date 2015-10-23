@@ -670,6 +670,11 @@ def _handleBondings(bondings, configurator, in_rollback):
         else:
             addition.append((name, attrs))
 
+    slaves_to_remove = _calculate_all_slaves_to_be_removed(edition, _netinfo,
+                                                           configurator)
+    _remove_slaves(slaves_to_remove, configurator, _netinfo)
+    _netinfo.updateDevices()
+
     for name, attrs in edition:
         bond = Bond.objectivize(name, configurator, attrs.get('options'),
                                 attrs.get('nics'), mtu=None, _netinfo=_netinfo,
@@ -688,6 +693,21 @@ def _handleBondings(bondings, configurator, in_rollback):
                                      ' for bonding device.')
         logger.debug("Creating bond %r with options %s", bond, bond.options)
         configurator.configureBond(bond)
+
+
+def _calculate_all_slaves_to_be_removed(edited_bonds, _netinfo, configurator):
+    all_removed_slaves = []
+    for name, attrs in edited_bonds:
+        slaves_removed_from_bond = (set(_netinfo.bondings[name]['slaves']) -
+                                    set(attrs.get('nics')))
+        all_removed_slaves.extend(slaves_removed_from_bond)
+    return all_removed_slaves
+
+
+def _remove_slaves(slaves_to_remove, configurator, _netinfo):
+    for name in slaves_to_remove:
+        slave = Nic(name, configurator, _netinfo=_netinfo)
+        slave.remove(remove_even_if_used=True)
 
 
 def _buildBondOptions(bondName, bondings, _netinfo):

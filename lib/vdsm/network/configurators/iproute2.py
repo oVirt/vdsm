@@ -192,8 +192,14 @@ class Iproute2(Configurator):
         else:
             self._setNewMtu(bonding, vlans.vlan_devs_for_iface(bonding.name))
 
-    def removeNic(self, nic):
-        toBeRemoved = not ifaceUsed(nic.name)
+    def removeNic(self, nic, remove_even_if_used=False):
+        """
+        Remove a nic from the kernel. By default, do nothing if the nic is used
+        When remove_even_if_used=True, remove the nic anyway
+        # FIXME the caller of this method is responsible to remove
+        # the nic from its users (such as bond)
+        """
+        toBeRemoved = not ifaceUsed(nic.name) or remove_even_if_used
 
         if toBeRemoved:
             if nic.master is None:

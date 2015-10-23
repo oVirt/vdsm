@@ -2805,3 +2805,26 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkDoesntExist(NET1)
             self.assertBondDoesntExist(BONDING_NAME, nics)
+
+    @cleanupNet
+    def test_setupNetworks_swap_slaves_between_bonds(self):
+        with dummyIf(4) as nics:
+            nics0 = nics[0:2]
+            nics1 = nics[2:4]
+            bondings = {
+                'bond0': {'nics': nics0},
+                'bond1': {'nics': nics1}
+            }
+            status, msg = self.setupNetworks({}, bondings, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondExists('bond0', nics0)
+            self.assertBondExists('bond1', nics1)
+
+            bondings = {
+                'bond1': {'nics': nics0},
+                'bond0': {'nics': nics1}
+            }
+            status, msg = self.setupNetworks({}, bondings, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondExists('bond0', nics1)
+            self.assertBondExists('bond1', nics0)

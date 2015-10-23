@@ -193,10 +193,10 @@ class Ifcfg(Configurator):
         self.configApplier.removeVlan(vlan.name)
         vlan.device.remove()
 
-    def _ifaceDownAndCleanup(self, iface):
+    def _ifaceDownAndCleanup(self, iface, remove_even_if_used=False):
         """Returns True iff the iface is to be removed."""
         DynamicSourceRoute.addInterfaceTracking(iface)
-        to_be_removed = not ifaceUsed(iface.name)
+        to_be_removed = remove_even_if_used or not ifaceUsed(iface.name)
         if to_be_removed:
             ifdown(iface.name)
         self._removeSourceRoute(iface, StaticSourceRoute)
@@ -230,8 +230,8 @@ class Ifcfg(Configurator):
             if set_mtu is not None:
                 ipwrapper.linkSet(bonding.name, ['mtu', str(set_mtu)])
 
-    def removeNic(self, nic):
-        to_be_removed = self._ifaceDownAndCleanup(nic)
+    def removeNic(self, nic, remove_even_if_used=False):
+        to_be_removed = self._ifaceDownAndCleanup(nic, remove_even_if_used)
         if to_be_removed:
             self.configApplier.removeNic(nic.name)
             if nic.name in nics.nics():
