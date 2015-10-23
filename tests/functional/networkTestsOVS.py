@@ -272,9 +272,42 @@ class OVSNetworkTest(NetworkTest):
     @cleanupNet
     @RequireVethMod
     def testSetupNetworksAddDelDhcp(self, bridged, families):
-        """ Copied from networkTests.py, source_route checking changed from
+        """Copied from networkTests.py, source_route checking changed from
         device_name to BRIDGE_NAME.
         """
+        def _assert_applied(network_name, requested, reported):
+            self.assertNetworkExists(network_name)
+            reported_network = reported.networks[network_name]
+
+            if requested['bridged']:
+                self.assertEqual(reported_network['cfg']['BOOTPROTO'],
+                                 requested['bootproto'])
+                reported_devices = reported.bridges
+                device_name = network_name
+            else:
+                # CHANGED: always bridged
+                pass
+            self.assertIn(device_name, reported_devices)
+            reported_device = reported_devices[device_name]
+
+            requested_dhcpv4 = requested['bootproto'] == 'dhcp'
+            self.assertEqual(reported_network['dhcpv4'], requested_dhcpv4)
+            self.assertEqual(reported_network['dhcpv6'], requested['dhcpv6'])
+
+            self.assertEqual(reported_device['cfg']['BOOTPROTO'],
+                             requested['bootproto'])
+            self.assertEqual(reported_device['dhcpv4'], requested_dhcpv4)
+            self.assertEqual(reported_device['dhcpv6'], requested['dhcpv6'])
+
+            if requested_dhcpv4:
+                self.assertEqual(reported_network['gateway'], IP_GATEWAY)
+                # TODO: source routing not ready for IPv6
+                ip_addr = reported_network['addr']
+                self.assertSourceRoutingConfiguration(BRIDGE_NAME,  # CHANGED
+                                                      ip_addr)
+                return device_name, ip_addr
+            return None, None
+
         with veth_pair() as (left, right):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
@@ -290,42 +323,19 @@ class OVSNetworkTest(NetworkTest):
                 try:
                     status, msg = self.setupNetworks(network, {}, NOCHK)
                     self.assertEqual(status, SUCCESS, msg)
-                    self.assertNetworkExists(NETWORK_NAME)
 
-                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                    self.assertEqual(test_net['dhcpv4'], dhcpv4)
-                    self.assertEqual(test_net['dhcpv6'], dhcpv6)
-
-                    if bridged:
-                        self.assertEqual(test_net['cfg']['BOOTPROTO'],
-                                         bootproto)
-                        devs = self.vdsm_net.netinfo.bridges
-                        device_name = NETWORK_NAME
-                    else:
-                        devs = self.vdsm_net.netinfo.nics
-                        device_name = right
-
-                    self.assertIn(device_name, devs)
-                    net_attrs = devs[device_name]
-                    self.assertEqual(net_attrs['cfg']['BOOTPROTO'], bootproto)
-                    self.assertEqual(net_attrs['dhcpv4'], dhcpv4)
-                    self.assertEqual(net_attrs['dhcpv6'], dhcpv6)
-
-                    if dhcpv4:
-                        self.assertEqual(test_net['gateway'], IP_GATEWAY)
-                        # TODO: source routing not ready for IPv6
-                        ip_addr = test_net['addr']
-                        self.assertSourceRoutingConfiguration(BRIDGE_NAME,
-                                                              ip_addr)
+                    device_name, ip_addr = _assert_applied(
+                        NETWORK_NAME, network[NETWORK_NAME],
+                        self.vdsm_net.netinfo)
 
                     # Do not report DHCP from (typically still valid) leases
                     network[NETWORK_NAME]['bootproto'] = 'none'
                     network[NETWORK_NAME]['dhcpv6'] = False
                     status, msg = self.setupNetworks(network, {}, NOCHK)
                     self.assertEqual(status, SUCCESS, msg)
-                    test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
-                    self.assertEqual(test_net['dhcpv4'], False)
-                    self.assertEqual(test_net['dhcpv6'], False)
+
+                    _assert_applied(NETWORK_NAME, network[NETWORK_NAME],
+                                    self.vdsm_net.netinfo)
 
                     network = {NETWORK_NAME: {'remove': True}}
                     status, msg = self.setupNetworks(network, {}, NOCHK)
@@ -334,7 +344,7 @@ class OVSNetworkTest(NetworkTest):
 
                     # Assert that routes and rules don't exist
                     if dhcpv4:
-                        source_route = _get_source_route(BRIDGE_NAME, ip_addr)
+                        source_route = _get_source_route(device_name, ip_addr)
                         for route in source_route._buildRoutes():
                             self.assertRouteDoesNotExist(route)
                         for rule in source_route._buildRules():
