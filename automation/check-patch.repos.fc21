@@ -1,3 +1,3 @@
-ovirt-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/$distro
-ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/$distro
+ovirt-snapshot,http://resources.ovirt.org/pub/ovirt-3.6-snapshot/rpm/$distro
+ovirt-snapshot-static,http://resources.ovirt.org/pub/ovirt-3.6-snapshot-static/rpm/$distro
 ovirt-glusterfs-fedora,http://download.gluster.org/pub/gluster/glusterfs/LATEST/Fedora/fedora-21/x86_64
