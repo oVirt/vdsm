@@ -22,6 +22,7 @@
 # stdlib imports
 from collections import namedtuple
 from contextlib import contextmanager
+from xml.dom import Node
 from xml.dom.minidom import parseString as _domParseStr
 import logging
 import os
@@ -4394,7 +4395,16 @@ class Vm(object):
                     network = network[len(netinfo.LIBVIRT_NET_PREFIX):]
 
             # Get nic address
-            address = self._getUnderlyingDeviceAddress(x)
+            address = {}
+            # TODO: fix _getUnderlyingDeviceAddress and its users to have this
+            # TODO: code.
+            for child in x.childNodes:
+                if (child.nodeType != Node.TEXT_NODE and
+                        child.tagName == 'address'):
+                    address = dict((k.strip(), child.getAttribute(k).strip())
+                                   for k in child.attributes.keys())
+                    break
+
             for nic in self._devices[hwclass.NIC]:
                 if nic.macAddr.lower() == mac.lower():
                     nic.name = name
