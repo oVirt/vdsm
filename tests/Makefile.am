@@ -167,6 +167,7 @@ dist_vdsmtests_DATA = \
 	caps_libvirt_multiqemu.out \
 	cpu_map.xml \
 	caps_numactl_4_nodes.out \
+	fake-virt-v2v.out \
 	glusterGeoRepStatus.xml \
 	glusterSnapshotConfig.xml \
 	glusterSnapshotRestore.xml \
@@ -199,6 +200,7 @@ dist_vdsmtests_PYTHON = \
 	$(test_modules) \
 	apiData.py \
 	hookValidation.py \
+	fake-virt-v2v \
 	monkeypatch.py \
 	nettestlib.py \
 	storagefakelib.py \

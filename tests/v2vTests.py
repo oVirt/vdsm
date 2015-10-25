@@ -22,20 +22,25 @@ from StringIO import StringIO
 import uuid
 
 import libvirt
+import os
 
 import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
+from vdsm.utils import CommandPath, execCmd
 
 
 from nose.plugins.skip import SkipTest
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import VdsmTestCase as TestCaseBase, recorded
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
 import vmfakelib as fake
 
 
 VmSpec = namedtuple('VmSpec', ['name', 'vmid'])
+
+FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
+                            os.path.abspath('fake-virt-v2v'))
 
 
 def _mac_from_uuid(vmid):
@@ -115,6 +120,22 @@ class LibvirtMock(object):
             return [0, 0, 0]
 
 
+class FakeIRS(object):
+    @recorded
+    def prepareImage(self, domainId, poolId, imageId, volumeId):
+        return {'status': {'code': 0},
+                'path': os.path.join('/rhev/data-center', poolId, domainId,
+                                     'images', imageId, volumeId)}
+
+    @recorded
+    def teardownImage(self, domainId, poolId, imageId):
+        return 0
+
+
+def hypervisorConnect(uri, username, passwd):
+    return LibvirtMock()
+
+
 def read_ovf(ovf_path):
     return """<?xml version="1.0" encoding="UTF-8"?>
 <Envelope xmlns="http://schemas.dmtf.org/ovf/envelope/1"
@@ -150,6 +171,22 @@ sourceAllocationSettingData">
 
 
 class v2vTests(TestCaseBase):
+    def setUp(self):
+        '''
+        We are testing the output of fake-virt-v2v with vminfo input
+        against pre-saved output;
+        Do not change this parameters without modifying
+        fake-virt-v2v.output.
+        '''
+        self.vm_name = 'TEST'
+        self.job_id = '00000000-0000-0000-0000-000000000005'
+        self.pool_id = '00000000-0000-0000-0000-000000000006'
+        self.domain_id = '00000000-0000-0000-0000-000000000007'
+        self.image_id_a = '00000000-0000-0000-0000-000000000001'
+        self.volume_id_a = '00000000-0000-0000-0000-000000000002'
+        self.image_id_b = '00000000-0000-0000-0000-000000000003'
+        self.volume_id_b = '00000000-0000-0000-0000-000000000004'
+        self.url = 'vpx://adminr%40vsphere@0.0.0.0/ovirt/0.0.0.0?no_verify=1'
 
     def testGetExternalVMs(self):
         if not v2v.supported():
@@ -274,3 +311,44 @@ class v2vTests(TestCaseBase):
         self.assertEquals(network['type'], 'bridge')
         self.assertEquals(network['macAddr'], _mac_from_uuid(spec.vmid))
         self.assertEquals(network['bridge'], 'VM Network')
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testSuccessfulImport(self):
+        vminfo = {'vmName': self.vm_name,
+                  'poolID': self.pool_id,
+                  'domainID': self.domain_id,
+                  'disks': [{'imageID': self.image_id_a,
+                             'volumeID': self.volume_id_a},
+                            {'imageID': self.image_id_b,
+                             'volumeID': self.volume_id_b}]}
+        ivm = v2v.ImportVm.from_libvirt(self.url, 'root', 'mypassword',
+                                        vminfo, self.job_id, FakeIRS())
+        ivm._run_command = ivm._run
+        ivm.start()
+        ivm.wait()
+
+        self.assertEqual(ivm.status, v2v.STATUS.DONE)
+
+    def testV2VOutput(self):
+        cmd = [FAKE_VIRT_V2V.cmd,
+               '-ic', self.url,
+               '-o', 'vdsm',
+               '-of', 'raw',
+               '-oa', 'sparse',
+               '--vdsm-image-uuid', self.image_id_a,
+               '--vdsm-vol-uuid', self.volume_id_a,
+               '--vdsm-image-uuid', self.image_id_b,
+               '--vdsm-vol-uuid', self.volume_id_b,
+               '--password-file', '/tmp/mypass',
+               '--vdsm-vm-uuid', self.job_id,
+               '--vdsm-ovf-output', '/usr/local/var/run/vdsm/v2v',
+               '--machine-readable',
+               '-os', '/rhev/data-center/%s/%s' % (self.pool_id,
+                                                   self.domain_id),
+               self.vm_name]
+
+        rc, output, error = execCmd(cmd, raw=True)
+        self.assertEqual(rc, 0)
+
+        with open('fake-virt-v2v.out', 'r') as f:
+            self.assertEqual(output, f.read())

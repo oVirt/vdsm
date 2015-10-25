@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+# Copyright 2015 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+import sys
+import argparse
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument('args')
+parser.add_argument('-ic', dest='inputConnection',
+                    help='Set input libvirt connectio url')
+parser.add_argument('-o', dest='output',
+                    help='Set output method')
+parser.add_argument('-of', dest='outputFormat',
+                    help='Set output image format')
+parser.add_argument('-oa', dest='outputAllocation',
+                    help='Set output allocation format')
+parser.add_argument('--vdsm-image-uuid', dest='vdsmImageId',
+                    help='Vdsm image UUID', action='append')
+parser.add_argument('--vdsm-vol-uuid', dest='vdsmVolId',
+                    help='Vdsm volume UUID', action='append')
+parser.add_argument('--vdsm-vm-uuid', dest='vdsmVmId',
+                    help='VM UUID')
+parser.add_argument('--password-file', dest='passwordFile',
+                    help='Read connection password from a file')
+parser.add_argument('--vdsm-ovf-output', dest='vdsmOvfOutput',
+                    help='Output directory for ovf output')
+parser.add_argument('-os', dest='outputStorage',
+                    help='Output directory for the images')
+parser.add_argument('--machine-readable', dest='machineReadable',
+                    action='store_true',
+                    help='Set the terminal output to be readable')
+parser.add_argument('vmname')
+
+options = parser.parse_args(sys.argv)
+elapsed_time = 0
+
+
+def write_output(msg):
+    sys.stdout.write(msg)
+    sys.stdout.flush()
+
+
+def write_progress():
+    global elapsed_time
+    for i in range(101):
+        write_output('    (%s/100%%)\r' % str(i))
+        elapsed_time = elapsed_time + 1
+
+write_output('[   %d.0] Opening the source -i libvirt\n' % elapsed_time)
+elapsed_time = elapsed_time + 1
+write_output('[   %d.0] Creating an overlay to protect\n' % elapsed_time)
+elapsed_time = elapsed_time + 1
+
+for i, o in enumerate(options.vdsmImageId):
+    write_output('[  %d.0] Copying disk %d/2 to %s/%s/images/%s\n' %
+                 (elapsed_time, i+1, options.outputStorage,
+                  options.vdsmVmId, o))
+    write_progress()
+    write_output('[ %d.0] Creating output metadata\n' % elapsed_time)
+    write_output('[ %d.0] Finishing off\n' % elapsed_time)
