@@ -221,7 +221,7 @@ Requires: sanlock >= 2.8, sanlock-python
 %if 0%{?rhel}
 Requires: python-ethtool >= 0.6-3
 %if 0%{?rhel} >= 7
-%if 0%{?centos}
+%if 0%{centos}
 Requires: device-mapper-multipath >= 0.4.9-68
 %else
 Requires: device-mapper-multipath >= 0.4.9-77.el7_1.2
