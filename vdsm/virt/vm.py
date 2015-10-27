@@ -2698,7 +2698,11 @@ class Vm(object):
 
     def _isDriveAttached(self, drive):
         root = ET.fromstring(self._dom.XMLDesc(0))
-        return bool(root.findall("./devices/disk[serial='%s']" % drive.serial))
+        source_key = {DISK_TYPE.FILE: 'file',
+                      DISK_TYPE.BLOCK: 'dev',
+                      DISK_TYPE.NETWORK: 'name'}
+        return bool(root.findall("./devices/disk/source[@%s='%s']" %
+                                 (source_key[drive.diskType], drive.path)))
 
     def _readPauseCode(self):
         state, reason = self._dom.state(0)
