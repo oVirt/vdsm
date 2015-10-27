@@ -359,7 +359,16 @@ def _usage_percentage(val, interval):
 def _find_bulk_stats_reverse_map(stats, group):
     name_to_idx = {}
     for idx in six.moves.xrange(stats.get('%s.count' % group, 0)):
-        name_to_idx[stats['%s.%d.name' % (group, idx)]] = idx
+        try:
+            name = stats['%s.%d.name' % (group, idx)]
+        except KeyError:
+            # Bulk stats accumulate what they can get, raising errors
+            # only in the critical cases. This includes fundamental
+            # attributes like names, so count has to be considered
+            # an upper bound more like a precise indicator.
+            pass
+        else:
+            name_to_idx[name] = idx
     return name_to_idx
 
 
