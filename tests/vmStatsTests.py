@@ -160,6 +160,68 @@ _FAKE_BULK_STATS = {
     ),
 }
 
+# on SR-IOV we seen unexpected net.count == 2 but data only for one nic.
+_FAKE_BULK_STATS_SRIOV = {
+    'f3243a90-2e9e-4061-b7b3-a6c585e14857': (
+        {
+            'state.state': 1,
+            'state.reason': 1,
+            'cpu.time': 13755069120,
+            'cpu.user': 3370000000,
+            'cpu.system': 6320000000,
+            'balloon.current': 4194304,
+            'balloon.maximum': 4194304,
+            'vcpu.current': 2,
+            'vcpu.maximum': 16,
+            'vcpu.0.state': 1,
+            'vcpu.0.time': 10910000000,
+            'vcpu.1.state': 1,
+            'vcpu.1.time': 0,
+            'net.count': 2,
+            'net.1.name': 'vnet1',
+            'net.1.rx.bytes': 0,
+            'net.1.rx.pkts': 0,
+            'net.1.rx.errs': 0,
+            'net.1.rx.drop': 0,
+            'net.1.tx.bytes': 0,
+            'net.1.tx.pkts': 0,
+            'net.1.tx.errs': 0,
+            'net.1.tx.drop': 0,
+            'block.count': 2,
+            'block.0.name': 'hdc',
+            'block.0.rd.reqs': 0,
+            'block.0.rd.bytes': 0,
+            'block.0.rd.times': 0,
+            'block.0.wr.reqs': 0,
+            'block.0.wr.bytes': 0,
+            'block.0.wr.times': 0,
+            'block.0.fl.reqs': 0,
+            'block.0.fl.times': 0,
+            'block.0.allocation': 0,
+            'block.1.name': 'vda',
+            'block.1.path': (
+                '/rhev'
+                '/data-center'
+                '/00000001-0001-0001-0001-0000000001e8'
+                '/bbed5784-b0ee-4a0a-aff2-801da0bcf39e'
+                '/images'
+                '/cbe82d1f-a0ba-4af2-af2f-788d15eef043'
+                '/7ba49d31-4fa7-49df-8df4-37a22de79f62'
+            ),
+            'block.1.rd.reqs': 1,
+            'block.1.rd.bytes': 512,
+            'block.1.rd.times': 58991,
+            'block.1.wr.reqs': 0,
+            'block.1.wr.bytes': 0,
+            'block.1.wr.times': 0,
+            'block.1.fl.reqs': 0,
+            'block.1.fl.times': 0,
+            'block.1.allocation': 0,
+            'block.1.capacity': 42949672960,
+        },
+    )
+}
+
 
 class VmStatsTestCase(TestCaseBase):
 
@@ -215,6 +277,14 @@ class UtilsFunctionsTests(VmStatsTestCase):
 
         # and indeed indexes must change
         self.assertEqual(len(all_indexes), len(self.samples))
+
+    def test_network_missing(self):
+        # seen using SR-IOV
+
+        bulk_stats = _FAKE_BULK_STATS_SRIOV.values()[0]
+        indexes = vmstats._find_bulk_stats_reverse_map(
+            bulk_stats[0], 'net')
+        self.assertTrue(indexes)
 
 
 class NetworkStatsTests(VmStatsTestCase):
