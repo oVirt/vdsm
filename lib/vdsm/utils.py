@@ -619,7 +619,7 @@ class AsyncProc(object):
         self._poller.close()
 
 
-_ANY_CPU = ["0-%d" % (os.sysconf('SC_NPROCESSORS_ONLN') - 1)]
+_ANY_CPU = ["0-%d" % (os.sysconf('SC_NPROCESSORS_CONF') - 1)]
 _USING_CPU_AFFINITY = config.get('vars', 'cpu_affinity') != ""
 
 
