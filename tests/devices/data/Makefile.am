@@ -34,6 +34,7 @@ dist_vdsmdevdatatests_DATA = \
 	scsi_host0.xml \
 	scsi_target0_0_0.xml \
 	testComplexVm.xml \
+	testSRiovVm.xml \
 	usb_1_1.xml \
 	usb_1_1_4.xml \
 	usb_usb1.xml \
