@@ -26,19 +26,31 @@ from storage import lvm as real_lvm
 
 
 class FakeLVM(object):
-    _PV_SIZE = 10 << 30  # We pretend all PVs contribute 10G of space
+    _PV_SIZE = 10 << 30             # We pretend all PVs are 10G in size
+    _PV_PE_SIZE = 128 << 20         # Found via inspection of real environment
+    _PV_MDA_COUNT = 2               # The number of PEs used for metadata areas
+    _PV_UNUSABLE = (_PV_PE_SIZE *   # 2 PE for metadata + 1 PE to hold a header
+                    (1 + _PV_MDA_COUNT))
 
     def __init__(self, root):
         self.root = root
         os.mkdir(os.path.join(self.root, 'dev'))
+        self.pvmd = {}
         self.vgmd = {}
         self.lvmd = {}
 
     def createVG(self, vgName, devices, initialTag, metadataSize,
-                 extentsize=134217728, force=False):
-        devices = [_fqpvname(dev) for dev in devices]
-        size = self._PV_SIZE * len(devices)
-        extent_count = size / extentsize
+                 extentsize=128, force=False):
+        # Convert params from MB to bytes to match other fields
+        metadataSize <<= 20
+        extentsize <<= 20
+
+        for dev in devices:
+            self._create_pv(dev, vgName, self._PV_SIZE)
+        pv_name = (tuple(_fqpvname(pdev)
+                         for pdev in real_lvm._normalizeargs(devices)))
+        extent_count = self._calc_vg_pe_count(vgName)
+        size = extent_count * self._PV_PE_SIZE
 
         vg_attr = dict(permission='w',
                        resizeable='z',
@@ -49,17 +61,17 @@ class FakeLVM(object):
         vg_md = dict(uuid=fake_lvm_uuid(),
                      name=vgName,
                      attr=vg_attr,
-                     size=size,
-                     free=size,
-                     extent_size=extentsize,
-                     extent_count=extent_count,
-                     free_count=extent_count,
-                     tags=[initialTag],
-                     vg_mda_size=metadataSize,
-                     vg_mda_free=metadataSize,
+                     size=str(size),
+                     free=str(size),
+                     extent_size=str(extentsize),
+                     extent_count=str(extent_count),
+                     free_count=str(extent_count),
+                     tags=(initialTag,),
+                     vg_mda_size=str(metadataSize),
+                     vg_mda_free=None,
                      lv_count='0',
-                     pv_count=len(devices),
-                     pv_name=tuple(devices),
+                     pv_count=str(len(devices)),
+                     pv_name=pv_name,
                      writeable=True,
                      partial='OK')
         self.vgmd[vgName] = vg_md
@@ -122,6 +134,29 @@ class FakeLVM(object):
         os.makedirs(os.path.dirname(volpath))
         with open(volpath, "w") as f:
             f.truncate(int(self.lvmd[vg_name][lv_name]['size']))
+
+    def _create_pv(self, pv_name, vg_name, size):
+        # pe_start is difficult to calculate correctly but since it's not
+        # currently needed by users of FakeLVM, set it to None.
+        pe_start = None
+        pe_count = (size - self._PV_UNUSABLE) / self._PV_PE_SIZE
+        pv_md = dict(uuid=fake_lvm_uuid(),
+                     name='/dev/mapper/%s' % pv_name,
+                     guid=pv_name,
+                     size=str(pe_count * self._PV_PE_SIZE),
+                     vg_name=vg_name,
+                     vg_uuid=None,  # This is calculated dynamically
+                     pe_start=pe_start,
+                     pe_count=str(pe_count),
+                     pe_alloc_count='0',
+                     mda_count=str(self._PV_MDA_COUNT),
+                     dev_size=str(self._PV_SIZE))
+        self.pvmd[pv_name] = pv_md
+
+    def _calc_vg_pe_count(self, vg_name):
+        return sum(int(pv["pe_count"]) for pv in self.pvmd.values()
+                   if pv["vg_name"] == vg_name)
+
 
 _fqpvname = real_lvm._fqpvname
 

@@ -103,6 +103,7 @@ test_modules = \
 	stompAsyncClientTests.py \
 	stompAsyncDispatcherTests.py \
 	stompTests.py \
+	storagefakelibTests.py \
 	storageMailboxTests.py \
 	storageMonitorTests.py \
 	storageServerTests.py \
