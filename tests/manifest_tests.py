@@ -29,6 +29,7 @@ from storagetestlib import make_filesd_manifest, make_blocksd_manifest, \
 from storage import sd, blockSD, blockVolume
 
 VOLSIZE = 1048576
+MB = 1048576
 
 
 class FileManifestTests(VdsmTestCase):
@@ -91,7 +92,7 @@ class BlockManifestTests(VdsmTestCase):
                 manifest = make_blocksd_manifest(tmpdir)
                 vg_name = make_vg(lvm, manifest)
                 lv_name = str(uuid.uuid4())
-                lvm.createLV(vg_name, lv_name, VOLSIZE)
+                lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
                 lvm.fake_lv_symlink_create(vg_name, lv_name)
                 self.assertEqual(VOLSIZE,
                                  manifest.getVSize('<imgUUID>', lv_name))
@@ -104,7 +105,7 @@ class BlockManifestTests(VdsmTestCase):
                 manifest = make_blocksd_manifest(tmpdir)
                 vg_name = make_vg(lvm, manifest)
                 lv_name = str(uuid.uuid4())
-                lvm.createLV(vg_name, lv_name, VOLSIZE)
+                lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
                 self.assertEqual(VOLSIZE,
                                  manifest.getVSize('<imgUUID>', lv_name))
 

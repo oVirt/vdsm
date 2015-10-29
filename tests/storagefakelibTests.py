@@ -29,6 +29,8 @@ from storage import lvm as real_lvm
 class FakeLVMSimpleVGTests(VdsmTestCase):
     VG_NAME = '1ffead52-7363-4968-a8c7-3bc34504d452'
     DEVICES = ['360014054d75cb132d474c0eae9825766']
+    LV_NAME = '54e3378a-b2f6-46ff-b2da-a9c82522a55e'
+    LV_SIZE_MB = 1024
 
     def validate_properties(self, props, obj):
         for var, val in props.items():
@@ -132,3 +134,44 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
         with self.base_config() as lvm:
             pv = lvm.getPV(self.DEVICES[0])
             self.assertIsNone(pv.pe_start)
+
+    def test_lv_properties(self):
+        """
+        Create a single logical volume on the base configuration.
+
+        lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                     '54e3378a-b2f6-46ff-b2da-a9c82522a55e', 1024)
+
+        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        LV(uuid='89tSvh-HJl5-SO2K-O36t-3qkj-Zo2J-yugkjk',
+           name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
+           vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
+           attr=LV_ATTR(voltype='-', permission='w', allocations='i',
+                        fixedminor='-', state='a', devopen='-', target='-',
+                        zero='-'),
+           size='1073741824', seg_start_pe='0',
+           devices='/dev/mapper/360014054d75cb132d474c0eae9825766(0)',
+           tags=(), writeable=True, opened=False, active=True)
+        """
+        props = dict(
+            name=self.LV_NAME,
+            vg_name=self.VG_NAME,
+            size='1073741824',
+            seg_start_pe='0',
+            tags=(),
+            writeable=True,
+            opened=False,
+            active=True,
+        )
+        attrs = real_lvm.LV_ATTR(voltype='-', permission='w', allocations='i',
+                                 fixedminor='-', state='a', devopen='-',
+                                 target='-', zero='-')
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB))
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.validate_properties(props, lv)
+            self.assertEqual(attrs, lv.attr)
+
+            # As documented in FakeLVM, devices is not emulated and is None
+            self.assertIsNone(lv.devices)

@@ -81,6 +81,13 @@ class FakeLVM(object):
 
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
                  initialTag=None):
+        # Size is expected as a string in MB, convert to a string in bytes.
+        size = str(int(size) << 20)
+
+        # devices is hard to emulate properly (must have a PE allocator that
+        # works the same as for LVM).  Since we don't need this value, use None
+        devices = None
+
         lv_attr = dict(voltype='-',
                        permission='w',
                        allocations='i',
@@ -95,20 +102,22 @@ class FakeLVM(object):
                      attr=lv_attr,
                      size=str(size),
                      seg_start_pe='0',
-                     devices='',
-                     tags=[],
+                     devices=devices,
+                     tags=(),
                      writeable=True,
                      opened=False,
                      active=True)
 
         vg_dict = self.lvmd.setdefault(vgName, {})
         vg_dict[lvName] = lv_md
+        lv_count = int(self.vgmd[vgName]['lv_count']) + 1
+        self.vgmd[vgName]['lv_count'] = str(lv_count)
 
     def activateLVs(self, vgName, lvNames):
         pass
 
     def addtag(self, vg, lv, tag):
-        self.lvmd[vg][lv]['tags'].append(tag)
+        self.lvmd[vg][lv]['tags'] += (tag,)
 
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
