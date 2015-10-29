@@ -18,6 +18,7 @@
 #
 
 from contextlib import contextmanager
+import os
 
 from testlib import VdsmTestCase, namedTemporaryDir
 from storagefakelib import FakeLVM
@@ -258,3 +259,14 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertTrue(lv.active)
             self.assertEqual('a', lv.attr.state)
+
+
+class FakeLVMGeneralTests(VdsmTestCase):
+
+    def test_lvpath(self):
+        with namedTemporaryDir() as tmpdir:
+            lvm = FakeLVM(tmpdir)
+            vg_name = 'foo'
+            lv_name = 'bar'
+            expected = os.path.join(tmpdir, 'dev', vg_name, lv_name)
+            self.assertEqual(expected, lvm.lvPath(vg_name, lv_name))
