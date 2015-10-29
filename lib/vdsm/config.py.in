@@ -181,6 +181,9 @@ parameters = [
 
         ('fake_vmstats_enable', 'false', 'Enable reporting of fake VM stats.'),
 
+        ('fake_sriov_enable', 'false',
+         'Enable reporting of fake SR-IOV devices.'),
+
         ('xmlrpc_enable', 'true', 'Enable the xmlrpc server'),
 
         ('xmlrpc_http11', 'true',

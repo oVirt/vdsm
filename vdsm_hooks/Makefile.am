@@ -40,6 +40,7 @@ SUBDIRS += \
 	diskunmap \
 	extnet \
 	fileinject \
+	fakesriov \
 	fakevmstats \
 	floppy \
 	hostusb \
