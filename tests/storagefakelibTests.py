@@ -21,9 +21,11 @@ from contextlib import contextmanager
 import os
 
 from testlib import VdsmTestCase, namedTemporaryDir
+from testlib import permutations, expandPermutations
 from storagefakelib import FakeLVM
 
 from storage import blockSD, blockVolume
+from storage import storage_exception as se
 from storage import lvm as real_lvm
 
 
@@ -261,6 +263,7 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             self.assertEqual('a', lv.attr.state)
 
 
+@expandPermutations
 class FakeLVMGeneralTests(VdsmTestCase):
 
     def test_lvpath(self):
@@ -270,3 +273,17 @@ class FakeLVMGeneralTests(VdsmTestCase):
             lv_name = 'bar'
             expected = os.path.join(tmpdir, 'dev', vg_name, lv_name)
             self.assertEqual(expected, lvm.lvPath(vg_name, lv_name))
+
+    @permutations([
+        [se.VolumeGroupDoesNotExist, 'getVG', ['vg']],
+        [se.CannotActivateLogicalVolume, 'activateLVs', ['vg', ['lv']]],
+        [se.MissingTagOnLogicalVolume, 'addtag', ['vg', 'lv', 'tag']],
+        [se.CannotCreateLogicalVolume, 'createLV', ['vg', 'lv', '1024']],
+        [se.LogicalVolumeDoesNotExistError, 'getLV', ['vg', 'lv']],
+        [se.InaccessiblePhysDev, 'getPV', ['pv']],
+    ])
+    def test_bad_args(self, exception, fn, args):
+        with namedTemporaryDir() as tmpdir:
+            lvm = FakeLVM(tmpdir)
+            lvm_fn = getattr(lvm, fn)
+            self.assertRaises(exception, lvm_fn, *args)

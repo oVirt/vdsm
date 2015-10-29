@@ -23,6 +23,7 @@ import random
 from copy import deepcopy
 
 from storage import lvm as real_lvm
+from storage import storage_exception as se
 
 
 class FakeLVM(object):
@@ -82,7 +83,10 @@ class FakeLVM(object):
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
                  initialTag=None):
         # Size is expected as a string in MB, convert to a string in bytes.
-        size = str(int(size) << 20)
+        try:
+            size = str(int(size) << 20)
+        except ValueError:
+            raise se.CannotCreateLogicalVolume(vgName, lvName)
 
         # devices is hard to emulate properly (must have a PE allocator that
         # works the same as for LVM).  Since we don't need this value, use None
@@ -110,33 +114,59 @@ class FakeLVM(object):
                      opened=False,
                      active=bool(activate))
 
+        try:
+            vg_md = self.vgmd[vgName]
+        except KeyError:
+            raise se.CannotCreateLogicalVolume(vgName, lvName)
+        lv_count = int(vg_md['lv_count']) + 1
+
+        if (vgName, lvName) in self.lvmd:
+            raise se.CannotCreateLogicalVolume(vgName, lvName)
+
         self.lvmd[(vgName, lvName)] = lv_md
-        lv_count = int(self.vgmd[vgName]['lv_count']) + 1
         self.vgmd[vgName]['lv_count'] = str(lv_count)
 
     def activateLVs(self, vgName, lvNames):
         for lv in lvNames:
-            self.lvmd[(vgName, lv)]['active'] = True
-            self.lvmd[(vgName, lv)]['attr']['state'] = 'a'
+            try:
+                lv_md = self.lvmd[(vgName, lv)]
+            except KeyError as e:
+                raise se.CannotActivateLogicalVolume(str(e))
+            lv_md['active'] = True
+            lv_md['attr']['state'] = 'a'
 
     def addtag(self, vg, lv, tag):
-        self.lvmd[(vg, lv)]['tags'] += (tag,)
+        try:
+            lv_md = self.lvmd[(vg, lv)]
+        except KeyError:
+            raise se.MissingTagOnLogicalVolume("%s/%s" % (vg, lv), tag)
+        lv_md['tags'] += (tag,)
 
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
 
     def getPV(self, pvName):
-        md = deepcopy(self.pvmd[pvName])
+        try:
+            pv = self.pvmd[pvName]
+        except KeyError:
+            raise se.InaccessiblePhysDev((pvName,))
+        md = deepcopy(pv)
         return real_lvm.PV(**md)
 
     def getVG(self, vgName):
+        if vgName not in self.vgmd:
+            raise se.VolumeGroupDoesNotExist(vgName)
         vg_md = deepcopy(self.vgmd[vgName])
         vg_attr = real_lvm.VG_ATTR(**vg_md['attr'])
         vg_md['attr'] = vg_attr
         return real_lvm.VG(**vg_md)
 
     def _getLV(self, vgName, lvName):
-        lv_md = deepcopy(self.lvmd[(vgName, lvName)])
+        try:
+            lv = self.lvmd[(vgName, lvName)]
+        except KeyError:
+            raise se.LogicalVolumeDoesNotExistError("%s/%s" % (vgName, lvName))
+        lv_md = deepcopy(lv)
         lv_attr = real_lvm.LV_ATTR(**lv_md['attr'])
         lv_md['attr'] = lv_attr
         return real_lvm.LV(**lv_md)
