@@ -46,9 +46,10 @@ _COMMAND_CONVERTER = {
 
 class _Server(object):
 
-    def __init__(self, client):
+    def __init__(self, client, xml_compat):
         self._vdsmapi = vdsmapi.get_api()
         self._client = client
+        self._xml_compat = xml_compat
 
     def _prepare_args(self, className, methodName, args, kwargs):
         sym = self._vdsmapi['commands'][className][methodName]
@@ -82,6 +83,9 @@ class _Server(object):
         if resp.error is not None:
             return response.error_raw(resp.error["code"],
                                       resp.error["message"])
+
+        if not self._xml_compat:
+            return response.success_raw(resp.result)
 
         if resp.result and resp.result is not True:
             # None is translated to True inside our JSONRPC implementation
@@ -126,7 +130,7 @@ def _create(requestQueue,
 def connect(requestQueue, stompClient=None,
             host=None, port=None,
             useSSL=None,
-            responseQueue=None):
+            responseQueue=None, xml_compat=True):
     if not stompClient:
         client = _create(requestQueue,
                          host, port, useSSL,
@@ -138,4 +142,4 @@ def connect(requestQueue, stompClient=None,
             str(uuid4())
         )
 
-    return _Server(client)
+    return _Server(client, xml_compat)
