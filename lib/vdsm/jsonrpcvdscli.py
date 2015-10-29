@@ -27,7 +27,8 @@ import six
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcRequest, \
-    JsonRpcNoResponseError
+    JsonRpcNoResponseError, \
+    CALL_TIMEOUT
 
 from api import vdsmapi
 from vdsm import response
@@ -68,8 +69,11 @@ class _Server(object):
         class_name, method_name = method.split('.')
         params = self._prepare_args(class_name, method_name, args, kwargs)
 
+        timeout = kwargs.pop('_transport_timeout', CALL_TIMEOUT)
+
         req = JsonRpcRequest(method, params, reqId=str(uuid4()))
-        responses = self._client.call(req)
+
+        responses = self._client.call(req, timeout=timeout)
         if responses:
             resp = responses[0]
         else:
