@@ -105,3 +105,30 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
         with self.base_config() as lvm:
             vg = lvm.getVG(self.VG_NAME)
             self.assertEqual(None, vg.vg_mda_free)
+
+    def test_pv_properties(self):
+        expected = dict(
+            name='/dev/mapper/%s' % self.DEVICES[0],
+            size='10334765056',
+            vg_name=self.VG_NAME,
+            pe_count='77',
+            pe_alloc_count='0',
+            mda_count='2',
+            dev_size='10737418240',
+            guid=self.DEVICES[0],
+        )
+        with self.base_config() as lvm:
+            pv = lvm.getPV(self.DEVICES[0])
+            self.validate_properties(expected, pv)
+
+    def test_pv_vg_uuid(self):
+        with self.base_config() as lvm:
+            vg = lvm.getVG(self.VG_NAME)
+            pv = lvm.getPV(self.DEVICES[0])
+            self.assertEqual(pv.vg_uuid, vg.uuid)
+
+    def test_pv_pe_start(self):
+        # As documented in FakeLVM, pe_start is not emulated and should be None
+        with self.base_config() as lvm:
+            pv = lvm.getPV(self.DEVICES[0])
+            self.assertIsNone(pv.pe_start)

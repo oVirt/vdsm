@@ -76,6 +76,9 @@ class FakeLVM(object):
                      partial='OK')
         self.vgmd[vgName] = vg_md
 
+        for dev in devices:
+            self.pvmd[dev]['vg_uuid'] = vg_md['uuid']
+
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
                  initialTag=None):
         lv_attr = dict(voltype='-',
@@ -109,6 +112,10 @@ class FakeLVM(object):
 
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
+
+    def getPV(self, pvName):
+        md = deepcopy(self.pvmd[pvName])
+        return real_lvm.PV(**md)
 
     def getVG(self, vgName):
         vg_md = deepcopy(self.vgmd[vgName])
@@ -145,7 +152,7 @@ class FakeLVM(object):
                      guid=pv_name,
                      size=str(pe_count * self._PV_PE_SIZE),
                      vg_name=vg_name,
-                     vg_uuid=None,  # This is calculated dynamically
+                     vg_uuid=None,  # This is set when the VG is created
                      pe_start=pe_start,
                      pe_count=str(pe_count),
                      pe_alloc_count='0',
