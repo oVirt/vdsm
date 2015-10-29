@@ -32,7 +32,7 @@ from yajsonrpc import \
 from api import vdsmapi
 from vdsm import response
 from .config import config
-from .sslcompat import sslutils
+from . import sslutils
 
 
 _COMMAND_CONVERTER = {
