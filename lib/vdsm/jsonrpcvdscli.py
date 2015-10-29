@@ -22,11 +22,14 @@ from functools import partial
 from uuid import uuid4
 import socket
 
+
+import six
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcRequest, \
     JsonRpcNoResponseError
 
+from api import vdsmapi
 from vdsm import response
 from .config import config
 from .sslcompat import sslutils
@@ -43,9 +46,18 @@ _COMMAND_CONVERTER = {
 class _Server(object):
 
     def __init__(self, client):
+        self._vdsmapi = vdsmapi.get_api()
         self._client = client
 
-    def _callMethod(self, methodName, *args):
+    def _prepare_args(self, className, methodName, args, kwargs):
+        sym = self._vdsmapi['commands'][className][methodName]
+        allargs = (arg[1:] if arg.startswith('*') else arg for arg
+                   in six.iterkeys(sym.get('data', {})))
+        params = dict(zip(allargs, args))
+        params.update(kwargs)
+        return params
+
+    def _callMethod(self, methodName, *args, **kwargs):
         try:
             method = _COMMAND_CONVERTER[methodName]
         except KeyError as e:
@@ -53,7 +65,10 @@ class _Server(object):
                             "arguments: %s error: %s" %
                             (methodName, args, e))
 
-        req = JsonRpcRequest(method, args, reqId=str(uuid4()))
+        class_name, method_name = method.split('.')
+        params = self._prepare_args(class_name, method_name, args, kwargs)
+
+        req = JsonRpcRequest(method, params, reqId=str(uuid4()))
         responses = self._client.call(req)
         if responses:
             resp = responses[0]
