@@ -116,7 +116,9 @@ class FakeLVM(object):
         self.vgmd[vgName]['lv_count'] = str(lv_count)
 
     def activateLVs(self, vgName, lvNames):
-        pass
+        for lv in lvNames:
+            self.lvmd[vgName][lv]['active'] = True
+            self.lvmd[vgName][lv]['attr']['state'] = 'a'
 
     def addtag(self, vg, lv, tag):
         self.lvmd[vg][lv]['tags'] += (tag,)

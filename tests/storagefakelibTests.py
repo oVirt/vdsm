@@ -228,3 +228,33 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
                          initialTag=blockVolume.TAG_VOL_UNINIT)
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertEqual((blockVolume.TAG_VOL_UNINIT,), lv.tags)
+
+    def test_activatelv(self):
+        """
+        Create an inactive LV and then activate it.
+
+        lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                     '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
+                     '1024', activate=False)
+        lvm.activateLVs('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        ['54e3378a-b2f6-46ff-b2da-a9c82522a55e'])
+
+        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        LV(uuid='P8Y7p8-V13j-rWDp-FvGk-5AX1-zXhp-ZU4K2G',
+           name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
+           vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
+           attr=LV_ATTR(voltype='-', permission='w', allocations='i',
+                        fixedminor='-', state='a', devopen='-', target='-',
+                        zero='-'),
+           size='1073741824', seg_start_pe='0',
+           devices='/dev/mapper/360014054d75cb132d474c0eae9825766(0)', tags=(),
+           writeable=True, opened=False, active=True)
+        """
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+                         activate=False)
+            lvm.activateLVs(self.VG_NAME, [self.LV_NAME])
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertTrue(lv.active)
+            self.assertEqual('a', lv.attr.state)
