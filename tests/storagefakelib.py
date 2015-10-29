@@ -89,6 +89,7 @@ class FakeLVM(object):
         devices = None
 
         state = 'a' if activate else '-'
+        tags = (initialTag,) if initialTag is not None else ()
         lv_attr = dict(voltype='-',
                        permission='w',
                        allocations='i',
@@ -104,7 +105,7 @@ class FakeLVM(object):
                      size=str(size),
                      seg_start_pe='0',
                      devices=devices,
-                     tags=(),
+                     tags=tags,
                      writeable=True,
                      opened=False,
                      active=bool(activate))

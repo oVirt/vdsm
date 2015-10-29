@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from testlib import VdsmTestCase, namedTemporaryDir
 from storagefakelib import FakeLVM
 
-from storage import blockSD
+from storage import blockSD, blockVolume
 from storage import lvm as real_lvm
 
 
@@ -202,3 +202,29 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertFalse(lv.active)
             self.assertEqual('-', lv.attr.state)
+
+    def test_lv_initialtag(self):
+        """
+        Create a logical volume with an initial tag.
+
+        lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                     '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
+                     '1024', initialTag=blockVolume.TAG_VOL_UNINIT)
+
+        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        LV(uuid='yJngqd-2kRy-9ogk-D7Gk-v3b1-RDQm-cb1bJv',
+           name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
+           vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
+           attr=LV_ATTR(voltype='-', permission='w', allocations='i',
+                        fixedminor='-', state='a', devopen='-', target='-',
+                        zero='-'), size='1073741824', seg_start_pe='0',
+           devices='/dev/mapper/360014054d75cb132d474c0eae9825766(0)',
+           tags=('OVIRT_VOL_INITIALIZING',), writeable=True, opened=False,
+           active=True)
+        """
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+                         initialTag=blockVolume.TAG_VOL_UNINIT)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertEqual((blockVolume.TAG_VOL_UNINIT,), lv.tags)
