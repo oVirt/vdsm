@@ -175,3 +175,30 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
 
             # As documented in FakeLVM, devices is not emulated and is None
             self.assertIsNone(lv.devices)
+
+    def test_lv_no_activate(self):
+        """
+        Create a logical volume with activate=False.
+
+        lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                     '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
+                     '1024', activate=False)
+
+        print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
+                        '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
+        LV(uuid='dDbzkJ-RSAQ-0CdJ-1pTD-OdqZ-3my2-v3hSUT',
+           name='54e3378a-b2f6-46ff-b2da-a9c82522a55e',
+           vg_name='1ffead52-7363-4968-a8c7-3bc34504d452',
+           attr=LV_ATTR(voltype='-', permission='w', allocations='i',
+                        fixedminor='-', state='-', devopen='-', target='-',
+                        zero='-'),
+           size='1073741824', seg_start_pe='0',
+           devices='/dev/mapper/360014054d75cb132d474c0eae9825766(0)', tags=(),
+           writeable=True, opened=False, active=False)
+        """
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+                         activate=False)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertFalse(lv.active)
+            self.assertEqual('-', lv.attr.state)

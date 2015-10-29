@@ -88,11 +88,12 @@ class FakeLVM(object):
         # works the same as for LVM).  Since we don't need this value, use None
         devices = None
 
+        state = 'a' if activate else '-'
         lv_attr = dict(voltype='-',
                        permission='w',
                        allocations='i',
                        fixedminor='-',
-                       state='a',
+                       state=state,
                        devopen='-',
                        target='-',
                        zero='-')
@@ -106,7 +107,7 @@ class FakeLVM(object):
                      tags=(),
                      writeable=True,
                      opened=False,
-                     active=True)
+                     active=bool(activate))
 
         vg_dict = self.lvmd.setdefault(vgName, {})
         vg_dict[lvName] = lv_md
