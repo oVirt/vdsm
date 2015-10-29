@@ -26,13 +26,17 @@ import threading
 from vdsm.config import config
 from vdsm.utils import retry
 from vdsm import ipwrapper
+from vdsm import vdscli
+from vdsm import jsonrpcvdscli
 from vdsm import netinfo
 from vdsm import supervdsm
-from vdsm import vdscli
 from vdsm.netconfpersistence import RunningConfig
 
 
 SUCCESS = 0
+
+_JSONRPC_ENABLED = \
+    config.getboolean('tests', 'functional_jsonrpc_enable')
 
 
 def cleanupRules(func):
@@ -71,7 +75,12 @@ class VdsProxy(object):
         retry(self.start, (socket.error, KeyError), tries=30)
 
     def start(self):
-        self.vdscli = vdscli.connect()
+        if _JSONRPC_ENABLED:
+            requestQueues = config.get('addresses', 'request_queues')
+            requestQueue = requestQueues.split(",")[0]
+            self.vdscli = jsonrpcvdscli.connect(requestQueue, xml_compat=False)
+        else:
+            self.vdscli = vdscli.connect()
         self.netinfo = self._get_netinfo()
         if config.get('vars', 'net_persistence') == 'unified':
             self.config = RunningConfig()
@@ -163,7 +172,11 @@ class VdsProxy(object):
         # add calling method for logs
         test_method, code_line = stack[3][3], stack[3][2]
         options['_caller'] = '{}:{}'.format(test_method, code_line)
-        result = self.vdscli.setupNetworks(networks, bonds, options)
+        if _JSONRPC_ENABLED:
+            result = self.vdscli.setupNetworks(networks, bonds, options,
+                                               _transport_timeout=30)
+        else:
+            result = self.vdscli.setupNetworks(networks, bonds, options)
         return _parse_result(result)
 
     def _vlanInRunningConfig(self, devName, vlanId):
@@ -212,14 +225,17 @@ class VdsProxy(object):
 
     def getVmStats(self, vmId):
         result = self.vdscli.getVmStats(vmId)
-        if 'statsList' in result:
+        if 'result' or 'statsList' in result:
             code, msg, stats = _parse_result(result, 'statsList')
             return code, msg, stats[0]
         else:
             return _parse_result(result)
 
     def getVmList(self, vmId):
-        result = self.vdscli.list('true', [vmId])
+        if _JSONRPC_ENABLED:
+            result = self.vdscli.fullList([vmId])
+        else:
+            result = self.vdscli.list('true', [vmId])
         code, msg, vm_list = _parse_result(result, 'vmList')
         return code, msg, vm_list[0]
 
@@ -237,7 +253,10 @@ def _parse_result(result, return_value=None):
     code = status['code']
     msg = status['message']
 
-    if code == SUCCESS and return_value is not None:
-        return code, msg, result[return_value]
+    if code == SUCCESS and return_value:
+        if _JSONRPC_ENABLED:
+            return code, msg, result['result']
+        else:
+            return code, msg, result[return_value]
     else:
         return code, msg

@@ -404,6 +404,13 @@ parameters = [
             'development only. Value is comma delimeted.'),
     ]),
 
+    # Section: [tests]
+    ('tests', [
+
+        ('functional_jsonrpc_enable', 'false',
+            'Enable jsonrpc when running functional tests.'),
+    ]),
+
 ]
 
 

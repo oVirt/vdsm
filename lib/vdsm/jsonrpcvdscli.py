@@ -37,10 +37,30 @@ from . import sslutils
 
 
 _COMMAND_CONVERTER = {
-    'ping': 'Host.ping',
+    'addNetwork': 'Host.addNetwork',
+    'create': 'VM.create',
+    'delNetwork': 'Host.delNetwork',
     'destroy': 'VM.destroy',
+    'editNetwork': 'Host.editNetwork',
+    'fullList': 'Host.getVMFullList',
+    'getAllVmStats': 'Host.getAllVmStats',
+    'getVdsCapabilities': 'Host.getCapabilities',
+    'getVdsStats': 'Host.getStats',
     'getVmStats': 'VM.getStats',
+    'hotplugDisk': 'VM.hotplugDisk',
+    'hotplugNic': 'VM.hotplugNic',
+    'hotunplugDisk': 'VM.hotunplugDisk',
+    'hotunplugNic': 'VM.hotunplugNic',
+    'list': 'Host.getVMList',
     'migrationCreate': 'VM.migrationCreate',
+    'ping': 'Host.ping',
+    'setBalloonTarget': 'VM.setBalloonTarget',
+    'setCpuTunePeriod': 'VM.setCpuTunePeriod',
+    'setCpuTuneQuota': 'VM.setCpuTuneQuota',
+    'setMOMPolicy': 'Host.setMOMPolicy',
+    'setSafeNetworkConfig': 'Host.setSafeNetworkConfig',
+    'setupNetworks': 'Host.setupNetworks',
+    'updateVmPolicy': 'VM.updateVmPolicy',
 }
 
 
@@ -95,6 +115,11 @@ class _Server(object):
 
     def migrationCreate(self, params):
         return self._callMethod('migrationCreate',
+                                params['vmId'],
+                                params)
+
+    def create(self, params):
+        return self._callMethod('create',
                                 params['vmId'],
                                 params)
 
