@@ -101,7 +101,7 @@ class clientIF(object):
         try:
             self.vmContainer = {}
             self._hostStats = sampling.HostStatsThread(
-                log, sampling.host_samples)
+                sampling.host_samples)
             self._hostStats.start()
             self.lastRemoteAccess = 0
             self._enabled = True

@@ -547,8 +547,9 @@ class HostStatsThread(object):
     """
     _CONNLOG = logging.getLogger('connectivity')
 
-    def __init__(self, log, samples=host_samples, clock=utils.monotonic_time):
-        self._log = log
+    _log = logging.getLogger('vds.sampling.HostStats')
+
+    def __init__(self, samples=host_samples, clock=utils.monotonic_time):
         self._samples = samples
 
         self._pid = os.getpid()

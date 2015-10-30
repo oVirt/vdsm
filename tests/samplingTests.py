@@ -165,7 +165,7 @@ class HostStatsThreadTests(TestCaseBase):
         with MonkeyPatchScope([(sampling, 'HostSample', WrapHostSample),
                                (sampling.HostStatsThread,
                                    'SAMPLE_INTERVAL_SEC', 0.1)]):
-            self._hs = sampling.HostStatsThread(self.log)
+            self._hs = sampling.HostStatsThread()
             self._hs.start()
             self._samplingDone.wait(3.0)
             self.assertTrue(self._samplingDone.is_set())
@@ -208,7 +208,7 @@ class HostStatsThreadTests(TestCaseBase):
                 pass
 
         with MonkeyPatchScope([(sampling, 'HostSample', FakeHostSample)]):
-            self._hs = sampling.HostStatsThread(self.log, samples)
+            self._hs = sampling.HostStatsThread(samples)
             self._hs._sampleInterval = 0
             # we cannot monkey patch, it will interfer on threading internals
             self._hs._stopEvent = FakeEvent()
