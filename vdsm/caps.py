@@ -88,8 +88,6 @@ class AutoNumaBalancingStatus:
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
 
-_REQUIRED_BONDINGS = frozenset(('bond0', 'bond1', 'bond2', 'bond3', 'bond4'))
-
 
 def _report_network_qos(caps):
     """Augment netinfo information with QoS data for the engine"""
