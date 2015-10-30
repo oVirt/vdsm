@@ -499,17 +499,17 @@ stats_cache = StatsCache()
 # a multiple of known timeout and period:
 # - vm sampling period is 15s (we control that)
 # - libvirt (default) qemu monitor timeout is 30s (we DON'T contol this)
-_TIMEOUT = 40.0
+_TTL = 40.0
 
 
 class VMBulkSampler(object):
     def __init__(self, conn, get_vms, stats_cache,
-                 stats_flags=0, timeout=_TIMEOUT):
+                 stats_flags=0, ttl=_TTL):
         self._conn = conn
         self._get_vms = get_vms
         self._stats_cache = stats_cache
         self._stats_flags = stats_flags
-        self._skip_doms = ExpiringCache(timeout)
+        self._skip_doms = ExpiringCache(ttl)
         self._sampling = threading.Semaphore()  # used as glorified counter
         self._log = logging.getLogger("virt.sampling.VMBulkSampler")
 
