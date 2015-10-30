@@ -551,13 +551,8 @@ class HostStatsThread(object):
 
     def __init__(self, samples=host_samples, clock=utils.monotonic_time):
         self._samples = samples
-
-        self._pid = os.getpid()
-
-        self._sampleInterval = \
-            config.getint('vars', 'host_sample_stats_interval')
-
         hoststats.start(clock)
+        self._pid = os.getpid()
 
         self._stopEvent = threading.Event()
 
@@ -574,9 +569,13 @@ class HostStatsThread(object):
         self._thread.join()
 
     def _run(self):
+
+        sample_interval = config.getint(
+            'vars', 'host_sample_stats_interval')
+
         try:
             # wait a bit before starting to sample
-            time.sleep(self._sampleInterval)
+            time.sleep(sample_interval)
             while not self._stopEvent.isSet():
                 try:
                     sample = HostSample(self._pid)
@@ -590,7 +589,7 @@ class HostStatsThread(object):
                             self._CONNLOG.debug('%s', diff)
                 except virdomain.TimeoutError:
                     self._log.exception("Timeout while sampling stats")
-                self._stopEvent.wait(self._sampleInterval)
+                self._stopEvent.wait(sample_interval)
         except:
             if not self._stopEvent.isSet():
                 self._log.exception("Error while sampling stats")
