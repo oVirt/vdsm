@@ -35,38 +35,32 @@ class FakeMetadata(dict):
         yield
 
 
-def make_blocksd_manifest(tmpdir=None, metadata=None, sduuid=None):
+def make_blocksd(tmpdir, fake_lvm, sduuid=None, devices=None, metadata=None):
     if sduuid is None:
         sduuid = str(uuid.uuid4())
+    if devices is None:
+        devices = get_random_devices()
     if metadata is None:
         metadata = FakeMetadata({sd.DMDK_VERSION: 3})
+
+    fake_lvm.createVG(sduuid, devices, blockSD.STORAGE_DOMAIN_TAG,
+                      blockSD.VG_METADATASIZE)
+    fake_lvm.createLV(sduuid, sd.METADATA, blockSD.SD_METADATA_SIZE)
+
+    # Create the rest of the special LVs
+    for metafile, sizemb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
+        fake_lvm.createLV(sduuid, metafile, sizemb)
+
     manifest = blockSD.BlockStorageDomainManifest(sduuid, metadata)
-    if tmpdir is not None:
-        manifest.domaindir = tmpdir
-        os.makedirs(os.path.join(manifest.domaindir, sduuid, sd.DOMAIN_IMAGES))
+    manifest.domaindir = tmpdir
+    os.makedirs(os.path.join(manifest.domaindir, sduuid, sd.DOMAIN_IMAGES))
+
     return manifest
 
 
 def get_random_devices(count=NR_PVS):
     return ['/dev/mapper/{0}'.format(os.urandom(16).encode('hex'))
             for _ in range(count)]
-
-
-def make_vg(fake_lvm, manifest, devices=None):
-    vg_name = manifest.sdUUID
-    if devices is None:
-        devices = get_random_devices()
-    fake_lvm.createVG(vg_name, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
-                      blockSD.VG_METADATASIZE)
-    fake_lvm.createLV(vg_name, sd.METADATA, blockSD.SD_METADATA_SIZE)
-
-    # Fake the PV information for our metadata LV (example lvs session follows)
-    #   # lvs -o devices b19d16a0-06e1-4c92-b959-2019f503c8ac/metadata
-    #   Devices
-    #   /dev/mapper/360014059e671b7fc2c44169a58c00289(0)
-    fake_lvm.lvmd[vg_name][sd.METADATA]['devices'] = \
-        '{0}(0)'.format(devices[0])
-    return vg_name
 
 
 def get_metafile_path(domaindir):

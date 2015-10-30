@@ -23,8 +23,7 @@ import uuid
 from testlib import VdsmTestCase, namedTemporaryDir, make_file
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeLVM
-from storagetestlib import make_filesd_manifest, make_blocksd_manifest, \
-    make_file_volume, make_vg
+from storagetestlib import make_filesd_manifest, make_blocksd, make_file_volume
 
 from storage import sd, blockSD, blockVolume
 
@@ -79,7 +78,7 @@ class BlockManifestTests(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             lvm = FakeLVM(tmpdir)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd_manifest(tmpdir)
+                manifest = make_blocksd(tmpdir, lvm)
                 vg_name = manifest.sdUUID
                 make_file(lvm.lvPath(vg_name, 'metadata'))
                 self.assertIsInstance(manifest.getReadDelay(), float)
@@ -89,8 +88,8 @@ class BlockManifestTests(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             lvm = FakeLVM(tmpdir)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd_manifest(tmpdir)
-                vg_name = make_vg(lvm, manifest)
+                manifest = make_blocksd(tmpdir, lvm)
+                vg_name = manifest.sdUUID
                 lv_name = str(uuid.uuid4())
                 lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
                 lvm.fake_lv_symlink_create(vg_name, lv_name)
@@ -102,10 +101,9 @@ class BlockManifestTests(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             lvm = FakeLVM(tmpdir)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd_manifest(tmpdir)
-                vg_name = make_vg(lvm, manifest)
+                manifest = make_blocksd(tmpdir, lvm)
                 lv_name = str(uuid.uuid4())
-                lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
+                lvm.createLV(manifest.sdUUID, lv_name, VOLSIZE / MB)
                 self.assertEqual(VOLSIZE,
                                  manifest.getVSize('<imgUUID>', lv_name))
 
@@ -114,7 +112,7 @@ class BlockManifestTests(VdsmTestCase):
             lvm = FakeLVM(tmpdir)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
                 metadata = {sd.DMDK_VERSION: 3}
-                manifest = make_blocksd_manifest(tmpdir, metadata)
+                manifest = make_blocksd(tmpdir, lvm, metadata=metadata)
                 metadata[sd.DMDK_SDUUID] = manifest.sdUUID
                 self.assertEquals(manifest.sdUUID,
                                   manifest.getMetaParam(sd.DMDK_SDUUID))
@@ -123,7 +121,7 @@ class BlockManifestTests(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             lvm = FakeLVM(tmpdir)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd_manifest(tmpdir)
+                manifest = make_blocksd(tmpdir, lvm)
                 self.assertEquals(512, manifest.logBlkSize)
                 self.assertEquals(512, manifest.phyBlkSize)
 
@@ -134,7 +132,7 @@ class BlockManifestTests(VdsmTestCase):
                 metadata = {sd.DMDK_VERSION: 3,
                             blockSD.DMDK_LOGBLKSIZE: 2048,
                             blockSD.DMDK_PHYBLKSIZE: 1024}
-                manifest = make_blocksd_manifest(tmpdir, metadata)
+                manifest = make_blocksd(tmpdir, lvm, metadata=metadata)
                 self.assertEquals(2048, manifest.logBlkSize)
                 self.assertEquals(1024, manifest.phyBlkSize)
 
@@ -145,8 +143,7 @@ class BlockDomainMetadataSlotTests(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             lvm = FakeLVM(tmpdir)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd_manifest(tmpdir)
-                make_vg(lvm, manifest)
+                manifest = make_blocksd(tmpdir, lvm)
                 lvs = ('0b6287f0-3679-4c4d-8be5-9bbfe3ec9c1f',
                        'ea13af29-b64a-4d1a-b35f-3e6ab15c3b04')
                 for lv, offset in zip(lvs, [4, 7]):
@@ -160,8 +157,7 @@ class BlockDomainMetadataSlotTests(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             lvm = FakeLVM(tmpdir)
             with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd_manifest(tmpdir)
-                make_vg(lvm, manifest)
+                manifest = make_blocksd(tmpdir, lvm)
                 with manifest.acquireVolumeMetadataSlot(None, 1):
                     acquired = manifest._lvTagMetaSlotLock.acquire(False)
                     self.assertFalse(acquired)
