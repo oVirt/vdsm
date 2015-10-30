@@ -213,7 +213,7 @@ class HostStatsThreadTests(TestCaseBase):
             # we cannot monkey patch, it will interfer on threading internals
             self._hs._stopEvent = FakeEvent()
             self._hs.start()
-            self._hs.join()
+            self._hs.wait()
             first, last, _ = samples.stats()
             self.assertEqual(first.id,
                              FakeHostSample.counter -

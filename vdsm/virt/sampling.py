@@ -541,17 +541,14 @@ HOST_STATS_AVERAGING_WINDOW = 5
 host_samples = SampleWindow(size=HOST_STATS_AVERAGING_WINDOW)
 
 
-class HostStatsThread(threading.Thread):
+class HostStatsThread(object):
     """
     A thread that periodically samples host statistics.
     """
     _CONNLOG = logging.getLogger('connectivity')
 
     def __init__(self, log, samples=host_samples, clock=utils.monotonic_time):
-        threading.Thread.__init__(self)
-        self.daemon = True
         self._log = log
-        self._stopEvent = threading.Event()
         self._samples = samples
 
         self._pid = os.getpid()
@@ -561,10 +558,21 @@ class HostStatsThread(threading.Thread):
 
         hoststats.start(clock)
 
+        self._stopEvent = threading.Event()
+
+        self._thread = threading.Thread(target=self._run, name='hoststats')
+        self._thread.daemon = True
+
+    def start(self):
+        self._thread.start()
+
     def stop(self):
         self._stopEvent.set()
 
-    def run(self):
+    def wait(self):
+        self._thread.join()
+
+    def _run(self):
         try:
             # wait a bit before starting to sample
             time.sleep(self._sampleInterval)
