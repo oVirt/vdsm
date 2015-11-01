@@ -81,4 +81,60 @@ public class RequestBuilderTestCase {
         assertEquals(map.get("acpiEnable"), vmParams.get("acpiEnable"));
         assertEquals(map.get("memSize"), vmParams.get("memSize"));
     }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSimpleRequestWithOptional() throws JsonParseException, JsonMappingException, IOException {
+        // given
+        String param = "1234";
+        assertRequestWithOptional(param, param);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSimpleRequestWithOptionalNonString() throws JsonParseException, JsonMappingException, IOException {
+        Boolean param = Boolean.FALSE;
+        assertRequestWithOptional(param, param);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSimpleRequestWithOptionalNull() throws JsonParseException, JsonMappingException, IOException {
+        Boolean param = null;
+        assertRequestWithOptional(param, param);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSimpleRequestWithOptionalEmptyString() throws JsonParseException, JsonMappingException, IOException {
+        Object parameter = "";
+        assertRequestWithOptional(parameter, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSimpleRequestWithOptionalPrimitiveBoolean() throws JsonParseException, JsonMappingException, IOException {
+        boolean parameter = true;
+        assertRequestWithOptional(parameter, parameter);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testSimpleRequestWithOptionalPrimitiveInteger() throws JsonParseException, JsonMappingException, IOException {
+        int parameter = 444;
+        assertRequestWithOptional(parameter, parameter);
+    }
+
+    private void assertRequestWithOptional(Object parameter, Object expected) throws JsonParseException,
+            JsonMappingException, IOException {
+        // when
+        JsonRpcRequest request = new RequestBuilder("Task.getInfo").withOptionalParameter("taskID", parameter).build();
+
+        // then
+        Map<String, Object> jsonData =
+                new ObjectMapper().readValue(request.toJson(), new TypeReference<HashMap<String, Object>>() {
+                });
+        Map<String, Object> params = (Map<String, Object>) jsonData.get("params");
+        assertEquals(expected, params.get("taskID"));
+    }
 }

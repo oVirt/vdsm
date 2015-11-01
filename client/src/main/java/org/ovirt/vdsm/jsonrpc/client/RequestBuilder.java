@@ -53,6 +53,24 @@ public class RequestBuilder {
     }
 
     /**
+     * Adds parameter which is optional by method runtime and if not
+     * provided default value will be used during method execution.
+     * @param name - Name of the parameter.
+     * @param value - Value of the parameter or <code>null</code>.
+     * @return {@link RequestBuilder} to let add more parameters.
+     */
+    public RequestBuilder withOptionalParameter(String name, Object value) {
+        if (value instanceof String) {
+            return withOptionalParameter(name, (String) value);
+        }
+        if (value != null) {
+            return withParameter(name, value);
+        }
+        return this;
+    }
+
+
+    /**
      * Adds <code>List</code> of values which is optional by method
      * runtime and if not provided default value will be used during
      * method execution.
