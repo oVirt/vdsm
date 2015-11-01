@@ -259,6 +259,10 @@ task_upgraded_version_check(){
              # by running manual configure command
              "$VDSM_TOOL" configure --force
              ret=$?
+        elif grep -q '^vdsm-4\.16\.' "${upgraded_ver_file}"; then
+             # REQUIRED_FOR upgrade from vdsm-4.16.z
+             "$VDSM_TOOL" configure --module multipath
+             ret=$?
         fi
         [ "${ret}" -eq 0 ] && rm -f "${upgraded_ver_file}"
     fi
