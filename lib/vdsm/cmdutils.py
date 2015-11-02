@@ -28,6 +28,18 @@ from .config import config
 SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 
+class Error(Exception):
+
+    def __init__(self, rc, out, err):
+        self.rc = rc
+        self.out = out
+        self.err = err
+
+    def __str__(self):
+        return "Process failed with rc=%d out=%r err=%r" % (
+            self.rc, self.out, self.err)
+
+
 def nice(cmd, nice):
     command = [constants.EXT_NICE, '-n', str(nice)]
     command.extend(cmd)

@@ -20,20 +20,9 @@
 
 from __future__ import absolute_import
 
+from . import cmdutils
 from . import constants
 from . import utils
-
-
-class Error(Exception):
-
-    def __init__(self, rc, out, err):
-        self.rc = rc
-        self.out = out
-        self.err = err
-
-    def __str__(self):
-        return "Process failed with rc=%d out=%r err=%r" % (
-            self.rc, self.out, self.err)
 
 
 def get(pid):
@@ -44,14 +33,14 @@ def get(pid):
     Return a frozenset of ints, each one being a cpu indices on which the
     process can run.
     Example: frozenset([0, 1, 2, 3])
-    Raise taskset.Error on failure.
+    Raise cmdutils.Error on failure.
     """
     command = [constants.EXT_TASKSET, '--pid', str(pid)]
 
     rc, out, err = utils.execCmd(command, resetCpuAffinity=False)
 
     if rc != 0:
-        raise Error(rc, out, err)
+        raise cmdutils.Error(rc, out, err)
 
     return _cpu_set_from_output(out[-1])
 
@@ -64,7 +53,7 @@ def set(pid, cpu_set, all_tasks=False):
     <cpu_set> must be an iterable whose items are ints which represent
     cpu indices, on which the process will be allowed to run; the format
     is the same as what the get() function returns.
-    Raise taskset.Error on failure.
+    Raise cmdutils.Error on failure.
     """
     command = [constants.EXT_TASKSET]
     if all_tasks:
@@ -79,7 +68,7 @@ def set(pid, cpu_set, all_tasks=False):
     rc, out, err = utils.execCmd(command, resetCpuAffinity=False)
 
     if rc != 0:
-        raise Error(rc, out, err)
+        raise cmdutils.Error(rc, out, err)
 
 
 def _cpu_set_from_output(line):

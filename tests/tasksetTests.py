@@ -23,6 +23,7 @@ import os
 
 from nose.plugins.skip import SkipTest
 
+from vdsm import cmdutils
 from vdsm import taskset
 
 from testlib import online_cpus
@@ -88,11 +89,11 @@ class AffinityTests(VdsmTestCase):
 
     def test_get_raises_on_failure(self):
         # here we just need to feed taskset with any bad input.
-        self.assertRaises(taskset.Error, taskset.get, '')
+        self.assertRaises(cmdutils.Error, taskset.get, '')
 
     def test_set_raises_on_failure(self):
         # here we just need to feed taskset with any bad input.
-        self.assertRaises(taskset.Error, taskset.set, '', 'x')
+        self.assertRaises(cmdutils.Error, taskset.set, '', 'x')
 
     def _run_child(self, cpu_set=None):
         if cpu_set:

@@ -55,6 +55,7 @@ try:
 except ImportError:
     _glusterEnabled = False
 
+from vdsm import cmdutils
 from vdsm import udevadm
 from vdsm import utils
 from vdsm import sysctl
@@ -509,7 +510,7 @@ class _SuperVdsm(object):
     def _udevTrigger(self, *args, **kwargs):
         try:
             udevadm.trigger(*args, **kwargs)
-        except udevadm.Error as e:
+        except cmdutils.Error as e:
             raise OSError(errno.EINVAL, 'Could not trigger change '
                           'out %s\nerr %s' % (e.out, e.err))
 

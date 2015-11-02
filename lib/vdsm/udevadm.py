@@ -20,21 +20,10 @@
 
 from __future__ import absolute_import
 import logging
+from . import cmdutils
 from . import utils
 
 _UDEVADM = utils.CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
-
-
-class Error(Exception):
-
-    def __init__(self, rc, out, err):
-        self.rc = rc
-        self.out = out
-        self.err = err
-
-    def __str__(self):
-        return "Process failed with rc=%d out=%r err=%r" % (
-            self.rc, self.out, self.err)
 
 
 def settle(timeout, exit_if_exists=None):
@@ -57,7 +46,7 @@ def settle(timeout, exit_if_exists=None):
 
     try:
         _run_command(args)
-    except Error as e:
+    except cmdutils.Error as e:
         logging.error("%s", e)
 
 
@@ -113,4 +102,4 @@ def _run_command(args):
     cmd.extend(args)
     rc, out, err = utils.execCmd(cmd, raw=True)
     if rc != 0:
-        raise Error(rc, out, err)
+        raise cmdutils.Error(rc, out, err)
