@@ -21,20 +21,12 @@
 from __future__ import absolute_import
 import signal
 
+from . import cmdutils
 from . import utils
 
 # Fedora, EL6
 _VIRTSPARSIFY = utils.CommandPath("virt-sparsify",
                                   "/usr/bin/virt-sparsify",)
-
-
-class Error(Exception):
-    def __init__(self, ecode, stderr):
-        self.ecode = ecode
-        self.stderr = stderr
-
-    def __str__(self):
-        return "[Error %d] %s" % (self.ecode, self.stderr)
 
 
 def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):
@@ -58,7 +50,7 @@ def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):
 
     cmd.extend((src_vol, dst_vol))
 
-    rc, _, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
-        raise Error(rc, err)
+        raise cmdutils.Error(rc, out, err)
