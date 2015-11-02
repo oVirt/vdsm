@@ -586,6 +586,9 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         return blockVolume.BlockVolumeManifest
 
+    def get_volume_artifacts(self, img_id, vol_id):
+        raise NotImplementedError()
+
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         """Filter vols belonging to imgUUID only."""
         exclusives = dict((vName, v) for vName, v in volsImgs.iteritems()

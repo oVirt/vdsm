@@ -1756,6 +1756,7 @@ class ResourceAcqusitionFailed(GeneralException):
 
 #################################################
 #  External domains exceptions
+#  Range: 900-909
 #################################################
 
 class StorageDomainIsMemberOfPool(StorageException):
@@ -1764,3 +1765,16 @@ class StorageDomainIsMemberOfPool(StorageException):
 
     def __init__(self, sdUUID):
         self.value = "domain=%s" % (sdUUID,)
+
+
+#################################################
+#  SDM Errors
+#  Range: 909-910
+#################################################
+
+class DomainHasGarbage(StorageException):
+    code = 910
+    message = "Operation failed because garbage was found"
+
+    def __init__(self, reason):
+        self.value = reason

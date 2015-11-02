@@ -959,6 +959,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/volume.py*
 %{_datadir}/%{vdsm_name}/storage/imageRepository/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/imageRepository/formatConverter.py*
+%{_datadir}/%{vdsm_name}/storage/sdm/__init__.py*
+%{_datadir}/%{vdsm_name}/storage/sdm/volume_artifacts.py*
 %{_libexecdir}/%{vdsm_name}/spmprotect.sh
 %{_libexecdir}/%{vdsm_name}/spmstop.sh
 %dir %{_libexecdir}/%{vdsm_name}/hooks

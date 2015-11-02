@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,3 +21,8 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 vdsmsdmdir = $(vdsmdir)/storage/sdm
+
+dist_vdsmsdm_PYTHON = \
+	__init__.py \
+	volume_artifacts.py \
+	$(NULL)

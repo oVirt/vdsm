@@ -30,6 +30,7 @@ from vdsm.storage import exception as se
 from vdsm.storage.persistent import PersistentDict, DictValidator
 
 import sd
+import sdm.volume_artifacts
 import fileUtils
 import fileVolume
 import misc
@@ -202,6 +203,9 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         Return a type specific volume generator object
         """
         return fileVolume.FileVolumeManifest
+
+    def get_volume_artifacts(self, img_id, vol_id):
+        return sdm.volume_artifacts.FileVolumeArtifacts(self, img_id, vol_id)
 
     def getDeletedImagePath(self, imgUUID):
         currImgDir = self.getImagePath(imgUUID)
