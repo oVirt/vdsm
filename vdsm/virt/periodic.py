@@ -210,6 +210,8 @@ class VmDispatcher(object):
         executor: executor.Executor instance
         create: callable to obtain the real callable to
                 dispatch, with its timeout
+        timeout: per-vm operation timeout, in seconds
+                 (fractions allowed).
         """
         self._get_vms = get_vms
         self._executor = executor
