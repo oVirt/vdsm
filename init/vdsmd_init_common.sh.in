@@ -255,8 +255,7 @@ task_upgraded_version_check(){
     if [ -f "${upgraded_ver_file}" ]; then
         local ret=0
         if grep -q '^vdsm-4\.10\.' "${upgraded_ver_file}"; then
-             # We need to treat the upgrade from 4.10.x specifically
-             # by running manual configure command
+             # REQUIRED_FOR upgrade from vdsm-4.10.x
              "$VDSM_TOOL" configure --force
              ret=$?
         elif grep -q '^vdsm-4\.16\.' "${upgraded_ver_file}"; then
