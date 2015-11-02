@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Hat, Inc.
+# Copyright 2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,10 +16,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
+#
+
 from __future__ import absolute_import
 import shlex
+import socket
 
 from ..ipwrapper import getLinks
+from .. import utils
 
 
 _IFCFG_ZERO_SUFFIXED = frozenset(
@@ -49,3 +53,15 @@ def visible_devs(predicate):
     predicate is True"""
     return [dev.name for dev in getLinks() if predicate(dev) and
             not dev.isHidden()]
+
+
+@utils.memoized
+def ipv6_supported():
+    """
+    Check if IPv6 is disabled by kernel arguments (or even compiled out).
+    """
+    try:
+        socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    except socket.error:
+        return False
+    return True

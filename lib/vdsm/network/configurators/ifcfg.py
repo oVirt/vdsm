@@ -102,7 +102,7 @@ class Ifcfg(Configurator):
         self._addSourceRoute(bridge)
         _ifup(bridge)
         if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
-                not bridge.ipv6.dhcpv6):
+                not bridge.ipv6.dhcpv6 and misc.ipv6_supported()):
             wait_for_device(bridge.name)
             sysctl.disable_ipv6(bridge.name)
 
