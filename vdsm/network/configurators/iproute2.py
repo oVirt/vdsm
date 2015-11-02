@@ -76,7 +76,7 @@ class Iproute2(Configurator):
         DynamicSourceRoute.addInterfaceTracking(bridge)
         self.configApplier.setIfaceConfigAndUp(bridge)
         if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
-                not bridge.ipv6.dhcpv6):
+                not bridge.ipv6.dhcpv6 and netinfo.ipv6_supported()):
             wait_for_device(bridge.name)
             sysctl.disable_ipv6(bridge.name)
         self._addSourceRoute(bridge)

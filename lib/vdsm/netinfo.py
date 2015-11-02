@@ -337,6 +337,18 @@ def getIpInfo(dev, ipaddrs=None):
     return ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
 
 
+@memoized
+def ipv6_supported():
+    """
+    Check if IPv6 is disabled by kernel arguments (or even compiled out).
+    """
+    try:
+        socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    except socket.error:
+        return False
+    return True
+
+
 def gethwaddr(dev):
     with open('/sys/class/net/%s/address' % dev) as addr:
         return addr.read().strip()
