@@ -247,7 +247,7 @@ class HostSample(TimedSample):
         super(HostSample, self).__init__()
         self.interfaces = _get_interfaces_and_samples()
         self.pidcpu = PidCpuSample(pid)
-        self.ncpus = max(os.sysconf('SC_NPROCESSORS_ONLN'), 1)
+        self.ncpus = os.sysconf('SC_NPROCESSORS_ONLN')
         self.totcpu = TotalCpuSample()
         meminfo = utils.readMemInfo()
         freeOrCached = (meminfo['MemFree'] +
