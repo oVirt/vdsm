@@ -27,8 +27,7 @@ Inspired by Volodymyr Orlenko,
 http://blog.bjola.ca/2007/08/using-timeout-with-xmlrpclib.html
 
 Sets up an xmlrpc Server with a modified Transport
-(TcpkeepTransport) which uses a (slightly modified) HTTP
-protocol (TcpkeepHTTP) that uses TcpkeepHTTPConnection when it
+(TcpkeepTransport) which uses TcpkeepHTTPConnection when it
 needs to set up a connection.
 """
 from __future__ import print_function
@@ -57,10 +56,7 @@ ServerProxy = Server
 class TcpkeepTransport(xmlrpclib.Transport):
 
     def make_connection(self, host):
-        if hasattr(xmlrpclib.Transport, "single_request"):  # Python 2.7
-            return TcpkeepHTTPConnection(host)
-        else:
-            return TcpkeepHTTP(host)
+        return TcpkeepHTTPConnection(host)
 
 
 class TcpkeepHTTPConnection(httplib.HTTPConnection):
@@ -105,9 +101,6 @@ class TcpkeepHTTPConnection(httplib.HTTPConnection):
         # end of added code
 
 
-class TcpkeepHTTP(httplib.HTTP):
-    _connection_class = TcpkeepHTTPConnection
-
 ###################
 # the same, for ssl
 from vdsm.sslcompat import sslutils
@@ -126,17 +119,11 @@ class TcpkeepSafeTransport(sslutils.VerifyingSafeTransport):
 
     def make_connection(self, host):
         chost, self._extra_headers, x509 = self.get_host_info(host)
-        if hasattr(xmlrpclib.SafeTransport, "single_request"):  # Python 2.7
-            return TcpkeepHTTPSConnection(
-                chost, None, key_file=self.key_file, strict=None,
-                timeout=CONNECTTIMEOUT,
-                cert_file=self.cert_file, ca_certs=self.ca_certs,
-                cert_reqs=self.cert_reqs)
-        else:
-            return TcpkeepHTTPS(
-                chost, None, key_file=self.key_file,
-                cert_file=self.cert_file, ca_certs=self.ca_certs,
-                cert_reqs=self.cert_reqs)
+        return TcpkeepHTTPSConnection(
+            chost, None, key_file=self.key_file, strict=None,
+            timeout=CONNECTTIMEOUT,
+            cert_file=self.cert_file, ca_certs=self.ca_certs,
+            cert_reqs=self.cert_reqs)
 
 
 class TcpkeepHTTPSConnection(sslutils.VerifyingHTTPSConnection):
@@ -158,7 +145,3 @@ class TcpkeepHTTPSConnection(sslutils.VerifyingHTTPSConnection):
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPIDLE, KEEPIDLE)
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPINTVL, KEEPINTVL)
         self.sock.setsockopt(socket.SOL_TCP, socket.TCP_KEEPCNT, KEEPCNT)
-
-
-class TcpkeepHTTPS(sslutils.VerifyingHTTPS):
-    _connection_class = TcpkeepHTTPSConnection
