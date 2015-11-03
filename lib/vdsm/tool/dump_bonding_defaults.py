@@ -47,9 +47,7 @@ def _get_default_bonding_options():
             with open(BONDING_OPT % (bond_name, 'mode'), 'w') as opt:
                 opt.write(mode)
 
-            # only read non-empty options
-            opts[mode] = dict(((opt, val) for (opt, val) in
-                               bondOpts(bond_name).iteritems() if val))
+            opts[mode] = bondOpts(bond_name)
             opts[mode]['mode'] = default_mode
 
     finally:

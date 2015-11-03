@@ -1,9 +1,12 @@
 {
     "0": {
+        "ad_actor_sys_prio": [],
+        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
         ],
+        "ad_user_port_key": [],
         "all_slaves_active": [
             "0"
         ],
@@ -14,6 +17,7 @@
         "arp_interval": [
             "0"
         ],
+        "arp_ip_target": [],
         "arp_validate": [
             "none",
             "0"
@@ -51,6 +55,7 @@
         "packets_per_slave": [
             "1"
         ],
+        "primary": [],
         "primary_reselect": [
             "always",
             "0"
@@ -73,10 +78,13 @@
         ]
     },
     "1": {
+        "ad_actor_sys_prio": [],
+        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
         ],
+        "ad_user_port_key": [],
         "all_slaves_active": [
             "0"
         ],
@@ -87,6 +95,7 @@
         "arp_interval": [
             "0"
         ],
+        "arp_ip_target": [],
         "arp_validate": [
             "none",
             "0"
@@ -124,6 +133,7 @@
         "packets_per_slave": [
             "1"
         ],
+        "primary": [],
         "primary_reselect": [
             "always",
             "0"
@@ -146,10 +156,13 @@
         ]
     },
     "2": {
+        "ad_actor_sys_prio": [],
+        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
         ],
+        "ad_user_port_key": [],
         "all_slaves_active": [
             "0"
         ],
@@ -160,6 +173,7 @@
         "arp_interval": [
             "0"
         ],
+        "arp_ip_target": [],
         "arp_validate": [
             "none",
             "0"
@@ -197,6 +211,7 @@
         "packets_per_slave": [
             "1"
         ],
+        "primary": [],
         "primary_reselect": [
             "always",
             "0"
@@ -219,10 +234,13 @@
         ]
     },
     "3": {
+        "ad_actor_sys_prio": [],
+        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
         ],
+        "ad_user_port_key": [],
         "all_slaves_active": [
             "0"
         ],
@@ -233,6 +251,7 @@
         "arp_interval": [
             "0"
         ],
+        "arp_ip_target": [],
         "arp_validate": [
             "none",
             "0"
@@ -270,6 +289,7 @@
         "packets_per_slave": [
             "1"
         ],
+        "primary": [],
         "primary_reselect": [
             "always",
             "0"
@@ -292,8 +312,17 @@
         ]
     },
     "4": {
+        "ad_actor_sys_prio": [
+            "65535"
+        ],
+        "ad_actor_system": [
+            "00:00:00:00:00:00"
+        ],
         "ad_select": [
             "stable",
+            "0"
+        ],
+        "ad_user_port_key": [
             "0"
         ],
         "all_slaves_active": [
@@ -306,6 +335,7 @@
         "arp_interval": [
             "0"
         ],
+        "arp_ip_target": [],
         "arp_validate": [
             "none",
             "0"
@@ -343,6 +373,7 @@
         "packets_per_slave": [
             "1"
         ],
+        "primary": [],
         "primary_reselect": [
             "always",
             "0"
@@ -365,10 +396,13 @@
         ]
     },
     "5": {
+        "ad_actor_sys_prio": [],
+        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
         ],
+        "ad_user_port_key": [],
         "all_slaves_active": [
             "0"
         ],
@@ -379,6 +413,7 @@
         "arp_interval": [
             "0"
         ],
+        "arp_ip_target": [],
         "arp_validate": [
             "none",
             "0"
@@ -416,6 +451,7 @@
         "packets_per_slave": [
             "1"
         ],
+        "primary": [],
         "primary_reselect": [
             "always",
             "0"
@@ -438,10 +474,13 @@
         ]
     },
     "6": {
+        "ad_actor_sys_prio": [],
+        "ad_actor_system": [],
         "ad_select": [
             "stable",
             "0"
         ],
+        "ad_user_port_key": [],
         "all_slaves_active": [
             "0"
         ],
@@ -452,6 +491,7 @@
         "arp_interval": [
             "0"
         ],
+        "arp_ip_target": [],
         "arp_validate": [
             "none",
             "0"
@@ -489,6 +529,7 @@
         "packets_per_slave": [
             "1"
         ],
+        "primary": [],
         "primary_reselect": [
             "always",
             "0"
