@@ -62,10 +62,6 @@ def is_available():
     return True
 
 
-def _hwaddr_required():
-    return config.get('vars', 'hwaddr_in_ifcfg') == 'always'
-
-
 class Ifcfg(Configurator):
     # TODO: Do all the configApplier interaction from here.
     def __init__(self, inRollback=False):
@@ -608,12 +604,7 @@ class ConfigWriter(object):
         conf = ''
         if ipwrapper.Link._detectType(nic.name) == 'dummy':
             opts['hotplug'] = 'no'
-        if _hwaddr_required():
-            _netinfo = netinfo.NetInfo()
-            hwaddr = (_netinfo.nics[nic.name].get('permhwaddr') or
-                      _netinfo.nics[nic.name]['hwaddr'])
 
-            conf += 'HWADDR=%s\n' % pipes.quote(hwaddr)
         if nic.bridge:
             conf += 'BRIDGE=%s\n' % pipes.quote(nic.bridge.name)
         if nic.bond:
@@ -653,34 +644,11 @@ class ConfigWriter(object):
                     mtu = int(mtu)
         return ipv4, ipv6, mtu
 
-    @staticmethod
-    def _hwaddr_from_ifcfg_or_system(nic, ifcfg):
-        if not _hwaddr_required():
-            return []
-        try:
-            with open(ifcfg) as ifcfg_file:
-                return [line for line in ifcfg_file if line.startswith(
-                    'HWADDR=')]
-        except IOError as e:
-            if e.errno != errno.ENOENT:
-                logging.error("%s couldn't be read (errno %s)", ifcfg, e.errno)
-                raise
-            logging.warning("%s doesn't exist, reading HWADDR from the system",
-                            ifcfg)
-            try:
-                return ['HWADDR=%s\n' % netinfo.gethwaddr(nic)]
-            except IOError as e:
-                logging.exception("couldn't determine hardware address of %s "
-                                  "(errno %s)", nic, e.errno)
-                return []
-
     def removeNic(self, nic):
         cf = netinfo.NET_CONF_PREF + nic
         self._backup(cf)
-        hwlines = self._hwaddr_from_ifcfg_or_system(nic, cf)
         l = [self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
-             'MTU=%s\n' % netinfo.DEFAULT_MTU] + hwlines
-        l.append('NM_CONTROLLED=no\n')
+             'MTU=%s\n' % netinfo.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
         with open(cf, 'w') as nicFile:
             nicFile.writelines(l)
 
