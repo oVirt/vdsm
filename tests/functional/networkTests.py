@@ -475,10 +475,12 @@ class NetworkTest(TestCaseBase):
             status, msg = self.setupNetworks(
                 {NETWORK_NAME:
                     {'bonding': BONDING_NAME, 'bridged': bridged}},
-                {BONDING_NAME: {'nics': nics, 'options': 'mode=2'}}, NOCHK)
+                {BONDING_NAME: {'nics': nics, 'options': 'mode=2 arp_ip_target'
+                                '=' + IP_ADDRESS_IN_NETWORK}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertNetworkExists(NETWORK_NAME, bridged)
-            self.assertBondExists(BONDING_NAME, nics, 'mode=2')
+            self.assertBondExists(BONDING_NAME, nics, 'mode=2 arp_ip_target=' +
+                                  IP_ADDRESS_IN_NETWORK)
 
             status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
