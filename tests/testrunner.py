@@ -52,6 +52,9 @@ class FakeSanlock(object):
     HOST_FAIL = 4
     HOST_DEAD = 5
 
+    def init_resource(self, sdUUID, volUUID, lockDisk):
+        pass
+
 
 sys.modules.update({'sanlock': FakeSanlock()})
 
