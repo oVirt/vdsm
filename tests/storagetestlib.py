@@ -82,7 +82,7 @@ def make_filesd_manifest(tmpdir, metadata=None):
     if metadata is None:
         metadata = make_sd_metadata()
     manifest = fileSD.FileStorageDomainManifest(domain_path, metadata)
-    os.makedirs(os.path.join(manifest.domaindir, sduuid, sd.DOMAIN_IMAGES))
+    os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
     return manifest
 
 
