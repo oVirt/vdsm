@@ -24,6 +24,7 @@ import functools
 import logging
 import os
 import pickle
+import platform
 import unittest
 from functools import wraps
 import shutil
@@ -39,6 +40,7 @@ from nose import result
 
 import vdsm
 
+from monkeypatch import Patch
 from testValidation import SlowTestsPlugin, StressTestsPlugin
 
 # /tmp may use tempfs filesystem, not suitable for some of the test assuming a
@@ -46,6 +48,9 @@ from testValidation import SlowTestsPlugin, StressTestsPlugin
 TEMPDIR = '/var/tmp'
 
 PERMUTATION_ATTR = "_permutations_"
+
+_ARCH_REAL = platform.machine()
+_ARCH_FAKE = 'x86_64'
 
 
 def dummyTextGenerator(size):
@@ -153,11 +158,34 @@ def make_file(path, size=0):
         f.truncate(size)
 
 
+def _vdsm_machine():
+    return (
+        _ARCH_REAL if _ARCH_REAL in (
+            # FIXME: this duplicates caps.Architecture, but
+            # we cannot import caps.py in this module.
+            'x86_64', 'ppc64', 'ppc64le'
+        ) else _ARCH_FAKE
+    )
+
+
 class VdsmTestCase(unittest.TestCase):
+
+    _patch_arch = Patch([
+        (platform, "machine", _vdsm_machine),
+    ])
+
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
         self.log = logging.getLogger(self.__class__.__name__)
         self.maxDiff = None  # disable truncating diff in assert error messages
+
+    @classmethod
+    def setUpClass(cls):
+        cls._patch_arch.apply()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._patch_arch.revert()
 
     def retryAssert(self, *args, **kwargs):
         '''Keep retrying an assertion if AssertionError is raised.
