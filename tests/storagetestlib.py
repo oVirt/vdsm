@@ -78,9 +78,11 @@ def get_metafile_path(domaindir):
 def make_filesd_manifest(tmpdir, metadata=None):
     sduuid = str(uuid.uuid4())
     domain_path = os.path.join(tmpdir, sduuid)
-    make_file(get_metafile_path(domain_path))
+    metafile = get_metafile_path(domain_path)
+    make_file(metafile)
     if metadata is None:
-        metadata = make_sd_metadata()
+        metadata = fileSD.FileSDMetadata(metafile)
+        metadata.update(make_sd_metadata())
     manifest = fileSD.FileStorageDomainManifest(domain_path, metadata)
     os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
     return manifest
