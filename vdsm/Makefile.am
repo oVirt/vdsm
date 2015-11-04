@@ -61,7 +61,6 @@ nodist_noinst_DATA = \
 	mom.conf \
 	sudoers.vdsm \
 	svdsm.logger.conf \
-	vdsm-logrotate.conf \
 	vdsm.rwtab \
 	$(NULL)
 
@@ -106,7 +105,7 @@ EXTRA_DIST = \
 	vdsm-libvirt-access.pkla \
 	vdsm-libvirt-access.rules \
 	vdsm-logrotate \
-	vdsm-logrotate.conf.in \
+	vdsm-logrotate.conf \
 	vdsm-modules-load.d.conf \
 	vdsm-store-net-config.in \
 	vdsm-sysctl.conf \
