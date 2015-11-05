@@ -31,8 +31,10 @@ import logging
 import os
 import re
 import signal
+import tarfile
 import threading
 import xml.etree.ElementTree as ET
+import zipfile
 
 import libvirt
 
@@ -734,6 +736,46 @@ def _add_networks(root, params):
 
 
 def _read_ovf_from_ova(ova_path):
+    """
+       virt-v2v support ova in tar, zip formats as well as
+       extracted directory
+    """
+    if os.path.isdir(ova_path):
+        return _read_ovf_from_ova_dir(ova_path)
+    elif zipfile.is_zipfile(ova_path):
+        return _read_ovf_from_zip_ova(ova_path)
+    elif tarfile.is_tarfile(ova_path):
+        return _read_ovf_from_tar_ova(ova_path)
+    raise ClientError('Unknown ova format, supported formats:'
+                      ' tar, zip or a directory')
+
+
+def _find_ovf(entries):
+    for entry in entries:
+        if '.ovf' == os.path.splitext(entry)[1].lower():
+            return entry
+    return None
+
+
+def _read_ovf_from_ova_dir(ova_path):
+    files = os.listdir(ova_path)
+    name = _find_ovf(files)
+    if name is not None:
+        with open(os.path.join(ova_path, name), 'r') as ovf_file:
+            return ovf_file.read()
+    raise ClientError('OVA directory %s does not contain ovf file' % ova_path)
+
+
+def _read_ovf_from_zip_ova(ova_path):
+    with open(ova_path, 'rb') as fh:
+        zf = zipfile.ZipFile(fh)
+        name = _find_ovf(zf.namelist())
+        if name is not None:
+            return zf.read(name)
+    raise ClientError('OVA does not contains file with .ovf suffix')
+
+
+def _read_ovf_from_tar_ova(ova_path):
     # FIXME: change to tarfile package when support --to-stdout
     cmd = ['/usr/bin/tar', 'xf', ova_path, '*.ovf', '--to-stdout']
     rc, output, error = execCmd(cmd)
