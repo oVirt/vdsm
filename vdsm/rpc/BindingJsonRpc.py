@@ -19,18 +19,26 @@ import logging
 from yajsonrpc import JsonRpcServer
 from yajsonrpc.stompReactor import StompReactor
 
+from vdsm import executor
+from vdsm.config import config
 
-def _simpleThreadFactory(func):
-    t = threading.Thread(target=func)
-    t.setDaemon(False)
-    t.start()
+
+# TODO test what should be the default values
+_THREADS = config.getint('rpc', 'worker_threads')
+_TASK_PER_WORKER = config.getint('rpc', 'tasks_per_worker')
+_TASKS = _THREADS * _TASK_PER_WORKER
 
 
 class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
-    def __init__(self, bridge):
-        self._server = JsonRpcServer(bridge, _simpleThreadFactory)
+    def __init__(self, bridge, scheduler):
+        self._executor = executor.Executor(name="jsonrpc.Executor",
+                                           workers_count=_THREADS,
+                                           max_tasks=_TASKS,
+                                           scheduler=scheduler)
+
+        self._server = JsonRpcServer(bridge, self._executor.dispatch)
         self._reactors = []
 
     def add_socket(self, reactor, client_socket):
@@ -46,6 +54,8 @@ class BindingJsonRpc(object):
         return reactor
 
     def start(self):
+        self._executor.start()
+
         t = threading.Thread(target=self._server.serve_requests,
                              name='JsonRpcServer')
         t.setDaemon(True)
@@ -62,3 +72,4 @@ class BindingJsonRpc(object):
         self._server.stop()
         for reactor in self._reactors:
             reactor.stop()
+        self._executor.stop()

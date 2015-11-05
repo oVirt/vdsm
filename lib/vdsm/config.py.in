@@ -249,6 +249,17 @@ parameters = [
 
     ]),
 
+    # Section: [rpc]
+    ('rpc', [
+
+        ('worker_threads', '8',
+            'Number of worker threads to serve jsonrpc server.'),
+
+        ('tasks_per_worker', '10',
+            'Max number of tasks which can be queued per workers.'),
+
+    ]),
+
     # Section: [mom]
     ('mom', [
 

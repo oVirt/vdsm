@@ -34,6 +34,8 @@ from yajsonrpc.stompReactor import StompDetector
 from protocoldetector import MultiProtocolAcceptor
 from yajsonrpc import JsonRpcClientPool
 from rpc.BindingJsonRpc import BindingJsonRpc
+from vdsm import schedule
+from vdsm import utils
 
 
 CERT_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -80,7 +82,11 @@ def constructAcceptor(log, ssl, jsonBridge):
     xmlDetector = XmlDetector(xml_binding)
     acceptor.add_detector(xmlDetector)
 
-    json_binding = BindingJsonRpc(jsonBridge)
+    scheduler = schedule.Scheduler(name="test.Scheduler",
+                                   clock=utils.monotonic_time)
+    scheduler.start()
+
+    json_binding = BindingJsonRpc(jsonBridge, scheduler)
     json_binding.start()
     stompDetector = StompDetector(json_binding)
     acceptor.add_detector(stompDetector)
@@ -96,6 +102,7 @@ def constructAcceptor(log, ssl, jsonBridge):
         acceptor.stop()
         json_binding.stop()
         xml_binding.stop()
+        scheduler.stop(wait=False)
 
 
 @contextmanager
