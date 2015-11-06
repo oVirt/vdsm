@@ -110,18 +110,17 @@ class FakeLVM(object):
                      opened=False,
                      active=bool(activate))
 
-        vg_dict = self.lvmd.setdefault(vgName, {})
-        vg_dict[lvName] = lv_md
+        self.lvmd[(vgName, lvName)] = lv_md
         lv_count = int(self.vgmd[vgName]['lv_count']) + 1
         self.vgmd[vgName]['lv_count'] = str(lv_count)
 
     def activateLVs(self, vgName, lvNames):
         for lv in lvNames:
-            self.lvmd[vgName][lv]['active'] = True
-            self.lvmd[vgName][lv]['attr']['state'] = 'a'
+            self.lvmd[(vgName, lv)]['active'] = True
+            self.lvmd[(vgName, lv)]['attr']['state'] = 'a'
 
     def addtag(self, vg, lv, tag):
-        self.lvmd[vg][lv]['tags'] += (tag,)
+        self.lvmd[(vg, lv)]['tags'] += (tag,)
 
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
@@ -137,15 +136,15 @@ class FakeLVM(object):
         return real_lvm.VG(**vg_md)
 
     def _getLV(self, vgName, lvName):
-        lv_md = deepcopy(self.lvmd[vgName][lvName])
+        lv_md = deepcopy(self.lvmd[(vgName, lvName)])
         lv_attr = real_lvm.LV_ATTR(**lv_md['attr'])
         lv_md['attr'] = lv_attr
         return real_lvm.LV(**lv_md)
 
     def getLV(self, vgName, lvName=None):
         if lvName is None:
-            return [self._getLV(vgName, lv_name)
-                    for lv_name in self.lvmd[vgName].keys()]
+            return [self._getLV(vgName, lv)
+                    for vg, lv in self.lvmd if vg == vgName]
         else:
             return self._getLV(vgName, lvName)
 
@@ -153,7 +152,7 @@ class FakeLVM(object):
         volpath = self.lvPath(vg_name, lv_name)
         os.makedirs(os.path.dirname(volpath))
         with open(volpath, "w") as f:
-            f.truncate(int(self.lvmd[vg_name][lv_name]['size']))
+            f.truncate(int(self.lvmd[(vg_name, lv_name)]['size']))
 
     def _create_pv(self, pv_name, vg_name, size):
         # pe_start is difficult to calculate correctly but since it's not
