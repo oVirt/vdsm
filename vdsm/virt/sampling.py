@@ -558,6 +558,9 @@ class VMBulkSampler(object):
                 doms.append(vm_obj._dom._dom)
         return doms
 
+    def __str__(self):
+        return "<VMBulkSampler at 0x%x>" % id(self)
+
 
 class HostStatsThread(threading.Thread):
     """

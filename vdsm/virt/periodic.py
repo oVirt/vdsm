@@ -194,6 +194,11 @@ class Operation(object):
         self._executor.dispatch(self, self._timeout)
         self._step()
 
+    def __str__(self):
+        return '<Operation action=%s at 0x%x>' % (
+            self._func, id(self)
+        )
+
 
 class VmDispatcher(object):
     """
@@ -241,8 +246,7 @@ class VmDispatcher(object):
 
             except Exception:
                 # we want to make sure to have VM UUID logged
-                self._log.exception("while dispatching %s to VM '%s'",
-                                    self._create, vm_id)
+                self._log.exception("while dispatching %s", op)
             else:
                 try:
                     self._executor.dispatch(op, self._timeout)
@@ -254,8 +258,12 @@ class VmDispatcher(object):
                               self._create, skipped)
         return skipped  # for testing purposes
 
-    def __repr__(self):
-        return 'VmDispatcher(%s)' % self._create
+    def __str__(self):
+        return '<VmDispatcher operation=%s at 0x%x>' % (
+            self._create, id(self)
+        )
+
+    __repr__ = __str__
 
 
 class _RunnableOnVm(object):
@@ -278,6 +286,11 @@ class _RunnableOnVm(object):
 
     def _execute(self):
         raise NotImplementedError
+
+    def __str__(self):
+        return '<%s vm=%s at 0x%x>' % (
+            self.__class__.__name__, self._vm.id, id(self)
+        )
 
 
 class UpdateVolumes(_RunnableOnVm):
