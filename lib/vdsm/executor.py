@@ -156,6 +156,7 @@ class _Worker(object):
         self._thread.daemon = True
         self._log.debug('Starting worker %s' % name)
         self._thread.start()
+        self._callable = None
 
     @property
     def name(self):
@@ -182,6 +183,7 @@ class _Worker(object):
     def _execute_task(self):
         callable, timeout = self._executor._next_task()
         discard = self._discard_after(timeout)
+        self._callable = callable
         try:
             callable()
         except Exception:
@@ -192,6 +194,7 @@ class _Worker(object):
             # blocked on callable when we discard it or it just finished.
             # However, we expect that most of times only blocked threads
             # will be discarded.
+            self._callable = None
             if discard is not None:
                 discard.cancel()
             if self._discarded:
@@ -206,8 +209,13 @@ class _Worker(object):
         if self._discarded:
             raise AssertionError("Attempt to discard worker twice")
         self._discarded = True
-        self._log.debug("Worker %s discarded", self.name)
+        self._log.debug("Worker discarded: %s", self)
         self._executor._worker_discarded(self)
+
+    def __str__(self):
+        return "<Worker name=%s task=%s at 0x%x>" % (
+            self.name, self._callable, id(self)
+        )
 
 
 class TaskQueue(object):
