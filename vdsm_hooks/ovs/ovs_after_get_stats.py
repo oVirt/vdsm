@@ -33,9 +33,12 @@ log = partial(ovs_utils.log, tag='ovs_after_get_stats: ')
 
 
 def ovs_networks_stats(stats):
-    """ Get OVS networks from RunningConfig and assign them network stats
-    dictionaries from underlying devices. Fake bridges and bonds already
-    have stats with their names.
+    """Get OVS networks from RunningConfig and assign them network stats
+    dictionaries from underlying devices. Fake bridges and bonds already have
+    stats with their names.
+
+    Note, that it takes some time for a new device to appear in stats, so we
+    first check if the device we got from running_config is already reported.
     """
     ovs_networks_stats = {}
     running_config = RunningConfig()
@@ -44,13 +47,14 @@ def ovs_networks_stats(stats):
         if is_ovs_network(attrs):
             vlan = attrs.get('vlan')
             iface = attrs.get('nic') or attrs.get('bonding')
-            if vlan is None:
+            if vlan is None and iface in stats:
                 # Untagged networks use OVS bridge as their bridge, but Engine
                 # expects a bridge with 'network-name' name.  create a copy of
                 # top underlying device stats and save it as bridge's stats.
                 # NOTE: copy stats of ovsbr0? (now we repots iface's stats)
                 ovs_networks_stats[network] = stats[iface]
-            else:
+                ovs_networks_stats[network]['name'] = network
+            elif network in stats:
                 # Engine expects stats entries for vlans named 'iface.id'
                 vlan_name = '%s.%s' % (iface, vlan)
                 ovs_networks_stats[vlan_name] = stats[network]

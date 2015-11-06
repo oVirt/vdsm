@@ -21,15 +21,13 @@ import re
 import sys
 import traceback
 
-import six
-
 from vdsm.netconfpersistence import RunningConfig
 from vdsm import netinfo
 
 from hooking import execCmd
 import hooking
 
-from ovs_utils import (get_bond_options, is_ovs_network, is_ovs_bond,
+from ovs_utils import (get_bond_options, iter_ovs_nets, iter_ovs_bonds,
                        EXT_OVS_APPCTL, EXT_OVS_VSCTL, BRIDGE_NAME)
 
 
@@ -45,6 +43,13 @@ def _get_stp(iface):
         return 'on'
     else:
         return 'off'
+
+
+def _list_ports(bridge):
+    rc, out, err = execCmd([EXT_OVS_VSCTL, 'list-ports', bridge], sudo=True)
+    if rc != 0:
+        hooking.exit_hook('\n'.join(err))
+    return out
 
 
 def _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces, routes):
@@ -72,16 +77,15 @@ def networks_caps(running_config):
     ovs_networks_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for network, attrs in six.iteritems(running_config.networks):
-        if is_ovs_network(attrs):
-            interface = network if 'vlan' in attrs else BRIDGE_NAME
-            net_info = _get_net_info(attrs, interface, dhcpv4ifaces,
-                                     dhcpv6ifaces, routes)
-            net_info['iface'] = interface
-            net_info['bridged'] = True
-            net_info['ports'] = []  # TODO attached nics + vms nets
-            net_info['stp'] = _get_stp(interface)
-            ovs_networks_caps[network] = net_info
+    for network, attrs in iter_ovs_nets(running_config.networks):
+        interface = network if 'vlan' in attrs else BRIDGE_NAME
+        net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
+                                 routes)
+        net_info['iface'] = network
+        net_info['bridged'] = True
+        net_info['ports'] = _list_ports(interface)
+        net_info['stp'] = _get_stp(interface)
+        ovs_networks_caps[network] = net_info
     return ovs_networks_caps
 
 
@@ -89,17 +93,16 @@ def bridges_caps(running_config):
     ovs_bridges_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for network, attrs in six.iteritems(running_config.networks):
-        if is_ovs_network(attrs):
-            interface = network if 'vlan' in attrs else BRIDGE_NAME
-            net_info = _get_net_info(attrs, interface, dhcpv4ifaces,
-                                     dhcpv6ifaces, routes)
-            net_info['bridged'] = True
-            net_info['ports'] = []  # TODO attached nics + vms nets
-            # TODO netinfo._bridge_options does not work here
-            net_info['opts'] = {}
-            net_info['stp'] = _get_stp(interface)
-            ovs_bridges_caps[network] = net_info
+    for network, attrs in iter_ovs_nets(running_config.networks):
+        interface = network if 'vlan' in attrs else BRIDGE_NAME
+        net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
+                                 routes)
+        net_info['bridged'] = True
+        net_info['ports'] = _list_ports(interface)
+        # TODO netinfo._bridge_options does not work here
+        net_info['opts'] = {}
+        net_info['stp'] = _get_stp(interface)
+        ovs_bridges_caps[network] = net_info
     return ovs_bridges_caps
 
 
@@ -107,17 +110,16 @@ def vlans_caps(running_config):
     ovs_vlans_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for network, attrs in six.iteritems(running_config.networks):
-        if is_ovs_network(attrs):
-            vlan = attrs.get('vlan')
-            if vlan is not None:
-                net_info = _get_net_info(attrs, network, dhcpv4ifaces,
-                                         dhcpv6ifaces, routes)
-                iface = attrs.get('bonding') or attrs.get('nic')
-                net_info['iface'] = iface
-                net_info['bridged'] = True
-                net_info['vlanid'] = vlan
-                ovs_vlans_caps['%s.%s' % (iface, vlan)] = net_info
+    for network, attrs in iter_ovs_nets(running_config.networks):
+        vlan = attrs.get('vlan')
+        if vlan is not None:
+            net_info = _get_net_info(attrs, network, dhcpv4ifaces,
+                                     dhcpv6ifaces, routes)
+            iface = attrs.get('bonding') or attrs.get('nic')
+            net_info['iface'] = iface
+            net_info['bridged'] = True
+            net_info['vlanid'] = vlan
+            ovs_vlans_caps['%s.%s' % (iface, vlan)] = net_info
     return ovs_vlans_caps
 
 
@@ -143,15 +145,14 @@ def bondings_caps(running_config):
     ovs_bonding_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
-    for bonding, attrs in six.iteritems(running_config.bonds):
-        if is_ovs_bond(attrs):
-            options = get_bond_options(attrs.get('options'), keep_custom=True)
-            net_info = _get_net_info(attrs, bonding, dhcpv4ifaces,
-                                     dhcpv6ifaces, routes)
-            net_info['slaves'] = attrs.get('nics')
-            net_info['active_slave'] = _get_active_slave(bonding)
-            net_info['opts'] = options
-            ovs_bonding_caps[bonding] = net_info
+    for bonding, attrs in iter_ovs_bonds(running_config.bonds):
+        options = get_bond_options(attrs.get('options'), keep_custom=True)
+        net_info = _get_net_info(attrs, bonding, dhcpv4ifaces, dhcpv6ifaces,
+                                 routes)
+        net_info['slaves'] = attrs.get('nics')
+        net_info['active_slave'] = _get_active_slave(bonding)
+        net_info['opts'] = options
+        ovs_bonding_caps[bonding] = net_info
     return ovs_bonding_caps
 
 
