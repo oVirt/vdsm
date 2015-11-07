@@ -40,7 +40,6 @@ AS_IF([test "x$PACKAGE_RELEASE" = x],
 AM_INIT_AUTOMAKE([-Wno-portability])
 
 # Checking for build tools
-AC_PROG_CC
 AC_PROG_LN_S
 AM_PATH_PYTHON([2.6])
 

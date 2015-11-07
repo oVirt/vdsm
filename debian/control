@@ -5,7 +5,6 @@ Maintainer: Zheng Sheng, Zhou <zhshzhou@linux.vnet.ibm.com>
 Build-Depends: debhelper (>= 8.0.0),
  autoconf,
  automake,
- gcc,
  genisoimage,
  gettext,
  libasprintf-dev,

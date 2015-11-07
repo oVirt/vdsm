@@ -1,6 +1,5 @@
 autoconf
 automake
-gcc
 git
 libguestfs-tools-c
 m2crypto
