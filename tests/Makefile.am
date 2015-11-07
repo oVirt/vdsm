@@ -216,7 +216,7 @@ dist_vdsmtests_SCRIPTS = \
 all-local: \
 	$(nodist_vdsmtests_PYTHON)
 
-server.crt:
+server.crt server.csr server.key other.crt other.csr other.key:
 	./makecert.sh
 
 # crossImportsTests.py has to be run separate due to different tests which
