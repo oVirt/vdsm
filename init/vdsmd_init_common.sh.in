@@ -260,9 +260,9 @@ task_upgraded_version_check(){
              ret=$?
         elif grep -q '^vdsm-4\.16\.' "${upgraded_ver_file}"; then
              # REQUIRED_FOR upgrade from vdsm-4.16.z
-	     # Both mutlipath and sasl password were configured in 4.16 as
-	     # part of the installation - see vdsm-4.16 spec. Since 4.17 the
-	     # logic moved to vdsm-tool
+             # Both mutlipath and sasl password were configured in 4.16 as
+             # part of the installation - see vdsm-4.16 spec. Since 4.17 the
+             # logic moved to vdsm-tool
              "$VDSM_TOOL" configure --module multipath --module passwd
              ret=$?
         fi
