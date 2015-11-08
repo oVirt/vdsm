@@ -301,7 +301,7 @@ A JSON RPC server and client implementation.
 %package infra
 Summary:        Utilities and libraries for vdsm
 Requires:       python >= 2.6
-Obsoletes:      python-zombiereaper
+Obsoletes:      %{name}-python-zombiereaper
 
 %description infra
 Utilities and libraries for vdsm.
