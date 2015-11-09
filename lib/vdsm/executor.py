@@ -110,6 +110,10 @@ class Executor(object):
         with self._lock:
             if self._running:
                 self._add_worker()
+        # this is a debug helper, it is not that important to be precise;
+        # intentionally done outside the lock
+        self._log.debug("executor state: count=%d workers=%s",
+                        len(self._workers), self._workers)
 
     def _worker_stopped(self, worker):
         """
