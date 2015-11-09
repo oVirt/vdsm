@@ -108,34 +108,65 @@ procs_blocked 0
 
 class HostStatsThreadTests(TestCaseBase):
 
-    def testCpuCoreStats(self):
-        node_id, cpu_id = 0, 0
-        cpu_sample = {'user': 1.0, 'sys': 2.0}
+    _core_zero_stats = {
+        'cpuIdle': '100.00',
+        'cpuSys': '0.00',
+        'cpuUser': '0.00',
+        'nodeIndex': 0
+    }
 
-        first_sample = fake.HostSample(1.0, {cpu_id: cpu_sample})
-        last_sample = fake.HostSample(2.0, {cpu_id: cpu_sample})
+    _core_one_stats = {
+        'cpuIdle': '100.00',
+        'cpuSys': '0.00',
+        'cpuUser': '0.00',
+        'nodeIndex': 1
+    }
 
-        def fakeNumaTopology():
-            return {
-                node_id: {
-                    'cpus': [cpu_id]
-                }
-            }
-
-        expected = {
-            '0': {
-                'cpuIdle': '100.00',
-                'cpuSys': '0.00',
-                'cpuUser': '0.00',
-                'nodeIndex': 0
-            }
+    def _fakeNumaTopology(self):
+        return {
+            0: {'cpus': [0]},
+            1: {'cpus': [1]}
         }
 
+    def testCpuCoreStats(self):
+        cpu_sample = {'user': 1.0, 'sys': 2.0}
+
+        # Both CPUs are online and first and last samples are present
+        first_sample = fake.HostSample(1.0, {0: cpu_sample, 1: cpu_sample})
+        last_sample = fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample})
+
         with MonkeyPatchScope([(caps, 'getNumaTopology',
-                                fakeNumaTopology)]):
-            self.assertEqual(
-                hoststats._get_cpu_core_stats(first_sample, last_sample),
-                expected)
+                                self._fakeNumaTopology)]):
+            result = hoststats._get_cpu_core_stats(first_sample, last_sample)
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result['0'], self._core_zero_stats)
+            self.assertEqual(result['1'], self._core_one_stats)
+
+    def testSkipStatsOnMissingFirstSample(self):
+        cpu_sample = {'user': 1.0, 'sys': 2.0}
+
+        # CPU one suddenly went offline and no new sample from it is available
+        first_sample = fake.HostSample(1.0, {0: cpu_sample})
+        last_sample = fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample})
+
+        with MonkeyPatchScope([(caps, 'getNumaTopology',
+                                self._fakeNumaTopology)]):
+            result = hoststats._get_cpu_core_stats(first_sample, last_sample)
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result['0'], self._core_zero_stats)
+
+    def testSkipStatsOnMissingLastSample(self):
+        cpu_sample = {'user': 1.0, 'sys': 2.0}
+
+        first_sample = fake.HostSample(1.0, {0: cpu_sample, 1: cpu_sample})
+        # CPU one suddenly came online and the second sample is still missing
+        last_sample = fake.HostSample(2.0, {0: cpu_sample})
+
+        with MonkeyPatchScope([(caps, 'getNumaTopology',
+                                self._fakeNumaTopology)]):
+            result = hoststats._get_cpu_core_stats(first_sample, last_sample)
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result['0'], self._core_zero_stats)
 
     def testOutputWithNoSamples(self):
         expected = {

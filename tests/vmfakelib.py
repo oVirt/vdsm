@@ -387,7 +387,7 @@ class CpuCoreSample(object):
         self._samples = samples
 
     def getCoreSample(self, key):
-        return self._samples[key]
+        return self._samples.get(key)
 
 
 class HostSample(object):

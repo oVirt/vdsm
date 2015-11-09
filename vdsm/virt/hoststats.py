@@ -98,9 +98,12 @@ def _get_cpu_core_stats(first_sample, last_sample):
     interval = last_sample.timestamp - first_sample.timestamp
 
     def compute_cpu_usage(cpu_core, mode):
+        first_core_sample = first_sample.cpuCores.getCoreSample(cpu_core)
+        last_core_sample = last_sample.cpuCores.getCoreSample(cpu_core)
+        if not first_core_sample or not last_core_sample:
+            raise MissingSample()
         jiffies = (
-            last_sample.cpuCores.getCoreSample(cpu_core)[mode] -
-            first_sample.cpuCores.getCoreSample(cpu_core)[mode]
+            last_core_sample[mode] - first_core_sample[mode]
         ) % JIFFIES_BOUND
         return ("%.2f" % (jiffies / interval))
 
@@ -108,10 +111,16 @@ def _get_cpu_core_stats(first_sample, last_sample):
     for node_index, numa_node in six.iteritems(caps.getNumaTopology()):
         cpu_cores = numa_node['cpus']
         for cpu_core in cpu_cores:
+            try:
+                user_cpu_usage = compute_cpu_usage(cpu_core, 'user')
+                system_cpu_usage = compute_cpu_usage(cpu_core, 'sys')
+            except MissingSample:
+                # Only collect data when all required samples already present
+                continue
             core_stat = {
                 'nodeIndex': int(node_index),
-                'cpuUser': compute_cpu_usage(cpu_core, 'user'),
-                'cpuSys': compute_cpu_usage(cpu_core, 'sys'),
+                'cpuUser': user_cpu_usage,
+                'cpuSys': system_cpu_usage,
             }
             core_stat['cpuIdle'] = (
                 "%.2f" % max(0.0,
@@ -120,6 +129,10 @@ def _get_cpu_core_stats(first_sample, last_sample):
                              float(core_stat['cpuSys'])))
             cpu_core_stats[str(cpu_core)] = core_stat
     return cpu_core_stats
+
+
+class MissingSample(Exception):
+    pass
 
 
 def _get_interfaces_stats(first_sample, last_sample):

@@ -154,8 +154,7 @@ class CpuCoreSample(object):
 
     def getCoreSample(self, coreId):
         strCoreId = str(coreId)
-        if strCoreId in self.coresSample:
-            return self.coresSample[strCoreId]
+        return self.coresSample.get(strCoreId)
 
 
 class NumaNodeMemorySample(object):
