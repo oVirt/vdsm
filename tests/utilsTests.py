@@ -166,7 +166,9 @@ class RetryTests(TestCaseBase):
 
 
 class PidStatTests(TestCaseBase):
-    def test(self):
+
+    @MonkeyPatch(cmdutils, "_USING_CPU_AFFINITY", False)
+    def test_without_affinity(self):
         args = ["sleep", "3"]
         sproc = utils.execCmd(args, sync=False)
         stats = utils.pidStat(sproc.pid)
@@ -201,7 +203,10 @@ class GetCmdArgsTests(TestCaseBase):
         args = [EXT_SLEEP, "4"]
         sproc = utils.execCmd(args, sync=False)
         try:
-            self.assertEquals(utils.getCmdArgs(sproc.pid), tuple(args))
+            cmd_args = utils.getCmdArgs(sproc.pid)
+            # let's ignore optional taskset at the beginning
+            self.assertEquals(cmd_args[-len(args):],
+                              tuple(args))
         finally:
             sproc.kill()
             sproc.wait()
