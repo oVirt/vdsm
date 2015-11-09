@@ -39,6 +39,8 @@ from vdsm import utils
 import storage.outOfProcess as oop
 import storage.misc as misc
 import storage.fileUtils as fileUtils
+
+from monkeypatch import MonkeyPatch
 from testValidation import checkSudo
 
 EXT_CHMOD = "/bin/chmod"
@@ -1019,7 +1021,13 @@ class ExecCmd(TestCaseBase):
 
         self.assertEquals(ret, 0)
 
-    def testNoCommand(self):
+    @MonkeyPatch(utils, "_USING_CPU_AFFINITY", True)
+    def testNoCommandWithAffinity(self):
+        rc, _, _ = utils.execCmd(["I.DONT.EXIST"])
+        self.assertNotEqual(rc, 0)
+
+    @MonkeyPatch(utils, "_USING_CPU_AFFINITY", False)
+    def testNoCommandWithoutAffinity(self):
         self.assertRaises(OSError, utils.execCmd, ["I.DONT.EXIST"])
 
     def testStdOut(self):

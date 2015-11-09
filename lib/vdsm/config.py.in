@@ -208,10 +208,10 @@ parameters = [
         ('connection_stats_timeout', '3600',
             'Time in seconds defining how frequently we log transport stats'),
 
-        ('cpu_affinity', '',
+        ('cpu_affinity', '1',
             'Comma separated whitelist of CPU cores on which VDSM is allowed '
-            'to run. The default is "", meaning VDSM can be scheduled by '
-            ' the OS to run on any core. '
+            'to run. The default is "1", meaning VDSM can be scheduled by '
+            ' the OS to run on the second core of the system. '
             'Valid examples: "1", "0,1", "0,2,3"'),
 
         ('ssl_implementation', '@SSL_IMPLEMENTATION@',
