@@ -50,6 +50,7 @@ test_modules = \
 	cmdutilsTests.py \
 	commands_test.py \
 	concurrentTests.py \
+	config_test.py \
 	cpuinfo_test.py \
 	cpuProfileTests.py \
 	deviceTests.py \
@@ -157,6 +158,7 @@ blacklist_modules_python3 = \
 	blocksdTests.py \
 	bridgeTests.py \
 	bulk_sampling_test.py \
+	config_test.py \
 	cPopenTests.py \
 	capsTests.py \
 	clientifTests.py \

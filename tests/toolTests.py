@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from vdsm import config
 from vdsm.tool import configurator
 from vdsm.tool.configurators import YES, NO, MAYBE, InvalidConfig, InvalidRun
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
@@ -34,6 +35,8 @@ import shutil
 import sys
 
 dirName = os.path.dirname(os.path.realpath(__file__))
+
+FakeFiles = libvirt.FILES
 
 
 class MockModuleConfigurator(object):
@@ -298,8 +301,9 @@ class LibvirtModuleConfigureTests(TestCase):
 
     def setUp(self):
         self._test_dir = tempfile.mkdtemp()
-
-        self.test_env['VDSM_CONF'] = self._test_dir + '/vdsm.conf'
+        vdsm_path = os.path.join(self._test_dir + '/vdsm/vdsm.conf.d')
+        os.makedirs(vdsm_path)
+        self.test_env['VDSM_CONF'] = vdsm_path + '/99_vdsm.conf'
         self.test_env['LCONF'] = self._test_dir + '/libvirtd.conf'
         self.test_env['QCONF'] = self._test_dir + '/qemu.conf'
         self.test_env['LDCONF'] = self._test_dir + '/qemu-sanlock.conf'
@@ -307,7 +311,10 @@ class LibvirtModuleConfigureTests(TestCase):
         self.test_env['QNETWORK'] = 'NON_EXISTENT'
 
         for key, val in self.test_env.items():
-            libvirt.FILES[key]['path'] = val
+            if not key == 'VDSM_CONF':
+                FakeFiles[key]['path'] = val
+
+        self.vdsm_cfg = config.load(vdsm_path)
 
         self._setConfig(
             ('QLCONF', 'libvirtd'),
@@ -322,8 +329,14 @@ class LibvirtModuleConfigureTests(TestCase):
             ),
             (
                 libvirt,
-                '_getFile',
-                lambda x: self.test_env[x]
+                '_vdsm_cfg',
+                self.vdsm_cfg
+            ),
+
+            (
+                libvirt,
+                'FILES',
+                FakeFiles
             ),
             (
                 utils,
@@ -350,8 +363,8 @@ class LibvirtModuleConfigureTests(TestCase):
                 testConf.write(data)
 
     def testValidatePositive(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'true')
         self._setConfig(
-            ('VDSM_CONF', 'vdsm_ssl'),
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'qemu_ssl'),
         )
@@ -359,8 +372,8 @@ class LibvirtModuleConfigureTests(TestCase):
         self.assertTrue(libvirt.validate())
 
     def testValidateNegative(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'false')
         self._setConfig(
-            ('VDSM_CONF', 'vdsm_no_ssl'),
             ('LCONF', 'lconf_ssl'),
             ('QCONF', 'qemu_ssl'),
         )
@@ -389,9 +402,9 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     def testLibvirtConfigureToSSLTrue(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'true')
         self._setConfig((
             'LCONF', 'empty'),
-            ('VDSM_CONF', 'vdsm_ssl'),
             ('QCONF', 'empty'),
         )
 
@@ -408,9 +421,9 @@ class LibvirtModuleConfigureTests(TestCase):
         )
 
     def testLibvirtConfigureToSSLFalse(self):
+        self.vdsm_cfg.set('vars', 'ssl', 'false')
         self._setConfig(
             ('LCONF', 'empty'),
-            ('VDSM_CONF', 'vdsm_no_ssl'),
             ('QCONF', 'empty'),
         )
         self.assertEquals(
