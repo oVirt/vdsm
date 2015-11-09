@@ -515,10 +515,10 @@ class VMBulkSampler(object):
 
     def __call__(self):
         timestamp = self._stats_cache.clock()
+        acquired = self._sampling.acquire(blocking=False)
         # we are deep in the hot path. bool(ExpiringCache)
         # *is* costly so we should avoid it if we can.
-        fast_path = (
-            self._sampling.acquire(blocking=False) and not self._skip_doms)
+        fast_path = acquired and not self._skip_doms
         try:
             if fast_path:
                 # This is expected to be the common case.
@@ -539,7 +539,8 @@ class VMBulkSampler(object):
         else:
             self._stats_cache.put(_translate(bulk_stats), timestamp)
         finally:
-            self._sampling.release()
+            if acquired:
+                self._sampling.release()
 
     def _get_responsive_doms(self):
         vms = self._get_vms()
