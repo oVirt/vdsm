@@ -149,6 +149,25 @@ class GlusterFSConnectionTests(VdsmTestCase):
                           "backup-volfile-servers=192.168.122.2:192.168.122.3")
 
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
+    def test_server_not_in_volinfo(self):
+        """
+        This test simulates a use case where gluster server provided in the
+        path doesn't appear in the volume info.
+        """
+        def glusterVolumeInfo(volname=None, volfileServer=None):
+            return {'music': {'brickCount': '3',
+                              'bricks': ['192.168.122.5:/tmp/music',
+                                         '192.168.122.2:/tmp/music',
+                                         '192.168.122.3:/tmp/music']}}
+
+        storageServer.supervdsm.glusterVolumeInfo = glusterVolumeInfo
+
+        gluster = GlusterFSConnection(spec="gluster-server:/music")
+        expected_backup_servers = \
+            "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
+        self.assertEquals(gluster.options, expected_backup_servers)
+
+    @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     def test_gluster_and_user_provided_mount_options(self):
         def glusterVolumeInfo(volname=None, volfileServer=None):
             return {'music': {'brickCount': '3',

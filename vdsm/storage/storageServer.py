@@ -338,7 +338,14 @@ class GlusterFSConnection(MountConnection):
 
     def _get_backup_servers_option(self):
         servers = [brick.split(":")[0] for brick in self.volinfo['bricks']]
-        servers.remove(self._volfileserver)
+        self.log.debug("Using bricks: %s", servers)
+        if self._volfileserver in servers:
+            servers.remove(self._volfileserver)
+        else:
+            self.log.warning("gluster server %r is not in bricks %s, possibly "
+                             "mounting duplicate servers",
+                             self._volfileserver, servers)
+
         if not servers:
             return ""
 
