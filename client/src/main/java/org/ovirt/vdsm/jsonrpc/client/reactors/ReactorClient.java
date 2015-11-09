@@ -264,6 +264,7 @@ public abstract class ReactorClient {
      * Sends message using provided byte array.
      *
      * @param message - content of the message to sent.
+     * @throws ClientConnectionException when issues with connection.
      */
     public abstract void sendMessage(byte[] message) throws ClientConnectionException;
 
@@ -274,6 +275,7 @@ public abstract class ReactorClient {
      *            provided buffer to be read.
      * @throws IOException
      *             when networking issue occurs.
+     * @return Number of bytes read.
      */
     protected abstract int read(ByteBuffer buff) throws IOException;
 
@@ -290,6 +292,7 @@ public abstract class ReactorClient {
     /**
      * Transport specific post connection functionality.
      *
+     * @param callback - callback which is executed after connection is estabilished.
      * @throws ClientConnectionException
      *             when issues with connection.
      */
@@ -319,6 +322,9 @@ public abstract class ReactorClient {
 
     /**
      * Builds network issue message for specific protocol.
+     *
+     * @param reason why we want to build network response.
+     * @return byte array containing response.
      */
     protected abstract byte[] buildNetworkResponse(String reason);
 

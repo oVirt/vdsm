@@ -21,6 +21,8 @@ public class RequestBuilder {
 
     /**
      * Creates builder with required methodName.
+     *
+     * @param methodName - Name of the method to call.
      */
     public RequestBuilder(String methodName) {
         this.parameters = OBJECT_MAPPER.createObjectNode();

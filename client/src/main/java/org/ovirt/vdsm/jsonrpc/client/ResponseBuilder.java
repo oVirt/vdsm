@@ -19,6 +19,8 @@ public class ResponseBuilder {
 
     /**
      * Creates builder with required response id.
+     *
+     * @param id - Unique response Id.
      */
     public ResponseBuilder(JsonNode id) {
         this.id = id;

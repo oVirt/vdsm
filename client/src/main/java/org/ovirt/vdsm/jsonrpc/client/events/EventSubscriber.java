@@ -7,7 +7,7 @@ import org.reactivestreams.Subscription;
 
 
 /**
- * Subscription id contains <receiver>.<component>.<operation_id>.<unique_id>
+ * Subscription id contains &lt;receiver&gt;.&lt;component&gt;.&lt;operation_id&gt;.&lt;unique_id&gt;.
  *
  */
 public abstract class EventSubscriber implements Subscriber<Map<String, Object>> {

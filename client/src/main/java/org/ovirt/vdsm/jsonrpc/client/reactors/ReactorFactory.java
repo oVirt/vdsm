@@ -26,7 +26,7 @@ public class ReactorFactory {
      * @param provider Provides ability to get SSL context.
      * @param type <code>ReactorType</code> which will be created.
      * @return <code>NioReactor</code> reactor when provider is <code>null</code> or <code>SSLReactor</code>.
-     * @throws ClientConnectionException
+     * @throws ClientConnectionException when unexpected type value is provided or issue with constucting selector.
      */
     public static Reactor getReactor(ManagerProvider provider, ReactorType type) throws ClientConnectionException {
         if (ReactorType.STOMP.equals(type)) {
@@ -37,6 +37,7 @@ public class ReactorFactory {
     }
 
     /**
+     * @param parallelism the parallelism level using for event processing.
      * @return Single instance of <code>ResponseWorker</code>.
      */
     public static ResponseWorker getWorker(int parallelism) {

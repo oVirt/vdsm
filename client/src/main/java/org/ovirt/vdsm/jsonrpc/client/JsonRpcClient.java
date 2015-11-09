@@ -31,7 +31,8 @@ public class JsonRpcClient {
     /**
      * Wraps {@link ReactorClient} to hide response update details.
      *
-     * @param client - used communicate.
+     * @param client - used to communicate.
+     * @param tracker - used for response tracking.
      */
     public JsonRpcClient(ReactorClient client, ResponseTracker tracker) {
         this.client = client;
@@ -63,9 +64,8 @@ public class JsonRpcClient {
      *
      * @param req - Request which is about to be sent.
      * @return Future representation of the response or <code>null</code> if sending failed.
-     * @throws ClientConnectionException
-     *             is thrown when connection issues occur.
-     * @throws {@link RequestAlreadySentException} when the same requests is attempted to be send twice.
+     * @throws ClientConnectionException is thrown when connection issues occur.
+     * @throws RequestAlreadySentException when the same requests is attempted to be send twice.
      */
     public Future<JsonRpcResponse> call(JsonRpcRequest req) throws ClientConnectionException {
         final Call call = new Call(req);
@@ -87,9 +87,8 @@ public class JsonRpcClient {
      *
      * @param requests - <code>List</code> of requests to be sent.
      * @return Future representation of the responses or <code>null</code> if sending failed.
-     * @throws ClientConnectionException
-     *             is thrown when connection issues occur.
-     * @throws {@link RequestAlreadySentException} when the same requests is attempted to be send twice.
+     * @throws ClientConnectionException is thrown when connection issues occur.
+     * @throws RequestAlreadySentException when the same requests is attempted to be send twice.
      */
     public Future<List<JsonRpcResponse>> batchCall(List<JsonRpcRequest> requests) throws ClientConnectionException {
         final BatchCall call = new BatchCall(requests);

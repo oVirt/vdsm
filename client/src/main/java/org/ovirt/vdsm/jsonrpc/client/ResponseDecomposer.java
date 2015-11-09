@@ -44,7 +44,8 @@ public class ResponseDecomposer {
 
     /**
      * Decomposes response to provided type.
-     * @param clazz - Type of the object to which response will be decomposed.
+     * @param clazz - Class to which response will be decomposed.
+     * @param <T> -Type of the object to which response will be decomposed. 
      * @return Decomposed response of provided type.
      */
     @SuppressWarnings("unchecked")
@@ -66,7 +67,8 @@ public class ResponseDecomposer {
     /**
      * Decomposes response to provided typed array.
      * @param array - An array of objects to be decomposed.
-     * @param clazz - Type of objects in array to which response are decomposed.
+     * @param clazz - Class to which response will be decomposed.
+     * @param <T> -Type of the object to which response will be decomposed. 
      * @param subtypeKey - The key which is used to store objects in decomposed map.
      * @return Decomposed response of provided type.
      */

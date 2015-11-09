@@ -43,7 +43,7 @@ public class PublisherTestCase {
         Subscription subscription = captor.getValue();
 
         publisher.process(event);
-        verify(subscriber, timeout(500).never()).onNext(map);
+        verify(subscriber, timeout(500).times(0)).onNext(map);
 
         subscription.request(1);
         verify(subscriber, timeout(500).times(1)).onNext(map);

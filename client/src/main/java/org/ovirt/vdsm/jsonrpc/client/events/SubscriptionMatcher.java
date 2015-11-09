@@ -20,12 +20,12 @@ import org.ovirt.vdsm.jsonrpc.client.JsonRpcEvent;
  *
  * Matching process is based on subscription id which is represented by 4 subscription types:
  *
- *  <receiver>.<component>.<operation_id>.<unique_id>
+ *  &lt;receiver&gt;.&lt;component&gt;.&lt;operation_id&gt;.&lt;unique_id&gt;
  *
- *  <receiver>     - Uniquely identifies host from which event arrived
- *  <component>    - Logical component like: Storage, Virt etc
- *  <operation_id> - Operation identifier like Image.create
- *  <unique_id>    - Identifier of a specific operation
+ *  &lt;receiver&gt;     - Uniquely identifies host from which event arrived
+ *  &lt;component&gt;    - Logical component like: Storage, Virt etc
+ *  &lt;operation_id&gt; - Operation identifier like Image.create
+ *  &lt;unique_id&gt;    - Identifier of a specific operation
  *
  *  User can subscribe to all events by defining '*' for each subscription type.
  *
