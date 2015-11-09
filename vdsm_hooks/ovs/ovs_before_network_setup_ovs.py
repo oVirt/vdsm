@@ -78,7 +78,7 @@ def _setup_ovs_net(net, attrs, running_config, nets_by_nic):
     else:
         commands.extend(['--', 'add-br', net, BRIDGE_NAME, str(vlan)])
     if nic is not None:
-        commands.extend(_add_nic_port(net, vlan, nic, nets_by_nic))
+        commands.extend(_add_nic_port(net, nic, nets_by_nic))
 
     running_config.setNetwork(net, attrs)
     return commands
@@ -100,10 +100,10 @@ def _edit_ovs_net(net, attrs, running_config, nets_by_nic):
             commands.extend(['--', 'set', 'port', net, 'tag=%d' % vlan])
     running_nic = running_config.networks[net].get('nic')
     if running_nic is None:
-        commands.extend(_add_nic_port(net, vlan, nic, nets_by_nic))
+        commands.extend(_add_nic_port(net, nic, nets_by_nic))
     elif running_nic != nic:
         commands.extend(_del_nic_port(net, running_nic, nets_by_nic))
-        commands.extend(_add_nic_port(net, vlan, nic, nets_by_nic))
+        commands.extend(_add_nic_port(net, nic, nets_by_nic))
 
     running_config.setNetwork(net, attrs)
     return commands
@@ -122,7 +122,7 @@ def _remove_ovs_network(net, running_config, nets_by_nic):
     return commands
 
 
-def _add_nic_port(net, vlan, nic, nets_by_nic):
+def _add_nic_port(net, nic, nets_by_nic):
     if nic in nets_by_nic:
         nets_by_nic[nic].add(net)
     else:
