@@ -257,6 +257,9 @@ class SSLHandshakeDispatcher(object):
             self.want_read = self.want_write = True
             self._is_handshaking = False
 
+    def handle_close(self, dispatcher):
+        dispatcher.close()
+
 
 def create_ssl_context():
         sslctx = None

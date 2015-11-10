@@ -70,6 +70,9 @@ class _AcceptorImpl(object):
                           *client.getpeername()[0:2])
             self._dispatcher_factory(client)
 
+    def handle_close(self, dispatcher):
+        dispatcher.close()
+
 
 class _ProtocolDetector(object):
     log = logging.getLogger("ProtocolDetector.Detector")
@@ -125,6 +128,9 @@ class _ProtocolDetector(object):
 
     def has_expired(self):
         return monotonic_time() >= self._give_up_at
+
+    def handle_close(self, dispatcher):
+        dispatcher.close()
 
 
 class MultiProtocolAcceptor:
