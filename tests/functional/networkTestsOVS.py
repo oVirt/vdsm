@@ -27,12 +27,16 @@ from modprobe import RequireVethMod
 from nettestlib import veth_pair
 from testlib import expandPermutations, permutations
 
+import networkTests
 from networkTests import (setupModule, tearDownModule, NetworkTest, dummyIf,
                           _get_source_route, dnsmasqDhcp, NETWORK_NAME,
                           IP_ADDRESS, IP_MASK, IP_CIDR, IP_GATEWAY,
                           IPv6_ADDRESS, IPv6_CIDR, VLAN_ID, NOCHK, SUCCESS)
 from utils import VdsProxy
 import dhcp
+
+# WARNING: because of this module changes networkTests module, we cannot run
+# networkTests.py and networkTestsOVS.py in one run
 
 # Make Pyflakes happy
 setupModule
@@ -134,6 +138,12 @@ for t in does_not_use_ovs:
     delattr(NetworkTest, t)
 for t in not_supported:
     delattr(NetworkTest, t)
+
+
+# When we set OVS bond device up, it does not turn UP, but only UNKNOWN
+def _fakeWaitForKnownOperstate(*args, **kwargs):
+    pass
+networkTests._waitForKnownOperstate = _fakeWaitForKnownOperstate
 
 
 class OVSVdsProxy(VdsProxy):

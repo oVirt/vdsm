@@ -121,3 +121,14 @@ def destroy_ovs_bridge():
 
 def log(message, tag='OVS: '):
     hooking.log('%s%s' % (tag, message))
+
+
+def ovs_bridge_exists(bridge):
+    commands = [EXT_OVS_VSCTL, 'br-exists', bridge]
+    rc, _, err = execCmd(commands)
+    if rc == 0:
+        return True
+    elif rc == 2:
+        return False
+    else:
+        raise Exception('\n'.join(err))
