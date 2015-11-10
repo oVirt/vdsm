@@ -13,6 +13,7 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache
+build-aux/compile
 build-aux/depcomp
 build-aux/install-sh
 build-aux/missing
@@ -29,6 +30,7 @@ init/systemd/vdsmd.service
 init/systemd/vdsm-network.service
 init/systemd/mom-vdsm.service
 init/vdsmd_init_common.sh
+lib/api/vdsm-api.html
 lib/vdsm/config.py
 lib/vdsm/constants.py
 lib/vdsm/tool/validate_ovirt_certs.py
