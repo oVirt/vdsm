@@ -231,7 +231,7 @@ class Domain(object):
                          METADATA_VM_TUNE_URI)
         self.dom.appendChild(self._metadata)
 
-    def appendOs(self):
+    def appendOs(self, use_serial_console=False):
         """
         Add <os> element to domain:
 
@@ -243,6 +243,14 @@ class Domain(object):
             <cmdline>ARGs 1</cmdline>
             <smbios mode="sysinfo"/>
         </os>
+
+        If 'use_serial_console' is true, use the console:
+
+        <os>
+            ...
+            <bios useserial="yes"/>
+        </os>
+
         """
 
         oselem = Element('os')
@@ -275,6 +283,9 @@ class Domain(object):
 
         if utils.tobool(self.conf.get('bootMenuEnable', False)):
             oselem.appendChildWithArgs('bootmenu', enable='yes')
+
+        if use_serial_console:
+            oselem.appendChildWithArgs('bios', useserial='yes')
 
     def appendSysinfo(self, osname, osversion, serialNumber):
         """

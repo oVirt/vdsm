@@ -26,6 +26,7 @@ import re
 import threading
 import time
 import uuid
+import xml.etree.cElementTree as etree
 
 import libvirt
 
@@ -83,6 +84,7 @@ _GRAPHICS_DEVICE_PARAMS = {
 }
 
 
+@expandPermutations
 class TestVm(XMLTestCase):
 
     def __init__(self, *args, **kwargs):
@@ -286,6 +288,16 @@ class TestVm(XMLTestCase):
         domxml.appendSysinfo(product, version, serial)
         xml = find_xml_element(domxml.dom.toxml(), './sysinfo')
         self.assertXMLEqual(xml, sysinfoXML)
+
+    @permutations([['serial', True], ['virtio', False]])
+    def testSerialBios(self, console_type, use_serial):
+        devices = {'device': 'console', 'type': 'console',
+                   'specParams': {'consoleType': console_type}},
+        with fake.VM(devices=devices, create_device_objects=True) as fakevm:
+            dom_xml = fakevm._buildDomainXML()
+            tree = etree.fromstring(dom_xml)
+            element = tree.find(".//bios[@useserial='yes']")
+            self.assertEqual(element is not None, use_serial)
 
     def testConsoleXMLVirtio(self):
         consoleXML = """

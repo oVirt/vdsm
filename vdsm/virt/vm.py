@@ -1562,6 +1562,16 @@ class Vm(object):
         finally:
             self._guestCpuLock.release()
 
+    def _getSerialConsole(self):
+        """
+        Return serial console device.
+        If no serial console device is available, return 'None'.
+        """
+        for console in self._devices[hwclass.CONSOLE]:
+            if console.isSerial:
+                return console
+        return None
+
     def _customDevices(self):
         """
             Get all devices that have custom properties
@@ -1596,8 +1606,10 @@ class Vm(object):
                 domxml.appendDeviceXML(deviceXML)
 
     def _buildDomainXML(self):
+        serial_console = self._getSerialConsole()
+
         domxml = vmxml.Domain(self.conf, self.log, self.arch)
-        domxml.appendOs()
+        domxml.appendOs(use_serial_console=(serial_console is not None))
 
         if self.arch == caps.Architecture.X86_64:
             osd = caps.osversion()
@@ -1635,10 +1647,8 @@ class Vm(object):
                 domxml._devices.appendChild(graphDev.getSpiceVmcChannelsXML())
                 break
 
-        for consoleDev in self._devices[hwclass.CONSOLE]:
-            if consoleDev.isSerial:
-                domxml._devices.appendChild(consoleDev.getSerialDeviceXML())
-                break
+        if serial_console is not None:
+            domxml._devices.appendChild(serial_console.getSerialDeviceXML())
 
         for drive in self._devices[hwclass.DISK][:]:
             for leaseElement in drive.getLeasesXML():
