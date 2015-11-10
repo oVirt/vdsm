@@ -286,7 +286,7 @@ Summary:        VDSM API Server
 Requires:       %{name}-python = %{version}-%{release}
 Requires:       %{name}-api = %{version}-%{release}
 Requires:       %{name}-yajsonrpc = %{version}-%{release}
-Obsoletes:      vdsm-api < 4.16
+Obsoletes:      %{name}-api < 4.16
 
 %description jsonrpc
 A Json-based RPC interface that serves as the protocol for libvdsm.
