@@ -32,14 +32,15 @@ import traceback
 from libvirt import libvirtError
 import six
 
+from vdsm.ipwrapper import linkSet
 from vdsm.netconfpersistence import RunningConfig
 
 from hooking import execCmd
 import hooking
 
 from ovs_utils import (is_ovs_network, is_ovs_bond, iter_ovs_nets, suppress,
-                       destroy_ovs_bridge, EXT_IP, EXT_OVS_VSCTL,
-                       INIT_CONFIG_FILE)
+                       destroy_ovs_bridge, ovs_bridge_exists, EXT_IP,
+                       EXT_OVS_VSCTL, BRIDGE_NAME, INIT_CONFIG_FILE)
 from ovs_setup_ovs import configure_ovs, prepare_ovs
 from ovs_setup_ip import configure_ip
 from ovs_setup_mtu import configure_mtu
@@ -136,6 +137,24 @@ def _rollback(running_config):
                    running_config, save_init_config=False)
 
 
+def _set_devices_up(nets, bonds):
+    devices = set()
+    for net, attrs in six.iteritems(nets):
+        if 'remove' not in attrs:
+            if 'vlan' in attrs:
+                devices.add(net)
+            if 'nic' in attrs or 'bond' in attrs:
+                devices.add(attrs.get('nic') or attrs.get('bond'))
+    for bond, attrs in six.iteritems(bonds):
+        if 'remove' not in attrs:
+            devices.add(bond)
+            devices.update(attrs['nics'])
+    if ovs_bridge_exists(BRIDGE_NAME):
+        devices.add(BRIDGE_NAME)
+    for device in devices:
+        linkSet(device, ['up'])
+
+
 def _configure(nets, bonds, running_config, save_init_config=True):
     initial_config = deepcopy(running_config)
 
@@ -151,6 +170,7 @@ def _configure(nets, bonds, running_config, save_init_config=True):
     configure_ovs(commands, running_config)
     configure_mtu(running_config)
     configure_ip(nets, initial_config.networks)
+    _set_devices_up(nets, bonds)
 
     log('Saving running configuration: %s %s' % (running_config.networks,
                                                  running_config.bonds))

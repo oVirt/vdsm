@@ -25,6 +25,7 @@ from vdsm.utils import RollbackContext
 from testlib import expandPermutations, permutations
 from testValidation import RequireVethMod
 
+import networkTests
 from networkTests import (setupModule, tearDownModule, NetworkTest, dummyIf,
                           _get_source_route, dnsmasqDhcp, NETWORK_NAME,
                           IP_ADDRESS, IP_MASK, IP_CIDR, IP_GATEWAY,
@@ -32,6 +33,9 @@ from networkTests import (setupModule, tearDownModule, NetworkTest, dummyIf,
 from utils import VdsProxy
 import veth
 import dhcp
+
+# WARNING: because of this module changes networkTests module, we cannot run
+# networkTests.py and networkTestsOVS.py in one run
 
 # Make Pyflakes happy
 setupModule
@@ -148,6 +152,12 @@ for t in does_not_use_ovs:
     delattr(NetworkTest, t)
 for t in not_supported:
     delattr(NetworkTest, t)
+
+
+# When we set OVS bond device up, it does not turn UP, but only UNKNOWN
+def _fakeWaitForKnownOperstate(*args, **kwargs):
+    pass
+networkTests._waitForKnownOperstate = _fakeWaitForKnownOperstate
 
 
 class OVSVdsProxy(VdsProxy):
