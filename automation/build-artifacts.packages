@@ -10,6 +10,7 @@ policycoreutils-python
 pyflakes
 python-blivet
 python-devel
+python-ethtool
 python-inotify
 python-ioprocess
 python-netaddr
