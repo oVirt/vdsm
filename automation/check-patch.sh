@@ -5,8 +5,7 @@ EXPORT_DIR="$PWD/exported-artifacts"
 set -xe
 
 easy_install pip
-pip install -U pep8==1.5.7 pyflakes==1.1.0
-pip install -U nose==1.3.7
+pip install -U nose==1.3.7 tox==2.1.1
 
 ./autogen.sh --system --enable-hooks
 

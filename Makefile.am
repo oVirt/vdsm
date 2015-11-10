@@ -48,18 +48,13 @@ EXTRA_DIST = \
 	pylintrc \
 	vdsm.spec \
 	vdsm.spec.in \
+	tox.ini \
+	tox.sh \
 	$(NULL)
 
 CLEANFILES = \
 	vdsm.spec \
 	$(DIST_ARCHIVES) \
-	$(NULL)
-
-PEP8_BLACKLIST = \
-	config.py \
-	constants.py \
-	crossImportsTests.py \
-	vdsm.py \
 	$(NULL)
 
 ABS_IMPORT_WHITELIST = \
@@ -101,35 +96,27 @@ abs_imports: all
 	done;
 
 .PHONY: pyflakes
-pyflakes: all
-	if [ -n "$(PYFLAKES)" ]; then \
-		python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'; \
-		( find . -path './.git' -prune -type f -o \
-			-name '*.py' && \
-			echo $(WHITELIST) ) | xargs $(PYFLAKES); \
+pyflakes:
+	if [ -n "$(TOX)" ]; then \
+		tox -- pyflakes; \
 	else \
-	    echo "Warning: pyflakes is not installed, skipping check"; \
+		echo "Warning: tox is not installed, skipping check"; \
 	fi
 
 .PHONY: pep8
-pep8: all
-	if [ -n "$(PEP8)" ]; then \
-		$(PEP8) --version; \
-		for x in $(PEP8_BLACKLIST); do \
-			exclude="$${exclude},$${x}" ; \
-		done ; \
-		$(PEP8) --exclude="$${exclude}" --filename '*.py' . \
-		$(WHITELIST); \
+pep8:
+	if [ -n "$(TOX)" ]; then \
+		tox -- pep8; \
 	else \
-	    echo "Warning: pep8 is not installed, skipping check"; \
+		echo "Warning: tox is not installed, skipping check"; \
 	fi
 
 .PHONY: python3
 python3: all
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
 	    PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
-	        $(WHITELIST) \
-	        `find . -name '*.py'`; \
+		$(WHITELIST) \
+		`find -not -path './.tox/*' -name '*.py'` \
 	else \
 	    echo "Warning: skipping python3 syntax check"; \
 	fi
