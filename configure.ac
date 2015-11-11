@@ -53,6 +53,9 @@ AC_ARG_ENABLE(
     [enable_hooks="no"]
 )
 AM_CONDITIONAL([HOOKS], [test "${enable_hooks}" = "yes"])
+AS_IF([test "${enable_hooks}" = "yes"],
+      AC_SUBST([HOOKS], ['1']),
+      AC_SUBST([HOOKS], ['0']))
 
 AC_ARG_ENABLE(
     [gluster-mgmt],
@@ -64,28 +67,22 @@ AC_ARG_ENABLE(
     [enable_gluster_mgmt="yes"]
 )
 AM_CONDITIONAL([GLUSTER_MGMT], [test "${enable_gluster_mgmt}" = "yes"])
+AS_IF([test "${enable_gluster_mgmt}" = "yes"],
+      AC_SUBST([GLUSTER_MGMT], ['1']),
+      AC_SUBST([GLUSTER_MGMT], ['0']))
 
 AC_ARG_ENABLE(
-    [rhev],
+    [koji_build],
     [AS_HELP_STRING(
-        [--enable-rhev],
-        [build RHEV version @<:@default=no@:>@]
-    )],
-    ,
-    [enable_rhev="no"]
-)
-AM_CONDITIONAL([RHEV], [test "${enable_rhev}" = "yes"])
-
-AC_ARG_ENABLE(
-    [koji],
-    [AS_HELP_STRING(
-        [--enable-koji],
+        [--enable-koji-build],
         [build koji version @<:@default=no@:>@]
     )],
     ,
-    [enable_koji="no"]
+    [enable_koji_build="no"]
 )
-AM_CONDITIONAL([KOJI], [test "${enable_koji}" = "yes"])
+AS_IF([test "${enable_koji_build}" = "yes"],
+      AC_SUBST([KOJI_BUILD], ['1']),
+      AC_SUBST([KOJI_BUILD], ['0']))
 
 AC_ARG_ENABLE(
     [libvirt-sanlock],

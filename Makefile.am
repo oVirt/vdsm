@@ -54,23 +54,6 @@ CLEANFILES = \
 	$(DIST_ARCHIVES) \
 	$(NULL)
 
-if HOOKS
-WITH_HOOKS = --define="with_hooks 1"
-endif
-
-# gluster is enabled by default
-if !GLUSTER_MGMT
-WITH_GLUSTER_MGMT = --define="with_gluster_mgmt 0"
-endif
-
-if RHEV
-RHEV_BUILD = --define="rhev_build 1"
-endif
-
-if KOJI
-KOJI_BUILD = --define="fedora_koji_build 1"
-endif
-
 PEP8_BLACKLIST = \
 	config.py \
 	constants.py \
@@ -159,11 +142,12 @@ all-local: \
 .PHONY: srpm rpm
 
 srpm: dist
-	rpmbuild -ts $(if $(BUILDID),--define="extra_release .$(BUILDID)") $(DIST_ARCHIVES)
+	rpmbuild -ts $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
+		$(DIST_ARCHIVES)
 
 rpm: dist
 	rpmbuild -ta $(if $(BUILDID),--define="extra_release .$(BUILDID)") \
-			$(WITH_HOOKS) $(WITH_GLUSTER_MGMT) $(RHEV_BUILD) $(KOJI_BUILD) $(DIST_ARCHIVES)
+		$(DIST_ARCHIVES)
 
 dist-hook: gen-VERSION gen-ChangeLog
 .PHONY: gen-VERSION gen-ChangeLog

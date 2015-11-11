@@ -23,7 +23,7 @@
 from __future__ import absolute_import
 import os
 
-GLUSTER_MGMT_ENABLED = False if '@GLUSTER_MGMT_TRUE@' else True
+GLUSTER_MGMT_ENABLED = bool(@GLUSTER_MGMT@)
 
 # VDSM management networks
 LEGACY_MANAGEMENT_NETWORKS = ('ovirtmgmt', 'rhevm')

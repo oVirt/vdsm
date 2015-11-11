@@ -10,22 +10,15 @@
 %global snlk_user @SNLKUSER@
 %global cdrom_group @CDROMGROUP@
 
+# Build types
+%global koji_build @KOJI_BUILD@
+
+# Features
+%global with_gluster_mgmt @GLUSTER_MGMT@
+%global with_hooks @HOOKS@
+
 # Glusterfs package version
 %global gluster_version 3.7.1
-
-# Gluster managment - overridable using
-# rpmbuild --define "with_gluster_mgmt 0"
-%{!?with_gluster_mgmt: %global with_gluster_mgmt 1}
-
-# koji build - overridable using rpmbuild --define "fedora_koji_build 1"
-%{!?fedora_koji_build: %global fedora_koji_build 0}
-
-# RHEV build - overridable using rpmbuild --define "rhev_build 1"
-%{!?rhev_build: %global rhev_build 0}
-
-%if 0%{fedora_koji_build}
-%global with_hooks 1
-%endif
 
 # Default to skipping autoreconf.  Distros can change just this one line
 # (or provide a command-line override) if they backport any patches that
@@ -46,7 +39,7 @@
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
 %endif
 
-%if ! 0%{?rhel} || ! 0%{fedora_koji_build}
+%if ! 0%{?rhel} || ! 0%{?koji_build}
 %global with_vhostmd 1
 %endif
 
@@ -641,13 +634,10 @@ autoreconf -if
 %if ! 0%{?with_gluster_mgmt}
         --disable-gluster-mgmt \
 %endif
-%if 0%{?rhev_build}
-        --enable-rhev \
-        --with-smbios-manufacturer='Red Hat' \
-        --with-smbios-osname='RHEV Hypervisor' \
-        --with-qemu-kvm='qemu-kvm-rhev' \
-        --with-qemu-img='qemu-img-rhev' \
-%endif
+        --with-smbios-manufacturer='@SMBIOS_MANUFACTURER@' \
+        --with-smbios-osname='@SMBIOS_OSNAME@' \
+        --with-qemu-kvm='@QEMU_KVM_PKG@' \
+        --with-qemu-img='@QEMU_IMG_PKG@'
 
 make
 # Setting software_version and software_revision in dsaversion.py
