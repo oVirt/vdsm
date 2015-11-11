@@ -20,3 +20,4 @@ python-six
 rpm-build
 sudo
 yum
+yum-utils

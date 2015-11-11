@@ -14,6 +14,7 @@ fi
 
 make
 # tests will be done elsewhere
+yum-builddep ./vdsm.spec
 make PYFLAKES=true PEP8=true NOSE_EXCLUDE=.* rpm
 
 find "$BUILDS" \
