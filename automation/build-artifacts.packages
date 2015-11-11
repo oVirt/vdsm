@@ -19,3 +19,4 @@ python-pep8
 python-pthreading
 python-six
 rpm-build
+yum-utils
