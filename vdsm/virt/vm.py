@@ -2251,6 +2251,10 @@ class Vm(object):
 
         try:
             self._dom.detachDevice(nicXml)
+            self._waitForDeviceRemoval(nic)
+        except HotunplugTimeout as e:
+            self.log.error("%s", e)
+            return response.error('hotunplugNic', "%s" % e)
         except libvirt.libvirtError as e:
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
@@ -2650,7 +2654,7 @@ class Vm(object):
                                     params=drive.custom)
         try:
             self._dom.detachDevice(driveXml)
-            self._waitForDriveRemoval(drive)
+            self._waitForDeviceRemoval(drive)
         except HotunplugTimeout as e:
             self.log.error("%s", e)
             return response.error('hotunplugDisk', "%s" % e)
@@ -2676,14 +2680,14 @@ class Vm(object):
 
         return {'status': doneCode, 'vmList': self.status()}
 
-    def _waitForDriveRemoval(self, drive):
+    def _waitForDeviceRemoval(self, device):
         """
         As stated in libvirt documentary, after detaching a device using
         virDomainDetachDeviceFlags, we need to verify that this device
         has actually been detached:
         libvirt.org/html/libvirt-libvirt-domain.html#virDomainDetachDeviceFlags
 
-        This function waits for the disk device to be detached.
+        This function waits for the device to be detached.
 
         Currently we use virDomainDetachDevice. However- That function behaves
         the same in that matter. (Currently it is not documented at libvirt's
@@ -2691,26 +2695,22 @@ class Vm(object):
         is true. Bug 1257280 opened for fixing the documentation.)
         TODO: remove this comment when the documentation will be fixed.
 
-        :param drive: The drive that should be detached.
+        :param device: Device to wait for
         """
         self.log.debug("Waiting for hotunplug to finish")
-        with utils.stopwatch("Hotunplug disk %s" % drive.name):
+        with utils.stopwatch("Hotunplug device %s" % device.name):
             deadline = (utils.monotonic_time() +
                         config.getfloat('vars', 'hotunplug_timeout'))
             sleep_time = config.getfloat('vars', 'hotunplug_check_interval')
-            while self._isDriveAttached(drive):
+            while self._isDeviceAttached(device):
                 time.sleep(sleep_time)
                 if utils.monotonic_time() > deadline:
-                    raise HotunplugTimeout("Timeout detaching drive %s"
-                                           % drive.name)
+                    raise HotunplugTimeout("Timeout detaching device %s"
+                                           % device.name)
 
-    def _isDriveAttached(self, drive):
+    def _isDeviceAttached(self, device):
         root = ET.fromstring(self._dom.XMLDesc(0))
-        source_key = {DISK_TYPE.FILE: 'file',
-                      DISK_TYPE.BLOCK: 'dev',
-                      DISK_TYPE.NETWORK: 'name'}
-        return bool(root.findall("./devices/disk/source[@%s='%s']" %
-                                 (source_key[drive.diskType], drive.path)))
+        return bool(root.findall(device.xpath))
 
     def _readPauseCode(self):
         state, reason = self._dom.state(0)
