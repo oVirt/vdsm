@@ -173,7 +173,10 @@ _EVENT_STRINGS = (
 
 
 def eventToString(event):
-    return _EVENT_STRINGS[event]
+    try:
+        return _EVENT_STRINGS[event]
+    except IndexError:
+        return "Unknown (%i)" % event
 
 
 class SetLinkAndNetworkError(Exception):

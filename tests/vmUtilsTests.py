@@ -22,6 +22,7 @@ from virt import utils
 from virt import vm
 from virt import vmexitreason
 
+from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -142,3 +143,11 @@ class ExceptionsTests(TestCaseBase):
                 str(e),
                 vmexitreason.exitReasons.get(
                     vmexitreason.LIBVIRT_DOMAIN_MISSING))
+
+
+@expandPermutations
+class LibvirtEventDispatchTests(TestCaseBase):
+
+    @permutations([[-1], [1023]])
+    def test_eventToString_unknown_event(self, code):
+        self.assertTrue(vm.eventToString(code))
