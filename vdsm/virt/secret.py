@@ -87,7 +87,7 @@ def clear():
     Should be called during startup and shutdown to ensure that we don't leave
     around stale or unneeded secrets.
     """
-    logging.info("Unregistering all secrests")
+    logging.info("Unregistering all secrets")
     con = libvirtconnection.get()
     for virsecret in con.listAllSecrets():
         try:
