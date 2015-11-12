@@ -302,13 +302,13 @@ class ChapCredentials(object):
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and
                 self.username == other.username and
-                self.password.value == other.password.value)
+                self.password == other.password)
 
     def __ne__(self, other):
         return not self == other
 
     def __hash__(self):
-        return hash((self.__class__, self.username, self.password.value))
+        return hash((self.__class__, self.username, hash(self.password)))
 
 
 # Technically there are a lot more interface properties but VDSM doesn't

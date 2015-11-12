@@ -66,16 +66,22 @@ class IscsiAdmTests(TestCaseBase):
 @expandPermutations
 class TestChapCredentialsEquality(TestCaseBase):
 
-    def test_eq_equal(self):
-        c1 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
-        c2 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
+    @permutations([
+        (None, None),
+        (None, "password"),
+        ("username", None),
+        ("usernae", "password"),
+    ])
+    def test_eq_equal(self, username, password):
+        c1 = iscsi.ChapCredentials(username, protected(password))
+        c2 = iscsi.ChapCredentials(username, protected(password))
         self.assertTrue(c1 == c2, "%s should equal %s" % (c1, c2))
 
     def test_eq_subclass(self):
         class Subclass(iscsi.ChapCredentials):
             pass
-        c1 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
-        c2 = Subclass("username", ProtectedPassword("password"))
+        c1 = iscsi.ChapCredentials("username", protected("password"))
+        c2 = Subclass("username", protected("password"))
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
     @permutations([
@@ -83,29 +89,41 @@ class TestChapCredentialsEquality(TestCaseBase):
         ("a", "b", "a", "a"),
     ])
     def test_eq_different(self, user1, user2, pass1, pass2):
-        c1 = iscsi.ChapCredentials(user1, ProtectedPassword(pass1))
-        c2 = iscsi.ChapCredentials(user2, ProtectedPassword(pass2))
+        c1 = iscsi.ChapCredentials(user1, protected(pass1))
+        c2 = iscsi.ChapCredentials(user2, protected(pass2))
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
-    def test_ne_equal(self):
-        c1 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
-        c2 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
+    @permutations([
+        (None, None),
+        (None, "password"),
+        ("username", None),
+        ("usernae", "password"),
+    ])
+    def test_ne_equal(self, username, password):
+        c1 = iscsi.ChapCredentials(username, protected(password))
+        c2 = iscsi.ChapCredentials(username, protected(password))
         self.assertFalse(c1 != c2, "%s should equal %s" % (c1, c2))
 
 
 @expandPermutations
 class TestChapCredentialsHash(TestCaseBase):
 
-    def test_equal_same_hash(self):
-        c1 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
-        c2 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
+    @permutations([
+        (None, None),
+        (None, "password"),
+        ("username", None),
+        ("usernae", "password"),
+    ])
+    def test_equal_same_hash(self, username, password):
+        c1 = iscsi.ChapCredentials(username, protected(password))
+        c2 = iscsi.ChapCredentials(username, protected(password))
         self.assertEqual(hash(c1), hash(c2))
 
     def test_subclass_different_hash(self):
         class Subclass(iscsi.ChapCredentials):
             pass
-        c1 = iscsi.ChapCredentials("username", ProtectedPassword("password"))
-        c2 = Subclass("username", ProtectedPassword("password"))
+        c1 = iscsi.ChapCredentials("username", protected("password"))
+        c2 = Subclass("username", protected("password"))
         self.assertNotEqual(hash(c1), hash(c2))
 
     @permutations([
@@ -113,6 +131,12 @@ class TestChapCredentialsHash(TestCaseBase):
         ("a", "b", "a", "a"),
     ])
     def test_not_equal_different_hash(self, user1, user2, pass1, pass2):
-        c1 = iscsi.ChapCredentials(user1, ProtectedPassword(pass1))
-        c2 = iscsi.ChapCredentials(user2, ProtectedPassword(pass2))
+        c1 = iscsi.ChapCredentials(user1, protected(pass1))
+        c2 = iscsi.ChapCredentials(user2, protected(pass2))
         self.assertNotEqual(hash(c1), hash(c2))
+
+
+def protected(password):
+    if password is None:
+        return None
+    return ProtectedPassword(password)

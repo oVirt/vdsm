@@ -39,6 +39,9 @@ class ProtectedPassword(object):
     def __repr__(self):
         return repr(str(self))
 
+    def __hash__(self):
+        return hash((self.__class__, self.value))
+
 
 def protect_passwords(obj):
     """
