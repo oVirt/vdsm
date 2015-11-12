@@ -334,9 +334,11 @@ def _disk_latency(first_sample, first_index, last_sample, last_index):
         )
         return elapsed_time / operations
 
-    return {'readLatency': str(compute_latency('rd')),
-            'writeLatency': str(compute_latency('wr')),
-            'flushLatency': str(compute_latency('fl'))}
+    return {
+        'readLatency': str(compute_latency('rd')),
+        'writeLatency': str(compute_latency('wr')),
+        'flushLatency': str(compute_latency('fl'))
+    }
 
 
 def _disk_iops_bytes(first_sample, first_index, last_sample, last_index):
