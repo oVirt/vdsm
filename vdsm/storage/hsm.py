@@ -230,9 +230,17 @@ def _connectionDict2ConnectionInfo(conTypeId, conDict):
                                    conDict.get('initiatorName', None),
                                    conDict.get('netIfaceName', None))
 
+        # NOTE: ChapCredentials must match the way we initialize username and
+        # password when reading session info in iscsi.readSessionInfo(). Empty
+        # or missing username or password are stored as None.
+
+        username = conDict.get('user')
+        if not username:
+            username = None
+        password = conDict.get('password')
+        if not getattr(password, "value", None):
+            password = None
         cred = None
-        username = conDict.get('user', None)
-        password = conDict.get('password', None)
         if username or password:
             cred = iscsi.ChapCredentials(username, password)
 
