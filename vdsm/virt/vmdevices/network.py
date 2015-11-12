@@ -184,3 +184,11 @@ class Interface(Base):
         else:
             raise Exception('Tried to detach a non host device: %s' % (
                 self.conf,))
+
+    @property
+    def xpath(self):
+        """
+        Returns xpath to the device in libvirt dom xml
+        The path is relative to the root element
+        """
+        return "./devices/interface/mac[@address='%s']" % self.macAddr

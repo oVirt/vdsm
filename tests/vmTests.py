@@ -1032,10 +1032,11 @@ class TestWaitForRemoval(TestCaseBase):
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
                    [drive_block, BLOCK_DRIVE_XML]])
-    def test_timeout(self, drive, matching_xml):
+    def test_timeout(self, device, matching_xml):
         testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
                                                    times_to_match=9))
-        self.assertRaises(HotunplugTimeout, testvm._waitForDriveRemoval, drive)
+        self.assertRaises(HotunplugTimeout, testvm._waitForDeviceRemoval,
+                          device)
 
     # The timeout hotunplug_check_interval=1 should never be reached. We should
     # never reach sleep when device is removed in first check, and method
@@ -1047,9 +1048,9 @@ class TestWaitForRemoval(TestCaseBase):
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
                    [drive_block, BLOCK_DRIVE_XML]])
-    def test_removed_on_first_check(self, drive, matching_xml):
+    def test_removed_on_first_check(self, device, matching_xml):
         testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml))
-        testvm._waitForDriveRemoval(drive)
+        testvm._waitForDeviceRemoval(device)
         self.assertEqual(testvm._dom.xmldesc_fetched, 1)
 
     @MonkeyPatch(vm, "config", make_config([
@@ -1060,10 +1061,10 @@ class TestWaitForRemoval(TestCaseBase):
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
                    [drive_block, BLOCK_DRIVE_XML]])
-    def test_removed_on_x_check(self, drive, matching_xml):
+    def test_removed_on_x_check(self, device, matching_xml):
         testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
                                                    times_to_match=2))
-        testvm._waitForDriveRemoval(drive)
+        testvm._waitForDeviceRemoval(device)
         self.assertEqual(testvm._dom.xmldesc_fetched, 3)
 
 

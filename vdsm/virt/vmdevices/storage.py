@@ -423,6 +423,20 @@ class Drive(Base):
         if hasattr(self, 'specParams') and 'ioTune' in self.specParams:
             self._validateIoTuneParams(self.specParams['ioTune'])
 
+    @property
+    def xpath(self):
+        """
+        Returns xpath to the device in libvirt dom xml
+        The path is relative to the root element
+        """
+        source_key = {
+            DISK_TYPE.FILE: 'file',
+            DISK_TYPE.BLOCK: 'dev',
+            DISK_TYPE.NETWORK: 'name',
+        }
+        return ("./devices/disk/source[@%s='%s']" %
+                (source_key[self.diskType], self.path))
+
 
 def _getSourceXML(drive):
     source = vmxml.Element('source')
