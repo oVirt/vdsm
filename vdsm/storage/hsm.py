@@ -1542,18 +1542,12 @@ class HSM(object):
                 tParams = dom.produceVolume(imgUUID, fakeTUUID).\
                     getVolumeParams()
             pool.deleteImage(dom, imgUUID, volsByImg)
-            # This is a hack to keep the interface consistent
-            # We currently have race conditions in delete image, to quickly fix
-            # this we delete images in the "synchronous" state. This only works
-            # because Engine does not send two requests at a time. This hack is
-            # intended to quickly fix the integration issue with Engine. In 2.3
-            # we should use the new resource system to synchronize the process
-            # an eliminate all race conditions
             if fakeTUUID:
                 img = image.Image(os.path.join(self.storage_repository,
                                                spUUID))
                 img.createFakeTemplate(sdUUID=sdUUID, volParams=tParams)
-            self._spmSchedule(spUUID, "deleteImage_%s" % imgUUID, lambda: True)
+            self._spmSchedule(spUUID, "purgeImage_%s" % imgUUID,
+                              pool.purgeImage, sdUUID, imgUUID, volsByImg)
 
     def validateImageMove(self, srcDom, dstDom, imgUUID):
         """

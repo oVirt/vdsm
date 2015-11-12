@@ -1917,6 +1917,20 @@ class StoragePool(object):
                 dom.produceVolume(imgUUID, volUUID).delete(
                     postZero=postZero, force=force)
 
+    def purgeImage(self, sdUUID, imgUUID, volsByImg):
+        """
+        Free the space taken by a given list of volumes belonging to imgUUID.
+
+        :param domain: The UUID of the relevant domain containing the image.
+        :type sdUUID: UUID
+        :param imgUUID: The UUID of the relevant image.
+        :type imgUUID: UUID
+        :param volsByImg: List of the volumes to remove.
+        :type volsByImg: list
+        """
+        domain = sdCache.produce(sdUUID=sdUUID)
+        domain.purgeImage(sdUUID, imgUUID, volsByImg)
+
     def deleteImage(self, domain, imgUUID, volsByImg):
         """
         Deletes a given list of volumes belonging to imgUUID.

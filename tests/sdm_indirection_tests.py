@@ -99,6 +99,10 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
+    def purgeImage(self, sdUUID, imgUUID, volsImgs):
+        pass
+
+    @recorded
     def getAllImages(self):
         pass
 
@@ -647,6 +651,7 @@ class DomainTestMixin(object):
         ['isBackup', 0],
         ['isData', 0],
         ['deleteImage', 3],
+        ['purgeImage', 3],
         ['getAllImages', 0],
         ['getAllVolumes', 0],
         ['getReservedId', 0],

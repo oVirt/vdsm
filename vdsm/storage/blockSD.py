@@ -640,6 +640,10 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
         self._markForDelVols(sdUUID, imgUUID, toDel, sd.REMOVED_IMAGE_PREFIX)
+
+    def purgeImage(self, sdUUID, imgUUID, volsImgs):
+        self.log.debug("Purging image %s", imgUUID)
+        toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
         deleteVolumes(sdUUID, toDel)
         self.rmDCImgDir(imgUUID, volsImgs)
 

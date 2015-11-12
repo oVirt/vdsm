@@ -541,6 +541,9 @@ class StorageDomain(object):
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         self._manifest.deleteImage(sdUUID, imgUUID, volsImgs)
 
+    def purgeImage(self, sdUUID, imgUUID, volsImgs):
+        self._manifest.purgeImage(sdUUID, imgUUID, volsImgs)
+
     def getAllImages(self):
         return self._manifest.getAllImages()
 
