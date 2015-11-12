@@ -156,21 +156,24 @@ def readSessionInfo(sessionID):
     port = int(port)
     tpgt = int(tpgt)
 
-    # Fix username and password if needed (iscsi reports empty user/password
-    # as "<NULL>" (RHEL5) or "(null)" (RHEL6)
-    if username in ["<NULL>", "(null)"]:
-        username = None
-    if password.value in ["<NULL>", "(null)"]:
-        password = None
-
     if netdev in ["<NULL>", "(null)"]:
         netdev = None
 
     iface = IscsiInterface(iface, netIfaceName=netdev)
     portal = IscsiPortal(ip, port)
     target = IscsiTarget(portal, tpgt, iqn)
+
+    # NOTE: ChapCredentials must match the way we initialize username and
+    # password when receiving request from engine in
+    # hsm._connectionDict2ConnectionInfo().
+    # iscsi reports empty user/password as "<NULL>" (RHEL5) or "(null)"
+    # (RHEL6);  empty values are stored as None.
+
+    if username in ["<NULL>", "(null)", ""]:
+        username = None
+    if password.value in ["<NULL>", "(null)", ""]:
+        password = None
     cred = None
-    # FIXME: Don't just assume CHAP
     if username or password:
         cred = ChapCredentials(username, password)
 
