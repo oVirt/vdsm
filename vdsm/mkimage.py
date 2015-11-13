@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 import os
 import tempfile
 import shutil
@@ -28,7 +29,7 @@ import hashlib
 from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
     DISKIMAGE_USER, DISKIMAGE_GROUP
 from vdsm.constants import P_VDSM_RUN
-from vdsm.utils import execCmd
+from vdsm.utils import execCmd, rmFile
 from storage.fileUtils import resolveUid, resolveGid
 import storage.mount
 
@@ -127,8 +128,25 @@ def mkIsoFs(vmId, files, volumeName=None):
         if volumeName is not None:
             command.extend(['-V', volumeName])
         command.extend([dirname])
-        rc, out, err = execCmd(command, raw=True, childUmask=0o027)
+
+        # pre-create the destination iso path with the right permissions;
+        # mkisofs/genisoimage will truncate the content and keep the
+        # permissions.
+
+        if os.path.exists(isopath):
+            logging.warning("iso file %r exists, removing", isopath)
+            rmFile(isopath)
+
+        fd = os.open(isopath, os.O_CREAT | os.O_RDONLY | os.O_EXCL, 0o640)
+        os.close(fd)
+
+        rc, out, err = execCmd(command, raw=True)
         if rc:
+            # clean up after ourselves in case of error
+            removeFs(isopath)
+            # skip _commonCleanFs step for missing iso
+            isopath = None
+
             raise OSError(errno.EIO, "could not create iso file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))
     finally:
