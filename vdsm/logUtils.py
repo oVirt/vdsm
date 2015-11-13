@@ -89,12 +89,28 @@ class SimpleLogAdapter(logging.LoggerAdapter):
     # and warn are the same. I need to reimplement it here. :(
     warn = logging.LoggerAdapter.warning
 
+    def __init__(self, logger, context):
+        """
+        Initialize an adapter with a logger and a dict-like object which
+        provides contextual information. The contextual information is
+        prepended to each log message.
+
+        This adapter::
+
+            self.log = SimpleLogAdapter(self.log, {"task": "xxxyyy",
+                                                   "res", "foo.bar.baz"})
+            self.log.debug("Message")
+
+        Would produce this message::
+
+            "task=`xxxyyy`res=`foo.bar.baz`::Message"
+        """
+        self.logger = logger
+        items = "".join("%s=`%s`" % (k, v) for k, v in context.iteritems())
+        self.prefix = items + "::"
+
     def process(self, msg, kwargs):
-        result = ''
-        for key, value in self.extra.iteritems():
-            result += '%s=`%s`' % (key, value)
-        result += '::%s' % msg
-        return (result, kwargs)
+        return self.prefix + msg, kwargs
 
 
 class TracebackRepeatFilter(logging.Filter):
