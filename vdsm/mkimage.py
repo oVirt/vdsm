@@ -22,6 +22,7 @@ import logging
 import os
 import tempfile
 import shutil
+import stat
 import base64
 import errno
 import hashlib
@@ -129,6 +130,7 @@ def mkIsoFs(vmId, files, volumeName=None):
             command.extend(['-V', volumeName])
         command.extend([dirname])
 
+        mode = 0o640
         # pre-create the destination iso path with the right permissions;
         # mkisofs/genisoimage will truncate the content and keep the
         # permissions.
@@ -137,7 +139,7 @@ def mkIsoFs(vmId, files, volumeName=None):
             logging.warning("iso file %r exists, removing", isopath)
             rmFile(isopath)
 
-        fd = os.open(isopath, os.O_CREAT | os.O_RDONLY | os.O_EXCL, 0o640)
+        fd = os.open(isopath, os.O_CREAT | os.O_RDONLY | os.O_EXCL, mode)
         os.close(fd)
 
         rc, out, err = execCmd(command, raw=True)
@@ -149,6 +151,9 @@ def mkIsoFs(vmId, files, volumeName=None):
 
             raise OSError(errno.EIO, "could not create iso file: "
                           "code %s, out %s\nerr %s" % (rc, out, err))
+
+        _check_attributes(isopath, mode)
+
     finally:
         _commonCleanFs(dirname, isopath)
 
@@ -161,3 +166,12 @@ def removeFs(path):
                         _P_PAYLOAD_IMAGES)
     if os.path.exists(path):
         os.remove(path)
+
+
+def _check_attributes(path, mode):
+    info = os.stat(path)
+
+    current_mode = stat.S_IMODE(info.st_mode)
+    if current_mode != mode:
+        logging.warning('wrong mode for %r: expected=%o found=%o',
+                        path, mode, current_mode)
