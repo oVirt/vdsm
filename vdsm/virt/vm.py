@@ -158,14 +158,16 @@ class ConsoleDisconnectAction:
 
 # These strings are representing libvirt virDomainEventType values
 # http://libvirt.org/html/libvirt-libvirt-domain.html#virDomainEventType
-_EVENT_STRINGS = ("Defined",
-                  "Undefined",
-                  "Started",
-                  "Suspended",
-                  "Resumed",
-                  "Stopped",
-                  "Shutdown",
-                  "PM-Suspended")
+_EVENT_STRINGS = (
+    "Defined",
+    "Undefined",
+    "Started",
+    "Suspended",
+    "Resumed",
+    "Stopped",
+    "Shutdown",
+    "PM-Suspended",
+)
 
 
 def eventToString(event):
