@@ -2552,7 +2552,7 @@ class HSM(object):
 
         # Disconnecting a device may change the visible storage domain list
         # so invalidate the caches
-        sdCache.refreshStorage()
+        sdCache.refreshStorage(resize=False)
         return dict(statuslist=res)
 
     def _translateConnectionError(self, e):
