@@ -53,4 +53,4 @@ def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):
     rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
-        raise cmdutils.Error(rc, out, err)
+        raise cmdutils.Error(cmd, rc, out, err)

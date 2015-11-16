@@ -102,4 +102,4 @@ def _run_command(args):
     cmd.extend(args)
     rc, out, err = utils.execCmd(cmd, raw=True)
     if rc != 0:
-        raise cmdutils.Error(rc, out, err)
+        raise cmdutils.Error(cmd, rc, out, err)

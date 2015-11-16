@@ -40,7 +40,7 @@ def get(pid):
     rc, out, err = utils.execCmd(command, resetCpuAffinity=False)
 
     if rc != 0:
-        raise cmdutils.Error(rc, out, err)
+        raise cmdutils.Error(command, rc, out, err)
 
     return _cpu_set_from_output(out[-1])
 
@@ -68,7 +68,7 @@ def set(pid, cpu_set, all_tasks=False):
     rc, out, err = utils.execCmd(command, resetCpuAffinity=False)
 
     if rc != 0:
-        raise cmdutils.Error(rc, out, err)
+        raise cmdutils.Error(command, rc, out, err)
 
 
 def _cpu_set_from_output(line):

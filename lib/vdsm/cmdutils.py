@@ -30,14 +30,15 @@ SUDO_NON_INTERACTIVE_FLAG = "-n"
 
 class Error(Exception):
 
-    def __init__(self, rc, out, err):
+    def __init__(self, cmd, rc, out, err):
+        self.cmd = cmd
         self.rc = rc
         self.out = out
         self.err = err
 
     def __str__(self):
-        return "Process failed with rc=%d out=%r err=%r" % (
-            self.rc, self.out, self.err)
+        return "Command %s failed with rc=%d out=%r err=%r" % (
+            self.cmd, self.rc, self.out, self.err)
 
 
 def nice(cmd, nice):
