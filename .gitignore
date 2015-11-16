@@ -62,7 +62,6 @@ vdsm/sudoers.vdsm
 vdsm/svdsm.logger.conf
 vdsm/vdscli.py
 vdsm/vdsm-gencerts.sh
-vdsm/vdsm-logrotate.conf
 vdsm/vdsm-sosplugin.py
 vdsm/vdsm-store-net-config
 vdsm/vdsm.rwtab
