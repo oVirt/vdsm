@@ -168,6 +168,7 @@ _EVENT_STRINGS = (
     "Stopped",
     "Shutdown",
     "PM-Suspended",
+    "Crashed",
 )
 
 
