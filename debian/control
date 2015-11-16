@@ -171,13 +171,6 @@ Description: Fake qemu process for VDSM quality assurance
  To enable this hook on your host, set vars.fake_kvm_support=True in your
  /etc/vdsm/vdsm.conf before adding the host to ovirt-Engine.
 
-Package: vdsm-hook-directlun
-Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})
-Description: Direct LUN support for VDSM
- VDSM hook enable user to add storage LUN for VDSM
- without the sharing and storage handling of VDSM.
-
 Package: vdsm-hook-macspoof
 Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}, python (>=2.7.3), vdsm (>= ${source:Version})

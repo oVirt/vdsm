@@ -37,8 +37,6 @@ EXTRA_DIST = \
     vdsm-gluster.install \
     vdsm-hook-checkimages.docs \
     vdsm-hook-checkimages.install \
-    vdsm-hook-directlun.docs \
-    vdsm-hook-directlun.install \
     vdsm-hook-ethtool-options.docs \
     vdsm-hook-ethtool-options.install \
     vdsm-hook-extnet.docs \
