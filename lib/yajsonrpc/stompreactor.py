@@ -319,12 +319,14 @@ class StompServer(object):
     Sends message to all subscribes that subscribed to destination.
     """
     def send(self, message, destination=stomp.LEGACY_SUBSCRIPTION_ID_RESPONSE):
+        resp = json.loads(message)
+        response_id = resp.get("id")
+
         try:
-            resp = json.loads(message)
-            destination = self._req_dest[resp.get("id")]
-            del self._req_dest["id"]
+            destination = self._req_dest[response_id]
+            del self._req_dest[response_id]
         except KeyError:
-            # we could have no reply-to
+            # we could have no reply-to or we could send events (no message id)
             pass
 
         try:
