@@ -65,13 +65,19 @@ def restoreRules(base):
         ipwrapper.ruleDel(ipwrapper.Rule.fromText(rule))
 
 
-class VdsProxy(object):
+class _VdsProxy(object):
     """
     Vdscli wrapper to save tests
     from common boilerplate code.
     """
 
     def __init__(self):
+        self.vdscli = None
+
+    def _is_connected(self):
+        return self.vdscli is not None
+
+    def _connect(self):
         retry(self.start, (socket.error, KeyError), tries=30)
 
     def start(self):
@@ -224,6 +230,21 @@ class VdsProxy(object):
     def updateVmPolicy(self, vmId, vcpuLimit):
         result = self.vdscli.updateVmPolicy([vmId, vcpuLimit])
         return _parse_result(result)
+
+
+_instance = _VdsProxy()
+
+
+def getProxy():
+    """
+    We used to connect when a proxy was created but now
+    we want to connect only when the proxy is needed.
+    It is used in functional test context so we do not
+    care about concurrent calls of this function.
+    """
+    if not _instance._is_connected():
+        _instance._connect()
+    return _instance
 
 
 def _parse_result(result, return_value=None):

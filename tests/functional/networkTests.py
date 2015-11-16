@@ -62,7 +62,7 @@ from testValidation import brokentest, slowtest, ValidateRunningAsRoot
 from nettestlib import Dummy, Tap, veth_pair
 import dhcp
 import firewall
-from utils import SUCCESS, VdsProxy
+from utils import SUCCESS, getProxy
 
 NETWORK_NAME = 'test-network'
 VLAN_ID = '27'
@@ -101,7 +101,7 @@ NOCHK = {'connectivityCheck': False}
 @RequireDummyMod
 def setupModule():
     """Persists network configuration."""
-    VdsProxy().save_config()
+    getProxy().save_config()
     for _ in range(DUMMY_POOL_SIZE):
         dummy = Dummy()
         dummy.create()
@@ -110,7 +110,7 @@ def setupModule():
 
 def tearDownModule():
     """Restores the network configuration previous to running tests."""
-    VdsProxy().restoreNetConfig()
+    getProxy().restoreNetConfig()
     for nic in dummyPool:
         nic.remove()
 
@@ -213,7 +213,7 @@ def requiresUnifiedPersistence(reason):
 class NetworkTest(TestCaseBase):
 
     def setUp(self):
-        self.vdsm_net = VdsProxy()
+        self.vdsm_net = getProxy()
 
     def cleanupNet(func):
         """
