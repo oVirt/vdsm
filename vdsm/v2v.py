@@ -40,7 +40,7 @@ import libvirt
 
 from vdsm.constants import P_VDSM_RUN
 from vdsm.define import errCode, doneCode
-from vdsm import libvirtconnection, response
+from vdsm import libvirtconnection, response, concurrent
 from vdsm.infra import zombiereaper
 from vdsm.utils import traceback, CommandPath, execCmd, NICENESS, IOCLASS
 
@@ -327,6 +327,7 @@ class ImportVm(object):
         '''
         do not use directly, use a factory method instead!
         '''
+        self._thread = None
         self._vminfo = vminfo
         self._id = job_id
         self._irs = irs
@@ -370,9 +371,12 @@ class ImportVm(object):
         return obj
 
     def start(self):
-        t = threading.Thread(target=self._run_command)
-        t.daemon = True
-        t.start()
+        self._thread = concurrent.thread(self._run_command)
+        self._thread.start()
+
+    def wait(self):
+        if self._thread is not None and self._thread.is_alive():
+            self._thread.join()
 
     @property
     def id(self):
