@@ -1741,6 +1741,14 @@ class Vm(object):
             raise MissingLibvirtDomainError(vmexitreason.LIBVIRT_START_FAILED)
 
         self._updateDomainDescriptor()
+
+        # REQUIRED_FOR migrate from vdsm-4.16
+        #
+        # We need to clean out unknown devices that are created for
+        # RNG devices by VDSM 3.5 and are left in the configuration
+        # after upgrade to 3.6.
+        self._fixLegacyRngConf()
+
         self._getUnderlyingVmDevicesInfo()
         self._updateAgentChannels()
 
@@ -1817,7 +1825,7 @@ class Vm(object):
             # we need to fix the graphics device configuration in the
             # case VDSM is upgraded from 3.4 to 3.5 on the host without
             # rebooting it. Evident on, but not limited to, the HE case.
-            self._fixLegacyConf()
+            self._fixLegacyGraphicsConf()
 
         self._devices = self.devMapFromDevSpecMap(dev_spec_map)
 
@@ -4968,10 +4976,29 @@ class Vm(object):
                     if x['volumeID'] in volumes]
         device['volumeChain'] = drive.volumeChain = newChain
 
-    def _fixLegacyConf(self):
+    def _fixLegacyGraphicsConf(self):
         with self._confLock:
             if not vmdevices.graphics.getFirstGraphics(self.conf):
                 self.conf['devices'].extend(self.getConfGraphics())
+
+    def _fixLegacyRngConf(self):
+        def _is_legacy_rng_device_conf(dev):
+            """
+            Returns True if dev is a legacy (3.5) RNG device conf,
+            False otherwise.
+            """
+            return dev['type'] == hwclass.RNG and (
+                'specParams' not in dev or
+                'source' not in dev['specParams']
+            )
+
+        with self._confLock:
+            self._devices[hwclass.RNG] = [dev for dev
+                                          in self._devices[hwclass.RNG]
+                                          if 'source' in dev.specParams]
+            self.conf['devices'] = [dev for dev
+                                    in self.conf['devices']
+                                    if not _is_legacy_rng_device_conf(dev)]
 
     def getDiskDevices(self):
         return self._devices[hwclass.DISK]
