@@ -151,8 +151,11 @@ def _create(requestQueue,
     else:
         sslctx = None
 
+    if responseQueue is None:
+        responseQueue = str(uuid4())
+
     return stompreactor.StandAloneRpcClient(
-        host, port, requestQueue, str(uuid4()), sslctx,
+        host, port, requestQueue, responseQueue, sslctx,
         lazy_start=False)
 
 
