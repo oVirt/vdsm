@@ -104,6 +104,7 @@ test_modules = \
 	testlibTests.py \
 	toolTests.py \
 	transportWrapperTests.py \
+	unicode_test.py \
 	utilsTests.py \
 	vdscliTests.py \
 	vdsClientTests.py \
