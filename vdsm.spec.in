@@ -841,6 +841,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/numaUtils.py*
 %{_datadir}/%{vdsm_name}/protocoldetector.py*
+%{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
 %{_datadir}/%{vdsm_name}/v2v.py*
 %{_datadir}/%{vdsm_name}/vdsm

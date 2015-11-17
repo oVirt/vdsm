@@ -128,6 +128,7 @@
 ./usr/share/vdsm/storage/threadLocal.py
 ./usr/share/vdsm/storage/threadPool.py
 ./usr/share/vdsm/storage/volume.py
+./usr/share/vdsm/sitecustomize.py
 ./usr/share/vdsm/supervdsmServer
 ./usr/share/vdsm/v2v.py
 ./usr/share/vdsm/vdsm

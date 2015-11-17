@@ -121,6 +121,7 @@ test_modules = \
 	toolTests.py \
 	toolBondingTests.py \
 	transportWrapperTests.py \
+	unicode_test.py \
 	utilsTests.py \
 	vdscliTests.py \
 	vdsClientTests.py \

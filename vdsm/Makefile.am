@@ -37,6 +37,7 @@ dist_vdsm_PYTHON = \
 	numaUtils.py \
 	parted_utils.py \
 	protocoldetector.py \
+	sitecustomize.py \
 	v2v.py \
 	$(NULL)
 

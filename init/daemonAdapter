@@ -69,12 +69,20 @@ class DaemonAdapter(object):
             os.nice(config.getint('vars', 'vdsm_nice'))
 
             env = os.environ.copy()
+
+            # Python path is needed to get sitecustomize.py imported from
+            # target directory.
+            pythonpath = os.path.dirname(self._args.target[0])
+            if 'PYTHONPATH' in env:
+                pythonpath += ':' + env['PYTHONPATH']
+
             env.update({
                 'LIBVIRT_LOG_FILTERS': config.get(
                     'vars', 'libvirt_env_variable_log_filters'),
                 'LIBVIRT_LOG_OUTPUTS': config.get(
                     'vars', 'libvirt_env_variable_log_outputs'),
                 'LC_ALL': 'C',
+                'PYTHONPATH': pythonpath,
             })
 
             cmd = [self._args.target[0]] + self._args.targetOptions
