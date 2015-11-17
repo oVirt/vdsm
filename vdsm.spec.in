@@ -809,6 +809,8 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
+%dir %{_datadir}/%{vdsm_name}/virt/vmdevices
+%dir %{_datadir}/%{vdsm_name}/rpc
 %{_datadir}/%{vdsm_name}/alignmentScan.py*
 %{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
@@ -1058,6 +1060,8 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/netlink
 %dir %{python_sitelib}/%{vdsm_name}/tool
+%dir %{python_sitelib}/%{vdsm_name}/tool/configurators
+%dir %{python_sitelib}/%{vdsm_name}/profiling
 %{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
 %{python_sitelib}/%{vdsm_name}/compat.py*
@@ -1127,9 +1131,12 @@ exit 0
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
 %defattr(-, root, root, -)
+%dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/tests
 %dir %{_datadir}/%{vdsm_name}/tests/functional
 %dir %{_datadir}/%{vdsm_name}/tests/devices
+%dir %{_datadir}/%{vdsm_name}/tests/devices/data
+%dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
 %dir %{_datadir}/%{vdsm_name}/tests/integration
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
@@ -1374,6 +1381,7 @@ exit 0
 %defattr(-, root, root, -)
 %license COPYING
 %{_bindir}/vdsClient
+%dir %{_datadir}/%{vdsm_name}
 %{_datadir}/%{vdsm_name}/vdsClient.py*
 %{_datadir}/%{vdsm_name}/vdsClientGluster.py*
 %{_sysconfdir}/bash_completion.d/vdsClient
@@ -1382,9 +1390,12 @@ exit 0
 %files xmlrpc
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
+%dir %{_datadir}/%{vdsm_name}/rpc
 %{_datadir}/%{vdsm_name}/rpc/bindingxmlrpc.py*
 
 %files jsonrpc
+%dir %{_datadir}/%{vdsm_name}
+%dir %{_datadir}/%{vdsm_name}/rpc
 %{_datadir}/%{vdsm_name}/rpc/__init__.py*
 %{_datadir}/%{vdsm_name}/rpc/bindingjsonrpc.py*
 %{_datadir}/%{vdsm_name}/rpc/Bridge.py*
@@ -1392,6 +1403,8 @@ exit 0
 
 %files api
 %doc lib/api/vdsm-api.html
+%dir %{_datadir}/%{vdsm_name}
+%dir %{_datadir}/%{vdsm_name}/rpc
 %{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{python_sitelib}/api/vdsmapi.py*
 %{python_sitelib}/api/__init__.py*
@@ -1406,6 +1419,12 @@ exit 0
 %{python_sitelib}/yajsonrpc/stompreactor.py*
 
 %files infra
+%dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/infra
+%dir %{python_sitelib}/%{vdsm_name}/infra/eventfd
+%dir %{python_sitelib}/%{vdsm_name}/infra/filecontrol
+%dir %{python_sitelib}/%{vdsm_name}/infra/sigutils
+%dir %{python_sitelib}/%{vdsm_name}/infra/zombiereaper
 %{python_sitelib}/%{vdsm_name}/infra/eventfd/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/filecontrol/__init__.py*
 %{python_sitelib}/%{vdsm_name}/infra/sigutils/__init__.py*
@@ -1420,6 +1439,7 @@ exit 0
 %if 0%{?with_gluster}
 %files gluster
 %defattr(-, root, root, -)
+%dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/gluster
 %license COPYING
 %{_datadir}/%{vdsm_name}/gluster/api.py*
