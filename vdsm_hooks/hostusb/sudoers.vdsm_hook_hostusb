@@ -1,1 +1,3 @@
-vdsm  ALL=(ALL) NOPASSWD: /bin/chown
+Runas_Alias    OP = root, vdsm
+
+vdsm  ALL=(OP) NOPASSWD: /bin/chown /dev/bus/usb/*/*
