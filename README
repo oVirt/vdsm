@@ -1,13 +1,13 @@
-         VDSM: Virtual Desktop Server Manager
+         Vdsm: Virtual Desktop Server Manager
          ====================================
 
-The VDSM service exposes an XML-RPC API for managing virtualization
-hosts running the KVM hypervisor technology. VDSM manages and monitors
+The Vdsm service exposes an XML-RPC API for managing virtualization
+hosts running the KVM hypervisor technology. Vdsm manages and monitors
 the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
 log collection.
 
-VDSM service originated as a service to be used by a RHEV Manager to
+Vdsm service originated as a service to be used by a RHEV Manager to
 control RHEV Hypervisors and Red Hat Enterprise Linux hosts. It is
 now independent of RHEV, usable by any management application and
 is intended to be portable to any Linux host providing the KVM
@@ -16,7 +16,7 @@ virtualization technology.
 Installation
 ============
 
-The VDSM service can be used by following the standard autotools
+The Vdsm service can be used by following the standard autotools
 installation process, documented in the INSTALL file. As a quick
 start you can do
 
@@ -35,7 +35,7 @@ In order to start vdsm at first try, please perform:
 Packaging
 =========
 
-The 'vdsm.spec' file demonstrates how to distribute VDSM as an RPM
+The 'vdsm.spec' file demonstrates how to distribute Vdsm as an RPM
 package.
 
 Getting Help
@@ -62,7 +62,7 @@ The latest upstream code can be obtained from GIT:
 Licensing
 =========
 
-VDSM is provided under the terms of the GNU General Public License,
+Vdsm is provided under the terms of the GNU General Public License,
 version 2 or later. Please see the COPYING file for complete GPLv2+
 license terms.
 
