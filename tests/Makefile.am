@@ -98,6 +98,7 @@ test_modules = \
 	sdm_indirection_tests.py \
 	securableTests.py \
 	sourceroutingTests.py \
+	sparsifyTests.py \
 	sslTests.py \
 	stompAdapterTests.py \
 	stompAsyncClientTests.py \
