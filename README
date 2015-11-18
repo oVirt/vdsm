@@ -1,7 +1,7 @@
          Vdsm: Virtual Desktop Server Manager
          ====================================
 
-The Vdsm service exposes an XML-RPC API for managing virtualization
+The Vdsm service exposes an API for managing virtualization
 hosts running the KVM hypervisor technology. Vdsm manages and monitors
 the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
