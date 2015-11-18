@@ -3163,7 +3163,8 @@ class Vm(object):
             vmConfVolPath = self.cif.prepareVolumePath(vmConfVol)
             vmConf = _vmConfForMemorySnapshot()
             try:
-                with open(vmConfVolPath, "w") as f:
+                # Use r+ to avoid truncating the file, see BZ#1282239
+                with open(vmConfVolPath, "r+") as f:
                     pickle.dump(vmConf, f)
             finally:
                 self.cif.teardownVolumePath(vmConfVol)
