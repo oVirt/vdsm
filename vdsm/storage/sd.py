@@ -875,8 +875,7 @@ class StorageDomain(object):
         return self._manifest.getMetadata()
 
     def setMetadata(self, newMetadata):
-        # Backup old md (rotate old backup files)
-        misc.rotateFiles(self.mdBackupDir, self.sdUUID, self.mdBackupVersions)
+        # Backup old md
         oldMd = ["%s=%s\n" % (key, value)
                  for key, value in self.getMetadata().copy().iteritems()]
         with open(os.path.join(self.mdBackupDir, self.sdUUID), "w") as f:

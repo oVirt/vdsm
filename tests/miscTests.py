@@ -207,55 +207,6 @@ class ITMap(TestCaseBase):
         self.assertRaises(ValueError, misc.itmap(int, data, 0).next)
 
 
-class RotateFiles(TestCaseBase):
-
-    def testNonExistingDir(self, persist=False):
-        """
-        Tests that the method fails correctly when given a non existing dir.
-        """
-        self.assertRaises(OSError, misc.rotateFiles, "/I/DONT/EXIST", "prefix",
-                          2, persist=persist)
-
-    def testEmptyDir(self, persist=False):
-        """
-        Test that when given an empty dir the rotator works correctly.
-        """
-        prefix = "prefix"
-        with namedTemporaryDir() as dir:
-            misc.rotateFiles(dir, prefix, 0, persist=persist)
-
-    def testFullDir(self, persist=False):
-        """
-        Test that rotator does it's basic functionality.
-        """
-        # Prepare
-        prefix = "prefix"
-        stubContent = ('"Multiple exclamation marks", '
-                       'he went on, shaking his head, '
-                       '"are a sure sign of a diseased mind."')
-        # (C) Terry Pratchet - Small Gods
-        with namedTemporaryDir() as dir:
-            gen = 10
-
-            expectedDirContent = []
-            for i in range(gen):
-                fname = "%s.txt.%d" % (prefix, i + 1)
-                expectedDirContent.append("%s.txt.%d" % (prefix, i + 1))
-                f = open(os.path.join(dir, fname), "wb")
-                f.write(stubContent)
-                f.flush()
-                f.close()
-
-            # Rotate
-            misc.rotateFiles(dir, prefix, gen, persist=persist)
-
-            # Test result
-            currentDirContent = os.listdir(dir)
-            expectedDirContent.sort()
-            currentDirContent.sort()
-            self.assertEquals(currentDirContent, expectedDirContent)
-
-
 class ParseHumanReadableSize(TestCaseBase):
 
     def testValidInput(self):

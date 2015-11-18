@@ -33,7 +33,6 @@ from functools import wraps, partial
 from itertools import chain, imap
 import contextlib
 import errno
-import glob
 import logging
 import os
 import Queue
@@ -465,58 +464,6 @@ def validateSize(size, name):
         raise se.InvalidParameterException("size", size)
     size = validateN(size, name)
     return (size + SECTOR_SIZE - 1) / SECTOR_SIZE
-
-
-def rotateFiles(directory, prefixName, gen, cp=False, persist=False):
-    log.debug("dir: %s, prefixName: %s, versions: %s" %
-              (directory, prefixName, gen))
-    gen = int(gen)
-    files = os.listdir(directory)
-    files = glob.glob("%s*" % prefixName)
-    fd = {}
-    for fname in files:
-        name = fname.rsplit('.', 1)
-        try:
-            ind = int(name[1])
-        except ValueError:
-            name[0] = fname
-            ind = 0
-        except IndexError:
-            ind = 0
-        except:
-            continue
-        if ind < gen:
-            fd[ind] = {'old': fname, 'new': name[0] + '.' + str(ind + 1)}
-
-    keys = fd.keys()
-    keys.sort(reverse=True)
-    log.debug("versions found: %s" % (keys))
-
-    for key in keys:
-        oldName = os.path.join(directory, fd[key]['old'])
-        newName = os.path.join(directory, fd[key]['new'])
-        if utils.isOvirtNode() and persist and not cp:
-            try:
-                utils.unpersist(oldName)
-                utils.unpersist(newName)
-            except:
-                pass
-        try:
-            if cp:
-                execCmd([constants.EXT_CP, oldName, newName], sudo=True)
-                if (utils.isOvirtNode() and
-                        persist and not os.path.exists(newName)):
-                    utils.persist(newName)
-
-            else:
-                os.rename(oldName, newName)
-        except:
-            pass
-        if utils.isOvirtNode() and persist and not cp:
-            try:
-                utils.persist(newName)
-            except:
-                pass
 
 
 def parseHumanReadableSize(size):
