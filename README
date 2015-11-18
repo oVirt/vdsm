@@ -45,19 +45,18 @@ There are two mailing lists for discussions:
 
   - For technical discussions about the project and its code base.
 
-
-    https://fedorahosted.org/mailman/listinfo/vdsm-devel
+    http://lists.ovirt.org/mailman/listinfo/devel
 
   - For questions by users, who do not want to be swamped by
     technicalities.
 
-    https://fedorahosted.org/mailman/listinfo/vdsm-users
+    http://lists.ovirt.org/mailman/listinfo/users
 
-The developers also hang out on IRC at #vdsm hosted on  freenode.net
+The developers also hang out on IRC at #vdsm hosted on freenode.net
 
 The latest upstream code can be obtained from GIT:
 
-   http://git.fedorahosted.org/git/?p=vdsm.git
+   git clone https://gerrit.ovirt.org/vdsm
 
 Licensing
 =========
