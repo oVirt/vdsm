@@ -20,8 +20,8 @@
 
 from __future__ import absolute_import
 import os
+from six.moves import configparser
 import textwrap
-import ConfigParser
 
 parameters = [
     # Section: [vars]
@@ -451,7 +451,7 @@ def print_config():
             print(twp.fill("%s = %s" % (key, value)))
             print('')
 
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 set_defaults(config)
 config.read([os.path.join('@CONFDIR@', 'vdsm.conf')])
 

@@ -18,12 +18,12 @@
 #
 
 from __future__ import absolute_import
-import ConfigParser
 import functools
 import os
 import tempfile
 import re
 import selinux
+from six.moves import configparser
 import io
 
 from .. import utils
@@ -242,11 +242,11 @@ class ConfigFile(object):
 
 class ParserWrapper(object):
     """
-    ConfigParser is for parsing of ini files. Use this
+    configparser is for parsing of ini files. Use this
     class for files with no sections.
     """
     def __init__(self, defaults=None):
-        self.wrapped = ConfigParser.RawConfigParser(defaults=defaults)
+        self.wrapped = configparser.RawConfigParser(defaults=defaults)
 
     def get(self, option):
         return self.wrapped.get('root', option)

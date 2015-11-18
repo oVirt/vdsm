@@ -19,7 +19,6 @@
 #
 
 import errno
-import ConfigParser
 import functools
 import logging
 import os
@@ -29,6 +28,7 @@ import unittest
 from functools import wraps
 import shutil
 import sys
+from six.moves import configparser
 import tempfile
 import threading
 from contextlib import contextmanager
@@ -403,7 +403,7 @@ def make_config(tunables):
     Create a vdsm.config.config clone, modified by tunables
     tunables is a list of (section, key, val) tuples
     """
-    cfg = ConfigParser.ConfigParser()
+    cfg = configparser.ConfigParser()
     vdsm.config.set_defaults(cfg)
     for (section, key, value) in tunables:
         cfg.set(section, key, value)

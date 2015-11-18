@@ -18,8 +18,8 @@
 #
 
 from __future__ import absolute_import
-import ConfigParser
 import logging
+from six.moves import configparser
 
 from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
@@ -173,7 +173,7 @@ class Configurator(object):
 def getEthtoolOpts(name):
     try:
         opts = config.get('vars', 'ethtool_opts.' + name)
-    except ConfigParser.NoOptionError:
+    except configparser.NoOptionError:
         opts = config.get('vars', 'ethtool_opts')
     return opts
 

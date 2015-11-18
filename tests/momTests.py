@@ -20,11 +20,11 @@
 from unittest import TestCase
 import logging
 import threading
-import ConfigParser
 from momIF import MomClient
 from caps import PAGE_SIZE_BYTES
 from vdsm.define import Mbytes
 from mom import unixrpc
+from six.moves import configparser
 import os.path
 import monkeypatch
 
@@ -67,7 +67,7 @@ class BrokenMomApi(object):
 @monkeypatch.MonkeyClass(logging.getLogger().manager, "loggerDict", {})
 class MomPolicyTests(TestCase):
     def setUp(self):
-        self.config_overrides = ConfigParser.SafeConfigParser()
+        self.config_overrides = configparser.SafeConfigParser()
         self.config_overrides.add_section("logging")
         self.config_overrides.set("logging", "log", "stdio")
         self.config_overrides.add_section("main")

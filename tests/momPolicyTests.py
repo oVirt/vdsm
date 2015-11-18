@@ -1,5 +1,5 @@
 import os.path
-import ConfigParser
+from six.moves import configparser
 
 from mom.Policy.Policy import Policy
 from mom.Entity import Entity
@@ -34,7 +34,7 @@ class MomPolicyTests(TestCase):
         self.assertTrue(policy.set_policy(policy_name, policy_string))
 
     def _prepareEntity(self, name, data):
-        cfg = ConfigParser.SafeConfigParser()
+        cfg = configparser.SafeConfigParser()
         cfg.add_section("__int__")
         cfg.set("__int__", "plot-subdir", "")
 

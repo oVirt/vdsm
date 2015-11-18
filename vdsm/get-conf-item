@@ -7,8 +7,8 @@ import sys
 try:
     from vdsm.config import config
 except:
-    import ConfigParser
-    config = ConfigParser.ConfigParser()
+    from six.moves import configparser
+    config = configparser.ConfigParser()
 
 (dummy, file, section, item, default) = sys.argv
 config.read(file)
