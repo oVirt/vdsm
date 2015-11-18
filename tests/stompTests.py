@@ -59,9 +59,17 @@ class _SampleBridge(object):
 @expandPermutations
 class StompTests(TestCaseBase):
 
-    @permutations(_USE_SSL)
-    def test_echo(self, use_ssl):
-        data = dummyTextGenerator(1024)
+    @permutations([
+        # size, use_ssl
+        (1024, True),
+        (1024, False),
+        (4096, True),
+        (4096, False),
+        (16384, True),
+        (16384, False),
+    ])
+    def test_echo(self, size, use_ssl):
+        data = dummyTextGenerator(size)
 
         with constructAcceptor(self.log, use_ssl, _SampleBridge()) as acceptor:
             sslctx = DEAFAULT_SSL_CONTEXT if use_ssl else None

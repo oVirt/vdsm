@@ -348,16 +348,20 @@ class AsyncDispatcher(object):
         self._frame_handler.handle_connect(self)
 
     def handle_read(self, dispatcher):
-        try:
-            data = dispatcher.recv(self._bufferSize)
-        except socket.error:
-            dispatcher.handle_error()
-            return
-
         parser = self._parser
+        pending = getattr(dispatcher, 'pending', lambda: 0)
+        todo = self._bufferSize
 
-        if data is not None:
+        while todo:
+            try:
+                data = dispatcher.recv(todo)
+            except socket.error:
+                dispatcher.handle_error()
+                return
+            if data is None:
+                return
             parser.parse(data)
+            todo = pending()
 
         while parser.pending > 0:
             self._frame_handler.handle_frame(self, parser.popFrame())
