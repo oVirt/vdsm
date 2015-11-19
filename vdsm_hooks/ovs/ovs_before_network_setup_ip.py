@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from collections import namedtuple
 import sys
 
 from vdsm import ipwrapper, sysctl
@@ -34,6 +35,9 @@ from network.sourceroute import DynamicSourceRoute
 
 
 iproute2 = Iproute2()
+
+IPConfig = namedtuple('IPConfig', ['top_dev', 'ipv4', 'ipv6', 'port',
+                                   'blocking_dhcp'])
 
 
 def _get_ipv4_model(attrs):
@@ -61,9 +65,15 @@ def _run_dhclient(iface, blockingdhcp, default_route, family):
         hooking.log('failed to start dhclient%s on iface %s' % (family, iface))
 
 
-def _set_ip_config(iface, ipv4, ipv6, port, blockingdhcp):
+def _set_ip_config(ip_config):
+    iface = ip_config.top_dev
+    ipv4 = ip_config.ipv4
+    ipv6 = ip_config.ipv6
+    port = ip_config.port
+    blocking_dhcp = ip_config.blocking_dhcp
+
     net_dev = NetDevice(iface, iproute2, ipv4=ipv4, ipv6=ipv6,
-                        blockingdhcp=blockingdhcp)
+                        blockingdhcp=blocking_dhcp)
     DynamicSourceRoute.addInterfaceTracking(net_dev)
     ipwrapper.linkSet(iface, ['down'])
     if ipv4.address:
@@ -83,13 +93,17 @@ def _set_ip_config(iface, ipv4, ipv6, port, blockingdhcp):
     ipwrapper.linkSet(port, ['up'])
     ipwrapper.linkSet(iface, ['up'])
     if ipv4.bootproto == 'dhcp':
-        _run_dhclient(iface, blockingdhcp, ipv4.defaultRoute, 4)
+        _run_dhclient(iface, blocking_dhcp, ipv4.defaultRoute, 4)
     if ipv6.dhcpv6:
-        _run_dhclient(iface, blockingdhcp, ipv6.defaultRoute, 6)
+        _run_dhclient(iface, blocking_dhcp, ipv6.defaultRoute, 6)
     iproute2._addSourceRoute(net_dev)
 
 
-def _remove_ip_config(iface, ipv4, ipv6):
+def _remove_ip_config(ip_config):
+    iface = ip_config.top_dev
+    ipv4 = ip_config.ipv4
+    ipv6 = ip_config.ipv6
+
     net_dev = NetDevice(iface, iproute2, ipv4=ipv4, ipv6=ipv6)
     DynamicSourceRoute.addInterfaceTracking(net_dev)
     DhcpClient(iface).shutdown()
@@ -100,28 +114,30 @@ def _remove_ip_config(iface, ipv4, ipv6):
 
 
 def configure_ip(nets, init_nets):
+
+    def _gather_ip_config(attrs):
+        top_dev = net if 'vlan' in attrs else BRIDGE_NAME
+        ipv4 = _get_ipv4_model(attrs)
+        ipv6 = _get_ipv6_model(attrs)
+        port = attrs.get('nic') or attrs.get('bonding')
+        blocking_dhcp = 'blockingdhcp' in attrs
+        return IPConfig(top_dev, ipv4, ipv6, port, blocking_dhcp)
+
     ip_config_to_set = {}
     ip_config_to_remove = {}
 
     for net, attrs in nets.items():
         if net in init_nets:
-            init_attrs = init_nets[net]
-            init_top_dev = net if 'vlan' in init_attrs else BRIDGE_NAME
-            ipv4 = _get_ipv4_model(init_attrs)
-            ipv6 = _get_ipv6_model(init_attrs)
-            ip_config_to_remove[init_top_dev] = ipv4, ipv6
+            init_ip_config = _gather_ip_config(init_nets[net])
+            ip_config_to_remove[init_ip_config.top_dev] = init_ip_config
         if 'remove' not in attrs:
-            top_dev = net if 'vlan' in attrs else BRIDGE_NAME
-            ipv4 = _get_ipv4_model(attrs)
-            ipv6 = _get_ipv6_model(attrs)
-            port = attrs.get('nic') or attrs.get('bonding')
-            if ipv4 or ipv6:
-                ip_config_to_set[top_dev] = (
-                    ipv4, ipv6, port, 'blockingdhcp' in attrs)
+            ip_config = _gather_ip_config(attrs)
+            if ip_config.ipv4 or ip_config.ipv6:
+                ip_config_to_set[ip_config.top_dev] = ip_config
 
     hooking.log('Remove IP configuration of: %s' % ip_config_to_remove)
     hooking.log('Set IP configuration: %s' % ip_config_to_set)
-    for iface, (ipv4, ipv6) in ip_config_to_remove.iteritems():
-        _remove_ip_config(iface, ipv4, ipv6)
-    for iface, (ipv4, ipv6, blockingdhcp, port) in ip_config_to_set.items():
-        _set_ip_config(iface, ipv4, ipv6, blockingdhcp, port)
+    for iface, ip_config in ip_config_to_remove.iteritems():
+        _remove_ip_config(ip_config)
+    for iface, ip_config in ip_config_to_set.items():
+        _set_ip_config(ip_config)
