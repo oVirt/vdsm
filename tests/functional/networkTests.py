@@ -32,7 +32,8 @@ from vdsm import ipwrapper
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet,
                             addrAdd)
-from vdsm.netconfpersistence import KernelConfig, RunningConfig
+from vdsm.kernelconfig import KernelConfig
+from vdsm.netconfpersistence import RunningConfig
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
                           BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,

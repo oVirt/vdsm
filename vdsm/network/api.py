@@ -30,6 +30,7 @@ import logging
 
 from vdsm.config import config
 from vdsm import constants
+from vdsm import kernelconfig
 from vdsm import netconfpersistence
 from vdsm import netinfo
 from vdsm import udevadm
@@ -890,7 +891,7 @@ def setupNetworks(networks, bondings, **options):
 
     logger.debug("Applying...")
     in_rollback = options.get('_inRollback', False)
-    kernel_config = netconfpersistence.KernelConfig(_netinfo)
+    kernel_config = kernelconfig.KernelConfig(_netinfo)
     normalized_config = kernel_config.normalize(
         netconfpersistence.BaseConfig(networks, bondings))
     with ConfiguratorClass(in_rollback) as configurator:

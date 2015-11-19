@@ -33,7 +33,8 @@ from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm.constants import P_VDSM_RUN
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \
-    KernelConfig, CONF_PERSIST_DIR, BaseConfig
+    CONF_PERSIST_DIR, BaseConfig
+from vdsm.kernelconfig import KernelConfig
 from vdsm.utils import monotonic_time
 import hostdev
 

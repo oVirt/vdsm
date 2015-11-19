@@ -33,6 +33,7 @@ dist_vdsmpylib_PYTHON = \
 	ipwrapper.py \
 	jobs.py \
 	jsonrpcvdscli.py \
+	kernelconfig.py \
 	libvirtconnection.py \
 	m2cutils.py \
 	netconfpersistence.py \

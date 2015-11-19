@@ -1087,6 +1087,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/ipwrapper.py*
 %{python_sitelib}/%{vdsm_name}/jobs.py*
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
+%{python_sitelib}/%{vdsm_name}/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/m2cutils.py*
 %{python_sitelib}/%{vdsm_name}/netinfo.py*
