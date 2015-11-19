@@ -373,7 +373,7 @@ class ConfigWriter(object):
         logging.info("Rolling back configuration (restoring atomic backup)")
         for confFilePath, content in self._backups.iteritems():
             if content is None:
-                utils.rmFile(confFilePath)
+                self._removeFile(confFilePath)
                 logging.debug('Removing empty configuration backup %s',
                               confFilePath)
             else:
