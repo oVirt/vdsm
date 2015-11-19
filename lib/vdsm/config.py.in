@@ -105,7 +105,7 @@ parameters = [
         ('default_bridge', 'engine', None),
 
         ('migration_downtime', '500',
-            'Maxmium allowed downtime for live migration in milliseconds '
+            'Maximum allowed downtime for live migration in milliseconds '
             '(anything below 100ms is ignored) if you do not care about '
             'liveness of migration, set to a very high value, such as '
             '600000.'),
