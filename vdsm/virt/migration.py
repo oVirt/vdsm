@@ -231,7 +231,8 @@ class SourceThread(threading.Thread):
 
             fname = self._vm.cif.prepareVolumePath(self._dstparams)
             try:
-                with open(fname, "w") as f:
+                # Use r+ to avoid truncating the file, see BZ#1282239
+                with open(fname, "r+") as f:
                     pickle.dump(self._machineParams, f)
             finally:
                 self._vm.cif.teardownVolumePath(self._dstparams)
