@@ -19,6 +19,7 @@
 #
 
 import caps
+import xml.etree.ElementTree as ET
 
 from vdsm.config import config
 from vdsm import constants
@@ -424,7 +425,7 @@ class Drive(Base):
             self._validateIoTuneParams(self.specParams['ioTune'])
 
     @property
-    def xpath(self):
+    def _xpath(self):
         """
         Returns xpath to the device in libvirt dom xml
         The path is relative to the root element
@@ -436,6 +437,10 @@ class Drive(Base):
         }
         return ("./devices/disk/source[@%s='%s']" %
                 (source_key[self.diskType], self.path))
+
+    def is_attached_to(self, xml_string):
+        dom = ET.fromstring(xml_string)
+        return bool(dom.findall(self._xpath))
 
 
 def _getSourceXML(drive):

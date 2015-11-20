@@ -2734,15 +2734,11 @@ class Vm(object):
             deadline = (utils.monotonic_time() +
                         config.getfloat('vars', 'hotunplug_timeout'))
             sleep_time = config.getfloat('vars', 'hotunplug_check_interval')
-            while self._isDeviceAttached(device):
+            while device.is_attached_to(self._dom.XMLDesc(0)):
                 time.sleep(sleep_time)
                 if utils.monotonic_time() > deadline:
                     raise HotunplugTimeout("Timeout detaching device %s"
                                            % device.name)
-
-    def _isDeviceAttached(self, device):
-        root = ET.fromstring(self._dom.XMLDesc(0))
-        return bool(root.findall(device.xpath))
 
     def _readPauseCode(self):
         state, reason = self._dom.state(0)
