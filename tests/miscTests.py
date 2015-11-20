@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ from testlib import TEMPDIR
 import inspect
 from vdsm import cmdutils
 from vdsm import commands
+from vdsm import exception
 from vdsm import utils
 
 import storage.outOfProcess as oop
@@ -461,7 +462,7 @@ class DdWatchCopy(TestCaseBase):
                 os.mkfifo(src.name)
                 with tempfile.NamedTemporaryFile() as dst:
                     misc.ddWatchCopy(src.name, dst.name, lambda: True, 100)
-        except utils.ActionStopped:
+        except exception.ActionStopped:
             self.log.info("Looks like it stopped!")
         else:
             self.fail("Copying didn't stop!")
@@ -922,7 +923,7 @@ class WatchCmd(TestCaseBase):
         sleepTime = "10"
         try:
             watchCmd([EXT_SLEEP, sleepTime], lambda: True)
-        except utils.ActionStopped:
+        except exception.ActionStopped:
             self.log.info("Looks like task stopped!")
         else:
             self.fail("watchCmd didn't stop!")

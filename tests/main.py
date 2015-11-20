@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import unittest
 
 from gluster import exception as gluster_exception
 from storage import storage_exception
-from vdsm.utils import GeneralException
+from vdsm.exception import GeneralException
 
 from testlib import VdsmTestCase as TestCaseBase
 

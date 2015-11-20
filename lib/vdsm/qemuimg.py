@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ import signal
 
 from cpopen import CPopen
 
+from . import exception
 from . import utils
 from . import cmdutils
 from . import commands
@@ -278,7 +279,7 @@ class QemuImgOperation(object):
         self._command.wait()
 
         if self._aborted:
-            raise utils.ActionStopped()
+            raise exception.ActionStopped()
 
         cmdutils.retcode_log_line(self._command.returncode, self.error)
         if self._command.returncode != 0:

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
 #######################################################
 
 from securable import SecureError
-from vdsm.utils import GeneralException
+from vdsm.exception import GeneralException
 SPM_STATUS_ERROR = (654, "Not SPM")
 
 GENERAL_EXCEPTION = lambda e: (100, str(e))

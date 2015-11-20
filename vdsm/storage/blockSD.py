@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ from operator import itemgetter
 
 from vdsm.config import config
 from vdsm import constants
+from vdsm import exception
 from vdsm import utils
 import vdsm.supervdsm as svdsm
 
@@ -915,7 +916,7 @@ class BlockStorageDomain(sd.StorageDomain):
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
             path = lvm.lvPath(vgName, sd.OUTBOX)
             misc.ddCopy("/dev/zero", path, RESERVED_MAILBOX_SIZE)
-        except utils.ActionStopped:
+        except exception.ActionStopped:
             raise
         except se.StorageException:
             raise se.VolumesZeroingError(path)

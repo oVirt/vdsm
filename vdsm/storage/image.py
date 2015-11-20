@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2012 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,7 +33,7 @@ import sd
 import misc
 import fileUtils
 import imageSharing
-from vdsm.utils import ActionStopped
+from vdsm.exception import ActionStopped
 import storage_exception as se
 import task
 from threadLocal import vars

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,9 +23,9 @@ import os
 import sanlock
 
 import storage_exception as se
+from vdsm import exception
 from vdsm import qemuimg
 from vdsm.commands import grepCmd
-from vdsm.utils import ActionStopped
 from sdc import sdCache
 import outOfProcess as oop
 import volume
@@ -412,7 +412,7 @@ class FileVolume(volume.Volume):
                 # ddWatchCopy expects size to be in bytes
                 misc.ddWatchCopy("/dev/zero", volPath,
                                  vars.task.aborting, sizeBytes)
-            except ActionStopped:
+            except exception.ActionStopped:
                 raise
             except Exception:
                 cls.log.error("Unexpected error", exc_info=True)

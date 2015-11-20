@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,3 +33,25 @@ class VdsmException(Exception):
 
     def response(self):
         return {'status': {'code': self.code, 'message': str(self)}}
+
+
+class GeneralException(Exception):
+    code = 100
+    message = "General Exception"
+
+    def __init__(self, *value):
+        self.value = value
+
+    def __str__(self):
+        return "%s: %s" % (self.message, repr(self.value))
+
+    def info(self):
+        return {'code': self.code, 'message': str(self)}
+
+    def response(self):
+        return {'status': self.info()}
+
+
+class ActionStopped(GeneralException):
+    code = 443
+    message = "Action was stopped"

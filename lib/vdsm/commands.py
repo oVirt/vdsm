@@ -30,7 +30,8 @@ import signal
 import threading
 import time
 from . import cmdutils
-from .utils import ActionStopped, NoIntrPoll, stripNewLines
+from .exception import ActionStopped
+from .utils import NoIntrPoll, stripNewLines
 from vdsm import constants
 
 # Buffsize is 1K because I tested it on some use cases and 1K was fastest. If

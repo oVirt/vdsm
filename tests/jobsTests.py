@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 import uuid
 
-from vdsm import jobs, response, utils
+from vdsm import jobs, response, exception
 
 from testlib import VdsmTestCase, expandPermutations, permutations
 
@@ -209,7 +209,7 @@ class JobsTests(VdsmTestCase):
         self.assertIsNone(job.error)
         self.assertNotIn('error', job.info())
 
-        error = utils.GeneralException()
+        error = exception.GeneralException()
         job._error = error
         self.assertEqual(job.error, error)
         self.assertEqual(error.info(), job.info()['error'])

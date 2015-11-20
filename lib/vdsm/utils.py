@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2013 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,7 +51,6 @@ import threading
 import time
 import vdsm.infra.zombiereaper as zombiereaper
 
-
 try:
     from ovirt.node.utils.fs import Config
     persist = Config().persist
@@ -75,28 +74,6 @@ class IOCLASS:
 class NICENESS:
     NORMAL = 0
     HIGH = 19
-
-
-class GeneralException(Exception):
-    code = 100
-    message = "General Exception"
-
-    def __init__(self, *value):
-        self.value = value
-
-    def __str__(self):
-        return "%s: %s" % (self.message, repr(self.value))
-
-    def info(self):
-        return {'code': self.code, 'message': str(self)}
-
-    def response(self):
-        return {'status': self.info()}
-
-
-class ActionStopped(GeneralException):
-    code = 443
-    message = "Action was stopped"
 
 
 def isBlockDevice(path):

@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import sanlock
 
 from vdsm import qemuimg
 from vdsm import constants
+from vdsm import exception
 from vdsm.config import config
 import vdsm.utils as utils
 import storage_exception as se
@@ -505,7 +506,7 @@ class BlockVolume(volume.Volume):
             try:
                 misc.ddWatchCopy(
                     "/dev/zero", vol_path, vars.task.aborting, int(size))
-            except utils.ActionStopped:
+            except exception.ActionStopped:
                 raise
             except Exception:
                 self.log.error("Unexpected error", exc_info=True)
