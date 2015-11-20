@@ -232,6 +232,10 @@ class Domain(object):
     def setMemory(self, target):
         self._failIfRequested()
 
+    @recorded
+    def setTime(self, time={}):
+        self._failIfRequested()
+
     def setDiskErrors(self, diskErrors):
         self._diskErrors = diskErrors
 
