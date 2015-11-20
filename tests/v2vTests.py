@@ -213,6 +213,31 @@ class v2vTests(TestCaseBase):
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
 
+    def testGetExternalVMsWithXMLDescFailure(self):
+        specs = list(self._VM_SPECS)
+
+        def internal_error(flags=0):
+            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+
+        fake_vms = [VmMock(*spec) for spec in specs]
+        # Cause vm 1 to fail, so it would not appear in results
+        fake_vms[1].XMLDesc = internal_error
+        del specs[1]
+
+        def _connect(uri, username, passwd):
+            return LibvirtMock(vms=fake_vms)
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms('esx://mydomain', 'user',
+                                       ProtectedPassword('password'))['vmList']
+
+        self.assertEqual(len(vms), len(specs))
+
+        for vm, spec in zip(vms, specs):
+            self._assertVmMatchesSpec(vm, spec)
+            self._assertVmDisksMatchSpec(vm, spec)
+
     def testOutputParser(self):
         output = ''.join(['[   0.0] Opening the source -i libvirt ://roo...\n',
                           '[   1.0] Creating an overlay to protect the f...\n',
