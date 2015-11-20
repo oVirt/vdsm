@@ -56,6 +56,7 @@ test_modules = \
 	deviceTests.py \
 	domainDescriptorTests.py \
 	encodingTests.py \
+	exception_test.py \
 	executorTests.py \
 	fileSDTests.py \
 	fileVolumeTests.py \
