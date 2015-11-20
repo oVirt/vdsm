@@ -37,6 +37,7 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from nettestlib import dummy_device, veth_pair
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot, RequireBondingMod
+from testValidation import brokentest
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -299,6 +300,7 @@ class TestNetinfo(TestCaseBase):
         self.assertIn('valid4', dhcpv6_ifaces)
         self.assertNotIn('expired3', dhcpv6_ifaces)
 
+    @brokentest("Skipped becasue it breaks randomly on the CI")
     @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
                  if os.path.exists(netinfo.BONDING_DEFAULTS)
                  else '../vdsm/bonding-defaults.json')
