@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,193 +19,76 @@
 #
 
 from __future__ import absolute_import
+from . import exception
+
+# TODO: Drop after callers changed to raise the exceptions
 errCode = {
-    'noVM': {'status': {
-        'code': 1,
-        'message': 'Virtual machine does not exist'}},
-    'nfsErr': {'status': {
-        'code': 3,
-        'message': 'Image repository access timeout'}},
-    'exist': {'status': {
-        'code': 4,
-        'message': 'Virtual machine already exists'}},
-    'noVmType': {'status': {
-        'code': 5,
-        'message': 'Unsupported VM type'}},
-    'down': {'status': {
-        'code': 6,
-        'message': 'Virtual machine is down'}},
-    'copyerr': {'status': {
-        'code': 7,
-        'message': 'Copy failed'}},
-    'sparse': {'status': {
-        'code': 8,
-        'message': 'sparse creation faild'}},
-    'createErr': {'status': {
-        'code': 9,
-        'message': 'Error creating the requested VM'}},
-    'noConPeer': {'status': {
-        'code': 10,
-        'message': 'Could not connect to peer VDS'}},
-    'MissParam': {'status': {
-        'code': 11,
-        'message': 'Missing required parameter'}},
-    'migrateErr': {'status': {
-        'code': 12,
-        'message': 'Fatal error during migration'}},
-    'imageErr': {'status': {
-        'code': 13,
-        'message': 'Drive image file could not be found'}},
-    'outOfMem': {'status': {
-        'code': 14,
-        'message': 'Not enough free memory to create VM'}},
-    'unexpected': {'status': {
-        'code': 16,
-        'message': 'Unexpected exception'}},
-    'unsupFormat': {'status': {
-        'code': 17,
-        'message': 'Unsupported image format'}},
-    'ticketErr': {'status': {
-        'code': 18, 'message': 'Error while setting spice ticket'}},
-    'nonresp': {'status': {
-        'code': 19,
-        'message': 'Guest agent non-responsive'}},
+    'noVM': exception.NoSuchVM().response(),
+    'nfsErr': exception.AccessTimeout().response(),
+    'exist': exception.VMExists().response(),
+    'noVmType': exception.UnsupportedVMType().response(),
+    'down': exception.VMIsDown().response(),
+    'copyerr': exception.CopyFailed().response(),
+    'sparse': exception.CannotCreateSparse().response(),
+    'createErr': exception.CannotCreateVM().response(),
+    'noConPeer': exception.NoConnectionToPeer().response(),
+    'MissParam': exception.MissingParameter().response(),
+    'migrateErr': exception.MigrationError().response(),
+    'imageErr': exception.ImageFileNotFound().response(),
+    'outOfMem': exception.OutOfMemory().response(),
+    'unexpected': exception.UnexpectedError().response(),
+    'unsupFormat': exception.UnsupportedImageFormat().response(),
+    'ticketErr': exception.SpiceTicketError().response(),
+    'nonresp': exception.NonResponsiveGuestAgent().response(),
     # codes 20-35 are reserved for add/delNetwork
     # code 39 was used for:
     # wrongHost - migration destination has an invalid hostname
-    'unavail': {'status': {
-        'code': 40,
-        'message': 'Resource unavailable'}},
-    'changeDisk': {'status': {
-        'code': 41,
-        'message': 'Failed to change disk image'}},
-    'destroyErr': {'status': {
-        'code': 42,
-        'message': 'Virtual machine destroy error'}},
-    'fenceAgent': {'status': {
-        'code': 43,
-        'message': 'Unsupported fencing agent'}},
-    'noimpl': {'status': {
-        'code': 44,
-        'message': 'Not implemented'}},
-    'hotplugDisk': {'status': {
-        'code': 45,
-        'message': 'Failed to hotplug disk'}},
-    'hotunplugDisk': {'status': {
-        'code': 46,
-        'message': 'Failed to hotunplug disk'}},
-    'migCancelErr': {'status': {
-        'code': 47,
-        'message': 'Migration not in progress'}},
-    'snapshotErr': {'status': {
-        'code': 48,
-        'message': 'Snapshot failed'}},
-    'hotplugNic': {'status': {
-        'code': 49,
-        'message': 'Failed to hotplug NIC'}},
-    'hotunplugNic': {'status': {
-        'code': 50,
-        'message': 'Failed to hotunplug NIC'}},
-    'migInProgress': {'status': {
-        'code': 51,
-        'message': 'Command not supported during migration'}},
-    'mergeErr': {'status': {
-        'code': 52,
-        'message': 'Merge failed'}},
-    'balloonErr': {'status': {
-        'code': 53,
-        'message': 'Balloon operation is not available'}},
-    'momErr': {'status': {
-        'code': 54,
-        'message': 'Failed to set mom policy'}},
-    'replicaErr': {'status': {
-        'code': 55,
-        'message': 'Drive replication error'}},
-    'updateDevice': {'status': {
-        'code': 56,
-        'message': 'Failed to update device'}},
-    'hwInfoErr': {'status': {
-        'code': 57,
-        'message': 'Failed to read hardware information'}},
-    'resizeErr': {'status': {
-        'code': 58,
-        'message': 'Wrong resize disk parameter'}},
-    'transientErr': {'status': {
-        'code': 59,
-        'message': 'Action not permitted on a VM with transient disks'}},
-    'setNumberOfCpusErr': {'status': {
-        'code': 60,
-        'message': 'Failed to set the number of cpus'}},
-    'haErr': {'status': {
-        'code': 61,
-        'message': 'Failed to set Hosted Engine HA policy'}},
-    'cpuTuneErr': {'status': {
-        'code': 62,
-        'message': 'CpuTune operation is not available'}},
-    'updateVmPolicyErr': {'status': {
-        'code': 63,
-        'message': 'Failed to update VM SLA policy'}},
-    'updateIoTuneErr': {'status': {
-        'code': 64,
-        'message': 'Failed to update ioTune values'}},
-    'V2VConnection': {'status': {
-        'code': 65,
-        'message': 'error connecting to hypervisor'}},
-    'NoSuchJob': {'status': {
-        'code': 66,
-        'message': 'Job Id does not exists'}},
-    'V2VNoSuchOvf': {'status': {
-        'code': 67,
-        'message': 'OVF file does not exists'}},
-    'JobNotDone': {'status': {
-        'code': 68,
-        'message': 'Job status is not done'}},
-    'JobExists': {'status': {
-        'code': 69,
-        'message': 'Job id already exists'}},
-    'hotplugMem': {'status': {
-        'code': 70,
-        'message': 'Failed to hotplug memory'}},
-    'ksmErr': {'status': {
-        'code': 71,
-        'message': 'Failed to update KSM values'}},
-    'secretBadRequestErr': {'status': {
-        'code': 72,
-        'message': 'Bad secret request'}},
-    'secretRegisterErr': {'status': {
-        'code': 73,
-        'message': 'Error registering Libvirt secret'}},
-    'secretUnregisterErr': {'status': {
-        'code': 74,
-        'message': 'Error unregistering Libvirt secret'}},
-    'unsupportedOperationErr': {'status': {
-        'code': 75,
-        'message': 'Operation not supported'}},
-    'freezeErr': {'status': {
-        'code': 76,
-        'message': 'Unable to freeze guest filesystems'}},
-    'thawErr': {'status': {
-        'code': 77,
-        'message': 'Unable to thaw guest filesystems'}},
-    'hookError': {'status': {
-        'code': 78,
-        'message': 'Hook error'}},
-    'destVolumeTooSmall': {'status': {
-        'code': 79,
-        'message': 'Destination volume is too small'}},
-    'AbortNotSupported': {'status': {
-        'code': 80,
-        'message': 'Job does not support aborting'}},
-    'migNotInProgress': {'status': {
-        'code': 81,
-        'message': 'Migration not in progress'}},
-    'migrateLimit': {'status': {
-        'code': 82,
-        'message': 'Incoming migration limit exceeded'}},
-    'recovery': {'status': {
-        'code': 99,
-        'message': 'Recovering from crash or Initializing'}},
+    'unavail': exception.ResourceUnavailable().response(),
+    'changeDisk': exception.ChangeDiskFailed().response(),
+    'destroyErr': exception.VMDestroyFailed().response(),
+    'fenceAgent': exception.UnsupportedFenceAgent().response(),
+    'noimpl': exception.MethodNotImplemented().response(),
+    'hotplugDisk': exception.HotplugDiskFailed().response(),
+    'hotunplugDisk': exception.HotunplugDiskFailed().response(),
+    'migCancelErr': exception.MigrationCancelationFailed().response(),
+    'snapshotErr': exception.SnapshotFailed().response(),
+    'hotplugNic': exception.HotplugNicFailed().response(),
+    'hotunplugNic': exception.HotunplugNicFailed().response(),
+    'migInProgress': exception.MigrationInProgress().response(),
+    'mergeErr': exception.MergeFailed().response(),
+    'balloonErr': exception.BalloonError().response(),
+    'momErr': exception.MOMPolicyUpdateFailed().response(),
+    'replicaErr': exception.ReplicaError().response(),
+    'updateDevice': exception.UpdateDeviceFailed().response(),
+    'hwInfoErr': exception.CannotRetrieveHWInfo().response(),
+    'resizeErr': exception.BadDiskResizeParameter().response(),
+    'transientErr': exception.TransientError().response(),
+    'setNumberOfCpusErr': exception.SetNumberOfCpusFailed().response(),
+    'haErr': exception.SetHAPolicyFailed().response(),
+    'cpuTuneErr': exception.CpuTuneError().response(),
+    'updateVmPolicyErr': exception.UpdateVMPolicyFailed().response(),
+    'updateIoTuneErr': exception.UpdateIOTuneError().response(),
+    'V2VConnection': exception.V2VConnectionError().response(),
+    'NoSuchJob': exception.NoSuchJob().response(),
+    'V2VNoSuchOvf': exception.V2VNoSuchOVF().response(),
+    'JobNotDone': exception.JobNotDone().response(),
+    'JobExists': exception.JobExists().response(),
+    'hotplugMem': exception.HotplugMemFailed().response(),
+    'ksmErr': exception.KSMUpdateFailed().response(),
+    'secretBadRequestErr': exception.BadSecretRequest().response(),
+    'secretRegisterErr': exception.SecretRegistrationFailed().response(),
+    'secretUnregisterErr': exception.SecretUnregistrationFailed().response(),
+    'unsupportedOperationErr': exception.UnsupportedOperation().response(),
+    'freezeErr': exception.FreezeGuestFSFailed().response(),
+    'thawErr': exception.ThawGuestFSFailed().response(),
+    'hookError': exception.HookFailed().response(),
+    'destVolumeTooSmall': exception.DestinationVolumeTooSmall().response(),
+    'AbortNotSupported': exception.AbortNotSupported().response(),
+    'migNotInProgress': exception.MigrationNotInProgress().response(),
+    'migrateLimit': exception.MigrationLimitExceeded().response(),
+    'recovery': exception.RecoveryInProgress().response(),
 }
+
 
 doneCode = {'code': 0, 'message': 'Done'}
 

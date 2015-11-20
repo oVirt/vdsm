@@ -111,3 +111,9 @@ class ResponseTests(TestCaseBase):
         except response.MalformedResponse as ex:
             self.assertEqual(str(ex),
                              "Missing required key in {}")
+
+    # TODO: drop this once we get rid of errCode
+    def test_legacy_error_code(self):
+        for code, res in errCode.items():
+            self.assertTrue(response.is_error(res))
+            self.assertEqual(res, response.error(code))
