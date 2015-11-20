@@ -56,6 +56,10 @@ class Base(vmxml.Device):
                  if not a.startswith('__')]
         return ' '.join(attrs)
 
+    def is_attached_to(self, xml_string):
+        raise NotImplementedError(
+            "%s does not implement is_attached_to", self.__class__.__name__)
+
 
 class Generic(Base):
 

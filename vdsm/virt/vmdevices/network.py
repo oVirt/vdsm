@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import xml.etree.ElementTree as ET
+
 from vdsm import utils
 from vdsm.netinfo import DUMMY_BRIDGE
 
@@ -186,9 +188,13 @@ class Interface(Base):
                 self.conf,))
 
     @property
-    def xpath(self):
+    def _xpath(self):
         """
         Returns xpath to the device in libvirt dom xml
         The path is relative to the root element
         """
         return "./devices/interface/mac[@address='%s']" % self.macAddr
+
+    def is_attached_to(self, xml_string):
+        dom = ET.fromstring(xml_string)
+        return bool(dom.findall(self._xpath))
