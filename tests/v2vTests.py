@@ -103,7 +103,9 @@ class VmMock(object):
 class LibvirtMock(object):
 
     def __init__(self,
-                 vmspecs=(("RHEL", "564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"),)):
+                 vmspecs=(
+                     VmSpec("RHEL", "564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"),
+                 )):
         self._vmspecs = vmspecs
 
     def close(self):
