@@ -26,11 +26,13 @@ import re
 import threading
 import time
 import uuid
+import xml.etree.cElementTree as etree
 
 import libvirt
 from nose.plugins.skip import SkipTest
 
 from virt import vm
+from virt.vm import HotunplugTimeout
 from virt import vmdevices
 from virt import vmexitreason
 from virt.vmdevices import hwclass
@@ -39,6 +41,8 @@ from virt import virdomain
 from virt import vmxml
 from virt import vmstats
 from virt import vmstatus
+from virt.vmdevices.storage import Drive
+from virt.vmdevices.storage import DISK_TYPE
 from vdsm import constants
 from vdsm import define
 from vdsm import password
@@ -1262,6 +1266,116 @@ class ChangingSchedulerDomain(object):
 
     def schedulerParameters(self):
         return self._params
+
+
+@expandPermutations
+class TestWaitForRemoval(TestCaseBase):
+
+    FILE_DRIVE_XML = """
+    <disk>
+        <source file='test_path'/>
+    </disk>"""
+    NETWORK_DRIVE_XML = """
+    <disk>
+        <source name='test_path'/>
+    </disk>"""
+    BLOCK_DRIVE_XML = """
+    <disk>
+        <source dev='/block_path'/>
+    </disk>"""
+
+    drive_file = Drive({}, log=logging.getLogger(''), index=0, iface="",
+                       path='test_path',  diskType=DISK_TYPE.FILE)
+    drive_network = Drive({}, log=logging.getLogger(''), index=0, iface="",
+                          path='test_path', diskType=DISK_TYPE.NETWORK)
+    drive_block = Drive({}, log=logging.getLogger(''), index=0, iface="",
+                        path="/block_path", diskType=DISK_TYPE.BLOCK)
+
+    @MonkeyPatch(vm, "config", make_config([
+        ("vars", "hotunplug_timeout", "0.25"),
+        ("vars", "hotunplug_check_interval", "0.1")
+    ]))
+    @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
+    @permutations([[drive_file, FILE_DRIVE_XML],
+                   [drive_network, NETWORK_DRIVE_XML],
+                   [drive_block, BLOCK_DRIVE_XML]])
+    def test_timeout(self, drive, matching_xml):
+        testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
+                                                   times_to_match=9))
+        self.assertRaises(HotunplugTimeout, testvm._waitForDriveRemoval, drive)
+
+    # The timeout hotunplug_check_interval=1 should never be reached. We should
+    # never reach sleep when device is removed in first check, and method
+    # should exit immediately
+    @MonkeyPatch(vm, "config", make_config([
+        ("vars", "hotunplug_timeout", "1")
+    ]))
+    @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
+    @permutations([[drive_file, FILE_DRIVE_XML],
+                   [drive_network, NETWORK_DRIVE_XML],
+                   [drive_block, BLOCK_DRIVE_XML]])
+    def test_removed_on_first_check(self, drive, matching_xml):
+        testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml))
+        testvm._waitForDriveRemoval(drive)
+        self.assertEqual(testvm._dom.xmldesc_fetched, 1)
+
+    @MonkeyPatch(vm, "config", make_config([
+        ("vars", "hotunplug_timeout", "1"),
+        ("vars", "hotunplug_check_interval", "0")
+    ]))
+    @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
+    @permutations([[drive_file, FILE_DRIVE_XML],
+                   [drive_network, NETWORK_DRIVE_XML],
+                   [drive_block, BLOCK_DRIVE_XML]])
+    def test_removed_on_x_check(self, drive, matching_xml):
+        testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
+                                                   times_to_match=2))
+        testvm._waitForDriveRemoval(drive)
+        self.assertEqual(testvm._dom.xmldesc_fetched, 3)
+
+
+class WaitForRemovalFakeVmDom(object):
+
+    DEFAULT_XML = """
+    <domain type='kvm' id='2'>
+        <devices>
+            <disk device="disk" snapshot="no" type="file">
+                <source file="/path/to/volume"/>
+                <target bus="virtio" dev="vda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="none" error_policy="stop"
+                        io="threads" name="qemu" type="raw"/>
+            </disk>
+            <disk device="lun" sgio="unfiltered" snapshot="no" type="block">
+                <source dev="/dev/mapper/lun1"/>
+                <target bus="scsi" dev="sda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="none" error_policy="stop"
+                        io="native" name="qemu" type="raw"/>
+            </disk>
+            <disk device="cdrom" snapshot="no" type="file">
+                <source file="/path/to/fedora.iso" startupPolicy="optional"/>
+                <target bus="ide" dev="hdc"/>
+                <readonly/>
+                <serial>54-a672-23e5b495a9ea</serial>
+            </disk>
+        </devices>
+    </domain>
+    """
+
+    def __init__(self, device_xml, times_to_match=0):
+        self.times_to_match = times_to_match
+        result_xml = etree.fromstring(self.DEFAULT_XML)
+        result_xml.find("devices").append(etree.fromstring(device_xml))
+        self.domain_xml_with_device = etree.tostring(result_xml)
+        self.xmldesc_fetched = 0
+
+    def XMLDesc(self, flags):
+        self.xmldesc_fetched += 1
+        if self.xmldesc_fetched > self.times_to_match:
+            return self.DEFAULT_XML
+        else:
+            return self.domain_xml_with_device
 
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),

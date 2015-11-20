@@ -2696,9 +2696,10 @@ class Vm(object):
         self.log.debug("Waiting for hotunplug to finish")
         with utils.stopwatch("Hotunplug disk %s" % drive.name):
             deadline = (utils.monotonic_time() +
-                        config.getint('vars', 'hotunplug_timeout'))
+                        config.getfloat('vars', 'hotunplug_timeout'))
+            sleep_time = config.getfloat('vars', 'hotunplug_check_interval')
             while self._isDriveAttached(drive):
-                time.sleep(1)
+                time.sleep(sleep_time)
                 if utils.monotonic_time() > deadline:
                     raise HotunplugTimeout("Timeout detaching drive %s"
                                            % drive.name)
