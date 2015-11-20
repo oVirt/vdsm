@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,19 +13,22 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from __future__ import absolute_import
+
+from testlib import VdsmTestCase
+from vdsm.exception import VdsmException
 
 
-class VdsmException(Exception):
-    code = 0
-    message = "Vdsm Exception"
+class TestVdsmException(VdsmTestCase):
 
-    def __str__(self):
-        return self.message
+    def test_str(self):
+        e = VdsmException()
+        self.assertEqual(str(e), e.message)
 
-    def response(self):
-        return {'status': {'code': self.code, 'message': str(self)}}
+    def test_response(self):
+        e = VdsmException()
+        self.assertEqual(e.response(),
+                         {"status": {"code": 0, "message": "Vdsm Exception"}})
