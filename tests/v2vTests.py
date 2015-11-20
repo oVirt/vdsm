@@ -102,17 +102,14 @@ class VmMock(object):
 # FIXME: extend vmfakelib allowing to set predefined domain in Connection class
 class LibvirtMock(object):
 
-    def __init__(self,
-                 vmspecs=(
-                     VmSpec("RHEL", "564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"),
-                 )):
-        self._vmspecs = vmspecs
+    def __init__(self, vms):
+        self._vms = vms
 
     def close(self):
         pass
 
     def listAllDomains(self):
-        return [VmMock(*spec) for spec in self._vmspecs]
+        return self._vms
 
     def storageVolLookupByPath(self, name):
         return LibvirtMock.Volume()
@@ -190,27 +187,29 @@ class v2vTests(TestCaseBase):
         self.volume_id_b = '00000000-0000-0000-0000-000000000004'
         self.url = 'vpx://adminr%40vsphere@0.0.0.0/ovirt/0.0.0.0?no_verify=1'
 
+    _VM_SPECS = (
+        VmSpec("RHEL_0", str(uuid.uuid4())),
+        VmSpec("RHEL_1", str(uuid.uuid4())),
+        VmSpec("RHEL_2", str(uuid.uuid4()))
+    )
+
+    _VMS = [VmMock(*spec) for spec in _VM_SPECS]
+
     def testGetExternalVMs(self):
         if not v2v.supported():
             raise SkipTest('v2v is not supported current os version')
 
-        vmspecs = (
-            VmSpec("RHEL_0", str(uuid.uuid4())),
-            VmSpec("RHEL_1", str(uuid.uuid4())),
-            VmSpec("RHEL_2", str(uuid.uuid4()))
-        )
-
         def _connect(uri, username, passwd):
-            return LibvirtMock(vmspecs=vmspecs)
+            return LibvirtMock(vms=self._VMS)
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'))['vmList']
 
-        self.assertEqual(len(vms), len(vmspecs))
+        self.assertEqual(len(vms), len(self._VM_SPECS))
 
-        for vm, spec in zip(vms, vmspecs):
+        for vm, spec in zip(vms, self._VM_SPECS):
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
 
@@ -267,7 +266,8 @@ class v2vTests(TestCaseBase):
         def internal_error(name):
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
 
-        mock = LibvirtMock()
+        # we need a sequence of just one vm
+        mock = LibvirtMock(vms=self._VMS[:1])
         mock.storageVolLookupByPath = internal_error
 
         def _connect(uri, username, passwd):
@@ -278,7 +278,7 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'))['vmList']
         self.assertEquals(len(vms), 1)
-        self._assertVmMatchesSpec(vms[0], mock._vmspecs[0])
+        self._assertVmMatchesSpec(vms[0], self._VM_SPECS[0])
         for disk in vms[0]['disks']:
             self.assertNotIn('capacity', disk)
             self.assertNotIn('allocation', disk)
