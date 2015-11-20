@@ -212,6 +212,7 @@ class v2vTests(TestCaseBase):
 
         for vm, spec in zip(vms, vmspecs):
             self._assertVmMatchesSpec(vm, spec)
+            self._assertVmDisksMatchSpec(vm, spec)
 
     def testOutputParser(self):
         output = ''.join(['[   0.0] Opening the source -i libvirt ://roo...\n',
@@ -277,23 +278,18 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'))['vmList']
         self.assertEquals(len(vms), 1)
-        vm = vms[0]
-        self.assertEquals(vm['vmId'], '564d7cb4-8e3d-06ec-ce82-7b2b13c6a611')
-        self.assertEquals(vm['memSize'], 2048)
-        self.assertEquals(vm['smp'], 1)
+        self._assertVmMatchesSpec(vms[0], mock._vmspecs[0])
+        for disk in vms[0]['disks']:
+            self.assertNotIn('capacity', disk)
+            self.assertNotIn('allocation', disk)
 
-        self.assertEquals(len(vm['disks']), 1)
+    def _assertVmDisksMatchSpec(self, vm, spec):
         disk = vm['disks'][0]
         self.assertEquals(disk['dev'], 'sda')
-        self.assertEquals(disk['alias'], '[datastore1] RHEL/RHEL_RHEL.vmdk')
-        self.assertNotIn('capacity', disk)
-        self.assertNotIn('allocation', disk)
-
-        self.assertEquals(len(vm['networks']), 1)
-        network = vm['networks'][0]
-        self.assertEquals(network['type'], 'bridge')
-        self.assertEquals(network['macAddr'], '52:54:56:4d:7c:b4')
-        self.assertEquals(network['bridge'], 'VM Network')
+        self.assertEquals(disk['alias'],
+                          '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
+        self.assertIn('capacity', disk)
+        self.assertIn('allocation', disk)
 
     def _assertVmMatchesSpec(self, vm, spec):
         self.assertEquals(vm['vmId'], spec.vmid)
@@ -301,13 +297,6 @@ class v2vTests(TestCaseBase):
         self.assertEquals(vm['smp'], 1)
         self.assertEquals(len(vm['disks']), 1)
         self.assertEquals(len(vm['networks']), 1)
-
-        disk = vm['disks'][0]
-        self.assertEquals(disk['dev'], 'sda')
-        self.assertEquals(disk['alias'],
-                          '[datastore1] RHEL/RHEL_%s.vmdk' % spec.name)
-        self.assertIn('capacity', disk)
-        self.assertIn('allocation', disk)
 
         network = vm['networks'][0]
         self.assertEquals(network['type'], 'bridge')
