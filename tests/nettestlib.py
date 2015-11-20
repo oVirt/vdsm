@@ -72,7 +72,7 @@ class Interface(object):
                         event.get('state') == 'down'):
                     return
 
-    def __str__(self):
+    def __repr__(self):
         return "<{0} {1!r}>".format(self.__class__.__name__, self.devName)
 
 

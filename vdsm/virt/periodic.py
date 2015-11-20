@@ -194,7 +194,7 @@ class Operation(object):
         self._executor.dispatch(self, self._timeout)
         self._step()
 
-    def __str__(self):
+    def __repr__(self):
         return '<Operation action=%s at 0x%x>' % (
             self._func, id(self)
         )
@@ -258,12 +258,10 @@ class VmDispatcher(object):
                               self._create, skipped)
         return skipped  # for testing purposes
 
-    def __str__(self):
+    def __repr__(self):
         return '<VmDispatcher operation=%s at 0x%x>' % (
             self._create, id(self)
         )
-
-    __repr__ = __str__
 
 
 class _RunnableOnVm(object):
@@ -287,7 +285,7 @@ class _RunnableOnVm(object):
     def _execute(self):
         raise NotImplementedError
 
-    def __str__(self):
+    def __repr__(self):
         return '<%s vm=%s at 0x%x>' % (
             self.__class__.__name__, self._vm.id, id(self)
         )

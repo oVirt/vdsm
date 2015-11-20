@@ -211,7 +211,7 @@ class _Worker(object):
         self._log.debug("Worker discarded: %s", self)
         self._executor._worker_discarded(self)
 
-    def __str__(self):
+    def __repr__(self):
         return "<Worker name=%s task=%s at 0x%x>" % (
             self.name, self._callable, id(self)
         )

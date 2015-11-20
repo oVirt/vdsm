@@ -278,7 +278,7 @@ class MountConnection(object):
                      self._remotePath,
                      self._options))
 
-    def __str__(self):
+    def __repr__(self):
         return "<{0} spec={1!r} vfstype={2!r} options={3!r}>".format(
             self.__class__.__name__,
             self._remotePath,
