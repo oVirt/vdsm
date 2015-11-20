@@ -28,7 +28,7 @@ import logging
 import selinux
 import exception as ge
 from functools import wraps
-from . import makePublic
+from . import gluster_mgmt_api
 from . import safeWrite
 
 _glusterHooksPath = '/var/lib/glusterd/hooks/1'
@@ -80,7 +80,7 @@ def checkArgs(func):
     return wrapper
 
 
-@makePublic
+@gluster_mgmt_api
 def hooksList():
     """
     It scans files which starts from HookStatus.ENABLE or HookStatus.DISABLE
@@ -140,7 +140,7 @@ def _getHookFileNames(glusterCmd, hookLevel, hookName):
 
 
 @checkArgs
-@makePublic
+@gluster_mgmt_api
 def hookEnable(glusterCmd, hookLevel, hookName):
     enabledFile, disabledFile = _getHookFileNames(glusterCmd,
                                                   hookLevel.lower(), hookName)
@@ -161,7 +161,7 @@ def hookEnable(glusterCmd, hookLevel, hookName):
 
 
 @checkArgs
-@makePublic
+@gluster_mgmt_api
 def hookDisable(glusterCmd, hookLevel, hookName):
     enabledFile, disabledFile = _getHookFileNames(glusterCmd,
                                                   hookLevel.lower(), hookName)
@@ -180,7 +180,7 @@ def hookDisable(glusterCmd, hookLevel, hookName):
 
 
 @checkArgs
-@makePublic
+@gluster_mgmt_api
 def hookRead(glusterCmd, hookLevel, hookName):
     """
     Returns:
@@ -234,7 +234,7 @@ def _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
 
 
 @checkArgs
-@makePublic
+@gluster_mgmt_api
 def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum):
     try:
         return _hookUpdateOrAdd(glusterCmd, hookLevel, hookName, hookData,
@@ -245,7 +245,7 @@ def hookUpdate(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum):
 
 
 @checkArgs
-@makePublic
+@gluster_mgmt_api
 def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
             enable=False):
     hookPath = os.path.join(_glusterHooksPath, glusterCmd, hookLevel.lower())
@@ -270,7 +270,7 @@ def hookAdd(glusterCmd, hookLevel, hookName, hookData, hookMd5Sum,
 
 
 @checkArgs
-@makePublic
+@gluster_mgmt_api
 def hookRemove(glusterCmd, hookLevel, hookName):
     enabledFile, disabledFile = _getHookFileNames(glusterCmd,
                                                   hookLevel.lower(),

@@ -30,7 +30,7 @@ from pwd import getpwnam
 from storage import mount
 
 import exception as ge
-from . import makePublic
+from . import gluster_mgmt_api
 from . import safeWrite
 import fstab
 import logging
@@ -109,7 +109,7 @@ def glusterAdditionalFeatures():
     return additionalFeatures
 
 
-@makePublic
+@gluster_mgmt_api
 def getGeoRepKeys():
     try:
         with open(GEOREP_PUB_KEY_PATH, 'r') as f:
@@ -119,7 +119,7 @@ def getGeoRepKeys():
     return pubKeys
 
 
-@makePublic
+@gluster_mgmt_api
 def updateGeoRepKeys(userName, geoRepPubKeys):
     try:
         userInfo = getpwnam(userName)
@@ -170,7 +170,7 @@ def updateGeoRepKeys(userName, geoRepPubKeys):
         raise ge.GlusterGeoRepPublicKeyWriteFailedException(err=[str(e)])
 
 
-@makePublic
+@gluster_mgmt_api
 def createMountBrokerRoot(userName):
     try:
         getpwnam(userName)
@@ -185,7 +185,7 @@ def createMountBrokerRoot(userName):
     return
 
 
-@makePublic
+@gluster_mgmt_api
 def mountMetaVolume(metaVolumeName):
     def _metaVolumeFstabUpdate(metaVolumeName):
         try:
@@ -232,7 +232,7 @@ def mountMetaVolume(metaVolumeName):
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotScheduleDisable():
     command = [_snapSchedulerPath.cmd, "disable_force"]
     rc, out, err = utils.execCmd(command)
@@ -242,7 +242,7 @@ def snapshotScheduleDisable():
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def snapshotScheduleFlagUpdate(value):
     if not os.path.exists(LOCK_FILE_DIR):
         try:
@@ -271,7 +271,7 @@ def snapshotScheduleFlagUpdate(value):
     return True
 
 
-@makePublic
+@gluster_mgmt_api
 def processesStop():
     command = ["/bin/sh", _stopAllProcessesPath.cmd]
     rc, out, err = utils.execCmd(command)

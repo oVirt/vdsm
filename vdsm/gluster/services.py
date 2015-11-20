@@ -20,7 +20,7 @@
 
 import exception as ge
 from vdsm.tool import service
-from . import makePublic
+from . import gluster_mgmt_api
 
 
 SUPPORTED_SERVICES = frozenset(("glusterd",
@@ -109,7 +109,7 @@ def _action(serviceNames, action):
     return statusOutput
 
 
-@makePublic
+@gluster_mgmt_api
 def servicesAction(serviceNames, action):
     """
     Returns:
@@ -120,7 +120,7 @@ def servicesAction(serviceNames, action):
     return _action(serviceNames, action)
 
 
-@makePublic
+@gluster_mgmt_api
 def servicesGet(serviceNames):
     """
     Returns:

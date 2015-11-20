@@ -36,7 +36,7 @@ from vdsm import utils
 
 import fstab
 import exception as ge
-from . import makePublic
+from . import gluster_mgmt_api
 
 
 log = logging.getLogger("Gluster")
@@ -123,14 +123,14 @@ def _reset_blivet(blivetEnv):
         log.error("Error: %s" % e.message)
 
 
-@makePublic
+@gluster_mgmt_api
 def storageDevicesList():
     blivetEnv = blivet.Blivet()
     _reset_blivet(blivetEnv)
     return _parseDevices(blivetEnv.devices)
 
 
-@makePublic
+@gluster_mgmt_api
 def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
                 raidParams={}):
     def _getDeviceList(devNameList):

@@ -20,7 +20,7 @@
 import logging
 
 import exception as ge
-from . import makePublic
+from . import gluster_mgmt_api
 from . import cli
 from cli import TaskType
 
@@ -51,7 +51,7 @@ def _getTasksData(value):
             "data": summary}
 
 
-@makePublic
+@gluster_mgmt_api
 def tasksList(taskIds=[]):
     details = {}
     tasks = cli.volumeTasks()

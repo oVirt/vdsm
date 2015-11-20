@@ -22,7 +22,7 @@ from ctypes.util import find_library
 import os
 
 import exception as ge
-from . import makePublic
+from . import gluster_mgmt_api
 
 
 GLUSTER_VOL_PROTOCOL = 'tcp'
@@ -95,7 +95,7 @@ def glfsFini(fs, volumeId):
         raise ge.GlfsFiniException(rc=rc)
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeStatvfsGet(volumeId, host=GLUSTER_VOL_HOST,
                      port=GLUSTER_VOL_PORT,
                      protocol=GLUSTER_VOL_PROTOCOL):
@@ -211,7 +211,7 @@ from vdsm import constants
 from vdsm import utils
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
                   port=GLUSTER_VOL_PORT,
                   protocol=GLUSTER_VOL_PROTOCOL):
@@ -242,7 +242,7 @@ def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
                               res['f_namemax']))
 
 
-@makePublic
+@gluster_mgmt_api
 def volumeEmptyCheck(volumeName, host=GLUSTER_VOL_HOST,
                      port=GLUSTER_VOL_PORT,
                      protocol=GLUSTER_VOL_PROTOCOL):
