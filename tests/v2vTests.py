@@ -263,13 +263,13 @@ class v2vTests(TestCaseBase):
         if not v2v.supported():
             raise SkipTest('v2v is not supported current os version')
 
+        def internal_error(name):
+            raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
+
+        mock = LibvirtMock()
+        mock.storageVolLookupByPath = internal_error
+
         def _connect(uri, username, passwd):
-            mock = LibvirtMock()
-
-            def internal_error(name):
-                raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
-
-            mock.storageVolLookupByPath = internal_error
             return mock
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
