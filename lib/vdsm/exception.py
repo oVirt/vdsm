@@ -27,11 +27,14 @@ class VdsmException(Exception):
     def __str__(self):
         return self.message
 
+    def info(self):
+        return {'code': self.code, 'message': str(self)}
+
     def response(self):
-        return {'status': {'code': self.code, 'message': str(self)}}
+        return {'status': self.info()}
 
 
-class GeneralException(Exception):
+class GeneralException(VdsmException):
     code = 100
     message = "General Exception"
 
@@ -40,12 +43,6 @@ class GeneralException(Exception):
 
     def __str__(self):
         return "%s: %s" % (self.message, repr(self.value))
-
-    def info(self):
-        return {'code': self.code, 'message': str(self)}
-
-    def response(self):
-        return {'status': self.info()}
 
 
 class ActionStopped(GeneralException):

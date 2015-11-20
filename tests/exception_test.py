@@ -28,10 +28,13 @@ class TestVdsmException(VdsmTestCase):
         e = VdsmException()
         self.assertEqual(str(e), e.message)
 
+    def test_info(self):
+        e = VdsmException()
+        self.assertEqual(e.info(), {"code": 0, "message": str(e)})
+
     def test_response(self):
         e = VdsmException()
-        self.assertEqual(e.response(),
-                         {"status": {"code": 0, "message": "Vdsm Exception"}})
+        self.assertEqual(e.response(), {"status": e.info()})
 
 
 class TestGeneralException(VdsmTestCase):

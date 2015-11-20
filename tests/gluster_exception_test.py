@@ -64,10 +64,14 @@ class TestGlusterException(VdsmTestCase):
         self.assertEqual(str(e), "Gluster Exception\nerror: output\nerror\n"
                                  "return code: 1")
 
+    def test_info(self):
+        e = GlusterException()
+        self.assertEqual(e.info(), {'code': 4100,
+                                    'message': str(e),
+                                    'rc': e.rc,
+                                    'out': e.out,
+                                    'err': e.err})
+
     def test_response(self):
         e = GlusterException()
-        self.assertEqual(e.response(), {"status": {'code': 4100,
-                                                   'message': str(e),
-                                                   'rc': e.rc,
-                                                   'out': e.out,
-                                                   'err': e.err}})
+        self.assertEqual(e.response(), {'status': e.info()})

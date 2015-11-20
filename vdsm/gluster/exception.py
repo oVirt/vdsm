@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -58,9 +58,12 @@ class GlusterException(VdsmException):
 
         return s
 
-    def response(self):
-        return {'status': {'code': self.code, 'message': str(self),
-                           'rc': self.rc, 'out': self.out, 'err': self.err}}
+    def info(self):
+        return {'code': self.code,
+                'message': str(self),
+                'rc': self.rc,
+                'out': self.out,
+                'err': self.err}
 
 
 # General
