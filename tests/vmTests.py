@@ -1546,6 +1546,31 @@ class FreezingUnexpectedErrorTests(TestCaseBase):
                                              message="fake error"))
 
 
+@expandPermutations
+class SyncGuestTimeTests(TestCaseBase):
+
+    def _make_vm(self, virt_error=None):
+        dom = fake.Domain(virtError=virt_error)
+        return TestingVm(dom)
+
+    @MonkeyPatch(time, 'time', lambda: 1234567890.125)
+    def test_success(self):
+        vm = self._make_vm()
+        vm._syncGuestTime()
+        self.assertEqual(vm._dom.__calls__, [
+            ('setTime', (), {'time': {'seconds': 1234567890,
+                                      'nseconds': 125000000}})
+        ])
+
+    @permutations([[libvirt.VIR_ERR_AGENT_UNRESPONSIVE],
+                   [libvirt.VIR_ERR_NO_SUPPORT],
+                   [libvirt.VIR_ERR_INTERNAL_ERROR]])
+    def test_swallow_expected_errors(self, virt_error):
+        vm = self._make_vm(virt_error=virt_error)
+        with self.assertNotRaises():
+            vm._syncGuestTime()
+
+
 def _load_xml(name):
     test_path = os.path.realpath(__file__)
     data_path = os.path.join(os.path.split(test_path)[0], 'devices', 'data')

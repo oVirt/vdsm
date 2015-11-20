@@ -1191,6 +1191,38 @@ class Vm(object):
             if not guestCpuLocked:
                 self._guestCpuLock.release()
 
+    def _syncGuestTime(self):
+        """
+        Try to set VM time to the current value.  This is typically useful when
+        clock wasn't running on the VM for some time (e.g. during suspension or
+        migration), especially if the time delay exceeds NTP tolerance.
+
+        It is not guaranteed that the time is actually set (it depends on guest
+        environment, especially QEMU agent presence) or that the set time is
+        very precise (NTP in the guest should take care of it if needed).
+        """
+        t = time.time()
+        seconds = int(t)
+        nseconds = int((t - seconds) * 10**9)
+        try:
+            self._dom.setTime(time={'seconds': seconds, 'nseconds': nseconds})
+        except libvirt.libvirtError as e:
+            template = "Failed to set time: %s"
+            code = e.get_error_code()
+            if code == libvirt.VIR_ERR_AGENT_UNRESPONSIVE:
+                self.log.debug(template, "QEMU agent unresponsive")
+            elif code == libvirt.VIR_ERR_NO_SUPPORT:
+                self.log.debug(template, "Not supported")
+            else:
+                self.log.error(template, e)
+        except virdomain.NotConnectedError:
+            # The highest priority is not to let this method crash and thus
+            # disrupt its caller in any way.  So we swallow this error here,
+            # to be absolutely safe.
+            self.log.debug("Failed to set time: not connected")
+        else:
+            self.log.debug('Time updated to: %d.%09d', seconds, nseconds)
+
     def shutdown(self, delay, message, reboot, timeout, force):
         if self.lastStatus == vmstatus.DOWN:
             return response.error('noVM')
@@ -2784,6 +2816,7 @@ class Vm(object):
             fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
                                        {'FROM_SNAPSHOT': fromSnapshot})
+            self._syncGuestTime()
         elif 'migrationDest' in self.conf:
             if self._needToWaitForMigrationToComplete():
                 usedTimeout = self._waitForUnderlyingMigration()
@@ -2797,6 +2830,12 @@ class Vm(object):
             for dev in self._customDevices():
                 hooks.after_device_migrate_destination(
                     dev._deviceXML, self.conf, dev.custom)
+
+            # TODO: _syncGuestTime() should be called here as it is in
+            # restore_state path.  But there may be some issues with the call
+            # such as blocking for some time when qemu-guest-agent is not
+            # running in the guest.  We'd like to discuss them more before
+            # touching migration.
 
         if 'guestIPs' in self.conf:
             del self.conf['guestIPs']
