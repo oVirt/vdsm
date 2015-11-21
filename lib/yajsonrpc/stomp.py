@@ -383,25 +383,27 @@ class AsyncDispatcher(object):
         return max(self._outgoing_heartbeat_expiration_interval(), 0)
 
     def handle_write(self, dispatcher):
-        if self._outbuf is None:
-            try:
-                frame = self._frame_handler.peek_message()
-            except IndexError:
+        while True:
+            if self._outbuf is None:
+                try:
+                    frame = self._frame_handler.peek_message()
+                except IndexError:
+                    return
+
+                self._outbuf = frame.encode()
+
+            data = self._outbuf
+            numSent = dispatcher.send(data)
+            if numSent == 0:
                 return
 
-            self._outbuf = frame.encode()
+            self._update_outgoing_heartbeat()
+            if numSent < len(data):
+                self._outbuf = data[numSent:]
+                return
 
-        data = self._outbuf
-        numSent = dispatcher.send(data)
-        self._update_outgoing_heartbeat()
-        if numSent == len(data):
             self._outbuf = None
-            # Throw away the frame that was sent to the server
-            # we do not want to do it for partially processed
-            # messages.
             self._frame_handler.pop_message()
-        else:
-            self._outbuf = data[numSent:]
 
     def writable(self, dispatcher):
         if self._frame_handler.has_outgoing_messages:
