@@ -75,27 +75,6 @@
           '*hostQos': 'HostQoSParams'}}
 
 ##
-# @Host.addNetwork:
-#
-# Add a new network to this host.
-#
-# @bridge:  The name of the network to add
-#
-# @vlan:    #optional The name of a VLAN to create on the device
-#
-# @bond:    #optional The name of a bond device to create from @nics
-#
-# @nics:    #optional A list of network device names
-#
-# @options: #optional A @NetworkOptions structure
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'Host', 'name': 'addNetwork'},
- 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
-          '*options': 'NetworkOptions'}}
-
-##
 # @Host.delNetwork:
 #
 # Remove a network from this host.

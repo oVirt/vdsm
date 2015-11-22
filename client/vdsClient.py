@@ -1755,21 +1755,6 @@ class service:
         status = self.s.setupNetworks(networks, bondings, params)
         return status['status']['code'], status['status']['message']
 
-    def do_addNetwork(self, args):
-        params = self._eqSplit(args)
-        try:
-            nics = filter(None, params['nics'].split(','))
-        except:
-            raise ValueError
-        bridge = params.get('bridge', '')
-        vlan = params.get('vlan', '')
-        bond = params.get('bond', '')
-        for k in ['bridge', 'vlan', 'bond', 'nics']:
-            if k in params:
-                del params[k]
-        status = self.s.addNetwork(bridge, vlan, bond, nics, params)
-        return status['status']['code'], status['status']['message']
-
     def do_editNetwork(self, args):
         params = self._eqSplit(args)
         try:
@@ -2795,11 +2780,6 @@ if __name__ == '__main__':
                            'Setup new configuration of multiple networks and '
                            'bonds.'
                            )),
-        'addNetwork': (serv.do_addNetwork,
-                       ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
-                        'nics=nic[,nic]',
-                        'Add a new network to this vds.'
-                        )),
         'delNetwork': (serv.do_delNetwork,
                        ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
                         'nics=nic[,nic]',

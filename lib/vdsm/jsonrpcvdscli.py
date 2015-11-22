@@ -37,7 +37,6 @@ from . import sslutils
 
 
 _COMMAND_CONVERTER = {
-    'addNetwork': 'Host.addNetwork',
     'create': 'VM.create',
     'delNetwork': 'Host.delNetwork',
     'destroy': 'VM.destroy',

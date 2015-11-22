@@ -30,7 +30,7 @@ import logging
 import errno
 
 from network.errors import ConfigNetworkError
-from network.errors import ERR_BAD_NIC, ERR_USED_BRIDGE
+from network.errors import ERR_BAD_NIC
 from network.models import Bond, Vlan
 from network.configurators import RollbackIncomplete
 
@@ -1502,55 +1502,6 @@ class Global(APIBase):
         except:
             _after_network_setup_fail(networks, bondings, options)
             raise
-        finally:
-            self._cif._networkSemaphore.release()
-
-    def addNetwork(self, bridge, vlan=None, bond=None, nics=None,
-                   options=None):
-        """Add a new network to this vds.
-
-        Network topology is network--[vlan--][bond--]nics.
-        vlan(number) and bond are optional - pass the empty string to discard
-        them.  """
-        network = bridge
-        if options is None:
-            options = {}
-
-        self.translateNetOptionsToNew(options)
-        if not self._cif._networkSemaphore.acquire(blocking=False):
-            self.log.warn('concurrent network verb already executing')
-            return errCode['unavail']
-        try:
-            self._cif._netConfigDirty = True
-
-            if vlan:
-                options['vlan'] = vlan
-            bonds = {}
-            if bond:
-                options['bonding'] = bond
-                bonds[bond] = {}
-                bond_opts = options.pop('bondingOptions', None)
-                if bond_opts is not None:
-                    bonds[bond]['options'] = bond_opts
-                bonds[bond]['nics'] = list(nics)
-            else:
-                nics = list(nics)
-                if nics:
-                    options['nic'], = nics
-
-            try:
-                if network in netinfo.NetInfo().networks:
-                    raise ConfigNetworkError(
-                        ERR_USED_BRIDGE,
-                        'Network already exists (%s)' % (network,))
-                supervdsm.getProxy().setupNetworks(
-                    {network: options},
-                    bonds,
-                    {'connectivityCheck': False})
-            except ConfigNetworkError as e:
-                self.log.error(e.message, exc_info=True)
-                return {'status': {'code': e.errCode, 'message': e.message}}
-            return {'status': doneCode}
         finally:
             self._cif._networkSemaphore.release()
 
