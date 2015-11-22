@@ -4151,8 +4151,8 @@ class Vm(object):
     def _isDriveAttached(self, drive):
         root = ET.fromstring(self._dom.XMLDesc(0))
         source_key = 'dev' if drive.blockDev else 'file'
-        return bool(root.findall("./devices/disk/source[@%s='%s']" %
-                                 (source_key, drive.path)))
+        sources = root.findall("./devices/disk/source")
+        return bool([s for s in sources if s.get(source_key) == drive.path])
 
     def _readPauseCode(self, timeout):
         # libvirt does not not export yet the I/O error reason code.
