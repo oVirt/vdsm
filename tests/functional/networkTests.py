@@ -29,10 +29,10 @@ from nose.plugins.skip import SkipTest
 import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
+from vdsm import kernelconfig
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet,
                             addrAdd)
-from vdsm.kernelconfig import KernelConfig
 from vdsm.netconfpersistence import RunningConfig
 from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
                           _get_dhclient_ifaces, BONDING_SLAVES,
@@ -382,10 +382,9 @@ class NetworkTest(TestCaseBase):
 
     def _assert_kernel_config_matches_running_config(self):
         netinfo = self.vdsm_net.netinfo
-        bare_kernel_config = KernelConfig(netinfo)
+        bare_kernel_config = kernelconfig.KernelConfig(netinfo)
         bare_running_config = self.vdsm_net.config
-        normalized_running_config = bare_kernel_config.normalize(
-            bare_running_config)
+        normalized_running_config = kernelconfig.normalize(bare_running_config)
         # Unify strings to unicode instances so differences are easier to
         # understand. This won't be needed once we move to Python 3.
         running_config = normalized_running_config.as_unicode()

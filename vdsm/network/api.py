@@ -892,7 +892,7 @@ def setupNetworks(networks, bondings, **options):
     logger.debug("Applying...")
     in_rollback = options.get('_inRollback', False)
     kernel_config = kernelconfig.KernelConfig(_netinfo)
-    normalized_config = kernel_config.normalize(
+    normalized_config = kernelconfig.normalize(
         netconfpersistence.BaseConfig(networks, bondings))
     with ConfiguratorClass(in_rollback) as configurator:
         # Remove edited networks and networks with 'remove' attribute

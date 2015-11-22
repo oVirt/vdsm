@@ -30,11 +30,11 @@ import errno
 
 from vdsm.config import config
 from vdsm import ipwrapper
+from vdsm import kernelconfig
 from vdsm import netinfo
 from vdsm.constants import P_VDSM_RUN
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
-from vdsm.kernelconfig import KernelConfig
 from vdsm.utils import monotonic_time
 import hostdev
 
@@ -237,8 +237,8 @@ def _filter_changed_nets_bonds(persistent_config):
     """filter-out unchanged networks and bond, so that we are left only with
     changes that must be applied"""
 
-    kernel_config = KernelConfig(netinfo.NetInfo())
-    normalized_config = kernel_config.normalize(persistent_config)
+    kernel_config = kernelconfig.KernelConfig(netinfo.NetInfo())
+    normalized_config = kernelconfig.normalize(persistent_config)
 
     changed_bonds_names = _find_changed_or_missing(normalized_config.bonds,
                                                    kernel_config.bonds)

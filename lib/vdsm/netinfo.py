@@ -403,7 +403,7 @@ def _permanent_address():
 
 
 @memoized
-def _getAllDefaultBondingOptions():
+def getAllDefaultBondingOptions():
     """
     Return default options per mode, in a dictionary of dictionaries. All keys
     are numeric modes stored as strings for coherence with 'mode' option value.
@@ -418,7 +418,7 @@ def getDefaultBondingOptions(mode=None):
     Return default options for the given mode. If it is None, return options
     for the default mode (usually '0').
     """
-    defaults = _getAllDefaultBondingOptions()
+    defaults = getAllDefaultBondingOptions()
 
     if mode is None:
         mode = defaults['0']['mode'][-1]
@@ -439,7 +439,7 @@ def _getBondingOptions(bond):
                  if val and val != defaults.get(opt)))
 
 
-def _bondOptsForIfcfg(opts):
+def bondOptsForIfcfg(opts):
     """
     Options having symbolic values, e.g. 'mode', are presented by sysfs in
     the order symbolic name, numeric value, e.g. 'balance-rr 0'.
@@ -521,7 +521,7 @@ def _bondinfo(link):
 def _bondOptsCompat(info):
     """Add legacy ifcfg option if missing."""
     if info['opts'] and 'BONDING_OPTS' not in info['cfg']:
-        info['cfg']['BONDING_OPTS'] = _bondOptsForIfcfg(info['opts'])
+        info['cfg']['BONDING_OPTS'] = bondOptsForIfcfg(info['opts'])
 
 
 def _vlaninfo(link):
@@ -972,30 +972,6 @@ class NetInfo(object):
                 lnics.append(port)
 
         return lnics, vlan, vlanid, bonding
-
-    @staticmethod
-    def getDefaultMtu():
-        return DEFAULT_MTU
-
-    @staticmethod
-    def getDefaultBondingOptions(mode=None):
-        return getDefaultBondingOptions(mode)
-
-    @staticmethod
-    def getDefaultBondingMode():
-        return _getAllDefaultBondingOptions()['0']['mode'][-1]
-
-    @staticmethod
-    def bondOptsForIfcfg(opts):
-        return _bondOptsForIfcfg(opts)
-
-    @staticmethod
-    def prefix2netmask(prefix):
-        return prefix2netmask(prefix)
-
-    @staticmethod
-    def stpBooleanize(value):
-        return stp_booleanize(value)
 
     def ifaceUsers(self, iface):
         "Returns a list of entities using the interface"
