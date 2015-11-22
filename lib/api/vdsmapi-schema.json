@@ -75,28 +75,6 @@
           '*hostQos': 'HostQoSParams'}}
 
 ##
-# @Host.delNetwork:
-#
-# Remove a network from this host.
-#
-# @bridge:   The name of the network to remove
-#
-# @vlan:     #optional The name of an associated vlan to remove
-#
-# @bond:     #optional The name of an associated bond device to remove
-#
-# @nics:     #optional A list of associated network devices to remove
-#
-# @options:  #optional A @NetworkOptions structure
-#
-# Since: 4.10.0
-##
-
-{'command': {'class': 'Host', 'name': 'delNetwork'},
- 'data': {'bridge': 'str', '*vlan': 'str', '*bond': 'str', '*nics': ['str'],
-          '*options': 'NetworkOptions'}}
-
-##
 # @SetupNetworkNetAttributes:
 #
 # Configuration attributes for a single host network.

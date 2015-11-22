@@ -104,8 +104,6 @@ not_supported = [
 does_not_use_ovs = [
     'testAddDelBondedNetwork(False)',
     'testAddDelBondedNetwork(True)',
-    'testAddDelNetwork(False)',
-    'testAddDelNetwork(True)',
     'testBondHwAddress(False)',
     'testBondHwAddress(True)',
     'testDelNetworkBondAccumulation',

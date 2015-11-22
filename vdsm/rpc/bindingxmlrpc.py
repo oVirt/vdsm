@@ -601,11 +601,6 @@ class BindingXMLRPC(object):
         api = API.VM(vmId)
         return api.diskSizeExtend(driveSpecs, newSize)
 
-    def delNetwork(self, bridge, vlan=None, bond=None, nics=None,
-                   options=None):
-        api = API.Global()
-        return api.delNetwork(bridge, vlan, bond, nics, options)
-
     def setupNetworks(self, networks, bondings, options):
         api = API.Global()
         return api.setupNetworks(networks, bondings, options)
@@ -1065,7 +1060,6 @@ class BindingXMLRPC(object):
                 (self.vmDiskReplicateStart, 'diskReplicateStart'),
                 (self.vmDiskReplicateFinish, 'diskReplicateFinish'),
                 (self.diskSizeExtend, 'diskSizeExtend'),
-                (self.delNetwork, 'delNetwork'),
                 (self.setupNetworks, 'setupNetworks'),
                 (self.ping, 'ping'),
                 (self.setSafeNetworkConfig, 'setSafeNetworkConfig'),

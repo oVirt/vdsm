@@ -1755,21 +1755,6 @@ class service:
         status = self.s.setupNetworks(networks, bondings, params)
         return status['status']['code'], status['status']['message']
 
-    def do_delNetwork(self, args):
-        params = self._eqSplit(args)
-        try:
-            nics = params['nics'].split(',')
-        except:
-            raise ValueError
-        bridge = params.get('bridge', '')
-        vlan = params.get('vlan', '')
-        bond = params.get('bond', '')
-        for k in ['bridge', 'vlan', 'bond', 'nics']:
-            if k in params:
-                del params[k]
-        status = self.s.delNetwork(bridge, vlan, bond, nics, params)
-        return status['status']['code'], status['status']['message']
-
     def do_setSafeNetworkConfig(self, args):
         status = self.s.setSafeNetworkConfig()
         return status['status']['code'], status['status']['message']
@@ -2763,11 +2748,6 @@ if __name__ == '__main__':
                            'Setup new configuration of multiple networks and '
                            'bonds.'
                            )),
-        'delNetwork': (serv.do_delNetwork,
-                       ('bridge=<bridge> [vlan=<number>] [bond=<bond>] '
-                        'nics=nic[,nic]',
-                        'Remove a network (and parts thereof) from this vds.'
-                        )),
         'setSafeNetworkConfig': (serv.do_setSafeNetworkConfig,
                                  ('',
                                   'declare current network configuration as '

@@ -38,7 +38,6 @@ from . import sslutils
 
 _COMMAND_CONVERTER = {
     'create': 'VM.create',
-    'delNetwork': 'Host.delNetwork',
     'destroy': 'VM.destroy',
     'fullList': 'Host.getVMFullList',
     'getAllVmStats': 'Host.getAllVmStats',

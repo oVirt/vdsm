@@ -994,12 +994,6 @@ def main():
         if 'bonding' in kwargs and kwargs['bonding'] == '':
             del kwargs['bonding']
         _addNetwork(bridge, **kwargs)
-    elif sys.argv[1] == 'del':
-        bridge = sys.argv[2]
-        kwargs = _parseKwargs(sys.argv[3:])
-        if 'nics' in kwargs:
-            kwargs['nics'] = kwargs['nics'].split(',')
-        _delNetwork(bridge, **kwargs)
     elif sys.argv[1] == 'setup':
         batchCommands, options = utils.listSplit(sys.argv[2:], '::', 1)
         d = {}

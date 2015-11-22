@@ -145,13 +145,6 @@ class VdsProxy(object):
         supervdsm.getProxy().restoreNetworks()
 
     @netinfo_altering
-    def delNetwork(self, bridge, vlan=None, bond=None, nics=None, opts=None):
-        result = self.vdscli.delNetwork(bridge,
-                                        *self._get_net_args(vlan, bond, nics,
-                                                            opts))
-        return _parse_result(result)
-
-    @netinfo_altering
     def setupNetworks(self, networks, bonds, options):
         stack = inspect.stack()
         # add calling method for logs

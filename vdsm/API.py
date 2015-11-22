@@ -30,13 +30,10 @@ import logging
 import errno
 
 from network.errors import ConfigNetworkError
-from network.errors import ERR_BAD_NIC
-from network.models import Bond, Vlan
 from network.configurators import RollbackIncomplete
 
 from vdsm import utils
 from clientIF import clientIF
-from vdsm import netinfo
 from vdsm import constants
 from vdsm import response
 from vdsm import supervdsm
@@ -1501,68 +1498,6 @@ class Global(APIBase):
         except:
             _after_network_setup_fail(networks, bondings, options)
             raise
-        finally:
-            self._cif._networkSemaphore.release()
-
-    def delNetwork(self, bridge, vlan=None, bond=None, nics=None,
-                   options=None):
-        """Delete a network from this vds."""
-        network = bridge
-        if options is None:
-            options = {}
-        self.translateNetOptionsToNew(options)
-
-        try:
-            if not self._cif._networkSemaphore.acquire(blocking=False):
-                self.log.warn('concurrent network verb already executing')
-                return errCode['unavail']
-
-            _netinfo = netinfo.NetInfo()
-            if vlan or bond or nics:
-                # Backwards compatibility
-                self.log.warn('Specifying vlan, '
-                              'bond or nics to delNetwork is deprecated')
-                try:
-                    if bond:
-                        Bond.validateName(bond)
-                    if vlan:
-                        Vlan.validateTag(vlan)
-                    if nics and bond and set(nics) != \
-                            set(_netinfo.bondings[bond]["slaves"]):
-                        self.log.error('delNetwork: not all nics specified '
-                                       'are enslaved (%s != %s)' %
-                                       (nics,
-                                        _netinfo.bondings[bond]["slaves"]))
-                        raise ConfigNetworkError(ERR_BAD_NIC,
-                                                 "not all nics are enslaved")
-                except ConfigNetworkError as e:
-                    self.log.error(e.message, exc_info=True)
-                    return {'status': {'code': e.errCode,
-                                       'message': e.message}}
-
-            self._cif._netConfigDirty = True
-
-            try:
-                try:
-                    _, _, _, bonding = \
-                        _netinfo.getNicsVlanAndBondingForNetwork(network)
-                except KeyError:
-                    bonding = None
-
-                # Don't remove bond assigned to another network
-                remove_bonding = (
-                    (len(list(_netinfo.getNetworksAndVlansForIface(bonding)))
-                     <= 1)
-                    if bonding else False)
-
-                supervdsm.getProxy().setupNetworks(
-                    {network: {'remove': True}},
-                    {bonding: {'remove': True}} if remove_bonding else {},
-                    {'connectivityCheck': False})
-            except ConfigNetworkError as e:
-                self.log.error(e.message, exc_info=True)
-                return {'status': {'code': e.errCode, 'message': e.message}}
-            return {'status': doneCode}
         finally:
             self._cif._networkSemaphore.release()
 

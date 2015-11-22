@@ -714,12 +714,10 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @permutations([[True], [False]])
-    def testDelWithoutAdd(self, bridged):
-        with dummyIf(1) as nics:
-            status, msg = self.vdsm_net.delNetwork(NETWORK_NAME, nics=nics,
-                                                   opts={'bridged': bridged})
-            self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
+    def testDelWithoutAdd(self):
+        status, msg = self.vdsm_net.setupNetworks(
+            {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
+        self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
