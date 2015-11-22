@@ -209,8 +209,8 @@ def _alterRunningConfig(func):
 
         isolatedCommand = attrs.get('configurator') is None
         # Detect if we are running an isolated command, i.e., a command that is
-        # not called as part of composed API operation like setupNetworks or
-        # editNetwork, but rather as its own API verb. This is necessary in
+        # not called as part of composed API operation like setupNetworks
+        # but rather as its own API verb. This is necessary in
         # order to maintain behavior of the addNetwork and delNetwork API
         # verbs
         if isolatedCommand:
@@ -516,19 +516,6 @@ def clientSeen(timeout):
         time.sleep(1)
         timeout -= 1
     return False
-
-
-def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
-                **options):
-    with ConfiguratorClass() as configurator:
-        _delNetwork(oldBridge, configurator=configurator, **options)
-        _addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
-                    configurator=configurator, **options)
-        if utils.tobool(options.get('connectivityCheck', False)):
-            if not clientSeen(_get_connectivity_timeout(options)):
-                _delNetwork(newBridge, bypassValidation=True)
-                raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
-                                         'connectivity check failed')
 
 
 def _wait_for_udev_events():
@@ -1013,13 +1000,6 @@ def main():
         if 'nics' in kwargs:
             kwargs['nics'] = kwargs['nics'].split(',')
         _delNetwork(bridge, **kwargs)
-    elif sys.argv[1] == 'edit':
-        oldBridge = sys.argv[2]
-        newBridge = sys.argv[3]
-        kwargs = _parseKwargs(sys.argv[4:])
-        if 'nics' in kwargs:
-            kwargs['nics'] = kwargs['nics'].split(',')
-        editNetwork(oldBridge, newBridge, **kwargs)
     elif sys.argv[1] == 'setup':
         batchCommands, options = utils.listSplit(sys.argv[2:], '::', 1)
         d = {}

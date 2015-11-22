@@ -152,14 +152,6 @@ class VdsProxy(object):
         return _parse_result(result)
 
     @netinfo_altering
-    def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
-                    nics=None, opts=None):
-        result = self.vdscli.editNetwork(oldBridge, newBridge,
-                                         *self._get_net_args(vlan, bond, nics,
-                                                             opts))
-        return _parse_result(result)
-
-    @netinfo_altering
     def setupNetworks(self, networks, bonds, options):
         stack = inspect.stack()
         # add calling method for logs

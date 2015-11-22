@@ -353,7 +353,7 @@ class BindingXMLRPC(object):
         return vm.create(vmParams)
 
     def getVMList(self, fullStatus=False, vmList=()):
-        API.updateTimestamp()  # required for editNetwork flow
+        API.updateTimestamp()  # required for setupNetworks flow
         api = API.Global()
         return api.getVMList(fullStatus, vmList, False)
 
@@ -605,11 +605,6 @@ class BindingXMLRPC(object):
                    options=None):
         api = API.Global()
         return api.delNetwork(bridge, vlan, bond, nics, options)
-
-    def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
-                    nics=None, options=None):
-        api = API.Global()
-        return api.editNetwork(oldBridge, newBridge, vlan, bond, nics, options)
 
     def setupNetworks(self, networks, bondings, options):
         api = API.Global()
@@ -1071,7 +1066,6 @@ class BindingXMLRPC(object):
                 (self.vmDiskReplicateFinish, 'diskReplicateFinish'),
                 (self.diskSizeExtend, 'diskSizeExtend'),
                 (self.delNetwork, 'delNetwork'),
-                (self.editNetwork, 'editNetwork'),
                 (self.setupNetworks, 'setupNetworks'),
                 (self.ping, 'ping'),
                 (self.setSafeNetworkConfig, 'setSafeNetworkConfig'),

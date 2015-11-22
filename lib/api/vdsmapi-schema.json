@@ -97,29 +97,6 @@
           '*options': 'NetworkOptions'}}
 
 ##
-# @Host.editNetwork:
-#
-# Add a new network to the host by replacing it with a new one.
-#
-# @oldBridge:   The name of the old bridge device to remove
-#
-# @newBridge:   The name of the new bridge device to create
-#
-# @vlan:        #optional The name of a VLAN to create on the new network
-#
-# @bond:        #optional The name of a bond device to create from @nics
-#
-# @nics:        #optional A list of network device names
-#
-# @options:     #optional A @NetworkOptions structure
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'Host', 'name': 'editNetwork'},
- 'data': {'oldBridge': 'str', 'newBridge': 'str', '*vlan': 'str',
-          '*bond': 'str', '*nics': ['str'], '*options': 'NetworkOptions'}}
-
-##
 # @SetupNetworkNetAttributes:
 #
 # Configuration attributes for a single host network.

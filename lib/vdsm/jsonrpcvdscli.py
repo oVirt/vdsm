@@ -40,7 +40,6 @@ _COMMAND_CONVERTER = {
     'create': 'VM.create',
     'delNetwork': 'Host.delNetwork',
     'destroy': 'VM.destroy',
-    'editNetwork': 'Host.editNetwork',
     'fullList': 'Host.getVMFullList',
     'getAllVmStats': 'Host.getAllVmStats',
     'getVdsCapabilities': 'Host.getCapabilities',

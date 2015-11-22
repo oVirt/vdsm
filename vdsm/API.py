@@ -81,9 +81,8 @@ def _after_network_setup_fail(networks, bondings, options):
 
 
 def updateTimestamp():
-    # The setup+editNetwork API uses this log file to
-    # determine if this host is still accessible.  We use a
-    # file (rather than an event) because setup+editNetwork is
+    # The setup API uses this log file to determine if this host is still
+    # accessible.  We use a file (rather than an event) because setup is
     # performed by a separate, root process.
     utils.touchFile(constants.P_VDSM_CLIENT_LOG)
 
@@ -1564,31 +1563,6 @@ class Global(APIBase):
                 self.log.error(e.message, exc_info=True)
                 return {'status': {'code': e.errCode, 'message': e.message}}
             return {'status': doneCode}
-        finally:
-            self._cif._networkSemaphore.release()
-
-    def editNetwork(self, oldBridge, newBridge, vlan=None, bond=None,
-                    nics=None, options=None):
-        """Add a new network to this vds, replacing an old one."""
-        if options is None:
-            options = {}
-
-        self.translateNetOptionsToNew(options)
-        if not self._cif._networkSemaphore.acquire(blocking=False):
-            self.log.warn('concurrent network verb already executing')
-            return errCode['unavail']
-        try:
-            if vlan:
-                options['vlan'] = vlan
-            if bond:
-                options['bonding'] = bond
-            if nics:
-                options['nics'] = list(nics)
-            self._cif._netConfigDirty = True
-
-            with self._rollback() as rollbackCtx:
-                supervdsm.getProxy().editNetwork(oldBridge, newBridge, options)
-            return rollbackCtx
         finally:
             self._cif._networkSemaphore.release()
 

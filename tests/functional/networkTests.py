@@ -723,15 +723,6 @@ class NetworkTest(TestCaseBase):
 
     @cleanupNet
     @permutations([[True], [False]])
-    def testEditWithoutAdd(self, bridged):
-        with dummyIf(1) as nics:
-            status, msg = self.vdsm_net.editNetwork(NETWORK_NAME, NETWORK_NAME,
-                                                    nics=nics,
-                                                    opts={'bridged': bridged})
-            self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
-
-    @cleanupNet
-    @permutations([[True], [False]])
     def testSetupNetworksAddVlan(self, bridged):
         BRIDGE_OPTS = {'multicast_router': '0', 'multicast_snooping': '0'}
         formattedOpts = ' '.join(
