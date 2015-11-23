@@ -192,7 +192,12 @@ Requires: kernel >= 3.10.0-132.el7
 %else
 Requires: kernel >= 3.10.0-229.17.1.el7
 %endif
+%if 0%{?centos}
+# TODO: Remove when lvm2 2.02.130 is available
 Requires: lvm2 >= 2.02.107
+%else
+Requires: lvm2 >= 2.02.130-2
+%endif
 Requires: python >= 2.7.5-18.el7_1.1
 Requires: policycoreutils-python
 Requires: selinux-policy-targeted >= 3.13.1-16.el7
