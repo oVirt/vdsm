@@ -156,6 +156,7 @@ class CommandPathTests(TestCaseBase):
             self.assertIn(NAME, e.strerror)
 
 
+@expandPermutations
 class GeneralUtilsTests(TestCaseBase):
     def testPanic(self):
         self.assertRaises(AssertionError, utils.panic, "panic test")
@@ -203,6 +204,16 @@ class GeneralUtilsTests(TestCaseBase):
         grouped = [('1', '2', '3', '4', '5'), ('6', '7', '8', '9', '0'),
                    ('a', 'b', 'c', 'd', 'e')]
         self.assertEquals(list(utils.grouper(iterable, 5)), grouped)
+
+    @permutations([
+        ([], []),
+        ((), []),
+        ((i for i in [1, 2, 3, 1, 3]), [1, 2, 3]),
+        (('a', 'a', 'b', 'c', 'a', 'd'), ['a', 'b', 'c', 'd']),
+        (['a', 'a', 'b', 'c', 'a', 'd'], ['a', 'b', 'c', 'd'])
+    ])
+    def test_unique(self, iterable, unique_items):
+        self.assertEquals(utils.unique(iterable,), unique_items)
 
 
 class AsyncProcessOperationTests(TestCaseBase):
