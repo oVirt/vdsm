@@ -154,7 +154,7 @@ Requires: libvirt-daemon >= 1.2.8-16.el7_1.4
 Requires: libvirt-python >= 1.2.8-7.el7_1.1
 %else
 Requires: libvirt-daemon >= 1.2.17-5.el7
-Requires: libvirt-python >= 1.2.17.el7
+Requires: libvirt-python >= 1.2.17-2.el7
 %endif # centos
 %endif # rhel
 
