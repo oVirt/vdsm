@@ -26,13 +26,6 @@ from . import netinfo
 from . import utils
 from .netconfpersistence import BaseConfig
 
-_BONDING_MODES = {
-    # TODO: this dictionary and the reverse mapping are duplicated in code
-    '0': 'balance-rr', '1': 'active-backup', '2': 'balance-xor',
-    '3': 'broadcast', '4': '802.3ad', '5': 'balance-tlb', '6': 'balance-alb'
-}
-_BONDING_MODES_REVERSED = dict((v, k) for k, v in _BONDING_MODES.iteritems())
-
 
 class KernelConfig(BaseConfig):
     # TODO: after the netinfo API is refactored, we should decide if we need
@@ -285,10 +278,10 @@ def _parse_bond_options(opts):
     # force a numeric bonding mode
     mode = opts.get('mode',
                     netinfo.getAllDefaultBondingOptions()['0']['mode'][-1])
-    if mode in _BONDING_MODES:
+    if mode in netinfo.BONDING_MODES_NUMBER_TO_NAME:
         numeric_mode = mode
     else:
-        numeric_mode = _BONDING_MODES_REVERSED[mode]
+        numeric_mode = netinfo.BONDING_MODES_NAME_TO_NUMBER[mode]
         opts['mode'] = numeric_mode
 
     defaults = netinfo.getDefaultBondingOptions(numeric_mode)

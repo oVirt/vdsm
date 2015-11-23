@@ -320,18 +320,8 @@ class Bond(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
                                      'bonding options: %r' % bondingOptions)
 
-        MODE_NAME_TO_NUMBER = {
-            'balance-rr': '0',
-            'active-backup': '1',
-            'balance-xor': '2',
-            'broadcast': '3',
-            '802.3ad': '4',
-            'balance-tlb': '5',
-            'balance-alb': '6',
-        }
-
-        if mode in MODE_NAME_TO_NUMBER:
-            mode = MODE_NAME_TO_NUMBER[mode]
+        if mode in netinfo.BONDING_MODES_NAME_TO_NUMBER:
+            mode = netinfo.BONDING_MODES_NAME_TO_NUMBER[mode]
         defaults = netinfo.getDefaultBondingOptions(mode)
 
         for option in bondingOptions.split():

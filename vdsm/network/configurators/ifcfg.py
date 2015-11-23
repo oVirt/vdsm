@@ -847,18 +847,8 @@ def _get_mode_from_desired_options(desired_options):
     if 'mode' not in desired_options:
         return None
 
-    MODE_NAME_TO_NUMBER = {
-        'balance-rr': '0',
-        'active-backup': '1',
-        'balance-xor': '2',
-        'broadcast': '3',
-        '802.3ad': '4',
-        'balance-tlb': '5',
-        'balance-alb': '6',
-    }
-
     desired_mode = desired_options['mode']
-    for k, v in MODE_NAME_TO_NUMBER.iteritems():
+    for k, v in netinfo.BONDING_MODES_NAME_TO_NUMBER.iteritems():
         if desired_mode in (k, v):
             return [k, v]
     raise Exception('Error translating bond mode.')

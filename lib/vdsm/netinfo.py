@@ -89,6 +89,18 @@ OPERSTATE_UNKNOWN = 'unknown'
 OPERSTATE_DOWN = 'down'
 DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 
+BONDING_MODES_NAME_TO_NUMBER = {
+    'balance-rr': '0',
+    'active-backup': '1',
+    'balance-xor': '2',
+    'broadcast': '3',
+    '802.3ad': '4',
+    'balance-tlb': '5',
+    'balance-alb': '6',
+}
+BONDING_MODES_NUMBER_TO_NAME = dict(
+    (v, k) for k, v in six.iteritems(BONDING_MODES_NAME_TO_NUMBER))
+
 
 def get_host_nameservers():
     """Returns a list of nameservers listed in /etc/resolv.conf"""
