@@ -80,6 +80,9 @@ class AsyncClientTest(TestCaseBase):
                 '"id":"e8a936a6-d886-4cfa-97b9-2d54209053ff"}')
         headers = {Headers.REPLY_TO: 'jms.topic.vdsm_responses',
                    Headers.CONTENT_LENGTH: '103'}
+        # make sure that client can send messages
+        client._connected.set()
+
         client.send('jms.topic.vdsm_requests', data, headers)
 
         req_frame = client.pop_message()

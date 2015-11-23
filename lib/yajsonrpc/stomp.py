@@ -19,6 +19,8 @@ import six
 import socket
 from uuid import uuid4
 from collections import deque
+from threading import Event
+from . import CALL_TIMEOUT
 
 from vdsm import utils
 import re
@@ -78,9 +80,9 @@ class AckMode(object):
 
 
 class StompError(RuntimeError):
-    def __init__(self, frame):
+    def __init__(self, frame, message):
         self.frame = frame
-        super(RuntimeError, self).__init__(self.frame.body)
+        super(RuntimeError, self).__init__(message)
 
 
 class _HeartBeatFrame(object):
@@ -436,7 +438,7 @@ class AsyncClient(object):
     log = logging.getLogger("yajsonrpc.protocols.stomp.AsyncClient")
 
     def __init__(self):
-        self._connected = False
+        self._connected = Event()
         self._outbox = deque()
         self._error = None
         self._subscriptions = {}
@@ -450,7 +452,7 @@ class AsyncClient(object):
 
     @property
     def connected(self):
-        return self._connected
+        return self._connected.is_set()
 
     def queue_frame(self, frame):
         self._outbox.append(frame)
@@ -484,7 +486,7 @@ class AsyncClient(object):
         self._commands[frame.command](frame, dispatcher)
 
     def _process_connected(self, frame, dispatcher):
-        self._connected = True
+        self._connected.set()
 
         self.log.debug("Stomp connection established")
 
@@ -507,9 +509,12 @@ class AsyncClient(object):
         self.log.debug("Receipt frame received")
 
     def _process_error(self, frame, dispatcher):
-        raise StompError(frame)
+        raise StompError(frame, frame.body)
 
     def send(self, destination, data="", headers=None):
+        if not self._connected.wait(timeout=CALL_TIMEOUT):
+            raise StompError("Timeout occured during connecting")
+
         final_headers = {"destination": destination}
         if headers is not None:
             final_headers.update(headers)
