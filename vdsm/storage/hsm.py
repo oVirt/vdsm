@@ -2925,6 +2925,7 @@ class HSM(object):
         info["GUID"] = str(pv.guid)
         return info
 
+    @deprecated
     @public
     def getVGList(self, storageType=None, options=None):
         """
