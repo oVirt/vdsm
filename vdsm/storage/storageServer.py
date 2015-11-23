@@ -35,6 +35,7 @@ from vdsm.config import config
 from vdsm import concurrent
 from vdsm import supervdsm
 from vdsm import udevadm
+from vdsm import utils
 
 import mount
 import fileUtils
@@ -337,7 +338,8 @@ class GlusterFSConnection(MountConnection):
             raise se.UnsupportedGlusterVolumeReplicaCountError(replicaCount)
 
     def _get_backup_servers_option(self):
-        servers = [brick.split(":")[0] for brick in self.volinfo['bricks']]
+        servers = utils.unique(brick.split(":")[0] for brick
+                               in self.volinfo['bricks'])
         self.log.debug("Using bricks: %s", servers)
         if self._volfileserver in servers:
             servers.remove(self._volfileserver)

@@ -27,7 +27,7 @@ plentifuly around vdsm.
 
     Contains a reverse dictionary pointing from error string to its error code.
 """
-from collections import namedtuple, deque
+from collections import namedtuple, deque, OrderedDict
 from contextlib import contextmanager
 from fnmatch import fnmatch
 from StringIO import StringIO
@@ -1256,3 +1256,11 @@ def kill_and_rm_pid(pid, pid_file):
             raise
     if pid_file is not None:
         rmFile(pid_file)
+
+
+def unique(iterable):
+    """
+    Return unique items from iterable of hashable objects, keeping the
+    original order.
+    """
+    return OrderedDict.fromkeys(iterable).keys()
