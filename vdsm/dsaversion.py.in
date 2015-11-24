@@ -35,9 +35,9 @@ version_info = {
     'version_name': version_name,
     'software_version': software_version,
     'software_revision': software_revision,
-    'supportedENGINEs': ['3.4', '3.5', '3.6'],
-    'clusterLevels': ['3.4', '3.5', '3.6'],
+    'supportedENGINEs': ['3.4', '3.5', '3.6', '4.0'],
+    'clusterLevels': ['3.4', '3.5', '3.6', '4.0'],
 }
 
 if platform.machine() == 'ppc64le':
-    version_info['clusterLevels'] = ['3.6']
+    version_info['clusterLevels'] = ['3.6', '4.0']
