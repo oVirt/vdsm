@@ -2616,10 +2616,9 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondExists(BONDING_NAME, nics)
             if vdsm.config.config.get('vars', 'net_persistence') == 'unified':
-                # custom property has to be shown in netinfo and persisted (if
-                # unified persistence is used).
-                self._assert_exact_bond_opts(BONDING_NAME,
-                                             ['mode=4', 'custom=foo=bar'])
+                # custom property has to be persisted (if unified persistence
+                # is used), but not reported by netinfo.
+                self._assert_exact_bond_opts(BONDING_NAME, ['mode=4'])
                 bond = self.vdsm_net.config.bonds.get(BONDING_NAME)
                 self.assertSetEqual(set(['mode=4', 'custom=foo=bar']),
                                     set(bond.get('options').split()))

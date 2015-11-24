@@ -524,15 +524,6 @@ def _bondOptsCompat(info):
         info['cfg']['BONDING_OPTS'] = _bondOptsForIfcfg(info['opts'])
 
 
-def _bondCustomOpts(dev, devinfo, running_config):
-    """Add custom bonding options read from running_config."""
-    if dev.name in running_config.bonds:
-        for option in running_config.bonds[dev.name]['options'].split():
-            if option.startswith('custom='):
-                devinfo['opts']['custom'] = option.split('=', 1)[1]
-                break
-
-
 def _vlaninfo(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
@@ -801,7 +792,6 @@ def get(vdsmnets=None):
                                 dhcpv6_ifaces))
         if dev.isBOND():
             _bondOptsCompat(devinfo)
-            _bondCustomOpts(dev, devinfo, running_config)
 
     for network_name, network_info in six.iteritems(networking['networks']):
         if network_info['bridged']:

@@ -373,6 +373,7 @@ class KernelConfig(BaseConfig):
             # TODO: globalize default bond options from Bond in models.py
             normalized_opts = self._parse_bond_options(
                 bond_attr.get('options'))
+            normalized_opts.pop('custom', None)
             bond_attr['options'] = self._netinfo.bondOptsForIfcfg(
                 normalized_opts)
         # before d18e2f10 bondingOptions were also part of networks, so in case
