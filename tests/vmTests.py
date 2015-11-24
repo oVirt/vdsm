@@ -43,6 +43,7 @@ from virt import vmstats
 from virt import vmstatus
 from virt.vmdevices.storage import Drive
 from virt.vmdevices.storage import DISK_TYPE
+from virt.vmdevices.network import Interface
 from vdsm import constants
 from vdsm import define
 from vdsm import password
@@ -1284,12 +1285,20 @@ class TestWaitForRemoval(TestCaseBase):
         <source dev='/block_path'/>
     </disk>"""
 
+    NIC_XML = """
+    <interface>
+      <mac address='macAddr'/>
+    </interface>
+    """
+
     drive_file = Drive({}, log=logging.getLogger(''), index=0, iface="",
                        path='test_path',  diskType=DISK_TYPE.FILE)
     drive_network = Drive({}, log=logging.getLogger(''), index=0, iface="",
                           path='test_path', diskType=DISK_TYPE.NETWORK)
     drive_block = Drive({}, log=logging.getLogger(''), index=0, iface="",
                         path="/block_path", diskType=DISK_TYPE.BLOCK)
+    interface = Interface({}, log=logging.getLogger(''), macAddr="macAddr",
+                          device='bridge', name='')
 
     @MonkeyPatch(vm, "config", make_config([
         ("vars", "hotunplug_timeout", "0.25"),
@@ -1298,7 +1307,8 @@ class TestWaitForRemoval(TestCaseBase):
     @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
-                   [drive_block, BLOCK_DRIVE_XML]])
+                   [drive_block, BLOCK_DRIVE_XML],
+                   [interface, NIC_XML]])
     def test_timeout(self, device, matching_xml):
         testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
                                                    times_to_match=9))
@@ -1314,7 +1324,8 @@ class TestWaitForRemoval(TestCaseBase):
     @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
-                   [drive_block, BLOCK_DRIVE_XML]])
+                   [drive_block, BLOCK_DRIVE_XML],
+                   [interface, NIC_XML]])
     def test_removed_on_first_check(self, device, matching_xml):
         testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml))
         testvm._waitForDeviceRemoval(device)
@@ -1327,7 +1338,8 @@ class TestWaitForRemoval(TestCaseBase):
     @MonkeyPatch(utils, "isBlockDevice", lambda x: x == "/block_path")
     @permutations([[drive_file, FILE_DRIVE_XML],
                    [drive_network, NETWORK_DRIVE_XML],
-                   [drive_block, BLOCK_DRIVE_XML]])
+                   [drive_block, BLOCK_DRIVE_XML],
+                   [interface, NIC_XML]])
     def test_removed_on_x_check(self, device, matching_xml):
         testvm = TestingVm(WaitForRemovalFakeVmDom(matching_xml,
                                                    times_to_match=2))
