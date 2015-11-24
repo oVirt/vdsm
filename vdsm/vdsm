@@ -229,7 +229,7 @@ def __set_cpu_affinity():
 
         # too early to use the facilities from caps.py
         if os.sysconf('SC_NPROCESSORS_ONLN') == 1:
-            log.warning('Only one cpu detected: affinity disabled')
+            log.debug('Only one cpu detected: affinity disabled')
             return
 
         log.info('VDSM will run with cpu affinity: %s', cpu_set)
