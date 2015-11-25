@@ -32,7 +32,7 @@ import time
 
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm import ipwrapper
-from vdsm import netinfo
+from vdsm.netinfo import nics, bonding, vlans
 from vdsm import utils
 from vdsm.config import config
 
@@ -598,11 +598,11 @@ class HostStatsThread(object):
 
 def _getLinkSpeed(dev):
     if dev.isNIC():
-        speed = netinfo.nicSpeed(dev.name)
+        speed = nics.nicSpeed(dev.name)
     elif dev.isBOND():
-        speed = netinfo.bondSpeed(dev.name)
+        speed = bonding.bondSpeed(dev.name)
     elif dev.isVLAN():
-        speed = netinfo.vlanSpeed(dev.name)
+        speed = vlans.vlanSpeed(dev.name)
     else:
         speed = 0
     return speed

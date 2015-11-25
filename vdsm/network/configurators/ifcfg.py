@@ -39,7 +39,8 @@ from vdsm.config import config
 from vdsm import cmdutils
 from vdsm import constants
 from vdsm import ipwrapper
-from vdsm import netinfo
+from vdsm.netinfo import (bonding as netinfo_bonding, mtus, nics, vlans,
+                          ifaceUsed, NET_PATH, misc)
 from vdsm import sysctl
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig
@@ -55,7 +56,10 @@ from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 from ..utils import remove_custom_bond_option
 import dsaversion  # TODO: Make parent package import when vdsm is a package
 
-NET_LOGICALNET_CONF_BACK_DIR = netinfo.NET_CONF_BACK_DIR + 'logicalnetworks/'
+NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
+NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'
+NET_CONF_PREF = NET_CONF_DIR + 'ifcfg-'
+NET_LOGICALNET_CONF_BACK_DIR = NET_CONF_BACK_DIR + 'logicalnetworks/'
 
 
 def is_available():
@@ -110,7 +114,7 @@ class Ifcfg(Configurator):
 
     def configureBond(self, bond, **opts):
         self.configApplier.addBonding(bond, **opts)
-        if not netinfo.isVlanned(bond.name):
+        if not vlans.isVlanned(bond.name):
             for slave in bond.slaves:
                 ifdown(slave.name)
         for slave in bond.slaves:
@@ -136,7 +140,7 @@ class Ifcfg(Configurator):
         # Needed to be before slave configuration for initscripts to add slave
         # to bond.
         bondIfcfgWritten = False
-        isIfcfgControlled = os.path.isfile(netinfo.NET_CONF_PREF + bond.name)
+        isIfcfgControlled = os.path.isfile(NET_CONF_PREF + bond.name)
         areOptionsApplied = bond.areOptionsApplied()
         if not isIfcfgControlled or not areOptionsApplied:
             bridgeName = _netinfo.getBridgedNetworkForIface(bond.name)
@@ -168,7 +172,7 @@ class Ifcfg(Configurator):
         self.configApplier.addNic(nic, **opts)
         self._addSourceRoute(nic)
         if nic.bond is None:
-            if not netinfo.isVlanned(nic.name):
+            if not vlans.isVlanned(nic.name):
                 ifdown(nic.name)
             _ifup(nic)
 
@@ -191,7 +195,7 @@ class Ifcfg(Configurator):
     def _ifaceDownAndCleanup(self, iface):
         """Returns True iff the iface is to be removed."""
         DynamicSourceRoute.addInterfaceTracking(iface)
-        to_be_removed = not netinfo.ifaceUsed(iface.name)
+        to_be_removed = not ifaceUsed(iface.name)
         if to_be_removed:
             ifdown(iface.name)
         self._removeSourceRoute(iface, StaticSourceRoute)
@@ -218,7 +222,7 @@ class Ifcfg(Configurator):
                 bonding.configure()
         else:
             set_mtu = self._setNewMtu(bonding,
-                                      netinfo.vlanDevsForIface(bonding.name))
+                                      vlans.vlanDevsForIface(bonding.name))
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value.
             # Note that ip link set dev bondX mtu Y sets Y on all its links
@@ -229,19 +233,19 @@ class Ifcfg(Configurator):
         to_be_removed = self._ifaceDownAndCleanup(nic)
         if to_be_removed:
             self.configApplier.removeNic(nic.name)
-            if nic.name in netinfo.nics():
+            if nic.name in nics.nics():
                 _exec_ifup(nic.name)
             else:
                 logging.warning('host interface %s missing', nic.name)
         else:
-            set_mtu = self._setNewMtu(nic, netinfo.vlanDevsForIface(nic.name))
+            set_mtu = self._setNewMtu(nic, vlans.vlanDevsForIface(nic.name))
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value
             if set_mtu is not None:
                 ipwrapper.linkSet(nic.name, ['mtu', str(set_mtu)])
 
     def _getFilePath(self, fileType, device):
-        return os.path.join(netinfo.NET_CONF_DIR, '%s-%s' % (fileType, device))
+        return os.path.join(NET_CONF_DIR, '%s-%s' % (fileType, device))
 
     def _removeSourceRouteFile(self, fileType, device):
         filePath = self._getFilePath(fileType, device)
@@ -413,7 +417,7 @@ class ConfigWriter(object):
                 raise
         logging.debug("backing up %s: %s", basename, content)
 
-        cls.writeBackupFile(netinfo.NET_CONF_BACK_DIR, basename, content)
+        cls.writeBackupFile(NET_CONF_BACK_DIR, basename, content)
 
     def restorePersistentBackup(self):
         """Restore network config to last known 'safe' state"""
@@ -452,7 +456,7 @@ class ConfigWriter(object):
         # Load logical networks
         self._loadBackupFiles(NET_LOGICALNET_CONF_BACK_DIR)
         # Load config files
-        self._loadBackupFiles(netinfo.NET_CONF_BACK_DIR, netinfo.NET_CONF_DIR)
+        self._loadBackupFiles(NET_CONF_BACK_DIR, NET_CONF_DIR)
 
     def restoreBackups(self):
         """ Restore network backups from memory."""
@@ -469,7 +473,7 @@ class ConfigWriter(object):
     @classmethod
     def clearBackups(cls):
         """ Clear backup files """
-        for fpath in glob.iglob(netinfo.NET_CONF_BACK_DIR + "*"):
+        for fpath in glob.iglob(NET_CONF_BACK_DIR + "*"):
             if os.path.isdir(fpath):
                 shutil.rmtree(fpath)
             else:
@@ -515,7 +519,7 @@ class ConfigWriter(object):
         elif ipv4.bootproto:
             cfg += 'BOOTPROTO=%s\n' % pipes.quote(ipv4.bootproto)
             if (ipv4.bootproto == 'dhcp' and
-                    os.path.exists(os.path.join(netinfo.NET_PATH, name))):
+                    os.path.exists(os.path.join(NET_PATH, name))):
                 # Ask dhclient to stop any dhclient running for the device
                 dhclient.kill_dhclient(name)
         if mtu:
@@ -544,7 +548,7 @@ class ConfigWriter(object):
             else:
                 logging.debug('ignoring variable %s', k)
 
-        ifcfg_file = netinfo.NET_CONF_PREF + name
+        ifcfg_file = NET_CONF_PREF + name
         hook_dict = {'ifcfg_file': ifcfg_file,
                      'config': cfg}
         hook_return = hooks.before_ifcfg_write(hook_dict)
@@ -593,10 +597,10 @@ class ConfigWriter(object):
         self._createConfFile(conf, bond.name, ipv4, ipv6, mtu, **opts)
 
         # create the bonding device to avoid initscripts noise
-        with open(netinfo.BONDING_MASTERS) as info:
+        with open(netinfo_bonding.BONDING_MASTERS) as info:
             names = info.read().split()
         if bond.name not in names:
-            with open(netinfo.BONDING_MASTERS, 'w') as bondingMasters:
+            with open(netinfo_bonding.BONDING_MASTERS, 'w') as bondingMasters:
                 bondingMasters.write('+%s\n' % bond.name)
 
     def addNic(self, nic, **opts):
@@ -623,8 +627,8 @@ class ConfigWriter(object):
         ipv4 = copy.deepcopy(iface.ipv4)
         ipv6 = copy.deepcopy(iface.ipv6)
         mtu = iface.mtu
-        if netinfo.ifaceUsed(iface.name):
-            confParams = netinfo.getIfaceCfg(iface.name)
+        if ifaceUsed(iface.name):
+            confParams = misc.getIfaceCfg(iface.name)
             if not ipv4.address and ipv4.bootproto != 'dhcp':
                 ipv4.address = confParams.get('IPADDR')
                 ipv4.netmask = confParams.get('NETMASK')
@@ -645,26 +649,26 @@ class ConfigWriter(object):
         return ipv4, ipv6, mtu
 
     def removeNic(self, nic):
-        cf = netinfo.NET_CONF_PREF + nic
+        cf = NET_CONF_PREF + nic
         self._backup(cf)
         l = [self.CONFFILE_HEADER + '\n', 'DEVICE=%s\n' % nic, 'ONBOOT=yes\n',
-             'MTU=%s\n' % netinfo.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
+             'MTU=%s\n' % mtus.DEFAULT_MTU, 'NM_CONTROLLED=no\n']
         with open(cf, 'w') as nicFile:
             nicFile.writelines(l)
 
     def removeVlan(self, vlan):
-        self._backup(netinfo.NET_CONF_PREF + vlan)
-        self._removeFile(netinfo.NET_CONF_PREF + vlan)
+        self._backup(NET_CONF_PREF + vlan)
+        self._removeFile(NET_CONF_PREF + vlan)
 
     def removeBonding(self, bonding):
-        self._backup(netinfo.NET_CONF_PREF + bonding)
-        self._removeFile(netinfo.NET_CONF_PREF + bonding)
-        with open(netinfo.BONDING_MASTERS, 'w') as f:
+        self._backup(NET_CONF_PREF + bonding)
+        self._removeFile(NET_CONF_PREF + bonding)
+        with open(netinfo_bonding.BONDING_MASTERS, 'w') as f:
             f.write("-%s\n" % bonding)
 
     def removeBridge(self, bridge):
-        self._backup(netinfo.NET_CONF_PREF + bridge)
-        self._removeFile(netinfo.NET_CONF_PREF + bridge)
+        self._backup(NET_CONF_PREF + bridge)
+        self._removeFile(NET_CONF_PREF + bridge)
 
     def _updateConfigValue(self, conffile, entry, value):
         """
@@ -690,12 +694,12 @@ class ConfigWriter(object):
             f.writelines(entries)
 
     def setIfaceMtu(self, iface, newmtu):
-        cf = netinfo.NET_CONF_PREF + iface
+        cf = NET_CONF_PREF + iface
         self._updateConfigValue(cf, 'MTU', str(newmtu))
 
     def setBondingMtu(self, bonding, newmtu):
         self.setIfaceMtu(bonding, newmtu)
-        slaves = netinfo.slaves(bonding)
+        slaves = netinfo_bonding.slaves(bonding)
         for slave in slaves:
             self.setIfaceMtu(slave, newmtu)
 
@@ -711,11 +715,11 @@ def start_devices(device_ifcfgs):
             # this is an ugly way to check if this is a bond but picking into
             # the ifcfg files is even worse.
             if dev.startswith('bond') and '.' not in dev:
-                with open(netinfo.BONDING_MASTERS) as info:
+                with open(netinfo_bonding.BONDING_MASTERS) as info:
                     names = info.read().split()
                 if dev not in names:
-                    with open(netinfo.BONDING_MASTERS, 'w') as bonding_masters:
-                        bonding_masters.write('+%s\n' % dev)
+                    with open(netinfo_bonding.BONDING_MASTERS, 'w') as masters:
+                        masters.write('+%s\n' % dev)
             _exec_ifup(dev)
         except ConfigNetworkError:
             logging.error('Failed to ifup device %s during rollback.', dev,
@@ -728,7 +732,7 @@ def _sort_device_ifcfgs(device_ifcfgs):
                'Slave': [],
                'Other': []}
     for conf_file in device_ifcfgs:
-        if not conf_file.startswith(netinfo.NET_CONF_PREF):
+        if not conf_file.startswith(NET_CONF_PREF):
             continue
         try:
             with open(conf_file) as f:
@@ -738,7 +742,7 @@ def _sort_device_ifcfgs(device_ifcfgs):
                 continue
             else:
                 raise
-        dev = conf_file[len(netinfo.NET_CONF_PREF):]
+        dev = conf_file[len(NET_CONF_PREF):]
 
         devices[_dev_type(content)].append(dev)
 
@@ -813,14 +817,15 @@ def _restore_default_bond_options(bond_name, desired_options):
     """
 
     desired_options = dict(p.split('=', 1) for p in desired_options.split())
-    current_opts = netinfo.bondOpts(bond_name)
+    current_opts = netinfo_bonding.bondOpts(bond_name)
     current_mode = current_opts['mode']
     desired_mode = (_get_mode_from_desired_options(desired_options)
                     or current_mode)
 
     if desired_mode != current_mode:
         try:
-            with open(netinfo.BONDING_OPT % (bond_name, 'mode'), 'w') as f:
+            bond_mode_path = netinfo_bonding.BONDING_OPT % (bond_name, 'mode')
+            with open(bond_mode_path, 'w') as f:
                 f.write(' '.join(desired_mode))
         except IOError as e:
             if e.errno == errno.EPERM:
@@ -834,12 +839,12 @@ def _restore_default_bond_options(bond_name, desired_options):
             raise
 
     diff = {}
-    default_opts = netinfo.getDefaultBondingOptions(desired_mode[1])
+    default_opts = netinfo_bonding.getDefaultBondingOptions(desired_mode[1])
     for k, v in default_opts.iteritems():
         if k != 'mode' and k in current_opts and v != current_opts[k]:
             diff[k] = default_opts[k]
     for k, v in diff.iteritems():
-        with open(netinfo.BONDING_OPT % (bond_name, k), 'w') as f:
+        with open(netinfo_bonding.BONDING_OPT % (bond_name, k), 'w') as f:
             f.write(' '.join(v))
 
 
@@ -848,7 +853,7 @@ def _get_mode_from_desired_options(desired_options):
         return None
 
     desired_mode = desired_options['mode']
-    for k, v in netinfo.BONDING_MODES_NAME_TO_NUMBER.iteritems():
+    for k, v in netinfo_bonding.BONDING_MODES_NAME_TO_NUMBER.iteritems():
         if desired_mode in (k, v):
             return [k, v]
     raise Exception('Error translating bond mode.')
@@ -857,7 +862,7 @@ def _get_mode_from_desired_options(desired_options):
 def configuredPorts(nets, bridge):
     """Returns the list of ports a bridge has"""
     ports = []
-    for filePath in glob.iglob(netinfo.NET_CONF_PREF + '*'):
+    for filePath in glob.iglob(NET_CONF_PREF + '*'):
         with open(filePath) as confFile:
             for line in confFile:
                 if line.startswith('BRIDGE=' + bridge):
@@ -884,9 +889,9 @@ def _get_unified_persistence_ifcfg():
     if not persistent_config:
         return set()
 
-    IFCFG_PATH = netinfo.NET_CONF_PREF + '%s'
-    RULE_PATH = os.path.join(netinfo.NET_CONF_DIR, 'rule-%s')
-    ROUTE_PATH = os.path.join(netinfo.NET_CONF_DIR, 'route-%s')
+    IFCFG_PATH = NET_CONF_PREF + '%s'
+    RULE_PATH = os.path.join(NET_CONF_DIR, 'rule-%s')
+    ROUTE_PATH = os.path.join(NET_CONF_DIR, 'route-%s')
     ifcfgs = set()
 
     for bonding, bonding_attr in persistent_config.bonds.iteritems():

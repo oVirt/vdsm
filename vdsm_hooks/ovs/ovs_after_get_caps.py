@@ -22,7 +22,7 @@ import sys
 import traceback
 
 from vdsm.netconfpersistence import RunningConfig
-from vdsm import netinfo
+from vdsm.netinfo import dhcp, routes as netinfo_routes, addresses, mtus
 
 from hooking import execCmd
 import hooking
@@ -53,13 +53,12 @@ def _list_ports(bridge):
 
 
 def _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces, routes):
-    mtu = netinfo.getMtu(interface)
-    addr, netmask, ipv4addrs, ipv6addrs = netinfo.getIpInfo(interface)
-    dhcpv4 = netinfo._dhcp_used(interface, dhcpv4ifaces, attrs)
-    dhcpv6 = netinfo._dhcp_used(interface, dhcpv6ifaces, attrs,
-                                family=6)
-    gateway = netinfo._get_gateway(routes, interface)
-    ipv6gateway = netinfo._get_gateway(routes, interface, family=6)
+    mtu = mtus.getMtu(interface)
+    addr, netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(interface)
+    dhcpv4 = dhcp.dhcp_used(interface, dhcpv4ifaces, attrs)
+    dhcpv6 = dhcp.dhcp_used(interface, dhcpv6ifaces, attrs, family=6)
+    gateway = routes.get_gateway(routes, interface)
+    ipv6gateway = routes.get_gateway(routes, interface, family=6)
     return {
         'mtu': str(mtu),
         'addr': addr,
@@ -75,8 +74,8 @@ def _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces, routes):
 
 def networks_caps(running_config):
     ovs_networks_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
-    routes = netinfo._get_routes()
+    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
+    routes = netinfo_routes.get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
         interface = network if 'vlan' in attrs else BRIDGE_NAME
         net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
@@ -91,8 +90,8 @@ def networks_caps(running_config):
 
 def bridges_caps(running_config):
     ovs_bridges_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
-    routes = netinfo._get_routes()
+    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
+    routes = netinfo_routes.get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
         interface = network if 'vlan' in attrs else BRIDGE_NAME
         net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
@@ -108,8 +107,8 @@ def bridges_caps(running_config):
 
 def vlans_caps(running_config):
     ovs_vlans_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
-    routes = netinfo._get_routes()
+    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
+    routes = netinfo_routes.get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
         vlan = attrs.get('vlan')
         if vlan is not None:
@@ -143,8 +142,8 @@ def _get_active_slave(bonding):
 
 def bondings_caps(running_config):
     ovs_bonding_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
-    routes = netinfo._get_routes()
+    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
+    routes = netinfo_routes.get_routes()
     for bonding, attrs in iter_ovs_bonds(running_config.bonds):
         options = get_bond_options(attrs.get('options'), keep_custom=True)
         net_info = _get_net_info(attrs, bonding, dhcpv4ifaces, dhcpv6ifaces,

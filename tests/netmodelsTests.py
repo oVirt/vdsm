@@ -21,7 +21,7 @@
 #
 import os
 
-from vdsm import netinfo
+from vdsm.netinfo import bonding, mtus, NetInfo
 
 from network import errors
 from network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
@@ -33,8 +33,8 @@ from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch, MonkeyClass
 
 
-@MonkeyClass(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
-             if os.path.exists(netinfo.BONDING_DEFAULTS)
+@MonkeyClass(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
+             if os.path.exists(bonding.BONDING_DEFAULTS)
              else '../vdsm/bonding-defaults.json')
 class TestNetmodels(TestCaseBase):
 
@@ -131,12 +131,12 @@ class TestNetmodels(TestCaseBase):
         for address in addresses:
             self.assertEqual(IPv6.validateAddress(address), None)
 
-    @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
+    @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     def testTextualRepr(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
                     'bondings': {}, 'bridges': {}}
-        fakeInfo = netinfo.NetInfo(_netinfo)
+        fakeInfo = NetInfo(_netinfo)
         nic1 = Nic('testnic1', None, _netinfo=fakeInfo)
         nic2 = Nic('testnic2', None, _netinfo=fakeInfo)
         bond1 = Bond('bond42', None, slaves=(nic1, nic2))
@@ -167,12 +167,12 @@ class TestNetmodels(TestCaseBase):
         inverted = Bond._reorderOptions('miimon=250 mode=4')
         self.assertEqual(inverted, 'mode=4 miimon=250')
 
-    @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
+    @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     def testIterNetworkHierarchy(self):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
                     'bondings': {}, 'bridges': {}}
-        fakeInfo = netinfo.NetInfo(_netinfo)
+        fakeInfo = NetInfo(_netinfo)
         # Vlanned and bonded VM network
         nic1 = Nic('testnic1', configurator=None, _netinfo=fakeInfo)
         nic2 = Nic('testnic2', configurator=None, _netinfo=fakeInfo)

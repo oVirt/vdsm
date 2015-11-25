@@ -185,6 +185,7 @@ AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
 AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pythondir}/vdsm'])
 AC_SUBST([vdsminfradir], ['${vdsmpylibdir}/infra'])
+AC_SUBST([vdsmnetinfodir], ['${vdsmpylibdir}/netinfo'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 AC_SUBST([configuratorsdir], ['${vdsmtooldir}/configurators'])
 AC_SUBST([vdsmtestsdir], ['${datarootdir}/vdsm/tests'])
@@ -338,6 +339,7 @@ AC_OUTPUT([
 	init/systemd/Makefile
 	lib/Makefile
 	lib/vdsm/Makefile
+	lib/vdsm/netinfo/Makefile
 	lib/vdsm/netlink/Makefile
 	lib/vdsm/profiling/Makefile
 	lib/vdsm/tool/Makefile

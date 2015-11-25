@@ -30,8 +30,8 @@ import errno
 
 from vdsm.config import config
 from vdsm import ipwrapper
+from vdsm.netinfo import nics, misc, NetInfo
 from vdsm import kernelconfig
-from vdsm import netinfo
 from vdsm.constants import P_VDSM_RUN
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
@@ -168,7 +168,7 @@ def _update_running_config(persistent_config):
 
 
 def _owned_ifcfg_files():
-    for fpath in glob.iglob(netinfo.NET_CONF_DIR + '/*'):
+    for fpath in glob.iglob(misc.NET_CONF_DIR + '/*'):
         if not os.path.isfile(fpath):
             continue
 
@@ -221,7 +221,7 @@ def _filter_available(persistent_config):
     """Returns only nets and bonds that can be configured with the devices
     present in the system"""
 
-    available_nics = netinfo.nics()
+    available_nics = nics.nics()
     available_bonds = _find_bonds_with_available_nics(available_nics,
                                                       persistent_config.bonds)
 
@@ -237,7 +237,7 @@ def _filter_changed_nets_bonds(persistent_config):
     """filter-out unchanged networks and bond, so that we are left only with
     changes that must be applied"""
 
-    kernel_config = kernelconfig.KernelConfig(netinfo.NetInfo())
+    kernel_config = kernelconfig.KernelConfig(NetInfo())
     normalized_config = kernelconfig.normalize(persistent_config)
 
     changed_bonds_names = _find_changed_or_missing(normalized_config.bonds,
@@ -356,7 +356,7 @@ def _owned_ifcfg_content(content):
 
 def _ifcfg_predicate(link_name, predicate):
     try:
-        with open(netinfo.NET_CONF_PREF + link_name) as conf:
+        with open(misc.NET_CONF_PREF + link_name) as conf:
             content = conf.read()
     except IOError as ioe:
         if ioe.errno == errno.ENOENT:

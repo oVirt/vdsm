@@ -21,7 +21,8 @@
 from __future__ import absolute_import
 import json
 
-from ..netinfo import BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS, bondOpts
+from ..netinfo.bonding import (BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS,
+                               bondOpts)
 from ..utils import random_iface_name
 from . import expose, ExtraArgsError
 

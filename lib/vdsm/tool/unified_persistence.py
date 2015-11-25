@@ -23,7 +23,8 @@ import logging
 from .. import utils
 from ..config import config
 from ..netconfpersistence import RunningConfig
-from ..netinfo import NET_CONF_PREF, NetInfo, getIfaceCfg, getDefaultGateway
+from ..netinfo import NetInfo
+from ..netinfo import misc, routes
 from . import expose
 from .upgrade import apply_upgrade
 
@@ -50,7 +51,7 @@ def run():
 def _getNetInfo():
     def _processNetworks(netinfo):
         networks = {}
-        defaultGateway = getDefaultGateway()
+        defaultGateway = routes.getDefaultGateway()
 
         for network, netParams in netinfo.networks.iteritems():
             networks[network] = {}
@@ -79,7 +80,7 @@ def _getNetInfo():
                 physicalDevice = topLevelDevice
 
             # Copy ip addressing information
-            bootproto = str(getIfaceCfg(topLevelDevice).get('BOOTPROTO'))
+            bootproto = str(misc.getIfaceCfg(topLevelDevice).get('BOOTPROTO'))
             if bootproto == 'dhcp':
                 networks[network]['bootproto'] = bootproto
             else:
@@ -120,7 +121,7 @@ def _getNetInfo():
                 continue
 
             bondings[bonding] = {'nics': bondingParams['slaves']}
-            bondingOptions = getIfaceCfg(bonding). \
+            bondingOptions = misc.getIfaceCfg(bonding). \
                 get('BONDING_OPTS')
             if bondingOptions:
                 bondings[bonding]['options'] = bondingOptions
@@ -170,7 +171,7 @@ def _persist(networks, bondings):
 
 def _owned(devname):
     try:
-        with open(NET_CONF_PREF + devname) as conf:
+        with open(misc.NET_CONF_PREF + devname) as conf:
             content = conf.read()
     except IOError as ioe:
         if ioe.errno == errno.ENOENT:

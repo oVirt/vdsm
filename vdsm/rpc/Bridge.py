@@ -24,7 +24,7 @@ import API
 import yajsonrpc
 from api import vdsmapi
 
-from vdsm.netinfo import getDeviceByIP
+from vdsm.netinfo.addresses import getDeviceByIP
 
 try:
     import gluster.apiwrapper as gapi

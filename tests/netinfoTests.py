@@ -28,7 +28,7 @@ import time
 
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm.netinfo import OPERSTATE_UP
+from vdsm.netinfo import addresses, bonding, dns, dhcp, misc, nics, routes, get
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 
@@ -59,12 +59,12 @@ class TestNetinfo(TestCaseBase):
         with namedTemporaryDir() as temp_dir:
             file_path = os.path.join(temp_dir, 'resolv.conf')
 
-            with MonkeyPatchScope([(netinfo, 'DNS_CONF_FILE', file_path)]):
+            with MonkeyPatchScope([(dns, 'DNS_CONF_FILE', file_path)]):
                 with open(file_path, 'w') as file_object:
                     file_object.write(RESOLV_CONF)
 
                 self.assertEqual(
-                    netinfo.get_host_nameservers(), dnss)
+                    dns.get_host_nameservers(), dnss)
 
     def testNetmaskConversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
@@ -73,57 +73,57 @@ class TestNetinfo(TestCaseBase):
                 if line.startswith('#'):
                     continue
                 bitmask, address = [value.strip() for value in line.split()]
-                self.assertEqual(netinfo.prefix2netmask(int(bitmask)),
+                self.assertEqual(addresses.prefix2netmask(int(bitmask)),
                                  address)
-        self.assertRaises(ValueError, netinfo.prefix2netmask, -1)
-        self.assertRaises(ValueError, netinfo.prefix2netmask, 33)
+        self.assertRaises(ValueError, addresses.prefix2netmask, -1)
+        self.assertRaises(ValueError, addresses.prefix2netmask, 33)
 
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInvalidNic(self):
         nicName = '0' * 20  # devices can't have so long names
-        self.assertEqual(netinfo.nicSpeed(nicName), 0)
+        self.assertEqual(nics.nicSpeed(nicName), 0)
 
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInRange(self):
-        for d in netinfo.nics():
-            s = netinfo.nicSpeed(d)
+        for d in nics.nics():
+            s = nics.nicSpeed(d)
             self.assertFalse(s < 0)
             self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
 
     def testValidNicSpeed(self):
-        values = ((0,           OPERSTATE_UP, 0),
-                  (-10,         OPERSTATE_UP, 0),
-                  (2 ** 16 - 1, OPERSTATE_UP, 0),
-                  (2 ** 32 - 1, OPERSTATE_UP, 0),
-                  (123,         OPERSTATE_UP, 123),
-                  ('',          OPERSTATE_UP, 0),
+        values = ((0,           nics.OPERSTATE_UP, 0),
+                  (-10,         nics.OPERSTATE_UP, 0),
+                  (2 ** 16 - 1, nics.OPERSTATE_UP, 0),
+                  (2 ** 32 - 1, nics.OPERSTATE_UP, 0),
+                  (123,         nics.OPERSTATE_UP, 123),
+                  ('',          nics.OPERSTATE_UP, 0),
                   ('',          'unknown',    0),
                   (123,         'unknown',    0))
 
         for passed, operstate, expected in values:
             with MonkeyPatchScope([(__builtin__, 'open',
                                     lambda x: io.BytesIO(str(passed))),
-                                   (netinfo, 'operstate',
+                                   (nics, 'operstate',
                                     lambda x: operstate)]):
-                self.assertEqual(netinfo.nicSpeed('fake_nic'), expected)
+                self.assertEqual(nics.nicSpeed('fake_nic'), expected)
 
     @MonkeyPatch(ipwrapper.Link, '_detectType',
                  partial(_fakeTypeDetection, ipwrapper.Link))
     @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
-    @MonkeyPatch(netinfo, '_getBondingOptions', lambda x: {})
+    @MonkeyPatch(bonding, '_getBondingOptions', lambda x: {})
     def testGetNonExistantBridgeInfo(self):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
         # it should.
-        netinfo.get()
+        get()
 
     @MonkeyPatch(netinfo, 'getLinks', lambda: [])
     @MonkeyPatch(netinfo, 'networks', lambda: {})
     def testGetEmpty(self):
         result = {}
-        result.update(netinfo.get())
+        result.update(get())
         self.assertEqual(result['networks'], {})
         self.assertEqual(result['bridges'], {})
         self.assertEqual(result['nics'], {})
@@ -131,7 +131,8 @@ class TestNetinfo(TestCaseBase):
         self.assertEqual(result['vlans'], {})
 
     def testIPv4toMapped(self):
-        self.assertEqual('::ffff:127.0.0.1', netinfo.IPv4toMapped('127.0.0.1'))
+        self.assertEqual('::ffff:127.0.0.1',
+                         addresses.IPv4toMapped('127.0.0.1'))
 
     def testGetDeviceByIP(self):
         for addr in nl_addr.iter_addrs():
@@ -143,7 +144,7 @@ class TestNetinfo(TestCaseBase):
             if addr['scope'] != 'link':
                 self.assertEqual(
                     addr['label'],
-                    netinfo.getDeviceByIP(addr['address'].split('/')[0]))
+                    addresses.getDeviceByIP(addr['address'].split('/')[0]))
 
     def _testNics(self):
         """Creates a test fixture so that nics() reports:
@@ -186,7 +187,7 @@ class TestNetinfo(TestCaseBase):
         not managed due to hidden bond (jbond) enslavement: me0, me1
         not managed due to being hidden nics: hid0, hideous
         """
-        with MonkeyPatchScope([(netinfo, 'getLinks',
+        with MonkeyPatchScope([(netinfo.misc, 'getLinks',
                                 self._testNics),
                                (ipwrapper, '_bondExists',
                                 lambda x: x == 'jbond'),
@@ -196,7 +197,7 @@ class TestNetinfo(TestCaseBase):
                                (ipwrapper.Link, '_hiddenBonds', ['jb*']),
                                (ipwrapper.Link, '_hiddenNics', ['hid*'])
                                ]):
-            self.assertEqual(set(netinfo.nics()),
+            self.assertEqual(set(nics.nics()),
                              set(['em', 'me', 'fake', 'fake0']))
 
     @ValidateRunningAsRoot
@@ -206,17 +207,18 @@ class TestNetinfo(TestCaseBase):
             with veth_pair() as (v1a, v1b):
                 with dummy_device() as d1:
                     fakes = set([d1, v1a, v1b])
-                    nics = netinfo.nics()
-                    self.assertTrue(fakes.issubset(nics), 'Fake devices %s are'
-                                    ' not listed in nics %s' % (fakes, nics))
+                    _nics = nics.nics()
+                    self.assertTrue(fakes.issubset(_nics),
+                                    'Fake devices %s are not listed in nics '
+                                    '%s' % (fakes, _nics))
 
             with veth_pair(prefix='mehv_') as (v2a, v2b):
                 with dummy_device(prefix='mehd_') as d2:
                     hiddens = set([d2, v2a, v2b])
-                    nics = netinfo.nics()
-                    self.assertFalse(hiddens.intersection(nics), 'Some of '
+                    _nics = nics.nics()
+                    self.assertFalse(hiddens.intersection(_nics), 'Some of '
                                      'hidden devices %s is shown in nics %s' %
-                                     (hiddens, nics))
+                                     (hiddens, _nics))
 
     def testGetIfaceCfg(self):
         deviceName = "___This_could_never_be_a_device_name___"
@@ -225,13 +227,13 @@ class TestNetinfo(TestCaseBase):
             ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
             filePath = ifcfgPrefix + deviceName
 
-            with MonkeyPatchScope([(netinfo, 'NET_CONF_PREF', ifcfgPrefix)]):
+            with MonkeyPatchScope([(misc, 'NET_CONF_PREF', ifcfgPrefix)]):
                 with open(filePath, 'w') as ifcfgFile:
                     ifcfgFile.write(ifcfg)
                 self.assertEqual(
-                    netinfo.getIfaceCfg(deviceName)['GATEWAY'], '1.1.1.1')
+                    misc.getIfaceCfg(deviceName)['GATEWAY'], '1.1.1.1')
                 self.assertEqual(
-                    netinfo.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
+                    misc.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
 
     def testGetDhclientIfaces(self):
         LEASES = (
@@ -291,7 +293,7 @@ class TestNetinfo(TestCaseBase):
                 ))
 
             dhcpv4_ifaces, dhcpv6_ifaces = \
-                netinfo._get_dhclient_ifaces([lease_file])
+                dhcp.get_dhclient_ifaces([lease_file])
 
         self.assertIn('valid', dhcpv4_ifaces)
         self.assertIn('valid2', dhcpv4_ifaces)
@@ -302,8 +304,8 @@ class TestNetinfo(TestCaseBase):
         self.assertNotIn('expired3', dhcpv6_ifaces)
 
     @brokentest("Skipped becasue it breaks randomly on the CI")
-    @MonkeyPatch(netinfo, 'BONDING_DEFAULTS', netinfo.BONDING_DEFAULTS
-                 if os.path.exists(netinfo.BONDING_DEFAULTS)
+    @MonkeyPatch(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
+                 if os.path.exists(bonding.BONDING_DEFAULTS)
                  else '../vdsm/bonding-defaults.json')
     @ValidateRunningAsRoot
     @RequireBondingMod
@@ -311,21 +313,21 @@ class TestNetinfo(TestCaseBase):
         INTERVAL = '12345'
         bondName = random_iface_name()
 
-        with open(netinfo.BONDING_MASTERS, 'w') as bonds:
+        with open(bonding.BONDING_MASTERS, 'w') as bonds:
             bonds.write('+' + bondName)
             bonds.flush()
 
             try:  # no error is anticipated but let's make sure we can clean up
                 self.assertEqual(
-                    netinfo._getBondingOptions(bondName), {}, "This test fails"
+                    bonding._getBondingOptions(bondName), {}, "This test fails"
                     " when a new bonding option is added to the kernel. Please"
                     " run vdsm-tool dump-bonding-defaults` and retest.")
 
-                with open(netinfo.BONDING_OPT % (bondName, 'miimon'),
+                with open(bonding.BONDING_OPT % (bondName, 'miimon'),
                           'w') as opt:
                     opt.write(INTERVAL)
 
-                self.assertEqual(netinfo._getBondingOptions(bondName),
+                self.assertEqual(bonding._getBondingOptions(bondName),
                                  {'miimon': INTERVAL})
 
             finally:
@@ -356,9 +358,9 @@ class TestNetinfo(TestCaseBase):
             }]}
         SINGLE_GATEWAY = {TEST_IFACE: [DUPLICATED_GATEWAY[TEST_IFACE][0]]}
 
-        gateway = netinfo._get_gateway(SINGLE_GATEWAY, TEST_IFACE)
+        gateway = routes.get_gateway(SINGLE_GATEWAY, TEST_IFACE)
         self.assertEqual(gateway, '12.34.56.1')
-        gateway = netinfo._get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
+        gateway = routes.get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
         self.assertEqual(gateway, '12.34.56.1')
 
     @ValidateRunningAsRoot
@@ -367,7 +369,7 @@ class TestNetinfo(TestCaseBase):
             """filter away ipv6 link local addresses that may or may not exist
             on the device depending on OS configuration"""
             ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = \
-                netinfo.getIpInfo(*a, **kw)
+                addresses.getIpInfo(*a, **kw)
             ipv6addrs = [
                 addr for addr in ipv6addrs
                 if not netaddr.IPAddress(addr.split('/')[0]).is_link_local()]

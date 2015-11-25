@@ -28,7 +28,6 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-from vdsm import netinfo
 from network.configurators import ifcfg, libvirt
 
 from monkeypatch import MonkeyPatch
@@ -104,10 +103,10 @@ class ifcfgConfigWriterTests(TestCaseBase):
     def testPersistentBackup(self):
 
         with MonkeyPatchScope([
-            (netinfo, 'NET_CONF_BACK_DIR',
+            (ifcfg, 'NET_CONF_BACK_DIR',
              os.path.join(self._tempdir, 'netback')),
-            (netinfo, 'NET_CONF_DIR', self._tempdir),
-            (netinfo, 'NET_CONF_PREF',
+            (ifcfg, 'NET_CONF_DIR', self._tempdir),
+            (ifcfg, 'NET_CONF_PREF',
              os.path.join(self._tempdir, 'ifcfg-')),
             (ifcfg, 'ifdown', lambda x: 0),
             (ifcfg, '_exec_ifup', lambda *x: 0),

@@ -25,7 +25,7 @@ import time
 import xml.etree.cElementTree as etree
 
 from vdsm import utils
-from vdsm import netinfo
+from vdsm.netinfo import addresses
 import exception as ge
 from . import gluster_mgmt_api, gluster_api
 
@@ -121,7 +121,7 @@ def _execGlusterXml(cmd):
 
 
 def _getLocalIpAddress():
-    for ip in netinfo.getIpAddresses():
+    for ip in addresses.getIpAddresses():
         if not ip.startswith('127.'):
             return ip
     return ''

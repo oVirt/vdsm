@@ -22,7 +22,10 @@ import copy
 import netaddr
 import string
 
-from . import netinfo
+from .netinfo import addresses
+from .netinfo import bonding
+from .netinfo import bridges
+from .netinfo import mtus
 from . import utils
 from .netconfpersistence import BaseConfig
 
@@ -140,13 +143,13 @@ def _translate_mtu(attributes, net_attr):
 def _translate_bridged(attributes, net_attr):
     attributes['bridged'] = net_attr['bridged']
     if net_attr['bridged']:
-        attributes['stp'] = netinfo.stp_booleanize(net_attr['stp'])
+        attributes['stp'] = bridges.stp_booleanize(net_attr['stp'])
 
 
 def _translate_netinfo_bond(bond_attr):
     return {
         'nics': sorted(bond_attr['slaves']),
-        'options': netinfo.bondOptsForIfcfg(bond_attr['opts'])
+        'options': bonding.bondOptsForIfcfg(bond_attr['opts'])
     }
 
 
@@ -176,7 +179,7 @@ def _remove_zero_values_in_net_qos(net_qos):
 
 def _normalize_stp(net_attr):
     stp = net_attr.pop('stp', net_attr.pop('STP', None))
-    net_attr['stp'] = netinfo.stp_booleanize(stp)
+    net_attr['stp'] = bridges.stp_booleanize(stp)
 
 
 def _normalize_vlan(config_copy):
@@ -199,7 +202,7 @@ def _normalize_mtu(config_copy):
         if 'mtu' in net_attr:
             net_attr['mtu'] = str(net_attr['mtu'])
         else:
-            net_attr['mtu'] = netinfo.DEFAULT_MTU
+            net_attr['mtu'] = mtus.DEFAULT_MTU
 
 
 def _normalize_blockingdhcp(config_copy):
@@ -225,7 +228,7 @@ def _normalize_bonding_opts(config_copy):
         normalized_opts = _parse_bond_options(
             bond_attr.get('options'))
         normalized_opts.pop('custom', None)
-        bond_attr['options'] = netinfo.bondOptsForIfcfg(normalized_opts)
+        bond_attr['options'] = bonding.bondOptsForIfcfg(normalized_opts)
     # before d18e2f10 bondingOptions were also part of networks, so in case
     # we are upgrading from an older version, they should be ignored if
     # they exist.
@@ -244,7 +247,7 @@ def _normalize_address(config_copy):
     for net_attr in config_copy.networks.itervalues():
         prefix = net_attr.pop('prefix', None)
         if prefix is not None:
-            net_attr['netmask'] = netinfo.prefix2netmask(int(prefix))
+            net_attr['netmask'] = addresses.prefix2netmask(int(prefix))
         if 'ipv6addr' in net_attr:
             net_attr['ipv6addr'] = [net_attr['ipv6addr']]
         if 'defaultRoute' not in net_attr:
@@ -277,13 +280,13 @@ def _parse_bond_options(opts):
 
     # force a numeric bonding mode
     mode = opts.get('mode',
-                    netinfo.getAllDefaultBondingOptions()['0']['mode'][-1])
-    if mode in netinfo.BONDING_MODES_NUMBER_TO_NAME:
+                    bonding.getAllDefaultBondingOptions()['0']['mode'][-1])
+    if mode in bonding.BONDING_MODES_NUMBER_TO_NAME:
         numeric_mode = mode
     else:
-        numeric_mode = netinfo.BONDING_MODES_NAME_TO_NUMBER[mode]
+        numeric_mode = bonding.BONDING_MODES_NAME_TO_NUMBER[mode]
         opts['mode'] = numeric_mode
 
-    defaults = netinfo.getDefaultBondingOptions(numeric_mode)
+    defaults = bonding.getDefaultBondingOptions(numeric_mode)
     return dict(
         (k, v) for k, v in opts.iteritems() if v != defaults.get(k))

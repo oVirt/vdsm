@@ -24,7 +24,7 @@ from six.moves import configparser
 from vdsm.config import config
 from vdsm.netconfpersistence import RunningConfig
 from vdsm import ipwrapper
-from vdsm import netinfo
+from vdsm.netinfo import mtus
 from vdsm.netlink import monitor
 
 from .dhclient import DhcpClient
@@ -160,8 +160,8 @@ class Configurator(object):
 
         :return mtu value that was applied
         """
-        ifaceMtu = netinfo.getMtu(iface.name)
-        maxMtu = netinfo.getMaxMtu(ifaceVlans, None)
+        ifaceMtu = mtus.getMtu(iface.name)
+        maxMtu = mtus.getMaxMtu(ifaceVlans, None)
         if maxMtu and maxMtu < ifaceMtu:
             if isinstance(iface, Bond):
                 self.configApplier.setBondingMtu(iface.name, maxMtu)

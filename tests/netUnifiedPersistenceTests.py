@@ -22,6 +22,7 @@
 from contextlib import contextmanager
 import os
 
+from vdsm.netinfo import misc
 from vdsm.tool import unified_persistence
 
 from monkeypatch import MonkeyPatchScope
@@ -144,7 +145,7 @@ class unfiedPersistenceTests(TestCaseBase):
             FAKE_NET_CONF_PREF = ifcfgs_dir + '/ifcfg-'
             with MonkeyPatchScope(
                 [(unified_persistence, 'NetInfo', _FakeNetInfo),
-                 (unified_persistence, 'NET_CONF_PREF', FAKE_NET_CONF_PREF)]):
+                 (misc, 'NET_CONF_PREF', FAKE_NET_CONF_PREF)]):
                 networks, bonds = unified_persistence._getNetInfo()
 
         self.assertEquals(set(networks), set([NETWORK_NAME]))

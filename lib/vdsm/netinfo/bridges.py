@@ -1,0 +1,79 @@
+#
+# Copyright 2015 Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+from __future__ import absolute_import
+from functools import partial
+from glob import iglob
+import os
+
+from .misc import _visible_devs
+from ..ipwrapper import Link
+
+BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
+
+bridges = partial(_visible_devs, Link.isBRIDGE)
+
+
+def ports(bridge):
+    return os.listdir('/sys/class/net/' + bridge + '/brif')
+
+
+def _bridge_options(bridge, keys=None):
+    """Returns a dictionary of bridge option name and value. E.g.,
+    {'max_age': '2000', 'gc_timer': '332'}"""
+    BR_KEY_BLACKLIST = ('flush',)
+    if keys is None:
+        paths = iglob(BRIDGING_OPT % (bridge, '*'))
+    else:
+        paths = (BRIDGING_OPT % (bridge, key) for key in keys)
+    opts = {}
+    for path in paths:
+        key = os.path.basename(path)
+        if key in BR_KEY_BLACKLIST:
+            continue
+        with open(path) as optFile:
+            opts[key] = optFile.read().rstrip()
+    return opts
+
+
+def bridge_stp_state(bridge):
+    with open('/sys/class/net/%s/bridge/stp_state' % bridge) as stp_file:
+        stp = stp_file.readline()
+    if stp == '1\n':
+        return 'on'
+    else:
+        return 'off'
+
+
+def stp_booleanize(value):
+    if value is None:
+        return False
+    if type(value) is bool:
+        return value
+    if value.lower() in ('true', 'on', 'yes'):
+        return True
+    elif value.lower() in ('false', 'off', 'no'):
+        return False
+    else:
+        raise ValueError('Invalid value for bridge stp')
+
+
+def bridgeinfo(link):
+    return {'ports': ports(link.name),
+            'stp': bridge_stp_state(link.name),
+            'opts': _bridge_options(link.name)}

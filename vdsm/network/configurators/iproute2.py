@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 import logging
 
-from vdsm import netinfo
+from vdsm.netinfo import bonding, ifaceUsed, vlans, bridges, mtus
 from vdsm import ipwrapper
 from vdsm.constants import EXT_BRCTL
 from vdsm.ipwrapper import routeAdd, routeDel, ruleAdd, ruleDel, IPRoute2Error
@@ -98,7 +98,7 @@ class Iproute2(Configurator):
             self.configApplier.ifdown(bond)
             self.configApplier.addBondOptions(bond)
         for slave in bond.slaves:
-            if slave.name not in netinfo.slaves(bond.name):
+            if slave.name not in bonding.slaves(bond.name):
                 self.configApplier.addBondSlave(bond, slave)
                 slave.configure(**opts)
         DynamicSourceRoute.addInterfaceTracking(bond)
@@ -175,7 +175,7 @@ class Iproute2(Configurator):
         self.configApplier.removeBond(bonding)
 
     def removeBond(self, bonding):
-        toBeRemoved = not netinfo.ifaceUsed(bonding.name)
+        toBeRemoved = not ifaceUsed(bonding.name)
 
         if toBeRemoved:
             if bonding.master is None:
@@ -187,14 +187,13 @@ class Iproute2(Configurator):
                 self._destroyBond(bonding)
                 self.runningConfig.removeBonding(bonding.name)
             else:
-                self.configApplier.setIfaceMtu(bonding.name,
-                                               netinfo.DEFAULT_MTU)
+                self.configApplier.setIfaceMtu(bonding.name,  mtus.DEFAULT_MTU)
                 self.configApplier.ifdown(bonding)
         else:
-            self._setNewMtu(bonding, netinfo.vlanDevsForIface(bonding.name))
+            self._setNewMtu(bonding, vlans.vlanDevsForIface(bonding.name))
 
     def removeNic(self, nic):
-        toBeRemoved = not netinfo.ifaceUsed(nic.name)
+        toBeRemoved = not ifaceUsed(nic.name)
 
         if toBeRemoved:
             if nic.master is None:
@@ -202,11 +201,10 @@ class Iproute2(Configurator):
                 DynamicSourceRoute.addInterfaceTracking(nic)
                 self._removeSourceRoute(nic, DynamicSourceRoute)
             else:
-                self.configApplier.setIfaceMtu(nic.name,
-                                               netinfo.DEFAULT_MTU)
+                self.configApplier.setIfaceMtu(nic.name, mtus.DEFAULT_MTU)
                 self.configApplier.ifdown(nic)
         else:
-            self._setNewMtu(nic, netinfo.vlanDevsForIface(nic.name))
+            self._setNewMtu(nic, vlans.vlanDevsForIface(nic.name))
 
     @staticmethod
     def configureSourceRoute(routes, rules, device):
@@ -292,7 +290,7 @@ class ConfigApplier(object):
             if not err_used_bridge:
                 raise ConfigNetworkError(ERR_FAILED_IFUP, err)
         if bridge.stp:
-            with open(netinfo.BRIDGING_OPT %
+            with open(bridges.BRIDGING_OPT %
                       (bridge.name, 'stp_state'), 'w') as bridge_stp:
                 bridge_stp.write('1')
 
@@ -320,26 +318,26 @@ class ConfigApplier(object):
         ipwrapper.linkDel(vlan.name)
 
     def addBond(self, bond):
-        if bond.name not in netinfo.bondings():
+        if bond.name not in bonding.bondings():
             logging.debug('Add new bonding %s', bond)
-            with open(netinfo.BONDING_MASTERS, 'w') as f:
+            with open(bonding.BONDING_MASTERS, 'w') as f:
                 f.write('+%s' % bond.name)
 
     def removeBond(self, bond):
         logging.debug('Remove bonding %s', bond)
-        with open(netinfo.BONDING_MASTERS, 'w') as f:
+        with open(bonding.BONDING_MASTERS, 'w') as f:
             f.write('-%s' % bond.name)
 
     def addBondSlave(self, bond, slave):
         logging.debug('Add slave %s to bonding %s', slave, bond)
         self.ifdown(slave)
-        with open(netinfo.BONDING_SLAVES % bond.name, 'w') as f:
+        with open(bonding.BONDING_SLAVES % bond.name, 'w') as f:
             f.write('+%s' % slave.name)
         self.ifup(slave)
 
     def removeBondSlave(self, bond, slave):
         logging.debug('Remove slave %s from bonding %s', slave, bond)
-        with open(netinfo.BONDING_SLAVES % bond.name, 'w') as f:
+        with open(bonding.BONDING_SLAVES % bond.name, 'w') as f:
             f.write('-%s' % slave.name)
 
     def addBondOptions(self, bond):
@@ -348,7 +346,7 @@ class ConfigApplier(object):
         options = remove_custom_bond_option(bond.options)
         for option in options.split():
             key, value = option.split('=')
-            with open(netinfo.BONDING_OPT % (bond.name, key), 'w') as f:
+            with open(bonding.BONDING_OPT % (bond.name, key), 'w') as f:
                 f.write(value)
 
     def createLibvirtNetwork(self, network, bridged=True, iface=None):

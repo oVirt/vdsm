@@ -22,7 +22,7 @@ import re
 import socket
 import struct
 
-from vdsm import netinfo
+from vdsm.netinfo import bonding, ifaceUsed, mtus, nics, NetInfo
 
 from .errors import ConfigNetworkError
 from . import errors as ne
@@ -77,12 +77,12 @@ class Nic(NetDevice):
     def __init__(self, name, configurator, ipv4=None, ipv6=None,
                  blockingdhcp=False, mtu=None, _netinfo=None):
         if _netinfo is None:
-            _netinfo = netinfo.NetInfo()
+            _netinfo = NetInfo()
         if name not in _netinfo.nics:
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'unknown nic: %s' % name)
 
         if _netinfo.ifaceUsers(name):
-            mtu = max(mtu, netinfo.getMtu(name))
+            mtu = max(mtu, mtus.getMtu(name))
 
         super(Nic, self).__init__(name, configurator, ipv4, ipv6, blockingdhcp,
                                   mtu)
@@ -90,9 +90,9 @@ class Nic(NetDevice):
     def configure(self, **opts):
         # in a limited condition, we should not touch the nic config
         if (self.vlan and
-                netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
-                netinfo.ifaceUsed(self.name) and
-                self.mtu <= netinfo.getMtu(self.name)):
+                nics.operstate(self.name) == nics.OPERSTATE_UP and
+                ifaceUsed(self.name) and
+                self.mtu <= mtus.getMtu(self.name)):
             return
 
         self.configurator.configureNic(self, **opts)
@@ -226,15 +226,15 @@ class Bond(NetDevice):
         # When the bond is up and we are not changing the configuration that
         # is already applied in any way, we can skip the configuring.
         if (self.vlan and
-            self.name in netinfo.bondings() and
+            self.name in bonding.bondings() and
             (not self.configurator.unifiedPersistence or
              self.name in self.configurator.runningConfig.bonds) and
-            netinfo.operstate(self.name) == netinfo.OPERSTATE_UP and
-            netinfo.ifaceUsed(self.name) and
-            self.mtu <= netinfo.getMtu(self.name) and
+            nics.operstate(self.name) == nics.OPERSTATE_UP and
+            ifaceUsed(self.name) and
+            self.mtu <= mtus.getMtu(self.name) and
             self.areOptionsApplied() and
             frozenset(slave.name for slave in self.slaves) ==
-                frozenset(netinfo.slaves(self.name))):
+                frozenset(bonding.slaves(self.name))):
                 return
 
         self.configurator.configureBond(self, **opts)
@@ -248,7 +248,7 @@ class Bond(NetDevice):
         if options == '':
             return True
         confOpts = [option.split('=', 1) for option in options.split(' ')]
-        activeOpts = netinfo.bondOpts(self.name,
+        activeOpts = bonding.bondOpts(self.name,
                                       (name for name, value in confOpts))
         return all(value in activeOpts[name] for name, value in confOpts)
 
@@ -280,14 +280,14 @@ class Bond(NetDevice):
                                             mtu, _netinfo)
             if name in _netinfo.bondings:
                 if _netinfo.ifaceUsers(name):
-                    mtu = max(mtu, netinfo.getMtu(name))
+                    mtu = max(mtu, mtus.getMtu(name))
 
                 if not options:
                     options = _netinfo.bondings[name]['cfg'].get(
                         'BONDING_OPTS')
         elif name in _netinfo.bondings:  # Implicit bonding.
             if _netinfo.ifaceUsers(name):
-                mtu = max(mtu, netinfo.getMtu(name))
+                mtu = max(mtu, mtus.getMtu(name))
 
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
                       for nic in _netinfo.getNicsForBonding(name)]
@@ -320,9 +320,9 @@ class Bond(NetDevice):
             raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Error parsing '
                                      'bonding options: %r' % bondingOptions)
 
-        if mode in netinfo.BONDING_MODES_NAME_TO_NUMBER:
-            mode = netinfo.BONDING_MODES_NAME_TO_NUMBER[mode]
-        defaults = netinfo.getDefaultBondingOptions(mode)
+        if mode in bonding.BONDING_MODES_NAME_TO_NUMBER:
+            mode = bonding.BONDING_MODES_NAME_TO_NUMBER[mode]
+        defaults = bonding.getDefaultBondingOptions(mode)
 
         for option in bondingOptions.split():
             key, _ = option.split('=', 1)

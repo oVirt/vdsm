@@ -32,7 +32,10 @@ from vdsm.config import config
 from vdsm import constants
 from vdsm import kernelconfig
 from vdsm import netconfpersistence
-from vdsm import netinfo
+from vdsm.netinfo import (addresses, libvirtNets2vdsm, bridges,
+                          get as netinfo_get, NetInfo,
+                          networks as netinfo_networks, nics as netinfo_nics,
+                          NET_PATH)
 from vdsm import udevadm
 from vdsm import utils
 from vdsm import ipwrapper
@@ -125,7 +128,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
     if configurator is None:
         configurator = ConfiguratorClass()
     if _netinfo is None:
-        _netinfo = netinfo.NetInfo()
+        _netinfo = NetInfo()
     if opts is None:
         opts = {}
     if bootproto == 'none':
@@ -161,7 +164,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
         elif 'STP' in opts:
             stp = opts.pop('STP')
         try:
-            stp = netinfo.stp_booleanize(stp)
+            stp = bridges.stp_booleanize(stp)
         except ValueError:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not a valid '
                                      'bridge STP value.' % stp)
@@ -240,7 +243,7 @@ def _alterRunningConfig(func):
 
 
 def _update_bridge_ports_mtu(bridge, mtu):
-    for port in netinfo.ports(bridge):
+    for port in bridges.ports(bridge):
         ipwrapper.linkSet(port, ['mtu', str(mtu)])
 
 
@@ -253,7 +256,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                 defaultRoute=None, blockingdhcp=False, **options):
     nics = nics or ()
     if _netinfo is None:
-        _netinfo = netinfo.NetInfo()
+        _netinfo = NetInfo()
     bridged = utils.tobool(bridged)
     if dhcpv6 is not None:
         dhcpv6 = utils.tobool(dhcpv6)
@@ -273,7 +276,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                                      'Both PREFIX and NETMASK supplied')
         else:
             try:
-                netmask = netinfo.prefix2netmask(int(prefix))
+                netmask = addresses.prefix2netmask(int(prefix))
             except ValueError as ve:
                 raise ConfigNetworkError(ne.ERR_BAD_ADDR, "Bad prefix: %s" %
                                          ve)
@@ -336,7 +339,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
-    ports = set(netinfo.ports(bridge))
+    ports = set(bridges.ports(bridge))
     ifaces = set(nics)
     if vlan is not None:
         ifaces.add(vlan)
@@ -351,7 +354,7 @@ def assertBridgeClean(bridge, vlan, bonding, nics):
 
 
 def showNetwork(network):
-    _netinfo = netinfo.NetInfo()
+    _netinfo = NetInfo()
     if network not in _netinfo.networks:
         print("Network %r doesn't exist" % network)
         return
@@ -377,7 +380,7 @@ def showNetwork(network):
 
 
 def listNetworks():
-    _netinfo = netinfo.NetInfo()
+    _netinfo = NetInfo()
     print("Networks:", _netinfo.networks.keys())
     print("Vlans:", _netinfo.vlans.keys())
     print("Nics:", _netinfo.nics.keys())
@@ -387,7 +390,7 @@ def listNetworks():
 def _delBrokenNetwork(network, netAttr, configurator):
     '''Adapts the network information of broken networks so that they can be
     deleted via _delNetwork.'''
-    _netinfo = netinfo.NetInfo()
+    _netinfo = NetInfo()
     _netinfo.networks[network] = netAttr
     _netinfo.networks[network]['dhcpv4'] = False
 
@@ -419,7 +422,7 @@ def _validateDelNetwork(network, vlan, bonding, nics, bridge_should_be_clean,
 
 
 def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
-    if network in netinfo.bridges():
+    if network in bridges.bridges():
         net_ent = _objectivizeNetwork(bridge=network, vlan_id=vlan,
                                       bonding=bonding, nics=nics,
                                       _netinfo=_netinfo,
@@ -442,7 +445,7 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None,
                 configurator=None, implicitBonding=True,
                 _netinfo=None, keep_bridge=False, **options):
     if _netinfo is None:
-        _netinfo = netinfo.NetInfo()
+        _netinfo = NetInfo()
 
     if configurator is None:
         configurator = ConfiguratorClass()
@@ -499,7 +502,7 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None,
     # QoS as used
     backing_device = hierarchy_backing_device(net_ent)
     if (backing_device is not None and
-            os.path.exists(netinfo.NET_PATH + '/' + backing_device.name)):
+            os.path.exists(NET_PATH + '/' + backing_device.name)):
         configurator.removeQoS(net_ent)
 
 
@@ -587,7 +590,7 @@ def _validateNetworkSetup(networks, bondings):
                     "than custom properties). specified attributes: %s" % (
                         networkAttrs,))
 
-    currentNicsSet = set(netinfo.nics())
+    currentNicsSet = set(netinfo_nics.nics())
     for bonding, bondingAttrs in bondings.iteritems():
         Bond.validateName(bonding)
         if 'options' in bondingAttrs:
@@ -629,7 +632,7 @@ def _handleBondings(bondings, configurator, in_rollback):
     """ Add/Edit/Remove bond interface """
     logger = logging.getLogger("_handleBondings")
 
-    _netinfo = netinfo.NetInfo()
+    _netinfo = NetInfo()
 
     edition = []
     addition = []
@@ -716,7 +719,7 @@ def _buildSetupHookDict(req_networks, req_bondings, req_options):
 
 def _emergencyNetworkCleanup(network, networkAttrs, configurator):
     """Remove all leftovers after failed setupNetwork"""
-    _netinfo = netinfo.NetInfo()
+    _netinfo = NetInfo()
 
     topNetDev = None
     if 'bonding' in networkAttrs:
@@ -743,7 +746,7 @@ def _add_missing_networks(configurator, networks, bondings, logger,
                           _netinfo=None):
     # We need to use the newest host info
     if _netinfo is None:
-        _netinfo = netinfo.NetInfo()
+        _netinfo = NetInfo()
     else:
         _netinfo.updateDevices()
 
@@ -884,9 +887,8 @@ def setupNetworks(networks, bondings, **options):
 
     bondings, networks, options = _apply_hook(bondings, networks, options)
 
-    libvirt_nets = netinfo.networks()
-    _netinfo = netinfo.NetInfo(_netinfo=netinfo.get(
-        netinfo.libvirtNets2vdsm(libvirt_nets)))
+    libvirt_nets = netinfo_networks()
+    _netinfo = NetInfo(_netinfo=netinfo_get(libvirtNets2vdsm(libvirt_nets)))
     connectivity_check_networks = set()
 
     logger.debug("Applying...")

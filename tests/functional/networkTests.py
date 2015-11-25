@@ -34,16 +34,18 @@ from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet,
                             addrAdd)
 from vdsm.netconfpersistence import RunningConfig
-from vdsm.netinfo import (bridges, operstate, getRouteDeviceTo,
-                          _get_dhclient_ifaces, BONDING_SLAVES,
-                          BONDING_MASTERS, NET_CONF_PREF, OPERSTATE_UNKNOWN,
-                          OPERSTATE_UP, NET_CONF_BACK_DIR)
+from vdsm.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
+from vdsm.netinfo.bridges import bridges
+from vdsm.netinfo.misc import NET_CONF_PREF
+from vdsm.netinfo.dhcp import get_dhclient_ifaces
+from vdsm.netinfo.nics import operstate, OPERSTATE_UNKNOWN, OPERSTATE_UP
+from vdsm.netinfo.routes import getRouteDeviceTo
 from vdsm.netlink import monitor
 from vdsm import sysctl
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
 
 from network import api, errors, sourceroute, tc
-from network.configurators.ifcfg import Ifcfg, stop_devices
+from network.configurators.ifcfg import Ifcfg, stop_devices, NET_CONF_BACK_DIR
 
 from hookValidation import ValidatesHook
 
@@ -2115,7 +2117,7 @@ class NetworkTest(TestCaseBase):
                     try:
                         with running(dhclient_runner) as dhc:
                             dhcpv4_ifaces, dhcpv6_ifaces = \
-                                _get_dhclient_ifaces([dhc.lease_file])
+                                get_dhclient_ifaces([dhc.lease_file])
                     except dhcp.ProcessCannotBeKilled:
                         raise SkipTest('dhclient could not be killed')
 

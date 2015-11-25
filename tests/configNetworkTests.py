@@ -21,6 +21,7 @@
 #
 
 from vdsm import netinfo
+from vdsm.netinfo import mtus
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
@@ -50,8 +51,8 @@ class TestConfigNetwork(TestCaseBase):
 
     # Monkey patch the real network detection from the netinfo module.
     @MonkeyPatch(netinfo, 'networks', _fakeNetworks)
-    @MonkeyPatch(netinfo, 'getMaxMtu', lambda *x: 1500)
-    @MonkeyPatch(netinfo, 'getMtu', lambda *x: 1500)
+    @MonkeyPatch(mtus, 'getMaxMtu', lambda *x: 1500)
+    @MonkeyPatch(mtus, 'getMtu', lambda *x: 1500)
     @MonkeyPatch(ifcfg, 'ifdown', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(ifcfg, '_exec_ifup', lambda *x: _raiseInvalidOpException())
     @MonkeyPatch(Bond, 'configure', lambda *x: _raiseInvalidOpException())

@@ -1,0 +1,79 @@
+#
+# Copyright 2015 Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+from __future__ import absolute_import
+import errno
+from functools import partial
+import logging
+
+from ..ipwrapper import drv_name
+from .misc import _visible_devs
+from ..ipwrapper import Link
+
+OPERSTATE_UP = 'up'
+OPERSTATE_UNKNOWN = 'unknown'
+OPERSTATE_DOWN = 'down'
+
+
+nics = partial(_visible_devs, Link.isNICLike)
+
+
+def operstate(dev):
+    with open('/sys/class/net/%s/operstate' % dev) as operstateFile:
+        return operstateFile.read().strip()
+
+
+def nicSpeed(nicName):
+    """Returns the nic speed if it is a legal value, nicName refers to a
+    nic and nic is UP, 0 otherwise."""
+    try:
+        if operstate(nicName) == OPERSTATE_UP:
+            with open('/sys/class/net/%s/speed' % nicName) as speedFile:
+                s = int(speedFile.read())
+            # the device may have been disabled/downed after checking
+            # so we validate the return value as sysfs may return
+            # special values to indicate the device is down/disabled
+            if s not in (2 ** 16 - 1, 2 ** 32 - 1) and s > 0:
+                return s
+    except IOError as ose:
+        if ose.errno == errno.EINVAL:
+            return _ibHackedSpeed(nicName)
+        else:
+            logging.exception('cannot read %s nic speed', nicName)
+    except Exception:
+        logging.exception('cannot read %s speed', nicName)
+    return 0
+
+
+def _ibHackedSpeed(nicName):
+    """If the nic is an InfiniBand device, return a speed of 10000 Mbps.
+
+    This is only needed until the kernel reports ib*/speed, see
+    https://bugzilla.redhat.com/show_bug.cgi?id=1101314
+    """
+    try:
+        return 10000 if drv_name(nicName) == 'ib_ipoib' else 0
+    except IOError:
+        return 0
+
+
+def nicinfo(link, paddr):
+    info = {'hwaddr': link.address, 'speed': nicSpeed(link.name)}
+    if paddr.get(link.name):
+        info['permhwaddr'] = paddr[link.name]
+    return info
