@@ -124,14 +124,9 @@ def run():
     logging.addLevelName(5, 'TRACE')
     logging.TRACE = 5  # impolite but helpful
 
-    # Used to enable code coverage. On production machines
-    # "coverage" should not exists and COVERAGE_PROCESS_START should not be
-    # set.
-    try:
+    if config.getboolean('devel', 'coverage_enable'):
         import coverage
         coverage.process_startup()
-    except ImportError:
-        pass
 
     log = logging.getLogger('vds')
     try:
