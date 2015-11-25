@@ -327,12 +327,23 @@ class StompServer(object):
         resp = json.loads(message)
         response_id = resp.get("id")
 
-        try:
-            destination = self._req_dest[response_id]
-            del self._req_dest[response_id]
-        except KeyError:
-            # we could have no reply-to or we could send events (no message id)
+        if response_id is None:
+            # events do not have ids
             pass
+        else:
+            try:
+                destination = self._req_dest[response_id]
+            except KeyError:
+                # we could have no reply-to we will use destination
+                # provided as method argument
+                pass
+            try:
+                del self._req_dest[response_id]
+            except KeyError:
+                self.log.warning(
+                    "Response to a message with id %s was not found",
+                    response_id
+                )
 
         try:
             connections = self._sub_map[destination]
