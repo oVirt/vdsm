@@ -31,12 +31,14 @@ def ovs_device(domxml):
     """ Modify interface XML in Libvirt to proper OVS configuration if OVS
     network is set as a source.
     """
-    running_config = RunningConfig()
-
-    iface = domxml.getElementsByTagName('interface')[0]
+    try:
+        iface = domxml.getElementsByTagName('interface')[0]
+    except IndexError:
+        return  # skip if not an interface
     source = iface.getElementsByTagName('source')[0]
     source_bridge = source.getAttribute('bridge')
 
+    running_config = RunningConfig()
     network = running_config.networks.get(source_bridge)
     if network is None:
         hooking.exit_hook('Network %s does not exist' % source_bridge)
@@ -116,6 +118,15 @@ def test():
   <model type="virtio"/>
   <source bridge="net3"/>
 </interface>"""
+    assert updated_device == expected_device
+
+    # Other than vNic devices are ignored
+    iface = minidom.parseString("""<?xml version="1.0" encoding="utf-8"?>
+<foodevice foo="bar"/>""")
+    ovs_device(iface)
+    updated_device = pretty_xml(iface)
+    expected_device = """<?xml version="1.0" encoding="utf-8"?>
+<foodevice foo="bar"/>"""
     assert updated_device == expected_device
 
     print("OK")
