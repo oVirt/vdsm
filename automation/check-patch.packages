@@ -8,6 +8,7 @@ mom
 policycoreutils-python
 pyflakes
 python-blivet
+python-coverage
 python-devel
 python-inotify
 python-ioprocess

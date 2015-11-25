@@ -1,9 +1,13 @@
 #!/bin/bash
 
+EXPORT_PATH="$PWD/exported-artifacts"
+TESTS_PATH="$PWD/tests"
+COVERAGE_REPORT="$TESTS_PATH/htmlcov"
+
 set -xe
 
 ./autogen.sh --system --enable-hooks
-make check
+make check NOSE_WITH_COVERAGE=1
 
 ./automation/build-artifacts.sh
 
@@ -13,3 +17,9 @@ shopt -s extglob
 if git diff-tree --no-commit-id --name-only -r HEAD | grep --quiet 'vdsm.spec.in' ; then
     yum -y install exported-artifacts/!(*.src).rpm
 fi
+
+# Generate coverage report in HTML format and save it
+pushd "$TESTS_PATH"
+coverage html
+popd
+mv "$COVERAGE_REPORT" "$EXPORT_PATH/"
