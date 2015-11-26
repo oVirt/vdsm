@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from collections import namedtuple
 from functools import partial
 import os
 
@@ -37,8 +36,15 @@ log = partial(ovs_utils.log, tag='ovs_before_network_setup_ip: ')
 
 iproute2 = Iproute2()
 
-IPConfig = namedtuple('IPConfig', ['top_dev', 'ipv4', 'ipv6', 'port',
-                                   'blocking_dhcp'])
+
+class IPConfig(object):
+    """Gather network's IP configuration and store it in an object"""
+    def __init__(self, net, attrs):
+        self.top_dev = net if 'vlan' in attrs else BRIDGE_NAME
+        self.ipv4 = _get_ipv4_model(attrs)
+        self.ipv6 = _get_ipv6_model(attrs)
+        self.port = attrs.get('bonding') or attrs.get('nic')
+        self.blocking_dhcp = 'blockingdhcp' in attrs
 
 
 def _get_ipv4_model(attrs):
@@ -124,27 +130,18 @@ def _drop_nic_ip_config(iface):
 
 
 def configure_ip(nets, init_nets, bonds, init_bonds):
-
-    def _gather_ip_config(attrs):
-        top_dev = net if 'vlan' in attrs else BRIDGE_NAME
-        ipv4 = _get_ipv4_model(attrs)
-        ipv6 = _get_ipv6_model(attrs)
-        port = attrs.get('nic') or attrs.get('bonding')
-        blocking_dhcp = 'blockingdhcp' in attrs
-        return IPConfig(top_dev, ipv4, ipv6, port, blocking_dhcp)
-
     ip_config_to_set = {}
     ip_config_to_remove = {}
 
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:  # if network was removed
             # remove network's IP configuration (running dhclient)
-            ip_config = _gather_ip_config(init_nets[net])
+            ip_config = IPConfig(net, init_nets[net])
             ip_config_to_remove[ip_config.top_dev] = ip_config
         else:
-            ip_config = _gather_ip_config(attrs)
+            ip_config = IPConfig(net, attrs)
             if net in init_nets:  # if network was edited
-                init_ip_config = _gather_ip_config(init_nets[net])
+                init_ip_config = IPConfig(net, init_nets[net])
 
                 # drop IP of newly attached nics
                 if init_nets[net].get('nic') != attrs.get('nic') is not None:
