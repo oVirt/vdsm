@@ -1,8 +1,6 @@
 #!/bin/bash
 
-EXPORT_PATH="$PWD/exported-artifacts"
-TESTS_PATH="$PWD/tests"
-COVERAGE_REPORT="$EXPORT_PATH/htmlcov"
+EXPORT_DIR="$PWD/exported-artifacts"
 
 set -xe
 
@@ -16,10 +14,10 @@ make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 shopt -s extglob
 # if specfile was changed, try to install all created packages
 if git diff-tree --no-commit-id --name-only -r HEAD | grep --quiet 'vdsm.spec.in' ; then
-    yum -y install exported-artifacts/!(*.src).rpm
+    yum -y install "$EXPORT_DIR/"!(*.src).rpm
 fi
 
 # Generate coverage report in HTML format
-pushd "$TESTS_PATH"
-coverage html -d "$COVERAGE_REPORT"
+pushd tests
+coverage html -d "$EXPORT_DIR/htmlcov"
 popd
