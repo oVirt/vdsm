@@ -226,13 +226,13 @@ def __set_cpu_affinity():
                             for cpu in cpu_affinity.split(","))
 
         log = logging.getLogger('vds')
-        log.info('VDSM will run with cpu affinity: %s', cpu_set)
 
         # too early to use the facilities from caps.py
         if os.sysconf('SC_NPROCESSORS_ONLN') == 1:
             log.warning('Only one cpu detected: affinity disabled')
             return
 
+        log.info('VDSM will run with cpu affinity: %s', cpu_set)
         taskset.set(os.getpid(), cpu_set, all_tasks=True)
 
 
