@@ -18,14 +18,13 @@ vdsm_configure_force() {
 }
 
 vdsm_restart() {
-    sudo service vdsmd stop && sudo service supervdsmd stop
-    sudo service vdsmd start
+    sudo systemctl stop vdsmd supervdsmd
+    sudo systemctl start vdsmd
     sleep 3
-    service vdsm-network-cleanup status | egrep -i "activ|failed"
-    service vdsm-network status | egrep -i "activ|failed"
-    service vdsmd status | egrep -i "activ|failed"
-    service supervdsmd status | egrep -i "activ|failed"
-}
+    systemctl status vdsm-network| egrep -i "activ|failed"
+    systemctl status vdsmd| egrep -i "activ|failed"
+    systemctl status supervdsmd | egrep -i "activ|failed"
+    }
 
 vdsm_caps_nonsecure() {
     if [ -t 1 ]; then
