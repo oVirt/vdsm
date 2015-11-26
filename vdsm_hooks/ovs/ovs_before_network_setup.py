@@ -182,9 +182,10 @@ def main():
     else:
         ovs_nets, non_ovs_nets, ovs_bonds, non_ovs_bonds = \
             _separate_ovs_nets_bonds(networks, bondings, running_config)
-        _configure(ovs_nets, ovs_bonds, running_config)
-        _set_nets_bonds(setup_nets_config['request'], non_ovs_nets,
-                        non_ovs_bonds)
+        if ovs_nets or ovs_bonds:
+            _configure(ovs_nets, ovs_bonds, running_config)
+            _set_nets_bonds(setup_nets_config['request'], non_ovs_nets,
+                            non_ovs_bonds)
         log('Hook finished, returning non-OVS networks and bondings back to '
             'VDSM: %s' % setup_nets_config)
 
