@@ -19,7 +19,7 @@
 from testlib import VdsmTestCase as TestCaseBase
 
 from network.configurators import qos
-from network.tc import cls
+from vdsm.tc import cls
 
 
 class TestConversions(TestCaseBase):

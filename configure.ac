@@ -351,6 +351,7 @@ AC_OUTPUT([
 	lib/vdsm/infra/filecontrol/Makefile
 	lib/vdsm/infra/sigutils/Makefile
 	lib/vdsm/infra/zombiereaper/Makefile
+	lib/vdsm/tc/Makefile
 	tests/Makefile
 	tests/functional/Makefile
 	tests/devices/Makefile
@@ -362,7 +363,6 @@ AC_OUTPUT([
 	vdsm/gluster/Makefile
 	vdsm/network/Makefile
 	vdsm/network/configurators/Makefile
-	vdsm/network/tc/Makefile
 	vdsm/rpc/Makefile
 	vdsm/sos/Makefile
 	vdsm/storage/Makefile

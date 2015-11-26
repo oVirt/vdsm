@@ -19,8 +19,7 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworktcdir = $(vdsmdir)/network/tc
-
+vdsmnetworktcdir = $(vdsmpylibdir)/tc
 dist_vdsmnetworktc_PYTHON = \
 	__init__.py \
 	_parser.py \

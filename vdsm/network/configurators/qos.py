@@ -22,8 +22,8 @@ import os
 from distutils.version import StrictVersion
 
 from vdsm import netinfo
+from vdsm import tc
 
-from .. import tc
 _NON_VLANNED_ID = 5000
 _DEFAULT_CLASSID = '%x' % _NON_VLANNED_ID
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0

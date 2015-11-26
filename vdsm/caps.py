@@ -35,14 +35,14 @@ from distutils.version import LooseVersion
 import libvirt
 
 from vdsm.config import config
-from vdsm import libvirtconnection
+from vdsm import libvirtconnection, tc
 import dsaversion
 from vdsm import netinfo
 import hooks
 from vdsm import utils
 import storage.hba
 from network.configurators import qos
-from network import tc
+
 
 # For debian systems we can use python-apt if available
 try:

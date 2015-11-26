@@ -21,6 +21,7 @@ from copy import deepcopy
 
 from . import _parser
 from . import _wrapper
+
 _TC_PRIO_MAX = 15
 
 

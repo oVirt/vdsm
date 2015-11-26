@@ -19,15 +19,14 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from collections import namedtuple
-
 import time
 import os
-import six
 import sys
-
 from binascii import unhexlify
 from itertools import izip_longest
 from subprocess import Popen, PIPE
+
+import six
 
 from hostdevTests import Connection
 from testlib import (VdsmTestCase as TestCaseBase, permutations,
@@ -37,13 +36,12 @@ from monkeypatch import MonkeyClass
 from nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
                         bridge_device, network_namespace, requires_iperf3,
                         requires_tc, requires_tun, veth_pair, vlan_device)
-
 from vdsm.constants import EXT_TC
-from network import tc
 from network.configurators import qos
 from vdsm.ipwrapper import addrAdd, linkSet, netns_exec, link_set_netns
 from vdsm import libvirtconnection
 from vdsm.utils import running
+from vdsm import tc
 
 
 class TestQdisc(TestCaseBase):

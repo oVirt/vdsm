@@ -30,6 +30,7 @@ import resource
 import signal
 import logging
 import logging.config
+
 from vdsm import concurrent
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
@@ -66,7 +67,7 @@ from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 from network import sourceroutethread
 from network.api import setupNetworks, setSafeNetworkConfig, change_numvfs
 
-from network.tc import setPortMirroring, unsetPortMirroring
+from vdsm.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo

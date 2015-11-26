@@ -20,9 +20,9 @@ from contextlib import contextmanager
 from functools import wraps
 import json
 import re
-import netaddr
 import os.path
 
+import netaddr
 from nose import with_setup
 from nose.plugins.skip import SkipTest
 
@@ -42,11 +42,12 @@ from vdsm.netinfo.nics import operstate, OPERSTATE_UNKNOWN, OPERSTATE_UP
 from vdsm.netinfo.routes import getRouteDeviceTo
 from vdsm.netlink import monitor
 from vdsm import sysctl
+from vdsm import tc
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
-
-from network import api, errors, sourceroute, tc
+from network import api
+from network import errors
+from network import sourceroute
 from network.configurators.ifcfg import Ifcfg, stop_devices, NET_CONF_BACK_DIR
-
 from hookValidation import ValidatesHook
 
 from modprobe import RequireDummyMod, RequireVethMod
@@ -54,11 +55,9 @@ from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import brokentest, slowtest, ValidateRunningAsRoot
 from nettestlib import Dummy, Tap, veth_pair
-
 import dhcp
 import firewall
 from utils import SUCCESS, VdsProxy
-
 
 NETWORK_NAME = 'test-network'
 VLAN_ID = '27'

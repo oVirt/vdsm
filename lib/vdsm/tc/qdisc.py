@@ -22,6 +22,7 @@ from functools import partial
 
 from . import _parser
 from . import _wrapper
+
 _TC_PRIO_MAX = 15
 
 

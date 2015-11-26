@@ -825,7 +825,6 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/network
 %dir %{_datadir}/%{vdsm_name}/network/configurators
-%dir %{_datadir}/%{vdsm_name}/network/tc
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
@@ -913,12 +912,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/network/models.py*
 %{_datadir}/%{vdsm_name}/network/sourceroute.py*
 %{_datadir}/%{vdsm_name}/network/sourceroutethread.py*
-%{_datadir}/%{vdsm_name}/network/tc/__init__.py*
-%{_datadir}/%{vdsm_name}/network/tc/_parser.py*
-%{_datadir}/%{vdsm_name}/network/tc/_wrapper.py*
-%{_datadir}/%{vdsm_name}/network/tc/cls.py*
-%{_datadir}/%{vdsm_name}/network/tc/filter.py*
-%{_datadir}/%{vdsm_name}/network/tc/qdisc.py*
 %{_datadir}/%{vdsm_name}/network/utils.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
@@ -1082,6 +1075,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
+%dir %{python_sitelib}/%{vdsm_name}/tc
 %{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
 %{python_sitelib}/%{vdsm_name}/compat.py*
@@ -1122,6 +1116,12 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/profiling/errors.py*
 %{python_sitelib}/%{vdsm_name}/profiling/memory.py*
 %{python_sitelib}/%{vdsm_name}/profiling/profile.py*
+%{python_sitelib}/%{vdsm_name}/tc/__init__.py*
+%{python_sitelib}/%{vdsm_name}/tc/_parser.py*
+%{python_sitelib}/%{vdsm_name}/tc/_wrapper.py*
+%{python_sitelib}/%{vdsm_name}/tc/cls.py*
+%{python_sitelib}/%{vdsm_name}/tc/filter.py*
+%{python_sitelib}/%{vdsm_name}/tc/qdisc.py*
 %{python_sitelib}/%{vdsm_name}/pthread.py*
 %{python_sitelib}/%{vdsm_name}/qemuimg.py*
 %{python_sitelib}/%{vdsm_name}/response.py*
