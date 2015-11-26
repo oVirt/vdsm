@@ -102,7 +102,7 @@ vdsm_build_reinstall() {
 }
 
 vdsm_build_reinstall_restart() {
-    vdsm_build && vdsm_reinstall && restart_vdsm
+    vdsm_build && vdsm_reinstall && vdsm_restart
 }
 
 del_dummies() {
