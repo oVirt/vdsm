@@ -823,8 +823,6 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/network
-%dir %{_datadir}/%{vdsm_name}/network/configurators
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
@@ -899,20 +897,6 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/ovirt_functions.sh
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
-%{_datadir}/%{vdsm_name}/network/__init__.py*
-%{_datadir}/%{vdsm_name}/network/api.py*
-%{_datadir}/%{vdsm_name}/network/configurators/__init__.py*
-%{_datadir}/%{vdsm_name}/network/configurators/dhclient.py*
-%{_datadir}/%{vdsm_name}/network/configurators/ifcfg.py*
-%{_datadir}/%{vdsm_name}/network/configurators/iproute2.py*
-%{_datadir}/%{vdsm_name}/network/configurators/libvirt.py*
-%{_datadir}/%{vdsm_name}/network/configurators/pyroute_two.py*
-%{_datadir}/%{vdsm_name}/network/configurators/qos.py*
-%{_datadir}/%{vdsm_name}/network/errors.py*
-%{_datadir}/%{vdsm_name}/network/models.py*
-%{_datadir}/%{vdsm_name}/network/sourceroute.py*
-%{_datadir}/%{vdsm_name}/network/sourceroutethread.py*
-%{_datadir}/%{vdsm_name}/network/utils.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*
@@ -1072,6 +1056,8 @@ exit 0
 %{_bindir}/vdsm-tool
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/netlink
+%dir %{python_sitelib}/%{vdsm_name}/network
+%dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
@@ -1108,6 +1094,20 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/netlink/link.py*
 %{python_sitelib}/%{vdsm_name}/netlink/monitor.py*
 %{python_sitelib}/%{vdsm_name}/netlink/route.py*
+%{python_sitelib}/%{vdsm_name}/network/__init__.py*
+%{python_sitelib}/%{vdsm_name}/network/api.py*
+%{python_sitelib}/%{vdsm_name}/network/configurators/__init__.py*
+%{python_sitelib}/%{vdsm_name}/network/configurators/dhclient.py*
+%{python_sitelib}/%{vdsm_name}/network/configurators/ifcfg.py*
+%{python_sitelib}/%{vdsm_name}/network/configurators/iproute2.py*
+%{python_sitelib}/%{vdsm_name}/network/configurators/libvirt.py*
+%{python_sitelib}/%{vdsm_name}/network/configurators/pyroute_two.py*
+%{python_sitelib}/%{vdsm_name}/network/configurators/qos.py*
+%{python_sitelib}/%{vdsm_name}/network/errors.py*
+%{python_sitelib}/%{vdsm_name}/network/models.py*
+%{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
+%{python_sitelib}/%{vdsm_name}/network/sourceroutethread.py*
+%{python_sitelib}/%{vdsm_name}/network/utils.py*
 %{python_sitelib}/%{vdsm_name}/password.py*
 %{python_sitelib}/%{vdsm_name}/panic.py*
 %{python_sitelib}/%{vdsm_name}/ppc64HardwareInfo.py*

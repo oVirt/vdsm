@@ -26,10 +26,10 @@ from vdsm.netinfo import mtus
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
-from network import api
-from network import errors
-from network.configurators import ifcfg
-from network.models import Bond, Bridge, Nic, Vlan
+from vdsm.network import api
+from vdsm.network import errors
+from vdsm.network.configurators import ifcfg
+from vdsm.network.models import Bond, Bridge, Nic, Vlan
 
 
 def _fakeNetworks():

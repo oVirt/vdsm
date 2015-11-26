@@ -24,7 +24,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from testValidation import ValidateRunningAsRoot
 
 from vdsm.constants import EXT_BRCTL
-from network.configurators.iproute2 import _BRCTL_DEV_EXISTS
+from vdsm.network.configurators.iproute2 import _BRCTL_DEV_EXISTS
 
 from nettestlib import Bridge, requires_brctl
 

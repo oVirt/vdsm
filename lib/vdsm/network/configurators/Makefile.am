@@ -1,4 +1,4 @@
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2015 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@
 
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkconfiguratorsdir = $(vdsmdir)/network/configurators
+vdsmnetworkconfiguratorsdir = $(vdsmpylibdir)/network/configurators
 
 dist_vdsmnetworkconfigurators_PYTHON = \
 	__init__.py \

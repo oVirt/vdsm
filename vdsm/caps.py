@@ -36,12 +36,12 @@ import libvirt
 
 from vdsm.config import config
 from vdsm import libvirtconnection, tc
+from vdsm.network.configurators import qos
 import dsaversion
 from vdsm import netinfo
 import hooks
 from vdsm import utils
 import storage.hba
-from network.configurators import qos
 
 
 # For debian systems we can use python-apt if available

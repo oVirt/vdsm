@@ -41,13 +41,17 @@ from vdsm.netinfo.dhcp import get_dhclient_ifaces
 from vdsm.netinfo.nics import operstate, OPERSTATE_UNKNOWN, OPERSTATE_UP
 from vdsm.netinfo.routes import getRouteDeviceTo
 from vdsm.netlink import monitor
+from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
+                                              NET_CONF_BACK_DIR)
+from vdsm.network import api
+from vdsm.network import errors
+from vdsm.network import sourceroute
+
 from vdsm import sysctl
 from vdsm import tc
 from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
-from network import api
-from network import errors
-from network import sourceroute
-from network.configurators.ifcfg import Ifcfg, stop_devices, NET_CONF_BACK_DIR
+
+
 from hookValidation import ValidatesHook
 
 from modprobe import RequireDummyMod, RequireVethMod

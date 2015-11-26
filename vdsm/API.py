@@ -29,8 +29,8 @@ import time
 import logging
 import errno
 
-from network.errors import ConfigNetworkError
-from network.configurators import RollbackIncomplete
+from vdsm.network.errors import ConfigNetworkError
+from vdsm.network.configurators import RollbackIncomplete
 
 from vdsm import utils
 from clientIF import clientIF

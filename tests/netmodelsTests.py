@@ -22,11 +22,10 @@
 import os
 
 from vdsm.netinfo import bonding, mtus, NetInfo
-
-from network import errors
-from network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
-from network.models import hierarchy_backing_device, hierarchy_vlan_tag
-from network.models import _nicSort
+from vdsm.network import errors
+from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
+from vdsm.network.models import hierarchy_backing_device, hierarchy_vlan_tag
+from vdsm.network.models import _nicSort
 
 from testlib import VdsmTestCase as TestCaseBase
 

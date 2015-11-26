@@ -23,7 +23,7 @@ import os
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
-from network import sourceroute
+from vdsm.network import sourceroute
 
 TABLE = '4026531841'
 DEVICE = 'test-network'

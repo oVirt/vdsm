@@ -18,7 +18,7 @@
 #
 from testlib import VdsmTestCase as TestCaseBase
 
-from network.configurators import qos
+from vdsm.network.configurators import qos
 from vdsm.tc import cls
 
 

@@ -64,8 +64,8 @@ from vdsm.supervdsm import _SuperVdsmManager
 from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
-from network import sourceroutethread
-from network.api import setupNetworks, setSafeNetworkConfig, change_numvfs
+from vdsm.network import sourceroutethread
+from vdsm.network.api import setupNetworks, setSafeNetworkConfig, change_numvfs
 
 from vdsm.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial

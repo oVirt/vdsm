@@ -39,10 +39,10 @@ from vdsm.utils import monotonic_time
 import hostdev
 
 # Ifcfg persistence restoration
-from network.configurators import ifcfg
+from vdsm.network.configurators import ifcfg
 
 # Unified persistence restoration
-from network.api import setupNetworks, change_numvfs
+from vdsm.network.api import setupNetworks, change_numvfs
 
 
 _ALL_DEVICES_UP_TIMEOUT = 5

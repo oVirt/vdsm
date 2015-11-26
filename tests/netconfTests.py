@@ -28,7 +28,7 @@ import subprocess
 import tempfile
 import xml.etree.ElementTree as ET
 
-from network.configurators import ifcfg, libvirt
+from vdsm.network.configurators import ifcfg, libvirt
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
