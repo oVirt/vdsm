@@ -2,7 +2,7 @@
 
 EXPORT_PATH="$PWD/exported-artifacts"
 TESTS_PATH="$PWD/tests"
-COVERAGE_REPORT="$TESTS_PATH/htmlcov"
+COVERAGE_REPORT="$EXPORT_PATH/htmlcov"
 
 set -xe
 
@@ -19,8 +19,7 @@ if git diff-tree --no-commit-id --name-only -r HEAD | grep --quiet 'vdsm.spec.in
     yum -y install exported-artifacts/!(*.src).rpm
 fi
 
-# Generate coverage report in HTML format and save it
+# Generate coverage report in HTML format
 pushd "$TESTS_PATH"
-coverage html
+coverage html -d "$COVERAGE_REPORT"
 popd
-mv "$COVERAGE_REPORT" "$EXPORT_PATH/"
