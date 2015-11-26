@@ -7,7 +7,7 @@ COVERAGE_REPORT="$TESTS_PATH/htmlcov"
 set -xe
 
 ./autogen.sh --system --enable-hooks
-make check NOSE_WITH_COVERAGE=1
+make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 ./automation/build-artifacts.sh
 
