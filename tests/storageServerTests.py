@@ -170,8 +170,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     def test_duplicate_servers_in_volinfo(self):
         """
-        This test simulates a use case where gluster server provided in the
-        path doesn't appear in the volume info.
+        This test verifies that servers list contains no duplicates.
         """
         def glusterVolumeInfo(volname=None, volfileServer=None):
             return {'music': {'brickCount': '3',
