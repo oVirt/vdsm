@@ -241,7 +241,8 @@ class GuestAgent(object):
                                                self.effectiveApiVersion)
         args['__name__'] = cmd
         message = (json.dumps(args) + '\n').encode('utf8')
-        self._sock.send(message)
+        # TODO: socket is non-blocking, handle possible EAGAIN
+        self._sock.sendall(message)
         self.log.log(logging.TRACE, 'sent %r', message)
 
     def _handleMessage(self, message, args):
