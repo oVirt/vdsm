@@ -240,6 +240,8 @@ class GuestAgent(object):
             raise GuestAgentUnsupportedMessage(cmd, ver,
                                                self.effectiveApiVersion)
         args['__name__'] = cmd
+        # TODO: encoding is required only on Python 3. Replace with wrapper
+        # hiding this difference.
         message = (json.dumps(args) + '\n').encode('utf8')
         # TODO: socket is non-blocking, handle possible EAGAIN
         self._sock.sendall(message)
