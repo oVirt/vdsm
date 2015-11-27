@@ -242,7 +242,7 @@ class GuestAgent(object):
         args['__name__'] = cmd
         message = (json.dumps(args) + '\n').encode('utf8')
         self._sock.send(message)
-        self.log.log(logging.TRACE, 'sent %s', message)
+        self.log.log(logging.TRACE, 'sent %r', message)
 
     def _handleMessage(self, message, args):
         self.log.log(logging.TRACE, "Guest's message %s: %s", message, args)
