@@ -157,6 +157,7 @@ class GuestAgent(object):
         return self._diskMappingHash
 
     def connect(self):
+        self.log.info("Starting connection")
         self._prepare_socket()
         self._channelListener.register(
             self._create,
@@ -332,6 +333,7 @@ class GuestAgent(object):
             self.log.error('Unknown message type %s', message)
 
     def stop(self):
+        self.log.info("Stopping connection")
         self._stopped = True
         try:
             self._channelListener.unregister(self._sock.fileno())
