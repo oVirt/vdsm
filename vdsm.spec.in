@@ -634,7 +634,10 @@ Gluster plugin enables VDSM to serve Gluster functionalities.
 %if 0%{?enable_autotools}
 autoreconf -if
 %endif
-%configure %{?with_hooks:--enable-hooks} \
+%configure \
+%if 0%{?with_hooks}
+        --enable-hooks \
+%endif
 %if ! 0%{?with_gluster_mgmt}
         --disable-gluster-mgmt \
 %endif
