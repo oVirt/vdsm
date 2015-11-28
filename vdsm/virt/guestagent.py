@@ -156,7 +156,7 @@ class GuestAgent(object):
     def diskMappingHash(self):
         return self._diskMappingHash
 
-    def connect(self):
+    def start(self):
         self.log.info("Starting connection")
         self._prepare_socket()
         self._channelListener.register(

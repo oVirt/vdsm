@@ -1777,7 +1777,7 @@ class Vm(object):
         self._guestEventTime = self._startTime
         sampling.stats_cache.add(self.id)
         try:
-            self.guestAgent.connect()
+            self.guestAgent.start()
         except Exception:
             self.log.exception("Failed to connect to guest agent channel")
 
