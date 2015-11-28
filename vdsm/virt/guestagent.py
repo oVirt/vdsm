@@ -469,6 +469,7 @@ class GuestAgent(object):
                 # therefore we're going to set ourself to stopped state
                 if not data:
                     self._stopped = True
+                    self.log.debug("Disconnected from %s", self._socketName)
                     result = False
                 else:
                     self._handleData(data)
