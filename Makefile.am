@@ -58,8 +58,9 @@ if HOOKS
 WITH_HOOKS = --define="with_hooks 1"
 endif
 
-if GLUSTER_MGMT
-WITH_GLUSTER_MGMT = --define="with_gluster_mgmt 1"
+# gluster is enabled by default
+if !GLUSTER_MGMT
+WITH_GLUSTER_MGMT = --define="with_gluster_mgmt 0"
 endif
 
 if RHEV
