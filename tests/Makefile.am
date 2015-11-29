@@ -26,6 +26,12 @@ SUBDIRS = \
 	  integration \
 	  $(NULL)
 
+test_modules_py3 = \
+	apiData.py \
+	cmdutilsTests.py \
+	cpuProfileTests.py \
+	$(NULL)
+
 device_modules = \
 	devices/parsing/complex_vm_tests.py \
 	$(NULL)
@@ -231,3 +237,5 @@ check-local:
 	@echo '*** into your environment.  Do not submit untested code!    ***'
 	$(top_srcdir)/tests/run_tests_local.sh crossImportsTests.py
 	$(top_srcdir)/tests/run_tests_local.sh $(test_modules) $(device_modules)
+	PYTHON_EXE=python3 $(top_srcdir)/tests/run_tests_local.sh \
+		$(test_modules_py3)

@@ -17,6 +17,8 @@ python-nose
 python-pep8
 python-pthreading
 python-six
+python3-nose
+python3-six
 rpm-build
 sudo
 yum
