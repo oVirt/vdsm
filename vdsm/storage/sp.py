@@ -32,7 +32,8 @@ from weakref import proxy
 from imageRepository.formatConverter import DefaultFormatConverter
 
 from vdsm import concurrent
-from vdsm import constants, utils
+from vdsm import constants
+from vdsm.panic import panic
 import storage_mailbox
 import blockSD
 import fileSD
@@ -371,7 +372,7 @@ class StoragePool(object):
                 try:
                     blockSD.BlockStorageDomain.doUnmountMaster(master)
                 except se.StorageDomainMasterUnmountError as e:
-                    utils.panic("unmount %s failed - %s" % (master, e))
+                    panic("unmount %s failed - %s" % (master, e))
             else:
                 cls.log.debug("master `%s` is not mounted, skipping", master)
 
@@ -412,7 +413,7 @@ class StoragePool(object):
                 stopFailed = True
 
             if stopFailed:
-                utils.panic("Unrecoverable errors during SPM stop process.")
+                panic("Unrecoverable errors during SPM stop process.")
 
             self.spmRole = SPM_FREE
 

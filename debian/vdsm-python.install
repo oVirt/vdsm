@@ -21,6 +21,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/netlink/link.py
 ./usr/lib/python2.7/dist-packages/vdsm/netlink/monitor.py
 ./usr/lib/python2.7/dist-packages/vdsm/netlink/route.py
+./usr/lib/python2.7/dist-packages/vdsm/panic.py
 ./usr/lib/python2.7/dist-packages/vdsm/password.py
 ./usr/lib/python2.7/dist-packages/vdsm/ppc64HardwareInfo.py
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/__init__.py

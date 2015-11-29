@@ -36,6 +36,7 @@ from vdsm import utils
 from vdsm.config import config
 from vdsm import libvirtconnection
 from vdsm import taskset
+from vdsm.panic import panic
 from vdsm.profiling import profile
 
 from storage.dispatcher import Dispatcher
@@ -89,7 +90,7 @@ def serve_clients(log):
             try:
                 irs = Dispatcher(HSM())
             except:
-                utils.panic("Error initializing IRS")
+                panic("Error initializing IRS")
 
         scheduler = schedule.Scheduler(name="vdsm.Scheduler",
                                        clock=utils.monotonic_time)

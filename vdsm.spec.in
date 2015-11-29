@@ -1105,6 +1105,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/netlink/monitor.py*
 %{python_sitelib}/%{vdsm_name}/netlink/route.py*
 %{python_sitelib}/%{vdsm_name}/password.py*
+%{python_sitelib}/%{vdsm_name}/panic.py*
 %{python_sitelib}/%{vdsm_name}/ppc64HardwareInfo.py*
 %{python_sitelib}/%{vdsm_name}/profiling/__init__.py*
 %{python_sitelib}/%{vdsm_name}/profiling/cpu.py*

@@ -1001,12 +1001,6 @@ class AsyncProcessOperation(object):
             zombiereaper.autoReapPID(self._proc.pid)
 
 
-def panic(msg):
-    logging.error("Panic: %s", msg, exc_info=True)
-    os.killpg(0, 9)
-    sys.exit(-3)
-
-
 @memoized
 def isOvirtNode():
     return (os.path.exists('/etc/rhev-hypervisor-release') or

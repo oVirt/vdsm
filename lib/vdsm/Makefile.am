@@ -38,6 +38,7 @@ dist_vdsmpylib_PYTHON = \
 	m2cutils.py \
 	netconfpersistence.py \
 	netinfo.py \
+	panic.py \
 	password.py \
 	ppc64HardwareInfo.py \
 	pthread.py \

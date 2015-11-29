@@ -24,6 +24,7 @@ from multiprocessing.managers import BaseManager, RemoteError
 import logging
 import threading
 from vdsm import constants, utils
+from vdsm.panic import panic
 
 _g_singletonSupervdsmInstance = None
 _g_singletonSupervdsmInstance_lock = threading.Lock()
@@ -78,7 +79,7 @@ class SuperVdsmProxy(object):
             utils.retry(self._manager.connect, Exception, timeout=60, tries=3)
         except Exception as ex:
             msg = "Connect to supervdsm service failed: %s" % ex
-            utils.panic(msg)
+            panic(msg)
 
         self._svdsm = self._manager.instance()
 

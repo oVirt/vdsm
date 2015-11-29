@@ -41,6 +41,7 @@ from vdsm import constants
 from vdsm import taskset
 from vdsm import utils
 from vdsm import cmdutils
+from vdsm import panic
 
 from monkeypatch import MonkeyPatch
 from vmTestsData import VM_STATUS_DUMP
@@ -247,7 +248,7 @@ class CommandPathTests(TestCaseBase):
 @expandPermutations
 class GeneralUtilsTests(TestCaseBase):
     def testPanic(self):
-        self.assertRaises(AssertionError, utils.panic, "panic test")
+        self.assertRaises(AssertionError, panic.panic, "panic test")
 
     def testAnyFnmatch(self):
         self.assertTrue(utils.anyFnmatch('test1', ['test0', 'test1']))

@@ -38,7 +38,7 @@ if hasattr(logging, 'captureWarnings'):
 import vdsm.infra.zombiereaper as zombiereaper
 zombiereaper.registerSignalHandler()
 
-from vdsm import utils
+from vdsm import panic
 import testlib
 
 
@@ -80,6 +80,6 @@ if __name__ == '__main__':
         constants.P_VDSM = "../vdsm/"
 
     # Mock panic() calls for tests
-    utils.panic = panicMock
+    panic.panic = panicMock
 
     testlib.run()
