@@ -864,6 +864,10 @@ class StoragePool(object):
         Attach a storage domain to the storage pool.
         This marks the storage domain as "attached" and links it
         to the storage pool
+
+        The storage domain may be the hosted engine storage domain, which is
+        being monitored but does not belong to the pool yet.
+
          'sdUUID' - storage domain UUID
         """
         self.log.info("sdUUID=%s spUUID=%s", sdUUID, self.spUUID)
@@ -887,6 +891,8 @@ class StoragePool(object):
                              sdUUID, self.spUUID)
             return
 
+        # We must always acquire a host id, since even if this domain is being
+        # monitored, it may not have a host id yet.
         dom.acquireHostId(self.id)
 
         try:
@@ -907,12 +913,20 @@ class StoragePool(object):
                 domains[sdUUID] = sd.DOM_ATTACHED_STATUS
                 self._backend.setDomainsMap(domains)
                 self._refreshDomainLinks(dom)
-
             finally:
                 dom.releaseClusterLock()
 
         finally:
-            dom.releaseHostId(self.id)
+            # If we are monitoring this domain, we must not release the host
+            # id, as it will kill any process holding a resource on this
+            # domain, such as the qemu process running the hosted engine vm.
+            # TODO: Remove this check when the cluster lock supports reference
+            # counting.
+            if self.domainMonitor.isMonitoring(sdUUID):
+                self.log.debug("Domain %s is being monitored, leaving the "
+                               "host id acquired", sdUUID)
+            else:
+                dom.releaseHostId(self.id)
 
         self.updateMonitoringThreads()
 
