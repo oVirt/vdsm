@@ -3457,7 +3457,7 @@ class HSM(object):
 
             # Stop repoStat threads
             try:
-                self.domainMonitor.close()
+                self.domainMonitor.shutdown()
             except Exception:
                 self.log.warning("Failed to stop RepoStats thread",
                                  exc_info=True)

@@ -130,11 +130,15 @@ class DomainMonitor(object):
                 status[sdUUID] = monitor.getHostStatus(hostId)
         return status
 
-    def close(self):
-        self.log.info("Stop monitoring all domains")
-        self._stopMonitors(self._monitors.values())
+    def shutdown(self):
+        """
+        Called during shutdown to stop all monitors without releasing the host
+        id. To stop monitors and release the host id, use stopMonitoring().
+        """
+        self.log.info("Shutting down domain monitors")
+        self._stopMonitors(self._monitors.values(), shutdown=True)
 
-    def _stopMonitors(self, monitors):
+    def _stopMonitors(self, monitors, shutdown=False):
         # The domain monitor issues events that might become raceful if
         # you don't wait until a monitor thread exit.
         # Eg: when a domain is detached the domain monitor is stopped and
@@ -144,8 +148,9 @@ class DomainMonitor(object):
         # First stop monitor threads - this take no time, and make the process
         # about 7 times faster when stopping 30 monitors.
         for monitor in monitors:
-            self.log.info("Stop monitoring %s", monitor.sdUUID)
-            monitor.stop()
+            self.log.info("Stop monitoring %s (shutdown=%s)",
+                          monitor.sdUUID, shutdown)
+            monitor.stop(shutdown=shutdown)
 
         # Now wait for threads to finish - this takes about 10 seconds with 30
         # monitors, most of the time spent waiting for sanlock.
@@ -178,11 +183,13 @@ class MonitorThread(object):
         self.lastRefresh = time.time()
         self.refreshTime = \
             config.getint("irs", "repo_stats_cache_refresh_timeout")
+        self.wasShutdown = False
 
     def start(self):
         self.thread.start()
 
-    def stop(self):
+    def stop(self, shutdown=False):
+        self.wasShutdown = shutdown
         self.stopEvent.set()
 
     def join(self):
@@ -206,7 +213,8 @@ class MonitorThread(object):
         try:
             self._monitorLoop()
         finally:
-            self.log.debug("Domain monitor for %s stopped", self.sdUUID)
+            self.log.debug("Domain monitor for %s stopped (shutdown=%s)",
+                           self.sdUUID, self.wasShutdown)
             if self._shouldReleaseHostId():
                 self._releaseHostId()
 
@@ -348,7 +356,9 @@ class MonitorThread(object):
     def _shouldReleaseHostId(self):
         # If this is an ISO domain we didn't acquire the host id and releasing
         # it is superfluous.
-        return self.domain and not self.isIsoDomain
+        # During shutdown we do not release the host id, in case there is a vm
+        # holding a resource on this domain, such as the hosted engine vm.
+        return self.domain and not self.isIsoDomain and not self.wasShutdown
 
     @utils.cancelpoint
     def _acquireHostId(self):
