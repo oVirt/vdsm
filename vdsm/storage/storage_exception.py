@@ -1732,3 +1732,15 @@ class ResourceAcqusitionFailed(GeneralException):
     code = 855
     message = ("Could not acquire resource. "
                "Probably resource factory threw an exception.")
+
+
+#################################################
+#  External domains exceptions
+#################################################
+
+class StorageDomainIsMemberOfPool(StorageException):
+    code = 900
+    message = "Storage domain is member of pool"
+
+    def __init__(self, sdUUID):
+        self.value = "domain=%s" % (sdUUID,)
