@@ -33,10 +33,11 @@ from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 
 from ipwrapperTests import _fakeTypeDetection
+from modprobe import RequireBondingMod
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from nettestlib import dummy_device, veth_pair
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
-from testValidation import ValidateRunningAsRoot, RequireBondingMod
+from testValidation import ValidateRunningAsRoot
 from testValidation import brokentest
 
 # speeds defined in ethtool

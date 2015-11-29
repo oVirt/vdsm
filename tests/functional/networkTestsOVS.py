@@ -23,8 +23,8 @@ from nose.plugins.skip import SkipTest
 from vdsm.ipwrapper import linkSet, addrAdd
 from vdsm.utils import RollbackContext
 
+from modprobe import RequireVethMod
 from nettestlib import veth_pair
-from testValidation import RequireVethMod
 from testlib import expandPermutations, permutations
 
 from networkTests import (setupModule, tearDownModule, NetworkTest, dummyIf,

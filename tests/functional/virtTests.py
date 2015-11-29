@@ -46,9 +46,6 @@ from virt import vmstatus
 _mkinitrd = CommandPath("mkinitrd",
                         "/usr/bin/mkinitrd",  # Fedora
                         "/sbin/mkinitrd")  # RHEL 6.x, Centos 6.x
-_modprobe = CommandPath("modprobe",
-                        "/usr/sbin/modprobe",  # Fedora, Ubuntu
-                        "/sbin/modprobe")  # RHEL6
 _kernelVer = os.uname()[2]
 _kernelPath = "/boot/vmlinuz-" + _kernelVer
 _initramfsPath = None

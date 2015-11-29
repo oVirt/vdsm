@@ -66,6 +66,7 @@ test_modules = \
 	manifest_tests.py \
 	miscTests.py \
 	mkimageTests.py \
+	modprobe.py \
 	monkeypatchTests.py \
 	momTests.py \
 	momPolicyTests.py \

@@ -24,14 +24,6 @@ from functools import wraps
 from nose.plugins import Plugin
 import subprocess
 
-from vdsm import utils
-
-
-modprobe = utils.CommandPath("modprobe",
-                             "/sbin/modprobe",      # EL6
-                             "/usr/sbin/modprobe",  # Fedora
-                             )
-
 
 class SlowTestsPlugin(Plugin):
     """
@@ -115,49 +107,6 @@ def ValidateNotRunningAsRoot(f):
 
         return f(*args, **kwargs)
 
-    return wrapper
-
-
-def RequireDummyMod(f):
-    """
-    Assumes root privileges to be used after
-    ValidateRunningAsRoot decoration.
-    """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not os.path.exists('/sys/module/dummy'):
-            cmd_modprobe = [modprobe.cmd, "dummy"]
-            rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
-        return f(*args, **kwargs)
-    return wrapper
-
-
-def RequireBondingMod(f):
-    """
-    Assumes root privileges to be used after
-    ValidateRunningAsRoot decoration.
-    """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not os.path.exists('/sys/module/bonding'):
-            cmd_modprobe = [modprobe.cmd, "bonding"]
-            rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
-        return f(*args, **kwargs)
-
-    return wrapper
-
-
-def RequireVethMod(f):
-    """
-    Assumes root privileges to be used after
-    ValidateRunningAsRoot decoration.
-    """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not os.path.exists('/sys/module/veth'):
-            cmd_modprobe = [modprobe.cmd, "veth"]
-            rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
-        return f(*args, **kwargs)
     return wrapper
 
 

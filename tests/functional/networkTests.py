@@ -46,10 +46,11 @@ from network import api, errors, sourceroute, tc
 from network.configurators.ifcfg import Ifcfg, stop_devices
 
 from hookValidation import ValidatesHook
+
+from modprobe import RequireDummyMod, RequireVethMod
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
-from testValidation import (brokentest, slowtest, RequireDummyMod,
-                            RequireVethMod, ValidateRunningAsRoot)
+from testValidation import brokentest, slowtest, ValidateRunningAsRoot
 from nettestlib import Dummy, Tap, veth_pair
 
 import dhcp

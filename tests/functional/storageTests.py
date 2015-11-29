@@ -29,6 +29,7 @@ from functools import partial
 
 from nose.plugins.skip import SkipTest
 
+from modprobe import modprobe
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import TEMPDIR
@@ -53,10 +54,6 @@ from virt import vmstatus
 if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")
 
-_modprobe = CommandPath("modprobe",
-                        "/usr/sbin/modprobe",  # Fedora, Ubuntu
-                        "/sbin/modprobe",  # RHEL6
-                        )
 _exportfs = CommandPath("exportfs", "/usr/sbin/exportfs")
 
 DEFAULT_TYPES = ('localfs', 'iscsi', 'glusterfs', 'nfs')
@@ -372,7 +369,7 @@ class IscsiServer(BackendServer):
         if "rtslib" not in globals().keys():
             raise SkipTest("python-rtslib is not installed.")
 
-        cmd = [_modprobe.cmd, "iscsi_target_mod"]
+        cmd = [modprobe.cmd, "iscsi_target_mod"]
         rc, out, err = execCmd(cmd, sudo=True)
         asserts.assertEquals(rc, 0)
 
