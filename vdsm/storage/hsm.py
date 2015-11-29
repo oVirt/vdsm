@@ -3658,6 +3658,8 @@ class HSM(object):
     def startMonitoringDomain(self, sdUUID, hostID, options=None):
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
+            # Note: We cannot raise here StorageDomainIsMemberOfPool, as it
+            # will break old hosted engine agent.
             self.domainMonitor.startMonitoring(sdUUID, int(hostID), False)
 
     @deprecated
@@ -3665,6 +3667,8 @@ class HSM(object):
     def stopMonitoringDomain(self, sdUUID, options=None):
         with rmanager.acquireResource(STORAGE, HSM_DOM_MON_LOCK,
                                       rm.LockType.exclusive):
+            if sdUUID in self.domainMonitor.poolDomains:
+                raise se.StorageDomainIsMemberOfPool(sdUUID)
             self.domainMonitor.stopMonitoring([sdUUID])
 
     @public
