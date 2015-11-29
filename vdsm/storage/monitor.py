@@ -98,8 +98,23 @@ class DomainMonitor(object):
     def startMonitoring(self, sdUUID, hostId, poolDomain=True):
         monitor = self._monitors.get(sdUUID)
 
+        # TODO: Replace with explicit attach.
         if monitor is not None:
-            monitor.poolDomain |= poolDomain
+            if not poolDomain:
+                # Expected when hosted engine agent is restarting.
+                self.log.debug("Monitor for %s is already running", sdUUID)
+                return
+
+            if monitor.poolDomain:
+                self.log.warning("Monitor for %s is already attached to pool",
+                                 sdUUID)
+                return
+
+            # An external storage domain attached to the pool. From this point,
+            # the storage domain is managed by Vdsm.  Expected during Vdsm
+            # startup when using hosted engine.
+            self.log.info("Attaching monitor for %s to the pool", sdUUID)
+            monitor.poolDomain = True
             return
 
         self.log.info("Start monitoring %s", sdUUID)
@@ -115,6 +130,9 @@ class DomainMonitor(object):
         monitors = [monitor for monitor in self._monitors.values()
                     if monitor.sdUUID in sdUUIDs]
         self._stopMonitors(monitors)
+
+    def isMonitoring(self, sdUUID):
+        return sdUUID in self._monitors
 
     def getDomainsStatus(self):
         for sdUUID, monitor in self._monitors.items():
