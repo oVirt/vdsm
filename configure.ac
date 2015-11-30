@@ -58,6 +58,18 @@ AS_IF([test "${enable_hooks}" = "yes"],
       AC_SUBST([HOOKS], ['0']))
 
 AC_ARG_ENABLE(
+    [vhostmd],
+    [AS_HELP_STRING(
+        [--enable-vhostmd-hook],
+        [build vdsm-vhostmd-hook subpackage @<:@default=no@:>@]
+    )],
+    [enable_vhostmd_hook="no"]
+)
+AS_IF([test "${enable_vhostmd_hook}" = "yes"],
+      AC_SUBST([VHOSTMD], ['1']),
+      AC_SUBST([VHOSTMD], ['0']))
+
+AC_ARG_ENABLE(
     [gluster-mgmt],
     [AS_HELP_STRING(
         [--enable-gluster-mgmt],
@@ -70,19 +82,6 @@ AM_CONDITIONAL([GLUSTER_MGMT], [test "${enable_gluster_mgmt}" = "yes"])
 AS_IF([test "${enable_gluster_mgmt}" = "yes"],
       AC_SUBST([GLUSTER_MGMT], ['1']),
       AC_SUBST([GLUSTER_MGMT], ['0']))
-
-AC_ARG_ENABLE(
-    [koji_build],
-    [AS_HELP_STRING(
-        [--enable-koji-build],
-        [build koji version @<:@default=no@:>@]
-    )],
-    ,
-    [enable_koji_build="no"]
-)
-AS_IF([test "${enable_koji_build}" = "yes"],
-      AC_SUBST([KOJI_BUILD], ['1']),
-      AC_SUBST([KOJI_BUILD], ['0']))
 
 AC_ARG_ENABLE(
     [libvirt-sanlock],

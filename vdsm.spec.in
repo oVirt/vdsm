@@ -10,12 +10,10 @@
 %global snlk_user @SNLKUSER@
 %global cdrom_group @CDROMGROUP@
 
-# Build types
-%global koji_build @KOJI_BUILD@
-
 # Features
 %global with_gluster_mgmt @GLUSTER_MGMT@
 %global with_hooks @HOOKS@
+%global with_vhostmd @VHOSTMD@
 
 # Glusterfs package version
 %global gluster_version 3.7.1
@@ -37,10 +35,6 @@
 %global _polkitdir %{_datadir}/polkit-1/rules.d
 %else
 %global _polkitdir %{_localstatedir}/lib/polkit-1/localauthority/10-vendor.d
-%endif
-
-%if ! 0%{?rhel} || ! 0%{?koji_build}
-%global with_vhostmd 1
 %endif
 
 %global _udevrulesdir /usr/lib/udev/rules.d/
