@@ -1048,6 +1048,7 @@ exit 0
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
 %{_localstatedir}/lib/%{vdsm_name}/bonding-defaults.json
+%{_localstatedir}/lib/%{vdsm_name}/bonding-name2numeric.json
 
 %files python
 %defattr(-, root, root, -)
@@ -1141,7 +1142,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tool/configfile.py*
 %{python_sitelib}/%{vdsm_name}/tool/dummybr.py*
-%{python_sitelib}/%{vdsm_name}/tool/dump_bonding_defaults.py*
+%{python_sitelib}/%{vdsm_name}/tool/dump_bonding_opts.py*
 %{python_sitelib}/%{vdsm_name}/tool/nwfilter.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurator.py*
 %{python_sitelib}/%{vdsm_name}/tool/configurators/__init__*

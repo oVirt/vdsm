@@ -119,6 +119,7 @@ test_modules = \
 	tcTests.py \
 	testlibTests.py \
 	toolTests.py \
+	toolBondingTests.py \
 	transportWrapperTests.py \
 	utilsTests.py \
 	vdscliTests.py \

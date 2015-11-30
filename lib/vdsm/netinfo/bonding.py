@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
+import errno
 from functools import partial
 from glob import iglob
 import json
@@ -35,6 +36,7 @@ BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_DEFAULTS = constants.P_VDSM_LIB + 'bonding-defaults.json'
 BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
+BONDING_NAME2NUMERIC_PATH = constants.P_VDSM_LIB + 'bonding-name2numeric.json'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
@@ -116,6 +118,11 @@ def getDefaultBondingOptions(mode=None):
     return defaults[mode]
 
 
+def _bond_opts_read_elements(file_path):
+    with open(file_path) as f:
+        return [el for el in f.read().rstrip().split(' ') if el]
+
+
 def _bondOpts(bond_name, keys=None):
     """ Returns a dictionary of bond option name and a values iterable. E.g.,
     {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
@@ -126,9 +133,8 @@ def _bondOpts(bond_name, keys=None):
         paths = (BONDING_OPT % (bond_name, key) for key in keys)
     opts = {}
     for path in paths:
-        with open(path) as optFile:
-            opts[os.path.basename(path)] = [
-                el for el in optFile.read().rstrip().split(' ') if el]
+        opts[os.path.basename(path)] = _bond_opts_read_elements(path)
+
     return opts
 
 
@@ -185,3 +191,77 @@ def permanent_address():
                 if line.startswith('Permanent HW addr: '):
                     paddr[slave] = line[len('Permanent HW addr: '):-1]
     return paddr
+
+
+def bond_opts_name2numeric_filtered(bond):
+    """
+    Return a dictionary in the same format as _bond_opts_name2numeric().
+    Exclude entries that are not bonding options,
+    e.g. 'ad_num_ports' or 'slaves'.
+    """
+    return dict(((opt, val) for (opt, val)
+                 in _bond_opts_name2numeric(bond).iteritems()
+                 if opt not in EXCLUDED_BONDING_ENTRIES))
+
+
+def get_bonding_option_numeric_val(mode_num, option_name, val_name):
+    bond_opts_map = _get_bonding_option_name2numeric()
+    opt = bond_opts_map[mode_num].get(option_name, None)
+    return opt.get(val_name, None) if opt else None
+
+
+@memoized
+def _get_bonding_option_name2numeric():
+    """
+    Return options per mode, in a dictionary of dictionaries.
+    For each mode, there are options with name values as keys
+    and their numeric equivalent.
+    """
+    with open(BONDING_NAME2NUMERIC_PATH) as f:
+        return json.loads(f.read())
+
+
+def _bond_opts_name2numeric(bond):
+    """
+    Returns a dictionary of bond option name and a values iterable. E.g.,
+    {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
+    """
+    bond_mode_path = BONDING_OPT % (bond, 'mode')
+    paths = (p for p in iglob(BONDING_OPT % (bond, '*'))
+             if p != bond_mode_path)
+    opts = {}
+
+    for path in paths:
+        elements = _bond_opts_read_elements(path)
+        if len(elements) == 2:
+            opts[os.path.basename(path)] = \
+                _bond_opts_name2numeric_scan(path)
+    return opts
+
+
+def _bond_opts_name2numeric_scan(opt_path):
+    vals = {}
+    with open(opt_path, 'w') as opt_file:
+        for numeric_val in range(32):
+            name, numeric = _bond_opts_name2numeric_getval(opt_path, opt_file,
+                                                           numeric_val)
+            if name is None:
+                break
+
+            vals[name] = numeric
+
+    return vals
+
+
+def _bond_opts_name2numeric_getval(opt_path, opt_write_file, numeric_val):
+    try:
+        opt_write_file.write(str(numeric_val))
+        opt_write_file.flush()
+    except IOError as e:
+        if e.errno in (errno.EINVAL, errno.EPERM, errno.EACCES):
+            return None, None
+        else:
+            e.filename = "opt[%s], numeric_val[%s]" % (opt_path, numeric_val)
+            raise
+
+    return _bond_opts_read_elements(opt_path)

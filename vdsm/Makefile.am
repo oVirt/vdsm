@@ -85,6 +85,7 @@ CLEANFILES = \
 
 EXTRA_DIST = \
 	bonding-defaults.json \
+	bonding-name2numeric.json \
 	dsaversion.py.in \
 	dumpStorageTable.py.in \
 	libvirt_password \
@@ -184,9 +185,12 @@ install-data-bonding-defaults:
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)
 	$(INSTALL_DATA) -m 600 $(srcdir)/bonding-defaults.json \
 		$(DESTDIR)$(vdsmlibdir)/bonding-defaults.json
+	$(INSTALL_DATA) -m 600 $(srcdir)/bonding-name2numeric.json \
+		$(DESTDIR)$(vdsmlibdir)/bonding-name2numeric.json
 
 uninstall-data-bonding-defaults:
 	$(RM) $(DESTDIR)$(vdsmlibdir)/bonding-defaults.json
+	$(RM) $(DESTDIR)$(vdsmlibdir)/bonding-name2numeric.json
 
 install-data-rwtab:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d

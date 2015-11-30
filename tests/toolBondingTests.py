@@ -1,5 +1,4 @@
-#
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,42 +16,26 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-SUBDIRS=configurators
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-EXTRA_DIST = \
-	validate_ovirt_certs.py.in \
-	$(NULL)
+from vdsm.tool.dump_bonding_opts \
+    import _get_bonding_options_name2numeric
+from testlib import VdsmTestCase as TestCaseBase
+from testValidation import ValidateRunningAsRoot
+from modprobe import RequireBondingMod
 
-nodist_vdsmtool_PYTHON = \
-	validate_ovirt_certs.py \
-	$(NULL)
 
-dist_vdsmtool_PYTHON = \
-	__init__.py \
-	dummybr.py \
-	dump_bonding_opts.py \
-	dump_volume_chains.py \
-	nwfilter.py \
-	configfile.py \
-	configurator.py \
-	register.py \
-	restore_nets.py \
-	service.py \
-	transient.py \
-	unified_persistence.py \
-	upgrade.py \
-	vdsm-id.py \
-	$(NULL)
+class TestToolBonding(TestCaseBase):
+    @ValidateRunningAsRoot
+    @RequireBondingMod
+    def test_dump_bonding_name2numeric(self):
+        BOND_MODE = '0'
+        OPT_NAME = 'arp_validate'
+        VAL_NAME = 'none'
+        VAL_NUMERIC = '0'
 
-CLEANFILES = \
-	config.log \
-	$(nodist_vdsmtool_PYTHON) \
-	$(nodist_vdsmexec_SCRIPTS) \
-	$(NULL)
-
-all-local: \
-	$(nodist_vdsmtool_PYTHON) \
-	$(nodist_vdsmexec_SCRIPTS) \
-	$(NULL)
+        opt_map = _get_bonding_options_name2numeric()
+        self.assertIn(BOND_MODE, opt_map)
+        self.assertIn(OPT_NAME, opt_map[BOND_MODE])
+        self.assertIn(VAL_NAME, opt_map[BOND_MODE][OPT_NAME])
+        self.assertEqual(opt_map[BOND_MODE][OPT_NAME][VAL_NAME], VAL_NUMERIC)

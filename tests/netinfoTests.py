@@ -321,7 +321,7 @@ class TestNetinfo(TestCaseBase):
                 self.assertEqual(
                     bonding._getBondingOptions(bondName), {}, "This test fails"
                     " when a new bonding option is added to the kernel. Please"
-                    " run vdsm-tool dump-bonding-defaults` and retest.")
+                    " run vdsm-tool dump-bonding-options` and retest.")
 
                 with open(bonding.BONDING_OPT % (bondName, 'miimon'),
                           'w') as opt:
@@ -332,6 +332,26 @@ class TestNetinfo(TestCaseBase):
 
             finally:
                 bonds.write('-' + bondName)
+
+    @MonkeyPatch(bonding, 'BONDING_NAME2NUMERIC_PATH',
+                 bonding.BONDING_NAME2NUMERIC_PATH
+                 if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
+                 else '../vdsm/bonding-name2numeric.json')
+    def test_get_bonding_option_numeric_val_exists(self):
+        mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
+        self.assertNotEqual(bonding.get_bonding_option_numeric_val(
+                            mode_num, "ad_select", "stable"),
+                            None)
+
+    @MonkeyPatch(bonding, 'BONDING_NAME2NUMERIC_PATH',
+                 bonding.BONDING_NAME2NUMERIC_PATH
+                 if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
+                 else '../vdsm/bonding-name2numeric.json')
+    def test_get_bonding_option_numeric_val_does_not_exists(self):
+        mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
+        self.assertEqual(bonding.get_bonding_option_numeric_val(
+                         mode_num, "opt_does_not_exist", "none"),
+                         None)
 
     def test_get_gateway(self):
         TEST_IFACE = 'test_iface'

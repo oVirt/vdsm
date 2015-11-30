@@ -153,8 +153,8 @@ _has_systemd() {
 }
 
 
-task_dump_bonding_defaults(){
-    "${VDSM_TOOL}" dump-bonding-defaults
+task_dump_bonding_options(){
+    "${VDSM_TOOL}" dump-bonding-options
 }
 
 
