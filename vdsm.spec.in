@@ -150,8 +150,14 @@ Requires: libvirt-daemon-driver-nwfilter
 Requires: libvirt-daemon-driver-qemu
 
 %if 0%{?rhel}
+%if 0%{?centos}
+# TODO: Remove when libvirt 1.2.17 is available
 Requires: libvirt-daemon >= 1.2.8-16.el7_1.4
 Requires: libvirt-python >= 1.2.8-7.el7_1.1
+%else
+Requires: libvirt-daemon >= 1.2.17-5.el7
+Requires: libvirt-python >= 1.2.17-2.el7
+%endif # centos
 %endif # rhel
 
 %if 0%{?fedora} >= 22
