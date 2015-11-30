@@ -172,12 +172,25 @@ Requires: iscsi-initiator-utils >= 6.2.0.873-21
 
 Requires: sanlock >= 2.8-2, sanlock-python
 
+# device-mapper-multipath
+
 %if 0%{?rhel}
 %if 0%{?centos}
 Requires: device-mapper-multipath >= 0.4.9-68
 %else
-Requires: device-mapper-multipath >= 0.4.9-77.el7_1.2
+Requires: device-mapper-multipath >= 0.4.9-84.el7
+%endif #centos
+%endif #rhel
+
+%if 0%{?fedora} == 22
+Requires: device-mapper-multipath >= 0.4.9-73.fc22.2
 %endif
+
+%if 0%{?fedora} >= 23
+Requires: device-mapper-multipath >= 0.4.9-80.fc23
+%endif
+
+%if 0%{?rhel}
 Requires: e2fsprogs
 Requires: fence-agents-all
 %if 0%{?centos}
@@ -200,11 +213,6 @@ Requires: kernel >= 4.1.6
 # Subprocess and thread bug was found on python 2.7.2
 Requires: python >= 2.7.3
 Requires: initscripts >= 9.42.2-1
-%if 0%{?fedora} >= 22
-Requires: device-mapper-multipath >= 0.4.9-73.fc22.1
-%else
-Requires: device-mapper-multipath >= 0.4.9-56
-%endif
 Requires: e2fsprogs >= 1.41.14
 %if 0%{?fedora} >= 23
 Requires: policycoreutils-python-utils
