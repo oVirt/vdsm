@@ -265,17 +265,21 @@ def __assertSudoerPermissions():
 def __set_cpu_affinity():
     cpu_affinity = config.get('vars', 'cpu_affinity')
     if cpu_affinity != "":
-        cpu_set = frozenset(int(cpu.strip())
-                            for cpu in cpu_affinity.split(","))
+        online_cpus = taskset.online_cpus()
 
         log = logging.getLogger('vds')
-        log.info('VDSM will run with cpu affinity: %s', cpu_set)
 
-        # too early to use the facilities from caps.py
-        if os.sysconf('SC_NPROCESSORS_ONLN') == 1:
-            log.warning('Only one cpu detected: affinity disabled')
+        if len(online_cpus) == 1:
+            log.debug('Only one cpu detected: affinity disabled')
             return
 
+        if cpu_affinity.lower() == taskset.AUTOMATIC:
+            cpu_set = frozenset((taskset.pick_cpu(online_cpus),))
+        else:
+            cpu_set = frozenset(int(cpu.strip())
+                                for cpu in cpu_affinity.split(","))
+
+        log.info('VDSM will run with cpu affinity: %s', cpu_set)
         taskset.set(os.getpid(), cpu_set, all_tasks=True)
 
 

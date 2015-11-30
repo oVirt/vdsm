@@ -24,6 +24,11 @@ from . import constants
 from . import utils
 
 
+AUTOMATIC = "auto"
+
+_SYS_ONLINE_CPUS = "/sys/devices/system/cpu/online"
+
+
 class Error(Exception):
 
     def __init__(self, rc, out, err):
@@ -82,6 +87,25 @@ def set(pid, cpu_set, all_tasks=False):
         raise Error(rc, out, err)
 
 
+def online_cpus():
+    """
+    Return a frozenset which contains identifiers of online CPUs,
+    as non-negative integers.
+    """
+    with open(_SYS_ONLINE_CPUS, 'r') as src:
+        return _cpulist_parse(src.readline())
+
+
+def pick_cpu(cpu_set):
+    """
+    Select the best CPU VDSM should pin to.
+    `cpu_set' is any iterable which produces the sequence of all
+    available CPUs, among which VDSM should pick the best one.
+    """
+    cpu_list = sorted(cpu_set)
+    return cpu_list[:2][-1]
+
+
 def _cpu_set_from_output(line):
     """
     Parse the output of taskset, in the format
@@ -91,3 +115,21 @@ def _cpu_set_from_output(line):
     hexmask = line.rsplit(":", 1)[1].strip()
     mask = int(hexmask, 16)
     return frozenset(i for i in range(mask.bit_length()) if mask & (1 << i))
+
+
+def _cpulist_parse(cpu_range):
+    """
+    Expand the kernel cpulist syntax (e.g. 0-2,5) into a plain
+    frozenset of integers (e.g. frozenset([0,1,2,5]))
+    The input format is like the content of the special file
+    /sys/devices/system/cpu/online
+    or the output of the 'taskset' and 'lscpu' tools.
+    """
+    cpus = []
+    for item in cpu_range.split(','):
+        if '-' in item:
+            begin, end = item.split('-', 1)
+            cpus.extend(range(int(begin), int(end)+1))
+        else:
+            cpus.append(int(item))
+    return frozenset(cpus)
