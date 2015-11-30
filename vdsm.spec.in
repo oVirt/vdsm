@@ -81,7 +81,13 @@ BuildRequires: policycoreutils-python
 BuildRequires: psmisc
 BuildRequires: python-cpopen >= 1.4
 BuildRequires: python-inotify
+
+%if 0%{?rhel} && ! 0%{?centos}
+BuildRequires: python-ioprocess >= 0.15.0-4
+%else
 BuildRequires: python-ioprocess >= 0.14
+%endif
+
 BuildRequires: python-pthreading
 BuildRequires: qemu-img
 BuildRequires: rpm-python
@@ -113,7 +119,13 @@ Requires: python-netaddr
 Requires: python-inotify
 Requires: python-argparse
 Requires: python-cpopen >= 1.4
+
+%if 0%{?rhel} && ! 0%{?centos}
+Requires: python-ioprocess >= 0.15.0-4
+%else
 Requires: python-ioprocess >= 0.14
+%endif
+
 Requires: python-pthreading >= 0.1.3-3
 Requires: python-six
 Requires: python-requests
@@ -339,7 +351,12 @@ Requires:       %{name}-api = %{version}-%{release}
 Requires:       %{name}-infra = %{version}-%{release}
 Requires:       python-cpopen >= 1.4
 Requires:       m2crypto
-Requires:       python-ioprocess >= 0.14
+
+%if 0%{?rhel} && ! 0%{?centos}
+Requires: python-ioprocess >= 0.15.0-4
+%else
+Requires: python-ioprocess >= 0.14
+%endif
 
 %description python
 Shared libraries between the various VDSM packages.
