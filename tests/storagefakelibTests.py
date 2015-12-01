@@ -233,6 +233,20 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertEqual((blockVolume.TAG_VOL_UNINIT,), lv.tags)
 
+    def test_changelvtags(self):
+        """
+        Create a logical volume with an initial tag and replace it.
+        """
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+                         initialTag=blockVolume.TAG_VOL_UNINIT)
+            deltags = (blockVolume.TAG_VOL_UNINIT,)
+            addtags = ("FOO",)
+            lvm.changeLVTags(self.VG_NAME, self.LV_NAME,
+                             delTags=deltags, addTags=addtags)
+            lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
+            self.assertEqual(addtags, lv.tags)
+
     def test_activatelv(self):
         """
         Create an inactive LV and then activate it.
@@ -282,6 +296,7 @@ class FakeLVMGeneralTests(VdsmTestCase):
         [se.CannotCreateLogicalVolume, 'createLV', ['vg', 'lv', '1024']],
         [se.LogicalVolumeDoesNotExistError, 'getLV', ['vg', 'lv']],
         [se.InaccessiblePhysDev, 'getPV', ['pv']],
+        [se.LogicalVolumeReplaceTagError, 'changeLVTags', ['vg', 'lv']],
     ])
     def test_bad_args(self, exception, fn, args):
         with namedTemporaryDir() as tmpdir:
