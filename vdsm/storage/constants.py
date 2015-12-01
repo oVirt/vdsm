@@ -20,3 +20,7 @@
 
 STORAGE = "Storage"
 SECTOR_SIZE = 512
+
+# Temporary volume indicators
+TEMP_VOL_FILEEXT = ".volatile"         # Added to FileVolume metadata filenames
+TEMP_VOL_LVTAG = "OVIRT_VOL_VOLATILE"  # Tag applied to BlockVolume LVs
