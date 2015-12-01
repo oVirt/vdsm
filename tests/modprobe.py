@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 import os
 from functools import wraps
+from nose.plugins.skip import SkipTest
 
 from vdsm import utils
 
@@ -31,13 +32,7 @@ def RequireDummyMod(f):
     Assumes root privileges to be used after
     ValidateRunningAsRoot decoration.
     """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not os.path.exists('/sys/module/dummy'):
-            cmd_modprobe = [modprobe.cmd, "dummy"]
-            rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
-        return f(*args, **kwargs)
-    return wrapper
+    return _require_mod(f, 'dummy')
 
 
 def RequireBondingMod(f):
@@ -45,14 +40,7 @@ def RequireBondingMod(f):
     Assumes root privileges to be used after
     ValidateRunningAsRoot decoration.
     """
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not os.path.exists('/sys/module/bonding'):
-            cmd_modprobe = [modprobe.cmd, "bonding"]
-            rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
-        return f(*args, **kwargs)
-
-    return wrapper
+    return _require_mod(f, 'bonding')
 
 
 def RequireVethMod(f):
@@ -60,10 +48,23 @@ def RequireVethMod(f):
     Assumes root privileges to be used after
     ValidateRunningAsRoot decoration.
     """
+    return _require_mod(f, 'veth')
+
+
+def _require_mod(f, name):
     @wraps(f)
     def wrapper(*args, **kwargs):
-        if not os.path.exists('/sys/module/veth'):
-            cmd_modprobe = [modprobe.cmd, "veth"]
-            rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
+        _validate_module(name)
         return f(*args, **kwargs)
+
     return wrapper
+
+
+def _validate_module(name):
+    if not os.path.exists('/sys/module/' + name):
+        cmd_modprobe = [modprobe.cmd, name]
+        rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
+        if rc != 0:
+            raise SkipTest("This test requires %s module "
+                           "(failed to load module: rc=%s, out=%s, err=%s)" %
+                           (name, rc, out, err))
