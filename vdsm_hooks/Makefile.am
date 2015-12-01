@@ -35,7 +35,6 @@ if HOOKS
 SUBDIRS += \
 	allocate_net \
 	checkimages \
-	directlun \
 	diskunmap \
 	extnet \
 	fileinject \

@@ -412,13 +412,6 @@ running real guests.
 To enable this hook on your host, set vars.fake_kvm_support=True in your
 /etc/vdsm/vdsm.conf before adding the host to ovirt-Engine.
 
-%package hook-directlun
-Summary:        Direct LUN support for VDSM
-
-%description hook-directlun
-VDSM hook enable user to add storage LUN for VDSM
-without the sharing and storage handling of VDSM.
-
 %package hook-macbind
 Summary:        Bind a vNIC to a Bridge
 Requires:       %{name} >= 4.14
@@ -1257,13 +1250,6 @@ exit 0
 %files hook-checkimages
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
-
-%files hook-directlun
-%defattr(-, root, root, -)
-%{_sysconfdir}/sudoers.d/50_vdsm_hook_directlun
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/50_directlun
-%{_libexecdir}/%{vdsm_name}/hooks/after_vm_destroy/50_directlun
-%{_libexecdir}/%{vdsm_name}/hooks/before_vm_migrate_destination/50_directlun
 
 %files hook-diskunmap
 %defattr(-, root, root, -)
