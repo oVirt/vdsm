@@ -3108,11 +3108,6 @@ class Vm(object):
             # safely access the blockDev property until after prepareVolumePath
             vmDrives[vmDevName] = vmDrive
 
-        # If all the drives are the current ones, return success
-        if len(newDrives) == 0:
-            self.log.debug('all the drives are already in use, success')
-            return {'status': doneCode}
-
         preparedDrives = {}
 
         for vmDevName, vmDevice in newDrives.iteritems():
