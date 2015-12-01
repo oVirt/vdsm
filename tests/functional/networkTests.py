@@ -2685,7 +2685,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
 
     @cleanupNet
     @ValidateRunningAsRoot
-    def test_keep_initial_bond_slaves_ip_config(self):
+    def test_drop_initial_bond_slaves_ip_config(self):
         with dummyIf(2) as nics:
             nic_1, nic_2 = nics
             addrAdd(nic_1, IP_ADDRESS, IP_CIDR)
@@ -2697,8 +2697,8 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
 
                 ipv4addrs = self.vdsm_net.netinfo.nics[nic_1]['ipv4addrs']
                 ipv6addrs = self.vdsm_net.netinfo.nics[nic_1]['ipv6addrs']
-                self.assertIn(IP_ADDRESS_AND_CIDR, ipv4addrs)
-                self.assertIn(IPv6_ADDRESS_AND_CIDR, ipv6addrs)
+                self.assertEqual([], ipv4addrs)
+                self.assertEqual([], ipv6addrs)
 
                 status, msg = self.vdsm_net.setupNetworks(
                     {}, {BONDING_NAME: {'remove': True}}, NOCHK)
