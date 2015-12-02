@@ -152,19 +152,27 @@ def get_external_vms(uri, username, password):
         vms = []
         for vm in conn.listAllDomains():
             params = {}
-            _add_vm_info(vm, params)
+            try:
+                _add_vm_info(vm, params)
+            except libvirt.libvirtError as e:
+                logging.exception("error getting domain information")
+                continue
             try:
                 xml = vm.XMLDesc(0)
             except libvirt.libvirtError as e:
                 logging.error("error getting domain xml for vm %r: %s",
                               vm.name(), e)
                 continue
-            root = ET.fromstring(xml)
+            try:
+                root = ET.fromstring(xml)
+            except ET.ParseError as e:
+                logging.exception('error parsing domain xml')
+                continue
             try:
                 _add_general_info(root, params)
             except InvalidVMConfiguration as e:
-                logging.error('error parsing domain xml, msg: %s  xml: %s',
-                              e.message, vm.XMLDesc(0))
+                logging.exception('error parsing domain xml, msg: %s  xml: %s',
+                                  e.message, vm.XMLDesc(0))
                 continue
             _add_networks(root, params)
             _add_disks(root, params)
