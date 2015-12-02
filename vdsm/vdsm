@@ -217,23 +217,25 @@ def __assertSudoerPermissions():
 
 def __set_cpu_affinity():
     cpu_affinity = config.get('vars', 'cpu_affinity')
-    if cpu_affinity != "":
-        online_cpus = taskset.online_cpus()
+    if cpu_affinity == "":
+        return
 
-        log = logging.getLogger('vds')
+    online_cpus = taskset.online_cpus()
 
-        if len(online_cpus) == 1:
-            log.debug('Only one cpu detected: affinity disabled')
-            return
+    log = logging.getLogger('vds')
 
-        if cpu_affinity.lower() == taskset.AUTOMATIC:
-            cpu_set = frozenset((taskset.pick_cpu(online_cpus),))
-        else:
-            cpu_set = frozenset(int(cpu.strip())
-                                for cpu in cpu_affinity.split(","))
+    if len(online_cpus) == 1:
+        log.debug('Only one cpu detected: affinity disabled')
+        return
 
-        log.info('VDSM will run with cpu affinity: %s', cpu_set)
-        taskset.set(os.getpid(), cpu_set, all_tasks=True)
+    if cpu_affinity.lower() == taskset.AUTOMATIC:
+        cpu_set = frozenset((taskset.pick_cpu(online_cpus),))
+    else:
+        cpu_set = frozenset(int(cpu.strip())
+                            for cpu in cpu_affinity.split(","))
+
+    log.info('VDSM will run with cpu affinity: %s', cpu_set)
+    taskset.set(os.getpid(), cpu_set, all_tasks=True)
 
 
 def main():
