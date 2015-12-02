@@ -163,7 +163,10 @@ def run(pidfile=None):
         log.info('(PID: %s) I am the actual vdsm %s %s (%s)',
                  pid, dsaversion.raw_version_revision, nodename, release)
 
-        __set_cpu_affinity()
+        try:
+            __set_cpu_affinity()
+        except Exception:
+            log.exception('Failed to set affinity, running without')
 
         serve_clients(log)
     except:
