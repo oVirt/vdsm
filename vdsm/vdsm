@@ -139,7 +139,10 @@ def run():
                  os.getpid(), dsaversion.raw_version_revision, nodename,
                  release)
 
-        __set_cpu_affinity()
+        try:
+            __set_cpu_affinity()
+        except Exception:
+            log.exception('Failed to set affinity, running without')
 
         serve_clients(log)
     except:
