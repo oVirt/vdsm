@@ -2445,7 +2445,7 @@ class NetworkTest(TestCaseBase):
                              'Failed to cleanup tc classes')
             # Real devices always get a qdisc, dummies don't, so 0 after
             # deletion.
-            self.assertEqual(0, len(list(tc._qdiscs(nic))),
+            self.assertEqual(0, len(list(tc.qdiscs(nic))),
                              'Failed to cleanup tc hfsc and ingress qdiscs')
             self.assertEqual(status, SUCCESS, msg)
 

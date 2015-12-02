@@ -1087,6 +1087,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/netinfo/misc.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/mtus.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/nics.py*
+%{python_sitelib}/%{vdsm_name}/netinfo/qos.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/routes.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/vlans.py*
 %{python_sitelib}/%{vdsm_name}/netlink/__init__.py*

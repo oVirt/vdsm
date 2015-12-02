@@ -24,6 +24,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/misc.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/mtus.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/nics.py
+./usr/lib/python2.7/dist-packages/vdsm/netinfo/qos.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/routes.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/vlans.py
 ./usr/lib/python2.7/dist-packages/vdsm/netlink/__init__.py

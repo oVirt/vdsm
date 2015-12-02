@@ -30,6 +30,7 @@ dist_vdsmnetinfo_PYTHON = \
 	misc.py \
 	mtus.py \
 	nics.py \
+	qos.py \
 	routes.py \
 	vlans.py \
 	$(NULL)

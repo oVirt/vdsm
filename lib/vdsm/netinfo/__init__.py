@@ -40,6 +40,7 @@ from .misc import getIfaceCfg
 from .mtus import getMtu
 from .nics import nicinfo
 from .routes import get_routes, get_gateway
+from .qos import report_network_qos
 from .vlans import vlaninfo, vlan_id, vlan_device
 
 
@@ -90,6 +91,8 @@ def get(vdsmnets=None):
             network_info['cfg'] = networking['bridges'][network_name]['cfg']
         updates = propose_updates_to_reported_dhcp(network_info, networking)
         update_reported_dhcp(updates, networking)
+
+    report_network_qos(networking)
 
     return networking
 

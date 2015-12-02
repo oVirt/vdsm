@@ -21,22 +21,23 @@ import errno
 import os
 from distutils.version import StrictVersion
 
-from vdsm import netinfo
+from vdsm.netinfo import ifaceUsed
+from vdsm.netinfo import qos as netinfo_qos
 from vdsm import tc
 
-_NON_VLANNED_ID = 5000
-_DEFAULT_CLASSID = '%x' % _NON_VLANNED_ID
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0
 _FAIR_QDISC_KIND = 'fq_codel' if (StrictVersion(os.uname()[2].split('-')[0]) >
                                   StrictVersion('3.5.0')) else 'sfq'
 _SHAPING_QDISC_KIND = 'hfsc'
+_DEFAULT_CLASSID = netinfo_qos.DEFAULT_CLASSID  # shorthand
+_NON_VLANNED_ID = netinfo_qos.NON_VLANNED_ID  # shorthand
 
 
 def configure_outbound(qosOutbound, device, vlan_tag):
     """Adds the qosOutbound configuration to the backing device (be it bond
     or nic). Adds a class and filter for default traffic if necessary. vlan_tag
     can be None"""
-    root_qdisc = _root_qdisc(tc._qdiscs(device))
+    root_qdisc = netinfo_qos.get_root_qdisc(tc.qdiscs(device))
     class_id = '%x' % (_NON_VLANNED_ID if vlan_tag is None else vlan_tag)
     if not root_qdisc or root_qdisc['kind'] != _SHAPING_QDISC_KIND:
         _fresh_qdisc_conf_out(device, vlan_tag, class_id, qosOutbound)
@@ -59,10 +60,10 @@ def remove_outbound(device, vlan_tag):
         if tce.errCode not in MISSING_OBJ_ERR_CODES:  # No filter exists
             raise
 
-    device_qdiscs = list(tc._qdiscs(device))
+    device_qdiscs = list(tc.qdiscs(device))
     if not device_qdiscs:
         return
-    root_qdisc_handle = _root_qdisc(device_qdiscs)['handle']
+    root_qdisc_handle = netinfo_qos.get_root_qdisc(device_qdiscs)['handle']
     try:
         tc.cls.delete(device, classid=root_qdisc_handle + class_id)
     except tc.TrafficControlException as tce:
@@ -82,11 +83,12 @@ def _uses_classes(device, root_qdisc_handle=None):
     """Returns true iff there's traffic classes in the device, ignoring the
     root class and a default unused class"""
     if root_qdisc_handle is None:
-        root_qdisc_handle = _root_qdisc(tc._qdiscs(device))['handle']
+        root_qdisc = netinfo_qos.get_root_qdisc(tc.qdiscs(device))
+        root_qdisc_handle = root_qdisc['handle']
     classes = [cls for cls in tc.classes(device, parent=root_qdisc_handle) if
                not cls.get('root')]
     return (classes and
-            not(len(classes) == 1 and not netinfo.ifaceUsed(device) and
+            not(len(classes) == 1 and not ifaceUsed(device) and
                 classes[0]['handle'] == root_qdisc_handle + _DEFAULT_CLASSID))
 
 
@@ -182,9 +184,3 @@ def _add_fair_qdisc(dev, root_qdisc_handle, class_id):
 def _add_hfsc_cls(dev, root_qdisc_handle, class_id, **qos_opts):
     tc.cls.add(dev, _SHAPING_QDISC_KIND, parent=root_qdisc_handle,
                classid=root_qdisc_handle + class_id, **qos_opts)
-
-
-def _root_qdisc(qdiscs):
-    for qdisc in qdiscs:
-        if 'root' in qdisc:
-            return qdisc

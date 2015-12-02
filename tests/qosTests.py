@@ -18,7 +18,7 @@
 #
 from testlib import VdsmTestCase as TestCaseBase
 
-from vdsm.network.configurators import qos
+from vdsm.netinfo import qos
 from vdsm.tc import cls
 
 
@@ -47,4 +47,4 @@ class TestConversions(TestCaseBase):
                 'sfq': {'limit': 127, 'quantum': 1514}},
                {'kind': 'sfq', 'handle': '20:', 'parent': '1:20',
                 'sfq': {'limit': 127, 'quantum': 1514}})
-        self.assertEqual(qos._root_qdisc(inp), root)
+        self.assertEqual(qos.get_root_qdisc(inp), root)

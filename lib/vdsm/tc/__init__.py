@@ -114,7 +114,7 @@ def _filter_replace(dev, parent, filt):
 
 def _qdiscs_of_device(dev):
     "Return an iterator of qdisc_ids associated with dev"
-    for qdisc_data in _qdiscs(dev):
+    for qdisc_data in qdiscs(dev):
         yield qdisc_data['handle']
 
 
@@ -160,5 +160,5 @@ def _iterate(module, dev, out=None, **kwargs):
 
 
 _filters = partial(_iterate, tc_filter)  # kwargs: parent and pref
-_qdiscs = partial(_iterate, qdisc)  # kwargs: dev
+qdiscs = partial(_iterate, qdisc)  # kwargs: dev
 classes = partial(_iterate, cls)  # kwargs: parent and classid

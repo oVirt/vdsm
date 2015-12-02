@@ -38,6 +38,7 @@ from nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
                         requires_tc, requires_tun, veth_pair, vlan_device)
 from vdsm.constants import EXT_TC
 from vdsm.network.configurators import qos
+from vdsm.netinfo.qos import DEFAULT_CLASSID
 from vdsm.ipwrapper import addrAdd, linkSet, netns_exec, link_set_netns
 from vdsm import libvirtconnection
 from vdsm.utils import running
@@ -213,7 +214,7 @@ class TestFilters(TestCaseBase):
                           'target': 5000.0, 'interval': 150000.0,
                           'ecn': True}},
         )
-        for parsed, correct in izip_longest(tc._qdiscs(None, out=data),
+        for parsed, correct in izip_longest(tc.qdiscs(None, out=data),
                                             qdiscs):
             self.assertEqual(parsed, correct)
 
@@ -530,7 +531,7 @@ class TestConfigureOutbound(TestCaseBase):
         return TcClasses(all_classes, default_class, root_class)
 
     def _analyse_qdiscs(self):
-        all_qdiscs = list(tc._qdiscs(self.device_name))
+        all_qdiscs = list(tc.qdiscs(self.device_name))
         ingress_qdisc = self._ingress_qdisc(all_qdiscs)
         root_qdisc = self._root_qdisc(all_qdiscs)
         leaf_qdiscs = self._leaf_qdiscs(all_qdiscs)
@@ -576,7 +577,7 @@ class TestConfigureOutbound(TestCaseBase):
 
     def _assertions_on_default_class(self, default_class):
         self._assert_parent_handle([default_class], qos._ROOT_QDISC_HANDLE)
-        self.assertEqual(default_class['leaf'], qos._DEFAULT_CLASSID + ':')
+        self.assertEqual(default_class['leaf'], DEFAULT_CLASSID + ':')
         self.assertEqual(default_class[qos._SHAPING_QDISC_KIND]['ls'],
                          HOST_QOS_OUTBOUND['ls'])
 
@@ -597,7 +598,7 @@ class TestConfigureOutbound(TestCaseBase):
         return _find_entity(lambda c: c.get('root'), classes)
 
     def _default_class(self, classes):
-        default_cls_handle = qos._ROOT_QDISC_HANDLE + qos._DEFAULT_CLASSID
+        default_cls_handle = qos._ROOT_QDISC_HANDLE + DEFAULT_CLASSID
         return _find_entity(lambda c: c['handle'] == default_cls_handle,
                             classes)
 
@@ -631,7 +632,7 @@ class TestConfigureOutbound(TestCaseBase):
         return _find_entity(lambda c: c['handle'] == handle, classes)
 
     def _non_vlan_qdisc(self, qdiscs):
-        handle = qos._DEFAULT_CLASSID + ':'
+        handle = DEFAULT_CLASSID + ':'
         return _find_entity(lambda q: q['handle'] == handle, qdiscs)
 
 

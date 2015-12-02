@@ -23,7 +23,6 @@
 import itertools
 import os
 import platform
-from collections import defaultdict
 import logging
 import time
 import linecache
@@ -35,8 +34,7 @@ from distutils.version import LooseVersion
 import libvirt
 
 from vdsm.config import config
-from vdsm import libvirtconnection, tc
-from vdsm.network.configurators import qos
+from vdsm import libvirtconnection
 import dsaversion
 from vdsm import netinfo
 import hooks
@@ -87,42 +85,6 @@ class AutoNumaBalancingStatus:
 
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
-
-
-def _report_network_qos(caps):
-    """Augment netinfo information with QoS data for the engine"""
-    qdiscs = defaultdict(list)
-    for qdisc in tc._qdiscs(dev=None):  # None -> all dev qdiscs
-        qdiscs[qdisc['dev']].append(qdisc)
-    for net, attrs in caps['networks'].iteritems():
-        iface = attrs['iface']
-        if iface in caps['bridges']:
-            host_ports = [port for port in attrs['ports'] if
-                          not port.startswith('vnet')]
-            if not host_ports:  # Port-less bridge
-                continue
-            iface, = host_ports
-        if iface in caps['vlans']:
-            vlan_id = caps['vlans'][iface]['vlanid']
-            iface = caps['vlans'][iface]['iface']
-            iface_qdiscs = qdiscs.get(iface)
-            if iface_qdiscs is None:
-                continue
-            class_id = (qos._root_qdisc(iface_qdiscs)['handle'] + '%x' %
-                        vlan_id)
-        else:
-            iface_qdiscs = qdiscs.get(iface)
-            if iface_qdiscs is None:
-                continue
-            class_id = (qos._root_qdisc(iface_qdiscs)['handle'] +
-                        qos._DEFAULT_CLASSID)
-
-        # Now that iface is either a bond or a nic, let's get the QoS info
-        classes = [cls for cls in tc.classes(iface, classid=class_id) if
-                   cls['kind'] == 'hfsc']
-        if classes:
-            cls, = classes
-            attrs['hostQos'] = {'out': cls['hfsc']}
 
 
 class Architecture:
@@ -668,7 +630,6 @@ def get():
 
     caps.update(_getVersionInfo())
     caps.update(netinfo.get())
-    _report_network_qos(caps)
 
     try:
         caps['hooks'] = hooks.installed()
