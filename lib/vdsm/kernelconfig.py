@@ -290,6 +290,13 @@ def _parse_bond_options(opts):
         numeric_mode = bonding.BONDING_MODES_NAME_TO_NUMBER[mode]
         opts['mode'] = numeric_mode
 
+    # Force a numeric value for an option
+    for opname, opval in opts.items():
+        numeric_val = bonding.get_bonding_option_numeric_val(numeric_mode,
+                                                             opname, opval)
+        if numeric_val is not None:
+            opts[opname] = numeric_val
+
     defaults = bonding.getDefaultBondingOptions(numeric_mode)
     return dict(
         (k, v) for k, v in opts.iteritems() if v != defaults.get(k))

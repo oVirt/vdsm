@@ -584,7 +584,6 @@ class NetworkTest(TestCaseBase):
                 {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
-    @brokentest("canonize bond options to numbers in KernelConfig")
     @cleanupNet
     @permutations([[True], [False]])
     def testReorderBondingOptions(self, bridged):
@@ -594,7 +593,7 @@ class NetworkTest(TestCaseBase):
             bonds = {BONDING_NAME: {'nics': nics,
                                     'options': 'lacp_rate=fast mode=802.3ad'}}
 
-            status, msg = self.vdsm_net.setupNetworks(nets, bonds, NOCHK)
+            status, msg = self.setupNetworks(nets, bonds, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
             self.assertNetworkExists(NETWORK_NAME, bridged)
