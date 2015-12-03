@@ -29,7 +29,7 @@ from ..utils import memoized
 
 from ..ipwrapper import Link
 from .misc import _visible_devs
-from .nics import nicSpeed
+from .nics import speed
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_DEFAULTS = constants.P_VDSM_LIB + 'bonding-defaults.json'
@@ -147,9 +147,9 @@ def bondSpeed(bondName):
         if opts['slaves']:
             if opts['mode'][1] in BONDING_FAILOVER_MODES:
                 active_slave = opts['active_slave']
-                s = nicSpeed(active_slave[0]) if active_slave else 0
+                s = speed(active_slave[0]) if active_slave else 0
             elif opts['mode'][1] in BONDING_LOADBALANCE_MODES:
-                s = sum(nicSpeed(slave) for slave in opts['slaves'])
+                s = sum(speed(slave) for slave in opts['slaves'])
             return s
     except Exception:
         logging.exception('cannot read %s speed', bondName)

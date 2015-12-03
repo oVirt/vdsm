@@ -598,7 +598,7 @@ class HostStatsThread(object):
 
 def _getLinkSpeed(dev):
     if dev.isNIC():
-        speed = nics.nicSpeed(dev.name)
+        speed = nics.speed(dev.name)
     elif dev.isBOND():
         speed = bonding.bondSpeed(dev.name)
     elif dev.isVLAN():

@@ -33,17 +33,17 @@ OPERSTATE_DOWN = 'down'
 nics = partial(_visible_devs, Link.isNICLike)
 
 
-def operstate(dev):
-    with open('/sys/class/net/%s/operstate' % dev) as operstateFile:
+def operstate(nic_name):
+    with open('/sys/class/net/%s/operstate' % nic_name) as operstateFile:
         return operstateFile.read().strip()
 
 
-def nicSpeed(nicName):
+def speed(nic_name):
     """Returns the nic speed if it is a legal value, nicName refers to a
     nic and nic is UP, 0 otherwise."""
     try:
-        if operstate(nicName) == OPERSTATE_UP:
-            with open('/sys/class/net/%s/speed' % nicName) as speedFile:
+        if operstate(nic_name) == OPERSTATE_UP:
+            with open('/sys/class/net/%s/speed' % nic_name) as speedFile:
                 s = int(speedFile.read())
             # the device may have been disabled/downed after checking
             # so we validate the return value as sysfs may return
@@ -52,28 +52,28 @@ def nicSpeed(nicName):
                 return s
     except IOError as ose:
         if ose.errno == errno.EINVAL:
-            return _ibHackedSpeed(nicName)
+            return _ibHackedSpeed(nic_name)
         else:
-            logging.exception('cannot read %s nic speed', nicName)
+            logging.exception('cannot read %s nic speed', nic_name)
     except Exception:
-        logging.exception('cannot read %s speed', nicName)
+        logging.exception('cannot read %s speed', nic_name)
     return 0
 
 
-def _ibHackedSpeed(nicName):
+def _ibHackedSpeed(nic_name):
     """If the nic is an InfiniBand device, return a speed of 10000 Mbps.
 
     This is only needed until the kernel reports ib*/speed, see
     https://bugzilla.redhat.com/show_bug.cgi?id=1101314
     """
     try:
-        return 10000 if drv_name(nicName) == 'ib_ipoib' else 0
+        return 10000 if drv_name(nic_name) == 'ib_ipoib' else 0
     except IOError:
         return 0
 
 
-def nicinfo(link, paddr):
-    info = {'hwaddr': link.address, 'speed': nicSpeed(link.name)}
+def info(link, paddr):
+    info = {'hwaddr': link.address, 'speed': speed(link.name)}
     if paddr.get(link.name):
         info['permhwaddr'] = paddr[link.name]
     return info

@@ -38,7 +38,7 @@ from .dhcp import (get_dhclient_ifaces, propose_updates_to_reported_dhcp,
                    update_reported_dhcp, dhcp_used)
 from .misc import getIfaceCfg
 from .mtus import getMtu
-from .nics import nicinfo
+from .nics import info
 from .routes import get_routes, get_gateway
 from .qos import report_network_qos
 from .vlans import vlaninfo, vlan_id, vlan_device
@@ -73,7 +73,7 @@ def get(vdsmnets=None):
         if dev.isBRIDGE():
             devinfo = networking['bridges'][dev.name] = bridgeinfo(dev)
         elif dev.isNICLike():
-            devinfo = networking['nics'][dev.name] = nicinfo(dev, paddr)
+            devinfo = networking['nics'][dev.name] = info(dev, paddr)
         elif dev.isBOND():
             devinfo = networking['bondings'][dev.name] = bondinfo(dev)
         elif dev.isVLAN():
