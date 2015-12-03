@@ -37,7 +37,6 @@ from ..models import Nic
 from ..sourceroute import DynamicSourceRoute
 from ..utils import remove_custom_bond_option
 
-_BRIDGING_OPT_PATH = '/sys/class/net/%s/bridge/%s'
 _ETHTOOL_BINARY = CommandPath(
     'ethtool',
     '/usr/sbin/ethtool',  # F19+
@@ -302,8 +301,8 @@ class ConfigApplier(object):
 
     def _setBridgeOpts(self, bridge, options):
         for key, value in (opt.split('=') for opt in options.split(' ')):
-            with open(_BRIDGING_OPT_PATH % (bridge.name, key), 'w') as optFile:
-                optFile.write(value)
+            with open(bridges.BRIDGING_OPT % (bridge.name, key), 'w') as f:
+                f.write(value)
 
     def removeBridge(self, bridge):
         rc, _, err = execCmd([EXT_BRCTL, 'delbr', bridge.name])

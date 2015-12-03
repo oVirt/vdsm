@@ -52,7 +52,7 @@ def _bridge_options(bridge, keys=None):
 
 
 def bridge_stp_state(bridge):
-    with open('/sys/class/net/%s/bridge/stp_state' % bridge) as stp_file:
+    with open(BRIDGING_OPT % (bridge, 'stp_state')) as stp_file:
         stp = stp_file.readline()
     if stp == '1\n':
         return 'on'
