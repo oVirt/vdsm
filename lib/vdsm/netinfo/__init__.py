@@ -44,7 +44,6 @@ from .qos import report_network_qos
 from .vlans import vlaninfo, vlan_id, vlan_device
 
 
-PROC_NET_VLAN = '/proc/net/vlan/'
 NET_PATH = '/sys/class/net'
 
 LIBVIRT_NET_PREFIX = 'vdsm-'
