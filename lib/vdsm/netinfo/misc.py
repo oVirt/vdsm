@@ -22,7 +22,7 @@ import shlex
 from ..ipwrapper import getLinks
 
 
-IFCFG_ZERO_SUFFIXED = frozenset(
+_IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
 # TODO: once the unification of vdsm under site-packges is done, this duplicate
 # TODO: of ifcfg.NET_CONF_DIR and ifcfg.NET_CONF_PREF can be removed
@@ -36,7 +36,7 @@ def getIfaceCfg(iface):
         with open(NET_CONF_PREF + iface) as f:
             for line in shlex.split(f, comments=True):
                 k, v = line.split('=', 1)
-                if k in IFCFG_ZERO_SUFFIXED:
+                if k in _IFCFG_ZERO_SUFFIXED:
                     k = k[:-1]
                 ifaceCfg[k] = v
     except Exception:
