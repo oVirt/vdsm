@@ -29,7 +29,7 @@ from ..utils import memoized
 
 from ..ipwrapper import Link
 from .misc import _visible_devs
-from .import nics
+from . import nics
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
 BONDING_DEFAULTS = constants.P_VDSM_LIB + 'bonding-defaults.json'
@@ -58,32 +58,32 @@ BONDING_MODES_NUMBER_TO_NAME = dict(
 bondings = partial(_visible_devs, Link.isBOND)
 
 
-def slaves(bonding):
-    with open(BONDING_SLAVES % bonding) as f:
+def slaves(bond_name):
+    with open(BONDING_SLAVES % bond_name) as f:
         return f.readline().split()
 
 
-def bondinfo(link):
+def info(link):
     return {'hwaddr': link.address, 'slaves': slaves(link.name),
             'active_slave': _active_slave(link.name),
             'opts': _getBondingOptions(link.name)}
 
 
-def _active_slave(bonding):
+def _active_slave(bond_name):
     """
-    :param bonding:
+    :param bond_name:
     :return: active slave when one exists or '' otherwise
     """
-    with open(BONDING_ACTIVE_SLAVE % bonding) as f:
+    with open(BONDING_ACTIVE_SLAVE % bond_name) as f:
         return f.readline().rstrip()
 
 
-def _getBondingOptions(bond):
+def _getBondingOptions(bond_name):
     """
     Return non-empty options differing from defaults, excluding not actual or
     not applicable options, e.g. 'ad_num_ports' or 'slaves'.
     """
-    opts = bondOpts(bond)
+    opts = bondOpts(bond_name)
     mode = opts['mode'][-1] if 'mode' in opts else None
     defaults = getDefaultBondingOptions(mode)
 
@@ -91,12 +91,13 @@ def _getBondingOptions(bond):
                  if val and val != defaults.get(opt)))
 
 
-def bondOpts(bond, keys=None):
+def bondOpts(bond_name, keys=None):
     """
     Return a dictionary in the same format as _bondOpts(). Exclude entries that
     are not bonding options, e.g. 'ad_num_ports' or 'slaves'.
     """
-    return dict(((opt, val) for (opt, val) in _bondOpts(bond, keys).iteritems()
+    return dict(((opt, val) for
+                 (opt, val) in _bondOpts(bond_name, keys).iteritems()
                  if opt not in EXCLUDED_BONDING_ENTRIES))
 
 
@@ -114,14 +115,14 @@ def getDefaultBondingOptions(mode=None):
     return defaults[mode]
 
 
-def _bondOpts(bond, keys=None):
+def _bondOpts(bond_name, keys=None):
     """ Returns a dictionary of bond option name and a values iterable. E.g.,
     {'mode': ('balance-rr', '0'), 'xmit_hash_policy': ('layer2', '0')}
     """
     if keys is None:
-        paths = iglob(BONDING_OPT % (bond, '*'))
+        paths = iglob(BONDING_OPT % (bond_name, '*'))
     else:
-        paths = (BONDING_OPT % (bond, key) for key in keys)
+        paths = (BONDING_OPT % (bond_name, key) for key in keys)
     opts = {}
     for path in paths:
         with open(path) as optFile:
@@ -140,9 +141,9 @@ def getAllDefaultBondingOptions():
         return json.loads(defaults.read())
 
 
-def speed(bondName):
+def speed(bond_name):
     """Returns the bond speed if bondName refers to a bond, 0 otherwise."""
-    opts = _bondOpts(bondName, keys=['slaves', 'active_slave', 'mode'])
+    opts = _bondOpts(bond_name, keys=['slaves', 'active_slave', 'mode'])
     try:
         if opts['slaves']:
             if opts['mode'][1] in BONDING_FAILOVER_MODES:
@@ -152,7 +153,7 @@ def speed(bondName):
                 s = sum(nics.speed(slave) for slave in opts['slaves'])
             return s
     except Exception:
-        logging.exception('cannot read %s speed', bondName)
+        logging.exception('cannot read %s speed', bond_name)
     return 0
 
 

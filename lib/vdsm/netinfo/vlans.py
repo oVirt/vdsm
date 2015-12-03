@@ -19,9 +19,9 @@
 from __future__ import absolute_import
 from functools import partial
 
-from .import bonding
+from . import bonding
 from .misc import _visible_devs
-from .import nics
+from . import nics
 from ..ipwrapper import getLink, Link
 from ..netlink import link as nl_link
 

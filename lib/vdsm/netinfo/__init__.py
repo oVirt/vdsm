@@ -32,13 +32,13 @@ from ..netconfpersistence import RunningConfig
 from ..netlink import link as nl_link
 
 from .addresses import getIpAddrs, getIpInfo
-from .bonding import permanent_address, bondinfo, bondOptsCompat
+from . import bonding
 from .bridges import bridgeinfo, ports, bridge_stp_state
 from .dhcp import (get_dhclient_ifaces, propose_updates_to_reported_dhcp,
                    update_reported_dhcp, dhcp_used)
 from .misc import getIfaceCfg
 from .mtus import getMtu
-from .nics import info
+from . import nics
 from .routes import get_routes, get_gateway
 from .qos import report_network_qos
 from .vlans import vlaninfo, vlan_id, vlan_device
@@ -55,7 +55,7 @@ DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 def get(vdsmnets=None):
     networking = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
                   'vlans': {}}
-    paddr = permanent_address()
+    paddr = bonding.permanent_address()
     ipaddrs = getIpAddrs()
     dhcpv4_ifaces, dhcpv6_ifaces = get_dhclient_ifaces()
     routes = get_routes()
@@ -73,9 +73,9 @@ def get(vdsmnets=None):
         if dev.isBRIDGE():
             devinfo = networking['bridges'][dev.name] = bridgeinfo(dev)
         elif dev.isNICLike():
-            devinfo = networking['nics'][dev.name] = info(dev, paddr)
+            devinfo = networking['nics'][dev.name] = nics.info(dev, paddr)
         elif dev.isBOND():
-            devinfo = networking['bondings'][dev.name] = bondinfo(dev)
+            devinfo = networking['bondings'][dev.name] = bonding.info(dev)
         elif dev.isVLAN():
             devinfo = networking['vlans'][dev.name] = vlaninfo(dev)
         else:
@@ -83,7 +83,7 @@ def get(vdsmnets=None):
         devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4_ifaces,
                                 dhcpv6_ifaces))
         if dev.isBOND():
-            bondOptsCompat(devinfo)
+            bonding.bondOptsCompat(devinfo)
 
     for network_name, network_info in six.iteritems(networking['networks']):
         if network_info['bridged']:
