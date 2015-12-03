@@ -21,12 +21,12 @@ from functools import partial
 from glob import iglob
 import os
 
-from .misc import _visible_devs
+from .misc import visible_devs
 from ..ipwrapper import Link
 
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 
-bridges = partial(_visible_devs, Link.isBRIDGE)
+bridges = partial(visible_devs, Link.isBRIDGE)
 
 
 def ports(bridge):

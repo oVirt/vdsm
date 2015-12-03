@@ -22,7 +22,7 @@ from functools import partial
 import logging
 
 from ..ipwrapper import drv_name
-from .misc import _visible_devs
+from .misc import visible_devs
 from ..ipwrapper import Link
 
 OPERSTATE_UP = 'up'
@@ -30,7 +30,7 @@ OPERSTATE_UNKNOWN = 'unknown'
 OPERSTATE_DOWN = 'down'
 
 
-nics = partial(_visible_devs, Link.isNICLike)
+nics = partial(visible_devs, Link.isNICLike)
 
 
 def operstate(nic_name):

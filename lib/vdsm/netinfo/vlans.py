@@ -20,13 +20,13 @@ from __future__ import absolute_import
 from functools import partial
 
 from . import bonding
-from .misc import _visible_devs
+from .misc import visible_devs
 from . import nics
 from ..ipwrapper import getLink, Link
 from ..netlink import link as nl_link
 
 
-vlans = partial(_visible_devs, Link.isVLAN)
+vlans = partial(visible_devs, Link.isVLAN)
 
 
 def vlanDevsForIface(iface):

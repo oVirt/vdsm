@@ -44,7 +44,7 @@ def getIfaceCfg(iface):
     return ifaceCfg
 
 
-def _visible_devs(predicate):
+def visible_devs(predicate):
     """Returns a list of visible (vdsm manageable) links for which the
     predicate is True"""
     return [dev.name for dev in getLinks() if predicate(dev) and

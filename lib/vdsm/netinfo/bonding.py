@@ -28,7 +28,7 @@ from .. import constants
 from ..utils import memoized
 
 from ..ipwrapper import Link
-from .misc import _visible_devs
+from .misc import visible_devs
 from . import nics
 
 BONDING_ACTIVE_SLAVE = '/sys/class/net/%s/bonding/active_slave'
@@ -55,7 +55,7 @@ BONDING_MODES_NAME_TO_NUMBER = {
 BONDING_MODES_NUMBER_TO_NAME = dict(
     (v, k) for k, v in six.iteritems(BONDING_MODES_NAME_TO_NUMBER))
 
-bondings = partial(_visible_devs, Link.isBOND)
+bondings = partial(visible_devs, Link.isBOND)
 
 
 def slaves(bond_name):
