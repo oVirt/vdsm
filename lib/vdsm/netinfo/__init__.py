@@ -33,7 +33,7 @@ from ..netlink import link as nl_link
 
 from .addresses import getIpAddrs, getIpInfo
 from . import bonding
-from .bridges import bridgeinfo, ports, bridge_stp_state
+from . import bridges
 from .dhcp import (get_dhclient_ifaces, propose_updates_to_reported_dhcp,
                    update_reported_dhcp, dhcp_used)
 from .misc import getIfaceCfg
@@ -71,7 +71,7 @@ def get(vdsmnets=None):
 
     for dev in (link for link in getLinks() if not link.isHidden()):
         if dev.isBRIDGE():
-            devinfo = networking['bridges'][dev.name] = bridgeinfo(dev)
+            devinfo = networking['bridges'][dev.name] = bridges.info(dev)
         elif dev.isNICLike():
             devinfo = networking['nics'][dev.name] = nics.info(dev, paddr)
         elif dev.isBOND():
@@ -187,8 +187,8 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
     data = {}
     try:
         if bridged:
-            data.update({'ports': ports(iface),
-                         'stp': bridge_stp_state(iface)})
+            data.update({'ports': bridges.ports(iface),
+                         'stp': bridges.stp_state(iface)})
         else:
             # ovirt-engine-3.1 expects to see the "interface" attribute iff the
             # network is bridgeless. Please remove the attribute and this

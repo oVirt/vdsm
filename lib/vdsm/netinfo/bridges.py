@@ -51,7 +51,7 @@ def _bridge_options(bridge, keys=None):
     return opts
 
 
-def bridge_stp_state(bridge):
+def stp_state(bridge):
     with open(BRIDGING_OPT % (bridge, 'stp_state')) as stp_file:
         stp = stp_file.readline()
     if stp == '1\n':
@@ -73,7 +73,7 @@ def stp_booleanize(value):
         raise ValueError('Invalid value for bridge stp')
 
 
-def bridgeinfo(link):
+def info(link):
     return {'ports': ports(link.name),
-            'stp': bridge_stp_state(link.name),
+            'stp': stp_state(link.name),
             'opts': _bridge_options(link.name)}
