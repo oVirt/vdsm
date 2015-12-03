@@ -300,12 +300,8 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         Fetch the set of the Image UUIDs in the SD.
         """
         # Get Volumes of an image
-        pattern = os.path.join(sd.storage_repository,
-                               # ISO domains don't have images,
-                               # we can assume single domain
-                               self.getPools()[0],
-                               self.sdUUID, sd.DOMAIN_IMAGES)
-        pattern = os.path.join(pattern, constants.UUID_GLOB_PATTERN)
+        pattern = os.path.join(self.mountpoint, self.sdUUID, sd.DOMAIN_IMAGES,
+                               constants.UUID_GLOB_PATTERN)
         files = self.oop.glob.glob(pattern)
         images = set()
         for i in files:

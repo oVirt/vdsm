@@ -71,6 +71,14 @@ class FileManifestTests(VdsmTestCase):
             self.assertEquals(manifest.sdUUID,
                               manifest.getMetaParam(sd.DMDK_SDUUID))
 
+    def test_getallimages(self):
+        with namedTemporaryDir() as tmpdir:
+            manifest = make_filesd_manifest(tmpdir)
+            self.assertEqual(set(), manifest.getAllImages())
+            img_uuid = str(uuid.uuid4())
+            make_file_volume(manifest.domaindir, VOLSIZE, img_uuid)
+            self.assertIn(img_uuid, manifest.getAllImages())
+
 
 class BlockManifestTests(VdsmTestCase):
 
