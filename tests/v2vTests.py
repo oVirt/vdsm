@@ -63,8 +63,14 @@ class VmMock(object):
     def name(self):
         return self._name
 
+    def id(self):
+        return self._vmid
+
     def state(self, flags=0):
         return [5, 0]
+
+    def isActive(self):
+        return False
 
     def XMLDesc(self, flags=0):
         return """
@@ -113,7 +119,7 @@ class LibvirtMock(object):
         pass
 
     def listAllDomains(self):
-        return self._vms
+        return [vm for vm in self._vms]
 
     def storageVolLookupByPath(self, name):
         return LibvirtMock.Volume()

@@ -151,34 +151,7 @@ def get_external_vms(uri, username, password):
     with closing(conn):
         vms = []
         for vm in conn.listAllDomains():
-            params = {}
-            try:
-                _add_vm_info(vm, params)
-            except libvirt.libvirtError as e:
-                logging.exception("error getting domain information")
-                continue
-            try:
-                xml = vm.XMLDesc(0)
-            except libvirt.libvirtError as e:
-                logging.error("error getting domain xml for vm %r: %s",
-                              vm.name(), e)
-                continue
-            try:
-                root = ET.fromstring(xml)
-            except ET.ParseError as e:
-                logging.exception('error parsing domain xml')
-                continue
-            try:
-                _add_general_info(root, params)
-            except InvalidVMConfiguration as e:
-                logging.exception('error parsing domain xml, msg: %s  xml: %s',
-                                  e.message, vm.XMLDesc(0))
-                continue
-            _add_networks(root, params)
-            _add_disks(root, params)
-            for disk in params['disks']:
-                _add_disk_info(conn, disk)
-            vms.append(params)
+            _add_vm(conn, vms, vm)
         return {'status': doneCode, 'vmList': vms}
 
 
@@ -659,6 +632,36 @@ def _mem_to_mib(size, unit):
     else:
         raise InvalidVMConfiguration("Invalid currentMemory unit attribute:"
                                      " %r" % unit)
+
+
+def _add_vm(conn, vms, vm):
+    params = {}
+    try:
+        _add_vm_info(vm, params)
+    except libvirt.libvirtError as e:
+        logging.error("error getting domain information: %s", e)
+        return
+    try:
+        xml = vm.XMLDesc(0)
+    except libvirt.libvirtError as e:
+        logging.error("error getting domain xml for vm %r: %s",
+                      vm.name(), e)
+        return
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError as e:
+        logging.error('error parsing domain xml: %s', e)
+        return
+    try:
+        _add_general_info(root, params)
+    except InvalidVMConfiguration as e:
+        logging.error("error adding general info: %s", e)
+        return
+    _add_networks(root, params)
+    _add_disks(root, params)
+    for disk in params['disks']:
+        _add_disk_info(conn, disk)
+    vms.append(params)
 
 
 def _add_vm_info(vm, params):
