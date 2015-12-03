@@ -444,7 +444,7 @@ To enable this hook on your host, set vars.fake_vmstats_enable=true in your
 /etc/vdsm/vdsm.conf.
 
 %package hook-fakesriov
-Summary:        Generate fake SR-IOV dsvices
+Summary:        Generate fake SR-IOV devices
 Requires:       %{name}
 
 %description hook-fakesriov
