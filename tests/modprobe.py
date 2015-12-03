@@ -22,8 +22,7 @@ from functools import wraps
 from vdsm import utils
 
 modprobe = utils.CommandPath("modprobe",
-                             "/sbin/modprobe",      # EL6
-                             "/usr/sbin/modprobe",  # Fedora
+                             "/usr/sbin/modprobe",  # Fedora, EL7
                              )
 
 
