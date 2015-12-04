@@ -2941,15 +2941,19 @@
 #         for @qxl is the size of the secondary bar,
 #
 # @ram:   #optional size of the primary bar for @qxl in KB,
-#         not supported for 'cirrus'
+#         rejected by libvirt for 'cirrus' or 'vga'
 #
 # @heads:  #optional Specify the amount of monitors that will use single
 #          pci device.  Currently relevant for @qxl devices only
 #
+# @vgamem: #optional framebuffer size for @qxl in KB,
+#          rejected by libvirt for 'cirrus' or 'vga'
+#          (new in version 4.17.14)
+#
 # Since: 4.10.0
 ##
 {'type': 'VmVideoDeviceSpecParams',
- 'data': {'vram': 'uint', '*ram': 'uint','*heads': 'uint'}}
+ 'data': {'vram': 'uint', '*ram': 'uint', '*vgamem': 'uint', '*heads': 'uint'}}
 
 ##
 # @VmVideoDevice:
