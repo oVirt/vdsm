@@ -216,9 +216,14 @@ class _Worker(object):
         self._log.debug("Worker discarded: %s", self)
         self._executor._worker_discarded(self)
 
-    def __str__(self):
-        return "<Worker name=%s task=%s at 0x%x>" % (
-            self.name, self._callable, id(self)
+    def __repr__(self):
+        if self._callable:
+            status = "running %s" % self._callable
+        else:
+            status = "waiting"
+        return "<Worker name=%s %s%s at 0x%x>" % (
+            self.name, status, " discarded" if self._discarded else "",
+            id(self)
         )
 
 
