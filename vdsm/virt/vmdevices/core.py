@@ -290,8 +290,9 @@ class Video(Base):
         video = self.createXmlElem('video', None, ['address'])
         sourceAttrs = {'vram': self.specParams.get('vram', '32768'),
                        'heads': self.specParams.get('heads', '1')}
-        if 'ram' in self.specParams:
-            sourceAttrs['ram'] = self.specParams['ram']
+        for attr in ('ram', 'vgamem',):
+            if attr in self.specParams:
+                sourceAttrs[attr] = self.specParams[attr]
 
         video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
         return video

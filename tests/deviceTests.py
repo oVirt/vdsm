@@ -289,11 +289,11 @@ class TestVmDevices(XMLTestCase):
     def testVideoXML(self):
         videoXML = """
             <video>
-                <model heads="2" type="vga" vram="32768"/>
+                <model heads="2" type="vga" vgamem="8192" vram="32768"/>
             </video>"""
 
-        dev = {'device': 'vga', 'specParams': {'vram': '32768',
-               'heads': '2'}}
+        dev = {'device': 'vga',
+               'specParams': {'vram': '32768', 'heads': '2', 'vgamem': '8192'}}
         video = vmdevices.core.Video(self.conf, self.log, **dev)
         self.assertXMLEqual(video.getXML().toxml(), videoXML)
 
