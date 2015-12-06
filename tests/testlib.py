@@ -20,6 +20,7 @@
 
 import errno
 import functools
+import inspect
 import logging
 import os
 import pickle
@@ -412,13 +413,38 @@ def make_config(tunables):
 
 def recorded(meth):
     """
-    Method decorator recording calls to instance's __recording__ list.
+    Method decorator recording calls to receiver __recording__ list.
+
+    Can decorate an instance method or class method. Instance methods are
+    stored in the instance __recording__ list, and class methods in the class
+    __class_recording__ list.
+
+    You are responsible for clearing the class __class_recording__.
+
+    Note: when decorating a class method, this decorator must be after the
+    @classmethod decorator:
+
+    class Foo(objet):
+
+        @classmethod
+        @recorded
+        def foo(cls):
+            pass
+
     """
     @wraps(meth)
-    def wrapper(self, *args, **kwargs):
-        recording = self.__dict__.setdefault("__recording__", [])
+    def wrapper(obj, *args, **kwargs):
+        if inspect.isclass(obj):
+            name = "__class_recording__"
+        else:
+            name = "__recording__"
+        try:
+            recording = getattr(obj, name)
+        except AttributeError:
+            recording = []
+            setattr(obj, name, recording)
         recording.append((meth.func_name, args, kwargs))
-        return meth(self, *args, **kwargs)
+        return meth(obj, *args, **kwargs)
     return wrapper
 
 

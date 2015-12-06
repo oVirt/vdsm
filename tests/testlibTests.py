@@ -64,6 +64,12 @@ class AssertingLockTests(VdsmTestCase):
 
 class RecordedTests(VdsmTestCase):
 
+    def setUp(self):
+        try:
+            del Recorded.__class_recording__
+        except AttributeError:
+            pass
+
     def test_no_args(self):
         obj = Recorded()
         obj.no_args()
@@ -110,8 +116,49 @@ class RecordedTests(VdsmTestCase):
             ("kwargs", (), {"a": 1}),
         ])
 
+    def test_class_method_via_class(self):
+        Recorded.class_method('a', b=2)
+        self.assertEqual(Recorded.__class_recording__,
+                         [('class_method', ('a',), {'b': 2})])
+
+    def test_class_method_via_obj(self):
+        obj = Recorded()
+        obj.class_method('a', b=2)
+        self.assertEqual(Recorded.__class_recording__,
+                         [('class_method', ('a',), {'b': 2})])
+
+    def test_class_method_flow(self):
+        obj = Recorded()
+        obj.class_method('a', b=2)
+        obj.class_method_noargs()
+        self.assertEqual(Recorded.__class_recording__, [
+            ('class_method', ('a',), {'b': 2}),
+            ('class_method_noargs', (), {}),
+        ])
+
+    def test_flow_mixed(self):
+        obj = Recorded()
+        obj.class_method('a', b=2)
+        obj.args(1, 2)
+        self.assertEqual(Recorded.__class_recording__, [
+            ('class_method', ('a',), {'b': 2}),
+        ])
+        self.assertEqual(obj.__recording__, [
+            ('args', (1, 2), {}),
+        ])
+
 
 class Recorded(object):
+
+    @classmethod
+    @recorded
+    def class_method(cls, *a, **kw):
+        pass
+
+    @classmethod
+    @recorded
+    def class_method_noargs(cls):
+        pass
 
     @recorded
     def args_and_kwargs(self, a, b, c=3, d=4):
