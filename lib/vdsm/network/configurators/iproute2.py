@@ -190,7 +190,7 @@ class Iproute2(Configurator):
                 self.configApplier.setIfaceMtu(bonding.name,  mtus.DEFAULT_MTU)
                 self.configApplier.ifdown(bonding)
         else:
-            self._setNewMtu(bonding, vlans.vlanDevsForIface(bonding.name))
+            self._setNewMtu(bonding, vlans.vlan_devs_for_iface(bonding.name))
 
     def removeNic(self, nic):
         toBeRemoved = not ifaceUsed(nic.name)
@@ -204,7 +204,7 @@ class Iproute2(Configurator):
                 self.configApplier.setIfaceMtu(nic.name, mtus.DEFAULT_MTU)
                 self.configApplier.ifdown(nic)
         else:
-            self._setNewMtu(nic, vlans.vlanDevsForIface(nic.name))
+            self._setNewMtu(nic, vlans.vlan_devs_for_iface(nic.name))
 
     @staticmethod
     def configureSourceRoute(routes, rules, device):

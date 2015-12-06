@@ -114,7 +114,7 @@ class Ifcfg(Configurator):
 
     def configureBond(self, bond, **opts):
         self.configApplier.addBonding(bond, **opts)
-        if not vlans.isVlanned(bond.name):
+        if not vlans.is_vlanned(bond.name):
             for slave in bond.slaves:
                 ifdown(slave.name)
         for slave in bond.slaves:
@@ -172,7 +172,7 @@ class Ifcfg(Configurator):
         self.configApplier.addNic(nic, **opts)
         self._addSourceRoute(nic)
         if nic.bond is None:
-            if not vlans.isVlanned(nic.name):
+            if not vlans.is_vlanned(nic.name):
                 ifdown(nic.name)
             _ifup(nic)
 
@@ -222,7 +222,7 @@ class Ifcfg(Configurator):
                 bonding.configure()
         else:
             set_mtu = self._setNewMtu(bonding,
-                                      vlans.vlanDevsForIface(bonding.name))
+                                      vlans.vlan_devs_for_iface(bonding.name))
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value.
             # Note that ip link set dev bondX mtu Y sets Y on all its links
@@ -238,7 +238,7 @@ class Ifcfg(Configurator):
             else:
                 logging.warning('host interface %s missing', nic.name)
         else:
-            set_mtu = self._setNewMtu(nic, vlans.vlanDevsForIface(nic.name))
+            set_mtu = self._setNewMtu(nic, vlans.vlan_devs_for_iface(nic.name))
             # Since we are not taking the device up again, ifcfg will not be
             # read at this point and we need to set the live mtu value
             if set_mtu is not None:

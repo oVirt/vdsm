@@ -39,9 +39,9 @@ from .dhcp import (get_dhclient_ifaces, propose_updates_to_reported_dhcp,
 from .misc import getIfaceCfg
 from .mtus import getMtu
 from . import nics
+from . import vlans
 from .routes import get_routes, get_gateway
 from .qos import report_network_qos
-from .vlans import vlaninfo, vlan_id, vlan_device
 
 
 NET_PATH = '/sys/class/net'
@@ -77,7 +77,7 @@ def get(vdsmnets=None):
         elif dev.isBOND():
             devinfo = networking['bondings'][dev.name] = bonding.info(dev)
         elif dev.isVLAN():
-            devinfo = networking['vlans'][dev.name] = vlaninfo(dev)
+            devinfo = networking['vlans'][dev.name] = vlans.info(dev)
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4_ifaces,
@@ -251,7 +251,7 @@ class NetInfo(object):
                     if iface == interface:
                         yield (network, None)
                     elif interface.startswith(iface + '.'):
-                        yield (network, vlan_id(interface))
+                        yield (network, vlans.vlan_id(interface))
 
     def _getBridgelessNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (network, vlan) connected to nic/bond """
@@ -260,7 +260,7 @@ class NetInfo(object):
                 if iface == netdict['iface']:
                     yield (network, None)
                 elif netdict['iface'].startswith(iface + '.'):
-                    yield (network, vlan_id(netdict['iface']))
+                    yield (network, vlans.vlan_id(netdict['iface']))
 
     def getVlansForIface(self, iface):
         for vlandict in six.itervalues(self.vlans):
@@ -309,8 +309,8 @@ class NetInfo(object):
         for port in ports:
             if port in self.vlans:
                 assert vlan is None
-                nic = vlan_device(port)
-                vlanid = vlan_id(port)
+                nic = vlans.vlan_device(port)
+                vlanid = vlans.vlan_id(port)
                 vlan = port  # vlan devices can have an arbitrary name
                 assert self.vlans[port]['iface'] == nic
                 port = nic

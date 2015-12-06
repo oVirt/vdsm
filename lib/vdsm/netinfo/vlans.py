@@ -29,35 +29,35 @@ from ..netlink import link as nl_link
 vlans = partial(visible_devs, Link.isVLAN)
 
 
-def vlanDevsForIface(iface):
+def vlan_devs_for_iface(iface):
     for linkDict in nl_link.iter_links():
         if linkDict.get('device') == iface:
             yield linkDict['name']
 
 
-def isVlanned(dev):
-    return any(vlan.startswith(dev + '.') for vlan in vlans())
+def is_vlanned(device_name):
+    return any(vlan.startswith(device_name + '.') for vlan in vlans())
 
 
-def vlan_device(vlan):
+def vlan_device(vlan_device_name):
     """ Return the device of the given VLAN. """
-    vlanLink = getLink(vlan)
+    vlanLink = getLink(vlan_device_name)
     return vlanLink.device
 
 
-def vlan_id(vlan):
+def vlan_id(vlan_device_name):
     """ Return the ID of the given VLAN. """
-    vlanLink = getLink(vlan)
+    vlanLink = getLink(vlan_device_name)
     return int(vlanLink.vlanid)
 
 
-def vlaninfo(link):
+def info(link):
     return {'iface': link.device, 'vlanid': link.vlanid}
 
 
-def vlanSpeed(vlanName):
+def speed(vlan_device_name):
     """Returns the vlan's underlying device speed."""
-    vlanDevName = vlan_device(vlanName)
+    vlanDevName = vlan_device(vlan_device_name)
     vlanDev = getLink(vlanDevName)
     if vlanDev.isNIC():
         return nics.speed(vlanDevName)
