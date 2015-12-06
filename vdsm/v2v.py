@@ -156,14 +156,16 @@ def get_external_vms(uri, username, password):
 
 
 def convert_external_vm(uri, username, password, vminfo, job_id, irs):
-    job = ImportVm.from_libvirt(uri, username, password, vminfo, job_id, irs)
+    command = LibvirtCommand(uri, username, password, vminfo, job_id, irs)
+    job = ImportVm(job_id, command)
     job.start()
     _add_job(job_id, job)
     return {'status': doneCode}
 
 
 def convert_ova(ova_path, vminfo, job_id, irs):
-    job = ImportVm.from_ova(ova_path, vminfo, job_id, irs)
+    command = OvaCommand(ova_path, vminfo, job_id, irs)
+    job = ImportVm(job_id, command)
     job.start()
     _add_job(job_id, job)
     return response.success()
@@ -275,43 +277,181 @@ def _read_ovf(job_id):
         raise NoSuchOvf("No such ovf %r" % file_name)
 
 
-def get_storage_domain_path(path):
-    '''
-    prepareImage returns /prefix/sdUUID/images/imgUUID/volUUID
-    we need storage domain absolute path so we go up 3 levels
-    '''
-    return path.rsplit(os.sep, 3)[0]
+class V2VCommand(object):
+    def __init__(self, vminfo, vmid, irs):
+        self._vminfo = vminfo
+        self._vmid = vmid
+        self._irs = irs
+        self._prepared_volumes = []
 
+    def execute(self):
+        raise NotImplementedError("Subclass must implement this")
 
-@contextmanager
-def password_file(job_id, file_name, password):
-    fd = os.open(file_name, os.O_WRONLY | os.O_CREAT, 0o600)
-    try:
-        os.write(fd, password.value)
-    finally:
-        os.close(fd)
-    try:
-        yield
-    finally:
+    def _start_virt_v2v(self):
+        return execCmd(self._command(),
+                       sync=False,
+                       deathSignal=signal.SIGTERM,
+                       nice=NICENESS.HIGH,
+                       ioclass=IOCLASS.IDLE,
+                       env=self._environment())
+
+    def _get_disk_format(self):
+        fmt = self._vminfo.get('format', 'raw').lower()
+        return "qcow2" if fmt == "cow" else fmt
+
+    def _disk_parameters(self):
+        parameters = []
+        for disk in self._vminfo['disks']:
+            try:
+                parameters.append('--vdsm-image-uuid')
+                parameters.append(disk['imageID'])
+                parameters.append('--vdsm-vol-uuid')
+                parameters.append(disk['volumeID'])
+            except KeyError as e:
+                raise InvalidInputError('Job %r missing required property: %s'
+                                        % (self._vmid, e))
+        return parameters
+
+    @contextmanager
+    def _volumes(self):
+        self._prepare_volumes()
         try:
-            os.remove(file_name)
-        except Exception:
-            logging.exception("Job %r error removing passwd file: %s",
-                              job_id, file_name)
+            yield
+        finally:
+            self._teardown_volumes()
+
+    def _prepare_volumes(self):
+        if len(self._vminfo['disks']) < 1:
+            raise InvalidInputError('Job %r cannot import vm with no disk',
+                                    self._vmid)
+
+        for disk in self._vminfo['disks']:
+            drive = {'poolID': self._vminfo['poolID'],
+                     'domainID': self._vminfo['domainID'],
+                     'volumeID': disk['volumeID'],
+                     'imageID': disk['imageID']}
+            res = self._irs.prepareImage(drive['domainID'],
+                                         drive['poolID'],
+                                         drive['imageID'],
+                                         drive['volumeID'])
+            if res['status']['code']:
+                raise VolumeError('Job %r bad volume specification: %s' %
+                                  (self._vmid, drive))
+
+            drive['path'] = res['path']
+            self._prepared_volumes.append(drive)
+
+    def _teardown_volumes(self):
+        for drive in self._prepared_volumes:
+            try:
+                self._irs.teardownImage(drive['domainID'],
+                                        drive['poolID'],
+                                        drive['imageID'])
+            except Exception as e:
+                logging.error('Job %r error tearing down drive: %s',
+                              self._vmid, e)
+
+    def _get_storage_domain_path(self, path):
+        '''
+        prepareImage returns /prefix/sdUUID/images/imgUUID/volUUID
+        we need storage domain absolute path so we go up 3 levels
+        '''
+        return path.rsplit(os.sep, 3)[0]
+
+    def _environment(self):
+        env = {'LIBGUESTFS_BACKEND': 'direct'}
+        if 'virtio_iso_path' in self._vminfo:
+            env['VIRTIO_WIN'] = self._vminfo['virtio_iso_path']
+        return env
+
+
+class LibvirtCommand(V2VCommand):
+    def __init__(self, uri, username, password, vminfo, vmid, irs):
+        super(LibvirtCommand, self).__init__(vminfo, vmid, irs)
+        self._uri = uri
+        self._username = username
+        self._password = password
+
+        self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
+
+    def _command(self):
+        cmd = [_VIRT_V2V.cmd,
+               '-ic', self._uri,
+               '-o', 'vdsm',
+               '-of', self._get_disk_format(),
+               '-oa', self._vminfo.get('allocation', 'sparse').lower()]
+        cmd.extend(self._disk_parameters())
+        cmd.extend(['--password-file',
+                    self._passwd_file,
+                    '--vdsm-vm-uuid',
+                    self._vmid,
+                    '--vdsm-ovf-output',
+                    _V2V_DIR,
+                    '--machine-readable',
+                    '-os',
+                    self._get_storage_domain_path(
+                        self._prepared_volumes[0]['path']),
+                    self._vminfo['vmName']])
+        return cmd
+
+    @contextmanager
+    def execute(self):
+        with self._volumes(), self._password_file():
+            yield self._start_virt_v2v()
+
+    @contextmanager
+    def _password_file(self):
+        fd = os.open(self._passwd_file, os.O_WRONLY | os.O_CREAT, 0o600)
+        try:
+            os.write(fd, self._password.value)
+        finally:
+            os.close(fd)
+        try:
+            yield
+        finally:
+            try:
+                os.remove(self._passwd_file)
+            except Exception:
+                logging.exception("Job %r error removing passwd file: %s",
+                                  self._vmid, self._passwd_file)
+
+
+class OvaCommand(V2VCommand):
+    def __init__(self, ova_path, vminfo, vmid, irs):
+        super(OvaCommand, self).__init__(vminfo, vmid, irs)
+        self._ova_path = ova_path
+
+    def _command(self):
+        cmd = [_VIRT_V2V.cmd,
+               '-i', 'ova', self._ova_path,
+               '-o', 'vdsm',
+               '-of', self._get_disk_format(),
+               '-oa', self._vminfo.get('allocation', 'sparse').lower(),
+               '--vdsm-vm-uuid',
+               self._vmid,
+               '--vdsm-ovf-output',
+               _V2V_DIR,
+               '--machine-readable',
+               '-os',
+               self._get_storage_domain_path(
+                   self._prepared_volumes[0]['path'])]
+        cmd.extend(self._disk_parameters())
+        return cmd
+
+    @contextmanager
+    def execute(self):
+        with self._volumes():
+            yield self._start_virt_v2v()
 
 
 class ImportVm(object):
     TERM_DELAY = 30
     PROC_WAIT_TIMEOUT = 30
 
-    def __init__(self, vminfo, job_id, irs):
-        '''
-        do not use directly, use a factory method instead!
-        '''
-        self._thread = None
-        self._vminfo = vminfo
+    def __init__(self, job_id, command):
         self._id = job_id
-        self._irs = irs
+        self._command = command
+        self._thread = None
 
         self._status = STATUS.STARTING
         self._description = ''
@@ -319,40 +459,10 @@ class ImportVm(object):
         self._disk_count = 1
         self._current_disk = 1
         self._aborted = False
-        self._prepared_volumes = []
-
-        self._uri = None
-        self._username = None
-        self._password = None
-        self._passwd_file = None
-        self._create_command = None
-        self._run_command = None
-
-        self._ova_path = None
-
-    @classmethod
-    def from_libvirt(cls, uri, username, password, vminfo, job_id, irs):
-        obj = cls(vminfo, job_id, irs)
-
-        obj._uri = uri
-        obj._username = username
-        obj._password = password
-        obj._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % job_id)
-        obj._create_command = obj._from_libvirt_command
-        obj._run_command = obj._run_with_password
-        return obj
-
-    @classmethod
-    def from_ova(cls, ova_path, vminfo, job_id, irs):
-        obj = cls(vminfo, job_id, irs)
-
-        obj._ova_path = ova_path
-        obj._create_command = obj._from_ova_command
-        obj._run_command = obj._run
-        return obj
+        self._proc = None
 
     def start(self):
-        self._thread = concurrent.thread(self._run_command)
+        self._thread = concurrent.thread(self._run)
         self._thread.start()
 
     def wait(self):
@@ -382,10 +492,6 @@ class ImportVm(object):
         completed = (self._disk_count - 1) * 100
         return (completed + self._disk_progress) / self._disk_count
 
-    def _run_with_password(self):
-        with password_file(self._id, self._passwd_file, self._password):
-            self._run()
-
     @traceback(msg="Error importing vm")
     def _run(self):
         try:
@@ -402,40 +508,26 @@ class ImportVm(object):
                 except Exception as e:
                     logging.exception('Job %r, error trying to abort: %r',
                                       self._id, e)
-        finally:
-            self._teardown_volumes()
 
     def _import(self):
-        # TODO: use the process handling http://gerrit.ovirt.org/#/c/33909/
-        self._prepare_volumes()
-        cmd = self._create_command()
         logging.info('Job %r starting import', self._id)
 
-        # This is the way we run qemu-img convert jobs. virt-v2v is invoking
-        # qemu-img convert to perform the migration.
-        self._proc = execCmd(cmd, sync=False, deathSignal=signal.SIGTERM,
-                             nice=NICENESS.HIGH, ioclass=IOCLASS.IDLE,
-                             env=self._execution_environments())
+        with self._command.execute() as self._proc:
+            self._proc.blocking = True
+            self._watch_process_output()
+            self._wait_for_process()
 
-        self._proc.blocking = True
-        self._watch_process_output()
-        self._wait_for_process()
+            if self._proc.returncode != 0:
+                raise V2VProcessError('Job %r process failed exit-code: %r'
+                                      ', stderr: %s' %
+                                      (self._id,
+                                       self._proc.returncode,
+                                       self._proc.stderr.read(1024)))
 
-        if self._proc.returncode != 0:
-            raise V2VProcessError('Job %r process failed exit-code: %r'
-                                  ', stderr: %s' %
-                                  (self._id, self._proc.returncode,
-                                   self._proc.stderr.read(1024)))
-
-        if self._status != STATUS.ABORTED:
-            self._status = STATUS.DONE
-            logging.info('Job %r finished import successfully', self._id)
-
-    def _execution_environments(self):
-        env = {'LIBGUESTFS_BACKEND': 'direct'}
-        if 'virtio_iso_path' in self._vminfo:
-            env['VIRTIO_WIN'] = self._vminfo['virtio_iso_path']
-        return env
+            if self._status != STATUS.ABORTED:
+                self._status = STATUS.DONE
+                logging.info('Job %r finished import successfully',
+                             self._id)
 
     def _wait_for_process(self):
         if self._proc.returncode is not None:
@@ -465,41 +557,6 @@ class ImportVm(object):
                 raise RuntimeError("Job %r got unexpected parser event: %s" %
                                    (self._id, event))
 
-    def _from_libvirt_command(self):
-        cmd = [_VIRT_V2V.cmd,
-               '-ic', self._uri,
-               '-o', 'vdsm',
-               '-of', self._get_disk_format(),
-               '-oa', self._vminfo.get('allocation', 'sparse').lower()]
-        cmd.extend(self._generate_disk_parameters())
-        cmd.extend(['--password-file',
-                    self._passwd_file,
-                    '--vdsm-vm-uuid',
-                    self._id,
-                    '--vdsm-ovf-output',
-                    _V2V_DIR,
-                    '--machine-readable',
-                    '-os',
-                    get_storage_domain_path(self._prepared_volumes[0]['path']),
-                    self._vminfo['vmName']])
-        return cmd
-
-    def _from_ova_command(self):
-        cmd = [_VIRT_V2V.cmd,
-               '-i', 'ova', self._ova_path,
-               '-o', 'vdsm',
-               '-of', self._get_disk_format(),
-               '-oa', self._vminfo.get('allocation', 'sparse').lower(),
-               '--vdsm-vm-uuid',
-               self._id,
-               '--vdsm-ovf-output',
-               _V2V_DIR,
-               '--machine-readable',
-               '-os',
-               get_storage_domain_path(self._prepared_volumes[0]['path'])]
-        cmd.extend(self._generate_disk_parameters())
-        return cmd
-
     def abort(self):
         self._status = STATUS.ABORTED
         logging.info('Job %r aborting...', self._id)
@@ -521,56 +578,6 @@ class ImportVm(object):
                               self._id)
             finally:
                 zombiereaper.autoReapPID(self._proc.pid)
-
-    def _get_disk_format(self):
-        fmt = self._vminfo.get('format', 'raw').lower()
-        if fmt == 'cow':
-            return 'qcow2'
-        return fmt
-
-    def _generate_disk_parameters(self):
-        parameters = []
-        for disk in self._vminfo['disks']:
-            try:
-                parameters.append('--vdsm-image-uuid')
-                parameters.append(disk['imageID'])
-                parameters.append('--vdsm-vol-uuid')
-                parameters.append(disk['volumeID'])
-            except KeyError as e:
-                raise InvalidInputError('Job %r missing required property: %s'
-                                        % (self._id, e))
-        return parameters
-
-    def _prepare_volumes(self):
-        if len(self._vminfo['disks']) < 1:
-            raise InvalidInputError('Job %r cannot import vm with no disk',
-                                    self._id)
-
-        for disk in self._vminfo['disks']:
-            drive = {'poolID': self._vminfo['poolID'],
-                     'domainID': self._vminfo['domainID'],
-                     'volumeID': disk['volumeID'],
-                     'imageID': disk['imageID']}
-            res = self._irs.prepareImage(drive['domainID'],
-                                         drive['poolID'],
-                                         drive['imageID'],
-                                         drive['volumeID'])
-            if res['status']['code']:
-                raise VolumeError('Job %r bad volume specification: %s' %
-                                  (self._id, drive))
-
-            drive['path'] = res['path']
-            self._prepared_volumes.append(drive)
-
-    def _teardown_volumes(self):
-        for drive in self._prepared_volumes:
-            try:
-                self._irs.teardownImage(drive['domainID'],
-                                        drive['poolID'],
-                                        drive['imageID'])
-            except Exception as e:
-                logging.error('Job %r error tearing down drive: %s',
-                              self._id, e)
 
 
 class OutputParser(object):
