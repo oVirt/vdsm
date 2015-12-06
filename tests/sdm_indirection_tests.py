@@ -432,14 +432,14 @@ class RedirectionChecker(object):
         self.source_instance = source_instance
         self.target_name = target_name
 
-    def check(self, fn, args, result):
+    def check_method(self, fn, args, result):
         target = getattr(self.source_instance, self.target_name)
         getattr(self.source_instance, fn)(*args)
         self.assertEqual(result, target.__recording__)
 
-    def check_call(self, fn, nr_args=0):
+    def check_method_call(self, fn, nr_args=0):
         args = tuple(range(nr_args))
-        self.check(fn, args, [(fn, args, {})])
+        self.check_method(fn, args, [(fn, args, {})])
 
     def check_classmethod_call(self, fn, nr_args=0):
         args = tuple(range(nr_args))
@@ -466,10 +466,12 @@ class DomainTestMixin(object):
     def test_getrepopath(self):
         # The private method _getRepoPath in StorageDomain calls the public
         # method getRepoPath in the StorageDomainManifest.
-        self.checker.check('_getRepoPath', (), [('getRepoPath', (), {})])
+        self.checker.check_method('_getRepoPath', (),
+                                  [('getRepoPath', (), {})])
 
     def test_nonexisting_function(self):
-        self.assertRaises(AttributeError, self.checker.check_call, 'foo')
+        self.assertRaises(AttributeError,
+                          self.checker.check_method_call, 'foo')
 
     @permutations([
         # dom method, manifest method, nargs
@@ -480,7 +482,8 @@ class DomainTestMixin(object):
     ])
     def test_clusterlock(self, dom_method, manifest_method, nr_args):
         args = tuple(range(nr_args))
-        self.checker.check(dom_method, args, [(manifest_method, args, {})])
+        self.checker.check_method(dom_method, args,
+                                  [(manifest_method, args, {})])
 
     @permutations([
         ['getReadDelay', 0],
@@ -516,7 +519,7 @@ class DomainTestMixin(object):
         ['validateCreateVolumeParams', 3],
         ])
     def test_common_functions(self, fn, nargs):
-        self.checker.check_call(fn, nargs)
+        self.checker.check_method_call(fn, nargs)
 
 
 @expandPermutations
@@ -543,7 +546,7 @@ class BlockDomainTests(DomainTestMixin, VdsmTestCase):
         ['rmDCImgDir', 2],
     ])
     def test_block_functions(self, fn, nargs=0):
-        self.checker.check_call(fn, nargs)
+        self.checker.check_method_call(fn, nargs)
 
     @permutations([
         ['metaSize', 1],
@@ -576,7 +579,7 @@ class ImageTest(VdsmTestCase):
         ['getImageDir', 2],
     ])
     def test_functions(self, fn, nargs):
-        self.checker.check_call(fn, nargs)
+        self.checker.check_method_call(fn, nargs)
 
 
 @expandPermutations
@@ -606,7 +609,7 @@ class VolumeTestMixin(object):
         ['getVolType', 0],
         ])
     def test_functions(self, fn, nargs):
-        self.checker.check_call(fn, nargs)
+        self.checker.check_method_call(fn, nargs)
 
     @permutations([
         ['formatMetadata', 1],
@@ -640,7 +643,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['_setrw', 1],
         ])
     def test_functions(self, fn, nargs):
-        self.checker.check_call(fn, nargs)
+        self.checker.check_method_call(fn, nargs)
 
 
 @expandPermutations
@@ -661,7 +664,7 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['_setrw', 1],
         ])
     def test_functions(self, fn, nargs):
-        self.checker.check_call(fn, nargs)
+        self.checker.check_method_call(fn, nargs)
 
     @permutations([
         ['file_setrw', 2],
