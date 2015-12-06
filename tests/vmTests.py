@@ -1400,7 +1400,7 @@ class TestVmBalloon(TestCaseBase):
             target = 256
             res = testvm.setBalloonTarget(target)  # just to fit in 80 cols
             self.assertEqual(res['status']['code'], 0)
-            self.assertEqual(testvm._dom.__recording__,
+            self.assertEqual(testvm._dom.__calls__,
                              [('setMemory', (target,), {})])
 
     def testVmWithoutDom(self):
@@ -1481,12 +1481,12 @@ class FreezingTests(TestCaseBase):
     def test_freeze(self):
         res = self.vm.freeze()
         self.assertEqual(res, response.success())
-        self.assertEqual(self.dom.__recording__, [("fsFreeze", (), {})])
+        self.assertEqual(self.dom.__calls__, [("fsFreeze", (), {})])
 
     def test_thaw(self):
         res = self.vm.thaw()
         self.assertEqual(res, response.success())
-        self.assertEqual(self.dom.__recording__, [("fsThaw", (), {})])
+        self.assertEqual(self.dom.__calls__, [("fsThaw", (), {})])
 
 
 class FreezingGuestAgentUnresponsiveTests(TestCaseBase):

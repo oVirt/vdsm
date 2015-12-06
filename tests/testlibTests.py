@@ -66,72 +66,72 @@ class RecordedTests(VdsmTestCase):
 
     def setUp(self):
         try:
-            del Recorded.__class_recording__
+            del Recorded.__class_calls__
         except AttributeError:
             pass
 
     def test_no_args(self):
         obj = Recorded()
         obj.no_args()
-        self.assertEqual(obj.__recording__, [("no_args", (), {})])
+        self.assertEqual(obj.__calls__, [("no_args", (), {})])
 
     def test_args(self):
         obj = Recorded()
         obj.args(1, 2)
-        self.assertEqual(obj.__recording__, [("args", (1, 2), {})])
+        self.assertEqual(obj.__calls__, [("args", (1, 2), {})])
 
     def test_kwargs(self):
         obj = Recorded()
         obj.kwargs(a=1, b=2)
-        self.assertEqual(obj.__recording__, [("kwargs", (), {"a": 1, "b": 2})])
+        self.assertEqual(obj.__calls__, [("kwargs", (), {"a": 1, "b": 2})])
 
     def test_kwargs_as_args(self):
         obj = Recorded()
         obj.kwargs(1, 2)
-        self.assertEqual(obj.__recording__, [("kwargs", (1, 2), {})])
+        self.assertEqual(obj.__calls__, [("kwargs", (1, 2), {})])
 
     def test_no_kwargs(self):
         obj = Recorded()
         obj.args_and_kwargs(1, 2)
-        self.assertEqual(obj.__recording__, [("args_and_kwargs", (1, 2), {})])
+        self.assertEqual(obj.__calls__, [("args_and_kwargs", (1, 2), {})])
 
     def test_some_kwargs(self):
         obj = Recorded()
         obj.args_and_kwargs(1, 2, c=3)
-        self.assertEqual(obj.__recording__,
+        self.assertEqual(obj.__calls__,
                          [("args_and_kwargs", (1, 2), {"c": 3})])
 
     def test_args_as_kwargs(self):
         obj = Recorded()
         obj.args_and_kwargs(a=1, b=2)
-        self.assertEqual(obj.__recording__,
+        self.assertEqual(obj.__calls__,
                          [("args_and_kwargs", (), {"a": 1, "b": 2})])
 
     def test_flow(self):
         obj = Recorded()
         obj.no_args()
         obj.kwargs(a=1)
-        self.assertEqual(obj.__recording__, [
+        self.assertEqual(obj.__calls__, [
             ("no_args", (), {}),
             ("kwargs", (), {"a": 1}),
         ])
 
     def test_class_method_via_class(self):
         Recorded.class_method('a', b=2)
-        self.assertEqual(Recorded.__class_recording__,
+        self.assertEqual(Recorded.__class_calls__,
                          [('class_method', ('a',), {'b': 2})])
 
     def test_class_method_via_obj(self):
         obj = Recorded()
         obj.class_method('a', b=2)
-        self.assertEqual(Recorded.__class_recording__,
+        self.assertEqual(Recorded.__class_calls__,
                          [('class_method', ('a',), {'b': 2})])
 
     def test_class_method_flow(self):
         obj = Recorded()
         obj.class_method('a', b=2)
         obj.class_method_noargs()
-        self.assertEqual(Recorded.__class_recording__, [
+        self.assertEqual(Recorded.__class_calls__, [
             ('class_method', ('a',), {'b': 2}),
             ('class_method_noargs', (), {}),
         ])
@@ -140,10 +140,10 @@ class RecordedTests(VdsmTestCase):
         obj = Recorded()
         obj.class_method('a', b=2)
         obj.args(1, 2)
-        self.assertEqual(Recorded.__class_recording__, [
+        self.assertEqual(Recorded.__class_calls__, [
             ('class_method', ('a',), {'b': 2}),
         ])
-        self.assertEqual(obj.__recording__, [
+        self.assertEqual(obj.__calls__, [
             ('args', (1, 2), {}),
         ])
 

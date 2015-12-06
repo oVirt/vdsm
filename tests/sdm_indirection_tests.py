@@ -32,7 +32,7 @@ class FakeDomainManifest(sd.StorageDomainManifest):
         self.domaindir = '/a/b/c'
         self.mountpoint = '/a/b'
         self._metadata = {}
-        self.__class__.__class_recording__ = []
+        self.__class__.__class_calls__ = []
 
     @recorded
     def replaceMetadata(self, md):
@@ -291,7 +291,7 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
         self._imagePath = '/a/b'
         self._volumePath = '/a/b/c'
         self.voltype = None
-        self.__class__.__class_recording__ = []
+        self.__class__.__class_calls__ = []
 
     @classmethod
     @recorded
@@ -424,7 +424,7 @@ class RedirectionChecker(object):
     def check_method(self, fn, args, result):
         target = getattr(self.source_instance, self.target_name)
         getattr(self.source_instance, fn)(*args)
-        self.assertEqual(result, target.__recording__)
+        self.assertEqual(result, target.__calls__)
 
     def check_method_call(self, fn, nr_args=0):
         args = tuple(range(nr_args))
@@ -434,7 +434,7 @@ class RedirectionChecker(object):
         args = tuple(range(nr_args))
         target = getattr(self.source_instance, self.target_name)
         getattr(self.source_instance, fn)(*args)
-        self.assertEqual([(fn, args, {})], target.__class_recording__)
+        self.assertEqual([(fn, args, {})], target.__class_calls__)
 
     def assertEqual(self, expected, actual):
         assert actual == expected, "expected: %r got: %r" % (expected, actual)
@@ -525,7 +525,7 @@ class BlockDomainTests(DomainTestMixin, VdsmTestCase):
     def test_acquirevolumemetadataslot(self):
         with self.domain.acquireVolumeMetadataSlot(0, 1):
             result = [('acquireVolumeMetadataSlot', (0, 1), {})]
-            self.assertEqual(self.domain._manifest.__recording__, result)
+            self.assertEqual(self.domain._manifest.__calls__, result)
 
     @permutations([
         ['extend', 2],

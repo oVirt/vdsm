@@ -413,13 +413,13 @@ def make_config(tunables):
 
 def recorded(meth):
     """
-    Method decorator recording calls to receiver __recording__ list.
+    Method decorator recording calls to receiver __calls__ list.
 
     Can decorate an instance method or class method. Instance methods are
-    stored in the instance __recording__ list, and class methods in the class
-    __class_recording__ list.
+    stored in the instance __calls__ list, and class methods in the class
+    __class_calls__ list.
 
-    You are responsible for clearing the class __class_recording__.
+    You are responsible for clearing the class __class_calls__.
 
     Note: when decorating a class method, this decorator must be after the
     @classmethod decorator:
@@ -435,9 +435,9 @@ def recorded(meth):
     @wraps(meth)
     def wrapper(obj, *args, **kwargs):
         if inspect.isclass(obj):
-            name = "__class_recording__"
+            name = "__class_calls__"
         else:
-            name = "__recording__"
+            name = "__calls__"
         try:
             recording = getattr(obj, name)
         except AttributeError:
