@@ -32,15 +32,7 @@ class FakeDomainManifest(sd.StorageDomainManifest):
         self.domaindir = '/a/b/c'
         self.mountpoint = '/a/b'
         self._metadata = {}
-        self.__class__._classmethod_calls = []
-
-    @classmethod
-    def record_classmethod_call(cls, fn, args):
-        cls._classmethod_calls.append((fn, args))
-
-    @classmethod
-    def get_classmethod_calls(cls):
-        return cls._classmethod_calls
+        self.__class__.__class_recording__ = []
 
     @recorded
     def replaceMetadata(self, md):
@@ -199,12 +191,14 @@ class FakeBlockDomainManifest(FakeDomainManifest):
         pass
 
     @classmethod
+    @recorded
     def metaSize(cls, *args):
-        cls.record_classmethod_call('metaSize', args)
+        pass
 
     @classmethod
+    @recorded
     def getMetaDataMapping(cls, *args):
-        cls.record_classmethod_call('getMetaDataMapping', args)
+        pass
 
     @recorded
     def resizePV(self, guid):
@@ -297,23 +291,17 @@ class FakeVolumeMetadata(volume.VolumeMetadata):
         self._imagePath = '/a/b'
         self._volumePath = '/a/b/c'
         self.voltype = None
-        self.__class__._classmethod_calls = []
+        self.__class__.__class_recording__ = []
 
     @classmethod
-    def record_classmethod_call(cls, fn, args):
-        cls._classmethod_calls.append((fn, args))
-
-    @classmethod
-    def get_classmethod_calls(cls):
-        return cls._classmethod_calls
-
-    @classmethod
+    @recorded
     def formatMetadata(cls, *args):
-        cls.record_classmethod_call('formatMetadata', args)
+        pass
 
     @classmethod
+    @recorded
     def _putMetadata(cls, *args):
-        cls.record_classmethod_call('_putMetadata', args)
+        pass
 
     @recorded
     def getVolumePath(self):
@@ -400,8 +388,9 @@ class FakeFileVolumeMetadata(FakeVolumeMetadata):
         pass
 
     @classmethod
+    @recorded
     def file_setrw(cls, *args):
-        cls.record_classmethod_call('file_setrw', args)
+        pass
 
     @recorded
     def _setrw(self, rw):
@@ -445,7 +434,7 @@ class RedirectionChecker(object):
         args = tuple(range(nr_args))
         target = getattr(self.source_instance, self.target_name)
         getattr(self.source_instance, fn)(*args)
-        self.assertEqual([(fn, args)], target.get_classmethod_calls())
+        self.assertEqual([(fn, args, {})], target.__class_recording__)
 
     def assertEqual(self, expected, actual):
         assert actual == expected, "expected: %r got: %r" % (expected, actual)
