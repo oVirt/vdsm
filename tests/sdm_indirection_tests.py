@@ -401,7 +401,7 @@ class FakeFileVolumeMetadata(FakeVolumeMetadata):
 
     @classmethod
     def file_setrw(cls, *args):
-        pass
+        cls.record_classmethod_call('file_setrw', args)
 
     @recorded
     def _setrw(self, rw):
@@ -435,17 +435,20 @@ class RedirectionChecker(object):
     def check(self, fn, args, result):
         target = getattr(self.source_instance, self.target_name)
         getattr(self.source_instance, fn)(*args)
-        return target.__recording__ == result
+        self.assertEqual(result, target.__recording__)
 
     def check_call(self, fn, nr_args=0):
         args = tuple(range(nr_args))
-        return self.check(fn, args, [(fn, args, {})])
+        self.check(fn, args, [(fn, args, {})])
 
     def check_classmethod_call(self, fn, nr_args=0):
         args = tuple(range(nr_args))
         target = getattr(self.source_instance, self.target_name)
         getattr(self.source_instance, fn)(*args)
-        return target.get_classmethod_calls() == [(fn, args)]
+        self.assertEqual([(fn, args)], target.get_classmethod_calls())
+
+    def assertEqual(self, expected, actual):
+        assert actual == expected, "expected: %r got: %r" % (expected, actual)
 
 
 @expandPermutations
@@ -594,7 +597,7 @@ class VolumeTestMixin(object):
     @permutations([
         ['getVolumePath', 0],
         ['getMetadataId', 0],
-        ['getMetadata', 0],
+        ['getMetadata', 1],
         ['getMetaParam', 1],
         ['setMetadata', 2],
         ['getParent', 0],
