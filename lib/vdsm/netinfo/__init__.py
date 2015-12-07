@@ -238,6 +238,12 @@ class CachingNetInfo(object):
         self.bondings = _netinfo['bondings']
         self.bridges = _netinfo['bridges']
 
+    def del_network(self, network):
+        del self.networks[network]
+
+    def del_bonding(self, bonding):
+        del self.bondings[bonding]
+
     def getNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (bridge/network, vlan) connected to  nic/bond """
         return chain(self._getBridgedNetworksAndVlansForIface(iface),

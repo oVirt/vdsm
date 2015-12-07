@@ -674,7 +674,7 @@ def _handleBondings(bondings, configurator, in_rollback):
                                     _netinfo=_netinfo,
                                     destroyOnMasterRemoval='remove' in attrs)
             bond.remove()
-            del _netinfo.bondings[name]
+            _netinfo.del_bonding(name)
         elif name in _netinfo.bondings:
             edition.append((name, attrs))
         else:
@@ -924,7 +924,7 @@ def setupNetworks(networks, bondings, **options):
                 _delNetwork(network, configurator=configurator,
                             implicitBonding=False, _netinfo=_netinfo,
                             keep_bridge=keep_bridge)
-                del _netinfo.networks[network]
+                _netinfo.del_network(network)
                 _netinfo.updateDevices()
             elif network in libvirt_nets:
                 # If the network was not in _netinfo but is in the networks
