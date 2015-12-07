@@ -158,7 +158,7 @@ class Tap(Interface):
     arch = cpuarch.real()
     if arch == cpuarch.X86_64:
         _TUNSETIFF = 0x400454ca
-    elif arch == cpuarch.PPC64:
+    elif cpuarch.is_ppc(arch):
         _TUNSETIFF = 0x800454ca
     else:
         raise SkipTest("Unsupported Architecture %s" % arch)
