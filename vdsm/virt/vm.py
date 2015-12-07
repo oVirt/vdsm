@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ import libvirt
 # vdsm imports
 from vdsm import concurrent
 from vdsm import constants
+from vdsm import cpuarch
 from vdsm import host
 from vdsm import hooks
 from vdsm import libvirtconnection
@@ -319,12 +320,7 @@ class Vm(object):
         self._releaseLock = threading.Lock()
         self.saveState()
         self._watchdogEvent = {}
-        self.arch = caps.getTargetArch()
-
-        if not caps.Architecture.is_ppc(self.arch) and \
-                not caps.Architecture.is_x86(self.arch):
-            raise RuntimeError('Unsupported architecture: %s' % self.arch)
-
+        self.arch = cpuarch.effective()
         self._powerDownEvent = threading.Event()
         self._liveMergeCleanupThreads = {}
         self._shutdownLock = threading.Lock()
@@ -547,9 +543,9 @@ class Vm(object):
         Normalize video device provided by conf.
         """
 
-        DEFAULT_VIDEOS = {caps.Architecture.X86_64: 'cirrus',
-                          caps.Architecture.PPC64: 'vga',
-                          caps.Architecture.PPC64LE: 'vga'}
+        DEFAULT_VIDEOS = {cpuarch.X86_64: 'cirrus',
+                          cpuarch.PPC64: 'vga',
+                          cpuarch.PPC64LE: 'vga'}
 
         vcards = []
         if self.conf.get('display') == 'vnc':
@@ -1644,7 +1640,7 @@ class Vm(object):
         domxml = vmxml.Domain(self.conf, self.log, self.arch)
         domxml.appendOs(use_serial_console=(serial_console is not None))
 
-        if caps.Architecture.is_x86(self.arch):
+        if cpuarch.is_x86(self.arch):
             osd = caps.osversion()
 
             osVersion = osd.get('version', '') + '-' + osd.get('release', '')
@@ -1657,7 +1653,7 @@ class Vm(object):
 
         domxml.appendClock()
 
-        if caps.Architecture.is_x86(self.arch):
+        if cpuarch.is_x86(self.arch):
             domxml.appendFeatures()
 
         domxml.appendCpu()
@@ -1670,7 +1666,7 @@ class Vm(object):
                                   _QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
 
-        if self.arch == caps.Architecture.PPC64:
+        if self.arch == cpuarch.PPC64:
             domxml.appendEmulator()
 
         self._appendDevices(domxml)
@@ -3629,7 +3625,7 @@ class Vm(object):
                       actionToString(action))
 
     def changeCD(self, drivespec):
-        if caps.Architecture.is_ppc(self.arch):
+        if cpuarch.is_ppc(self.arch):
             blockdev = 'sda'
         else:
             blockdev = 'hdc'

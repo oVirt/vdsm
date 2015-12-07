@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -33,10 +33,10 @@ import logging.config
 
 from vdsm import commands
 from vdsm import concurrent
+from vdsm import cpuarch
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
 
-from caps import Architecture
 import numaUtils
 
 LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
@@ -159,7 +159,7 @@ class _SuperVdsm(object):
         if platform.machine() in ('x86_64', 'i686'):
             from vdsm.dmidecodeUtil import getHardwareInfoStructure
             return getHardwareInfoStructure()
-        elif Architecture.is_ppc(platform.machine()):
+        elif cpuarch.is_ppc(platform.machine()):
             from vdsm.ppc64HardwareInfo import getHardwareInfoStructure
             return getHardwareInfoStructure()
         else:

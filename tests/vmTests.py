@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ from virt.vmdevices.storage import Drive
 from virt.vmdevices.storage import DISK_TYPE
 from virt.vmdevices.network import Interface
 from vdsm import constants
+from vdsm import cpuarch
 from vdsm import define
 from vdsm import password
 from vdsm import response
@@ -129,7 +130,7 @@ class TestVm(XMLTestCase):
               </metadata>
            </domain>"""
 
-        domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         self.assertXMLEqual(domxml.dom.toxml(), expectedXML)
 
     def testOSXMLBootMenu(self):
@@ -181,7 +182,7 @@ class TestVm(XMLTestCase):
             </os>""")
         for conf, osXML in zip(vmConfs, expectedXMLs):
             conf.update(self.conf)
-            domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
+            domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
             domxml.appendOs()
             xml = find_xml_element(domxml.dom.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
@@ -212,7 +213,7 @@ class TestVm(XMLTestCase):
 
         for vmConf, osXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
+            domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
             domxml.appendOs()
             xml = find_xml_element(domxml.dom.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
@@ -241,7 +242,7 @@ class TestVm(XMLTestCase):
 
         for vmConf, osXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.PPC64)
+            domxml = vmxml.Domain(vmConf, self.log, cpuarch.PPC64)
             domxml.appendOs()
             xml = find_xml_element(domxml.dom.toxml(), './os')
             self.assertXMLEqual(xml, osXML)
@@ -251,7 +252,7 @@ class TestVm(XMLTestCase):
             <features>
                   <acpi/>
             </features>"""
-        domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendFeatures()
         xml = find_xml_element(domxml.dom.toxml(), './features')
         self.assertXMLEqual(xml, featuresXML)
@@ -268,7 +269,7 @@ class TestVm(XMLTestCase):
             </features>"""
         conf = {'hypervEnable': 'true'}
         conf.update(self.conf)
-        domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
         domxml.appendFeatures()
         xml = find_xml_element(domxml.dom.toxml(), './features')
         self.assertXMLEqual(xml, featuresXML)
@@ -289,7 +290,7 @@ class TestVm(XMLTestCase):
         serial = 'A5955881-519B-11CB-8352-E78A528C28D8_00:21:cc:68:d7:38'
         sysinfoXML = sysinfoXML % (constants.SMBIOS_MANUFACTURER,
                                    product, version, serial, self.conf['vmId'])
-        domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendSysinfo(product, version, serial)
         xml = find_xml_element(domxml.dom.toxml(), './sysinfo')
         self.assertXMLEqual(xml, sysinfoXML)
@@ -359,7 +360,7 @@ class TestVm(XMLTestCase):
                 <timer name="hpet" present="no"/>
             </clock>"""
         self.conf['timeOffset'] = '-3600'
-        domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml.appendClock()
         xml = find_xml_element(domxml.dom.toxml(), './clock')
         self.assertXMLEqual(xml, clockXML)
@@ -374,7 +375,7 @@ class TestVm(XMLTestCase):
             </clock>"""
         conf = {'timeOffset': '-3600', 'hypervEnable': 'true'}
         conf.update(self.conf)
-        domxml = vmxml.Domain(conf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(conf, self.log, cpuarch.X86_64)
         domxml.appendClock()
         xml = find_xml_element(domxml.dom.toxml(), './clock')
         self.assertXMLEqual(xml, clockXML)
@@ -412,7 +413,7 @@ class TestVm(XMLTestCase):
                                      {'cpus': '2,3', 'memory': '5120',
                                       'nodeIndex': 1}]}
         vmConf.update(self.conf)
-        domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
         domxml.appendCpu()
         domxml.appendNumaTune()
         xml = domxml.dom.toxml()
@@ -429,7 +430,7 @@ class TestVm(XMLTestCase):
         path = '/tmp/channel-socket'
         name = 'org.linux-kvm.port.0'
         channelXML = channelXML % (name, path)
-        domxml = vmxml.Domain(self.conf, self.log, caps.Architecture.X86_64)
+        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
         domxml._appendAgentDevice(path, name)
         xml = find_xml_element(domxml.dom.toxml(), './devices/channel')
         self.assertXMLEqual(xml, channelXML)
@@ -442,7 +443,7 @@ class TestVm(XMLTestCase):
         vmConfs = [{}, {'tabletEnable': 'true'}]
         for vmConf, inputXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.X86_64)
+            domxml = vmxml.Domain(vmConf, self.log, cpuarch.X86_64)
             domxml.appendInput()
             xml = find_xml_element(domxml.dom.toxml(), './devices/input')
             self.assertXMLEqual(xml, inputXML)
@@ -455,7 +456,7 @@ class TestVm(XMLTestCase):
         vmConfs = [{}, {'tabletEnable': 'true'}]
         for vmConf, inputXML in zip(vmConfs, expectedXMLs):
             vmConf.update(self.conf)
-            domxml = vmxml.Domain(vmConf, self.log, caps.Architecture.PPC64)
+            domxml = vmxml.Domain(vmConf, self.log, cpuarch.PPC64)
             domxml.appendInput()
             xml = find_xml_element(domxml.dom.toxml(), './devices/input')
             self.assertXMLEqual(xml, inputXML)
@@ -496,7 +497,7 @@ class TestVm(XMLTestCase):
 
             self.assertEquals(cm.exception.args[0], exceptionMsg)
 
-    @MonkeyPatch(caps, 'getTargetArch', lambda: caps.Architecture.X86_64)
+    @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.X86_64)
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
@@ -508,7 +509,7 @@ class TestVm(XMLTestCase):
     def testBuildCmdLineX86_64(self):
         self.assertBuildCmdLine(CONF_TO_DOMXML_X86_64)
 
-    @MonkeyPatch(caps, 'getTargetArch', lambda: caps.Architecture.PPC64)
+    @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.PPC64)
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
@@ -1295,8 +1296,8 @@ class TestLibVirtCallbacks(TestCaseBase):
 class TestVmFunctions(TestCaseBase):
 
     _CONFS = {
-        caps.Architecture.X86_64: CONF_TO_DOMXML_X86_64,
-        caps.Architecture.PPC64: CONF_TO_DOMXML_PPC64,
+        cpuarch.X86_64: CONF_TO_DOMXML_X86_64,
+        cpuarch.PPC64: CONF_TO_DOMXML_PPC64,
         'novdsm': CONF_TO_DOMXML_NO_VDSM}
 
     def _buildAllDomains(self, arch):
@@ -1313,11 +1314,11 @@ class TestVmFunctions(TestCaseBase):
     def _getAllDomainIds(self, arch):
         return [conf['vmId'] for conf, _ in self._CONFS[arch]]
 
-    @permutations([[caps.Architecture.X86_64], [caps.Architecture.PPC64]])
+    @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
     def testGetVDSMDomains(self, arch):
         with MonkeyPatchScope([(vm, '_listDomains',
                                 lambda: self._buildAllDomains(arch)),
-                               (caps, 'getTargetArch', lambda: arch)]):
+                               (cpuarch, 'effective', lambda: arch)]):
             self.assertEqual([v.UUIDString() for v in vm.getVDSMDomains()],
                              self._getAllDomainIds(arch))
 

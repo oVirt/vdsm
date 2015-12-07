@@ -1,6 +1,6 @@
 #
 # Copyright IBM Corp. 2012
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,9 +28,9 @@ import xml.etree.ElementTree as etree
 import libvirt
 
 from vdsm import constants
+from vdsm import cpuarch
 from vdsm import libvirtconnection
 
-import caps
 import clientIF
 from virt import sampling
 from virt import vm
@@ -319,7 +319,7 @@ class ConfStub(object):
 
 @contextmanager
 def VM(params=None, devices=None, runCpu=False,
-       arch=caps.Architecture.X86_64, status=None,
+       arch=cpuarch.X86_64, status=None,
        cif=None, create_device_objects=False):
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,9 +24,8 @@ import xml.dom.minidom
 import xml.etree.ElementTree as etree
 
 from vdsm import constants
+from vdsm import cpuarch
 from vdsm import utils
-
-import caps
 
 METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
 METADATA_VM_TUNE_ELEMENT = 'qos'
@@ -205,7 +204,7 @@ class Domain(object):
         m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
         m.appendChildWithArgs('timer', name='pit', tickpolicy='delay')
 
-        if caps.Architecture.is_x86(self.arch):
+        if cpuarch.is_x86(self.arch):
             m.appendChildWithArgs('timer', name='hpet', present='no')
 
         self.dom.appendChild(m)
@@ -256,9 +255,9 @@ class Domain(object):
         oselem = Element('os')
         self.dom.appendChild(oselem)
 
-        DEFAULT_MACHINES = {caps.Architecture.X86_64: 'pc',
-                            caps.Architecture.PPC64: 'pseries',
-                            caps.Architecture.PPC64LE: 'pseries'}
+        DEFAULT_MACHINES = {cpuarch.X86_64: 'pc',
+                            cpuarch.PPC64: 'pseries',
+                            cpuarch.PPC64LE: 'pseries'}
 
         machine = self.conf.get('emulatedMachine', DEFAULT_MACHINES[self.arch])
 
@@ -278,7 +277,7 @@ class Domain(object):
         if self.conf.get('kernelArgs'):
             oselem.appendChildWithArgs('cmdline', text=self.conf['kernelArgs'])
 
-        if caps.Architecture.is_x86(self.arch):
+        if cpuarch.is_x86(self.arch):
             oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
         if utils.tobool(self.conf.get('bootMenuEnable', False)):
@@ -401,7 +400,7 @@ class Domain(object):
 
         cpu = Element('cpu')
 
-        if caps.Architecture.is_x86(self.arch):
+        if cpuarch.is_x86(self.arch):
             cpu.setAttrs(match='exact')
 
             features = self.conf.get('cpuType', 'qemu64').split(',')
@@ -430,7 +429,7 @@ class Domain(object):
                     elif feature[0] == '-':
                         featureAttrs['policy'] = 'disable'
                     cpu.appendChildWithArgs('feature', **featureAttrs)
-        elif caps.Architecture.is_ppc(self.arch):
+        elif cpuarch.is_ppc(self.arch):
             features = self.conf.get('cpuType', 'POWER8').split(',')
             model = features[0]
             cpu.appendChildWithArgs('model', text=model)
@@ -508,7 +507,7 @@ class Domain(object):
         """
         if utils.tobool(self.conf.get('tabletEnable')):
             inputAttrs = {'type': 'tablet', 'bus': 'usb'}
-        elif caps.Architecture.is_x86(self.arch):
+        elif cpuarch.is_x86(self.arch):
             inputAttrs = {'type': 'mouse', 'bus': 'ps2'}
         else:
             inputAttrs = {'type': 'mouse', 'bus': 'usb'}

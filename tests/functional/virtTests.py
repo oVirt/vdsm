@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@ from testlib import temporaryPath
 
 import verify
 
-import caps
+from vdsm import cpuarch
 from vdsm.utils import CommandPath, RollbackContext
 import storageTests as storage
 from storage.misc import execCmd
@@ -56,8 +56,8 @@ _tmpinitramfs = False
 
 VM_MINIMAL_UPTIME = 30
 
-_GRAPHICS_FOR_ARCH = {caps.Architecture.PPC64LE: 'vnc',
-                      caps.Architecture.X86_64: 'qxl'}
+_GRAPHICS_FOR_ARCH = {cpuarch.PPC64LE: 'vnc',
+                      cpuarch.X86_64: 'qxl'}
 
 
 class VDSMConnectionError(Exception):

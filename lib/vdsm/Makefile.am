@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ dist_vdsmpylib_PYTHON = \
 	compat.py \
 	commands.py \
 	concurrent.py \
+	cpuarch.py \
 	define.py \
 	dmidecodeUtil.py \
 	exception.py \

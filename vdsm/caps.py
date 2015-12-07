@@ -34,6 +34,7 @@ from distutils.version import LooseVersion
 import libvirt
 
 from vdsm.config import config
+from vdsm import cpuarch
 from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import libvirtconnection
@@ -89,20 +90,6 @@ RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
 
 
-class Architecture:
-    X86_64 = 'x86_64'
-    PPC64 = 'ppc64'
-    PPC64LE = 'ppc64le'
-
-    @classmethod
-    def is_ppc(cls, arch):
-        return arch in (cls.PPC64, cls.PPC64LE)
-
-    @classmethod
-    def is_x86(cls, arch):
-        return arch == cls.X86_64
-
-
 class CpuInfo(object):
     def __init__(self, cpuinfo='/proc/cpuinfo'):
         """Parse /proc/cpuinfo"""
@@ -122,26 +109,26 @@ class CpuInfo(object):
                     p[key] = value
 
     def flags(self):
-        if Architecture.is_x86(self._arch):
+        if cpuarch.is_x86(self._arch):
             return self._info.itervalues().next()['flags'].split()
-        elif Architecture.is_ppc(self._arch):
+        elif cpuarch.is_ppc(self._arch):
             return ['powernv']
         else:
             raise RuntimeError('Unsupported architecture')
 
     def mhz(self):
-        if Architecture.is_x86(self._arch):
+        if cpuarch.is_x86(self._arch):
             return self._info.itervalues().next()['cpu MHz']
-        elif Architecture.is_ppc(self._arch):
+        elif cpuarch.is_ppc(self._arch):
             clock = self._info.itervalues().next()['clock']
             return clock[:-3]
         else:
             raise RuntimeError('Unsupported architecture')
 
     def model(self):
-        if Architecture.is_x86(self._arch):
+        if cpuarch.is_x86(self._arch):
             return self._info.itervalues().next()['model name']
-        elif Architecture.is_ppc(self._arch):
+        elif cpuarch.is_ppc(self._arch):
             return self._info.itervalues().next()['cpu']
         else:
             raise RuntimeError('Unsupported architecture')
@@ -414,10 +401,10 @@ def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
     # the same architecture, so in order to find all
     # the CPU models for this architecture, 'x86'
     # must be used
-    if Architecture.is_x86(arch):
+    if cpuarch.is_x86(arch):
         arch = 'x86'
 
-    if Architecture.is_ppc(arch):
+    if cpuarch.is_ppc(arch):
         arch = 'ppc64'
 
     architectureElement = None
@@ -612,7 +599,7 @@ def get():
     caps['onlineCpus'] = ','.join(cpuTopology.onlineCpus())
     caps['cpuSpeed'] = cpuInfo.mhz()
     if config.getboolean('vars', 'fake_kvm_support'):
-        if Architecture.is_x86(targetArch):
+        if cpuarch.is_x86(targetArch):
             caps['cpuModel'] = 'Intel(Fake) CPU'
 
             flagList = ['vmx', 'sse2', 'nx']
@@ -626,7 +613,7 @@ def get():
                 'model_pentium2,model_pentium3,model_pentiumpro,' \
                 'model_qemu32,model_coreduo,model_core2duo,model_n270,' \
                 'model_Conroe,model_Penryn,model_Nehalem,model_Opteron_G1'
-        elif Architecture.is_ppc(targetArch):
+        elif cpuarch.is_ppc(targetArch):
             caps['cpuModel'] = 'POWER 8 (fake)'
             caps['cpuFlags'] = 'powernv,model_POWER8'
         else:

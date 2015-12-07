@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2014 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,11 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import caps
 import xml.etree.ElementTree as ET
 
 from vdsm.config import config
 from vdsm import constants
+from vdsm import cpuarch
 from vdsm import utils
 
 from .. import vmxml
@@ -30,9 +30,9 @@ from .. import vmxml
 from .core import Base
 
 DEFAULT_INTERFACE_FOR_ARCH = {
-    caps.Architecture.X86_64: 'ide',
-    caps.Architecture.PPC64: 'scsi',
-    caps.Architecture.PPC64LE: 'scsi'
+    cpuarch.X86_64: 'ide',
+    cpuarch.PPC64: 'scsi',
+    cpuarch.PPC64LE: 'scsi'
 }
 
 

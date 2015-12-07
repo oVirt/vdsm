@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ from monkeypatch import MonkeyPatch
 
 import caps
 from vdsm import commands
+from vdsm import cpuarch
 from vdsm import utils
 
 
@@ -60,7 +61,7 @@ class TestCaps(TestCaseBase):
         with open(path) as f:
             return f.read()
 
-    @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.X86_64)
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
     def testCpuInfo(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
@@ -87,7 +88,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(c.model(),
                          'Intel(R) Xeon(R) CPU           E5649  @ 2.53GHz')
 
-    @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.PPC64)
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.PPC64)
     def testCpuTopologyPPC64(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
@@ -98,7 +99,7 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t.cores(), 20)
         self.assertEqual(t.sockets(), 4)
 
-    @MonkeyPatch(platform, 'machine', lambda: caps.Architecture.X86_64)
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
     def testCpuTopologyX86_64(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
@@ -126,7 +127,7 @@ class TestCaps(TestCaseBase):
 
     def testEmulatedMachines(self):
         capsData = self._readCaps("caps_libvirt_amd_6274.out")
-        machines = caps._getEmulatedMachines(caps.Architecture.X86_64,
+        machines = caps._getEmulatedMachines(cpuarch.X86_64,
                                              capsData)
         expectedMachines = ['pc-1.0', 'pc', 'isapc', 'pc-0.12', 'pc-0.13',
                             'pc-0.10', 'pc-0.11', 'pc-0.14', 'pc-0.15']
@@ -183,19 +184,19 @@ class TestCaps(TestCaseBase):
     def testLiveSnapshotNoElementX86_64(self):
         '''old libvirt, backward compatibility'''
         capsData = self._readCaps("caps_libvirt_amd_6274.out")
-        support = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+        support = caps._getLiveSnapshotSupport(cpuarch.X86_64,
                                                capsData)
         self.assertTrue(support is None)
 
     def testLiveSnapshotX86_64(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770.out")
-        support = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+        support = caps._getLiveSnapshotSupport(cpuarch.X86_64,
                                                capsData)
         self.assertEqual(support, True)
 
     def testLiveSnapshotDisabledX86_64(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        support = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+        support = caps._getLiveSnapshotSupport(cpuarch.X86_64,
                                                capsData)
         self.assertEqual(support, False)
 
@@ -238,7 +239,7 @@ class TestCaps(TestCaseBase):
                                               capsData)
         self.assertIsNone(result)
 
-        result = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+        result = caps._getLiveSnapshotSupport(cpuarch.X86_64,
                                               capsData)
         self.assertFalse(result)
 
@@ -248,13 +249,13 @@ class TestCaps(TestCaseBase):
                                               capsData)
         self.assertIsNone(result)
 
-        result = caps._getLiveSnapshotSupport(caps.Architecture.X86_64,
+        result = caps._getLiveSnapshotSupport(cpuarch.X86_64,
                                               capsData)
         self.assertTrue(result)
 
     def test_getAllCpuModels(self):
         result = caps._getAllCpuModels(capfile=self.CPU_MAP_FILE,
-                                       arch=caps.Architecture.X86_64)
+                                       arch=cpuarch.X86_64)
         expected = {
             'qemu32': None,
             'Haswell': 'Intel',
