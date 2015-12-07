@@ -23,10 +23,10 @@ from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from testlib import recorded
 
-from storage import sd, blockSD, fileSD, image, volume, fileVolume, blockVolume
+from storage import blockSD, fileSD, image, fileVolume, blockVolume
 
 
-class FakeDomainManifest(sd.StorageDomainManifest):
+class FakeDomainManifest(object):
     def __init__(self):
         self.sdUUID = 'a6ecac0a-5c6b-46d7-9ba5-df8b34df2d01'
         self.domaindir = '/a/b/c'
@@ -268,9 +268,11 @@ class FakeFileStorageDomain(fileSD.FileStorageDomain):
         self._manifest = self.manifestClass()
 
 
-class FakeImageManifest(image.ImageManifest):
-    def __init__(self):
-        self._repoPath = '/rhev/data-center'
+class FakeImageManifest(object):
+
+    @property
+    def repoPath(self):
+        return '/rhev/data-center'
 
     @recorded
     def getImageDir(self, sdUUID, imgUUID):
@@ -282,16 +284,22 @@ class FakeImage(image.Image):
         self._manifest = FakeImageManifest()
 
 
-class FakeVolumeMetadata(volume.VolumeMetadata):
+class FakeVolumeMetadata(object):
     def __init__(self):
         self.sdUUID = 'b4502284-2101-4c5c-ada0-6a196fb30315'
         self.imgUUID = 'e2a325e4-62be-4939-8145-72277c270e8e'
         self.volUUID = '6aab5eb4-2a8b-4cb7-a0b7-bc6f61de3e18'
         self.repoPath = '/rhev/data-center'
-        self._imagePath = '/a/b'
-        self._volumePath = '/a/b/c'
         self.voltype = None
         self.__class__.__class_calls__ = []
+
+    @property
+    def imagePath(self):
+        return '/a/b'
+
+    @property
+    def volumePath(self):
+        return '/a/b/c'
 
     @classmethod
     @recorded
