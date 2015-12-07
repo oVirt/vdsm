@@ -291,8 +291,8 @@ class NetworkTest(TestCaseBase):
         # TODO: we should try and call this logic always during
         # TODO: assertBondExists and be stricter. Will probably need to fix a
         # TODO: few tests
-        self.assertEqual(set(self._get_active_bond_opts(bond)),
-                         set(opts))
+        self.assertEqual(set(self._get_active_bond_opts(bond))-set(["mode=0"]),
+                         set(opts)-set(["mode=0"]))
 
     def _get_active_bond_opts(self, bondName):
         netinfo = self.vdsm_net.netinfo
@@ -2657,6 +2657,31 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
                 self.assertSetEqual(set(['mode=4', 'custom=foo=bar']),
                                     set(bond.get('options').split()))
 
+            status, msg = self.setupNetworks(
+                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondDoesntExist(BONDING_NAME, nics)
+
+    @permutations([[{}], [{'options': 'mode=1'}], [{'options': 'mode=0'}]])
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_bondmode_in_capabilities(self, mode_arg):
+        with dummyIf(2) as nics:
+            if mode_arg:
+                origin_mode = mode_arg.get("options").split("=")[1]
+            else:
+                origin_mode = '0'
+            bonding = {'nics': nics}
+            bonding.update(mode_arg)
+            status, msg = self.setupNetworks(
+                {},
+                {BONDING_NAME: bonding},
+                NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondExists(BONDING_NAME, nics)
+            status, msg, info = self.vdsm_net.getVdsCapabilities()
+            mode = info['bondings'][BONDING_NAME]['opts'].get('mode')
+            self.assertEqual(mode, origin_mode)
             status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
