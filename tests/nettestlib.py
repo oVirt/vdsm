@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@ import fcntl
 import functools
 import json
 import os
-import platform
 import signal
 import struct
 import time
@@ -32,6 +31,7 @@ from multiprocessing import Process
 from nose.plugins.skip import SkipTest
 
 from vdsm.constants import EXT_BRCTL, EXT_TC
+from vdsm import cpuarch
 from vdsm.ipwrapper import (addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error,
                             netns_add, netns_delete, netns_exec)
 from vdsm.netlink import monitor
@@ -155,10 +155,10 @@ class Tap(Interface):
 
     _IFF_TAP = 0x0002
     _IFF_NO_PI = 0x1000
-    arch = platform.machine()
-    if arch == 'x86_64':
+    arch = cpuarch.real()
+    if arch == cpuarch.X86_64:
         _TUNSETIFF = 0x400454ca
-    elif arch == 'ppc64':
+    elif arch == cpuarch.PPC64:
         _TUNSETIFF = 0x800454ca
     else:
         raise SkipTest("Unsupported Architecture %s" % arch)
