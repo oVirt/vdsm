@@ -19,9 +19,9 @@
 from __future__ import absolute_import
 from functools import partial
 
-from .bonding import bondSpeed
+from .import bonding
 from .misc import _visible_devs
-from .nics import speed
+from .import nics
 from ..ipwrapper import getLink, Link
 from ..netlink import link as nl_link
 
@@ -60,9 +60,8 @@ def vlanSpeed(vlanName):
     vlanDevName = vlan_device(vlanName)
     vlanDev = getLink(vlanDevName)
     if vlanDev.isNIC():
-        speed = speed(vlanDevName)
+        return nics.speed(vlanDevName)
     elif vlanDev.isBOND():
-        speed = bondSpeed(vlanDevName)
+        return bonding.speed(vlanDevName)
     else:
-        speed = 0
-    return speed
+        return 0

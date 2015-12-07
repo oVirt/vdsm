@@ -147,8 +147,8 @@ def ifaceUsed(iface):
             return True
         if linkDict.get('device') == iface and linkDict.get('type') == 'vlan':
             return True  # it backs a VLAN
-    for name, info in networks().iteritems():
-        if info.get('iface') == iface:
+    for net_attr in six.itervalues(networks()):
+        if net_attr.get('iface') == iface:
             return True
     return False
 

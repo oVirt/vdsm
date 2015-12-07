@@ -562,7 +562,7 @@ def _getLinkSpeed(dev):
     if dev.isNIC():
         speed = nics.speed(dev.name)
     elif dev.isBOND():
-        speed = bonding.bondSpeed(dev.name)
+        speed = bonding.speed(dev.name)
     elif dev.isVLAN():
         speed = vlans.vlanSpeed(dev.name)
     else:
