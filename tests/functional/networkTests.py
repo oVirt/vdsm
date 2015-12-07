@@ -231,7 +231,7 @@ class NetworkTest(TestCaseBase):
     def assertNetworkExists(self, networkName, bridged=None, bridgeOpts=None,
                             hostQos=None, assert_in_running_conf=True):
         netinfo = self.vdsm_net.netinfo
-        config = self.vdsm_net.config
+        running_config = self.vdsm_net.config
         self.assertIn(networkName, netinfo.networks)
         if bridged is not None:
             self.assertEqual(bridged, netinfo.networks[networkName]['bridged'])
@@ -247,11 +247,12 @@ class NetworkTest(TestCaseBase):
             reported_qos = netinfo.networks[networkName]['hostQos']
             _cleanup_qos_definition(reported_qos)
             self.assertEqual(reported_qos, hostQos)
-        if assert_in_running_conf and config is not None:
-            self.assertIn(networkName, config.networks)
+        if assert_in_running_conf and running_config is not None:
+            self.assertIn(networkName, running_config.networks)
             if bridged is not None:
-                self.assertEqual(config.networks[networkName].get('bridged'),
-                                 bridged)
+                self.assertEqual(
+                    running_config.networks[networkName].get('bridged'),
+                    bridged)
 
     def assertNetworkDoesntExist(self, networkName):
         netinfo = self.vdsm_net.netinfo
