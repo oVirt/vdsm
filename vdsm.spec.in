@@ -1079,6 +1079,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
 %{python_sitelib}/%{vdsm_name}/cpuarch.py*
+%{python_sitelib}/%{vdsm_name}/cpuinfo.py*
 %{python_sitelib}/%{vdsm_name}/dsaversion.py*
 %{python_sitelib}/%{vdsm_name}/define.py*
 %{python_sitelib}/%{vdsm_name}/dmidecodeUtil.py*
@@ -1181,6 +1182,7 @@ exit 0
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/tests
+%dir %{_datadir}/%{vdsm_name}/tests/cpuinfo
 %dir %{_datadir}/%{vdsm_name}/tests/functional
 %dir %{_datadir}/%{vdsm_name}/tests/devices
 %dir %{_datadir}/%{vdsm_name}/tests/devices/data
@@ -1197,6 +1199,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_i73770_nosnap.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_multiqemu.out
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
+%{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.out
 %{_datadir}/%{vdsm_name}/tests/cpu_map.xml

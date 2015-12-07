@@ -61,33 +61,6 @@ class TestCaps(TestCaseBase):
         with open(path) as f:
             return f.read()
 
-    @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
-    def testCpuInfo(self):
-        testPath = os.path.realpath(__file__)
-        dirName = os.path.split(testPath)[0]
-        path = os.path.join(dirName, "cpu_info.out")
-        c = caps.CpuInfo(path)
-        self.assertEqual(set(c.flags()), set("""fpu vme de pse tsc msr pae
-                                                mce cx8 apic mtrr pge mca
-                                                cmov pat pse36 clflush dts
-                                                acpi mmx fxsr sse sse2 ss ht
-                                                tm pbe syscall nx pdpe1gb
-                                                rdtscp lm constant_tsc
-                                                arch_perfmon pebs bts
-                                                rep_good xtopology
-                                                nonstop_tsc aperfmperf pni
-                                                pclmulqdq dtes64 monitor
-                                                ds_cpl vmx smx est tm2 ssse3
-                                                cx16 xtpr pdcm dca sse4_1
-                                                sse4_2 popcnt aes lahf_lm
-                                                arat epb dts tpr_shadow vnmi
-                                                flexpriority ept
-                                                vpid""".split()))
-
-        self.assertEqual(c.frequency(), '2533.402')
-        self.assertEqual(c.model(),
-                         'Intel(R) Xeon(R) CPU           E5649  @ 2.53GHz')
-
     @MonkeyPatch(platform, 'machine', lambda: cpuarch.PPC64)
     def testCpuTopologyPPC64(self):
         testPath = os.path.realpath(__file__)

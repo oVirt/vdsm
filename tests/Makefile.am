@@ -21,6 +21,7 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 SUBDIRS = \
+	  cpuinfo \
 	  functional \
 	  devices \
 	  integration \
@@ -48,6 +49,7 @@ test_modules = \
 	bridgeTests.py \
 	cPopenTests.py \
 	capsTests.py \
+	cpuinfo_test.py \
 	clientifTests.py \
 	cmdutilsTests.py \
 	commands_test.py \

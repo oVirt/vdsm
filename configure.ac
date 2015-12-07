@@ -354,6 +354,7 @@ AC_OUTPUT([
 	lib/vdsm/network/configurators/Makefile
 	lib/vdsm/tc/Makefile
 	tests/Makefile
+	tests/cpuinfo/Makefile
 	tests/functional/Makefile
 	tests/devices/Makefile
 	tests/devices/parsing/Makefile

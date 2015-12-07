@@ -35,6 +35,7 @@ import libvirt
 
 from vdsm.config import config
 from vdsm import cpuarch
+from vdsm import cpuinfo
 from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import libvirtconnection
@@ -43,7 +44,6 @@ from vdsm import host
 from vdsm import commands
 from vdsm import utils
 import storage.hba
-
 
 # For debian systems we can use python-apt if available
 try:
@@ -88,45 +88,6 @@ class AutoNumaBalancingStatus:
 
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
-
-
-class CpuInfo(object):
-    def __init__(self, cpuinfo='/proc/cpuinfo'):
-        """Parse /proc/cpuinfo"""
-        self._fields = {}
-
-        if cpuarch.is_ppc(cpuarch.real()):
-            self._fields['flags'] = ['powernv']
-
-        with open(cpuinfo) as info:
-            for line in info:
-                if not line.strip():
-                    continue
-
-                key, value = [part.strip() for part in line.split(':', 1)]
-
-                if key == 'flags':  # x86_64
-                    self._fields['flags'] = value.split()
-                elif key == 'cpu MHz':  # x86_64
-                    self._fields['frequency'] = value
-                elif key == 'clock':  # ppc64, ppc64le
-                    self._fields['frequency'] = value[:-3]
-                elif key == 'model name':  # x86_64
-                    self._fields['model'] = value
-                elif key == 'cpu':  # ppc64, ppc64le
-                    self._fields['model'] = value
-
-                if len(self._fields) == 3:
-                    break
-
-    def flags(self):
-        return self._fields['flags']
-
-    def frequency(self):
-        return self._fields['frequency']
-
-    def model(self):
-        return self._fields['model']
 
 
 class CpuTopology(object):
@@ -573,7 +534,6 @@ def get():
         str(config.getboolean('vars', 'fake_kvm_support') or
             os.path.exists('/dev/kvm')).lower()
 
-    cpuInfo = CpuInfo()
     cpuTopology = CpuTopology()
     if config.getboolean('vars', 'report_host_threads_as_cores'):
         caps['cpuCores'] = str(cpuTopology.threads())
@@ -583,7 +543,7 @@ def get():
     caps['cpuThreads'] = str(cpuTopology.threads())
     caps['cpuSockets'] = str(cpuTopology.sockets())
     caps['onlineCpus'] = ','.join(cpuTopology.onlineCpus())
-    caps['cpuSpeed'] = cpuInfo.frequency()
+    caps['cpuSpeed'] = cpuinfo.frequency()
     if config.getboolean('vars', 'fake_kvm_support'):
         if cpuarch.is_x86(cpuarch.effective()):
             caps['cpuModel'] = 'Intel(Fake) CPU'
@@ -591,7 +551,7 @@ def get():
             flagList = ['vmx', 'sse2', 'nx']
 
             if cpuarch.effective() == cpuarch.real():
-                flagList += cpuInfo.flags()
+                flagList += cpuinfo.flags()
 
             flags = set(flagList)
 
@@ -606,8 +566,8 @@ def get():
             raise RuntimeError('Unsupported architecture: %s' %
                                cpuarch.effective())
     else:
-        caps['cpuModel'] = cpuInfo.model()
-        caps['cpuFlags'] = ','.join(cpuInfo.flags() +
+        caps['cpuModel'] = cpuinfo.model()
+        caps['cpuFlags'] = ','.join(cpuinfo.flags() +
                                     _getCompatibleCpuModels())
 
     caps.update(_getVersionInfo())

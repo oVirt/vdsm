@@ -10,6 +10,7 @@ usr/share/vdsm/tests/caps_libvirt_intel_i73770_nosnap.out
 usr/share/vsdm/tests/caps_numactl_4_nodes.out
 usr/share/vdsm/tests/cpu_info.out
 usr/share/vdsm/tests/cpu_map.xml
+usr/share/vdsm/tests/cpuinfo/*.out
 usr/share/vdsm/tests/devices/parsing*.py
 usr/share/vdsm/tests/devices/data/*.xml
 usr/share/vdsm/tests/functional/*.policy
