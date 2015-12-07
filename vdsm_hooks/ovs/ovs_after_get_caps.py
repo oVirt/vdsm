@@ -57,8 +57,8 @@ def _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces, routes):
     addr, netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(interface)
     dhcpv4 = dhcp.dhcp_used(interface, dhcpv4ifaces, attrs)
     dhcpv6 = dhcp.dhcp_used(interface, dhcpv6ifaces, attrs, family=6)
-    gateway = routes.get_gateway(routes, interface)
-    ipv6gateway = routes.get_gateway(routes, interface, family=6)
+    gateway = netinfo_routes.get_gateway(routes, interface)
+    ipv6gateway = netinfo_routes.get_gateway(routes, interface, family=6)
     return {
         'mtu': str(mtu),
         'addr': addr,
