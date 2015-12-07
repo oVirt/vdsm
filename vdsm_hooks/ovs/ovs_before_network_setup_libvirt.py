@@ -17,16 +17,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import sys
-
 from libvirt import libvirtError
 import six
 
-from ovs_utils import suppress
+from vdsm.network.configurators import libvirt
 
-# TODO: move required modules into vdsm/lib
-sys.path.append('/usr/share/vdsm')
-from network.configurators import libvirt
+from ovs_utils import suppress
 
 
 def prepare_libvirt(nets, running_config):

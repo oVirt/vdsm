@@ -20,21 +20,17 @@
 from collections import namedtuple
 from functools import partial
 import os
-import sys
 
 import six
 
 from vdsm import ipwrapper, sysctl
+from vdsm.network.configurators.dhclient import DhcpClient, kill_dhclient
+from vdsm.network.configurators.iproute2 import Iproute2
+from vdsm.network.models import NetDevice, IPv4, IPv6
+from vdsm.network.sourceroute import DynamicSourceRoute
 
 from ovs_utils import suppress, BRIDGE_NAME
 import ovs_utils
-
-# TODO: move required modules into vdsm/lib
-sys.path.append('/usr/share/vdsm')
-from network.configurators.dhclient import DhcpClient, kill_dhclient
-from network.configurators.iproute2 import Iproute2
-from network.models import NetDevice, IPv4, IPv6
-from network.sourceroute import DynamicSourceRoute
 
 log = partial(ovs_utils.log, tag='ovs_before_network_setup_ip: ')
 

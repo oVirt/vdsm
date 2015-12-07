@@ -18,11 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from functools import partial
-import sys
 
 import six
 
 from vdsm.netinfo import CachingNetInfo
+from vdsm.network.configurators import libvirt
 
 import hooking
 
@@ -30,10 +30,6 @@ from ovs_utils import (get_bond_options, is_ovs_bond, iter_ovs_nets,
                        iter_ovs_bonds, rget, suppress, destroy_ovs_bridge,
                        BRIDGE_NAME, EXT_OVS_VSCTL)
 import ovs_utils
-
-# TODO: move required modules into vdsm/lib
-sys.path.append('/usr/share/vdsm')
-from network.configurators import libvirt
 
 log = partial(ovs_utils.log, tag='ovs_before_network_setup_ovs: ')
 

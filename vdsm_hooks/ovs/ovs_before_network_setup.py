@@ -34,6 +34,7 @@ import six
 
 from vdsm import hooks
 from vdsm.netconfpersistence import RunningConfig
+from vdsm.network.configurators import libvirt
 
 from hooking import execCmd
 import hooking
@@ -47,10 +48,6 @@ from ovs_setup_mtu import configure_mtu
 from ovs_setup_libvirt import (create_libvirt_nets, remove_libvirt_nets,
                                prepare_libvirt)
 import ovs_utils
-
-# TODO: move required modules into vdsm/lib
-sys.path.append('/usr/share/vdsm')
-from network.configurators import libvirt
 
 log = partial(ovs_utils.log, tag='ovs_before_network_setup: ')
 
