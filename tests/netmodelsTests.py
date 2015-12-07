@@ -21,7 +21,7 @@
 #
 import os
 
-from vdsm.netinfo import bonding, mtus, NetInfo
+from vdsm.netinfo import bonding, mtus, CachingNetInfo
 from vdsm.network import errors
 from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from vdsm.network.models import hierarchy_backing_device, hierarchy_vlan_tag
@@ -135,7 +135,7 @@ class TestNetmodels(TestCaseBase):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
                     'bondings': {}, 'bridges': {}}
-        fakeInfo = NetInfo(_netinfo)
+        fakeInfo = CachingNetInfo(_netinfo)
         nic1 = Nic('testnic1', None, _netinfo=fakeInfo)
         nic2 = Nic('testnic2', None, _netinfo=fakeInfo)
         bond1 = Bond('bond42', None, slaves=(nic1, nic2))
@@ -171,7 +171,7 @@ class TestNetmodels(TestCaseBase):
         _netinfo = {'networks': {}, 'vlans': {},
                     'nics': ['testnic1', 'testnic2'],
                     'bondings': {}, 'bridges': {}}
-        fakeInfo = NetInfo(_netinfo)
+        fakeInfo = CachingNetInfo(_netinfo)
         # Vlanned and bonded VM network
         nic1 = Nic('testnic1', configurator=None, _netinfo=fakeInfo)
         nic2 = Nic('testnic2', configurator=None, _netinfo=fakeInfo)

@@ -117,7 +117,7 @@ class VdsProxy(object):
     def _get_netinfo(self):
         response = self.getVdsCapabilities()
         try:
-            return netinfo.NetInfo(response[2])
+            return netinfo.CachingNetInfo(response[2])
         except IndexError:
             raise Exception('VdsProxy: getVdsCapabilities failed. '
                             'code:%s msg:%s' % (response[0], response[1]))

@@ -144,7 +144,7 @@ class unfiedPersistenceTests(TestCaseBase):
         with _fake_ifcfgs() as ifcfgs_dir:
             FAKE_NET_CONF_PREF = ifcfgs_dir + '/ifcfg-'
             with MonkeyPatchScope(
-                [(unified_persistence, 'NetInfo', _FakeNetInfo),
+                [(unified_persistence, 'CachingNetInfo', _FakeNetInfo),
                  (misc, 'NET_CONF_PREF', FAKE_NET_CONF_PREF)]):
                 networks, bonds = unified_persistence._getNetInfo()
 

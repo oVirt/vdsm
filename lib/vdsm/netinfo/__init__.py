@@ -217,7 +217,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
     return data
 
 
-class NetInfo(object):
+class CachingNetInfo(object):
     def __init__(self, _netinfo=None):
         if _netinfo is None:
             _netinfo = get()

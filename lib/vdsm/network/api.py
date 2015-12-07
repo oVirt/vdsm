@@ -33,7 +33,7 @@ from vdsm import constants
 from vdsm import kernelconfig
 from vdsm import netconfpersistence
 from vdsm.netinfo import (addresses, libvirtNets2vdsm, bridges,
-                          get as netinfo_get, NetInfo,
+                          get as netinfo_get, CachingNetInfo,
                           networks as netinfo_networks, nics as netinfo_nics,
                           NET_PATH)
 from vdsm import udevadm
@@ -128,7 +128,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
     if configurator is None:
         configurator = ConfiguratorClass()
     if _netinfo is None:
-        _netinfo = NetInfo()
+        _netinfo = CachingNetInfo()
     if opts is None:
         opts = {}
     if bootproto == 'none':
@@ -256,7 +256,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                 defaultRoute=None, blockingdhcp=False, **options):
     nics = nics or ()
     if _netinfo is None:
-        _netinfo = NetInfo()
+        _netinfo = CachingNetInfo()
     bridged = utils.tobool(bridged)
     if dhcpv6 is not None:
         dhcpv6 = utils.tobool(dhcpv6)
@@ -354,7 +354,7 @@ def assertBridgeClean(bridge, vlan, bonding, nics):
 
 
 def showNetwork(network):
-    _netinfo = NetInfo()
+    _netinfo = CachingNetInfo()
     if network not in _netinfo.networks:
         print("Network %r doesn't exist" % network)
         return
@@ -380,7 +380,7 @@ def showNetwork(network):
 
 
 def listNetworks():
-    _netinfo = NetInfo()
+    _netinfo = CachingNetInfo()
     print("Networks:", _netinfo.networks.keys())
     print("Vlans:", _netinfo.vlans.keys())
     print("Nics:", _netinfo.nics.keys())
@@ -390,7 +390,7 @@ def listNetworks():
 def _delBrokenNetwork(network, netAttr, configurator):
     '''Adapts the network information of broken networks so that they can be
     deleted via _delNetwork.'''
-    _netinfo = NetInfo()
+    _netinfo = CachingNetInfo()
     _netinfo.networks[network] = netAttr
     _netinfo.networks[network]['dhcpv4'] = False
 
@@ -445,7 +445,7 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None,
                 configurator=None, implicitBonding=True,
                 _netinfo=None, keep_bridge=False, **options):
     if _netinfo is None:
-        _netinfo = NetInfo()
+        _netinfo = CachingNetInfo()
 
     if configurator is None:
         configurator = ConfiguratorClass()
@@ -645,7 +645,7 @@ def _handleBondings(bondings, configurator, in_rollback):
     """ Add/Edit/Remove bond interface """
     logger = logging.getLogger("_handleBondings")
 
-    _netinfo = NetInfo()
+    _netinfo = CachingNetInfo()
 
     edition = []
     addition = []
@@ -732,7 +732,7 @@ def _buildSetupHookDict(req_networks, req_bondings, req_options):
 
 def _emergencyNetworkCleanup(network, networkAttrs, configurator):
     """Remove all leftovers after failed setupNetwork"""
-    _netinfo = NetInfo()
+    _netinfo = CachingNetInfo()
 
     topNetDev = None
     if 'bonding' in networkAttrs:
@@ -759,7 +759,7 @@ def _add_missing_networks(configurator, networks, bondings, logger,
                           _netinfo=None):
     # We need to use the newest host info
     if _netinfo is None:
-        _netinfo = NetInfo()
+        _netinfo = CachingNetInfo()
     else:
         _netinfo.updateDevices()
 
@@ -901,7 +901,8 @@ def setupNetworks(networks, bondings, **options):
     bondings, networks, options = _apply_hook(bondings, networks, options)
 
     libvirt_nets = netinfo_networks()
-    _netinfo = NetInfo(_netinfo=netinfo_get(libvirtNets2vdsm(libvirt_nets)))
+    _netinfo = CachingNetInfo(_netinfo=netinfo_get(
+        libvirtNets2vdsm(libvirt_nets)))
     connectivity_check_networks = set()
 
     logger.debug("Applying...")

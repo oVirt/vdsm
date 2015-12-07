@@ -22,7 +22,7 @@ import sys
 
 import six
 
-from vdsm.netinfo import NetInfo
+from vdsm.netinfo import CachingNetInfo
 
 import hooking
 
@@ -255,7 +255,7 @@ def _validate_bond_configuration(attrs, netinfo):
 
 def _handle_setup(nets, bonds, running_config, nets_by_nic):
     commands = []
-    netinfo = NetInfo()
+    netinfo = CachingNetInfo()
     for bond, attrs in six.iteritems(bonds):
         if 'remove' not in attrs:
             _validate_bond_configuration(attrs, netinfo)

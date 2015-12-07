@@ -22,7 +22,7 @@ import re
 import socket
 import struct
 
-from vdsm.netinfo import bonding, ifaceUsed, mtus, nics, NetInfo
+from vdsm.netinfo import bonding, ifaceUsed, mtus, nics, CachingNetInfo
 
 from .errors import ConfigNetworkError
 from . import errors as ne
@@ -77,7 +77,7 @@ class Nic(NetDevice):
     def __init__(self, name, configurator, ipv4=None, ipv6=None,
                  blockingdhcp=False, mtu=None, _netinfo=None):
         if _netinfo is None:
-            _netinfo = NetInfo()
+            _netinfo = CachingNetInfo()
         if name not in _netinfo.nics:
             raise ConfigNetworkError(ne.ERR_BAD_NIC, 'unknown nic: %s' % name)
 

@@ -23,7 +23,7 @@ import logging
 from .. import utils
 from ..config import config
 from ..netconfpersistence import RunningConfig
-from ..netinfo import NetInfo
+from ..netinfo import CachingNetInfo
 from ..netinfo import misc, routes
 from . import expose
 from .upgrade import apply_upgrade
@@ -128,7 +128,7 @@ def _getNetInfo():
 
         return bondings
 
-    netinfo = NetInfo()
+    netinfo = CachingNetInfo()
     networks = _processNetworks(netinfo)
     bonds = _processBondings(netinfo)
 
