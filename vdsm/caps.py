@@ -556,13 +556,6 @@ def osversion():
     return dict(release=release, version=version, name=osname)
 
 
-def getTargetArch():
-    if config.getboolean('vars', 'fake_kvm_support'):
-        return config.get('vars', 'fake_kvm_architecture')
-    else:
-        return platform.machine()
-
-
 def _getSELinux():
     selinux = dict()
     selinux['mode'] = str(utils.get_selinux_enforce_mode())
@@ -579,8 +572,6 @@ def _getHostdevPassthorughSupport():
 
 
 def get():
-    targetArch = getTargetArch()
-
     caps = {}
 
     caps['kvmEnabled'] = \
@@ -599,12 +590,12 @@ def get():
     caps['onlineCpus'] = ','.join(cpuTopology.onlineCpus())
     caps['cpuSpeed'] = cpuInfo.mhz()
     if config.getboolean('vars', 'fake_kvm_support'):
-        if cpuarch.is_x86(targetArch):
+        if cpuarch.is_x86(cpuarch.effective()):
             caps['cpuModel'] = 'Intel(Fake) CPU'
 
             flagList = ['vmx', 'sse2', 'nx']
 
-            if targetArch == platform.machine():
+            if cpuarch.effective() == cpuarch.real():
                 flagList += cpuInfo.flags()
 
             flags = set(flagList)
@@ -613,11 +604,12 @@ def get():
                 'model_pentium2,model_pentium3,model_pentiumpro,' \
                 'model_qemu32,model_coreduo,model_core2duo,model_n270,' \
                 'model_Conroe,model_Penryn,model_Nehalem,model_Opteron_G1'
-        elif cpuarch.is_ppc(targetArch):
+        elif cpuarch.is_ppc(cpuarch.effective()):
             caps['cpuModel'] = 'POWER 8 (fake)'
             caps['cpuFlags'] = 'powernv,model_POWER8'
         else:
-            raise RuntimeError('Unsupported architecture: %s' % targetArch)
+            raise RuntimeError('Unsupported architecture: %s' %
+                               cpuarch.effective())
     else:
         caps['cpuModel'] = cpuInfo.model()
         caps['cpuFlags'] = ','.join(cpuInfo.flags() +
@@ -637,7 +629,7 @@ def get():
     caps['operatingSystem'] = osversion()
     caps['uuid'] = host.uuid()
     caps['packages2'] = _getKeyPackages()
-    caps['emulatedMachines'] = _getEmulatedMachines(targetArch)
+    caps['emulatedMachines'] = _getEmulatedMachines(cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
     caps['HBAInventory'] = storage.hba.HBAInventory()
     caps['vmTypes'] = ['kvm']
@@ -670,7 +662,7 @@ def get():
 
     caps['selinux'] = _getSELinux()
 
-    liveSnapSupported = _getLiveSnapshotSupport(targetArch)
+    liveSnapSupported = _getLiveSnapshotSupport(cpuarch.effective())
     if liveSnapSupported is not None:
         caps['liveSnapshot'] = str(liveSnapSupported).lower()
     caps['liveMerge'] = str(getLiveMergeSupport()).lower()
