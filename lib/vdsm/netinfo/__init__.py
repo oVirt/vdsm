@@ -36,7 +36,7 @@ from . import bonding
 from . import bridges
 from .dhcp import (get_dhclient_ifaces, propose_updates_to_reported_dhcp,
                    update_reported_dhcp, dhcp_used)
-from .misc import getIfaceCfg
+from .misc import getIfaceCfg, ipv6_supported
 from .mtus import getMtu
 from . import nics
 from . import vlans
@@ -92,6 +92,7 @@ def get(vdsmnets=None):
         update_reported_dhcp(updates, networking)
 
     report_network_qos(networking)
+    networking['supportsIPv6'] = ipv6_supported()
 
     return networking
 

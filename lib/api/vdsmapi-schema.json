@@ -1144,6 +1144,9 @@
 #
 # @clusterLevels:       A list of supported cluster versions
 #
+# @ipv6Supported:       Whether IPv6 is enabled in the kernel
+#                       (new in version 4.18.0)
+#
 # @networks:            Information about configured VDSM networks
 #
 # @bridges:             Information about the network bridges on the host
@@ -1218,7 +1221,7 @@
           'cpuSpeed': 'float', 'cpuModel': 'str',
           'cpuFlags': 'str', 'version_name': 'str', 'software_version': 'str',
           'software_revision': 'str', 'supportedENGINEs': ['str'],
-          'clusterLevels': ['str'],
+          'clusterLevels': ['str'], 'ipv6Supported': 'bool',
           'networks': 'NetInfoNetworkMap', 'bridges': 'NetInfoBridgeMap',
           'nics': 'NetInfoNicMap', 'bondings': 'NetInfoBondMap',
           'vlans': 'NetInfoVlanMap', '*hooks': 'HookScriptInfoMap',
