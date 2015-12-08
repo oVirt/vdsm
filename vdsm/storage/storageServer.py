@@ -334,7 +334,9 @@ class GlusterFSConnection(MountConnection):
     def validate(self):
         replicaCount = self.volinfo['replicaCount']
         if replicaCount not in self.ALLOWED_REPLICA_COUNTS:
-            raise se.UnsupportedGlusterVolumeReplicaCountError(replicaCount)
+            self.log.warning("Unsupported replica count (%s) for volume %r, "
+                             "please upgrade volume to replica 3",
+                             replicaCount, self._volname)
 
     def _get_backup_servers_option(self):
         servers = utils.unique(brick.split(":")[0] for brick
