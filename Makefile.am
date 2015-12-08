@@ -98,17 +98,12 @@ abs_imports:
 	    echo "Missing absolute_import in $$f"; exit 1; fi; \
 	done;
 
-SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
-	'lv' from line .*"
-
 .PHONY: pyflakes
 pyflakes:
 	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
 	( find . -path './.git' -prune -type f -o \
 		-name '*.py' && \
-		echo $(WHITELIST) ) | xargs $(PYFLAKES) | \
-		grep -w -v $(SKIP_PYFLAKES_ERR) | \
-		while read LINE; do echo "$$LINE"; false; done
+		echo $(WHITELIST) ) | xargs $(PYFLAKES)
 
 .PHONY: pep8
 pep8:
