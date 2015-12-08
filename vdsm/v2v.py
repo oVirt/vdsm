@@ -780,13 +780,12 @@ def _read_ovf_from_zip_ova(ova_path):
 
 
 def _read_ovf_from_tar_ova(ova_path):
-    # FIXME: change to tarfile package when support --to-stdout
-    cmd = ['/usr/bin/tar', 'xf', ova_path, '*.ovf', '--to-stdout']
-    rc, output, error = execCmd(cmd)
-    if rc:
-        raise V2VError(error)
-
-    return ''.join(output)
+    with tarfile.open(ova_path) as tar:
+        for member in tar:
+            if member.name.endswith('.ovf'):
+                with closing(tar.extractfile(member)) as ovf:
+                    return ovf.read()
+        raise ClientError('OVA does not contains file with .ovf suffix')
 
 
 def _add_general_ovf_info(vm, node, ns):
