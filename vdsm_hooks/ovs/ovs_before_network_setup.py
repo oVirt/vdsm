@@ -151,7 +151,7 @@ def _configure(nets, bonds, running_config, save_init_config=True):
     remove_libvirt_nets(libvirt_remove)
     configure_ovs(commands, running_config)
     configure_mtu(running_config)
-    configure_ip(nets, initial_config.networks)
+    configure_ip(nets, initial_config.networks, bonds, initial_config.bonds)
 
     log('Saving running configuration: %s %s' % (running_config.networks,
                                                  running_config.bonds))

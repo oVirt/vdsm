@@ -125,7 +125,7 @@ def _drop_ip_config(iface):
         kill_dhclient(iface, family=6)
 
 
-def configure_ip(nets, init_nets):
+def configure_ip(nets, init_nets, bonds, init_bonds):
 
     def _gather_ip_config(attrs):
         top_dev = net if 'vlan' in attrs else BRIDGE_NAME
@@ -171,6 +171,15 @@ def configure_ip(nets, init_nets):
                 # set networks IP configuration if any
                 if ip_config.ipv4 or ip_config.ipv6:
                     ip_config_to_set[ip_config.top_dev] = ip_config
+
+    for bond, attrs in six.iteritems(bonds):
+        # drop initial IP config of bonds' slaves
+        if 'remove' not in attrs:
+            nics_to_drop_ip_from = (
+                set(attrs.get('nics')) - set(init_bonds[bond].get('nics'))
+                if bond in init_bonds else attrs.get('nics'))
+            for nic in nics_to_drop_ip_from:
+                _drop_ip_config(nic)
 
     log('Remove IP configuration of: %s' % ip_config_to_remove)
     log('Set IP configuration: %s' % ip_config_to_set)
