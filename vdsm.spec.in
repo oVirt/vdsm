@@ -87,8 +87,10 @@ BuildRequires: qemu-img
 BuildRequires: rpm-python
 BuildRequires: python-blivet
 
+%if "@PYTHON3@" != ""
 BuildRequires: python3-nose
 BuildRequires: python3-six
+%endif
 
 # Autotools BuildRequires
 %if 0%{?enable_autotools}
