@@ -105,7 +105,7 @@ SKIP_PYFLAKES_ERR = "\./vdsm/storage/lvm\.py.*: list comprehension redefines \
 pyflakes:
 	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
 	( find . -path './.git' -prune -type f -o \
-		-name '*.py' -o -name '*.py.in' && \
+		-name '*.py' && \
 		echo $(WHITELIST) ) | xargs $(PYFLAKES) | \
 		grep -w -v $(SKIP_PYFLAKES_ERR) | \
 		while read LINE; do echo "$$LINE"; false; done
@@ -116,7 +116,7 @@ pep8:
 	for x in $(PEP8_BLACKLIST); do \
 	    exclude="$${exclude},$${x}" ; \
 	done ; \
-	$(PEP8) --exclude="$${exclude}" --filename '*.py,*.py.in' . \
+	$(PEP8) --exclude="$${exclude}" --filename '*.py' . \
 	$(WHITELIST)
 
 .PHONY: python3
