@@ -8812,3 +8812,65 @@
 ##
 {'command': {'class': 'VM', 'name': 'updateVmPolicy'},
  'data': {'vmID': 'UUID', 'params': 'UpdateVmPolicyParams'}}
+
+## Category: @SDM ############################################################
+##
+# @SDM:
+#
+# This namespace is for SDM (storage domain manager) functions.
+#
+# Since: 4.18
+##
+{'class': 'SDM'}
+
+##
+# @CreateVolumeInfo:
+#
+# Parameters used for creating a new volume.
+#
+# @sd_id:          The Storage Domain associated with the Volume
+#
+# @img_id:         The Image associated with the Volume
+#
+# @vol_id:         The UUID of the Volume
+#
+# @virtual_size:   The Volume size in bytes
+#
+# @vol_format:     The data format to use for the destination Volume
+#
+# @disk_type:      An advisory disk usage type
+#
+# @description:    The Volume description (up to 210 bytes)
+#
+# @parent_img_id:  #optional Identifies the image of the parent volume.  If
+#                  specified, @parent_vol_id is also required.
+#
+# @parent_vol_id:  #optional Identifies the parent volume.  If specified,
+#                  @parent_img_id is also required.
+#
+# @initial_size:   #optional If specified, the initial allocated size of volume
+#                  in bytes.  Allowed only when creating a thinly provisioned
+#                  volume on block storage.
+#
+# Since: 4.18
+##
+{'type': 'CreateVolumeInfo',
+ 'data': {'sd_id': 'UUID', 'img_id': 'UUID', 'vol_id': 'UUID',
+          'virtual_size': 'uint', 'vol_format': 'VolumeFormat',
+          'disk_type': 'DiskType', 'description': 'str',
+          '*parent_img_id': 'UUID', '*parent_vol_id': 'UUID',
+          '*initial_size': 'uint'}}
+
+##
+# @SDM.create_volume:
+#
+# Create a new volume.
+#
+# @job_id:    A UUID to be used for tracking the job progress
+#
+# @vol_info:  Information about the new volume to be created
+#
+# Since: 4.18
+##
+{'command': {'class': 'SDM', 'name': 'create_volume'},
+ 'data': {'job_id': 'UUID', 'vol_info': 'CreateVolumeInfo'}}

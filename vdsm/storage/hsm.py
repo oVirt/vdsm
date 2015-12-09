@@ -3679,3 +3679,7 @@ class HSM(object):
                             their meaning.
         """
         return {'domains': self.domainMonitor.getHostStatus(domains)}
+
+    @public
+    def sdm_create_volume(self, job_id, vol_info):
+        raise se.GeneralException("Not implemented")

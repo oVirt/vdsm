@@ -1028,6 +1028,18 @@ class BindingXMLRPC(object):
     def storageServerConnectionRefsStatuses(self):
         return API.ConnectionRefs().statuses()
 
+    def sdm_create_volume(self, job_id, vol_info):
+        sdm = API.SDM()
+
+        # As a workaround for the 32bit signed integer limitation of xmlrpc,
+        # allow large integers to be passed as strings.  We convert them back
+        # to the correct type here.
+        for param in 'virtual_size', 'initial_size':
+            if param in vol_info:
+                vol_info[param] = int(vol_info[param])
+
+        return sdm.create_volume(job_id, vol_info)
+
     def getGlobalMethods(self):
         return ((self.vmDestroy, 'destroy'),
                 (self.vmCreate, 'create'),
@@ -1185,7 +1197,8 @@ class BindingXMLRPC(object):
                 (self.storageServerConnectionRefsRelease,
                  'storageServer_ConnectionRefs_release'),
                 (self.storageServerConnectionRefsStatuses,
-                 'storageServer_ConnectionRefs_statuses'),)
+                 'storageServer_ConnectionRefs_statuses'),
+                (self.sdm_create_volume, 'sdm_create_volume'))
 
 
 def wrapApiMethod(f):

@@ -1749,3 +1749,10 @@ class Global(APIBase):
                 logging.warn("options %s is deprecated. Use %s instead" %
                              (k, _translationMap[k]))
                 options[_translationMap[k]] = options.pop(k)
+
+
+class SDM(APIBase):
+    ctorArgs = []
+
+    def create_volume(self, job_id, vol_info):
+        return self._irs.sdm_create_volume(job_id, vol_info)

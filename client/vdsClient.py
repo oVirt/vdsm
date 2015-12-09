@@ -204,6 +204,13 @@ def parse_dict(dict_str):
     return d
 
 
+def parse_json_obj(json_str):
+    try:
+        return json.loads(json_str)
+    except ValueError:
+        raise ValueError("Invalid json: %r" % json_str)
+
+
 class service:
     def __init__(self):
         self.useSSL = False
@@ -1962,6 +1969,22 @@ class service:
         res = self.s.unregisterSecrets(args)
         return res['status']['code'], res['status']['message']
 
+    def sdm_create_volume(self, args):
+        validateArgTypes(args, [str, parse_json_obj])
+
+        # Convert large integers to strings.  The server's xmlrpc binding will
+        # restore them to their proper int types.
+        vol_info = args[1]
+        for param in 'virtual_size', 'initial_size':
+            if param in vol_info:
+                vol_info[param] = str(vol_info[param])
+
+        res = self.s.sdm_create_volume(*args)
+        if res['status']['code']:
+            return res['status']['code'], res['status']['message']
+
+        return 0, ''
+
 
 if __name__ == '__main__':
     if _glusterEnabled:
@@ -2490,6 +2513,23 @@ if __name__ == '__main__':
                           '<srcImgUUID> <srcVolUUID> <initialSize>',
                           'Creates new volume or snapshot'
                           )),
+        'sdm_create_volume': (serv.sdm_create_volume, (
+            '<job_id> <vol_info>',
+            'Create a new volume.',
+            'o   job_id:   A UUID that can be used to monitor the sdm job',
+            'o   vol_info: A JSON object containing info about the new volume',
+            '    - sd_id:         The Storage Domain UUID',
+            '    - img_id:        The UUID of the volume\'s image',
+            '    - vol_id:        A UUID for the new volume',
+            '    - virtual_size:  The desired storage capacity (in bytes)',
+            '    - vol_format:    The volume format (RAW, COW)',
+            '    - disk_type:     The type of disk (SYSTEM, DATA, SHARED, ..)',
+            '    - description:   The volume description',
+            '    - parent_img_id: Optional image UUID of the parent volume',
+            '    - parent_vol_id: Optional volume UUID of the parent volume',
+            '    - initial_size:  Optional requested initial allocated size '
+            '(in bytes)'
+        )),
         'extendVolumeSize': (serv.extendVolumeSize, (
             '<spUUID> <sdUUID> <imgUUID> <volUUID> <newSize>',
             'Extend the volume size (virtual disk size seen by the guest).',
