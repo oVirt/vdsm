@@ -110,6 +110,9 @@
 ./usr/share/vdsm/storage/sdc.py
 ./usr/share/vdsm/storage/sdm/__init__.py
 ./usr/share/vdsm/storage/sdm/volume_artifacts.py
+./usr/share/vdsm/storage/sdm/api/__init__.py
+./usr/share/vdsm/storage/sdm/api/base.py
+./usr/share/vdsm/storage/sdm/api/create_volume.py
 ./usr/share/vdsm/storage/sp.py
 ./usr/share/vdsm/storage/spbackends.py
 ./usr/share/vdsm/storage/storageServer.py

@@ -38,6 +38,7 @@ import stat
 
 from vdsm import concurrent
 from vdsm import constants
+from vdsm import jobs
 from vdsm import logUtils
 from vdsm import qemuimg
 from vdsm import supervdsm
@@ -78,6 +79,8 @@ import mount
 import dispatcher
 import storageServer
 
+
+import sdm.api.create_volume
 
 GUID = "guid"
 NAME = "name"
@@ -3521,6 +3524,21 @@ class HSM(object):
         """
         return {'domains': self.domainMonitor.getHostStatus(domains)}
 
+    def sdm_schedule(self, job):
+        """
+        SDM jobs currently run using the old TaskManager thread pool but none
+        of the other old Task features (ie. rollbacks, persistence) are
+        supported.  SDM tasks are managed using the Host Jobs API in jobs.py.
+        """
+        jobs.add(job)
+        self.taskMng.scheduleJob("sdm", None, vars.task,
+                                 job.description, job.run)
+
     @public
     def sdm_create_volume(self, job_id, vol_info):
-        raise se.GeneralException("Not implemented")
+        vol_info = sdm.api.create_volume.CreateVolumeInfo(vol_info)
+        dom_manifest = sdCache.produce(vol_info.sd_id).manifest
+        host_id = self.domainMonitor.getHostId(vol_info.sd_id)
+        job = sdm.api.create_volume.Job(job_id, host_id, dom_manifest,
+                                        vol_info)
+        self.sdm_schedule(job)
