@@ -30,6 +30,7 @@ dist_vdsmpylib_PYTHON = \
 	dmidecodeUtil.py \
 	exception.py \
 	executor.py \
+	hooks.py \
 	ipwrapper.py \
 	jobs.py \
 	jsonrpcvdscli.py \

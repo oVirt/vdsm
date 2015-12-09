@@ -23,12 +23,11 @@ import libvirt
 
 from nose.plugins.skip import SkipTest
 
-import hooks
-
 from virt import virdomain
 from virt import vmexitreason
 from virt.vmdevices import hwclass
 from vdsm import define
+from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import password
 from vdsm import response

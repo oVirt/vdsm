@@ -45,7 +45,6 @@
 ./usr/share/vdsm/gluster/cli.py
 ./usr/share/vdsm/gluster/exception.py
 ./usr/share/vdsm/hooking.py
-./usr/share/vdsm/hooks.py
 ./usr/share/vdsm/hostdev.py
 ./usr/share/vdsm/jobs.py
 ./usr/share/vdsm/kaxmlrpclib.py

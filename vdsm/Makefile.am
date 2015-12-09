@@ -29,7 +29,6 @@ dist_vdsm_PYTHON = \
 	caps.py \
 	clientIF.py \
 	hooking.py \
-	hooks.py \
 	hostdev.py \
 	kaxmlrpclib.py \
 	logUtils.py \

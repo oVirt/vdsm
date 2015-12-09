@@ -30,6 +30,7 @@ import logging
 
 from vdsm.config import config
 from vdsm import constants
+from vdsm import hooks
 from vdsm import kernelconfig
 from vdsm import netconfpersistence
 from vdsm.netinfo import (addresses, libvirtNets2vdsm, bridges,
@@ -45,7 +46,6 @@ from .errors import ConfigNetworkError
 from . import errors as ne
 from .models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from .models import hierarchy_backing_device
-import hooks  # TODO: Turn into parent package import when vdsm is a package
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
 _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'

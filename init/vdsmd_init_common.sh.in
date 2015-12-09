@@ -110,7 +110,7 @@ task_configure_vdsm_logs() {
 }
 
 task_run_init_hooks(){
-    "@PYTHON@" "@VDSMDIR@/hooks.pyc" before_vdsm_start
+    "@PYTHON@" -m "vdsm.hooks" before_vdsm_start
 }
 
 

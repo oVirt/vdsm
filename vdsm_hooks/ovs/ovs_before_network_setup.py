@@ -32,6 +32,7 @@ import traceback
 from libvirt import libvirtError
 import six
 
+from vdsm import hooks
 from vdsm.netconfpersistence import RunningConfig
 
 from hooking import execCmd
@@ -207,7 +208,6 @@ def _execCmd(cmd, exit=True):
 
 
 def test_add():
-    import hooks
     _execCmd([EXT_OVS_VSCTL, 'show'])
     json_input = {
         'request': {
@@ -229,7 +229,6 @@ def test_add():
 
 
 def test_del():
-    import hooks
     _execCmd([EXT_OVS_VSCTL, 'show'])
     json_input = {'request': {'networks': {'ovs-test-net': {'remove': True}},
                               'bondings': {'bond1515': {'remove': True}}}}

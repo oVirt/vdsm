@@ -20,7 +20,7 @@
 
 import xml.etree.ElementTree as etree
 
-import hooks
+from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import supervdsm
 

@@ -35,6 +35,7 @@ from vdsm.network.configurators import RollbackIncomplete
 from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
+from vdsm import hooks
 from vdsm import response
 from vdsm import supervdsm
 import storage.misc
@@ -52,7 +53,6 @@ from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
-import hooks
 import hostdev
 from caps import PAGE_SIZE_BYTES
 import v2v

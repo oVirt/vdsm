@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import hooks
+
 import hostdev
 import vmfakelib as fake
 
@@ -28,6 +28,7 @@ from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
 from monkeypatch import MonkeyClass
 
+from vdsm import hooks
 from vdsm import libvirtconnection
 
 _PCI_DEVICES = ['pci_0000_00_1a_0', 'pci_0000_00_1f_2', 'pci_0000_00_02_0',

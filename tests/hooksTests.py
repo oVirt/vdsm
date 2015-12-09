@@ -28,7 +28,7 @@ from contextlib import contextmanager
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir
 
-import hooks
+from vdsm import hooks
 
 
 class TestHooks(TestCaseBase):

@@ -19,7 +19,6 @@
 #
 
 from __future__ import print_function
-from vdsm import utils
 import glob
 import hashlib
 import itertools
@@ -30,7 +29,8 @@ import os.path
 import sys
 import tempfile
 
-from vdsm.constants import P_VDSM_HOOKS, P_VDSM
+from . import utils
+from .constants import P_VDSM_HOOKS, P_VDSM
 
 
 class HookError(Exception):

@@ -22,7 +22,6 @@ from contextlib import contextmanager
 import copy
 import errno
 import glob
-import hooks
 import logging
 import os
 import pipes
@@ -38,6 +37,7 @@ from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 from vdsm.config import config
 from vdsm import cmdutils
 from vdsm import constants
+from vdsm import hooks
 from vdsm import ipwrapper
 from vdsm.netinfo import (bonding as netinfo_bonding, mtus, nics, vlans,
                           ifaceUsed, NET_PATH, misc)

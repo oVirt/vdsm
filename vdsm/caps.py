@@ -34,10 +34,10 @@ from distutils.version import LooseVersion
 import libvirt
 
 from vdsm.config import config
+from vdsm import hooks
 from vdsm import libvirtconnection
 import dsaversion
 from vdsm import netinfo
-import hooks
 from vdsm import utils
 import storage.hba
 
