@@ -18,12 +18,16 @@
 #
 
 from collections import namedtuple
+from contextlib import contextmanager
 from StringIO import StringIO
+import tarfile
+import zipfile
 import uuid
 
 import libvirt
 import os
 
+from testlib import namedTemporaryDir
 import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
@@ -264,26 +268,6 @@ class v2vTests(TestCaseBase):
             (v2v.DiskProgress(50)),
             (v2v.DiskProgress(100))])
 
-    @MonkeyPatch(v2v, '_read_ovf_from_ova', read_ovf)
-    def testGetOvaInfo(self):
-        ret = v2v.get_ova_info("dummy")
-        vm = ret['vmList']
-        self.assertEquals(vm['vmName'], 'First')
-        self.assertEquals(vm['memSize'], 2048)
-        self.assertEquals(vm['smp'], 1)
-
-        disk = vm['disks'][0]
-        self.assertEquals(disk['allocation'], '349405696')
-        self.assertEquals(disk['capacity'], '34359738368')
-        self.assertEquals(disk['type'], 'disk')
-        self.assertEquals(disk['alias'], 'First-disk1.vmdk')
-
-        network = vm['networks'][0]
-        self.assertEquals(network['bridge'], 'VM Network')
-        self.assertEquals(network['model'], 'E1000')
-        self.assertEquals(network['type'], 'bridge')
-        self.assertEquals(network['dev'], 'Ethernet 1')
-
     def testGetExternalVMsWithoutDisksInfo(self):
         if not v2v.supported():
             raise SkipTest('v2v is not supported current os version')
@@ -368,3 +352,52 @@ class v2vTests(TestCaseBase):
 
         with open('fake-virt-v2v.out', 'r') as f:
             self.assertEqual(output, f.read())
+
+
+class TestGetOVAInfo(TestCaseBase):
+    def test_directory(self):
+        with self.temporary_ovf_dir() as (base, ovfpath, ovapath):
+            vm = v2v.get_ova_info(base)
+            self.check(vm['vmList'])
+
+    def test_tar(self):
+        with self.temporary_ovf_dir() as (base, ovfpath, ovapath):
+            with tarfile.open(ovapath, 'w') as tar:
+                tar.add(ovfpath, arcname='testvm.ovf')
+            vm = v2v.get_ova_info(ovapath)
+            self.check(vm['vmList'])
+
+    def test_zip(self):
+        with self.temporary_ovf_dir() as (base, ovfpath, ovapath):
+            with zipfile.ZipFile(ovapath, 'w') as zip:
+                zip.write(ovfpath)
+            vm = v2v.get_ova_info(ovapath)
+            self.check(vm['vmList'])
+
+    @contextmanager
+    def temporary_ovf_dir(self):
+        with namedTemporaryDir() as base:
+            ovfpath = os.path.join(base, 'testvm.ovf')
+            ovapath = os.path.join(base, 'testvm.ova')
+            ovf = read_ovf('test')
+
+            with open(ovfpath, 'w') as ovffile:
+                ovffile.write(ovf)
+            yield base, ovfpath, ovapath
+
+    def check(self, vm):
+        self.assertEquals(vm['vmName'], 'First')
+        self.assertEquals(vm['memSize'], 2048)
+        self.assertEquals(vm['smp'], 1)
+
+        disk = vm['disks'][0]
+        self.assertEquals(disk['allocation'], '349405696')
+        self.assertEquals(disk['capacity'], '34359738368')
+        self.assertEquals(disk['type'], 'disk')
+        self.assertEquals(disk['alias'], 'First-disk1.vmdk')
+
+        network = vm['networks'][0]
+        self.assertEquals(network['bridge'], 'VM Network')
+        self.assertEquals(network['model'], 'E1000')
+        self.assertEquals(network['type'], 'bridge')
+        self.assertEquals(network['dev'], 'Ethernet 1')
