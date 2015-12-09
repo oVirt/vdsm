@@ -533,7 +533,7 @@ class VMBulkSampler(object):
         return doms
 
 
-HOST_STATS_AVERAGING_WINDOW = 5
+HOST_STATS_AVERAGING_WINDOW = 2
 
 
 host_samples = SampleWindow(size=HOST_STATS_AVERAGING_WINDOW)
