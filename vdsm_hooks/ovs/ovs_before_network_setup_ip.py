@@ -66,7 +66,8 @@ def _run_dhclient(iface, blockingdhcp, default_route, family):
         log('failed to start dhclient%s on iface %s' % (family, iface))
 
 
-def _set_ip_config(ip_config):
+def _set_network_ip_config(ip_config):
+    """Set IP configuration on Vdsm controlled OVS network"""
     iface = ip_config.top_dev
     ipv4 = ip_config.ipv4
     ipv6 = ip_config.ipv6
@@ -100,7 +101,8 @@ def _set_ip_config(ip_config):
     iproute2._addSourceRoute(net_dev)
 
 
-def _remove_ip_config(ip_config):
+def _remove_network_ip_config(ip_config):
+    """Remove IP configuration from Vdsm controlled OVS network"""
     iface = ip_config.top_dev
     ipv4 = ip_config.ipv4
     ipv6 = ip_config.ipv6
@@ -114,8 +116,8 @@ def _remove_ip_config(ip_config):
             ipwrapper.addrFlush(iface)
 
 
-def _drop_ip_config(iface):
-    """Remove IP configuration of a new nic controlled by VDSM"""
+def _drop_nic_ip_config(iface):
+    """Drop IP configuration of a new nic controlled by VDSM"""
     if os.path.exists(os.path.join('/sys/class/net', iface)):
         kill_dhclient(iface, family=4)  # kill_dhclient flushes IP
         kill_dhclient(iface, family=6)
@@ -146,7 +148,7 @@ def configure_ip(nets, init_nets, bonds, init_bonds):
 
                 # drop IP of newly attached nics
                 if init_nets[net].get('nic') != attrs.get('nic') is not None:
-                    _drop_ip_config(attrs.get('nic'))
+                    _drop_nic_ip_config(attrs.get('nic'))
 
                 # if IP config is to be changed or network's top device was
                 # changed, remove initial IP configuration and set the new one
@@ -162,7 +164,7 @@ def configure_ip(nets, init_nets, bonds, init_bonds):
                 # drop IP of newly attached nics
                 nic = attrs.get('nic')
                 if nic is not None:
-                    _drop_ip_config(nic)
+                    _drop_nic_ip_config(nic)
 
                 # set networks IP configuration if any
                 if ip_config.ipv4 or ip_config.ipv6:
@@ -175,11 +177,11 @@ def configure_ip(nets, init_nets, bonds, init_bonds):
                 set(attrs.get('nics')) - set(init_bonds[bond].get('nics'))
                 if bond in init_bonds else attrs.get('nics'))
             for nic in nics_to_drop_ip_from:
-                _drop_ip_config(nic)
+                _drop_nic_ip_config(nic)
 
     log('Remove IP configuration of: %s' % ip_config_to_remove)
     log('Set IP configuration: %s' % ip_config_to_set)
     for iface, ip_config in six.iteritems(ip_config_to_remove):
-        _remove_ip_config(ip_config)
+        _remove_network_ip_config(ip_config)
     for iface, ip_config in six.iteritems(ip_config_to_set):
-        _set_ip_config(ip_config)
+        _set_network_ip_config(ip_config)
