@@ -22,7 +22,7 @@ import os
 
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
-from storagefakelib import FakeLVM
+from storagefakelib import FakeLVM, FakeResourceManager
 
 from storage import blockSD, blockVolume
 from storage import storage_exception as se
@@ -287,3 +287,16 @@ class FakeLVMGeneralTests(VdsmTestCase):
             lvm = FakeLVM(tmpdir)
             lvm_fn = getattr(lvm, fn)
             self.assertRaises(exception, lvm_fn, *args)
+
+
+class FakeResourceManagerTests(VdsmTestCase):
+
+    def test_acquire_contextmanager(self):
+        expected_calls = []
+        rm = FakeResourceManager()
+        acquire_args = ('ns', 'name', 'locktype')
+        with rm.acquireResource(*acquire_args):
+            expected_calls.append(('acquireResource', acquire_args, {}))
+            self.assertEqual(expected_calls, rm.__calls__)
+        expected_calls.append(('releaseResource', acquire_args, {}))
+        self.assertEqual(expected_calls, rm.__calls__)

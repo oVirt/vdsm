@@ -20,7 +20,10 @@
 import os
 import string
 import random
+from contextlib import contextmanager
 from copy import deepcopy
+
+from testlib import recorded
 
 from storage import lvm as real_lvm
 from storage import storage_exception as se
@@ -216,3 +219,18 @@ def fake_lvm_uuid():
     def part(size):
         return ''.join(random.choice(chars) for _ in range(size))
     return '-'.join(part(size) for size in [6, 4, 4, 4, 4, 6])
+
+
+class FakeResourceManager(object):
+
+    @recorded
+    @contextmanager
+    def acquireResource(self, *args, **kwargs):
+        try:
+            yield
+        finally:
+            self.releaseResource(*args, **kwargs)
+
+    @recorded
+    def releaseResource(self, *args, **kwargs):
+        pass
