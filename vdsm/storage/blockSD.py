@@ -1136,7 +1136,7 @@ class BlockStorageDomain(sd.StorageDomain):
 
     def createImageLinks(self, srcImgPath, imgUUID, volUUIDs):
         """
-        qcow chain is build by reading each qcow header and reading the path
+        qcow chain is built by reading each qcow header and reading the path
         to the parent. When creating the qcow layer, we pass a relative path
         which allows us to build a directory with links to all volumes in the
         chain anywhere we want. This method creates a directory with the image
