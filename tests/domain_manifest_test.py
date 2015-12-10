@@ -20,13 +20,11 @@
 import os
 import uuid
 
-from testlib import VdsmTestCase, namedTemporaryDir, make_file, recorded
-from monkeypatch import MonkeyPatchScope
-from storagefakelib import FakeLVM
+from testlib import VdsmTestCase, make_file, recorded
 from storagetestlib import (
-    make_filesd_manifest,
-    make_blocksd,
     make_file_volume,
+    fake_block_env,
+    fake_file_env
 )
 
 from storage import sd, blockSD, blockVolume
@@ -38,139 +36,113 @@ MB = 1048576
 class FileManifestTests(VdsmTestCase):
 
     def test_getreaddelay(self):
-        with namedTemporaryDir() as tmpdir:
-            manifest = make_filesd_manifest(tmpdir)
-            self.assertIsInstance(manifest.getReadDelay(), float)
+        with fake_file_env() as env:
+            self.assertIsInstance(env.sd_manifest.getReadDelay(), float)
 
     def test_getvsize(self):
-        with namedTemporaryDir() as tmpdir:
-            manifest = make_filesd_manifest(tmpdir)
-            imguuid, voluuid = make_file_volume(manifest.domaindir, VOLSIZE)
-            self.assertEqual(VOLSIZE, manifest.getVSize(imguuid, voluuid))
+        with fake_file_env() as env:
+            sd_manifest = env.sd_manifest
+            imguuid, voluuid = make_file_volume(sd_manifest.domaindir, VOLSIZE)
+            self.assertEqual(VOLSIZE, sd_manifest.getVSize(imguuid, voluuid))
 
     def test_getvallocsize(self):
-        with namedTemporaryDir() as tmpdir:
-            manifest = make_filesd_manifest(tmpdir)
-            imguuid, voluuid = make_file_volume(manifest.domaindir, VOLSIZE)
-            self.assertEqual(0, manifest.getVAllocSize(imguuid, voluuid))
+        with fake_file_env() as env:
+            sd_manifest = env.sd_manifest
+            imguuid, voluuid = make_file_volume(sd_manifest.domaindir, VOLSIZE)
+            self.assertEqual(0, sd_manifest.getVAllocSize(imguuid, voluuid))
 
     def test_getisodomainimagesdir(self):
-        with namedTemporaryDir() as tmpdir:
-            manifest = make_filesd_manifest(tmpdir)
-            isopath = os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES,
+        with fake_file_env() as env:
+            isopath = os.path.join(env.sd_manifest.domaindir, sd.DOMAIN_IMAGES,
                                    sd.ISO_IMAGE_UUID)
-            self.assertEquals(isopath, manifest.getIsoDomainImagesDir())
+            self.assertEquals(isopath, env.sd_manifest.getIsoDomainImagesDir())
 
     def test_getmdpath(self):
-        with namedTemporaryDir() as tmpdir:
-            manifest = make_filesd_manifest(tmpdir)
-            mdpath = os.path.join(manifest.domaindir, sd.DOMAIN_META_DATA)
-            self.assertEquals(mdpath, manifest.getMDPath())
+        with fake_file_env() as env:
+            sd_manifest = env.sd_manifest
+            mdpath = os.path.join(sd_manifest.domaindir, sd.DOMAIN_META_DATA)
+            self.assertEquals(mdpath, env.sd_manifest.getMDPath())
 
     def test_getmetaparam(self):
-        with namedTemporaryDir() as tmpdir:
-            manifest = make_filesd_manifest(tmpdir)
-            self.assertEquals(manifest.sdUUID,
-                              manifest.getMetaParam(sd.DMDK_SDUUID))
+        with fake_file_env() as env:
+            sd_manifest = env.sd_manifest
+            self.assertEquals(sd_manifest.sdUUID,
+                              sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getallimages(self):
-        with namedTemporaryDir() as tmpdir:
-            manifest = make_filesd_manifest(tmpdir)
-            self.assertEqual(set(), manifest.getAllImages())
+        with fake_file_env() as env:
+            self.assertEqual(set(), env.sd_manifest.getAllImages())
             img_uuid = str(uuid.uuid4())
-            make_file_volume(manifest.domaindir, VOLSIZE, img_uuid)
-            self.assertIn(img_uuid, manifest.getAllImages())
+            make_file_volume(env.sd_manifest.domaindir, VOLSIZE, img_uuid)
+            self.assertIn(img_uuid, env.sd_manifest.getAllImages())
 
 
 class BlockManifestTests(VdsmTestCase):
 
     def test_getreaddelay(self):
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd(tmpdir, lvm)
-                vg_name = manifest.sdUUID
-                make_file(lvm.lvPath(vg_name, 'metadata'))
-                self.assertIsInstance(manifest.getReadDelay(), float)
+        with fake_block_env() as env:
+            vg_name = env.sd_manifest.sdUUID
+            make_file(env.lvm.lvPath(vg_name, 'metadata'))
+            self.assertIsInstance(env.sd_manifest.getReadDelay(), float)
 
     def test_getvsize_active_lv(self):
         # Tests the path when the device file is present
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd(tmpdir, lvm)
-                vg_name = manifest.sdUUID
-                lv_name = str(uuid.uuid4())
-                lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
-                lvm.fake_lv_symlink_create(vg_name, lv_name)
-                self.assertEqual(VOLSIZE,
-                                 manifest.getVSize('<imgUUID>', lv_name))
+        with fake_block_env() as env:
+            vg_name = env.sd_manifest.sdUUID
+            lv_name = str(uuid.uuid4())
+            env.lvm.createLV(vg_name, lv_name, VOLSIZE / MB)
+            env.lvm.fake_lv_symlink_create(vg_name, lv_name)
+            self.assertEqual(VOLSIZE,
+                             env.sd_manifest.getVSize('<imgUUID>', lv_name))
 
     def test_getvsize_inactive_lv(self):
         # Tests the path when the device file is not present
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd(tmpdir, lvm)
-                lv_name = str(uuid.uuid4())
-                lvm.createLV(manifest.sdUUID, lv_name, VOLSIZE / MB)
-                self.assertEqual(VOLSIZE,
-                                 manifest.getVSize('<imgUUID>', lv_name))
+        with fake_block_env() as env:
+            lv_name = str(uuid.uuid4())
+            env.lvm.createLV(env.sd_manifest.sdUUID, lv_name, VOLSIZE / MB)
+            self.assertEqual(VOLSIZE,
+                             env.sd_manifest.getVSize('<imgUUID>', lv_name))
 
     def test_getmetaparam(self):
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                metadata = {sd.DMDK_VERSION: 3}
-                manifest = make_blocksd(tmpdir, lvm, metadata=metadata)
-                metadata[sd.DMDK_SDUUID] = manifest.sdUUID
-                self.assertEquals(manifest.sdUUID,
-                                  manifest.getMetaParam(sd.DMDK_SDUUID))
+        with fake_block_env() as env:
+            self.assertEquals(env.sd_manifest.sdUUID,
+                              env.sd_manifest.getMetaParam(sd.DMDK_SDUUID))
 
     def test_getblocksize_defaults(self):
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd(tmpdir, lvm)
-                self.assertEquals(512, manifest.logBlkSize)
-                self.assertEquals(512, manifest.phyBlkSize)
+        with fake_block_env() as env:
+            self.assertEquals(512, env.sd_manifest.logBlkSize)
+            self.assertEquals(512, env.sd_manifest.phyBlkSize)
 
     def test_getblocksize(self):
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                metadata = {sd.DMDK_VERSION: 3,
-                            blockSD.DMDK_LOGBLKSIZE: 2048,
-                            blockSD.DMDK_PHYBLKSIZE: 1024}
-                manifest = make_blocksd(tmpdir, lvm, metadata=metadata)
-                self.assertEquals(2048, manifest.logBlkSize)
-                self.assertEquals(1024, manifest.phyBlkSize)
+        with fake_block_env() as env:
+            sduuid = env.sd_manifest.sdUUID
+            metadata = dict(env.sd_manifest._metadata)
+            metadata[blockSD.DMDK_LOGBLKSIZE] = 2048
+            metadata[blockSD.DMDK_PHYBLKSIZE] = 1024
+            sd_manifest = blockSD.BlockStorageDomainManifest(sduuid, metadata)
+            self.assertEquals(2048, sd_manifest.logBlkSize)
+            self.assertEquals(1024, sd_manifest.phyBlkSize)
 
 
 class BlockDomainMetadataSlotTests(VdsmTestCase):
 
     def test_metaslot_selection(self):
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd(tmpdir, lvm)
-                lvs = ('0b6287f0-3679-4c4d-8be5-9bbfe3ec9c1f',
-                       'ea13af29-b64a-4d1a-b35f-3e6ab15c3b04')
-                for lv, offset in zip(lvs, [4, 7]):
-                    lvm.createLV(manifest.sdUUID, lv, VOLSIZE)
-                    tag = blockVolume.TAG_PREFIX_MD + str(offset)
-                    lvm.addtag(manifest.sdUUID, lv, tag)
-                with manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
-                    self.assertEqual(mdSlot, 5)
+        with fake_block_env() as env:
+            lvs = ('0b6287f0-3679-4c4d-8be5-9bbfe3ec9c1f',
+                   'ea13af29-b64a-4d1a-b35f-3e6ab15c3b04')
+            for lv, offset in zip(lvs, [4, 7]):
+                sduuid = env.sd_manifest.sdUUID
+                env.lvm.createLV(sduuid, lv, VOLSIZE)
+                tag = blockVolume.TAG_PREFIX_MD + str(offset)
+                env.lvm.addtag(sduuid, lv, tag)
+            with env.sd_manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
+                self.assertEqual(mdSlot, 5)
 
     def test_metaslot_lock(self):
-        with namedTemporaryDir() as tmpdir:
-            lvm = FakeLVM(tmpdir)
-            with MonkeyPatchScope([(blockSD, 'lvm', lvm)]):
-                manifest = make_blocksd(tmpdir, lvm)
-                with manifest.acquireVolumeMetadataSlot(None, 1):
-                    acquired = manifest._lvTagMetaSlotLock.acquire(False)
-                    self.assertFalse(acquired)
+        with fake_block_env() as env:
+            with env.sd_manifest.acquireVolumeMetadataSlot(None, 1):
+                acquired = env.sd_manifest._lvTagMetaSlotLock.acquire(False)
+                self.assertFalse(acquired)
 
 
 class TestingStorageDomainManifest(sd.StorageDomainManifest):
