@@ -80,7 +80,7 @@ class Executor(object):
             self._running = False
             self._tasks.clear()
             for _ in xrange(self._workers_count):
-                self._tasks.put((_STOP, None))
+                self._tasks.put(_STOP)
             workers = tuple(self._workers) if wait else ()
         for worker in workers:
             worker.join()
@@ -98,7 +98,7 @@ class Executor(object):
         """
         if not self._running:
             raise NotRunning()
-        self._tasks.put((callable, timeout))
+        self._tasks.put(Task(callable, timeout))
 
     # Serving workers
 
@@ -127,10 +127,10 @@ class Executor(object):
         Called from worker thread to get the next task from the taks queue.
         Raises NotRunning exception if executor was stopped.
         """
-        task, timeout = self._tasks.get()
+        task = self._tasks.get()
         if task is _STOP:
             raise NotRunning()
-        return task, timeout
+        return task
 
     # Private
 
@@ -160,7 +160,7 @@ class _Worker(object):
                                          logger=self._log.name)
         self._log.debug('Starting worker %s' % name)
         self._thread.start()
-        self._callable = None
+        self._task = None
 
     @property
     def name(self):
@@ -184,20 +184,20 @@ class _Worker(object):
             self._executor._worker_stopped(self)
 
     def _execute_task(self):
-        callable, timeout = self._executor._next_task()
-        discard = self._discard_after(timeout)
-        self._callable = callable
+        task = self._executor._next_task()
+        discard = self._discard_after(task.timeout)
+        self._task = task
         try:
-            callable()
+            task.callable()
         except Exception:
-            self._log.exception("Unhandled exception in %s", callable)
+            self._log.exception("Unhandled exception in %s", task)
         finally:
+            self._task = None
             # We want to discard workers that were too slow to disarm
             # the timer. It does not matter if the thread was still
             # blocked on callable when we discard it or it just finished.
             # However, we expect that most of times only blocked threads
             # will be discarded.
-            self._callable = None
             if discard is not None:
                 discard.cancel()
             if self._discarded:
@@ -216,14 +216,17 @@ class _Worker(object):
         self._executor._worker_discarded(self)
 
     def __repr__(self):
-        if self._callable:
-            status = "running %s" % self._callable
+        if self._task:
+            status = "running %s" % (self._task,)
         else:
             status = "waiting"
         return "<Worker name=%s %s%s at 0x%x>" % (
             self.name, status, " discarded" if self._discarded else "",
             id(self)
         )
+
+
+Task = collections.namedtuple("Task", "callable, timeout")
 
 
 class TaskQueue(object):
