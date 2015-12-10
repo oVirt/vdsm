@@ -20,7 +20,7 @@
 import os
 import uuid
 
-from testlib import VdsmTestCase, namedTemporaryDir, make_file
+from testlib import VdsmTestCase, namedTemporaryDir, make_file, recorded
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeLVM
 from storagetestlib import make_filesd_manifest, make_blocksd, make_file_volume
@@ -169,3 +169,44 @@ class BlockDomainMetadataSlotTests(VdsmTestCase):
                 with manifest.acquireVolumeMetadataSlot(None, 1):
                     acquired = manifest._lvTagMetaSlotLock.acquire(False)
                     self.assertFalse(acquired)
+
+
+class TestingStorageDomainManifest(sd.StorageDomainManifest):
+    def __init__(self):
+        pass
+
+    @recorded
+    def acquireDomainLock(self, host_id):
+        pass
+
+    @recorded
+    def releaseDomainLock(self):
+        pass
+
+    @recorded
+    def dummy(self):
+        pass
+
+
+class DomainLockTests(VdsmTestCase):
+
+    def test_domainlock_contextmanager(self):
+        expected_calls = [("acquireDomainLock", (1,), {}),
+                          ("dummy", (), {}),
+                          ("releaseDomainLock", (), {})]
+        manifest = TestingStorageDomainManifest()
+        with manifest.domain_lock(1):
+            manifest.dummy()
+        self.assertEqual(manifest.__calls__, expected_calls)
+
+    def test_domainlock_contextmanager_exception(self):
+        class InjectedFailure(Exception):
+            pass
+
+        expected_calls = [("acquireDomainLock", (1,), {}),
+                          ("releaseDomainLock", (), {})]
+        manifest = TestingStorageDomainManifest()
+        with self.assertRaises(InjectedFailure):
+            with manifest.domain_lock(1):
+                raise InjectedFailure()
+        self.assertEqual(manifest.__calls__, expected_calls)

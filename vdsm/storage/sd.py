@@ -24,6 +24,7 @@ import types
 import threading
 from collections import namedtuple
 import codecs
+from contextlib import contextmanager
 
 import image
 import storage_exception as se
@@ -421,6 +422,14 @@ class StorageDomainManifest(object):
 
     def releaseDomainLock(self):
         self._domainLock.release()
+
+    @contextmanager
+    def domain_lock(self, host_id):
+        self.acquireDomainLock(host_id)
+        try:
+            yield
+        finally:
+            self.releaseDomainLock()
 
     def inquireDomainLock(self):
         return self._domainLock.inquire()
