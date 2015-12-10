@@ -10,7 +10,7 @@ _latest_version() {
 
 _latest_rpms() {
     local VERSION=$(_latest_version)
-    find ~/rpmbuild/RPMS/ -iname "*$VERSION*.rpm" | egrep "vdsm-[0-9]|python|cli|xmlrpc|jsonrpc|tests|infra"
+    find ~/rpmbuild/RPMS/ -iname "*$VERSION*.rpm" | egrep "vdsm-[0-9]|python|cli|xmlrpc|jsonrpc|tests|infra|hook-vmfex-dev"
 }
 
 vdsm_configure_force() {
