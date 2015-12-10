@@ -924,6 +924,9 @@ def setupNetworks(networks, bondings, **options):
     normalized_config = kernelconfig.normalize(
         netconfpersistence.BaseConfig(networks, bondings))
     with ConfiguratorClass(in_rollback) as configurator:
+        # from this point forward, any exception thrown will be handled by
+        # Configurator.__exit__.
+
         # Remove edited networks and networks with 'remove' attribute
         for network, attrs in networks.items():
             if network in _netinfo.networks:

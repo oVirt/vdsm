@@ -85,6 +85,9 @@ class Ifcfg(Configurator):
             self.runningConfig = RunningConfig()
 
     def rollback(self):
+        """This reimplementation always returns None since Ifcfg can rollback
+        on its own via restoreBackups(). This makes the general mechanism of
+        API.Global._rollback redundant in this case."""
         self.configApplier.restoreBackups()
         self.configApplier = None
         if self.unifiedPersistence:

@@ -1521,12 +1521,19 @@ class Global(APIBase):
         try:
             yield rollbackCtx
         except ConfigNetworkError as e:
+            # Only a configuration error in setupNetworks before any damage
+            # done. No need for cleanup.
             self.log.error(e.message, exc_info=True)
             rollbackCtx['status'] = {'code': e.errCode, 'message': e.message}
         except RollbackIncomplete as roi:
+            # a previous call to setupNetworks (with 'inRollback': False)
+            # failed and we need to try and cleanup.
             config, excType, value = roi
             tb = sys.exc_info()[2]
             try:
+                # config holds the difference between RunningConfig on disk and
+                # the one in memory with the addition of {'remove': True}
+                # hence, the next call to setupNetworks will perform a cleanup.
                 supervdsm.getProxy().setupNetworks(
                     config.networks, config.bonds, {'inRollback': True,
                                                     'connectivityCheck': 0})
