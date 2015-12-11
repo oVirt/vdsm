@@ -67,6 +67,7 @@ class Job(object):
         self._id = job_id
         self._status = STATUS.PENDING
         self._description = description
+        self._error = None
 
     @property
     def id(self):
@@ -88,13 +89,20 @@ class Job(object):
     def job_type(self):
         return self._JOB_TYPE
 
+    @property
+    def error(self):
+        return self._error
+
     def info(self):
-        return {
-            'status': self.status,
-            'description': self.description,
-            'progress': self.progress,
-            'job_type': self.job_type
-        }
+        ret = {'status': self.status,
+               'description': self.description,
+               'progress': self.progress,
+               'job_type': self.job_type}
+
+        if self.error:
+            ret['error'] = self.error.response()
+
+        return ret
 
     def abort(self):
         self._status = STATUS.ABORTED

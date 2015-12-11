@@ -19,7 +19,7 @@
 
 import uuid
 
-from vdsm import jobs, response
+from vdsm import jobs, response, utils
 
 from testlib import VdsmTestCase, expandPermutations, permutations
 
@@ -146,3 +146,13 @@ class JobsTests(VdsmTestCase):
     def test_delete_unknown_job(self):
         self.assertEqual(response.error(jobs.NoSuchJob.name),
                          jobs.delete('foo'))
+
+    def test_job_get_error(self):
+        job = TestingJob()
+        self.assertIsNone(job.error)
+        self.assertNotIn('error', job.info())
+
+        error = utils.GeneralException()
+        job._error = error
+        self.assertEqual(job.error, error)
+        self.assertEqual(error.response(), job.info()['error'])
