@@ -83,7 +83,7 @@ class Job(object):
 
     @property
     def progress(self):
-        raise NotImplementedError()
+        return None
 
     @property
     def job_type(self):
@@ -96,8 +96,10 @@ class Job(object):
     def info(self):
         ret = {'status': self.status,
                'description': self.description,
-               'progress': self.progress,
                'job_type': self.job_type}
+
+        if self.progress is not None:
+            ret['progress'] = self.progress
 
         if self.error:
             ret['error'] = self.error.response()

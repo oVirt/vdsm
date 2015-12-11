@@ -29,7 +29,7 @@ class TestingJob(jobs.Job):
 
     def __init__(self):
         jobs.Job.__init__(self, str(uuid.uuid4()))
-        self._progress = 0
+        self._progress = None
         self._aborted = False
 
     @property
@@ -63,8 +63,9 @@ class JobsTests(VdsmTestCase):
 
     def test_job_info(self):
         job = TestingJob()
-        self.assertEqual({'status': jobs.STATUS.PENDING, 'progress': 0,
-                          'job_type': 'testing', 'description': ''},
+        self.assertEqual({'status': jobs.STATUS.PENDING,
+                          'job_type': 'testing',
+                          'description': ''},
                          job.info())
 
     def test_add_job(self):
@@ -146,6 +147,18 @@ class JobsTests(VdsmTestCase):
     def test_delete_unknown_job(self):
         self.assertEqual(response.error(jobs.NoSuchJob.name),
                          jobs.delete('foo'))
+
+    def test_job_get_progress(self):
+        job = TestingJob()
+
+        # Job queued or initializing, no progress yet
+        self._progress = None
+        self.assertNotIn('progress', job.info())
+
+        # Job running
+        for i in [0, 42, 100]:
+            job._progress = i
+            self.assertEqual(i, job.info()['progress'])
 
     def test_job_get_error(self):
         job = TestingJob()
