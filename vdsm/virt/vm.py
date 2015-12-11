@@ -388,7 +388,11 @@ class VmStatsThread(sampling.AdvancedStatsThread):
             metadataCpuLimitXML = _domParseStr(metadataCpuLimit)
             nodeList = \
                 metadataCpuLimitXML.getElementsByTagName('vcpuLimit')
-            infos['vcpuLimit'] = nodeList[0].childNodes[0].data
+            try:
+                infos['vcpuLimit'] = nodeList[0].childNodes[0].data
+            except IndexError:
+                # No CPU limit defined yet, ignore
+                pass
 
         return infos
 
