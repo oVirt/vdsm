@@ -6,10 +6,6 @@ set -xe
 
 ./autogen.sh --system --enable-hooks
 
-# 'make check' runs pep8 and pyflakes for all .py files. To generate
-# templates (py.in files) we run 'make' before.
-make all
-
 make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 ./automation/build-artifacts.sh

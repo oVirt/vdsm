@@ -92,21 +92,21 @@ gitignore:
 	fi;
 
 .PHONY: abs_imports
-abs_imports:
-	@for f in `git ls-files $(ABS_IMPORT_WHITELIST) |grep '.py$$\|.py.in$$'`; do\
+abs_imports: all
+	@for f in `git ls-files $(ABS_IMPORT_WHITELIST) |grep '.py$$'`; do\
 	  if ! grep -q '^from __future__ import absolute_import$$' "$$f"; then \
 	    echo "Missing absolute_import in $$f"; exit 1; fi; \
 	done;
 
 .PHONY: pyflakes
-pyflakes:
+pyflakes: all
 	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
 	( find . -path './.git' -prune -type f -o \
 		-name '*.py' && \
 		echo $(WHITELIST) ) | xargs $(PYFLAKES)
 
 .PHONY: pep8
-pep8:
+pep8: all
 	$(PEP8) --version
 	for x in $(PEP8_BLACKLIST); do \
 	    exclude="$${exclude},$${x}" ; \
@@ -115,11 +115,11 @@ pep8:
 	$(WHITELIST)
 
 .PHONY: python3
-python3:
+python3: all
 	if [ -x "$(PYTHON3)" ]; then \
 	    PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
 		$(WHITELIST) \
-		`find . -name '*.py' -o -name '*.py.in'`; \
+		`find . -name '*.py'`; \
 	else \
 	    echo "Warning: skipping python3 syntax check"; \
 	fi
