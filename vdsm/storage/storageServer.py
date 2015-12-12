@@ -42,6 +42,7 @@ import fileSD
 import iscsi
 from sync import asyncmethod, AsyncCallStub
 from mount import MountError
+import gluster.cli
 import storage_exception as se
 
 
@@ -314,13 +315,14 @@ class GlusterFSConnection(MountConnection):
         self._volinfo = None
         self._volfileserver, volname = self._remotePath.split(":", 1)
         self._volname = volname.strip('/')
+        self._have_gluster_cli = gluster.cli.exists()
 
     @property
     def options(self):
+        backup_servers_option = ""
         if "backup-volfile-servers" in self._options:
             self.log.warn("Using user specified backup-volfile-servers option")
-            backup_servers_option = ""
-        else:
+        elif self._have_gluster_cli:
             backup_servers_option = self._get_backup_servers_option()
         return ",".join(
             p for p in (self._options, backup_servers_option) if p)
@@ -332,6 +334,15 @@ class GlusterFSConnection(MountConnection):
         return self._volinfo
 
     def validate(self):
+        if not self._have_gluster_cli:
+            self.log.warning("Required glusterfs-cli package is missing "
+                             "on this host. Note that automatic detection "
+                             "of backup servers will be disabled! Please "
+                             "install the missing package in order to "
+                             "automatically mount gluster storage backup "
+                             "servers")
+            return
+
         replicaCount = self.volinfo['replicaCount']
         if replicaCount not in self.ALLOWED_REPLICA_COUNTS:
             self.log.warning("Unsupported replica count (%s) for volume %r, "
