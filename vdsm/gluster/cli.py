@@ -20,6 +20,7 @@
 
 import calendar
 import logging
+import os
 import socket
 import time
 import xml.etree.cElementTree as etree
@@ -1579,3 +1580,12 @@ def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
         return True
     except ge.GlusterCmdFailedException as e:
         raise ge.GlusterGeoRepSessionDeleteFailedException(rc=e.rc, err=e.err)
+
+
+def exists():
+    try:
+        return os.path.exists(_glusterCommandPath.cmd)
+    except OSError as e:
+        if e.errno != os.errno.ENOENT:
+            raise
+        return False

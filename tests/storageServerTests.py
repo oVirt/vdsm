@@ -19,6 +19,7 @@
 #
 
 from monkeypatch import MonkeyPatch
+import gluster.cli
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 from storage.storageServer import GlusterFSConnection
@@ -131,6 +132,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
         self.assertEquals(mount_con._mount.fs_file,
                           "/tmp/glusterSD/server:_volume")
 
+    @MonkeyPatch(gluster.cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     def test_gluster_replica3_mount_options(self):
         def glusterVolumeInfo(volname=None, volfileServer=None):
@@ -147,6 +149,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
         self.assertEquals(gluster.options,
                           "backup-volfile-servers=192.168.122.2:192.168.122.3")
 
+    @MonkeyPatch(gluster.cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     def test_server_not_in_volinfo(self):
         """
@@ -166,6 +169,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
         self.assertEquals(gluster.options, expected_backup_servers)
 
+    @MonkeyPatch(gluster.cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     def test_duplicate_servers_in_volinfo(self):
         """
@@ -186,6 +190,7 @@ class GlusterFSConnectionTests(VdsmTestCase):
             "backup-volfile-servers=192.168.122.5:192.168.122.2:192.168.122.3"
         self.assertEquals(gluster.options, expected_backup_servers)
 
+    @MonkeyPatch(gluster.cli, 'exists', lambda: True)
     @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
     def test_gluster_and_user_provided_mount_options(self):
         def glusterVolumeInfo(volname=None, volfileServer=None):
@@ -237,3 +242,8 @@ class GlusterFSConnectionTests(VdsmTestCase):
 
         gluster = GlusterFSConnection(spec="192.168.122.1:/music")
         gluster.validate()
+
+    @MonkeyPatch(gluster.cli, 'exists', lambda: False)
+    def test_glusterfs_cli_missing(self):
+        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        self.assertEquals(gluster.options, "")
