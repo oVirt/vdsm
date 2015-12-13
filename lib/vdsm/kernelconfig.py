@@ -197,6 +197,7 @@ def _normalize_bridge(config_copy):
             net_attr['bridged'] = False
 
 
+# TODO: Treat mtu as an int in the first place and avoid the conversion.
 def _normalize_mtu(config_copy):
     for net_attr in config_copy.networks.itervalues():
         if 'mtu' in net_attr:

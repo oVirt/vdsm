@@ -27,6 +27,7 @@ import os
 import traceback
 import time
 import logging
+import six
 
 from vdsm.config import config
 from vdsm import constants
@@ -37,6 +38,7 @@ from vdsm.netinfo import (addresses, libvirtNets2vdsm, bridges,
                           get as netinfo_get, CachingNetInfo,
                           networks as netinfo_networks, nics as netinfo_nics,
                           NET_PATH)
+from vdsm.netinfo.mtus import DEFAULT_MTU
 from vdsm import udevadm
 from vdsm import utils
 from vdsm import ipwrapper
@@ -264,8 +266,8 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         ipv6autoconf = utils.tobool(ipv6autoconf)
     vlan = _vlanToInternalRepresentation(vlan)
 
-    if mtu:
-        mtu = int(mtu)
+    # TODO: Add such conversions into a seperated layer.
+    mtu = int(mtu)
 
     if network == '':
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
@@ -319,14 +321,16 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if bridged and network in _netinfo.bridges:
         net_ent_to_configure = net_ent.port
         logging.info("Bridge %s already exists.", network)
-        if mtu:
-            # The bridge already exists and we attach a new underlying device
-            # to it. We need to make sure that the bridge MTU configuration is
-            # updated.
-            configurator.configApplier.setIfaceMtu(network, mtu)
-            # We must also update the vms` tap devices (the bridge ports in
-            # this case) so that their MTU is synced with the bridge
-            _update_bridge_ports_mtu(net_ent.name, mtu)
+
+        # TODO: Update the mtu only if it is different from current.
+
+        # The bridge already exists and we attach a new underlying device
+        # to it. We need to make sure that the bridge MTU configuration is
+        # updated.
+        configurator.configApplier.setIfaceMtu(network, mtu)
+        # We must also update the vms` tap devices (the bridge ports in
+        # this case) so that their MTU is synced with the bridge
+        _update_bridge_ports_mtu(net_ent.name, mtu)
     else:
         net_ent_to_configure = net_ent
 
@@ -895,6 +899,8 @@ def setupNetworks(networks, bondings, **options):
                  "networks:%r, bondings:%r, options:%r" % (networks,
                                                            bondings, options))
 
+    _canonize_networks_defaults(networks)
+
     logging.debug("Validating configuration")
     _validateNetworkSetup(networks, bondings)
 
@@ -959,6 +965,19 @@ def _vlanToInternalRepresentation(vlan):
         Vlan.validateTag(vlan)
         vlan = int(vlan)
     return vlan
+
+
+def _canonize_networks_defaults(nets):
+    """
+    Given networks configuration, explicitly add missing defaults.
+    :param nets: The network configuration
+    """
+    for attrs in six.itervalues(nets):
+        if 'remove' in attrs and attrs['remove'] is True:
+            continue
+
+        if 'mtu' not in attrs:
+            attrs['mtu'] = DEFAULT_MTU
 
 
 def setSafeNetworkConfig():
