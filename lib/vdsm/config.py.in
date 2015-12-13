@@ -346,6 +346,11 @@ parameters = [
         ('oop_impl', 'ioprocess',
             'Whether to use RFH or ioprocess implementation for oop.'
             'Values can be either ioprocess or rfh.'),
+
+        ('progress_interval', '30',
+            'Time to wait (in seconds) between consecutive progress reports '
+            'during long operations such as copying images (default 30)'),
+
     ]),
 
     # Section: [addresses]

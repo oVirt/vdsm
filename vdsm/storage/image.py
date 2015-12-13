@@ -27,6 +27,7 @@ from contextlib import contextmanager
 import volume
 from vdsm import qemuimg
 from vdsm import virtsparsify
+from vdsm.config import config
 from sdc import sdCache
 import sd
 import misc
@@ -111,7 +112,6 @@ class Image:
     """
     log = logging.getLogger('Storage.Image')
     _fakeTemplateLock = threading.Lock()
-    _QEMU_LOGGING_INTERVAL = 60.0
 
     @classmethod
     def createImageRollback(cls, taskObj, imageDir):
@@ -137,8 +137,9 @@ class Image:
         self.log.debug('waiting for qemu-img operation to complete')
 
         with vars.task.abort_callback(operation.abort):
+            interval = config.getint("irs", "progress_interval")
             while not operation.finished:
-                operation.wait(self._QEMU_LOGGING_INTERVAL)
+                operation.wait(interval)
                 self.log.debug('qemu-img operation progress: %s%%',
                                operation.progress)
 
