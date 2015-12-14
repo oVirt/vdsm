@@ -40,13 +40,13 @@
 %endif
 %endif
 
-Summary:	oVirt JsonRpc java client (%{name})
+Summary:	JsonRpc java client (%{name}) for oVirt
 Name:		@PACKAGE_NAME@
 Version:	@PACKAGE_RPM_VERSION@
 Release:	@PACKAGE_RPM_RELEASE@%{?release_suffix}%{?dist}
 License:	LGPLv2+
 URL:		http://www.ovirt.org
-Source:		http://resources.ovirt.org/pub/ovirt-3.5-snapshot/src/%{name}/%{name}-%{package_version}.tar.gz
+Source:		http://resources.ovirt.org/pub/ovirt-3.6-snapshot/src/%{name}/%{name}-%{package_version}.tar.gz
 Group:		Development/Libraries
 
 BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -100,7 +100,7 @@ vdsm jsonrpc java
 
 %if %{_use_maven}
 %package javadoc
-Summary:	Javadocs for %{name}
+Summary:	Java-docs for %{name}
 Group:		Documentation
 
 %description javadoc
