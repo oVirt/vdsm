@@ -234,8 +234,8 @@ Requires: systemd >= 197-1.fc18.2
 %endif
 
 %if 0%{?rhel}
-Requires: qemu-kvm-rhev >= 10:2.3.0-13.el7
-Requires: qemu-img-rhev >= 10:2.3.0-13.el7
+Requires: qemu-kvm-rhev >= 10:2.3.0-31.el7_2.4
+Requires: qemu-img-rhev >= 10:2.3.0-31.el7_2.4
 %else
 Requires: qemu-kvm >= 2:2.3.0
 Requires: qemu-img >= 2:2.3.0
