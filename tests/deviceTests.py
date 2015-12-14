@@ -286,16 +286,27 @@ class TestVmDevices(XMLTestCase):
         sound = vmdevices.core.Sound(self.conf, self.log, **dev)
         self.assertXMLEqual(sound.getXML().toxml(), soundXML)
 
-    def testVideoXML(self):
-        videoXML = """
-            <video>
-                <model heads="2" type="vga" vgamem="8192" vram="32768"/>
-            </video>"""
-
-        dev = {'device': 'vga',
-               'specParams': {'vram': '32768', 'heads': '2', 'vgamem': '8192'}}
-        video = vmdevices.core.Video(self.conf, self.log, **dev)
-        self.assertXMLEqual(video.getXML().toxml(), videoXML)
+    @permutations([
+        [{'device': 'vga',
+          'specParams': {'vram': '32768', 'heads': '2'}},
+         """<video>
+         <model heads="2" type="vga" vram="32768"/>
+         </video>"""],
+        [{'device': 'qxl',
+          'specParams': {'vram': '65536', 'heads': '2', 'ram': '131072'}},
+         """<video>
+         <model heads="2" ram="131072" type="qxl" vram="65536"/>
+         </video>"""],
+        [{'device': 'qxl',
+          'specParams': {'vram': '32768', 'heads': '2',
+                         'ram': '65536', 'vgamem': '8192'}},
+         """<video>
+         <model heads="2" ram="65536" type="qxl" vgamem="8192" vram="32768"/>
+         </video>"""]
+    ])
+    def testVideoXML(self, dev_spec, video_xml):
+        video = vmdevices.core.Video(self.conf, self.log, **dev_spec)
+        self.assertXMLEqual(video.getXML().toxml(), video_xml)
 
     def testInterfaceXML(self):
         interfaceXML = """
