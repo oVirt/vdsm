@@ -197,11 +197,12 @@ def _normalize_bridge(config_copy):
             net_attr['bridged'] = False
 
 
-# TODO: Treat mtu as an int in the first place and avoid the conversion.
 def _normalize_mtu(config_copy):
     for net_attr in config_copy.networks.itervalues():
         if 'mtu' in net_attr:
-            net_attr['mtu'] = str(net_attr['mtu'])
+            # defensively convert to int so support upgrade path
+            # REQUIRED_FOR: upgrade from vdsm<=4.17
+            net_attr['mtu'] = int(net_attr['mtu'])
         else:
             net_attr['mtu'] = mtus.DEFAULT_MTU
 

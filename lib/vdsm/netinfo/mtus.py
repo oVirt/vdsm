@@ -17,7 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-DEFAULT_MTU = '1500'
+DEFAULT_MTU = 1500
 
 
 def getMtu(iface):

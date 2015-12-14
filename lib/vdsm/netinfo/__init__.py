@@ -132,7 +132,7 @@ def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
             'ipv6gateway': get_gateway(routes, link.name, family=6),
             'dhcpv4': link.name in dhcpv4_ifaces,  # to be refined if a network
             'dhcpv6': link.name in dhcpv6_ifaces,  # is not configured for DHCP
-            'mtu': str(link.mtu),
+            'mtu': link.mtu,
             'netmask': ipv4netmask}
     if 'BOOTPROTO' not in info['cfg']:
         info['cfg']['BOOTPROTO'] = 'dhcp' if info['dhcpv4'] else 'none'
@@ -209,7 +209,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
                      'ipv6addrs': ipv6addrs,
                      'gateway': gateway,
                      'ipv6gateway': get_gateway(routes, iface, family=6),
-                     'mtu': str(getMtu(iface))})
+                     'mtu': getMtu(iface)})
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:
             logging.info('Obtaining info for net %s.', iface, exc_info=True)

@@ -686,7 +686,7 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @permutations([[True], [False]])
     def testDelNetworkWithMTU(self, bridged):
-        MTU = '1280'  # required for sysctl.disable_ipv6() on the bridge
+        MTU = 1280  # required for sysctl.disable_ipv6() on the bridge
         with dummyIf(2) as nics:
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'vlan': VLAN_ID, 'bonding': BONDING_NAME,
@@ -1202,22 +1202,22 @@ class NetworkTest(TestCaseBase):
             with self.vdsm_net.pinger():
                 # Add initial vlanned net over bond
                 self._createBondedNetAndCheck(0, {'nics': nics}, bridged,
-                                              mtu='1500')
-                self.assertEquals('1500',
+                                              mtu=1500)
+                self.assertEquals(1500,
                                   self.vdsm_net.getMtu(BONDING_NAME))
 
                 _waitForKnownOperstate(BONDING_NAME)
                 with nonChangingOperstate(BONDING_NAME):
                     # Add a network with MTU smaller than existing network
                     self._createBondedNetAndCheck(1, {'nics': nics},
-                                                  bridged, mtu='1400')
-                    self.assertEquals('1500',
+                                                  bridged, mtu=1400)
+                    self.assertEquals(1500,
                                       self.vdsm_net.getMtu(BONDING_NAME))
 
                     # Add a network with MTU bigger than existing network
                     self._createBondedNetAndCheck(2, {'nics': nics},
-                                                  bridged, mtu='1600')
-                    self.assertEquals('1600',
+                                                  bridged, mtu=1600)
+                    self.assertEquals(1600,
                                       self.vdsm_net.getMtu(BONDING_NAME))
 
                 # cleanup
@@ -1246,18 +1246,18 @@ class NetworkTest(TestCaseBase):
             with self.vdsm_net.pinger():
                 # Add initial vlanned net over bond
                 self._createVlanedNetOverNicAndCheck(0, bridged, nic=nic,
-                                                     mtu='1500')
-                self.assertEquals('1500', self.vdsm_net.getMtu(nic))
+                                                     mtu=1500)
+                self.assertEquals(1500, self.vdsm_net.getMtu(nic))
 
                 # Add a network with MTU smaller than existing network
                 self._createVlanedNetOverNicAndCheck(1, bridged, nic=nic,
-                                                     mtu='1400')
-                self.assertEquals('1500', self.vdsm_net.getMtu(nic))
+                                                     mtu=1400)
+                self.assertEquals(1500, self.vdsm_net.getMtu(nic))
 
                 # Add a network with MTU bigger than existing network
                 self._createVlanedNetOverNicAndCheck(2, bridged, nic=nic,
-                                                     mtu='1600')
-                self.assertEquals('1600', self.vdsm_net.getMtu(nic))
+                                                     mtu=1600)
+                self.assertEquals(1600, self.vdsm_net.getMtu(nic))
 
                 # cleanup
                 networks = dict((NETWORK_NAME + str(num), {'remove': True}) for

@@ -266,9 +266,6 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         ipv6autoconf = utils.tobool(ipv6autoconf)
     vlan = _vlanToInternalRepresentation(vlan)
 
-    # TODO: Add such conversions into a seperated layer.
-    mtu = int(mtu)
-
     if network == '':
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
                                  'Empty network names are not valid')
@@ -976,8 +973,7 @@ def _canonize_networks_defaults(nets):
         if 'remove' in attrs and attrs['remove'] is True:
             continue
 
-        if 'mtu' not in attrs:
-            attrs['mtu'] = DEFAULT_MTU
+        attrs['mtu'] = int(attrs['mtu']) if 'mtu' in attrs else DEFAULT_MTU
 
 
 def setSafeNetworkConfig():
