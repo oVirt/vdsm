@@ -149,6 +149,9 @@ class DomainMonitor(object):
                 status[sdUUID] = monitor.getHostStatus(hostId)
         return status
 
+    def getHostId(self, sdUUID):
+        return self._monitors[sdUUID].hostId
+
     def shutdown(self):
         """
         Called during shutdown to stop all monitors without releasing the host
