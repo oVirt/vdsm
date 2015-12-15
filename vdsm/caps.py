@@ -518,8 +518,12 @@ def _getSELinux():
 
 def _getHostdevPassthorughSupport():
     try:
-        return (bool(len(os.listdir('/sys/class/iommu'))) and
-                bool(len(os.listdir('/sys/kernel/iommu_groups'))))
+        iommu_groups_exist = bool(len(os.listdir('/sys/kernel/iommu_groups')))
+        if cpuarch.is_ppc(cpuarch.real()):
+            return iommu_groups_exist
+
+        dmar_exists = bool(len(os.listdir('/sys/class/iommu')))
+        return iommu_groups_exist and dmar_exists
     except OSError:
         return False
 
