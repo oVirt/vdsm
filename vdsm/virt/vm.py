@@ -2831,11 +2831,17 @@ class Vm(object):
                 hooks.after_device_migrate_destination(
                     dev._deviceXML, self.conf, dev.custom)
 
-            # TODO: _syncGuestTime() should be called here as it is in
-            # restore_state path.  But there may be some issues with the call
-            # such as blocking for some time when qemu-guest-agent is not
-            # running in the guest.  We'd like to discuss them more before
-            # touching migration.
+            # We refrain from syncing time in this path.  There are two basic
+            # reasons:
+            # 1. The jump change in the time (as performed by QEMU) may cause
+            #    undesired effects like unnecessary timeouts, false alerts
+            #    (think about logging excessive SQL command execution times),
+            #    etc.  This is not what users expect when performing live
+            #    migrations.
+            # 2. The user can simply run NTP on the VM to keep the time right
+            #    and smooth after migrations.  On the contrary to suspensions,
+            #    there is no danger of excessive delays preventing NTP from
+            #    operation.
 
         if 'guestIPs' in self.conf:
             del self.conf['guestIPs']
