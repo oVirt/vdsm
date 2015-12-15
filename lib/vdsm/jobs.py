@@ -28,16 +28,10 @@ _jobs = {}
 
 
 class STATUS:
-    '''
-    RUNNING: Job is running
-    ABORTED: Job aborted by user request
-    FAILED: Job failed and no longer running
-    DONE: Job has finished successfully
-    '''
-    RUNNING = 'running'
-    ABORTED = 'aborted'
-    FAILED = 'error'
-    DONE = 'done'
+    RUNNING = 'running'  # Job is running
+    ABORTED = 'aborted'  # Job was aborted by user request
+    FAILED = 'error'     # Job has failed
+    DONE = 'done'        # Job has finished successfully
 
 
 class ClientError(Exception):
