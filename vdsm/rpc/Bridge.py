@@ -109,7 +109,7 @@ class DynamicBridge(object):
 
     def __getattr__(self, attr):
         try:
-            className, methodName = attr.split('_')
+            className, methodName = attr.split('_', 1)
             self.api['commands'][className][methodName]
         except (KeyError, ValueError):
             raise AttributeError("Attribute not found '%s'" % attr)
