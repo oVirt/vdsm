@@ -28,6 +28,7 @@ _jobs = {}
 
 
 class STATUS:
+    PENDING = 'pending'  # Job has not started yet
     RUNNING = 'running'  # Job is running
     DONE = 'done'        # Job has finished successfully
     ABORTED = 'aborted'  # Job was aborted by user request
@@ -64,7 +65,7 @@ class Job(object):
 
     def __init__(self, job_id, description=''):
         self._id = job_id
-        self._status = STATUS.RUNNING
+        self._status = STATUS.PENDING
         self._description = description
 
     @property
@@ -104,7 +105,7 @@ class Job(object):
         if self.status != STATUS.DONE:
             raise JobNotDone("Job %r is %s" % (self.id, self.status))
 
-    def validate_not_running(self):
+    def validate_not_active(self):
         if self.status not in (STATUS.DONE, STATUS.ABORTED, STATUS.FAILED):
             raise JobNotDone("Job %r is %s" % (self.id, self.status))
 
@@ -125,7 +126,7 @@ def _clear():
 def delete(job_id):
     try:
         job = get(job_id)
-        job.validate_not_running()
+        job.validate_not_active()
         _delete(job_id)
     except ClientError as e:
         logging.info('Cannot delete job, error: %s', e)

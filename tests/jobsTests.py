@@ -57,13 +57,13 @@ class JobsTests(VdsmTestCase):
 
     def test_job_initial_state(self):
         job = TestingJob()
-        self.assertEqual(jobs.STATUS.RUNNING, job.status)
+        self.assertEqual(jobs.STATUS.PENDING, job.status)
         self.assertEqual('', job.description)
         self.assertEqual('testing', job.job_type)
 
     def test_job_info(self):
         job = TestingJob()
-        self.assertEqual({'status': 'running', 'progress': 0,
+        self.assertEqual({'status': jobs.STATUS.PENDING, 'progress': 0,
                           'job_type': 'testing', 'description': ''},
                          job.info())
 
@@ -126,14 +126,19 @@ class JobsTests(VdsmTestCase):
         [jobs.STATUS.DONE],
         [jobs.STATUS.FAILED]
     ])
-    def test_delete_job(self, status):
+    def test_delete_inactive_job(self, status):
         job = TestingJob()
         job._status = status
         jobs.add(job)
         self.assertEqual(response.success(), jobs.delete(job.id))
 
-    def test_delete_running_job(self):
+    @permutations([
+        [jobs.STATUS.PENDING],
+        [jobs.STATUS.RUNNING],
+    ])
+    def test_delete_active_job(self, status):
         job = TestingJob()
+        job._status = status
         jobs.add(job)
         self.assertEqual(response.error(jobs.JobNotDone.name),
                          jobs.delete(job.id))
