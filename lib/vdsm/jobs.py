@@ -32,7 +32,7 @@ class STATUS:
     RUNNING = 'running'  # Job is running
     DONE = 'done'        # Job has finished successfully
     ABORTED = 'aborted'  # Job was aborted by user request
-    FAILED = 'error'     # Job has failed
+    FAILED = 'failed'    # Job has failed
 
 
 class ClientError(Exception):
