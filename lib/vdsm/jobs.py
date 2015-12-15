@@ -29,9 +29,9 @@ _jobs = {}
 
 class STATUS:
     RUNNING = 'running'  # Job is running
+    DONE = 'done'        # Job has finished successfully
     ABORTED = 'aborted'  # Job was aborted by user request
     FAILED = 'error'     # Job has failed
-    DONE = 'done'        # Job has finished successfully
 
 
 class ClientError(Exception):
@@ -105,7 +105,7 @@ class Job(object):
             raise JobNotDone("Job %r is %s" % (self.id, self.status))
 
     def validate_not_running(self):
-        if self.status not in (STATUS.DONE, STATUS.FAILED, STATUS.ABORTED):
+        if self.status not in (STATUS.DONE, STATUS.ABORTED, STATUS.FAILED):
             raise JobNotDone("Job %r is %s" % (self.id, self.status))
 
     def _abort(self):
