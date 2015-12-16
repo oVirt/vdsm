@@ -174,6 +174,14 @@ sourceAllocationSettingData">
 
 
 class v2vTests(TestCaseBase):
+    _VM_SPECS = (
+        VmSpec("RHEL_0", str(uuid.uuid4())),
+        VmSpec("RHEL_1", str(uuid.uuid4())),
+        VmSpec("RHEL_2", str(uuid.uuid4()))
+    )
+
+    _VMS = [VmMock(*spec) for spec in _VM_SPECS]
+
     def setUp(self):
         '''
         We are testing the output of fake-virt-v2v with vminfo input
@@ -191,13 +199,16 @@ class v2vTests(TestCaseBase):
         self.volume_id_b = '00000000-0000-0000-0000-000000000004'
         self.url = 'vpx://adminr%40vsphere@0.0.0.0/ovirt/0.0.0.0?no_verify=1'
 
-    _VM_SPECS = (
-        VmSpec("RHEL_0", str(uuid.uuid4())),
-        VmSpec("RHEL_1", str(uuid.uuid4())),
-        VmSpec("RHEL_2", str(uuid.uuid4()))
-    )
+        self.vminfo = {'vmName': self.vm_name,
+                       'poolID': self.pool_id,
+                       'domainID': self.domain_id,
+                       'disks': [{'imageID': self.image_id_a,
+                                  'volumeID': self.volume_id_a},
+                                 {'imageID': self.image_id_b,
+                                  'volumeID': self.volume_id_b}]}
 
-    _VMS = [VmMock(*spec) for spec in _VM_SPECS]
+    def tearDown(self):
+        v2v._jobs.clear()
 
     def testGetExternalVMs(self):
         if not v2v.supported():
@@ -313,21 +324,19 @@ class v2vTests(TestCaseBase):
         self.assertEquals(network['bridge'], 'VM Network')
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
-    def testSuccessfulImport(self):
-        vminfo = {'vmName': self.vm_name,
-                  'poolID': self.pool_id,
-                  'domainID': self.domain_id,
-                  'disks': [{'imageID': self.image_id_a,
-                             'volumeID': self.volume_id_a},
-                            {'imageID': self.image_id_b,
-                             'volumeID': self.volume_id_b}]}
-        ivm = v2v.ImportVm.from_libvirt(self.url, 'root', 'mypassword',
-                                        vminfo, self.job_id, FakeIRS())
-        ivm._run_command = ivm._run
-        ivm.start()
-        ivm.wait()
+    @MonkeyPatch(v2v, '_V2V_DIR', None)
+    def testSuccessfulVMWareImport(self):
+        with namedTemporaryDir() as v2v._V2V_DIR:
+            v2v.convert_external_vm(self.url,
+                                    'root',
+                                    ProtectedPassword('mypassword'),
+                                    self.vminfo,
+                                    self.job_id,
+                                    FakeIRS())
+            job = v2v._jobs[self.job_id]
+            job.wait()
 
-        self.assertEqual(ivm.status, v2v.STATUS.DONE)
+            self.assertEqual(job.status, v2v.STATUS.DONE)
 
     def testV2VOutput(self):
         cmd = [FAKE_VIRT_V2V.cmd,
