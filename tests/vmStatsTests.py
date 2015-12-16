@@ -22,8 +22,12 @@ import copy
 import uuid
 
 from virt import vmstats
+
+from testValidation import brokentest
+
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
+
 
 _FAKE_BULK_STATS = {
     'f3243a90-2e9e-4061-b7b3-a6c585e14857': (
@@ -421,6 +425,38 @@ class DiskStatsTests(VmStatsTestCase):
         self.assertRepeatedStatsHaveKeys(drives,
                                          stats['disks'],
                                          expected_keys)
+
+    @brokentest
+    def test_disk_missing_rate(self):
+        partial_stats = self._drop_stats(
+            ('block.0.rd.bytes', 'block.1.rd.bytes',
+             'block.0.wr.bytes', 'block.1.wr.bytes'))
+
+        interval = 10  # seconds
+        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        testvm = FakeVM(drives=drives)
+
+        stats = {}
+        self.assertNotRaises(vmstats.disks,
+                             testvm, stats,
+                             partial_stats, partial_stats,
+                             interval)
+
+    @brokentest
+    def test_disk_missing_latency(self):
+        partial_stats = self._drop_stats(
+            ('block.0.rd.times', 'block.1.rd.times',
+             'block.0.wr.reqs', 'block.1.wr.reqs'))
+
+        interval = 10  # seconds
+        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        testvm = FakeVM(drives=drives)
+
+        stats = {}
+        self.assertNotRaises(vmstats.disks,
+                             testvm, stats,
+                             partial_stats, partial_stats,
+                             interval)
 
     def _drop_stats(self, keys):
         partial_stats = copy.deepcopy(self.bulk_stats)

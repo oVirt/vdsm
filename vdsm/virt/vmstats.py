@@ -278,22 +278,19 @@ def disks(vm, stats, first_sample, last_sample, interval):
                         'stats for vm %s disk %s',
                         interval, vm.id, vm_drive.name)
                 else:
-                    with _skip_if_missing_stats(vm):
-                        drive_stats.update(
-                            _disk_rate(
-                                first_sample, first_indexes[vm_drive.name],
-                                last_sample, last_indexes[vm_drive.name],
-                                interval))
-                with _skip_if_missing_stats(vm):
                     drive_stats.update(
-                        _disk_latency(
+                        _disk_rate(
                             first_sample, first_indexes[vm_drive.name],
-                            last_sample, last_indexes[vm_drive.name]))
-                with _skip_if_missing_stats(vm):
-                    drive_stats.update(
-                        _disk_iops_bytes(
-                            first_sample, first_indexes[vm_drive.name],
-                            last_sample, last_indexes[vm_drive.name]))
+                            last_sample, last_indexes[vm_drive.name],
+                            interval))
+                drive_stats.update(
+                    _disk_latency(
+                        first_sample, first_indexes[vm_drive.name],
+                        last_sample, last_indexes[vm_drive.name]))
+                drive_stats.update(
+                    _disk_iops_bytes(
+                        first_sample, first_indexes[vm_drive.name],
+                        last_sample, last_indexes[vm_drive.name]))
 
         except AttributeError:
             logging.exception("Disk %s stats not available",
