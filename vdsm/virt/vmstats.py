@@ -325,24 +325,26 @@ def _disk_rate(first_sample, first_index, last_sample, last_index, interval):
 
 
 def _disk_latency(first_sample, first_index, last_sample, last_index):
-    def compute_latency(ltype):
-        operations = (
-            last_sample['block.%d.%s.reqs' % (last_index, ltype)] -
-            first_sample['block.%d.%s.reqs' % (first_index, ltype)]
-        )
-        if not operations:
-            return 0
-        elapsed_time = (
-            last_sample['block.%d.%s.times' % (last_index, ltype)] -
-            first_sample['block.%d.%s.times' % (first_index, ltype)]
-        )
-        return elapsed_time / operations
+    stats = {}
 
-    return {
-        'readLatency': str(compute_latency('rd')),
-        'writeLatency': str(compute_latency('wr')),
-        'flushLatency': str(compute_latency('fl'))
-    }
+    for name, mode in (('readLatency', 'rd'),
+                       ('writeLatency', 'wr'),
+                       ('flushLatency', 'fl')):
+        try:
+            last_key = "block.%d.%s" % (last_index, mode)
+            first_key = "block.%d.%s" % (first_index, mode)
+            operations = (last_sample[last_key + ".reqs"] -
+                          first_sample[first_key + ".reqs"])
+            elapsed_time = (last_sample[last_key + ".times"] -
+                            first_sample[first_key + ".times"])
+        except KeyError:
+            continue
+        if operations:
+            stats[name] = str(elapsed_time / operations)
+        else:
+            stats[name] = '0'
+
+    return stats
 
 
 def _disk_iops_bytes(first_sample, first_index, last_sample, last_index):
