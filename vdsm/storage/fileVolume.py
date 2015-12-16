@@ -36,12 +36,13 @@ from misc import deprecated
 import task
 from threadLocal import vars
 
+from storage.constants import FILE_VOLUME_PERMISSIONS
+
 META_FILEEXT = ".meta"
 LEASE_FILEEXT = ".lease"
 LEASE_FILEOFFSET = 0
 
 BLOCK_SIZE = volume.BLOCK_SIZE
-VOLUME_PERMISSIONS = 0o660
 
 
 def getDomUuidFromVolumePath(volPath):
@@ -398,7 +399,8 @@ class FileVolume(volume.Volume):
 
         try:
             oop.getProcessPool(dom.sdUUID).truncateFile(
-                volPath, truncSize, mode=VOLUME_PERMISSIONS, creatExcl=True)
+                volPath, truncSize, mode=FILE_VOLUME_PERMISSIONS,
+                creatExcl=True)
         except OSError as e:
             if e.errno == errno.EEXIST:
                 raise se.VolumeAlreadyExists(volUUID)
@@ -429,7 +431,7 @@ class FileVolume(volume.Volume):
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissiosn.
-        dom.oop.os.chmod(volPath, VOLUME_PERMISSIONS)
+        dom.oop.os.chmod(volPath, FILE_VOLUME_PERMISSIONS)
 
         return (volPath,)
 
