@@ -216,12 +216,10 @@ class _Worker(object):
         self._executor._worker_discarded(self)
 
     def __repr__(self):
-        if self._task:
-            status = "running %s" % (self._task,)
-        else:
-            status = "waiting"
         return "<Worker name=%s %s%s at 0x%x>" % (
-            self.name, status, " discarded" if self._discarded else "",
+            self.name,
+            "running %s" % (self._task,) if self._task else "waiting",
+            " discarded" if self._discarded else "",
             id(self)
         )
 
