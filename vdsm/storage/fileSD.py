@@ -219,9 +219,10 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                 metaFile = volPath + '.meta'
                 self.log.debug("Removing file: %s", metaFile)
                 self.oop.os.remove(metaFile)
-                leaseFile = volPath + '.lease'
-                self.log.debug("Removing file: %s", leaseFile)
-                self.oop.os.remove(leaseFile)
+                if self.hasVolumeLeases():
+                    leaseFile = volPath + '.lease'
+                    self.log.debug("Removing file: %s", leaseFile)
+                    self.oop.os.remove(leaseFile)
             except OSError:
                 self.log.error("vol: %s can't be removed.",
                                volPath, exc_info=True)
