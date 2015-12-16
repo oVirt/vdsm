@@ -173,6 +173,18 @@ sourceAllocationSettingData">
 </Envelope>"""
 
 
+@contextmanager
+def temporary_ovf_dir():
+    with namedTemporaryDir() as base:
+        ovfpath = os.path.join(base, 'testvm.ovf')
+        ovapath = os.path.join(base, 'testvm.ova')
+        ovf = read_ovf('test')
+
+        with open(ovfpath, 'w') as ovffile:
+            ovffile.write(ovf)
+        yield ovapath
+
+
 class v2vTests(TestCaseBase):
     _VM_SPECS = (
         VmSpec("RHEL_0", str(uuid.uuid4())),
@@ -333,6 +345,15 @@ class v2vTests(TestCaseBase):
                                     self.vminfo,
                                     self.job_id,
                                     FakeIRS())
+            job = v2v._jobs[self.job_id]
+            job.wait()
+
+            self.assertEqual(job.status, v2v.STATUS.DONE)
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    def testSuccessfulImportOVA(self):
+        with temporary_ovf_dir() as ovapath:
+            v2v.convert_ova(ovapath, self.vminfo, self.job_id, FakeIRS())
             job = v2v._jobs[self.job_id]
             job.wait()
 
