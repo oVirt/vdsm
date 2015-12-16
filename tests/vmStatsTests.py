@@ -23,8 +23,6 @@ import uuid
 
 from virt import vmstats
 
-from testValidation import brokentest
-
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 
@@ -426,7 +424,6 @@ class DiskStatsTests(VmStatsTestCase):
                                          stats['disks'],
                                          expected_keys)
 
-    @brokentest
     def test_disk_missing_rate(self):
         partial_stats = self._drop_stats(
             ('block.0.rd.bytes', 'block.1.rd.bytes',
@@ -442,7 +439,6 @@ class DiskStatsTests(VmStatsTestCase):
                              partial_stats, partial_stats,
                              interval)
 
-    @brokentest
     def test_disk_missing_latency(self):
         partial_stats = self._drop_stats(
             ('block.0.rd.times', 'block.1.rd.times',

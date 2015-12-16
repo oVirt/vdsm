@@ -347,12 +347,20 @@ def _disk_latency(first_sample, first_index, last_sample, last_index):
 
 
 def _disk_iops_bytes(first_sample, first_index, last_sample, last_index):
-    return {
-        'readOps': str(last_sample['block.%d.rd.reqs' % last_index]),
-        'writeOps': str(last_sample['block.%d.wr.reqs' % last_index]),
-        'readBytes': str(last_sample['block.%d.rd.bytes' % last_index]),
-        'writtenBytes': str(last_sample['block.%d.wr.bytes' % last_index]),
-    }
+    stats = {}
+
+    for name, mode, field in (('readOps', 'rd', 'reqs'),
+                              ('writeOps', 'wr', 'reqs'),
+                              ('readBytes', 'rd', 'bytes'),
+                              ('writtenBytes', 'wr', 'bytes')):
+        key = 'block.%d.%s.%s' % (last_index, mode, field)
+        try:
+            value = last_sample[key]
+        except KeyError:
+            continue
+        stats[name] = str(value)
+
+    return stats
 
 
 def _diff(prev, curr, val):
