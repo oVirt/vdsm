@@ -38,7 +38,7 @@ from functional import dummy, veth
 from ipwrapperTests import _fakeTypeDetection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testrunner import VdsmTestCase as TestCaseBase, namedTemporaryDir
-from testValidation import ValidateRunningAsRoot
+from testValidation import ValidateRunningAsRoot, brokentest
 
 # speeds defined in ethtool
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
@@ -212,6 +212,8 @@ class TestNetinfo(TestCaseBase):
             self.assertEqual(set(netinfo.nics()),
                              set(['em', 'me', 'fake', 'fake0']))
 
+    @brokentest("Unexplained behavior where netinfo.nics() returns a 'hidden' "
+                "dummy nic. (only seen on the Jenkins slave run)")
     @ValidateRunningAsRoot
     def testFakeNics(self):
         with MonkeyPatchScope([(ipwrapper.Link, '_fakeNics', ['veth_*',
