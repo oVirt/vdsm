@@ -63,8 +63,6 @@ import clusterlock
 import storage_exception as se
 from threadLocal import vars
 from vdsm import constants
-from storageConstants import STORAGE
-from storageConstants import SECTOR_SIZE
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
 import devicemapper
@@ -75,6 +73,9 @@ import storageServer
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm import qemuimg
+
+from storage.constants import STORAGE
+from storage.constants import SECTOR_SIZE
 
 GUID = "guid"
 NAME = "name"

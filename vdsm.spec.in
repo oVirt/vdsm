@@ -899,6 +899,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*
+%{_datadir}/%{vdsm_name}/storage/constants.py*
 %{_datadir}/%{vdsm_name}/storage/curlImgWrap.py*
 %{_datadir}/%{vdsm_name}/storage/devicemapper.py*
 %{_datadir}/%{vdsm_name}/storage/dispatcher.py*
@@ -933,7 +934,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/securable.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
 %{_datadir}/%{vdsm_name}/storage/spbackends.py*
-%{_datadir}/%{vdsm_name}/storage/storageConstants.py*
 %{_datadir}/%{vdsm_name}/storage/storage_exception.py*
 %{_datadir}/%{vdsm_name}/storage/storage_mailbox.py*
 %{_datadir}/%{vdsm_name}/storage/storageServer.py*

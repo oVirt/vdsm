@@ -47,10 +47,11 @@ from remoteFileHandler import Timeout
 from securable import secured, unsecured
 import image
 from resourceFactories import IMAGE_NAMESPACE
-from storageConstants import STORAGE
 import resourceManager as rm
 import volume
 import mount
+
+from storage.constants import STORAGE
 
 POOL_MASTER_DOMAIN = 'mastersd'
 

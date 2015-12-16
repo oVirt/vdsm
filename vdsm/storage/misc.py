@@ -49,9 +49,10 @@ import inspect
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import utils
-from storageConstants import SECTOR_SIZE
 import storage_exception as se
 import logUtils
+
+from storage.constants import SECTOR_SIZE
 
 IOUSER = "vdsm"
 DIRECTFLAG = "direct"

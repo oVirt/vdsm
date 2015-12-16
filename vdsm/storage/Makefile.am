@@ -28,6 +28,7 @@ dist_vdsmstorage_PYTHON = \
 	blockSD.py \
 	blockVolume.py \
 	clusterlock.py \
+	constants.py \
 	curlImgWrap.py \
 	devicemapper.py \
 	dispatcher.py \
@@ -60,7 +61,6 @@ dist_vdsmstorage_PYTHON = \
 	securable.py \
 	sp.py \
 	spbackends.py \
-	storageConstants.py \
 	storage_exception.py \
 	storage_mailbox.py \
         storageServer.py \
