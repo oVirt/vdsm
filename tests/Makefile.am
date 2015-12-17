@@ -30,6 +30,9 @@ test_modules_py3 = \
 	apiData.py \
 	cmdutilsTests.py \
 	cpuProfileTests.py \
+	domainDescriptorTests.py \
+	permutationTests.py \
+	responseTests.py \
 	$(NULL)
 
 device_modules = \
