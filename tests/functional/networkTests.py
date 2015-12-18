@@ -214,19 +214,20 @@ class NetworkTest(TestCaseBase):
         netinfo = self.vdsm_net.netinfo
         config = self.vdsm_net.config
         network_config = config.networks[networkName]
+        network_netinfo = netinfo.networks[networkName]
         self.assertIn(networkName, netinfo.networks)
         if bridged is not None:
-            self.assertEqual(bridged, netinfo.networks[networkName]['bridged'])
+            self.assertEqual(bridged, network_netinfo['bridged'])
             if bridged:
                 self.assertIn(networkName, netinfo.bridges)
             else:
                 self.assertNotIn(networkName, netinfo.bridges)
-        if bridgeOpts is not None and netinfo.networks[networkName]['bridged']:
+        if bridgeOpts is not None and network_netinfo['bridged']:
             appliedOpts = netinfo.bridges[networkName]['opts']
             for opt, value in bridgeOpts.iteritems():
                 self.assertEqual(value, appliedOpts[opt])
         if hostQos is not None:
-            reported_qos = netinfo.networks[networkName]['hostQos']
+            reported_qos = network_netinfo['hostQos']
             _cleanup_qos_definition(reported_qos)
             self.assertEqual(reported_qos, hostQos)
         if assert_in_running_conf and config is not None:
