@@ -117,7 +117,7 @@ def vlans_caps(running_config):
             iface = attrs.get('bonding') or attrs.get('nic')
             net_info['iface'] = iface
             net_info['bridged'] = True
-            net_info['vlanid'] = vlan
+            net_info['vlanid'] = int(vlan)
             ovs_vlans_caps['%s.%s' % (iface, vlan)] = net_info
     return ovs_vlans_caps
 

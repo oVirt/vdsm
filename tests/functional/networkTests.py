@@ -255,15 +255,19 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(network_config.get('bridged'), bridged)
         physical_iface = (network_config.get('bonding') or
                           network_config.get('nic'))
+        vlan_name = ('%s.%s' % (physical_iface, network_config['vlan'])
+                     if 'vlan' in network_config else None)
         if network_config.get('bridged', True):
             expected_iface = networkName
         elif network_config.get('vlan') is not None:
-            expected_iface = '%s.%s' % (physical_iface,
-                                        network_config.get('vlan'))
+            expected_iface = vlan_name
         else:
             expected_iface = physical_iface
         self.assertEquals(netinfo.networks[networkName]['iface'],
                           expected_iface)
+        if 'vlan' in network_config:
+            self.assertTrue(isinstance(netinfo.vlans[vlan_name]['vlanid'],
+                                       int))
 
     def assertNetworkDoesntExist(self, networkName):
         netinfo = self.vdsm_net.netinfo
