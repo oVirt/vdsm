@@ -63,6 +63,20 @@ DEFAULT_FS_TYPE = "xfs"
 DEFAULT_MOUNT_OPTIONS = "inode64,noatime"
 
 
+# This method helps to convert the size to given Unittype.
+# This is required since there an incompatible change in blivet API
+# size.convertTo. Older versions required string param but newer versions
+# requires the equivalent constants in blivet.size
+def _getDeviceSize(device, unitType='MiB'):
+    if hasattr(blivet.size, 'MiB'):
+        # New Blivet requires size constants from blivet.size
+        unit = getattr(blivet.size, unitType)
+        return device.size.convertTo(unit)
+    else:
+        # Older blivet needs spec string
+        return device.size.convertTo(spec=unitType)
+
+
 def _getDeviceDict(device, createBrick=False):
     info = {'name': device.name,
             'devPath': device.path,
@@ -74,7 +88,7 @@ def _getDeviceDict(device, createBrick=False):
             'uuid': '',
             'createBrick': createBrick}
     if isinstance(device.size, blivet.size.Size):
-        info['size'] = '%s' % device.size.convertTo(spec="MiB")
+        info['size'] = '%s' % _getDeviceSize(device)
     else:
         info['size'] = '%s' % device.size
     if not info['bus'] and device.parents:
@@ -207,7 +221,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     poolDataSize = 0
     count = 0
     raidType = raidParams.get('type')
-    metaDataSize = DEFAULT_METADATA_SIZE_KB
+    metaDataSizeKib = DEFAULT_METADATA_SIZE_KB
     if raidType == '6':
         count = raidParams['pdCount'] - 2
         alignment = raidParams['stripeSize'] * count
@@ -244,25 +258,26 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     # http://docbuilder.usersys.redhat.com/22522
     # /#chap-Configuring_Red_Hat_Storage_for_Enhancing_Performance
 
-    # create ~16GB metadata LV (metaDataSize) that has a size which is
+    # create ~16GB metadata LV (metaDataSizeKib) that has a size which is
     # a multiple of RAID stripe width if it is > minimum vg size
     # otherwise allocate a minimum of 0.5% of the data device size
     # and create data LV (poolDataSize) that has a size which is
     # a multiple of stripe width
     # For JBOD, this adjustment is not necessary
-    vgSizeKib = int(vg.size.convertTo(spec="KiB"))
-    if vg.size.convertTo(spec='MiB') < MIN_VG_SIZE:
-        metaDataSize = vgSizeKib * MIN_METADATA_PERCENT
-    poolDataSize = vgSizeKib - metaDataSize
+    vgSizeKib = int(_getDeviceSize(vg, 'KiB'))
+    if _getDeviceSize(vg) < MIN_VG_SIZE:
+        metaDataSizeKib = vgSizeKib * MIN_METADATA_PERCENT
+    poolDataSize = vgSizeKib - metaDataSizeKib
 
     if raidType:
-        metaDataSize = (metaDataSize - (metaDataSize % alignment))
+        metaDataSizeKib = (metaDataSizeKib - (metaDataSizeKib % alignment))
         poolDataSize = (poolDataSize - (poolDataSize % alignment))
 
     # Creating a thin pool from the data LV and the metadata LV
     # lvconvert --chunksize alignment --thinpool VOLGROUP/thin_pool
     #     --poolmetadata VOLGROUP/metadata_device_name
-    pool = _createThinPool(poolName, vg, chunkSize, metaDataSize, poolDataSize)
+    pool = _createThinPool(poolName, vg, chunkSize, metaDataSizeKib,
+                           poolDataSize)
     thinlv = LVMThinLogicalVolumeDevice(brickName, parents=[pool],
                                         size=vg.size, grow=True)
     blivetEnv.createDevice(thinlv)
