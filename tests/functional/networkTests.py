@@ -234,19 +234,20 @@ class NetworkTest(TestCaseBase):
         netinfo = self.vdsm_net.netinfo
         running_config = self.vdsm_net.config
         network_config = running_config.networks[networkName]
+        network_netinfo = netinfo.networks[networkName]
         self.assertIn(networkName, netinfo.networks)
         if bridged is not None:
-            self.assertEqual(bridged, netinfo.networks[networkName]['bridged'])
+            self.assertEqual(bridged, network_netinfo['bridged'])
             if bridged:
                 self.assertIn(networkName, netinfo.bridges)
             else:
                 self.assertNotIn(networkName, netinfo.bridges)
-        if bridgeOpts is not None and netinfo.networks[networkName]['bridged']:
+        if bridgeOpts is not None and network_netinfo['bridged']:
             appliedOpts = netinfo.bridges[networkName]['opts']
             for opt, value in bridgeOpts.iteritems():
                 self.assertEqual(value, appliedOpts[opt])
         if hostQos is not None:
-            reported_qos = netinfo.networks[networkName]['hostQos']
+            reported_qos = network_netinfo['hostQos']
             _cleanup_qos_definition(reported_qos)
             self.assertEqual(reported_qos, hostQos)
         if assert_in_running_conf and running_config is not None:
@@ -263,8 +264,7 @@ class NetworkTest(TestCaseBase):
             expected_iface = vlan_name
         else:
             expected_iface = physical_iface
-        self.assertEquals(netinfo.networks[networkName]['iface'],
-                          expected_iface)
+        self.assertEquals(network_netinfo['iface'], expected_iface)
         if 'vlan' in network_config:
             self.assertTrue(isinstance(netinfo.vlans[vlan_name]['vlanid'],
                                        int))

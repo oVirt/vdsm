@@ -72,6 +72,21 @@ def _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces, routes):
         'cfg': {'BOOTPROTO': 'dhcp' if dhcpv4 else 'none'}}
 
 
+def _get_ports(network, attrs):
+    """Return network's ports. Such ports consist of a port explicitly assigned
+    during network setup (nic/bond/vlan) and ports attached by libvirt.
+    Network's nics and bonds are listed by ovs-vsctl list-ports command.
+    However, if assigned port is a vlan, it is not listed and it has to be
+    added explicitly."""
+    top_device = network if 'vlan' in attrs else BRIDGE_NAME
+    ports = _list_ports(top_device)
+    if 'vlan' in attrs:
+        assigned_vlan = '%s.%s' % (attrs.get('bonding') or attrs.get('nic'),
+                                   attrs.get('vlan'))
+        ports.append(assigned_vlan)
+    return ports
+
+
 def networks_caps(running_config):
     ovs_networks_caps = {}
     dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
@@ -82,7 +97,7 @@ def networks_caps(running_config):
                                  routes)
         net_info['iface'] = network
         net_info['bridged'] = True
-        net_info['ports'] = _list_ports(interface)
+        net_info['ports'] = _get_ports(network, attrs)
         net_info['stp'] = _get_stp(interface)
         ovs_networks_caps[network] = net_info
     return ovs_networks_caps
@@ -97,7 +112,7 @@ def bridges_caps(running_config):
         net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
                                  routes)
         net_info['bridged'] = True
-        net_info['ports'] = _list_ports(interface)
+        net_info['ports'] = _get_ports(network, attrs)
         # TODO netinfo._bridge_options does not work here
         net_info['opts'] = {}
         net_info['stp'] = _get_stp(interface)
