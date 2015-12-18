@@ -2727,7 +2727,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
 
     @cleanupNet
     @ValidateRunningAsRoot
-    def test_remove_initial_network_nic_ip_config(self):
+    def test_drop_initial_network_nic_ip_config(self):
         with dummyIf(1) as nics:
             nic, = nics
             addrAdd(nic, IP_ADDRESS, IP_CIDR)
@@ -2763,8 +2763,8 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
 
                 ipv4addrs = self.vdsm_net.netinfo.nics[nic_1]['ipv4addrs']
                 ipv6addrs = self.vdsm_net.netinfo.nics[nic_1]['ipv6addrs']
-                self.assertEqual([], ipv4addrs)
-                self.assertEqual([], ipv6addrs)
+                self.assertNotIn(IP_ADDRESS_AND_CIDR, ipv4addrs)
+                self.assertNotIn(IPv6_ADDRESS_AND_CIDR, ipv6addrs)
 
                 status, msg = self.vdsm_net.setupNetworks(
                     {}, {BONDING_NAME: {'remove': True}}, NOCHK)
