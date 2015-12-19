@@ -22,12 +22,12 @@ from __future__ import print_function
 import errno
 import os
 import re
+from six.moves import xmlrpc_client as xmlrpclib
 import socket
 import ssl
 import subprocess
 import tempfile
 import threading
-import xmlrpclib
 
 from contextlib import contextmanager, closing
 from testlib import VdsmTestCase as TestCaseBase
@@ -378,7 +378,7 @@ ADDRESS = ("127.0.0.1", 8443)
 
 
 # Private key used for the tests:
-KEY = """
+KEY = b"""
 -----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDapPcHwCWYsfiH
 pJ/tXpcSZsa6ocJZaL3HF/mFxiO4/7za6lP0Vdtln4CwCzqAfUJKQhCHNyYUvZsf
@@ -412,7 +412,7 @@ VSgxeSvBewtCS1FnILwgXJ4=
 
 # This is the certificate used for the tests, and it expires in Sep 26
 # 2022, so don't be surprised if by that date the test starts failing:
-CERTIFICATE = """
+CERTIFICATE = b"""
 -----BEGIN CERTIFICATE-----
 MIIC8zCCAdugAwIBAgIBADANBgkqhkiG9w0BAQUFADAUMRIwEAYDVQQDDAkxMjcu
 MC4wLjEwHhcNMTIwOTI4MTcyMzE3WhcNMjIwOTI2MTcyMzE3WjAUMRIwEAYDVQQD

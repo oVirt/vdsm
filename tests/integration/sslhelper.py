@@ -7,7 +7,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
-import SimpleXMLRPCServer
+from six.moves import xmlrpc_server as SimpleXMLRPCServer
 import ssl
 import threading
 from vdsm.sslutils import SSLContext

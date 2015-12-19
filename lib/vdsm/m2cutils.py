@@ -18,12 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
-import httplib
 import logging
 import os
+from six.moves import http_client as httplib
+from six.moves import xmlrpc_client as xmlrpclib
 import socket
 import ssl
-import xmlrpclib
 
 from vdsm.utils import (
     monotonic_time,
