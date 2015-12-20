@@ -273,7 +273,8 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         raise ge.GlusterHostStorageDeviceMkfsFailedException(
             thinlv.path, alignment, raidParams.get('stripeSize', 0), fsType)
 
-    format = blivet.formats.getFormat(DEFAULT_FS_TYPE, device=thinlv.path)
+    format = blivet.formats.getFormat(DEFAULT_FS_TYPE, device=thinlv.path,
+                                      mountopts=DEFAULT_MOUNT_OPTIONS)
     format._defaultFormatOptions = ["-f", "-i", "size=512", "-n", "size=8192"]
     if raidParams.get('type') == '6':
         format._defaultFormatOptions += ["-d", "sw=%s,su=%sk" % (
@@ -296,5 +297,6 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     rc, out, err = utils.execCmd([_vgscanCommandPath.cmd])
     if rc:
         raise ge.GlusterHostStorageDeviceVGScanFailedException(rc, out, err)
-    fstab.FsTab().add(thinlv.path, mountPoint, DEFAULT_FS_TYPE)
+    fstab.FsTab().add(thinlv.path, mountPoint,
+                      DEFAULT_FS_TYPE, mntOpts=[DEFAULT_MOUNT_OPTIONS])
     return _getDeviceDict(thinlv)
