@@ -213,25 +213,26 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
         for volUUID in volsImgs:
             volPath = os.path.join(toDelDir, volUUID)
-            try:
-                self.log.debug("Removing file: %s", volPath)
-                self.oop.os.remove(volPath)
-                metaFile = volPath + '.meta'
-                self.log.debug("Removing file: %s", metaFile)
-                self.oop.os.remove(metaFile)
-                if self.hasVolumeLeases():
-                    leaseFile = volPath + '.lease'
-                    self.log.debug("Removing file: %s", leaseFile)
-                    self.oop.os.remove(leaseFile)
-            except OSError:
-                self.log.error("vol: %s can't be removed.",
-                               volPath, exc_info=True)
+            self._deleteVolumeFile(volPath)
+            self._deleteVolumeFile(volPath + '.meta')
+            if self.hasVolumeLeases():
+                self._deleteVolumeFile(volPath + '.lease')
         self.log.debug("Removing directory: %s", toDelDir)
         try:
             self.oop.os.rmdir(toDelDir)
         except OSError as e:
             self.log.error("removed image dir: %s can't be removed", toDelDir)
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
+
+    def _deleteVolumeFile(self, path):
+        self.log.debug("Removing file: %s", path)
+        try:
+            self.oop.os.remove(path)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                self.log.warning("File %r does not exist: %s", path, e)
+            else:
+                self.log.error("File %r cannot be removed: %s", path, e)
 
     def getAllVolumes(self):
         """
