@@ -137,24 +137,6 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         return [blivetEnv.devicetree.getDeviceByName(devName.split("/")[-1])
                 for devName in devNameList]
 
-    def _makePartition(deviceList):
-        pvDeviceList = []
-        doPartitioning = False
-        for dev in deviceList:
-            if dev.type not in ['disk', 'dm-multipath']:
-                pvDeviceList.append(dev)
-            else:
-                blivetEnv.initializeDisk(dev)
-                part = blivetEnv.newPartition(fmt_type="lvmpv", grow=True,
-                                              parents=[dev])
-                blivetEnv.createDevice(part)
-                pvDeviceList.append(part)
-                doPartitioning = True
-
-        if doPartitioning:
-            blivet.partitioning.doPartitioning(blivetEnv)
-        return pvDeviceList
-
     def _createPV(deviceList, alignment=0):
         def _createAlignedPV(deviceList, alignment):
             for dev in deviceList:
@@ -283,8 +265,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     if inUseList:
         raise ge.GlusterHostStorageDeviceInUseException(inUseList)
 
-    pvDeviceList = _makePartition(deviceList)
-    pvDeviceList = _createPV(pvDeviceList, alignment)
+    pvDeviceList = _createPV(deviceList, alignment)
     vg = _createVG(vgName, pvDeviceList, raidParams.get('stripeSize', 0))
 
     # The following calculation is based on the redhat storage performance doc
