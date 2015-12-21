@@ -35,10 +35,9 @@ from vdsm import hooks
 from vdsm import kernelconfig
 from vdsm import netconfpersistence
 from vdsm.netinfo import (addresses, libvirtNets2vdsm, bridges,
-                          get as netinfo_get, CachingNetInfo,
+                          get as netinfo_get, CachingNetInfo, mtus,
                           networks as netinfo_networks, nics as netinfo_nics,
                           NET_PATH)
-from vdsm.netinfo.mtus import DEFAULT_MTU
 from vdsm import udevadm
 from vdsm import utils
 from vdsm import ipwrapper
@@ -244,11 +243,6 @@ def _alterRunningConfig(func):
     return wrapped
 
 
-def _update_bridge_ports_mtu(bridge, mtu):
-    for port in bridges.ports(bridge):
-        ipwrapper.linkSet(port, ['mtu', str(mtu)])
-
-
 @_alterRunningConfig
 def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
                 netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
@@ -316,18 +310,15 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         _netinfo=_netinfo, configurator=configurator, opts=options)
 
     if bridged and network in _netinfo.bridges:
-        net_ent_to_configure = net_ent.port
+        # The bridge already exists, update the configured entity to one level
+        # below and update the mtu of the bridge.
+        # The mtu is updated in the bridge configuration and on all the tap
+        # devices attached to it (for the VMs).
+        # (expecting the bridge running mtu to be updated by the kernel when
+        # the device attached under it has its mtu updated)
         logging.info("Bridge %s already exists.", network)
-
-        # TODO: Update the mtu only if it is different from current.
-
-        # The bridge already exists and we attach a new underlying device
-        # to it. We need to make sure that the bridge MTU configuration is
-        # updated.
-        configurator.configApplier.setIfaceMtu(network, mtu)
-        # We must also update the vms` tap devices (the bridge ports in
-        # this case) so that their MTU is synced with the bridge
-        _update_bridge_ports_mtu(net_ent.name, mtu)
+        net_ent_to_configure = net_ent.port
+        _update_mtu_for_an_existing_bridge(network, configurator, mtu)
     else:
         net_ent_to_configure = net_ent
 
@@ -337,6 +328,17 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     configurator.configureLibvirtNetwork(network, net_ent)
     if hostQos is not None:
         configurator.configureQoS(hostQos, net_ent)
+
+
+def _update_mtu_for_an_existing_bridge(dev_name, configurator, mtu):
+    if mtu != mtus.getMtu(dev_name):
+        configurator.configApplier.setIfaceMtu(dev_name, mtu)
+        _update_bridge_ports_mtu(dev_name, mtu)
+
+
+def _update_bridge_ports_mtu(bridge, mtu):
+    for port in bridges.ports(bridge):
+        ipwrapper.linkSet(port, ['mtu', str(mtu)])
 
 
 def assertBridgeClean(bridge, vlan, bonding, nics):
@@ -978,7 +980,8 @@ def _canonize_networks(nets):
             if attrs['remove']:
                 continue
 
-        attrs['mtu'] = int(attrs['mtu']) if 'mtu' in attrs else DEFAULT_MTU
+        attrs['mtu'] = int(attrs['mtu']) if 'mtu' in attrs else (
+            mtus.DEFAULT_MTU)
 
 
 def setSafeNetworkConfig():
