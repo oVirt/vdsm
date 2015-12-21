@@ -31,6 +31,7 @@ test_modules_py3 = \
 	cmdutilsTests.py \
 	cpuProfileTests.py \
 	domainDescriptorTests.py \
+	passwordsTests.py \
 	permutationTests.py \
 	responseTests.py \
 	$(NULL)

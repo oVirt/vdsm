@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+import six
 
 
 class ProtectedPassword(object):
@@ -68,7 +69,7 @@ def unprotect_passwords(obj):
 
 def _walk(obj):
     if isinstance(obj, dict):
-        for key, value in obj.iteritems():
+        for key, value in six.iteritems(obj):
             if key == "password":
                 yield obj, key, value
             elif isinstance(value, (dict, list)):
