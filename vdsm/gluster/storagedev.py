@@ -262,16 +262,14 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
     # a multiple of RAID stripe width if it is > minimum vg size
     # otherwise allocate a minimum of 0.5% of the data device size
     # and create data LV (poolDataSize) that has a size which is
-    # a multiple of stripe width
-    # For JBOD, this adjustment is not necessary
+    # a multiple of stripe width.
     vgSizeKib = int(_getDeviceSize(vg, 'KiB'))
     if _getDeviceSize(vg) < MIN_VG_SIZE:
         metaDataSizeKib = vgSizeKib * MIN_METADATA_PERCENT
     poolDataSize = vgSizeKib - metaDataSizeKib
 
-    if raidType:
-        metaDataSizeKib = (metaDataSizeKib - (metaDataSizeKib % alignment))
-        poolDataSize = (poolDataSize - (poolDataSize % alignment))
+    metaDataSizeKib = (metaDataSizeKib - (metaDataSizeKib % alignment))
+    poolDataSize = (poolDataSize - (poolDataSize % alignment))
 
     # Creating a thin pool from the data LV and the metadata LV
     # lvconvert --chunksize alignment --thinpool VOLGROUP/thin_pool
