@@ -427,14 +427,15 @@ def getDefaultBondingOptions(mode=None):
 def _getBondingOptions(bond):
     """
     Return non-empty options differing from defaults, excluding not actual or
-    not applicable options, e.g. 'ad_num_ports' or 'slaves'.
+    not applicable options, e.g. 'ad_num_ports' or 'slaves'  and always return
+    bonding mode even if it's default, e.g. 'mode=0'
     """
     opts = bondOpts(bond)
     mode = opts['mode'][-1] if 'mode' in opts else None
     defaults = getDefaultBondingOptions(mode)
 
     return dict(((opt, val[-1]) for (opt, val) in opts.iteritems()
-                 if val and val != defaults.get(opt)))
+                 if val and (val != defaults.get(opt) or opt == "mode")))
 
 
 def _bondOptsForIfcfg(opts):
