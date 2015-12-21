@@ -320,8 +320,8 @@ class Vm(object):
         self._watchdogEvent = {}
         self.arch = caps.getTargetArch()
 
-        if self.arch not in caps.Architecture.POWER and \
-                self.arch != caps.Architecture.X86_64:
+        if not caps.Architecture.is_ppc(self.arch) and \
+                not caps.Architecture.is_x86(self.arch):
             raise RuntimeError('Unsupported architecture: %s' % self.arch)
 
         self._powerDownEvent = threading.Event()
@@ -1643,7 +1643,7 @@ class Vm(object):
         domxml = vmxml.Domain(self.conf, self.log, self.arch)
         domxml.appendOs(use_serial_console=(serial_console is not None))
 
-        if self.arch == caps.Architecture.X86_64:
+        if caps.Architecture.is_x86(self.arch):
             osd = caps.osversion()
 
             osVersion = osd.get('version', '') + '-' + osd.get('release', '')
@@ -1656,7 +1656,7 @@ class Vm(object):
 
         domxml.appendClock()
 
-        if self.arch == caps.Architecture.X86_64:
+        if caps.Architecture.is_x86(self.arch):
             domxml.appendFeatures()
 
         domxml.appendCpu()
@@ -3628,7 +3628,7 @@ class Vm(object):
                       actionToString(action))
 
     def changeCD(self, drivespec):
-        if self.arch in caps.Architecture.POWER:
+        if caps.Architecture.is_ppc(self.arch):
             blockdev = 'sda'
         else:
             blockdev = 'hdc'

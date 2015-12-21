@@ -205,7 +205,7 @@ class Domain(object):
         m.appendChildWithArgs('timer', name='rtc', tickpolicy='catchup')
         m.appendChildWithArgs('timer', name='pit', tickpolicy='delay')
 
-        if self.arch == caps.Architecture.X86_64:
+        if caps.Architecture.is_x86(self.arch):
             m.appendChildWithArgs('timer', name='hpet', present='no')
 
         self.dom.appendChild(m)
@@ -278,7 +278,7 @@ class Domain(object):
         if self.conf.get('kernelArgs'):
             oselem.appendChildWithArgs('cmdline', text=self.conf['kernelArgs'])
 
-        if self.arch == caps.Architecture.X86_64:
+        if caps.Architecture.is_x86(self.arch):
             oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
         if utils.tobool(self.conf.get('bootMenuEnable', False)):
@@ -401,7 +401,7 @@ class Domain(object):
 
         cpu = Element('cpu')
 
-        if self.arch in (caps.Architecture.X86_64,):
+        if caps.Architecture.is_x86(self.arch):
             cpu.setAttrs(match='exact')
 
             features = self.conf.get('cpuType', 'qemu64').split(',')
@@ -430,7 +430,7 @@ class Domain(object):
                     elif feature[0] == '-':
                         featureAttrs['policy'] = 'disable'
                     cpu.appendChildWithArgs('feature', **featureAttrs)
-        elif self.arch in caps.Architecture.POWER:
+        elif caps.Architecture.is_ppc(self.arch):
             features = self.conf.get('cpuType', 'POWER8').split(',')
             model = features[0]
             cpu.appendChildWithArgs('model', text=model)
@@ -508,7 +508,7 @@ class Domain(object):
         """
         if utils.tobool(self.conf.get('tabletEnable')):
             inputAttrs = {'type': 'tablet', 'bus': 'usb'}
-        elif self.arch == caps.Architecture.X86_64:
+        elif caps.Architecture.is_x86(self.arch):
             inputAttrs = {'type': 'mouse', 'bus': 'ps2'}
         else:
             inputAttrs = {'type': 'mouse', 'bus': 'usb'}
