@@ -39,6 +39,8 @@ from vdsm.utils import stripNewLines
 from vdsm import supervdsm
 import mount
 
+from storage.constants import LEASE_FILEEXT
+
 REMOTE_PATH = "REMOTE_PATH"
 
 FILE_SD_MD_FIELDS = sd.SD_MD_FIELDS.copy()
@@ -225,7 +227,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
             self._deleteVolumeFile(volPath)
             self._deleteVolumeFile(volPath + fileVolume.META_FILEEXT)
             if self.hasVolumeLeases():
-                self._deleteVolumeFile(volPath + fileVolume.LEASE_FILEEXT)
+                self._deleteVolumeFile(volPath + LEASE_FILEEXT)
         self.log.debug("Removing directory: %s", toDelDir)
         try:
             self.oop.os.rmdir(toDelDir)
@@ -467,7 +469,7 @@ class FileStorageDomain(sd.StorageDomain):
         if self.hasVolumeLeases():
             vol = self.produceVolume(imgUUID, volUUID)
             volumePath = vol.getVolumePath()
-            leasePath = volumePath + fileVolume.LEASE_FILEEXT
+            leasePath = volumePath + LEASE_FILEEXT
             return leasePath, fileVolume.LEASE_FILEOFFSET
         return None, None
 
@@ -673,7 +675,7 @@ class FileStorageDomain(sd.StorageDomain):
         basePath = os.path.join(repoPath, self.sdUUID, sd.DOMAIN_IMAGES)
         volFiles = [volUUID, volUUID + fileVolume.META_FILEEXT]
         if self.hasVolumeLeases():
-            volFiles.append(volUUID + fileVolume.LEASE_FILEEXT)
+            volFiles.append(volUUID + LEASE_FILEEXT)
         for rImg in relinkImgs:
             # This function assumes that all relevant images and template
             # namespaces are locked.

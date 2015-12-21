@@ -22,6 +22,7 @@ STORAGE = "Storage"
 SECTOR_SIZE = 512
 
 FILE_VOLUME_PERMISSIONS = 0o660
+LEASE_FILEEXT = ".lease"
 
 # Temporary volume indicators
 TEMP_VOL_FILEEXT = ".volatile"         # Added to FileVolume metadata filenames

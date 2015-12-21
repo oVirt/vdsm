@@ -37,9 +37,9 @@ import task
 from threadLocal import vars
 
 from storage.constants import FILE_VOLUME_PERMISSIONS
+from storage.constants import LEASE_FILEEXT
 
 META_FILEEXT = ".meta"
-LEASE_FILEEXT = ".lease"
 LEASE_FILEOFFSET = 0
 
 BLOCK_SIZE = volume.BLOCK_SIZE
