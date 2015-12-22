@@ -18,13 +18,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import print_function
 import logging
 from collections import namedtuple
 from virt import guestagent
 import json
+import timeit
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import expandPermutations, permutations
+from testValidation import slowtest
 
 _MSG_TYPES = ['heartbeat', 'host-name', 'os-version',
               'network-interfaces', 'applications', 'disks-usage']
@@ -108,6 +111,13 @@ class TestFiltering(TestCaseBase):
         restricted = u''.join(guestagent._RESTRICTED_CHARS)
         filtered = guestagent._REPLACEMENT_CHAR * len(restricted)
         self.assertEqual(filtered, guestagent._filterXmlChars(restricted))
+
+    @slowtest
+    def test_filter_xml_chars_timing(self):
+        setup = ('from virt.guestagent import _filterXmlChars;'
+                 'x = u"x" * 1024 * 1024')
+        elasped = timeit.timeit('_filterXmlChars(x)', setup=setup, number=10)
+        print(elasped, "seconds")
 
     def test_filter_object_valid(self):
         valid = {u"foo": u"?data?test\U00010000"}
