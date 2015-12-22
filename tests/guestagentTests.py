@@ -24,6 +24,7 @@ from virt import guestagent
 import json
 
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import expandPermutations, permutations
 
 _MSG_TYPES = ['heartbeat', 'host-name', 'os-version',
               'network-interfaces', 'applications', 'disks-usage']
@@ -82,33 +83,43 @@ _OUTPUTS = [
             'used': '153149440'}]}]
 
 
-class TestGuestIF(TestCaseBase):
-    def testfilterXmlChars(self):
-        ALL_LEGAL = u"Hello World"
-        self.assertEqual(ALL_LEGAL, guestagent._filterXmlChars(ALL_LEGAL))
-        TM = u"\u2122"
-        self.assertEqual(TM, guestagent._filterXmlChars(TM))
-        invalid = u"\u0000"
-        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid))
-        invalid2 = u"\uffff"
-        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid2))
-        invalid3 = u"\ufffe"
-        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid3))
-        invalid4 = u"\ud800"
-        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid4))
-        invalid5 = u"\udc79"
-        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(invalid5))
-        restricted = u''.join(guestagent._RESTRICTED_CHARS)
-        self.assertEqual(guestagent._REPLACEMENT_CHAR * len(restricted),
-                         guestagent._filterXmlChars(restricted))
+@expandPermutations
+class TestFiltering(TestCaseBase):
 
-    def test_filterObject(self):
-        ILLEGAL_DATA = {u"foo": u"\x00data\x00test\uffff\ufffe\ud800\udc79"}
-        LEGAL_DATA = {u"foo": u"?data?test\U00010000"}
-        EXPECTED_DATA = {
-            u"foo": u"\ufffddata\ufffdtest\ufffd\ufffd\ufffd\ufffd"}
-        self.assertEqual(EXPECTED_DATA, guestagent._filterObject(ILLEGAL_DATA))
-        self.assertEqual(LEGAL_DATA, guestagent._filterObject(LEGAL_DATA))
+    @permutations([
+        [u""],
+        [u"ascii"],
+        [u"\u2122"],
+    ])
+    def test_filter_xml_chars_valid(self, value):
+        self.assertEqual(value, guestagent._filterXmlChars(value))
+
+    @permutations([
+        [u"\u0000"],
+        [u"\uffff"],
+        [u"\ufffe"],
+        [u"\ud800"],
+        [u"\udc79"],
+    ])
+    def test_filter_xml_chars_replace_invalid(self, value):
+        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(value))
+
+    def test_filter_xml_chars_replace_restricted(self):
+        restricted = u''.join(guestagent._RESTRICTED_CHARS)
+        filtered = guestagent._REPLACEMENT_CHAR * len(restricted)
+        self.assertEqual(filtered, guestagent._filterXmlChars(restricted))
+
+    def test_filter_object_valid(self):
+        valid = {u"foo": u"?data?test\U00010000"}
+        self.assertEqual(valid, guestagent._filterObject(valid))
+
+    def test_filter_object_invalid(self):
+        invalid = {u"foo": u"\x00data\x00test\uffff\ufffe\ud800\udc79"}
+        filtered = {u"foo": u"\ufffddata\ufffdtest\ufffd\ufffd\ufffd\ufffd"}
+        self.assertEqual(filtered, guestagent._filterObject(invalid))
+
+
+class TestGuestIF(TestCaseBase):
 
     def test_handleMessage(self):
         logging.TRACE = 5
