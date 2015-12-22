@@ -134,6 +134,9 @@ public abstract class SSLClient extends StompCommonClient {
 
                         @Override
                         public SelectionKey call() throws ClosedChannelException {
+                            if (!SSLClient.this.isOpen()) {
+                                throw new ClosedChannelException();
+                            }
                             return channel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE , client);
                         }
                     }, this.policy));

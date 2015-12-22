@@ -64,6 +64,9 @@ public abstract class PlainClient extends StompCommonClient {
 
                         @Override
                         public SelectionKey call() throws ClosedChannelException {
+                            if (!PlainClient.this.isOpen()) {
+                                throw new ClosedChannelException();
+                            }
                             return channel.register(selector, SelectionKey.OP_READ, client);
                         }
                     }, this.policy));
