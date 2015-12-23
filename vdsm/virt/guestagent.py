@@ -82,11 +82,9 @@ def _filterObject(obj):
     """
     def filt(o):
         if isinstance(o, dict):
-            return dict(map(filt, o.iteritems()))
+            return {filt(k): filt(v) for k, v in o.iteritems()}
         elif isinstance(o, list):
-            return map(filt, o)
-        elif isinstance(o, tuple):
-            return tuple(map(filt, o))
+            return [filt(i) for i in o]
         elif isinstance(o, basestring):
             return _filterXmlChars(o)
         return o
