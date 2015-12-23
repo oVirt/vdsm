@@ -78,7 +78,7 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         self._imagePath = imageDir
 
     @classmethod
-    def _metaVolumePath(cls, volPath):
+    def metaVolumePath(cls, volPath):
         if volPath:
             return volPath + META_FILEEXT
         else:
@@ -90,7 +90,7 @@ class FileVolumeMetadata(volume.VolumeMetadata):
         """
         if not vol_path:
             vol_path = self.getVolumePath()
-        return self._metaVolumePath(vol_path)
+        return self.metaVolumePath(vol_path)
 
     def validateMetaVolumePath(self):
         """
@@ -239,7 +239,7 @@ class FileVolumeMetadata(volume.VolumeMetadata):
     @classmethod
     def _putMetadata(cls, metaId, meta):
         volPath, = metaId
-        metaPath = cls._metaVolumePath(volPath)
+        metaPath = cls.metaVolumePath(volPath)
 
         data = cls.formatMetadata(meta)
 
@@ -265,7 +265,7 @@ class FileVolumeMetadata(volume.VolumeMetadata):
             self.oop.os.unlink(metaPath)
 
     @classmethod
-    def _leaseVolumePath(cls, vol_path):
+    def leaseVolumePath(cls, vol_path):
         if vol_path:
             return vol_path + LEASE_FILEEXT
         else:
@@ -274,14 +274,14 @@ class FileVolumeMetadata(volume.VolumeMetadata):
     def _getLeaseVolumePath(self, vol_path):
         if not vol_path:
             vol_path = self.getVolumePath()
-        return self._leaseVolumePath(vol_path)
+        return self.leaseVolumePath(vol_path)
 
     @classmethod
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
         cls.log.debug("Initializing volume lease volUUID=%s sdUUID=%s, "
                       "metaId=%s", volUUID, sdUUID, metaId)
         volPath, = metaId
-        leasePath = cls._leaseVolumePath(volPath)
+        leasePath = cls.leaseVolumePath(volPath)
         oop.getProcessPool(sdUUID).truncateFile(leasePath, LEASE_FILEOFFSET)
         cls.file_setrw(leasePath, rw=True)
         sanlock.init_resource(sdUUID, volUUID, [(leasePath,
@@ -365,7 +365,7 @@ class FileVolume(volume.Volume):
             raise TypeError("halfbakedVolumeRollback takes 1 or 3 "
                             "arguments (%d given)" % len(args))
 
-        metaVolPath = cls.metadataClass._metaVolumePath(volPath)
+        metaVolPath = cls.metadataClass.metaVolumePath(volPath)
         cls.log.info("Halfbaked volume rollback for volPath=%s", volPath)
 
         if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath) and not \
@@ -375,7 +375,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, volPath):
         cls.log.info("createVolumeMetadataRollback: volPath=%s" % (volPath))
-        metaPath = cls.metadataClass._metaVolumePath(volPath)
+        metaPath = cls.metadataClass.metaVolumePath(volPath)
         sdUUID = getDomUuidFromVolumePath(volPath)
         if oop.getProcessPool(sdUUID).os.path.lexists(metaPath):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
@@ -444,7 +444,7 @@ class FileVolume(volume.Volume):
         self.log.info("Request to delete volume %s", self.volUUID)
 
         vol_path = self.getVolumePath()
-        lease_path = self._md._leaseVolumePath(vol_path)
+        lease_path = self._md.leaseVolumePath(vol_path)
 
         if not force:
             self.validateDelete()
@@ -492,8 +492,8 @@ class FileVolume(volume.Volume):
         cls.log.info("Volume rollback for volPath=%s", volPath)
         procPool = oop.getProcessPool(getDomUuidFromVolumePath(volPath))
         procPool.utils.rmFile(volPath)
-        procPool.utils.rmFile(cls.metadataClass._metaVolumePath(volPath))
-        procPool.utils.rmFile(cls.metadataClass._leaseVolumePath(volPath))
+        procPool.utils.rmFile(cls.metadataClass.metaVolumePath(volPath))
+        procPool.utils.rmFile(cls.metadataClass.leaseVolumePath(volPath))
 
     def llPrepare(self, rw=False, setrw=False):
         """
