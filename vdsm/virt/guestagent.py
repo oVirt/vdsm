@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,13 +18,12 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import array
 import logging
 import time
 import socket
 import errno
 import json
-import unicodedata
+import re
 
 from vdsm import supervdsm
 
@@ -37,42 +36,44 @@ _MESSAGE_API_VERSION_LOOKUP = {
     'set-number-of-cpus': 1}
 
 _REPLACEMENT_CHAR = u'\ufffd'
-_RESTRICTED_CHARS = frozenset(unichr(c) for c in
-                              list(range(8 + 1)) +
-                              list(range(0xB, 0xC + 1)) +
-                              list(range(0xE, 0x1F + 1)) +
-                              list(range(0x7F, 0x84 + 1)) +
-                              list(range(0x86, 0x9F + 1)) +
-                              [0xFFFE, 0xFFFF])
+
+# The set of characters allowed in XML documents is described in
+# http://www.w3.org/TR/xml11/#charsets
+#
+# Char is defined as any Unicode character, excluding the surrogate blocks,
+# FFFE, and FFFF:
+#
+#     [#x1-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+#
+# But according to bug 606281, we should also avoid RestrictedChar character
+# ranges:
+#
+#     [#x1-#x8] | [#xB-#xC] | [#xE-#x1F] | [#x7F-#x84] | [#x86-#x9F]
+#
+# The following ranges are the results of substructing the RestrictedChar
+# ranges from Char ranges, and adding 0x00, FFFE, and FFFF. Any character in
+# these ranges will be replaced by the unicode replacement character.
+#
+# Note that Python unicode string cannot represent code points above 0x10FFFF,
+# so we don't need to filter anything above this value.
+
+_FILTERED_CHARS = (
+    u"\u0000-\u0008"
+    u"\u000b-\u000c"
+    u"\u000e-\u001f"
+    u"\u007f-\u0084"
+    u"\u0086-\u009f"
+    u"\ud800-\udfff"
+    u"\ufffe-\uffff"
+)
+
+_filter_chars_re = re.compile(u'[%s]' % _FILTERED_CHARS)
 
 
 def _filterXmlChars(u):
-    """
-    The set of characters allowed in XML documents is described in
-    http://www.w3.org/TR/xml11/#charsets
-
-    "Char" is defined as any unicode character except the surrogate blocks,
-    \ufffe and \uffff.
-    "RestrictedChar" is defiend as the code points in _RESTRICTED_CHARS above
-
-    It's a little hard to follow, but the upshot is an XML document
-    must contain only characters in Char that are not in
-    RestrictedChar.
-
-    Note that Python's xmlcharrefreplace option is not relevant here -
-    that's about handling characters which can't be encoded in a given
-    charset encoding, not which aren't permitted in XML.
-    """
-
     if not isinstance(u, unicode):
         raise TypeError
-
-    chars = array.array('u', u)
-    for i, c in enumerate(chars):
-        if (c > u'\U00010fff' or unicodedata.category(c) == 'Cs'
-                or c in _RESTRICTED_CHARS):
-            chars[i] = _REPLACEMENT_CHAR
-    return chars.tounicode()
+    return _filter_chars_re.sub(_REPLACEMENT_CHAR, u)
 
 
 def _filterObject(obj):

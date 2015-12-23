@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -90,27 +90,28 @@ _OUTPUTS = [
 class TestFiltering(TestCaseBase):
 
     @permutations([
-        [u""],
-        [u"ascii"],
-        [u"\u2122"],
+        [u"\u0009 \u000a"],
+        [u"\u000d"],
+        [u"\u0020 \u007e"],
+        [u"\u0085"],
+        [u"\u00a0 \ud7ff"],
+        [u"\ue000 \ufffd"],
+        [u"\U00010000 \U0010ffff"],
     ])
     def test_filter_xml_chars_valid(self, value):
         self.assertEqual(value, guestagent._filterXmlChars(value))
 
     @permutations([
-        [u"\u0000"],
-        [u"\uffff"],
-        [u"\ufffe"],
-        [u"\ud800"],
-        [u"\udc79"],
+        [u"\u0000 \u0008"],
+        [u"\u000b \u000c"],
+        [u"\u000e \u001f"],
+        [u"\u007f \u0084"],
+        [u"\u0086 \u009f"],
+        [u"\ud800 \udfff"],
+        [u"\ufffe \uffff"],
     ])
-    def test_filter_xml_chars_replace_invalid(self, value):
-        self.assertEqual(u'\ufffd', guestagent._filterXmlChars(value))
-
-    def test_filter_xml_chars_replace_restricted(self):
-        restricted = u''.join(guestagent._RESTRICTED_CHARS)
-        filtered = guestagent._REPLACEMENT_CHAR * len(restricted)
-        self.assertEqual(filtered, guestagent._filterXmlChars(restricted))
+    def test_filter_xml_chars_invalid(self, value):
+        self.assertEqual(u'\ufffd \ufffd', guestagent._filterXmlChars(value))
 
     @slowtest
     def test_filter_xml_chars_timing(self):
