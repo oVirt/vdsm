@@ -20,6 +20,7 @@
 #
 import __builtin__
 import os
+import pwd
 from datetime import datetime
 from functools import partial
 import io
@@ -273,6 +274,7 @@ class TestNetinfo(TestCaseBase):
                 self.assertEqual(
                     netinfo.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
 
+    @MonkeyPatch(pwd, 'getpwnam', lambda name: pwd.getpwuid(os.geteuid()))
     def testGetBootProtocolUnified(self):
         with namedTemporaryDir() as tempDir:
             netsDir = os.path.join(tempDir, 'nets')

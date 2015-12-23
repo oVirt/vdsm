@@ -19,7 +19,9 @@
 #
 
 import json
+from monkeypatch import MonkeyPatch
 import os
+import pwd
 from shutil import rmtree
 import tempfile
 
@@ -69,6 +71,7 @@ class NetConfPersistenceTests(TestCaseBase):
         persistence.removeBonding(BONDING)
         self.assertTrue(persistence.bonds.get(BONDING) is None)
 
+    @MonkeyPatch(pwd, 'getpwnam', lambda name: pwd.getpwuid(os.geteuid()))
     def testSaveAndDelete(self):
         persistence = Config(self.tempdir)
         persistence.setNetwork(NETWORK, NETWORK_ATTRIBUTES)

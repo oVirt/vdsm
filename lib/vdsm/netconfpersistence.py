@@ -24,6 +24,7 @@ import json
 import logging
 import netaddr
 import os
+import pwd
 import string
 
 from .config import config
@@ -155,6 +156,11 @@ class Config(BaseConfig):
                 raise
         with open(path, 'w') as configurationFile:
             json.dump(config, configurationFile)
+
+        # Set owner to vdsm (required by ovirt-node)
+        vdsm_uid = pwd.getpwnam(constants.VDSM_USER).pw_uid
+        os.chown(dirPath, vdsm_uid, 0)
+        os.chown(path, vdsm_uid, 0)
 
     @staticmethod
     def _removeConfig(path):
