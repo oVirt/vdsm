@@ -120,14 +120,68 @@ class TestFiltering(TestCaseBase):
         elapsed = timeit.timeit('_filterXmlChars(x)', setup=setup, number=10)
         print(elapsed, "seconds")
 
-    def test_filter_object_valid(self):
-        valid = {u"foo": u"?data?test\U00010000"}
-        self.assertEqual(valid, guestagent._filterObject(valid))
+    def test_filter_object_dict(self):
+        raw = {u"a\x00": u"b\x01", u"c\x02": u"d\x03"}
+        filtered = {u"a\ufffd": u"b\ufffd", u"c\ufffd": u"d\ufffd"}
+        self.assertEqual(filtered, guestagent._filterObject(raw))
 
-    def test_filter_object_invalid(self):
-        invalid = {u"foo": u"\x00data\x00test\uffff\ufffe\ud800\udc79"}
-        filtered = {u"foo": u"\ufffddata\ufffdtest\ufffd\ufffd\ufffd\ufffd"}
-        self.assertEqual(filtered, guestagent._filterObject(invalid))
+    def test_filter_object_nested_dict(self):
+        raw = {u"a\x00": {u"b\x01": {u"c\x02": u"d\x03"}}}
+        filtered = {u"a\ufffd": {u"b\ufffd": {u"c\ufffd": u"d\ufffd"}}}
+        self.assertEqual(filtered, guestagent._filterObject(raw))
+
+    def test_filter_object_list(self):
+        raw = [u"a\x00", u"b\x01", u"c\x02", u"d\x03"]
+        filtered = [u"a\ufffd", u"b\ufffd", u"c\ufffd", u"d\ufffd"]
+        self.assertEqual(filtered, guestagent._filterObject(raw))
+
+    def test_filter_object_nested_lists(self):
+        raw = [u"a\x00", [u"b\x01", [u"c\x02", u"d\x03"]]]
+        filtered = [u"a\ufffd", [u"b\ufffd", [u"c\ufffd", u"d\ufffd"]]]
+        self.assertEqual(filtered, guestagent._filterObject(raw))
+
+    def test_filter_object_nested_mix(self):
+        raw = {u"a\x00": [u"b\x01", {u"c\x02": u"d\x03"}]}
+        filtered = {u"a\ufffd": [u"b\ufffd", {u"c\ufffd": u"d\ufffd"}]}
+        self.assertEqual(filtered, guestagent._filterObject(raw))
+
+    def test_filter_object_other_types(self):
+        raw = {u"int": 1,
+               u"float": 3.14,
+               u"true": True,
+               u"false": False,
+               u"none": None}
+        self.assertEqual(raw, guestagent._filterObject(raw))
+
+    @slowtest
+    def test_filter_object_timing(self):
+        setup = """
+from virt.guestagent import _filterObject
+d = {u'netIfaces': [
+        {
+            u'hw': u'00:21:cc:68:d7:38',
+            u'name': u'eth0',
+            u'inet': [u'9.115.122.77'],
+            u'inet6': [u'fe80::221:ccff:fe68:d738']
+        },
+        {
+            u'hw': u'a0:88:b4:f0:ce:a0',
+            u'name': u'wlan0',
+            u'inet': [u'9.115.126.23'],
+            u'inet6': [u'fe80::a288:b4ff:fef0:cea0']
+        },
+        {
+            u'hw': u'52:54:00:5b:3f:e1',
+            u'name': u'virbr0',
+            u'inet': [u'192.168.122.1'],
+            u'inet6': []
+        }
+    ],
+    u'guestIPs': u'9.115.122.77 9.115.126.23 192.168.122.1'
+}
+"""
+        elapsed = timeit.timeit('_filterObject(d)', setup=setup, number=1000)
+        print(elapsed, "seconds")
 
 
 class TestGuestIF(TestCaseBase):
