@@ -5205,6 +5205,18 @@
  'returns': 'UUID'}
 
 ##
+# @ImageInfo:
+#
+# Information about a prepared image
+#
+# @path:          The image path
+#
+# Since: 4.18.0
+##
+{'type': 'ImageInfo',
+ 'data': {'path': 'str'}}
+
+##
 # @Image.prepare:
 #
 # Prepare an image, making the needed volumes available.
@@ -5217,11 +5229,16 @@
 #
 # @volumeID:         The UUID of the Volume
 #
+# Returns:
+# Information about prepared image
+# (new in version 4.18)
+#
 # Since: 4.15.0
 ##
 {'command': {'class': 'Image', 'name': 'prepare'},
  'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'imageID': 'UUID', 'volumeID': 'UUID'}}
+          'imageID': 'UUID', 'volumeID': 'UUID'}
+ 'returns': 'ImageInfo'}}
 
 ##
 # @Image.teardown:

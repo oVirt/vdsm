@@ -394,6 +394,10 @@ def Volume_getsize_Ret(ret):
     return {'truesize': ret['truesize'], 'apparentsize': ret['apparentsize']}
 
 
+def Image_prepare_Ret(ret):
+    return {'path': ret['path']}
+
+
 ##
 # Possible ways to override a command:
 # - Supply a custom call function if the function name doesn't map directly to
@@ -439,6 +443,7 @@ command_info = {
     'Image_reconcileVolumeChain': {'ret': 'volumes'},
     'Image_syncData': {'ret': 'uuid'},
     'Image_upload': {'ret': 'uuid'},
+    'Image_prepare': {'ret': Image_prepare_Ret},
     'ISCSIConnection_discoverSendTargets': {'ret': 'fullTargets'},
     'LVMVolumeGroup_create': {'ret': 'uuid'},
     'LVMVolumeGroup_getInfo': {'ret': 'info'},
