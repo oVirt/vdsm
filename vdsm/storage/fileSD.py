@@ -214,9 +214,9 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         for volUUID in volsImgs:
             volPath = os.path.join(toDelDir, volUUID)
             self._deleteVolumeFile(volPath)
-            self._deleteVolumeFile(volPath + '.meta')
+            self._deleteVolumeFile(volPath + fileVolume.META_FILEEXT)
             if self.hasVolumeLeases():
-                self._deleteVolumeFile(volPath + '.lease')
+                self._deleteVolumeFile(volPath + fileVolume.LEASE_FILEEXT)
         self.log.debug("Removing directory: %s", toDelDir)
         try:
             self.oop.os.rmdir(toDelDir)
