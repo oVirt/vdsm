@@ -303,7 +303,7 @@ class CachingNetInfo(object):
         """ Return the network attached to nic/bond """
         for network, netdict in self.networks.iteritems():
             if ('ports' in netdict and iface in netdict['ports'] or
-                    iface == netdict['iface']):
+                    'iface' in netdict and iface == netdict['iface']):
                 return network
 
     def getBridgedNetworkForIface(self, iface):
