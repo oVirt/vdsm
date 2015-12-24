@@ -896,7 +896,8 @@ def setupNetworks(networks, bondings, **options):
                  "networks:%r, bondings:%r, options:%r" % (networks,
                                                            bondings, options))
 
-    _canonize_networks_defaults(networks)
+    _canonize_networks(networks)
+    # TODO: Add _canonize_bondings(bondings)
 
     logging.debug("Validating configuration")
     _validateNetworkSetup(networks, bondings)
@@ -964,14 +965,18 @@ def _vlanToInternalRepresentation(vlan):
     return vlan
 
 
-def _canonize_networks_defaults(nets):
+def _canonize_networks(nets):
     """
     Given networks configuration, explicitly add missing defaults.
     :param nets: The network configuration
     """
     for attrs in six.itervalues(nets):
-        if 'remove' in attrs and attrs['remove'] is True:
-            continue
+        # If net is marked for removal, normalize the mark to boolean and
+        # ignore all other attributes canonization.
+        if 'remove' in attrs:
+            attrs['remove'] = utils.tobool(attrs['remove'])
+            if attrs['remove']:
+                continue
 
         attrs['mtu'] = int(attrs['mtu']) if 'mtu' in attrs else DEFAULT_MTU
 
