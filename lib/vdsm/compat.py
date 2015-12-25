@@ -35,6 +35,6 @@ try:
     import simplejson as json
     json  # make pyflakes happy
 except ImportError:
-    # no big deal, fallback to standard libary
+    # no big deal, fallback to standard library
     import json
     json  # yep, this is needed twice.
