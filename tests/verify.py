@@ -58,7 +58,7 @@ class DeviceMixin(object):
                                       hwclass.HOSTDEV):
                 self.assertIn('address', device)
 
-            # NIC devices have an additional name and linkActive attribuets
+            # NIC devices have an additional name and linkActive attributes
             if device['type'] == hwclass.NIC:
                 self.assertIn('name', device)
                 self.assertIn('linkActive', device)
