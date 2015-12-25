@@ -27,8 +27,8 @@ from . import expose
 
 from vdsm import vdscli
 
-# BLANK_UUID is re-declared here since it cannot be imported properly. this
-# constant should be introduced under lib publically available
+# BLANK_UUID is re-declared here since it cannot be imported properly. This
+# constant should be introduced under lib publicly available
 _BLANK_UUID = '00000000-0000-0000-0000-000000000000'
 _NAME = 'dump-volume-chains'
 
