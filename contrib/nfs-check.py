@@ -82,7 +82,7 @@ class Nfs(object):
         # get return from mount cmd
         ret = process.poll()
 
-        # Let`s check if the NFS Server is local machine
+        # Let's check if the NFS Server is local machine
         localIP = self.getLocalIP()
         serverIP = self.getIP(server)
         localMachine = False
@@ -106,7 +106,7 @@ class Nfs(object):
             print("return = %s error msg = %s" % (ret, errorMsg))
             print("Access Denied: Cannot mount nfs!")
             if not os.path.isfile(EXPORTS):
-                print(EXPORTS + " doesn`t exist, please create one"
+                print(EXPORTS + " doesn't exist, please create one"
                       " and start nfs server!")
             else:
                 targetFound = False
