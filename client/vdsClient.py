@@ -2007,7 +2007,7 @@ if __name__ == '__main__':
                     'network',
                     'o   sysprepInf=/path/to/file: Launch with the '
                     'specified file as sysprep.inf in floppy',
-                    # 'o   any parmeter=<any value> : parameter that is '
+                    # 'o   any parameter=<any value> : parameter that is '
                     # 'not familiar is passed as is to the VM',
                     # '                               and displayed with '
                     # 'all other parameter. They can be used for '
