@@ -47,7 +47,7 @@ def register():
 
     read_fd, write_fd = os.pipe()
 
-    # Python c-level signal handler requires that the the write end will be in
+    # Python c-level signal handler requires that the write end will be in
     # non blocking mode
     filecontrol.set_non_blocking(write_fd)
 
