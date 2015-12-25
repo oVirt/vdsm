@@ -100,7 +100,7 @@ class SocketTests(TestCaseBase):
                 client_socket.settimeout(timeout)
                 client_socket.connect((HOST, server.port))
                 # Wait for data that will never arrive.
-                # This will return successfuly if the other side closes the
+                # This will return successfully if the other side closes the
                 # connection (as expected) or raise timeout (which means the
                 # test failed)
                 client_socket.recv(100)
@@ -171,7 +171,7 @@ class SSLServerThread(threading.Thread):
                 pass
 
     def shutdown(self):
-        # Note that this doesn't stop the thready inmediately, it just
+        # Note that this doesn't stop the thready immediately, it just
         # indicates that stopping is requested, the thread will stop
         # with next iteration of the accept loop:
         self.stop.set()
