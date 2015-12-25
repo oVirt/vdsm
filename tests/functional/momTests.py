@@ -63,7 +63,7 @@ class MOMTest(TestCaseBase):
         run = 1
         pages_to_scan = random.randint(100, 200)
 
-        # Set a simple MOM policy to change KSM paramters unconditionally.
+        # Set a simple MOM policy to change KSM parameters unconditionally.
         testPolicyStr = """
             (Host.Control "ksm_run" %d)
             (Host.Control "ksm_pages_to_scan" %d)""" % \
