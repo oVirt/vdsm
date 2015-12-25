@@ -3129,7 +3129,7 @@
 #
 # @deviceType:  The device type (always @balloon)
 #
-# @device:      The the type of balloon device
+# @device:      The type of balloon device
 #
 # @address:     Device hardware address
 #
@@ -3214,7 +3214,7 @@
 #
 # @deviceType:  The device type (always @watchdog)
 #
-# @device:      The the type of watchdog device
+# @device:      The type of watchdog device
 #
 # @address:     Device hardware address, only 'i6300esb' need address
 #
@@ -3325,7 +3325,7 @@
 #
 # @deviceType:  The device type (always @tpm)
 #
-# @device:      The the type of tpm device
+# @device:      The type of tpm device
 #
 # @specParams:  Additional device parameters
 #
@@ -3393,7 +3393,7 @@
 #
 # @deviceType:  The device type (always @smartcard)
 #
-# @device:      The the type of smartcard device
+# @device:      The type of smartcard device
 #
 # @address:     Device hardware address
 #
@@ -3472,7 +3472,7 @@
 #
 # @deviceType:  The device type (always @rng)
 #
-# @device:      The the type of rng device
+# @device:      The type of rng device
 #
 # @model:       The model of rng device
 #
@@ -4399,7 +4399,7 @@
 #
 # A host device parameters
 #
-# @capability:      The capability of the device (ussualy pci,
+# @capability:      The capability of the device (usually pci,
 #                   usb_device, scsi)
 #
 # @iommu_group:     The iommu group which the device belongs to
@@ -8083,9 +8083,9 @@
 #
 # @vmID:     The UUID of the VM
 #
-# @srcDisk:  A @DriveSpecVolume structure rapresenting the source disk
+# @srcDisk:  A @DriveSpecVolume structure representing the source disk
 #
-# @dstDisk:  A @DriveSpecVolume structure rapresenting the destination disk
+# @dstDisk:  A @DriveSpecVolume structure representing the destination disk
 #
 # Since: 4.11.0
 ##
@@ -8100,9 +8100,9 @@
 #
 # @vmID:     The UUID of the VM
 #
-# @srcDisk:  A @DriveSpecVolume structure rapresenting the source disk
+# @srcDisk:  A @DriveSpecVolume structure representing the source disk
 #
-# @dstDisk:  A @DriveSpecVolume structure rapresenting the destination disk
+# @dstDisk:  A @DriveSpecVolume structure representing the destination disk
 #
 # Since: 4.11.0
 ##
@@ -8117,7 +8117,7 @@
 #
 # @vmID:     The UUID of the VM
 #
-# @disk:  A @DriveSpecVolume structure rapresenting the disk
+# @disk:  A @DriveSpecVolume structure representing the disk
 #
 # Since: 4.11.0
 ##
@@ -8131,7 +8131,7 @@
 #
 # @vmID:        The UUID of the VM
 #
-# @driveSpecs:  A @DriveSpecVolume structure rapresenting the disk
+# @driveSpecs:  A @DriveSpecVolume structure representing the disk
 #
 # @newSize:     The new desired size (in bytes)
 #
@@ -8153,7 +8153,7 @@
 #
 # @vmID:         The UUID of the VM
 #
-# @drive:        A @DriveSpecVolume structure rapresenting the disk
+# @drive:        A @DriveSpecVolume structure representing the disk
 #
 # @baseVolUUID:  The UUID of the base volume
 #
@@ -8470,7 +8470,7 @@
 #
 # @status:        Indicates whether the Volume and metadata are valid
 #
-# @children:      A list of decendent Volumes that depend on this Volume
+# @children:      A list of descendent Volumes that depend on this Volume
 #
 # Since: 4.10.0
 ##
