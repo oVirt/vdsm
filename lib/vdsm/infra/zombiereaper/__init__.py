@@ -41,7 +41,7 @@ def autoReapPID(pid):
     if not _registered:
         raise RuntimeError("zombiereaper is not registered for SIGCHLD")
     _trackedPids.add(pid)
-    # SIGCHLD happend before we added the pid to the set
+    # SIGCHLD happened before we added the pid to the set
     _tryReap(pid)
 
 
