@@ -3246,7 +3246,12 @@ class Vm(object):
             if should_freeze:
                 freezed = self.freeze()
             try:
+                self.log.info("Taking a live snapshot (drives=%s, memory=%s)",
+                              ', '.join(drive["name"] for drive in
+                                        newDrives.values()),
+                              memoryParams is not None)
                 self._dom.snapshotCreateXML(snapxml, snapFlags)
+                self.log.info("Completed live snapshot")
             except libvirt.libvirtError:
                 self.log.exception("Unable to take snapshot")
                 return response.error('snapshotErr')
