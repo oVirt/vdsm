@@ -172,6 +172,7 @@ class Config(BaseConfig):
 
         # Set owner to vdsm (required by ovirt-node)
         vdsm_uid = pwd.getpwnam(constants.VDSM_USER).pw_uid
+        os.chown(os.path.dirname(dirPath), vdsm_uid, 0)
         os.chown(dirPath, vdsm_uid, 0)
         os.chown(path, vdsm_uid, 0)
 
