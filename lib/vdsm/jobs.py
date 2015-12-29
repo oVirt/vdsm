@@ -94,7 +94,8 @@ class Job(object):
         return self._error
 
     def info(self):
-        ret = {'status': self.status,
+        ret = {'id': self.id,
+               'status': self.status,
                'description': self.description,
                'job_type': self.job_type}
 

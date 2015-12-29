@@ -63,7 +63,8 @@ class JobsTests(VdsmTestCase):
 
     def test_job_info(self):
         job = TestingJob()
-        self.assertEqual({'status': jobs.STATUS.PENDING,
+        self.assertEqual({'id': job.id,
+                          'status': jobs.STATUS.PENDING,
                           'job_type': 'testing',
                           'description': ''},
                          job.info())
