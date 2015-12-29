@@ -192,4 +192,4 @@ class JobsTests(VdsmTestCase):
         error = utils.GeneralException()
         job._error = error
         self.assertEqual(job.error, error)
-        self.assertEqual(error.response(), job.info()['error'])
+        self.assertEqual(error.info(), job.info()['error'])

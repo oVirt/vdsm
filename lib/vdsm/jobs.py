@@ -102,7 +102,7 @@ class Job(object):
             ret['progress'] = self.progress
 
         if self.error:
-            ret['error'] = self.error.response()
+            ret['error'] = self.error.info()
 
         return ret
 
