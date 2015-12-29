@@ -103,7 +103,7 @@ def start(cif, scheduler):
             config.getint('vars', 'vm_watermark_interval')),
 
         Operation(
-            sampling.HostMonitor(),
+            sampling.HostMonitor(cif=cif),
             config.getint('vars', 'host_sample_stats_interval'),
             scheduler)
 

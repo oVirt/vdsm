@@ -541,9 +541,10 @@ host_samples = SampleWindow(size=HOST_STATS_AVERAGING_WINDOW)
 class HostMonitor(object):
     _CONNLOG = logging.getLogger('connectivity')
 
-    def __init__(self, samples=host_samples):
+    def __init__(self, samples=host_samples, cif=None):
         self._samples = samples
         self._pid = os.getpid()
+        self._cif = cif
 
     def __call__(self):
         sample = HostSample(self._pid)
@@ -555,6 +556,8 @@ class HostMonitor(object):
             diff = sample.connlog_diff(second_last)
             if diff:
                 self._CONNLOG.debug('%s', diff)
+                if self._cif is not None:
+                    self._cif.notify('|net|host_conn|no_id')
 
 
 def _getLinkSpeed(dev):
