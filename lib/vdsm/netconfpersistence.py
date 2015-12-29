@@ -167,9 +167,9 @@ class Config(BaseConfig):
 
         # Set owner to vdsm (required by ovirt-node)
         vdsm_uid = pwd.getpwnam(constants.VDSM_USER).pw_uid
-        os.chown(os.path.dirname(dirPath), vdsm_uid, 0)
-        os.chown(dirPath, vdsm_uid, 0)
-        os.chown(path, vdsm_uid, 0)
+        os.chown(os.path.dirname(dirPath), vdsm_uid, -1)
+        os.chown(dirPath, vdsm_uid, -1)
+        os.chown(path, vdsm_uid, -1)
 
     @staticmethod
     def _removeConfig(path):
