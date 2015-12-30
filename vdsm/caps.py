@@ -629,7 +629,10 @@ def get():
                                     _getCompatibleCpuModels())
 
     caps.update(_getVersionInfo())
-    caps.update(netinfo.get())
+
+    # TODO: Version requests by engine to ease handling of compatibility.
+    netinfo_data = netinfo.get(compatibility=30600)
+    caps.update(netinfo_data)
 
     try:
         caps['hooks'] = hooks.installed()

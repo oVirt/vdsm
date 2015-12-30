@@ -380,8 +380,11 @@ class NetworkTest(TestCaseBase):
             self.assertRuleExists(rule)
 
     def assertMtu(self, mtu, *elems):
+        # Due to compatibility with engine, the expected mtu type is string
+        # REQUIRED_FOR engine < 3.7
+        mtu = str(mtu)
         for elem in elems:
-            self.assertEquals(int(mtu), int(self.vdsm_net.getMtu(elem)))
+            self.assertEquals(mtu, self.vdsm_net.getMtu(elem))
 
     def assert_active_slave_exists(self, bondName, nics):
         netinfo = self.vdsm_net.netinfo
@@ -403,8 +406,8 @@ class NetworkTest(TestCaseBase):
         return status, msg
 
     def _assert_kernel_config_matches_running_config(self):
-        netinfo = self.vdsm_net.netinfo
-        bare_kernel_config = kernelconfig.KernelConfig(netinfo)
+        bare_kernel_config = kernelconfig.KernelConfig(
+            vdsm.netinfo.CachingNetInfo())
         bare_running_config = self.vdsm_net.config
         normalized_running_config = kernelconfig.normalize(bare_running_config)
         # Unify strings to unicode instances so differences are easier to
@@ -709,10 +712,7 @@ class NetworkTest(TestCaseBase):
             vlan_name = '%s.%s' % (BONDING_NAME, VLAN_ID)
 
             self.assertEqual(status, SUCCESS, msg)
-            self.assertEquals(MTU, self.vdsm_net.getMtu(NETWORK_NAME))
-            self.assertEquals(MTU, self.vdsm_net.getMtu(vlan_name))
-            self.assertEquals(MTU, self.vdsm_net.getMtu(BONDING_NAME))
-            self.assertEquals(MTU, self.vdsm_net.getMtu(nics[0]))
+            self.assertMtu(MTU, NETWORK_NAME, vlan_name, BONDING_NAME, nics[0])
 
             status, msg = self.vdsm_net.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
@@ -1002,8 +1002,8 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @permutations([[True], [False]])
     def testSetupNetworksMtus(self, bridged):
-        JUMBO = '9000'
-        MIDI = '4000'
+        JUMBO = 9000
+        MIDI = 4000
 
         with dummyIf(3) as nics:
             # Add two networks, one with default MTU and the other with MIDI.
@@ -1217,22 +1217,19 @@ class NetworkTest(TestCaseBase):
                 # Add initial vlanned net over bond
                 self._createBondedNetAndCheck(0, {'nics': nics}, bridged,
                                               mtu=1500)
-                self.assertEquals(1500,
-                                  self.vdsm_net.getMtu(BONDING_NAME))
+                self.assertMtu(1500, BONDING_NAME)
 
                 _waitForKnownOperstate(BONDING_NAME)
                 with nonChangingOperstate(BONDING_NAME):
                     # Add a network with MTU smaller than existing network
                     self._createBondedNetAndCheck(1, {'nics': nics},
                                                   bridged, mtu=1400)
-                    self.assertEquals(1500,
-                                      self.vdsm_net.getMtu(BONDING_NAME))
+                    self.assertMtu(1500, BONDING_NAME)
 
                     # Add a network with MTU bigger than existing network
                     self._createBondedNetAndCheck(2, {'nics': nics},
                                                   bridged, mtu=1600)
-                    self.assertEquals(1600,
-                                      self.vdsm_net.getMtu(BONDING_NAME))
+                    self.assertMtu(1600, BONDING_NAME)
 
                 # cleanup
                 networks = dict((NETWORK_NAME + str(num), {'remove': True}) for
@@ -1261,17 +1258,17 @@ class NetworkTest(TestCaseBase):
                 # Add initial vlanned net over bond
                 self._createVlanedNetOverNicAndCheck(0, bridged, nic=nic,
                                                      mtu=1500)
-                self.assertEquals(1500, self.vdsm_net.getMtu(nic))
+                self.assertMtu(1500, nic)
 
                 # Add a network with MTU smaller than existing network
                 self._createVlanedNetOverNicAndCheck(1, bridged, nic=nic,
                                                      mtu=1400)
-                self.assertEquals(1500, self.vdsm_net.getMtu(nic))
+                self.assertMtu(1500, nic)
 
                 # Add a network with MTU bigger than existing network
                 self._createVlanedNetOverNicAndCheck(2, bridged, nic=nic,
                                                      mtu=1600)
-                self.assertEquals(1600, self.vdsm_net.getMtu(nic))
+                self.assertMtu(1600, nic)
 
                 # cleanup
                 networks = dict((NETWORK_NAME + str(num), {'remove': True}) for

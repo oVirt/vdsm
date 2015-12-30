@@ -53,7 +53,14 @@ LIBVIRT_NET_PREFIX = 'vdsm-'
 DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here
 
 
-def get(vdsmnets=None):
+def _get(vdsmnets=None):
+    """
+    Generate a networking report for all devices, including data managed by
+    libvirt.
+    In case vdsmnets is provided, it is used in the report instead of
+    retrieving data from libvirt.
+    :return: Dict of networking devices with all their details.
+    """
     networking = {'bondings': {}, 'bridges': {}, 'networks': {}, 'nics': {},
                   'vlans': {}, 'dnss': get_host_nameservers()}
     paddr = bonding.permanent_address()
@@ -96,6 +103,23 @@ def get(vdsmnets=None):
     networking['supportsIPv6'] = ipv6_supported()
 
     return networking
+
+
+def get(vdsmnets=None, compatibility=None):
+    if compatibility is None:
+        return _get(vdsmnets)
+    elif compatibility < 30700:
+        # REQUIRED_FOR engine < 3.7
+        return _stringify_mtus(_get(vdsmnets))
+
+    return _get(vdsmnets)
+
+
+def _stringify_mtus(netinfo_data):
+    for devtype in ('bondings', 'bridges', 'networks', 'nics', 'vlans'):
+        for dev in six.itervalues(netinfo_data[devtype]):
+            dev['mtu'] = str(dev['mtu'])
+    return netinfo_data
 
 
 def libvirtNets2vdsm(nets, running_config=None, routes=None, ipAddrs=None,
