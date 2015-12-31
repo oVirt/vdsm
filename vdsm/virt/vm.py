@@ -2295,18 +2295,15 @@ class Vm(object):
             self._waitForDeviceRemoval(nic)
         except HotunplugTimeout as e:
             self.log.error("%s", e)
+            self._rollback_nic_hotunplug(nicDev, nic)
+            hooks.after_nic_hotunplug_fail(nicXml, self.conf,
+                                           params=nic.custom)
             return response.error('hotunplugNic', "%s" % e)
         except libvirt.libvirtError as e:
             self.log.exception("Hotunplug failed")
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
                 return response.error('noVM')
-            # Restore NIC device in vm's conf and _devices
-            if nicDev:
-                with self._confLock:
-                    self.conf['devices'].append(nicDev)
-            if nic:
-                self._devices[hwclass.NIC].append(nic)
-            self.saveState()
+            self._rollback_nic_hotunplug(nicDev, nic)
             hooks.after_nic_hotunplug_fail(nicXml, self.conf,
                                            params=nic.custom)
             return response.error('hotunplugNic', e.message)
@@ -2314,6 +2311,15 @@ class Vm(object):
         hooks.after_nic_hotunplug(nicXml, self.conf,
                                   params=nic.custom)
         return {'status': doneCode, 'vmList': self.status()}
+
+    # Restore NIC device in vm's conf and _devices
+    def _rollback_nic_hotunplug(self, nic_dev, nic):
+        if nic_dev:
+            with self._confLock:
+                self.conf['devices'].append(nic_dev)
+        if nic:
+            self._devices[hwclass.NIC].append(nic)
+        self.saveState()
 
     def hotplugMemory(self, params):
 
