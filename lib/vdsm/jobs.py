@@ -122,6 +122,13 @@ class Job(object):
         """
         raise AbortNotSupported()
 
+    def __repr__(self):
+        s = "<{self.__class__.__name__} id={self.id} status={self.status} "
+        if self.progress is not None:
+            s += "progress={self.progress}% "
+        s += "at 0x{id}>"
+        return s.format(self=self, id=id(self))
+
 
 # This helper should only be called by test code.  Everything else should be
 # using the public APIs.

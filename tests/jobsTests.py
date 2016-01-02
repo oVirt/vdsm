@@ -213,3 +213,17 @@ class JobsTests(VdsmTestCase):
         job._error = error
         self.assertEqual(job.error, error)
         self.assertEqual(error.info(), job.info()['error'])
+
+    def test_job_repr(self):
+        job = TestingJob()
+        rep = repr(job)
+        self.assertIn("TestingJob", rep)
+        self.assertIn("id=%s" % job.id, rep)
+        self.assertIn("status=pending", rep)
+        self.assertNotIn("progress=", rep)
+
+    def test_job_repr_with_progress(self):
+        job = ProgressingJob()
+        job.progress = 32
+        rep = repr(job)
+        self.assertIn("progress=32%", rep)
