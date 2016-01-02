@@ -29,12 +29,7 @@ class TestingJob(jobs.Job):
 
     def __init__(self):
         jobs.Job.__init__(self, str(uuid.uuid4()))
-        self._progress = None
         self._aborted = False
-
-    @property
-    def progress(self):
-        return self._progress
 
     def _abort(self):
         self._aborted = True
@@ -46,6 +41,21 @@ class FooJob(TestingJob):
 
 class BarJob(TestingJob):
     _JOB_TYPE = 'bar'
+
+
+class ProgressingJob(jobs.Job):
+
+    def __init__(self):
+        jobs.Job.__init__(self, str(uuid.uuid4()))
+        self._progress = None
+
+    @property
+    def progress(self):
+        return self._progress
+
+    @progress.setter
+    def progress(self, value):
+        self._progress = value
 
 
 @expandPermutations
@@ -174,15 +184,14 @@ class JobsTests(VdsmTestCase):
                          jobs.delete('foo'))
 
     def test_job_get_progress(self):
-        job = TestingJob()
+        job = ProgressingJob()
 
         # Job queued or initializing, no progress yet
-        self._progress = None
         self.assertNotIn('progress', job.info())
 
         # Job running
         for i in [0, 42, 100]:
-            job._progress = i
+            job.progress = i
             self.assertEqual(i, job.info()['progress'])
 
     def test_job_get_error(self):
