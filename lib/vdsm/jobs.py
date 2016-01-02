@@ -132,8 +132,6 @@ def _clear():
 
 def delete(job_id):
     try:
-        job = get(job_id)
-        job.validate_not_active()
         _delete(job_id)
     except ClientError as e:
         logging.info('Cannot delete job, error: %s', e)
@@ -181,6 +179,9 @@ def get(job_id):
 
 def _delete(job_id):
     with _lock:
-        if job_id not in _jobs:
+        try:
+            job = _jobs[job_id]
+        except KeyError:
             raise NoSuchJob("No such job %r" % job_id)
+        job.validate_not_active()
         del _jobs[job_id]
