@@ -112,10 +112,6 @@ class Job(object):
         logging.info('Job %r aborting...', self._id)
         self._abort()
 
-    def validate_done(self):
-        if self.status != STATUS.DONE:
-            raise JobNotDone("Job %r is %s" % (self.id, self.status))
-
     def validate_not_active(self):
         if self.status not in (STATUS.DONE, STATUS.ABORTED, STATUS.FAILED):
             raise JobNotDone("Job %r is %s" % (self.id, self.status))
