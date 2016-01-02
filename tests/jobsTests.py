@@ -159,6 +159,17 @@ class JobsTests(VdsmTestCase):
                          jobs.abort(job.id))
 
     @permutations([
+        [jobs.STATUS.PENDING, True],
+        [jobs.STATUS.RUNNING, True],
+        [jobs.STATUS.ABORTED, False],
+        [jobs.STATUS.DONE, False],
+        [jobs.STATUS.FAILED, False]
+    ])
+    def test_job_active(self, status, active):
+        job = TestingJob(status)
+        self.assertEqual(active, job.active)
+
+    @permutations([
         [jobs.STATUS.ABORTED],
         [jobs.STATUS.DONE],
         [jobs.STATUS.FAILED]

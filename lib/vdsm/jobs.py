@@ -107,14 +107,14 @@ class Job(object):
 
         return ret
 
+    @property
+    def active(self):
+        return self.status in (STATUS.PENDING, STATUS.RUNNING)
+
     def abort(self):
         self._status = STATUS.ABORTED
         logging.info('Job %r aborting...', self._id)
         self._abort()
-
-    def validate_not_active(self):
-        if self.status not in (STATUS.DONE, STATUS.ABORTED, STATUS.FAILED):
-            raise JobNotDone("Job %r is %s" % (self.id, self.status))
 
     def _abort(self):
         """
@@ -183,5 +183,6 @@ def _delete(job_id):
             job = _jobs[job_id]
         except KeyError:
             raise NoSuchJob("No such job %r" % job_id)
-        job.validate_not_active()
+        if job.active:
+            raise JobNotDone("Job %r is %s" % (job_id, job.status))
         del _jobs[job_id]
