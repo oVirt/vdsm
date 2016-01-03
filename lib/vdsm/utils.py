@@ -1223,12 +1223,16 @@ def round(n, size):
 
 
 def create_connected_socket(host, port, sslctx=None, timeout=None):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    addrinfo = socket.getaddrinfo(host, port,
+                                  socket.AF_UNSPEC, socket.SOCK_STREAM)
+    family, socktype, proto, _, sockaddr = addrinfo[0]
+    sock = socket.socket(family, socktype, proto)
+
     if sslctx:
         sock = sslctx.wrapSocket(sock)
 
     sock.settimeout(timeout)
-    sock.connect((host, port))
+    sock.connect(sockaddr)
     return sock
 
 

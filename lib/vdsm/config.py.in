@@ -360,7 +360,11 @@ parameters = [
             'Port on which the vdsmd XMPRPC server listens to network '
             'clients.'),
 
-        ('management_ip', '0.0.0.0', 'Set to "::" to listen on IPv6.'),
+        ('management_ip', '::',
+            'IP address on which the vdsmd server listens to network '
+            'clients. '
+            'Set to "0.0.0.0" to listen only on IPv4. '
+            'Set to "::" to listen on both IPv4 & IPv6.'),
 
         ('guests_gateway_ip', '', None),
 

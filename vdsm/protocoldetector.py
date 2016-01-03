@@ -28,16 +28,17 @@ from vdsm.sslcompat import SSLHandshakeDispatcher
 
 
 def _create_socket(host, port):
-    addr = socket.getaddrinfo(host, port, socket.AF_INET,
-                              socket.SOCK_STREAM)
-    if not addr:
+    addrinfo = socket.getaddrinfo(host, port,
+                                  socket.AF_UNSPEC, socket.SOCK_STREAM)
+    if not addrinfo:
         raise socket.error("Could not translate address '%s:%s'"
                            % (host, str(port)))
 
-    server_socket = socket.socket(addr[0][0], addr[0][1], addr[0][2])
+    family, socktype, proto, _, sockaddr = addrinfo[0]
+    server_socket = socket.socket(family, socktype, proto)
     filecontrol.set_close_on_exec(server_socket.fileno())
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server_socket.bind(addr[0][4])
+    server_socket.bind(sockaddr)
 
     return server_socket
 
@@ -69,7 +70,7 @@ class _AcceptorImpl(object):
         else:
             client.setblocking(0)
             self.log.info("Accepting connection from %s:%d",
-                          *client.getpeername())
+                          *client.getpeername()[0:2])
             self._dispatcher_factory(client)
 
 
@@ -110,7 +111,7 @@ class _ProtocolDetector(object):
 
         for detector in self._detectors:
             if detector.detect(data):
-                host, port = sock.getpeername()
+                host, port = sock.getpeername()[0:2]
                 self.log.info(
                     "Detected protocol %s from %s:%d",
                     detector.NAME,
@@ -168,7 +169,8 @@ class MultiProtocolAcceptor:
         self._sslctx = sslctx
         self._reactor = reactor
         sock = _create_socket(host, port)
-        self._host, self._port = sock.getsockname()
+        # TODO: Clean _host & _port, use sockaddr instead.
+        self._host, self._port = sock.getsockname()[0:2]
         self.log.info("Listening at %s:%d", self._host, self._port)
         self._acceptor = self._reactor.create_dispatcher(
             sock, _AcceptorImpl(self.handle_accept))

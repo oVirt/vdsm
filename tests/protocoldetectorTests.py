@@ -137,6 +137,12 @@ class AcceptorTests(VdsmTestCase):
         self.check_detect(use_ssl, data, data)
 
     @permutations(PERMUTATIONS)
+    def test_detect_echo6(self, use_ssl):
+        self.start_acceptor(use_ssl, address='::1')
+        data = "echo testing is fun\n"
+        self.check_detect(use_ssl, data, data)
+
+    @permutations(PERMUTATIONS)
     def test_detect_uppercase(self, use_ssl):
         self.start_acceptor(use_ssl)
         data = "uppercase testing is fun\n"
@@ -203,31 +209,36 @@ class AcceptorTests(VdsmTestCase):
 
     # Helpers
 
-    def start_acceptor(self, use_ssl):
+    def start_acceptor(self, use_ssl, address='127.0.0.1'):
         self.reactor = Reactor()
         self.acceptor = MultiProtocolAcceptor(
             self.reactor,
-            '127.0.0.1',
+            address,
             0,
             sslctx=self.SSLCTX if use_ssl else None
         )
         self.acceptor.TIMEOUT = 1
         self.acceptor.add_detector(Echo())
         self.acceptor.add_detector(Uppercase())
-        self.acceptor_address = self.acceptor._acceptor.socket.getsockname()
+        self.acceptor_address = \
+            self.acceptor._acceptor.socket.getsockname()[0:2]
         t = threading.Thread(target=self.reactor.process_requests)
         t.deamon = True
         t.start()
 
     @contextmanager
     def connect(self, use_ssl):
-        s = socket.socket()
+        host, port = self.acceptor_address
+        addrinfo = socket.getaddrinfo(host, port,
+                                      socket.AF_UNSPEC, socket.SOCK_STREAM)
+        family, socktype, proto, _, sockaddr = addrinfo[0]
+        s = socket.socket(family, socktype, proto)
         try:
             s.settimeout(self.TIMEOUT)
             if use_ssl:
                 s = ssl.wrap_socket(s, KEY_FILE, CRT_FILE, ca_certs=CRT_FILE,
                                     server_side=False)
-            s.connect(self.acceptor_address)
+            s.connect(sockaddr)
             yield s
         finally:
             s.close()
