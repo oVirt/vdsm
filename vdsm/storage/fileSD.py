@@ -395,26 +395,24 @@ class FileStorageDomain(sd.StorageDomain):
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
         for volUUID in volsImgs:
             volPath = os.path.join(toDelDir, volUUID)
-            self._deleteVolumeFile(volPath)
-            self._deleteVolumeFile(volPath + '.meta')
-            if self.hasVolumeLeases():
-                self._deleteVolumeFile(volPath + '.lease')
+            try:
+                self.log.debug("Removing file: %s", volPath)
+                self.oop.os.remove(volPath)
+                metaFile = volPath + '.meta'
+                self.log.debug("Removing file: %s", metaFile)
+                self.oop.os.remove(metaFile)
+                leaseFile = volPath + '.lease'
+                self.log.debug("Removing file: %s", leaseFile)
+                self.oop.os.remove(leaseFile)
+            except OSError:
+                self.log.error("vol: %s can't be removed.",
+                               volPath, exc_info=True)
         self.log.debug("Removing directory: %s", toDelDir)
         try:
             self.oop.os.rmdir(toDelDir)
         except OSError as e:
             self.log.error("removed image dir: %s can't be removed", toDelDir)
             raise se.ImageDeleteError("%s %s" % (imgUUID, str(e)))
-
-    def _deleteVolumeFile(self, path):
-        self.log.debug("Removing file: %s", path)
-        try:
-            self.oop.os.remove(path)
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                self.log.warning("File %r does not exist: %s", path, e)
-            else:
-                self.log.error("File %r cannot be removed: %s", path, e)
 
     def zeroImage(self, sdUUID, imgUUID, volsImgs):
         self.log.warning("image %s on a fileSD %s won't be zeroed." %
