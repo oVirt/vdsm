@@ -27,9 +27,10 @@ from testlib import VdsmTestCase, expandPermutations, permutations
 class TestingJob(jobs.Job):
     _JOB_TYPE = 'testing'
 
-    def __init__(self):
+    def __init__(self, status=jobs.STATUS.PENDING):
         jobs.Job.__init__(self, str(uuid.uuid4()))
         self._aborted = False
+        self._status = status
 
     def _abort(self):
         self._aborted = True
@@ -163,8 +164,7 @@ class JobsTests(VdsmTestCase):
         [jobs.STATUS.FAILED]
     ])
     def test_delete_inactive_job(self, status):
-        job = TestingJob()
-        job._status = status
+        job = TestingJob(status)
         jobs.add(job)
         self.assertEqual(response.success(), jobs.delete(job.id))
 
@@ -173,8 +173,7 @@ class JobsTests(VdsmTestCase):
         [jobs.STATUS.RUNNING],
     ])
     def test_delete_active_job(self, status):
-        job = TestingJob()
-        job._status = status
+        job = TestingJob(status)
         jobs.add(job)
         self.assertEqual(response.error(jobs.JobNotDone.name),
                          jobs.delete(job.id))
