@@ -264,8 +264,8 @@ class RWLockTests(VdsmTestCase):
                                        "holding a write lock")
                 lock.acquireRead()
                 # I hold both a read lock and a write lock now
-            # I released the write lock. Having read lock, reader should get the
-            # lock.
+            # I released the write lock. Having read lock, reader should get
+            # the lock.
             self.assertTrue(reader.acquired.wait(0.5),
                             "Reader could not acuire the lock")
         finally:
