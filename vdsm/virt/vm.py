@@ -272,6 +272,7 @@ class Vm(object):
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
         self._destroyed = False
+        self._recoveryLock = threading.Lock()
         self._recoveryFile = constants.P_VDSM_RUN + \
             str(self.conf['vmId']) + '.recovery'
         self._monitorResponse = 0
@@ -813,16 +814,24 @@ class Vm(object):
         return base * (doubler + load) / doubler
 
     def saveState(self):
-        self._saveStateInternal()
+        with self._recoveryLock:
+            if self._recoveryFile is not None:
+                with tempfile.NamedTemporaryFile(dir=constants.P_VDSM_RUN,
+                                                 delete=False) as f:
+                    pickle.dump(self._getVmState(), f)
+
+                os.rename(f.name, self._recoveryFile)
+            else:
+                self.log.debug('saveState after cleanup for status=%s',
+                               self.lastStatus)
+
         try:
             self._updateDomainDescriptor()
         except Exception:
             # we do not care if _dom suddenly died now
             pass
 
-    def _saveStateInternal(self):
-        if self._destroyed:
-            return
+    def _getVmState(self):
         toSave = self.status()
         toSave['startTime'] = self._startTime
         if self.lastStatus != vmstatus.DOWN:
@@ -847,11 +856,7 @@ class Vm(object):
         toSave['_blockJobs'] = utils.picklecopy(
             self.conf.get('_blockJobs', {}))
 
-        with tempfile.NamedTemporaryFile(dir=constants.P_VDSM_RUN,
-                                         delete=False) as f:
-            pickle.dump(toSave, f)
-
-        os.rename(f.name, self._recoveryFile)
+        return toSave
 
     def onReboot(self):
         try:
@@ -1701,7 +1706,9 @@ class Vm(object):
             con.cleanup()
 
     def _cleanupRecoveryFile(self):
-        utils.rmFile(self._recoveryFile)
+        with self._recoveryLock:
+            utils.rmFile(self._recoveryFile)
+            self._recoveryFile = None
 
     def _cleanupStatsCache(self):
         try:
