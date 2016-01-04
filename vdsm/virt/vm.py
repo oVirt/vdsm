@@ -1684,13 +1684,16 @@ class Vm(object):
         self._cleanupDrives()
         self._cleanupFloppy()
         self._cleanupGuestAgent()
-        utils.rmFile(self._recoveryFile)
+        self._cleanupRecoveryFile()
         cleanup_guest_socket(self._qemuguestSocketFile)
         self._reattachHostDevices()
         self._cleanupStatsCache()
         numaUtils.invalidateNumaCache(self)
         for con in self._devices[hwclass.CONSOLE]:
             con.cleanup()
+
+    def _cleanupRecoveryFile(self):
+        utils.rmFile(self._recoveryFile)
 
     def _cleanupStatsCache(self):
         try:
