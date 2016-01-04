@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -417,8 +417,7 @@ def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
     if Architecture.is_x86(arch):
         arch = 'x86'
 
-    # Same goes for ppc64le
-    if arch == Architecture.PPC64LE:
+    if Architecture.is_ppc(arch):
         arch = 'ppc64'
 
     architectureElement = None
