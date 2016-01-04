@@ -3897,7 +3897,7 @@ class Vm(object):
             return response.error('destroyErr')
         return {'status': doneCode}
 
-    def deleteVm(self):
+    def _deleteVm(self):
         """
         Clean VM from the system
         """
@@ -3915,7 +3915,7 @@ class Vm(object):
         if response.is_error(result):
             return result
         # Clean VM from the system
-        self.deleteVm()
+        self._deleteVm()
 
         return response.success()
 
