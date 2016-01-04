@@ -3830,7 +3830,7 @@ class Vm(object):
 
         with self._releaseLock:
             if self._released:
-                return {'status': doneCode}
+                return response.success()
 
             # unsetting mirror network will clear both mirroring
             # (on the same network).
@@ -3848,7 +3848,7 @@ class Vm(object):
             self.guestAgent.stop()
             if self._dom.connected:
                 result = self._destroyVmGraceful()
-                if result['status']['code']:
+                if response.is_error(result):
                     return result
 
             # Wait for any Live Merge cleanup threads.  This will only block in
@@ -3869,7 +3869,7 @@ class Vm(object):
 
             self._released = True
 
-        return {'status': doneCode}
+        return response.success()
 
     def _destroyVmGraceful(self):
         try:
@@ -3912,12 +3912,12 @@ class Vm(object):
         self.log.debug('destroy Called')
 
         result = self.doDestroy()
-        if result['status']['code']:
+        if response.is_error(result):
             return result
         # Clean VM from the system
         self.deleteVm()
 
-        return {'status': doneCode}
+        return response.success()
 
     def doDestroy(self):
         for dev in self._customDevices():
