@@ -444,7 +444,7 @@ def tobool(s):
 
 
 symbolerror = {}
-for code, symbol in errno.errorcode.iteritems():
+for code, symbol in six.iteritems(errno.errorcode):
     symbolerror[os.strerror(code)] = symbol
 
 
