@@ -30,6 +30,12 @@ from vdsm.utils import NoIntrPoll
 # applied
 COOLDOWN_RECONNECT_THRESHOLD = 5
 
+DEVICE_NAME = 'com.redhat.rhevm.vdsm'
+# This device name is used as default both in the qemu-guest-agent
+# service/daemon and in libvirtd (to be used with the quiesce flag).
+QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
+AGENT_DEVICE_NAMES = (DEVICE_NAME, QEMU_GA_DEVICE_NAME)
+
 
 class Listener(threading.Thread):
     """

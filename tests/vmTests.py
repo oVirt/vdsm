@@ -32,6 +32,7 @@ import libvirt
 
 from virt import vm
 from virt.vm import HotunplugTimeout
+from virt import vmchannels
 from virt import vmdevices
 from virt import vmexitreason
 from virt.vmdevices import hwclass
@@ -988,7 +989,7 @@ class TestVm(XMLTestCase):
         with fake.VM(self.conf) as testvm:
             self.assertEqual(
                 testvm._guestSocketFile,
-                testvm._makeChannelPath(vm._VMCHANNEL_DEVICE_NAME))
+                testvm._makeChannelPath(vmchannels.DEVICE_NAME))
 
     def test_spice_restore_set_passwd(self):
         # stolen from VDSM logs

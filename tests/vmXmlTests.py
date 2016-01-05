@@ -21,7 +21,7 @@
 from vdsm import cpuarch
 
 from virt import domain_descriptor
-from virt import vm
+from virt import vmchannels
 from virt import vmxml
 
 from testlib import VdsmTestCase as TestCaseBase
@@ -54,7 +54,7 @@ class TestVmXmlFunctions(VmXmlTestCase):
     def test_has_channel(self, arch):
         for _, dom_xml in self._build_domain_xml(arch):
             self.assertEqual(True, vmxml.has_channel(
-                dom_xml, vm._VMCHANNEL_DEVICE_NAME))
+                dom_xml, vmchannels.DEVICE_NAME))
 
 
 @expandPermutations
@@ -65,12 +65,13 @@ class TestDomainDescriptor(VmXmlTestCase):
         for _, dom_xml in self._build_domain_xml(arch):
             dom = domain_descriptor.DomainDescriptor(dom_xml)
             channels = list(dom.all_channels())
-            self.assertTrue(len(channels) >= len(vm._AGENT_CHANNEL_DEVICES))
+            self.assertTrue(len(channels) >=
+                            len(vmchannels.AGENT_DEVICE_NAMES))
             for name, path in channels:
-                self.assertIn(name, vm._AGENT_CHANNEL_DEVICES)
+                self.assertIn(name, vmchannels.AGENT_DEVICE_NAMES)
 
     def test_all_channels_extra_domain(self):
         for conf, raw_xml in CONF_TO_DOMXML_NO_VDSM:
             dom = domain_descriptor.DomainDescriptor(raw_xml % conf)
             self.assertNotEquals(sorted(dom.all_channels()),
-                                 sorted(vm._AGENT_CHANNEL_DEVICES))
+                                 sorted(vmchannels.AGENT_DEVICE_NAMES))

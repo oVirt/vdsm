@@ -68,6 +68,7 @@ from . import guestagent
 from . import migration
 from . import sampling
 from . import virdomain
+from . import vmchannels
 from . import vmdevices
 from . import vmexitreason
 from . import vmstats
@@ -82,12 +83,6 @@ from .vmxml import METADATA_VM_TUNE_PREFIX
 
 from .utils import isVdsmImage, cleanup_guest_socket
 from vmpowerdown import VmShutdown, VmReboot
-
-_VMCHANNEL_DEVICE_NAME = 'com.redhat.rhevm.vdsm'
-# This device name is used as default both in the qemu-guest-agent
-# service/daemon and in libvirtd (to be used with the quiesce flag).
-_QEMU_GA_DEVICE_NAME = 'org.qemu.guest_agent.0'
-_AGENT_CHANNEL_DEVICES = (_VMCHANNEL_DEVICE_NAME, _QEMU_GA_DEVICE_NAME)
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
 
@@ -118,7 +113,7 @@ def getVDSMDomains():
     Return a list of Domains created by VDSM.
     """
     return [vm for vm, xmlDom in _listDomains()
-            if vmxml.has_channel(xmlDom, _VMCHANNEL_DEVICE_NAME)]
+            if vmxml.has_channel(xmlDom, vmchannels.DEVICE_NAME)]
 
 
 def _filterSnappableDiskDevices(diskDeviceXmlElements):
@@ -311,8 +306,9 @@ class Vm(object):
         self._connection = libvirtconnection.get(cif)
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
-        self._guestSocketFile = self._makeChannelPath(_VMCHANNEL_DEVICE_NAME)
-        self._qemuguestSocketFile = self._makeChannelPath(_QEMU_GA_DEVICE_NAME)
+        self._guestSocketFile = self._makeChannelPath(vmchannels.DEVICE_NAME)
+        self._qemuguestSocketFile = self._makeChannelPath(
+            vmchannels.QEMU_GA_DEVICE_NAME)
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange)
@@ -1667,9 +1663,9 @@ class Vm(object):
         domxml.appendNumaTune()
 
         domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
-                                  _VMCHANNEL_DEVICE_NAME)
+                                  vmchannels.DEVICE_NAME)
         domxml._appendAgentDevice(self._qemuguestSocketFile.decode('utf-8'),
-                                  _QEMU_GA_DEVICE_NAME)
+                                  vmchannels.QEMU_GA_DEVICE_NAME)
         domxml.appendInput()
 
         if self.arch == cpuarch.PPC64:
@@ -1757,7 +1753,7 @@ class Vm(object):
         the upgrade of VDSM with running VMs to fail on this.
         """
         for name, path in self._domain.all_channels():
-            if name not in _AGENT_CHANNEL_DEVICES:
+            if name not in vmchannels.AGENT_DEVICE_NAMES:
                 continue
 
             uuidPath = self._makeChannelPath(name)
