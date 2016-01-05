@@ -33,6 +33,7 @@ init/vdsmd_init_common.sh
 lib/api/vdsm-api.html
 lib/vdsm/config.py
 lib/vdsm/constants.py
+lib/vdsm/dsaversion.py
 lib/vdsm/tool/validate_ovirt_certs.py
 lib/vdsm/vdscli.py
 lib/vdsm/vdsm.conf.sample
@@ -50,7 +51,6 @@ tests/other.csr
 tests/other.key
 vdsm-*.tar.gz
 vdsm.spec
-vdsm/dsaversion.py
 vdsm/dumpStorageTable.py
 vdsm/logger.conf
 vdsm/mk_sysprep_floppy

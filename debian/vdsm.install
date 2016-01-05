@@ -39,7 +39,6 @@
 ./usr/share/vdsm/caps.py
 ./usr/share/vdsm/clientIF.py
 ./usr/share/vdsm/daemonAdapter
-./usr/share/vdsm/dsaversion.py
 ./usr/share/vdsm/dumpStorageTable.py
 ./usr/share/vdsm/get-conf-item
 ./usr/share/vdsm/gluster/__init__.py

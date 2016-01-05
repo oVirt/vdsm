@@ -6,6 +6,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/concurrent.py
 ./usr/lib/python2.7/dist-packages/vdsm/config.py
 ./usr/lib/python2.7/dist-packages/vdsm/constants.py
+./usr/lib/python2.7/dist-packages/vdsm/dsaversion.py
 ./usr/lib/python2.7/dist-packages/vdsm/define.py
 ./usr/lib/python2.7/dist-packages/vdsm/dmidecodeUtil.py
 ./usr/lib/python2.7/dist-packages/vdsm/exception.py

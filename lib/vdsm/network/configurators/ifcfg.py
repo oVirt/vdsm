@@ -1,4 +1,4 @@
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@ from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 from vdsm.config import config
 from vdsm import cmdutils
 from vdsm import constants
+from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import ipwrapper
 from vdsm.netinfo import (bonding as netinfo_bonding, mtus, nics, vlans,
@@ -54,7 +55,6 @@ from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge, IPv4, IPv6
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 from ..utils import remove_custom_bond_option
-import dsaversion  # TODO: Make parent package import when vdsm is a package
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
 NET_CONF_BACK_DIR = constants.P_VDSM_LIB + 'netconfback/'

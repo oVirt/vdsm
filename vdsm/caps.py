@@ -34,9 +34,9 @@ from distutils.version import LooseVersion
 import libvirt
 
 from vdsm.config import config
+from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import libvirtconnection
-import dsaversion
 from vdsm import netinfo
 from vdsm import utils
 import storage.hba

@@ -60,6 +60,7 @@ dist_vdsmpylib_PYTHON = \
 nodist_vdsmpylib_PYTHON = \
 	config.py \
 	constants.py \
+	dsaversion.py \
 	$(NULL)
 
 nodist_noinst_DATA= \
@@ -75,6 +76,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	config.py.in \
 	constants.py.in \
+	dsaversion.py.in \
 	vdsm.conf.sample \
 	$(NULL)
 

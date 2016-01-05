@@ -49,7 +49,6 @@ nodist_vdsmexec_SCRIPTS = \
 	$(NULL)
 
 nodist_vdsm_PYTHON = \
-	dsaversion.py \
 	dumpStorageTable.py
 
 nodist_vdsm_SCRIPTS = \
@@ -87,7 +86,6 @@ CLEANFILES = \
 EXTRA_DIST = \
 	bonding-defaults.json \
 	bonding-name2numeric.json \
-	dsaversion.py.in \
 	dumpStorageTable.py.in \
 	libvirt_password \
 	limits.conf \

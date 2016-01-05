@@ -31,6 +31,7 @@ from logging import config as lconfig
 import warnings
 
 from vdsm import constants
+from vdsm import dsaversion
 from vdsm import schedule
 from vdsm import utils
 from vdsm.config import config
@@ -45,7 +46,6 @@ from storage.hsm import HSM
 from vdsm.infra import sigutils
 import vdsm.infra.zombiereaper as zombiereaper
 from virt import periodic
-import dsaversion
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 
