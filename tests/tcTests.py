@@ -209,7 +209,7 @@ class TestQdisc(TestCaseBase):
                          ethtool.IFF_PROMISC,
                          "Could not disable promiscuous mode.")
 
-    def testException(self):
+    def testTcException(self):
         self.assertRaises(tc.TrafficControlException, tc.qdisc_del,
                           self._bridge.devName + "A", 'ingress')
 

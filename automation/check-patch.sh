@@ -6,7 +6,19 @@ set -xe
 #export NOSE_WITH_XUNIT=1
 
 export NOSE_SKIP_STRESS_TESTS=1
-export NOSE_EXCLUDE=
+export NOSE_EXCLUDE="\
+test_discarded_workers|\
+testBridgeEthtoolDrvinfo|\
+testGetLink|\
+testMethodMissingMethod|\
+testMirroring|\
+testMonitorIteration|\
+testTcException|\
+testToggleIngress|\
+testTogglePromisc|\
+testQdiscsOfDevice|\
+testReplacePrio\
+"
 
 # really ugly and hopefully temporary fix
 # https://bugzilla.redhat.com/show_bug.cgi?id=1255142
