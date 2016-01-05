@@ -21,6 +21,8 @@
 import logging
 import os
 import os.path
+import tempfile
+import threading
 import time
 
 import libvirt
@@ -31,7 +33,9 @@ from vdsm import libvirtconnection
 from vdsm import response
 from vdsm import utils
 
+from .utils import isVdsmImage
 from . import vmchannels
+from . import vmstatus
 from . import vmxml
 
 
@@ -56,6 +60,70 @@ def _get_vdsm_domains():
     """
     return [dom_obj for dom_obj, dom_xml in _list_domains()
             if vmxml.has_channel(dom_xml, vmchannels.DEVICE_NAME)]
+
+
+class File(object):
+    """
+    "pickle" for vm state.
+    """
+
+    _log = logging.getLogger("virt.recovery.file")
+
+    def __init__(self, vmid):
+        self._path = os.path.join(
+            constants.P_VDSM_RUN,
+            '%s.recovery' % vmid
+        )
+        self._lock = threading.Lock()
+
+    def cleanup(self):
+        with self._lock:
+            utils.rmFile(self._path)
+            self._path = None
+
+    def save(self, vm):
+        data = self._collect(vm)
+        with self._lock:
+            if self._path is None:
+                self.log.debug('save after cleanup')
+            else:
+                self._dump(data)
+
+    def _dump(self, data):
+        with tempfile.NamedTemporaryFile(
+            dir=constants.P_VDSM_RUN,
+            delete=False
+        ) as f:
+            pickle.dump(data, f)
+
+        os.rename(f.name, self._path)
+
+    def _collect(self, vm):
+        data = vm.status()
+        data['startTime'] = vm.start_time
+        if vm.lastStatus != vmstatus.DOWN:
+            guestInfo = vm.guestAgent.getGuestInfo()
+            data['username'] = guestInfo['username']
+            data['guestIPs'] = guestInfo['guestIPs']
+            data['guestFQDN'] = guestInfo['guestFQDN']
+        else:
+            data['username'] = ""
+            data['guestIPs'] = ""
+            data['guestFQDN'] = ""
+        if 'sysprepInf' in data:
+            del data['sysprepInf']
+            if 'floppy' in data:
+                del data['floppy']
+        for drive in data.get('drives', []):
+            for d in vm.getDiskDevices():
+                if isVdsmImage(d) and drive.get('volumeID') == d.volumeID:
+                    drive['truesize'] = str(d.truesize)
+                    drive['apparentsize'] = str(d.apparentsize)
+
+        data['_blockJobs'] = utils.picklecopy(
+            vm.conf.get('_blockJobs', {}))
+
+        return data
 
 
 def all_vms(cif):

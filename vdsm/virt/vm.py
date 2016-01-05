@@ -66,6 +66,7 @@ import numaUtils
 from .domain_descriptor import DomainDescriptor
 from . import guestagent
 from . import migration
+from . import recovery
 from . import sampling
 from . import virdomain
 from . import vmchannels
@@ -244,9 +245,7 @@ class Vm(object):
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
         self._destroyed = False
-        self._recoveryLock = threading.Lock()
-        self._recoveryFile = constants.P_VDSM_RUN + \
-            str(self.conf['vmId']) + '.recovery'
+        self._recovery_file = recovery.File(self.conf['vmId'])
         self._monitorResponse = 0
         self.memCommitted = 0
         self._consoleDisconnectAction = ConsoleDisconnectAction.LOCK_SCREEN
@@ -304,6 +303,10 @@ class Vm(object):
         self._numaInfo = {}
         self._vmJobs = None
         self._clientPort = ''
+
+    @property
+    def start_time(self):
+        return self._startTime
 
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
@@ -787,50 +790,13 @@ class Vm(object):
         return base * (doubler + load) / doubler
 
     def saveState(self):
-        with self._recoveryLock:
-            if self._recoveryFile is not None:
-                with tempfile.NamedTemporaryFile(dir=constants.P_VDSM_RUN,
-                                                 delete=False) as f:
-                    pickle.dump(self._getVmState(), f)
-
-                os.rename(f.name, self._recoveryFile)
-            else:
-                self.log.debug(
-                    'saveState after cleanup for status=%s destroyed=%s',
-                    self.lastStatus, self._destroyed)
+        self._recovery_file.save(self)
 
         try:
             self._updateDomainDescriptor()
         except Exception:
             # we do not care if _dom suddenly died now
             pass
-
-    def _getVmState(self):
-        toSave = self.status()
-        toSave['startTime'] = self._startTime
-        if self.lastStatus != vmstatus.DOWN:
-            guestInfo = self.guestAgent.getGuestInfo()
-            toSave['username'] = guestInfo['username']
-            toSave['guestIPs'] = guestInfo['guestIPs']
-            toSave['guestFQDN'] = guestInfo['guestFQDN']
-        else:
-            toSave['username'] = ""
-            toSave['guestIPs'] = ""
-            toSave['guestFQDN'] = ""
-        if 'sysprepInf' in toSave:
-            del toSave['sysprepInf']
-            if 'floppy' in toSave:
-                del toSave['floppy']
-        for drive in toSave.get('drives', []):
-            for d in self._devices[hwclass.DISK]:
-                if isVdsmImage(d) and drive.get('volumeID') == d.volumeID:
-                    drive['truesize'] = str(d.truesize)
-                    drive['apparentsize'] = str(d.apparentsize)
-
-        toSave['_blockJobs'] = utils.picklecopy(
-            self.conf.get('_blockJobs', {}))
-
-        return toSave
 
     def onReboot(self):
         try:
@@ -1679,9 +1645,7 @@ class Vm(object):
             con.cleanup()
 
     def _cleanupRecoveryFile(self):
-        with self._recoveryLock:
-            utils.rmFile(self._recoveryFile)
-            self._recoveryFile = None
+        self._recovery_file.cleanup()
 
     def _cleanupStatsCache(self):
         try:
