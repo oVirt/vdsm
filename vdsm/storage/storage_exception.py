@@ -27,7 +27,7 @@
 #######################################################
 #
 # IMPORTANT NOTE: DO NOT USE CODES GREATER THAN 5000
-# AS THEY ARE ASSIGNED TO RHEVM !!!!!!!!!!!!!!!!!!!!!
+# AS THEY ARE ASSIGNED TO THE OVIRT ENGINE !!!!!!!!!
 #
 #######################################################
 
