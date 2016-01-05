@@ -201,7 +201,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         """
         return fileVolume.FileVolumeMetadata
 
-    def _getDeletedImagePath(self, imgUUID):
+    def getDeletedImagePath(self, imgUUID):
         currImgDir = self.getImagePath(imgUUID)
         dirName, baseName = os.path.split(currImgDir)
         toDelDir = os.path.join(dirName, sd.REMOVED_IMAGE_PREFIX + baseName)
@@ -209,7 +209,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
 
     def deleteImage(self, sdUUID, imgUUID, volsImgs):
         currImgDir = self.getImagePath(imgUUID)
-        toDelDir = self._getDeletedImagePath(imgUUID)
+        toDelDir = self.getDeletedImagePath(imgUUID)
         self.log.debug("Renaming dir %s to %s", currImgDir, toDelDir)
         try:
             self.oop.os.rename(currImgDir, toDelDir)
@@ -219,7 +219,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
 
     def purgeImage(self, sdUUID, imgUUID, volsImgs):
         self.log.debug("Purging image %s", imgUUID)
-        toDelDir = self._getDeletedImagePath(imgUUID)
+        toDelDir = self.getDeletedImagePath(imgUUID)
         for volUUID in volsImgs:
             volPath = os.path.join(toDelDir, volUUID)
             self._deleteVolumeFile(volPath)
