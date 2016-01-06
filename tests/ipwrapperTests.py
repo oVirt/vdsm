@@ -22,6 +22,7 @@ from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
+from vdsm.netlink import monitor
 
 from nettestlib import Bridge, requires_brctl
 from testlib import VdsmTestCase as TestCaseBase
@@ -125,9 +126,14 @@ class TestDrvinfo(TestCaseBase):
                          ipwrapper.LinkType.BRIDGE)
 
     def testEnablePromisc(self):
-        ipwrapper.getLink(self._bridge.devName).promisc = True
-        self.assertTrue(ipwrapper.getLink(self._bridge.devName).promisc,
-                        "Could not enable promiscuous mode.")
+        link = ipwrapper.getLink(self._bridge.devName)
+        with monitor.Monitor(timeout=2, silent_timeout=True) as mon:
+            link.promisc = True
+            for event in mon:
+                if (event['event'] == 'new_link' and
+                        event.get('flags', 0) & ipwrapper.Link.IFF_PROMISC):
+                    return
+        self.fail("Could not enable promiscuous mode.")
 
     def testDisablePromisc(self):
         ipwrapper.getLink(self._bridge.devName).promisc = True
