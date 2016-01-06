@@ -18,6 +18,11 @@
 #
 
 
+import errno
+import os
+
+from nose.plugins.skip import SkipTest
+
 from vdsm.tool.dump_bonding_opts \
     import _get_bonding_options_name2numeric
 from testlib import VdsmTestCase as TestCaseBase
@@ -34,7 +39,14 @@ class TestToolBonding(TestCaseBase):
         VAL_NAME = 'none'
         VAL_NUMERIC = '0'
 
-        opt_map = _get_bonding_options_name2numeric()
+        try:
+            opt_map = _get_bonding_options_name2numeric()
+        except IOError as e:
+            if e.errno == errno.EBUSY:
+                raise SkipTest('Bond option mapping failed on EBUSY, '
+                               'Kernel version: %s' % os.uname()[2])
+            raise
+
         self.assertIn(BOND_MODE, opt_map)
         self.assertIn(OPT_NAME, opt_map[BOND_MODE])
         self.assertIn(VAL_NAME, opt_map[BOND_MODE][OPT_NAME])
