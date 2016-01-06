@@ -17,11 +17,11 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import platform
 import os
 import logging
 from .commands import execCmd
 from . import constants
+from . import cpuarch
 
 __hostUUID = None
 
@@ -42,8 +42,8 @@ def uuid(legacy=False):
             with open(constants.P_VDSM_NODE_ID) as f:
                 __hostUUID = f.readline().replace("\n", "")
         else:
-            arch = platform.machine()
-            if arch in ('x86_64', 'i686'):
+            arch = cpuarch.real()
+            if cpuarch.is_x86(arch):
                 ret, out, err = execCmd([constants.EXT_DMIDECODE,
                                          "-s",
                                          "system-uuid"],
@@ -57,7 +57,7 @@ def uuid(legacy=False):
                     __hostUUID = out.strip()
                 else:
                     logging.warning('Could not find host UUID.')
-            elif arch in ('ppc', 'ppc64', 'ppc64le'):
+            elif cpuarch.is_ppc(arch):
                 # eg. output IBM,03061C14A
                 try:
                     with open('/proc/device-tree/system-id') as f:
