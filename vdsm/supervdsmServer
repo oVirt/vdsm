@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from pwd import getpwnam
-import platform
 import sys
 import os
 import stat
@@ -157,10 +156,11 @@ class _SuperVdsm(object):
 
     @logDecorator
     def getHardwareInfo(self, *args, **kwargs):
-        if platform.machine() in ('x86_64', 'i686'):
+        arch = cpuarch.real()
+        if cpuarch.is_x86(arch):
             from vdsm.dmidecodeUtil import getHardwareInfoStructure
             return getHardwareInfoStructure()
-        elif cpuarch.is_ppc(platform.machine()):
+        elif cpuarch.is_ppc(arch):
             from vdsm.ppc64HardwareInfo import getHardwareInfoStructure
             return getHardwareInfoStructure()
         else:
