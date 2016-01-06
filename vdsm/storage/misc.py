@@ -46,6 +46,7 @@ import types
 import weakref
 import inspect
 
+from vdsm import commands
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import utils
@@ -157,11 +158,11 @@ execCmdLogger = enableLogSkip(logging.getLogger('Storage.Misc.excCmd'),
                               logSkipName="Storage.Misc.excCmd")
 
 
-execCmd = partial(logskip("Storage.Misc.excCmd")(utils.execCmd),
+execCmd = partial(logskip("Storage.Misc.excCmd")(commands.execCmd),
                   execCmdLogger=execCmdLogger)
 
 
-watchCmd = partial(utils.watchCmd, execCmdLogger=execCmdLogger)
+watchCmd = partial(commands.watchCmd, execCmdLogger=execCmdLogger)
 
 
 def pidExists(pid):

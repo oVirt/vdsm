@@ -22,7 +22,7 @@ from __future__ import absolute_import
 
 from . import cmdutils
 from . import constants
-from . import utils
+from . import commands
 
 
 AUTOMATIC = "auto"
@@ -42,7 +42,7 @@ def get(pid):
     """
     command = [constants.EXT_TASKSET, '--pid', str(pid)]
 
-    rc, out, err = utils.execCmd(command, resetCpuAffinity=False)
+    rc, out, err = commands.execCmd(command, resetCpuAffinity=False)
 
     if rc != 0:
         raise cmdutils.Error(command, rc, out, err)
@@ -70,7 +70,7 @@ def set(pid, cpu_set, all_tasks=False):
                    str(pid)
                    ))
 
-    rc, out, err = utils.execCmd(command, resetCpuAffinity=False)
+    rc, out, err = commands.execCmd(command, resetCpuAffinity=False)
 
     if rc != 0:
         raise cmdutils.Error(command, rc, out, err)

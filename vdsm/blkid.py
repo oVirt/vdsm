@@ -19,7 +19,7 @@
 #
 
 from vdsm import constants
-from vdsm import utils
+from vdsm import commands
 
 
 class BlockIdException(Exception):
@@ -43,7 +43,7 @@ class BlockIdException(Exception):
 
 
 def getDeviceByUuid(uuid):
-    rc, out, err = utils.execCmd([constants.EXT_BLKID, '-U', uuid])
+    rc, out, err = commands.execCmd([constants.EXT_BLKID, '-U', uuid])
     if rc:
         raise BlockIdException(rc, uuid)
     return out[0]

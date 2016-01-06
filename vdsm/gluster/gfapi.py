@@ -208,7 +208,7 @@ import json
 import argparse
 
 from vdsm import constants
-from vdsm import utils
+from vdsm import commands
 
 
 @gluster_mgmt_api
@@ -226,7 +226,7 @@ def volumeStatvfs(volumeName, host=GLUSTER_VOL_HOST,
     env['PYTHONPATH'] = ":".join(map(os.path.abspath,
                                      env['PYTHONPATH'].split(":")))
 
-    rc, out, err = utils.execCmd(command, raw=True, env=env)
+    rc, out, err = commands.execCmd(command, raw=True, env=env)
     if rc != 0:
         raise ge.GlfsStatvfsException(rc, [out], [err])
     res = json.loads(out)
@@ -257,7 +257,7 @@ def volumeEmptyCheck(volumeName, host=GLUSTER_VOL_HOST,
     env['PYTHONPATH'] = ":".join(map(os.path.abspath,
                                      env['PYTHONPATH'].split(":")))
 
-    rc, out, err = utils.execCmd(command, raw=True, env=env)
+    rc, out, err = commands.execCmd(command, raw=True, env=env)
     if rc != 0:
         raise ge.GlusterVolumeEmptyCheckFailedException(rc, [out], [err])
     return out.upper() == "TRUE"

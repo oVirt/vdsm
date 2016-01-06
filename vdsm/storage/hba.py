@@ -27,7 +27,7 @@ import os
 
 from vdsm import constants
 from vdsm import supervdsm
-from vdsm import utils
+from vdsm import commands
 from vdsm.config import config
 from vdsm.infra import zombiereaper
 
@@ -68,8 +68,8 @@ def _rescan():
     """
     timeout = config.getint('irs', 'scsi_rescan_maximal_timeout')
 
-    proc = utils.execCmd([constants.EXT_FC_SCAN], sync=False,
-                         execCmdLogger=log)
+    proc = commands.execCmd([constants.EXT_FC_SCAN], sync=False,
+                            execCmdLogger=log)
     try:
         proc.wait(timeout)
     finally:

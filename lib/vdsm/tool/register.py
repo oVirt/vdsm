@@ -31,7 +31,8 @@ import selinux
 from . import expose
 from .. import utils
 
-from vdsm.utils import getHostUUID, tobool
+from vdsm import host
+from vdsm.utils import tobool
 
 
 class Register(object):
@@ -256,7 +257,7 @@ class Register(object):
         if self.vdsm_uuid:
             self.uuid = self.vdsm_uuid
         else:
-            self.uuid = getHostUUID(legacy=False)
+            self.uuid = host.uuid(legacy=False)
 
         self.url_reg += "&uniqueId={u}".format(u=self.uuid)
 

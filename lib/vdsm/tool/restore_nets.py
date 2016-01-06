@@ -21,7 +21,7 @@ from __future__ import absolute_import
 import os
 import sys
 
-from .. import utils
+from .. import commands
 from . import expose, ExtraArgsError
 from ..constants import P_VDSM
 
@@ -47,7 +47,7 @@ def restore():
 
 
 def exec_restore(cmd):
-    rc, out, err = utils.execCmd(cmd, raw=True)
+    rc, out, err = commands.execCmd(cmd, raw=True)
     sys.stdout.write(out)
     sys.stderr.write(err)
     if rc != 0:

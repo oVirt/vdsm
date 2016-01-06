@@ -5,7 +5,7 @@ from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import make_config
 from testlib import expandPermutations, permutations
-
+from vdsm import commands
 from vdsm import utils
 from vdsm.password import ProtectedPassword
 
@@ -15,7 +15,7 @@ from storage import iscsiadm
 
 def fake_rescan(timeout):
     def func():
-        proc = utils.execCmd(["sleep", str(timeout)], sync=False)
+        proc = commands.execCmd(["sleep", str(timeout)], sync=False)
         return utils.AsyncProcessOperation(proc)
     return func
 

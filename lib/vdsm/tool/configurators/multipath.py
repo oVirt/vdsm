@@ -27,6 +27,7 @@ import time
 
 from . import YES, NO
 from .. import service
+from ... import commands
 from ... import utils
 from ... import constants
 
@@ -135,7 +136,7 @@ def configure():
     utils.persist(_CONF_FILE)
 
     # Flush all unused multipath device maps
-    utils.execCmd([constants.EXT_MULTIPATH, "-F"])
+    commands.execCmd([constants.EXT_MULTIPATH, "-F"])
 
     try:
         service.service_reload("multipathd")

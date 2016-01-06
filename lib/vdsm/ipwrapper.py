@@ -34,7 +34,7 @@ from netaddr import IPNetwork
 from .config import config
 from .utils import anyFnmatch
 from .utils import CommandPath
-from .utils import execCmd
+from .commands import execCmd
 from .netlink import link
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')

@@ -37,7 +37,8 @@ from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import brokentest, checkSudo, ValidateRunningAsRoot
 
 from vdsm import udevadm
-from vdsm.utils import execCmd, stopwatch
+from vdsm.commands import execCmd
+from vdsm.utils import stopwatch
 import storage
 import mkimage
 

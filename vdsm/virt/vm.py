@@ -38,6 +38,7 @@ import libvirt
 # vdsm imports
 from vdsm import concurrent
 from vdsm import constants
+from vdsm import host
 from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import netinfo
@@ -1647,7 +1648,7 @@ class Vm(object):
             osd = caps.osversion()
 
             osVersion = osd.get('version', '') + '-' + osd.get('release', '')
-            serialNumber = self.conf.get('serial', utils.getHostUUID())
+            serialNumber = self.conf.get('serial', host.uuid())
 
             domxml.appendSysinfo(
                 osname=constants.SMBIOS_OSNAME,

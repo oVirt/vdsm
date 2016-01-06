@@ -29,7 +29,7 @@ import os.path
 import sys
 import tempfile
 
-from . import utils
+from . import commands
 from .constants import P_VDSM_HOOKS, P_VDSM
 
 
@@ -96,8 +96,8 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
 
         errorSeen = False
         for s in scripts:
-            rc, out, err = utils.execCmd([s], raw=True,
-                                         env=scriptenv)
+            rc, out, err = commands.execCmd([s], raw=True,
+                                            env=scriptenv)
             logging.info(err)
             if rc != 0:
                 errorSeen = True

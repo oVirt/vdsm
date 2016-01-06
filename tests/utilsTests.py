@@ -41,6 +41,7 @@ from vdsm import constants
 from vdsm import taskset
 from vdsm import utils
 from vdsm import cmdutils
+from vdsm import commands
 from vdsm import panic
 
 from monkeypatch import MonkeyPatch
@@ -171,7 +172,7 @@ class PidStatTests(TestCaseBase):
     @MonkeyPatch(cmdutils, "_USING_CPU_AFFINITY", False)
     def test_without_affinity(self):
         args = ["sleep", "3"]
-        sproc = utils.execCmd(args, sync=False)
+        sproc = commands.execCmd(args, sync=False)
         stats = utils.pidStat(sproc.pid)
         pid = int(stats.pid)
         # procName comes in the format of (procname)
@@ -186,7 +187,7 @@ class PgrepTests(TestCaseBase):
     def test(self):
         sleepProcs = []
         for i in range(3):
-            sleepProcs.append(utils.execCmd([EXT_SLEEP, "3"], sync=False,
+            sleepProcs.append(commands.execCmd([EXT_SLEEP, "3"], sync=False,
                               sudo=False))
 
         pids = utils.pgrep(EXT_SLEEP)
@@ -202,7 +203,7 @@ class PgrepTests(TestCaseBase):
 class GetCmdArgsTests(TestCaseBase):
     def test(self):
         args = [EXT_SLEEP, "4"]
-        sproc = utils.execCmd(args, sync=False)
+        sproc = commands.execCmd(args, sync=False)
         try:
             cmd_args = utils.getCmdArgs(sproc.pid)
             # let's ignore optional taskset at the beginning
@@ -214,7 +215,7 @@ class GetCmdArgsTests(TestCaseBase):
 
     def testZombie(self):
         args = [EXT_SLEEP, "0"]
-        sproc = utils.execCmd(args, sync=False)
+        sproc = commands.execCmd(args, sync=False)
         sproc.kill()
         try:
             test = lambda: self.assertEquals(utils.getCmdArgs(sproc.pid),
@@ -233,7 +234,7 @@ class CommandPathTests(TestCaseBase):
         """Tests if CommandPath can find the executable like the 'which' unix
         tool"""
         cp = utils.CommandPath('sh', 'utter nonsense')
-        _, stdout, _ = utils.execCmd(['which', 'sh'])
+        _, stdout, _ = commands.execCmd(['which', 'sh'])
         self.assertIn(cp.cmd, stdout)
 
     def testMissing(self):
@@ -289,7 +290,7 @@ class GeneralUtilsTests(TestCaseBase):
 
 class AsyncProcessOperationTests(TestCaseBase):
     def _echo(self, text):
-        proc = utils.execCmd(["echo", "-n", "test"], sync=False)
+        proc = commands.execCmd(["echo", "-n", "test"], sync=False)
 
         def parse(rc, out, err):
             return out
@@ -297,11 +298,11 @@ class AsyncProcessOperationTests(TestCaseBase):
         return utils.AsyncProcessOperation(proc, parse)
 
     def _sleep(self, t):
-        proc = utils.execCmd(["sleep", str(t)], sync=False)
+        proc = commands.execCmd(["sleep", str(t)], sync=False)
         return utils.AsyncProcessOperation(proc)
 
     def _fail(self, t):
-        proc = utils.execCmd(["sleep", str(t)], sync=False)
+        proc = commands.execCmd(["sleep", str(t)], sync=False)
 
         def parse(rc, out, err):
             raise Exception("TEST!!!")
@@ -567,20 +568,20 @@ class ExecCmdTest(TestCaseBase):
 
     @permutations(CMD_TYPES)
     def testNormal(self, cmd):
-        rc, out, _ = utils.execCmd(cmd(('echo', 'hello world')))
+        rc, out, _ = commands.execCmd(cmd(('echo', 'hello world')))
         self.assertEquals(rc, 0)
         self.assertEquals(out[0], 'hello world')
 
     @permutations(CMD_TYPES)
     def testIoClass(self, cmd):
-        rc, out, _ = utils.execCmd(cmd(('ionice',)), ioclass=2,
-                                   ioclassdata=3)
+        rc, out, _ = commands.execCmd(cmd(('ionice',)), ioclass=2,
+                                      ioclassdata=3)
         self.assertEquals(rc, 0)
         self.assertEquals(out[0].strip(), 'best-effort: prio 3')
 
     @permutations(CMD_TYPES)
     def testNice(self, cmd):
-        rc, out, _ = utils.execCmd(cmd(('cat', '/proc/self/stat')), nice=7)
+        rc, out, _ = commands.execCmd(cmd(('cat', '/proc/self/stat')), nice=7)
         self.assertEquals(rc, 0)
         self.assertEquals(int(out[0].split()[18]), 7)
 
@@ -588,14 +589,15 @@ class ExecCmdTest(TestCaseBase):
     def testSetSid(self, cmd):
         cmd_args = (constants.EXT_PYTHON, '-c',
                     'import os; print os.getsid(os.getpid())')
-        rc, out, _ = utils.execCmd(cmd(cmd_args), setsid=True)
+        rc, out, _ = commands.execCmd(cmd(cmd_args), setsid=True)
         self.assertNotEquals(int(out[0]), os.getsid(os.getpid()))
 
     @permutations(CMD_TYPES)
     def testSudo(self, cmd):
         checkSudo(['echo'])
-        rc, out, _ = utils.execCmd(cmd(('grep', 'Uid', '/proc/self/status')),
-                                   sudo=True)
+        rc, out, _ = commands.execCmd(cmd(('grep',
+                                      'Uid', '/proc/self/status')),
+                                      sudo=True)
         self.assertEquals(rc, 0)
         self.assertEquals(int(out[0].split()[2]), 0)
 
@@ -608,7 +610,7 @@ class ExecCmdAffinityTests(TestCaseBase):
     @MonkeyPatch(cmdutils, '_USING_CPU_AFFINITY', False)
     def testResetAffinityByDefault(self):
         try:
-            proc = utils.execCmd((EXT_SLEEP, '30s'), sync=False)
+            proc = commands.execCmd((EXT_SLEEP, '30s'), sync=False)
 
             self.assertEquals(taskset.get(proc.pid),
                               taskset.get(os.getpid()))
@@ -622,7 +624,7 @@ class ExecCmdAffinityTests(TestCaseBase):
         self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
 
         try:
-            proc = utils.execCmd((EXT_SLEEP, '30s'), sync=False)
+            proc = commands.execCmd((EXT_SLEEP, '30s'), sync=False)
 
             self.assertEquals(taskset.get(proc.pid), online_cpus())
         finally:
@@ -635,9 +637,9 @@ class ExecCmdAffinityTests(TestCaseBase):
         self.assertEquals(taskset.get(os.getpid()), self.CPU_SET)
 
         try:
-            proc = utils.execCmd((EXT_SLEEP, '30s'),
-                                 sync=False,
-                                 resetCpuAffinity=False)
+            proc = commands.execCmd((EXT_SLEEP, '30s'),
+                                    sync=False,
+                                    resetCpuAffinity=False)
 
             self.assertEquals(taskset.get(proc.pid), self.CPU_SET)
         finally:
@@ -712,7 +714,7 @@ class ExecCmdStressTest(TestCaseBase):
     def run_dd(self, args):
         cmd = [constants.EXT_DD]
         cmd.extend(args)
-        rc, out, err = utils.execCmd(cmd, raw=True, data=self.data)
+        rc, out, err = commands.execCmd(cmd, raw=True, data=self.data)
         if rc != 0:
             raise self.failureException("Process failed: rc=%d err=%r" %
                                         (rc, err))

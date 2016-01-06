@@ -52,6 +52,7 @@ from testlib import find_xml_element
 from testlib import make_config
 from testlib import XMLTestCase
 import caps
+from vdsm import host
 from vdsm import utils
 from vdsm import libvirtconnection
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
@@ -501,7 +502,7 @@ class TestVm(XMLTestCase):
     @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
     @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
     @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
-    @MonkeyPatch(utils, 'getHostUUID',
+    @MonkeyPatch(host, 'uuid',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
     def testBuildCmdLineX86_64(self):
@@ -511,7 +512,7 @@ class TestVm(XMLTestCase):
     @MonkeyPatch(caps, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
-    @MonkeyPatch(utils, 'getHostUUID',
+    @MonkeyPatch(host, 'uuid',
                  lambda: "fc25cbbe-5520-4f83-b82e-1541914753d9")
     @MonkeyPatch(vm.Vm, 'send_status_event', lambda x: None)
     def testBuildCmdLinePPC64(self):

@@ -38,11 +38,12 @@ import zipfile
 
 import libvirt
 
+from vdsm.commands import execCmd
 from vdsm.constants import P_VDSM_RUN
 from vdsm.define import errCode, doneCode
 from vdsm import libvirtconnection, response, concurrent
 from vdsm.infra import zombiereaper
-from vdsm.utils import traceback, CommandPath, execCmd, NICENESS, IOCLASS
+from vdsm.utils import traceback, CommandPath, NICENESS, IOCLASS
 
 import caps
 

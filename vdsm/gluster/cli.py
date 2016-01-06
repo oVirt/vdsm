@@ -25,6 +25,7 @@ import socket
 import time
 import xml.etree.cElementTree as etree
 
+from vdsm import commands
 from vdsm import utils
 from vdsm.netinfo import addresses
 import exception as ge
@@ -98,12 +99,12 @@ class SnapshotStatus:
 
 
 def _execGluster(cmd):
-    return utils.execCmd(cmd)
+    return commands.execCmd(cmd)
 
 
 def _execGlusterXml(cmd):
     cmd.append('--xml')
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = commands.execCmd(cmd)
     if rc != 0:
         raise ge.GlusterCmdExecFailedException(rc, out, err)
     try:

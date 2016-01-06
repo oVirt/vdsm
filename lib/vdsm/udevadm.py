@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 import logging
 from . import cmdutils
+from . import commands
 from . import utils
 
 _UDEVADM = utils.CommandPath("udevadm", "/sbin/udevadm", "/usr/sbin/udevadm")
@@ -100,6 +101,6 @@ def trigger(attr_matches=(), property_matches=(), subsystem_matches=()):
 def _run_command(args):
     cmd = [_UDEVADM.cmd]
     cmd.extend(args)
-    rc, out, err = utils.execCmd(cmd, raw=True)
+    rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0:
         raise cmdutils.Error(cmd, rc, out, err)

@@ -19,6 +19,7 @@
 
 from __future__ import absolute_import
 from ... import constants
+from ... import commands
 from ... import utils
 
 
@@ -38,7 +39,7 @@ LIBVIRT_PASSWORD_PATH = constants.P_VDSM_KEYS + 'libvirt_password'
 
 def isconfigured():
     script = (str(_SASLDBLISTUSERS2), '-f', _LIBVIRT_SASLDB)
-    _, out, _ = utils.execCmd(script)
+    _, out, _ = commands.execCmd(script)
     for user in out:
         if SASL_USERNAME in user:
             return YES
@@ -47,7 +48,7 @@ def isconfigured():
 
 def configure():
     script = (str(_SASLPASSWD2), '-p', '-a', 'libvirt', SASL_USERNAME)
-    rc, _, err = utils.execCmd(script, data=libvirt_password())
+    rc, _, err = commands.execCmd(script, data=libvirt_password())
     if rc != 0:
         raise RuntimeError("Set password failed: %s" % (err,))
     if utils.isOvirtNode():
@@ -58,7 +59,7 @@ def configure():
 
 def removeConf():
     if isconfigured() == YES:
-        rc, out, err = utils.execCmd(
+        rc, out, err = commands.execCmd(
             (
                 str(_SASLPASSWD2),
                 '-p',

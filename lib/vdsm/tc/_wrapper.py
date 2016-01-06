@@ -21,7 +21,7 @@ import errno
 import os
 
 from vdsm.constants import EXT_TC
-from vdsm.utils import execCmd
+from vdsm.commands import execCmd
 
 _TC_ERR_PREFIX = 'RTNETLINK answers: '
 _errno_trans = dict(((os.strerror(code), code) for code in errno.errorcode))

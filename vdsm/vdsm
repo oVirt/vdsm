@@ -30,6 +30,7 @@ import tempfile
 from logging import config as lconfig
 import warnings
 
+from vdsm import commands
 from vdsm import constants
 from vdsm import dsaversion
 from vdsm import schedule
@@ -210,7 +211,7 @@ def __assertSudoerPermissions():
         # is read properly
         cmd = [constants.EXT_CHOWN, "%s:%s" %
                (constants.VDSM_USER, constants.QEMU_PROCESS_GROUP), dst.name]
-        rc, _, stderr = utils.execCmd(cmd, sudo=True)
+        rc, _, stderr = commands.execCmd(cmd, sudo=True)
 
     if rc != 0:
         raise FatalError("Vdsm user could not manage to run sudo operation: "

@@ -23,7 +23,8 @@ import os
 from signal import SIGKILL, SIGTERM
 from time import sleep, time
 
-from vdsm.utils import CommandPath, execCmd
+from vdsm.commands import execCmd
+from vdsm.utils import CommandPath
 
 _DNSMASQ_BINARY = CommandPath('dnsmasq', '/usr/sbin/dnsmasq')
 _DHCLIENT_BINARY = CommandPath('dhclient', '/usr/sbin/dhclient',

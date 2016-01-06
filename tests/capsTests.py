@@ -26,6 +26,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
 import caps
+from vdsm import commands
 from vdsm import utils
 
 
@@ -163,7 +164,7 @@ class TestCaps(TestCaseBase):
         expectedInfo = {'total': '49141', 'free': '46783'}
         self.assertEqual(t, expectedInfo)
 
-    @MonkeyPatch(utils, 'execCmd', lambda x: _getCapsNumaDistanceTestData(
+    @MonkeyPatch(commands, 'execCmd', lambda x: _getCapsNumaDistanceTestData(
         "caps_numactl_4_nodes.out"))
     def testNumaNodeDistance(self):
         t = caps.getNumaNodeDistance()
@@ -174,7 +175,7 @@ class TestCaps(TestCaseBase):
             '3': [20, 20, 20, 10]}
         self.assertEqual(t, expectedDistanceInfo)
 
-    @MonkeyPatch(utils, 'execCmd', lambda x: (0, ['0'], []))
+    @MonkeyPatch(commands, 'execCmd', lambda x: (0, ['0'], []))
     def testAutoNumaBalancingInfo(self):
         t = caps.getAutoNumaBalancingInfo()
         self.assertEqual(t, 0)

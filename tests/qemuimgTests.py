@@ -22,7 +22,7 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from vdsm import qemuimg
-from vdsm import utils
+from vdsm import commands
 
 QEMU_IMG = qemuimg._qemuimg.cmd
 
@@ -43,7 +43,7 @@ class InfoTests(TestCaseBase):
             out = ["image: leaf.img", "invalid file format line"]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
 
     def test_qemu1_no_backing_file(self):
@@ -55,7 +55,7 @@ class InfoTests(TestCaseBase):
                    "cluster_size: 65536"]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             info = qemuimg.info('leaf.img')
             self.assertNotIn('backingfile', info)
 
@@ -69,7 +69,7 @@ class InfoTests(TestCaseBase):
                    "backing file: base.img (actual path: /tmp/base.img)"]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             info = qemuimg.info('leaf.img')
             self.assertEquals('base.img', info['backingfile'])
 
@@ -85,7 +85,7 @@ class InfoTests(TestCaseBase):
                    "    lazy refcounts: false"]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             info = qemuimg.info('leaf.img')
             self.assertEquals('qcow2', info['format'])
             self.assertEquals(1073741824, info['virtualsize'])
@@ -104,7 +104,7 @@ class InfoTests(TestCaseBase):
                    "    lazy refcounts: false"]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             info = qemuimg.info('leaf.img')
             self.assertEquals('base.img', info['backingfile'])
 
@@ -117,7 +117,7 @@ class CreateTests(CommandTests):
             self.assertEqual(cmd, expected)
             return 0, '', ''
 
-        with MonkeyPatchScope([(utils, "execCmd", create)]):
+        with MonkeyPatchScope([(commands, "execCmd", create)]):
             qemuimg.create('image')
 
     def test_zero_size(self):
@@ -126,7 +126,7 @@ class CreateTests(CommandTests):
             self.assertEqual(cmd, expected)
             return 0, '', ''
 
-        with MonkeyPatchScope([(utils, "execCmd", create)]):
+        with MonkeyPatchScope([(commands, "execCmd", create)]):
             qemuimg.create('image', size=0)
 
     def test_qcow2_compat_unsupported(self):
@@ -137,7 +137,7 @@ class CreateTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('create', False)),
-                               (utils, 'execCmd', create)]):
+                               (commands, 'execCmd', create)]):
             qemuimg.create('image', format='qcow2')
 
     def test_qcow2_compat_supported(self):
@@ -150,7 +150,7 @@ class CreateTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('create', True)),
-                               (utils, 'execCmd', create)]):
+                               (commands, 'execCmd', create)]):
             qemuimg.create('image', format='qcow2')
 
 
@@ -260,19 +260,19 @@ def qcow2_compat_unsupported(cmd, **kw):
 
 class SupportsQcow2ComaptTests(TestCaseBase):
 
-    @MonkeyPatch(utils, 'execCmd', qcow2_compat_supported)
+    @MonkeyPatch(commands, 'execCmd', qcow2_compat_supported)
     def test_create_supported(self, **kw):
         self.assertTrue(qemuimg._supports_qcow2_compat('create'))
 
-    @MonkeyPatch(utils, 'execCmd', qcow2_compat_unsupported)
+    @MonkeyPatch(commands, 'execCmd', qcow2_compat_unsupported)
     def test_create_unsupported(self, **kw):
         self.assertFalse(qemuimg._supports_qcow2_compat('create'))
 
-    @MonkeyPatch(utils, 'execCmd', qcow2_compat_supported)
+    @MonkeyPatch(commands, 'execCmd', qcow2_compat_supported)
     def test_convert_supported(self, **kw):
         self.assertTrue(qemuimg._supports_qcow2_compat('convert'))
 
-    @MonkeyPatch(utils, 'execCmd', qcow2_compat_unsupported)
+    @MonkeyPatch(commands, 'execCmd', qcow2_compat_unsupported)
     def test_convert_unsupported(self, **kw):
         self.assertFalse(qemuimg._supports_qcow2_compat('convert'))
 
@@ -315,19 +315,19 @@ class SupportsSrcCacheTests(TestCaseBase):
     def tearDown(self):
         qemuimg._supports_src_cache.invalidate()
 
-    @MonkeyPatch(utils, 'execCmd', src_cache_supported)
+    @MonkeyPatch(commands, 'execCmd', src_cache_supported)
     def test_rebase_supported(self, **kw):
         self.assertTrue(qemuimg._supports_src_cache('rebase'))
 
-    @MonkeyPatch(utils, 'execCmd', rebase_src_cache_unsupported)
+    @MonkeyPatch(commands, 'execCmd', rebase_src_cache_unsupported)
     def test_rebase_unsupported(self, **kw):
         self.assertFalse(qemuimg._supports_src_cache('rebase'))
 
-    @MonkeyPatch(utils, 'execCmd', src_cache_supported)
+    @MonkeyPatch(commands, 'execCmd', src_cache_supported)
     def test_convert_supported(self, **kw):
         self.assertTrue(qemuimg._supports_src_cache('convert'))
 
-    @MonkeyPatch(utils, 'execCmd', convert_src_cache_unsupported)
+    @MonkeyPatch(commands, 'execCmd', convert_src_cache_unsupported)
     def test_convert_unsupported(self, **kw):
         self.assertFalse(qemuimg._supports_src_cache('convert'))
 
@@ -342,7 +342,7 @@ class CheckTests(TestCaseBase):
                    "Image end offset: 4271243264"]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             check = qemuimg.check('unused')
             self.assertEquals(4271243264, check['offset'])
 
@@ -352,7 +352,7 @@ class CheckTests(TestCaseBase):
                    "Image end offset: 4271243264"]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             check = qemuimg.check('unused')
             self.assertEquals(4271243264, check['offset'])
 
@@ -361,7 +361,7 @@ class CheckTests(TestCaseBase):
             out = ["All your base are belong to us."]
             return 0, out, []
 
-        with MonkeyPatchScope([(utils, "execCmd", call)]):
+        with MonkeyPatchScope([(commands, "execCmd", call)]):
             self.assertRaises(qemuimg.QImgError, qemuimg.check, 'unused')
 
 

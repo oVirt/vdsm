@@ -41,7 +41,7 @@ import os
 import sys
 from xml.dom import minidom
 
-from vdsm.utils import execCmd
+from vdsm.commands import execCmd
 from vdsm.utils import tobool
 
 # make pyflakes happy

@@ -20,6 +20,7 @@ import os
 from functools import wraps
 from nose.plugins.skip import SkipTest
 
+from vdsm import commands
 from vdsm import utils
 
 modprobe = utils.CommandPath("modprobe",
@@ -63,7 +64,7 @@ def _require_mod(f, name):
 def _validate_module(name):
     if not os.path.exists('/sys/module/' + name):
         cmd_modprobe = [modprobe.cmd, name]
-        rc, out, err = utils.execCmd(cmd_modprobe, sudo=True)
+        rc, out, err = commands.execCmd(cmd_modprobe, sudo=True)
         if rc != 0:
             raise SkipTest("This test requires %s module "
                            "(failed to load module: rc=%s, out=%s, err=%s)" %

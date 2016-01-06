@@ -24,7 +24,8 @@ import sanlock
 
 import storage_exception as se
 from vdsm import qemuimg
-from vdsm.utils import ActionStopped, grepCmd
+from vdsm.commands import grepCmd
+from vdsm.utils import ActionStopped
 from sdc import sdCache
 import outOfProcess as oop
 import volume

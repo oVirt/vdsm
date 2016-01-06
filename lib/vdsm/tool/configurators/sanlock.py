@@ -23,7 +23,7 @@ import grp
 import pwd
 
 from . import YES, NO, MAYBE, InvalidConfig
-from ... import utils
+from ... import commands
 from ... import constants
 
 SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
@@ -35,7 +35,7 @@ def configure():
     """
     Configure sanlock process groups
     """
-    rc, out, err = utils.execCmd(
+    rc, out, err = commands.execCmd(
         (
             '/usr/sbin/usermod',
             '-a',

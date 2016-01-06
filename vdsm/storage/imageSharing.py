@@ -22,7 +22,7 @@ import signal
 
 import curlImgWrap
 from vdsm import constants
-from vdsm import utils
+from vdsm import commands
 import storage_exception as se
 
 
@@ -78,8 +78,8 @@ def copyToImage(dstImgPath, methodArgs):
     totalSize = getLengthFromArgs(methodArgs)
     fileObj = methodArgs['fileObj']
     cmd = [constants.EXT_DD, "of=%s" % dstImgPath, "bs=%s" % constants.MEGAB]
-    p = utils.execCmd(cmd, sudo=False, sync=False,
-                      deathSignal=signal.SIGKILL)
+    p = commands.execCmd(cmd, sudo=False, sync=False,
+                         deathSignal=signal.SIGKILL)
     try:
         _copyData(fileObj, p.stdin, totalSize)
         p.stdin.close()
@@ -104,8 +104,8 @@ def copyFromImage(dstImgPath, methodArgs):
     cmd = [constants.EXT_DD, "if=%s" % dstImgPath, "bs=%s" % constants.MEGAB,
            "count=%s" % (total_size / constants.MEGAB + 1)]
 
-    p = utils.execCmd(cmd, sync=False,
-                      deathSignal=signal.SIGKILL)
+    p = commands.execCmd(cmd, sync=False,
+                         deathSignal=signal.SIGKILL)
     p.blocking = True
     try:
         _copyData(p.stdout, fileObj, bytes_left)

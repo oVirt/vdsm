@@ -30,6 +30,7 @@ from blivet.devices import LVMLogicalVolumeDevice
 from blivet.devices import LVMThinLogicalVolumeDevice
 from blivet import udev
 
+from vdsm import commands
 from vdsm import utils
 
 import fstab
@@ -153,10 +154,10 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         for dev in deviceList:
             # bz#1178705: Blivet always creates pv with 1MB dataalignment
             # Workaround: Till blivet fixes the issue, we use lvm pvcreate
-            rc, out, err = utils.execCmd([_pvCreateCommandPath.cmd,
-                                          '--dataalignment',
-                                          '%sk' % alignment,
-                                          dev.path])
+            rc, out, err = commands.execCmd([_pvCreateCommandPath.cmd,
+                                             '--dataalignment',
+                                             '%sk' % alignment,
+                                             dev.path])
             if rc:
                 raise ge.GlusterHostStorageDevicePVCreateFailedException(
                     dev.path, alignment, rc, out, err)
@@ -167,9 +168,9 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         # bz#1198568: Blivet always creates vg with 1MB stripe size
         # Workaround: Till blivet fixes the issue, use vgcreate command
         devices = ','.join([device.path for device in deviceList])
-        rc, out, err = utils.execCmd([_vgCreateCommandPath.cmd,
-                                      '-s', '%sk' % stripeSize,
-                                      vgName, devices])
+        rc, out, err = commands.execCmd([_vgCreateCommandPath.cmd,
+                                         '-s', '%sk' % stripeSize,
+                                         vgName, devices])
         if rc:
             raise ge.GlusterHostStorageDeviceVGCreateFailedException(
                 vgName, devices, stripeSize, rc, out, err)
@@ -195,18 +196,18 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
         # to use lvconvert to achive that.
         # bz#1179826: blivet doesn't support lvconvert functionality.
         # Workaround: Till the bz gets fixed, lvconvert command is used
-        rc, out, err = utils.execCmd([_lvconvertCommandPath.cmd,
-                                      '--chunksize', '%sK' % alignment,
-                                      '--thinpool', vgPoolName,
-                                      '--poolmetadata',
-                                      "%s/%s" % (vg.name, metaName),
-                                      '--poolmetadataspar', 'n', '-y'])
+        rc, out, err = commands.execCmd([_lvconvertCommandPath.cmd,
+                                         '--chunksize', '%sK' % alignment,
+                                         '--thinpool', vgPoolName,
+                                         '--poolmetadata',
+                                         "%s/%s" % (vg.name, metaName),
+                                         '--poolmetadataspar', 'n', '-y'])
 
         if rc:
             raise ge.GlusterHostStorageDeviceLVConvertFailedException(
                 vg.path, alignment, rc, out, err)
-        rc, out, err = utils.execCmd([_lvchangeCommandPath.cmd,
-                                      '--zero', 'n', vgPoolName])
+        rc, out, err = commands.execCmd([_lvchangeCommandPath.cmd,
+                                         '--zero', 'n', vgPoolName])
         if rc:
             raise ge.GlusterHostStorageDeviceLVChangeFailedException(
                 vgPoolName, rc, out, err)
@@ -307,7 +308,7 @@ def createBrick(brickName, mountPoint, devNameList, fsType=DEFAULT_FS_TYPE,
 
     # bz#1230495: lvm devices are invisible and appears only after vgscan
     # Workaround: Till the bz gets fixed, We use vgscan to refresh LVM devices
-    rc, out, err = utils.execCmd([_vgscanCommandPath.cmd])
+    rc, out, err = commands.execCmd([_vgscanCommandPath.cmd])
     if rc:
         raise ge.GlusterHostStorageDeviceVGScanFailedException(rc, out, err)
     fstab.FsTab().add(thinlv.path, mountPoint,

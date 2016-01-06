@@ -50,7 +50,8 @@ from vdsm.network import sourceroute
 
 from vdsm import sysctl
 from vdsm import tc
-from vdsm.utils import CommandPath, RollbackContext, execCmd, pgrep, running
+from vdsm.commands import execCmd
+from vdsm.utils import CommandPath, RollbackContext, pgrep, running
 
 
 from hookValidation import ValidatesHook

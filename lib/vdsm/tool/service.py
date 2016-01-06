@@ -30,7 +30,7 @@ from collections import defaultdict
 
 from . import expose, UsageError, ExtraArgsError
 from ..utils import CommandPath
-from ..utils import execCmd as _execCmd
+from ..commands import execCmd as _execCmd
 
 
 def execCmd(argv, raw=True, *args, **kwargs):

@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import signal
 
 from . import cmdutils
+from . import commands
 from . import utils
 
 # Fedora, EL6
@@ -50,7 +51,7 @@ def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):
 
     cmd.extend((src_vol, dst_vol))
 
-    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise cmdutils.Error(cmd, rc, out, err)

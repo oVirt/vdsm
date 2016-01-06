@@ -30,6 +30,7 @@ import logging
 import six
 
 from vdsm.config import config
+from vdsm import commands
 from vdsm import constants
 from vdsm import hooks
 from vdsm import kernelconfig
@@ -979,8 +980,8 @@ def _canonize_networks(nets):
 
 def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
-    utils.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
-                  config.get('vars', 'net_persistence')])
+    commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
+                     config.get('vars', 'net_persistence')])
 
 
 def usage():

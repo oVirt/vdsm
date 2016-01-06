@@ -35,7 +35,8 @@ from vdsm.constants import EXT_BRCTL, EXT_TC
 from vdsm.ipwrapper import (addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error,
                             netns_add, netns_delete, netns_exec)
 from vdsm.netlink import monitor
-from vdsm.utils import CommandPath, execCmd, random_iface_name
+from vdsm.commands import execCmd
+from vdsm.utils import CommandPath, random_iface_name
 
 EXT_IP = "/sbin/ip"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')

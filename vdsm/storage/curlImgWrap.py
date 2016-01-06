@@ -20,7 +20,9 @@
 
 import signal
 
-from vdsm import utils, constants
+from vdsm import commands
+from vdsm import constants
+from vdsm import utils
 
 _curl = utils.CommandPath("curl",
                           "/usr/bin/curl",)  # Fedora, EL6
@@ -52,7 +54,7 @@ def head(url, headers={}):
     cmd = [_curl.cmd] + CURL_OPTIONS + ["--head", url]
 
     cmd.extend(_headersToOptions(headers))
-    rc, out, err = utils.execCmd(cmd)
+    rc, out, err = commands.execCmd(cmd)
 
     if rc != 0:
         raise CurlError(rc, out, err)
@@ -65,7 +67,7 @@ def download(url, path, headers={}):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--download"]
     cmd.extend(_headersToOptions(headers) + [path, url])
 
-    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise CurlError(rc, out, err)
@@ -75,7 +77,7 @@ def upload(url, path, headers={}):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--upload"]
     cmd.extend(_headersToOptions(headers) + [path, url])
 
-    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise CurlError(rc, out, err)

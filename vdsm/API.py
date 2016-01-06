@@ -32,6 +32,7 @@ import errno
 from vdsm.network.errors import ConfigNetworkError
 from vdsm.network.configurators import RollbackIncomplete
 
+from vdsm import commands
 from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
@@ -708,9 +709,10 @@ class VM(APIBase):
 
     def _createSysprepFloppyFromInf(self, infFileBinary, floppyImage):
         try:
-            rc, out, err = utils.execCmd([constants.EXT_MK_SYSPREP_FLOPPY,
-                                          floppyImage],
-                                         sudo=True, data=infFileBinary.data)
+            rc, out, err = commands.execCmd([constants.EXT_MK_SYSPREP_FLOPPY,
+                                             floppyImage],
+                                            sudo=True,
+                                            data=infFileBinary.data)
             if rc:
                 return False
             else:
@@ -1211,7 +1213,7 @@ class Global(APIBase):
             # non-status actions are sent asyncronously. deathSignal is set to
             # make sure that no stray fencing scripts are left behind if Vdsm
             # crashes.
-            rc, out, err = utils.execCmd(
+            rc, out, err = commands.execCmd(
                 [script], deathSignal=signal.SIGTERM,
                 data=inp)
             self.log.debug('rc %s inp %s out %s err %s', rc,

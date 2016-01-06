@@ -23,12 +23,12 @@ from __future__ import absolute_import
 import os
 
 from ..netinfo import DUMMY_BRIDGE
-from .. import libvirtconnection, utils, constants
+from .. import libvirtconnection, commands, constants
 from . import expose, ExtraArgsError
 
 
 def createEphemeralBridge(bridgeName):
-    rc, out, err = utils.execCmd([constants.EXT_BRCTL, 'addbr', bridgeName])
+    rc, out, err = commands.execCmd([constants.EXT_BRCTL, 'addbr', bridgeName])
     if rc != 0:
         raise EnvironmentError(
             'Failed to create ephemeral dummy bridge. Err: %s' % err

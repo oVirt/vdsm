@@ -21,8 +21,8 @@ import logging
 
 from nose.plugins.skip import SkipTest
 
+from vdsm.commands import execCmd
 from vdsm.utils import CommandPath
-from vdsm.utils import execCmd
 
 _FIREWALLD_BINARY = CommandPath('firewall-cmd', '/bin/firewall-cmd')
 _IPTABLES_BINARY = CommandPath('iptables', '/sbin/iptables')

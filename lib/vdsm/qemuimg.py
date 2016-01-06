@@ -28,6 +28,7 @@ from cpopen import CPopen
 
 from . import utils
 from . import cmdutils
+from . import commands
 
 _qemuimg = utils.CommandPath("qemu-img",
                              "/usr/bin/qemu-img",)  # Fedora, EL6
@@ -94,7 +95,7 @@ def info(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -142,7 +143,8 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     if size is not None:
         cmd.append(str(size))
 
-    rc, out, err = utils.execCmd(cmd, cwd=cwdPath, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, cwd=cwdPath,
+                                    deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -155,7 +157,7 @@ def check(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
@@ -295,7 +297,7 @@ def resize(image, newSize, format=None):
         cmd.extend(("-f", format))
 
     cmd.extend((image, str(newSize)))
-    rc, out, err = utils.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -320,7 +322,7 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
     cmd.extend(("-b", backing, image))
 
     cwdPath = None if os.path.isabs(backing) else os.path.dirname(image)
-    rc, out, err = utils.watchCmd(
+    rc, out, err = commands.watchCmd(
         cmd, cwd=cwdPath, stop=stop, nice=utils.NICENESS.HIGH,
         ioclass=utils.IOCLASS.IDLE)
 
@@ -349,7 +351,7 @@ def _supports_qcow2_compat(command):
     cmd = [_qemuimg.cmd, command, flag, FORMAT.QCOW2, "-o", "?"]
     cmd.extend(dummy_files)
 
-    rc, out, err = utils.execCmd(cmd, raw=True)
+    rc, out, err = commands.execCmd(cmd, raw=True)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -369,7 +371,7 @@ def _supports_src_cache(command):
     """
     # REQUIRED_FOR: FEDORA 20 (no qemu-img with -T support)
     cmd = [_qemuimg.cmd, "--help"]
-    rc, out, err = utils.execCmd(cmd, raw=True)
+    rc, out, err = commands.execCmd(cmd, raw=True)
 
     # REQUIRED_FOR: EL6 (--help returns 1)
     if rc not in (0, 1):

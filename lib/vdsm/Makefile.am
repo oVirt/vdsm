@@ -25,12 +25,14 @@ dist_vdsmpylib_PYTHON = \
 	__init__.py \
 	cmdutils.py \
 	compat.py \
+	commands.py \
 	concurrent.py \
 	define.py \
 	dmidecodeUtil.py \
 	exception.py \
 	executor.py \
 	hooks.py \
+	host.py \
 	ipwrapper.py \
 	jobs.py \
 	jsonrpcvdscli.py \

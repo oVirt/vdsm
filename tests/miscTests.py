@@ -35,6 +35,7 @@ from testlib import permutations, expandPermutations
 from testlib import TEMPDIR
 import inspect
 from vdsm import cmdutils
+from vdsm import commands
 from vdsm import utils
 
 import storage.outOfProcess as oop
@@ -59,7 +60,7 @@ SUDO_GROUP = "root"
 
 
 def watchCmd(cmd, stop, cwd=None, data=None):
-    return utils.watchCmd(cmd, stop, cwd=cwd, data=data)
+    return commands.watchCmd(cmd, stop, cwd=cwd, data=data)
 
 
 class EventTests(TestCaseBase):
@@ -236,7 +237,7 @@ class AsyncProcTests(TestCaseBase):
                   The Doctor: And where do you function?
                   Striker: Eternity. The endless wastes of eternity. """
         # (C) BBC - Doctor Who
-        p = utils.execCmd([EXT_CAT], sync=False)
+        p = commands.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data)
         p.stdin.flush()
@@ -251,7 +252,7 @@ class AsyncProcTests(TestCaseBase):
                               I'm pretty sure it wasn't the future. """
         # (C) BBC - Doctor Who
         halfPoint = len(data) / 2
-        p = utils.execCmd([EXT_CAT], sync=False)
+        p = commands.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data[:halfPoint])
         self.log.info("Writing more data to std out")
@@ -281,7 +282,7 @@ class AsyncProcTests(TestCaseBase):
         # (C) BBC - Doctor Who
 
         data = data * 100
-        p = utils.execCmd([EXT_CAT], sync=False)
+        p = commands.execCmd([EXT_CAT], sync=False)
         self.log.info("Writing data to std out")
         p.stdin.write(data)
         p.stdin.flush()
@@ -290,7 +291,7 @@ class AsyncProcTests(TestCaseBase):
 
     def testWaitTimeout(self):
         ttl = 2
-        p = utils.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
+        p = commands.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
         startTime = time.time()
         p.wait(ttl)
         duration = time.time() - startTime
@@ -300,7 +301,7 @@ class AsyncProcTests(TestCaseBase):
 
     def testWaitCond(self):
         ttl = 2
-        p = utils.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
+        p = commands.execCmd([EXT_SLEEP, str(ttl + 10)], sync=False)
         startTime = time.time()
         p.wait(cond=lambda: time.time() - startTime > ttl)
         duration = time.time() - startTime
@@ -311,7 +312,7 @@ class AsyncProcTests(TestCaseBase):
     def testCommunicate(self):
         data = ("The trouble with the world is that the stupid are cocksure "
                 "and the intelligent are full of doubt")
-        p = utils.execCmd([EXT_DD], data=data, sync=False)
+        p = commands.execCmd([EXT_DD], data=data, sync=False)
         p.stdin.close()
         self.assertEquals(p.stdout.read(len(data)).strip(), data)
 
@@ -675,7 +676,7 @@ class ValidateDDBytes(TestCaseBase):
         with tempfile.NamedTemporaryFile() as f:
             cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
                    'count=%d' % count]
-            rc, out, err = utils.execCmd(cmd)
+            rc, out, err = commands.execCmd(cmd)
 
         self.assertTrue(misc.validateDDBytes(err, count))
 
@@ -687,7 +688,7 @@ class ValidateDDBytes(TestCaseBase):
         with tempfile.NamedTemporaryFile() as f:
             cmd = [EXT_DD, "bs=1", "if=/dev/urandom", 'of=%s' % f.name,
                    'count=%d' % count]
-            rc, out, err = utils.execCmd(cmd)
+            rc, out, err = commands.execCmd(cmd)
 
         self.assertFalse(misc.validateDDBytes(err, count + 1))
 
@@ -969,18 +970,18 @@ class ExecCmd(TestCaseBase):
         """
         Tests that execCmd execs and returns the correct ret code
         """
-        ret, out, err = utils.execCmd([EXT_ECHO])
+        ret, out, err = commands.execCmd([EXT_ECHO])
 
         self.assertEquals(ret, 0)
 
     @MonkeyPatch(cmdutils, "_USING_CPU_AFFINITY", True)
     def testNoCommandWithAffinity(self):
-        rc, _, _ = utils.execCmd(["I.DONT.EXIST"])
+        rc, _, _ = commands.execCmd(["I.DONT.EXIST"])
         self.assertNotEqual(rc, 0)
 
     @MonkeyPatch(cmdutils, "_USING_CPU_AFFINITY", False)
     def testNoCommandWithoutAffinity(self):
-        self.assertRaises(OSError, utils.execCmd, ["I.DONT.EXIST"])
+        self.assertRaises(OSError, commands.execCmd, ["I.DONT.EXIST"])
 
     def testStdOut(self):
         """
@@ -990,7 +991,7 @@ class ExecCmd(TestCaseBase):
         line = "All I wanted was to have some pizza, hang out with dad, " + \
                "and not let your weirdness mess up my day"
         # (C) Nickolodeon - Invader Zim
-        ret, stdout, stderr = utils.execCmd((EXT_ECHO, line))
+        ret, stdout, stderr = commands.execCmd((EXT_ECHO, line))
         self.assertEquals(stdout[0], line)
 
     def testStdErr(self):
@@ -1002,7 +1003,7 @@ class ExecCmd(TestCaseBase):
                "turning you on at all?"
         # (C) Fox - The X Files
         code = "import sys; sys.stderr.write('%s')" % line
-        ret, stdout, stderr = utils.execCmd([EXT_PYTHON, "-c", code])
+        ret, stdout, stderr = commands.execCmd([EXT_PYTHON, "-c", code])
         self.assertEquals(stderr[0], line)
 
     def testSudo(self):
@@ -1012,12 +1013,12 @@ class ExecCmd(TestCaseBase):
         """
         cmd = [EXT_WHOAMI]
         checkSudo(cmd)
-        ret, stdout, stderr = utils.execCmd(cmd, sudo=True)
+        ret, stdout, stderr = commands.execCmd(cmd, sudo=True)
         self.assertEquals(stdout[0], SUDO_USER)
 
     def testNice(self):
         cmd = ["sleep", "10"]
-        proc = utils.execCmd(cmd, nice=10, sync=False)
+        proc = commands.execCmd(cmd, nice=10, sync=False)
 
         def test():
             nice = utils.pidStat(proc.pid).nice

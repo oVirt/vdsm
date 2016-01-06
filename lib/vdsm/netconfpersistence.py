@@ -27,6 +27,7 @@ import pwd
 
 from .config import config
 from .tool.restore_nets import restore
+from . import commands
 from . import constants
 from . import utils
 
@@ -196,8 +197,8 @@ class RunningConfig(Config):
         super(RunningConfig, self).__init__(CONF_RUN_DIR)
 
     def store(self):
-        utils.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
-                       config.get('vars', 'net_persistence')])
+        commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
+                         config.get('vars', 'net_persistence')])
         return PersistentConfig()
 
 

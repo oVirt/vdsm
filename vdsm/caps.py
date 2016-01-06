@@ -38,6 +38,8 @@ from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import netinfo
+from vdsm import host
+from vdsm import commands
 from vdsm import utils
 import storage.hba
 
@@ -326,7 +328,7 @@ def getUMAHostMemoryStats():
 @utils.memoized
 def getNumaNodeDistance():
     nodeDistance = {}
-    retcode, out, err = utils.execCmd(['numactl', '--hardware'])
+    retcode, out, err = commands.execCmd(['numactl', '--hardware'])
     if retcode != 0:
         logging.error("Get error when execute numactl", exc_info=True)
         return nodeDistance
@@ -341,8 +343,8 @@ def getNumaNodeDistance():
 
 @utils.memoized
 def getAutoNumaBalancingInfo():
-    retcode, out, err = utils.execCmd(['sysctl', '-n', '-e',
-                                       'kernel.numa_balancing'])
+    retcode, out, err = commands.execCmd(['sysctl', '-n', '-e',
+                                          'kernel.numa_balancing'])
     if not out:
         return AutoNumaBalancingStatus.UNKNOWN
     elif out[0] == '0':
@@ -647,7 +649,7 @@ def get():
         logging.debug('not reporting hooks', exc_info=True)
 
     caps['operatingSystem'] = osversion()
-    caps['uuid'] = utils.getHostUUID()
+    caps['uuid'] = host.uuid()
     caps['packages2'] = _getKeyPackages()
     caps['emulatedMachines'] = _getEmulatedMachines(targetArch)
     caps['ISCSIInitiatorName'] = _getIscsiIniName()

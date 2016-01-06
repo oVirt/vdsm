@@ -31,7 +31,8 @@ from testlib import namedTemporaryDir
 import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
-from vdsm.utils import CommandPath, execCmd
+from vdsm.commands import execCmd
+from vdsm.utils import CommandPath
 
 
 from nose.plugins.skip import SkipTest

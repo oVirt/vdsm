@@ -24,7 +24,9 @@ import os
 import selinux
 from functools import wraps
 from vdsm.define import doneCode
-from vdsm import constants, utils
+from vdsm import constants
+from vdsm import commands
+from vdsm import utils
 from vdsm import supervdsm as svdsm
 from pwd import getpwnam
 from storage import mount
@@ -225,7 +227,7 @@ def mountMetaVolume(metaVolumeName):
                     err=['Mount Point creation failed', str(e)])
 
     command = [constants.EXT_MOUNT, META_VOL_MOUNT_POINT]
-    rc, out, err = utils.execCmd(command)
+    rc, out, err = commands.execCmd(command)
     if rc:
         raise ge.GlusterMetaVolumeMountFailedException(
             rc, out, err)
@@ -235,7 +237,7 @@ def mountMetaVolume(metaVolumeName):
 @gluster_mgmt_api
 def snapshotScheduleDisable():
     command = [_snapSchedulerPath.cmd, "disable_force"]
-    rc, out, err = utils.execCmd(command)
+    rc, out, err = commands.execCmd(command)
     if rc not in [0, SNAP_SCHEDULER_ALREADY_DISABLED_RC]:
         raise ge.GlusterDisableSnapshotScheduleFailedException(
             rc)
@@ -274,7 +276,7 @@ def snapshotScheduleFlagUpdate(value):
 @gluster_mgmt_api
 def processesStop():
     command = ["/bin/sh", _stopAllProcessesPath.cmd]
-    rc, out, err = utils.execCmd(command)
+    rc, out, err = commands.execCmd(command)
     if rc:
         raise ge.GlusterProcessesStopFailedException(rc)
 

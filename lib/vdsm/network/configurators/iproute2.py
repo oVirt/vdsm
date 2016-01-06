@@ -28,7 +28,7 @@ from vdsm.ipwrapper import routeAdd, routeDel, ruleAdd, ruleDel, IPRoute2Error
 from vdsm.netconfpersistence import RunningConfig
 from vdsm import sysctl
 from vdsm.utils import CommandPath
-from vdsm.utils import execCmd
+from vdsm.commands import execCmd
 
 from . import (Configurator, runDhclient, getEthtoolOpts, libvirt,
                wait_for_device)

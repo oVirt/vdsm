@@ -29,6 +29,7 @@ import logging
 import re
 from collections import namedtuple
 
+from vdsm import commands
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm import udevadm
@@ -131,7 +132,7 @@ def _resize_map(name):
     log.debug("Resizing map %r", name)
     cmd = [_MULTIPATHD.cmd, "resize", "map", name]
     with utils.stopwatch("Resized map %r" % name, log=log):
-        rc, out, err = utils.execCmd(cmd, raw=True, execCmdLogger=log)
+        rc, out, err = commands.execCmd(cmd, raw=True, execCmdLogger=log)
         # multipathd reports some errors using non-zero exit code and stderr
         # (need to be root), but the command may return 0, and the result is
         # reported using stdout.

@@ -26,7 +26,7 @@ import testValidation
 from testlib import VdsmTestCase as TestCaseBase
 from nose.plugins.skip import SkipTest
 
-from vdsm import utils
+from vdsm import commands
 
 try:
     import parted_utils as putils
@@ -54,10 +54,10 @@ class PartedUtilsTests(TestCaseBase):
 
         cmd = ['dd', 'if=/dev/zero', 'of=%s' % self.tempFilePath,
                'bs=%sM' % FILE_SIZE_MB, 'count=1']
-        rc, out, err = utils.execCmd(cmd)
+        rc, out, err = commands.execCmd(cmd)
         self.assertEquals(rc, 0)
         cmd = ['losetup', '-f', '--show', self.tempFilePath]
-        rc, out, err = utils.execCmd(cmd)
+        rc, out, err = commands.execCmd(cmd)
         self.assertEquals(rc, 0)
         self.devPath = out[0].strip()
 
@@ -67,7 +67,7 @@ class PartedUtilsTests(TestCaseBase):
 
         time.sleep(1)  # wait for syncing
         cmd = ['losetup', '-d', self.devPath]
-        rc, out, err = utils.execCmd(cmd)
+        rc, out, err = commands.execCmd(cmd)
         self.assertEquals(rc, 0)
         os.unlink(self.tempFilePath)
 
@@ -86,14 +86,14 @@ class PartedUtilsTests(TestCaseBase):
 
     def _parted_dev_test(self):
         cmd = ['parted', '-s', self.devPath, 'mktable', 'gpt']
-        rc, out, err = utils.execCmd(cmd)
+        rc, out, err = commands.execCmd(cmd)
         self.assertEquals(rc, 0)
         cmd = ['parted', '-s', self.devPath,
                'mkpart', 'primary', '0', '%sMB' % PART_SIZE_MB]
-        rc, out, err = utils.execCmd(cmd)
+        rc, out, err = commands.execCmd(cmd)
         self.assertEquals(rc, 0)
         cmd = ['parted', '-s', self.devPath, 'set', '1', 'boot', 'on']
-        rc, out, err = utils.execCmd(cmd)
+        rc, out, err = commands.execCmd(cmd)
         self.assertEquals(rc, 0)
         time.sleep(1)  # wait for syncing
 

@@ -30,7 +30,8 @@ import hashlib
 from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
     DISKIMAGE_USER, DISKIMAGE_GROUP
 from vdsm.constants import P_VDSM_RUN
-from vdsm.utils import execCmd, rmFile
+from vdsm.commands import execCmd
+from vdsm.utils import rmFile
 from storage.fileUtils import resolveUid, resolveGid
 import storage.mount
 

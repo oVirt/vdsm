@@ -31,6 +31,7 @@ import signal
 import logging
 import logging.config
 
+from vdsm import commands
 from vdsm import concurrent
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
@@ -419,7 +420,7 @@ class _SuperVdsm(object):
                        'bus: %s, device:: %s', bus, device)
         device_path = _USB_DEVICE_PATH % (int(bus), int(device))
         cmd = [EXT_CHOWN, 'root:root', device_path]
-        rc, out, err = utils.execCmd(cmd)
+        rc, out, err = commands.execCmd(cmd)
         if err:
             raise OSError(errno.EINVAL, 'Could not change ownership'
                           'out %s\nerr %s' % (out, err))

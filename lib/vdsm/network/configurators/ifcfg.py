@@ -35,6 +35,7 @@ import uuid
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm.config import config
+from vdsm import commands
 from vdsm import cmdutils
 from vdsm import constants
 from vdsm import dsaversion
@@ -180,7 +181,7 @@ class Ifcfg(Configurator):
         DynamicSourceRoute.addInterfaceTracking(bridge)
         ifdown(bridge.name)
         self._removeSourceRoute(bridge, StaticSourceRoute)
-        utils.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
+        commands.execCmd([constants.EXT_BRCTL, 'delbr', bridge.name])
         self.configApplier.removeBridge(bridge.name)
         if bridge.port:
             bridge.port.remove()
@@ -401,8 +402,8 @@ class ConfigWriter(object):
     def _persistentBackup(cls, filename):
         """ Persistently backup ifcfg-* config files """
         if os.path.exists('/usr/libexec/ovirt-functions'):
-            utils.execCmd([constants.EXT_SH, '/usr/libexec/ovirt-functions',
-                           'unmount_config', filename])
+            commands.execCmd([constants.EXT_SH, '/usr/libexec/ovirt-functions',
+                             'unmount_config', filename])
             logging.debug("unmounted %s using ovirt", filename)
 
         (dummy, basename) = os.path.split(filename)
@@ -762,7 +763,7 @@ def _dev_type(content):
 
 def ifdown(iface):
     "Bring down an interface"
-    rc, _, _ = utils.execCmd([constants.EXT_IFDOWN, iface], raw=True)
+    rc, _, _ = commands.execCmd([constants.EXT_IFDOWN, iface], raw=True)
     return rc
 
 
@@ -777,7 +778,7 @@ def _exec_ifup(iface_name, cgroup=dhclient.DHCLIENT_CGROUP):
         cmd = cmdutils.systemd_run(cmd, scope=True, unit=uuid.uuid4(),
                                    slice=cgroup)
 
-    rc, out, err = utils.execCmd(cmd, raw=False)
+    rc, out, err = commands.execCmd(cmd, raw=False)
 
     if rc != 0:
         # In /etc/sysconfig/network-scripts/ifup* the last line usually

@@ -18,7 +18,7 @@
 #
 
 from __future__ import absolute_import
-from ..utils import getHostUUID
+from .. import host
 from . import expose, ExtraArgsError
 import sys
 
@@ -31,7 +31,7 @@ def getUUID(*args):
     """
     if len(args) > 1:
         raise ExtraArgsError()
-    hostUUID = getHostUUID(False)
+    hostUUID = host.uuid(False)
     if hostUUID is None:
         raise EnvironmentError('Cannot retrieve host UUID')
     sys.stdout.write(hostUUID + '\n')
