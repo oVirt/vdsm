@@ -247,7 +247,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
         # Create the metadata artifact.  The metadata file is created with a
         # special extension to prevent these artifacts from being recognized as
         # a volume until FileVolumeArtifacts.commit() is called.
-        meta_dict = self.vol_class.new_metadata_dict(
+        meta = volume.VolumeMetadata(
             self.sd_manifest.sdUUID,
             self.img_id,
             parent_vol_id,
@@ -258,9 +258,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
             disk_type,
             desc,
             volume.LEGAL_VOL)
-
-        data = self.vol_class.formatMetadata(meta_dict)
-        self._oop.writeLines(self.meta_volatile_path, data)
+        self._oop.writeFile(self.meta_volatile_path, meta.storage_format())
 
     def _create_lease_file(self):
         if self.sd_manifest.hasVolumeLeases():

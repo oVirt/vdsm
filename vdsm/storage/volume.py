@@ -169,6 +169,97 @@ class VmVolumeInfo(object):
     TYPE_NETWORK = "network"
 
 
+class VolumeMetadata(object):
+    log = logging.getLogger('Storage.VolumeMetadata')
+
+    def __init__(self, domain, image, puuid, size, format,
+                 type, voltype, disktype, description="",
+                 legality=ILLEGAL_VOL, ctime=None, mtime=None):
+        assert(isinstance(size, int))
+        assert(ctime is None or isinstance(ctime, int))
+        assert(mtime is None or isinstance(mtime, int))
+
+        # Storage domain UUID
+        self.domain = domain
+        # Image UUID
+        self.image = image
+        # UUID of the parent volume or BLANK_UUID
+        self.puuid = puuid
+        # Volume size in sectors
+        self.size = size
+        # Format (RAW or COW)
+        self.format = format
+        # Allocation policy (PREALLOCATED or SPARSE)
+        self.type = type
+        # Relationship to other volumes (LEAF, INTERNAL or SHARED)
+        self.voltype = voltype
+        # Intended usage of this volume (unused)
+        self.disktype = disktype
+        # Free-form description and may be used to store extra metadata
+        self.description = description
+        # Indicates if the volume contents should be considered valid
+        self.legality = legality
+        # Volume creation time (in seconds since the epoch)
+        self.ctime = int(time.time()) if ctime is None else ctime
+        # Volume modification time (unused and should be zero)
+        self.mtime = 0 if mtime is None else mtime
+
+    @property
+    def description(self):
+        return self._description
+
+    @description.setter
+    def description(self, desc):
+        self._description = self.validate_description(desc)
+
+    @classmethod
+    def validate_description(cls, desc):
+        desc = str(desc)
+        # We cannot fail when the description is too long, since we must
+        # support older engine that may send such values, or old disks
+        # with long description.
+        if len(desc) > DESCRIPTION_SIZE:
+            cls.log.warning("Description is too long, truncating to %d bytes",
+                            DESCRIPTION_SIZE)
+            desc = desc[:DESCRIPTION_SIZE]
+        return desc
+
+    def storage_format(self):
+        """
+        Format metadata string in storage format.
+
+        Raises MetadataOverflowError if formatted metadata is too long.
+        """
+        info = self.legacy_info()
+        keys = sorted(info.keys())
+        lines = ["%s=%s\n" % (key, info[key]) for key in keys]
+        lines.append("EOF\n")
+        data = "".join(lines)
+        if len(data) > METADATA_SIZE:
+            raise se.MetadataOverflowError(data)
+        return data
+
+    def legacy_info(self):
+        """
+        Return metadata in dictionary format
+        """
+        return {
+            FORMAT: self.format,
+            TYPE: self.type,
+            VOLTYPE: self.voltype,
+            DISKTYPE: self.disktype,
+            SIZE: str(self.size),
+            CTIME: str(self.ctime),
+            sd.DMDK_POOLS: "",  # obsolete
+            DOMAIN: self.domain,
+            IMAGE: self.image,
+            DESCRIPTION: self.description,
+            PUUID: self.puuid,
+            MTIME: str(self.mtime),
+            LEGALITY: self.legality,
+        }
+
+
 class VolumeManifest(object):
     log = logging.getLogger('Storage.VolumeManifest')
 
@@ -389,6 +480,7 @@ class VolumeManifest(object):
 
         Raises MetadataOverflowError if formatted metadata is too long.
         """
+        # TODO: Adopt VolumeMetadata.storage_format()
         lines = ["%s=%s\n" % (key.strip(), str(value).strip())
                  for key, value in meta.iteritems()]
         lines.append("EOF\n")
@@ -440,24 +532,12 @@ class VolumeManifest(object):
 
         return self.isLeaf()
 
-    @classmethod
-    def validateDescription(cls, desc):
-        desc = str(desc)
-        # We cannot fail when the description is too long, since we must
-        # support older engine that may send such values, or old disks
-        # with long description.
-        if len(desc) > DESCRIPTION_SIZE:
-            cls.log.warning("Description is too long, truncating to %d bytes",
-                            DESCRIPTION_SIZE)
-            desc = desc[:DESCRIPTION_SIZE]
-        return desc
-
     def setDescription(self, descr):
         """
         Set Volume Description
             'descr' - volume description
         """
-        descr = self.validateDescription(descr)
+        descr = VolumeMetadata.validate_description(descr)
         self.log.info("volUUID = %s descr = %s ", self.volUUID, descr)
         self.setMetaParam(DESCRIPTION, descr)
 
@@ -528,35 +608,10 @@ class VolumeManifest(object):
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
                     voltype, disktype, desc="", legality=ILLEGAL_VOL):
-        """
-        Creates the metadata for a volume and writes it to storage.
-        """
-        meta_dict = cls.new_metadata_dict(sdUUID, imgUUID, puuid, size, format,
-                                          type, voltype, disktype, desc,
-                                          legality)
-        cls.createMetadata(metaId, meta_dict)
-        return meta_dict
-
-    @classmethod
-    def new_metadata_dict(cls, sdUUID, imgUUID, puuid, size, format, type,
-                          voltype, disktype, desc="", legality=ILLEGAL_VOL):
-        """
-        Produce a metadata dictionary from a set of arguments.
-        """
-        return {
-            FORMAT: str(format),
-            TYPE: str(type),
-            VOLTYPE: str(voltype),
-            DISKTYPE: str(disktype),
-            SIZE: int(size),
-            CTIME: int(time.time()),
-            POOL: "",  # obsolete
-            DOMAIN: str(sdUUID),
-            IMAGE: str(imgUUID),
-            DESCRIPTION: cls.validateDescription(desc),
-            PUUID: str(puuid),
-            MTIME: 0,
-            LEGALITY: str(legality)}
+        meta = VolumeMetadata(sdUUID, imgUUID, puuid, size, format, type,
+                              voltype, disktype, desc, legality)
+        cls.createMetadata(metaId, meta.legacy_info())
+        return meta
 
     def refreshVolume(self):
         pass
@@ -1080,10 +1135,6 @@ class Volume(object):
             self._extendSizeRaw(newSize)
 
         self.syncMetadata()  # update the metadata
-
-    @classmethod
-    def validateDescription(cls, desc):
-        return cls.manifestClass.validateDescription(desc)
 
     def setDescription(self, descr):
         self._manifest.setDescription(descr)
