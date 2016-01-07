@@ -66,8 +66,8 @@ BuildRequires:	java-devel >= 1.7.0
 
 Requires:	java-openjdk >= 1.7.0
 
-BuildRequires:	slf4j >= 1.6.1
-Requires:	slf4j >= 1.6.1
+BuildRequires:	slf4j >= 1.7.0
+Requires:	slf4j >= 1.7.0
 
 %if %{_use_maven}
 BuildRequires:	jackson
