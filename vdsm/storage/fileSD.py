@@ -201,7 +201,7 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         """
         Return a type specific volume generator object
         """
-        return fileVolume.FileVolumeMetadata
+        return fileVolume.FileVolumeManifest
 
     def getDeletedImagePath(self, imgUUID):
         currImgDir = self.getImagePath(imgUUID)

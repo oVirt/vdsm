@@ -69,10 +69,10 @@ log = logging.getLogger('Storage.Volume')
 rmanager = rm.ResourceManager.getInstance()
 
 
-class BlockVolumeMetadata(volume.VolumeMetadata):
+class BlockVolumeManifest(volume.VolumeManifest):
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        volume.VolumeMetadata.__init__(self, repoPath, sdUUID, imgUUID,
+        volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
         self.metaoff = None
 
@@ -159,7 +159,7 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
             lvm.getLV(self.sdUUID, self.volUUID)
         except se.LogicalVolumeDoesNotExistError:
             raise se.VolumeDoesNotExist(self.volUUID)
-        volume.VolumeMetadata.validate(self)
+        volume.VolumeManifest.validate(self)
 
     def getVolumeTag(self, tagPrefix):
         return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
@@ -331,20 +331,20 @@ class BlockVolumeMetadata(volume.VolumeMetadata):
 class BlockVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
-    metadataClass = BlockVolumeMetadata
+    manifestClass = BlockVolumeManifest
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        md = self.metadataClass(repoPath, sdUUID, imgUUID, volUUID)
-        volume.Volume.__init__(self, md)
+        manifest = self.manifestClass(repoPath, sdUUID, imgUUID, volUUID)
+        volume.Volume.__init__(self, manifest)
         self.lvmActivationNamespace = sd.getNamespace(self.sdUUID,
                                                       LVM_ACTIVATION_NAMESPACE)
 
     @property
     def metaoff(self):
-        return self._md.metaoff
+        return self._manifest.metaoff
 
     def refreshVolume(self):
-        self._md.refreshVolume()
+        self._manifest.refreshVolume()
 
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, sdUUID, volUUID, volPath):
@@ -616,7 +616,7 @@ class BlockVolume(volume.Volume):
         """
         self.log.info("Rename volume %s as %s ", self.volUUID, newUUID)
         if not self.imagePath:
-            self._md.validateImagePath()
+            self._manifest.validateImagePath()
 
         if os.path.lexists(self.getVolumePath()):
             os.unlink(self.getVolumePath())
@@ -628,11 +628,11 @@ class BlockVolume(volume.Volume):
                 [self.sdUUID, newUUID, self.volUUID]))
 
         lvm.renameLV(self.sdUUID, self.volUUID, newUUID)
-        self._md.volUUID = newUUID
-        self._md.volumePath = os.path.join(self.imagePath, newUUID)
+        self._manifest.volUUID = newUUID
+        self._manifest.volumePath = os.path.join(self.imagePath, newUUID)
 
     def getDevPath(self):
-        return self._md.getDevPath()
+        return self._manifest.getDevPath()
 
     @classmethod
     def shareVolumeRollback(cls, taskObj, volPath):
@@ -683,25 +683,25 @@ class BlockVolume(volume.Volume):
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
 
     def getVolumeTag(self, tagPrefix):
-        return self._md.getVolumeTag(tagPrefix)
+        return self._manifest.getVolumeTag(tagPrefix)
 
     def changeVolumeTag(self, tagPrefix, uuid):
-        return self._md.changeVolumeTag(tagPrefix, uuid)
+        return self._manifest.changeVolumeTag(tagPrefix, uuid)
 
     def getParentMeta(self):
-        return self._md.getParentMeta()
+        return self._manifest.getParentMeta()
 
     def getParentTag(self):
-        return self._md.getParentTag()
+        return self._manifest.getParentTag()
 
     def setParentMeta(self, puuid):
-        return self._md.setParentMeta(puuid)
+        return self._manifest.setParentMeta(puuid)
 
     def setParentTag(self, puuid):
-        return self._md.setParentTag(puuid)
+        return self._manifest.setParentTag(puuid)
 
     def getMetaOffset(self):
-        return self._md.getMetaOffset()
+        return self._manifest.getMetaOffset()
 
     def _extendSizeRaw(self, newSize):
         # Since this method relies on lvm.extendLV (lvextend) when the

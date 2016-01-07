@@ -165,8 +165,8 @@ class VmVolumeInfo(object):
     TYPE_NETWORK = "network"
 
 
-class VolumeMetadata(object):
-    log = logging.getLogger('Storage.VolumeMetadata')
+class VolumeManifest(object):
+    log = logging.getLogger('Storage.VolumeManifest')
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
         self.repoPath = repoPath
@@ -555,87 +555,87 @@ class VolumeMetadata(object):
 
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
-    metadataClass = VolumeMetadata
+    manifestClass = VolumeManifest
 
-    def __init__(self, md):
-        self._md = md
+    def __init__(self, manifest):
+        self._manifest = manifest
 
     @property
     def sdUUID(self):
-        return self._md.sdUUID
+        return self._manifest.sdUUID
 
     @property
     def imgUUID(self):
-        return self._md.imgUUID
+        return self._manifest.imgUUID
 
     @property
     def volUUID(self):
-        return self._md.volUUID
+        return self._manifest.volUUID
 
     @property
     def repoPath(self):
-        return self._md.repoPath
+        return self._manifest.repoPath
 
     @property
     def volumePath(self):
-        return self._md.volumePath
+        return self._manifest.volumePath
 
     @property
     def imagePath(self):
-        return self._md.imagePath
+        return self._manifest.imagePath
 
     @property
     def voltype(self):
-        return self._md.voltype
+        return self._manifest.voltype
 
     def getMetadataId(self):
-        return self._md.getMetadataId()
+        return self._manifest.getMetadataId()
 
     def getMetadata(self, metaId=None):
         """
         Get Meta data array of key,values lines
         """
-        return self._md.getMetadata(metaId)
+        return self._manifest.getMetadata(metaId)
 
     def getParent(self):
         """
         Return parent volume UUID
         """
-        return self._md.getParent()
+        return self._manifest.getParent()
 
     def getChildren(self):
         """ Return children volume UUIDs.
 
         Children can be found in any image of the volume SD.
         """
-        return self._md.getChildren()
+        return self._manifest.getChildren()
 
     def getImage(self):
-        return self._md.getImage()
+        return self._manifest.getImage()
 
     @deprecated  # valid only for domain version < 3, see volume.setrw
     def _setrw(self, rw):
         """
         Set the read/write permission on the volume (deprecated)
         """
-        self._md._setrw(rw)
+        self._manifest._setrw(rw)
 
     def removeMetadata(self):
-        self._md.removeMetadata()
+        self._manifest.removeMetadata()
 
     def _share(self, dstImgPath):
-        return self._md._share(dstImgPath)
+        return self._manifest._share(dstImgPath)
 
     @classmethod
     def formatMetadata(cls, meta):
-        return cls.metadataClass.formatMetadata(meta)
+        return cls.manifestClass.formatMetadata(meta)
 
     @classmethod
     def _putMetadata(cls, metaId, meta):
-        cls.metadataClass._putMetadata(metaId, meta)
+        cls.manifestClass._putMetadata(metaId, meta)
 
     def setMetadata(self, meta, metaId=None):
-        return self._md.setMetadata(meta, metaId)
+        return self._manifest.setMetadata(meta, metaId)
 
     @classmethod
     def _getModuleAndClass(cls):
@@ -647,8 +647,8 @@ class Volume(object):
         """
         Validate that the volume can be accessed
         """
-        self._md.validateImagePath()
-        self._md.validateVolumePath()
+        self._manifest.validateImagePath()
+        self._manifest.validateVolumePath()
 
     def __str__(self):
         return str(self.volUUID)
@@ -763,7 +763,7 @@ class Volume(object):
             raise se.CannotCloneVolume(self.volumePath, dstPath, str(e))
 
     def _shareLease(self, dstImgPath):
-        self._md._shareLease(dstImgPath)
+        self._manifest._shareLease(dstImgPath)
 
     def share(self, dstImgPath):
         """
@@ -792,7 +792,7 @@ class Volume(object):
             raise se.CannotShareVolume(self.getVolumePath(), dstPath, str(e))
 
     def refreshVolume(self):
-        return self._md.refreshVolume()
+        return self._manifest.refreshVolume()
 
     @classmethod
     def parentVolumeRollback(cls, taskObj, sdUUID, pimgUUID, pvolUUID):
@@ -979,7 +979,7 @@ class Volume(object):
         return volUUID
 
     def validateDelete(self):
-        self._md.validateDelete()
+        self._manifest.validateDelete()
 
     def extend(self, newsize):
         """
@@ -1070,92 +1070,92 @@ class Volume(object):
 
     @classmethod
     def validateDescription(cls, desc):
-        return cls.metadataClass.validateDescription(desc)
+        return cls.manifestClass.validateDescription(desc)
 
     def setDescription(self, descr):
-        self._md.setDescription(descr)
+        self._manifest.setDescription(descr)
 
     def getDescription(self):
-        return self._md.getDescription()
+        return self._manifest.getDescription()
 
     def getLegality(self):
-        return self._md.getLegality()
+        return self._manifest.getLegality()
 
     def setLegality(self, legality):
-        self._md.setLegality(legality)
+        self._manifest.setLegality(legality)
 
     def setDomain(self, sdUUID):
-        return self._md.setDomain(sdUUID)
+        return self._manifest.setDomain(sdUUID)
 
     def setShared(self):
-        return self._md.setShared()
+        return self._manifest.setShared()
 
     @deprecated  # valid for domain version < 3
     def setrw(self, rw):
-        self._md.setrw(rw)
+        self._manifest.setrw(rw)
 
     def setLeaf(self):
-        return self._md.setLeaf()
+        return self._manifest.setLeaf()
 
     def setInternal(self):
-        return self._md.setInternal()
+        return self._manifest.setInternal()
 
     def getVolType(self):
-        return self._md.getVolType()
+        return self._manifest.getVolType()
 
     def getSize(self):
-        return self._md.getSize()
+        return self._manifest.getSize()
 
     def getVolumeSize(self, bs=BLOCK_SIZE):
-        return self._md.getVolumeSize(bs)
+        return self._manifest.getVolumeSize(bs)
 
     def getVolumeTrueSize(self, bs=BLOCK_SIZE):
-        return self._md.getVolumeTrueSize(bs)
+        return self._manifest.getVolumeTrueSize(bs)
 
     def setSize(self, size):
-        self._md.setSize(size)
+        self._manifest.setSize(size)
 
     def updateInvalidatedSize(self):
-        self._md.updateInvalidatedSize()
+        self._manifest.updateInvalidatedSize()
 
     def getType(self):
-        return self._md.getType()
+        return self._manifest.getType()
 
     def setType(self, prealloc):
-        self._md.setType(prealloc)
+        self._manifest.setType(prealloc)
 
     def getDiskType(self):
-        return self._md.getDiskType()
+        return self._manifest.getDiskType()
 
     def getFormat(self):
-        return self._md.getFormat()
+        return self._manifest.getFormat()
 
     def setFormat(self, volFormat):
-        self._md.setFormat(volFormat)
+        self._manifest.setFormat(volFormat)
 
     def isLegal(self):
-        return self._md.isLegal()
+        return self._manifest.isLegal()
 
     def isFake(self):
-        return self._md.isFake()
+        return self._manifest.isFake()
 
     def isShared(self):
-        return self._md.isShared()
+        return self._manifest.isShared()
 
     def isLeaf(self):
-        return self._md.isLeaf()
+        return self._manifest.isLeaf()
 
     def isInternal(self):
-        return self._md.isInternal()
+        return self._manifest.isInternal()
 
     def isSparse(self):
-        return self._md.isSparse()
+        return self._manifest.isSparse()
 
     def recheckIfLeaf(self):
         """
         Recheck if I am a leaf.
         """
-        return self._md.recheckIfLeaf()
+        return self._manifest.recheckIfLeaf()
 
     @contextmanager
     def scopedPrepare(self, rw=True, justme=False, chainrw=False, setrw=False,
@@ -1218,17 +1218,17 @@ class Volume(object):
         pass
 
     def metadata2info(self, meta):
-        return self._md.metadata2info(meta)
+        return self._manifest.metadata2info(meta)
 
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
                     voltype, disktype, desc="", legality=ILLEGAL_VOL):
-        return cls.metadataClass.newMetadata(
+        return cls.manifestClass.newMetadata(
             metaId, sdUUID, imgUUID, puuid, size, format, type, voltype,
             disktype, desc, legality)
 
     def getInfo(self):
-        return self._md.getInfo()
+        return self._manifest.getInfo()
 
     def getParentVolume(self):
         """
@@ -1249,25 +1249,25 @@ class Volume(object):
         self.setParentMeta(puuid)
 
     def getVolumePath(self):
-        return self._md.getVolumePath()
+        return self._manifest.getVolumePath()
 
     def getVmVolumeInfo(self):
-        return self._md.getVmVolumeInfo()
+        return self._manifest.getVmVolumeInfo()
 
     def getMetaParam(self, key):
         """
         Get a value of a specific key
         """
-        return self._md.getMetaParam(key)
+        return self._manifest.getMetaParam(key)
 
     def setMetaParam(self, key, value):
         """
         Set a value of a specific key
         """
-        self._md.setMetaParam(key, value)
+        self._manifest.setMetaParam(key, value)
 
     def getVolumeParams(self, bs=BLOCK_SIZE):
-        return self._md.getVolumeParams(bs)
+        return self._manifest.getVolumeParams(bs)
 
     def shrinkToOptimalSize(self):
         """
@@ -1278,12 +1278,12 @@ class Volume(object):
 
     @classmethod
     def createMetadata(cls, metaId, meta):
-        return cls.metadataClass.createMetadata(metaId, meta)
+        return cls.manifestClass.createMetadata(metaId, meta)
 
     @classmethod
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
-        return cls.metadataClass.newVolumeLease(metaId, sdUUID, volUUID)
+        return cls.manifestClass.newVolumeLease(metaId, sdUUID, volUUID)
 
     @classmethod
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
-        return cls.metadataClass.getImageVolumes(repoPath, sdUUID, imgUUID)
+        return cls.manifestClass.getImageVolumes(repoPath, sdUUID, imgUUID)

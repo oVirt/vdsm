@@ -288,7 +288,7 @@ class FakeImage(image.Image):
         self._manifest = FakeImageManifest()
 
 
-class FakeVolumeMetadata(object):
+class FakeVolumeManifest(object):
     def __init__(self):
         self.sdUUID = 'b4502284-2101-4c5c-ada0-6a196fb30315'
         self.imgUUID = 'e2a325e4-62be-4939-8145-72277c270e8e'
@@ -514,9 +514,9 @@ class FakeVolumeMetadata(object):
         pass
 
 
-class FakeBlockVolumeMetadata(FakeVolumeMetadata):
+class FakeBlockVolumeManifest(FakeVolumeManifest):
     def __init__(self):
-        super(FakeBlockVolumeMetadata, self).__init__()
+        super(FakeBlockVolumeManifest, self).__init__()
         self.metaoff = None
 
     @recorded
@@ -556,9 +556,9 @@ class FakeBlockVolumeMetadata(FakeVolumeMetadata):
         pass
 
 
-class FakeFileVolumeMetadata(FakeVolumeMetadata):
+class FakeFileVolumeManifest(FakeVolumeManifest):
     def __init__(self):
-        super(FakeFileVolumeMetadata, self).__init__()
+        super(FakeFileVolumeManifest, self).__init__()
         self.oop = 'oop'
 
     @recorded
@@ -580,17 +580,17 @@ class FakeFileVolumeMetadata(FakeVolumeMetadata):
 
 
 class FakeFileVolume(fileVolume.FileVolume):
-    metadataClass = FakeFileVolumeMetadata
+    manifestClass = FakeFileVolumeManifest
 
     def __init__(self):
-        self._md = self.metadataClass()
+        self._manifest = self.manifestClass()
 
 
 class FakeBlockVolume(blockVolume.BlockVolume):
-    metadataClass = FakeBlockVolumeMetadata
+    manifestClass = FakeBlockVolumeManifest
 
     def __init__(self):
-        self._md = self.metadataClass()
+        self._manifest = self.manifestClass()
 
 
 class RedirectionChecker(object):
@@ -835,7 +835,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     def setUp(self):
         self.volume = FakeBlockVolume()
-        self.checker = RedirectionChecker(self.volume, '_md')
+        self.checker = RedirectionChecker(self.volume, '_manifest')
 
     @permutations([
         ['metaoff', None],
@@ -863,7 +863,7 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
 
     def setUp(self):
         self.volume = FakeFileVolume()
-        self.checker = RedirectionChecker(self.volume, '_md')
+        self.checker = RedirectionChecker(self.volume, '_manifest')
 
     @permutations([
         ['oop', 'oop'],

@@ -53,10 +53,10 @@ def getDomUuidFromVolumePath(volPath):
     return sdUUID
 
 
-class FileVolumeMetadata(volume.VolumeMetadata):
+class FileVolumeManifest(volume.VolumeManifest):
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        volume.VolumeMetadata.__init__(self, repoPath, sdUUID, imgUUID,
+        volume.VolumeManifest.__init__(self, repoPath, sdUUID, imgUUID,
                                        volUUID)
 
     @property
@@ -339,20 +339,20 @@ class FileVolumeMetadata(volume.VolumeMetadata):
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
     """
-    metadataClass = FileVolumeMetadata
+    manifestClass = FileVolumeManifest
 
     def __init__(self, repoPath, sdUUID, imgUUID, volUUID):
-        md = self.metadataClass(repoPath, sdUUID, imgUUID, volUUID)
-        volume.Volume.__init__(self, md)
+        manifest = self.manifestClass(repoPath, sdUUID, imgUUID, volUUID)
+        volume.Volume.__init__(self, manifest)
 
     @property
     def oop(self):
-        return self._md.oop
+        return self._manifest.oop
 
     # Must be class method for redirection tests.
     @classmethod
     def file_setrw(cls, volPath, rw):
-        cls.metadataClass.file_setrw(volPath, rw)
+        cls.manifestClass.file_setrw(volPath, rw)
 
     @classmethod
     def halfbakedVolumeRollback(cls, taskObj, *args):
@@ -365,7 +365,7 @@ class FileVolume(volume.Volume):
             raise TypeError("halfbakedVolumeRollback takes 1 or 3 "
                             "arguments (%d given)" % len(args))
 
-        metaVolPath = cls.metadataClass.metaVolumePath(volPath)
+        metaVolPath = cls.manifestClass.metaVolumePath(volPath)
         cls.log.info("Halfbaked volume rollback for volPath=%s", volPath)
 
         if oop.getProcessPool(sdUUID).fileUtils.pathExists(volPath) and not \
@@ -375,7 +375,7 @@ class FileVolume(volume.Volume):
     @classmethod
     def createVolumeMetadataRollback(cls, taskObj, volPath):
         cls.log.info("createVolumeMetadataRollback: volPath=%s" % (volPath))
-        metaPath = cls.metadataClass.metaVolumePath(volPath)
+        metaPath = cls.manifestClass.metaVolumePath(volPath)
         sdUUID = getDomUuidFromVolumePath(volPath)
         if oop.getProcessPool(sdUUID).os.path.lexists(metaPath):
             oop.getProcessPool(sdUUID).os.unlink(metaPath)
@@ -444,7 +444,7 @@ class FileVolume(volume.Volume):
         self.log.info("Request to delete volume %s", self.volUUID)
 
         vol_path = self.getVolumePath()
-        lease_path = self._md.leaseVolumePath(vol_path)
+        lease_path = self._manifest.leaseVolumePath(vol_path)
 
         if not force:
             self.validateDelete()
@@ -492,8 +492,8 @@ class FileVolume(volume.Volume):
         cls.log.info("Volume rollback for volPath=%s", volPath)
         procPool = oop.getProcessPool(getDomUuidFromVolumePath(volPath))
         procPool.utils.rmFile(volPath)
-        procPool.utils.rmFile(cls.metadataClass.metaVolumePath(volPath))
-        procPool.utils.rmFile(cls.metadataClass.leaseVolumePath(volPath))
+        procPool.utils.rmFile(cls.manifestClass.metaVolumePath(volPath))
+        procPool.utils.rmFile(cls.manifestClass.leaseVolumePath(volPath))
 
     def llPrepare(self, rw=False, setrw=False):
         """
@@ -546,7 +546,7 @@ class FileVolume(volume.Volume):
         """
         self.log.info("Rename volume %s as %s ", self.volUUID, newUUID)
         if not self.imagePath:
-            self._md.validateImagePath()
+            self._manifest.validateImagePath()
         volPath = os.path.join(self.imagePath, newUUID)
         metaPath = self._getMetaVolumePath(volPath)
         prevMetaPath = self._getMetaVolumePath()
@@ -581,14 +581,14 @@ class FileVolume(volume.Volume):
         except OSError as e:
             if e.errno != os.errno.ENOENT:
                 raise
-        self._md.volUUID = newUUID
-        self._md.volumePath = volPath
+        self._manifest.volUUID = newUUID
+        self._manifest.volumePath = volPath
 
     def _getMetaVolumePath(self, vol_path=None):
-        return self._md._getMetaVolumePath(vol_path)
+        return self._manifest._getMetaVolumePath(vol_path)
 
     def _getLeaseVolumePath(self, vol_path=None):
-        return self._md._getLeaseVolumePath(vol_path)
+        return self._manifest._getLeaseVolumePath(vol_path)
 
     def _extendSizeRaw(self, newSize):
         volPath = self.getVolumePath()

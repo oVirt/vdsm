@@ -583,7 +583,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         Return a type specific volume generator object
         """
-        return blockVolume.BlockVolumeMetadata
+        return blockVolume.BlockVolumeManifest
 
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         """Filter vols belonging to imgUUID only."""
