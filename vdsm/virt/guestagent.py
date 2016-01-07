@@ -170,8 +170,7 @@ class GuestAgent(object):
             self._create,
             self._connect,
             self._onChannelRead,
-            self._onChannelTimeout,
-            self)
+            self._onChannelTimeout)
 
     def _handleAPIVersion(self, version):
         """ Handles the API version value from the heartbeat
@@ -210,13 +209,11 @@ class GuestAgent(object):
     def _prepare_socket(self):
         supervdsm.getProxy().prepareVmChannel(self._socketName)
 
-    @staticmethod
     def _create(self):
         self._sock.close()
         self._sock = _create_socket()
         return self._sock.fileno()
 
-    @staticmethod
     def _connect(self):
         ret = False
         try:
@@ -425,7 +422,6 @@ class GuestAgent(object):
         self.log.debug("setNumberOfCPUs('%d') called", count)
         self._forward('set-number-of-cpus', {'count': count})
 
-    @staticmethod
     def _onChannelTimeout(self):
         self.guestInfo['memUsage'] = 0
         if self.guestStatus not in (vmstatus.POWERING_DOWN,
@@ -468,7 +464,6 @@ class GuestAgent(object):
             self._messageState = MessageState.TOO_BIG
             self._clearReadBuffer()
 
-    @staticmethod
     def _onChannelRead(self):
         result = True
         try:

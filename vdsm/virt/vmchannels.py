@@ -74,7 +74,7 @@ class Listener(threading.Thread):
                 obj['timeout_seen'] = False
                 obj['reconnects'] = 0
                 try:
-                    if obj['read_cb'](obj['opaque']):
+                    if obj['read_cb']():
                         obj['read_time'] = time.time()
                     else:
                         reconnect = True
@@ -93,7 +93,7 @@ class Listener(threading.Thread):
             obj = self._channels.pop(fileno)
             obj['timeout_seen'] = False
             try:
-                fileno = obj['create_cb'](obj['opaque'])
+                fileno = obj['create_cb']()
             except:
                 self.log.exception("An error occurred in the create callback "
                                    "fileno: %d.", fileno)
@@ -113,7 +113,7 @@ class Listener(threading.Thread):
                     self.log.debug("Timeout on fileno %d.", fileno)
                     obj['timeout_seen'] = True
                 try:
-                    obj['timeout_cb'](obj['opaque'])
+                    obj['timeout_cb']()
                     obj['read_time'] = now
                 except:
                     self.log.exception("Exception on timeout callback.")
@@ -157,7 +157,7 @@ class Listener(threading.Thread):
                     continue
 
             try:
-                success = obj['connect_cb'](obj['opaque'])
+                success = obj['connect_cb']()
             except:
                 self.log.exception("Exception on connect callback.")
             else:
@@ -212,17 +212,15 @@ class Listener(threading.Thread):
         self._timeout = seconds
 
     def register(self, create_callback, connect_callback, read_callback,
-                 timeout_callback, opaque):
+                 timeout_callback):
         """ Register a new file descriptor to the listener. """
-        fileno = create_callback(opaque)
+        fileno = create_callback()
         self.log.debug("Add fileno %d to listener's channels.", fileno)
         with self._update_lock:
             self._add_channels[fileno] = {
                 'connect_cb': connect_callback,
                 'read_cb': read_callback, 'timeout_cb': timeout_callback,
-                'opaque': opaque, 'create_cb': create_callback,
-                'read_time': 0.0,
-            }
+                'create_cb': create_callback, 'read_time': 0.0}
 
     def unregister(self, fileno):
         """ Unregister an exist file descriptor from the listener. """
