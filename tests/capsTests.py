@@ -84,7 +84,7 @@ class TestCaps(TestCaseBase):
                                                 flexpriority ept
                                                 vpid""".split()))
 
-        self.assertEqual(c.mhz(), '2533.402')
+        self.assertEqual(c.frequency(), '2533.402')
         self.assertEqual(c.model(),
                          'Intel(R) Xeon(R) CPU           E5649  @ 2.53GHz')
 

@@ -93,45 +93,40 @@ RNG_SOURCES = {'random': '/dev/random',
 class CpuInfo(object):
     def __init__(self, cpuinfo='/proc/cpuinfo'):
         """Parse /proc/cpuinfo"""
-        self._info = {}
-        p = {}
-        self._arch = platform.machine()
+        self._fields = {}
+
+        if cpuarch.is_ppc(cpuarch.real()):
+            self._fields['flags'] = ['powernv']
 
         with open(cpuinfo) as info:
             for line in info:
-                if line.strip() == '':
-                    p = {}
+                if not line.strip():
                     continue
-                key, value = map(str.strip, line.split(':', 1))
-                if key == 'processor':
-                    self._info[value] = p
-                else:
-                    p[key] = value
+
+                key, value = [part.strip() for part in line.split(':', 1)]
+
+                if key == 'flags':  # x86_64
+                    self._fields['flags'] = value.split()
+                elif key == 'cpu MHz':  # x86_64
+                    self._fields['frequency'] = value
+                elif key == 'clock':  # ppc64, ppc64le
+                    self._fields['frequency'] = value[:-3]
+                elif key == 'model name':  # x86_64
+                    self._fields['model'] = value
+                elif key == 'cpu':  # ppc64, ppc64le
+                    self._fields['model'] = value
+
+                if len(self._fields) == 3:
+                    break
 
     def flags(self):
-        if cpuarch.is_x86(self._arch):
-            return self._info.itervalues().next()['flags'].split()
-        elif cpuarch.is_ppc(self._arch):
-            return ['powernv']
-        else:
-            raise RuntimeError('Unsupported architecture')
+        return self._fields['flags']
 
-    def mhz(self):
-        if cpuarch.is_x86(self._arch):
-            return self._info.itervalues().next()['cpu MHz']
-        elif cpuarch.is_ppc(self._arch):
-            clock = self._info.itervalues().next()['clock']
-            return clock[:-3]
-        else:
-            raise RuntimeError('Unsupported architecture')
+    def frequency(self):
+        return self._fields['frequency']
 
     def model(self):
-        if cpuarch.is_x86(self._arch):
-            return self._info.itervalues().next()['model name']
-        elif cpuarch.is_ppc(self._arch):
-            return self._info.itervalues().next()['cpu']
-        else:
-            raise RuntimeError('Unsupported architecture')
+        return self._fields['model']
 
 
 class CpuTopology(object):
@@ -588,7 +583,7 @@ def get():
     caps['cpuThreads'] = str(cpuTopology.threads())
     caps['cpuSockets'] = str(cpuTopology.sockets())
     caps['onlineCpus'] = ','.join(cpuTopology.onlineCpus())
-    caps['cpuSpeed'] = cpuInfo.mhz()
+    caps['cpuSpeed'] = cpuInfo.frequency()
     if config.getboolean('vars', 'fake_kvm_support'):
         if cpuarch.is_x86(cpuarch.effective()):
             caps['cpuModel'] = 'Intel(Fake) CPU'
