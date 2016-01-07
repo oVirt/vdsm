@@ -23,6 +23,7 @@ from collections import namedtuple
 from virt import guestagent
 import json
 
+from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 
 _MSG_TYPES = ['heartbeat', 'host-name', 'os-version',
@@ -121,6 +122,21 @@ class TestGuestIF(TestCaseBase):
             fakeGuestAgent._handleMessage(t.msgType, t.message)
             for (k, v) in t.assertDict.iteritems():
                 self.assertEqual(fakeGuestAgent.guestInfo[k], v)
+
+    def test_guestinfo_encapsulation(self):
+        logging.TRACE = 5
+        fake_guest_agent = guestagent.GuestAgent(None, None, self.log,
+                                                 lambda: None)
+        fake_guest_agent._handleMessage(_MSG_TYPES[0], _INPUTS[0])
+        with MonkeyPatchScope([
+                (fake_guest_agent, 'isResponsive', lambda: True)
+        ]):
+            guest_info = fake_guest_agent.getGuestInfo()
+            for k in _OUTPUTS[0]:
+                guest_info[k] = 'modified'
+            guest_info = fake_guest_agent.getGuestInfo()
+            for (k, v) in _OUTPUTS[0].iteritems():
+                self.assertEqual(guest_info[k], v)
 
 
 class TestGuestIFHandleData(TestCaseBase):

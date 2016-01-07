@@ -360,7 +360,10 @@ class GuestAgent(object):
 
     def getGuestInfo(self):
         if self.isResponsive():
-            return self.guestInfo
+            # Returning deep copy would be safer but could have performance
+            # implications (e.g. on lists of thousands installed Windows
+            # packages).
+            return self.guestInfo.copy()
         else:
             return {
                 'username': 'Unknown',
