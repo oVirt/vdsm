@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 import os
 import os.path
 import time
@@ -26,10 +27,35 @@ import libvirt
 
 from vdsm.compat import pickle
 from vdsm import constants
+from vdsm import libvirtconnection
 from vdsm import response
 from vdsm import utils
 
-from .vm import getVDSMDomains
+from . import vmchannels
+from . import vmxml
+
+
+def _list_domains():
+    conn = libvirtconnection.get()
+    for dom_uuid in conn.listDomainsID():
+        try:
+            dom_obj = conn.lookupByID(dom_uuid)
+            dom_xml = dom_obj.XMLDesc(0)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                logging.exception("domain %s is dead", dom_uuid)
+            else:
+                raise
+        else:
+            yield dom_obj, dom_xml
+
+
+def _get_vdsm_domains():
+    """
+    Return a list of Domains created by VDSM.
+    """
+    return [dom_obj for dom_obj, dom_xml in _list_domains()
+            if vmxml.has_channel(dom_xml, vmchannels.DEVICE_NAME)]
 
 
 def all_vms(cif):
@@ -43,7 +69,7 @@ def all_vms(cif):
 
 
 def _all_vms_from_libvirt(cif):
-    doms = getVDSMDomains()
+    doms = _get_vdsm_domains()
     num_doms = len(doms)
     for idx, v in enumerate(doms):
         vm_id = v.UUIDString()
