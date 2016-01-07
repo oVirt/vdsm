@@ -126,8 +126,16 @@ class SourceThread(threading.Thread):
 
     def _createClient(self, port):
         sslctx = sslutils.create_ssl_context()
-        client_socket = utils.create_connected_socket(
-            self.remoteHost, int(port), sslctx)
+
+        def is_ipv6_address(a):
+            return (':' in a) and a.startswith('[') and a.endswith(']')
+
+        if is_ipv6_address(self.remoteHost):
+            host = self.remoteHost[1:-1]
+        else:
+            host = self.remoteHost
+
+        client_socket = utils.create_connected_socket(host, int(port), sslctx)
         return self._vm.cif.createStompClient(client_socket)
 
     def _setupVdsConnection(self):
