@@ -117,8 +117,8 @@ class TestFiltering(TestCaseBase):
     def test_filter_xml_chars_timing(self):
         setup = ('from virt.guestagent import _filterXmlChars;'
                  'x = u"x" * 1024 * 1024')
-        elasped = timeit.timeit('_filterXmlChars(x)', setup=setup, number=10)
-        print(elasped, "seconds")
+        elapsed = timeit.timeit('_filterXmlChars(x)', setup=setup, number=10)
+        print(elapsed, "seconds")
 
     def test_filter_object_valid(self):
         valid = {u"foo": u"?data?test\U00010000"}
