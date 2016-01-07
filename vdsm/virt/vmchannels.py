@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import threading
 import time
 import select
@@ -47,6 +48,16 @@ class Listener(threading.Thread):
         self._del_channels = []
         self._timeout = None
 
+    def _unregister_fd(self, fileno):
+        try:
+            self._epoll.unregister(fileno)
+        except IOError as e:
+            if e.errno != errno.ENOENT:
+                raise
+            # This case shouldn't happen anymore - But let's track it anyway
+            self.log.debug("Failed to unregister FD from epoll (ENOENT): %d",
+                           fileno)
+
     def _handle_event(self, fileno, event):
         """ Handle an epoll event occurred on a specific file descriptor. """
         reconnect = False
@@ -55,8 +66,8 @@ class Listener(threading.Thread):
             if fileno in self._channels:
                 reconnect = True
             else:
-                self.log.debug("Received %.08X. On fd removed by epoll.",
-                               event)
+                self.log.warning('Received an error on an untracked fd(%d)',
+                                 fileno)
         elif (event & select.EPOLLIN):
             obj = self._channels.get(fileno, None)
             if obj:
@@ -77,6 +88,8 @@ class Listener(threading.Thread):
             self._prepare_reconnect(fileno)
 
     def _prepare_reconnect(self, fileno):
+            # fileno will be closed by create_cb
+            self._unregister_fd(fileno)
             obj = self._channels.pop(fileno)
             obj['timeout_seen'] = False
             try:
@@ -85,7 +98,8 @@ class Listener(threading.Thread):
                 self.log.exception("An error occurred in the create callback "
                                    "fileno: %d.", fileno)
             else:
-                self._unconnected[fileno] = obj
+                with self._update_lock:
+                    self._unconnected[fileno] = obj
 
     def _handle_timeouts(self):
         """
@@ -171,7 +185,8 @@ class Listener(threading.Thread):
             self._update_channels()
             if (self._timeout is not None) and (self._timeout > 0):
                 self._handle_timeouts()
-            self._handle_unconnected()
+            with self._update_lock:
+                self._handle_unconnected()
 
     def run(self):
         """ The listener thread's function. """
@@ -213,4 +228,16 @@ class Listener(threading.Thread):
         """ Unregister an exist file descriptor from the listener. """
         self.log.debug("Delete fileno %d from listener.", fileno)
         with self._update_lock:
+            # Threadsafe, fileno will be closed by caller
+            # NOTE: unregister_fd has to be called here, otherwise it'd be
+            # removed from epoll after the socket has been closed, which is
+            # incorrect
+            # NOTE: unregister_fd must be only called if fileno is not in
+            # _add_channels and not in _unconnected because it might be
+            # about to reconnect after an error or has just been added.
+            # In those cases fileno is not being tracked by epoll and
+            # would result in an ENOENT error
+            if (fileno not in self._add_channels and
+                    fileno not in self._unconnected):
+                self._unregister_fd(fileno)
             self._del_channels.append(fileno)
