@@ -110,20 +110,30 @@ public abstract class ReactorClient {
                             socketChannel.configureBlocking(false);
                             socketChannel.connect(addr);
 
-                            long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
-                            while(!socketChannel.finishConnect() ){
-                                if (System.currentTimeMillis() >= timeout) {
-                                    throw new ConnectException("Connection timeout");
-                                }
-                            }
-
-                            updateLastIncomingHeartbeat();
-                            updateLastOutgoingHeartbeat();
-
                             return socketChannel;
                         }
                     }, this.policy));
-            this.channel = task.get();
+            SocketChannel channel = task.get();
+            if (!channel.finishConnect()) {
+                while (!channel.finishConnect()) {
+                    final long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
+
+                    final FutureTask<SocketChannel> connectTask = scheduleTask(new Retryable<SocketChannel>(
+                            new Callable<SocketChannel>() {
+                                @Override
+                                public SocketChannel call() throws ConnectException {
+                                    if (System.currentTimeMillis() >= timeout) {
+                                        throw new ConnectException("Connection timeout");
+                                    }
+                                    return null;
+                                }
+                            }, this.policy));
+                    connectTask.get();
+                }
+            }
+            updateLastIncomingHeartbeat();
+            updateLastOutgoingHeartbeat();
+            this.channel = channel;
             if (!isOpen()) {
                 throw new ClientConnectionException("Connection failed");
             }
@@ -140,6 +150,8 @@ public abstract class ReactorClient {
             };
             scheduleTask(disconnectCallable);
             throw new ClientConnectionException(e);
+        } catch (IOException e) {
+            throw new ClientConnectionException("Connection failed");
         }
     }
 
@@ -207,7 +219,7 @@ public abstract class ReactorClient {
     }
 
     private boolean isIncomingHeartbeatExeeded() {
-        return this.lastIncomingHeartbeat +  this.policy.getIncomingHeartbeat() < System.currentTimeMillis();
+        return this.lastIncomingHeartbeat + this.policy.getIncomingHeartbeat() < System.currentTimeMillis();
     }
 
     protected void updateLastIncomingHeartbeat() {
@@ -257,7 +269,7 @@ public abstract class ReactorClient {
     }
 
     private boolean isOutgoingHeartbeatExeeded() {
-        return this.lastOutgoingHeartbeat +  this.policy.getOutgoingHeartbeat() < System.currentTimeMillis();
+        return this.lastOutgoingHeartbeat + this.policy.getOutgoingHeartbeat() < System.currentTimeMillis();
     }
 
     /**
@@ -287,7 +299,7 @@ public abstract class ReactorClient {
      * @throws IOException
      *             when networking issue occurs.
      */
-     abstract void write(ByteBuffer buff) throws IOException;
+    abstract void write(ByteBuffer buff) throws IOException;
 
     /**
      * Transport specific post connection functionality.
@@ -341,7 +353,7 @@ public abstract class ReactorClient {
     /**
      * @return the peer certificates of the current session
      */
-    public List<Certificate> getPeerCertificates(){
+    public List<Certificate> getPeerCertificates() {
         throw new UnsupportedOperationException();
     }
 }
