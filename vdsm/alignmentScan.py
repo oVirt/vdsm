@@ -40,7 +40,10 @@ class VirtAlignError(Exception):
 def runScanArgs(*args):
     cmd = [_virtAlignmentScan.cmd]
     cmd.extend(args)
-    return execCmd(cmd)
+    # TODO: remove the environment variable when the issue in
+    # virt-alignment-scan/libvirt is resolved
+    # http://bugzilla.redhat.com/1151838
+    return execCmd(cmd, env={'LIBGUESTFS_BACKEND': 'direct'})
 
 
 def scanImage(image_path):
