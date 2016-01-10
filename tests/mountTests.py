@@ -25,6 +25,9 @@ import os
 import shutil
 import stat
 
+from vdsm import udevadm
+from vdsm.utils import stopwatch
+
 from nose.plugins.skip import SkipTest
 
 from testlib import VdsmTestCase as TestCaseBase
@@ -129,7 +132,10 @@ class MountTests(TestCaseBase):
                 try:
                     self.assertTrue(m.isMounted())
                 finally:
-                    m.umount()
+                    m.umount(force=True, freeloop=True)
+                    # TODO: Use libudev to wait for specific event
+                    with stopwatch("Wait for udev events"):
+                        udevadm.settle(5)
 
     def testSymlinkMount(self):
         checkSudo(["mount", "-o", "loop", "somefile", "target"])
@@ -151,7 +157,10 @@ class MountTests(TestCaseBase):
             try:
                 self.assertTrue(m.isMounted())
             finally:
-                m.umount()
+                m.umount(force=True, freeloop=True)
+                # TODO: Use libudev to wait for specific event
+                with stopwatch("Wait for udev events"):
+                    udevadm.settle(5)
 
 
 class IterMountsPerfTests(TestCaseBase):
