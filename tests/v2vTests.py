@@ -52,7 +52,7 @@ def _mac_from_uuid(vmid):
         vmid[:2], vmid[2:4], vmid[4:6], vmid[6:8])
 
 
-class VmMock(object):
+class MockVirDomain(object):
 
     def __init__(self, name="RHEL",
                  vmid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"):
@@ -110,7 +110,7 @@ class VmMock(object):
 
 
 # FIXME: extend vmfakelib allowing to set predefined domain in Connection class
-class LibvirtMock(object):
+class MockVirConnect(object):
 
     def __init__(self, vms):
         self._vms = vms
@@ -122,7 +122,7 @@ class LibvirtMock(object):
         return [vm for vm in self._vms]
 
     def storageVolLookupByPath(self, name):
-        return LibvirtMock.Volume()
+        return MockVirConnect.Volume()
 
     class Volume(object):
         def info(self):
@@ -142,7 +142,7 @@ class FakeIRS(object):
 
 
 def hypervisorConnect(uri, username, passwd):
-    return LibvirtMock()
+    return MockVirConnect()
 
 
 def read_ovf(ovf_path):
@@ -198,7 +198,7 @@ class v2vTests(TestCaseBase):
         VmSpec("RHEL_2", str(uuid.uuid4()))
     )
 
-    _VMS = [VmMock(*spec) for spec in _VM_SPECS]
+    _VMS = [MockVirDomain(*spec) for spec in _VM_SPECS]
 
     def setUp(self):
         '''
@@ -233,7 +233,7 @@ class v2vTests(TestCaseBase):
             raise SkipTest('v2v is not supported current os version')
 
         def _connect(uri, username, passwd):
-            return LibvirtMock(vms=self._VMS)
+            return MockVirConnect(vms=self._VMS)
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
@@ -252,13 +252,13 @@ class v2vTests(TestCaseBase):
         def internal_error(flags=0):
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
 
-        fake_vms = [VmMock(*spec) for spec in specs]
+        fake_vms = [MockVirDomain(*spec) for spec in specs]
         # Cause vm 1 to fail, so it would not appear in results
         fake_vms[1].XMLDesc = internal_error
         del specs[1]
 
         def _connect(uri, username, passwd):
-            return LibvirtMock(vms=fake_vms)
+            return MockVirConnect(vms=fake_vms)
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
@@ -305,7 +305,7 @@ class v2vTests(TestCaseBase):
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
 
         # we need a sequence of just one vm
-        mock = LibvirtMock(vms=self._VMS[:1])
+        mock = MockVirConnect(vms=self._VMS[:1])
         mock.storageVolLookupByPath = internal_error
 
         def _connect(uri, username, passwd):
