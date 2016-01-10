@@ -53,6 +53,10 @@ VM_SPECS = (
 
 FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
                             os.path.abspath('fake-virt-v2v'))
+FAKE_SSH_ADD = CommandPath('fake-ssh-add',
+                           os.path.abspath('fake-ssh-add'))
+FAKE_SSH_AGENT = CommandPath('fake-ssh-agent',
+                             os.path.abspath('fake-ssh-agent'))
 
 
 def _mac_from_uuid(vm_uuid):
@@ -271,7 +275,9 @@ class v2vTests(TestCaseBase):
         self.volume_id_a = '00000000-0000-0000-0000-000000000002'
         self.image_id_b = '00000000-0000-0000-0000-000000000003'
         self.volume_id_b = '00000000-0000-0000-0000-000000000004'
-        self.url = 'vpx://adminr%40vsphere@0.0.0.0/ovirt/0.0.0.0?no_verify=1'
+        self.vpx_url = 'vpx://adminr%40vsphere@0.0.0.0/ovirt/' \
+                       '0.0.0.0?no_verify=1'
+        self.xen_url = 'xen+ssh://user@host.com'
 
         self.vminfo = {'vmName': self.vm_name,
                        'poolID': self.pool_id,
@@ -444,20 +450,13 @@ class v2vTests(TestCaseBase):
         self.assertEquals(network['macAddr'], _mac_from_uuid(spec.uuid))
         self.assertEquals(network['bridge'], 'VM Network')
 
-    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
-    @MonkeyPatch(v2v, '_V2V_DIR', None)
     def testSuccessfulVMWareImport(self):
-        with namedTemporaryDir() as v2v._V2V_DIR:
-            v2v.convert_external_vm(self.url,
-                                    'root',
-                                    ProtectedPassword('mypassword'),
-                                    self.vminfo,
-                                    self.job_id,
-                                    FakeIRS())
-            job = v2v._jobs[self.job_id]
-            job.wait()
+        self._commonConvertExternalVM(self.vpx_url)
 
-            self.assertEqual(job.status, v2v.STATUS.DONE)
+    @MonkeyPatch(v2v, '_SSH_ADD', FAKE_SSH_ADD)
+    @MonkeyPatch(v2v, '_SSH_AGENT', FAKE_SSH_AGENT)
+    def testSuccessfulXenImport(self):
+        self._commonConvertExternalVM(self.xen_url)
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     def testSuccessfulImportOVA(self):
@@ -470,7 +469,7 @@ class v2vTests(TestCaseBase):
 
     def testV2VOutput(self):
         cmd = [FAKE_VIRT_V2V.cmd,
-               '-ic', self.url,
+               '-ic', self.vpx_url,
                '-o', 'vdsm',
                '-of', 'raw',
                '-oa', 'sparse',
@@ -491,6 +490,21 @@ class v2vTests(TestCaseBase):
 
         with open('fake-virt-v2v.out', 'r') as f:
             self.assertEqual(output, f.read())
+
+    @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    @MonkeyPatch(v2v, '_V2V_DIR', None)
+    def _commonConvertExternalVM(self, url):
+        with namedTemporaryDir() as v2v._V2V_DIR:
+            v2v.convert_external_vm(url,
+                                    'root',
+                                    ProtectedPassword('mypassword'),
+                                    self.vminfo,
+                                    self.job_id,
+                                    FakeIRS())
+            job = v2v._jobs[self.job_id]
+            job.wait()
+
+            self.assertEqual(job.status, v2v.STATUS.DONE)
 
 
 class MockVirConnectTests(TestCaseBase):

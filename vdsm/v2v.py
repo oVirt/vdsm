@@ -53,6 +53,10 @@ _jobs = {}
 
 _V2V_DIR = os.path.join(P_VDSM_RUN, 'v2v')
 _VIRT_V2V = CommandPath('virt-v2v', '/usr/bin/virt-v2v')
+_SSH_AGENT = CommandPath('ssh-agent', '/usr/bin/ssh-agent')
+_SSH_ADD = CommandPath('ssh-add', '/usr/bin/ssh-add')
+_XEN_SSH_PROTOCOL = 'xen+ssh'
+_SSH_AUTH_RE = '(SSH_AUTH_SOCK)=([^;]+).*;\nSSH_AGENT_PID=(\d+)'
 _OVF_RESOURCE_CPU = 3
 _OVF_RESOURCE_MEMORY = 4
 _OVF_RESOURCE_NETWORK = 10
@@ -157,7 +161,10 @@ def get_external_vms(uri, username, password):
 
 
 def convert_external_vm(uri, username, password, vminfo, job_id, irs):
-    command = LibvirtCommand(uri, username, password, vminfo, job_id, irs)
+    if uri.startswith(_XEN_SSH_PROTOCOL):
+        command = XenCommand(uri, vminfo, job_id, irs)
+    else:
+        command = LibvirtCommand(uri, username, password, vminfo, job_id, irs)
     job = ImportVm(job_id, command)
     job.start()
     _add_job(job_id, job)
@@ -276,6 +283,69 @@ def _read_ovf(job_id):
         if e.errno != errno.ENOENT:
             raise
         raise NoSuchOvf("No such ovf %r" % file_name)
+
+
+class SSHAgent(object):
+    """
+    virt-v2v uses ssh-agent for importing xen vms from libvirt,
+    after virt-v2v log in to the machine it needs to copy its disks
+    which ssh-agent let it handle without passwords while the session
+    is on.
+    for more information please refer to the virt-v2v man page:
+    http://libguestfs.org/virt-v2v.1.html
+    """
+    def __init__(self):
+        self._auth = None
+        self._agent_pid = None
+        self._ssh_auth_re = re.compile(_SSH_AUTH_RE)
+
+    def __enter__(self):
+        rc, out, err = execCmd([_SSH_AGENT.cmd], raw=True)
+        if rc != 0:
+            raise V2VError('Error init ssh-agent, exit code: %r'
+                           ', out: %r, err: %r' %
+                           (rc, out, err))
+
+        m = self._ssh_auth_re.match(out)
+        # looking for: SSH_AUTH_SOCK=/tmp/ssh-VEE74ObhTWBT/agent.29917
+        self._auth = {m.group(1): m.group(2)}
+        self._agent_pid = m.group(3)
+
+        try:
+            rc, out, err = execCmd([_SSH_ADD.cmd], env=self._auth)
+        except:
+            self._kill_agent()
+            raise
+
+        if rc != 0:
+            # 1 = general fail
+            # 2 = no agnet
+            if rc != 2:
+                self._kill_agent()
+            raise V2VError('Error init ssh-add, exit code: %r'
+                           ', out: %r, err: %r' %
+                           (rc, out, err))
+
+    def __exit__(self, *args):
+        rc, out, err = execCmd([_SSH_ADD.cmd, '-d'], env=self._auth)
+        if rc != 0:
+            logging.error('Error deleting ssh-add, exit code: %r'
+                          ', out: %r, err: %r' %
+                          (rc, out, err))
+
+        self._kill_agent()
+
+    def _kill_agent(self):
+        rc, out, err = execCmd([_SSH_AGENT.cmd, '-k'],
+                               env={'SSH_AGENT_PID': self._agent_pid})
+        if rc != 0:
+            logging.error('Error killing ssh-agent (PID=%r), exit code: %r'
+                          ', out: %r, err: %r' %
+                          (self._agent_pid, rc, out, err))
+
+    @property
+    def auth(self):
+        return self._auth
 
 
 class V2VCommand(object):
@@ -443,6 +513,50 @@ class OvaCommand(V2VCommand):
     def execute(self):
         with self._volumes():
             yield self._start_virt_v2v()
+
+
+class XenCommand(V2VCommand):
+    """
+    Importing Xen via virt-v2v require to use xen+ssh protocol.
+    this requires:
+    - enable the vdsm user in /etc/passwd
+    - generate ssh keys via ssh-keygen
+    - public key exchange with the importing hosts user
+    - host must be in ~/.ssh/known_hosts (done automatically
+      by ssh to the host before importing vm)
+    """
+    def __init__(self, uri, vminfo, job_id, irs):
+        super(XenCommand, self).__init__(vminfo, job_id, irs)
+        self._uri = uri
+        self._ssh_agent = SSHAgent()
+
+    def _command(self):
+        cmd = [_VIRT_V2V.cmd,
+               '-ic', self._uri,
+               '-o', 'vdsm',
+               '-of', self._get_disk_format(),
+               '-oa', self._vminfo.get('allocation', 'sparse').lower()]
+        cmd.extend(self._disk_parameters())
+        cmd.extend(['--vdsm-vm-uuid',
+                    self._vmid,
+                    '--vdsm-ovf-output',
+                    _V2V_DIR,
+                    '--machine-readable',
+                    '-os',
+                    self._get_storage_domain_path(
+                        self._prepared_volumes[0]['path']),
+                    self._vminfo['vmName']])
+        return cmd
+
+    @contextmanager
+    def execute(self):
+        with self._volumes(), self._ssh_agent:
+            yield self._start_virt_v2v()
+
+    def _environment(self):
+        env = super(XenCommand, self)._environment()
+        env.update(self._ssh_agent.auth)
+        return env
 
 
 class ImportVm(object):

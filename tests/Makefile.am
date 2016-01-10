@@ -220,6 +220,8 @@ dist_vdsmtests_PYTHON = \
 	apiData.py \
 	hookValidation.py \
 	fake-virt-v2v \
+	fake-ssh-add \
+	fake-ssh-agent \
 	monkeypatch.py \
 	nettestlib.py \
 	storagefakelib.py \

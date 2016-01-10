@@ -1207,6 +1207,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_multiqemu.out
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
+%{_datadir}/%{vdsm_name}/tests/fake-ssh-add
+%{_datadir}/%{vdsm_name}/tests/fake-ssh-agent
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.out
 %{_datadir}/%{vdsm_name}/tests/cpu_map.xml
