@@ -26,6 +26,7 @@ import logging
 import netaddr
 import os
 import pwd
+import six
 import string
 
 from .config import config
@@ -393,14 +394,15 @@ class KernelConfig(BaseConfig):
                 bond_attr['nics'].sort()
 
     def _normalize_address(self, config_copy):
-        for net_attr in config_copy.networks.itervalues():
+        for net_name, net_attr in six.iteritems(config_copy.networks):
             prefix = net_attr.pop('prefix', None)
             if prefix is not None:
                 net_attr['netmask'] = self._netinfo.prefix2netmask(int(prefix))
             if 'ipv6addr' in net_attr:
                 net_attr['ipv6addr'] = [net_attr['ipv6addr']]
             if 'defaultRoute' not in net_attr:
-                net_attr['defaultRoute'] = False
+                net_attr['defaultRoute'] = net_name in \
+                    constants.LEGACY_MANAGEMENT_NETWORKS
 
     def _normalize_ifcfg_keys(self, config_copy):
         # ignore keys in persisted networks that might originate from vdsm-reg.
