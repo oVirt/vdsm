@@ -284,13 +284,6 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         for nic in nics:
             _validateInterNetworkCompatibility(_netinfo, vlan, nic)
 
-    # defaultRoute is set either explicitly by the client, OR if we're adding
-    # the management network.
-    # REQUIRED_FOR: clusterLevel<=3.3
-    #       remove reference to constants.LEGACY_MANAGEMENT_NETWORKS
-    if defaultRoute is None:
-        defaultRoute = network in constants.LEGACY_MANAGEMENT_NETWORKS
-
     logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
                  " bondingOptions=%s, mtu=%s, bridged=%s, defaultRoute=%s,"
                  "options=%s", network, vlan, bonding, nics, bondingOptions,
