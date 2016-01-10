@@ -20,8 +20,10 @@
 from __future__ import absolute_import
 import copy
 import netaddr
+import six
 import string
 
+from . import constants
 from .netinfo import addresses
 from .netinfo import bonding
 from .netinfo import bridges
@@ -248,14 +250,15 @@ def _normalize_bonding_nics(config_copy):
 
 
 def _normalize_address(config_copy):
-    for net_attr in config_copy.networks.itervalues():
+    for net_name, net_attr in six.iteritems(config_copy.networks):
         prefix = net_attr.pop('prefix', None)
         if prefix is not None:
             net_attr['netmask'] = addresses.prefix2netmask(int(prefix))
         if 'ipv6addr' in net_attr:
             net_attr['ipv6addr'] = [net_attr['ipv6addr']]
         if 'defaultRoute' not in net_attr:
-            net_attr['defaultRoute'] = False
+            net_attr['defaultRoute'] = net_name in \
+                constants.LEGACY_MANAGEMENT_NETWORKS
 
 
 def _normalize_ifcfg_keys(config_copy):
