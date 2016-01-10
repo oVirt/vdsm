@@ -314,11 +314,11 @@ class ConfigWriter(object):
         # make directory (if it doesn't exist) and assign it to vdsm
         if not os.path.exists(dirName):
             os.makedirs(dirName)
-        os.chown(dirName, vdsm_uid, 0)
+        os.chown(dirName, vdsm_uid, -1)
 
         with open(backup, 'w') as backupFile:
             backupFile.write(content)
-        os.chown(backup, vdsm_uid, 0)
+        os.chown(backup, vdsm_uid, -1)
         logging.debug("Persistently backed up %s "
                       "(until next 'set safe config')", backup)
 
