@@ -8068,18 +8068,32 @@
           'dstDisk': 'DriveSpecVolume'}}
 
 ##
+# @DiskAlignmentMap:
+#
+# A map of the disk alignment from partition name to whether it's aligned
+#
+# Since: 4.17.17
+##
+{'map': 'DiskAlignmentMap',
+ 'key': 'str', 'value': 'bool'}
+
+##
 # @VM.getDiskAlignment:
 #
-# Returns the alignment of the disk partitions.
+# Check alignment of virtual machine disk partitions.
 #
 # @vmID:     The UUID of the VM
 #
 # @disk:  A @DriveSpecVolume structure rapresenting the disk
 #
+# Returns:
+# Mapping of partition name to alignment status (new in version 4.17.17)
+#
 # Since: 4.11.0
 ##
 {'command': {'class': 'VM', 'name': 'getDiskAlignment'},
- 'data': {'vmID': 'UUID', 'disk': 'DriveSpecVolume'}}
+ 'data': {'vmID': 'UUID', 'disk': 'DriveSpecVolume'},
+ 'returns': 'DiskAlignmentMap'}
 
 ##
 # @VM.diskSizeExtend:
