@@ -128,6 +128,30 @@ class TestVmMigrationDowntimeSequence(TestCaseBase):
         return list(_linear_downtime(downtime, steps))
 
 
+class MigrationParamsTests(TestCaseBase):
+
+    def setUp(self):
+        # random values, no real meaning
+        self.params = {
+            'foo': 'bar',
+            'answer': 42,
+            'hyperv': ['qemu', 'kvm'],
+        }
+
+    def test_params_stored(self):
+        with fake.VM() as testvm:
+            with testvm.migration_parameters(self.params):
+                self.assertEquals(testvm.conf['_migrationParams'],
+                                  self.params)
+
+    def test_params_removed(self):
+        with fake.VM() as testvm:
+            with testvm.migration_parameters(self.params):
+                pass
+
+            self.assertNotIn('_migrationParams', testvm.conf)
+
+
 # stolen^Wborrowed from itertools recipes
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
