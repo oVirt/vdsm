@@ -285,24 +285,22 @@ class SourceThread(threading.Thread):
                     self.log.debug("migration semaphore acquired "
                                    "after %d seconds",
                                    time.time() - startTime)
-                    self._vm.conf['_migrationParams'] = {
+                    params = {
                         'dst': self._dst,
                         'mode': self._mode,
                         'method': METHOD_ONLINE,
                         'dstparams': self._dstparams,
                         'dstqemu': self._dstqemu,
                     }
-                    self._vm.saveState()
-                    self._startUnderlyingMigration(time.time())
-                    self._finishSuccessfully()
+                    with self._vm.migration_parameters(params):
+                        self._vm.saveState()
+                        self._startUnderlyingMigration(time.time())
+                        self._finishSuccessfully()
                 except libvirt.libvirtError as e:
                     if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                         self.status = response.error(
                             'migCancelErr', message='Migration canceled')
                     raise
-                finally:
-                    if '_migrationParams' in self._vm.conf:
-                        del self._vm.conf['_migrationParams']
         except MigrationDestinationSetupError as e:
             self._recover(str(e))
             # we know what happened, no need to dump hollow stack trace
