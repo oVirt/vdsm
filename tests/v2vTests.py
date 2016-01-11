@@ -42,30 +42,30 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 import vmfakelib as fake
 
 
-VmSpec = namedtuple('VmSpec', ['name', 'vmid'])
+VmSpec = namedtuple('VmSpec', ['name', 'uuid'])
 
 FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
                             os.path.abspath('fake-virt-v2v'))
 
 
-def _mac_from_uuid(vmid):
+def _mac_from_uuid(vm_uuid):
     return "52:54:%s:%s:%s:%s" % (
-        vmid[:2], vmid[2:4], vmid[4:6], vmid[6:8])
+        vm_uuid[:2], vm_uuid[2:4], vm_uuid[4:6], vm_uuid[6:8])
 
 
 class MockVirDomain(object):
 
     def __init__(self, name="RHEL",
-                 vmid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"):
+                 vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"):
         self._name = name
-        self._vmid = vmid
-        self._mac_address = _mac_from_uuid(vmid)
+        self._uuid = vm_uuid
+        self._mac_address = _mac_from_uuid(vm_uuid)
 
     def name(self):
         return self._name
 
-    def id(self):
-        return self._vmid
+    def UUID(self):
+        return self._uuid
 
     def state(self, flags=0):
         return [5, 0]
@@ -77,7 +77,7 @@ class MockVirDomain(object):
         return """
 <domain type='vmware' id='15'>
     <name>{name}</name>
-    <uuid>{vmid}</uuid>
+    <uuid>{uuid}</uuid>
     <memory unit='KiB'>2097152</memory>
     <currentMemory unit='KiB'>2097152</currentMemory>
     <vcpu placement='static'>1</vcpu>
@@ -106,7 +106,7 @@ class MockVirDomain(object):
     </devices>
 </domain>""".format(
             name=self._name,
-            vmid=self._vmid,
+            uuid=self._uuid,
             mac=self._mac_address)
 
 
@@ -331,7 +331,7 @@ class v2vTests(TestCaseBase):
         self.assertIn('allocation', disk)
 
     def _assertVmMatchesSpec(self, vm, spec):
-        self.assertEquals(vm['vmId'], spec.vmid)
+        self.assertEquals(vm['vmId'], spec.uuid)
         self.assertEquals(vm['memSize'], 2048)
         self.assertEquals(vm['smp'], 1)
         self.assertEquals(len(vm['disks']), 1)
@@ -339,7 +339,7 @@ class v2vTests(TestCaseBase):
 
         network = vm['networks'][0]
         self.assertEquals(network['type'], 'bridge')
-        self.assertEquals(network['macAddr'], _mac_from_uuid(spec.vmid))
+        self.assertEquals(network['macAddr'], _mac_from_uuid(spec.uuid))
         self.assertEquals(network['bridge'], 'VM Network')
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
