@@ -1899,7 +1899,8 @@ class Vm(object):
             hooks.before_vm_start(self._buildDomainXML(), self.conf)
 
             fromSnapshot = self.conf.get('restoreFromSnapshot', False)
-            srcDomXML = self.conf.pop('_srcDomXML')
+            with self._confLock:
+                srcDomXML = self.conf.pop('_srcDomXML')
             if fromSnapshot:
                 srcDomXML = self._correctDiskVolumes(srcDomXML)
                 srcDomXML = self._correctGraphicsConfiguration(srcDomXML)
@@ -2829,8 +2830,9 @@ class Vm(object):
     def _completeIncomingMigration(self):
         if 'restoreState' in self.conf:
             self.cont()
-            del self.conf['restoreState']
-            fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
+            with self._confLock:
+                del self.conf['restoreState']
+                fromSnapshot = self.conf.pop('restoreFromSnapshot', False)
             hooks.after_vm_dehibernate(self._dom.XMLDesc(0), self.conf,
                                        {'FROM_SNAPSHOT': fromSnapshot})
             self._syncGuestTime()
@@ -4681,7 +4683,8 @@ class Vm(object):
         if not self._pathsPreparedEvent.isSet():
             self.log.debug('Timeout while waiting for path preparation')
             return False
-        srcDomXML = self.conf.pop('_srcDomXML').encode('utf-8')
+        with self._confLock:
+            srcDomXML = self.conf.pop('_srcDomXML').encode('utf-8')
         self._updateDevicesDomxmlCache(srcDomXML)
 
         for dev in self._customDevices():
