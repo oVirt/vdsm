@@ -151,7 +151,7 @@ def get_external_vms(uri, username, password):
 
     with closing(conn):
         vms = []
-        for vm in conn.listAllDomains():
+        for vm in _list_domains(conn):
             _add_vm(conn, vms, vm)
         return {'status': doneCode, 'vmList': vms}
 
@@ -642,6 +642,35 @@ def _mem_to_mib(size, unit):
                                      " %r" % unit)
 
 
+def _list_domains(conn):
+    try:
+        for vm in conn.listAllDomains():
+            yield vm
+    # TODO: use only the new API (no need to fall back to listDefinedDomains)
+    #       when supported in Xen under RHEL 5.x
+    except libvirt.libvirtError as e:
+        if e.get_error_code() != libvirt.VIR_ERR_NO_SUPPORT:
+            raise
+        # Support for old libvirt clients
+        seen = set()
+        for name in conn.listDefinedDomains():
+            try:
+                vm = conn.lookupByName(name)
+            except libvirt.libvirtError as e:
+                logging.error("Error looking up vm %r: %s", name, e)
+            else:
+                seen.add(name)
+                yield vm
+        for domainId in conn.listDomainsID():
+            try:
+                vm = conn.lookupByID(domainId)
+            except libvirt.libvirtError as e:
+                logging.error("Error looking up vm by id %r: %s", domainId, e)
+            else:
+                if vm.name() not in seen:
+                    yield vm
+
+
 def _add_vm(conn, vms, vm):
     params = {}
     try:
@@ -674,10 +703,12 @@ def _add_vm(conn, vms, vm):
 
 def _add_vm_info(vm, params):
     params['vmName'] = vm.name()
-    if vm.state()[0] == libvirt.VIR_DOMAIN_SHUTOFF:
-        params['status'] = "Down"
-    else:
+    # TODO: use new API: vm.state()[0] == libvirt.VIR_DOMAIN_SHUTOFF
+    #       when supported in Xen under RHEL 5.x
+    if vm.isActive():
         params['status'] = "Up"
+    else:
+        params['status'] = "Down"
 
 
 def _add_general_info(root, params):

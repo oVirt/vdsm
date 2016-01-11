@@ -27,7 +27,7 @@ import uuid
 import libvirt
 import os
 
-from testlib import namedTemporaryDir
+from testlib import namedTemporaryDir, permutations, expandPermutations
 import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
@@ -42,12 +42,13 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 import vmfakelib as fake
 
 
-VmSpec = namedtuple('VmSpec', ['name', 'uuid'])
+VmSpec = namedtuple('VmSpec', ['name', 'uuid', 'id', 'active'])
 
 VM_SPECS = (
-    VmSpec("RHEL_0", str(uuid.uuid4())),
-    VmSpec("RHEL_1", str(uuid.uuid4())),
-    VmSpec("RHEL_2", str(uuid.uuid4()))
+    VmSpec("RHEL_0", str(uuid.uuid4()), id=0, active=True),
+    VmSpec("RHEL_1", str(uuid.uuid4()), id=1, active=True),
+    VmSpec("RHEL_2", str(uuid.uuid4()), id=2, active=False),
+    VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False)
 )
 
 FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
@@ -62,10 +63,14 @@ def _mac_from_uuid(vm_uuid):
 class MockVirDomain(object):
 
     def __init__(self, name="RHEL",
-                 vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611"):
+                 vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611",
+                 id=0,
+                 active=False):
         self._name = name
         self._uuid = vm_uuid
         self._mac_address = _mac_from_uuid(vm_uuid)
+        self._id = id
+        self._active = active
 
     def name(self):
         return self._name
@@ -73,11 +78,20 @@ class MockVirDomain(object):
     def UUID(self):
         return self._uuid
 
+    def ID(self):
+        return self._id
+
     def state(self, flags=0):
+        """
+        VIR_DOMAIN_RUNNING = 1
+        VIR_DOMAIN_SHUTOFF = 5
+        """
+        if self._active:
+            return [1, 0]
         return [5, 0]
 
     def isActive(self):
-        return False
+        return self._active
 
     def XMLDesc(self, flags=0):
         return """
@@ -128,12 +142,54 @@ class MockVirConnect(object):
     def listAllDomains(self):
         return [vm for vm in self._vms]
 
+    def listDefinedDomains(self):
+        # listDefinedDomains return only inactive domains
+        return [vm.name() for vm in self._vms if not vm.isActive()]
+
+    def listDomainsID(self):
+        # listDomainsID return only active domains
+        return [vm.ID() for vm in self._vms if vm.isActive()]
+
+    def lookupByName(self, name):
+        for vm in self._vms:
+            if vm.name() == name:
+                return vm
+        raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
+                         'virDomainLookupByName() failed')
+
+    def lookupByID(self, id):
+        for vm in self._vms:
+            if vm.ID() == id:
+                return vm
+        raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
+                         'virDomainLookupByID() failed')
+
     def storageVolLookupByPath(self, name):
         return MockVirConnect.Volume()
 
     class Volume(object):
         def info(self):
             return [0, 0, 0]
+
+
+def legacylistAllDomains():
+    raise fake.Error(libvirt.VIR_ERR_NO_SUPPORT,
+                     'Method not supported')
+
+
+def legacylistAllDomainsWrongRaise():
+    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
+                     'Domain not exists')
+
+
+def lookupByNameFailure(name):
+    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
+                     'Domain not exists')
+
+
+def lookupByIDFailure(id):
+    raise fake.Error(libvirt.VIR_ERR_NO_DOMAIN,
+                     'Domain not exists')
 
 
 class FakeIRS(object):
@@ -198,6 +254,7 @@ def temporary_ovf_dir():
         yield ovapath
 
 
+@expandPermutations
 class v2vTests(TestCaseBase):
     def setUp(self):
         '''
@@ -271,6 +328,51 @@ class v2vTests(TestCaseBase):
         for vm, spec in zip(vms, specs):
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
+
+    def testLegacyGetExternalVMs(self):
+        def _connect(uri, username, passwd):
+            mock = MockVirConnect(vms=self._vms)
+            mock.listAllDomains = legacylistAllDomains
+            return mock
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms('esx://mydomain', 'user',
+                                       ProtectedPassword('password')
+                                       )['vmList']
+            self.assertEqual(len(vms), len(self._vms))
+
+    def testLegacyGetExternalVMsFailure(self):
+        def _connect(uri, username, passwd):
+            mock = MockVirConnect(vms=self._vms)
+            mock.listAllDomains = legacylistAllDomainsWrongRaise
+            return mock
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            self.assertRaises(libvirt.libvirtError,
+                              v2v.get_external_vms,
+                              'esx://mydomain', 'user',
+                              ProtectedPassword('password'))
+
+    @permutations([
+        # (methodname, fakemethod)
+        ['lookupByName', lookupByNameFailure],
+        ['lookupByID', lookupByIDFailure]
+    ])
+    def testLookupFailure(self, methodname, fakemethod):
+        def _connect(uri, username, passwd):
+            mock = MockVirConnect(vms=self._vms)
+            mock.listAllDomains = legacylistAllDomains
+            setattr(mock, methodname, fakemethod)
+            return mock
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms('esx://mydomain', 'user',
+                                       ProtectedPassword('password')
+                                       )['vmList']
+            self.assertEqual(len(vms), 2)
 
     def testOutputParser(self):
         output = ''.join(['[   0.0] Opening the source -i libvirt ://roo...\n',
