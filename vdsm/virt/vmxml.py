@@ -243,7 +243,7 @@ class Domain(object):
             <smbios mode="sysinfo"/>
         </os>
 
-        If 'use_serial_console' is true, use the console:
+        If 'use_serial_console' is true and we are on x86, use the console:
 
         <os>
             ...
@@ -283,7 +283,7 @@ class Domain(object):
         if utils.tobool(self.conf.get('bootMenuEnable', False)):
             oselem.appendChildWithArgs('bootmenu', enable='yes')
 
-        if use_serial_console:
+        if use_serial_console and caps.Architecture.is_x86(self.arch):
             oselem.appendChildWithArgs('bios', useserial='yes')
 
     def appendSysinfo(self, osname, osversion, serialNumber):

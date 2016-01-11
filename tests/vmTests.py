@@ -295,14 +295,24 @@ class TestVm(XMLTestCase):
         xml = find_xml_element(domxml.dom.toxml(), './sysinfo')
         self.assertXMLEqual(xml, sysinfoXML)
 
-    @permutations([['serial', True], ['virtio', False]])
-    def testSerialBios(self, console_type, use_serial):
+    @permutations([
+        # console_type, cpu_arch, use_serial, check_attrib
+        ['serial', caps.Architecture.X86_64, True, True],
+        ['virtio', caps.Architecture.X86_64, False, True],
+        ['serial', caps.Architecture.PPC64, False, False],
+        ['serial', caps.Architecture.PPC64LE, False, False],
+    ])
+    def testSerialBios(self, console_type, cpu_arch, use_serial, check_attrib):
         devices = {'device': 'console', 'type': 'console',
                    'specParams': {'consoleType': console_type}},
-        with fake.VM(devices=devices, create_device_objects=True) as fakevm:
+        with fake.VM(devices=devices, arch=cpu_arch,
+                     create_device_objects=True) as fakevm:
             dom_xml = fakevm._buildDomainXML()
             tree = etree.fromstring(dom_xml)
-            element = tree.find(".//bios[@useserial='yes']")
+            xpath = ".//bios"
+            if check_attrib:
+                xpath += "[@useserial='yes']"
+            element = tree.find(xpath)
             self.assertEqual(element is not None, use_serial)
 
     def testConsoleXMLVirtio(self):
