@@ -3610,6 +3610,16 @@ class Vm(object):
                      'message': e.message}}
 
     @contextmanager
+    def migration_parameters(self, params):
+        with self._confLock:
+            self.conf['_migrationParams'] = params
+        try:
+            yield
+        finally:
+            with self._confLock:
+                del self.conf['_migrationParams']
+
+    @contextmanager
     def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom,
                           specParams=None):
         vnicXML = dev.getXML()

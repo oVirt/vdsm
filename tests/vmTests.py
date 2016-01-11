@@ -1773,3 +1773,27 @@ class TestVmStatusTransitions(TestCaseBase):
                 self.assertEqual(vm.status()['status'], vmstatus.SAVING_STATE)
                 # state must not change even after we are sure the event was
                 # handled
+
+
+class MigrationParamsTests(TestCaseBase):
+
+    def setUp(self):
+        # random values, no real meaning
+        self.params = {
+            'foo': 'bar',
+            'answer': 42,
+            'hyperv': ['qemu', 'kvm'],
+        }
+
+    def test_params_stored(self):
+        with FakeVM() as testvm:
+            with testvm.migration_parameters(self.params):
+                self.assertEquals(testvm.conf['_migrationParams'],
+                                  self.params)
+
+    def test_params_removed(self):
+        with FakeVM() as testvm:
+            with testvm.migration_parameters(self.params):
+                pass
+
+            self.assertNotIn('_migrationParams', testvm.conf)
