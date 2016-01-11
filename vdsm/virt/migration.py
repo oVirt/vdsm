@@ -230,31 +230,31 @@ class SourceThread(threading.Thread):
             self._setupVdsConnection()
             self._setupRemoteMachineParams()
             self._prepareGuest()
-            SourceThread._ongoingMigrations.acquire()
-            try:
-                if self._migrationCanceledEvt:
-                    self._raiseAbortError()
-                self.log.debug("migration semaphore acquired after %d seconds",
-                               time.time() - startTime)
-                self._vm.conf['_migrationParams'] = {
-                    'dst': self._dst,
-                    'mode': self._mode,
-                    'method': self._method,
-                    'dstparams': self._dstparams,
-                    'dstqemu': self._dstqemu}
-                self._vm.saveState()
-                self._startUnderlyingMigration(time.time())
-                self._finishSuccessfully()
-            except libvirt.libvirtError as e:
-                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
-                    self.status['status']['code'] = \
-                        errCode['migCancelErr']['status']['code']
-                    self.status['status']['message'] = 'Migration canceled'
-                raise
-            finally:
-                if '_migrationParams' in self._vm.conf:
-                    del self._vm.conf['_migrationParams']
-                SourceThread._ongoingMigrations.release()
+            with SourceThread._ongoingMigrations:
+                try:
+                    if self._migrationCanceledEvt:
+                        self._raiseAbortError()
+                    self.log.debug(
+                        "migration semaphore acquired after %d seconds",
+                        time.time() - startTime)
+                    self._vm.conf['_migrationParams'] = {
+                        'dst': self._dst,
+                        'mode': self._mode,
+                        'method': self._method,
+                        'dstparams': self._dstparams,
+                        'dstqemu': self._dstqemu}
+                    self._vm.saveState()
+                    self._startUnderlyingMigration(time.time())
+                    self._finishSuccessfully()
+                except libvirt.libvirtError as e:
+                    if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
+                        self.status['status']['code'] = \
+                            errCode['migCancelErr']['status']['code']
+                        self.status['status']['message'] = 'Migration canceled'
+                    raise
+                finally:
+                    if '_migrationParams' in self._vm.conf:
+                        del self._vm.conf['_migrationParams']
         except Exception as e:
             self._recover(str(e))
             self.log.error("Failed to migrate", exc_info=True)
