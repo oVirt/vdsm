@@ -585,7 +585,7 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BONDING_NAME, nics)
             self.assertMtu(NETB_DICT['mtu'], BONDING_NAME)
 
-            _waitForKnownOperstate(BONDING_NAME)
+            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
             with nonChangingOperstate(BONDING_NAME):
                 status, msg = self.setupNetworks(
                     {NETB_NAME: {'remove': True}}, {}, NOCHK)
@@ -1132,7 +1132,7 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BONDING_NAME, nics[:2])
 
             # Increase bond size
-            _waitForKnownOperstate(BONDING_NAME)
+            _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
             with nonChangingOperstate(BONDING_NAME):
                 status, msg = self.setupNetworks(
                     {}, {BONDING_NAME: dict(nics=nics)}, NOCHK)
@@ -1172,7 +1172,7 @@ class NetworkTest(TestCaseBase):
                                               'options': 'mode=3 miimon=250'},
                                               bridged)
 
-                _waitForKnownOperstate(BONDING_NAME)
+                _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
                 with nonChangingOperstate(BONDING_NAME):
                     # Add additional vlanned net over the bond
                     self._createBondedNetAndCheck(1,
@@ -1195,7 +1195,7 @@ class NetworkTest(TestCaseBase):
 
                 # Add a network changing bond options
                 with self.assertRaises(OperStateChangedError):
-                    _waitForKnownOperstate(BONDING_NAME)
+                    _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
                     with nonChangingOperstate(BONDING_NAME):
                         self._createBondedNetAndCheck(4,
                                                       {'nics': nics[1:],
@@ -1220,7 +1220,7 @@ class NetworkTest(TestCaseBase):
                                               mtu=1500)
                 self.assertMtu(1500, BONDING_NAME)
 
-                _waitForKnownOperstate(BONDING_NAME)
+                _waitForOperstate(BONDING_NAME, OPERSTATE_UP)
                 with nonChangingOperstate(BONDING_NAME):
                     # Add a network with MTU smaller than existing network
                     self._createBondedNetAndCheck(1, {'nics': nics},
