@@ -18,7 +18,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import __builtin__
 import os
 from datetime import datetime
 from functools import partial
@@ -103,7 +102,7 @@ class TestNetinfo(TestCaseBase):
                   (123,         'unknown',    0))
 
         for passed, operstate, expected in values:
-            with MonkeyPatchScope([(__builtin__, 'open',
+            with MonkeyPatchScope([(io, 'open',
                                     lambda x: io.BytesIO(str(passed))),
                                    (nics, 'operstate',
                                     lambda x: operstate)]):

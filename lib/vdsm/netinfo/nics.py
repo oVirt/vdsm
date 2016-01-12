@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 from __future__ import absolute_import
 import errno
+import io
 from functools import partial
 import logging
 
@@ -34,7 +35,7 @@ nics = partial(visible_devs, Link.isNICLike)
 
 
 def operstate(nic_name):
-    with open('/sys/class/net/%s/operstate' % nic_name) as operstateFile:
+    with io.open('/sys/class/net/%s/operstate' % nic_name) as operstateFile:
         return operstateFile.read().strip()
 
 
@@ -43,7 +44,7 @@ def speed(nic_name):
     nic and nic is UP, 0 otherwise."""
     try:
         if operstate(nic_name) == OPERSTATE_UP:
-            with open('/sys/class/net/%s/speed' % nic_name) as speedFile:
+            with io.open('/sys/class/net/%s/speed' % nic_name) as speedFile:
                 s = int(speedFile.read())
             # the device may have been disabled/downed after checking
             # so we validate the return value as sysfs may return
