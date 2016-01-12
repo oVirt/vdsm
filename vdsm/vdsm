@@ -30,6 +30,7 @@ import tempfile
 from logging import config as lconfig
 
 from vdsm import constants
+from vdsm import health
 from vdsm import utils
 from vdsm.config import config
 from vdsm import libvirtconnection
@@ -82,11 +83,13 @@ def serve_clients(log):
     from clientIF import clientIF  # must import after config is read
     cif = clientIF.getInstance(irs, log)
     cif.start()
+    health.start()
     try:
         while running[0]:
             signal.pause()
 
         profile.stop()
+        health.stop()
     finally:
         cif.prepareForShutdown()
 
