@@ -391,6 +391,39 @@ class v2vTests(TestCaseBase):
             self.assertEqual(output, f.read())
 
 
+class MockVirConnectTests(TestCaseBase):
+    def setUp(self):
+        self._vms = [MockVirDomain(*spec) for spec in VM_SPECS]
+        self._mock = MockVirConnect(vms=self._vms)
+
+    def test_list_all_domains(self):
+        vms = self._mock.listAllDomains()
+        self.assertEqual(len(vms), len(self._vms))
+
+    def test_list_defined_domains(self):
+        vms = self._mock.listDefinedDomains()
+        self.assertEqual(len(vms), 2)
+
+    def test_list_domains_id(self):
+        vms = self._mock.listDomainsID()
+        self.assertEqual(len(vms), 2)
+
+    def test_lookup_by_name(self):
+        vm = self._mock.lookupByName('RHEL_0')
+        self.assertEquals('RHEL_0', vm.name())
+
+    def test_lookup_by_name_failed(self):
+        self.assertRaises(libvirt.libvirtError, self._mock.lookupByName,
+                          'fakename')
+
+    def test_lookup_by_id(self):
+        vm = self._mock.lookupByID(0)
+        self.assertEquals(0, vm.ID())
+
+    def test_lookup_by_id_failed(self):
+        self.assertRaises(libvirt.libvirtError, self._mock.lookupByID, 99)
+
+
 class TestGetOVAInfo(TestCaseBase):
     def test_directory(self):
         with self.temporary_ovf_dir() as (base, ovfpath, ovapath):
