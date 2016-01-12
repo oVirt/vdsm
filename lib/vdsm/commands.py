@@ -283,6 +283,9 @@ class AsyncProc(object):
             self._returncode = self._proc.poll()
         return self._returncode
 
+    def poll(self):
+        return self.returncode
+
     def kill(self):
         try:
             self._proc.kill()

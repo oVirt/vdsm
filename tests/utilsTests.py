@@ -40,8 +40,9 @@ from vdsm import utils
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import panic
+from vdsm.infra import zombiereaper
 
-from monkeypatch import MonkeyPatch
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import VM_STATUS_DUMP
 from monkeypatch import Patch
 from testlib import forked, online_cpus
@@ -74,6 +75,61 @@ class FakeMonotonicTime(object):
 
     def __exit__(self, *_):
         self.patch.revert()
+
+
+def wait_for_removal(path, timeout, wait=0.1):
+    deadline = utils.monotonic_time() + timeout
+    while True:
+        if not os.path.exists(path):
+            return True
+        if utils.monotonic_time() > deadline:
+            return False
+        time.sleep(wait)
+
+
+class TerminatingTests(TestCaseBase):
+
+    def setUp(self):
+        self.proc = commands.execCmd([EXT_SLEEP, "2"], sync=False)
+        self.proc_path = "/proc/%d" % self.proc.pid
+        self.kill_proc = self.proc.kill
+        self.assertTrue(os.path.exists(self.proc_path))
+        self.reaped = set()
+
+    def tearDown(self):
+        if self.proc.poll() is None:
+            self.kill_proc()
+
+    def test_terminating(self):
+        with utils.terminating(self.proc):
+            self.assertTrue(os.path.exists(self.proc_path))
+        self.assertTrue(wait_for_removal(self.proc_path, timeout=1))
+
+    def test_terminating_with_kill_exception(self):
+        class FakeKillError(Exception):
+            pass
+
+        def fake_kill():
+            raise FakeKillError("fake kill exception")
+
+        with MonkeyPatchScope([(zombiereaper,
+                                'autoReapPID',
+                                self.reaped.add
+                                )]):
+            self.proc.kill = fake_kill
+            with utils.terminating(self.proc):
+                self.assertTrue(os.path.exists(self.proc_path))
+            self.assertTrue(self.proc.pid not in self.reaped)
+
+    def test_terminating_with_infected_kill(self):
+        with MonkeyPatchScope([(zombiereaper,
+                                'autoReapPID',
+                                self.reaped.add
+                                )]):
+            self.proc.kill = lambda: None
+            with utils.terminating(self.proc):
+                self.assertTrue(os.path.exists(self.proc_path))
+            self.assertTrue(self.proc.pid in self.reaped)
 
 
 class RetryTests(TestCaseBase):

@@ -747,6 +747,21 @@ def running(runnable):
         runnable.stop()
 
 
+@contextmanager
+def terminating(proc):
+    try:
+        yield proc
+    finally:
+        try:
+            if proc.poll() is None:
+                logging.debug('Terminating process pid=%d' % proc.pid)
+                proc.kill()
+                if proc.poll() is None:
+                    zombiereaper.autoReapPID(proc.pid)
+        except Exception:
+            logging.exception('Failed to kill process %d' % proc.pid)
+
+
 def get_selinux_enforce_mode():
     """
     Returns the SELinux mode as reported by kernel.
