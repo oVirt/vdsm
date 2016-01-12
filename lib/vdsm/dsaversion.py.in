@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import platform
+from vdsm import cpuarch
 
 """
 This module provides DSA software versioning information for
@@ -39,5 +39,5 @@ version_info = {
     'clusterLevels': ['3.4', '3.5', '3.6', '4.0'],
 }
 
-if platform.machine() == 'ppc64le':
+if cpuarch.real() == cpuarch.PPC64LE:
     version_info['clusterLevels'] = ['3.6', '4.0']
