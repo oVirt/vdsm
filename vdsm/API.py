@@ -1736,22 +1736,6 @@ class Global(APIBase):
                 self.log.exception("failed to retrieve Hosted Engine HA info")
         return i
 
-    @staticmethod
-    def translateNetOptionsToNew(options):
-        _translationMap = {
-            'IPADDR': 'ipaddr',
-            'NETMASK': 'netmask',
-            'PREFIX': 'prefix',
-            'GATEWAY': 'gateway',
-            'BOOTPROTO': 'bootproto',
-            'BONDING_OPTS': 'bondingOptions',
-        }
-        for k, v in options.items():
-            if k in _translationMap:
-                logging.warn("options %s is deprecated. Use %s instead" %
-                             (k, _translationMap[k]))
-                options[_translationMap[k]] = options.pop(k)
-
 
 class SDM(APIBase):
     ctorArgs = []

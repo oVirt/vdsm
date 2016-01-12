@@ -998,12 +998,7 @@ def usage():
 
 
 def _parseKwargs(args):
-    import API
-
-    kwargs = dict(arg.split('=', 1) for arg in args)
-    API.Global.translateNetOptionsToNew(kwargs)
-
-    return kwargs
+    return dict(arg.split('=', 1) for arg in args)
 
 
 def main():
