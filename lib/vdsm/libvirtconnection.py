@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2013 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -126,7 +126,8 @@ def get(target=None, killOnFailure=True):
                     for name in dir(ret):
                         method = getattr(ret, name)
                         if callable(method) and name[0] != '_':
-                            setattr(ret, name, wrapMethod(method))
+                            setattr(ret, name,
+                                    wrapMethod(utils.weakmethod(method)))
                 return ret
             except libvirt.libvirtError as e:
                 edom = e.get_error_domain()
@@ -167,7 +168,8 @@ def get(target=None, killOnFailure=True):
             for name in dir(libvirt.virConnect):
                 method = getattr(conn, name)
                 if callable(method) and name[0] != '_':
-                    setattr(conn, name, wrapMethod(method))
+                    setattr(conn, name,
+                            wrapMethod(utils.weakmethod(method)))
             if target is not None:
                 for ev in (libvirt.VIR_DOMAIN_EVENT_ID_LIFECYCLE,
                            libvirt.VIR_DOMAIN_EVENT_ID_REBOOT,
