@@ -32,6 +32,7 @@ dist_vdsmpylib_PYTHON = \
 	dmidecodeUtil.py \
 	exception.py \
 	executor.py \
+	health.py \
 	hooks.py \
 	host.py \
 	ipwrapper.py \

@@ -33,6 +33,7 @@ import warnings
 from vdsm import commands
 from vdsm import constants
 from vdsm import dsaversion
+from vdsm import health
 from vdsm import schedule
 from vdsm import utils
 from vdsm.config import config
@@ -104,12 +105,14 @@ def serve_clients(log):
 
         cif.start()
         periodic.start(cif, scheduler)
+        health.start()
         try:
             while running[0]:
                 sigutils.wait_for_signal()
 
             profile.stop()
         finally:
+            health.stop()
             periodic.stop()
             cif.prepareForShutdown()
             scheduler.stop()

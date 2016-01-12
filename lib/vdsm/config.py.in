@@ -428,6 +428,12 @@ parameters = [
             'false by default. Use environment file /etc/sysconfig/vdsm to '
             'set COVERAGE_PROCESS_START and COVERAGE_FILE variables.'),
 
+        ('health_monitor_enable', 'false',
+            'Enable Vdsm health monitoring.'),
+
+        ('health_check_interval', '60',
+            'Number of seconds to wait between health checks.'),
+
     ]),
 
     # Section: [gluster]

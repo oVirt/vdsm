@@ -12,6 +12,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/dmidecodeUtil.py
 ./usr/lib/python2.7/dist-packages/vdsm/exception.py
 ./usr/lib/python2.7/dist-packages/vdsm/executor.py
+./usr/lib/python2.7/dist-packages/vdsm/health.py
 ./usr/lib/python2.7/dist-packages/vdsm/hooks.py
 ./usr/lib/python2.7/dist-packages/vdsm/ipwrapper.py
 ./usr/lib/python2.7/dist-packages/vdsm/jsonrpcvdscli.py

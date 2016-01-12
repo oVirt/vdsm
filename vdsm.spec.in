@@ -1077,6 +1077,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/dmidecodeUtil.py*
 %{python_sitelib}/%{vdsm_name}/exception.py*
 %{python_sitelib}/%{vdsm_name}/executor.py*
+%{python_sitelib}/%{vdsm_name}/health.py*
 %{python_sitelib}/%{vdsm_name}/hooks.py*
 %{python_sitelib}/%{vdsm_name}/host.py*
 %{python_sitelib}/%{vdsm_name}/ipwrapper.py*
