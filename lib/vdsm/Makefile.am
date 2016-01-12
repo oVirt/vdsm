@@ -29,6 +29,7 @@ dist_vdsmpylib_PYTHON = \
 	define.py \
 	exception.py \
 	executor.py \
+	health.py \
 	ipwrapper.py \
 	jsonrpcvdscli.py \
 	libvirtconnection.py \
