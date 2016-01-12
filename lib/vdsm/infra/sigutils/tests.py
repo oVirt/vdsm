@@ -57,18 +57,18 @@ def child_test(*args):
 
 def test_signal_received():
     with child_test('check_signal_received') as child:
-        assert_read(child.stdout, 'ready\n')
+        assert_read(child.stdout, b'ready\n')
         child.send_signal(signal.SIGUSR1)
-        assert_read(child.stdout, 'signal sigusr1\n')
-        assert_read(child.stdout, 'done\n')
+        assert_read(child.stdout, b'signal sigusr1\n')
+        assert_read(child.stdout, b'done\n')
 
 
 def test_signal_timeout():
     TIMEOUT = 0.2
     with child_test('check_signal_timeout', str(TIMEOUT)) as child:
         now = time.time()
-        assert_read(child.stdout, 'ready\n')
-        assert_read(child.stdout, 'done\n')
+        assert_read(child.stdout, b'ready\n')
+        assert_read(child.stdout, b'done\n')
         later = time.time()
 
         # 3 is a safety factor
@@ -80,35 +80,35 @@ def test_signal_3_times():
     A sanity test to make sure wait_for_signal fires more than once.
     '''
     with child_test('check_signal_times') as child:
-        assert_read(child.stdout, 'ready\n')
+        assert_read(child.stdout, b'ready\n')
         child.send_signal(signal.SIGUSR1)
-        assert_read(child.stdout, 'signal sigusr1\n')
-        assert_read(child.stdout, 'woke up\n')
+        assert_read(child.stdout, b'signal sigusr1\n')
+        assert_read(child.stdout, b'woke up\n')
         child.send_signal(signal.SIGUSR1)
-        assert_read(child.stdout, 'signal sigusr1\n')
-        assert_read(child.stdout, 'woke up\n')
+        assert_read(child.stdout, b'signal sigusr1\n')
+        assert_read(child.stdout, b'woke up\n')
         child.send_signal(signal.SIGUSR1)
-        assert_read(child.stdout, 'signal sigusr1\n')
-        assert_read(child.stdout, 'woke up\n')
-        assert_read(child.stdout, 'done\n')
+        assert_read(child.stdout, b'signal sigusr1\n')
+        assert_read(child.stdout, b'woke up\n')
+        assert_read(child.stdout, b'done\n')
 
 
 def test_signal_to_thread():
     with child_test('check_child_signal_to_thread') as child:
-        assert_read(child.stdout, 'ready\n')
-        assert_read(child.stdout, 'signal sigchld\n')
-        assert_read(child.stdout, 'done\n')
+        assert_read(child.stdout, b'ready\n')
+        assert_read(child.stdout, b'signal sigchld\n')
+        assert_read(child.stdout, b'done\n')
 
 
 def test_uninitialized():
     with child_test('check_uninitialized') as child:
-        assert_read(child.stdout, 'ready\n')
-        assert_read(child.stdout, 'exception\n')
-        assert_read(child.stdout, 'done\n')
+        assert_read(child.stdout, b'ready\n')
+        assert_read(child.stdout, b'exception\n')
+        assert_read(child.stdout, b'done\n')
 
 
 def test_register_twice():
     with child_test('check_register_twice') as child:
-        assert_read(child.stdout, 'ready\n')
-        assert_read(child.stdout, 'exception\n')
-        assert_read(child.stdout, 'done\n')
+        assert_read(child.stdout, b'ready\n')
+        assert_read(child.stdout, b'exception\n')
+        assert_read(child.stdout, b'done\n')

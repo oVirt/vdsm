@@ -22,7 +22,7 @@ from time import sleep
 import os
 
 from .. import zombiereaper
-from cpopen import CPopen
+from subprocess import Popen
 
 from unittest import TestCase
 
@@ -36,7 +36,7 @@ class zombieReaperTests(TestCase):
         zombiereaper.unregisterSignalHandler()
 
     def testProcessDiesAfterBeingTracked(self):
-        p = CPopen(["sleep", "1"])
+        p = Popen(["sleep", "1"])
         zombiereaper.autoReapPID(p.pid)
         # wait for the grim reaper to arrive
         sleep(4)
@@ -45,7 +45,7 @@ class zombieReaperTests(TestCase):
         self.assertRaises(OSError, os.waitpid, p.pid, os.WNOHANG)
 
     def testProcessDiedBeforeBeingTracked(self):
-        p = CPopen(["sleep", "0"])
+        p = Popen(["sleep", "0"])
         # wait for the process to die
         sleep(1)
 
