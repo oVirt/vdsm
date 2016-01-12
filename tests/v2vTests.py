@@ -44,6 +44,12 @@ import vmfakelib as fake
 
 VmSpec = namedtuple('VmSpec', ['name', 'uuid'])
 
+VM_SPECS = (
+    VmSpec("RHEL_0", str(uuid.uuid4())),
+    VmSpec("RHEL_1", str(uuid.uuid4())),
+    VmSpec("RHEL_2", str(uuid.uuid4()))
+)
+
 FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
                             os.path.abspath('fake-virt-v2v'))
 
@@ -193,14 +199,6 @@ def temporary_ovf_dir():
 
 
 class v2vTests(TestCaseBase):
-    _VM_SPECS = (
-        VmSpec("RHEL_0", str(uuid.uuid4())),
-        VmSpec("RHEL_1", str(uuid.uuid4())),
-        VmSpec("RHEL_2", str(uuid.uuid4()))
-    )
-
-    _VMS = [MockVirDomain(*spec) for spec in _VM_SPECS]
-
     def setUp(self):
         '''
         We are testing the output of fake-virt-v2v with vminfo input
@@ -226,6 +224,8 @@ class v2vTests(TestCaseBase):
                                  {'imageID': self.image_id_b,
                                   'volumeID': self.volume_id_b}]}
 
+        self._vms = [MockVirDomain(*spec) for spec in VM_SPECS]
+
     def tearDown(self):
         v2v._jobs.clear()
 
@@ -234,21 +234,21 @@ class v2vTests(TestCaseBase):
             raise SkipTest('v2v is not supported current os version')
 
         def _connect(uri, username, passwd):
-            return MockVirConnect(vms=self._VMS)
+            return MockVirConnect(vms=self._vms)
 
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'))['vmList']
 
-        self.assertEqual(len(vms), len(self._VM_SPECS))
+        self.assertEqual(len(vms), len(VM_SPECS))
 
-        for vm, spec in zip(vms, self._VM_SPECS):
+        for vm, spec in zip(vms, VM_SPECS):
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
 
     def testGetExternalVMsWithXMLDescFailure(self):
-        specs = list(self._VM_SPECS)
+        specs = list(VM_SPECS)
 
         def internal_error(flags=0):
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
@@ -306,7 +306,7 @@ class v2vTests(TestCaseBase):
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
 
         # we need a sequence of just one vm
-        mock = MockVirConnect(vms=self._VMS[:1])
+        mock = MockVirConnect(vms=self._vms[:1])
         mock.storageVolLookupByPath = internal_error
 
         def _connect(uri, username, passwd):
@@ -317,7 +317,7 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password'))['vmList']
         self.assertEquals(len(vms), 1)
-        self._assertVmMatchesSpec(vms[0], self._VM_SPECS[0])
+        self._assertVmMatchesSpec(vms[0], VM_SPECS[0])
         for disk in vms[0]['disks']:
             self.assertNotIn('capacity', disk)
             self.assertNotIn('allocation', disk)
