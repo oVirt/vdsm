@@ -7626,45 +7626,52 @@
 #
 # Parameters for @VM.migrate.
 #
-# @vmId:            The UUID of the virtual machine to migrate
+# @vmId:                The UUID of the virtual machine to migrate
 #
-# @dst:             The destination host in <host>[:<port>] format.
-#                   The port is optional and should usually be omitted.
+# @dst:                 The destination host in <host>[:<port>] format.
+#                       The port is optional and should usually be omitted.
 #
-# @dstparams:       Used only by the hibernate API.  Ignored for @remote
-#                   migration
+# @dstparams:           Used only by the hibernate API.  Ignored for @remote
+#                       migration
 #
-# @mode:            #optional The migration mode.  Callers of this API should
-#                   use @remote.  For @file migration use @VM.hibernate.
+# @mode:                #optional The migration mode.  Callers of this API
+#                       should use @remote.  For @file migration use
+#                       @VM.hibernate.
 #
-# @method:          #optional
+# @method:              #optional
 #
-# @tunneled:        #optional use libvirt's tunneled migration.
-#                   default it False.
+# @tunneled:            #optional use libvirt's tunneled migration.
+#                       default it False.
 #
-# @abortOnError:    #optional Abort migration on I/O errors and refuse
-#                   to migrate VMs, paused due to EIO
+# @abortOnError:        #optional Abort migration on I/O errors and refuse
+#                       to migrate VMs, paused due to EIO
 #
-# @consoleAddress:  #optional The destination host graphics address in format:
-#                   hostname[:port]/[?tlsPort]
-#                   port and tlsPort are optional.
-#                   (new in version 4.17.0)
+# @consoleAddress:      #optional The destination host graphics address in
+#                       the format: hostname[:port]/[?tlsPort]
+#                       port and tlsPort are optional.
+#                       (new in version 4.17.0)
 #
-# @dstqemu:         #optional The destination's host address dedicated for
-#                   migration.
+# @dstqemu:             #optional The destination's host address dedicated for
+#                       migration.
 #
-# @compressed:      #optional Compress repeated pages during live migration.
-#                   (new in version 4.17.0)
+# @compressed:          #optional Compress repeated pages during live
+#                       migration.
+#                       (new in version 4.17.0)
 #
-# @autoConverge:    #optional Force convergence during live migration.
-#                   (new in version 4.17.0)
+# @autoConverge:        #optional Force convergence during live migration.
+#                       (new in version 4.17.0)
 #
-# @maxBandwidth:    #optional maximal bandwidth used by the migration (MiB/s)
-#                   (new in version 4.18.0)
+# @maxBandwidth:        #optional maximal bandwidth used by the migration
+#                       (MiB/s)
+#                       (new in version 4.18.0)
 #
 # @convergenceSchedule: #optional initial actions and actions to
-#                   perform when stalling
-#                   (new in version 4.18.0)
+#                       perform when stalling
+#                       (new in version 4.18.0)
+#
+# @enableGuestEvents:   #optional whether or not to send migration/hibernation
+#                       events to the guest operating systems
+#                       (new in version 4.18.0)
 # Since: 4.10.0
 ##
 {'type': 'MigrateParams',
@@ -7674,7 +7681,8 @@
           '*consoleAddress': 'str', '*dstqemu': 'str',
           '*compressed': 'bool', '*autoConverge': 'bool',
           '*maxBandwidth': 'int',
-          '*convergenceSchedule': 'ConvergenceSchedule'}}
+          '*convergenceSchedule': 'ConvergenceSchedule',
+          '*enableGuestEvents', 'bool'}}
 
 ##
 # @VM.migrate:

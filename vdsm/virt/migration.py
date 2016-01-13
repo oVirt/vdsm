@@ -95,7 +95,8 @@ class SourceThread(threading.Thread):
                 'migration method %s is deprecated, forced to "online"',
                 method)
         self._dstparams = dstparams
-        self._machineParams = {}
+        self._enableGuestEvents = kwargs.get('enableGuestEvents', False)
+        self._machineParams = {'enableGuestEvents': self._enableGuestEvents}
         self._tunneled = utils.tobool(tunneled)
         self._abortOnError = utils.tobool(abortOnError)
         self._consoleAddress = consoleAddress
@@ -249,6 +250,10 @@ class SourceThread(threading.Thread):
         # if the guest was stopped before migration, we need to cont it
         if self.hibernating:
             self._vm.cont()
+            if self._enableGuestEvents:
+                self._vm.guestAgent.events.after_hibernation_failure()
+        elif self._enableGuestEvents:
+            self._vm.guestAgent.events.after_migration_failure()
         # either way, migration has finished
         self._vm.lastStatus = vmstatus.UP
         self._vm.send_status_event()
@@ -318,6 +323,14 @@ class SourceThread(threading.Thread):
             while self._progress < 100:
                 try:
                     with SourceThread.ongoingMigrations:
+                        timeout = config.getint(
+                            'vars', 'guest_lifecycle_event_reply_timeout')
+                        if self.hibernating:
+                            self._vm.guestAgent.events.before_hibernation(
+                                wait_timeout=timeout)
+                        elif self._enableGuestEvents:
+                            self._vm.guestAgent.events.before_migration(
+                                wait_timeout=timeout)
                         if self._migrationCanceledEvt.is_set():
                             self._raiseAbortError()
                         self.log.debug("migration semaphore acquired "

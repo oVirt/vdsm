@@ -139,6 +139,10 @@ parameters = [
         ('guest_agent_timeout', '30',
             'Time (in sec) to wait for guest agent.'),
 
+        ('guest_lifecycle_event_reply_timeout', '10',
+            'Time (in sec) to wait for the guest agent to reply on lifecycle'
+            ' events (such as before_migration/before_hibernation'),
+
         ('vm_command_timeout', '60',
             'Time to wait (in seconds) for vm to respond to a monitor '
             'command, 30 secs is a nice default. Set to 300 if the vm is '

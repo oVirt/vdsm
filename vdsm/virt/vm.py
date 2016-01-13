@@ -1826,6 +1826,15 @@ class Vm(object):
         except Exception:
             self.log.exception("Failed to connect to guest agent channel")
 
+        try:
+            if self.conf.get('enableGuestEvents', False):
+                if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
+                    self.guestAgent.events.after_migration()
+                elif self.lastStatus == vmstatus.RESTORING_STATE:
+                    self.guestAgent.events.after_hibernation()
+        except Exception:
+            self.log.exception("Unexpected error on guest event notification")
+
         for con in self._devices[hwclass.CONSOLE]:
             con.prepare()
 
