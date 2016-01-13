@@ -67,6 +67,10 @@ class _Server(object):
         self._vdsmapi = vdsmapi.get_api()
         self._client = client
         self._xml_compat = xml_compat
+        self._timeouts = {
+            'migrationCreate': config.getint(
+                'vars', 'migration_create_timeout'),
+        }
 
     def _prepare_args(self, className, methodName, args, kwargs):
         sym = self._vdsmapi['commands'][className][methodName]
@@ -87,11 +91,12 @@ class _Server(object):
         class_name, method_name = method.split('.')
         params = self._prepare_args(class_name, method_name, args, kwargs)
 
-        timeout = kwargs.pop('_transport_timeout', CALL_TIMEOUT)
-
         req = JsonRpcRequest(method, params, reqId=str(uuid4()))
 
-        responses = self._client.call(req, timeout=timeout)
+        responses = self._client.call(
+            req, timeout=self._timeouts.get(
+                method_name,
+                kwargs.pop('_transport_timeout', CALL_TIMEOUT)))
         if responses:
             resp = responses[0]
         else:
