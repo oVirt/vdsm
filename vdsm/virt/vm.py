@@ -822,8 +822,9 @@ class Vm(object):
 
                 os.rename(f.name, self._recoveryFile)
             else:
-                self.log.debug('saveState after cleanup for status=%s',
-                               self.lastStatus)
+                self.log.debug(
+                    'saveState after cleanup for status=%s destroyed=%s',
+                    self.lastStatus, self._destroyed)
 
         try:
             self._updateDomainDescriptor()
@@ -1697,7 +1698,6 @@ class Vm(object):
         self._cleanupDrives()
         self._cleanupFloppy()
         self._cleanupGuestAgent()
-        self._cleanupRecoveryFile()
         cleanup_guest_socket(self._qemuguestSocketFile)
         self._reattachHostDevices()
         self._cleanupStatsCache()
@@ -3906,6 +3906,7 @@ class Vm(object):
         except KeyError:
             self.log.exception("Failed to delete VM %s", self.id)
         else:
+            self._cleanupRecoveryFile()
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.conf['vmId'], len(self.cif.vmContainer))
 
