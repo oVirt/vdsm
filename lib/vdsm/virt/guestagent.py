@@ -35,7 +35,8 @@ _MAX_SUPPORTED_API_VERSION = 3
 _IMPLICIT_API_VERSION_ZERO = 0
 
 _MESSAGE_API_VERSION_LOOKUP = {
-    'set-number-of-cpus': 1}
+    'set-number-of-cpus': 1,
+    'lifecycle-event': 3}
 
 _REPLACEMENT_CHAR = u'\ufffd'
 
@@ -429,6 +430,19 @@ class GuestAgent(object):
     def setNumberOfCPUs(self, count):
         self.log.debug("setNumberOfCPUs('%d') called", count)
         self._forward('set-number-of-cpus', {'count': count})
+
+    def send_lifecycle_event(self, event, **kwargs):
+        self.log.debug('send_lifecycle_event %s called', event)
+        try:
+            message = {'type': event}
+            message.update(kwargs)
+            self._forward('lifecycle-event', message)
+        except GuestAgentUnsupportedMessage:
+            # This is ok, that guest agent doesn't know yet how to handle
+            # the message
+            pass
+        except socket.error as e:
+            self.log.debug("Failed to forward lifecycle-event: %s", e)
 
     def _onChannelTimeout(self):
         self.guestInfo['memUsage'] = 0
