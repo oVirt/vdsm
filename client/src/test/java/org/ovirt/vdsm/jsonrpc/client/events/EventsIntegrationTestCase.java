@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
 import org.ovirt.vdsm.jsonrpc.client.internal.ResponseWorker;
@@ -27,6 +28,8 @@ import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorType;
 import org.ovirt.vdsm.jsonrpc.client.reactors.stomp.StompClientPolicy;
 import org.reactivestreams.Subscription;
 
+
+@Ignore
 public class EventsIntegrationTestCase {
 
     private final static String HOSTNAME = "localhost";
