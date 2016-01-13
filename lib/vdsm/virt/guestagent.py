@@ -25,6 +25,7 @@ import socket
 import errno
 import json
 import re
+import weakref
 
 from vdsm import supervdsm
 from vdsm import utils
@@ -113,6 +114,32 @@ class GuestAgentUnsupportedMessage(Exception):
         Exception.__init__(self, message)
 
 
+class GuestAgentEvents(object):
+    def __init__(self, agent):
+        self._agent = weakref.ref(agent)
+
+    def _send(self, *args, **kwargs):
+        self._agent().send_lifecycle_event(*args, **kwargs)
+
+    def before_hibernation(self):
+        self._send('before_hibernation')
+
+    def after_hibernation_failure(self):
+        self._send('after_hibernation', failure=True)
+
+    def after_hibernation(self):
+        self._send('after_hibernation')
+
+    def before_migration(self):
+        self._send('before_migration')
+
+    def after_migration_failure(self):
+        self._send('after_migration', failure=True)
+
+    def after_migration(self):
+        self._send('after_migration')
+
+
 class GuestAgent(object):
     MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
 
@@ -142,6 +169,7 @@ class GuestAgent(object):
         self._agentTimestamp = 0
         self._channelListener = channelListener
         self._messageState = MessageState.NORMAL
+        self.events = GuestAgentEvents(self)
 
     @property
     def guestStatus(self):
