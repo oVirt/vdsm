@@ -41,6 +41,15 @@ To enable stress tests:
 
 Stress tests are also enabled if NOSE_STRESS_TESTS environment variable is set.
 
+Control verbose level:
+---------------------
+
+By default, tests run with verbose level 3.
+To run without verbose output, set verbose level to 1.
+
+To set verbose level:
+    make check NOSE_VERBOSE=<VERBOSE LEVEL>
+
 Functional test suite:
 ----------------------
 

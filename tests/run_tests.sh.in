@@ -4,4 +4,4 @@ if [ -z "$PYTHON_EXE" ]; then
 fi
 
 prefix="@prefix@"
-LC_ALL=C PYTHONPATH="@datarootdir@/vdsm" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py $@
+LC_ALL=C NOSE_VERBOSE=${NOSE_VERBOSE:-3} PYTHONPATH="@datarootdir@/vdsm" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py $@

@@ -381,12 +381,10 @@ class VdsmTestRunner(core.TextTestRunner):
 def run():
     argv = sys.argv
     stream = sys.stdout
-    verbosity = 3
     testdir = os.path.dirname(os.path.abspath(__file__))
 
     conf = config.Config(stream=stream,
                          env=os.environ,
-                         verbosity=verbosity,
                          workingDir=testdir,
                          plugins=core.DefaultPluginManager())
     conf.plugins.addPlugin(SlowTestsPlugin())
