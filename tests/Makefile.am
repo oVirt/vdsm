@@ -50,6 +50,7 @@ test_modules = \
 	capsTests.py \
 	clientifTests.py \
 	cmdutilsTests.py \
+	commands_test.py \
 	concurrentTests.py \
 	configNetworkTests.py \
 	cpuProfileTests.py \
