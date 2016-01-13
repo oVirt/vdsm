@@ -1624,6 +1624,15 @@ class Global(APIBase):
             return errCode['haErr']
         return {'status': doneCode}
 
+    def add_image_ticket(self, ticket):
+        return self._irs.add_image_ticket(ticket)
+
+    def remove_image_ticket(self, uuid):
+        return self._irs.remove_image_ticket(uuid)
+
+    def extend_image_ticket(self, uuid, timeout):
+        return self._irs.extend_image_ticket(uuid, timeout)
+
     # take a rough estimate on how much free mem is available for new vm
     # memTotal = memFree + memCached + mem_used_by_non_qemu + resident  .
     # simply returning (memFree + memCached) is not good enough, as the

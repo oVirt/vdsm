@@ -525,6 +525,82 @@
  'data': {'mode': 'HaMaintenanceMode', 'enabled': 'bool'}}
 
 ##
+# @ImageTicketOps:
+#
+# An enumeration of operation types allowed by an image ticket
+#
+# @write:     permission to write data to image
+#
+# @read:      permission to read data from image
+#
+# Since: 4.18.0
+##
+{'enum': 'ImageTicketOps',
+ 'data': ['write', 'read']}
+
+##
+# @ImageTicket:
+#
+# Information about an image ticket.
+#
+# @uuid:      A ticket UUID
+#
+# @timeout:   Timeout in seconds for the ticket to expire
+#
+# @ops:       operations allowed by this ticket
+#
+# @size:      Maximum size (in bytes) that can be written or read
+#             from the image.
+#
+# @url:       The image url, e.g. "file:///path/to/image"
+#
+# Since: 4.18.0
+##
+{'type': 'ImageTicket',
+ 'data': {'uuid': 'UUID', 'timeout': 'uint', 'ops': ['ImageTicketOps'],
+          'size': 'uint', 'url': 'str'}}
+
+##
+# @Host.add_image_ticket:
+#
+# Start a session to expose an image via imaged daemon https api for
+# reading and writing image data.
+#
+# @ticket:      ImageTicket
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'Host', 'name': 'add_image_ticket'},
+ 'data': {'ticket': 'ImageTicket'}}
+
+##
+# @Host.remove_image_ticket:
+#
+# Stop an image upload data transfer session.
+#
+# @uuid:      uuid of the ticket to be removed
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'Host', 'name': 'remove_image_ticket'},
+ 'data': {'uuid': 'UUID'}}
+
+##
+# @Host.extend_image_ticket:
+#
+# Extend an image upload data transfer session.
+#
+# @uuid:        uuid of the ticket to be extended
+#
+# @timeout:     Timeout in seconds for the ticket to expire.
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'Host', 'name': 'extend_image_ticket'},
+ 'data': {'uuid': 'UUID', 'timeout': 'uint'}}
+
+
+##
 # @TaskDetails:
 #
 # A collection of information about a task.

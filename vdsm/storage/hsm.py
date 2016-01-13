@@ -54,6 +54,7 @@ import multipath
 import outOfProcess as oop
 from sdc import sdCache
 import image
+import imagetickets
 import volume
 import iscsi
 import misc
@@ -3095,6 +3096,18 @@ class HSM(object):
         return sdCache.produce(
             sdUUID=sdUUID).produceVolume(imgUUID=imgUUID,
                                          volUUID=volUUID).refreshVolume()
+
+    @public
+    def add_image_ticket(self, ticket):
+        imagetickets.add_ticket(ticket)
+
+    @public
+    def remove_image_ticket(self, uuid):
+        imagetickets.remove_ticket(uuid)
+
+    @public
+    def extend_image_ticket(self, uuid, timeout):
+        imagetickets.extend_ticket(uuid, timeout)
 
     @public
     def getVolumeSize(self, sdUUID, spUUID, imgUUID, volUUID, options=None):

@@ -1204,6 +1204,30 @@ class UnsupportedGlusterVolumeReplicaCountError(StorageException):
         self.value = "replica count = %s" % replicaCount
 
 
+class ImageTicketsError(StorageException):
+    code = 481
+    message = "Cannot communicate with image daemon"
+
+    def __init__(self, reason):
+        self.value = "reason=%s" % reason
+
+
+class ImageDeamonError(StorageException):
+    code = 482
+    message = "Image daemon request failed"
+
+    def __init__(self, status, reason, error_info):
+        d = error_info.copy()
+        d['status'] = status
+        d['reason'] = reason
+        self.value = ", ".join("%s=%s" % (k, v) for k, v in d.items())
+
+
+class ImageDeamonUnsupported(StorageException):
+    code = 483
+    message = "Image daemon is unsupported"
+
+
 #################################################
 #  LVM related Exceptions
 #################################################

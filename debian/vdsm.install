@@ -93,6 +93,7 @@
 ./usr/share/vdsm/storage/fileUtils.py
 ./usr/share/vdsm/storage/fileVolume.py
 ./usr/share/vdsm/storage/fuser.py
+./usr/share/vdsm/storage/imagetickets.py
 ./usr/share/vdsm/storage/glusterSD.py
 ./usr/share/vdsm/storage/glusterVolume.py
 ./usr/share/vdsm/storage/hba.py
