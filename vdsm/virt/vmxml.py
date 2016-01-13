@@ -283,7 +283,7 @@ class Domain(object):
         if utils.tobool(self.conf.get('bootMenuEnable', False)):
             oselem.appendChildWithArgs('bootmenu', enable='yes')
 
-        if use_serial_console and caps.Architecture.is_x86(self.arch):
+        if use_serial_console and cpuarch.is_x86(self.arch):
             oselem.appendChildWithArgs('bios', useserial='yes')
 
     def appendSysinfo(self, osname, osversion, serialNumber):

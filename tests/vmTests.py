@@ -297,10 +297,10 @@ class TestVm(XMLTestCase):
 
     @permutations([
         # console_type, cpu_arch, use_serial, check_attrib
-        ['serial', caps.Architecture.X86_64, True, True],
-        ['virtio', caps.Architecture.X86_64, False, True],
-        ['serial', caps.Architecture.PPC64, False, False],
-        ['serial', caps.Architecture.PPC64LE, False, False],
+        ['serial', cpuarch.X86_64, True, True],
+        ['virtio', cpuarch.X86_64, False, True],
+        ['serial', cpuarch.PPC64, False, False],
+        ['serial', cpuarch.PPC64LE, False, False],
     ])
     def testSerialBios(self, console_type, cpu_arch, use_serial, check_attrib):
         devices = {'device': 'console', 'type': 'console',
