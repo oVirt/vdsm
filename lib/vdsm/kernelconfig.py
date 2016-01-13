@@ -135,7 +135,7 @@ def _translate_bonding(attributes, bond):
 
 def _translate_vlan(attributes, vlan):
     if vlan is not None:
-        attributes['vlan'] = str(vlan)
+        attributes['vlan'] = vlan
 
 
 def _translate_mtu(attributes, net_attr):
@@ -186,8 +186,10 @@ def _normalize_stp(net_attr):
 
 def _normalize_vlan(config_copy):
     for net_attr in config_copy.networks.itervalues():
+        # defensively convert to int to support upgrade path
+        # REQUIRED_FOR: upgrade from vdsm<=4.17
         if 'vlan' in net_attr:
-            net_attr['vlan'] = str(net_attr['vlan'])
+            net_attr['vlan'] = int(net_attr['vlan'])
 
 
 def _normalize_bridge(config_copy):

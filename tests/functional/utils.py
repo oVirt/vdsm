@@ -165,7 +165,7 @@ class _VdsProxy(object):
 
     def _vlanInRunningConfig(self, devName, vlanId):
         for net, attrs in self.config.networks.iteritems():
-            if (vlanId == attrs.get('vlan') and
+            if (int(vlanId) == attrs.get('vlan') and
                     (attrs.get('bonding') == devName or
                      attrs.get('nic') == devName)):
                 return True

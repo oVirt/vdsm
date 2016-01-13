@@ -259,7 +259,6 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
         dhcpv6 = utils.tobool(dhcpv6)
     if ipv6autoconf is not None:
         ipv6autoconf = utils.tobool(ipv6autoconf)
-    vlan = _vlanToInternalRepresentation(vlan)
 
     if network == '':
         raise ConfigNetworkError(ne.ERR_BAD_BRIDGE,
@@ -449,7 +448,6 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None,
 
     if network not in _netinfo.networks:
         logging.info("Network %r: doesn't exist in libvirt database", network)
-        vlan = _vlanToInternalRepresentation(vlan)
         _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo,
                            configurator)
         return
@@ -591,14 +589,9 @@ def change_numvfs(pci_path, numvfs, net_name):
 def _validateNetworkSetup(networks, bondings):
     for network, networkAttrs in networks.iteritems():
         if networkAttrs.get('remove', False):
-            net_attr_keys = set(networkAttrs)
-            if 'remove' in net_attr_keys and net_attr_keys - set(
-                    ['remove', 'custom']):
-                raise ConfigNetworkError(
-                    ne.ERR_BAD_PARAMS,
-                    "Cannot specify any attribute when removing (other "
-                    "than custom properties). specified attributes: %s" % (
-                        networkAttrs,))
+            _validate_network_remove(networkAttrs)
+        elif 'vlan' in networkAttrs:
+            Vlan.validateTag(networkAttrs['vlan'])
 
     currentNicsSet = set(netinfo_nics.nics())
     for bonding, bondingAttrs in bondings.iteritems():
@@ -616,6 +609,17 @@ def _validateNetworkSetup(networks, bondings):
         if not set(nics).issubset(currentNicsSet):
             raise ConfigNetworkError(ne.ERR_BAD_NIC,
                                      "Unknown nics in: %r" % list(nics))
+
+
+def _validate_network_remove(networkAttrs):
+    net_attr_keys = set(networkAttrs)
+    if 'remove' in net_attr_keys and net_attr_keys - set(
+            ['remove', 'custom']):
+        raise ConfigNetworkError(
+            ne.ERR_BAD_PARAMS,
+            "Cannot specify any attribute when removing (other "
+            "than custom properties). specified attributes: %s" % (
+                networkAttrs,))
 
 
 def _inherit_dhcp_unique_identifier(bridge, _netinfo):
@@ -952,15 +956,6 @@ def setupNetworks(networks, bondings, **options):
     hooks.after_network_setup(_buildSetupHookDict(networks, bondings, options))
 
 
-def _vlanToInternalRepresentation(vlan):
-    if vlan is None or vlan == '':
-        vlan = None
-    else:
-        Vlan.validateTag(vlan)
-        vlan = int(vlan)
-    return vlan
-
-
 def _canonize_networks(nets):
     """
     Given networks configuration, explicitly add missing defaults.
@@ -976,6 +971,12 @@ def _canonize_networks(nets):
 
         attrs['mtu'] = int(attrs['mtu']) if 'mtu' in attrs else (
             mtus.DEFAULT_MTU)
+
+        vlan = attrs.get('vlan', None)
+        if vlan in (None, ''):
+            attrs.pop('vlan', None)
+        else:
+            attrs['vlan'] = int(vlan)
 
 
 def setSafeNetworkConfig():
