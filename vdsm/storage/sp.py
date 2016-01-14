@@ -89,6 +89,8 @@ class StoragePool(object):
         self.domainMonitor = domainMonitor
         self._upgradeCallback = partial(StoragePool._upgradePoolDomain,
                                         proxy(self))
+        self._domainStateCallback = partial(
+            StoragePool._domainStateChange, proxy(self))
         self._backend = None
 
     def __is_secure__(self):
@@ -131,6 +133,24 @@ class StoragePool(object):
     @unsecured
     def getBackend(self):
         return self._backend
+
+    @unsecured
+    def _domainStateChange(self, sdUUID, isValid):
+        if not isValid:
+            return
+
+        domain = sdCache.produce(sdUUID)
+        with rmanager.acquireResource(STORAGE, self.spUUID,
+                                      rm.LockType.shared):
+            if sdUUID not in self.getDomains(activeOnly=True):
+                self.log.debug("Domain %s is not an active pool domain, "
+                               "skipping domain links refresh",
+                               sdUUID)
+                return
+            with rmanager.acquireResource(STORAGE, sdUUID + "_repo",
+                                          rm.LockType.exclusive):
+                self.log.debug("Refreshing domain links for %s", sdUUID)
+                self._refreshDomainLinks(domain)
 
     def _upgradePoolDomain(self, sdUUID, isValid):
         # This method is called everytime the onDomainStateChange
@@ -628,11 +648,34 @@ class StoragePool(object):
         # Make sure SDCache doesn't have stale data (it can be in case of FC)
         sdCache.invalidateStorage()
         sdCache.refresh()
-        # Rebuild whole Pool
-        self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
-        self.__createMailboxMonitor()
+        # Since we start the monitor threads during the call to __rebuild,
+        # we should start watching the domains states right before we call
+        # __rebuild.
+        self._startWatchingDomainsState()
+        try:
+            # Rebuild whole Pool
+            self.__rebuild(msdUUID=msdUUID, masterVersion=masterVersion)
+            self.__createMailboxMonitor()
+        except Exception:
+            self._stopWatchingDomainsState()
+            raise
 
         return True
+
+    @unsecured
+    def _startWatchingDomainsState(self):
+        self.log.debug("Start watching domains state")
+        self.domainMonitor.onDomainStateChange.register(
+            self._domainStateCallback)
+
+    @unsecured
+    def _stopWatchingDomainsState(self):
+        self.log.debug("Stop watching domains state")
+        try:
+            self.domainMonitor.onDomainStateChange.unregister(
+                self._domainStateCallback)
+        except KeyError:
+            self.log.warning("Domain state callback is not registered")
 
     @unsecured
     def stopMonitoringDomains(self):
@@ -660,6 +703,7 @@ class StoragePool(object):
             fileUtils.cleanupdir(self.poolPath)
 
         self.stopMonitoringDomains()
+        self._stopWatchingDomainsState()
         return True
 
     @unsecured
