@@ -31,6 +31,8 @@ import resource
 import signal
 import logging
 import logging.config
+
+from contextlib import closing
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
 
@@ -264,37 +266,38 @@ class _SuperVdsm(object):
             pipe.recv()
 
         pipe, hisPipe = Pipe()
-        proc = Process(target=child, args=(hisPipe,))
-        proc.start()
+        with closing(pipe), closing(hisPipe):
+            proc = Process(target=child, args=(hisPipe,))
+            proc.start()
 
-        needReaping = True
-        try:
-            if not safe_poll(pipe, RUN_AS_TIMEOUT):
-                try:
+            needReaping = True
+            try:
+                if not safe_poll(pipe, RUN_AS_TIMEOUT):
+                    try:
 
-                    os.kill(proc.pid, signal.SIGKILL)
-                except OSError as e:
-                    # Don't add to zombiereaper of PID no longer exists
-                    if e.errno == errno.ESRCH:
-                        needReaping = False
-                    else:
-                        raise
+                        os.kill(proc.pid, signal.SIGKILL)
+                    except OSError as e:
+                        # Don't add to zombiereaper of PID no longer exists
+                        if e.errno == errno.ESRCH:
+                            needReaping = False
+                        else:
+                            raise
 
-                raise Timeout()
+                    raise Timeout()
 
-            res, err = pipe.recv()
-            pipe.send("Bye")
-            proc.terminate()
+                res, err = pipe.recv()
+                pipe.send("Bye")
+                proc.terminate()
 
-            if err is not None:
-                raise err
+                if err is not None:
+                    raise err
 
-            return res
+                return res
 
-        finally:
-            # Add to zombiereaper if process has not been waited upon
-            if proc.exitcode is None and needReaping:
-                zombiereaper.autoReapPID(proc.pid)
+            finally:
+                # Add to zombiereaper if process has not been waited upon
+                if proc.exitcode is None and needReaping:
+                    zombiereaper.autoReapPID(proc.pid)
 
     @logDecorator
     def validateAccess(self, user, groups, *args, **kwargs):
