@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import copy
 import uuid
 
 from virt import vmstats
@@ -234,13 +235,13 @@ class VmStatsTestCase(TestCaseBase):
     def assertNameIsAt(self, stats, group, idx, name):
         self.assertEqual(stats['%s.%d.name' % (group, idx)], name)
 
-    def assertStatsHaveKeys(self, stats):
-        for key in self._EXPECTED_KEYS:
+    def assertStatsHaveKeys(self, stats, keys):
+        for key in keys:
             self.assertIn(key, stats)
 
-    def assertRepeatedStatsHaveKeys(self, items, stats):
+    def assertRepeatedStatsHaveKeys(self, items, stats, keys):
         for item in items:
-            self.assertStatsHaveKeys(stats[item.name])
+            self.assertStatsHaveKeys(stats[item.name], keys)
 
 
 @expandPermutations
@@ -319,7 +320,7 @@ class NetworkStatsTests(VmStatsTestCase):
             self.bulk_stats, 0,
             self.interval)
 
-        self.assertStatsHaveKeys(stats)
+        self.assertStatsHaveKeys(stats, self._EXPECTED_KEYS)
 
     def test_networks_have_all_keys(self):
         nics = (
@@ -332,7 +333,8 @@ class NetworkStatsTests(VmStatsTestCase):
         vmstats.networks(vm, stats,
                          self.bulk_stats, self.bulk_stats,
                          self.interval)
-        self.assertRepeatedStatsHaveKeys(nics, stats['network'])
+        self.assertRepeatedStatsHaveKeys(nics, stats['network'],
+                                         self._EXPECTED_KEYS)
 
     def test_networks_good_interval(self):
         nics = (
@@ -367,6 +369,8 @@ class NetworkStatsTests(VmStatsTestCase):
 class DiskStatsTests(VmStatsTestCase):
 
     # TODO: grab them from the schema
+    # Note: these are the minimal set Vdsm exported,
+    # no clear rationale for this subset.
     _EXPECTED_KEYS = (
         'truesize',
         'apparentsize',
@@ -389,13 +393,52 @@ class DiskStatsTests(VmStatsTestCase):
         testvm = FakeVM(drives=drives)
 
         stats = {}
+        stats_before = copy.deepcopy(self.bulk_stats)
+        stats_after = copy.deepcopy(self.bulk_stats)
+        _ensure_delta(stats_before, stats_after,
+                      'block.0.rd.reqs', 1024)
+        _ensure_delta(stats_before, stats_after,
+                      'block.0.rd.bytes', 128 * 1024)
         vmstats.disks(testvm, stats,
-                      self.bulk_stats, self.bulk_stats,
+                      stats_before, stats_after,
                       interval)
-        self.assertRepeatedStatsHaveKeys(drives, stats['disks'])
+        self.assertRepeatedStatsHaveKeys(drives, stats['disks'],
+                                         self._EXPECTED_KEYS)
+
+    def test_interval_zero(self):
+        interval = 0  # seconds
+        # with zero interval, we won't have {read,write}Rate
+        expected_keys = tuple(k for k in self._EXPECTED_KEYS
+                              if k not in ('readRate', 'writeRate'))
+        drives = (FakeDrive(name='hdc', size=700 * 1024 * 1024),)
+        testvm = FakeVM(drives=drives)
+
+        stats = {}
+        self.assertNotRaises(vmstats.disks,
+                             testvm, stats,
+                             self.bulk_stats, self.bulk_stats,
+                             interval)
+        self.assertRepeatedStatsHaveKeys(drives,
+                                         stats['disks'],
+                                         expected_keys)
+
+    def _drop_stats(self, keys):
+        partial_stats = copy.deepcopy(self.bulk_stats)
+        for key in keys:
+            del partial_stats[key]
+        return partial_stats
 
 
 # helpers
+
+def _ensure_delta(stats_before, stats_after, key, delta):
+    """
+    Set stats_before[key] and stats_after[key] so that
+    stats_after[key] - stats_before[key] == abs(delta).
+    """
+    stats_before[key] = 0
+    stats_after[key] = abs(delta)
+
 
 class FakeNic(object):
 
