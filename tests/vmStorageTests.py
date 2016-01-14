@@ -114,7 +114,6 @@ class DriveXMLTests(XMLTestCase):
             <disk device="lun" sgio="unfiltered" snapshot="no" type="block">
                 <source dev="/dev/mapper/lun1"/>
                 <target bus="scsi" dev="sda"/>
-                <serial>54-a672-23e5b495a9ea</serial>
                 <driver cache="none" error_policy="stop"
                         io="native" name="qemu" type="raw"/>
             </disk>

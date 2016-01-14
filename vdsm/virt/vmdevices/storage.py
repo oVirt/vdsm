@@ -364,7 +364,7 @@ class Drive(Base):
             # they are readonly unless explicitely stated otherwise
             diskelem.appendChildWithArgs('readonly')
 
-        if hasattr(self, 'serial'):
+        if hasattr(self, 'serial') and self.device != 'lun':
             diskelem.appendChildWithArgs('serial', text=self.serial)
 
         if hasattr(self, 'bootOrder'):
