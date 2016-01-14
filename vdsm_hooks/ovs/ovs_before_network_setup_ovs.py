@@ -81,6 +81,7 @@ def _setup_ovs_net(net, attrs, running_config, nets_by_nic):
         commands.extend(['--', 'add-br', net, BRIDGE_NAME, str(vlan)])
     if nic is not None:
         commands.extend(_add_nic_port(net, nic, nets_by_nic))
+    commands.extend(_set_aa_mapping(net, attrs, running_config))
 
     running_config.setNetwork(net, attrs)
     return commands
@@ -106,6 +107,7 @@ def _edit_ovs_net(net, attrs, running_config, nets_by_nic):
             commands.extend(_del_nic_port(net, running_nic, nets_by_nic))
         if nic is not None:
             commands.extend(_add_nic_port(net, nic, nets_by_nic))
+    commands.extend(_set_aa_mapping(net, attrs, running_config))
 
     running_config.setNetwork(net, attrs)
     return commands
@@ -147,6 +149,31 @@ def _set_stp(attrs):
             'stp_enable=%s' % str(stp).lower()]
 
 
+def _set_aa_mapping(network, attrs, running_config):
+    """Handle OVS Auto-Attach mapping. This requires openvswitch >= 2.4"""
+    command = []
+    init_sid = rget(running_config.networks, (network, 'custom', 'ovs_aa_sid'))
+    init_vlan = rget(running_config.networks, (network, 'vlan'))
+    sid = rget(attrs, ('custom', 'ovs_aa_sid'))
+    vlan = attrs.get('vlan')
+    if init_sid != sid or init_vlan != vlan:  # if configuration differs
+        if init_sid is not None:
+            command.extend(['--', 'del-aa-mapping', network, str(init_sid),
+                            str(init_vlan)])
+        if sid is not None:
+            interfaces = (
+                running_config.bonds.get(attrs['bonding'])['nics']
+                if 'bonding' in attrs else [attrs['nic']])
+            for interface in interfaces:
+                # lldp is disabled by default, see ovs-vswitchd.conf.db(5)
+                command.extend(['--', 'set', 'Interface', interface,
+                                'lldp:enable=true'])
+            command.extend(['--', 'add-aa-mapping', network, str(sid),
+                            str(vlan)])
+
+    return command
+
+
 def _get_untagged_net(running_config):
     for network, attrs in iter_ovs_nets(running_config.networks):
         if 'vlan' not in attrs:
@@ -183,6 +210,8 @@ def _validate_net_configuration(net, attrs, running_config, netinfo):
         if untagged_net not in (None, net):
             raise Exception('Untagged network already defined with name %s' %
                             untagged_net)
+        if rget(attrs, ('custom', 'ovs_aa_sid')) is not None:
+            raise Exception('Cannot define aa-mapping on untagged network')
     if stp and vlan is not None:
         raise Exception('STP could be set only on untagged networks')
 
