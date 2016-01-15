@@ -436,6 +436,9 @@ class FileVolume(volume.Volume):
 
         return (volPath,)
 
+    def removeMetadata(self):
+        self._manifest.removeMetadata()
+
     def delete(self, postZero, force):
         """
         Delete volume.

@@ -451,6 +451,9 @@ class BlockVolume(volume.Volume):
 
         return alloc_size
 
+    def removeMetadata(self, metaId):
+        self._manifest.removeMetadata(metaId)
+
     def delete(self, postZero, force):
         """ Delete volume
             'postZero' - zeroing file before deletion

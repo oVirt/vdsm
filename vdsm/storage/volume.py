@@ -620,9 +620,6 @@ class Volume(object):
         """
         self._manifest._setrw(rw)
 
-    def removeMetadata(self):
-        self._manifest.removeMetadata()
-
     def _share(self, dstImgPath):
         return self._manifest._share(dstImgPath)
 

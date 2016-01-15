@@ -487,10 +487,6 @@ class FakeVolumeManifest(object):
     def validateDelete(self):
         pass
 
-    @recorded
-    def removeMetadata(self):
-        pass
-
     @classmethod
     @recorded
     def newVolumeLease(cls, metaId, sdUUID, volUUID):
@@ -555,6 +551,10 @@ class FakeBlockVolumeManifest(FakeVolumeManifest):
     def getDevPath(self):
         pass
 
+    @recorded
+    def removeMetadata(self, metaId):
+        pass
+
 
 class FakeFileVolumeManifest(FakeVolumeManifest):
     def __init__(self):
@@ -576,6 +576,10 @@ class FakeFileVolumeManifest(FakeVolumeManifest):
 
     @recorded
     def _getLeaseVolumePath(self, vol_path):
+        pass
+
+    @recorded
+    def removeMetadata(self):
         pass
 
 
@@ -809,7 +813,6 @@ class VolumeTestMixin(object):
         ['getVmVolumeInfo', 0],
         ['getVolumeParams', 1],
         ['validateDelete', 0],
-        ['removeMetadata', 0],
         ['refreshVolume', 0],
         ['_share', 1],
         ['_shareLease', 1],
@@ -853,6 +856,7 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['setParentTag', 1],
         ['_setrw', 1],
         ['getDevPath', 0],
+        ['removeMetadata', 1],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
@@ -876,6 +880,7 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
         ['_getMetaVolumePath', 1],
         ['_getLeaseVolumePath', 1],
         ['_setrw', 1],
+        ['removeMetadata', 0],
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
