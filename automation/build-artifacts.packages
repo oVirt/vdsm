@@ -1,0 +1,6 @@
+autoconf
+automake
+git
+java-devel
+yum-utils
+vim-minimal
