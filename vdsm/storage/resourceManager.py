@@ -21,6 +21,7 @@
 import threading
 import logging
 import re
+import weakref
 from functools import partial
 from contextlib import nested
 from uuid import uuid4
@@ -294,7 +295,9 @@ class ResourceRef(object):
             if hasattr(self, attr) or attr in ('close', 'switchLockType'):
                 continue
 
-            setattr(self, attr, partial(self.__methodProxy, attr))
+            weakmethod = partial(ResourceRef.__methodProxy,
+                                 weakref.proxy(self), attr)
+            setattr(self, attr, weakmethod)
 
     def __methodProxy(self, attr, *args, **kwargs):
         with self._syncRoot.shared:
