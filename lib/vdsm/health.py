@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 import gc
 import logging
+import os
 import threading
 
 from . config import config
@@ -53,6 +54,7 @@ class Monitor(object):
         self._interval = interval
         self._thread = concurrent.thread(self._run)
         self._done = threading.Event()
+        self._last = ProcStat()
 
     def start(self):
         self.log.info("Starting health monitor (interval=%d)", self._interval)
@@ -82,6 +84,10 @@ class Monitor(object):
 
     def _check(self):
         self.log.debug("Checking health")
+        self._check_garbage()
+        self._check_resources()
+
+    def _check_garbage(self):
         collected = gc.collect()
         self.log.debug("Collected %d objects", collected)
         # Copy garbage so it is not modified while iterate over it.
@@ -90,6 +96,36 @@ class Monitor(object):
             uncollectable = [saferepr(obj) for obj in uncollectable]
             self.log.warning("Found %d uncollectable objects: %s",
                              len(uncollectable), uncollectable)
+
+    def _check_resources(self):
+        current = ProcStat()
+        utime_pct = (current.utime - self._last.utime) / self._interval * 100
+        stime_pct = (current.stime - self._last.stime) / self._interval * 100
+        delta_rss = current.rss - self._last.rss
+        self._last = current
+        self.log.debug("user=%.2f%%, sys=%.2f%%, rss=%d kB (%s%d), threads=%d",
+                       utime_pct,
+                       stime_pct,
+                       current.rss,
+                       "+" if delta_rss >= 0 else "-",
+                       abs(delta_rss),
+                       current.threads)
+
+
+class ProcStat(object):
+
+    _PAGE_SIZE = os.sysconf("SC_PAGESIZE")
+    _TICKS_PER_SEC = os.sysconf("SC_CLK_TCK")
+    _PATH = "/proc/self/stat"
+
+    def __init__(self):
+        with open(self._PATH, "rb") as f:
+            fields = f.readline().split()
+        # See proc(5) for available fields and their semantics.
+        self.utime = int(fields[13], 10) / float(self._TICKS_PER_SEC)
+        self.stime = int(fields[14], 10) / float(self._TICKS_PER_SEC)
+        self.threads = int(fields[19], 10)
+        self.rss = int(fields[23], 10) * self._PAGE_SIZE / 1024
 
 
 def saferepr(obj):
