@@ -272,7 +272,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         else:
             return None
 
-    def _getLeaseVolumePath(self, vol_path):
+    def _getLeaseVolumePath(self, vol_path=None):
         if not vol_path:
             vol_path = self.getVolumePath()
         return self.leaseVolumePath(vol_path)

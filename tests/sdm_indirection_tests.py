@@ -871,6 +871,7 @@ class FileVolumeTests(VolumeTestMixin, VdsmTestCase):
     def test_file_property(self, prop, val):
         self.assertEqual(getattr(self.volume, prop), val)
 
+    # TODO: Test _getLeaseVolumePath with no arguments
     @permutations([
         ['_getMetaVolumePath', 1],
         ['_getLeaseVolumePath', 1],
