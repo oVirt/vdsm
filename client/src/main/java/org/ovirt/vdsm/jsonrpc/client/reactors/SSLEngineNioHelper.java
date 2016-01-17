@@ -125,10 +125,12 @@ public class SSLEngineNioHelper {
                 this.callback.checkAndExecute();
             }
 
-            try {
-                client.getPeerCertificates();
-            } catch (Exception e) {
-                // ignore
+            if (this.getSSLEngine().getUseClientMode()) {
+                try {
+                    client.getPeerCertificates();
+                } catch (Exception e) {
+                    // ignore exception if the session is invalid
+                }
             }
             return null;
         }
