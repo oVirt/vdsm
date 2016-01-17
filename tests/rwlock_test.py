@@ -328,6 +328,37 @@ class RWLockStressTests(VdsmTestCase):
         print("reads   avg=%.2f med=%d min=%d max=%d"
               % (avg_reads, med_reads, min_reads, max_reads))
 
+    @stresstest
+    @permutations([(1,), (2,), (4,), (8,), (16,), (32,), (64,), (128,)])
+    def test_readers(self, readers):
+        lock = RWLock()
+        ready = Barrier(readers + 1)
+        done = threading.Event()
+        reads = [0] * readers
+        threads = []
+
+        def read(slot):
+            ready.wait()
+            while not done.is_set():
+                with lock.shared:
+                    reads[slot] += 1
+
+        try:
+            for i in range(readers):
+                t = start_thread(read, i)
+                threads.append(t)
+            ready.wait(5)
+            time.sleep(1)
+        finally:
+            done.set()
+            for t in threads:
+                t.join()
+
+        print()
+        avg_reads, med_reads, min_reads, max_reads = stats(reads)
+        print("reads   avg=%.2f med=%d min=%d max=%d"
+              % (avg_reads, med_reads, min_reads, max_reads))
+
 
 def stats(seq):
     seq = sorted(seq)
