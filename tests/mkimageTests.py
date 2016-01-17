@@ -34,7 +34,7 @@ from tempfile import mkdtemp
 from nose.plugins.skip import SkipTest
 from monkeypatch import Patch
 from testlib import VdsmTestCase, permutations, expandPermutations
-from testValidation import brokentest, checkSudo, ValidateRunningAsRoot
+from testValidation import checkSudo, ValidateRunningAsRoot
 
 from vdsm import udevadm
 from vdsm.commands import execCmd
@@ -160,8 +160,6 @@ class MkimageTestCase(VdsmTestCase):
         mkimage._decodeFilesIntoDir(self.files, self.workdir)
         self._check_content()
 
-    @brokentest("mkimage._commonCleanFs of one run can remove floppy image "
-                "created by a concurrent one")
     @ValidateRunningAsRoot
     @permutations([[None], ['FSLABEL']])
     def test_mkFloppyFs(self, label):
