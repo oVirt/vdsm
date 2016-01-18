@@ -1282,6 +1282,8 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/ovs_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/50_ovs
 %{_libexecdir}/%{vdsm_name}/hooks/before_device_create/ovs_utils.py*
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/50_ovs
+%{_libexecdir}/%{vdsm_name}/hooks/before_nic_hotplug/ovs_utils.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_ovs
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_ip.py*
 %{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/ovs_setup_libvirt.py*

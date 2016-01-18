@@ -53,6 +53,9 @@ install-data-local: install-data-utils install-data-sudoers
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_device_create
 	$(INSTALL_SCRIPT) $(srcdir)/ovs_before_device_create.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_device_create/50_ovs
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug
+	$(INSTALL_SCRIPT) $(srcdir)/ovs_before_device_create.py \
+		$(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/50_ovs
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_network_setup
 	$(INSTALL_SCRIPT) $(srcdir)/ovs_before_network_setup.py \
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/50_ovs
@@ -75,6 +78,7 @@ uninstall-local: uninstall-data-utils uninstall-data-sudoers
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_caps/50_ovs
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_stats/50_ovs
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_device_create/50_ovs
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/50_ovs
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/50_ovs
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_ovs.py
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/ovs_setup_ip.py
@@ -93,6 +97,9 @@ install-data-utils:
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_device_create
 	$(INSTALL_SCRIPT) $(srcdir)/$(utilsfile) \
 		$(DESTDIR)$(vdsmhooksdir)/before_device_create/$(utilsfile)
+	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug
+	$(INSTALL_SCRIPT) $(srcdir)/$(utilsfile) \
+		$(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/$(utilsfile)
 	$(MKDIR_P) $(DESTDIR)$(vdsmhooksdir)/before_network_setup
 	$(INSTALL_SCRIPT) $(srcdir)/$(utilsfile) \
 		$(DESTDIR)$(vdsmhooksdir)/before_network_setup/$(utilsfile)
@@ -107,6 +114,7 @@ uninstall-data-utils:
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_caps/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_get_stats/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_device_create/$(utilsfile)
+	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_nic_hotplug/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/before_network_setup/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_network_setup/$(utilsfile)
 	$(RM) $(DESTDIR)$(vdsmhooksdir)/after_network_setup_fail/$(utilsfile)
