@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import errno
 import os
 import os.path
 import socket
@@ -116,7 +117,16 @@ class clientIF(object):
             host = config.get('addresses', 'management_ip')
             port = config.getint('addresses', 'management_port')
 
-            self._createAcceptor(host, port)
+            # When IPv6 is not enabled, fallback to listen on IPv4 address
+            try:
+                self._createAcceptor(host, port)
+            except socket.error as e:
+                if e.errno == errno.EAFNOSUPPORT and host in ('::', '::1'):
+                    fallback_host = '0.0.0.0'
+                    self._createAcceptor(fallback_host, port)
+                else:
+                    raise
+
             self._prepareXMLRPCBinding()
             self._prepareJSONRPCBinding()
             self._connectToBroker()
