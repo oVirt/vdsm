@@ -18,6 +18,7 @@
 #
 
 from __future__ import print_function
+import errno
 import sys
 import ast
 import getopt
@@ -3005,6 +3006,12 @@ if __name__ == '__main__':
     except socket.error as e:
         if e[0] == 111:
             print("Connection to %s refused" % hostPort)
+        elif e.errno == errno.EAFNOSUPPORT:
+            print("Connection to host %s is not supported, "
+                  "probably trying to connect to an IPv6 address "
+                  "while IPv6 is disabled.\n"
+                  "Either specify a proper address or "
+                  "update vdsm.conf management_ip parameter" % hostPort)
         else:
             traceback.print_exc()
         sys.exit(-1)
