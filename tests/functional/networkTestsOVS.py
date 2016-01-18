@@ -90,6 +90,8 @@ not_supported = [
     'testSetupNetworksMultiMTUsOverBond(False)',  # bridgeless
     'testSetupNetworksMultiMTUsOverNic(False)',  # bridgeless
     'testSetupNetworksNetCompatibilityMultipleNetsSameNic(False)',  # brless
+    # two networks cannot share one tag
+    'testSetupNetworksNetCompatibilityMultipleNetsSameNic(True)',
     'testSetupNetworksNiclessBridgeless',  # bridgeless
     'testSetupNetworksOverDhcpIface',  # bridgeless
     'testSetupNetworksRemoveBondWithKilledEnslavedNics',  # bridgeless
