@@ -101,11 +101,11 @@ def _edit_ovs_net(net, attrs, running_config, nets_by_nic):
         elif running_vlan != vlan:
             commands.extend(['--', 'set', 'port', net, 'tag=%d' % vlan])
     running_nic = running_config.networks[net].get('nic')
-    if running_nic is None:
-        commands.extend(_add_nic_port(net, nic, nets_by_nic))
-    elif running_nic != nic:
-        commands.extend(_del_nic_port(net, running_nic, nets_by_nic))
-        commands.extend(_add_nic_port(net, nic, nets_by_nic))
+    if running_nic != nic:
+        if running_nic is not None:
+            commands.extend(_del_nic_port(net, running_nic, nets_by_nic))
+        if nic is not None:
+            commands.extend(_add_nic_port(net, nic, nets_by_nic))
 
     running_config.setNetwork(net, attrs)
     return commands
