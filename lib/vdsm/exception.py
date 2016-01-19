@@ -29,3 +29,8 @@ class VdsmException(Exception):
 
     def response(self):
         return {'status': {'code': self.code, 'message': str(self)}}
+
+
+class HookError(VdsmException):
+    code = 1500
+    message = "Hook Error"
