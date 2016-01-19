@@ -27,18 +27,4 @@ public class ClientConnectionException extends Exception {
             boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }
-
-    @Override
-    public synchronized Throwable getCause() {
-        Throwable throwable = super.getCause();
-        if (throwable == null) {
-            return this;
-        }
-        Throwable previous = throwable;
-        while (throwable != null) {
-            previous = throwable;
-            throwable = previous.getCause();
-        }
-        return previous;
-    }
 }
