@@ -21,7 +21,10 @@
 import imp
 import json
 
+from vdsm.exception import VdsmException
 from rpc.Bridge import DynamicBridge
+from yajsonrpc import JsonRpcError
+
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -48,6 +51,9 @@ class Host():
     def getCapabilities(self):
         return {'status': {'code': 0, 'message': 'Done'},
                 'info': {'My caps': 'My capabilites'}}
+
+    def ping(self):
+        raise VdsmException("Kaboom!!!")
 
 
 class StorageDomain():
@@ -144,3 +150,12 @@ class BridgeTests(TestCaseBase):
         params = obj.get('params', [])
         method = getattr(bridge, mangledMethod)
         self.assertEqual(method(**params), None)
+
+    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
+    def testHookError(self):
+        bridge = DynamicBridge()
+
+        with self.assertRaises(JsonRpcError) as e:
+            bridge.Host_ping()
+
+        self.assertEquals(e.exception.code, 0)
