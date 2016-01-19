@@ -25,6 +25,8 @@ import yajsonrpc
 from api import vdsmapi
 
 from vdsm.netinfo.addresses import getDeviceByIP
+from vdsm.exception import VdsmException
+
 
 try:
     import gluster.apiwrapper as gapi
@@ -280,6 +282,8 @@ class DynamicBridge(object):
             except TypeError as e:
                 self.log.exception("TypeError raised by dispatched function")
                 raise InvalidCall(fn, methodArgs, e)
+            except VdsmException as e:
+                raise yajsonrpc.JsonRpcError(e.code, str(e))
 
         if result['status']['code']:
             code = result['status']['code']
