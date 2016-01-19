@@ -48,3 +48,8 @@ class GeneralException(VdsmException):
 class ActionStopped(GeneralException):
     code = 443
     message = "Action was stopped"
+
+
+class HookError(GeneralException):
+    code = 1500
+    message = "Hook Error"
