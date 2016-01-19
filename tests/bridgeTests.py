@@ -19,7 +19,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import imp
-import json
 
 from rpc.Bridge import DynamicBridge
 from monkeypatch import MonkeyPatch
@@ -102,45 +101,27 @@ class BridgeTests(TestCaseBase):
     def testMethodWithManyOptionalAttributes(self):
         bridge = DynamicBridge()
 
-        msg = ('{"jsonrpc":"2.0","method":"Host.fenceNode","params":{"addr":"r'
-               'ack05-pdu01-lab4.tlv.redhat.com","port":"","agent":"apc_snmp",'
-               '"username":"emesika","password":"pass","action":"off","op'
-               'tions":"port=15"},"id":"c212299f-42b5-485d-b9ba-bc9880628743"'
-               '}')
-        obj = json.loads(msg, 'utf-8')
+        params = {"addr": "rack05-pdu01-lab4.tlv.redhat.com", "port": "",
+                  "agent": "apc_snmp", "username": "emesika",
+                  "password": "pass", "action": "off", "options": "port=15"}
 
-        mangledMethod = obj.get("method").replace(".", "_")
-        params = obj.get('params', [])
-
-        method = getattr(bridge, mangledMethod)
-        self.assertEquals(method(**params), {'power': 'on'})
+        self.assertEquals(bridge.Host_fenceNode(**params), {'power': 'on'})
 
     @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
     def testMethodWithNoParams(self):
         bridge = DynamicBridge()
 
-        msg = ('{"jsonrpc":"2.0","method":"Host.getCapabilities","params":{},"'
-               'id":"505ebe58-4fd7-45c6-8195-61e3a6d1dce9"}')
-
-        obj = json.loads(msg, 'utf-8')
-        mangledMethod = obj.get("method").replace(".", "_")
-        params = obj.get('params', [])
-        method = getattr(bridge, mangledMethod)
         bridge.register_server_address('127.0.0.1')
-        self.assertEquals(method(**params)['My caps'], 'My capabilites')
+        self.assertEquals(bridge.Host_getCapabilities()['My caps'],
+                          'My capabilites')
         bridge.unregister_server_address()
 
     @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
     def testDetach(self):
         bridge = DynamicBridge()
 
-        msg = ('{"jsonrpc":"2.0","method":"StorageDomain.detach","params":{"st'
-               'oragepoolID":"00000002-0002-0002-0002-0000000000f6","force":'
-               '"True","storagedomainID": "773adfc7-10d4-4e60-b700-3272ee1871'
-               'f9"},"id":"505ebe58-4fd7-45c6-8195-61e3a6d1dce9"}')
+        params = {"storagepoolID": "00000002-0002-0002-0002-0000000000f6",
+                  "force": "True",
+                  "storagedomainID": "773adfc7-10d4-4e60-b700-3272ee1871f9"}
 
-        obj = json.loads(msg, 'utf-8')
-        mangledMethod = obj.get("method").replace(".", "_")
-        params = obj.get('params', [])
-        method = getattr(bridge, mangledMethod)
-        self.assertEqual(method(**params), None)
+        self.assertEqual(bridge.StorageDomain_detach(**params), None)
