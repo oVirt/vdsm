@@ -30,11 +30,8 @@ import os.path
 import sys
 import tempfile
 
+from vdsm import exception
 from vdsm.constants import P_VDSM_HOOKS, P_VDSM
-
-
-class HookError(Exception):
-    pass
 
 
 # dir path is relative to '/' for test purposes
@@ -108,7 +105,7 @@ def _runHooksDir(data, dir, vmconf={}, raiseError=True, params={},
                 logging.warn('hook returned unexpected return code %s', rc)
 
         if errorSeen and raiseError:
-            raise HookError(err)
+            raise exception.HookError(err)
 
         with open(data_filename) as f:
             final_data = f.read()
