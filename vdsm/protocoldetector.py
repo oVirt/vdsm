@@ -30,9 +30,6 @@ from vdsm.sslcompat import SSLHandshakeDispatcher
 def _create_socket(host, port):
     addrinfo = socket.getaddrinfo(host, port,
                                   socket.AF_UNSPEC, socket.SOCK_STREAM)
-    if not addrinfo:
-        raise socket.error("Could not translate address '%s:%s'"
-                           % (host, str(port)))
 
     family, socktype, proto, _, sockaddr = addrinfo[0]
     server_socket = socket.socket(family, socktype, proto)
