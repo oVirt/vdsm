@@ -182,6 +182,9 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 %endif
 
 %changelog
+* Tue Jan 19 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.1.7-1
+- Exception shouldn't be recursive
+
 * Fri Jan 8 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.1.6-1
 - scheduled tasks do not check whether a channel is there
 - i/o thread blocked during connection
