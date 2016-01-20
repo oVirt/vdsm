@@ -254,7 +254,6 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     nics = nics or ()
     if _netinfo is None:
         _netinfo = CachingNetInfo()
-    bridged = utils.tobool(bridged)
     if dhcpv6 is not None:
         dhcpv6 = utils.tobool(dhcpv6)
     if ipv6autoconf is not None:
@@ -748,7 +747,7 @@ def _emergencyNetworkCleanup(network, networkAttrs, configurator):
         vlan_name = '%s.%s' % (topNetDev.name, networkAttrs['vlan'])
         if vlan_name in _netinfo.vlans:
             topNetDev = Vlan(topNetDev, networkAttrs['vlan'], configurator)
-    if networkAttrs.get('bridged', True):
+    if networkAttrs['bridged']:
         if network in _netinfo.bridges:
             topNetDev = Bridge(network, configurator, port=topNetDev)
 
@@ -827,7 +826,7 @@ def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
     if marked_for_removal:
         return False
 
-    should_be_bridged = network_attrs.get('bridged')
+    should_be_bridged = network_attrs['bridged']
     if currently_bridged and not should_be_bridged:
         return False
 
@@ -969,6 +968,7 @@ def _canonize_networks(nets):
 
         _canonize_mtu(attrs)
         _canonize_vlan(attrs)
+        _canonize_bridged(attrs)
 
 
 def _canonize_remove(data):
@@ -988,6 +988,13 @@ def _canonize_vlan(data):
         data.pop('vlan', None)
     else:
         data['vlan'] = int(vlan)
+
+
+def _canonize_bridged(data):
+    if 'bridged' in data:
+        data['bridged'] = utils.tobool(data['bridged'])
+    else:
+        data['bridged'] = True
 
 
 def setSafeNetworkConfig():
