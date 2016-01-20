@@ -22,7 +22,6 @@
 
 from contextlib import contextmanager
 import os
-import signal
 import six
 import sys
 import time
@@ -1210,12 +1209,7 @@ class Global(APIBase):
            action can be one of (status, on, off, reboot)."""
 
         def fence(script, inp):
-            # non-status actions are sent asyncronously. deathSignal is set to
-            # make sure that no stray fencing scripts are left behind if Vdsm
-            # crashes.
-            rc, out, err = commands.execCmd(
-                [script], deathSignal=signal.SIGTERM,
-                data=inp)
+            rc, out, err = commands.execCmd([script], data=inp)
             self.log.debug('rc %s inp %s out %s err %s', rc,
                            hidePasswd(inp), out, err)
             return rc, out, err
