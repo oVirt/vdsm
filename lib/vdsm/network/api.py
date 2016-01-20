@@ -964,19 +964,30 @@ def _canonize_networks(nets):
     for attrs in six.itervalues(nets):
         # If net is marked for removal, normalize the mark to boolean and
         # ignore all other attributes canonization.
-        if 'remove' in attrs:
-            attrs['remove'] = utils.tobool(attrs['remove'])
-            if attrs['remove']:
+        if _canonize_remove(attrs):
                 continue
 
-        attrs['mtu'] = int(attrs['mtu']) if 'mtu' in attrs else (
-            mtus.DEFAULT_MTU)
+        _canonize_mtu(attrs)
+        _canonize_vlan(attrs)
 
-        vlan = attrs.get('vlan', None)
-        if vlan in (None, ''):
-            attrs.pop('vlan', None)
-        else:
-            attrs['vlan'] = int(vlan)
+
+def _canonize_remove(data):
+    if 'remove' in data:
+        data['remove'] = utils.tobool(data['remove'])
+        return data['remove']
+    return False
+
+
+def _canonize_mtu(data):
+    data['mtu'] = int(data['mtu']) if 'mtu' in data else mtus.DEFAULT_MTU
+
+
+def _canonize_vlan(data):
+    vlan = data.get('vlan', None)
+    if vlan in (None, ''):
+        data.pop('vlan', None)
+    else:
+        data['vlan'] = int(vlan)
 
 
 def setSafeNetworkConfig():
