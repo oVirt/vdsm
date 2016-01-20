@@ -250,6 +250,10 @@ def disks(vm, stats, first_sample, last_sample, interval):
     if first_sample is None or last_sample is None:
         return None
 
+    # libvirt does not guarantee that disk will returned in the same
+    # order across calls. It is usually like this, but not always,
+    # for example if hotplug/hotunplug comes into play.
+    # To be safe, we need to find the mapping after each call.
     first_indexes = _find_bulk_stats_reverse_map(first_sample, 'block')
     last_indexes = _find_bulk_stats_reverse_map(last_sample, 'block')
     disk_stats = {}
