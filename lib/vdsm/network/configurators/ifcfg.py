@@ -542,7 +542,7 @@ class ConfigWriter(object):
                      'force', 'blockingdhcp', 'custom',
                      'connectivityCheck', 'connectivityTimeout',
                      'implicitBonding', 'delay', 'onboot', 'forward_delay',
-                     'DELAY', 'ONBOOT']
+                     'DELAY', 'ONBOOT', 'stp']
         for k in set(kwargs.keys()).difference(set(BLACKLIST)):
             if re.match('^[a-zA-Z_]\w*$', k):
                 cfg += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))

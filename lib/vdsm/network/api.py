@@ -160,18 +160,8 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
     elif vlan_id is not None:
         topNetDev = Vlan(topNetDev, vlan_id, configurator, mtu=mtu)
     if bridge is not None:
-        stp = None
-        if 'stp' in opts:
-            stp = opts.pop('stp')
-        elif 'STP' in opts:
-            stp = opts.pop('STP')
-        try:
-            stp = bridges.stp_booleanize(stp)
-        except ValueError:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not a valid '
-                                     'bridge STP value.' % stp)
         topNetDev = Bridge(bridge, configurator, port=topNetDev, mtu=mtu,
-                           stp=stp)
+                           stp=opts.get('stp', None))
         # inherit DUID from the port's existing DHCP lease (BZ#1219429)
         if topNetDev.port and bootproto == 'dhcp':
             _inherit_dhcp_unique_identifier(topNetDev, _netinfo)
@@ -969,6 +959,7 @@ def _canonize_networks(nets):
         _canonize_mtu(attrs)
         _canonize_vlan(attrs)
         _canonize_bridged(attrs)
+        _canonize_stp(attrs)
 
 
 def _canonize_remove(data):
@@ -995,6 +986,20 @@ def _canonize_bridged(data):
         data['bridged'] = utils.tobool(data['bridged'])
     else:
         data['bridged'] = True
+
+
+def _canonize_stp(data):
+    if data['bridged']:
+        stp = False
+        if 'stp' in data:
+            stp = data['stp']
+        elif 'STP' in data:
+            stp = data.pop('STP')
+        try:
+            data['stp'] = bridges.stp_booleanize(stp)
+        except ValueError:
+            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not '
+                                     'a valid bridge STP value.' % stp)
 
 
 def setSafeNetworkConfig():

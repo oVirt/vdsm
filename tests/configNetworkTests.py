@@ -47,6 +47,7 @@ class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
+            api._canonize_networks({netName: opts})
             api._addNetwork(netName, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 
