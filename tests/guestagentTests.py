@@ -78,7 +78,7 @@ _OUTPUTS = [
         'guestIPs': '9.115.122.77 9.115.126.23 192.168.122.1'},
 
     {'appsList':
-        ['kernel-2.6.32-71.7.1.el6', 'kernel-2.6.32-220.el6']},
+        ('kernel-2.6.32-71.7.1.el6', 'kernel-2.6.32-220.el6',)},
 
     {'disksUsage': [
         {'total': '130062397440', 'path': '/', 'fs': 'ext4',
@@ -209,7 +209,14 @@ class TestGuestIF(TestCaseBase):
         ]):
             guest_info = fake_guest_agent.getGuestInfo()
             for k in _OUTPUTS[0]:
-                guest_info[k] = 'modified'
+                value = guest_info[k]
+                if isinstance(value, list):
+                    value.append('modified')
+                elif isinstance(value, dict):
+                    value['modified'] = 'modified'
+                else:
+                    value = 'modified'
+                guest_info[k] = value
             guest_info = fake_guest_agent.getGuestInfo()
             for (k, v) in _OUTPUTS[0].iteritems():
                 self.assertEqual(guest_info[k], v)

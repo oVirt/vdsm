@@ -26,6 +26,7 @@ import json
 import re
 
 from vdsm import supervdsm
+from vdsm import utils
 from vdsm.infra import filecontrol
 
 from . import vmstatus
@@ -131,7 +132,7 @@ class GuestAgent(object):
             'guestIPs': ips,
             'guestFQDN': '',
             'session': 'Unknown',
-            'appsList': [],
+            'appsList': (),
             'disksUsage': [],
             'netIfaces': [],
             'memoryStats': {}}
@@ -297,7 +298,7 @@ class GuestAgent(object):
             self.guestInfo['netIfaces'] = interfaces
             self.guestInfo['guestIPs'] = old_ips.strip()
         elif message == 'applications':
-            self.guestInfo['appsList'] = args['applications']
+            self.guestInfo['appsList'] = tuple(args['applications'])
         elif message == 'active-user':
             currentUser = args['name']
             if ((currentUser != self.guestInfo['username']) and
@@ -316,7 +317,7 @@ class GuestAgent(object):
             self.guestInfo['session'] = "LoggedOff"
         elif message == 'uninstalled':
             self.log.debug("RHEV agent was uninstalled.")
-            self.guestInfo['appsList'] = []
+            self.guestInfo['appsList'] = ()
         elif message == 'session-startup':
             self.log.debug("Guest system is started or restarted.")
         elif message == 'fqdn':
@@ -360,10 +361,7 @@ class GuestAgent(object):
 
     def getGuestInfo(self):
         if self.isResponsive():
-            # Returning deep copy would be safer but could have performance
-            # implications (e.g. on lists of thousands installed Windows
-            # packages).
-            return self.guestInfo.copy()
+            return utils.picklecopy(self.guestInfo)
         else:
             return {
                 'username': 'Unknown',
