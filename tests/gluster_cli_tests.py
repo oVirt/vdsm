@@ -59,15 +59,18 @@ class GlusterCliTests(TestCaseBase):
         <stripeCount>1</stripeCount>
         <replicaCount>2</replicaCount>
         <disperseCount>0</disperseCount>
+        <arbiterCount>1</arbiterCount>
         <redundancyCount>0</redundancyCount>
         <type>2</type>
         <typeStr>Replicate</typeStr>
         <transport>0</transport>
         <bricks>
           <brick>192.168.122.2:/tmp/m_b1<name>192.168.122.2:/tmp/m_b1</name>
+            <isArbiter>1</isArbiter>
             <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
           </brick>
           <brick>192.168.122.2:/tmp/m_b2<name>192.168.122.2:/tmp/m_b2</name>
+            <isArbiter>1</isArbiter>
             <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
           </brick>
         </bricks>
@@ -89,12 +92,14 @@ class GlusterCliTests(TestCaseBase):
         <stripeCount>1</stripeCount>
         <replicaCount>1</replicaCount>
         <disperseCount>0</disperseCount>
+        <arbiterCount>0</arbiterCount>
         <redundancyCount>0</redundancyCount>
         <type>0</type>
         <typeStr>Distribute</typeStr>
         <transport>1</transport>
         <bricks>
           <brick>192.168.122.2:/tmp/t_b1<name>192.168.122.2:/tmp/t_b1</name>
+            <isArbiter>0</isArbiter>
             <hostUuid>04eb591b-2fd3-489e-a22c-5d342a3c713d</hostUuid>
           </brick>
         </bricks>
@@ -108,15 +113,18 @@ class GlusterCliTests(TestCaseBase):
 """
         tree = etree.fromstring(out)
         oVolumeInfo = \
-            {'music': {'brickCount': '2',
+            {'music': {'isArbiter': True,
+                       'brickCount': '2',
                        'bricks': ['192.168.122.2:/tmp/m_b1',
                                   '192.168.122.2:/tmp/m_b2'],
                        'distCount': '2',
                        'bricksInfo': [{
                            'name': '192.168.122.2:/tmp/m_b1',
+                           'isArbiter': True,
                            'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
                        }, {
                            'name': '192.168.122.2:/tmp/m_b2',
+                           'isArbiter': True,
                            'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
                        }],
                        'options': {'auth.allow': '*'},
@@ -129,11 +137,13 @@ class GlusterCliTests(TestCaseBase):
                        'volumeName': 'music',
                        'volumeStatus': gcli.VolumeStatus.ONLINE,
                        'volumeType': 'REPLICATE'},
-             'test1': {'brickCount': '1',
+             'test1': {'isArbiter': False,
+                       'brickCount': '1',
                        'bricks': ['192.168.122.2:/tmp/t_b1'],
                        'distCount': '1',
                        'bricksInfo': [{
                            'name': '192.168.122.2:/tmp/t_b1',
+                           'isArbiter': False,
                            'hostUuid': '04eb591b-2fd3-489e-a22c-5d342a3c713d'
                        }],
                        'options': {},

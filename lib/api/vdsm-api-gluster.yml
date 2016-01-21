@@ -19,6 +19,10 @@ types:
         -   description: Name of the brick
             name: name
             type: string
+
+        -   description: A flag which tells if a gluster brick is a arbiter
+            name: isArbiter
+            type: boolean
         type: object
 
     CreateTime: &CreateTime
@@ -815,6 +819,10 @@ types:
             name: redundancyCount
             type: int
 
+        -   description: A flag which tells if a volume is arbiter volume
+            name: isArbiter
+            type: boolean
+
         -   description: Disperse count of the volume
             name: disperseCount
             type: int
@@ -1292,6 +1300,12 @@ GlusterVolume.create:
         name: force
         type: boolean
         added: '3.4'
+
+    -   defaultvalue: false
+        description: Create arbiter volume
+        name: arbiter
+        type: boolean
+        added: '4.1'
     return:
         description: uuid of the volume
         type: *UUID

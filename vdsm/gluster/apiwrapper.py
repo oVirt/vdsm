@@ -123,9 +123,10 @@ class GlusterVolume(GlusterApiBase):
         return self._gluster.volumesList(volumeName, remoteServer)
 
     def create(self, volumeName, brickList, replicaCount=0, stripeCount=0,
-               transportList=[], force=False):
+               transportList=[], force=False, arbiter=False):
         return self._gluster.volumeCreate(volumeName, brickList, replicaCount,
-                                          stripeCount, transportList, force)
+                                          stripeCount, transportList, force,
+                                          arbiter)
 
     def start(self, volumeName, force=False):
         return self._gluster.volumeStart(volumeName, force)

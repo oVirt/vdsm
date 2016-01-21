@@ -372,7 +372,8 @@ def _parseVolumeInfo(tree):
                       'volumeStatus': STATUS,
                       'volumeType': TYPE,
                       'disperseCount': DISPERSE_COUNT,
-                      'redundancyCount': REDUNDANCY_COUNT}, ...}
+                      'redundancyCount': REDUNDANCY_COUNT,
+                      'isArbiter': [True/False]}, ...}
     """
     volumes = {}
     for el in tree.findall('volInfo/volumes/volume'):
@@ -391,6 +392,7 @@ def _parseVolumeInfo(tree):
         value['replicaCount'] = el.find('replicaCount').text
         value['disperseCount'] = el.find('disperseCount').text
         value['redundancyCount'] = el.find('redundancyCount').text
+        value['isArbiter'] = (el.find('arbiterCount').text == '1')
         transportType = el.find('transport').text
         if transportType == '0':
             value['transportType'] = [TransportType.TCP]
@@ -412,6 +414,7 @@ def _parseVolumeInfo(tree):
             try:
                 brickDetail['name'] = d.find('name').text
                 brickDetail['hostUuid'] = d.find('hostUuid').text
+                brickDetail['isArbiter'] = (d.find('isArbiter').text == '1')
                 value['bricksInfo'].append(brickDetail)
             except AttributeError:
                 break
@@ -505,12 +508,14 @@ def volumeInfo(volumeName=None, remoteServer=None):
 
 @gluster_mgmt_api
 def volumeCreate(volumeName, brickList, replicaCount=0, stripeCount=0,
-                 transportList=[], force=False):
+                 transportList=[], force=False, arbiter=False):
     command = _getGlusterVolCmd() + ["create", volumeName]
     if stripeCount:
         command += ["stripe", "%s" % stripeCount]
     if replicaCount:
         command += ["replica", "%s" % replicaCount]
+    if arbiter:
+        command += ["arbiter", "1"]
     if transportList:
         command += ["transport", ','.join(transportList)]
     command += brickList
