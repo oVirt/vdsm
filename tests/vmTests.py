@@ -839,7 +839,6 @@ class TestVm(TestCaseBase):
             <disk device="lun" sgio="unfiltered" snapshot="no" type="block">
                 <source dev="/dev/mapper/lun1"/>
                 <target bus="scsi" dev="sda"/>
-                <serial>%s</serial>
                 <driver cache="none" error_policy="stop"
                         io="native" name="qemu" type="raw"/>
             </disk>"""]
@@ -853,7 +852,8 @@ class TestVm(TestCaseBase):
             drive = vm.Drive(vmConf, self.log, **devConf)
             # Patch Drive.blockDev to skip the block device checking.
             drive._blockDev = blockDev
-            self.assertXML(drive.getXML(), xml % SERIAL)
+            xmlForCompare = xml if devConf['device'] == 'lun' else xml % SERIAL
+            self.assertXML(drive.getXML(), xmlForCompare)
 
     def testIoTuneException(self):
         SERIAL = '54-a672-23e5b495a9ea'
