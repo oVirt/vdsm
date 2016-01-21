@@ -21,13 +21,13 @@ AC_PREREQ(2.60)
 
 define([VERSION_MAJOR], [1])
 define([VERSION_MINOR], [1])
-define([VERSION_FIX], [7])
+define([VERSION_FIX], [8])
 define([VERSION_NUMBER], VERSION_MAJOR[.]VERSION_MINOR[.]VERSION_FIX)
-define([VERSION_SUFFIX], [])
+define([VERSION_SUFFIX], [_master])
 
 AC_INIT([vdsm-jsonrpc-java], VERSION_NUMBER[]VERSION_SUFFIX)
 PACKAGE_RPM_VERSION="VERSION_NUMBER"
-PACKAGE_RPM_RELEASE="1"
+PACKAGE_RPM_RELEASE="0.0.$(echo VERSION_SUFFIX | sed 's/^_//')"
 PACKAGE_MAVEN_VERSION="VERSION_MAJOR.VERSION_MINOR.VERSION_FIX"
 AC_SUBST([PACKAGE_RPM_VERSION])
 AC_SUBST([PACKAGE_RPM_RELEASE])
@@ -55,9 +55,9 @@ AC_ARG_WITH(
 
 AC_ARG_WITH(
 	[maven-version-snapshot],
-	[AS_HELP_STRING([--with-maven-version-snapshot], [maven version snapshot @<:@default=no@:>@])],
+	[AS_HELP_STRING([--with-maven-version-snapshot], [maven version snapshot @<:@default=yes@:>@])],
 	,
-	[with_maven_version_snapshot="no"]
+	[with_maven_version_snapshot="yes"]
 )
 
 AC_ARG_WITH(
