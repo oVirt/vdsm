@@ -25,7 +25,8 @@ import socket
 from yajsonrpc import stompreactor
 from yajsonrpc import \
     JsonRpcRequest, \
-    JsonRpcNoResponseError
+    JsonRpcNoResponseError, \
+    CALL_TIMEOUT
 
 from vdsm import response
 from .config import config
@@ -44,6 +45,10 @@ class _Server(object):
 
     def __init__(self, client):
         self._client = client
+        self._timeouts = {
+            'migrationCreate': config.getint(
+                'vars', 'migration_create_timeout'),
+        }
 
     def _callMethod(self, methodName, *args):
         try:
@@ -54,7 +59,9 @@ class _Server(object):
                             (methodName, args, e))
 
         req = JsonRpcRequest(method, args, reqId=str(uuid4()))
-        responses = self._client.call(req)
+        responses = self._client.call(
+            req, timeout=self._timeouts.get(
+                methodName, CALL_TIMEOUT))
         if responses:
             resp = responses[0]
         else:
