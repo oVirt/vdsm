@@ -250,6 +250,11 @@ if test "x$PYTHON3" = "x"; then
   AC_MSG_WARN([python3 not found])
 fi
 
+AC_PATH_PROG([PYTHON3_NOSE], [nosetests-3.4])
+if test "x$PYTHON3_NOSE" = "x"; then
+  AC_MSG_WARN([python3-nose not found])
+fi
+
 # Checking for python-devel
 AC_PATH_PROG([PYTHON_CONFIG], [python-config])
 if test "x$PYTHON_CONFIG" = "x"; then

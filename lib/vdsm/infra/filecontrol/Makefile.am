@@ -31,4 +31,7 @@ dist_noinst_PYTHON = \
 	$(NULL)
 
 check-local:
+	if [ -x "$(PYTHON3_NOSE)" ]; then \
+		"$(PYTHON3_NOSE)" tests.py; \
+	fi
 	nosetests tests.py
