@@ -113,27 +113,26 @@ public abstract class ReactorClient {
                             return socketChannel;
                         }
                     }, this.policy));
-            SocketChannel channel = task.get();
-            if (!channel.finishConnect()) {
-                while (!channel.finishConnect()) {
-                    final long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
+            this.channel = task.get();
 
-                    final FutureTask<SocketChannel> connectTask = scheduleTask(new Retryable<SocketChannel>(
-                            new Callable<SocketChannel>() {
-                                @Override
-                                public SocketChannel call() throws ConnectException {
-                                    if (System.currentTimeMillis() >= timeout) {
-                                        throw new ConnectException("Connection timeout");
-                                    }
-                                    return null;
+            while (!this.channel.finishConnect()) {
+                final long timeout = getTimeout(policy.getRetryTimeOut(), policy.getTimeUnit());
+
+                final FutureTask<SocketChannel> connectTask = scheduleTask(new Retryable<SocketChannel>(
+                        new Callable<SocketChannel>() {
+                            @Override
+                            public SocketChannel call() throws ConnectException {
+                                if (System.currentTimeMillis() >= timeout) {
+                                    throw new ConnectException("Connection timeout");
                                 }
-                            }, this.policy));
-                    connectTask.get();
-                }
+                                return null;
+                            }
+                        }, this.policy));
+                connectTask.get();
             }
+
             updateLastIncomingHeartbeat();
             updateLastOutgoingHeartbeat();
-            this.channel = channel;
             if (!isOpen()) {
                 throw new ClientConnectionException("Connection failed");
             }
@@ -151,6 +150,7 @@ public abstract class ReactorClient {
             scheduleTask(disconnectCallable);
             throw new ClientConnectionException(e);
         } catch (IOException e) {
+            closeChannel();
             throw new ClientConnectionException("Connection failed");
         }
     }
