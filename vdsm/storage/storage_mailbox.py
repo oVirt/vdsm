@@ -24,7 +24,6 @@ import time
 import threading
 import Queue
 import struct
-import signal
 import logging
 
 import uuid
@@ -82,7 +81,6 @@ def runTask(args):
 
 
 def _mboxExecCmd(*args, **kwargs):
-    kwargs['deathSignal'] = signal.SIGKILL
     return misc.execCmd(*args, **kwargs)
 
 

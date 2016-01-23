@@ -20,8 +20,6 @@
 
 from __future__ import absolute_import
 
-import signal
-
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import utils
@@ -33,7 +31,7 @@ def blkdiscard(device):
     cmd = [_blkdiscard.cmd]
     cmd.append(device)
 
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd)
 
     if rc != 0:
         raise cmdutils.Error(cmd, rc, out, err)

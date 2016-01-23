@@ -71,7 +71,7 @@ def info(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL, raw=True)
+    rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0:
         raise QImgError(rc, out, err)
 
@@ -123,8 +123,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     if size is not None:
         cmd.append(str(size))
 
-    rc, out, err = commands.execCmd(cmd, cwd=cwdPath,
-                                    deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, cwd=cwdPath)
 
     if rc != 0:
         raise QImgError(rc, out, err)
@@ -137,7 +136,7 @@ def check(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL, raw=True)
+    rc, out, err = commands.execCmd(cmd, raw=True)
 
     # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
@@ -277,7 +276,7 @@ def resize(image, newSize, format=None):
         cmd.extend(("-f", format))
 
     cmd.extend((image, str(newSize)))
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd)
 
     if rc != 0:
         raise QImgError(rc, out, err)

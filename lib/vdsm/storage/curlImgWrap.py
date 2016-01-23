@@ -20,8 +20,6 @@
 
 from __future__ import absolute_import
 
-import signal
-
 from vdsm import commands
 from vdsm import constants
 from vdsm import utils
@@ -69,7 +67,7 @@ def download(url, path, headers={}):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--download"]
     cmd.extend(_headersToOptions(headers) + [path, url])
 
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd)
 
     if rc != 0:
         raise CurlError(rc, out, err)
@@ -79,7 +77,7 @@ def upload(url, path, headers={}):
     cmd = [constants.EXT_CURL_IMG_WRAP, "--upload"]
     cmd.extend(_headersToOptions(headers) + [path, url])
 
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd)
 
     if rc != 0:
         raise CurlError(rc, out, err)
