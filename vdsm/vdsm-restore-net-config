@@ -62,9 +62,13 @@ def _get_persisted_numvfs(existing_sriov_devices):
         return {}
 
     numvfs_by_device = {}
+    sriov_devices_file_names = frozenset(
+        hostdev.name_to_pci_path(device_name)
+        for device_name in existing_sriov_devices)
+
     for file_name in os.listdir(_VIRTUAL_FUNCTIONS_PATH):
-        if file_name not in existing_sriov_devices:
-            logging.error('Phisycal device in %s no longer exists. Skipping '
+        if file_name not in sriov_devices_file_names:
+            logging.error('Physical device in %s no longer exists. Skipping '
                           'numvfs restoration.', file_name)
         else:
             with open(os.path.join(
