@@ -24,6 +24,7 @@ import uuid
 from testlib import VdsmTestCase, permutations, expandPermutations
 from monkeypatch import MonkeyPatchScope
 
+from vdsm.storage import exception as se
 from storage import image, volume
 
 
@@ -45,6 +46,35 @@ def make_init_params(**kwargs):
         legality=volume.LEGAL_VOL)
     res.update(kwargs)
     return res
+
+
+def make_md_dict(**kwargs):
+    res = {
+        volume.DOMAIN: 'domain',
+        volume.IMAGE: 'image',
+        volume.PUUID: 'parent',
+        volume.SIZE: '0',
+        volume.FORMAT: 'format',
+        volume.TYPE: 'type',
+        volume.VOLTYPE: 'voltype',
+        volume.DISKTYPE: 'disktype',
+        volume.DESCRIPTION: 'description',
+        volume.LEGALITY: 'legality',
+        volume.MTIME: '0',
+        volume.CTIME: '0',
+        volume.POOL: '',
+    }
+    res.update(kwargs)
+    return res
+
+
+def make_lines(**kwargs):
+    data = make_md_dict(**kwargs)
+    lines = ['EOF']
+    for k, v in data.items():
+        if v is not None:
+            lines.insert(0, "%s=%s" % (k, v))
+    return lines
 
 
 @expandPermutations
@@ -105,3 +135,46 @@ class VolumeMetadataTests(VdsmTestCase):
     def test_int_params_str_raises(self, param):
         params = make_init_params(**{param: 'not_an_int'})
         self.assertRaises(AssertionError, volume.VolumeMetadata, **params)
+
+    @permutations([[key] for key in make_md_dict() if key != volume.POOL])
+    def test_from_lines_missing_key(self, required_key):
+        data = make_md_dict(CTIME=None, MTIME=None, POOL=None)
+        data[required_key] = None
+        lines = make_lines(**data)
+        self.assertRaises(se.MetaDataKeyNotFoundError,
+                          volume.VolumeMetadata.from_lines, lines)
+
+    @permutations([[None], ['pool']])
+    def test_deprecated_pool(self, val):
+        lines = make_lines(**{volume.POOL: val})
+        md = volume.VolumeMetadata.from_lines(lines)
+        self.assertEqual("", md.legacy_info()[volume.POOL])
+
+    def test_from_lines_invalid_param(self):
+        lines = make_lines(INVALID_KEY='foo')
+        self.assertNotIn("INVALID_KEY",
+                         volume.VolumeMetadata.from_lines(lines).legacy_info())
+
+    @permutations([[volume.SIZE], [volume.CTIME], [volume.MTIME]])
+    def test_from_lines_int_parse_error(self, key):
+        lines = make_lines(**{key: 'not_an_integer'})
+        self.assertRaises(ValueError,
+                          volume.VolumeMetadata.from_lines, lines)
+
+    def test_from_lines(self):
+        data = make_md_dict()
+        lines = make_lines(**data)
+
+        md = volume.VolumeMetadata.from_lines(lines)
+        self.assertEqual(data[volume.DOMAIN], md.domain)
+        self.assertEqual(data[volume.IMAGE], md.image)
+        self.assertEqual(data[volume.PUUID], md.puuid)
+        self.assertEqual(int(data[volume.SIZE]), md.size)
+        self.assertEqual(data[volume.FORMAT], md.format)
+        self.assertEqual(data[volume.TYPE], md.type)
+        self.assertEqual(data[volume.VOLTYPE], md.voltype)
+        self.assertEqual(data[volume.DISKTYPE], md.disktype)
+        self.assertEqual(data[volume.DESCRIPTION], md.description)
+        self.assertEqual(int(data[volume.MTIME]), md.mtime)
+        self.assertEqual(int(data[volume.CTIME]), md.ctime)
+        self.assertEqual(data[volume.LEGALITY], md.legality)

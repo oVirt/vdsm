@@ -170,6 +170,7 @@ class VmVolumeInfo(object):
 
 
 class VolumeMetadata(object):
+
     log = logging.getLogger('Storage.VolumeMetadata')
 
     def __init__(self, domain, image, puuid, size, format,
@@ -203,6 +204,34 @@ class VolumeMetadata(object):
         self.ctime = int(time.time()) if ctime is None else ctime
         # Volume modification time (unused and should be zero)
         self.mtime = 0 if mtime is None else mtime
+
+    @classmethod
+    def from_lines(cls, lines):
+        md = {}
+        for line in lines:
+            if line.startswith("EOF"):
+                break
+            if '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            md[key.strip()] = value.strip()
+
+        try:
+            return cls(domain=md[DOMAIN],
+                       image=md[IMAGE],
+                       puuid=md[PUUID],
+                       size=int(md[SIZE]),
+                       format=md[FORMAT],
+                       type=md[TYPE],
+                       voltype=md[VOLTYPE],
+                       disktype=md[DISKTYPE],
+                       description=md[DESCRIPTION],
+                       legality=md[LEGALITY],
+                       ctime=int(md[CTIME]),
+                       mtime=int(md[MTIME]))
+        except KeyError as e:
+            raise se.MetaDataKeyNotFoundError("Missing metadata key: %s: "
+                                              "found: %s" % (e, md))
 
     @property
     def description(self):

@@ -137,22 +137,13 @@ class FileVolumeManifest(volume.VolumeManifest):
         metaPath = self._getMetaVolumePath(volPath)
 
         try:
-            f = self.oop.directReadLines(metaPath)
-            # TODO: factor out logic below for sharing with block volumes
-            out = {}
-            for l in f:
-                if l.startswith("EOF"):
-                    return out
-                if l.find("=") < 0:
-                    continue
-                key, value = l.split("=", 1)
-                out[key.strip()] = value.strip()
-
+            lines = self.oop.directReadLines(metaPath)
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
-        return out
+        md = volume.VolumeMetadata.from_lines(lines)
+        return md.legacy_info()
 
     def getParent(self):
         """
