@@ -538,16 +538,6 @@ class ConfigWriter(object):
             elif ipv6.dhcpv6:
                 cfg += 'DHCPV6C=yes\n'
             cfg += 'IPV6_AUTOCONF=%s\n' % _to_ifcfg_bool(ipv6.ipv6autoconf)
-        BLACKLIST = ['TYPE', 'NAME', 'DEVICE', 'VLAN', 'bondingOptions',
-                     'force', 'blockingdhcp', 'custom',
-                     'connectivityCheck', 'connectivityTimeout',
-                     'implicitBonding', 'delay', 'onboot', 'forward_delay',
-                     'DELAY', 'ONBOOT', 'stp']
-        for k in set(kwargs.keys()).difference(set(BLACKLIST)):
-            if re.match('^[a-zA-Z_]\w*$', k):
-                cfg += '%s=%s\n' % (k.upper(), pipes.quote(kwargs[k]))
-            else:
-                logging.debug('ignoring variable %s', k)
 
         ifcfg_file = NET_CONF_PREF + name
         hook_dict = {'ifcfg_file': ifcfg_file,
@@ -570,7 +560,8 @@ class ConfigWriter(object):
             conf += 'DHCLIENTARGS="-df %s"\n' % duid_source_file
 
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
-            opts['bridging_opts'] = opts['custom']['bridge_opts']
+            conf += 'BRIDGING_OPTS="%s"\n' % opts['custom']['bridge_opts']
+
         self._createConfFile(conf, bridge.name, bridge.ipv4, bridge.ipv6,
                              bridge.mtu, **opts)
 
