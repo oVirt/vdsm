@@ -74,6 +74,7 @@ test_modules = \
 	hooksTests.py \
 	hostdevTests.py \
 	hoststatsTests.py \
+	imagetickets_test.py \
 	iscsiTests.py \
 	jobsTests.py \
 	libvirtconnectionTests.py \

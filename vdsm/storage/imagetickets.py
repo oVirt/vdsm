@@ -31,9 +31,8 @@ from vdsm.storage import exception as se
 
 try:
     from ovirt_image_daemon import uhttp
-    _have_image_daemon = True
 except ImportError:
-    _have_image_daemon = False
+    uhttp = None
 
 DAEMON_SOCK = os.path.join(constants.P_VDSM_RUN, "ovirt-image-daemon.sock")
 
@@ -43,7 +42,7 @@ log = logging.getLogger('storage.imagetickets')
 def requires_image_daemon(func):
     @functools.wraps(func)
     def wrapper(*args, **kw):
-        if not _have_image_daemon:
+        if not uhttp:
             raise se.ImageDaemonUnsupported()
         return func(*args, **kw)
 
