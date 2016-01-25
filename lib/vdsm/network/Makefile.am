@@ -26,6 +26,7 @@ dist_vdsmnetwork_PYTHON = \
 	__init__.py \
 	api.py \
 	errors.py \
+	canonize.py \
 	models.py \
 	sourceroute.py \
 	sourceroutethread.py \

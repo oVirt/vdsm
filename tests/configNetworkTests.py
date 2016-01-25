@@ -30,6 +30,7 @@ from monkeypatch import MonkeyPatch
 from vdsm.network import api
 from vdsm.network import errors
 from vdsm.network.configurators import ifcfg
+from vdsm.network.canonize import canonize_networks
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
 
 
@@ -47,7 +48,7 @@ class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-            api._canonize_networks({netName: opts})
+            canonize_networks({netName: opts})
             api._addNetwork(netName, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 

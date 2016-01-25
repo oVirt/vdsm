@@ -1126,6 +1126,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/configurators/pyroute_two.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/qos.py*
 %{python_sitelib}/%{vdsm_name}/network/errors.py*
+%{python_sitelib}/%{vdsm_name}/network/canonize.py*
 %{python_sitelib}/%{vdsm_name}/network/models.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroutethread.py*
