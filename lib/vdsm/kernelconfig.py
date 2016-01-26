@@ -27,8 +27,6 @@ from . import constants
 from .netinfo import addresses
 from .netinfo import bonding
 from .netinfo import bridges
-from .netinfo import mtus
-from . import utils
 from .netconfpersistence import BaseConfig
 
 
@@ -62,9 +60,6 @@ class KernelConfig(BaseConfig):
 def normalize(running_config):
     config_copy = copy.deepcopy(running_config)
 
-    _normalize_bridge(config_copy)
-    _normalize_vlan(config_copy)
-    _normalize_mtu(config_copy)
     _normalize_blockingdhcp(config_copy)
     _normalize_dhcp(config_copy)
     _normalize_bonding_opts(config_copy)
@@ -177,38 +172,6 @@ def _remove_zero_values_in_net_qos(net_qos):
                                              in curve_config.iteritems()
                                              if v != 0)
     return stripped_qos
-
-
-def _normalize_stp(net_attr):
-    stp = net_attr.pop('stp', net_attr.pop('STP', None))
-    net_attr['stp'] = bridges.stp_booleanize(stp)
-
-
-def _normalize_vlan(config_copy):
-    for net_attr in config_copy.networks.itervalues():
-        # defensively convert to int to support upgrade path
-        # REQUIRED_FOR: upgrade from vdsm<=4.17
-        if 'vlan' in net_attr:
-            net_attr['vlan'] = int(net_attr['vlan'])
-
-
-def _normalize_bridge(config_copy):
-    for net_attr in config_copy.networks.itervalues():
-        if utils.tobool(net_attr.get('bridged', True)):
-            net_attr['bridged'] = True
-            _normalize_stp(net_attr)
-        else:
-            net_attr['bridged'] = False
-
-
-def _normalize_mtu(config_copy):
-    for net_attr in config_copy.networks.itervalues():
-        if 'mtu' in net_attr:
-            # defensively convert to int so support upgrade path
-            # REQUIRED_FOR: upgrade from vdsm<=4.17
-            net_attr['mtu'] = int(net_attr['mtu'])
-        else:
-            net_attr['mtu'] = mtus.DEFAULT_MTU
 
 
 def _normalize_blockingdhcp(config_copy):

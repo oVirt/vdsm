@@ -30,6 +30,7 @@ from .tool.restore_nets import restore
 from . import commands
 from . import constants
 from . import utils
+from vdsm.network.canonize import canonize_networks
 
 CONF_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
 # The persistent path is inside of an extra "persistence" dir in order to get
@@ -108,8 +109,9 @@ class Config(BaseConfig):
     def __init__(self, savePath):
         self.networksPath = os.path.join(savePath, 'nets', '')
         self.bondingsPath = os.path.join(savePath, 'bonds', '')
-        super(Config, self).__init__(self._getConfigs(self.networksPath),
-                                     self._getConfigs(self.bondingsPath))
+        nets = self._getConfigs(self.networksPath)
+        canonize_networks(nets)
+        super(Config, self).__init__(nets, self._getConfigs(self.bondingsPath))
 
     def delete(self):
         self.networks = {}

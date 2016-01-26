@@ -32,7 +32,8 @@ from testlib import VdsmTestCase as TestCaseBase
 
 
 NETWORK = 'luke'
-NETWORK_ATTRIBUTES = {'bonding': 'bond0', 'bridged': True, 'vlan': 1}
+NETWORK_ATTRIBUTES = {'bonding': 'bond0', 'bridged': True, 'vlan': 1,
+                      'mtu': 1500, 'stp': False}
 BONDING = 'skywalker'
 BONDING_ATTRIBUTES = {'options': 'mode=4 miimon=100', 'nics': ['eth0', 'eth1']}
 
