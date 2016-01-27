@@ -125,6 +125,9 @@ parameters = [
         ('max_incoming_migrations', '2',
             'Maximum concurrent incoming migrations'),
 
+        ('migration_retry_timeout', '10',
+            'Time (in sec) to wait before retrying failed migration.'),
+
         ('sys_shutdown_timeout', '120',
             'Destroy and shutdown timeouts (in sec) before completing the '
             'action.'),

@@ -48,6 +48,7 @@ from vdsm import concurrent
 from vdsm import numa
 from vdsm import utils
 from vdsm import supervdsm
+from vdsm import response
 
 from virt import migration
 from virt import recovery
@@ -425,8 +426,10 @@ class clientIF(object):
                 if vmParams['vmId'] in self.vmContainer:
                     return errCode['exist']
             vm = Vm(self, vmParams, vmRecover)
-            self.vmContainer[vmParams['vmId']] = vm
-        return vm.run()
+            ret = vm.run()
+            if not response.is_error(ret):
+                self.vmContainer[vmParams['vmId']] = vm
+            return ret
 
     def getAllVmStats(self):
         return [v.getStats() for v in self.vmContainer.values()]

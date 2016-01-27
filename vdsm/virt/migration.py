@@ -66,6 +66,12 @@ class MigrationDestinationSetupError(RuntimeError):
     """
 
 
+class MigrationLimitExceeded(RuntimeError):
+    """
+    Cannot migrate right now: no resources on destination.
+    """
+
+
 class SourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
@@ -322,29 +328,37 @@ class SourceThread(threading.Thread):
             self._setupVdsConnection()
             self._setupRemoteMachineParams()
             self._prepareGuest()
-            with SourceThread._ongoingMigrations:
+
+            while self._progress < 100:
                 try:
-                    if self._migrationCanceledEvt:
-                        self._raiseAbortError()
-                    self.log.debug("migration semaphore acquired "
-                                   "after %d seconds",
-                                   time.time() - startTime)
-                    params = {
-                        'dst': self._dst,
-                        'mode': self._mode,
-                        'method': METHOD_ONLINE,
-                        'dstparams': self._dstparams,
-                        'dstqemu': self._dstqemu,
-                    }
-                    with self._vm.migration_parameters(params):
-                        self._vm.saveState()
-                        self._startUnderlyingMigration(time.time())
-                        self._finishSuccessfully()
+                    with SourceThread._ongoingMigrations:
+                        if self._migrationCanceledEvt:
+                            self._raiseAbortError()
+                        self.log.debug("migration semaphore acquired "
+                                       "after %d seconds",
+                                       time.time() - startTime)
+                        params = {
+                            'dst': self._dst,
+                            'mode': self._mode,
+                            'method': METHOD_ONLINE,
+                            'dstparams': self._dstparams,
+                            'dstqemu': self._dstqemu,
+                        }
+                        with self._vm.migration_parameters(params):
+                            self._vm.saveState()
+                            self._startUnderlyingMigration(time.time())
+                            self._finishSuccessfully()
                 except libvirt.libvirtError as e:
                     if e.get_error_code() == libvirt.VIR_ERR_OPERATION_ABORTED:
                         self.status = response.error(
                             'migCancelErr', message='Migration canceled')
                     raise
+                except MigrationLimitExceeded:
+                    retry_timeout = config.getint('vars',
+                                                  'migration_retry_timeout')
+                    self.log.debug("Migration destination busy. Initiating "
+                                   "retry in %d seconds.", retry_timeout)
+                    time.sleep(retry_timeout)
         except MigrationDestinationSetupError as e:
             self._recover(str(e))
             # we know what happened, no need to dump hollow stack trace
@@ -379,9 +393,12 @@ class SourceThread(threading.Thread):
 
             if response.is_error(result):
                 self.status = result
-                raise MigrationDestinationSetupError(
-                    'migration destination error: ' +
-                    result['status']['message'])
+                if response.is_error(result, 'migrateLimit'):
+                    raise MigrationLimitExceeded()
+                else:
+                    raise MigrationDestinationSetupError(
+                        'migration destination error: ' +
+                        result['status']['message'])
             if config.getboolean('vars', 'ssl'):
                 transport = 'tls'
             else:
