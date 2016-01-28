@@ -17,7 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from functools import partial
 import traceback
 
 import six
@@ -27,9 +26,6 @@ from vdsm.netconfpersistence import RunningConfig
 import hooking
 
 from ovs_utils import is_ovs_network
-import ovs_utils
-
-log = partial(ovs_utils.log, tag='ovs_after_get_stats: ')
 
 
 def ovs_networks_stats(stats):
@@ -60,7 +56,6 @@ def ovs_networks_stats(stats):
                 ovs_networks_stats[vlan_name] = stats[network]
                 ovs_networks_stats[vlan_name]['name'] = vlan_name
 
-    log('Updating network stats with OVS networks: %s' % ovs_networks_stats)
     return ovs_networks_stats
 
 
