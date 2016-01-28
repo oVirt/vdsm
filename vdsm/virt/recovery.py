@@ -71,11 +71,13 @@ class File(object):
 
     def __init__(self, vmid):
         self._vmid = vmid
-        self._path = os.path.join(
-            constants.P_VDSM_RUN,
-            '%s.recovery' % vmid
-        )
+        self._name = '%s.recovery' % vmid
+        self._path = os.path.join(constants.P_VDSM_RUN, self._name)
         self._lock = threading.Lock()
+
+    @property
+    def name(self):
+        return self._name
 
     def cleanup(self):
         with self._lock:

@@ -141,6 +141,7 @@ test_modules = \
 	vmfakelibTests.py \
 	vmMigrationTests.py \
 	vmOperationsTests.py \
+	vmRecoveryTests.py \
 	vmSecretTests.py \
 	vmStatsTests.py \
 	vmStorageTests.py \

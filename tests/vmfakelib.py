@@ -30,6 +30,7 @@ import libvirt
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm import libvirtconnection
+from vdsm import response
 
 import clientIF
 from virt import sampling
@@ -155,9 +156,14 @@ class ClientIF(clientIF.clientIF):
         self.channelListener = None
         self.vmContainerLock = threading.Lock()
         self.vmContainer = {}
+        self.vmRequests = {}
 
     def notify(self, event_id, **kwargs):
         pass
+
+    def createVm(self, vmParams, vmRecover=False):
+        self.vmRequests[vmParams['vmId']] = (vmParams, vmRecover)
+        return response.success(vmList={})
 
 
 class Domain(object):

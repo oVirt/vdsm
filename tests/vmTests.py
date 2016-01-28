@@ -31,7 +31,6 @@ from xml.dom.minidom import parseString
 
 import libvirt
 
-from virt import recovery
 from virt import vm
 from virt.vm import HotunplugTimeout
 from virt import vmchannels
@@ -64,7 +63,6 @@ from testlib import namedTemporaryDir
 from testValidation import slowtest
 from vmTestsData import CONF_TO_DOMXML_X86_64
 from vmTestsData import CONF_TO_DOMXML_PPC64
-from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 import vmfakelib as fake
 
 
@@ -1307,43 +1305,6 @@ class TestLibVirtCallbacks(TestCaseBase):
 
 @expandPermutations
 class TestVmFunctions(TestCaseBase):
-
-    _CONFS = {
-        cpuarch.X86_64: CONF_TO_DOMXML_X86_64,
-        cpuarch.PPC64: CONF_TO_DOMXML_PPC64,
-        'novdsm': CONF_TO_DOMXML_NO_VDSM}
-
-    def _buildAllDomains(self, arch):
-        for conf, _ in self._CONFS[arch]:
-            with fake.VM(conf, arch=arch) as v:
-                domXml = v._buildDomainXML()
-                yield fake.Domain(domXml, vmId=v.id), domXml
-
-    def _getAllDomains(self, arch):
-        for conf, rawXml in self._CONFS[arch]:
-            domXml = rawXml % conf
-            yield fake.Domain(domXml, vmId=conf['vmId']), domXml
-
-    def _getAllDomainIds(self, arch):
-        return [conf['vmId'] for conf, _ in self._CONFS[arch]]
-
-    # TODO: rewrite once recovery.py refactoring is completed
-    @permutations([[cpuarch.X86_64], [cpuarch.PPC64]])
-    def testGetVDSMDomains(self, arch):
-        with MonkeyPatchScope([(recovery, '_list_domains',
-                                lambda: self._buildAllDomains(arch)),
-                               (cpuarch, 'effective', lambda: arch)]):
-            self.assertEqual([v.UUIDString()
-                             for v in recovery._get_vdsm_domains()],
-                             self._getAllDomainIds(arch))
-
-    # TODO: rewrite once recovery.py refactoring is completed
-    # VDSM (of course) builds correct config, so we need static examples
-    # of incorrect/not-compliant data
-    def testSkipNotVDSMDomains(self):
-        with MonkeyPatchScope([(recovery, '_list_domains',
-                                lambda: self._getAllDomains('novdsm'))]):
-            self.assertFalse(recovery._get_vdsm_domains())
 
     def testGetPidNoFile(self):
         with MonkeyPatchScope([(vm, 'supervdsm',
