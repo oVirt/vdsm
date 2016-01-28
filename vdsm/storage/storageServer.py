@@ -206,7 +206,9 @@ class MountConnection(object):
 
     def __init__(self, spec, vfsType=None, options="", mountClass=mount.Mount):
         self._vfsType = vfsType
-        self._remotePath = spec
+        # Note: must be normalized before we escape "/" in _getLocalPath.
+        # See https://bugzilla.redhat.com/1300749
+        self._remotePath = normpath(spec)
         self._options = options
         self._mount = mountClass(spec, self._getLocalPath())
 

@@ -57,12 +57,25 @@ class IscsiConnectionMismatchTests(VdsmTestCase):
         self.assertEqual(str(errors), expected)
 
 
+@expandPermutations
 class MountConnectionTests(VdsmTestCase):
 
     def test_mountpoint(self):
         mount_con = MountConnection("dummy-spec", mountClass=FakeMount)
         self.assertEquals(mount_con._mount.fs_spec, "dummy-spec")
         self.assertEquals(mount_con._mount.fs_file, "/tmp/dummy-spec")
+
+    @permutations([
+        # spec, localpath
+        ("/a/", "/tmp/_a"),
+        ("/a//", "/tmp/_a"),
+        ("/a/b", "/tmp/_a_b"),
+        ("/a//b", "/tmp/_a_b"),
+        ("/a/b_c", "/tmp/_a_b__c"),
+    ])
+    def test_normalize_local_path(self, spec, localpath):
+        con = MountConnection(spec, mountClass=FakeMount)
+        self.assertEqual(con._mount.fs_file, localpath)
 
 
 @expandPermutations
