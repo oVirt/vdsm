@@ -70,6 +70,7 @@ class File(object):
     _log = logging.getLogger("virt.recovery.file")
 
     def __init__(self, vmid):
+        self._vmid = vmid
         self._path = os.path.join(
             constants.P_VDSM_RUN,
             '%s.recovery' % vmid
@@ -88,6 +89,21 @@ class File(object):
                 self.log.debug('save after cleanup')
             else:
                 self._dump(data)
+
+    def load(self, cif):
+        self._log.debug("recovery: trying with VM %s", self._vmid)
+        try:
+            with open(self._path) as src:
+                params = pickle.load(src)
+            self._set_elapsed_time(params)
+            res = cif.createVm(params, vmRecover=True)
+        except Exception:
+            self._log.exception("Error recovering VM: %s", self._vmid)
+            return False
+        else:
+            if response.is_error(res):
+                return False
+            return True
 
     def _dump(self, data):
         with tempfile.NamedTemporaryFile(
@@ -125,6 +141,12 @@ class File(object):
 
         return data
 
+    def _set_elapsed_time(self, params):
+        now = time.time()
+        pt = float(params.pop('startTime', now))
+        params['elapsedTimeOffset'] = now - pt
+        return params
+
 
 def all_vms(cif):
     # Recover stage 1: domains from libvirt
@@ -141,7 +163,8 @@ def _all_vms_from_libvirt(cif):
     num_doms = len(doms)
     for idx, v in enumerate(doms):
         vm_id = v.UUIDString()
-        if _vm_from_file(cif, vm_id):
+        vm_state = File(vm_id)
+        if vm_state.load(cif):
             cif.log.info(
                 'recovery [1:%d/%d]: recovered domain %s from libvirt',
                 idx+1, num_doms, vm_id)
@@ -167,7 +190,8 @@ def _all_vms_from_files(cif):
             ' Will try to recover them.', num_rec_vms)
 
     for idx, vm_id in enumerate(rec_vms):
-        if _vm_from_file(cif, vm_id):
+        vm_state = File(vm_id)
+        if vm_state.load(cif):
             cif.log.info(
                 'recovery [2:%d/%d]: recovered domain %s'
                 ' from data file', idx+1, num_rec_vms, vm_id)
@@ -185,23 +209,6 @@ def _find_vdsm_vms_from_files(cif):
             if vm_id not in cif.vmContainer:
                 vms.append(vm_id)
     return vms
-
-
-def _vm_from_file(cif, vmid):
-    try:
-        recovery_file = constants.P_VDSM_RUN + vmid + ".recovery"
-        params = pickle.load(file(recovery_file))
-        now = time.time()
-        pt = float(params.pop('startTime', now))
-        params['elapsedTimeOffset'] = now - pt
-        cif.log.debug("recovery: trying with domain %s", vmid)
-        if response.is_error(cif.createVm(params, vmRecover=True)):
-            return None
-    except:
-        cif.log.debug("Error recovering VM", exc_info=True)
-        return None
-    else:
-        return recovery_file
 
 
 def clean_vm_files(cif):
