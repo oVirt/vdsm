@@ -837,6 +837,7 @@ exit 0
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
+%dir %{_datadir}/%{vdsm_name}/supervdsm_api
 %dir %{_datadir}/%{vdsm_name}/storage
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
@@ -910,6 +911,8 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
 %{_libexecdir}/%{vdsm_name}/wait_for_ipv4s
+%{_datadir}/%{vdsm_name}/supervdsm_api/__init__.py*
+%{_datadir}/%{vdsm_name}/supervdsm_api/hwinfo.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*
@@ -1197,6 +1200,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/tests/devices/data
 %dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
 %dir %{_datadir}/%{vdsm_name}/tests/integration
+%{_datadir}/%{vdsm_name}/supervdsm_api/test.py*
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_E5649.out

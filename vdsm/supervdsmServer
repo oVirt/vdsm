@@ -22,6 +22,8 @@ import sys
 import os
 import stat
 import errno
+import importlib
+import pkgutil
 from functools import wraps
 import re
 import getopt
@@ -33,7 +35,6 @@ from contextlib import closing
 
 from vdsm import commands
 from vdsm import concurrent
-from vdsm import cpuarch
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
 
@@ -83,6 +84,7 @@ from vdsm.constants import METADATA_GROUP, EXT_CHOWN, \
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
 import mkimage
+import supervdsm_api
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
 _UDEV_RULE_FILE_PREFIX = "99-vdsm-"
@@ -148,24 +150,6 @@ def safe_poll(mp_connection, timeout):
 class _SuperVdsm(object):
 
     log = logging.getLogger("SuperVdsm.ServerCallback")
-
-    @logDecorator
-    def ping(self, *args, **kwargs):
-        # This method exists for testing purposes
-        return True
-
-    @logDecorator
-    def getHardwareInfo(self, *args, **kwargs):
-        arch = cpuarch.real()
-        if cpuarch.is_x86(arch):
-            from vdsm.dmidecodeUtil import getHardwareInfoStructure
-            return getHardwareInfoStructure()
-        elif cpuarch.is_ppc(arch):
-            from vdsm.ppc64HardwareInfo import getHardwareInfoStructure
-            return getHardwareInfoStructure()
-        else:
-            #  not implemented over other architecture
-            return {}
 
     @logDecorator
     def getDevicePartedInfo(self, *args, **kwargs):
@@ -534,6 +518,15 @@ def main(sockfile, pidfile=None):
     if _glusterEnabled:
         for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
             setattr(_SuperVdsm, name, logDecorator(bind(func)))
+
+    for _, module_name, _ in pkgutil.iter_modules([supervdsm_api.__path__[0]]):
+        module = importlib.import_module('%s.%s' %
+                                         (supervdsm_api.__name__,
+                                          module_name))
+        api_funcs = [f for _, f in module.__dict__.iteritems()
+                     if callable(f) and getattr(f, 'exposed_api', False)]
+        for func in api_funcs:
+            setattr(_SuperVdsm, func.__name__, logDecorator(bind(func)))
 
     try:
         log.debug("Making sure I'm root - SuperVdsm")

@@ -370,6 +370,7 @@ AC_OUTPUT([
 	vdsm/gluster/Makefile
 	vdsm/rpc/Makefile
 	vdsm/sos/Makefile
+	vdsm/supervdsm_api/Makefile
 	vdsm/storage/Makefile
 	vdsm/storage/imageRepository/Makefile
 	vdsm/storage/protect/Makefile
