@@ -25,6 +25,8 @@ code to perform periodic maintenance and bookkeeping of the VMs.
 import logging
 import threading
 
+import libvirt
+
 from vdsm import executor
 from vdsm import libvirtconnection
 from vdsm.config import config
@@ -32,6 +34,7 @@ from vdsm.config import config
 from . import hoststats
 from . import sampling
 from . import virdomain
+from . import vmstatus
 
 
 # just a made up number. Maybe should be equal to number of cores?
@@ -281,6 +284,7 @@ class _RunnableOnVm(object):
         return self._vm.isDomainReadyForCommands()
 
     def __call__(self):
+        migrating = self._vm.isMigrating()
         try:
             self._execute()
         except virdomain.NotConnectedError:
@@ -289,6 +293,15 @@ class _RunnableOnVm(object):
             # both cases: let's reduce the log spam.
             self._vm.log.warning('could not run on %s: domain not connected',
                                  self._vm.id)
+        except libvirt.libvirtError as e:
+            if e.get_error_code() in (
+                # race on shutdown/migration completion
+                libvirt.VIR_ERR_NO_DOMAIN,
+            ):
+                # known benign cases: migration in progress or completed
+                if migrating or self._vm.lastStatus == vmstatus.DOWN:
+                    return
+            raise
 
     def _execute(self):
         raise NotImplementedError
