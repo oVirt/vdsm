@@ -108,6 +108,7 @@ class SourceThread(threading.Thread):
         self._preparingMigrationEvt = True
         self._migrationCanceledEvt = False
         self._monitorThread = None
+        self._destServer = None
 
     @property
     def hibernating(self):
@@ -218,7 +219,7 @@ class SourceThread(threading.Thread):
         if not response.is_error(self.status):
             self.status = response.error('migrateErr')
         self.log.error(message)
-        if not self.hibernating:
+        if not self.hibernating and self._destServer is not None:
             try:
                 self._destServer.destroy(self._vm.id)
             except Exception:
