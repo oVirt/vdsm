@@ -558,6 +558,10 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.getIoTunePolicy()
 
+    def vmGetIoTune(self, vmId):
+        vm = API.VM(vmId)
+        return vm.getIoTune()
+
     def vmSetIoTune(self, vmId, tunables):
         vm = API.VM(vmId)
         return vm.setIoTune(tunables)
@@ -1083,6 +1087,7 @@ class BindingXMLRPC(object):
                 (self.merge, 'merge'),
                 (self.vmUpdateVmPolicy, 'updateVmPolicy'),
                 (self.vmSetIoTune, 'setIoTune'),
+                (self.vmGetIoTune, 'getIoTune'),
                 (self.vmGetIoTunePolicy, 'getIoTunePolicy'),
                 (self.vmSetCpuTuneQuota, 'vmSetCpuTuneQuota'),
                 (self.vmSetCpuTunePeriod, 'vmSetCpuTunePeriod'),

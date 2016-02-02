@@ -2488,6 +2488,32 @@ class Vm(object):
             self._vcpuLimit = params.pop('vcpuLimit')
 
         if 'ioTune' in params:
+            ioTuneParams = params["ioTune"]
+
+            for ioTune in ioTuneParams:
+                if ("path" in ioTune) or ("name" in ioTune):
+                    continue
+
+                self.log.debug("IoTuneParams: %s", str(ioTune))
+
+                try:
+                    # All 4 IDs are required to identify a device
+                    # If there is a valid reason why not all 4 are required,
+                    # please change the code
+
+                    disk = self._findDriveByUUIDs({
+                        'domainID': ioTune["domainID"],
+                        'poolID': ioTune["poolID"],
+                        'imageID': ioTune["imageID"],
+                        'volumeID': ioTune["volumeID"]})
+
+                    self.log.debug("Device path: %s", disk.path)
+                    ioTune["name"] = disk.name
+                    ioTune["path"] = disk.path
+
+                except LookupError as e:
+                    return response.error('updateVmPolicyErr', e.message)
+
             # Make sure the top level element exists
             ioTuneList = qos.getElementsByTagName("ioTune")
             if not ioTuneList:
@@ -2496,7 +2522,7 @@ class Vm(object):
                 qos.appendChild(ioTuneElement)
                 metadata_modified = True
 
-            if update_io_tune_dom(ioTuneList[0], params["ioTune"]) > 0:
+            if update_io_tune_dom(ioTuneList[0], ioTuneParams) > 0:
                 metadata_modified = True
 
             del params['ioTune']
@@ -2565,12 +2591,45 @@ class Vm(object):
         qos = self._getVmPolicy()
         ioTuneList = qos.getElementsByTagName("ioTune")
         if not ioTuneList or not ioTuneList[0].hasChildNodes():
-            return []
+            return response.success(ioTunePolicy=[])
 
         for device in ioTuneList[0].getElementsByTagName("device"):
             tunables.append(io_tune_dom_to_values(device))
 
-        return tunables
+        return response.success(ioTunePolicy=tunables)
+
+    def getIoTune(self):
+        resultList = []
+
+        for device in self.getDiskDevices():
+            if not isVdsmImage(device):
+                continue
+
+            try:
+                res = self._dom.blockIoTune(
+                    device.name,
+                    libvirt.VIR_DOMAIN_AFFECT_LIVE)
+
+                # use only certain fields, otherwise
+                # Drive._validateIoTuneParams will not pass
+                ioTune = {k: res[k] for k in (
+                    'total_bytes_sec', 'read_bytes_sec',
+                    'write_bytes_sec', 'total_iops_sec',
+                    'write_iops_sec', 'read_iops_sec')}
+
+                resultList.append({
+                    'name': device.name,
+                    'path': device.path,
+                    'ioTune': ioTune})
+
+            except libvirt.libvirtError as e:
+                self.log.exception("getVmIoTune failed")
+                if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
+                    return response.error('noVM')
+                else:
+                    return response.error('updateIoTuneErr', e.message)
+
+        return response.success(ioTune=resultList)
 
     def setIoTune(self, tunables):
         for io_tune_change in tunables:

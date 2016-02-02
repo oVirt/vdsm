@@ -2587,10 +2587,19 @@
 # @VmDiskDeviceTuneLimits:
 #
 # Extra parameters for VM disk devices.
+# Either name, path or all 4 IDs must be present
 #
 # @name:        #optional The name of the target device
 #
 # @path:        #optional The path of the target device
+#
+# @domainID:    #optional DomainID
+#
+# @poolID:      #optional PoolId
+#
+# @imageID:     #optional ImageId
+#
+# @volumeID:    #optional VolumeId
 #
 # @guaranteed:  IO tune parameters - guaranteed values
 #
@@ -2600,6 +2609,8 @@
 ##
 {'type': 'VmDiskDeviceTuneLimits',
  'data': {'*name': 'str', '*path': 'str',
+          '*domainID': 'UUID', '*poolID': 'UUID',
+          '*imageID': 'UUID', '*volumeID': 'UUID',
           'guaranteed': 'VmDiskDeviceIoTuneParams',
           'maximum': 'VmDiskDeviceIoTuneParams'}}
 
@@ -8626,6 +8637,23 @@
  'returns': 'TaskStatus'}
 
 ##
+# @VM.getIoTune:
+#
+# Sets the ioTune parameters for block devices
+#
+# @vmID:    The UUID of the VM
+#
+# Returns:
+# list of VmDiskDeviceTuneParams objects
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'VM', 'name': 'getIoTune'},
+ 'data': {'vmID': 'UUID'},
+ 'returns': ['VmDiskDeviceTuneParams']}
+
+
+##
 # @VM.getIoTunePolicy:
 #
 # Gets the ioTune policy settings for block devices
@@ -8633,14 +8661,14 @@
 # @vmID:    The UUID of the VM
 #
 # Returns:
-# list of VmDiskDeviceTuneParams objects describing
+# list of VmDiskDeviceTuneLimits objects describing
 # the current settings
 #
 # Since: 4.15.0
 ##
 {'command': {'class': 'VM', 'name': 'getIoTunePolicy'},
  'data': {'vmID': 'UUID'},
- 'returns': ['VmDiskDeviceTuneParams']}
+ 'returns': ['VmDiskDeviceTuneLimits']}
 
 ##
 # @VM.setCpuTuneQuota:
