@@ -30,7 +30,7 @@ def _set_iface_mtu(iface, mtu):
 
 def _update_mtu_changes(mtu, devices, changes):
     for device in devices:
-        current_mtu = netinfo.getMtu(device)
+        current_mtu = netinfo.mtus.getMtu(device)
         mtu = max(mtu, changes.get(device), current_mtu)
         if mtu != current_mtu:
             changes[device] = mtu
@@ -59,8 +59,8 @@ def _mtus_bonds(running_config):
     changes = {}
     for bonding, attrs in iter_ovs_bonds(running_config.bonds):
         slaves = running_config.bonds[bonding].get('nics')
-        mtu = max(netinfo.getMtu(bonding),
-                  max([netinfo.getMtu(slave) for slave in slaves]))
+        mtu = max(netinfo.mtus.getMtu(bonding),
+                  max([netinfo.mtus.getMtu(slave) for slave in slaves]))
         _update_mtu_changes(mtu, slaves, changes)
     return changes
 
@@ -75,7 +75,7 @@ def _mtus_vlans(running_config):
     for net, attrs in iter_ovs_nets(running_config.networks):
         mtu = attrs.get('mtu')
         if mtu is not None and 'vlan' in attrs:
-            current_mtu = netinfo.getMtu(net)
+            current_mtu = netinfo.mtus.getMtu(net)
             if current_mtu != mtu:
                 changes[net] = mtu
     return changes

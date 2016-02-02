@@ -68,7 +68,7 @@ def _top_dev(network, attrs):
     if utils.tobool(attrs.get('bridged')):
         return network
     # bridgeless
-    nics, vlan, _, bonding = netinfo.NetInfo().\
+    nics, vlan, _, bonding = netinfo.cache.CachingNetInfo().\
         getNicsVlanAndBondingForNetwork(network)
     return vlan or bonding or nics[0]
 

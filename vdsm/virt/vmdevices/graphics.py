@@ -206,7 +206,7 @@ def _getNetworkIp(network):
     try:
         nets = netinfo.networks()
         device = nets[network].get('iface', network)
-        ip, _, _, _ = netinfo.getIpInfo(device)
+        ip, _, _, _ = netinfo.addresses.getIpInfo(device)
     except (libvirt.libvirtError, KeyError, IndexError):
         ip = config.get('addresses', 'guests_gateway_ip')
         if ip == '':

@@ -119,7 +119,7 @@ def _process_network(network, attrs):
 
 def _net_nics(attrs):
     if 'bonding' in attrs:
-        return netinfo.slaves(attrs['bonding'])
+        return netinfo.bonding.slaves(attrs['bonding'])
     else:
         return [attrs.pop('nic')] if 'nic' in attrs else ()
 
