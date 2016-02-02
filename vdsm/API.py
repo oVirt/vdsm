@@ -256,7 +256,6 @@ class VM(APIBase):
                                        'message': 'Failed to create '
                                                   'sysprep floppy image. '
                                                   'No space on /tmp?'}}
-                    return errCode['createErr']
 
             if not graphics.isSupportedDisplayType(vmParams):
                 return {'status': {'code': errCode['createErr']

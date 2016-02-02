@@ -295,7 +295,6 @@ def NoIntrCall(callfun, *args, **kwargs):
             if e.args[0] == os.errno.EINTR:
                 continue
             raise
-        break
 
 
 class CommandStream(object):

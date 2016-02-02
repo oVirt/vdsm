@@ -111,7 +111,6 @@ class SchemaValidation(TestCaseBase):
                 except KeyError:
                     raise AssertionError('Missing method %s.%s' % (
                                          spec_class, method_name))
-                    continue
 
                 # inspect apiobj and gather args and default args
                 args = ctorArgs + self._get_args(method_obj)
