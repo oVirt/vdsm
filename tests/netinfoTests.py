@@ -27,7 +27,8 @@ import time
 
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm.netinfo import addresses, bonding, dns, dhcp, misc, nics, routes, get
+from vdsm.netinfo import addresses, bonding, dns, dhcp, misc, nics, routes
+from vdsm.netinfo.cache import get
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 
@@ -118,7 +119,7 @@ class TestNetinfo(TestCaseBase):
         # it should.
         get()
 
-    @MonkeyPatch(netinfo, 'getLinks', lambda: [])
+    @MonkeyPatch(netinfo.cache, 'getLinks', lambda: [])
     @MonkeyPatch(netinfo, 'networks', lambda: {})
     def testGetEmpty(self):
         result = {}

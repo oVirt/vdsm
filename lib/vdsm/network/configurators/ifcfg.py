@@ -41,8 +41,9 @@ from vdsm import constants
 from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import ipwrapper
-from vdsm.netinfo import (bonding as netinfo_bonding, mtus, nics, vlans,
-                          ifaceUsed, NET_PATH, misc)
+from vdsm.netinfo import (bonding as netinfo_bonding, mtus, nics, vlans, misc,
+                          NET_PATH)
+from vdsm.netinfo.cache import ifaceUsed
 from vdsm import sysctl
 from vdsm import utils
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig

@@ -34,10 +34,10 @@ from vdsm import constants
 from vdsm import hooks
 from vdsm import kernelconfig
 from vdsm import netconfpersistence
-from vdsm.netinfo import (addresses, libvirtNets2vdsm, bridges,
-                          get as netinfo_get, CachingNetInfo, mtus,
-                          networks as netinfo_networks, nics as netinfo_nics,
-                          NET_PATH)
+from vdsm.netinfo import (addresses, bridges, mtus, nics as netinfo_nics,
+                          networks as netinfo_networks, NET_PATH)
+from vdsm.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
+                                CachingNetInfo)
 from vdsm import udevadm
 from vdsm import utils
 from vdsm import ipwrapper

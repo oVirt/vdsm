@@ -22,7 +22,8 @@ import re
 import socket
 import struct
 
-from vdsm.netinfo import bonding, ifaceUsed, mtus, nics, CachingNetInfo
+from vdsm.netinfo import bonding, mtus, nics
+from vdsm.netinfo.cache import ifaceUsed, CachingNetInfo
 
 from .errors import ConfigNetworkError
 from . import errors as ne

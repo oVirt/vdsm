@@ -1104,6 +1104,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/netinfo/addresses.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/bonding.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/bridges.py*
+%{python_sitelib}/%{vdsm_name}/netinfo/cache.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/dhcp.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/dns.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/misc.py*

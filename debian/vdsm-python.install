@@ -23,6 +23,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/addresses.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/bonding.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/bridges.py
+./usr/lib/python2.7/dist-packages/vdsm/netinfo/cache.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/dhcp.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/dns.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/misc.py

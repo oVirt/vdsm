@@ -21,7 +21,8 @@
 #
 import os
 
-from vdsm.netinfo import bonding, mtus, CachingNetInfo
+from vdsm.netinfo import bonding, mtus
+from vdsm.netinfo.cache import CachingNetInfo
 from vdsm.network import errors
 from vdsm.network.models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
 from vdsm.network.models import hierarchy_backing_device, hierarchy_vlan_tag

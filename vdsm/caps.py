@@ -549,7 +549,7 @@ def get():
     caps.update(_getVersionInfo())
 
     # TODO: Version requests by engine to ease handling of compatibility.
-    netinfo_data = netinfo.get(compatibility=30600)
+    netinfo_data = netinfo.cache.get(compatibility=30600)
     caps.update(netinfo_data)
 
     try:

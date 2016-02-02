@@ -23,7 +23,7 @@ import logging
 from .. import utils
 from ..config import config
 from ..netconfpersistence import RunningConfig
-from ..netinfo import CachingNetInfo
+from ..netinfo.cache import CachingNetInfo
 from ..netinfo import misc, routes
 from . import expose
 from .upgrade import apply_upgrade

@@ -30,7 +30,8 @@ import errno
 
 from vdsm.config import config
 from vdsm import ipwrapper
-from vdsm.netinfo import nics, misc, CachingNetInfo
+from vdsm.netinfo import nics, misc
+from vdsm.netinfo.cache import CachingNetInfo
 from vdsm import kernelconfig
 from vdsm.constants import P_VDSM_RUN
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \

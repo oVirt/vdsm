@@ -21,7 +21,7 @@ import errno
 import os
 from distutils.version import StrictVersion
 
-from vdsm.netinfo import ifaceUsed
+from vdsm.netinfo.cache import ifaceUsed
 from vdsm.netinfo import qos as netinfo_qos
 from vdsm import tc
 

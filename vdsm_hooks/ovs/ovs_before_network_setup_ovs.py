@@ -21,7 +21,7 @@ from functools import partial
 
 import six
 
-from vdsm.netinfo import CachingNetInfo
+from vdsm.netinfo.cache import CachingNetInfo
 from vdsm.network.configurators import libvirt
 
 import hooking

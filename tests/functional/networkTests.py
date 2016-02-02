@@ -408,7 +408,7 @@ class NetworkTest(TestCaseBase):
 
     def _assert_kernel_config_matches_running_config(self):
         bare_kernel_config = kernelconfig.KernelConfig(
-            vdsm.netinfo.CachingNetInfo())
+            vdsm.netinfo.cache.CachingNetInfo())
         bare_running_config = self.vdsm_net.config
         normalized_running_config = kernelconfig.normalize(bare_running_config)
         # Unify strings to unicode instances so differences are easier to

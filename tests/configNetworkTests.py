@@ -96,7 +96,7 @@ class TestConfigNetwork(TestCaseBase):
             'bondings': {'bond00': {'slaves': ['eth5', 'eth6']}}
         }
 
-        fakeInfo = netinfo.CachingNetInfo(_netinfo)
+        fakeInfo = netinfo.cache.CachingNetInfo(_netinfo)
         nics = ['eth2']
 
         # Test for already existing bridge.
@@ -165,7 +165,7 @@ class TestConfigNetwork(TestCaseBase):
             api._buildBondOptions('jamesbond', {}, _netinfo=FakeNetInfo())
         self.assertEquals(cne.exception.errCode, errors.ERR_BAD_PARAMS)
 
-    @MonkeyPatch(netinfo, 'CachingNetInfo', lambda: None)
+    @MonkeyPatch(netinfo.cache, 'CachingNetInfo', lambda: None)
     def testValidateNetSetupRemoveParamValidation(self):
         attrs = dict(nic='dummy', remove=True,
                      bridged=True)
