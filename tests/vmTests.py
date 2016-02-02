@@ -809,7 +809,7 @@ class TestVm(XMLTestCase):
 
             self.assertEqual(expected_xml, self._xml_sanitizer(dom._metadata))
 
-    def testGetIoTune(self):
+    def testGetIoTunePolicy(self):
         with fake.VM() as machine:
             dom = fake.Domain()
             dom._metadata = """
@@ -842,7 +842,7 @@ class TestVm(XMLTestCase):
                      u'totalBytes': 9999
                  }}
             ]
-            self.assertEqual(tunables, expected)
+            self.assertEqual(tunables['ioTunePolicy'], expected)
 
     def testSetIoTune(self):
 

@@ -470,6 +470,7 @@ command_info = {
     'VM_diskSizeExtend': {'ret': 'size'},
     'VM_getDiskAlignment': {'ret': 'alignment'},
     'VM_getInfo': {'call': VM_getInfo_Call, 'ret': VM_getInfo_Ret},
+    'VM_getIoTune': {'ret': 'ioTuneList'},
     'VM_getIoTunePolicy': {'ret': 'ioTunePolicyList'},
     'VM_getStats': {'ret': 'statsList'},
     'VM_hotplugDisk': {'ret': 'vmList'},
