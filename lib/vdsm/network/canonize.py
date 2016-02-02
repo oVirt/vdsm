@@ -43,6 +43,7 @@ def canonize_networks(nets):
         _canonize_vlan(attrs)
         _canonize_bridged(attrs)
         _canonize_stp(attrs)
+        _canonize_ipv6(attrs)
 
 
 def _canonize_remove(data):
@@ -83,3 +84,8 @@ def _canonize_stp(data):
         except ValueError:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, '"%s" is not '
                                      'a valid bridge STP value.' % stp)
+
+
+def _canonize_ipv6(data):
+    if 'dhcpv6' not in data:
+        data['dhcpv6'] = False
