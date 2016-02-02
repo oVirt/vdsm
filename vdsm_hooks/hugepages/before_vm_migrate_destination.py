@@ -52,11 +52,3 @@ if 'hugepages' in os.environ:
         sys.stderr.write('hugepages before_vm_migraton_destination: '
                          '[unexpected error]: %s\n' % traceback.format_exc())
         sys.exit(2)
-
-        # Add system hugepages
-        allocatedPages = addSysHugepages(pages)
-        if allocatedPages != pages:
-            freeSysHugepages(allocatedPages)
-            sys.stderr.write('hugepages before_vm_migraton_destination: cannot'
-                             ' allocate enough pages\n')
-            sys.exit(2)
