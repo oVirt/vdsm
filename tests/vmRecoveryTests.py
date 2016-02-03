@@ -73,6 +73,13 @@ class RecoveryFileTests(TestCaseBase):
                 stored.cleanup()
                 self.assertEqual(len(os.listdir(tmpdir)), 0)
 
+    def test_name(self):
+        with fake.VM() as testvm, namedTemporaryDir() as tmpDir:
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
+                state = recovery.File(testvm.id)
+                self.assertIn(testvm.id, state.name)
+                self.assertTrue(state.name.endswith(recovery.File.EXTENSION))
+
     def assertVmStatus(self, testvm, params):
         status = testvm.status()
         # reloaded status must be a superset of Vm' status()

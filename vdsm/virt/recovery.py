@@ -67,11 +67,13 @@ class File(object):
     "pickle" for vm state.
     """
 
+    EXTENSION = ".recovery"
+
     _log = logging.getLogger("virt.recovery.file")
 
     def __init__(self, vmid):
         self._vmid = vmid
-        self._name = '%s.recovery' % vmid
+        self._name = '%s%s' % (vmid, self.EXTENSION)
         self._path = os.path.join(constants.P_VDSM_RUN, self._name)
         self._lock = threading.Lock()
 
@@ -207,7 +209,7 @@ def _find_vdsm_vms_from_files(cif):
     vms = []
     for f in os.listdir(constants.P_VDSM_RUN):
         vm_id, fileType = os.path.splitext(f)
-        if fileType == ".recovery":
+        if fileType == File.EXTENSION:
             if vm_id not in cif.vmContainer:
                 vms.append(vm_id)
     return vms
@@ -217,4 +219,4 @@ def clean_vm_files(cif):
     for vm_id in _find_vdsm_vms_from_files(cif):
         cif.log.debug("cleaning old file for vm %s", vm_id)
         utils.rmFile(os.path.join(constants.P_VDSM_RUN,
-                                  "%s%s" % (vm_id, ".recovery")))
+                                  "%s%s" % (vm_id, File.EXTENSION)))
