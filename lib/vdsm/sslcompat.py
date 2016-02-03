@@ -17,6 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+from __future__ import absolute_import
+
 from .config import config
 
 if config.get('vars', 'ssl_implementation') == 'm2c':

@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 
+from __future__ import absolute_import
+
 from collections import defaultdict
 
 from vdsm import tc

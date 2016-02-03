@@ -63,7 +63,6 @@ PEP8_BLACKLIST = \
 
 ABS_IMPORT_WHITELIST = \
 	lib \
-	vdsm/network \
 	$(NULL)
 
 WHITELIST = \
@@ -125,7 +124,7 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check-recursive: gitignore python3 pyflakes pep8
+check-recursive: gitignore abs_imports python3 pyflakes pep8
 
 .PHONY: check-all
 check-all:

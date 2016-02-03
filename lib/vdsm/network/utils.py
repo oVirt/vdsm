@@ -17,6 +17,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
+
 
 def remove_custom_bond_option(options):
     """ Removes 'custom' option from bond options string.
