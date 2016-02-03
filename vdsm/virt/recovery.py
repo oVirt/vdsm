@@ -214,13 +214,7 @@ def _find_vdsm_vms_from_files(cif):
 
 
 def clean_vm_files(cif):
-    for f in os.listdir(constants.P_VDSM_RUN):
-        try:
-            vmId, fileType = f.split(".", 1)
-        except ValueError:
-            # If file is missing type extention - ignore it
-            pass
-        else:
-            if fileType == "recovery" and vmId not in cif.vmContainer:
-                cif.log.debug("cleaning old file " + f)
-                utils.rmFile(constants.P_VDSM_RUN + f)
+    for vm_id in _find_vdsm_vms_from_files(cif):
+        cif.log.debug("cleaning old file for vm %s", vm_id)
+        utils.rmFile(os.path.join(constants.P_VDSM_RUN,
+                                  "%s%s" % (vm_id, ".recovery")))
