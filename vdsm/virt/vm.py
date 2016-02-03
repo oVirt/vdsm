@@ -2145,7 +2145,7 @@ class Vm(object):
         try:
             link = vnicXML.getElementsByTagName('link')[0]
         except IndexError:
-            vnicXML.appendChildWithArgs('link')
+            link = vnicXML.appendChildWithArgs('link')
         link.setAttribute('state', linkValue)
         if (specParams and
                 ('inbound' in specParams or 'outbound' in specParams)):
