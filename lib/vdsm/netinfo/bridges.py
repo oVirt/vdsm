@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 from functools import partial
 from glob import iglob
+import logging
 import os
 
 from .misc import visible_devs
@@ -30,7 +31,17 @@ bridges = partial(visible_devs, Link.isBRIDGE)
 
 
 def ports(bridge):
-    return os.listdir('/sys/class/net/' + bridge + '/brif')
+    brif_path = os.path.join('/sys/class/net', bridge, 'brif')
+    if os.path.isdir(brif_path):
+        bridge_ports = os.listdir(brif_path)
+    else:
+        # We expect "bridge" to be a Linux bridge with interfaces. It is quite
+        # common that this is not the case, when the bridge is actually
+        # implemented by OVS (via our hook) or when the Linux bridge device is
+        # not yet up.
+        logging.warning('%s is not a Linux bridge', bridge)
+        bridge_ports = []
+    return bridge_ports
 
 
 def _bridge_options(bridge, keys=None):
