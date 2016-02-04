@@ -189,7 +189,7 @@ class NumaNodeMemorySampleTests(TestCaseBase):
     def _monkeyPatchedMemorySample(self, freeMemory, totalMemory):
         node_id, cpu_id = 0, 0
 
-        def fakeMemoryStats():
+        def fakeMemoryStats(cell):
             return {
                 'free': freeMemory,
                 'total': totalMemory
@@ -204,7 +204,7 @@ class NumaNodeMemorySampleTests(TestCaseBase):
 
         return MonkeyPatchScope([(caps, 'getNumaTopology',
                                   fakeNumaTopology),
-                                 (caps, 'getUMAHostMemoryStats',
+                                 (caps, 'getMemoryStatsByNumaCell',
                                   fakeMemoryStats)])
 
     def testMemoryStatsWithZeroMemoryAsString(self):

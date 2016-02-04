@@ -229,10 +229,7 @@ def getNumaTopology(capabilities=None):
             cpus.append(int(cpu.get('id')))
         cellInfo['cpus'] = cpus
         cellIndex = cell.get('id')
-        if len(cellSets) < 2:
-            memInfo = getUMAHostMemoryStats()
-        else:
-            memInfo = getMemoryStatsByNumaCell(int(cellIndex))
+        memInfo = getMemoryStatsByNumaCell(int(cellIndex))
         cellInfo['totalMemory'] = memInfo['total']
         cellsInfo[cellIndex] = cellInfo
     return cellsInfo
@@ -250,19 +247,6 @@ def getMemoryStatsByNumaCell(cell):
     cellMemInfo['total'] = str(cellMemInfo['total'] / 1024)
     cellMemInfo['free'] = str(cellMemInfo['free'] / 1024)
     return cellMemInfo
-
-
-def getUMAHostMemoryStats():
-    """
-    Get the memory stats of a UMA host, the unit is MiB.
-
-    :return: dict like {'total': '49141', 'free': '46783'}
-    """
-    memDict = {}
-    memInfo = utils.readMemInfo()
-    memDict['total'] = str(memInfo['MemTotal'] / 1024)
-    memDict['free'] = str(memInfo['MemFree'] / 1024)
-    return memDict
 
 
 @utils.memoized

@@ -131,13 +131,6 @@ class TestCaps(TestCaseBase):
                   'totalMemory': '49141'}}
         self.assertEqual(t, expectedNumaInfo)
 
-    @MonkeyPatch(utils, 'readMemInfo', lambda: {
-        'MemTotal': 50321208, 'MemFree': 47906488})
-    def testGetUMAMemStats(self):
-        t = caps.getUMAHostMemoryStats()
-        expectedInfo = {'total': '49141', 'free': '46783'}
-        self.assertEqual(t, expectedInfo)
-
     @MonkeyPatch(commands, 'execCmd', lambda x: _getCapsNumaDistanceTestData(
         "caps_numactl_4_nodes.out"))
     def testNumaNodeDistance(self):
@@ -310,6 +303,8 @@ class TestCaps(TestCaseBase):
                     'pc-i440fx-rhel7.0.0']
         self.assertEqual(expected, result)
 
+    @MonkeyPatch(caps, 'getMemoryStatsByNumaCell', lambda x: {
+        'total': '1', 'free': '1'})
     def test_getNumaTopology(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
         result = caps.getNumaTopology(capsData)

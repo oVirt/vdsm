@@ -168,10 +168,7 @@ class NumaNodeMemorySample(object):
         numaTopology = caps.getNumaTopology()
         for nodeIndex in numaTopology:
             nodeMemSample = {}
-            if len(numaTopology) < 2:
-                memInfo = caps.getUMAHostMemoryStats()
-            else:
-                memInfo = caps.getMemoryStatsByNumaCell(int(nodeIndex))
+            memInfo = caps.getMemoryStatsByNumaCell(int(nodeIndex))
             nodeMemSample['memFree'] = memInfo['free']
             # in case the numa node has zero memory assigned, report the whole
             # memory as used
