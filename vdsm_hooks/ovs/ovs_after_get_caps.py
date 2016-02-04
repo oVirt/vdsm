@@ -52,11 +52,12 @@ def _list_ports(bridge):
     return out
 
 
-def _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces, routes):
+def _get_net_info(interface, routes):
     mtu = mtus.getMtu(interface)
-    addr, netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(interface)
-    dhcpv4 = dhcp.dhcp_used(interface, dhcpv4ifaces, attrs)
-    dhcpv6 = dhcp.dhcp_used(interface, dhcpv6ifaces, attrs, family=6)
+    ipaddrs = addresses.getIpAddrs()
+    addr, netmask, ipv4addrs, ipv6addrs = addresses.getIpInfo(interface,
+                                                              ipaddrs)
+    dhcpv4, dhcpv6 = dhcp.dhcp_status(interface, ipaddrs)
     gateway = netinfo_routes.get_gateway(routes, interface)
     ipv6gateway = netinfo_routes.get_gateway(routes, interface, family=6)
     return {
@@ -89,12 +90,10 @@ def _get_ports(network, attrs):
 
 def networks_caps(running_config):
     ovs_networks_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
     routes = netinfo_routes.get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
         interface = network if 'vlan' in attrs else BRIDGE_NAME
-        net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
-                                 routes)
+        net_info = _get_net_info(interface, routes)
         net_info['iface'] = network
         net_info['bridged'] = True
         net_info['ports'] = _get_ports(network, attrs)
@@ -105,12 +104,10 @@ def networks_caps(running_config):
 
 def bridges_caps(running_config):
     ovs_bridges_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
     routes = netinfo_routes.get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
         interface = network if 'vlan' in attrs else BRIDGE_NAME
-        net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
-                                 routes)
+        net_info = _get_net_info(interface, routes)
         net_info['bridged'] = True
         net_info['ports'] = _get_ports(network, attrs)
         # TODO netinfo._bridge_options does not work here
@@ -122,13 +119,11 @@ def bridges_caps(running_config):
 
 def vlans_caps(running_config):
     ovs_vlans_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
     routes = netinfo_routes.get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
         vlan = attrs.get('vlan')
         if vlan is not None:
-            net_info = _get_net_info(attrs, network, dhcpv4ifaces,
-                                     dhcpv6ifaces, routes)
+            net_info = _get_net_info(network, routes)
             iface = attrs.get('bonding') or attrs.get('nic')
             net_info['iface'] = iface
             net_info['bridged'] = True
@@ -157,12 +152,10 @@ def _get_active_slave(bonding):
 
 def bondings_caps(running_config):
     ovs_bonding_caps = {}
-    dhcpv4ifaces, dhcpv6ifaces = dhcp.get_dhclient_ifaces()
     routes = netinfo_routes.get_routes()
     for bonding, attrs in iter_ovs_bonds(running_config.bonds):
         options = get_bond_options(attrs.get('options'), keep_custom=True)
-        net_info = _get_net_info(attrs, bonding, dhcpv4ifaces, dhcpv6ifaces,
-                                 routes)
+        net_info = _get_net_info(bonding, routes)
         net_info['slaves'] = attrs.get('nics')
         net_info['active_slave'] = _get_active_slave(bonding)
         net_info['opts'] = options

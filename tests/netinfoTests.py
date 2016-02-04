@@ -19,15 +19,13 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import os
-from datetime import datetime
 from functools import partial
 import io
 import netaddr
-import time
 
 from vdsm import ipwrapper
 from vdsm import netinfo
-from vdsm.netinfo import addresses, bonding, dns, dhcp, misc, nics, routes
+from vdsm.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.netinfo.cache import get
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
@@ -234,74 +232,6 @@ class TestNetinfo(TestCaseBase):
                     misc.getIfaceCfg(deviceName)['GATEWAY'], '1.1.1.1')
                 self.assertEqual(
                     misc.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
-
-    def testGetDhclientIfaces(self):
-        LEASES = (
-            'lease {{\n'
-            '  interface "valid";\n'
-            '  expire {active_datetime:%w %Y/%m/%d %H:%M:%S};\n'
-            '}}\n'
-            'lease {{\n'
-            '  interface "valid2";\n'
-            '  expire epoch {active:.0f}; # Sat Jan 31 20:04:20 2037\n'
-            '}}\n'                   # human-readable date is just a comment
-            'lease {{\n'
-            '  interface "valid3";\n'
-            '  expire never;\n'
-            '}}\n'
-            'lease {{\n'
-            '  interface "expired";\n'
-            '  expire {expired_datetime:%w %Y/%m/%d %H:%M:%S};\n'
-            '}}\n'
-            'lease {{\n'
-            '  interface "expired2";\n'
-            '  expire epoch {expired:.0f}; # Fri Jan 31 20:04:20 2014\n'
-            '}}\n'
-            'lease6 {{\n'
-            '  interface "valid4";\n'
-            '  ia-na [some MAC address] {{\n'
-            '    iaaddr [some IPv6 address] {{\n'
-            '      starts {now:.0f};\n'
-            '      max-life 60;\n'  # the lease has a minute left
-            '    }}\n'
-            '  }}\n'
-            '}}\n'
-            'lease6 {{\n'
-            '  interface "expired3";\n'
-            '  ia-na [some MAC address] {{\n'
-            '    iaaddr [some IPv6 address] {{\n'
-            '      starts {expired:.0f};\n'
-            '      max-life 30;\n'  # the lease expired half a minute ago
-            '    }}\n'
-            '  }}\n'
-            '}}\n'
-        )
-
-        with namedTemporaryDir() as tmp_dir:
-            lease_file = os.path.join(tmp_dir, 'test.lease')
-            with open(lease_file, 'w') as f:
-                now = time.time()
-                last_minute = now - 60
-                next_minute = now + 60
-
-                f.write(LEASES.format(
-                    active_datetime=datetime.utcfromtimestamp(next_minute),
-                    active=next_minute,
-                    expired_datetime=datetime.utcfromtimestamp(last_minute),
-                    expired=last_minute,
-                    now=now
-                ))
-
-            dhcpv4_ifaces, dhcpv6_ifaces = \
-                dhcp.get_dhclient_ifaces([lease_file])
-
-        self.assertIn('valid', dhcpv4_ifaces)
-        self.assertIn('valid2', dhcpv4_ifaces)
-        self.assertIn('valid3', dhcpv4_ifaces)
-        self.assertNotIn('expired', dhcpv4_ifaces)
-        self.assertNotIn('expired2', dhcpv4_ifaces)
-        self.assertIn('valid4', dhcpv6_ifaces)
-        self.assertNotIn('expired3', dhcpv6_ifaces)
 
     @brokentest("Skipped becasue it breaks randomly on the CI")
     @MonkeyPatch(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS

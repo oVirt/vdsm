@@ -38,7 +38,6 @@ from vdsm.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.netinfo.bridges import bridges
 from vdsm.netinfo.misc import NET_CONF_PREF
 from vdsm.netinfo.mtus import DEFAULT_MTU
-from vdsm.netinfo.dhcp import get_dhclient_ifaces
 from vdsm.netinfo.nics import operstate, OPERSTATE_UNKNOWN, OPERSTATE_UP
 from vdsm.netinfo.routes import getRouteDeviceTo
 from vdsm.netlink import monitor
@@ -2144,8 +2143,6 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @RequireVethMod
     def testDhclientLeases(self, family, dateFormat):
-        dhcpv4_ifaces = set()
-        dhcpv6_ifaces = set()
         with veth_pair() as (server, client):
             addrAdd(server, IP_ADDRESS, IP_CIDR)
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, 6)
@@ -2157,18 +2154,17 @@ class NetworkTest(TestCaseBase):
                     dhclient_runner = dhcp.DhclientRunner(
                         client, family, dir, dateFormat)
                     try:
-                        with running(dhclient_runner) as dhc:
-                            dhcpv4_ifaces, dhcpv6_ifaces = \
-                                get_dhclient_ifaces([dhc.lease_file])
+                        with running(dhclient_runner):
+                            ipaddrs = vdsm.netinfo.addresses.getIpAddrs()
+                            is_dhcpv4, is_dhcpv6 = (
+                                vdsm.netinfo.dhcp.dhcp_status(client, ipaddrs))
                     except dhcp.ProcessCannotBeKilled:
                         raise SkipTest('dhclient could not be killed')
 
         if family == 4:
-            self.assertIn(client, dhcpv4_ifaces,
-                          '{0} not found in a lease file.'.format(client))
+            self.assertTrue(is_dhcpv4)
         else:
-            self.assertIn(client, dhcpv6_ifaces,
-                          '{0} not found in a lease file.'.format(client))
+            self.assertTrue(is_dhcpv6)
 
     def testGetRouteDeviceTo(self):
         with dummyIf(1) as nics:

@@ -111,3 +111,15 @@ def getIpAddresses():
     "Return a list of the host's IPv4 addresses"
     return [addr['address'] for addr in nl_addr.iter_addrs() if
             addr['family'] == 'inet']
+
+
+def is_ipv4(nladdr):
+    return nladdr['family'] == 'inet'
+
+
+def is_ipv6(nladdr):
+    return nladdr['family'] == 'inet6'
+
+
+def is_dynamic(nladdr):
+    return not nl_addr.is_permanent(nladdr)

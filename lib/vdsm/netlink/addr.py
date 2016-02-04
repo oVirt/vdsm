@@ -71,6 +71,10 @@ def is_primary(addr):
     return 'secondary' not in addr['flags']
 
 
+def is_permanent(addr):
+    return 'permanent' in addr['flags']
+
+
 def _addr_flags(addr):
     """Returns the textual representation of the address flags"""
     flags = (c_char * (CHARBUFFSIZE * 2))()

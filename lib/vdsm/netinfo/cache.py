@@ -33,8 +33,8 @@ from vdsm import netinfo
 from .addresses import getIpAddrs, getIpInfo
 from . import bonding
 from . import bridges
-from .dhcp import (get_dhclient_ifaces, propose_updates_to_reported_dhcp,
-                   update_reported_dhcp, dhcp_used)
+from .dhcp import (propose_updates_to_reported_dhcp,  update_reported_dhcp,
+                   dhcp_status, dhcp_faked_status)
 from .dns import get_host_nameservers
 from .misc import getIfaceCfg, ipv6_supported
 from .mtus import getMtu
@@ -56,15 +56,12 @@ def _get(vdsmnets=None):
                   'vlans': {}, 'dnss': get_host_nameservers()}
     paddr = bonding.permanent_address()
     ipaddrs = getIpAddrs()
-    dhcpv4_ifaces, dhcpv6_ifaces = get_dhclient_ifaces()
     routes = get_routes()
-    running_config = RunningConfig()
 
     if vdsmnets is None:
         libvirt_nets = netinfo.networks()
-        networking['networks'] = libvirtNets2vdsm(libvirt_nets, running_config,
-                                                  routes, ipaddrs,
-                                                  dhcpv4_ifaces, dhcpv6_ifaces)
+        networking['networks'] = libvirtNets2vdsm(libvirt_nets, routes,
+                                                  ipaddrs)
     else:
         networking['networks'] = vdsmnets
 
@@ -79,8 +76,7 @@ def _get(vdsmnets=None):
             devinfo = networking['vlans'][dev.name] = vlans.info(dev)
         else:
             continue
-        devinfo.update(_devinfo(dev, routes, ipaddrs, dhcpv4_ifaces,
-                                dhcpv6_ifaces))
+        devinfo.update(_devinfo(dev, routes, ipaddrs))
         if dev.isBOND():
             bonding.bondOptsCompat(devinfo)
 
@@ -113,40 +109,40 @@ def _stringify_mtus(netinfo_data):
     return netinfo_data
 
 
-def libvirtNets2vdsm(nets, running_config=None, routes=None, ipAddrs=None,
-                     dhcpv4_ifaces=None, dhcpv6_ifaces=None):
-    if running_config is None:
-        running_config = RunningConfig()
+def libvirtNets2vdsm(nets, routes=None, ipAddrs=None):
+    running_config = RunningConfig()
     if routes is None:
         routes = get_routes()
     if ipAddrs is None:
         ipAddrs = getIpAddrs()
-    if dhcpv4_ifaces is None or dhcpv6_ifaces is None:
-        dhcpv4_ifaces, dhcpv6_ifaces = get_dhclient_ifaces()
+
     d = {}
     for net, netAttr in nets.iteritems():
         try:
             # Pass the iface if the net is _not_ bridged, the bridge otherwise
             d[net] = _getNetInfo(netAttr.get('iface', net), netAttr['bridged'],
-                                 routes, ipAddrs, dhcpv4_ifaces, dhcpv6_ifaces,
+                                 routes, ipAddrs,
                                  running_config.networks.get(net, None))
         except KeyError:
             continue  # Do not report missing libvirt networks.
     return d
 
 
-def _devinfo(link, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces):
+def _devinfo(link, routes, ipaddrs):
     gateway = get_gateway(routes, link.name)
     ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
         link.name, ipaddrs, gateway)
+
+    is_dhcpv4, is_dhcpv6 = dhcp_status(link.name, ipaddrs)
+
     info = {'addr': ipv4addr,
             'cfg': getIfaceCfg(link.name),
             'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
             'gateway': gateway,
             'ipv6gateway': get_gateway(routes, link.name, family=6),
-            'dhcpv4': link.name in dhcpv4_ifaces,  # to be refined if a network
-            'dhcpv6': link.name in dhcpv6_ifaces,  # is not configured for DHCP
+            'dhcpv4': is_dhcpv4,
+            'dhcpv6': is_dhcpv6,
             'mtu': link.mtu,
             'netmask': ipv4netmask}
     if 'BOOTPROTO' not in info['cfg']:
@@ -170,8 +166,7 @@ def ifaceUsed(iface):
     return False
 
 
-def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
-                net_attrs):
+def _getNetInfo(iface, bridged, routes, ipaddrs, net_attrs):
     """Returns a dictionary of properties about the network's interface status.
     Raises a KeyError if the iface does not exist."""
     data = {}
@@ -188,11 +183,13 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, dhcpv4_ifaces, dhcpv6_ifaces,
         gateway = get_gateway(routes, iface)
         ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
             iface, ipaddrs, gateway)
+
+        is_dhcpv4, is_dhcpv6 = dhcp_faked_status(iface, ipaddrs, net_attrs)
+
         data.update({'iface': iface, 'bridged': bridged,
                      'addr': ipv4addr, 'netmask': ipv4netmask,
-                     'dhcpv4': dhcp_used(iface, dhcpv4_ifaces, net_attrs),
-                     'dhcpv6': dhcp_used(iface, dhcpv6_ifaces, net_attrs,
-                                         family=6),
+                     'dhcpv4': is_dhcpv4,
+                     'dhcpv6': is_dhcpv6,
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
                      'gateway': gateway,
