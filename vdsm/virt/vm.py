@@ -5966,6 +5966,7 @@ class Vm(object):
             self.log.error("merge: Refusing to merge into a shared volume")
             return errCode['mergeErr']
         baseSize = int(res['info']['apparentsize'])
+        baseFormat = res['info']['format']
 
         # Indicate that we expect libvirt to maintain the relative paths of
         # backing files.  This is necessary to ensure that a volume chain is
@@ -6014,24 +6015,27 @@ class Vm(object):
                 self.untrackBlockJob(jobUUID)
                 return errCode['mergeErr']
 
-        # blockCommit will cause data to be written into the base volume.
-        # Perform an initial extension to ensure there is enough space to
-        # copy all the required data.  Normally we'd use monitoring to extend
-        # the volume on-demand but internal watermark information is not being
-        # reported by libvirt so we must do the full extension up front.  In
-        # the worst case, the allocated size of 'base' should be increased by
-        # the allocated size of 'top' plus one additional chunk to accomodate
-        # additional writes to 'top' during the live merge operation.
-        maxAlloc = baseSize + topSize
+        if baseFormat == 'COW':
+            # blockCommit will cause data to be written into the base volume.
+            # Perform an initial extension to ensure there is enough space to
+            # copy all the required data.  Normally we'd use monitoring to
+            # extend the volume on-demand but internal watermark information is
+            # not being reported by libvirt so we must do the full extension up
+            # front.  In the worst case, the allocated size of 'base' should be
+            # increased by the allocated size of 'top' plus one additional
+            # chunk to accomodate additional writes to 'top' during the live
+            # merge operation.
+            maxAlloc = baseSize + topSize
 
-        # getNextVolumeSize is not properly capping volume extension requests
-        # to the drive capacity (plus cow overhead).  This was fixed in master
-        # by commit d17dc8 but has not been backported.  Work around the
-        # problem by capping it here.
-        capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
-        maxAlloc = min(capacity, maxAlloc)
-        maxAlloc = maxAlloc * drive.VOLWM_COW_OVERHEAD
-        self.extendDriveVolume(drive, baseVolUUID, maxAlloc)
+            # getNextVolumeSize is not properly capping volume extension
+            # requests to the drive capacity (plus cow overhead).  This was
+            # fixed in master by commit d17dc8 but has not been backported.
+            # Work around the problem by capping it here.
+            capacity, alloc, physical = self._dom.blockInfo(drive.path, 0)
+            maxAlloc = min(capacity, maxAlloc)
+            maxAlloc = maxAlloc * drive.VOLWM_COW_OVERHEAD
+
+            self.extendDriveVolume(drive, baseVolUUID, maxAlloc)
 
         # Trigger the collection of stats before returning so that callers
         # of getVmStats after this returns will see the new job
