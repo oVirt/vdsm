@@ -70,8 +70,10 @@ def _get(vdsmnets=None):
             devinfo = networking['bridges'][dev.name] = bridges.info(dev)
         elif dev.isNICLike():
             devinfo = networking['nics'][dev.name] = nics.info(dev, paddr)
+            devinfo.update(bonding.get_bond_slave_agg_info(dev.name))
         elif dev.isBOND():
             devinfo = networking['bondings'][dev.name] = bonding.info(dev)
+            devinfo.update(bonding.get_bond_agg_info(dev.name))
         elif dev.isVLAN():
             devinfo = networking['vlans'][dev.name] = vlans.info(dev)
         else:

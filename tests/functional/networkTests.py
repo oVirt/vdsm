@@ -21,6 +21,7 @@ from functools import wraps
 import json
 import re
 import os.path
+import six
 
 import netaddr
 from nose import with_setup
@@ -2833,3 +2834,62 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondExists('bond0', nics1)
             self.assertBondExists('bond1', nics0)
+
+    @contextmanager
+    def setup_bonds_with_veth_pair(self, bond_options):
+        with veth_pair() as (n1, n2), veth_pair() as (n3, n4):
+            nics = [n1, n2, n3, n4]
+            bonds = {BONDING_NAME: (n1, n3), BONDING_NAME + "0": (n2, n4)}
+            for bond, pair in six.iteritems(bonds):
+                bonding = {'nics': pair}
+                bonding.update({'options': bond_options})
+                status, msg = self.setupNetworks(
+                    {},
+                    {bond: bonding},
+                    NOCHK)
+                self.assertEqual(status, SUCCESS, msg)
+                self.assertBondExists(bond, pair)
+            status, msg, info = self.vdsm_net.getVdsCapabilities()
+            bond_caps, nic_caps = info['bondings'], info['nics']
+            try:
+                yield bonds, nics, bond_caps, nic_caps
+            finally:
+                for bond in bonds:
+                    status, msg = self.setupNetworks(
+                        {}, {bond: {'remove': True}}, NOCHK)
+                    self.assertEqual(status, SUCCESS, msg)
+                    self.assertBondDoesntExist(bond, bonds[bond])
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_bond_mode4_caps_aggregator_id(self):
+        with self.setup_bonds_with_veth_pair(
+                'mode=4 lacp_rate=1 miimon=100'
+        ) as (bonds, nics, bond_caps, nic_caps):
+            for bond in bonds:
+                self.assertIn('ad_aggregator_id', bond_caps[bond])
+                self.assertIn('ad_partner_mac', bond_caps[bond])
+            bond1, bond2 = bonds
+            self.assertEqual(
+                bond_caps[bond1]['ad_partner_mac'],
+                bond_caps[bond2]['hwaddr']
+            )
+            self.assertEqual(
+                bond_caps[bond2]['ad_partner_mac'],
+                bond_caps[bond1]['hwaddr']
+            )
+            for nic in nics:
+                self.assertIn('ad_aggregator_id', nic_caps[nic])
+                self.assertNotEqual(nic_caps[nic]['ad_aggregator_id'], None)
+
+    @cleanupNet
+    @ValidateRunningAsRoot
+    def test_bond_mode0_caps_aggregator_id(self):
+        with self.setup_bonds_with_veth_pair(
+                'mode=0'
+        ) as (bonds, nics, bond_caps, nic_caps):
+            for bond in bonds:
+                self.assertNotIn('ad_aggregator_id', bond_caps[bond])
+                self.assertNotIn('ad_partner_mac', bond_caps[bond])
+            for nic in nics:
+                self.assertNotIn('ad_aggregator_id', nic_caps[nic])

@@ -40,6 +40,7 @@ BONDING_NAME2NUMERIC_PATH = constants.P_VDSM_LIB + 'bonding-name2numeric.json'
 BONDING_MASTERS = '/sys/class/net/bonding_masters'
 BONDING_OPT = '/sys/class/net/%s/bonding/%s'
 BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
+BONDING_SLAVE_OPT = '/sys/class/net/%s/bonding_slave/%s'
 EXCLUDED_BONDING_ENTRIES = frozenset((
     'slaves', 'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
     'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac'
@@ -63,6 +64,28 @@ bondings = partial(visible_devs, Link.isBOND)
 def slaves(bond_name):
     with open(BONDING_SLAVES % bond_name) as f:
         return f.readline().split()
+
+
+def _file_value(path):
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return f.read().replace('N/A', '').strip()
+
+
+def get_bond_slave_agg_info(nic_name):
+    agg_id_path = BONDING_SLAVE_OPT % (nic_name, 'ad_aggregator_id')
+    agg_id = _file_value(agg_id_path)
+    return {'ad_aggregator_id': agg_id} if agg_id else {}
+
+
+def get_bond_agg_info(bond_name):
+    agg_id_path = BONDING_OPT % (bond_name, 'ad_aggregator')
+    ad_mac_path = BONDING_OPT % (bond_name, 'ad_partner_mac')
+    agg_id = _file_value(agg_id_path)
+    agg_mac = _file_value(ad_mac_path)
+    return {
+        'ad_aggregator_id': agg_id, 'ad_partner_mac': agg_mac
+    } if agg_id and agg_mac else {}
 
 
 def info(link):
