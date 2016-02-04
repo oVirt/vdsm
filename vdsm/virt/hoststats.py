@@ -25,7 +25,7 @@ import six
 from vdsm import utils
 
 import caps
-import v2v
+from vdsm import v2v
 
 
 JIFFIES_BOUND = 2 ** 32

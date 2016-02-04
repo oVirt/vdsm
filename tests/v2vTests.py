@@ -28,7 +28,7 @@ import libvirt
 import os
 
 from testlib import namedTemporaryDir, permutations, expandPermutations
-import v2v
+from vdsm import v2v
 from vdsm import libvirtconnection
 from vdsm.password import ProtectedPassword
 from vdsm.commands import execCmd

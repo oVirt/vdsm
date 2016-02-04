@@ -57,6 +57,7 @@ dist_vdsmpylib_PYTHON = \
 	taskset.py \
 	udevadm.py \
 	utils.py \
+	v2v.py \
 	vdscli.py \
 	virtsparsify.py \
 	xmlrpc.py \
@@ -90,6 +91,7 @@ vdsm.conf.sample: Makefile config.py
 
 install-data-local: \
 	install-data-sample-vdsm-conf
+	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/v2v
 
 uninstall-local: \
 	uninstall-data-sample-vdsm-conf

@@ -38,7 +38,6 @@ dist_vdsm_PYTHON = \
 	parted_utils.py \
 	protocoldetector.py \
 	sitecustomize.py \
-	v2v.py \
 	$(NULL)
 
 dist_vdsmexec_SCRIPTS = \
@@ -143,7 +142,6 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/sourceRoutes
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/trackedInterfaces
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/payload
-	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/v2v
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/netconfback
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/persistence
 	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)/upgrade

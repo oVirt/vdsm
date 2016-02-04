@@ -71,5 +71,6 @@
 ./usr/lib/python2.7/dist-packages/vdsm/udevadm.py
 ./usr/lib/python2.7/dist-packages/vdsm/utils.py
 ./usr/lib/python2.7/dist-packages/vdsm/vdscli.py
+./usr/lib/python2.7/dist-packages/vdsm/v2v.py
 ./usr/lib/python2.7/dist-packages/vdsm/virtsparsify.py
 ./usr/lib/python2.7/dist-packages/vdsm/xmlrpc.py

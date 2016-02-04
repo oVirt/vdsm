@@ -857,7 +857,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/protocoldetector.py*
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
-%{_datadir}/%{vdsm_name}/v2v.py*
 %{_datadir}/%{vdsm_name}/vdsm
 %{_datadir}/%{vdsm_name}/vdsm-restore-net-config
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
@@ -1160,6 +1159,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/taskset.py*
 %{python_sitelib}/%{vdsm_name}/udevadm.py*
 %{python_sitelib}/%{vdsm_name}/utils.py*
+%{python_sitelib}/%{vdsm_name}/v2v.py*
 %{python_sitelib}/%{vdsm_name}/vdscli.py*
 %{python_sitelib}/%{vdsm_name}/virtsparsify.py*
 %{python_sitelib}/%{vdsm_name}/xmlrpc.py*

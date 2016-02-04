@@ -39,6 +39,7 @@ from vdsm import hooks
 from vdsm import response
 from vdsm import supervdsm
 from vdsm import jobs
+from vdsm import v2v
 import storage.misc
 import storage.clusterlock
 import storage.volume
@@ -56,7 +57,6 @@ import caps
 from vdsm.config import config
 import hostdev
 from caps import PAGE_SIZE_BYTES
-import v2v
 
 
 haClient = None  # Define here to work around pyflakes issue #13
