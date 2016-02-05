@@ -143,9 +143,10 @@ for t in not_supported:
 
 
 # When we set OVS bond device up, it does not turn UP, but only UNKNOWN
-def _fakeWaitForKnownOperstate(*args, **kwargs):
+def _fakeWaitForOperstate(*args, **kwargs):
     pass
-networkTests._waitForKnownOperstate = _fakeWaitForKnownOperstate
+networkTests._waitForOperstate = _fakeWaitForOperstate
+networkTests._waitForKnownOperstate = _fakeWaitForOperstate
 
 
 class OVSVdsProxy(VdsProxy):
