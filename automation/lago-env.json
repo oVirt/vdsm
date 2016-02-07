@@ -1,0 +1,37 @@
+{
+    "domains": {
+        "vdsm_functional_tests_host-fc23": {
+            "nics": [
+                {
+                    "net": "vdsm_functional_tests_lago"
+                }
+            ],
+            "memory": 512,
+            "disks": [
+                {
+                    "template_name": "fedora23_host",
+                    "type": "template",
+                    "name": "root",
+                    "dev": "sda3",
+                    "format": "qcow2"
+                }
+            ],
+            "metadata": {
+                "ovirt-role": "host",
+                "ovirt-scripts": [
+                    "../deploy.sh"
+                ]
+            }
+        }
+    },
+    "nets": {
+        "vdsm_functional_tests_lago": {
+            "type": "nat",
+            "dhcp": {
+                "start": 100,
+                "end": 254
+            },
+            "management": true
+        }
+    }
+}
