@@ -81,8 +81,10 @@ def createDirectPool(conn):
 def qbhInUse(conn):
     """Returns whether there is already some VM with a 802.1Qbh (most likely to
     be vmfex)."""
-    for vm in conn.listDomainsID():
-        domxml = minidom.parseString(conn.lookupByID(vm).XMLDesc(0))
+    for vmid in conn.listDomainsID():
+        # FIXME: we have to hold a reference to domobj due to rhbz#1305338
+        domobj = conn.lookupByID(vmid)
+        domxml = minidom.parseString(domobj.XMLDesc(0))
         for vport in domxml.getElementsByTagName('virtualport'):
             if vport.getAttribute('type') == '802.1Qbh':
                 return True
