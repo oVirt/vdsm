@@ -35,7 +35,6 @@ from vdsm.commands import execCmd
 from vdsm.utils import CommandPath
 
 
-from nose.plugins.skip import SkipTest
 from testlib import VdsmTestCase as TestCaseBase, recorded
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 
@@ -293,9 +292,6 @@ class v2vTests(TestCaseBase):
         v2v._jobs.clear()
 
     def testGetExternalVMs(self):
-        if not v2v.supported():
-            raise SkipTest('v2v is not supported current os version')
-
         def _connect(uri, username, passwd):
             return MockVirConnect(vms=self._vms)
 
@@ -407,9 +403,6 @@ class v2vTests(TestCaseBase):
             (v2v.DiskProgress(100))])
 
     def testGetExternalVMsWithoutDisksInfo(self):
-        if not v2v.supported():
-            raise SkipTest('v2v is not supported current os version')
-
         def internal_error(name):
             raise fake.Error(libvirt.VIR_ERR_INTERNAL_ERROR)
 

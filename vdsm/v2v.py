@@ -45,8 +45,6 @@ from vdsm import libvirtconnection, response, concurrent
 from vdsm.infra import zombiereaper
 from vdsm.utils import traceback, CommandPath, NICENESS, IOCLASS
 
-import caps
-
 
 _lock = threading.Lock()
 _jobs = {}
@@ -135,15 +133,7 @@ class InvalidInputError(ClientError):
     ''' Invalid input received '''
 
 
-def supported():
-    return not (caps.getos() in (caps.OSName.RHEVH, caps.OSName.RHEL)
-                and caps.osversion()['version'].startswith('6'))
-
-
 def get_external_vms(uri, username, password):
-    if not supported():
-        return errCode["noimpl"]
-
     try:
         conn = libvirtconnection.open_connection(uri=uri,
                                                  username=username,
