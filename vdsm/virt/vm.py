@@ -414,7 +414,7 @@ class Vm(object):
                 'truesize': 0})
         return removables
 
-    def devMapFromDevSpecMap(self, dev_spec_map):
+    def _devMapFromDevSpecMap(self, dev_spec_map):
         dev_map = self._emptyDevMap()
 
         for dev_type, dev_class in self.DeviceMapping:
@@ -1869,7 +1869,7 @@ class Vm(object):
             # rebooting it. Evident on, but not limited to, the HE case.
             self._fixLegacyGraphicsConf()
 
-        self._devices = self.devMapFromDevSpecMap(dev_spec_map)
+        self._devices = self._devMapFromDevSpecMap(dev_spec_map)
 
         # We should set this event as a last part of drives initialization
         self._pathsPreparedEvent.set()
