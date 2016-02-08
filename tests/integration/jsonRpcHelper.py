@@ -88,7 +88,7 @@ def constructAcceptor(log, ssl, jsonBridge,
     reactor = Reactor()
     acceptor = MultiProtocolAcceptor(
         reactor,
-        "127.0.0.1",
+        "::1",
         0,
         sslctx,
     )
