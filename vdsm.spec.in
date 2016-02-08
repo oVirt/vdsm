@@ -1194,6 +1194,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/logUtils.py*
 %{python_sitelib}/%{vdsm_name}/m2cutils.py*
 %{python_sitelib}/%{vdsm_name}/machinetype.py*
+%{python_sitelib}/%{vdsm_name}/moduleloader.py*
 %{python_sitelib}/%{vdsm_name}/momIF.py*
 %{python_sitelib}/%{vdsm_name}/network/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/api.py*

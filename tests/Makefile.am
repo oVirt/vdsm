@@ -42,6 +42,7 @@ test_modules_py3 = \
 	glusterTestData.py \
 	hookValidation.py \
 	jobsTests.py \
+	moduleloader_test.py \
 	modprobe.py \
 	monkeypatch.py \
 	network/models_test.py \
@@ -109,6 +110,7 @@ test_modules = \
 	miscTests.py \
 	mkimageTests.py \
 	modprobe.py \
+	moduleloader_test.py \
 	monkeypatchTests.py \
 	momTests.py \
 	momPolicyTests.py \

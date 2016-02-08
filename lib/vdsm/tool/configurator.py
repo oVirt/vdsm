@@ -30,8 +30,6 @@ configurators interface is described below.
 
 from collections import deque
 import argparse
-import os
-import re
 import sys
 import traceback
 
@@ -41,30 +39,17 @@ from . import \
     UsageError, \
     requiresRoot
 from . import configurators
+from vdsm import moduleloader
 
 
-def _import_module(abspkg, mname):
-    """return imported module mname from abspkg."""
-    # TODO: use importlib once python version >= 2.7
-    pkg = "%s.%s" % (abspkg.__name__, mname)
-    return __import__(pkg, globals(), locals(), [mname], level=0)
+def _init_configurators():
+    modules = moduleloader.load_modules(configurators)
+    for module_name in modules:
+        if not hasattr(modules[module_name], 'name'):
+            setattr(modules[module_name], 'name', module_name)
+    return modules
 
-
-def _listmodules(path):
-    """Return base file names for all modules under pkg."""
-    is_module = re.compile(r"^[^_].*\.pyc?$").search
-    return set(
-        os.path.splitext(name)[0]
-        for name in os.listdir(path)
-        if is_module(name)
-    )
-
-
-_CONFIGURATORS = {}
-for module in _listmodules(configurators.__path__[0]):
-    _CONFIGURATORS[module] = _import_module(configurators, module)
-    if not hasattr(_CONFIGURATORS[module], 'name'):
-        setattr(_CONFIGURATORS[module], 'name', module)
+_CONFIGURATORS = _init_configurators()
 
 
 #

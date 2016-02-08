@@ -43,6 +43,7 @@ dist_vdsmpylib_PYTHON = \
 	logUtils.py \
 	m2cutils.py \
 	machinetype.py \
+	moduleloader.py \
 	momIF.py \
 	numa.py \
 	osinfo.py \
