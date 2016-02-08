@@ -1120,6 +1120,7 @@ class BlockStorageDomain(sd.StorageDomain):
         If the image is based on a template image it should be expressly
         deactivated.
         """
+        self.removeImageLinks(imgUUID)
         allVols = self.getAllVolumes()
         volUUIDs = self._manifest._getImgExclusiveVols(imgUUID, allVols)
         lvm.deactivateLVs(self.sdUUID, volUUIDs)
@@ -1167,6 +1168,15 @@ class BlockStorageDomain(sd.StorageDomain):
                     raise
 
         return imgRunDir
+
+    def removeImageLinks(self, imgUUID):
+        """
+        Remove /run/vdsm/storage/sd_uuid/img_uuid directory, created in
+        createImageLinks.
+
+        Should be called when tearing down an image.
+        """
+        fileUtils.cleanupdir(self.getImageRundir(imgUUID))
 
     def activateVolumes(self, imgUUID, volUUIDs):
         """
