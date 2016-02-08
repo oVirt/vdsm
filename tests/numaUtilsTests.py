@@ -26,8 +26,8 @@ from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
 
-import caps
 import numaUtils
+from vdsm import numa
 
 import vmfakelib as fake
 
@@ -60,8 +60,8 @@ class TestNumaUtils(TestCaseBase):
         self.assertEqual(vcpuPids, expectedVcpuPids)
 
     @MonkeyPatch(numaUtils, 'supervdsm', fake.SuperVdsm())
-    @MonkeyPatch(caps,
-                 'getNumaTopology',
+    @MonkeyPatch(numa,
+                 'topology',
                  lambda: {'0': {'cpus': [0, 1, 2, 3],
                                 'totalMemory': '49141'},
                           '1': {'cpus': [4, 5, 6, 7],

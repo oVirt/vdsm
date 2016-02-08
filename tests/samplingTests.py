@@ -24,10 +24,9 @@ import random
 import threading
 
 from vdsm import ipwrapper
+from vdsm import numa
 from vdsm.password import ProtectedPassword
 import virt.sampling as sampling
-
-import caps
 
 from testValidation import ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
@@ -202,9 +201,9 @@ class NumaNodeMemorySampleTests(TestCaseBase):
                 }
             }
 
-        return MonkeyPatchScope([(caps, 'getNumaTopology',
+        return MonkeyPatchScope([(numa, 'topology',
                                   fakeNumaTopology),
-                                 (caps, 'getMemoryStatsByNumaCell',
+                                 (numa, 'memory_by_cell',
                                   fakeMemoryStats)])
 
     def testMemoryStatsWithZeroMemoryAsString(self):

@@ -23,9 +23,8 @@ from collections import defaultdict
 import os.path
 import xml.etree.cElementTree as ET
 
+from vdsm import numa
 from vdsm import supervdsm
-
-import caps
 
 # xml file name -> (last mtime, cached value)
 _libvirt_vcpu_pids_cache = {}
@@ -146,7 +145,7 @@ def _get_mapping_vcpu_to_pcpu(sample):
 
 def _get_mapping_pcpu_to_pnode():
     pcpu_to_pnode = {}
-    for node_index, numa_node in caps.getNumaTopology().iteritems():
+    for node_index, numa_node in numa.topology().iteritems():
         for pcpu_id in numa_node['cpus']:
             pcpu_to_pnode[pcpu_id] = int(node_index)
     return pcpu_to_pnode

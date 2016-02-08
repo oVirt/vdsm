@@ -22,9 +22,9 @@ import logging
 
 import six
 
+from vdsm import numa
 from vdsm import utils
 
-import caps
 from vdsm import v2v
 
 
@@ -108,7 +108,7 @@ def _get_cpu_core_stats(first_sample, last_sample):
         return ("%.2f" % (jiffies / interval))
 
     cpu_core_stats = {}
-    for node_index, numa_node in six.iteritems(caps.getNumaTopology()):
+    for node_index, numa_node in six.iteritems(numa.topology()):
         cpu_cores = numa_node['cpus']
         for cpu_core in cpu_cores:
             try:

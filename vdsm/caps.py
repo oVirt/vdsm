@@ -28,7 +28,6 @@ import time
 import linecache
 import glob
 import xml.etree.ElementTree as ET
-from collections import defaultdict
 from distutils.version import LooseVersion
 
 import libvirt
@@ -40,6 +39,7 @@ from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import netinfo
+from vdsm import numa
 from vdsm import host
 from vdsm import commands
 from vdsm import utils
@@ -208,57 +208,6 @@ def getLiveMergeSupport():
             logging.debug("libvirt is missing '%s': live merge disabled", flag)
             return False
     return True
-
-
-@utils.memoized
-def getNumaTopology(capabilities=None):
-    if capabilities is None:
-        capabilities = _getCapsXMLStr()
-    caps = ET.fromstring(capabilities)
-    host = caps.find('host')
-    cells = host.find('.//cells')
-    cellsInfo = {}
-    cellSets = cells.findall('cell')
-    for cell in cellSets:
-        cellInfo = {}
-        cpus = []
-        for cpu in cell.iter(tag='cpu'):
-            cpus.append(int(cpu.get('id')))
-        cellInfo['cpus'] = cpus
-        cellIndex = cell.get('id')
-        memInfo = getMemoryStatsByNumaCell(int(cellIndex))
-        cellInfo['totalMemory'] = memInfo['total']
-        cellsInfo[cellIndex] = cellInfo
-    return cellsInfo
-
-
-def getMemoryStatsByNumaCell(cell):
-    """
-    Get the memory stats of a specified numa node, the unit is MiB.
-
-    :param cell: the index of numa node
-    :type cell: int
-    :return: dict like {'total': '49141', 'free': '46783'}
-    """
-    cellMemInfo = libvirtconnection.get().getMemoryStats(cell, 0)
-    cellMemInfo['total'] = str(cellMemInfo['total'] / 1024)
-    cellMemInfo['free'] = str(cellMemInfo['free'] / 1024)
-    return cellMemInfo
-
-
-@utils.memoized
-def getNumaNodeDistance(capabilities=None):
-    if capabilities is None:
-        capabilities = _getCapsXMLStr()
-    caps = ET.fromstring(capabilities)
-    cells = caps.find('host').find('.//cells').findall('cell')
-    distances = defaultdict(list)
-    for cell in cells:
-        cellIndex = cell.get('id')
-        for sibling in cell.find('distances').findall('sibling'):
-            distances[cellIndex].append(int(sibling.get('value')))
-
-    return distances
 
 
 @utils.memoized
@@ -562,8 +511,8 @@ def get():
     else:
         caps['rngSources'] = vmdevices.core.Rng.available_sources()
 
-    caps['numaNodes'] = getNumaTopology()
-    caps['numaNodeDistance'] = getNumaNodeDistance()
+    caps['numaNodes'] = numa.topology()
+    caps['numaNodeDistance'] = numa.distances()
     caps['autoNumaBalancing'] = getAutoNumaBalancingInfo()
 
     caps['selinux'] = _getSELinux()

@@ -28,6 +28,7 @@ from monkeypatch import MonkeyPatch
 import caps
 from vdsm import commands
 from vdsm import cpuarch
+from vdsm import numa
 from vdsm import utils
 
 
@@ -114,13 +115,13 @@ class TestCaps(TestCaseBase):
         for res, s in zip(expectedRes, sign):
             self.assertEqual(res, caps._parseKeyVal(lines, s))
 
-    @MonkeyPatch(caps, 'getMemoryStatsByNumaCell', lambda x: {
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '49141', 'free': '46783'})
-    @MonkeyPatch(caps, '_getCapsXMLStr', lambda: _getTestData(
+    @MonkeyPatch(numa, '_get_libvirt_caps', lambda: _getTestData(
         "caps_libvirt_amd_6274.out"))
     def testNumaTopology(self):
         # 2 x AMD 6272 (with Modules)
-        t = caps.getNumaTopology()
+        t = numa.topology()
         expectedNumaInfo = {
             '0': {'cpus': [0, 1, 2, 3, 4, 5, 6, 7], 'totalMemory': '49141'},
             '1': {'cpus': [8, 9, 10, 11, 12, 13, 14, 15],
@@ -131,10 +132,10 @@ class TestCaps(TestCaseBase):
                   'totalMemory': '49141'}}
         self.assertEqual(t, expectedNumaInfo)
 
-    @MonkeyPatch(caps, '_getCapsXMLStr', lambda: _getTestData(
+    @MonkeyPatch(numa, '_get_libvirt_caps', lambda: _getTestData(
         'caps_libvirt_ibm_S822L_le.out'))
     def testNumaNodeDistance(self):
-        t = caps.getNumaNodeDistance()
+        t = numa.distances()
         expectedDistanceInfo = {'0': [10, 20, 40, 40],
                                 '1': [20, 10, 40, 40],
                                 '16': [40, 40, 10, 20],
@@ -302,11 +303,11 @@ class TestCaps(TestCaseBase):
                     'pc-i440fx-rhel7.0.0']
         self.assertEqual(expected, result)
 
-    @MonkeyPatch(caps, 'getMemoryStatsByNumaCell', lambda x: {
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
-    def test_getNumaTopology(self):
+    def test_topology(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        result = caps.getNumaTopology(capsData)
+        result = numa.topology(capsData)
         # only check cpus, memory does not come from file
         expected = [0, 1, 2, 3, 4, 5, 6, 7]
         self.assertEqual(expected, result['0']['cpus'])

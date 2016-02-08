@@ -46,6 +46,7 @@ dist_vdsmpylib_PYTHON = \
 	logUtils.py \
 	m2cutils.py \
 	netconfpersistence.py \
+	numa.py \
 	panic.py \
 	password.py \
 	ppc64HardwareInfo.py \

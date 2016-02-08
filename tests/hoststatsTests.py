@@ -24,7 +24,7 @@ import shutil
 
 from virt import hoststats
 
-import caps
+from vdsm import numa
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
@@ -135,7 +135,7 @@ class HostStatsThreadTests(TestCaseBase):
         first_sample = fake.HostSample(1.0, {0: cpu_sample, 1: cpu_sample})
         last_sample = fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample})
 
-        with MonkeyPatchScope([(caps, 'getNumaTopology',
+        with MonkeyPatchScope([(numa, 'topology',
                                 self._fakeNumaTopology)]):
             result = hoststats._get_cpu_core_stats(first_sample, last_sample)
             self.assertEqual(len(result), 2)
@@ -149,7 +149,7 @@ class HostStatsThreadTests(TestCaseBase):
         first_sample = fake.HostSample(1.0, {0: cpu_sample})
         last_sample = fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample})
 
-        with MonkeyPatchScope([(caps, 'getNumaTopology',
+        with MonkeyPatchScope([(numa, 'topology',
                                 self._fakeNumaTopology)]):
             result = hoststats._get_cpu_core_stats(first_sample, last_sample)
             self.assertEqual(len(result), 1)
@@ -162,7 +162,7 @@ class HostStatsThreadTests(TestCaseBase):
         # CPU one suddenly came online and the second sample is still missing
         last_sample = fake.HostSample(2.0, {0: cpu_sample})
 
-        with MonkeyPatchScope([(caps, 'getNumaTopology',
+        with MonkeyPatchScope([(numa, 'topology',
                                 self._fakeNumaTopology)]):
             result = hoststats._get_cpu_core_stats(first_sample, last_sample)
             self.assertEqual(len(result), 1)

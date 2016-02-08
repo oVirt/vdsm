@@ -32,12 +32,11 @@ import time
 
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm import ipwrapper
+from vdsm import numa
 from vdsm.netinfo import nics, bonding, vlans
 from vdsm import utils
 
 from .utils import ExpiringCache
-
-import caps
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):
@@ -165,10 +164,10 @@ class NumaNodeMemorySample(object):
     """
     def __init__(self):
         self.nodesMemSample = {}
-        numaTopology = caps.getNumaTopology()
+        numaTopology = numa.topology()
         for nodeIndex in numaTopology:
             nodeMemSample = {}
-            memInfo = caps.getMemoryStatsByNumaCell(int(nodeIndex))
+            memInfo = numa.memory_by_cell(int(nodeIndex))
             nodeMemSample['memFree'] = memInfo['free']
             # in case the numa node has zero memory assigned, report the whole
             # memory as used
