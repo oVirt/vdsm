@@ -727,6 +727,9 @@ class StorageDomain(object):
         return image.Image(self._getRepoPath()) \
                     .getImageDir(self.sdUUID, imgUUID)
 
+    def getImageRundir(self, imgUUID):
+        return os.path.join(constants.P_VDSM_STORAGE, self.sdUUID, imgUUID)
+
     def getIsoDomainImagesDir(self):
         return self._manifest.getIsoDomainImagesDir()
 
