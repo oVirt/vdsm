@@ -131,15 +131,14 @@ class TestCaps(TestCaseBase):
                   'totalMemory': '49141'}}
         self.assertEqual(t, expectedNumaInfo)
 
-    @MonkeyPatch(commands, 'execCmd', lambda x: _getCapsNumaDistanceTestData(
-        "caps_numactl_4_nodes.out"))
+    @MonkeyPatch(caps, '_getCapsXMLStr', lambda: _getTestData(
+        'caps_libvirt_ibm_S822L_le.out'))
     def testNumaNodeDistance(self):
         t = caps.getNumaNodeDistance()
-        expectedDistanceInfo = {
-            '0': [10, 20, 20, 20],
-            '1': [20, 10, 20, 20],
-            '2': [20, 20, 10, 20],
-            '3': [20, 20, 20, 10]}
+        expectedDistanceInfo = {'0': [10, 20, 40, 40],
+                                '1': [20, 10, 40, 40],
+                                '16': [40, 40, 10, 20],
+                                '17': [40, 40, 20, 10]}
         self.assertEqual(t, expectedDistanceInfo)
 
     @MonkeyPatch(commands, 'execCmd', lambda x: (0, ['0'], []))

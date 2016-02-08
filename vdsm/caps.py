@@ -27,8 +27,8 @@ import logging
 import time
 import linecache
 import glob
-import re
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from distutils.version import LooseVersion
 
 import libvirt
@@ -247,19 +247,18 @@ def getMemoryStatsByNumaCell(cell):
 
 
 @utils.memoized
-def getNumaNodeDistance():
-    nodeDistance = {}
-    retcode, out, err = commands.execCmd(['numactl', '--hardware'])
-    if retcode != 0:
-        logging.error("Get error when execute numactl", exc_info=True)
-        return nodeDistance
-    pattern = re.compile(r'\s+(\d+):(.*)')
-    for item in out:
-        match = pattern.match(item)
-        if match:
-            nodeDistance[match.group(1)] = map(int,
-                                               match.group(2).strip().split())
-    return nodeDistance
+def getNumaNodeDistance(capabilities=None):
+    if capabilities is None:
+        capabilities = _getCapsXMLStr()
+    caps = ET.fromstring(capabilities)
+    cells = caps.find('host').find('.//cells').findall('cell')
+    distances = defaultdict(list)
+    for cell in cells:
+        cellIndex = cell.get('id')
+        for sibling in cell.find('distances').findall('sibling'):
+            distances[cellIndex].append(int(sibling.get('value')))
+
+    return distances
 
 
 @utils.memoized

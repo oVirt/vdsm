@@ -2,6 +2,7 @@ usr/share/vdsm/tests
 usr/share/vdsm/tests/*.py
 usr/share/vdsm/tests/caps_libvirt_amd_6274.out
 usr/share/vdsm/tests/caps_libvirt_ibm_S822L.out
+usr/share/vdsm/tests/caps_libvirt_ibm_S822L_le.out
 usr/share/vdsm/tests/caps_libvirt_intel_E31220.out
 usr/share/vdsm/tests/caps_libvirt_intel_E5606.out
 usr/share/vdsm/tests/caps_libvirt_intel_E5649.out

@@ -1,0 +1,153 @@
+<capabilities>
+
+  <host>
+    <uuid>bfd7abcb-141c-40f1-91a4-0a341b59648a</uuid>
+    <cpu>
+      <arch>ppc64le</arch>
+      <model>POWER8</model>
+      <vendor>IBM</vendor>
+      <topology sockets='1' cores='5' threads='8'/>
+      <pages unit='KiB' size='64'/>
+      <pages unit='KiB' size='16384'/>
+    </cpu>
+    <power_management>
+      <suspend_mem/>
+    </power_management>
+    <migration_features>
+      <live/>
+      <uri_transports>
+        <uri_transport>tcp</uri_transport>
+        <uri_transport>rdma</uri_transport>
+      </uri_transports>
+    </migration_features>
+    <topology>
+      <cells num='4'>
+        <cell id='0'>
+          <memory unit='KiB'>67108864</memory>
+          <pages unit='KiB' size='64'>1048576</pages>
+          <pages unit='KiB' size='16384'>0</pages>
+          <distances>
+            <sibling id='0' value='10'/>
+            <sibling id='1' value='20'/>
+            <sibling id='16' value='40'/>
+            <sibling id='17' value='40'/>
+          </distances>
+          <cpus num='5'>
+            <cpu id='0' socket_id='0' core_id='32' siblings='0'/>
+            <cpu id='8' socket_id='0' core_id='40' siblings='8'/>
+            <cpu id='16' socket_id='0' core_id='96' siblings='16'/>
+            <cpu id='24' socket_id='0' core_id='104' siblings='24'/>
+            <cpu id='32' socket_id='0' core_id='112' siblings='32'/>
+          </cpus>
+        </cell>
+        <cell id='1'>
+          <memory unit='KiB'>67108864</memory>
+          <pages unit='KiB' size='64'>1048576</pages>
+          <pages unit='KiB' size='16384'>0</pages>
+          <distances>
+            <sibling id='0' value='20'/>
+            <sibling id='1' value='10'/>
+            <sibling id='16' value='40'/>
+            <sibling id='17' value='40'/>
+          </distances>
+          <cpus num='5'>
+            <cpu id='40' socket_id='1' core_id='160' siblings='40'/>
+            <cpu id='48' socket_id='1' core_id='168' siblings='48'/>
+            <cpu id='56' socket_id='1' core_id='176' siblings='56'/>
+            <cpu id='64' socket_id='1' core_id='224' siblings='64'/>
+            <cpu id='72' socket_id='1' core_id='232' siblings='72'/>
+          </cpus>
+        </cell>
+        <cell id='16'>
+          <memory unit='KiB'>67108864</memory>
+          <pages unit='KiB' size='64'>1048576</pages>
+          <pages unit='KiB' size='16384'>0</pages>
+          <distances>
+            <sibling id='0' value='40'/>
+            <sibling id='1' value='40'/>
+            <sibling id='16' value='10'/>
+            <sibling id='17' value='20'/>
+          </distances>
+          <cpus num='5'>
+            <cpu id='80' socket_id='16' core_id='2080' siblings='80'/>
+            <cpu id='88' socket_id='16' core_id='2088' siblings='88'/>
+            <cpu id='96' socket_id='16' core_id='2096' siblings='96'/>
+            <cpu id='104' socket_id='16' core_id='2152' siblings='104'/>
+            <cpu id='112' socket_id='16' core_id='2160' siblings='112'/>
+          </cpus>
+        </cell>
+        <cell id='17'>
+          <memory unit='KiB'>67108864</memory>
+          <pages unit='KiB' size='64'>1048576</pages>
+          <pages unit='KiB' size='16384'>0</pages>
+          <distances>
+            <sibling id='0' value='40'/>
+            <sibling id='1' value='40'/>
+            <sibling id='16' value='20'/>
+            <sibling id='17' value='10'/>
+          </distances>
+          <cpus num='5'>
+            <cpu id='120' socket_id='17' core_id='2208' siblings='120'/>
+            <cpu id='128' socket_id='17' core_id='2224' siblings='128'/>
+            <cpu id='136' socket_id='17' core_id='2272' siblings='136'/>
+            <cpu id='144' socket_id='17' core_id='2280' siblings='144'/>
+            <cpu id='152' socket_id='17' core_id='2288' siblings='152'/>
+          </cpus>
+        </cell>
+      </cells>
+    </topology>
+    <secmodel>
+      <model>selinux</model>
+      <doi>0</doi>
+      <baselabel type='kvm'>system_u:system_r:svirt_t:s0</baselabel>
+      <baselabel type='qemu'>system_u:system_r:svirt_tcg_t:s0</baselabel>
+    </secmodel>
+    <secmodel>
+      <model>dac</model>
+      <doi>0</doi>
+      <baselabel type='kvm'>+107:+107</baselabel>
+      <baselabel type='qemu'>+107:+107</baselabel>
+    </secmodel>
+  </host>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='ppc64'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/libexec/qemu-kvm</emulator>
+      <machine maxCpus='255'>pseries-rhel7.2.0</machine>
+      <machine canonical='pseries-rhel7.2.0' maxCpus='255'>pseries</machine>
+      <domain type='qemu'/>
+      <domain type='kvm'>
+        <emulator>/usr/libexec/qemu-kvm</emulator>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <disksnapshot default='on' toggle='no'/>
+    </features>
+  </guest>
+
+  <guest>
+    <os_type>hvm</os_type>
+    <arch name='ppc64le'>
+      <wordsize>64</wordsize>
+      <emulator>/usr/libexec/qemu-kvm</emulator>
+      <machine maxCpus='255'>pseries-rhel7.2.0</machine>
+      <machine canonical='pseries-rhel7.2.0' maxCpus='255'>pseries</machine>
+      <domain type='qemu'/>
+      <domain type='kvm'>
+        <emulator>/usr/libexec/qemu-kvm</emulator>
+      </domain>
+    </arch>
+    <features>
+      <cpuselection/>
+      <deviceboot/>
+      <disksnapshot default='on' toggle='no'/>
+    </features>
+  </guest>
+
+</capabilities>
+
+
