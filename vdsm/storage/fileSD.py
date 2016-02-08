@@ -427,7 +427,7 @@ class FileStorageDomain(sd.StorageDomain):
 
         imgUUID: the image to be deactivated.
         """
-        pass
+        self.removeImageLinks(imgUUID)
 
     def getAllVolumes(self):
         """
@@ -521,6 +521,24 @@ class FileStorageDomain(sd.StorageDomain):
                 raise
 
         return imgRunDir
+
+    def removeImageLinks(self, imgUUID):
+        """
+        Remove /run/vdsm/storage/sd_uuid/img_uuid link, created in
+        createImageLinks.
+
+        Should be called when tearing down an image.
+        """
+        path = self.getImageRundir(imgUUID)
+        self.log.debug("Removing image rundir link %r", path)
+        try:
+            os.unlink(path)
+        except OSError as e:
+            if e.errno == errno.ENOENT:
+                self.log.debug("Image rundir link %r does not exists", path)
+            else:
+                self.log.error("Cannot remove image rundir link %r: %s",
+                               path, e)
 
     def activateVolumes(self, imgUUID, volUUIDs):
         """
