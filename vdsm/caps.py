@@ -87,23 +87,6 @@ class AutoNumaBalancingStatus:
     UNKNOWN = 2
 
 
-class CpuTopology(object):
-    def __init__(self, capabilities=None):
-        self._topology = _getCpuTopology(capabilities)
-
-    def threads(self):
-        return self._topology['threads']
-
-    def cores(self):
-        return self._topology['cores']
-
-    def sockets(self):
-        return self._topology['sockets']
-
-    def onlineCpus(self):
-        return self._topology['onlineCpus']
-
-
 class KdumpStatus(object):
     UNKNOWN = -1
     DISABLED = 0
@@ -117,33 +100,6 @@ def _getFreshCapsXMLStr():
 @utils.memoized
 def _getCapsXMLStr():
     return _getFreshCapsXMLStr()
-
-
-def _getCpuTopology(capabilities):
-    if capabilities is None:
-        capabilities = _getFreshCapsXMLStr()
-
-    caps = ET.fromstring(capabilities)
-    host = caps.find('host')
-    cells = host.find('.//cells')
-
-    sockets = set()
-    siblings = set()
-    onlineCpus = []
-
-    for cpu in cells.iter(tag='cpu'):
-        if cpu.get('socket_id') is not None and \
-           cpu.get('siblings') is not None:
-            onlineCpus.append(cpu.get('id'))
-            sockets.add(cpu.get('socket_id'))
-            siblings.add(cpu.get('siblings'))
-
-    topology = {'sockets': len(sockets),
-                'cores': len(siblings),
-                'threads': len(onlineCpus),
-                'onlineCpus': onlineCpus}
-
-    return topology
 
 
 def _findLiveSnapshotSupport(guest):
@@ -454,18 +410,18 @@ def _getHostdevPassthorughSupport():
 
 def get():
     caps = {}
+    cpu_topology = numa.cpu_topology()
 
     caps['kvmEnabled'] = str(os.path.exists('/dev/kvm')).lower()
 
-    cpuTopology = CpuTopology()
     if config.getboolean('vars', 'report_host_threads_as_cores'):
-        caps['cpuCores'] = str(cpuTopology.threads())
+        caps['cpuCores'] = str(cpu_topology['threads'])
     else:
-        caps['cpuCores'] = str(cpuTopology.cores())
+        caps['cpuCores'] = str(cpu_topology['cores'])
 
-    caps['cpuThreads'] = str(cpuTopology.threads())
-    caps['cpuSockets'] = str(cpuTopology.sockets())
-    caps['onlineCpus'] = ','.join(cpuTopology.onlineCpus())
+    caps['cpuThreads'] = str(cpu_topology['threads'])
+    caps['cpuSockets'] = str(cpu_topology['sockets'])
+    caps['onlineCpus'] = ','.join(cpu_topology['onlineCpus'])
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
     caps['cpuFlags'] = ','.join(cpuinfo.flags() + _getCompatibleCpuModels())

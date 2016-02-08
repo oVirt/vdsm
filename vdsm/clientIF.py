@@ -40,9 +40,9 @@ from vdsm.sslcompat import sslutils
 import libvirt
 from vdsm import libvirtconnection
 from vdsm import concurrent
+from vdsm import numa
 from vdsm import utils
 from vdsm import supervdsm
-import caps
 import blkid
 from protocoldetector import MultiProtocolAcceptor
 
@@ -467,7 +467,7 @@ class clientIF(object):
             # we prefer running this code in external thread to avoid blocking
             # API response.
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
-                      caps.CpuTopology().cores())
+                      numa.cpu_topology()['cores'])
             migration.SourceThread.setMaxOutgoingMigrations(mog)
 
             recovery.all_vms(self)

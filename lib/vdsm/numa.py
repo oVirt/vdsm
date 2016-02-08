@@ -79,3 +79,32 @@ def distances(capabilities=None):
             distances[cell_index].append(int(sibling.get('value')))
 
     return distances
+
+
+def cpu_topology(capabilities=None):
+    if capabilities is None:
+        capabilities = _get_libvirt_caps()
+
+    caps = ET.fromstring(capabilities)
+    host = caps.find('host')
+    cells = host.find('.//cells')
+
+    sockets = set()
+    siblings = set()
+    online_cpus = []
+
+    for cpu in cells.iter(tag='cpu'):
+        if (cpu.get('socket_id') is not None and
+                cpu.get('siblings') is not None):
+            online_cpus.append(cpu.get('id'))
+            sockets.add(cpu.get('socket_id'))
+            siblings.add(cpu.get('siblings'))
+
+    topology = {
+        'sockets': len(sockets),
+        'cores': len(siblings),
+        'threads': len(online_cpus),
+        'onlineCpus': online_cpus,
+    }
+
+    return topology
