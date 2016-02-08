@@ -54,7 +54,6 @@ from virt import recovery
 from virt import vm
 from virt.vm import Vm
 from virt.vmchannels import Listener
-from virt.vmdevices import hwclass
 try:
     import gluster.api as gapi
     _glusterEnabled = True
@@ -565,8 +564,7 @@ class clientIF(object):
                     self.log.info(
                         'recovery [%d/%d]: preparing paths for'
                         ' domain %s',  idx+1, num_vm_objects, vm_obj.id)
-                    vm_obj.preparePaths(
-                        vm_obj.devSpecMapFromConf()[hwclass.DISK])
+                    vm_obj.preparePaths()
             except:
                 self.log.exception(
                     "recovery [%d/%d]: failed for vm %s",

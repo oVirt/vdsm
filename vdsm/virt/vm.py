@@ -768,7 +768,11 @@ class Vm(object):
     def isDisksStatsCollectionEnabled(self):
         return self._volumesPrepared
 
-    def preparePaths(self, drives):
+    def preparePaths(self):
+        drives = self.devSpecMapFromConf()[hwclass.DISK]
+        self._preparePathsForDrives(drives)
+
+    def _preparePathsForDrives(self, drives):
         for drive in drives:
             with self._volPrepareLock:
                 if self._destroyed:
@@ -1849,7 +1853,7 @@ class Vm(object):
         # Disk stats collection is started from clientIF at the end
         # of the recovery process.
         if not self.recovering:
-            self.preparePaths(dev_spec_map[hwclass.DISK])
+            self._preparePathsForDrives(dev_spec_map[hwclass.DISK])
             self._prepareTransientDisks(dev_spec_map[hwclass.DISK])
             self._updateDevices(dev_spec_map)
             # We need to save conf here before we actually run VM.
