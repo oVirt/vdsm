@@ -22,9 +22,7 @@ from __future__ import print_function
 from functools import wraps
 import errno
 import inspect
-import sys
 import os
-import traceback
 import time
 import logging
 
@@ -205,10 +203,9 @@ def _alterRunningConfig(func):
 
         isolatedCommand = attrs.get('configurator') is None
         # Detect if we are running an isolated command, i.e., a command that is
-        # not called as part of composed API operation like setupNetworks or
-        # editNetwork, but rather as its own API verb. This is necessary in
-        # order to maintain behavior of the addNetwork and delNetwork API
-        # verbs
+        # not called as part of composed API operation like setupNetworks, but
+        # rather as its own API verb. This is necessary in order to maintain
+        # behavior of the addNetwork and delNetwork API verbs
         if isolatedCommand:
             attrs['configurator'] = configurator = ConfiguratorClass()
             configurator.begin()
@@ -504,19 +501,6 @@ def clientSeen(timeout):
         time.sleep(1)
         timeout -= 1
     return False
-
-
-def editNetwork(oldBridge, newBridge, vlan=None, bonding=None, nics=None,
-                **options):
-    with ConfiguratorClass() as configurator:
-        _delNetwork(oldBridge, configurator=configurator, **options)
-        _addNetwork(newBridge, vlan=vlan, bonding=bonding, nics=nics,
-                    configurator=configurator, **options)
-        if utils.tobool(options.get('connectivityCheck', False)):
-            if not clientSeen(_get_connectivity_timeout(options)):
-                _delNetwork(newBridge, bypassValidation=True)
-                raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
-                                         'connectivity check failed')
 
 
 def _wait_for_udev_events():
@@ -972,80 +956,3 @@ def setSafeNetworkConfig():
     """Declare current network configuration as 'safe'"""
     commands.execCmd([constants.EXT_VDSM_STORE_NET_CONFIG,
                      config.get('vars', 'net_persistence')])
-
-
-def usage():
-    print("""Usage:
-    ./api.py add Network <attributes> <options>
-             edit oldNetwork newNetwork <attributes> <options>
-             del Network <options>
-             setup Network [None|attributes] \
-[++ Network [None|attributes] [++ ...]] [:: <options>]
-
-                       attributes = [vlan=...] [bonding=...] [nics=<nic1>,...]
-                       options = [bridged=<True|False>]...
-    """)
-
-
-def _parseKwargs(args):
-    return dict(arg.split('=', 1) for arg in args)
-
-
-def main():
-    if len(sys.argv) <= 1:
-        usage()
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "No action specified")
-    if sys.argv[1] == 'list':
-        listNetworks()
-        return
-    if len(sys.argv) <= 2:
-        usage()
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "No action specified")
-    if sys.argv[1] == 'add':
-        bridge = sys.argv[2]
-        kwargs = _parseKwargs(sys.argv[3:])
-        if 'nics' in kwargs:
-            kwargs['nics'] = kwargs['nics'].split(',')
-        # Remove empty vlan and bonding so that they don't make it to
-        # _alterRunningConfig
-        if 'vlan' in kwargs and kwargs['vlan'] == '':
-            del kwargs['vlan']
-        if 'bonding' in kwargs and kwargs['bonding'] == '':
-            del kwargs['bonding']
-        _addNetwork(bridge, **kwargs)
-    elif sys.argv[1] == 'del':
-        bridge = sys.argv[2]
-        kwargs = _parseKwargs(sys.argv[3:])
-        if 'nics' in kwargs:
-            kwargs['nics'] = kwargs['nics'].split(',')
-        _delNetwork(bridge, **kwargs)
-    elif sys.argv[1] == 'edit':
-        oldBridge = sys.argv[2]
-        newBridge = sys.argv[3]
-        kwargs = _parseKwargs(sys.argv[4:])
-        if 'nics' in kwargs:
-            kwargs['nics'] = kwargs['nics'].split(',')
-        editNetwork(oldBridge, newBridge, **kwargs)
-    elif sys.argv[1] == 'setup':
-        batchCommands, options = utils.listSplit(sys.argv[2:], '::', 1)
-        d = {}
-        for batchCommand in utils.listSplit(batchCommands, '++'):
-            d[batchCommand[0]] = _parseKwargs(batchCommand[1:]) or None
-        setupNetworks(d, **_parseKwargs(options))
-    elif sys.argv[1] == 'show':
-        bridge = sys.argv[2]
-        kwargs = _parseKwargs(sys.argv[3:])
-        showNetwork(bridge, **kwargs)
-    else:
-        usage()
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "Unknown action specified")
-
-if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    try:
-        main()
-    except ConfigNetworkError as e:
-        traceback.print_exc()
-        print(e.message)
-        sys.exit(e.errCode)
-    sys.exit(0)
