@@ -27,7 +27,7 @@ try:
 except ImportError:
     _glusterEnabled = False
 
-from rpc import Bridge
+from vdsm.rpc import Bridge
 from testlib import VdsmTestCase as TestCaseBase
 
 

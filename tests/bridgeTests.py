@@ -21,7 +21,7 @@
 import imp
 
 from vdsm.exception import GeneralException
-from rpc.Bridge import DynamicBridge
+from vdsm.rpc.Bridge import DynamicBridge
 from yajsonrpc import JsonRpcError
 
 from monkeypatch import MonkeyPatch

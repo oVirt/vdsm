@@ -667,6 +667,8 @@ sed -i -e 's/^software_version =.*/software_version = "'"${baseversion}"'"/' \
 
 sed -i -e 's/@SSL_IMPLEMENTATION@/m2c/g' lib/vdsm/config.py
 
+sed -i -e 's\@VDSMRPCPYLIBDIR@\%{python_sitelib}/%{vdsm_name}/rpc\g' lib/vdsm/constants.py
+
 %install
 rm -rf %{buildroot}
 make DESTDIR=%{buildroot} install
@@ -842,7 +844,6 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/storage/imageRepository
 %dir %{_datadir}/%{vdsm_name}/virt
 %dir %{_datadir}/%{vdsm_name}/virt/vmdevices
-%dir %{_datadir}/%{vdsm_name}/rpc
 %{_datadir}/%{vdsm_name}/alignmentScan.py*
 %{_datadir}/%{vdsm_name}/blkid.py*
 %{_datadir}/%{vdsm_name}/caps.py*
@@ -1472,27 +1473,27 @@ exit 0
 
 %files xmlrpc
 %defattr(-, root, root, -)
-%dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/rpc
-%{_datadir}/%{vdsm_name}/rpc/bindingxmlrpc.py*
+%dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/rpc
+%{python_sitelib}/%{vdsm_name}/rpc/bindingxmlrpc.py*
 
 %files jsonrpc
-%dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/rpc
-%{_datadir}/%{vdsm_name}/rpc/__init__.py*
-%{_datadir}/%{vdsm_name}/rpc/bindingjsonrpc.py*
-%{_datadir}/%{vdsm_name}/rpc/Bridge.py*
+%dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/rpc
+%{python_sitelib}/%{vdsm_name}/rpc/__init__.py*
+%{python_sitelib}/%{vdsm_name}/rpc/bindingjsonrpc.py*
+%{python_sitelib}/%{vdsm_name}/rpc/Bridge.py*
 %{python_sitelib}/yajsonrpc/__init__.py*
 
 %files api
 %doc lib/api/vdsm-api.html
-%dir %{_datadir}/%{vdsm_name}
-%dir %{_datadir}/%{vdsm_name}/rpc
-%{_datadir}/%{vdsm_name}/rpc/vdsmapi-schema.json
+%dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/rpc
+%{python_sitelib}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{python_sitelib}/api/vdsmapi.py*
 %{python_sitelib}/api/__init__.py*
 %if ! 0%{?with_gluster_mgmt}
-%exclude %{_datadir}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
+%exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
 %endif
 
 %files yajsonrpc
@@ -1525,11 +1526,13 @@ exit 0
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/gluster
+%dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/rpc
 %license COPYING
 %{_datadir}/%{vdsm_name}/gluster/api.py*
 %{_datadir}/%{vdsm_name}/gluster/apiwrapper.py*
 %{_datadir}/%{vdsm_name}/gluster/fstab.py*
-%{_datadir}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
+%{python_sitelib}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
 %{_datadir}/%{vdsm_name}/gluster/gfapi.py*
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*
 %{_datadir}/%{vdsm_name}/gluster/services.py*

@@ -19,7 +19,7 @@
 #
 
 vdsmpyrpcdir = $(pythondir)/api
-vdsmrpcdir = $(vdsmdir)/rpc
+vdsmrpcdir = $(vdsmpylibdir)/rpc
 
 CLEANFILES = \
 	vdsm-api.html \

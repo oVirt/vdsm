@@ -25,7 +25,7 @@ from collections import defaultdict
 from xmlrpclib import Transport, dumps, Fault
 from contextlib import contextmanager
 from itertools import product
-from rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
+from vdsm.rpc.bindingxmlrpc import BindingXMLRPC, XmlDetector
 from yajsonrpc.betterAsyncore import Reactor
 from yajsonrpc.stompreactor import StompDetector, StompRpcClient
 from yajsonrpc.stomp import (
@@ -34,8 +34,8 @@ from yajsonrpc.stomp import (
 )
 from yajsonrpc import Notification
 from protocoldetector import MultiProtocolAcceptor
-from rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm.config import config
+from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm import schedule
 from vdsm import utils
 

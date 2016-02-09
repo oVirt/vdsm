@@ -73,10 +73,6 @@
 ./usr/share/vdsm/numaUtils.py
 ./usr/share/vdsm/parted_utils.py
 ./usr/share/vdsm/protocoldetector.py
-./usr/share/vdsm/rpc/__init__.py
-./usr/share/vdsm/rpc/bindingjsonrpc.py
-./usr/share/vdsm/rpc/bindingxmlrpc.py
-./usr/share/vdsm/rpc/Bridge.py
 ./usr/share/vdsm/set-conf-item
 ./usr/share/vdsm/storage/__init__.py
 ./usr/share/vdsm/storage/blockSD.py

@@ -231,8 +231,8 @@ class clientIF(object):
     def _prepareXMLRPCBinding(self):
         if config.getboolean('vars', 'xmlrpc_enable'):
             try:
-                from rpc.bindingxmlrpc import BindingXMLRPC
-                from rpc.bindingxmlrpc import XmlDetector
+                from vdsm.rpc.bindingxmlrpc import BindingXMLRPC
+                from vdsm.rpc.bindingxmlrpc import XmlDetector
             except ImportError:
                 self.log.error('Unable to load the xmlrpc server module. '
                                'Please make sure it is installed.')
@@ -245,8 +245,8 @@ class clientIF(object):
     def _prepareJSONRPCBinding(self):
         if config.getboolean('vars', 'jsonrpc_enable'):
             try:
-                from rpc import Bridge
-                from rpc.bindingjsonrpc import BindingJsonRpc
+                from vdsm.rpc import Bridge
+                from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
                 from yajsonrpc.stompreactor import StompDetector
             except ImportError:
                 self.log.warn('Unable to load the json rpc server module. '

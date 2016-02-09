@@ -1,4 +1,4 @@
-vdsmrpcdir = $(vdsmdir)/rpc
+vdsmrpcdir = $(vdsmpylibdir)/rpc
 
 dist_vdsmrpc_PYTHON = \
 	__init__.py \
