@@ -578,9 +578,9 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.setCpuTunePeriod(period)
 
-    def vmMigrationCreate(self, params):
+    def vmMigrationCreate(self, params, incomingLimit=None):
         vm = API.VM(params['vmId'])
-        return vm.migrationCreate(params)
+        return vm.migrationCreate(params, incomingLimit)
 
     def vmDesktopLogin(self, vmId, domain, user, password):
         password = ProtectedPassword(password)

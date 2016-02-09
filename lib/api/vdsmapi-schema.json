@@ -7702,6 +7702,13 @@
 # @enableGuestEvents:   #optional whether or not to send migration/hibernation
 #                       events to the guest operating systems
 #                       (new in version 4.18.0)
+#
+# @outgoingLimit:       #optional maximum number of outgoing migrations.
+#                       Must be > 0. (new in version 4.18.0)
+#
+# @incomingLimit:       #optional maximum number of incoming migrations.
+#                       Must be > 0. (new in version 4.18.0)
+#
 # Since: 4.10.0
 ##
 {'type': 'MigrateParams',
@@ -7712,7 +7719,8 @@
           '*compressed': 'bool', '*autoConverge': 'bool',
           '*maxBandwidth': 'int',
           '*convergenceSchedule': 'ConvergenceSchedule',
-          '*enableGuestEvents', 'bool'}}
+          '*enableGuestEvents', 'bool',
+          '*outgoingLimit': 'uint', '*incomingLimit': 'uint'}}
 
 ##
 # @VM.migrate:
@@ -7790,9 +7798,12 @@
 #
 # Start a migrating VM on a destination host.
 #
-# @vmID:    The UUID of the VM
+# @vmID:          The UUID of the VM
 #
-# @params:  The VM definition
+# @params:        The VM definition
+#
+# @incomingLimit: #optional Maximum number of incoming migrations.
+#                  Must be > 0. (new in version 4.18.0)
 #
 # Returns:
 # Migration creation state
@@ -7803,7 +7814,7 @@
 # called directly.
 ##
 {'command': {'class': 'VM', 'name': 'migrationCreate'},
- 'data': {'vmID': 'UUID', 'params': 'VmDefinition'},
+ 'data': {'vmID': 'UUID', 'params': 'VmDefinition', '*incomingLimit': 'uint'},
  'returns': 'MigrationCreateState'}
 
 ##

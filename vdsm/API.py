@@ -48,6 +48,7 @@ import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
+from virt import migration
 from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle
@@ -529,6 +530,8 @@ class VM(APIBase):
             *autoConverge* - force convergence during live migration
             *maxBandwidth* - max bandwidth used by this specific migration
             *convergenceSchedule* - actions to perform when stalling
+            *outgoingLimit* - max number of outgoing migrations, must be > 0.
+            *incomingLimit* - max number of incoming migrations, must be > 0.
         """
         params['vmId'] = self._UUID
         self.log.debug(params)
@@ -571,20 +574,36 @@ class VM(APIBase):
             return errCode['noVM']
         return v.migrateCancel()
 
-    def migrationCreate(self, params):
+    def migrationCreate(self, params, incomingLimit=None):
         """
         Start a migration-destination VM.
 
         :param params: parameters of new VM, to be passed to
             *:meth:* - `~clientIF.create`.
         :type params: dict
+        :param incomingLimit: maximum number of incoming migrations to set
+            before the migration is started. Must be > 0.
+        :type incomingLimit: int
         """
         self.log.debug('Migration create')
+
+        if incomingLimit:
+            self.log.debug('Setting incoming migration limit to %s',
+                           incomingLimit)
+            migration.incomingMigrations.bound = incomingLimit
 
         params['vmId'] = self._UUID
         result = self.create(params)
         if result['status']['code']:
             self.log.debug('Migration create - Failed')
+            # for compatibility with < 4.0 src that could not handle the
+            # retry error code
+            is_old_source = incomingLimit is None
+            is_retry_error = response.is_error(result, 'migrateLimit')
+            if is_old_source and is_retry_error:
+                self.log.debug('Returning backwards compatible migration '
+                               'error code')
+                return response.error('migrateErr')
             return result
 
         v = self._cif.vmContainer.get(self._UUID)

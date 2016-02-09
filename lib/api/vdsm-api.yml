@@ -2917,6 +2917,19 @@ types:
                 to the guest operating systems
             name: enableGuestEvents
             type: boolean
+
+        -   defaultvalue: null
+            description: maximum number of outgoing migrations. Must be > 0.
+            name: outgoingLimit
+            type: uint
+            added: '4.0'
+
+        -   defaultvalue: null
+            description: maximum number of incoming migrations. Must be > 0.
+            name: incomingLimit
+            type: uint
+            added: '4.0'
+
         type: object
 
     MigrationStatus: &MigrationStatus
@@ -8816,6 +8829,12 @@ VM.migrationCreate:
     -   description: The VM definition
         name: params
         type: *VmDefinition
+
+    -   description: The maxiumum number of incoming migrations
+                     that Vdsm should allow from now on. Must be > 0.
+        name: incomingLimit
+        type: uint
+        added: '4.0'
     return:
         description: Migration creation state
         type: *MigrationCreateState

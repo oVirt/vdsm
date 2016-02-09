@@ -109,6 +109,8 @@ class SourceThread(threading.Thread):
         )
         self._autoConverge = autoConverge
         self._compressed = compressed
+        self._incomingLimit = kwargs.get('incomingLimit')
+        self._outgoingLimit = kwargs.get('outgoingLimit')
         self.status = {
             'status': {
                 'code': 0,
@@ -313,7 +315,14 @@ class SourceThread(threading.Thread):
                  -1, -1)                             # int1, int2
         raise e
 
+    def _update_outgoing_limit(self):
+        if self._outgoingLimit:
+            self.log.debug('Setting outgoing migration limit to %s',
+                           self._outgoingLimit)
+            SourceThread.ongoingMigrations.bound = self._outgoingLimit
+
     def run(self):
+        self._update_outgoing_limit()
         try:
             startTime = time.time()
             self._setupVdsConnection()
@@ -384,7 +393,8 @@ class SourceThread(threading.Thread):
             # destination. In some cases some expensive operations can cause
             # the migration to get cancelled right after the transfer started.
             destCreateStartTime = time.time()
-            result = self._destServer.migrationCreate(self._machineParams)
+            result = self._destServer.migrationCreate(self._machineParams,
+                                                      self._incomingLimit)
             destCreationTime = time.time() - destCreateStartTime
             startTime += destCreationTime
             self.log.info('Creation of destination VM took: %d seconds',

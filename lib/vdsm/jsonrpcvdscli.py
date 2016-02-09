@@ -169,10 +169,13 @@ class _Server(object):
 
         return response.success()
 
-    def migrationCreate(self, params):
+    def migrationCreate(self, params, incomingLimit=None):
+        args = [params]
+        if incomingLimit is not None:
+            args.append(incomingLimit)
         return self._callMethod('migrationCreate',
                                 params['vmId'],
-                                params)
+                                *args)
 
     def create(self, params):
         return self._callMethod('create',
