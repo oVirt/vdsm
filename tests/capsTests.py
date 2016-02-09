@@ -62,6 +62,8 @@ class TestCaps(TestCaseBase):
         with open(path) as f:
             return f.read()
 
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
     @MonkeyPatch(platform, 'machine', lambda: cpuarch.PPC64)
     def testCpuTopologyPPC64(self):
         testPath = os.path.realpath(__file__)
@@ -73,6 +75,8 @@ class TestCaps(TestCaseBase):
         self.assertEqual(t['cores'], 20)
         self.assertEqual(t['sockets'], 4)
 
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
     @MonkeyPatch(platform, 'machine', lambda: cpuarch.X86_64)
     def testCpuTopologyX86_64(self):
         testPath = os.path.realpath(__file__)
@@ -134,6 +138,8 @@ class TestCaps(TestCaseBase):
 
     @MonkeyPatch(numa, '_get_libvirt_caps', lambda: _getTestData(
         'caps_libvirt_ibm_S822L_le.out'))
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
     def testNumaNodeDistance(self):
         t = numa.distances()
         expectedDistanceInfo = {'0': [10, 20, 40, 40],
@@ -312,6 +318,8 @@ class TestCaps(TestCaseBase):
         expected = [0, 1, 2, 3, 4, 5, 6, 7]
         self.assertEqual(expected, result['0']['cpus'])
 
+    @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
+        'total': '1', 'free': '1'})
     def test_getCpuTopology(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
         result = numa.cpu_topology(capsData)

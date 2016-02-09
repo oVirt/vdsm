@@ -20,11 +20,14 @@
 
 from __future__ import absolute_import
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import xml.etree.ElementTree as ET
 
 from . import utils
 from . import libvirtconnection
+
+
+NumaTopology = namedtuple('NumaTopology', 'topology, distances, cpu_topology')
 
 
 def _get_libvirt_caps():
@@ -33,21 +36,45 @@ def _get_libvirt_caps():
 
 
 @utils.memoized
-def topology(capabilities=None):
+def _numa(capabilities=None):
     if capabilities is None:
         capabilities = _get_libvirt_caps()
+
+    topology = defaultdict(dict)
+    distances = defaultdict(dict)
+    sockets = set()
+    siblings = set()
+    online_cpus = []
+
     caps = ET.fromstring(capabilities)
-    host = caps.find('host')
-    cells = host.find('.//cells')
-    cells_info = defaultdict(dict)
-    cell_sets = cells.findall('cell')
-    for cell in cell_sets:
-        cell_index = cell.get('id')
-        cells_info[cell_index]['cpus'] = [int(cpu.get('id')) for cpu in
-                                          cell.iter(tag='cpu')]
-        meminfo = memory_by_cell(int(cell_index))
-        cells_info[cell_index]['totalMemory'] = meminfo['total']
-    return cells_info
+    cells = caps.findall('.host//cells/cell')
+
+    for cell in cells:
+        cell_id = cell.get('id')
+        meminfo = memory_by_cell(int(cell_id))
+        topology[cell_id]['totalMemory'] = meminfo['total']
+        topology[cell_id]['cpus'] = []
+        distances[cell_id] = []
+
+        for cpu in cell.findall('cpus/cpu'):
+            topology[cell_id]['cpus'].append(int(cpu.get('id')))
+            if cpu.get('siblings') and cpu.get('socket_id'):
+                online_cpus.append(cpu.get('id'))
+                sockets.add(cpu.get('socket_id'))
+                siblings.add(cpu.get('siblings'))
+
+        if cell.find('distances') is not None:
+            for sibling in cell.find('distances').findall('sibling'):
+                distances[cell_id].append(int(sibling.get('value')))
+
+    cpu_topology = {
+        'sockets': len(sockets),
+        'cores': len(siblings),
+        'threads': len(online_cpus),
+        'onlineCpus': online_cpus,
+    }
+
+    return NumaTopology(topology, distances, cpu_topology)
 
 
 def memory_by_cell(index):
@@ -65,46 +92,13 @@ def memory_by_cell(index):
     return meminfo
 
 
-@utils.memoized
-def distances(capabilities=None):
-    if capabilities is None:
-        capabilities = _get_libvirt_caps()
-    caps = ET.fromstring(capabilities)
-    cells = caps.find('host').find('.//cells').findall('cell')
-    distances = defaultdict(list)
-    for cell in cells:
-        cell_index = cell.get('id')
-        distances[cell_index] = []
-        for sibling in cell.find('distances').findall('sibling'):
-            distances[cell_index].append(int(sibling.get('value')))
+def topology(capabilities=None):
+    return _numa(capabilities).topology
 
-    return distances
+
+def distances():
+    return _numa().distances
 
 
 def cpu_topology(capabilities=None):
-    if capabilities is None:
-        capabilities = _get_libvirt_caps()
-
-    caps = ET.fromstring(capabilities)
-    host = caps.find('host')
-    cells = host.find('.//cells')
-
-    sockets = set()
-    siblings = set()
-    online_cpus = []
-
-    for cpu in cells.iter(tag='cpu'):
-        if (cpu.get('socket_id') is not None and
-                cpu.get('siblings') is not None):
-            online_cpus.append(cpu.get('id'))
-            sockets.add(cpu.get('socket_id'))
-            siblings.add(cpu.get('siblings'))
-
-    topology = {
-        'sockets': len(sockets),
-        'cores': len(siblings),
-        'threads': len(online_cpus),
-        'onlineCpus': online_cpus,
-    }
-
-    return topology
+    return _numa(capabilities).cpu_topology
