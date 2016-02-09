@@ -461,7 +461,7 @@ class clientIF(object):
             # API response.
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
                       numa.cpu_topology().cores)
-            migration.SourceThread.setMaxOutgoingMigrations(mog)
+            migration.SourceThread.ongoingMigrations.bound = mog
 
             recovery.all_vms(self)
 

@@ -118,3 +118,85 @@ def cleanup_guest_socket(sock):
     if os.path.islink(sock):
         rmFile(os.path.realpath(sock))
     rmFile(sock)
+
+
+class DynamicBoundedSemaphore(object):
+    """
+    Bounded Semaphore with the additional ability
+    to dynamically adjust its `bound`.
+
+    The semaphore can be acquired only if the current number of acquisitions
+    is strictly smaller than the current `bound` value.
+
+    Specifically when "throttling" the semaphore below the current number
+    of concurrent acquisitions, the semaphore will become acquirable again
+    only after the semaphore is released by its current users appropriate
+    number of times - so the '# of acquisitions' will become smaller than the
+    semaphore's new `bound`.
+    """
+
+    def __init__(self, value):
+        self._cond = threading.Condition(threading.Lock())
+        self._value = value
+        self._bound = value
+
+    def acquire(self, blocking=True):
+        """ Same behavior as threading.BoundedSemaphore.acquire """
+        rc = False
+        with self._cond:
+            # to enable runtime adjustment of semaphore bound
+            # we allow the _value counter to reach negative values
+            while self._value <= 0:
+                if not blocking:
+                    break
+                self._cond.wait()
+            else:
+                self._value -= 1
+                rc = True
+        return rc
+
+    __enter__ = acquire
+
+    def release(self):
+        """ Same behavior as threading.BoundedSemaphore.release """
+        with self._cond:
+            if self._value >= self._bound:
+                raise ValueError("Dynamic Semaphore released too many times")
+            self._value += 1
+            self._cond.notify()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+    @property
+    def bound(self):
+        return self._bound
+
+    @bound.setter
+    def bound(self, value):
+        """ Dynamically updates semaphore bound.
+
+        When the the specified value is larger than the previous bound,
+        it releases the semaphore the required number of times (and possibly
+        wakes that number of waiting threads).
+
+        When the specified value is smaller than the previous bound,
+        it simply decreases the current value, which may in doing so become
+        negative. Semaphore with value <= 0 is considered unavailable and
+        appropriate number of `release()` calls or a new `bound = n` is
+        required to make it obtainable again.
+
+        """
+        with self._cond:
+            delta = value - self._bound
+            self._bound = value
+            if delta < 0:
+                self._value += delta
+
+        # implementation note:
+        # if we are increasing the bound we need to do this outside of
+        # context manager otherwise release() would deadlock since it also
+        # tries to obtain the lock
+        if delta > 0:
+            for i in range(delta):
+                self.release()

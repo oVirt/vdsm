@@ -155,3 +155,55 @@ class LibvirtEventDispatchTests(TestCaseBase):
     @permutations([[-1], [1023]])
     def test_eventToString_unknown_event(self, code):
         self.assertTrue(vm.eventToString(code))
+
+
+class DynamicSemaphoreTests(TestCaseBase):
+
+    INITIAL_BOUND = 5
+    INCREASED_BOUND = 10
+
+    def setUp(self):
+        self.sem = utils.DynamicBoundedSemaphore(self.INITIAL_BOUND)
+
+    def assertAcquirable(self, times=1):
+        for i in range(times):
+            success = self.sem.acquire(blocking=False)
+            self.assertTrue(success, 'It should be possible to obtain '
+                                     'Dynamic Semaphore')
+
+    def assertNotAcquirable(self):
+        success = self.sem.acquire(blocking=False)
+        self.assertFalse(success, 'It should not be possible to obtain '
+                                  'Dynamic Semaphore with value 0')
+
+    def test_basic_operations(self):
+        self.assertAcquirable(times=self.INITIAL_BOUND)
+        self.sem.release()
+        self.assertAcquirable()
+
+    def test_bound_increase(self):
+        self.sem.bound = self.INCREASED_BOUND
+        self.assertAcquirable(times=self.INCREASED_BOUND)
+        self.assertNotAcquirable()
+
+    def test_bound_decrease(self):
+        self.sem.bound = 0
+        self.assertNotAcquirable()
+
+    def test_bound_increase_while_acquired(self):
+        self.assertAcquirable(times=self.INITIAL_BOUND)
+        self.sem.bound = self.INCREASED_BOUND
+        added_capacity = self.INCREASED_BOUND - self.INITIAL_BOUND
+        self.assertAcquirable(times=added_capacity)
+        self.assertNotAcquirable()
+
+    def test_bound_decrease_while_acquired(self):
+        self.assertAcquirable(times=3)
+        self.sem.bound = 4
+        self.assertAcquirable()
+        self.assertNotAcquirable()
+
+    def test_bound_decrease_below_capacity_while_acquired(self):
+        self.assertAcquirable(times=3)
+        self.sem.bound = 1
+        self.assertNotAcquirable()

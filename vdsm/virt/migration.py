@@ -32,6 +32,7 @@ from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import NORMAL, Mbytes
 from vdsm.sslcompat import sslutils
+from vdsm.virt.utils import DynamicBoundedSemaphore
 from yajsonrpc import \
     JsonRpcNoResponseError, \
     JsonRpcBindingsError
@@ -52,7 +53,8 @@ VIR_MIGRATE_PARAM_URI = 'migrate_uri'
 VIR_MIGRATE_PARAM_BANDWIDTH = 'bandwidth'
 VIR_MIGRATE_PARAM_GRAPHICS_URI = 'graphics_uri'
 
-incomingMigrations = threading.BoundedSemaphore(
+
+incomingMigrations = DynamicBoundedSemaphore(
     max(1, config.getint('vars', 'max_incoming_migrations')))
 
 
@@ -76,14 +78,7 @@ class SourceThread(threading.Thread):
     """
     A thread that takes care of migration on the source vdsm.
     """
-    _ongoingMigrations = threading.BoundedSemaphore(1)
-
-    @classmethod
-    def setMaxOutgoingMigrations(cls, n):
-        """Set the initial value of the _ongoingMigrations semaphore.
-
-        must not be called after any vm has been run."""
-        cls._ongoingMigrations = threading.BoundedSemaphore(n)
+    ongoingMigrations = DynamicBoundedSemaphore(1)
 
     def __init__(self, vm, dst='', dstparams='',
                  mode=MODE_REMOTE, method=METHOD_ONLINE,
@@ -331,7 +326,7 @@ class SourceThread(threading.Thread):
 
             while self._progress < 100:
                 try:
-                    with SourceThread._ongoingMigrations:
+                    with SourceThread.ongoingMigrations:
                         if self._migrationCanceledEvt.is_set():
                             self._raiseAbortError()
                         self.log.debug("migration semaphore acquired "
