@@ -45,7 +45,7 @@ def requires_image_daemon(func):
     @functools.wraps(func)
     def wrapper(*args, **kw):
         if not _have_image_daemon:
-            raise se.ImageDeamonUnsupported()
+            raise se.ImageDaemonUnsupported()
         return func(*args, **kw)
 
     return wrapper
@@ -88,7 +88,7 @@ def request(method, uuid, body=None):
             except ValueError as e:
                 error_info = {"explanation": "Invalid content-length",
                               "detail": str(e)}
-                raise se.ImageDeamonError(res.status, res.reason, error_info)
+                raise se.ImageDaemonError(res.status, res.reason, error_info)
 
             try:
                 res_data = res.read(content_length)

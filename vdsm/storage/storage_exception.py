@@ -1212,7 +1212,7 @@ class ImageTicketsError(StorageException):
         self.value = "reason=%s" % reason
 
 
-class ImageDeamonError(StorageException):
+class ImageDaemonError(StorageException):
     code = 482
     message = "Image daemon request failed"
 
@@ -1223,7 +1223,7 @@ class ImageDeamonError(StorageException):
         self.value = ", ".join("%s=%s" % (k, v) for k, v in d.items())
 
 
-class ImageDeamonUnsupported(StorageException):
+class ImageDaemonUnsupported(StorageException):
     code = 483
     message = "Image daemon is unsupported"
 
