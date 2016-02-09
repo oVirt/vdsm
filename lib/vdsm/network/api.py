@@ -749,13 +749,9 @@ def _emergencyNetworkCleanup(network, networkAttrs, configurator):
         topNetDev.remove()
 
 
-def _add_missing_networks(configurator, networks, bondings, logger,
-                          _netinfo=None):
+def _add_missing_networks(configurator, networks, bondings, logger, _netinfo):
     # We need to use the newest host info
-    if _netinfo is None:
-        _netinfo = CachingNetInfo()
-    else:
-        _netinfo.updateDevices()
+    _netinfo.updateDevices()
 
     for network, attrs in networks.iteritems():
         if 'remove' in attrs:
