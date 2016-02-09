@@ -4884,7 +4884,7 @@ class Vm(object):
         # the worst case, the allocated size of 'base' should be increased by
         # the allocated size of 'top' plus one additional chunk to accomodate
         # additional writes to 'top' during the live merge operation.
-        if drive.chunked:
+        if drive.chunked and baseInfo['format'] == 'COW':
             capacity, alloc, physical = self._getExtendInfo(drive)
             baseSize = int(baseInfo['apparentsize'])
             topSize = int(topInfo['apparentsize'])
