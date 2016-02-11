@@ -78,6 +78,10 @@ class File(object):
         self._lock = threading.Lock()
 
     @property
+    def vmid(self):
+        return self._vmid
+
+    @property
     def name(self):
         return self._name
 
@@ -193,16 +197,15 @@ def _all_vms_from_files(cif):
             ' reported by libvirt. This should not happen!'
             ' Will try to recover them.', num_rec_vms)
 
-    for idx, vm_id in enumerate(rec_vms):
-        vm_state = File(vm_id)
+    for idx, vm_state in enumerate(rec_vms):
         if vm_state.load(cif):
             cif.log.info(
                 'recovery [2:%d/%d]: recovered domain %s'
-                ' from data file', idx+1, num_rec_vms, vm_id)
+                ' from data file', idx+1, num_rec_vms, vm_state.vmid)
         else:
             cif.log.warning(
                 'recovery [2:%d/%d]: VM %s failed to recover from data'
-                ' file, reported as Down', idx+1, num_rec_vms, vm_id)
+                ' file, reported as Down', idx+1, num_rec_vms, vm_state.vmid)
 
 
 def _find_vdsm_vms_from_files(cif):
@@ -211,12 +214,11 @@ def _find_vdsm_vms_from_files(cif):
         vm_id, fileType = os.path.splitext(f)
         if fileType == File.EXTENSION:
             if vm_id not in cif.vmContainer:
-                vms.append(vm_id)
+                vms.append(File(vm_id))
     return vms
 
 
 def clean_vm_files(cif):
-    for vm_id in _find_vdsm_vms_from_files(cif):
-        cif.log.debug("cleaning old file for vm %s", vm_id)
-        utils.rmFile(os.path.join(constants.P_VDSM_RUN,
-                                  "%s%s" % (vm_id, File.EXTENSION)))
+    for vm in _find_vdsm_vms_from_files(cif):
+        cif.log.debug("cleaning old file for vm: %s", vm.vmid)
+        vm.cleanup()
