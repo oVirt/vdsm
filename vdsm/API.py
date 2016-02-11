@@ -35,6 +35,7 @@ from vdsm import commands
 from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
+from vdsm import exception
 from vdsm import hooks
 from vdsm import response
 from vdsm import supervdsm
@@ -371,7 +372,7 @@ class VM(APIBase):
         if runHooks:
             try:
                 hooks.before_get_vm_stats()
-            except hooks.HookError as e:
+            except exception.HookError as e:
                 return response.error('hookError',
                                       'Hook error: ' + str(e))
 
@@ -601,7 +602,7 @@ class VM(APIBase):
         try:
             if not v.waitForMigrationDestinationPrepare():
                 return errCode['createErr']
-        except hooks.HookError as e:
+        except exception.HookError as e:
             self.log.debug('Destination VM creation failed due to hook' +
                            ' error:' + str(e))
             return response.error('hookError', 'Destination hook failed: ' +
@@ -1506,7 +1507,7 @@ class Global(APIBase):
             if rollbackCtx['status'] != doneCode:
                 _after_network_setup_fail(networks, bondings, options)
             return rollbackCtx
-        except hooks.HookError as e:
+        except exception.HookError as e:
             _after_network_setup_fail(networks, bondings, options)
             return response.error('hookError', 'Hook error: ' + str(e))
         except:
