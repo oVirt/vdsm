@@ -88,7 +88,7 @@ persistence = _getPersistenceModule()
 
 
 def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
-                        bondingOptions=None, nics=None, mtu=None, ipaddr=None,
+                        nic=None, mtu=None, ipaddr=None,
                         netmask=None, gateway=None, bootproto=None,
                         ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
                         dhcpv6=None, defaultRoute=None, _netinfo=None,
@@ -102,8 +102,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
     :param vlan: vlan device name.
     :param vlan_id: vlan tag id.
     :param bonding: name of the bond.
-    :param bondingOptions: bonding options separated by spaces.
-    :param nics: list of nic names.
+    :param nic: name of the nic.
     :param mtu: the desired network maximum transmission unit.
     :param ipaddr: IPv4 address in dotted decimal format.
     :param netmask: IPv4 mask in dotted decimal format.
@@ -133,25 +132,18 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
         opts = {}
     if bootproto == 'none':
         bootproto = None
-    if bondingOptions and not bonding:
-        raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Bonding options '
-                                 'specified without bonding')
+
     topNetDev = None
     if bonding:
-        topNetDev = Bond.objectivize(bonding, configurator, bondingOptions,
-                                     nics, mtu, _netinfo, implicitBonding)
-    elif nics:
-        try:
-            nic, = nics
-        except ValueError:
-            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Multiple nics '
-                                     'require a bonding device')
-        else:
-            bond = _netinfo.getBondingForNic(nic)
-            if bond:
-                raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already '
-                                         'enslaved to %s' % (nic, bond))
-            topNetDev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
+        topNetDev = Bond.objectivize(bonding, configurator, options=None,
+                                     nics=None, mtu=mtu, _netinfo=_netinfo,
+                                     destroyOnMasterRemoval=implicitBonding)
+    elif nic:
+        bond = _netinfo.getBondingForNic(nic)
+        if bond:
+            raise ConfigNetworkError(ne.ERR_USED_NIC, 'nic %s already '
+                                     'enslaved to %s' % (nic, bond))
+        topNetDev = Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
     if vlan is not None:
         tag = _netinfo.vlans[vlan]['vlanid'] if vlan_id is None else vlan_id
         topNetDev = Vlan(topNetDev, tag, configurator, mtu=mtu, name=vlan)
@@ -214,13 +206,6 @@ def _alterRunningConfig(func):
 
         ret = func(**attrs)
 
-        nics = attrs.pop('nics', None)
-        # Bond config handled in configurator so that operations only touching
-        # bonds don't need special casing and the logic of this remains simpler
-        if not attrs.get('bonding'):
-            if nics:
-                attrs['nic'], = nics
-
         if func.__name__ == '_delNetwork':
             configurator.runningConfig.removeNetwork(attrs.pop('network'))
         else:
@@ -232,13 +217,12 @@ def _alterRunningConfig(func):
 
 
 @_alterRunningConfig
-def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
+def _addNetwork(network, vlan=None, bonding=None, nic=None, ipaddr=None,
                 netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
                 ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
-                configurator=None, bondingOptions=None,
+                configurator=None,
                 bridged=True, _netinfo=None, hostQos=None,
                 defaultRoute=None, blockingdhcp=False, **options):
-    nics = nics or ()
     if _netinfo is None:
         _netinfo = CachingNetInfo()
     if dhcpv6 is not None:
@@ -267,13 +251,11 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
     if bonding:
         _validateInterNetworkCompatibility(_netinfo, vlan, bonding)
     else:
-        for nic in nics:
-            _validateInterNetworkCompatibility(_netinfo, vlan, nic)
+        _validateInterNetworkCompatibility(_netinfo, vlan, nic)
 
-    logging.info("Adding network %s with vlan=%s, bonding=%s, nics=%s,"
-                 " bondingOptions=%s, mtu=%s, bridged=%s, defaultRoute=%s,"
-                 "options=%s", network, vlan, bonding, nics, bondingOptions,
-                 mtu, bridged, defaultRoute, options)
+    logging.info('Adding network %s with vlan=%s, bonding=%s, nic=%s, '
+                 'mtu=%s, bridged=%s, defaultRoute=%s, options=%s', network,
+                 vlan, bonding, nic, mtu, bridged, defaultRoute, options)
 
     if configurator is None:
         configurator = ConfiguratorClass()
@@ -282,7 +264,7 @@ def _addNetwork(network, vlan=None, bonding=None, nics=None, ipaddr=None,
 
     net_ent = _objectivizeNetwork(
         bridge=network if bridged else None, vlan_id=vlan, bonding=bonding,
-        bondingOptions=bondingOptions, nics=nics, mtu=mtu, ipaddr=ipaddr,
+        nic=nic, mtu=mtu, ipaddr=ipaddr,
         netmask=netmask, gateway=gateway, bootproto=bootproto, dhcpv6=dhcpv6,
         blockingdhcp=blockingdhcp, ipv6addr=ipv6addr, ipv6gateway=ipv6gateway,
         ipv6autoconf=ipv6autoconf, defaultRoute=defaultRoute,
@@ -369,10 +351,10 @@ def _validateDelNetwork(network, vlan, bonding, nics, bridge_should_be_clean,
         assertBridgeClean(network, vlan, bonding, nics)
 
 
-def _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo, configurator):
+def _delNonVdsmNetwork(network, vlan, bonding, _netinfo, configurator):
     if network in bridges.bridges():
         net_ent = _objectivizeNetwork(bridge=network, vlan_id=vlan,
-                                      bonding=bonding, nics=nics,
+                                      bonding=bonding,
                                       _netinfo=_netinfo,
                                       configurator=configurator,
                                       implicitBonding=False)
@@ -388,7 +370,7 @@ def _disconnect_bridge_port(port):
 
 
 @_alterRunningConfig
-def _delNetwork(network, vlan=None, bonding=None, nics=None,
+def _delNetwork(network, vlan=None, bonding=None,
                 bypassValidation=False,
                 configurator=None, implicitBonding=True,
                 _netinfo=None, keep_bridge=False, **options):
@@ -400,7 +382,7 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None,
 
     if network not in _netinfo.networks:
         logging.info("Network %r: doesn't exist in libvirt database", network)
-        _delNonVdsmNetwork(network, vlan, bonding, nics, _netinfo,
+        _delNonVdsmNetwork(network, vlan, bonding, _netinfo,
                            configurator)
         return
 
@@ -418,7 +400,9 @@ def _delNetwork(network, vlan=None, bonding=None, nics=None,
 
     net_ent = _objectivizeNetwork(bridge=network if bridged else None,
                                   vlan=vlan, vlan_id=vlan_id, bonding=bonding,
-                                  nics=nics, _netinfo=_netinfo,
+                                  nic=nics[0] if nics and not bonding
+                                  else None,
+                                  _netinfo=_netinfo,
                                   configurator=configurator,
                                   implicitBonding=implicitBonding)
     net_ent.ipv4.bootproto = (
@@ -609,8 +593,9 @@ def _handleBondings(bondings, configurator, in_rollback):
                     ne.ERR_USED_BOND,
                     "Cannot remove bonding %s: used by another interfaces %s" %
                     (name, bond_users))
-            bond = Bond.objectivize(name, configurator, attrs.get('options'),
-                                    attrs.get('nics'), mtu=None,
+            bond = Bond.objectivize(name, configurator,
+                                    options=attrs.get('options'),
+                                    nics=attrs.get('nics'), mtu=None,
                                     _netinfo=_netinfo,
                                     destroyOnMasterRemoval='remove' in attrs)
             bond.remove()
@@ -626,8 +611,10 @@ def _handleBondings(bondings, configurator, in_rollback):
     _netinfo.updateDevices()
 
     for name, attrs in edition:
-        bond = Bond.objectivize(name, configurator, attrs.get('options'),
-                                attrs.get('nics'), mtu=None, _netinfo=_netinfo,
+        bond = Bond.objectivize(name, configurator,
+                                options=attrs.get('options'),
+                                nics=attrs.get('nics'), mtu=None,
+                                _netinfo=_netinfo,
                                 destroyOnMasterRemoval='remove' in attrs)
         if len(bond.slaves) == 0:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required nics'
@@ -635,8 +622,10 @@ def _handleBondings(bondings, configurator, in_rollback):
         logger.debug("Editing bond %r with options %s", bond, bond.options)
         configurator.editBonding(bond, _netinfo)
     for name, attrs in addition:
-        bond = Bond.objectivize(name, configurator, attrs.get('options'),
-                                attrs.get('nics'), mtu=None, _netinfo=_netinfo,
+        bond = Bond.objectivize(name, configurator,
+                                options=attrs.get('options'),
+                                nics=attrs.get('nics'), mtu=None,
+                                _netinfo=_netinfo,
                                 destroyOnMasterRemoval='remove' in attrs)
         if len(bond.slaves) == 0:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required nics'
@@ -660,27 +649,6 @@ def _remove_slaves(slaves_to_remove, configurator, _netinfo):
         slave.remove(remove_even_if_used=True)
 
 
-def _buildBondOptions(bondName, bondings, _netinfo):
-    logger = logging.getLogger("_buildBondOptions")
-
-    bond = {}
-    if bondings.get(bondName):
-        bond['nics'] = bondings[bondName]['nics']
-        bond['bondingOptions'] = bondings[bondName].get('options', None)
-    elif bondName in _netinfo.bondings:
-        # We may not receive any information about the bonding device if it is
-        # unchanged. In this case check whether this bond exists on host and
-        # take its parameters.
-        logger.debug("Fetching bond %r info", bondName)
-        existingBond = _netinfo.bondings[bondName]
-        bond['nics'] = existingBond['slaves']
-        bond['bondingOptions'] = existingBond['cfg'].get('BONDING_OPTS', None)
-    else:
-        raise ConfigNetworkError(ne.ERR_BAD_PARAMS, "No bonding option given, "
-                                 "nor existing bond %s found." % bondName)
-    return bond
-
-
 def _buildSetupHookDict(req_networks, req_bondings, req_options):
 
     hook_dict = {'request': {'networks': dict(req_networks),
@@ -698,7 +666,9 @@ def _emergencyNetworkCleanup(network, networkAttrs, configurator):
     if 'bonding' in networkAttrs:
         if networkAttrs['bonding'] in _netinfo.bondings:
             topNetDev = Bond.objectivize(networkAttrs['bonding'], configurator,
-                                         None, None, None, _netinfo, True)
+                                         options=None, nics=None, mtu=None,
+                                         _netinfo=_netinfo,
+                                         destroyOnMasterRemoval=True)
     elif 'nic' in networkAttrs:
         if networkAttrs['nic'] in _netinfo.nics:
             topNetDev = Nic(networkAttrs['nic'], configurator,
@@ -715,6 +685,15 @@ def _emergencyNetworkCleanup(network, networkAttrs, configurator):
         topNetDev.remove()
 
 
+def _check_bonding_availability(bond, bonds, _netinfo):
+    # network's bond must be a newly-built bond or previously-existing ones
+    newly_built = bond in bonds and not bonds[bond].get('remove', False)
+    already_existing = bond in _netinfo.bondings
+    if not newly_built and not already_existing:
+        raise ConfigNetworkError(
+            ne.ERR_BAD_PARAMS, 'Bond %s does not exist' % bond)
+
+
 def _add_missing_networks(configurator, networks, bondings, logger, _netinfo):
     # We need to use the newest host info
     _netinfo.updateDevices()
@@ -723,16 +702,14 @@ def _add_missing_networks(configurator, networks, bondings, logger, _netinfo):
         if 'remove' in attrs:
             continue
 
-        d = dict(attrs)
-        if 'bonding' in d:
-            d.update(_buildBondOptions(d['bonding'], bondings, _netinfo))
-        else:
-            d['nics'] = [d.pop('nic')] if 'nic' in d else []
+        bond = attrs.get('bonding')
+        if bond:
+            _check_bonding_availability(bond, bondings, _netinfo)
 
         logger.debug("Adding network %r", network)
         try:
             _addNetwork(network, configurator=configurator,
-                        implicitBonding=True, _netinfo=_netinfo, **d)
+                        implicitBonding=True, _netinfo=_netinfo, **attrs)
         except ConfigNetworkError as cne:
             if cne.errCode == ne.ERR_FAILED_IFUP:
                 logger.debug("Adding network %r failed. Running "

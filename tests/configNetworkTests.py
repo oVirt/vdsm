@@ -97,73 +97,45 @@ class TestConfigNetwork(TestCaseBase):
         }
 
         fakeInfo = netinfo.cache.CachingNetInfo(_netinfo)
-        nics = ['eth2']
+        nic = 'eth2'
 
         # Test for already existing bridge.
-        self._addNetworkWithExc('fakebrnet', dict(nics=nics, mtu=DEFAULT_MTU,
+        self._addNetworkWithExc('fakebrnet', dict(nic=nic, mtu=DEFAULT_MTU,
                                 _netinfo=fakeInfo), errors.ERR_USED_BRIDGE)
 
         # Test for already existing network.
-        self._addNetworkWithExc('fakent', dict(nics=nics, _netinfo=fakeInfo,
+        self._addNetworkWithExc('fakent', dict(nic=nic, _netinfo=fakeInfo,
                                 mtu=DEFAULT_MTU), errors.ERR_USED_BRIDGE)
 
-        # Test for bonding opts passed without bonding specified.
-        self._addNetworkWithExc('test', dict(nics=nics, mtu=DEFAULT_MTU,
-                                bondingOptions='mode=802.3ad',
-                                _netinfo=fakeInfo), errors.ERR_BAD_BONDING)
-
         # Test IP without netmask.
-        self._addNetworkWithExc('test', dict(nics=nics, ipaddr='10.10.10.10',
+        self._addNetworkWithExc('test', dict(nic=nic, ipaddr='10.10.10.10',
                                 mtu=DEFAULT_MTU, _netinfo=fakeInfo),
                                 errors.ERR_BAD_ADDR)
 
         # Test netmask without IP.
-        self._addNetworkWithExc('test', dict(nics=nics, mtu=DEFAULT_MTU,
+        self._addNetworkWithExc('test', dict(nic=nic, mtu=DEFAULT_MTU,
                                 netmask='255.255.255.0', _netinfo=fakeInfo),
                                 errors.ERR_BAD_ADDR)
 
         # Test gateway without IP.
-        self._addNetworkWithExc('test', dict(nics=nics, gateway='10.10.0.1',
+        self._addNetworkWithExc('test', dict(nic=nic, gateway='10.10.0.1',
                                 mtu=DEFAULT_MTU, _netinfo=fakeInfo),
                                 errors.ERR_BAD_ADDR)
 
         # Test for non existing nic.
-        self._addNetworkWithExc('test', dict(nics=['eth11'],
+        self._addNetworkWithExc('test', dict(nic='eth11',
                                 mtu=DEFAULT_MTU, _netinfo=fakeInfo),
                                 errors.ERR_BAD_NIC)
 
-        # Test for nic already bound to a different network.
-        self._addNetworkWithExc('test', dict(bonding='bond0', nics=['eth0',
-                                'eth1'], mtu=DEFAULT_MTU, _netinfo=fakeInfo),
-                                errors.ERR_USED_NIC)
-
-        # Test for bond already member of a network.
-        self._addNetworkWithExc('test', dict(bonding='bond00', nics=['eth5',
-                                'eth6'], mtu=DEFAULT_MTU, _netinfo=fakeInfo),
-                                errors.ERR_BAD_PARAMS)
-
-        # Test for multiple nics without bonding device.
-        self._addNetworkWithExc('test', dict(nics=['eth3', 'eth4'],
-                                mtu=DEFAULT_MTU, _netinfo=fakeInfo),
-                                errors.ERR_BAD_BONDING)
-
         # Test for nic already in a bond.
-        self._addNetworkWithExc('test', dict(nics=['eth6'], _netinfo=fakeInfo,
+        self._addNetworkWithExc('test', dict(nic='eth6', _netinfo=fakeInfo,
                                 mtu=DEFAULT_MTU, ), errors.ERR_USED_NIC)
 
         # Test for adding a new non-VLANed bridgeless network when a non-VLANed
         # bridgeless network exists
-        self._addNetworkWithExc('test', dict(nics=['eth8'], bridged=False,
+        self._addNetworkWithExc('test', dict(nic='eth8', bridged=False,
                                 mtu=DEFAULT_MTU, _netinfo=fakeInfo),
                                 errors.ERR_BAD_PARAMS)
-
-    def testBuildBondOptionsBadParams(self):
-        class FakeNetInfo(object):
-            def __init__(self):
-                self.bondings = ['god', 'bless', 'potatoes']
-        with self.assertRaises(errors.ConfigNetworkError) as cne:
-            api._buildBondOptions('jamesbond', {}, _netinfo=FakeNetInfo())
-        self.assertEquals(cne.exception.errCode, errors.ERR_BAD_PARAMS)
 
     @MonkeyPatch(netinfo.cache, 'CachingNetInfo', lambda: None)
     def testValidateNetSetupRemoveParamValidation(self):
