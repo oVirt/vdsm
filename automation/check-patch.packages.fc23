@@ -17,6 +17,7 @@ python-netaddr
 python-nose
 python-pthreading
 python-six
+python-yaml
 python3-netaddr
 python3-nose
 python3-six

@@ -28,6 +28,8 @@ except ImportError:
     _glusterEnabled = False
 
 from vdsm.rpc import Bridge
+from api import schemaapi
+from api import vdsmapi
 from testlib import VdsmTestCase as TestCaseBase
 
 
@@ -74,12 +76,15 @@ class SchemaValidation(TestCaseBase):
     def _get_paths(self):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
-        for tail in ('vdsmapi-schema.json', 'vdsmapi-gluster-schema.json'):
+
+        for tail in ('vdsm-api.yml', 'vdsm-api-gluster.yml'):
             yield os.path.join(
                 dirName, '..', 'lib', 'api', tail)
 
     def _validate(self, api_mod):
-        bridge = Bridge.DynamicBridge()
+        path = schemaapi.find_schema()
+        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
+        cache = schemaapi.Schema([path, gluster_path])
 
         for class_name, class_obj in self._get_api_classes(api_mod):
             apiObj = getattr(api_mod, class_name)
@@ -107,7 +112,7 @@ class SchemaValidation(TestCaseBase):
 
                 try:
                     # get args from schema
-                    method_args = bridge._get_arg_list(spec_class, method_name)
+                    method_args = cache.get_params(spec_class, method_name)
                 except KeyError:
                     raise AssertionError('Missing method %s.%s' % (
                                          spec_class, method_name))
@@ -123,26 +128,26 @@ class SchemaValidation(TestCaseBase):
                                          method_name, method_args, args))
                 for marg in method_args:
                     # verify optional arg
-                    if marg.startswith('*'):
-                        if not marg[1:] in default_args:
+                    if 'defaultvalue' in marg:
+                        if not marg.get('name') in default_args:
                             raise AssertionError(
                                 self._prep_msg(class_name, method_name,
                                                method_args, args))
                         continue
                     # verify args from schema in apiobj args
-                    if not bridge._sym_name_filter(marg) in args:
+                    if not marg.get('name') in args:
                         raise AssertionError(self._prep_msg(
                             class_name, method_name, method_args, args))
                 try:
                     # verify ret value with entry in command_info
-                    ret = bridge._get_ret_list(spec_class, method_name)
+                    ret = cache.get_ret_param(spec_class, method_name)
                     ret_info = Bridge.command_info.get(cmd, {}).get('ret')
                     if not ret_info and not ret:
                         continue
                     if ret_info == 'status':
                         continue
                     if not ret_info or not ret:
-                        raise AssertionError('wrong return type for ' + cmd)
+                        raise AssertionError('wrong return type: ' + cmd)
                 except KeyError:
                     raise AssertionError('Missing ret %s.%s' % (
                                          spec_class, method_name))
@@ -176,3 +181,116 @@ class SchemaValidation(TestCaseBase):
             return gapi
         else:
             return None
+
+
+class JsonToYamlValidation(TestCaseBase):
+
+    def swap_types(self, name):
+        if name == 'str':
+            return 'string'
+        elif name == 'bool':
+            return 'boolean'
+        else:
+            return name
+
+    def methods(self):
+        jsonapi = vdsmapi.get_api()
+        commands = jsonapi['commands']
+        for command in commands:
+            cmd = commands[command]
+            for method in cmd:
+                yield (command, method, cmd[method])
+
+    def test_command_params(self):
+        path = schemaapi.find_schema()
+        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
+        cache = schemaapi.Schema([path, gluster_path])
+
+        for (command, method, obj) in self.methods():
+            params = obj.get('data', {})
+            y_params = cache.get_params(command, method)
+            for param in y_params:
+                name = param.get('name')
+                if 'defaultvalue' in param:
+                    name = '*' + name
+                if name not in params:
+                    self.assertNotIn(name, params,
+                                     "parameters do not match for %s.%s"
+                                     % (command, method))
+
+    def test_command_ret(self):
+        path = schemaapi.find_schema()
+        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
+        cache = schemaapi.Schema([path, gluster_path])
+
+        for (command, method, obj) in self.methods():
+            ret = obj.get('returns', {})
+            y_ret = cache.get_ret_param(command, method)
+            if not y_ret:
+                self.assertFalse(ret)
+                continue
+            ret_type = y_ret['type']
+            if isinstance(ret_type, list):
+                self.assertTrue(isinstance(ret, list))
+                ret_type = ret_type[0]
+                ret = ret[0]
+
+            if isinstance(ret_type, dict):
+                ret_type = ret_type['name']
+
+            if ret_type != self.swap_types(ret):
+                raise Exception("Return type do not match")
+
+    def test_types(self):
+        path = schemaapi.find_schema()
+        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
+        cache = schemaapi.Schema([path, gluster_path])
+
+        types = vdsmapi.get_api()['types']
+        for type_name in types:
+            y_type = cache.get_type(type_name)
+            j_type = types.get(type_name)
+            t = y_type.get('type')
+            if t == 'object':
+                type_params = j_type.get('data')
+                for param in y_type.get('properties'):
+                    name = param.get('name')
+                    if 'defaultvalue' in param:
+                        name = '*' + name
+
+                    if name not in type_params:
+                        raise Exception("parameters do not match for %s"
+                                        % (type_name))
+            elif t == 'union':
+                unions = j_type.get('union')
+                for value in y_type.get('values'):
+                    if 'params' in value:
+                        for param in value.get('params'):
+                            if value.get('name') not in unions:
+                                raise Exception(
+                                    "Union %s values do not match"
+                                    % (type_name))
+                    else:
+                        # ignore anchored types
+                        pass
+            else:
+                raise Exception("Unknown type %s" % type_name)
+
+    def test_missing_method(self):
+        path = schemaapi.find_schema()
+        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
+        cache = schemaapi.Schema([path, gluster_path])
+
+        self.assertRaises(schemaapi.MethodNotFound,
+                          cache.get_method,
+                          'Missing_class',
+                          'missing_method')
+
+    def test_missing_type(self):
+        path = schemaapi.find_schema()
+        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
+        cache = schemaapi.Schema([path, gluster_path])
+
+        self.assertRaises(schemaapi.TypeNotFound,
+                          cache.get_type,
+                          'Missing_type')

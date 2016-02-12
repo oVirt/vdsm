@@ -1,0 +1,2065 @@
+types:
+    UUID: &UUID
+        added: '3.1'
+        description: A universally unique identifier in RFC 4122 format.eg.
+            "407cb255-34be-432c-be7c-eb43b8de82be"
+        name: UUID
+        sourcetype: str
+        type: alias
+
+    BricksInfo: &BricksInfo
+        added: '3.4'
+        description: Bricks information.
+        name: BricksInfo
+        properties:
+        -   description: Uuid of the host on which brick lies.
+            name: hostUuid
+            type: *UUID
+
+        -   description: Name of the brick
+            name: name
+            type: string
+        type: object
+
+    CreateTime: &CreateTime
+        added: '3.6'
+        description: creation time of snapshot
+        name: CreateTime
+        properties:
+        -   description: Time zone of cluster in which snapshot
+                was created
+            name: timeZone
+            type: string
+
+        -   description: Creation time represented in epoch
+            name: epochTime
+            type: int
+        type: object
+
+    GeoRepConfigMap: &GeoRepConfigMap
+        added: '3.6'
+        description: A mapping of geo replication config indexed by option
+            name.
+        key-type: string
+        name: GeoRepConfigMap
+        type: map
+        value-type: string
+
+    GeoRepConfig: &GeoRepConfig
+        added: '3.6'
+        description: Geo replication config details.
+        name: GeoRepConfig
+        properties:
+        -   description: GeoRepConfig map
+            name: gepRepConfig
+            type: *GeoRepConfigMap
+        type: object
+
+    GeoRepPubKeys: &GeoRepPubKeys
+        added: '3.6'
+        description: collection of geo-replication public keys from all local
+            nodes
+        name: GeoRepPubKeys
+        properties:
+        -   description: collection of geo-rep public keys
+            name: geoRepPubKeys
+            type:
+            - string
+        type: object
+
+    geoRepPairInfo: &geoRepPairInfo
+        added: '3.6'
+        description: Gluster geo-replication pair information.
+        name: geoRepPairInfo
+        properties:
+        -   description: Time of last sync
+            name: lastSynced
+            type: int
+
+        -   description: Name of user in remote Machine
+            name: remoteUserName
+            type: string
+
+        -   description: Crawl status
+            name: crawlStatus
+            type: string
+
+        -   description: Time zone of local node
+            name: timeZone
+            type: string
+
+        -   description: If checkpoint is completed or not
+            name: checkpointCompleted
+            type: string
+
+        -   description: Nos of meta operations pending
+            name: meta
+            type: string
+
+        -   description: Checkpoint completion time
+            name: checkpointCompletionTime
+            type: int
+
+        -   description: Nos of failures
+            name: failures
+            type: string
+
+        -   description: Uuid of host for local volume brick
+            name: hostUuid
+            type: *UUID
+
+        -   description: Nos of entry operations pending
+            name: entry
+            type: string
+
+        -   description: Local volume brick involved in session
+            name: brickName
+            type: string
+
+        -   description: Status of geo replication
+            name: status
+            type: string
+
+        -   description: Checkpoint Set time
+            name: checkpointTime
+            type: int
+
+        -   description: The remote host involved in the session
+            name: remoteHost
+            type: string
+
+        -   description: Nos of data operations pending
+            name: data
+            type: string
+
+        -   description: Host of the local volume
+            name: host
+            type: string
+        type: object
+
+    geoRepSessionInfo: &geoRepSessionInfo
+        added: '3.6'
+        description: Gluster geo-replication session information.
+        name: geoRepSessionInfo
+        properties:
+        -   description: Unique identification for session
+            name: sessionKey
+            type: string
+
+        -   description: Brick pair info of all pairs
+            name: bricks
+            type:
+            - *geoRepPairInfo
+        -   description: Name of the remote volume participating in
+                the session
+            name: remoteVolumeName
+            type: string
+        type: object
+
+    GlusterGeoRepSessionList: &GlusterGeoRepSessionList
+        added: '3.6'
+        description: Gluster geo-replication session list.
+        name: GlusterGeoRepSessionList
+        properties:
+        -   description: The session details of all sessions
+            name: sessions
+            type:
+            - *geoRepSessionInfo
+        type: object
+
+    GlusterGeoRepSessionMap: &GlusterGeoRepSessionMap
+        added: '3.6'
+        description: A mapping of sessions info indexed by volume name.
+        key-type: string
+        name: GlusterGeoRepSessionMap
+        type: map
+        value-type: *GlusterGeoRepSessionList
+
+    GlusterServiceAction: &GlusterServiceAction
+        added: '3.2'
+        description: Possible value of Gluster service actions.
+        name: GlusterServiceAction
+        type: enum
+        values:
+            restart: Restart the service
+            start: Start the service
+            stop: Stop the service
+
+    GlusterServiceStatus: &GlusterServiceStatus
+        added: '3.2'
+        description: Possible value of Gluster service status.
+        name: GlusterServiceStatus
+        type: enum
+        values:
+            ERROR: Service action failed
+            NOT_AVAILABLE: Service is not Installed
+            NOT_SUPPORTED: Service is not allowed to manage
+            RUNNING: Service is Running
+            STOPPED: Service is Stopped
+
+    GlusterServiceStatusInfo: &GlusterServiceStatusInfo
+        added: '3.2'
+        description: Gluster service status information.
+        name: GlusterServiceStatusInfo
+        properties:
+        -   description: Status of the service
+            name: status
+            type: *GlusterServiceStatus
+
+        -   description: Message if status is ERROR
+            name: message
+            type: string
+
+        -   description: The name of the service
+            name: name
+            type: string
+        type: object
+
+    GlusterServicesStatusInfo: &GlusterServicesStatusInfo
+        added: '3.2'
+        description: Gluster services status information.
+        name: GlusterServicesStatusInfo
+        properties:
+        -   description: List of services status information
+            name: services
+            type:
+            - *GlusterServiceStatusInfo
+        type: object
+
+    GlusterVolumeStatsInfo: &GlusterVolumeStatsInfo
+        added: '3.4'
+        description: Gluster Volumes disk usage statistics
+        name: GlusterVolumeStatsInfo
+        properties:
+        -   description: Free space available in bytes
+            name: sizeFree
+            type: string
+
+        -   description: Used space in bytes
+            name: sizeUsed
+            type: string
+
+        -   description: Total space available in bytes
+            name: sizeTotal
+            type: string
+        type: object
+
+    HookContent: &HookContent
+        added: '3.2'
+        description: Hook content information.
+        name: HookContent
+        properties:
+        -   description: Type of hook
+            name: mimetype
+            type: string
+
+        -   description: Md5sum of the hook file
+            name: md5sum
+            type: string
+
+        -   description: Hook content
+            name: content
+            type: string
+        type: object
+
+    HookStatus: &HookStatus
+        added: '3.2'
+        description: Possible value of hook status.
+        name: HookStatus
+        type: enum
+        values:
+            DISABLED: Hook is disabled
+            ENABLED: Hook is enabled
+
+    HookLevel: &HookLevel
+        added: '3.2'
+        description: Possible value of hook level.
+        name: HookLevel
+        type: enum
+        values:
+            POST: After gluster command execution
+            PRE: Before gluster command execution
+
+    HookInfo: &HookInfo
+        added: '3.2'
+        description: Hook information.
+        name: HookInfo
+        properties:
+        -   description: Type of hook
+            name: mimetype
+            type: string
+
+        -   description: Status of the hook
+            name: status
+            type: *HookStatus
+
+        -   description: The name of the hook
+            name: name
+            type: string
+
+        -   description: Md5sum of the hook file
+            name: md5sum
+            type: string
+
+        -   description: Hook level
+            name: level
+            type: *HookLevel
+
+        -   description: Gluster command
+            name: command
+            type: string
+        type: object
+
+    GlusterTaskStatus: &GlusterTaskStatus
+        added: '3.2'
+        description: Possible value of task status.
+        name: GlusterTaskStatus
+        type: enum
+        values:
+            COMPLETED: Process completed
+            FAILED: Process failed
+            NOT_STARTED: Process not Started
+            STARTED: Process Started
+            STOPPED: Process not Stopped
+            UNKNOWN: Status unknown
+
+    HostInfo: &HostInfo
+        added: '3.2'
+        description: Info about Host
+        name: HostInfo
+        properties:
+        -   description: Numbers of files skipped
+            name: filesSkipped
+            type: int
+
+        -   description: Number of files scanned
+            name: filesScanned
+            type: int
+
+        -   description: id of the host
+            name: id
+            type: *UUID
+
+        -   description: Name of the host
+            name: name
+            type: string
+
+        -   description: Status of task
+            name: status
+            type: *GlusterTaskStatus
+
+        -   description: Runtime of the operation
+            name: runtime
+            type: float
+
+        -   description: Number of files failed
+            name: filesFailed
+            type: int
+
+        -   description: Total size of data moved
+            name: totalSizeMoved
+            type: int
+
+        -   description: Number of files moved
+            name: filesMoved
+            type: int
+        type: object
+
+    HostStatus: &HostStatus
+        added: '3.2'
+        description: Possible value of host status.
+        name: HostStatus
+        type: enum
+        values:
+            CONNECTED: Host is connected
+            DISCONNECTED: host is disconnected
+            UNKNOWN: Host status is unknown
+
+    HostList: &HostList
+        added: '3.2'
+        description: List of hosts.
+        name: HostList
+        properties:
+        -   description: Id of the host
+            name: uuid
+            type: *UUID
+
+        -   description: The name of the host
+            name: hostname
+            type: string
+
+        -   description: Status of the host
+            name: status
+            type: *HostStatus
+        type: object
+
+    RaidDevice: &RaidDevice
+        added: '3.6'
+        description: Raid storage devices.
+        name: RaidDevice
+        properties:
+        -   description: Disk count
+            name: diskCnt
+            type: int
+
+        -   description: Raid type
+            name: type
+            type: string
+
+        -   description: Stripe size
+            name: stripeSize
+            type: int
+        type: object
+
+    Summary: &Summary
+        added: '3.2'
+        description: Summary of the process
+        name: Summary
+        properties:
+        -   description: Number of files scanned
+            name: filesScanned
+            type: int
+
+        -   description: Status of the operation
+            name: status
+            type: string
+
+        -   description: Numbers of files skipped
+            name: filesSkipped
+            type: int
+
+        -   description: Runtime of the operation
+            name: runtime
+            type: float
+
+        -   description: Number of files failed
+            name: filesFailed
+            type: int
+
+        -   description: Total size of data moved
+            name: totalSizeMoved
+            type: int
+
+        -   description: Number of files moved
+            name: filesMoved
+            type: int
+        type: object
+
+    RebalanceRemoveStatus: &RebalanceRemoveStatus
+        added: '3.2'
+        description: status of volume rebalance and brick removal.
+        name: RebalanceRemoveStatus
+        properties:
+        -   description: Summary of the operation.
+            name: summary
+            type: *Summary
+
+        -   description: Information about hosts.
+            name: hosts
+            type: *HostInfo
+        type: object
+
+    SystemSnapshotConfig: &SystemSnapshotConfig
+        added: '3.6'
+        description: 'snap-max-hard-limit: Snapshot max hard limit'
+        name: SystemSnapshotConfig
+        properties:
+        -   description: Auto activate enabled/disabled
+            name: activate-on-create
+            type: string
+
+        -   description: Auto delete enabled/disabled
+            name: auto-delete
+            type: string
+
+        -   description: Soft limit percentage of snapshot max limit
+            name: snap-max-soft-limit
+            type: string
+        type: object
+
+    VolumeSnapConfig: &VolumeSnapConfig
+        added: '3.6'
+        description: Volume snapshot config
+        name: VolumeSnapConfig
+        properties:
+            - description: Snapshot max hard limit
+              name: snap-max-hard-limit
+              type: string
+        type: object
+
+    VolumeSnapshotConfigMap: &VolumeSnapshotConfigMap
+        added: '3.6'
+        description: A mapping of snapshot config indexed by volume name.
+        key-type: string
+        name: VolumeSnapshotConfigMap
+        type: map
+        value-type: *VolumeSnapConfig
+
+    SnapConfigDetail: &SnapConfigDetail
+        added: '3.6'
+        description: Snapshot configuration details
+        name: SnapConfigDetail
+        properties:
+        -   description: System level snapshot configuration
+            name: system
+            type: *SystemSnapshotConfig
+
+        -   description: Volume specific snapshot configuration
+            name: volume
+            type: *VolumeSnapshotConfigMap
+        type: object
+
+    SnapshotStatus: &SnapshotStatus
+        added: '3.6'
+        description: Possible value of snapshot status.
+        name: SnapshotStatus
+        type: enum
+        values:
+            ACTIVATED: Snapshot is activated
+            DEACTIVATED: Snapshot is deactivated
+
+    SnapInfo: &SnapInfo
+        added: '3.6'
+        description: info about a snapshot.
+        name: SnapInfo
+        properties:
+        -   description: Snapshot creation time
+            name: createTime
+            type: *CreateTime
+
+        -   description: Uuid of the snapshot
+            name: id
+            type: *UUID
+
+        -   description: Description of the snapshot
+            name: description
+            type: string
+
+        -   description: Name of the snapshot
+            name: name
+            type: string
+
+        -   description: Name of the snapshot volume
+            name: snapVolume
+            type: string
+
+        -   description: Status of the snapshot volume
+            name: snapVolumeStatus
+            type: *SnapshotStatus
+        type: object
+
+    SnapRestoreDetail: &SnapRestoreDetail
+        added: '3.6'
+        description: Restored snapshot detail
+        name: SnapRestoreDetail
+        properties:
+        -   description: Uuid of the restored volume
+            name: volumeUuid
+            type: *UUID
+
+        -   description: Uuid of the restored snapshot
+            name: snapshotUuid
+            type: *UUID
+
+        -   description: Name and of restored volume
+            name: volumeName
+            type: string
+
+        -   description: Name of the restored snapshot
+            name: snapshotName
+            type: string
+        type: object
+
+    SnapshotCreateDetail: &SnapshotCreateDetail
+        added: '3.6'
+        description: Created snapshot detail
+        name: SnapshotCreateDetail
+        properties:
+        -   description: UUID of the created snapshot
+            name: uuid
+            type: *UUID
+
+        -   description: Name of the created snapshot
+            name: name
+            type: string
+        type: object
+
+    VolumeSnapInfo: &VolumeSnapInfo
+        added: '3.6'
+        description: info about volume snapshots.
+        name: VolumeSnapInfo
+        properties:
+        -   description: Number of snapshots remaining for that volume
+            name: snapRemaining
+            type: string
+
+        -   description: List of snapshot info of all snaps for that volume
+            name: snapshots
+            type:
+            - *SnapInfo
+        type: object
+
+    SnapshotInfoMap: &SnapshotInfoMap
+        added: '3.6'
+        description: A mapping of snapshot info indexed by volume name.
+        key-type: string
+        name: SnapshotInfoMap
+        type: map
+        value-type: *VolumeSnapInfo
+
+    StatusOption: &StatusOption
+        added: '3.2'
+        description: Possible value of Status option type.
+        name: StatusOption
+        type: enum
+        values:
+            CLIENTS: ''
+            DETAIL: ''
+            MEM: ''
+
+    StorageDevicesList: &StorageDevicesList
+        added: '3.6'
+        description: List of storage devices.
+        name: StorageDevicesList
+        properties:
+        -   description: The name of the device
+            name: name
+            type: string
+
+        -   description: Device path
+            name: devPath
+            type: string
+
+        -   description: Device Model
+            name: model
+            type: string
+
+        -   description: Device bus
+            name: bus
+            type: string
+
+        -   description: Device uuid
+            name: devUuid
+            type: *UUID
+
+        -   description: File system type
+            name: fsType
+            type: string
+
+        -   description: Device size
+            name: size
+            type: int
+
+        -   description: File system uuid
+            name: uuid
+            type: *UUID
+
+        -   description: Device mount point path
+            name: mountPoint
+            type: string
+
+        -   description: Has the device can be used for create brick or not
+            name: createBrick
+            type: boolean
+        type: object
+
+    TaskSummary: &TaskSummary
+        added: '3.2'
+        description: Task Summary.
+        name: TaskSummary
+        properties:
+        -   description: Volume name is passed
+            name: volumeName
+            type: string
+
+        -   description: The UUID of the task
+            name: id
+            type: *UUID
+
+        -   description: Number of files skipped
+            name: filesSkipped
+            type: int
+
+        -   description: Rebalance/Remove brick status
+            name: status
+            type: string
+
+        -   description: Number of files failed to move
+            name: filesFailed
+            type: int
+
+        -   description: Total size of the files moved
+            name: totalSizeMoved
+            type: int
+
+        -   description: Number of files scanned
+            name: filesScanned
+            type: int
+
+        -   description: Number of files moved
+            name: filesMoved
+            type: int
+        type: object
+
+    TaskType: &TaskType
+        added: '3.2'
+        description: Possible value of task type.
+        name: TaskType
+        type: enum
+        values:
+            REBALANCE: Task type is rebalance
+            REMOVE_BRICK: Task type is remove brick
+            REPLACE_BRICK: Task type is replace brick
+
+    TaskInfo: &TaskInfo
+        added: '3.2'
+        description: Task information.
+        name: TaskInfo
+        properties:
+        -   description: Status of the task
+            name: status
+            type: *GlusterTaskStatus
+
+        -   description: Volume Bricks
+            name: bricks
+            type:
+            - string
+
+        -   description: The UUID of the task
+            name: id
+            type: *UUID
+
+        -   description: Type of task
+            name: type
+            type: *TaskType
+
+        -   description: Task summary
+            name: data
+            type: *TaskSummary
+
+        -   description: Volume name
+            name: volume
+            type: string
+        type: object
+
+    VolumeEmptyCheck: &VolumeEmptyCheck
+        added: '3.6'
+        description: Flag which tells if a given volume is empty
+        name: VolumeEmptyCheck
+        properties:
+        -   description: A flag which tells if a gluster volume is empty
+            name: volumeEmptyCheck
+            type: boolean
+        type: object
+
+    VolumeStatus: &VolumeStatus
+        added: '3.2'
+        description: Possible value of volume status.
+        name: VolumeStatus
+        type: enum
+        values:
+            OFFLINE: volume is offline
+            ONLINE: volume is online
+
+    transType: &transType
+        added: '3.2'
+        description: Possible value of transport type.
+        name: transType
+        type: enum
+        values:
+            RDMA: Transport type is RDMA
+            TCP: Transport type is TCP
+
+    VolumeInfo: &VolumeInfo
+        added: '3.2'
+        description: volume information.
+        name: VolumeInfo
+        properties:
+        -   description: Id of the volume
+            name: uuid
+            type: *UUID
+
+        -   description: Type of transport protocol
+            name: transportType
+            type: *transType
+
+        -   description: Status of the volume
+            name: status
+            type: *VolumeStatus
+
+        -   description: The number of bricks
+            name: brickCount
+            type: int
+
+        -   description: List of options
+            name: options
+            type:
+            - string
+
+        -   description: details related to bricks
+            name: bricksInfo
+            type:
+            - *BricksInfo
+            added: '3.4'
+
+        -   description: List of bricks
+            name: bricks
+            type:
+            - string
+
+        -   description: Name of the volume
+            name: volumeName
+            type: string
+
+        -   description: Redundancy count of the volume
+            name: redundancyCount
+            type: int
+
+        -   description: Disperse count of the volume
+            name: disperseCount
+            type: int
+
+        -   description: Type of the volume
+            name: volumeType
+            type: string
+        type: object
+
+    VolumeOptionInfo: &VolumeOptionInfo
+        added: '3.2'
+        description: Volume option information.
+        name: VolumeOptionInfo
+        properties:
+        -   description: default value
+            name: defaultValue
+            type: string
+
+        -   description: description
+            name: description
+            type: string
+
+        -   description: volume option name
+            name: name
+            type: string
+        type: object
+
+    VolumeProfileInfo: &VolumeProfileInfo
+        added: '3.2'
+        description: Volume profile information.
+        name: VolumeProfileInfo
+        properties:
+        -   description: list of bricks
+            name: bricks
+            type:
+            - string
+
+        -   description: volume name
+            name: volumeName
+            type: string
+        type: object
+
+GlusterHook.add:
+    added: '3.2'
+    description: Add a hook file
+    params:
+    -   description: Gluster command name
+        name: glusterCmd
+        type: string
+
+    -   description: Hook execution level
+        name: hookLevel
+        type: *HookLevel
+
+    -   description: Gluster hook name
+        name: hookName
+        type: string
+
+    -   description: Hook content
+        name: hookData
+        type: string
+
+    -   description: Md5sum of the hook file
+        name: hookMd5Sum
+        type: string
+
+    -   description: Hook status
+        name: enable
+        type: boolean
+    return:
+        description: success or failure
+        type: boolean
+
+GlusterHook.disable:
+    added: '3.2'
+    description: Disable the hook file
+    params:
+    -   description: Gluster command name
+        name: glusterCmd
+        type: string
+
+    -   description: Hook execution level
+        name: hookLevel
+        type: *HookLevel
+
+    -   description: Gluster hook name
+        name: hookName
+        type: string
+    return:
+        description: success or failure
+        type: boolean
+
+GlusterHook.enable:
+    added: '3.2'
+    description: Enable the hook file
+    params:
+    -   description: Gluster command name
+        name: glusterCmd
+        type: string
+
+    -   description: Hook execution level
+        name: hookLevel
+        type: *HookLevel
+
+    -   description: Gluster hook name
+        name: hookName
+        type: string
+    return:
+        description: success or failure
+        type: boolean
+
+GlusterHook.list:
+    added: '3.2'
+    description: Provides the list of hook files
+    return:
+        description: List of gluster hook information
+        type:
+        - *HookInfo
+
+GlusterHook.read:
+    added: '3.2'
+    description: Provides the hook content
+    params:
+    -   description: Gluster command name
+        name: glusterCmd
+        type: string
+
+    -   description: Hook execution level
+        name: hookLevel
+        type: *HookLevel
+
+    -   description: Gluster hook name
+        name: hookName
+        type: string
+    return:
+        description: Hook content
+        type: *HookContent
+
+GlusterHook.remove:
+    added: '3.2'
+    description: Remove a hook file
+    params:
+    -   description: Gluster command name
+        name: glusterCmd
+        type: string
+
+    -   description: Hook execution level
+        name: hookLevel
+        type: *HookLevel
+
+    -   description: Gluster hook name
+        name: hookName
+        type: string
+    return:
+        description: success or failure
+        type: boolean
+
+GlusterHook.update:
+    added: '3.2'
+    description: Update the hook file
+    params:
+    -   description: Gluster command name
+        name: glusterCmd
+        type: string
+
+    -   description: Hook execution level
+        name: hookLevel
+        type: *HookLevel
+
+    -   description: Gluster hook name
+        name: hookName
+        type: string
+
+    -   description: Hook content
+        name: hookData
+        type: string
+
+    -   description: Md5sum of the hook file
+        name: hookMd5Sum
+        type: string
+    return:
+        description: success or failure
+        type: boolean
+
+GlusterHost.add:
+    added: '3.2'
+    description: Add Gluster Host
+    params:
+    -   description: Host name
+        name: hostName
+        type: string
+    return:
+        description: Success or Failure
+        type: boolean
+
+GlusterHost.createBrick:
+    added: '3.6'
+    description: Create a brick for the gluster volume
+    params:
+    -   description: Gluster brick name
+        name: name
+        type: string
+
+    -   description: Device mountPoint
+        name: mountPoint
+        type: string
+
+    -   description: List of devices to be used
+        name: devList
+        type:
+        - string
+
+    -   defaultvalue: null
+        description: file system type
+        name: fsType
+        type: string
+
+    -   defaultvalue: {}
+        description: dictonary contains raid details of a raid device
+        name: raidParams
+        type: *RaidDevice
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterHost.list:
+    added: '3.2'
+    description: List Gluster Hosts
+    return:
+        description: List of gluster host
+        type:
+        - *HostList
+
+GlusterHost.processesStop:
+    added: '3.6'
+    description: Stops the gluster processes on the host
+
+GlusterHost.remove:
+    added: '3.2'
+    description: Remove Gluster Host
+    params:
+    -   description: host name
+        name: hostName
+        type: string
+
+    -   description: forcefull removal
+        name: force
+        type: boolean
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterHost.removeByUuid:
+    added: '3.4'
+    description: Remove Gluster Host by uuid
+    params:
+    -   description: host uuid
+        name: hostUuid
+        type: *UUID
+
+    -   description: remove host forcefully
+        name: force
+        type: boolean
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterHost.storageDevicesList:
+    added: '3.6'
+    description: List Gluster Storage Devices List
+    return:
+        description: List of gluster storage devices list
+        type:
+        - *StorageDevicesList
+
+GlusterHost.uuid:
+    added: '3.2'
+    description: Get Gluster Host UUID
+    return:
+        description: UUID of host
+        type: *UUID
+
+GlusterService.action:
+    added: '3.2'
+    description: start/stop/restart the list of services and get status
+        information.
+    params:
+    -   description: Gluster service name
+        name: serviceNames
+        type:
+        - string
+
+    -   description: Action to perform start/stop/restart
+        name: action
+        type: *GlusterServiceAction
+    return:
+        description: Status information for list of services
+        type: *GlusterServicesStatusInfo
+
+GlusterService.get:
+    added: '3.2'
+    description: Get status information for list of services
+    params:
+    -   description: A list of Gluster service names
+        name: serviceNames
+        type:
+        - string
+    return:
+        description: Status information for list of services
+        type: *GlusterServicesStatusInfo
+
+GlusterSnapshot.activate:
+    added: '3.6'
+    description: Activate the volume snapshot
+    params:
+    -   description: Gluster volume snapshot name
+        name: snapName
+        type: string
+
+    -   defaultvalue: false
+        description: Force activate snapshot
+        name: force
+        type: boolean
+    return:
+        description: success/failure
+        type: boolean
+
+GlusterSnapshot.configList:
+    added: '3.6'
+    description: get the config values of snapshot
+    return:
+        description: current configuration related to system and all volumes
+        type: *SnapConfigDetail
+
+GlusterSnapshot.configSet:
+    added: '3.6'
+    description: set gluster volume snapshot config
+    params:
+    -   description: Option name to be set
+        name: optionName
+        type: string
+
+    -   description: Value of the configuration option
+        name: optionValue
+        type: string
+
+GlusterSnapshot.deactivate:
+    added: '3.6'
+    description: De-activate the volume snapshot
+    params:
+    -   description: Gluster volume snapshot name
+        name: snapName
+        type: string
+    return:
+        description: success/failure
+        type: boolean
+
+GlusterSnapshot.delete:
+    added: '3.6'
+    description: Delete the volume snapshot
+    params:
+    -   description: Gluster volume snapshot name
+        name: snapName
+        type: string
+    return:
+        description: success/failure
+        type: boolean
+
+GlusterSnapshot.restore:
+    added: '3.6'
+    description: Restore a snapshot
+    params:
+    -   description: Gluster volume snapshot name
+        name: snapName
+        type: string
+    return:
+        description: Volume snapshot pair
+        type: *SnapRestoreDetail
+
+GlusterTask.list:
+    added: '3.2'
+    description: List Gluster tasks.
+    params:
+    -   defaultvalue: []
+        description: UUID of the Task
+        name: taskID
+        type: *UUID
+    return:
+        description: List of task information
+        type:
+        - *TaskInfo
+
+GlusterVolume.addBrick:
+    added: '3.2'
+    description: Add Gluster volume brick
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: List of bricks
+        name: brickList
+        type:
+        - string
+
+    -   defaultvalue: 0
+        description: Replica count of the volume
+        name: replicaCount
+        type: int
+
+    -   defaultvalue: 0
+        description: Stripe count of the volume
+        name: stripeCount
+        type: int
+
+    -   defaultvalue: False
+        description: Force add brick
+        name: force
+        type: boolean
+        added: '3.4'
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.create:
+    added: '3.2'
+    description: Create a Gluster volume
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: List of bricks
+        name: bricklist
+        type:
+        - string
+
+    -   defaultvalue: 0
+        description: Replica count for volume
+        name: replicaCount
+        type: int
+
+    -   defaultvalue: 0
+        description: Stripe count for volume
+        name: stripeCount
+        type: int
+
+    -   defaultvalue: []
+        description: Transport type
+        name: transportList
+        type:
+        - *transType
+
+    -   defaultvalue: false
+        description: Force create Volume
+        name: force
+        type: boolean
+        added: '3.4'
+    return:
+        description: uuid of the volume
+        type: *UUID
+
+GlusterVolume.delete:
+    added: '3.2'
+    description: Deletes Gluster volume
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.geoRepConfigList:
+    added: '3.6'
+    description: List Geo Replication configuration
+    params:
+    -   description: Is an existing volume name in the local node
+        name: volumeName
+        type: string
+
+    -   description: Is remote host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the remote node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+    return:
+        description: List of geo replication configurations
+        type: *GeoRepConfig
+
+GlusterVolume.geoRepConfigReset:
+    added: '3.6'
+    description: Resets the the config option to default value
+    params:
+    -   description: Is an existing volume name in the local node
+        name: volumeName
+        type: string
+
+    -   description: Is remote host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the remote node
+        name: remoteVolumeName
+        type: string
+
+    -   description: Valid configuration option name
+        name: optionName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+    return:
+        description: True if default value is set successfully
+        type: boolean
+
+GlusterVolume.geoRepConfigSet:
+    added: '3.6'
+    description: Set Geo Replication config option
+    params:
+    -   description: Is an existing volume name in the local node
+        name: volumeName
+        type: string
+
+    -   description: Is remote host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the remote node
+        name: remoteVolumeName
+        type: string
+
+    -   description: Valid configuration option name
+        name: optionName
+        type: string
+
+    -   description: Value to the option
+        name: optionValue
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+    return:
+        description: True if it sets value to the option successfully
+        type: boolean
+
+GlusterVolume.geoRepKeysGet:
+    added: '3.6'
+    description: Get collected public keys for geo-replication setup
+    return:
+        description: collection of geo-replication public keys as string.
+        type: *GeoRepPubKeys
+
+GlusterVolume.geoRepMountBrokerSetup:
+    added: '3.6'
+    description: set up gluster mount broker needed for non-root geo-rep
+    params:
+    -   description: Name of user
+        name: remoteUserName
+        type: string
+
+    -   description: Name of the users group
+        name: remoteGroupName
+        type: string
+
+    -   description: Name of the remote volume
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: false
+        description: if partial mount broker setup
+        name: partial
+        type: boolean
+
+GlusterVolume.geoRepSessionCreate:
+    added: '3.6'
+    description: Creates a Geo Replication session
+    params:
+    -   description: Is an existing volume name in the master node
+        name: volumeName
+        type: string
+
+    -   description: Is remote slave host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the slave node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+
+    -   defaultvalue: false
+        description: For creating a georeplication session forcefully
+        name: force
+        type: boolean
+
+GlusterVolume.geoRepSessionDelete:
+    added: '3.6'
+    description: Deletes a Geo Replication session
+    params:
+    -   description: Is an existing volume name in the master node
+        name: volumeName
+        type: string
+
+    -   description: Is remote slave host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the slave node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+
+GlusterVolume.geoRepSessionList:
+    added: '3.6'
+    description: Gets the list of geo-Replication sessions
+    params:
+    -   defaultvalue: null
+        description: Is an existing volume name in the local node
+        name: volumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Is remote remote host name or ip
+        name: remoteHost
+        type: string
+
+    -   defaultvalue: null
+        description: Is an available existing volume name in the remote node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+    return:
+        description: list of geo-replicaion sessions
+        type: *GlusterGeoRepSessionMap
+
+GlusterVolume.geoRepSessionPause:
+    added: '3.6'
+    description: Pauses the Geo Replication session
+    params:
+    -   description: Is an existing volume name in the local node
+        name: volumeName
+        type: string
+
+    -   description: Is remote host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the remote node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+
+    -   defaultvalue: false
+        description: For pausing a geo-replication session forcefully
+        name: force
+        type: boolean
+    return:
+        description: True if session is successfully paused
+        type: boolean
+
+GlusterVolume.geoRepSessionResume:
+    added: '3.6'
+    description: Resumes the Geo Replication session
+    params:
+    -   description: Is an existing volume name in the local node
+        name: volumeName
+        type: string
+
+    -   description: Is remote host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the remote node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+
+    -   defaultvalue: false
+        description: For resuming a geo-replication session forcefully
+        name: force
+        type: boolean
+    return:
+        description: True if session is successfully resumed
+        type: boolean
+
+GlusterVolume.geoRepSessionStart:
+    added: '3.6'
+    description: Starts the Geo Replication session
+    params:
+    -   description: Is an existing volume name in the master node
+        name: volumeName
+        type: string
+
+    -   description: Is remote slave host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the slave node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+
+    -   defaultvalue: false
+        description: For starting a geo-replication session forcefully
+        name: force
+        type: boolean
+    return:
+        description: True if session is successfully started
+        type: boolean
+
+GlusterVolume.geoRepSessionStatus:
+    added: '3.6'
+    description: Gets the detailed status of geo-Replication session
+    params:
+    -   description: Is an existing volume name in the master node
+        name: volumeName
+        type: string
+
+    -   description: Is remote host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the remote node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+    return:
+        description: Detailed information of geo-replication session
+        type: *GlusterGeoRepSessionMap
+
+GlusterVolume.geoRepSessionStop:
+    added: '3.6'
+    description: Stops the Geo Replication session
+    params:
+    -   description: Is an existing volume name in the master node
+        name: volumeName
+        type: string
+
+    -   description: Is remote slave host name or ip
+        name: remoteHost
+        type: string
+
+    -   description: Is an available existing volume name in the slave node
+        name: remoteVolumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Name of user in remote Machine
+        name: remoteUserName
+        type: string
+
+    -   defaultvalue: false
+        description: For stoping a geo-replication session forcefully
+        name: force
+        type: boolean
+    return:
+        description: True if session is successfully stopped
+        type: boolean
+
+GlusterVolume.list:
+    added: '3.6'
+    description: Get the list of Gluster volumes
+    params:
+    -   defaultvalue: null
+        description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   defaultvalue: null
+        description: remote server name
+        name: remoteServer
+        type: string
+    return:
+        description: List of Gluster volumes
+        type:
+        - *VolumeInfo
+
+GlusterVolume.metaVolumeMount:
+    added: '3.6'
+    description: Mount glusterfs meta volume
+    params:
+    -   defaultvalue: gluster_shared_storage
+        description: Gluster meta volume name
+        name: metaVolumeName
+        type: string
+
+GlusterVolume.profileInfo:
+    added: '3.2'
+    description: Get Gluster volume profileInfo
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   defaultvalue: false
+        description: ''
+        name: nfs
+        type: string
+    return:
+        description: List of Gluster volume profile infos
+        type:
+        - *VolumeProfileInfo
+
+GlusterVolume.profileStart:
+    added: '3.2'
+    description: Start Gluster volume Profile
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.profileStop:
+    added: '3.2'
+    description: Stop Gluster volume Profile
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.rebalanceStart:
+    added: '3.2'
+    description: Start Gluster volume rebalance
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Rebalance type
+        name: rebalanceType
+        type: string
+
+    -   description: Start rebalance forcefully
+        name: force
+        type: boolean
+    return:
+        description: Task id of the operation
+        type: *UUID
+
+GlusterVolume.rebalanceStatus:
+    added: '3.2'
+    description: Get Gluster volume Rebalance status
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: Gluster volume rebalance status
+        type: *RebalanceRemoveStatus
+
+GlusterVolume.rebalanceStop:
+    added: '3.2'
+    description: Stop Gluster volume rebalance
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   defaultvalue: false
+        description: Force flag
+        name: force
+        type: boolean
+    return:
+        description: Gluster volume rebalance status
+        type: *RebalanceRemoveStatus
+
+GlusterVolume.removeBrickCommit:
+    added: '3.2'
+    description: Commit Gluster volume brick remove
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: List of bricks
+        name: brickList
+        type:
+        - string
+
+    -   description: Volume replica count
+        name: replicaCount
+        type: int
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.removeBrickForce:
+    added: '3.2'
+    description: Force remove Gluster volume brick
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: List of bricks
+        name: brickList
+        type:
+        - string
+
+    -   description: Volume replica count
+        name: replicaCount
+        type: int
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.removeBrickStart:
+    added: '3.2'
+    description: Start Gluster volume brick remove
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: List of bricks
+        name: brickList
+        type:
+        - string
+
+    -   description: Volume replica count
+        name: replicaCount
+        type: int
+    return:
+        description: Task id of the operation
+        type: *UUID
+
+GlusterVolume.removeBrickStatus:
+    added: '3.2'
+    description: Get status of Gluster volume brick remove
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: List of bricks
+        name: brickList
+        type:
+        - string
+
+    -   defaultvalue: 0
+        description: Replica count of the volume
+        name: replicaCount
+        type: int
+    return:
+        description: Status information of remove brick operation
+        type: *RebalanceRemoveStatus
+
+GlusterVolume.removeBrickStop:
+    added: '3.2'
+    description: Stop Gluster volume brick remove
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: List of bricks
+        name: brickList
+        type:
+        - string
+
+    -   description: Volume replica count
+        name: replicaCount
+        type: int
+    return:
+        description: Status information of remove brick operation
+        type: *RebalanceRemoveStatus
+
+GlusterVolume.replaceBrickCommitForce:
+    added: '3.6'
+    description: Replace Gluster volume brick
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Existing brick path
+        name: existingBrick
+        type: string
+
+    -   description: New brick path
+        name: newBrick
+        type: string
+
+GlusterVolume.reset:
+    added: '3.2'
+    description: Reset Gluster volume options
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Volume option
+        name: option
+        type: string
+
+    -   description: Reset volume options forcefully
+        name: force
+        type: boolean
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.set:
+    added: '3.2'
+    description: Set Gluster volume options
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Volume set option name
+        name: option
+        type: string
+
+    -   description: Value of the volume option
+        name: value
+        type: string
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.setOptionsList:
+    added: '3.2'
+    description: List Gluster volume options
+    return:
+        description: VolumeOptionInfo
+        type:
+        - *VolumeOptionInfo
+
+GlusterVolume.snapshotConfigList:
+    added: '3.6'
+    description: get the config values of snapshot for a volume
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: current configuration related a gluster volume
+        type: *SnapConfigDetail
+
+GlusterVolume.snapshotConfigSet:
+    added: '3.6'
+    description: set gluster volume snapshot config
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Option name to be set
+        name: optionName
+        type: string
+
+    -   description: Value of the configration option
+        name: optionValue
+        type: string
+
+GlusterVolume.snapshotCreate:
+    added: '3.6'
+    description: Create a Gluster volume snapshot
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Snapsot name
+        name: snapName
+        type: string
+
+    -   defaultvalue: null
+        description: Description for the snapshot
+        name: snapDescription
+        type: string
+
+    -   defaultvalue: false
+        description: Force create snapshot
+        name: force
+        type: boolean
+    return:
+        description: uuid and name of the created snapshot
+        type: *SnapshotCreateDetail
+
+GlusterVolume.snapshotDeleteAll:
+    added: '3.6'
+    description: Delete all the volume snapshot
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: success/failure
+        type: boolean
+
+GlusterVolume.snapshotList:
+    added: '3.6'
+    description: Snapshot list is retrieved for the given volume
+    params:
+    -   defaultvalue: null
+        description: gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: Volume snapshot list for that volume
+        type: *SnapshotInfoMap
+
+GlusterVolume.snapshotScheduleOverride:
+    added: '3.6'
+    description: overrides gluster snapshot scheduling.
+    params:
+    -   defaultvalue: true
+        description: force override snapshot schedule
+        name: force
+        type: boolean
+
+GlusterVolume.snapshotScheduleReset:
+    added: '3.6'
+    description: resets gluster snapshot scheduling.
+
+GlusterVolume.start:
+    added: '3.2'
+    description: Start Gluster volume
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Start volume forcefully
+        name: force
+        type: boolean
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.statsInfoGet:
+    added: '3.4'
+    description: Get the size info of gluster volume
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: Stats info of GlusterFS volume
+        type: *GlusterVolumeStatsInfo
+
+GlusterVolume.status:
+    added: '3.2'
+    description: Get Gluster volume status
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   defaultvalue: null
+        description: Brick name
+        name: brick
+        type: string
+
+    -   defaultvalue: null
+        description: One of the status options
+        name: statusOption
+        type: *StatusOption
+    return:
+        description: List of gluster volume statuses
+        type:
+        - *VolumeStatus
+
+GlusterVolume.stop:
+    added: '3.2'
+    description: Stop Gluster volume
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+
+    -   description: Stop volume forcefully
+        name: force
+        type: boolean
+    return:
+        description: Success or failure
+        type: boolean
+
+GlusterVolume.volumeEmptyCheck:
+    added: '3.6'
+    description: check if a gluster volume is empty
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: success/failure
+        type: *VolumeEmptyCheck
+
+GlusterVolume.geoRepKeysUpdate:
+    added: '3.6'
+    description: write collected public keys to users authorized_keys file.
+    params:
+    -   description: Name of user
+        name: userName
+        type: string
+
+    -   description: Collection of geo-rep public keys from local nodes
+        name: geoRepPubKeys
+        type:
+        - string

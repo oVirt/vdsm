@@ -20,6 +20,7 @@ python-nose
 python-pthreading
 python-rtslib
 python-six
+python-yaml
 python3-netaddr
 python3-nose
 python3-six
