@@ -47,9 +47,11 @@ def _raiseInvalidOpException(*args, **kwargs):
 class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):
+        configurator = api.ConfiguratorClass()
+
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
             canonize_networks({netName: opts})
-            api._addNetwork(netName, **opts)
+            api._addNetwork(netName, configurator, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.

@@ -21,7 +21,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 from functools import wraps
 import errno
-import inspect
 import os
 import time
 import logging
@@ -180,47 +179,27 @@ def _validateInterNetworkCompatibility(ni, vlan, iface):
 
 
 def _alterRunningConfig(func):
-    """Wrapper for _addNetwork and _delNetwork that abstracts away all current
-    configuration handling from the wrapped methods."""
-    spec = inspect.getargspec(func)
+    """
+    Wrapper for _addNetwork and _delNetwork that abstracts away all current
+    configuration handling from the wrapped methods.
+    """
 
     @wraps(func)
-    def wrapped(*args, **kwargs):
-        if not config.get('vars', 'net_persistence') == 'unified':
-            return func(*args, **kwargs)
-
-        # Get args and kwargs in a single dictionary
-        attrs = kwargs.copy()
-        attrs.update(dict(zip(spec.args, args)))
-
-        isolatedCommand = attrs.get('configurator') is None
-        # Detect if we are running an isolated command, i.e., a command that is
-        # not called as part of composed API operation like setupNetworks, but
-        # rather as its own API verb. This is necessary in order to maintain
-        # behavior of the addNetwork and delNetwork API verbs
-        if isolatedCommand:
-            attrs['configurator'] = configurator = ConfiguratorClass()
-            configurator.begin()
-        else:
-            configurator = attrs['configurator']
-
-        ret = func(**attrs)
-
-        if func.__name__ == '_delNetwork':
-            configurator.runningConfig.removeNetwork(attrs.pop('network'))
-        else:
-            configurator.runningConfig.setNetwork(attrs.pop('network'), attrs)
-        if isolatedCommand:  # Commit the no-rollback transaction.
-            configurator.commit()
-        return ret
+    def wrapped(network, configurator, **kwargs):
+        if config.get('vars', 'net_persistence') == 'unified':
+            if func.__name__ == '_delNetwork':
+                configurator.runningConfig.removeNetwork(network)
+            else:
+                configurator.runningConfig.setNetwork(network, kwargs)
+        return func(network, configurator, **kwargs)
     return wrapped
 
 
 @_alterRunningConfig
-def _addNetwork(network, vlan=None, bonding=None, nic=None, ipaddr=None,
+def _addNetwork(network, configurator,
+                vlan=None, bonding=None, nic=None, ipaddr=None,
                 netmask=None, prefix=None, mtu=None, gateway=None, dhcpv6=None,
                 ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
-                configurator=None,
                 bridged=True, _netinfo=None, hostQos=None,
                 defaultRoute=None, blockingdhcp=False, **options):
     if _netinfo is None:
@@ -256,9 +235,6 @@ def _addNetwork(network, vlan=None, bonding=None, nic=None, ipaddr=None,
     logging.info('Adding network %s with vlan=%s, bonding=%s, nic=%s, '
                  'mtu=%s, bridged=%s, defaultRoute=%s, options=%s', network,
                  vlan, bonding, nic, mtu, bridged, defaultRoute, options)
-
-    if configurator is None:
-        configurator = ConfiguratorClass()
 
     bootproto = options.pop('bootproto', None)
 
@@ -337,7 +313,7 @@ def _delBrokenNetwork(network, netAttr, configurator):
         if config.get('vars', 'net_persistence') == 'unified':
             configurator.runningConfig.removeNetwork(network)
         return
-    _delNetwork(network, configurator=configurator, bypassValidation=True,
+    _delNetwork(network, configurator, bypassValidation=True,
                 implicitBonding=False, _netinfo=_netinfo)
 
 
@@ -371,15 +347,12 @@ def _disconnect_bridge_port(port):
 
 
 @_alterRunningConfig
-def _delNetwork(network, vlan=None, bonding=None,
+def _delNetwork(network, configurator, vlan=None, bonding=None,
                 bypassValidation=False,
-                configurator=None, implicitBonding=True,
+                implicitBonding=True,
                 _netinfo=None, keep_bridge=False, **options):
     if _netinfo is None:
         _netinfo = CachingNetInfo()
-
-    if configurator is None:
-        configurator = ConfiguratorClass()
 
     if network not in _netinfo.networks:
         logging.info("Network %r: doesn't exist in libvirt database", network)
@@ -703,7 +676,7 @@ def _add_missing_networks(configurator, networks, bondings, logger, _netinfo):
 
         logger.debug("Adding network %r", network)
         try:
-            _addNetwork(network, configurator=configurator,
+            _addNetwork(network, configurator,
                         implicitBonding=True, _netinfo=_netinfo, **attrs)
         except ConfigNetworkError as cne:
             if cne.errCode == ne.ERR_FAILED_IFUP:
@@ -731,7 +704,8 @@ def _check_connectivity(connectivity_check_networks, networks, bondings,
                 # If the new added network was created on top of
                 # existing bond, we need to keep the bond on rollback
                 # flow, else we will break the new created bond.
-                _delNetwork(network, bypassValidation=True,
+                _delNetwork(network, ConfiguratorClass(),
+                            bypassValidation=True,
                             implicitBonding=networks[network].
                             get('bonding') in bondings)
             raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
@@ -855,7 +829,7 @@ def setupNetworks(networks, bondings, options):
                     net_kernel_config=kernel_config.networks[network]
                 )
 
-                _delNetwork(network, configurator=configurator,
+                _delNetwork(network, configurator,
                             implicitBonding=False, _netinfo=_netinfo,
                             keep_bridge=keep_bridge)
                 _netinfo.del_network(network)
