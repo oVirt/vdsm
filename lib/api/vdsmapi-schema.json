@@ -136,9 +136,6 @@
 #
 # Additional options for setupNetworks.
 #
-# @force:                #optional If True, skip validation of the
-#                        configuration
-#
 # @connectivityCheck:    #optional After reconfiguration, check for network
 #                        connectivity and roll back if necessary
 #
@@ -148,8 +145,7 @@
 # Since: 4.10.0
 ##
 {'type': 'SetupNetworkOptions',
- 'data': {'*force': 'int', '*connectivityCheck': 'int',
-          '*connectivityTimeout': 'int'}}
+ 'data': {'*connectivityCheck': 'int', '*connectivityTimeout': 'int'}}
 
 ##
 # @SetupNetworkNetConfig:
@@ -3056,7 +3052,7 @@
 ##
 {'type': 'VmGraphicsDevice',
  'data': {'deviceType': 'VmDeviceType', 'device': 'VmGraphicsDeviceType',
-          'port': 'uint', 'tlsPort': 'uint',
+          'port': 'uint', '*tlsPort': 'uint',
           'specParams': 'VmGraphicsDeviceSpecParams'}}
 
 ##
@@ -3608,7 +3604,7 @@
 ##
 {'type': 'VmConsoleDevice',
  'data': {'deviceType': 'VmDeviceType', 'deviceId': 'UUID',
-          'specParams': 'VmConsoleDeviceSpecParams'}}
+          '*specParams': 'VmConsoleDeviceSpecParams'}}
 
 
 ##
@@ -3653,8 +3649,8 @@
 ##
 {'type': 'VmHostDevice',
  'data': {'deviceType': 'VmDeviceType', 'deviceId': 'UUID',
-          'device': 'str', 'bootOrder': 'int',
-          'address': 'VmDeviceAddress', 'alias': 'str',
+          'device': 'str', '*bootOrder': 'int',
+          '*address': 'VmDeviceAddress', 'alias': 'str',
           '*specParams': 'VmHostDeviceSpecParams'}}
 
 ##
@@ -3878,7 +3874,7 @@
           '*smpThreadsPerCore': 'uint', 'timeOffset': 'uint',
           'transparentHugePages': 'bool', 'vmId': 'UUID', 'vmName': 'str',
           'vmType': 'VmType', '*launchPaused': 'bool',
-          'numaTune': 'NumaTune', 'guestNumaNodes': ['GuestNumaNode']}}
+          '*numaTune': 'NumaTune', '*guestNumaNodes': ['GuestNumaNode']}}
 
 ##
 # @VmInfo:
@@ -4506,7 +4502,7 @@
 {'type': 'HostDeviceParams',
  'data': {'capability': 'str', 'iommu_group': 'uint',
           'parent': 'str', 'product_id': 'str', 'product': 'str',
-          'vendor_id': 'str', 'vendor': 'str', 'totalvfs': 'uint',
+          'vendor_id': 'str', 'vendor': 'str', '*totalvfs': 'uint',
           '*physfn':'str'}}
 
 ##
@@ -4538,7 +4534,7 @@
 #
 # Refresh and get information about devices available on the host
 #
-# @caps:            @optional List of capabilities. Devices of given
+# @caps:            #optional List of capabilities. Devices of given
 #                   capabilities will be fetched. Omitting or sending
 #                   empty list returns all devices.
 #
@@ -7514,7 +7510,7 @@
 ##
 {'type': 'RunningVmStats',
  'data': {'vmId': 'UUID',
-          '*displayPort': 'uint', '*displaySecurePort': 'uint',
+          'displayPort': 'uint', '*displaySecurePort': 'uint',
           '*displayType': 'VmDisplayType', '*displayIp': 'str', 'pid': 'uint',
           'vmType': 'VmType', 'kvmEnable': 'bool',
           'network': 'NetworkInterfaceStatsMap',
@@ -7858,7 +7854,7 @@
  'data': {'vmId': 'UUID', 'dst': 'str', 'dstparams': 'str',
           '*mode': 'MigrateMode', '*method': 'MigrateMethod',
           '*tunneled': 'bool', '*abortOnError': 'bool',
-          'consoleAddress': 'str', 'dstqemu': 'str',
+          '*consoleAddress': 'str', '*dstqemu': 'str',
           '*compressed': 'bool', '*autoConverge': 'bool',
           '*maxBandwidth': 'int'}}
 
@@ -8616,7 +8612,7 @@
           'format': 'VolumeFormat', 'disktype': 'DiskType',
           'voltype': 'VolumeRole', 'capacity': 'uint', 'parent': 'UUID',
           'description': 'str', 'pool': 'UUID', 'domain': 'UUID',
-          'image': 'UUID', 'ctime': 'int', '*mtime': 'uint',
+          'image': 'UUID', 'ctime': 'int', 'mtime': 'uint',
           'legality': 'VolumeLegality', 'apparentsize': 'uint',
           'truesize': 'uint', 'status': 'VolumeStatus', 'children': ['UUID']}}
 
