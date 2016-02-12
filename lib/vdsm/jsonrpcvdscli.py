@@ -113,7 +113,10 @@ class _Server(object):
 
         if resp.result and resp.result is not True:
             # None is translated to True inside our JSONRPC implementation
-            return response.success(**resp.result)
+            if isinstance(resp.result, list):
+                return response.success(items=resp.result)
+            else:
+                return response.success(**resp.result)
 
         return response.success()
 
