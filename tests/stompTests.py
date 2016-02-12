@@ -25,6 +25,7 @@ from testlib import VdsmTestCase as TestCaseBase, \
     permutations, \
     dummyTextGenerator
 
+import yajsonrpc
 from integration.jsonRpcHelper import constructAcceptor
 from yajsonrpc.stompreactor import StandAloneRpcClient
 from vdsm.config import config
@@ -54,6 +55,12 @@ class _SampleBridge(object):
 
     def unregister_server_address(self):
         self.server_address = None
+
+    def dispatch(self, method):
+        try:
+            return getattr(self, method)
+        except AttributeError:
+            raise yajsonrpc.JsonRpcMethodNotFoundError(method)
 
 
 @expandPermutations

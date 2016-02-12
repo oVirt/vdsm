@@ -111,15 +111,16 @@ class BridgeTests(TestCaseBase):
                   "agent": "apc_snmp", "username": "emesika",
                   "password": "pass", "action": "off", "options": "port=15"}
 
-        self.assertEquals(bridge.Host_fenceNode(**params), {'power': 'on'})
+        self.assertEquals(bridge.dispatch('Host.fenceNode')(**params),
+                          {'power': 'on'})
 
     @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
     def testMethodWithNoParams(self):
         bridge = DynamicBridge()
 
         bridge.register_server_address('127.0.0.1')
-        self.assertEquals(bridge.Host_getCapabilities()['My caps'],
-                          'My capabilites')
+        self.assertEquals(bridge.dispatch('Host.getCapabilities')()
+                          ['My caps'], 'My capabilites')
         bridge.unregister_server_address()
 
     @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
@@ -130,13 +131,14 @@ class BridgeTests(TestCaseBase):
                   "force": "True",
                   "storagedomainID": "773adfc7-10d4-4e60-b700-3272ee1871f9"}
 
-        self.assertEqual(bridge.StorageDomain_detach(**params), None)
+        self.assertEqual(bridge.dispatch('StorageDomain.detach')(**params),
+                         None)
 
     @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
     def testHookError(self):
         bridge = DynamicBridge()
 
         with self.assertRaises(JsonRpcError) as e:
-            bridge.Host_ping()
+            bridge.dispatch('Host.ping')()
 
         self.assertEquals(e.exception.code, 100)

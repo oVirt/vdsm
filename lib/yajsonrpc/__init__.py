@@ -504,21 +504,18 @@ class JsonRpcServer(object):
 
     def _serveRequest(self, ctx, req):
         self._attempt_log_stats()
-        mangledMethod = req.method.replace(".", "_")
         logLevel = logging.DEBUG
-        if mangledMethod in self.FILTERED_METHODS:
+        if req.method in self.FILTERED_METHODS:
             logLevel = logging.TRACE
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
                      req.method, req.params)
         try:
-            method = getattr(self._bridge, mangledMethod)
-        except AttributeError:
+            method = self._bridge.dispatch(req.method)
+        except JsonRpcMethodNotFoundError as e:
             if req.isNotification():
                 return
 
-            ctx.requestDone(JsonRpcResponse(
-                None, JsonRpcMethodNotFoundError(mangledMethod),
-                req.id))
+            ctx.requestDone(JsonRpcResponse(None, e, req.id))
             return
 
         try:

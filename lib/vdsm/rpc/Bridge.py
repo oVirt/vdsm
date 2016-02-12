@@ -110,12 +110,12 @@ class DynamicBridge(object):
         except KeyError:
             raise VdsmError(5, "Response is missing '%s' member" % member)
 
-    def __getattr__(self, attr):
+    def dispatch(self, method):
         try:
-            className, methodName = attr.split('_', 1)
+            className, methodName = method.split('.', 1)
             self.api['commands'][className][methodName]
         except (KeyError, ValueError):
-            raise AttributeError("Attribute not found '%s'" % attr)
+            raise yajsonrpc.JsonRpcMethodNotFoundError(method)
         return partial(self._dynamicMethod, className, methodName)
 
     def _convertClassName(self, name):
