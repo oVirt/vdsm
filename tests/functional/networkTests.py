@@ -100,8 +100,18 @@ NOCHK = {'connectivityCheck': False}
 @ValidateRunningAsRoot
 @RequireDummyMod
 def setupModule():
-    """Persists network configuration."""
-    getProxy().save_config()
+    vds = getProxy()
+    running_config, kernel_config = _get_running_and_kernel_config(
+        vds.config)
+    if ((running_config['networks'] != kernel_config['networks']) or
+            (running_config['bonds'] != kernel_config['bonds'])):
+        raise SkipTest("Tested host is not clean (running vs kernel):\n"
+                       "networks: %r != %r\n"
+                       "bonds: %r != %r\n",
+                       running_config['networks'], kernel_config['networks'],
+                       running_config['bonds'], kernel_config['bonds'])
+
+    vds.save_config()
     for _ in range(DUMMY_POOL_SIZE):
         dummy = Dummy()
         dummy.create()
@@ -190,6 +200,18 @@ def requiresUnifiedPersistence(reason):
             test_method(*args, **kwargs)
         return wrapped_test_method
     return wrapper
+
+
+def _get_running_and_kernel_config(bare_running_config):
+    """:param config: vdsm configuration, could be retrieved from getProxy()
+    """
+    bare_kernel_config = kernelconfig.KernelConfig(
+        vdsm.netinfo.cache.CachingNetInfo())
+    normalized_running_config = kernelconfig.normalize(bare_running_config)
+    # Unify strings to unicode instances so differences are easier to
+    # understand. This won't be needed once we move to Python 3.
+    return (normalized_running_config.as_unicode(),
+            bare_kernel_config.as_unicode())
 
 
 @expandPermutations
@@ -393,15 +415,8 @@ class NetworkTest(TestCaseBase):
         return status, msg
 
     def _assert_kernel_config_matches_running_config(self):
-        bare_kernel_config = kernelconfig.KernelConfig(
-            vdsm.netinfo.cache.CachingNetInfo())
-        bare_running_config = self.vdsm_net.config
-        normalized_running_config = kernelconfig.normalize(bare_running_config)
-        # Unify strings to unicode instances so differences are easier to
-        # understand. This won't be needed once we move to Python 3.
-        running_config = normalized_running_config.as_unicode()
-        kernel_config = bare_kernel_config.as_unicode()
-
+        running_config, kernel_config = _get_running_and_kernel_config(
+            self.vdsm_net.config)
         # Do not use KernelConfig.__eq__ to get a better exception if something
         # breaks.
         self.assertEqual(running_config['networks'], kernel_config['networks'])
