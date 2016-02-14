@@ -95,9 +95,8 @@ _NO_CPU_PERIOD = 0
 
 
 def _filterSnappableDiskDevices(diskDeviceXmlElements):
-    return filter(lambda x: not(x.getAttribute('device')) or
-                  x.getAttribute('device') in ['disk', 'lun'],
-                  diskDeviceXmlElements)
+    return [x for x in diskDeviceXmlElements
+            if x.getAttribute('device') in ('disk', 'lun', '')]
 
 
 class VolumeError(RuntimeError):
