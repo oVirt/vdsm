@@ -63,13 +63,10 @@ from vdsm import udevadm
 from vdsm import utils
 from vdsm import sysctl
 from vdsm.supervdsm import _SuperVdsmManager
-from vdsm.tool import restore_nets
 from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
 from vdsm.network import sourceroutethread
-from vdsm.network.api import setupNetworks, setSafeNetworkConfig, change_numvfs
 
-from vdsm.tc import setPortMirroring, unsetPortMirroring
 from storage.multipath import getScsiSerial as _getScsiSerial
 from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
@@ -215,18 +212,6 @@ class _SuperVdsm(object):
         else:
             raise Exception("Incorporate socketFile")
 
-    @logDecorator
-    def restoreNetworks(self):
-        return restore_nets.restore()
-
-    @logDecorator
-    def setupNetworks(self, networks, bondings, options):
-        return setupNetworks(networks, bondings, options)
-
-    @logDecorator
-    def changeNumvfs(self, pci_path, numvfs, net_name):
-        return change_numvfs(pci_path, numvfs, net_name)
-
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(pipe):
             res = ex = None
@@ -284,10 +269,6 @@ class _SuperVdsm(object):
     def validateAccess(self, user, groups, *args, **kwargs):
         return self._runAs(user, groups, _validateAccess, args=args,
                            kwargs=kwargs)
-
-    @logDecorator
-    def setSafeNetworkConfig(self):
-        return setSafeNetworkConfig()
 
     @logDecorator
     def udevTriggerMultipath(self, guid):
@@ -434,33 +415,6 @@ class _SuperVdsm(object):
                                 (k, v))
             with open('/sys/kernel/mm/ksm/%s' % k, 'w') as f:
                 f.write(str(v))
-
-    @logDecorator
-    def setPortMirroring(self, networkName, ifaceName):
-        '''
-        Copy networkName traffic of a bridge to an interface
-
-        :param networkName: networkName bridge name to capture the traffic from
-        :type networkName: string
-
-        :param ifaceName: ifaceName to copy (mirror) the traffic to
-        :type ifaceName: string
-
-        this commands mirror all 'networkName' traffic to 'ifaceName'
-        '''
-        setPortMirroring(networkName, ifaceName)
-
-    @logDecorator
-    def unsetPortMirroring(self, networkName, target):
-        '''
-        Release captured mirror networkName traffic from networkName bridge
-
-        :param networkName: networkName to release the traffic capture
-        :type networkName: string
-        :param target: target device to release
-        :type target: string
-        '''
-        unsetPortMirroring(networkName, target)
 
     @logDecorator
     def mkFloppyFs(self, vmId, files, volId):

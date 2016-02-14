@@ -64,6 +64,17 @@ def _delTarget(network, parent, target):
 
 
 def setPortMirroring(network, target):
+    '''
+    Copy networkName traffic of a bridge to an interface
+
+    :param networkName: networkName bridge name to capture the traffic from
+    :type networkName: string
+
+    :param ifaceName: ifaceName to copy (mirror) the traffic to
+    :type ifaceName: string
+
+    this commands mirror all 'networkName' traffic to 'ifaceName'
+    '''
     _qdisc_replace_ingress(network)
     _addTarget(network, QDISC_INGRESS, target)
 
@@ -74,8 +85,17 @@ def setPortMirroring(network, target):
 
 
 def unsetPortMirroring(network, target):
+    '''
+    Release captured mirror networkName traffic from networkName bridge
+
+    :param networkName: networkName to release the traffic capture
+    :type networkName: string
+    :param target: target device to release
+    :type target: string
+
     # TODO handle the case where we have partial definitions on device due to
     # vdsm crash
+    '''
     acts = _delTarget(network, QDISC_INGRESS, target)
     try:
         qdisc_id = _qdiscs_of_device(network).next()
