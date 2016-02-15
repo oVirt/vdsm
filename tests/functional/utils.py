@@ -28,7 +28,7 @@ from vdsm.utils import retry
 from vdsm import ipwrapper
 from vdsm import vdscli
 from vdsm import jsonrpcvdscli
-from vdsm import netinfo
+from vdsm.netinfo.cache import CachingNetInfo
 from vdsm import supervdsm
 from vdsm.netconfpersistence import RunningConfig
 
@@ -123,7 +123,7 @@ class _VdsProxy(object):
     def _get_netinfo(self):
         response = self.getVdsCapabilities()
         try:
-            return netinfo.cache.CachingNetInfo(response[2])
+            return CachingNetInfo(response[2])
         except IndexError:
             raise Exception('VdsProxy: getVdsCapabilities failed. '
                             'code:%s msg:%s' % (response[0], response[1]))
