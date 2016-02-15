@@ -15,7 +15,7 @@
 from __future__ import absolute_import
 import logging
 from functools import partial
-from Queue import Queue
+from six.moves.queue import Queue
 from weakref import ref
 from threading import Lock, Event
 

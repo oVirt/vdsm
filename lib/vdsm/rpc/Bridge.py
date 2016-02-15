@@ -173,6 +173,7 @@ class DynamicBridge(object):
                                  self._schema.get_arg_names(className,
                                                             methodName))
 
+        self._schema.verify_args(className, methodName, argobj)
         api = self._get_api_instance(className, argobj)
 
         methodArgs = self._get_method_args(className, methodName, argobj)
@@ -215,6 +216,7 @@ class DynamicBridge(object):
         else:
             ret = self._get_result(result, retfield)
 
+        self._schema.verify_retval(className, methodName, ret)
         return ret
 
 

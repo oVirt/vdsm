@@ -275,22 +275,3 @@ class JsonToYamlValidation(TestCaseBase):
                         pass
             else:
                 raise Exception("Unknown type %s" % type_name)
-
-    def test_missing_method(self):
-        path = schemaapi.find_schema()
-        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
-        cache = schemaapi.Schema([path, gluster_path])
-
-        self.assertRaises(schemaapi.MethodNotFound,
-                          cache.get_method,
-                          'Missing_class',
-                          'missing_method')
-
-    def test_missing_type(self):
-        path = schemaapi.find_schema()
-        gluster_path = schemaapi.find_schema('vdsm-api-gluster')
-        cache = schemaapi.Schema([path, gluster_path])
-
-        self.assertRaises(schemaapi.TypeNotFound,
-                          cache.get_type,
-                          'Missing_type')

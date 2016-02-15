@@ -452,6 +452,9 @@ parameters = [
         ('m2c_debug_enable', 'true',
             'Enable state information about the SSL connections which is by '
             'default logged to stderr.'),
+
+        ('api_strict_mode', 'false',
+            'Enable exception throwing when rpc data is not correct.'),
     ]),
 
     # Section: [gluster]

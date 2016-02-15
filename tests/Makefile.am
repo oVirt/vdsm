@@ -50,6 +50,7 @@ test_modules_py3 = \
 	pthreadTests.py \
 	responseTests.py \
 	scheduleTests.py \
+	schemaapi_test.py \
 	sslTests.py \
 	testlib.py \
 	testrunner.py \
@@ -125,6 +126,7 @@ test_modules = \
 	responseTests.py \
 	samplingTests.py \
 	scheduleTests.py \
+	schemaapi_test.py \
 	schemaTests.py \
 	schemaValidationTest.py \
 	sdm_indirection_tests.py \

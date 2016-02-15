@@ -21,6 +21,7 @@ python-six
 python3-netaddr
 python3-nose
 python3-six
+python3-yaml
 rpm-build
 sudo
 yum
