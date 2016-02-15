@@ -1721,9 +1721,11 @@ class Vm(object):
         """
         Obtain underlying vm's devices info from libvirt.
         """
+        devices = self._devices
         self._getUnderlyingNetworkInterfaceInfo()
         self._getUnderlyingDriveInfo()
-        self._getUnderlyingSoundDeviceInfo()
+        vmdevices.core.Sound.update_device_info(
+            self, devices[hwclass.SOUND])
         self._getUnderlyingVideoDeviceInfo()
         self._getUnderlyingGraphicsDeviceInfo()
         self._getUnderlyingControllerDeviceInfo()
@@ -4290,32 +4292,6 @@ class Vm(object):
             # Update vm's conf with address
             for dev in self.conf['devices']:
                 if ((dev['type'] == hwclass.VIDEO) and
-                        (not dev.get('address') or not dev.get('alias'))):
-                    dev['address'] = address
-                    dev['alias'] = alias
-                    break
-
-    def _getUnderlyingSoundDeviceInfo(self):
-        """
-        Obtain sound devices info from libvirt.
-        """
-        for x in self._domain.get_device_elements('sound'):
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            # Get sound card address
-            address = vmxml.device_address(x)
-
-            # FIXME. We have an identification problem here.
-            # Sound device has not unique identifier, except the alias
-            # (but backend not aware to device's aliases). So, for now
-            # we can only assign the address according to devices order.
-            for sc in self._devices[hwclass.SOUND]:
-                if not hasattr(sc, 'address') or not hasattr(sc, 'alias'):
-                    sc.alias = alias
-                    sc.address = address
-                    break
-            # Update vm's conf with address
-            for dev in self.conf['devices']:
-                if ((dev['type'] == hwclass.SOUND) and
                         (not dev.get('address') or not dev.get('alias'))):
                     dev['address'] = address
                     dev['alias'] = alias

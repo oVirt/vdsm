@@ -25,6 +25,7 @@ from vdsm import supervdsm
 from vdsm import utils
 from vdsm.virt.utils import cleanup_guest_socket
 
+from . import hwclass
 from .. import vmxml
 
 
@@ -57,6 +58,21 @@ class Base(vmxml.Device):
     def is_attached_to(self, xml_string):
         raise NotImplementedError(
             "%s does not implement is_attached_to", self.__class__.__name__)
+
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        """
+        Obtain info about this class of devices from libvirt domain and update
+        the corresponding device structures.
+
+        :param vm: VM for which the device info should be updated
+        :type vm: `class:Vm` instance
+        :param device_conf: VM device configuration corresponding to the given
+          device.
+        :type device_conf: list of dictionaries
+
+        """
+        raise NotImplementedError()
 
 
 class Generic(Base):
@@ -217,6 +233,30 @@ class Sound(Base):
         sound = self.createXmlElem('sound', None, ['address'])
         sound.setAttrs(model=self.device)
         return sound
+
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('sound'):
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            # Get sound card address
+            address = vmxml.device_address(x)
+
+            # FIXME. We have an identification problem here.
+            # Sound device has not unique identifier, except the alias
+            # (but backend not aware to device's aliases). So, for now
+            # we can only assign the address according to devices order.
+            for sc in device_conf:
+                if not hasattr(sc, 'address') or not hasattr(sc, 'alias'):
+                    sc.alias = alias
+                    sc.address = address
+                    break
+            # Update vm's conf with address
+            for dev in vm.conf['devices']:
+                if ((dev['type'] == hwclass.SOUND) and
+                        (not dev.get('address') or not dev.get('alias'))):
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    break
 
 
 class Redir(Base):
