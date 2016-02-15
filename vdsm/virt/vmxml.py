@@ -63,6 +63,23 @@ def filter_devices_with_alias(devices):
             yield deviceXML, alias
 
 
+def device_address(devXml, index=0):
+    """
+    Obtain device's address from libvirt
+    """
+    address = {}
+    adrXml = devXml.getElementsByTagName('address')[index]
+    # Parse address to create proper dictionary.
+    # Libvirt device's address definition is:
+    # PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
+    #        'slot':'0x0c', 'function':'0x0'}
+    # IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
+    for key in adrXml.attributes.keys():
+        address[key.strip()] = adrXml.getAttribute(key).strip()
+
+    return address
+
+
 class Device(object):
     # since we're inheriting all VM devices from this class, __slots__ must
     # be initialized here in order to avoid __dict__ creation

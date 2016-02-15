@@ -4020,22 +4020,6 @@ class Vm(object):
         self.log.exception("Operation failed")
         return response.error(key, msg)
 
-    def _getUnderlyingDeviceAddress(self, devXml, index=0):
-        """
-        Obtain device's address from libvirt
-        """
-        address = {}
-        adrXml = devXml.getElementsByTagName('address')[index]
-        # Parse address to create proper dictionary.
-        # Libvirt device's address definition is:
-        # PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
-        #        'slot':'0x0c', 'function':'0x0'}
-        # IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
-        for key in adrXml.attributes.keys():
-            address[key.strip()] = adrXml.getAttribute(key).strip()
-
-        return address
-
     def _getUnderlyingUnknownDeviceInfo(self):
         """
         Obtain unknown devices info from libvirt.
@@ -4057,7 +4041,7 @@ class Vm(object):
 
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             if not isKnownDevice(alias):
-                address = self._getUnderlyingDeviceAddress(x)
+                address = vmxml.device_address(x)
                 # I general case we assume that device has attribute 'type',
                 # if it hasn't getAttribute returns ''.
                 device = x.getAttribute('type')
@@ -4082,7 +4066,7 @@ class Vm(object):
             index = x.getAttribute('index')
 
             # Get controller address
-            address = self._getUnderlyingDeviceAddress(x)
+            address = vmxml.device_address(x)
 
             # In case the controller has index and/or model, they
             # are compared. Currently relevant for USB controllers.
@@ -4121,7 +4105,7 @@ class Vm(object):
             if not x.getElementsByTagName('address'):
                 address = None
             else:
-                address = self._getUnderlyingDeviceAddress(x)
+                address = vmxml.device_address(x)
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
             for dev in self._devices[hwclass.BALLOON]:
@@ -4161,7 +4145,7 @@ class Vm(object):
             if not x.getElementsByTagName('address'):
                 continue
 
-            address = self._getUnderlyingDeviceAddress(x)
+            address = vmxml.device_address(x)
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
             for dev in self._devices[hwclass.SMARTCARD]:
@@ -4180,7 +4164,7 @@ class Vm(object):
         Obtain rng device info from libvirt.
         """
         for rng in self._domain.get_device_elements('rng'):
-            address = self._getUnderlyingDeviceAddress(rng)
+            address = vmxml.device_address(rng)
             alias = rng.getElementsByTagName('alias')[0].getAttribute('name')
             source = rng.getElementsByTagName('backend')[0].firstChild.\
                 nodeValue
@@ -4201,7 +4185,7 @@ class Vm(object):
 
     def _getUnderlyingHostDeviceUSBInfo(self, x):
         alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-        address = self._getUnderlyingDeviceAddress(x)
+        address = vmxml.device_address(x)
 
         # The routine is quite unusual because we cannot directly reconstruct
         # the unique name. Therefore, we first look up correspondoing device
@@ -4230,16 +4214,16 @@ class Vm(object):
                 self._getUnderlyingHostDeviceUSBInfo(x)
                 continue
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            address = self._getUnderlyingDeviceAddress(x)
+            address = vmxml.device_address(x)
             source = x.getElementsByTagName('source')[0]
             device = hostdev.pci_address_to_name(
-                **self._getUnderlyingDeviceAddress(source))
+                **vmxml.device_address(source))
 
             # We can assume the device name to be correct since we're
             # inspecting source element. For the address, we may look at
             # both addresses and determine the correct one.
             if (hostdev.pci_address_to_name(**address) == device):
-                address = self._getUnderlyingDeviceAddress(x, 1)
+                address = vmxml.device_address(x, 1)
 
             known_device = False
             for dev in self.conf['devices']:
@@ -4255,7 +4239,7 @@ class Vm(object):
 
             if not known_device:
                 device = hostdev.pci_address_to_name(
-                    **self._getUnderlyingDeviceAddress(source))
+                    **vmxml.device_address(source))
 
                 hostdevice = {'type': hwclass.HOSTDEV,
                               'device': device,
@@ -4271,7 +4255,7 @@ class Vm(object):
 
             # PCI watchdog has "address" different from ISA watchdog
             if x.getElementsByTagName('address'):
-                address = self._getUnderlyingDeviceAddress(x)
+                address = vmxml.device_address(x)
                 alias = x.getElementsByTagName('alias')[0].getAttribute('name')
 
                 for wd in self._devices[hwclass.WATCHDOG]:
@@ -4292,7 +4276,7 @@ class Vm(object):
         for x in self._domain.get_device_elements('video'):
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get video card address
-            address = self._getUnderlyingDeviceAddress(x)
+            address = vmxml.device_address(x)
 
             # FIXME. We have an identification problem here.
             # Video card device has not unique identifier, except the alias
@@ -4318,7 +4302,7 @@ class Vm(object):
         for x in self._domain.get_device_elements('sound'):
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get sound card address
-            address = self._getUnderlyingDeviceAddress(x)
+            address = vmxml.device_address(x)
 
             # FIXME. We have an identification problem here.
             # Sound device has not unique identifier, except the alias
@@ -4370,7 +4354,7 @@ class Vm(object):
             else:
                 drv = 'raw'
             # Get disk address
-            address = self._getUnderlyingDeviceAddress(x)
+            address = vmxml.device_address(x)
 
             # Keep data as dict for easier debugging
             deviceDict = {'path': devPath, 'name': name,
@@ -4513,8 +4497,7 @@ class Vm(object):
 
             # Get nic address
             address = {}
-            # TODO: fix _getUnderlyingDeviceAddress and its users to have this
-            # TODO: code.
+            # TODO: fix vmxml.device_address and its users to have this code.
             for child in x.childNodes:
                 if (child.nodeType != Node.TEXT_NODE and
                         child.tagName == 'address'):
@@ -4563,7 +4546,7 @@ class Vm(object):
         for x in self._domain.get_device_elements('memory'):
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             # Get device address
-            address = self._getUnderlyingDeviceAddress(x)
+            address = vmxml.device_address(x)
 
             for mem in self._devices[hwclass.MEMORY]:
                 if not hasattr(mem, 'address') or not hasattr(mem, 'alias'):
