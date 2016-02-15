@@ -39,7 +39,7 @@ from vdsm.utils import CommandPath, RollbackContext
 import storageTests as storage
 from storage.misc import execCmd
 
-from utils import VdsProxy, SUCCESS
+from utils import getProxy, SUCCESS
 
 from virt import vmstatus
 
@@ -166,7 +166,7 @@ class VirtTestBase(TestCaseBase, verify.DeviceMixin):
     UPSTATES = frozenset((vmstatus.UP, vmstatus.POWERING_UP))
 
     def setUp(self):
-        self.vdsm = VdsProxy()
+        self.vdsm = getProxy()
 
     def _getVmStatus(self, vmid):
         status, msg, result = self.vdsm.getVmStats(vmid)
