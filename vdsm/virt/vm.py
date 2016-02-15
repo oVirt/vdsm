@@ -295,7 +295,8 @@ class Vm(object):
             vmchannels.QEMU_GA_DEVICE_NAME)
         self.guestAgent = guestagent.GuestAgent(
             self._guestSocketFile, self.cif.channelListener, self.log,
-            self._onGuestStatusChange)
+            self._onGuestStatusChange,
+            self.conf.pop('guestAgentAPIVersion', None))
         self._domain = DomainDescriptor.from_id(self.id)
         self._released = threading.Event()
         self._releaseLock = threading.Lock()

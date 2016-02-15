@@ -116,8 +116,10 @@ class GuestAgent(object):
     MAX_MESSAGE_SIZE = 2 ** 20  # 1 MiB for now
 
     def __init__(self, socketName, channelListener, log, onStatusChange,
-                 user='Unknown', ips=''):
-        self.effectiveApiVersion = _IMPLICIT_API_VERSION_ZERO
+                 api_version=None, user='Unknown', ips=''):
+        self.effectiveApiVersion = min(
+            api_version or _IMPLICIT_API_VERSION_ZERO,
+            _MAX_SUPPORTED_API_VERSION)
         self._onStatusChange = onStatusChange
         self.log = log
         self._socketName = socketName
