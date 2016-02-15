@@ -19,12 +19,15 @@
 #
 from __future__ import absolute_import
 
+import contextlib
 import logging
 import time
 import socket
 import errno
 import json
 import re
+import threading
+import uuid
 import weakref
 
 from vdsm import supervdsm
@@ -34,6 +37,7 @@ from vdsm.virt import vmstatus
 
 _MAX_SUPPORTED_API_VERSION = 3
 _IMPLICIT_API_VERSION_ZERO = 0
+_REPLY_CAP_MIN_VERSION = 3
 
 _MESSAGE_API_VERSION_LOOKUP = {
     'set-number-of-cpus': 1,
@@ -121,8 +125,10 @@ class GuestAgentEvents(object):
     def _send(self, *args, **kwargs):
         self._agent().send_lifecycle_event(*args, **kwargs)
 
-    def before_hibernation(self):
-        self._send('before_hibernation')
+    def before_hibernation(self, wait_timeout=None):
+        reply_id = str(uuid.uuid4())
+        with self._agent()._waitable_message(wait_timeout, reply_id):
+            self._send('before_hibernation', reply_id=reply_id)
 
     def after_hibernation_failure(self):
         self._send('after_hibernation', failure=True)
@@ -130,8 +136,10 @@ class GuestAgentEvents(object):
     def after_hibernation(self):
         self._send('after_hibernation')
 
-    def before_migration(self):
-        self._send('before_migration')
+    def before_migration(self, wait_timeout=None):
+        reply_id = str(uuid.uuid4())
+        with self._agent()._waitable_message(wait_timeout, reply_id):
+            self._send('before_migration', reply_id=reply_id)
 
     def after_migration_failure(self):
         self._send('after_migration', failure=True)
@@ -170,6 +178,32 @@ class GuestAgent(object):
         self._channelListener = channelListener
         self._messageState = MessageState.NORMAL
         self.events = GuestAgentEvents(self)
+        self._completion_lock = threading.Lock()
+        self._completion_events = {}
+
+    def _on_completion(self, reply_id):
+        with self._completion_lock:
+            event = self._completion_events.pop(reply_id, None)
+        if event is not None:
+            event.set()
+
+    @property
+    def can_reply(self):
+        active = self.isResponsive()
+        return active and self.effectiveApiVersion >= _REPLY_CAP_MIN_VERSION
+
+    @contextlib.contextmanager
+    def _waitable_message(self, wait_timeout, reply_id):
+        if self.can_reply and wait_timeout is not None:
+            event = threading.Event()
+            with self._completion_lock:
+                self._completion_events[reply_id] = event
+            yield
+            event.wait(wait_timeout)
+            with self._completion_lock:
+                self._completion_events.pop(reply_id, None)
+        else:
+            yield
 
     @property
     def guestStatus(self):
@@ -369,6 +403,8 @@ class GuestAgent(object):
             self.guestDiskMapping = args.get('mapping', {})
         elif message == 'number-of-cpus':
             self.guestInfo['guestCPUCount'] = int(args['count'])
+        elif message == 'completion':
+            self._on_completion(args.pop('reply_id', None))
         else:
             self.log.error('Unknown message type %s', message)
 
