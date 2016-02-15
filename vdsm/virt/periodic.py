@@ -280,6 +280,12 @@ class _RunnableOnVm(object):
         self._vm = vm
 
     @property
+    def required(self):
+        # disable everything until migration destination VM
+        # isn't fully started, to avoid false positives log spam.
+        return not self._vm.incomingMigrationPending()
+
+    @property
     def runnable(self):
         return self._vm.isDomainReadyForCommands()
 
@@ -316,8 +322,9 @@ class UpdateVolumes(_RunnableOnVm):
 
     @property
     def required(self):
-        # Avoid queries from storage during recovery process
-        return self._vm.isDisksStatsCollectionEnabled()
+        return (super(UpdateVolumes, self).required and
+                # Avoid queries from storage during recovery process
+                self._vm.isDisksStatsCollectionEnabled())
 
     def _execute(self):
         for drive in self._vm.getDiskDevices():
@@ -331,7 +338,8 @@ class NumaInfoMonitor(_RunnableOnVm):
 
     @property
     def required(self):
-        return self._vm.hasGuestNumaNode
+        return (super(NumaInfoMonitor, self).required and
+                self._vm.hasGuestNumaNode)
 
     @property
     def runnable(self):
@@ -352,7 +360,7 @@ class BlockjobMonitor(_RunnableOnVm):
         # though they will do nothing but a few check and exit
         # early, as they do if a VM doesn't have Block Jobs to
         # monitor (most often true).
-        return self._vm.hasVmJobs
+        return (super(BlockjobMonitor, self).required and self._vm.hasVmJobs)
 
     def _execute(self):
         self._vm.updateVmJobs()
@@ -362,8 +370,9 @@ class DriveWatermarkMonitor(_RunnableOnVm):
 
     @property
     def required(self):
-        # Avoid queries from storage during recovery process
-        return self._vm.isDisksStatsCollectionEnabled()
+        return (super(DriveWatermarkMonitor, self).required and
+                # Avoid queries from storage during recovery process
+                self._vm.isDisksStatsCollectionEnabled())
 
     def _execute(self):
         self._vm.extendDrivesIfNeeded()
