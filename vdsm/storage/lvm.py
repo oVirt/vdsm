@@ -94,10 +94,6 @@ PV_PREFIX = "/dev/mapper"
 # Assuming there are no spaces in the PV name
 re_pvName = re.compile(PV_PREFIX + '[^\s\"]+', re.MULTILINE)
 
-# operations lock
-LVM_OP_INVALIDATE = "lvm invalidate operation"
-LVM_OP_RELOAD = "lvm reload operation"
-
 PVS_CMD = ("pvs",) + LVM_FLAGS + ("-o", PV_FIELDS)
 VGS_CMD = ("vgs",) + LVM_FLAGS + ("-o", VG_FIELDS)
 LVS_CMD = ("lvs",) + LVM_FLAGS + ("-o", LV_FIELDS)
@@ -279,7 +275,7 @@ class LVMCache(object):
         self._filterStale = True
         self._extraCfg = None
         self._filterLock = threading.Lock()
-        self._oplock = misc.OperationMutex()
+        self._lock = threading.Lock()
         self._stalepv = True
         self._stalevg = True
         self._stalelv = True
@@ -318,8 +314,10 @@ class LVMCache(object):
         cmd = list(PVS_CMD)
         pvNames = _normalizeargs(pvName)
         cmd.extend(pvNames)
-        with self._oplock.acquireContext(LVM_OP_RELOAD):
-            rc, out, err = self.cmd(cmd)
+
+        rc, out, err = self.cmd(cmd)
+
+        with self._lock:
             if rc != 0:
                 log.warning("lvm pvs failed: %s %s %s", str(rc), str(out),
                             str(err))
@@ -352,16 +350,17 @@ class LVMCache(object):
 
     def _getVGDevs(self, vgNames):
         devices = []
-        for name in vgNames:
-            try:
-                pvs = self._vgs[name].pv_name  # pv_names tuple
-            except (KeyError, AttributeError):  # Yet unknown VG, stub
-                devices = tuple()
-                break  # unknownVG = True
-            else:
-                devices.extend(pvs)
-        else:  # All known VGs
-            devices = tuple(devices)
+        with self._lock:
+            for name in vgNames:
+                try:
+                    pvs = self._vgs[name].pv_name  # pv_names tuple
+                except (KeyError, AttributeError):  # Yet unknown VG, stub
+                    devices = tuple()
+                    break  # unknownVG = True
+                else:
+                    devices.extend(pvs)
+            else:  # All known VGs
+                devices = tuple(devices)
         return devices
 
     def _reloadvgs(self, vgName=None):
@@ -369,9 +368,9 @@ class LVMCache(object):
         vgNames = _normalizeargs(vgName)
         cmd.extend(vgNames)
 
-        with self._oplock.acquireContext(LVM_OP_RELOAD):
-            rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
+        rc, out, err = self.cmd(cmd, self._getVGDevs(vgNames))
 
+        with self._lock:
             if rc != 0:
                 log.warning("lvm vgs failed: %s %s %s", str(rc), str(out),
                             str(err))
@@ -426,9 +425,9 @@ class LVMCache(object):
         else:
             cmd.append(vgName)
 
-        with self._oplock.acquireContext(LVM_OP_RELOAD):
-            rc, out, err = self.cmd(cmd, self._getVGDevs((vgName, )))
+        rc, out, err = self.cmd(cmd, self._getVGDevs((vgName,)))
 
+        with self._lock:
             if rc != 0:
                 log.warning("lvm lvs failed: %s %s %s", str(rc), str(out),
                             str(err))
@@ -490,30 +489,30 @@ class LVMCache(object):
         return dict(self._lvs)
 
     def _invalidatepvs(self, pvNames):
-        with self._oplock.acquireContext(LVM_OP_INVALIDATE):
-            pvNames = _normalizeargs(pvNames)
+        pvNames = _normalizeargs(pvNames)
+        with self._lock:
             for pvName in pvNames:
                 self._pvs[pvName] = Stub(pvName, True)
 
     def _invalidateAllPvs(self):
-        with self._oplock.acquireContext(LVM_OP_INVALIDATE):
+        with self._lock:
             self._stalepv = True
             self._pvs.clear()
 
     def _invalidatevgs(self, vgNames):
         vgNames = _normalizeargs(vgNames)
-        with self._oplock.acquireContext(LVM_OP_INVALIDATE):
+        with self._lock:
             for vgName in vgNames:
                 self._vgs[vgName] = Stub(vgName, True)
 
     def _invalidateAllVgs(self):
-        with self._oplock.acquireContext(LVM_OP_INVALIDATE):
+        with self._lock:
             self._stalevg = True
             self._vgs.clear()
 
     def _invalidatelvs(self, vgName, lvNames=None):
-        with self._oplock.acquireContext(LVM_OP_INVALIDATE):
-            lvNames = _normalizeargs(lvNames)
+        lvNames = _normalizeargs(lvNames)
+        with self._lock:
             # Invalidate LVs in a specific VG
             if lvNames:
                 # Invalidate a specific LVs
@@ -527,7 +526,7 @@ class LVMCache(object):
                             self._lvs[(vgName, lv.name)] = Stub(lv.name, True)
 
     def _invalidateAllLvs(self):
-        with self._oplock.acquireContext(LVM_OP_INVALIDATE):
+        with self._lock:
             self._stalelv = True
             self._lvs.clear()
 

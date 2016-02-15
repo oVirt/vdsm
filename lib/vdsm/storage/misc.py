@@ -29,7 +29,6 @@ Various storage misc procedures
 
 from __future__ import absolute_import
 
-import contextlib
 import errno
 import inspect
 import logging
@@ -46,7 +45,6 @@ import weakref
 
 from array import array
 from collections import defaultdict
-from contextlib import contextmanager
 from functools import wraps, partial
 from itertools import chain, imap
 
@@ -624,56 +622,6 @@ class Event(object):
     def emit(self, *args, **kwargs):
         if len(self._registrar) > 0:
             concurrent.thread(self._emit, args=args, kwargs=kwargs).start()
-
-
-class OperationMutex(object):
-    log = enableLogSkip(logging.getLogger("Storage.OperationMutex"),
-                        ignoreSourceFiles=[__file__, contextlib.__file__])
-
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._cond = threading.Condition()
-        self._active = None
-        self._counter = 0
-        self._queueSize = 0
-
-    @contextmanager
-    def acquireContext(self, operation):
-        self.acquire(operation)
-        try:
-            yield self
-        finally:
-            self.release()
-
-    def acquire(self, operation):
-        generation = 0
-        with self._cond:
-            while not self._lock.acquire(False):
-                if self._active == operation:
-                    if self._queueSize == 0 or generation > 0:
-                        self._counter += 1
-                        self.log.debug("Got the operational mutex")
-                        return
-
-                self._queueSize += 1
-                self.log.debug("Operation '%s' is holding the operation mutex,"
-                               " waiting...", self._active)
-                self._cond.wait()
-                generation += 1
-                self._queueSize -= 1
-
-            self.log.debug("Operation '%s' got the operation mutex", operation)
-            self._active = operation
-            self._counter = 1
-
-    def release(self):
-        with self._cond:
-            self._counter -= 1
-            if self._counter == 0:
-                self.log.debug("Operation '%s' released the operation mutex",
-                               self._active)
-                self._lock.release()
-                self._cond.notifyAll()
 
 
 def killall(name, signum, group=False):
