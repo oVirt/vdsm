@@ -1743,7 +1743,8 @@ class Vm(object):
             self, devices[hwclass.SMARTCARD])
         vmdevices.core.Rng.update_device_info(
             self, devices[hwclass.RNG])
-        self._getUnderlyingHostDeviceInfo()
+        vmdevices.hostdevice.HostDevice.update_device_info(
+            self, devices[hwclass.HOSTDEV])
         vmdevices.core.Memory.update_device_info(
             self, devices[hwclass.MEMORY])
         # Obtain info of all unknown devices. Must be last!
@@ -4062,70 +4063,6 @@ class Vm(object):
                           'device': device,
                           'address': address}
                 self.conf['devices'].append(newDev)
-
-    def _getUnderlyingHostDeviceUSBInfo(self, x):
-        alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-        address = vmxml.device_address(x)
-
-        # The routine is quite unusual because we cannot directly reconstruct
-        # the unique name. Therefore, we first look up correspondoing device
-        # object address,
-        for dev in self._devices[hwclass.HOSTDEV]:
-            if address == dev.hostAddress:
-                dev.alias = alias
-                device = dev.device
-
-        # and use that to identify the device in self.conf.
-        for dev in self.conf['devices']:
-            if dev['device'] == device:
-                dev['alias'] = alias
-
-        # This has an unfortunate effect that we will not be able to look up
-        # any new USB passthrough devices, because there is no easy
-        # way of reconstructing the udev name we use as unique id.
-
-    def _getUnderlyingHostDeviceInfo(self):
-        """
-        Obtain host device info from libvirt
-        """
-        for x in self._domain.get_device_elements('hostdev'):
-            device_type = x.getAttribute('type')
-            if device_type == 'usb':
-                self._getUnderlyingHostDeviceUSBInfo(x)
-                continue
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            address = vmxml.device_address(x)
-            source = x.getElementsByTagName('source')[0]
-            device = hostdev.pci_address_to_name(
-                **vmxml.device_address(source))
-
-            # We can assume the device name to be correct since we're
-            # inspecting source element. For the address, we may look at
-            # both addresses and determine the correct one.
-            if (hostdev.pci_address_to_name(**address) == device):
-                address = vmxml.device_address(x, 1)
-
-            known_device = False
-            for dev in self.conf['devices']:
-                if dev['device'] == device:
-                    dev['alias'] = alias
-                    dev['address'] = address
-
-            for dev in self._devices[hwclass.HOSTDEV]:
-                if dev.device == device:
-                    dev.alias = alias
-                    dev.address = address
-                    known_device = True
-
-            if not known_device:
-                device = hostdev.pci_address_to_name(
-                    **vmxml.device_address(source))
-
-                hostdevice = {'type': hwclass.HOSTDEV,
-                              'device': device,
-                              'alias': alias,
-                              'address': address}
-                self.conf['devices'].append(hostdevice)
 
     def _getDriveIdentification(self, dom):
         sources = dom.getElementsByTagName('source')
