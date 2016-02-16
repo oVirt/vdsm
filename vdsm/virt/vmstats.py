@@ -118,7 +118,12 @@ def cpu(stats, first_sample, last_sample, interval):
             interval)
         return None
 
-    try:
+    keys = ('cpu.system', 'cpu.user')
+    samples = (last_sample, first_sample)
+
+    if all(k in s for k in keys for s in samples):
+        # TODO: cpuUsage should have the same type as cpuUser and cpuSys.
+        # we may block the str() when xmlrpc is deserted.
         stats['cpuUsage'] = str(last_sample['cpu.system'] +
                                 last_sample['cpu.user'])
 
@@ -126,15 +131,15 @@ def cpu(stats, first_sample, last_sample, interval):
                    (last_sample['cpu.system'] - first_sample['cpu.system']))
         stats['cpuSys'] = _usage_percentage(cpu_sys, interval)
 
-        stats['cpuUser'] = _usage_percentage(
-            (last_sample['cpu.time'] - first_sample['cpu.time']) - cpu_sys,
-            interval)
+        if all('cpu.time' in s for s in samples):
+            stats['cpuUser'] = _usage_percentage(
+                ((last_sample['cpu.time'] - first_sample['cpu.time']) -
+                 cpu_sys),
+                interval)
 
-    except KeyError as e:
-        logging.exception("CPU stats not available: %s", e)
-        return None
+            return stats
 
-    return stats
+    return None
 
 
 def balloon(vm, stats, sample):
