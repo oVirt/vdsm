@@ -624,3 +624,68 @@ class ConsoleTests(TestCaseBase):
             con.cleanup()
 
             self.assertEqual(self._cleaned_path, self._expected_path)
+
+
+@expandPermutations
+class RngTests(TestCaseBase):
+
+    def setUp(self):
+        self.conf = {
+            'vmName': 'testVm',
+            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
+            'smp': '8', 'maxVCpus': '160',
+            'memSize': '1024', 'memGuaranteedSize': '512',
+        }
+
+    @permutations([
+        # avail_map, output_sources
+        [{'/dev/random': True, '/dev/hwrng': True}, ['random', 'hwrng']],
+        [{'/dev/random': True, '/dev/hwrng': False}, ['random']],
+        [{'/dev/random': False, '/dev/hwrng': True}, ['hwrng']],
+        [{'/dev/random': False, '/dev/hwrng': False}, []],
+    ])
+    def test_available_sources(self, avail_map, output_sources):
+
+        def fake_path_exists(path):
+            return avail_map.get(path, False)
+
+        with MonkeyPatchScope([(os.path, 'exists', fake_path_exists)]):
+            available = list(sorted(vmdevices.core.Rng.available_sources()))
+
+        expected = list(sorted(output_sources))
+        self.assertEqual(available, expected)
+
+    @permutations([
+        # config, source
+        ['random', '/dev/random'],
+        ['hwrng', '/dev/hwrng'],
+    ])
+    def test_matching_source(self, config, source):
+        conf = {
+            'type': 'rng',
+            'model': 'virtio',
+            'specParams': {
+                'period': '2000',
+                'bytes': '1234',
+                'source': config,
+            },
+        }
+        self.assertTrue(vmdevices.core.Rng.matching_source(conf, source))
+
+    @permutations([
+        # config, source
+        ['random', '/dev/random'],
+        ['hwrng', '/dev/hwrng'],
+    ])
+    def test_uses_source(self, config, source):
+        dev_conf = {
+            'type': 'rng',
+            'model': 'virtio',
+            'specParams': {
+                'period': '2000',
+                'bytes': '1234',
+                'source': config,
+            },
+        }
+        rng = vmdevices.core.Rng(self.conf, self.log, **dev_conf)
+        self.assertTrue(rng.uses_source(source))

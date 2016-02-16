@@ -24,8 +24,6 @@ from vdsm import constants
 from vdsm import supervdsm
 from vdsm import utils
 
-import caps
-
 from ..utils import cleanup_guest_socket
 from .. import vmxml
 
@@ -235,6 +233,26 @@ class Redir(Base):
 
 
 class Rng(Base):
+
+    _SOURCES = {
+        'random': '/dev/random',
+        'hwrng': '/dev/hwrng'
+    }
+
+    @staticmethod
+    def available_sources():
+        return [
+            source for (source, path) in Rng._SOURCES.items()
+            if os.path.exists(path)
+        ]
+
+    @staticmethod
+    def matching_source(conf, source):
+        return Rng._SOURCES[conf['specParams']['source']] == source
+
+    def uses_source(self, source):
+        return self._SOURCES[self.specParams['source']] == source
+
     def getXML(self):
         """
         <rng model='virtio'>
@@ -254,7 +272,7 @@ class Rng(Base):
 
         # <backend... /> element
         rng.appendChildWithArgs('backend',
-                                caps.RNG_SOURCES[self.specParams['source']],
+                                self._SOURCES[self.specParams['source']],
                                 model='random')
 
         return rng

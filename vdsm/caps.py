@@ -44,6 +44,7 @@ from vdsm import host
 from vdsm import commands
 from vdsm import utils
 import storage.hba
+from virt import vmdevices
 
 # For debian systems we can use python-apt if available
 try:
@@ -84,10 +85,6 @@ class AutoNumaBalancingStatus:
     DISABLE = 0
     ENABLE = 1
     UNKNOWN = 2
-
-
-RNG_SOURCES = {'random': '/dev/random',
-               'hwrng': '/dev/hwrng'}
 
 
 class CpuTopology(object):
@@ -418,11 +415,6 @@ def _getIscsiIniName():
     return ''
 
 
-def _getRngSources():
-    return [source for (source, path) in RNG_SOURCES.items()
-            if os.path.exists(path)]
-
-
 def _getKdumpStatus():
     try:
         # check if kdump service is running
@@ -569,7 +561,7 @@ def get():
         logging.debug('VirtioRNG DISABLED: libvirt version %s required >= %s',
                       libvirtVer, requiredVer)
     else:
-        caps['rngSources'] = _getRngSources()
+        caps['rngSources'] = vmdevices.core.Rng.available_sources()
 
     caps['numaNodes'] = getNumaTopology()
     caps['numaNodeDistance'] = getNumaNodeDistance()

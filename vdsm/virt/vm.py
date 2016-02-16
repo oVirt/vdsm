@@ -4175,16 +4175,15 @@ class Vm(object):
                 nodeValue
 
             for dev in self._devices[hwclass.RNG]:
-                if caps.RNG_SOURCES[dev.specParams['source']] == source and \
-                        not hasattr(dev, 'alias'):
+                if dev.uses_source(source) and not hasattr(dev, 'alias'):
                     dev.address = address
                     dev.alias = alias
                     break
 
             for dev in self.conf['devices']:
                 if dev['type'] == hwclass.RNG and \
-                        caps.RNG_SOURCES[dev['specParams']['source']] == \
-                        source and 'alias' not in dev:
+                   vmdevices.core.Rng.matching_source(dev, source) and \
+                   'alias' not in dev:
                     dev['address'] = address
                     dev['alias'] = alias
                     break
