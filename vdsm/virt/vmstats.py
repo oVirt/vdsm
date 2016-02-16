@@ -122,14 +122,12 @@ def cpu(stats, first_sample, last_sample, interval):
         stats['cpuUsage'] = str(last_sample['cpu.system'] +
                                 last_sample['cpu.user'])
 
-        stats['cpuSys'] = _usage_percentage(
-            _diff(last_sample, first_sample, 'cpu.user') +
-            _diff(last_sample, first_sample, 'cpu.system'),
-            interval)
+        cpu_sys = ((last_sample['cpu.user'] - first_sample['cpu.user']) +
+                   (last_sample['cpu.system'] - first_sample['cpu.system']))
+        stats['cpuSys'] = _usage_percentage(cpu_sys, interval)
+
         stats['cpuUser'] = _usage_percentage(
-            _diff(last_sample, first_sample, 'cpu.time')
-            - _diff(last_sample, first_sample, 'cpu.user')
-            - _diff(last_sample, first_sample, 'cpu.system'),
+            (last_sample['cpu.time'] - first_sample['cpu.time']) - cpu_sys,
             interval)
 
     except KeyError as e:
@@ -372,10 +370,6 @@ def _disk_iops_bytes(first_sample, first_index, last_sample, last_index):
         stats[name] = str(value)
 
     return stats
-
-
-def _diff(prev, curr, val):
-    return prev[val] - curr[val]
 
 
 def _usage_percentage(val, interval):
