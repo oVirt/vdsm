@@ -1729,7 +1729,8 @@ class Vm(object):
         vmdevices.core.Video.update_device_info(
             self, devices[hwclass.VIDEO])
         self._getUnderlyingGraphicsDeviceInfo()
-        self._getUnderlyingConsoleDeviceInfo()
+        vmdevices.core.Console.update_device_info(
+            self, devices[hwclass.CONSOLE])
         vmdevices.core.Controller.update_device_info(
             self, devices[hwclass.CONTROLLER])
         vmdevices.core.Balloon.update_device_info(
@@ -4058,22 +4059,6 @@ class Vm(object):
                           'device': device,
                           'address': address}
                 self.conf['devices'].append(newDev)
-
-    def _getUnderlyingConsoleDeviceInfo(self):
-        """
-        Obtain the alias for the console device from libvirt
-        """
-        for x in self._domain.get_device_elements('console'):
-            # All we care about is the alias
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            for dev in self._devices[hwclass.CONSOLE]:
-                if not hasattr(dev, 'alias'):
-                    dev.alias = alias
-
-            for dev in self.conf['devices']:
-                if dev['device'] == hwclass.CONSOLE and \
-                        not dev.get('alias'):
-                    dev['alias'] = alias
 
     def _getUnderlyingHostDeviceUSBInfo(self, x):
         alias = x.getElementsByTagName('alias')[0].getAttribute('name')

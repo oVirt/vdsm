@@ -211,6 +211,20 @@ class Console(Base):
         m.appendChildWithArgs('target', type=consoleType, port='0')
         return m
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('console'):
+            # All we care about is the alias
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            for dev in device_conf:
+                if not hasattr(dev, 'alias'):
+                    dev.alias = alias
+
+            for dev in vm.conf['devices']:
+                if dev['device'] == hwclass.CONSOLE and \
+                        not dev.get('alias'):
+                    dev['alias'] = alias
+
 
 class Controller(Base):
     __slots__ = ('address', 'model', 'index', 'master')
