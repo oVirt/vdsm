@@ -22,8 +22,8 @@ import os
 from distutils.version import StrictVersion
 
 from vdsm.network import tc
-from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.network.netinfo import qos as netinfo_qos
+from vdsm.network.netinfo.cache import ifaceUsed, NetInfo, get as cache_get
 
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0
 _FAIR_QDISC_KIND = 'fq_codel' if (StrictVersion(os.uname()[2].split('-')[0]) >
@@ -157,6 +157,17 @@ def _qdisc_conf_out(dev, root_qdisc_handle, vlan_tag, class_id, qos):
     if class_id == _DEFAULT_CLASSID:
         _add_non_vlanned_filter(dev, root_qdisc_handle)
     else:
+        if not _is_explicit_defined_default_class(dev):
+            default_class, = [c['hfsc'] for c in tc.classes(
+                dev) if c['handle'] == _ROOT_QDISC_HANDLE + _DEFAULT_CLASSID]
+            ls_max_rate = _max_hfsc_ls_rate(dev)
+            default_class['ls']['m2'] = ls_max_rate
+
+            tc.cls.delete(dev, classid=_ROOT_QDISC_HANDLE + _DEFAULT_CLASSID)
+            _add_hfsc_cls(dev, _ROOT_QDISC_HANDLE, _DEFAULT_CLASSID,
+                          ls=default_class['ls'])
+            _add_fair_qdisc(dev, _ROOT_QDISC_HANDLE, _DEFAULT_CLASSID)
+
         _add_vlan_filter(dev, vlan_tag, root_qdisc_handle, class_id)
     _add_fair_qdisc(dev, root_qdisc_handle, class_id)
 
@@ -184,3 +195,22 @@ def _add_fair_qdisc(dev, root_qdisc_handle, class_id):
 def _add_hfsc_cls(dev, root_qdisc_handle, class_id, **qos_opts):
     tc.cls.add(dev, _SHAPING_QDISC_KIND, parent=root_qdisc_handle,
                classid=root_qdisc_handle + class_id, **qos_opts)
+
+
+def _is_explicit_defined_default_class(dev):
+    """
+    A default class is defined explicitly when a non-vlan network has hostQos
+    definitions.
+    """
+    netinfo = NetInfo(cache_get())
+    for _, attrs in netinfo.networks:
+        if 'vlan' not in attrs and 'hostQos' in attrs and (
+           attrs['iface'] == dev):
+            return True
+
+    return False
+
+
+def _max_hfsc_ls_rate(dev):
+    return max([cls['hfsc']['ls']['m2'] for cls in tc.classes(dev)
+                if cls['kind'] == 'hfsc' and 'root' not in cls])
