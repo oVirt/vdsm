@@ -563,6 +563,27 @@ class Memory(Base):
         self.size = int(kwargs.get('size')) * 1024
         self.node = kwargs.get('node')
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('memory'):
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            # Get device address
+            address = vmxml.device_address(x)
+
+            for mem in device_conf:
+                if not hasattr(mem, 'address') or not hasattr(mem, 'alias'):
+                    mem.alias = alias
+                    mem.address = address
+                    break
+            # Update vm's conf with address
+            for dev in vm.conf['devices']:
+                if ((dev['type'] == hwclass.MEMORY) and
+                        (not dev.get('address') or not dev.get('alias'))):
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    break
+            vm.conf['memSize'] = vm.domain.get_memory_size()
+
     def getXML(self):
         """
         <memory model='dimm'>

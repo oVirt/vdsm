@@ -40,7 +40,9 @@ class TestVmDevicesXmlParsing(XMLTestCase, verify.DeviceMixin):
                    {'device': 'rng', 'specParams': {'source': 'random'},
                     'model': 'virtio', 'type': 'rng'},
                    {'device': 'rng', 'specParams': {'source': 'random'},
-                    'model': 'virtio', 'type': 'rng'}]
+                    'model': 'virtio', 'type': 'rng'},
+                   {'device': 'memory', 'type': 'memory', 'size': 524288,
+                    'alias': 'dimm0', 'address': '0x100000000'}]
 
         test_path = os.path.realpath(__file__)
         dir_name = os.path.split(test_path)[0]

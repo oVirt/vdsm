@@ -143,6 +143,14 @@
       <alias name='rng1'/>
       <address type='pci' domain='0x0000' bus='0x00' slot='0x0a' function='0x0'/>
     </rng>
+    <memory model='dimm'>
+      <target>
+        <size unit='KiB'>524288</size>
+        <node>0</node>
+      </target>
+      <alias name='dimm0'/>
+      <address type='dimm' slot='0' base='0x100000000'/>
+    </memory>
   </devices>
   <seclabel type='dynamic' model='selinux' relabel='yes'>
     <label>system_u:system_r:svirt_t:s0:c117,c189</label>

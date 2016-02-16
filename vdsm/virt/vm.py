@@ -1743,7 +1743,8 @@ class Vm(object):
         vmdevices.core.Rng.update_device_info(
             self, devices[hwclass.RNG])
         self._getUnderlyingHostDeviceInfo()
-        self._getUnderlyingMemoryDeviceInfo()
+        vmdevices.core.Memory.update_device_info(
+            self, devices[hwclass.MEMORY])
         # Obtain info of all unknown devices. Must be last!
         self._getUnderlyingUnknownDeviceInfo()
 
@@ -2378,7 +2379,7 @@ class Vm(object):
         with self._confLock:
             self.conf['devices'].append(memParams)
         self._updateDomainDescriptor()
-        self._getUnderlyingMemoryDeviceInfo()
+        device.update_device_info(self, self._devices[hwclass.MEMORY])
         # TODO: this is raceful (as the similar code of hotplugDisk
         # and hotplugNic, as a concurrent call of hotplug can change
         # vm.conf before we return.
@@ -4342,29 +4343,6 @@ class Vm(object):
                 if network:
                     nicDev['network'] = network
                 self.conf['devices'].append(nicDev)
-
-    def _getUnderlyingMemoryDeviceInfo(self):
-        """
-        Obtain memory device info from libvirt.
-        """
-        for x in self._domain.get_device_elements('memory'):
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            # Get device address
-            address = vmxml.device_address(x)
-
-            for mem in self._devices[hwclass.MEMORY]:
-                if not hasattr(mem, 'address') or not hasattr(mem, 'alias'):
-                    mem.alias = alias
-                    mem.address = address
-                    break
-            # Update vm's conf with address
-            for dev in self.conf['devices']:
-                if ((dev['type'] == hwclass.MEMORY) and
-                        (not dev.get('address') or not dev.get('alias'))):
-                    dev['address'] = address
-                    dev['alias'] = alias
-                    break
-        self.conf['memSize'] = self._domain.get_memory_size()
 
     def _setWriteWatermarks(self):
         """
