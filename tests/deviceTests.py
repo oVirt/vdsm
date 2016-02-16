@@ -436,10 +436,10 @@ class TestVmDevices(XMLTestCase):
                 device='spice', port='-1', tlsPort='-1')
 
             testvm.conf['devices'] = [graphConf]
-            testvm._devices = {hwclass.GRAPHICS: [graphDev]}
+            device_conf = [graphDev]
             testvm._domain = DomainDescriptor(graphicsXML)
 
-            testvm._getUnderlyingGraphicsDeviceInfo()
+            vmdevices.graphics.Graphics.update_device_info(testvm, device_conf)
 
             self.assertEqual(graphDev.port, port)
             self.assertEqual(graphDev.tlsPort, tlsPort)

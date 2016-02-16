@@ -150,6 +150,35 @@ class Graphics(Base):
     def setupPassword(self, devXML):
         self._setPasswd(devXML.attrib)
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for gxml in vm.domain.get_device_elements('graphics'):
+            port = gxml.getAttribute('port')
+            tlsPort = gxml.getAttribute('tlsPort')
+            graphicsType = gxml.getAttribute('type')
+
+            for d in device_conf:
+                if d.device == graphicsType:
+                    if port:
+                        d.port = port
+                    if tlsPort:
+                        d.tlsPort = tlsPort
+                    break
+
+            for dev in vm.conf['devices']:
+                if (dev.get('type') == hwclass.GRAPHICS and
+                        dev.get('device') == graphicsType):
+                    if port:
+                        dev['port'] = port
+                    if tlsPort:
+                        dev['tlsPort'] = tlsPort
+                    break
+
+        # the first graphic device is duplicated in the legacy conf
+        # TODO: Remove this code once we stop maintaining compatibility with
+        # Engines older than 3.6.
+        updateLegacyConf({'devices': vm.conf['devices']})
+
 
 def isSupportedDisplayType(vmParams):
     display = vmParams.get('display')

@@ -1729,7 +1729,8 @@ class Vm(object):
             self, devices[hwclass.SOUND])
         vmdevices.core.Video.update_device_info(
             self, devices[hwclass.VIDEO])
-        self._getUnderlyingGraphicsDeviceInfo()
+        vmdevices.graphics.Graphics.update_device_info(
+            self, devices[hwclass.GRAPHICS])
         vmdevices.core.Console.update_device_info(
             self, devices[hwclass.CONSOLE])
         vmdevices.core.Controller.update_device_info(
@@ -4228,42 +4229,6 @@ class Vm(object):
                     diskDev['bootOrder'] = bootOrder
                 self.log.warn('Found unknown drive: %s', diskDev)
                 self.conf['devices'].append(diskDev)
-
-    def _getUnderlyingGraphicsDeviceInfo(self):
-        """
-        Obtain graphic framebuffer devices info from libvirt.
-        Libvirt only allows at most one device of each type, so mapping between
-        _devices and conf.devices is based on this fact.
-        The libvirt docs are a bit sparse on this topic, but as of libvirt
-        1.2.3 if one tries to create a domain with 2+ SPICE graphics devices,
-        virsh responds: error: unsupported configuration: only 1 graphics
-        device of each type (sdl, vnc, spice) is supported
-        """
-
-        for gxml in self._domain.get_device_elements('graphics'):
-            port = gxml.getAttribute('port')
-            tlsPort = gxml.getAttribute('tlsPort')
-            graphicsType = gxml.getAttribute('type')
-
-            for d in self._devices[hwclass.GRAPHICS]:
-                if d.device == graphicsType:
-                    if port:
-                        d.port = port
-                    if tlsPort:
-                        d.tlsPort = tlsPort
-                    break
-
-            for dev in self.conf['devices']:
-                if (dev.get('type') == hwclass.GRAPHICS and
-                        dev.get('device') == graphicsType):
-                    if port:
-                        dev['port'] = port
-                    if tlsPort:
-                        dev['tlsPort'] = tlsPort
-                    break
-
-        # the first graphic device is duplicated in the legacy conf
-        vmdevices.graphics.updateLegacyConf(self.conf)
 
     def _getUnderlyingNetworkInterfaceInfo(self):
         """
