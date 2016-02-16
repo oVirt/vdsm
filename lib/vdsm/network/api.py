@@ -839,7 +839,7 @@ def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
     return True
 
 
-def setupNetworks(networks, bondings, **options):
+def setupNetworks(networks, bondings, options):
     """Add/Edit/Remove configuration for networks and bondings.
 
     Params:

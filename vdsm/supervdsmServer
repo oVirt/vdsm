@@ -221,7 +221,7 @@ class _SuperVdsm(object):
 
     @logDecorator
     def setupNetworks(self, networks, bondings, options):
-        return setupNetworks(networks, bondings, **options)
+        return setupNetworks(networks, bondings, options)
 
     @logDecorator
     def changeNumvfs(self, pci_path, numvfs, net_name):

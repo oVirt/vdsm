@@ -133,7 +133,8 @@ def unified_restoration():
         _convert_to_blocking_dhcp(nets)
         logging.debug('Calling setupNetworks with networks (%s) '
                       'and bond (%s).', nets, bonds)
-        setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
+        setupNetworks(nets, bonds, {'connectivityCheck': False,
+                                    '_inRollback': True})
 
 
 def _verify_all_devices_are_up(owned_ifcfg_files):
@@ -197,8 +198,8 @@ def _remove_networks_in_running_config():
         removeBonds[bond] = {'remove': True}
     logging.debug('Removing all networks (%s) and bonds (%s) in running '
                   'config.', removeNetworks, removeBonds)
-    setupNetworks(removeNetworks, removeBonds, connectivityCheck=False,
-                  _inRollback=True)
+    setupNetworks(removeNetworks, removeBonds, {'connectivityCheck': False,
+                                                '_inRollback': True})
 
 
 def _restore_non_vdsm_net_devices():
