@@ -131,6 +131,11 @@ def attachProfileToInterfaceXml(interface, portProfile):
     interface.setAttribute('type', 'network')
 
 
+def removeFilter(interface):
+    for filterElement in interface.getElementsByTagName('filterref'):
+        interface.removeChild(filterElement)
+
+
 def test():
     interface = minidom.parseString("""
     <interface type="bridge">
@@ -149,6 +154,8 @@ def test():
           interface.toprettyxml(encoding='UTF-8'))
 
     attachProfileToInterfaceXml(interface, 'Profail')
+    removeFilter(interface)
+
     print("Interface after attaching to VM-FEX port: %s" %
           interface.toprettyxml(encoding='UTF-8'))
 
@@ -171,6 +178,7 @@ def main():
             doc = hooking.read_domxml()
             interface, = doc.getElementsByTagName('interface')
             attachProfileToInterfaceXml(interface, portProfile)
+            removeFilter(interface)
             hooking.write_domxml(doc)
 
 
