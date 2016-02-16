@@ -19,10 +19,11 @@
 #
 
 import xml.etree.ElementTree as ET
+from xml.dom import Node
 
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable
-from vdsm.netinfo import DUMMY_BRIDGE
+from vdsm.netinfo import DUMMY_BRIDGE, LIBVIRT_NET_PREFIX
 
 from .core import Base
 from . import hwclass
@@ -198,3 +199,80 @@ class Interface(Base):
     def is_attached_to(self, xml_string):
         dom = ET.fromstring(xml_string)
         return bool(dom.findall(self._xpath))
+
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('interface'):
+            devType = x.getAttribute('type')
+            mac = x.getElementsByTagName('mac')[0].getAttribute('address')
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            xdrivers = x.getElementsByTagName('driver')
+            driver = ({'name': xdrivers[0].getAttribute('name'),
+                       'queues': xdrivers[0].getAttribute('queues')}
+                      if xdrivers else {})
+            if devType == 'hostdev':
+                name = alias
+                model = 'passthrough'
+            else:
+                name = x.getElementsByTagName('target')[0].getAttribute('dev')
+                model = x.getElementsByTagName('model')[0].getAttribute('type')
+
+            network = None
+            try:
+                if x.getElementsByTagName('link')[0].getAttribute('state') == \
+                        'down':
+                    linkActive = False
+                else:
+                    linkActive = True
+            except IndexError:
+                linkActive = True
+            source = x.getElementsByTagName('source')
+            if source:
+                network = source[0].getAttribute('bridge')
+                if not network:
+                    network = source[0].getAttribute('network')
+                    network = network[len(LIBVIRT_NET_PREFIX):]
+
+            # Get nic address
+            address = {}
+            # TODO: fix vmxml.device_address and its users to have this code.
+            for child in x.childNodes:
+                if (child.nodeType != Node.TEXT_NODE and
+                        child.tagName == 'address'):
+                    address = dict((k.strip(), child.getAttribute(k).strip())
+                                   for k in child.attributes.keys())
+                    break
+
+            for nic in device_conf:
+                if nic.macAddr.lower() == mac.lower():
+                    nic.name = name
+                    nic.alias = alias
+                    nic.address = address
+                    nic.linkActive = linkActive
+                    if driver:
+                        # If a driver was reported, pass it back to libvirt.
+                        # Engine (vm's conf) is not interested in this value.
+                        nic.driver = driver
+            # Update vm's conf with address for known nic devices
+            knownDev = False
+            for dev in vm.conf['devices']:
+                if (dev['type'] == hwclass.NIC and
+                        dev['macAddr'].lower() == mac.lower()):
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    dev['name'] = name
+                    dev['linkActive'] = linkActive
+                    knownDev = True
+            # Add unknown nic device to vm's conf
+            if not knownDev:
+                nicDev = {'type': hwclass.NIC,
+                          'device': devType,
+                          'macAddr': mac,
+                          'nicModel': model,
+                          'address': address,
+                          'alias': alias,
+                          'name': name,
+                          'linkActive': linkActive}
+                if network:
+                    nicDev['network'] = network
+                vm.conf['devices'].append(nicDev)

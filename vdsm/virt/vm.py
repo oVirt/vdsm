@@ -22,7 +22,6 @@
 # stdlib imports
 from collections import namedtuple
 from contextlib import contextmanager
-from xml.dom import Node
 from xml.dom.minidom import parseString as _domParseStr
 import logging
 import os
@@ -43,7 +42,6 @@ from vdsm import host
 from vdsm import hooks
 from vdsm import hostdev
 from vdsm import libvirtconnection
-from vdsm import netinfo
 from vdsm import osinfo
 from vdsm import qemuimg
 from vdsm import response
@@ -1723,7 +1721,8 @@ class Vm(object):
         Obtain underlying vm's devices info from libvirt.
         """
         devices = self._devices
-        self._getUnderlyingNetworkInterfaceInfo()
+        vmdevices.network.Interface.update_device_info(
+            self, devices[hwclass.NIC])
         self._getUnderlyingDriveInfo()
         vmdevices.core.Sound.update_device_info(
             self, devices[hwclass.SOUND])
@@ -2068,11 +2067,12 @@ class Vm(object):
             # we sent command to libvirt and before save conf. In this case
             # we will gather almost all needed info about this NIC from
             # the libvirt during recovery process.
-            self._devices[hwclass.NIC].append(nic)
+            device_conf = self._devices[hwclass.NIC]
+            device_conf.append(nic)
             with self._confLock:
                 self.conf['devices'].append(nicParams)
             self.saveState()
-            self._getUnderlyingNetworkInterfaceInfo()
+            vmdevices.network.Interface.update_device_info(self, device_conf)
             hooks.after_nic_hotplug(nicXml, self.conf,
                                     params=nic.custom)
 
@@ -4166,85 +4166,6 @@ class Vm(object):
                     diskDev['bootOrder'] = bootOrder
                 self.log.warn('Found unknown drive: %s', diskDev)
                 self.conf['devices'].append(diskDev)
-
-    def _getUnderlyingNetworkInterfaceInfo(self):
-        """
-        Obtain network interface info from libvirt.
-        """
-        for x in self._domain.get_device_elements('interface'):
-            devType = x.getAttribute('type')
-            mac = x.getElementsByTagName('mac')[0].getAttribute('address')
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            xdrivers = x.getElementsByTagName('driver')
-            driver = ({'name': xdrivers[0].getAttribute('name'),
-                       'queues': xdrivers[0].getAttribute('queues')}
-                      if xdrivers else {})
-            if devType == 'hostdev':
-                name = alias
-                model = 'passthrough'
-            else:
-                name = x.getElementsByTagName('target')[0].getAttribute('dev')
-                model = x.getElementsByTagName('model')[0].getAttribute('type')
-
-            network = None
-            try:
-                if x.getElementsByTagName('link')[0].getAttribute('state') == \
-                        'down':
-                    linkActive = False
-                else:
-                    linkActive = True
-            except IndexError:
-                linkActive = True
-            source = x.getElementsByTagName('source')
-            if source:
-                network = source[0].getAttribute('bridge')
-                if not network:
-                    network = source[0].getAttribute('network')
-                    network = network[len(netinfo.LIBVIRT_NET_PREFIX):]
-
-            # Get nic address
-            address = {}
-            # TODO: fix vmxml.device_address and its users to have this code.
-            for child in x.childNodes:
-                if (child.nodeType != Node.TEXT_NODE and
-                        child.tagName == 'address'):
-                    address = dict((k.strip(), child.getAttribute(k).strip())
-                                   for k in child.attributes.keys())
-                    break
-
-            for nic in self._devices[hwclass.NIC]:
-                if nic.macAddr.lower() == mac.lower():
-                    nic.name = name
-                    nic.alias = alias
-                    nic.address = address
-                    nic.linkActive = linkActive
-                    if driver:
-                        # If a driver was reported, pass it back to libvirt.
-                        # Engine (vm's conf) is not interested in this value.
-                        nic.driver = driver
-            # Update vm's conf with address for known nic devices
-            knownDev = False
-            for dev in self.conf['devices']:
-                if (dev['type'] == hwclass.NIC and
-                        dev['macAddr'].lower() == mac.lower()):
-                    dev['address'] = address
-                    dev['alias'] = alias
-                    dev['name'] = name
-                    dev['linkActive'] = linkActive
-                    knownDev = True
-            # Add unknown nic device to vm's conf
-            if not knownDev:
-                nicDev = {'type': hwclass.NIC,
-                          'device': devType,
-                          'macAddr': mac,
-                          'nicModel': model,
-                          'address': address,
-                          'alias': alias,
-                          'name': name,
-                          'linkActive': linkActive}
-                if network:
-                    nicDev['network'] = network
-                self.conf['devices'].append(nicDev)
 
     def _setWriteWatermarks(self):
         """
