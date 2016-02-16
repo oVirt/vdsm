@@ -63,6 +63,7 @@ PEP8_BLACKLIST = \
 
 ABS_IMPORT_WHITELIST = \
 	lib \
+	tests/net*.py \
 	$(NULL)
 
 WHITELIST = \

@@ -19,8 +19,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 from contextlib import contextmanager
 import os
+import six
 
 from vdsm.netinfo import misc
 from vdsm.tool import unified_persistence
@@ -129,7 +131,7 @@ FAKE_IFCFGS = {
 @contextmanager
 def _fake_ifcfgs():
     with namedTemporaryDir() as temp_dir:
-        for iface, conf in FAKE_IFCFGS.iteritems():
+        for iface, conf in six.iteritems(FAKE_IFCFGS):
             with open(os.path.join(temp_dir, 'ifcfg-' + iface), 'w') as f:
                 f.write(conf)
         yield temp_dir

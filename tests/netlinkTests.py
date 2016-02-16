@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from collections import deque
 import threading
 import time
@@ -88,14 +89,14 @@ class NetlinkEventMonitorTests(TestCaseBase):
             # Generate events to avoid blocking
             dummy = Dummy()
             dummy.create()
-            iterator.next()
+            next(iterator)
 
             dummy.remove()
-            iterator.next()
+            next(iterator)
 
         with self.assertRaises(StopIteration):
             while True:
-                iterator.next()
+                next(iterator)
 
     @ValidateRunningAsRoot
     def test_events_keys(self):
