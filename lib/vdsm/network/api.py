@@ -302,7 +302,7 @@ def _update_bridge_ports_mtu(bridge, mtu):
         ipwrapper.linkSet(port, ['mtu', str(mtu)])
 
 
-def assertBridgeClean(bridge, vlan, bonding, nics):
+def _assertBridgeClean(bridge, vlan, bonding, nics):
     ports = set(bridges.ports(bridge))
     ifaces = set(nics)
     if vlan is not None:
@@ -348,7 +348,7 @@ def _validateDelNetwork(network, vlan, bonding, nics, bridge_should_be_clean,
                                      'not all nics enslaved to %s' %
                                      (nics, bonding))
     if bridge_should_be_clean:
-        assertBridgeClean(network, vlan, bonding, nics)
+        _assertBridgeClean(network, vlan, bonding, nics)
 
 
 def _delNonVdsmNetwork(network, vlan, bonding, _netinfo, configurator):
@@ -437,7 +437,7 @@ def _delNetwork(network, vlan=None, bonding=None,
         configurator.removeQoS(net_ent)
 
 
-def clientSeen(timeout):
+def _clientSeen(timeout):
     start = time.time()
     while timeout >= 0:
         try:
@@ -730,7 +730,7 @@ def _check_connectivity(connectivity_check_networks, networks, bondings,
                         options, logger):
     if utils.tobool(options.get('connectivityCheck', True)):
         logger.debug('Checking connectivity...')
-        if not clientSeen(_get_connectivity_timeout(options)):
+        if not _clientSeen(_get_connectivity_timeout(options)):
             logger.info('Connectivity check failed, rolling back')
             for network in connectivity_check_networks:
                 # If the new added network was created on top of
