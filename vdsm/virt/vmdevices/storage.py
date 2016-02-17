@@ -26,6 +26,7 @@ from vdsm import cpuarch
 from vdsm import utils
 
 from .. import vmxml
+from . import hwclass
 
 from .core import Base
 
@@ -69,6 +70,93 @@ class Drive(Base):
 
     # Estimate of the additional space needed for qcow format internal data.
     VOLWM_COW_OVERHEAD = 1.1
+
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        # FIXME!  We need to gather as much info as possible from the libvirt.
+        # In the future we can return this real data to management instead of
+        # vm's conf
+        for x in vm.domain.get_device_elements('disk'):
+            alias, devPath, name = _get_drive_identification(x)
+            readonly = bool(x.getElementsByTagName('readonly'))
+            boot = x.getElementsByTagName('boot')
+            bootOrder = boot[0].getAttribute('order') if boot else ''
+
+            devType = x.getAttribute('device')
+            if devType == 'disk':
+                # raw/qcow2
+                drv = x.getElementsByTagName('driver')[0].getAttribute('type')
+            else:
+                drv = 'raw'
+            # Get disk address
+            address = vmxml.device_address(x)
+
+            # Keep data as dict for easier debugging
+            deviceDict = {'path': devPath, 'name': name,
+                          'readonly': readonly, 'bootOrder': bootOrder,
+                          'address': address, 'type': devType, 'boot': boot}
+
+            # display indexed pairs of ordered values from 2 dicts
+            # such as {key_1: (valueA_1, valueB_1), ...}
+            def mergeDicts(deviceDef, dev):
+                return dict((k, (deviceDef[k], getattr(dev, k, None)))
+                            for k in deviceDef.iterkeys())
+
+            vm.log.debug('Looking for drive with attributes %s', deviceDict)
+            for d in device_conf:
+                # When we analyze a disk device that was already discovered in
+                # the past (generally as soon as the VM is created) we should
+                # verify that the cached path is the one used in libvirt.
+                # We already hit few times the problem that after a live
+                # migration the paths were not in sync anymore (BZ#1059482).
+                if (hasattr(d, 'alias') and d.alias == alias
+                        and d.path != devPath):
+                    vm.log.warning('updating drive %s path from %s to %s',
+                                   d.alias, d.path, devPath)
+                    d.path = devPath
+                if d.path == devPath:
+                    d.name = name
+                    d.type = devType
+                    d.drv = drv
+                    d.alias = alias
+                    d.address = address
+                    d.readonly = readonly
+                    if bootOrder:
+                        d.bootOrder = bootOrder
+                    vm.log.debug('Matched %s', mergeDicts(deviceDict, d))
+            # Update vm's conf with address for known disk devices
+            knownDev = False
+            for dev in vm.conf['devices']:
+                # See comment in previous loop. This part is used to update
+                # the vm configuration as well.
+                if ('alias' in dev and dev['alias'] == alias
+                        and dev['path'] != devPath):
+                    vm.log.warning('updating drive %s config path from %s '
+                                   'to %s', dev['alias'], dev['path'],
+                                   devPath)
+                    dev['path'] = devPath
+                if (dev['type'] == hwclass.DISK and
+                        dev['path'] == devPath):
+                    dev['name'] = name
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    dev['readonly'] = str(readonly)
+                    if bootOrder:
+                        dev['bootOrder'] = bootOrder
+                    vm.log.debug('Matched %s', mergeDicts(deviceDict, dev))
+                    knownDev = True
+            # Add unknown disk device to vm's conf
+            if not knownDev:
+                archIface = DEFAULT_INTERFACE_FOR_ARCH[vm.arch]
+                iface = archIface if address['type'] == 'drive' else 'pci'
+                diskDev = {'type': hwclass.DISK, 'device': devType,
+                           'iface': iface, 'path': devPath, 'name': name,
+                           'address': address, 'alias': alias,
+                           'readonly': str(readonly)}
+                if bootOrder:
+                    diskDev['bootOrder'] = bootOrder
+                vm.log.warn('Found unknown drive: %s', diskDev)
+                vm.conf['devices'].append(diskDev)
 
     def __init__(self, conf, log, **kwargs):
         if not kwargs.get('serial'):
@@ -489,3 +577,17 @@ def _getDriverXML(drive):
 
     driver.setAttrs(**driverAttrs)
     return driver
+
+
+def _get_drive_identification(dom):
+    sources = dom.getElementsByTagName('source')
+    if sources:
+        devPath = (sources[0].getAttribute('file') or
+                   sources[0].getAttribute('dev') or
+                   sources[0].getAttribute('name'))
+    else:
+        devPath = ''
+    target = dom.getElementsByTagName('target')
+    name = target[0].getAttribute('dev') if target else ''
+    alias = dom.getElementsByTagName('alias')[0].getAttribute('name')
+    return alias, devPath, name
