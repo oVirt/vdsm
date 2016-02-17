@@ -1720,35 +1720,7 @@ class Vm(object):
         """
         Obtain underlying vm's devices info from libvirt.
         """
-        devices = self._devices
-        vmdevices.network.Interface.update_device_info(
-            self, devices[hwclass.NIC])
-        vmdevices.storage.Drive.update_device_info(
-            self, devices[hwclass.DISK])
-        vmdevices.core.Sound.update_device_info(
-            self, devices[hwclass.SOUND])
-        vmdevices.core.Video.update_device_info(
-            self, devices[hwclass.VIDEO])
-        vmdevices.graphics.Graphics.update_device_info(
-            self, devices[hwclass.GRAPHICS])
-        vmdevices.core.Console.update_device_info(
-            self, devices[hwclass.CONSOLE])
-        vmdevices.core.Controller.update_device_info(
-            self, devices[hwclass.CONTROLLER])
-        vmdevices.core.Balloon.update_device_info(
-            self, devices[hwclass.BALLOON])
-        vmdevices.core.Watchdog.update_device_info(
-            self, devices[hwclass.WATCHDOG])
-        vmdevices.core.Smartcard.update_device_info(
-            self, devices[hwclass.SMARTCARD])
-        vmdevices.core.Rng.update_device_info(
-            self, devices[hwclass.RNG])
-        vmdevices.hostdevice.HostDevice.update_device_info(
-            self, devices[hwclass.HOSTDEV])
-        vmdevices.core.Memory.update_device_info(
-            self, devices[hwclass.MEMORY])
-        # Obtain info of all unknown devices. Must be last!
-        vmdevices.common.update_unknown_device_info(self)
+        vmdevices.common.update_device_info(self, self._devices)
 
     def _updateAgentChannels(self):
         """

@@ -20,8 +20,15 @@
 
 from .. import vmxml
 
+from . import core
+from . import graphics
+from . import hostdevice
+from . import hwclass
+from . import network
+from . import storage
 
-def update_unknown_device_info(vm):
+
+def _update_unknown_device_info(vm):
     """
     Obtain info about unknown devices from libvirt domain and update the
     corresponding device structures.  Unknown device is a device that has an
@@ -54,3 +61,31 @@ def update_unknown_device_info(vm):
                       'device': device,
                       'address': address}
             vm.conf['devices'].append(newDev)
+
+
+def update_device_info(vm, devices):
+    """
+    Obtain info about VM devices from libvirt domain and update the
+    corresponding device structures.
+
+    :param vm: VM for which the device info should be updated
+    :type vm: `class:Vm` instance
+    :param devices: Device configuration of the given VM.
+    :type devices: dict
+
+    """
+    network.Interface.update_device_info(vm, devices[hwclass.NIC])
+    storage.Drive.update_device_info(vm, devices[hwclass.DISK])
+    core.Sound.update_device_info(vm, devices[hwclass.SOUND])
+    graphics.Graphics.update_device_info(vm, devices[hwclass.GRAPHICS])
+    core.Video.update_device_info(vm, devices[hwclass.VIDEO])
+    core.Controller.update_device_info(vm, devices[hwclass.CONTROLLER])
+    core.Balloon.update_device_info(vm, devices[hwclass.BALLOON])
+    core.Watchdog.update_device_info(vm, devices[hwclass.WATCHDOG])
+    core.Smartcard.update_device_info(vm, devices[hwclass.SMARTCARD])
+    core.Rng.update_device_info(vm, devices[hwclass.RNG])
+    core.Console.update_device_info(vm, devices[hwclass.CONSOLE])
+    hostdevice.HostDevice.update_device_info(vm, devices[hwclass.HOSTDEV])
+    core.Memory.update_device_info(vm, devices[hwclass.MEMORY])
+    # Obtain info of all unknown devices. Must be last!
+    _update_unknown_device_info(vm)
