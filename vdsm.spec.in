@@ -868,6 +868,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/vm.py*
 %{_datadir}/%{vdsm_name}/virt/vmxml.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
+%{_datadir}/%{vdsm_name}/virt/vmdevices/common.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/core.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/graphics.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/hostdevice.py*

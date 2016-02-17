@@ -24,6 +24,7 @@ from . import hwclass
 from . import graphics
 from . import network
 from . import storage
+from . import common
 
 # Silence pyflakes
-core, graphics, hostdevice, hwclass, network, storage
+common, core, graphics, hostdevice, hwclass, network, storage

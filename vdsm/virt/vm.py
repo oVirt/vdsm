@@ -1747,7 +1747,7 @@ class Vm(object):
         vmdevices.core.Memory.update_device_info(
             self, devices[hwclass.MEMORY])
         # Obtain info of all unknown devices. Must be last!
-        self._getUnderlyingUnknownDeviceInfo()
+        vmdevices.common.update_unknown_device_info(self)
 
     def _updateAgentChannels(self):
         """
@@ -4032,37 +4032,6 @@ class Vm(object):
         """
         self.log.exception("Operation failed")
         return response.error(key, msg)
-
-    def _getUnderlyingUnknownDeviceInfo(self):
-        """
-        Obtain unknown devices info from libvirt.
-
-        Unknown device is a device that has an address but wasn't
-        passed during VM creation request.
-        """
-        def isKnownDevice(alias):
-            for dev in self.conf['devices']:
-                if dev.get('alias') == alias:
-                    return True
-            return False
-
-        for x in self._domain.devices.childNodes:
-            # Ignore empty nodes and devices without address
-            if (x.nodeName == '#text' or
-                    not x.getElementsByTagName('address')):
-                continue
-
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            if not isKnownDevice(alias):
-                address = vmxml.device_address(x)
-                # I general case we assume that device has attribute 'type',
-                # if it hasn't getAttribute returns ''.
-                device = x.getAttribute('type')
-                newDev = {'type': x.nodeName,
-                          'alias': alias,
-                          'device': device,
-                          'address': address}
-                self.conf['devices'].append(newDev)
 
     def _getDriveIdentification(self, dom):
         sources = dom.getElementsByTagName('source')

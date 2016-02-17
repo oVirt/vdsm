@@ -21,6 +21,7 @@
 vmdevicesdir = $(vdsmdir)/virt/vmdevices
 dist_vmdevices_PYTHON = \
 	__init__.py \
+	common.py \
 	core.py \
 	graphics.py \
 	hostdevice.py \

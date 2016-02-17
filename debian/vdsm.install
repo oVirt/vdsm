@@ -142,6 +142,7 @@
 ./usr/share/vdsm/virt/vmxml.py
 ./usr/share/vdsm/virt/utils.py
 ./usr/share/vdsm/virt/vmdevices/__init__.py
+./usr/share/vdsm/virt/vmdevices/common.py
 ./usr/share/vdsm/virt/vmdevices/core.py
 ./usr/share/vdsm/virt/vmdevices/graphics.py
 ./usr/share/vdsm/virt/vmdevices/hostdevice.py
