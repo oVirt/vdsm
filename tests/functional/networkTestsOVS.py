@@ -32,7 +32,6 @@ from networkTests import (setupModule, tearDownModule, NetworkTest, dummyIf,
                           _get_source_route, NETWORK_NAME,
                           IP_ADDRESS, IP_MASK, IP_CIDR, IP_GATEWAY,
                           IPv6_ADDRESS, IPv6_CIDR, VLAN_ID, NOCHK, SUCCESS)
-from utils import VdsProxy
 
 # WARNING: because of this module changes networkTests module, we cannot run
 # networkTests.py and networkTestsOVS.py in one run
@@ -153,37 +152,6 @@ networkTests._waitForOperstate = _fakeWaitForOperstate
 networkTests._waitForKnownOperstate = _fakeWaitForOperstate
 
 
-class OVSVdsProxy(VdsProxy):
-
-    def setupNetworks(self, networks, bonds, options):
-        if options.pop('ovs', True):
-            # skip non-bridged networks and networks without a nic/bonding,
-            # such tests should be listed in not_suported list
-            for _, attrs in networks.items():
-                if not attrs.get('bridged', True):
-                    raise SkipTest('OVS does not support bridgeless networks')
-
-            # setup every network as OVS network
-            for network, attrs in networks.items():
-                if 'remove' not in attrs:
-                    networks[network].update({'custom': {'ovs': True}})
-            for bond, attrs in bonds.items():
-                if 'remove' not in attrs:
-                    bond_opts = bonds[bond].get('options', '').split()
-                    modified = False
-                    for i in range(len(bond_opts)):
-                        if bond_opts[i].startswith('custom='):
-                            bond_opts[i] = ('custom=%s,ovs=True' %
-                                            bond_opts[i].split('=', 1)[1])
-                            modified = True
-                            break
-                    if not modified:
-                        bond_opts.append('custom=ovs=True')
-                    bonds[bond]['options'] = ' '.join(bond_opts)
-
-        return super(OVSVdsProxy, self).setupNetworks(networks, bonds, options)
-
-
 @expandPermutations
 class OVSNetworkTest(NetworkTest):
     __test__ = True
@@ -202,14 +170,29 @@ class OVSNetworkTest(NetworkTest):
                 func(*args, **kwargs)
         return wrapper
 
-    def setUp(self):
-        self.vdsm_net = OVSVdsProxy()
+    def setupNetworks(self, nets, bonds, opts, **kwargs):
+        if opts.pop('ovs', True):
+            # setup every network as OVS network
+            for net, attrs in nets.items():
+                if not attrs.get('bridged', True):
+                    raise SkipTest('OVS does not support bridgeless networks')
+                if 'remove' not in attrs:
+                    nets[net].update({'custom': {'ovs': True}})
+            for bond, attrs in bonds.items():
+                if 'remove' not in attrs:
+                    bond_opts = bonds[bond].get('options', '').split()
+                    modified = False
+                    for i in range(len(bond_opts)):
+                        if bond_opts[i].startswith('custom='):
+                            bond_opts[i] = ('custom=%s,ovs=True' %
+                                            bond_opts[i].split('=', 1)[1])
+                            modified = True
+                            break
+                    if not modified:
+                        bond_opts.append('custom=ovs=True')
+                    bonds[bond]['options'] = ' '.join(bond_opts)
 
-    def setupNetworks(self, *args, **kwargs):
-        # Do not run test_kernel_config
-        if 'test_kernel_config' in kwargs:
-            kwargs.pop('test_kernel_config')
-        return self.vdsm_net.setupNetworks(*args, **kwargs)
+        return self.vdsm_net.setupNetworks(nets, bonds, opts)
 
     @cleanupNet
     def test_ovirtmgmtm_to_ovs(self):
