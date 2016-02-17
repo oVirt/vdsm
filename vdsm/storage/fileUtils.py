@@ -34,6 +34,9 @@ import subprocess
 import shutil
 import logging
 import errno
+import sys
+
+import six
 
 from vdsm import constants
 
@@ -200,6 +203,53 @@ def open_ex(path, mode):
         return DirectFile(path, mode)
     else:
         return open(path, mode)
+
+
+def atomic_symlink(target, name):
+    """
+    Create s symbolic link atomically, updating stale links.
+
+    If the symlink exists but links to a different target, it is replaced
+    atomically with a link to the requested target.
+
+    If the process is killed while creating a link, it may leave temporary link
+    (name.tmp). This link will be removed in the next time a link is created.
+
+    This replace a link atomically, so you will have either the old link, or
+    the new link. However it is not safe to call this from multiple threads,
+    trying to modify the same link.
+    """
+    log.info("Linking %r to %r", target, name)
+    try:
+        current_target = os.readlink(name)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+    else:
+        if current_target == target:
+            log.debug("link %r exists", name)
+            return
+        log.debug("Replacing stale link to %r", current_target)
+
+    tmp_name = name + ".tmp"
+    try:
+        os.symlink(target, tmp_name)
+    except OSError as e:
+        if e.errno != errno.EEXIST:
+            raise
+        log.debug("Removing stale temporary link %r", tmp_name)
+        os.unlink(tmp_name)
+        os.symlink(target, tmp_name)
+
+    try:
+        os.rename(tmp_name, name)
+    except:
+        exc_info = sys.exc_info()
+        try:
+            os.unlink(tmp_name)
+        except OSError as e:
+            log.error("Cannot remove temporary link %r: %s", tmp_name, e)
+        six.reraise(*exc_info)
 
 
 class DirectFile(object):

@@ -226,3 +226,59 @@ class CopyUserModeToGroupTests(TestCaseBase):
                 fileUtils.copyUserModeToGroup(path)
                 self.assertEquals(os.stat(path).st_mode & self.MODE_MASK,
                                   expectedMode)
+
+
+class TestAtomicSymlink(TestCaseBase):
+
+    def test_create_new(self):
+        with namedTemporaryDir() as tmpdir:
+            target = os.path.join(tmpdir, "target")
+            link = os.path.join(tmpdir, "link")
+            fileUtils.atomic_symlink(target, link)
+            self.assertEqual(os.readlink(link), target)
+            self.assertFalse(os.path.exists(link + ".tmp"))
+
+    def test_keep_current(self):
+        with namedTemporaryDir() as tmpdir:
+            target = os.path.join(tmpdir, "target")
+            link = os.path.join(tmpdir, "link")
+            fileUtils.atomic_symlink(target, link)
+            current = os.lstat(link)
+            fileUtils.atomic_symlink(target, link)
+            new = os.lstat(link)
+            self.assertEqual(current, new)
+            self.assertFalse(os.path.exists(link + ".tmp"))
+
+    def test_replace_stale(self):
+        with namedTemporaryDir() as tmpdir:
+            target = os.path.join(tmpdir, "target")
+            link = os.path.join(tmpdir, "link")
+            fileUtils.atomic_symlink("stale", link)
+            fileUtils.atomic_symlink(target, link)
+            self.assertEqual(os.readlink(link), target)
+            self.assertFalse(os.path.exists(link + ".tmp"))
+
+    def test_replace_stale_temporary_link(self):
+        with namedTemporaryDir() as tmpdir:
+            target = os.path.join(tmpdir, "target")
+            link = os.path.join(tmpdir, "link")
+            tmp_link = link + ".tmp"
+            fileUtils.atomic_symlink("stale", tmp_link)
+            fileUtils.atomic_symlink(target, link)
+            self.assertEqual(os.readlink(link), target)
+            self.assertFalse(os.path.exists(tmp_link))
+
+    def test_error_isfile(self):
+        with namedTemporaryDir() as tmpdir:
+            target = os.path.join(tmpdir, "target")
+            link = os.path.join(tmpdir, "link")
+            with open(link, 'w') as f:
+                f.write('data')
+            self.assertRaises(OSError, fileUtils.atomic_symlink, target, link)
+
+    def test_error_isdir(self):
+        with namedTemporaryDir() as tmpdir:
+            target = os.path.join(tmpdir, "target")
+            link = os.path.join(tmpdir, "link")
+            os.mkdir(link)
+            self.assertRaises(OSError, fileUtils.atomic_symlink, target, link)
