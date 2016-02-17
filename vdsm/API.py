@@ -82,22 +82,6 @@ class APIBase(object):
         self.log = self._cif.log
 
 
-class ConnectionRefs(APIBase):
-    ctorArgs = []
-
-    def __init__(self):
-        APIBase.__init__(self)
-
-    def acquire(self, conRefArgs):
-        return self._irs.storageServer_ConnectionRefs_acquire(conRefArgs)
-
-    def release(self, refIDs):
-        return self._irs.storageServer_ConnectionRefs_release(refIDs)
-
-    def statuses(self):
-        return self._irs.storageServer_ConnectionRefs_statuses()
-
-
 class Task(APIBase):
     ctorArgs = ['taskID']
 

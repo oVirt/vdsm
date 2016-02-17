@@ -29,11 +29,11 @@ from testlib import VdsmTestCase as TestCaseBase
 
 apiWhitelist = ('StorageDomain.Classes', 'StorageDomain.Types',
                 'Volume.Formats', 'Volume.Types', 'Volume.Roles',
-                'Image.DiskTypes', 'ConnectionRefs.ctorArgs',
-                'Global.ctorArgs', 'ISCSIConnection.ctorArgs',
-                'Image.ctorArgs', 'LVMVolumeGroup.ctorArgs',
-                'StorageDomain.ctorArgs', 'StoragePool.ctorArgs',
-                'Task.ctorArgs', 'VM.ctorArgs', 'Volume.ctorArgs')
+                'Image.DiskTypes', 'Global.ctorArgs',
+                'ISCSIConnection.ctorArgs', 'Image.ctorArgs',
+                'LVMVolumeGroup.ctorArgs', 'StorageDomain.ctorArgs',
+                'StoragePool.ctorArgs', 'Task.ctorArgs', 'VM.ctorArgs',
+                'Volume.ctorArgs')
 
 
 class Host():

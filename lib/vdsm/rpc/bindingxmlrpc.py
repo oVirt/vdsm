@@ -1012,15 +1012,6 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getDevicesVisibility(guids)
 
-    def storageServerConnectionRefsAcquire(self, conRefArgs):
-        return API.ConnectionRefs().acquire(conRefArgs)
-
-    def storageServerConnectionRefsRelease(self, refIDs):
-        return API.ConnectionRefs().release(refIDs)
-
-    def storageServerConnectionRefsStatuses(self):
-        return API.ConnectionRefs().statuses()
-
     def sdm_create_volume(self, job_id, vol_info):
         sdm = API.SDM()
 
@@ -1183,12 +1174,6 @@ class BindingXMLRPC(object):
                 (self.vgsGetList, 'getVGList'),
                 (self.devicesGetList, 'getDeviceList'),
                 (self.devicesGetVisibility, 'getDevicesVisibility'),
-                (self.storageServerConnectionRefsAcquire,
-                 'storageServer_ConnectionRefs_acquire'),
-                (self.storageServerConnectionRefsRelease,
-                 'storageServer_ConnectionRefs_release'),
-                (self.storageServerConnectionRefsStatuses,
-                 'storageServer_ConnectionRefs_statuses'),
                 (self.sdm_create_volume, 'sdm_create_volume'))
 
 

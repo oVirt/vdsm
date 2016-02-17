@@ -31,7 +31,6 @@ dist_vdsmfunctests_PYTHON = \
 	virtTests.py \
 	vmQoSTests.py \
 	vmRecoveryTests.py \
-	storageTests.py \
 	$(NULL)
 
 dist_vdsmfunctests_DATA = \

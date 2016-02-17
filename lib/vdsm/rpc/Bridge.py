@@ -394,9 +394,6 @@ def Image_prepare_Ret(ret):
 # - Specify a custom function to post-process the result into a return value
 ##
 command_info = {
-    'ConnectionRefs_acquire': {'ret': 'results'},
-    'ConnectionRefs_release': {'ret': 'results'},
-    'ConnectionRefs_statuses': {'ret': 'connectionslist'},
     'Host_fenceNode': {'ret': Host_fenceNode_Ret},
     'Host_getAllTasksInfo': {'ret': 'allTasksInfo'},
     'Host_getAllTasksStatuses': {'ret': 'allTasksStatus'},
