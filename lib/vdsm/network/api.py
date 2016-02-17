@@ -335,40 +335,6 @@ def assertBridgeClean(bridge, vlan, bonding, nics):
                                  ' %s connected' % (bridge, brifs))
 
 
-def showNetwork(network):
-    _netinfo = CachingNetInfo()
-    if network not in _netinfo.networks:
-        print("Network %r doesn't exist" % network)
-        return
-
-    bridged = _netinfo.networks[network]['bridged']
-    print("Network %s(Bridged: %s):" % (network, bridged))
-
-    nics, vlan, vlan_id, bonding = _netinfo.getNicsVlanAndBondingForNetwork(
-        network)
-
-    if bridged:
-        ipaddr = _netinfo.networks[network]['addr']
-        netmask = _netinfo.networks[network]['netmask']
-        gateway = _netinfo.networks[network]['gateway']
-        print("ipaddr=%s, netmask=%s, gateway=%s" % (ipaddr, netmask, gateway))
-    else:
-        iface = _netinfo.networks[network]['iface']
-        ipaddr = _netinfo.nics[iface]['addr']
-        netmask = _netinfo.nics[iface]['netmask']
-        print("ipaddr=%s, netmask=%s" % (ipaddr, netmask))
-
-    print("vlan=%s, bonding=%s, nics=%s" % (vlan_id, bonding, nics))
-
-
-def listNetworks():
-    _netinfo = CachingNetInfo()
-    print("Networks:", _netinfo.networks.keys())
-    print("Vlans:", _netinfo.vlans.keys())
-    print("Nics:", _netinfo.nics.keys())
-    print("Bondings:", _netinfo.bondings.keys())
-
-
 def _delBrokenNetwork(network, netAttr, configurator):
     '''Adapts the network information of broken networks so that they can be
     deleted via _delNetwork.'''
