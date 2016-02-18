@@ -28,14 +28,18 @@ import threading
 import time
 import errno
 
+import six
+
 from vdsm.config import config
 from vdsm import ipwrapper
 from vdsm.netinfo import nics, misc
+from vdsm.netinfo.misc import ipv6_supported
 from vdsm.netinfo.cache import CachingNetInfo
 from vdsm import kernelconfig
 from vdsm.constants import P_VDSM_RUN
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
+from vdsm import sysctl
 from vdsm.utils import monotonic_time
 import hostdev
 
@@ -135,6 +139,8 @@ def unified_restoration():
                       'and bond (%s).', nets, bonds)
         setupNetworks(nets, bonds, {'connectivityCheck': False,
                                     '_inRollback': True})
+    if ipv6_supported():
+        _restore_disable_ipv6(nets)
 
 
 def _verify_all_devices_are_up(owned_ifcfg_files):
@@ -342,6 +348,18 @@ def _get_links_with_state_down(links):
                _owned_ifcfg(l.name) and
                _onboot_ifcfg(l.name) and
                not l.oper_up)
+
+
+def _restore_disable_ipv6(networks):
+    """
+    Disable IPv6 on bridges with no IPv6 configuration, after networks have
+    been restored. This is implemented for unified persistence only.
+    """
+    for net, net_attr in six.iteritems(networks):
+        if net_attr.get('bridged') and not net_attr.get('ipv6addr') and not (
+                net_attr.get('ipv6autoconf')) and not net_attr.get('dhcpv6'):
+            # _wait_for_for_all_devices_up has already run, so assuming up
+            sysctl.disable_ipv6(net)
 
 
 def _owned_ifcfg(link_name):
