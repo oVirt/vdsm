@@ -94,7 +94,7 @@ class File(object):
         data = self._collect(vm)
         with self._lock:
             if self._path is None:
-                self.log.debug('save after cleanup')
+                self._log.debug('save after cleanup')
             else:
                 self._dump(data)
 

@@ -48,6 +48,19 @@ class RecoveryFileTests(TestCaseBase):
                 with open(os.path.join(tmpdir, rec.name), 'rb') as f:
                     self.assertTrue(pickle.load(f))
 
+    def test_save_after_cleanup(self):
+
+        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
+                rec = recovery.File(testvm.id)
+                rec.save(testvm)
+
+                rec.cleanup()
+                self.assertEqual(os.listdir(tmpdir), [])
+
+                rec.save(testvm)  # must silently fail
+                self.assertEqual(os.listdir(tmpdir), [])
+
     def test_load(self):
 
         with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
