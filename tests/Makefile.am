@@ -25,6 +25,7 @@ SUBDIRS = \
 	  functional \
 	  devices \
 	  integration \
+	  network \
 	  $(NULL)
 
 test_modules_py3 = \
@@ -42,6 +43,8 @@ device_modules = \
 	devices/parsing/complex_vm_tests.py \
 	$(NULL)
 
+network_modules = network/*_test.py
+
 test_modules = \
 	alignmentScanTests.py \
 	blocksdTests.py \
@@ -54,7 +57,6 @@ test_modules = \
 	cmdutilsTests.py \
 	commands_test.py \
 	concurrentTests.py \
-	configNetworkTests.py \
 	cpuProfileTests.py \
 	deviceTests.py \
 	domainDescriptorTests.py \
@@ -72,8 +74,6 @@ test_modules = \
 	hooksTests.py \
 	hostdevTests.py \
 	hoststatsTests.py \
-	iproute2Tests.py \
-	ipwrapperTests.py \
 	iscsiTests.py \
 	jobsTests.py \
 	libvirtconnectionTests.py \
@@ -87,12 +87,6 @@ test_modules = \
 	momTests.py \
 	momPolicyTests.py \
 	mountTests.py \
-	netUnifiedPersistenceTests.py \
-	netconfpersistenceTests.py \
-	netconfTests.py \
-	netinfoTests.py \
-	netlinkTests.py \
-	netmodelsTests.py \
 	numaUtilsTests.py \
 	outOfProcessTests.py \
 	parted_utils_tests.py \
@@ -103,7 +97,6 @@ test_modules = \
 	protocoldetectorTests.py \
 	pthreadTests.py \
 	qemuimgTests.py \
-	qosTests.py \
 	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
 	responseTests.py \
@@ -126,7 +119,6 @@ test_modules = \
 	storageMonitorTests.py \
 	storageServerTests.py \
 	tasksetTests.py \
-	tcTests.py \
 	testlibTests.py \
 	toolTests.py \
 	toolBondingTests.py \
@@ -205,8 +197,6 @@ dist_vdsmtests_DATA = \
 	iscsiadm_-m_iface.out \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	mem_info.out \
-	netmaskconversions \
-	tc_filter_show.out \
 	toolTests_empty.conf \
 	toolTests_lconf_ssl.conf \
 	toolTests_libvirtd.conf \
@@ -224,7 +214,6 @@ dist_vdsmtests_PYTHON = \
 	fake-ssh-add \
 	fake-ssh-agent \
 	monkeypatch.py \
-	nettestlib.py \
 	storagefakelib.py \
 	storagetestlib.py \
 	testlib.py \
@@ -244,6 +233,10 @@ all-local: \
 server.crt server.csr server.key other.crt other.csr other.key:
 	./makecert.sh
 
+run_modules  = $(test_modules)
+run_modules += $(network_modules)
+run_modules += $(device_modules)
+
 # crossImportsTests.py has to be run separate due to different tests which
 # load modules first, making the env dirty. Unloading python modules
 # is not supported, see http://bugs.python.org/issue9072 .
@@ -251,7 +244,7 @@ check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
 	@echo '*** into your environment.  Do not submit untested code!    ***'
 	$(top_srcdir)/tests/run_tests_local.sh crossImportsTests.py
-	$(top_srcdir)/tests/run_tests_local.sh $(test_modules) $(device_modules)
+	$(top_srcdir)/tests/run_tests_local.sh  $(run_modules)
 	if [ -x "$(PYTHON3)" ]; then \
 		PYTHON_EXE="$(PYTHON3)" $(top_srcdir)/tests/run_tests_local.sh \
 			$(test_modules_py3); \

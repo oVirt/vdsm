@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -60,7 +60,7 @@ from modprobe import RequireDummyMod, RequireVethMod
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import brokentest, slowtest, ValidateRunningAsRoot
-from nettestlib import Dummy, Tap, veth_pair
+from network.nettestlib import Dummy, Tap, veth_pair
 import dhcp
 import firewall
 from utils import SUCCESS, getProxy

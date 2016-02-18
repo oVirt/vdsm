@@ -33,7 +33,7 @@ from testValidation import ValidateRunningAsRoot
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatchScope
-from nettestlib import dummy_device
+from network.nettestlib import dummy_device
 
 
 @contextmanager

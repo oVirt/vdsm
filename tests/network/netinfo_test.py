@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,10 +31,10 @@ from vdsm.netinfo.cache import get
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 
-from ipwrapperTests import _fakeTypeDetection
+from .ipwrapper_test import _fakeTypeDetection
 from modprobe import RequireBondingMod
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from nettestlib import dummy_device, veth_pair
+from .nettestlib import dummy_device, veth_pair
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot
 from testValidation import brokentest

@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -24,7 +24,7 @@ from vdsm.ipwrapper import linkSet, addrAdd
 from vdsm.utils import RollbackContext
 
 from modprobe import RequireVethMod
-from nettestlib import veth_pair
+from network.nettestlib import veth_pair
 from testlib import expandPermutations, permutations
 
 import networkTests

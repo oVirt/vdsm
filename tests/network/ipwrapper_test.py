@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,13 +18,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+from __future__ import absolute_import
+
 from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
 from vdsm.netlink import monitor
 
-from nettestlib import Bridge, requires_brctl
+from .nettestlib import Bridge, requires_brctl
 from testlib import VdsmTestCase as TestCaseBase
 
 

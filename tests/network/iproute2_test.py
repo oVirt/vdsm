@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 from subprocess import Popen, PIPE
 
 from testlib import VdsmTestCase as TestCaseBase
@@ -26,7 +27,7 @@ from testValidation import ValidateRunningAsRoot
 from vdsm.constants import EXT_BRCTL
 from vdsm.network.configurators.iproute2 import _BRCTL_DEV_EXISTS
 
-from nettestlib import Bridge, requires_brctl
+from .nettestlib import Bridge, requires_brctl
 
 
 class TestBridgeOverwrite(TestCaseBase):

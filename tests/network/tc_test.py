@@ -1,6 +1,6 @@
 #
 # Copyright 2012 Roman Fenkhuber.
-# Copyright 2012-2014 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
+from __future__ import absolute_import
 from collections import namedtuple
 import time
 import os
@@ -33,9 +35,9 @@ from testlib import (VdsmTestCase as TestCaseBase, permutations,
                      expandPermutations)
 from testValidation import ValidateRunningAsRoot, stresstest
 from monkeypatch import MonkeyClass
-from nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
-                        bridge_device, network_namespace, requires_iperf3,
-                        requires_tc, requires_tun, veth_pair, vlan_device)
+from .nettestlib import (Bridge, Dummy, IperfClient, IperfServer, Tap,
+                         bridge_device, network_namespace, requires_iperf3,
+                         requires_tc, requires_tun, veth_pair, vlan_device)
 from vdsm.constants import EXT_TC
 from vdsm.network.configurators import qos
 from vdsm.netinfo.qos import DEFAULT_CLASSID

@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2012 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -365,6 +365,7 @@ AC_OUTPUT([
 	tests/devices/parsing/Makefile
 	tests/devices/data/Makefile
 	tests/integration/Makefile
+	tests/network/Makefile
 	vdsm-tool/Makefile
 	vdsm/Makefile
 	vdsm/gluster/Makefile

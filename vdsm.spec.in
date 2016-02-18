@@ -1201,6 +1201,7 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/tests/devices/data
 %dir %{_datadir}/%{vdsm_name}/tests/devices/parsing
 %dir %{_datadir}/%{vdsm_name}/tests/integration
+%dir %{_datadir}/%{vdsm_name}/tests/network
 %{_datadir}/%{vdsm_name}/supervdsm_api/test.py*
 %{_datadir}/%{vdsm_name}/tests/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpu_info.out
@@ -1226,9 +1227,10 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/iscsiadm_-m_iface.out
 %{_datadir}/%{vdsm_name}/tests/lvs_3386c6f2-926f-42c4-839c-38287fac8998.out
 %{_datadir}/%{vdsm_name}/tests/mem_info.out
-%{_datadir}/%{vdsm_name}/tests/netmaskconversions
+%{_datadir}/%{vdsm_name}/tests/network/*.py*
+%{_datadir}/%{vdsm_name}/tests/network/netmaskconversions
+%{_datadir}/%{vdsm_name}/tests/network/tc_filter_show.out
 %{_datadir}/%{vdsm_name}/tests/run_tests.sh
-%{_datadir}/%{vdsm_name}/tests/tc_filter_show.out
 %{_datadir}/%{vdsm_name}/tests/toolTests_empty.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_lconf_ssl.conf
 %{_datadir}/%{vdsm_name}/tests/toolTests_libvirtd.conf
