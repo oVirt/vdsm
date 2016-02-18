@@ -571,7 +571,7 @@ def _handleBondings(bondings, configurator, in_rollback):
                                     options=attrs.get('options'),
                                     nics=attrs.get('nics'), mtu=None,
                                     _netinfo=_netinfo,
-                                    destroyOnMasterRemoval='remove' in attrs)
+                                    destroyOnMasterRemoval=True)
             bond.remove()
             _netinfo.del_bonding(name)
         elif name in _netinfo.bondings:
@@ -589,7 +589,7 @@ def _handleBondings(bondings, configurator, in_rollback):
                                 options=attrs.get('options'),
                                 nics=attrs.get('nics'), mtu=None,
                                 _netinfo=_netinfo,
-                                destroyOnMasterRemoval='remove' in attrs)
+                                destroyOnMasterRemoval=False)
         logger.debug("Editing bond %r with options %s", bond, bond.options)
         configurator.editBonding(bond, _netinfo)
     for name, attrs in addition:
@@ -597,7 +597,7 @@ def _handleBondings(bondings, configurator, in_rollback):
                                 options=attrs.get('options'),
                                 nics=attrs.get('nics'), mtu=None,
                                 _netinfo=_netinfo,
-                                destroyOnMasterRemoval='remove' in attrs)
+                                destroyOnMasterRemoval=False)
         logger.debug("Creating bond %r with options %s", bond, bond.options)
         configurator.configureBond(bond)
 
