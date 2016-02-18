@@ -39,6 +39,8 @@ class LocalFsStorageDomainManifest(fileSD.FileStorageDomainManifest):
 
 
 class LocalFsStorageDomain(fileSD.FileStorageDomain):
+    manifestClass = LocalFsStorageDomainManifest
+
     @property
     def supportsMailbox(self):
         return False
