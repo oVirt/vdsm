@@ -25,6 +25,8 @@ import os
 import time
 import logging
 
+import six
+
 from vdsm.config import config
 from vdsm import commands
 from vdsm import constants
@@ -519,82 +521,100 @@ def _inherit_dhcp_unique_identifier(bridge, _netinfo):
             break
 
 
-def _handleBondings(bondings, configurator, in_rollback):
-    """ Add/Edit/Remove bond interface """
-    logger = logging.getLogger("_handleBondings")
+def _bonds_setup(bonds, configurator, _netinfo, in_rollback, logger):
+    logger.debug('Starting bondings setup. bonds=%s, in_rollback=%s',
+                 bonds, in_rollback)
+    _netinfo.updateDevices()
+    remove, edit, add = _bonds_classification(bonds, _netinfo)
+    _bonds_remove(remove, configurator, _netinfo, in_rollback, logger)
+    _bonds_edit(edit, configurator, _netinfo, logger)
+    _bonds_add(add, configurator, _netinfo, logger)
 
-    _netinfo = CachingNetInfo()
 
-    edition = []
-    addition = []
-    for name, attrs in bondings.items():
+def _bonds_classification(bonds, _netinfo):
+    """
+    Divide bondings according to whether they are to be removed, edited or
+    added.
+    """
+    remove = set()
+    edit = {}
+    add = {}
+    for name, attrs in six.iteritems(bonds):
         if 'remove' in attrs:
-            if name not in _netinfo.bondings:
-                if in_rollback:
-                    logger.error(
-                        'Cannot remove bonding %s during rollback: '
-                        'does not exist', name)
-                    continue
-                else:
-                    raise ConfigNetworkError(
-                        ne.ERR_BAD_BONDING,
-                        "Cannot remove bonding %s: does not exist" % name)
-            bond_users = _netinfo.ifaceUsers(name)
-            # networks removal takes place before bondings handling, therefore
-            # all assigned networks (bond_users) should be already removed
-            if bond_users:
-                raise ConfigNetworkError(
-                    ne.ERR_USED_BOND,
-                    "Cannot remove bonding %s: used by another interfaces %s" %
-                    (name, bond_users))
-            bond = Bond.objectivize(name, configurator,
-                                    options=attrs.get('options'),
-                                    nics=attrs.get('nics'), mtu=None,
-                                    _netinfo=_netinfo,
-                                    destroyOnMasterRemoval=True)
+            remove.add(name)
+        elif name in _netinfo.bondings:
+            edit[name] = attrs
+        else:
+            add[name] = attrs
+    return remove, edit, add
+
+
+def _bonds_remove(bonds, configurator, _netinfo, in_rollback, logger):
+    for name in bonds:
+        if _is_bond_valid_for_removal(name, _netinfo, in_rollback, logger):
+            bond = Bond.objectivize(
+                name, configurator, options=None, nics=None, mtu=None,
+                _netinfo=_netinfo, destroyOnMasterRemoval=True)
+            logger.debug('Removing bond %r', bond)
             bond.remove()
             _netinfo.del_bonding(name)
-        elif name in _netinfo.bondings:
-            edition.append((name, attrs))
-        else:
-            addition.append((name, attrs))
 
-    slaves_to_remove = _calculate_all_slaves_to_be_removed(edition, _netinfo,
-                                                           configurator)
-    _remove_slaves(slaves_to_remove, configurator, _netinfo)
+
+def _is_bond_valid_for_removal(bond, _netinfo, in_rollback, logger):
+    if bond not in _netinfo.bondings:
+        if in_rollback:
+            logger.error('Cannot remove bonding %s during rollback: '
+                         'does not exist', bond)
+            return False
+        else:
+            raise ConfigNetworkError(ne.ERR_BAD_BONDING, 'Cannot remove '
+                                     'bonding %s: does not exist' % bond)
+
+    # Networks removal takes place before bondings handling, therefore all
+    # assigned networks (bond_users) should be already removed.
+    bond_users = _netinfo.ifaceUsers(bond)
+    if bond_users:
+        raise ConfigNetworkError(
+            ne.ERR_USED_BOND, 'Cannot remove bonding %s: used by another '
+            'interfaces %s' % (bond, bond_users))
+
+    return True
+
+
+def _bonds_edit(bonds, configurator, _netinfo, logger):
     _netinfo.updateDevices()
 
-    for name, attrs in edition:
-        bond = Bond.objectivize(name, configurator,
-                                options=attrs.get('options'),
-                                nics=attrs.get('nics'), mtu=None,
-                                _netinfo=_netinfo,
-                                destroyOnMasterRemoval=False)
-        logger.debug("Editing bond %r with options %s", bond, bond.options)
+    for name, attrs in six.iteritems(bonds):
+        slaves_to_remove = (set(_netinfo.bondings[name]['slaves']) -
+                            set(attrs.get('nics')))
+        logger.debug('Editing bond %r, removing slaves %s', name,
+                     slaves_to_remove)
+        _remove_slaves(slaves_to_remove, configurator, _netinfo)
+
+    # we need bonds to be slaveless in _netinfo
+    _netinfo.updateDevices()
+
+    for name, attrs in six.iteritems(bonds):
+        bond = Bond.objectivize(
+            name, configurator, attrs.get('options'), attrs.get('nics'),
+            mtu=None, _netinfo=_netinfo, destroyOnMasterRemoval=False)
+        logger.debug('Editing bond %r with options %s', bond, bond.options)
         configurator.editBonding(bond, _netinfo)
-    for name, attrs in addition:
-        bond = Bond.objectivize(name, configurator,
-                                options=attrs.get('options'),
-                                nics=attrs.get('nics'), mtu=None,
-                                _netinfo=_netinfo,
-                                destroyOnMasterRemoval=False)
-        logger.debug("Creating bond %r with options %s", bond, bond.options)
-        configurator.configureBond(bond)
-
-
-def _calculate_all_slaves_to_be_removed(edited_bonds, _netinfo, configurator):
-    all_removed_slaves = []
-    for name, attrs in edited_bonds:
-        slaves_removed_from_bond = (set(_netinfo.bondings[name]['slaves']) -
-                                    set(attrs.get('nics')))
-        all_removed_slaves.extend(slaves_removed_from_bond)
-    return all_removed_slaves
 
 
 def _remove_slaves(slaves_to_remove, configurator, _netinfo):
     for name in slaves_to_remove:
         slave = Nic(name, configurator, _netinfo=_netinfo)
         slave.remove(remove_even_if_used=True)
+
+
+def _bonds_add(bonds, configurator, _netinfo, logger):
+    for name, attrs in six.iteritems(bonds):
+        bond = Bond.objectivize(
+            name, configurator, attrs.get('options'), attrs.get('nics'),
+            mtu=None, _netinfo=_netinfo, destroyOnMasterRemoval=False)
+        logger.debug('Creating bond %r with options %s', bond, bond.options)
+        configurator.configureBond(bond)
 
 
 def _buildSetupHookDict(req_networks, req_bondings, req_options):
@@ -829,7 +849,7 @@ def setupNetworks(networks, bondings, options):
             else:
                 connectivity_check_networks.add(network)
 
-        _handleBondings(bondings, configurator, in_rollback)
+        _bonds_setup(bondings, configurator, _netinfo, in_rollback, logger)
 
         _add_missing_networks(configurator, networks, bondings,
                               logger, _netinfo)
