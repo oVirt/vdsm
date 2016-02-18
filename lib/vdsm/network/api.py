@@ -617,9 +617,6 @@ def _handleBondings(bondings, configurator, in_rollback):
                                 nics=attrs.get('nics'), mtu=None,
                                 _netinfo=_netinfo,
                                 destroyOnMasterRemoval='remove' in attrs)
-        if len(bond.slaves) == 0:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required nics'
-                                     ' for bonding device.')
         logger.debug("Editing bond %r with options %s", bond, bond.options)
         configurator.editBonding(bond, _netinfo)
     for name, attrs in addition:
@@ -628,9 +625,6 @@ def _handleBondings(bondings, configurator, in_rollback):
                                 nics=attrs.get('nics'), mtu=None,
                                 _netinfo=_netinfo,
                                 destroyOnMasterRemoval='remove' in attrs)
-        if len(bond.slaves) == 0:
-            raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Missing required nics'
-                                     ' for bonding device.')
         logger.debug("Creating bond %r with options %s", bond, bond.options)
         configurator.configureBond(bond)
 
