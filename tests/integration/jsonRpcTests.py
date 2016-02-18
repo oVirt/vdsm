@@ -132,20 +132,23 @@ class JsonRpcServerTests(TestCaseBase):
 
     @permutations(PERMUTATIONS)
     def testMethodMissingMethod(self, ssl, type):
+        missing_method = "I_DO_NOT_EXIST :("
+
         bridge = _DummyBridge()
         with constructClient(self.log, bridge, ssl, type) as clientFactory:
             with self._client(clientFactory) as client:
                 if type == "xml":
-                    response = client.send("I.DO.NOT.EXIST :(", ())
-                    self.assertTrue("\"I.DO.NOT.EXIST :(\" is not supported"
-                                    in response)
+                    response = client.send(missing_method, ())
+                    self.assertIn(missing_method, response)
                 else:
                     with self.assertRaises(JsonRpcError) as cm:
-                        self._callTimeout(client, "I.DO.NOT.EXIST :(", [],
+                        self._callTimeout(client, missing_method, [],
                                           CALL_ID)
 
-                    self.assertEquals(cm.exception.code,
-                                      JsonRpcMethodNotFoundError().code)
+                    self.assertEquals(
+                        cm.exception.code,
+                        JsonRpcMethodNotFoundError(missing_method).code)
+                    self.assertIn(missing_method, cm.exception.message)
 
     @permutations(PERMUTATIONS)
     def testMethodBadParameters(self, ssl, type):

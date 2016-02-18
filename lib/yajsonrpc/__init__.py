@@ -61,9 +61,10 @@ class JsonRpcInvalidRequestError(JsonRpcError):
 
 
 class JsonRpcMethodNotFoundError(JsonRpcError):
-    def __init__(self):
-        JsonRpcError.__init__(self, -32601,
-                              "The method does not exist / is not available.")
+    def __init__(self, method_name):
+        JsonRpcError.__init__(
+            self, -32601,
+            "The method %r does not exist or is not available." % method_name)
 
 
 class JsonRpcInvalidParamsError(JsonRpcError):
@@ -513,9 +514,9 @@ class JsonRpcServer(object):
             if req.isNotification():
                 return
 
-            ctx.requestDone(JsonRpcResponse(None,
-                                            JsonRpcMethodNotFoundError(),
-                                            req.id))
+            ctx.requestDone(JsonRpcResponse(
+                None, JsonRpcMethodNotFoundError(mangledMethod),
+                req.id))
             return
 
         try:
