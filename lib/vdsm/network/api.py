@@ -328,20 +328,6 @@ def _validateDelNetwork(network, vlan, bonding, nics, bridge_should_be_clean,
         _assertBridgeClean(network, vlan, bonding, nics)
 
 
-def _delNonVdsmNetwork(network, vlan, bonding, _netinfo, configurator):
-    if network in bridges.bridges():
-        net_ent = _objectivizeNetwork(bridge=network, vlan_id=vlan,
-                                      bonding=bonding,
-                                      _netinfo=_netinfo,
-                                      configurator=configurator,
-                                      implicitBonding=False)
-        net_ent.remove()
-    else:
-        raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete network"
-                                 " %r: It doesn't exist in the system" %
-                                 network)
-
-
 def _disconnect_bridge_port(port):
     ipwrapper.linkSet(port, ['nomaster'])
 
@@ -353,12 +339,6 @@ def _delNetwork(network, configurator, vlan=None, bonding=None,
                 _netinfo=None, keep_bridge=False, **options):
     if _netinfo is None:
         _netinfo = CachingNetInfo()
-
-    if network not in _netinfo.networks:
-        logging.info("Network %r: doesn't exist in libvirt database", network)
-        _delNonVdsmNetwork(network, vlan, bonding, _netinfo,
-                           configurator)
-        return
 
     nics, vlan, vlan_id, bonding = _netinfo.getNicsVlanAndBondingForNetwork(
         network)
