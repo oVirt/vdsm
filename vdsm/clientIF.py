@@ -439,8 +439,7 @@ class clientIF(object):
                     return errCode['exist']
             vm = Vm(self, vmParams, vmRecover)
             self.vmContainer[vmParams['vmId']] = vm
-        vm.run()
-        return {'status': doneCode, 'vmList': vm.status()}
+        return vm.run()
 
     def getAllVmStats(self):
         return [v.getStats() for v in self.vmContainer.values()]

@@ -661,6 +661,7 @@ class Vm(object):
 
     def run(self):
         self._creationThread.start()
+        return response.success(vmList=self.status())
 
     def memCommit(self):
         """
