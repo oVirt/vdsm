@@ -45,7 +45,6 @@ URL:		http://www.ovirt.org
 Source:		http://resources.ovirt.org/pub/ovirt-3.6-snapshot/src/%{name}/%{name}-%{package_version}.tar.gz
 Group:		Development/Libraries
 
-BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:	noarch
 
 
