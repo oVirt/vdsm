@@ -25,15 +25,9 @@
 %global	_use_mockito 1
 %endif
 %if 0%{?rhel:1}
-%if %{rhel} >= 7
 %global	_mvn_opts -Pno-test
 %global	_use_maven 1
 %global	_use_mockito 0
-%else
-%global	_use_maven 0
-%global	_use_repolib 1
-%global	maven2brewrepodir %{_javadir}/repository.jboss.com/maven2-brew/dummy
-%endif
 %endif
 
 Summary:	JsonRpc java client (%{name}) for oVirt
@@ -48,24 +42,9 @@ Group:		Development/Libraries
 BuildArch:	noarch
 
 
-%if 0%{?rhel}
-%if 0%{?rhel} >= 7
-BuildRequires:	java-devel >= 1.7.0
-%else
-BuildRequires:	java7-devel
-%endif
-%endif
-%if 0%{?fedora}
-BuildRequires:	java-devel >= 1.7.0
-%endif
-
-Requires:	java-openjdk >= 1.7.0
-
-BuildRequires:	slf4j >= 1.7.0
-Requires:	slf4j >= 1.7.0
-
 BuildRequires:	jackson >= 1.9
-Requires:	jackson >= 1.9
+BuildRequires:	java-devel >= 1.7.0
+BuildRequires:	slf4j >= 1.7.0
 
 %if %{_use_maven}
 BuildRequires:	junit
@@ -86,6 +65,10 @@ BuildRequires:	junit4
 # BuildRequires:	mockito
 %endif
 
+Requires:	jackson >= 1.9
+Requires:	java-openjdk >= 1.7.0
+Requires:	slf4j >= 1.7.0
+
 %description
 vdsm jsonrpc java
 
@@ -96,13 +79,6 @@ Group:		Documentation
 
 %description javadoc
 This package contains the API documentation for %{name}.
-%endif
-
-%if 0%{?_use_repolib:1}
-%package repolib
-Summary:	%{name} maven repo
-%description repolib
-%{name} maven repo
 %endif
 
 %prep
@@ -128,9 +104,6 @@ make %{?_smp_mflags}
 %endif
 
 %install
-%if 0%{?_use_repolib:1}
-rm -rf "%{buildroot}"
-%endif
 make %{?_smp_mflags} install DESTDIR="%{buildroot}"
 
 %if %{_use_maven}
@@ -140,14 +113,6 @@ install -d "%{buildroot}%{_javadir}/%{name}"
 FILE=$(ls -1 target/%{name}-client*.jar | grep -v source | grep -v javadoc | xargs -n 1 basename)
 install target/$FILE %{buildroot}%{_javadir}/%{name}
 ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
-%endif
-
-%if 0%{?_use_repolib:1}
-install -d "%{buildroot}%{maven2brewrepodir}/root"
-install -d "%{buildroot}%{maven2brewrepodir}/%{name}"
-cp pom.xml "%{buildroot}%{maven2brewrepodir}/root/root-%{package_maven_version}.pom"
-cp "%{buildroot}%{_javadir}/%{name}/%{name}-client.jar" "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{package_maven_version}.jar"
-cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{package_maven_version}.pom"
 %endif
 
 %if %{_use_maven}
@@ -161,11 +126,6 @@ cp client/pom.xml "%{buildroot}%{maven2brewrepodir}/%{name}/%{name}-client-%{pac
 
 %if %{_use_maven}
 %files javadoc -f .mfiles-javadoc
-%endif
-
-%if 0%{?_use_repolib:1}
-%files repolib
-%{maven2brewrepodir}/
 %endif
 
 %changelog
