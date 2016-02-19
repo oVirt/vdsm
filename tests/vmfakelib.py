@@ -343,7 +343,7 @@ def VM(params=None, devices=None, runCpu=False,
             fake.conf['devices'] = [] if devices is None else devices
             if create_device_objects:
                 fake._devices = fake.devMapFromDevSpecMap(
-                    fake.devSpecMapFromConf())
+                    fake._devSpecMapFromConf())
             fake._guestCpuRunning = runCpu
             if status is not None:
                 fake._lastStatus = status

@@ -125,18 +125,18 @@ class TestVmDevices(XMLTestCase):
         for conf in self.confDisplay:
             conf.update(self.conf)
             with fake.VM(conf) as testvm:
-                devs = testvm.devSpecMapFromConf()
+                devs = testvm._devSpecMapFromConf()
                 self.assertTrue(devs['graphics'])
 
     def testGraphicsDevice(self):
         for dev in self.confDeviceGraphics:
             with fake.VM(self.conf, dev) as testvm:
-                devs = testvm.devSpecMapFromConf()
+                devs = testvm._devSpecMapFromConf()
                 self.assertTrue(devs['graphics'])
 
     def testGraphicDeviceHeadless(self):
         with fake.VM(self.conf) as testvm:
-            devs = testvm.devSpecMapFromConf()
+            devs = testvm._devSpecMapFromConf()
             self.assertFalse(devs['graphics'])
 
     def testGraphicsDeviceMixed(self):
@@ -148,7 +148,7 @@ class TestVmDevices(XMLTestCase):
             conf.update(self.conf)
             for dev in self.confDeviceGraphics:
                 with fake.VM(self.conf, dev) as testvm:
-                    devs = testvm.devSpecMapFromConf()
+                    devs = testvm._devSpecMapFromConf()
                     self.assertEqual(len(devs['graphics']), 1)
                     self.assertEqual(devs['graphics'][0]['device'],
                                      dev[0]['device'])
@@ -199,7 +199,7 @@ class TestVmDevices(XMLTestCase):
         devices = [{'type': 'graphics', 'device': primary},
                    {'type': 'graphics', 'device': secondary}]
         with fake.VM(self.conf, devices) as testvm:
-            devs = testvm.devSpecMapFromConf()
+            devs = testvm._devSpecMapFromConf()
             self.assertTrue(len(devs['graphics']) == 2)
 
     @permutations([['vnc'], ['spice']])
@@ -207,7 +207,7 @@ class TestVmDevices(XMLTestCase):
         devices = [{'type': 'graphics', 'device': devType},
                    {'type': 'graphics', 'device': devType}]
         with fake.VM(self.conf, devices) as testvm:
-            self.assertRaises(ValueError, testvm.devSpecMapFromConf)
+            self.assertRaises(ValueError, testvm._devSpecMapFromConf)
 
     def testSmartcardXML(self):
         smartcardXML = '<smartcard mode="passthrough" type="spicevmc"/>'

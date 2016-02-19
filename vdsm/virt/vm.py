@@ -423,7 +423,7 @@ class Vm(object):
 
         return dev_map
 
-    def devSpecMapFromConf(self):
+    def _devSpecMapFromConf(self):
         """
         Return the "devices" section of this Vm's conf.
         If missing, create it according to old API.
@@ -769,7 +769,7 @@ class Vm(object):
         return self._volumesPrepared
 
     def preparePaths(self):
-        drives = self.devSpecMapFromConf()[hwclass.DISK]
+        drives = self._devSpecMapFromConf()[hwclass.DISK]
         self._preparePathsForDrives(drives)
 
     def _preparePathsForDrives(self, drives):
@@ -1845,7 +1845,7 @@ class Vm(object):
 
     def _run(self):
         self.log.info("VM wrapper has started")
-        dev_spec_map = self.devSpecMapFromConf()
+        dev_spec_map = self._devSpecMapFromConf()
 
         # recovery flow note:
         # we do not start disk stats collection here since
