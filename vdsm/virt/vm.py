@@ -274,6 +274,8 @@ class Vm(object):
 
         self._usedIndices = {}  # {'ide': [], 'virtio' = []}
         self.stopDisksStatsCollection()
+        self._vmStartEvent = threading.Event()
+        self._vmAsyncStartError = None
         self._vmCreationEvent = threading.Event()
         self._pathsPreparedEvent = threading.Event()
         self._devices = self._emptyDevMap()
@@ -661,6 +663,9 @@ class Vm(object):
 
     def run(self):
         self._creationThread.start()
+        self._vmStartEvent.wait()
+        if self._vmAsyncStartError:
+            return self._vmAsyncStartError
         return response.success(vmList=self.status())
 
     def memCommit(self):
@@ -673,6 +678,16 @@ class Vm(object):
 
     def _startUnderlyingVm(self):
         self.log.debug("Start")
+        acquired = False
+        if 'migrationDest' in self.conf:
+            self.log.debug('Acquiring incoming migration semaphore.')
+            acquired = migration.incomingMigrations.acquire(blocking=False)
+            if not acquired:
+                self._vmAsyncStartError = response.error('migrateLimit')
+                self._vmStartEvent.set()
+                return
+
+        self._vmStartEvent.set()
         try:
             self.memCommit()
             with self._ongoingCreations:
@@ -736,6 +751,10 @@ class Vm(object):
             else:
                 self.log.exception("The vm start process failed")
                 self.setDownStatus(ERROR, vmexitreason.GENERIC_ERROR, str(e))
+        finally:
+            if acquired:
+                self.log.debug('Releasing incoming migration semaphore')
+                migration.incomingMigrations.release()
 
     def incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf

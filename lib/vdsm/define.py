@@ -199,6 +199,9 @@ errCode = {
     'migNotInProgress': {'status': {
         'code': 81,
         'message': 'Migration not in progress'}},
+    'migrateLimit': {'status': {
+        'code': 82,
+        'message': 'Incoming migration limit exceeded'}},
     'recovery': {'status': {
         'code': 99,
         'message': 'Recovering from crash or Initializing'}},

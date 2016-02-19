@@ -52,6 +52,9 @@ VIR_MIGRATE_PARAM_URI = 'migrate_uri'
 VIR_MIGRATE_PARAM_BANDWIDTH = 'bandwidth'
 VIR_MIGRATE_PARAM_GRAPHICS_URI = 'graphics_uri'
 
+incomingMigrations = threading.BoundedSemaphore(
+    max(1, config.getint('vars', 'max_incoming_migrations')))
+
 
 class MigrationDestinationSetupError(RuntimeError):
     """

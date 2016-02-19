@@ -122,6 +122,9 @@ parameters = [
         ('max_outgoing_migrations', '3',
             'Maximum concurrent outgoing migrations'),
 
+        ('max_incoming_migrations', '3',
+            'Maximum concurrent incoming migrations'),
+
         ('sys_shutdown_timeout', '120',
             'Destroy and shutdown timeouts (in sec) before completing the '
             'action.'),
