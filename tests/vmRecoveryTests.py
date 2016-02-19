@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import contextlib
 import os
 
 from virt import recovery
@@ -40,64 +41,60 @@ class RecoveryFileTests(TestCaseBase):
 
     def test_save(self):
 
-        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
-                rec = recovery.File(testvm.id)
-                rec.save(testvm)
+        with self.setup_env() as (testvm, tmpdir):
+            rec = recovery.File(testvm.id)
+            rec.save(testvm)
 
-                with open(os.path.join(tmpdir, rec.name), 'rb') as f:
-                    self.assertTrue(pickle.load(f))
+            with open(os.path.join(tmpdir, rec.name), 'rb') as f:
+                self.assertTrue(pickle.load(f))
 
     def test_save_after_cleanup(self):
 
-        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
-                rec = recovery.File(testvm.id)
-                rec.save(testvm)
+        with self.setup_env() as (testvm, tmpdir):
+            rec = recovery.File(testvm.id)
+            rec.save(testvm)
 
-                rec.cleanup()
-                self.assertEqual(os.listdir(tmpdir), [])
+            rec.cleanup()
+            self.assertEqual(os.listdir(tmpdir), [])
 
-                rec.save(testvm)  # must silently fail
-                self.assertEqual(os.listdir(tmpdir), [])
+            rec.save(testvm)  # must silently fail
+            self.assertEqual(os.listdir(tmpdir), [])
 
     def test_load(self):
 
-        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
-                stored = recovery.File(testvm.id)
-                stored.save(testvm)
+        with self.setup_env() as (testvm, tmpdir):
+            stored = recovery.File(testvm.id)
+            stored.save(testvm)
 
-                loaded = recovery.File(testvm.id)
-                fakecif = fake.ClientIF()
-                loaded.load(fakecif)
+            loaded = recovery.File(testvm.id)
+            fakecif = fake.ClientIF()
+            res = loaded.load(fakecif)
+            self.assertTrue(res)
 
-                self.assertVmStatus(testvm,
-                                    fakecif.vmRequests[testvm.id][0])
+            self.assertVmStatus(testvm, fakecif.vmRequests[testvm.id][0])
 
     def test_cleanup(self):
 
-        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
-                stored = recovery.File(testvm.id)
-                stored.save(testvm)
+        with self.setup_env() as (testvm, tmpdir):
+            stored = recovery.File(testvm.id)
+            stored.save(testvm)
 
-                self.assertEqual(len(os.listdir(tmpdir)), 1)
-                stored.cleanup()
-                self.assertEqual(len(os.listdir(tmpdir)), 0)
+            self.assertEqual(len(os.listdir(tmpdir)), 1)
+            stored.cleanup()
+            self.assertEqual(len(os.listdir(tmpdir)), 0)
 
     def test_name(self):
-        with fake.VM() as testvm, namedTemporaryDir() as tmpDir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
-                state = recovery.File(testvm.id)
-                self.assertIn(testvm.id, state.name)
-                self.assertTrue(state.name.endswith(recovery.File.EXTENSION))
+
+        with self.setup_env() as (testvm, tmpdir):
+            state = recovery.File(testvm.id)
+            self.assertIn(testvm.id, state.name)
+            self.assertTrue(state.name.endswith(recovery.File.EXTENSION))
 
     def test_vmid(self):
-        with fake.VM() as testvm, namedTemporaryDir() as tmpDir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
-                state = recovery.File(testvm.id)
-                self.assertEqual(testvm.id, state.vmid)
+
+        with self.setup_env() as (testvm, tmpdir):
+            state = recovery.File(testvm.id)
+            self.assertEqual(testvm.id, state.vmid)
 
     def assertVmStatus(self, testvm, params):
         status = testvm.status()
@@ -110,6 +107,12 @@ class RecoveryFileTests(TestCaseBase):
             expected, recovered = status[key], params[key]
             msg = 'item %s status=%s params=%s' % (key, expected, recovered)
             self.assertEqual(recovered, expected, msg)
+
+    @contextlib.contextmanager
+    def setup_env(self):
+        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
+                yield testvm, tmpdir
 
 
 @expandPermutations
