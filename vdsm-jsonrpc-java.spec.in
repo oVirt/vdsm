@@ -1,6 +1,6 @@
 #
 # vdsm-jsonrpc-java - vdsm json rpc
-# Copyright (C) 2013 Red Hat, Inc.
+# Copyright (C) 2013-2016 Red Hat, Inc.
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -19,24 +19,20 @@
 
 %global		package_version @PACKAGE_VERSION@
 %global		package_maven_version @PACKAGE_MAVEN_VERSION@
-# Version 1.9 of jackson currently no available for rhel or centos
 
 %if 0%{?fedora:1}
 %global	_use_maven 1
 %global	_use_mockito 1
-%global	jackson_deps_available 1
 %endif
 %if 0%{?rhel:1}
 %if %{rhel} >= 7
 %global	_mvn_opts -Pno-test
 %global	_use_maven 1
 %global	_use_mockito 0
-%global	jackson_deps_available 1
 %else
 %global	_use_maven 0
 %global	_use_repolib 1
 %global	maven2brewrepodir %{_javadir}/repository.jboss.com/maven2-brew/dummy
-%global	jackson_deps_available 0
 %endif
 %endif
 
@@ -69,8 +65,10 @@ Requires:	java-openjdk >= 1.7.0
 BuildRequires:	slf4j >= 1.7.0
 Requires:	slf4j >= 1.7.0
 
+BuildRequires:	jackson >= 1.9
+Requires:	jackson >= 1.9
+
 %if %{_use_maven}
-BuildRequires:	jackson
 BuildRequires:	junit
 BuildRequires:	maven-compiler-plugin
 BuildRequires:	maven-enforcer-plugin
@@ -83,16 +81,10 @@ BuildRequires:	maven-surefire-provider-junit
 %if %{_use_mockito}
 BuildRequires:	mockito
 %endif
-Requires:	jackson
 %else
 BuildRequires:	junit4
 # Package not in rhel. it is only build time, at this point (until rhel-7) we can accept that
 # BuildRequires:	mockito
-%if %{jackson_deps_available}
-BuildRequires:	codehaus-jackson-core-asl
-BuildRequires:	codehaus-jackson-mapper-asl
-Requires:	jackson >= 1.9
-%endif
 %endif
 
 %description
@@ -121,17 +113,13 @@ Summary:	%{name} maven repo
 %if %{_use_maven}
 %global conf --with-maven --disable-java-build
 %else
-%if !%{jackson_deps_available}
-%global conf --with-maven --enable-java-build
-%else
 %global conf \\\
-	JACKSON_CORE_ASL=$(build-classpath codehaus-jackson/jackson-core-asl) \\\
-	JACKSON_MAPPER_ASL=$(build-classpath codehaus-jackson/jackson-mapper-asl) \\\
+	JACKSON_CORE_ASL=$(build-classpath jackson/jackson-core-asl) \\\
+	JACKSON_MAPPER_ASL=$(build-classpath jackson/jackson-mapper-asl) \\\
 	SLF4J_JAR=$(build-classpath slf4j) \\\
 	JAVAC=/usr/lib/jvm/java-1.7.0/bin/javac \\\
 	JAR=/usr/lib/jvm/java-1.7.0/bin/jar \\\
 	%{?null}
-%endif
 %endif
 %configure %{?conf}
 make %{?_smp_mflags}
