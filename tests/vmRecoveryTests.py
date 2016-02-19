@@ -25,6 +25,7 @@ from virt import recovery
 from vdsm.compat import pickle
 from vdsm import constants
 from vdsm import cpuarch
+from vdsm import response
 
 
 from monkeypatch import MonkeyPatchScope
@@ -37,6 +38,15 @@ from vmTestsData import CONF_TO_DOMXML_NO_VDSM
 import vmfakelib as fake
 
 
+def _createVm_fails(*args, **kwargs):
+    return response.error('noVM')
+
+
+def _createVm_raises(*args, **kwargs):
+    raise RuntimeError("fake error")
+
+
+@expandPermutations
 class RecoveryFileTests(TestCaseBase):
 
     def test_save(self):
@@ -72,6 +82,23 @@ class RecoveryFileTests(TestCaseBase):
             self.assertTrue(res)
 
             self.assertVmStatus(testvm, fakecif.vmRequests[testvm.id][0])
+
+    @permutations([[_createVm_raises], [_createVm_fails]])
+    def test_load_with_createVm_error(self, createVm):
+
+        with self.setup_env() as (testvm, tmpdir):
+            stored = recovery.File(testvm.id)
+            stored.save(testvm)
+
+            loaded = recovery.File(testvm.id)
+            fakecif = fake.ClientIF()
+
+            fakecif.createVm = createVm
+            res = loaded.load(fakecif)
+
+            self.assertFalse(res)
+            self.assertEqual(fakecif.vmContainer, {})
+            self.assertEqual(fakecif.vmRequests, {})
 
     def test_cleanup(self):
 
@@ -155,3 +182,35 @@ class RecoveryFunctionsTests(TestCaseBase):
         with MonkeyPatchScope([(recovery, '_list_domains',
                                 lambda: self._getAllDomains('novdsm'))]):
             self.assertFalse(recovery._get_vdsm_domains())
+
+    def test_clean_vm_files(self):
+
+        with fake.VM() as testvm, namedTemporaryDir() as tmpdir:
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/')]):
+                stored = recovery.File(testvm.id)
+                stored.save(testvm)
+
+                loaded = recovery.File(testvm.id)
+                fakecif = fake.ClientIF()
+                loaded.load(fakecif)
+
+                # we have one recovery file (just created)
+                self.assertEqual(len(os.listdir(tmpdir)), 1)
+                # ...but somehow ClientIF failed to create the VM.
+                self.assertEqual(fakecif.vmContainer, {})
+
+                # ... so we can actually do our test.
+                recovery.clean_vm_files(fakecif)
+                self.assertEqual(os.listdir(tmpdir), [])
+
+
+class RecoveryAllVmsTests(TestCaseBase):
+    # more tests handling all the edge cases will come
+    def test_without_any_vms(self):
+
+        with namedTemporaryDir() as tmpdir:
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/'),
+                                   (recovery, '_list_domains', lambda: [])]):
+                fakecif = fake.ClientIF()
+                recovery.all_vms(fakecif)
+                self.assertEqual(fakecif.vmContainer, {})
