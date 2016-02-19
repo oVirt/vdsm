@@ -401,7 +401,8 @@ def _delBrokenNetwork(network, netAttr, configurator):
     elif not os.path.exists('/sys/class/net/' + netAttr['iface']):
         # Bridgeless broken network without underlying device
         libvirt.removeNetwork(network)
-        configurator.runningConfig.removeNetwork(network)
+        if config.get('vars', 'net_persistence') == 'unified':
+            configurator.runningConfig.removeNetwork(network)
         return
     _delNetwork(network, configurator=configurator, force=True,
                 implicitBonding=False, _netinfo=_netinfo)
