@@ -22,12 +22,10 @@
 
 %if 0%{?fedora:1}
 %global	_use_maven 1
-%global	_use_mockito 1
 %endif
 %if 0%{?rhel:1}
 %global	_mvn_opts -Pno-test
 %global	_use_maven 1
-%global	_use_mockito 0
 %endif
 
 Summary:	JsonRpc java client (%{name}) for oVirt
@@ -56,13 +54,7 @@ BuildRequires:	maven-javadoc-plugin
 BuildRequires:	maven-local
 BuildRequires:	maven-source-plugin
 BuildRequires:	maven-surefire-provider-junit
-%if %{_use_mockito}
 BuildRequires:	mockito
-%endif
-%else
-BuildRequires:	junit4
-# Package not in rhel. it is only build time, at this point (until rhel-7) we can accept that
-# BuildRequires:	mockito
 %endif
 
 Requires:	jackson >= 1.9
