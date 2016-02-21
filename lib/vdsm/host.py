@@ -19,30 +19,26 @@
 #
 from __future__ import absolute_import
 
+
 import os
 import logging
+from vdsm.utils import memoized
 from .commands import execCmd
 from . import constants
 from . import cpuarch
 
-__hostUUID = None
 
-
+@memoized
 def uuid(legacy=False):
-    global __hostUUID
+    host_UUID = None
 
     if legacy:
         raise NotImplementedError
 
-    if __hostUUID:
-        return __hostUUID
-
-    __hostUUID = None
-
     try:
         if os.path.exists(constants.P_VDSM_NODE_ID):
             with open(constants.P_VDSM_NODE_ID) as f:
-                __hostUUID = f.readline().replace("\n", "")
+                host_UUID = f.readline().replace("\n", "")
         else:
             arch = cpuarch.real()
             if cpuarch.is_x86(arch):
@@ -56,7 +52,7 @@ def uuid(legacy=False):
 
                 if ret == 0 and 'Not' not in out:
                     # Avoid error string - 'Not Settable' or 'Not Present'
-                    __hostUUID = out.strip()
+                    host_UUID = out.strip()
                 else:
                     logging.warning('Could not find host UUID.')
             elif cpuarch.is_ppc(arch):
@@ -64,11 +60,11 @@ def uuid(legacy=False):
                 try:
                     with open('/proc/device-tree/system-id') as f:
                         systemId = f.readline()
-                        __hostUUID = systemId.rstrip('\0').replace(',', '')
+                        host_UUID = systemId.rstrip('\0').replace(',', '')
                 except IOError:
                     logging.warning('Could not find host UUID.')
 
     except:
         logging.error("Error retrieving host UUID", exc_info=True)
 
-    return __hostUUID
+    return host_UUID
