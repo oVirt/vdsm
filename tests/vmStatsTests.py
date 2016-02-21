@@ -461,6 +461,56 @@ class DiskStatsTests(VmStatsTestCase):
         return partial_stats
 
 
+FIRST_CPU_SAMPLE = {'cpu.user': 4740000000, 'cpu.system': 6490000000}
+
+LAST_CPU_SAMPLE = {'cpu.user': 4760000000, 'cpu.system': 6500000000}
+
+
+@expandPermutations
+class CpuStatsTests(VmStatsTestCase):
+    # all data stolen from Vdsm and/or virsh -r domstats
+
+    INTERVAL = 15.  # seconds.
+
+    # [first, last]
+    # intentionally use only one sample, the other empty
+    @permutations([[{}, {}],
+                   [{}, FIRST_CPU_SAMPLE],
+                   [FIRST_CPU_SAMPLE, {}]])
+    def test_empty_samples(self, first, last):
+        stats = {}
+        res = vmstats.cpu(stats, {}, {}, self.INTERVAL)
+        self.assertEqual(stats,
+                         {'cpuUser': 0.0, 'cpuSys': 0.0})
+        self.assertEquals(res, None)
+
+    def test_only_cpu_user_system(self):
+        stats = {}
+        res = vmstats.cpu(stats, FIRST_CPU_SAMPLE, LAST_CPU_SAMPLE,
+                          self.INTERVAL)
+        self.assertEqual(stats, {
+                         'cpuUser': 0.0,
+                         'cpuSys': 0.2,
+                         'cpuUsage': '11260000000',
+                         })
+        self.assertEquals(res, None)
+
+    def test_update_all_keys(self):
+        stats = {}
+        first_sample = {'cpu.time': 24345584838}
+        first_sample.update(FIRST_CPU_SAMPLE)
+        last_sample = {'cpu.time': 24478198023}
+        last_sample.update(LAST_CPU_SAMPLE)
+        res = vmstats.cpu(stats, first_sample, last_sample,
+                          self.INTERVAL)
+        self.assertEqual(stats, {
+                         'cpuUser':  0.6840879,
+                         'cpuSys': 0.2,
+                         'cpuUsage': '11260000000',
+                         })
+        self.assertNotEquals(res, None)
+
+
 # helpers
 
 def _ensure_delta(stats_before, stats_after, key, delta):

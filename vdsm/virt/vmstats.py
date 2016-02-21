@@ -98,6 +98,15 @@ def tune_io(vm, stats):
 
 
 def cpu(stats, first_sample, last_sample, interval):
+    """
+    Add cpu statistics to the `stats' dict.
+    Expect two samplings `first_sample' and `last_sample'
+    which must be data in the format of the libvirt bulk stats.
+    `interval' is the time between the two samplings, in seconds.
+    Fill `stats' as much as possible, bailing out at first error.
+    Return None on error,  if any needed data is missing or wrong.
+    Return the `stats' dictionary on success.
+    """
     stats['cpuUser'] = 0.0
     stats['cpuSys'] = 0.0
 
@@ -125,6 +134,7 @@ def cpu(stats, first_sample, last_sample, interval):
 
     except KeyError as e:
         logging.exception("CPU stats not available: %s", e)
+        return None
 
     return stats
 
