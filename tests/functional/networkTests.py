@@ -2403,6 +2403,11 @@ class NetworkTest(TestCaseBase):
             self.assertVlanDoesntExist(NETWORK_NAME + '.' + VLAN_ID)
             self.assertBondExists(BONDING_NAME, nics)
 
+            status, msg = self.setupNetworks({NETWORK_NAME: {'remove': True}},
+                                             {BONDING_NAME: {'remove': True}},
+                                             NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+
     @cleanupNet
     def testSetupNetworksOverDhcpIface(self):
         """When asked to setupNetwork on top of an interface with a running
