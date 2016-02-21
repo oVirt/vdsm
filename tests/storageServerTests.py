@@ -20,6 +20,7 @@
 
 from monkeypatch import MonkeyPatch
 import gluster.cli
+import gluster.exception as ge
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 from storage.storageServer import GlusterFSConnection
@@ -260,3 +261,28 @@ class GlusterFSConnectionTests(VdsmTestCase):
     def test_glusterfs_cli_missing(self):
         gluster = GlusterFSConnection(spec="192.168.122.1:/music")
         self.assertEquals(gluster.options, "")
+
+
+@expandPermutations
+class GlusterFSNotAccessibleConnectionTests(VdsmTestCase):
+
+    def glusterVolumeInfo(self, volumeName=None, remoteServer=None):
+        raise ge.GlusterCmdExecFailedException()
+
+    @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
+    @MonkeyPatch(gluster.cli, 'exists', lambda: True)
+    def test_validate(self):
+        storageServer.supervdsm.glusterVolumeInfo = self.glusterVolumeInfo
+
+        gluster = GlusterFSConnection(spec="192.168.122.1:/music")
+        gluster.validate()
+
+    @MonkeyPatch(storageServer, 'supervdsm', FakeSupervdsm())
+    @MonkeyPatch(gluster.cli, 'exists', lambda: True)
+    @permutations([[''], ['backup-volfile-servers=server1:server2']])
+    def test_mount_options(self, userMountOptions):
+        storageServer.supervdsm.glusterVolumeInfo = self.glusterVolumeInfo
+
+        gluster = GlusterFSConnection(spec="192.168.122.1:/music",
+                                      options=userMountOptions)
+        self.assertEquals(gluster.options, userMountOptions)

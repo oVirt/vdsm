@@ -44,6 +44,7 @@ import iscsi
 from sync import asyncmethod, AsyncCallStub
 from mount import MountError
 import gluster.cli
+import gluster.exception as ge
 import storage_exception as se
 
 
@@ -346,6 +347,9 @@ class GlusterFSConnection(MountConnection):
                              "servers")
             return
 
+        if not self.volinfo:
+            return
+
         replicaCount = self.volinfo['replicaCount']
         if replicaCount not in self.ALLOWED_REPLICA_COUNTS:
             self.log.warning("Unsupported replica count (%s) for volume %r, "
@@ -353,6 +357,9 @@ class GlusterFSConnection(MountConnection):
                              replicaCount, self._volname)
 
     def _get_backup_servers_option(self):
+        if not self.volinfo:
+            return ""
+
         servers = utils.unique(brick.split(":")[0] for brick
                                in self.volinfo['bricks'])
         self.log.debug("Using bricks: %s", servers)
@@ -369,9 +376,14 @@ class GlusterFSConnection(MountConnection):
         return "backup-volfile-servers=" + ":".join(servers)
 
     def _get_gluster_volinfo(self):
-        volinfo = supervdsm.getProxy().glusterVolumeInfo(self._volname,
-                                                         self._volfileserver)
-        return volinfo[self._volname]
+        try:
+            superVdsmProxy = supervdsm.getProxy()
+            volinfo = superVdsmProxy.glusterVolumeInfo(self._volname,
+                                                       self._volfileserver)
+            return volinfo[self._volname]
+        except ge.GlusterCmdExecFailedException as e:
+            self.log.warning("Failed to get volume info: %s", e)
+            return {}
 
 
 class NFSConnection(object):
