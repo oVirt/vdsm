@@ -307,6 +307,10 @@ class Vm(object):
     def start_time(self):
         return self._startTime
 
+    @property
+    def domain(self):
+        return self._domain
+
     def _get_lastStatus(self):
         # note that we don't use _statusLock here. One of the reasons is the
         # non-obvious recursive locking in the following flow:
