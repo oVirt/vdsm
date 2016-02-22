@@ -46,7 +46,7 @@ from .netconfpersistence import RunningConfig
 from .netlink import link as nl_link
 from .netlink import addr as nl_addr
 from .netlink import route as nl_route
-from .utils import memoized
+from .utils import memoized, is_persistence_unified
 
 
 NET_CONF_DIR = '/etc/sysconfig/network-scripts/'
@@ -451,6 +451,14 @@ def _bondOptsForIfcfg(opts):
 def _dhcp_used(iface, ifaces_with_active_leases, net_attrs, family=4):
     if net_attrs is None:
         logging.debug('There is no VDSM network configured on %s.' % iface)
+        if not is_persistence_unified():
+            cfg = getIfaceCfg(iface)
+            if family == 4:
+                return cfg.get('BOOTPROTO', 'none') == 'dhcp'
+            elif family == 6:
+                return (cfg.get('IPV6INIT', 'yes') == 'yes' and
+                        cfg.get('DHCPV6C', 'no') == 'yes')
+
         return iface in ifaces_with_active_leases
     else:
         try:

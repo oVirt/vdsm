@@ -1313,3 +1313,7 @@ def weakmethod(meth):
         return func(inst, *args, **kwargs)
 
     return wrapper
+
+
+def is_persistence_unified():
+    return config.get('vars', 'net_persistence') == 'unified'
