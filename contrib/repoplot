@@ -1,0 +1,148 @@
+#!/usr/bin/python
+#
+# Copyright 2014 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+"""
+Parse repoStats log lines and plot graphs of lastCheck and read delay for all
+storage domains.
+
+Usage: repoplot vdsm.log [...]
+
+Requirements: python-pandas
+"""
+
+import argparse
+import fileinput
+import re
+import sys
+from collections import defaultdict
+
+import pandas
+from matplotlib import pyplot
+
+PREFIX = re.compile(r"^.+?::.+?::(.+?)::.+Run and protect: repoStats, "
+                    "Return response: ")
+
+
+def main(args):
+    args = parse_args(args)
+    stats = parse(args.files)
+    lastcheck = dataframe(stats, "lastcheck")
+    delay = dataframe(stats, "delay")
+    filename = "%s.%s" % ((args.name or args.files[0]), args.format)
+    plot(lastcheck, delay, filename, (args.width, args.height))
+
+
+def parse_args(args):
+    parser = argparse.ArgumentParser(
+        description="Visualize storage monitoring")
+    parser.add_argument("--name", "-n", dest="name",
+                        help="output file name (default first log file name)")
+    parser.add_argument("--format", "-f", dest="format",
+                        help="output file format (default pdf)")
+    parser.add_argument("--width", "-x", dest="width", type=int,
+                        help="output file width in inches (default 20)")
+    parser.add_argument("--height", "-y", dest="height", type=int,
+                        help="output file height in inches (default 10)")
+    parser.add_argument("files", nargs="+",
+                        help="vdsm log files to process")
+    parser.set_defaults(name=None, format="pdf", width=20, height=10)
+    return parser.parse_args(args)
+
+
+class DomainStats(object):
+    def __init__(self):
+        self.timestamp = []
+        self.lastcheck = []
+        self.delay = []
+
+
+def parse(files):
+    """
+    Parse repoStat from vdsm log. Return dict of DomainStats objects.
+    """
+    stats = defaultdict(DomainStats)
+
+    for line in fileinput.input(files):
+        match = PREFIX.search(line)
+        if not match:
+            continue
+        timestamp = match.group(1)
+        timestamp, millis = timestamp.split(",", 1)
+        timestamp = pandas.Timestamp(timestamp)
+        response = eval(line[match.end():])
+        for uuid, info in response.items():
+            ds = stats[uuid]
+            ds.timestamp.append(timestamp)
+            ds.lastcheck.append(float(info["lastCheck"]))
+            ds.delay.append(float(info["delay"]))
+
+    return stats
+
+
+def dataframe(stats, key):
+    """
+    Create pandas.DataFrame with one column per domain for given key.
+    """
+    dfs = []
+    for uuid, ds in stats.iteritems():
+        df = pandas.DataFrame(getattr(ds, key), index=ds.timestamp,
+                              columns=[uuid])
+        dfs.append(df)
+    combined = pandas.concat(dfs, axis=1)
+    return combined
+
+
+def plot(lastcheck, delay, filename, size):
+    pyplot.figure(figsize=size, dpi=300)
+
+    pyplot.subplot(211)
+    pyplot.title("lastCheck")
+    pyplot.ylabel("lastCheck (seconds)")
+    pyplot.xlabel("time")
+    pyplot.grid(True)
+
+    pyplot.plot(lastcheck.index, lastcheck)
+
+    pyplot.axhline(y=30, color="gray", linewidth="2")
+
+    # Show values up to 330 seconds. Bigger values will cause a host to become
+    # non-operational.
+    pyplot.axis([lastcheck.index[0], lastcheck.index[-1], 0, 330])
+
+    pyplot.subplot(212)
+    pyplot.title("read delay")
+    pyplot.ylabel("delay (seconds)")
+    pyplot.xlabel("time")
+    pyplot.grid(True)
+
+    pyplot.plot(delay.index, delay)
+
+    pyplot.axhline(y=5, color="gray", linewidth="2")
+
+    # Show values up to 10 seconds. Values bigger then 5 seconds will show a
+    # warning in engine log.
+    pyplot.axis([lastcheck.index[0], lastcheck.index[-1], 0, 10])
+
+    pyplot.savefig(filename, bbox_inches="tight")
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
