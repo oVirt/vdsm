@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client.utils;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
@@ -23,7 +24,7 @@ public abstract class OneTimeCallback {
 
     public abstract void execute() throws ClientConnectionException;
 
-    public void await() throws InterruptedException {
-        this.latch.await();
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
+        return this.latch.await(timeout, unit);
     }
 }

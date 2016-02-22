@@ -51,7 +51,10 @@ public class StompClient extends PlainClient {
                     subscribe(eventQueue);
                 }
 
-                connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
+                if (!connected.await(policy.getRetryTimeOut(), policy.getTimeUnit())) {
+                    closeChannel();
+                    throw new ClientConnectionException("Connection timeout");
+                }
             } catch (InterruptedException e) {
                 disconnect("Waiting for connect interrupted");
                 throw new ClientConnectionException("Timeout during connection", e);
