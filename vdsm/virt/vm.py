@@ -3862,7 +3862,8 @@ class Vm(object):
                 self.log.warning(
                     "Failed to destroy VM '%s' gracefully (error=%i)",
                     self.id, e.get_error_code())
-                if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
+                if e.get_error_code() in (libvirt.VIR_ERR_OPERATION_FAILED,
+                                          libvirt.VIR_ERR_SYSTEM_ERROR,):
                     safe_to_force = True
                 return response.error('destroyErr'), safe_to_force
         return response.success(), safe_to_force
