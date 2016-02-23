@@ -3852,21 +3852,23 @@ class Vm(object):
                 self.log.info("VM '%s' already down and destroyed",
                               self.conf['vmId'])
             else:
-                self.log.warning("Failed to destroy VM '%s' gracefully",
-                                 self.conf['vmId'], exc_info=True)
+                self.log.warning(
+                    "Failed to destroy VM '%s' gracefully (error=%i)",
+                    self.id, e.get_error_code())
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
                     return self._destroyVmForceful()
                 return response.error('destroyErr')
-        return {'status': doneCode}
+        return response.success()
 
     def _destroyVmForceful(self):
         try:
             self._dom.destroy()
-        except libvirt.libvirtError:
-            self.log.warning("Failed to destroy VM '%s'",
-                             self.conf['vmId'], exc_info=True)
+        except libvirt.libvirtError as e:
+            self.log.warning(
+                "Failed to destroy VM '%s' forcefully (error=%i)",
+                self.id, e.get_error_code())
             return response.error('destroyErr')
-        return {'status': doneCode}
+        return response.success()
 
     def deleteVm(self):
         """
