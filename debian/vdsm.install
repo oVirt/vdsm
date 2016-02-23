@@ -35,7 +35,6 @@
 ./usr/share/man/man8/vdsmd.8
 ./usr/share/vdsm/API.py
 ./usr/share/vdsm/alignmentScan.py
-./usr/share/vdsm/blkid.py
 ./usr/share/vdsm/caps.py
 ./usr/share/vdsm/clientIF.py
 ./usr/share/vdsm/daemonAdapter

@@ -48,7 +48,6 @@ from vdsm import concurrent
 from vdsm import numa
 from vdsm import utils
 from vdsm import supervdsm
-import blkid
 
 from virt import migration
 from virt import recovery
@@ -300,13 +299,6 @@ class clientIF(object):
                                         name='Reactor thread')
         self.thread.start()
 
-    def _getUUIDSpecPath(self, uuid):
-        try:
-            return blkid.getDeviceByUuid(uuid)
-        except blkid.BlockIdException:
-            self.log.info('Error finding path for device', exc_info=True)
-            raise vm.VolumeError(uuid)
-
     def prepareVolumePath(self, drive, vmId=None):
         if type(drive) is dict:
             device = drive['device']
@@ -339,10 +331,6 @@ class clientIF(object):
                 drive["apparentsize"] = res['apparentsize']
 
                 volPath = res['path']
-
-            # UUID drive format
-            elif "UUID" in drive:
-                volPath = self._getUUIDSpecPath(drive["UUID"])
 
             # cdrom and floppy drives
             elif (device in ('cdrom', 'floppy') and 'specParams' in drive):
