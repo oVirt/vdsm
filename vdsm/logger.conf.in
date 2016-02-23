@@ -61,7 +61,7 @@ formatter=sysform
 args=('/dev/log', handlers.SysLogHandler.LOG_USER)
 
 [handler_logfile]
-class=logUtils.UserGroupEnforcingHandler
+class=vdsm.logUtils.UserGroupEnforcingHandler
 args=('@VDSMUSER@', '@VDSMGROUP@', '@VDSMLOGDIR@/vdsm.log',)
 filters=storage.misc.TracebackRepeatFilter
 level=DEBUG

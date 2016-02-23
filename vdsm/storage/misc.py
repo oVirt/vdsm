@@ -49,9 +49,9 @@ import inspect
 from vdsm import commands
 from vdsm import concurrent
 from vdsm import constants
+from vdsm import logUtils
 from vdsm import utils
 import storage_exception as se
-import logUtils
 
 from storage.constants import SECTOR_SIZE
 

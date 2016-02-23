@@ -901,7 +901,6 @@ exit 0
 %{_sysconfdir}/sudoers.d/50_vdsm
 %{_sysconfdir}/cron.hourly/vdsm-logrotate
 %{_sysconfdir}/libvirt/hooks/qemu
-%{_datadir}/%{vdsm_name}/logUtils.py*
 %{_libexecdir}/%{vdsm_name}/curl-img-wrap
 %{_libexecdir}/%{vdsm_name}/fc-scan
 %{_libexecdir}/%{vdsm_name}/persist-vdsm-hooks
@@ -1103,6 +1102,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
 %{python_sitelib}/%{vdsm_name}/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
+%{python_sitelib}/%{vdsm_name}/logUtils.py*
 %{python_sitelib}/%{vdsm_name}/m2cutils.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/__init__.py*
 %{python_sitelib}/%{vdsm_name}/netinfo/addresses.py*

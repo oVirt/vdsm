@@ -51,6 +51,7 @@ from vdsm import utils
 from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.logUtils import SimpleLogAdapter
 from vdsm.netinfo import DUMMY_BRIDGE
 from storage import outOfProcess as oop
 from storage import sd
@@ -58,7 +59,6 @@ from storage import fileUtils
 
 # local imports
 # In future those should be imported via ..
-from logUtils import SimpleLogAdapter
 import caps
 import numaUtils
 

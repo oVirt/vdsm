@@ -60,8 +60,8 @@ from threadLocal import vars
 from weakref import proxy
 from vdsm import concurrent
 from vdsm.config import config
+from vdsm.logUtils import SimpleLogAdapter
 import outOfProcess as oop
-from logUtils import SimpleLogAdapter
 
 
 getProcPool = oop.getGlobalProcPool

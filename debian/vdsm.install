@@ -47,7 +47,6 @@
 ./usr/share/vdsm/hooking.py
 ./usr/share/vdsm/jobs.py
 ./usr/share/vdsm/kaxmlrpclib.py
-./usr/share/vdsm/logUtils.py
 ./usr/share/vdsm/mk_sysprep_floppy
 ./usr/share/vdsm/mkimage.py
 ./usr/share/vdsm/momIF.py

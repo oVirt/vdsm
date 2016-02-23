@@ -42,6 +42,7 @@ dist_vdsmpylib_PYTHON = \
 	jsonrpcvdscli.py \
 	kernelconfig.py \
 	libvirtconnection.py \
+	logUtils.py \
 	m2cutils.py \
 	netconfpersistence.py \
 	panic.py \

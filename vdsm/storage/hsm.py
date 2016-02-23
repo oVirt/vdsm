@@ -37,6 +37,7 @@ import numbers
 import stat
 
 from vdsm import concurrent
+from vdsm import logUtils
 from vdsm.config import config
 import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
@@ -67,7 +68,6 @@ from vdsm import constants
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
 import devicemapper
-import logUtils
 import mount
 import dispatcher
 import storageServer

@@ -29,7 +29,7 @@ from Queue import Queue
 
 import storage_exception as se
 import misc
-from logUtils import SimpleLogAdapter
+from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
 from vdsm import utils
 

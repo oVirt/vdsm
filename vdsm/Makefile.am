@@ -30,7 +30,6 @@ dist_vdsm_PYTHON = \
 	clientIF.py \
 	hooking.py \
 	kaxmlrpclib.py \
-	logUtils.py \
 	mkimage.py \
 	momIF.py \
 	numaUtils.py \
