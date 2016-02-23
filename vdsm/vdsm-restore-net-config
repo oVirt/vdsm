@@ -140,7 +140,7 @@ def unified_restoration():
         setupNetworks(nets, bonds, {'connectivityCheck': False,
                                     '_inRollback': True})
     if ipv6_supported():
-        _restore_disable_ipv6(nets)
+        _restore_disable_ipv6(available_config.networks)
 
 
 def _verify_all_devices_are_up(owned_ifcfg_files):
