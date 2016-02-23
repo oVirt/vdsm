@@ -44,6 +44,7 @@ EXTRA_DIST = \
 	build-aux/pkg-version \
 	contrib/logdb \
 	contrib/profile-stats \
+	contrib/repoplot \
 	pylintrc \
 	vdsm.spec \
 	vdsm.spec.in \
@@ -69,6 +70,7 @@ ABS_IMPORT_WHITELIST = \
 WHITELIST = \
 	contrib/logdb \
 	contrib/profile-stats \
+	contrib/repoplot \
 	init/daemonAdapter \
 	vdsm/get-conf-item \
 	vdsm/set-conf-item \
