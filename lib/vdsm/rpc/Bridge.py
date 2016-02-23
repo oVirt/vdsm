@@ -70,23 +70,6 @@ class DynamicBridge(object):
     def unregister_server_address(self):
         self._threadLocal.server = None
 
-    def dispatch(self, name, argobj):
-        methodName = name.replace('.', '_')
-        result = None
-        try:
-            fn = getattr(self, methodName)
-        except AttributeError:
-            raise yajsonrpc.JsonRpcMethodNotFoundError()
-
-        try:
-            result = fn(argobj)
-        except VdsmError as e:
-            # TBD: Do we really want to always log here
-            self.log.exception("Operation failed, returning error")
-            raise yajsonrpc.JsonRpcError(e.code, e.message)
-
-        return result
-
     def _getArgs(self, argobj, arglist, defaultArgs):
         ret = ()
         for arg in arglist:
