@@ -21,11 +21,11 @@
 import xml.etree.ElementTree as ET
 
 from vdsm import utils
+from vdsm.hostdev import get_device_params, detach_detachable
 from vdsm.netinfo import DUMMY_BRIDGE
 
 from .core import Base
 from . import hwclass
-from hostdev import get_device_params, detach_detachable
 
 
 class Interface(Base):

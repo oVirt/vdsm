@@ -19,7 +19,7 @@
 #
 
 from vdsm import utils
-from hostdev import get_device_params, detach_detachable, \
+from vdsm.hostdev import get_device_params, detach_detachable, \
     CAPABILITY_TO_XML_ATTR
 from . import core
 from . import hwclass

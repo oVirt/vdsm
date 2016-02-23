@@ -41,6 +41,7 @@ from vdsm import constants
 from vdsm import cpuarch
 from vdsm import host
 from vdsm import hooks
+from vdsm import hostdev
 from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import qemuimg
@@ -59,7 +60,6 @@ from storage import fileUtils
 # In future those should be imported via ..
 from logUtils import SimpleLogAdapter
 import caps
-import hostdev
 import numaUtils
 
 # local package imports

@@ -36,6 +36,7 @@ dist_vdsmpylib_PYTHON = \
 	health.py \
 	hooks.py \
 	host.py \
+	hostdev.py \
 	ipwrapper.py \
 	jobs.py \
 	jsonrpcvdscli.py \

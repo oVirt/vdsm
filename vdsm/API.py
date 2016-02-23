@@ -37,6 +37,7 @@ from clientIF import clientIF
 from vdsm import constants
 from vdsm import exception
 from vdsm import hooks
+from vdsm import hostdev
 from vdsm import response
 from vdsm import supervdsm
 from vdsm import jobs
@@ -56,7 +57,6 @@ from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
-import hostdev
 from caps import PAGE_SIZE_BYTES
 
 

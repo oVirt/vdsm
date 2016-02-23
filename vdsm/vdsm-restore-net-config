@@ -32,6 +32,7 @@ import six
 
 from vdsm.config import config
 from vdsm import ipwrapper
+from vdsm import hostdev
 from vdsm.netinfo import nics, misc
 from vdsm.netinfo.misc import ipv6_supported
 from vdsm.netinfo.cache import CachingNetInfo
@@ -41,7 +42,6 @@ from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
 from vdsm import sysctl
 from vdsm.utils import monotonic_time
-import hostdev
 
 # Ifcfg persistence restoration
 from vdsm.network.configurators import ifcfg

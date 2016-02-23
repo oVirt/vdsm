@@ -19,7 +19,6 @@
 #
 
 
-import hostdev
 import vmfakelib as fake
 
 from virt.vmdevices import hostdevice, network, hwclass
@@ -29,6 +28,7 @@ from testlib import permutations, expandPermutations
 from monkeypatch import MonkeyClass
 
 from vdsm import hooks
+from vdsm import hostdev
 from vdsm import libvirtconnection
 
 _PCI_DEVICES = ['pci_0000_00_1a_0', 'pci_0000_00_1f_2', 'pci_0000_00_02_0',
