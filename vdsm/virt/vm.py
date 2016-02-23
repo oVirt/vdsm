@@ -3818,7 +3818,7 @@ class Vm(object):
             self._incomingMigrationFinished.set()
             self.guestAgent.stop()
             if self._dom.connected:
-                result = self._destroyVmGraceful()
+                result = self._destroyVm()
                 if response.is_error(result):
                     return result
 
@@ -3842,7 +3842,14 @@ class Vm(object):
 
         return response.success()
 
+    def _destroyVm(self):
+        res, safe_to_force = self._destroyVmGraceful()
+        if safe_to_force:
+            res = self._destroyVmForceful()
+        return res
+
     def _destroyVmGraceful(self):
+        safe_to_force = False
         try:
             self._dom.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
         except libvirt.libvirtError as e:
@@ -3856,9 +3863,9 @@ class Vm(object):
                     "Failed to destroy VM '%s' gracefully (error=%i)",
                     self.id, e.get_error_code())
                 if e.get_error_code() == libvirt.VIR_ERR_OPERATION_FAILED:
-                    return self._destroyVmForceful()
-                return response.error('destroyErr')
-        return response.success()
+                    safe_to_force = True
+                return response.error('destroyErr'), safe_to_force
+        return response.success(), safe_to_force
 
     def _destroyVmForceful(self):
         try:
