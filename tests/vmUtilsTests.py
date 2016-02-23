@@ -21,9 +21,10 @@ from __future__ import absolute_import
 
 from six.moves import range
 
-from virt import utils
+from vdsm.virt import vmexitreason
+from vdsm.virt import utils
+
 from virt import vm
-from virt import vmexitreason
 
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase

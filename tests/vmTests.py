@@ -34,16 +34,17 @@ import libvirt
 import six
 from six.moves import zip
 
+from vdsm.virt import vmexitreason
+from vdsm.virt import vmstatus
+
 from virt import vm
 from virt.vm import HotunplugTimeout
 from virt import vmchannels
 from virt import vmdevices
-from virt import vmexitreason
 from virt.vmdevices import hwclass
 from virt.vmtune import io_tune_merge, io_tune_dom_to_values, io_tune_to_dom
 from virt import vmxml
 from virt import vmstats
-from virt import vmstatus
 from virt.vmdevices.storage import Drive
 from virt.vmdevices.storage import DISK_TYPE
 from virt.vmdevices.network import Interface

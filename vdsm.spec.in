@@ -869,17 +869,11 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/periodic.py*
 %{_datadir}/%{vdsm_name}/virt/recovery.py*
 %{_datadir}/%{vdsm_name}/virt/sampling.py*
-%{_datadir}/%{vdsm_name}/virt/secret.py*
-%{_datadir}/%{vdsm_name}/virt/virdomain.py*
 %{_datadir}/%{vdsm_name}/virt/vmchannels.py*
 %{_datadir}/%{vdsm_name}/virt/vmstats.py*
-%{_datadir}/%{vdsm_name}/virt/vmstatus.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
-%{_datadir}/%{vdsm_name}/virt/vmexitreason.py*
-%{_datadir}/%{vdsm_name}/virt/vmpowerdown.py*
 %{_datadir}/%{vdsm_name}/virt/vmxml.py*
-%{_datadir}/%{vdsm_name}/virt/utils.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/core.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/graphics.py*
@@ -1195,6 +1189,13 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/upgrade.py*
 %{python_sitelib}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 %{python_sitelib}/%{vdsm_name}/tool/vdsm-id.py*
+%{python_sitelib}/%{vdsm_name}/virt/__init__.py*
+%{python_sitelib}/%{vdsm_name}/virt/secret.py*
+%{python_sitelib}/%{vdsm_name}/virt/utils.py*
+%{python_sitelib}/%{vdsm_name}/virt/virdomain.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmexitreason.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmpowerdown.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmstatus.py*
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README

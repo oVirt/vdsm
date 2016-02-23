@@ -37,6 +37,9 @@ from vdsm.config import config
 from momIF import MomClient
 from vdsm.define import doneCode, errCode
 from vdsm.sslcompat import sslutils
+from vdsm.virt import secret
+from vdsm.virt import vmstatus
+from vdsm.virt.utils import isVdsmImage
 import libvirt
 from vdsm import libvirtconnection
 from vdsm import concurrent
@@ -48,13 +51,10 @@ from protocoldetector import MultiProtocolAcceptor
 
 from virt import migration
 from virt import recovery
-from virt import secret
 from virt import vm
-from virt import vmstatus
 from virt.vm import Vm
 from virt.vmchannels import Listener
 from virt.vmdevices import hwclass
-from virt.utils import isVdsmImage
 try:
     import gluster.api as gapi
     _glusterEnabled = True

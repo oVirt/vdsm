@@ -34,9 +34,9 @@ from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm import ipwrapper
 from vdsm import numa
 from vdsm.netinfo import nics, bonding, vlans
+from vdsm.virt.utils import ExpiringCache
 from vdsm import utils
 
-from .utils import ExpiringCache
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'
 if not os.path.exists(_THP_STATE_PATH):

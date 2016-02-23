@@ -25,7 +25,7 @@ import socket
 
 import vdsm
 from vdsm.tool.service import service_start, service_stop
-from virt import vmstatus
+from vdsm.virt import vmstatus
 
 from testValidation import ValidateRunningAsRoot
 from virtTests import VirtTestBase, RunningVm, VDSMConnectionError

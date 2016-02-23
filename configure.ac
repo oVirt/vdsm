@@ -359,6 +359,7 @@ AC_OUTPUT([
 	lib/vdsm/network/configurators/Makefile
 	lib/vdsm/rpc/Makefile
 	lib/vdsm/tc/Makefile
+	lib/vdsm/virt/Makefile
 	tests/Makefile
 	tests/cpuinfo/Makefile
 	tests/functional/Makefile

@@ -32,10 +32,10 @@ from vdsm import constants
 from vdsm import libvirtconnection
 from vdsm import response
 from vdsm import utils
+from vdsm.virt import vmstatus
+from vdsm.virt.utils import isVdsmImage
 
-from .utils import isVdsmImage
 from . import vmchannels
-from . import vmstatus
 from . import vmxml
 
 

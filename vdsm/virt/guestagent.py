@@ -28,8 +28,7 @@ import re
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.infra import filecontrol
-
-from . import vmstatus
+from vdsm.virt import vmstatus
 
 _MAX_SUPPORTED_API_VERSION = 2
 _IMPLICIT_API_VERSION_ZERO = 0

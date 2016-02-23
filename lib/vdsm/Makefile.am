@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=netinfo netlink tool infra profiling rpc tc network
+SUBDIRS=netinfo netlink tool infra profiling rpc tc network virt
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \

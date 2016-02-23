@@ -47,9 +47,9 @@ from storage.mount import Mount
 from vdsm.config import config
 from vdsm.constants import VDSM_USER, VDSM_GROUP
 from vdsm.utils import CommandPath, RollbackContext
+from vdsm.virt import vmstatus
 from vdsm import vdscli
 
-from virt import vmstatus
 
 if not config.getboolean('vars', 'xmlrpc_enable'):
     raise SkipTest("XML-RPC Bindings are disabled")

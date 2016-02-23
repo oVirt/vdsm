@@ -79,5 +79,10 @@
 ./usr/lib/python2.7/dist-packages/vdsm/utils.py
 ./usr/lib/python2.7/dist-packages/vdsm/vdscli.py
 ./usr/lib/python2.7/dist-packages/vdsm/v2v.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/__init__.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/virdomain.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/vmexitreason.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/vmpowerdown.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/vmstatus.py
 ./usr/lib/python2.7/dist-packages/vdsm/virtsparsify.py
 ./usr/lib/python2.7/dist-packages/vdsm/xmlrpc.py

@@ -26,7 +26,7 @@ import six
 from vdsm.utils import convertToStr
 
 from vdsm.utils import monotonic_time
-from .utils import isVdsmImage
+from vdsm.virt.utils import isVdsmImage
 
 
 _MBPS_TO_BPS = 10 ** 6 / 8

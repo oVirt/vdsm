@@ -37,8 +37,8 @@ from yajsonrpc import \
     JsonRpcBindingsError
 
 
-from . import vmexitreason
-from . import vmstatus
+from vdsm.virt import vmexitreason
+from vdsm.virt import vmstatus
 
 
 MODE_REMOTE = 'remote'

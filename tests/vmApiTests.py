@@ -21,8 +21,9 @@ from __future__ import absolute_import
 
 import os.path
 
+from vdsm.virt import vmexitreason
+
 from virt import vm
-from virt import vmexitreason
 from vdsm import define
 from testlib import VdsmTestCase as TestCaseBase
 from vdsm import utils

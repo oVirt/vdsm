@@ -140,13 +140,10 @@
 ./usr/share/vdsm/virt/recovery.py
 ./usr/share/vdsm/virt/sampling.py
 ./usr/share/vdsm/virt/secret.py
-./usr/share/vdsm/virt/virdomain.py
 ./usr/share/vdsm/virt/vm.py
 ./usr/share/vdsm/virt/vmchannels.py
-./usr/share/vdsm/virt/vmexitreason.py
-./usr/share/vdsm/virt/vmpowerdown.py
 ./usr/share/vdsm/virt/vmstats.py
-./usr/share/vdsm/virt/vmstatus.py
+./usr/share/vdsm/virt/vmtunepy
 ./usr/share/vdsm/virt/vmxml.py
 ./usr/share/vdsm/virt/utils.py
 ./usr/share/vdsm/virt/vmdevices/__init__.py

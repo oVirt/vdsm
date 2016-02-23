@@ -1,5 +1,4 @@
-#
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,17 +16,4 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
-UP = 'Up'
-DOWN = 'Down'
-MIGRATION_SOURCE = 'Migration Source'
-MIGRATION_DESTINATION = 'Migration Destination'
-PAUSED = 'Paused'
-POWERING_DOWN = 'Powering down'
-POWERING_UP = 'Powering up'
-REBOOT_IN_PROGRESS = 'RebootInProgress'
-RESTORING_STATE = 'Restoring state'
-SAVING_STATE = 'Saving State'
-WAIT_FOR_LAUNCH = 'WaitForLaunch'
-
-PAUSED_STATES = (POWERING_DOWN, REBOOT_IN_PROGRESS, UP)
+from __future__ import absolute_import

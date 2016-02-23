@@ -23,8 +23,8 @@ import os.path
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm import utils
+from vdsm.virt.utils import cleanup_guest_socket
 
-from ..utils import cleanup_guest_socket
 from .. import vmxml
 
 

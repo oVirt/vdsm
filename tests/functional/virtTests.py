@@ -36,12 +36,12 @@ import verify
 
 from vdsm import cpuarch
 from vdsm.utils import CommandPath, RollbackContext
+from vdsm.virt import vmstatus
 import storageTests as storage
 from storage.misc import execCmd
 
 from utils import getProxy, SUCCESS
 
-from virt import vmstatus
 
 _mkinitrd = CommandPath("mkinitrd",
                         "/usr/bin/mkinitrd",  # Fedora

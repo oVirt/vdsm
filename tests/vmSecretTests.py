@@ -31,8 +31,7 @@ import vmfakelib
 from vdsm import libvirtconnection
 from vdsm import response
 from vdsm.password import ProtectedPassword
-
-from virt import secret
+from vdsm.virt import secret
 
 
 class Unexpected(Exception):

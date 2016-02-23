@@ -53,6 +53,11 @@ from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm.netinfo import DUMMY_BRIDGE
+from vdsm.virt import vmexitreason
+from vdsm.virt import virdomain
+from vdsm.virt import vmstatus
+from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
+from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
 from storage import outOfProcess as oop
 from storage import sd
 from storage import fileUtils
@@ -68,12 +73,9 @@ from . import guestagent
 from . import migration
 from . import recovery
 from . import sampling
-from . import virdomain
 from . import vmchannels
 from . import vmdevices
-from . import vmexitreason
 from . import vmstats
-from . import vmstatus
 from .vmdevices import hwclass
 from .vmdevices.storage import DISK_TYPE
 from .vmtune import update_io_tune_dom, collect_inner_elements
@@ -82,8 +84,6 @@ from . import vmxml
 from .vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
 from .vmxml import METADATA_VM_TUNE_PREFIX
 
-from .utils import isVdsmImage, cleanup_guest_socket
-from vmpowerdown import VmShutdown, VmReboot
 
 DEFAULT_BRIDGE = config.get("vars", "default_bridge")
 

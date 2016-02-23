@@ -25,8 +25,9 @@ from six.moves import zip
 
 from nose.plugins.skip import SkipTest
 
-from virt import virdomain
-from virt import vmexitreason
+from vdsm.virt import vmexitreason
+from vdsm.virt import virdomain
+
 from virt.vmdevices import hwclass
 from vdsm import define
 from vdsm import hooks

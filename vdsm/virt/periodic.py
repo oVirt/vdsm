@@ -30,11 +30,11 @@ import libvirt
 from vdsm import executor
 from vdsm import libvirtconnection
 from vdsm.config import config
+from vdsm.virt import virdomain
+from vdsm.virt import vmstatus
 
 from . import hoststats
 from . import sampling
-from . import virdomain
-from . import vmstatus
 
 
 # just a made up number. Maybe should be equal to number of cores?
