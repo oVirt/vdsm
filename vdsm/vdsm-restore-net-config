@@ -38,7 +38,7 @@ from vdsm.constants import P_VDSM_RUN
 from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \
     KernelConfig, CONF_PERSIST_DIR, BaseConfig
 from vdsm import sysctl
-from vdsm.utils import monotonic_time
+from vdsm.utils import monotonic_time, tobool
 import hostdev
 
 # Ifcfg persistence restoration
@@ -137,7 +137,7 @@ def unified_restoration():
                       'and bond (%s).', nets, bonds)
         setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
     if ipv6_supported():
-        _restore_disable_ipv6(nets)
+        _restore_disable_ipv6(available_config.networks)
 
 
 def _verify_all_devices_are_up(owned_ifcfg_files):
@@ -353,8 +353,9 @@ def _restore_disable_ipv6(networks):
     been restored. This is implemented for unified persistence only.
     """
     for net, net_attr in six.iteritems(networks):
-        if net_attr.get('bridged') and not net_attr.get('ipv6addr') and not (
-                net_attr.get('ipv6autoconf')) and not net_attr.get('dhcpv6'):
+        if tobool(net_attr.get('bridged')) and not net_attr.get('ipv6addr') \
+                and not tobool(net_attr.get('ipv6autoconf')) and not \
+                tobool(net_attr.get('dhcpv6')):
             # _wait_for_for_all_devices_up has already run, so assuming up
             sysctl.disable_ipv6(net)
 
