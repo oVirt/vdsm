@@ -34,6 +34,11 @@ import re
 import sys
 from collections import defaultdict
 
+# Use non-interactive backend so we can generate graphs on a headless server.
+# See http://matplotlib.org/faq/howto_faq.html#howto-webapp
+import matplotlib
+matplotlib.use("Agg")
+
 import pandas
 from matplotlib import pyplot
 
