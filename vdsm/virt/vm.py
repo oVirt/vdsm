@@ -291,7 +291,6 @@ class Vm(object):
         self._domain = DomainDescriptor.from_id(self.id)
         self._released = False
         self._releaseLock = threading.Lock()
-        self.saveState()
         self._watchdogEvent = {}
         self.arch = cpuarch.effective()
         self._powerDownEvent = threading.Event()
@@ -665,6 +664,7 @@ class Vm(object):
         self._vmStartEvent.wait()
         if self._vmAsyncStartError:
             return self._vmAsyncStartError
+
         return response.success(vmList=self.status())
 
     def memCommit(self):
@@ -686,6 +686,7 @@ class Vm(object):
                 self._vmStartEvent.set()
                 return
 
+        self.saveState()
         self._vmStartEvent.set()
         try:
             self.memCommit()
