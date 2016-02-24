@@ -2,6 +2,9 @@ package org.ovirt.vdsm.jsonrpc.client;
 
 import static org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils.jsonToByteArray;
 
+import java.io.IOException;
+import java.util.Map;
+
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
@@ -55,6 +58,19 @@ public final class JsonRpcResponse {
 
     /**
      * Validates and builds {@link JsonRpcResponse} based on provided json node.
+     * @param message - byte array containing the response.
+     * @return Response object.
+     */
+    public static JsonRpcResponse fromByteArray(byte[] message) {
+        try {
+            return fromJsonNode(MAPPER.readTree(message));
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Validates and builds {@link JsonRpcResponse} based on provided json node.
      * @param node - Json representation of the response.
      * @return Response object.
      */
@@ -98,9 +114,19 @@ public final class JsonRpcResponse {
         return jsonToByteArray(node);
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public String toString() {
-        String response = this.getResult() != null ? " result: " + this.getResult().toString() : " error: " + this.getError().toString();
-        return "<JsonRpcResponse id: " + this.getId() + response +  ">";
+        Map<String, String> result = null;
+        if (this.getResult() != null) {
+            Class<Map<String, String>> clazz = (Class) Map.class;
+            result = MAPPER.convertValue(this.getResult(), clazz);
+            if (result.containsKey("password")) {
+                result.put("password", "*****");
+            }
+        }
+        String response = this.getResult() != null ? " result: " + result
+                : " error: " + this.getError().toString();
+        return "<JsonRpcResponse id: " + this.getId() + response + ">";
     }
 }

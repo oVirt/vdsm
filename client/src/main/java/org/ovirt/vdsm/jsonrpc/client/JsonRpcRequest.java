@@ -1,6 +1,7 @@
 package org.ovirt.vdsm.jsonrpc.client;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -130,8 +131,14 @@ public class JsonRpcRequest {
         return node;
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public String toString() {
-        return "<JsonRpcRequest id: " + this.getId() + ", method: " + this.getMethod() + ", params: " + this.getParams().toString() +  ">";
+        Class<Map<String, String>> clazz = (Class) Map.class;
+        Map<String, String> params = MAPPER.convertValue(this.getParams(), clazz);
+        if (params.containsKey("password")) {
+            params.put("password", "*****");
+        }
+        return "<JsonRpcRequest id: " + this.getId() + ", method: " + this.getMethod() + ", params: " + params +  ">";
     }
 }
