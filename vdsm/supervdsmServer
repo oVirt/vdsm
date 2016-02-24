@@ -77,7 +77,6 @@ from vdsm.constants import METADATA_GROUP, EXT_CHOWN, \
     VDSM_USER, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, GLUSTER_MGMT_ENABLED
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
-import mkimage
 import supervdsm_api
 
 _UDEV_RULE_FILE_DIR = "/etc/udev/rules.d/"
@@ -376,18 +375,6 @@ class _SuperVdsm(object):
                                 (k, v))
             with open('/sys/kernel/mm/ksm/%s' % k, 'w') as f:
                 f.write(str(v))
-
-    @logDecorator
-    def mkFloppyFs(self, vmId, files, volId):
-        return mkimage.mkFloppyFs(vmId, files, volId)
-
-    @logDecorator
-    def mkIsoFs(self, vmId, files, volId):
-        return mkimage.mkIsoFs(vmId, files, volId)
-
-    @logDecorator
-    def removeFs(self, path):
-        return mkimage.removeFs(path)
 
     @logDecorator
     def fuser(self, *args, **kwargs):

@@ -1,4 +1,3 @@
-#
 # Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -13,18 +12,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-supervdsm_apidir = $(vdsmdir)/supervdsm_api
-dist_supervdsm_api_PYTHON = \
-	__init__.py \
-	test.py \
-	hwinfo.py \
-	mkimage.py \
-	network.py \
-	virt.py \
-	$(NULL)
+from . import expose
+
+from mkimage import mkFloppyFs, mkIsoFs, removeFs
+
+
+expose(mkFloppyFs)
+expose(mkIsoFs)
+expose(removeFs)
