@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.ovirt.vdsm.jsonrpc.client.ClientConnectionException;
+import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
+import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -257,5 +259,23 @@ public class Message {
 
     public void trimEndOfMessage() {
         this.content = Arrays.copyOfRange(this.content, 0, this.content.length - 1);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append(this.command).append("\n");
+        for (String key : this.headers.keySet()) {
+            builder.append(key).append(":").append(this.headers.get(key)).append("\n");
+        }
+        builder.append("\n");
+        if (Command.SEND.toString().equals(this.command)) {
+            JsonRpcRequest request = JsonRpcRequest.fromByteArray(this.content);
+            builder.append(request.toString());
+        } else if (Command.MESSAGE.toString().equals(this.command)) {
+            JsonRpcResponse response = JsonRpcResponse.fromByteArray(this.content);
+            builder.append(response.toString());
+        }
+        return builder.toString();
     }
 }
