@@ -25,4 +25,5 @@ dist_supervdsm_api_PYTHON = \
 	test.py \
 	hwinfo.py \
 	network.py \
+	virt.py \
 	$(NULL)

@@ -20,7 +20,6 @@
 from pwd import getpwnam
 import sys
 import os
-import stat
 import errno
 import importlib
 import pkgutil
@@ -38,7 +37,6 @@ from vdsm import concurrent
 from vdsm.infra import sigutils
 from vdsm.infra import zombiereaper
 
-import numaUtils
 
 LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"
 
@@ -76,7 +74,6 @@ from storage.fileUtils import chown, resolveGid, resolveUid
 from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, EXT_CHOWN, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, \
-    P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES, \
     VDSM_USER, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, GLUSTER_MGMT_ENABLED
 from storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.config import config
@@ -175,42 +172,6 @@ class _SuperVdsm(object):
     @logDecorator
     def getPathsStatus(self):
         return _getPathsStatus()
-
-    @logDecorator
-    def getVmPid(self, vmName):
-        pidFile = "/var/run/libvirt/qemu/%s.pid" % vmName
-        with open(pidFile) as pid:
-            return pid.read()
-
-    @logDecorator
-    def getVcpuNumaMemoryMapping(self, vmName):
-        vmPid = self.getVmPid(vmName)
-        vCpuPids = numaUtils.getVcpuPid(vmName)
-        vCpuIdxToNode = {}
-        for vCpuIndex, vCpuPid in vCpuPids.iteritems():
-            numaMapsFile = "/proc/%s/task/%s/numa_maps" % (vmPid, vCpuPid)
-            try:
-                with open(numaMapsFile, 'r') as f:
-                    mappingNodes = map(
-                        int, re.findall('N(\d+)=\d+', f.read()))
-                    vCpuIdxToNode[vCpuIndex] = list(set(mappingNodes))
-            except IOError:
-                continue
-        return vCpuIdxToNode
-
-    @logDecorator
-    def prepareVmChannel(self, socketFile, group=None):
-        if (socketFile.startswith(P_LIBVIRT_VMCHANNELS) or
-           socketFile.startswith(P_OVIRT_VMCONSOLES)):
-            fsinfo = os.stat(socketFile)
-            mode = fsinfo.st_mode | stat.S_IWGRP
-            os.chmod(socketFile, mode)
-            if group is not None:
-                os.chown(socketFile,
-                         fsinfo.st_uid,
-                         resolveGid(group))
-        else:
-            raise Exception("Incorporate socketFile")
 
     def _runAs(self, user, groups, func, args=(), kwargs={}):
         def child(pipe):
