@@ -2800,6 +2800,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             finally:
                 addrFlush(nic_1)
 
+    @cleanupNet
     def test_rollback(self):
         with dummyIf(3) as nics:
             NET1 = NETWORK_NAME + '1'
