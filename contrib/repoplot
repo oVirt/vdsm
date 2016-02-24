@@ -30,7 +30,6 @@ Requirements: python-pandas
 
 import argparse
 import fileinput
-import re
 import sys
 from collections import defaultdict
 
@@ -42,8 +41,7 @@ matplotlib.use("Agg")
 import pandas
 from matplotlib import pyplot
 
-PREFIX = re.compile(r"^.+?::.+?::(.+?)::.+Run and protect: repoStats, "
-                    "Return response: ")
+REPOSTAT = "Run and protect: repoStats, Return response:"
 
 
 def main(args):
@@ -86,13 +84,13 @@ def parse(files):
     stats = defaultdict(DomainStats)
 
     for line in fileinput.input(files):
-        match = PREFIX.search(line)
-        if not match:
+        pos = line.find(REPOSTAT)
+        if pos == -1:
             continue
-        timestamp = match.group(1)
+        timestamp = line.split("::", 3)[2]
         timestamp, millis = timestamp.split(",", 1)
         timestamp = pandas.Timestamp(timestamp)
-        response = eval(line[match.end():])
+        response = eval(line[pos + len(REPOSTAT):])
         for uuid, info in response.items():
             ds = stats[uuid]
             ds.timestamp.append(timestamp)
