@@ -22,6 +22,17 @@
 # VDSM GLUSTER API Schema
 #
 
+##
+# @UUID:
+#
+# A universally unique identifier in RFC 4122 format.
+#     eg. "407cb255-34be-432c-be7c-eb43b8de82be"
+#
+# Since: 4.10.0
+# XXX: Extension: 'str' data type
+##
+{'alias': 'UUID', 'data': 'str'}
+
 ## Category: @GlusterHook ####################################################
 ##
 # @GlusterHook:
@@ -417,6 +428,22 @@
         'totalSizeMoved': 'int', 'status': 'str'}}
 
 ##
+# @TaskType:
+#
+# Possible value of task type.
+#
+# @REBALANCE:     Task type is rebalance
+#
+# @REPLACE_BRICK: Task type is replace brick
+#
+# @REMOVE_BRICK:  Task type is remove brick
+#
+# Since: 4.10.3
+##
+{'enum': 'TaskType',
+ 'data': ['REBALANCE', 'REPLACE_BRICK','REMOVE_BRICK']}
+
+##
 # @TaskInfo:
 #
 # Task information.
@@ -436,8 +463,8 @@
 # Since: 4.10.3
 ##
 {'type': 'TaskInfo',
-  'data': {'id': 'UUID', 'volume': 'str', 'status': 'TaskStatus',
-           'type': 'TaskType', 'data': 'TaskSummary', 'bricks': ['str']}}
+ 'data': {'id': 'UUID', 'volume': 'str', 'status': 'GlusterTaskStatus',
+          'type': 'TaskType', 'data': 'TaskSummary', 'bricks': ['str']}}
 
 ##
 # @GlusterTask.list:
@@ -466,21 +493,7 @@
 {'class': 'GlusterVolume'}
 
 ##
-# @volumeType:
-#
-# Possible type of volume.
-#
-# @ENABLED:  volume is enabled
-#
-# @DISABLED: volume is disabled
-#
-# Since: 4.10.3
-##
-{'enum': 'volumeType',
- 'data': ['ENABLED', 'DISABLED']}
-
-##
-# @volumeStatus:
+# @VolumeStatus:
 #
 # Possible value of volume status.
 #
@@ -490,7 +503,7 @@
 #
 # Since: 4.10.3
 ##
-{'enum': 'volumeStatus',
+{'enum': 'VolumeStatus',
  'data': ['ONLINE', 'OFFLINE']}
 
 ##
@@ -583,7 +596,7 @@
 {'type': 'VolumeInfo',
  'data': {'brickCount': 'int', 'bricks': ['str'], 'options': ['str'],
           'transportType': 'transType', 'uuid': 'UUID', 'volumeName': 'str',
-          'status': 'volumeStatus', 'volumeType': 'str',
+          'status': 'VolumeStatus', 'volumeType': 'str',
           'disperseCount': 'int', 'redundancyCount': 'int',
           'bricksInfo': ['BricksInfo']}}
 
@@ -647,7 +660,7 @@
 #
 # Get the list of Gluster volumes
 #
-# @volumeName: Gluster volume name
+# @volumeName:   #optional Gluster volume name
 #
 # @remoteServer: #optional remote server name
 #
@@ -657,7 +670,7 @@
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterVolume', 'name': 'list'},
- 'data': {'volumeName': 'str', '*remoteServer': 'str'},
+ 'data': {'*volumeName': 'str', '*remoteServer': 'str'},
  'returns': ['VolumeInfo']}
 
 ##
@@ -886,7 +899,7 @@
  'returns': 'RebalanceRemoveStatus'}
 
 ##
-# @TaskStatus:
+# @GlusterTaskStatus:
 #
 # Possible value of task status.
 #
@@ -904,7 +917,7 @@
 #
 # Since: 4.10.3
 ##
-{'enum': 'TaskStatus',
+{'enum': 'GlusterTaskStatus',
  'data': ['NOT_STARTED', 'STARTED','STOPPED', 'COMPLETED', 'FAILED',
           'UNKNOWN']}
 
@@ -937,7 +950,7 @@
  'data': {'name': 'str', 'id': 'UUID', 'runtime': 'float',
           'filesScanned': 'int', 'filesMoved': 'int', 'filesFailed': 'int',
           'filesSkipped': 'int', 'totalSizeMoved': 'int',
-          'status': 'TaskStatus'}}
+          'status': 'GlusterTaskStatus'}}
 
 ##
 # @RebalanceRemoveStatus:
@@ -1217,29 +1230,29 @@
 #
 # List of storage devices.
 #
-# @name:       The name of the device
+# @name:        The name of the device
 #
-# @size:       Device size
+# @size:        Device size
 #
-# @devPath:    Device path
+# @devPath:     Device path
 #
-# devUuid:     Device uuid
+# @devUuid:     Device uuid
 #
-# bus:         Device bus
+# @bus:         Device bus
 #
-# model:       Device Model
+# @model:       Device Model
 #
-# fsType:      File system type
+# @fsType:      File system type
 #
-# mountPoint:  Device mount point path
+# @mountPoint:  Device mount point path
 #
-# uuid:        File system uuid
+# @uuid:        File system uuid
 #
-# createBrick: Has the device can be used for create brick or not
+# @createBrick: Has the device can be used for create brick or not
 #
 # Since: 4.17.0
 ##
-{'type': 'StorageDevicesList':
+{'type': 'StorageDevicesList',
  'data': {'name': 'str', 'size': 'int', 'devPath': 'str', 'devUuid': 'UUID',
           'bus': 'str', 'model': 'str', 'fsType': 'str', 'mountPoint': 'str',
           'uuid': 'UUID', 'createBrick': 'bool'}}
@@ -1257,12 +1270,12 @@
 {'command': {'class': 'GlusterHost', 'name': 'storageDevicesList'},
  'returns': ['StorageDevicesList']}
 
-
+##
 # @RaidDevice:
 #
 # Raid storage devices.
 #
-# @type :       Raid type
+# @type:       Raid type
 #
 # @stripeSize:  Stripe size
 #
@@ -1270,7 +1283,7 @@
 #
 # Since: 4.17.0
 ##
-{'type': 'RaidDevice':
+{'type': 'RaidDevice',
  'data': {'type': 'str', 'stripeSize': 'int', 'diskCnt': 'int'}}
 
 ##
@@ -1284,9 +1297,9 @@
 #
 # @devList:    List of devices to be used
 #
-# @fsType:     # optional file system type
+# @fsType:     #optional file system type
 #
-# @raidParams: # optional dictonary contains raid details of a raid device
+# @raidParams: #optional dictonary contains raid details of a raid device
 #
 # Returns:
 # Success or failure
@@ -1391,41 +1404,42 @@
           '*remoteUserName': 'str', '*force': 'bool'},
  'returns': 'bool'}
 
+##
 # @geoRepPairInfo:
 #
 # Gluster geo-replication pair information.
 #
-# @host:                    Host of the local volume
+# @host:                     Host of the local volume
 #
-# @hostUuid:                Uuid of host for local volume brick
+# @hostUuid:                 Uuid of host for local volume brick
 #
-# @brickName:               Local volume brick involved in session
+# @brickName:                Local volume brick involved in session
 #
-# @remoteHost:              The remote host involved in the session
+# @remoteHost:               The remote host involved in the session
 #
-# @remoteUserName:          Name of user in remote Machine
+# @remoteUserName:           Name of user in remote Machine
 #
-# @status:                  Status of geo replication
+# @status:                   Status of geo replication
 #
-# @crawlStatus:             Crawl status
+# @crawlStatus:              Crawl status
 #
-# @timeZone:                Time zone of local node
+# @timeZone:                 Time zone of local node
 #
-# @lastSynced:              Time of last sync
+# @lastSynced:               Time of last sync
 #
-# @entry:                   Nos of entry operations pending
+# @entry:                    Nos of entry operations pending
 #
-# @data:                    Nos of data operations pending
+# @data:                     Nos of data operations pending
 #
-# @meta:                    Nos of meta operations pending
+# @meta:                     Nos of meta operations pending
 #
-# @failures:                Nos of failures
+# @failures:                 Nos of failures
 #
-# @checkpointTime           Checkpoint Set time
+# @checkpointTime:           Checkpoint Set time
 #
-# @checkpointCompletionTime Checkpoint completion time
+# @checkpointCompletionTime: Checkpoint completion time
 #
-# @checkpointCompleted      If checkpoint is completed or not
+# @checkpointCompleted:      If checkpoint is completed or not
 #
 # Since: 4.17.0
 ##
@@ -1458,8 +1472,6 @@
 # @GlusterGeoRepSessionList:
 #
 # Gluster geo-replication session list.
-#
-# @volumeName:   Master volume name
 #
 # @sessions:     The session details of all sessions
 #
@@ -1587,13 +1599,12 @@
 {'map': 'GeoRepConfigMap',
  'key': 'str', 'value': 'str'}
 
+##
 # @GeoRepConfig:
 #
 # Geo replication config details.
 #
-# @optionName:   Config option name
-#
-# @optionValue:  Value of the config option
+# @gepRepConfig:   GeoRepConfig map
 #
 # Since: 4.17.0
 ##
@@ -1601,7 +1612,7 @@
  'data': {'gepRepConfig': 'GeoRepConfigMap'}}
 
 ##
-# @Glustervolume.geoRepConfigList:
+# @GlusterVolume.geoRepConfigList:
 #
 # List Geo Replication configuration
 #
@@ -1690,7 +1701,7 @@
 {'type': 'SnapshotCreateDetail',
  'data': {'uuid': 'UUID', 'name': 'str'}}
 
-#
+##
 # @GlusterVolume.geoRepSessionCreate:
 #
 # Creates a Geo Replication session
@@ -1713,7 +1724,7 @@
           'remoteVolumeName': 'str', '*remoteUserName': 'str',
           '*force': 'bool'}}
 
-#
+##
 # @GlusterVolume.geoRepSessionDelete:
 #
 # Deletes a Geo Replication session
@@ -1867,7 +1878,6 @@
  'returns': 'SnapRestoreDetail'}
 
 ##
-#
 # @SystemSnapshotConfig:
 #
 # @snap-max-hard-limit: Snapshot max hard limit
@@ -1878,36 +1888,36 @@
 #
 # @activate-on-create:  Auto activate enabled/disabled
 #
-# @Since: 4.17.0
+# Since: 4.17.0
 ##
 {'type': 'SystemSnapshotConfig',
  'data': {'snap-max-hard-limit': 'str', 'snap-max-soft-limit': 'str',
           'auto-delete': 'str', 'activate-on-create': 'str'}}
 
 ##
-#
 # @VolumeSnapConfig:
+#
+# Volume snapshot configuration
 #
 # @snap-max-hard-limit:  Snapshot max hard limit
 #
-# @Since: 4.17.0
+# Since: 4.17.0
 ##
 {'type': 'VolumeSnapConfig',
  'data': {'snap-max-hard-limit': 'str'}}
 
 ##
-#
 # @VolumeSnapshotConfigMap:
 #
 # A mapping of snapshot config indexed by volume name.
 #
-# @Since: 4.17.0
+# Since: 4.17.0
 ##
 {'map': 'VolumeSnapshotConfigMap',
  'key': 'str', 'value': 'VolumeSnapConfig'}
 
 ##
-# @SnapConfigDetail
+# @SnapConfigDetail:
 #
 # Snapshot configuration details
 #
@@ -1932,7 +1942,6 @@
 # Since: 4.17.0
 ##
 {'command': {'class': 'GlusterSnapshot', 'name': 'configList'},
- 'data': {},
  'returns': 'SnapConfigDetail'}
 
 ##
@@ -1958,7 +1967,7 @@
 #
 # @optionName:   Option name to be set
 #
-# @optionValue:  Value of the configration option
+# @optionValue:  Value of the configuration option
 #
 # Since: 4.17.0
 ##
@@ -1993,7 +2002,7 @@
 # Since: 4.17.0
 ##
 {'enum': 'SnapshotStatus',
- 'data': ['ACTIVATED', 'DEDACTIVATED']}
+ 'data': ['ACTIVATED', 'DEACTIVATED']}
 
 ##
 # @CreateTime:
@@ -2042,12 +2051,10 @@
 #
 # @snapRemaining:  Number of snapshots remaining for that volume
 #
-# @snapCount:      Number of snapshots taken for that volume
-#
 # Since: 4.17.0
 ##
 {'type': 'VolumeSnapInfo',
- 'data': {'snapshots': ['snapInfo'], 'snapRemaining': 'str'}}
+ 'data': {'snapshots': ['SnapInfo'], 'snapRemaining': 'str'}}
 
 ##
 # @SnapshotInfoMap:
@@ -2057,12 +2064,12 @@
 # Since: 4.17.0
 ##
 {'map': 'SnapshotInfoMap',
- 'key': 'str', 'value': 'volumeSnapInfo'}
+ 'key': 'str', 'value': 'VolumeSnapInfo'}
 
 ##
 # @GlusterVolume.snapshotList:
 #
-# Snapshot list is retrived for the given volume
+# Snapshot list is retrieved for the given volume
 #
 # @volumeName: #optional gluster volume name
 #
@@ -2101,13 +2108,13 @@
  'returns': 'GeoRepPubKeys'}
 
 ##
-# @GlusterVolume.writeGeoRepPubKeysUpdate:
+# @GlusterVolume.geoRepKeysUpdate:
 #
 # write collected public keys to users authorized_keys file.
 #
-# @userName:  Name of user
+# @userName:       Name of user
 #
-# @geoRepPubKeys :  Collection of geo-rep public keys from local nodes
+# @geoRepPubKeys:  Collection of geo-rep public keys from local nodes
 #
 # Since: 4.17.0
 ##
@@ -2121,7 +2128,7 @@
 #
 # @remoteUserName:         Name of user
 #
-# @remoteGroupName :       Name of the users group
+# @remoteGroupName:        Name of the users group
 #
 # @remoteVolumeName:       Name of the remote volume
 #
