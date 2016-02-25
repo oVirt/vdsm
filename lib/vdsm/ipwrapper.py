@@ -225,7 +225,7 @@ class Link(object):
 
     @property
     def oper_up(self):
-        return bool(self.flags & self.IFF_RUNNING)
+        return bool(link.get_link(self.name)['flags'] & self.IFF_RUNNING)
 
     def get_promisc(self):
         return bool(link.get_link(self.name)['flags'] & self.IFF_PROMISC)

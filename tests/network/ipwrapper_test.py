@@ -109,6 +109,7 @@ class TestLinks(TestCaseBase):
     def testGetLink(self):
         link = ipwrapper.getLink(self._bridge.devName)
         self.assertTrue(link.isBRIDGE)
+        self.assertTrue(link.oper_up)
         self.assertEqual(link.master, None)
         self.assertEqual(link.name, self._bridge.devName)
 
