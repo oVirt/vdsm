@@ -17,8 +17,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 from itertools import tee, izip, product
+
+from six.moves import range
+from six.moves import zip
 
 from vdsm.config import config
 from virt import migration

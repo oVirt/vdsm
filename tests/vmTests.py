@@ -18,6 +18,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 from itertools import product
 import logging
@@ -30,6 +31,8 @@ import xml.etree.cElementTree as etree
 from xml.dom.minidom import parseString
 
 import libvirt
+import six
+from six.moves import zip
 
 from virt import vm
 from virt.vm import HotunplugTimeout
@@ -208,7 +211,7 @@ class TestVm(XMLTestCase):
             </os>"""
 
         qemu2libvirtBoot = {'a': 'fd', 'c': 'hd', 'd': 'cdrom', 'n': 'network'}
-        for k, v in qemu2libvirtBoot.iteritems():
+        for k, v in six.iteritems(qemu2libvirtBoot):
             vmConfs.append({'boot': k})
             expectedXMLs.append(OSXML % v)
 
@@ -237,7 +240,7 @@ class TestVm(XMLTestCase):
             </os>"""
 
         qemu2libvirtBoot = {'a': 'fd', 'c': 'hd', 'd': 'cdrom', 'n': 'network'}
-        for k, v in qemu2libvirtBoot.iteritems():
+        for k, v in six.iteritems(qemu2libvirtBoot):
             vmConfs.append({'boot': k})
             expectedXMLs.append(OSXML % v)
 
@@ -1138,7 +1141,7 @@ class WaitForRemovalFakeVmDom(object):
 
 
 VM_EXITS = tuple(product((define.NORMAL, define.ERROR),
-                 vmexitreason.exitReasons.keys()))
+                 list(vmexitreason.exitReasons.keys())))
 
 
 @expandPermutations

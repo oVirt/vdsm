@@ -17,6 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
+
+from six.moves import range
 
 from virt import utils
 from virt import vm

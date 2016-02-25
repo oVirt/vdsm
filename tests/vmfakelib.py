@@ -18,6 +18,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 from contextlib import contextmanager
 import logging
@@ -64,7 +65,7 @@ class Connection(object):
             sec.description = description
         else:
             # (usage_type, usage_id) pair must be unique
-            for sec in self.secrets.values():
+            for sec in list(self.secrets.values()):
                 if sec.usage_type == usage_type and sec.usage_id == usage_id:
                     raise Error(libvirt.VIR_ERR_INTERNAL_ERROR)
             sec = Secret(self, uuid, usage_type, usage_id, description)
@@ -77,7 +78,7 @@ class Connection(object):
         return self.secrets[uuid]
 
     def listAllSecrets(self, flags=0):
-        return self.secrets.values()
+        return list(self.secrets.values())
 
     def domainEventRegisterAny(self, *arg):
         pass

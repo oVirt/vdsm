@@ -17,9 +17,12 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 import copy
 import uuid
+
+import six
 
 from virt import vmstats
 
@@ -230,7 +233,7 @@ class VmStatsTestCase(TestCaseBase):
 
     def setUp(self):
         # just pick one sampling
-        self.samples = _FAKE_BULK_STATS.values()[0]
+        self.samples = next(six.itervalues(_FAKE_BULK_STATS))
         self.bulk_stats = self.samples[0]
         self.interval = 10  # seconds
 
@@ -284,7 +287,7 @@ class UtilsFunctionsTests(VmStatsTestCase):
     def test_network_missing(self):
         # seen using SR-IOV
 
-        bulk_stats = _FAKE_BULK_STATS_SRIOV.values()[0]
+        bulk_stats = next(six.itervalues(_FAKE_BULK_STATS_SRIOV))
         indexes = vmstats._find_bulk_stats_reverse_map(
             bulk_stats[0], 'net')
         self.assertTrue(indexes)
