@@ -41,8 +41,6 @@ matplotlib.use("Agg")
 import pandas
 from matplotlib import pyplot
 
-REPOSTAT = "Run and protect: repoStats, Return response:"
-
 
 def main(args):
     args = parse_args(args)
@@ -79,25 +77,45 @@ class DomainStats(object):
 
 def parse(files):
     """
-    Parse repoStat from vdsm log. Return dict of DomainStats objects.
+    Parse patterns from vdsm log. Return dict of DomainStats objects.
     """
+    patterns = [
+        # Match repoStats response log:
+        # jsonrpc.Executor/5::INFO::2016-02-17
+        # 19:26:33,837::logUtils::51::dispatcher::(wrapper) Run and protect:
+        # repoStats, Return response: ...
+        (add_repostats, "Run and protect: repoStats, Return response:"),
+    ]
+
     stats = defaultdict(DomainStats)
 
     for line in fileinput.input(files):
-        pos = line.find(REPOSTAT)
-        if pos == -1:
-            continue
-        timestamp = line.split("::", 3)[2]
-        timestamp, millis = timestamp.split(",", 1)
-        timestamp = pandas.Timestamp(timestamp)
-        response = eval(line[pos + len(REPOSTAT):])
-        for uuid, info in response.items():
-            ds = stats[uuid]
-            ds.timestamp.append(timestamp)
-            ds.lastcheck.append(float(info["lastCheck"]))
-            ds.delay.append(float(info["delay"]))
+        for func, pattern in patterns:
+            start = line.find(pattern)
+            if start != -1:
+                end = start + len(pattern)
+                func(stats, line, start, end)
 
     return stats
+
+
+def add_repostats(stats, line, start, end):
+    """
+    Add repostats samples from repoStats response line
+    """
+    timestamp = parse_timestamp(line)
+    response = eval(line[end:])
+    for uuid, info in response.items():
+        ds = stats[uuid]
+        ds.timestamp.append(timestamp)
+        ds.lastcheck.append(float(info["lastCheck"]))
+        ds.delay.append(float(info["delay"]))
+
+
+def parse_timestamp(line):
+    timestamp = line.split("::", 3)[2]
+    timestamp, millis = timestamp.split(",", 1)
+    return pandas.Timestamp(timestamp)
 
 
 def dataframe(stats, key):
