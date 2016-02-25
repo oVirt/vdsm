@@ -231,7 +231,7 @@ def _addNetwork(network, configurator,
             ne.ERR_USED_BRIDGE, 'Network already exists (%s)' % (network,))
     if bonding:
         _validateInterNetworkCompatibility(_netinfo, vlan, bonding)
-    else:
+    elif nic:
         _validateInterNetworkCompatibility(_netinfo, vlan, nic)
 
     logging.info('Adding network %s with vlan=%s, bonding=%s, nic=%s, '
