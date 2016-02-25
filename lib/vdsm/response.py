@@ -75,10 +75,13 @@ def error_raw(code, message):
     }
 
 
-def is_error(res):
+def is_error(res, err=None):
     try:
         code = res["status"]["code"]
     except KeyError:
         raise MalformedResponse(res)
     else:
-        return code != doneCode["code"]
+        if err:
+            return code == errCode[err]["status"]["code"]
+        else:
+            return code != doneCode["code"]
