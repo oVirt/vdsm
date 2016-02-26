@@ -411,6 +411,28 @@ class Rng(Base):
 
         return rng
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for rng in vm.domain.get_device_elements('rng'):
+            address = vmxml.device_address(rng)
+            alias = rng.getElementsByTagName('alias')[0].getAttribute('name')
+            source = rng.getElementsByTagName('backend')[0].firstChild.\
+                nodeValue
+
+            for dev in device_conf:
+                if dev.uses_source(source) and not hasattr(dev, 'alias'):
+                    dev.address = address
+                    dev.alias = alias
+                    break
+
+            for dev in vm.conf['devices']:
+                if dev['type'] == hwclass.RNG and \
+                   Rng.matching_source(dev, source) and \
+                   'alias' not in dev:
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    break
+
 
 class Tpm(Base):
     __slots__ = ()

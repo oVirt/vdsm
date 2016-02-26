@@ -1729,7 +1729,6 @@ class Vm(object):
         vmdevices.core.Video.update_device_info(
             self, devices[hwclass.VIDEO])
         self._getUnderlyingGraphicsDeviceInfo()
-        self._getUnderlyingRngDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
         vmdevices.core.Controller.update_device_info(
             self, devices[hwclass.CONTROLLER])
@@ -1739,6 +1738,8 @@ class Vm(object):
             self, devices[hwclass.WATCHDOG])
         vmdevices.core.Smartcard.update_device_info(
             self, devices[hwclass.SMARTCARD])
+        vmdevices.core.Rng.update_device_info(
+            self, devices[hwclass.RNG])
         self._getUnderlyingHostDeviceInfo()
         self._getUnderlyingMemoryDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
@@ -4073,30 +4074,6 @@ class Vm(object):
                 if dev['device'] == hwclass.CONSOLE and \
                         not dev.get('alias'):
                     dev['alias'] = alias
-
-    def _getUnderlyingRngDeviceInfo(self):
-        """
-        Obtain rng device info from libvirt.
-        """
-        for rng in self._domain.get_device_elements('rng'):
-            address = vmxml.device_address(rng)
-            alias = rng.getElementsByTagName('alias')[0].getAttribute('name')
-            source = rng.getElementsByTagName('backend')[0].firstChild.\
-                nodeValue
-
-            for dev in self._devices[hwclass.RNG]:
-                if dev.uses_source(source) and not hasattr(dev, 'alias'):
-                    dev.address = address
-                    dev.alias = alias
-                    break
-
-            for dev in self.conf['devices']:
-                if dev['type'] == hwclass.RNG and \
-                   vmdevices.core.Rng.matching_source(dev, source) and \
-                   'alias' not in dev:
-                    dev['address'] = address
-                    dev['alias'] = alias
-                    break
 
     def _getUnderlyingHostDeviceUSBInfo(self, x):
         alias = x.getElementsByTagName('alias')[0].getAttribute('name')
