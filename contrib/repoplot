@@ -61,10 +61,10 @@ def parse_args(args):
     parser.add_argument("--width", "-x", dest="width", type=int,
                         help="output file width in inches (default 20)")
     parser.add_argument("--height", "-y", dest="height", type=int,
-                        help="output file height in inches (default 25)")
+                        help="output file height in inches (default 30)")
     parser.add_argument("files", nargs="+",
                         help="vdsm log files to process")
-    parser.set_defaults(name=None, format="pdf", width=20, height=25)
+    parser.set_defaults(name=None, format="pdf", width=20, height=30)
     return parser.parse_args(args)
 
 
@@ -77,6 +77,7 @@ class Stats(object):
         self.lvm_commands = defaultdict(CommandStats)
         self.mailbox_commands = defaultdict(CommandStats)
         self.monitor_commands = defaultdict(CommandStats)
+        self.qemuimg_operations = defaultdict(CommandStats)
 
 
 class DomainStats(object):
@@ -145,6 +146,21 @@ def parse(files):
         # SUCCESS: ...
         (add_command, "::Storage.Misc.excCmd::(_checkForMail)",
             "mailbox_commands"),
+
+        # Match qemu-img operation used for copying images in 4.0.
+        #
+        # Begin:
+        # 10db509a-d5e4-41e8-8751-1305f0852d68::DEBUG::2016-02-17
+        # 19:32:49,865::image::137::Storage.Image::(_wait_for_qemuimg_operation)
+        # waiting for qemu-img operation to complete
+        #
+        # End:
+        # 10db509a-d5e4-41e8-8751-1305f0852d68::DEBUG::2016-02-17
+        # 19:40:14,134::image::146::Storage.Image::(_wait_for_qemuimg_operation)
+        # qemu-img operation has completed
+        (add_qemuimg_operation,
+            "::Storage.Image::(_wait_for_qemuimg_operation)",
+            "qemuimg_operations"),
     ]
 
     stats = Stats()
@@ -193,6 +209,30 @@ def add_command(commands, log):
         cs.runtime.append(0)
 
 
+def add_qemuimg_operation(operations, log):
+    """
+    Add qemu-img operations start and stop events
+    """
+    cs = operations[log.thread]
+    if "waiting for qemu-img operation" in log.text:
+        cs.running = True
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(0)
+    elif "operation has completed" in log.text:
+        if not cs.running:
+            return
+        cs.running = False
+        timedelta = log.timestamp - cs.timestamp[-1]
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(timedelta.total_seconds())
+        # Add zero in the same timestamp, to get nicer triangles in the plots.
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(0)
+    else:
+        # Ignore periodic progress reports
+        pass
+
+
 def parse_log(line):
     # MainThread::DEBUG::2016-02-17
     # 19:26:03,875::sp::398::Storage.StoragePool::(cleanupMasterMount) ...
@@ -217,7 +257,7 @@ def dataframe(stats, key):
 
 
 def plot(stats, filename, size):
-    rows = 5
+    rows = 6
     columns = 1
 
     pyplot.figure(figsize=size, dpi=300)
@@ -280,6 +320,16 @@ def plot(stats, filename, size):
     pyplot.grid(True)
 
     for thread, cs in stats.monitor_commands.iteritems():
+        pyplot.plot(cs.timestamp, cs.runtime)
+
+    pyplot.subplot(rows, columns, 6)
+    pyplot.title("qemu-img operations")
+    pyplot.ylabel("runtime (seconds)")
+    pyplot.xlabel("time")
+    pyplot.xlim(lastcheck.index[0], lastcheck.index[-1])
+    pyplot.grid(True)
+
+    for thread, cs in stats.qemuimg_operations.iteritems():
         pyplot.plot(cs.timestamp, cs.runtime)
 
     pyplot.savefig(filename, bbox_inches="tight")
