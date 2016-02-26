@@ -694,20 +694,11 @@ def _get_connectivity_timeout(options):
                            CONNECTIVITY_TIMEOUT_DEFAULT))
 
 
-def _check_connectivity(connectivity_check_networks, networks, bondings,
-                        options, logger):
+def _check_connectivity(networks, bondings, options, logger):
     if utils.tobool(options.get('connectivityCheck', True)):
         logger.debug('Checking connectivity...')
         if not _clientSeen(_get_connectivity_timeout(options)):
             logger.info('Connectivity check failed, rolling back')
-            for network in connectivity_check_networks:
-                # If the new added network was created on top of
-                # existing bond, we need to keep the bond on rollback
-                # flow, else we will break the new created bond.
-                _delNetwork(network, ConfiguratorClass(),
-                            bypassValidation=True,
-                            implicitBonding=networks[network].
-                            get('bonding') in bondings)
             raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                      'connectivity check failed')
 
@@ -808,7 +799,6 @@ def setupNetworks(networks, bondings, options):
     libvirt_nets = netinfo_networks()
     _netinfo = CachingNetInfo(_netinfo=netinfo_get(
         libvirtNets2vdsm(libvirt_nets)))
-    connectivity_check_networks = set()
 
     logger.debug("Applying...")
     in_rollback = options.get('_inRollback', False)
@@ -846,16 +836,13 @@ def setupNetworks(networks, bondings, options):
                 raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
                                          "network %r: It doesn't exist in the "
                                          "system" % network)
-            else:
-                connectivity_check_networks.add(network)
 
         _bonds_setup(bondings, configurator, _netinfo, in_rollback, logger)
 
         _add_missing_networks(configurator, networks, bondings,
                               logger, _netinfo)
 
-        _check_connectivity(connectivity_check_networks, networks, bondings,
-                            options, logger)
+        _check_connectivity(networks, bondings, options, logger)
 
     hooks.after_network_setup(_buildSetupHookDict(networks, bondings, options))
 

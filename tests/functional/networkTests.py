@@ -2461,6 +2461,29 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(status, errors.ERR_LOST_CONNECTION)
         self.assertNetworkDoesntExist(NETWORK_NAME)
 
+    @cleanupNet
+    def testSetupNetworksConnectivityCheckOverExistingBond(self):
+        with dummyIf(2) as nics:
+            # setup initial bonding
+            status, msg = self.setupNetworks(
+                {}, {BONDING_NAME: {'nics': nics}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondExists(BONDING_NAME, nics)
+
+            # setup a network on top of existing bond
+            status, msg = self.setupNetworks(
+                {NETWORK_NAME: {'bridged': True, 'bonding': BONDING_NAME}}, {},
+                {'connectivityCheck': True, 'connectivityTimeout': 0.1})
+            self.assertEqual(status, errors.ERR_LOST_CONNECTION)
+            self.assertNetworkDoesntExist(NETWORK_NAME)
+            self.assertBondExists(BONDING_NAME, nics)
+
+            # cleanup
+            status, msg = self.vdsm_net.setupNetworks(
+                {}, {BONDING_NAME: {'remove': True}}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertBondDoesntExist(BONDING_NAME, nics)
+
     @permutations([[True], [False]])
     @cleanupNet
     def testSetupNetworkOutboundQos(self, bridged):
