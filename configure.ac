@@ -199,6 +199,9 @@ AC_SUBST([SNLKUSER], [sanlock])
 AC_SUBST([SNLKGROUP], [sanlock])
 AC_SUBST([CDROMGROUP], [cdrom])
 
+# Systemd units default path
+AC_SUBST([SYSTEMD_UNIT_DIR], ['/usr/lib/systemd/system'])
+
 # VDSM default paths
 AC_SUBST([vdsmdir], ['${datarootdir}/vdsm'])
 AC_SUBST([vdsmconfdir], ['${sysconfdir}/vdsm'])
@@ -418,6 +421,7 @@ AC_OUTPUT([
 	vdsm_hooks/Makefile
 	vdsm_hooks/allocate_net/Makefile
 	vdsm_hooks/checkimages/Makefile
+	vdsm_hooks/checkips/Makefile
 	vdsm_hooks/diskunmap/Makefile
 	vdsm_hooks/ethtool_options/Makefile
 	vdsm_hooks/extnet/Makefile

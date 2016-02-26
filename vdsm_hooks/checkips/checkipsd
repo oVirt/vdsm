@@ -1,0 +1,96 @@
+#!/usr/bin/python
+#
+# Copyright 2008-2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+import os
+import six
+import subprocess
+import sys
+import syslog
+import time
+import threading
+
+from vdsm import constants
+import vdsm.netconfpersistence as persist_net
+
+sys.path.append(os.path.join(constants.P_VDSM_HOOKS, 'after_get_stats'))
+import checkips_utils
+
+PING_TIMEOUT = 15
+PING_SAMPLE_TIME = 20
+CHECKIPV4 = 'checkipv4'
+CHECKIPV6 = 'checkipv6'
+VDSM_CHECKIPS = 'vdsm-checkips'
+
+
+def _ping_address(address, address_type, network):
+    ping_cmd = 'ping' if address_type == CHECKIPV4 else 'ping6'
+    command = [
+        ping_cmd,
+        '-c', '1',
+        '-w', str(PING_TIMEOUT),
+        address
+    ]
+    p = subprocess.Popen(
+        command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    out, _ = p.communicate()
+    if not p.returncode:
+        checkips_utils.touch(network, constants.P_VDSM_RUN)
+    # Not sure about this, flood the journalctl log
+    elif out:
+        syslog.syslog(
+            "%s: failed to ping address %s: %s" %
+            (VDSM_CHECKIPS, address, out)
+        )
+
+
+def _ping_addresses():
+    threads = []
+    networks = persist_net.PersistentConfig().networks
+    for net, net_attrs in six.iteritems(networks):
+        ping_addresses = checkips_utils.get_ping_addresses(net_attrs)
+        if ping_addresses:
+            for address_type, address in ping_addresses:
+                ping_thread = threading.Thread(
+                    target=_ping_address,
+                    args=(address, address_type, net)
+                )
+                ping_thread.start()
+                threads.append(ping_thread)
+
+    for ping_thread in threads:
+        ping_thread.join()
+
+
+def main():
+    try:
+        while True:
+            time_before_ping = time.time()
+            _ping_addresses()
+            time.sleep(
+                PING_SAMPLE_TIME - (time.time() - time_before_ping)
+            )
+    except Exception as e:
+        syslog.syslog("%s: service failed to start: %s" % (VDSM_CHECKIPS, e))
+        return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())

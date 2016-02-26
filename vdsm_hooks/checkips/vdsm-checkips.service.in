@@ -1,0 +1,15 @@
+[Unit]
+Description=Service that ping given ips each 60 seconds
+
+[Service]
+Type=simple
+LimitCORE=infinity
+ExecStart=@HOOKSDIR@/checkipsd
+Restart=on-failure
+RestartSec=10
+User=@VDSMUSER@
+Group=@VDSMGROUP@
+TimeoutStopSec=@SERVICE_STOP_TIMEOUT@
+
+[Install]
+WantedBy=multi-user.target

@@ -36,6 +36,7 @@ if HOOKS
 SUBDIRS += \
 	allocate_net \
 	checkimages \
+	checkips \
 	diskunmap \
 	extnet \
 	extra_ipv4_addrs \

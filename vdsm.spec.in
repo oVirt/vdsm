@@ -377,6 +377,19 @@ Requires:       %{name}
 VDSM hook used to perform consistency check on a qcow2 format disk image
 using the QEMU disk image utility.
 
+%package hook-checkips
+Summary:        Check connectivity from the host to designated IPs
+Requires:       %{name} = %{version}-%{release}
+
+%description hook-checkips
+VDSM hook used to check connectivity from the host network to designated IPs
+
+%post hook-checkips
+%systemd_post vdsm-checkips.service
+
+%preun hook-checkips
+%systemd_preun vdsm-checkips.service
+
 %package hook-diskunmap
 Summary:        Activate UNMAP for disk/lun devices
 BuildArch:      noarch
@@ -1390,6 +1403,13 @@ exit 0
 %files hook-checkimages
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
+
+%files hook-checkips
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/10_checkips
+%{_libexecdir}/%{vdsm_name}/hooks/checkipsd
+%{_libexecdir}/%{vdsm_name}/hooks/after_get_stats/checkips_utils.py*
+%{_unitdir}/vdsm-checkips.service
 
 %files hook-extra-ipv4-addrs
 %defattr(-, root, root, -)

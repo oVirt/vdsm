@@ -1,0 +1,41 @@
+checkips vdsm hook
+=====================
+This hook check connectivity from host to given addresses
+
+This hook is useful in cases where you need to check connectivity from host to
+specific VLAN, you just need to add custom property checkipv4 or checkipv6,
+depend on what type of IP do you want to check, to network.
+
+Syntax:
+    checkipv4=IPV4 or FQDN
+    checkipv6=IPV6 or FQDN
+
+Where:
+    IPV4 is ip address in IPV4 format
+    IPV6 is ip address in IPV6 format
+
+Example:
+    checkipv4=127.0.0.1
+    checkipv6=::1
+
+Installation:
+    - Use the engine-config to append the proper custom property:
+        $ sudo engine-config -s UserDefinedNetworkCustomProperties='checkipv4=^[0-9\.a-fA-F]+$;checkipv6=^[0-9\.a-fA-F\:]+$'
+    - Verify that the checkipv4 and checkipv6 custom properties was properly added:
+        $ sudo engine-config -g UserDefinedNetworkCustomProperties
+    - Restart ovirt-engine service to apply changes
+        $ sudo service ovirt-engine restart
+    - The hook should be installed on all hosts,
+      and its accompanying service should be enabled and started
+        systemctl vdsm-checkips enable
+        systemctl vdsm-checkips start
+
+Usage:
+    In the host setup network configuration window, choose edit assigned
+    logical network, select custom property checkipv4 or checkipv6 and
+    enter VLAN IP or FQDN that you want to check for
+    connectivity(examples 8.8.8.8,2001:4860:4860::8888). So if you defined
+    checkipv4 and checkipv6 custom properties and if the host fails to ping
+    both IP's, it will drop the network's state to down.
+    If the network is defined as "required",
+    the host would become non-operational.
