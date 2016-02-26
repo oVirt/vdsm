@@ -698,6 +698,40 @@ def _check_connectivity(networks, bondings, options, logger):
                                      'connectivity check failed')
 
 
+def _remove_networks(networks, bondings, configurator, _netinfo,
+                     libvirt_nets, logger):
+    kernel_config = kernelconfig.KernelConfig(_netinfo)
+    normalized_config = kernelconfig.normalize(
+        netconfpersistence.BaseConfig(networks, bondings))
+
+    for network, attrs in networks.items():
+        if network in _netinfo.networks:
+            logger.debug("Removing network %r", network)
+            keep_bridge = _should_keep_bridge(
+                network_attrs=normalized_config.networks[network],
+                currently_bridged=_netinfo.networks[network]['bridged'],
+                net_kernel_config=kernel_config.networks[network]
+            )
+
+            _delNetwork(network, configurator,
+                        _netinfo=_netinfo,
+                        keep_bridge=keep_bridge)
+            _netinfo.del_network(network)
+            _netinfo.updateDevices()
+        elif network in libvirt_nets:
+            # If the network was not in _netinfo but is in the networks
+            # returned by libvirt, it means that we are dealing with
+            # a broken network.
+            logger.debug('Removing broken network %r', network)
+            _delBrokenNetwork(network, libvirt_nets[network],
+                              configurator=configurator)
+            _netinfo.updateDevices()
+        elif 'remove' in attrs:
+            raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
+                                     "network %r: It doesn't exist in the "
+                                     "system" % network)
+
+
 def _apply_hook(bondings, networks, options):
     results = hooks.before_network_setup(_buildSetupHookDict(networks,
                                                              bondings,
@@ -797,40 +831,12 @@ def setupNetworks(networks, bondings, options):
 
     logger.debug("Applying...")
     in_rollback = options.get('_inRollback', False)
-    kernel_config = kernelconfig.KernelConfig(_netinfo)
-    normalized_config = kernelconfig.normalize(
-        netconfpersistence.BaseConfig(networks, bondings))
     with ConfiguratorClass(in_rollback) as configurator:
         # from this point forward, any exception thrown will be handled by
         # Configurator.__exit__.
 
-        # Remove edited networks and networks with 'remove' attribute
-        for network, attrs in networks.items():
-            if network in _netinfo.networks:
-                logger.debug("Removing network %r", network)
-                keep_bridge = _should_keep_bridge(
-                    network_attrs=normalized_config.networks[network],
-                    currently_bridged=_netinfo.networks[network]['bridged'],
-                    net_kernel_config=kernel_config.networks[network]
-                )
-
-                _delNetwork(network, configurator,
-                            _netinfo=_netinfo,
-                            keep_bridge=keep_bridge)
-                _netinfo.del_network(network)
-                _netinfo.updateDevices()
-            elif network in libvirt_nets:
-                # If the network was not in _netinfo but is in the networks
-                # returned by libvirt, it means that we are dealing with
-                # a broken network.
-                logger.debug('Removing broken network %r', network)
-                _delBrokenNetwork(network, libvirt_nets[network],
-                                  configurator=configurator)
-                _netinfo.updateDevices()
-            elif 'remove' in attrs:
-                raise ConfigNetworkError(ne.ERR_BAD_BRIDGE, "Cannot delete "
-                                         "network %r: It doesn't exist in the "
-                                         "system" % network)
+        _remove_networks(networks, bondings, configurator, _netinfo,
+                         libvirt_nets, logger)
 
         _bonds_setup(bondings, configurator, _netinfo, in_rollback, logger)
 
