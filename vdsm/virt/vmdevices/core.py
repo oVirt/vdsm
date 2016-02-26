@@ -203,6 +203,49 @@ class Controller(Base):
 
         return ctrl
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('controller'):
+            # Ignore controller devices without address
+            if not x.getElementsByTagName('address'):
+                continue
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            device = x.getAttribute('type')
+            # Get model and index. Relevant for USB controllers.
+            model = x.getAttribute('model')
+            index = x.getAttribute('index')
+
+            # Get controller address
+            address = vmxml.device_address(x)
+
+            # In case the controller has index and/or model, they
+            # are compared. Currently relevant for USB controllers.
+            for ctrl in device_conf:
+                if ((ctrl.device == device) and
+                        (not hasattr(ctrl, 'index') or ctrl.index == index) and
+                        (not hasattr(ctrl, 'model') or ctrl.model == model)):
+                    ctrl.alias = alias
+                    ctrl.address = address
+            # Update vm's conf with address for known controller devices
+            # In case the controller has index and/or model, they
+            # are compared. Currently relevant for USB controllers.
+            knownDev = False
+            for dev in vm.conf['devices']:
+                if ((dev['type'] == hwclass.CONTROLLER) and
+                        (dev['device'] == device) and
+                        ('index' not in dev or dev['index'] == index) and
+                        ('model' not in dev or dev['model'] == model)):
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    knownDev = True
+            # Add unknown controller device to vm's conf
+            if not knownDev:
+                vm.conf['devices'].append(
+                    {'type': hwclass.CONTROLLER,
+                     'device': device,
+                     'address': address,
+                     'alias': alias})
+
 
 class Smartcard(Base):
     __slots__ = ('address',)

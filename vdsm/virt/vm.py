@@ -1729,12 +1729,13 @@ class Vm(object):
         vmdevices.core.Video.update_device_info(
             self, devices[hwclass.VIDEO])
         self._getUnderlyingGraphicsDeviceInfo()
-        self._getUnderlyingControllerDeviceInfo()
         self._getUnderlyingBalloonDeviceInfo()
         self._getUnderlyingWatchdogDeviceInfo()
         self._getUnderlyingSmartcardDeviceInfo()
         self._getUnderlyingRngDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
+        vmdevices.core.Controller.update_device_info(
+            self, devices[hwclass.CONTROLLER])
         self._getUnderlyingHostDeviceInfo()
         self._getUnderlyingMemoryDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
@@ -4053,51 +4054,6 @@ class Vm(object):
                           'device': device,
                           'address': address}
                 self.conf['devices'].append(newDev)
-
-    def _getUnderlyingControllerDeviceInfo(self):
-        """
-        Obtain controller devices info from libvirt.
-        """
-        for x in self._domain.get_device_elements('controller'):
-            # Ignore controller devices without address
-            if not x.getElementsByTagName('address'):
-                continue
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            device = x.getAttribute('type')
-            # Get model and index. Relevant for USB controllers.
-            model = x.getAttribute('model')
-            index = x.getAttribute('index')
-
-            # Get controller address
-            address = vmxml.device_address(x)
-
-            # In case the controller has index and/or model, they
-            # are compared. Currently relevant for USB controllers.
-            for ctrl in self._devices[hwclass.CONTROLLER]:
-                if ((ctrl.device == device) and
-                        (not hasattr(ctrl, 'index') or ctrl.index == index) and
-                        (not hasattr(ctrl, 'model') or ctrl.model == model)):
-                    ctrl.alias = alias
-                    ctrl.address = address
-            # Update vm's conf with address for known controller devices
-            # In case the controller has index and/or model, they
-            # are compared. Currently relevant for USB controllers.
-            knownDev = False
-            for dev in self.conf['devices']:
-                if ((dev['type'] == hwclass.CONTROLLER) and
-                        (dev['device'] == device) and
-                        ('index' not in dev or dev['index'] == index) and
-                        ('model' not in dev or dev['model'] == model)):
-                    dev['address'] = address
-                    dev['alias'] = alias
-                    knownDev = True
-            # Add unknown controller device to vm's conf
-            if not knownDev:
-                self.conf['devices'].append(
-                    {'type': hwclass.CONTROLLER,
-                     'device': device,
-                     'address': address,
-                     'alias': alias})
 
     def _getUnderlyingBalloonDeviceInfo(self):
         """
