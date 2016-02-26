@@ -1729,13 +1729,14 @@ class Vm(object):
         vmdevices.core.Video.update_device_info(
             self, devices[hwclass.VIDEO])
         self._getUnderlyingGraphicsDeviceInfo()
-        self._getUnderlyingBalloonDeviceInfo()
         self._getUnderlyingWatchdogDeviceInfo()
         self._getUnderlyingSmartcardDeviceInfo()
         self._getUnderlyingRngDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
         vmdevices.core.Controller.update_device_info(
             self, devices[hwclass.CONTROLLER])
+        vmdevices.core.Balloon.update_device_info(
+            self, devices[hwclass.BALLOON])
         self._getUnderlyingHostDeviceInfo()
         self._getUnderlyingMemoryDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
@@ -4054,31 +4055,6 @@ class Vm(object):
                           'device': device,
                           'address': address}
                 self.conf['devices'].append(newDev)
-
-    def _getUnderlyingBalloonDeviceInfo(self):
-        """
-        Obtain balloon device info from libvirt.
-        """
-        for x in self._domain.get_device_elements('memballoon'):
-            # Ignore balloon devices without address.
-            if not x.getElementsByTagName('address'):
-                address = None
-            else:
-                address = vmxml.device_address(x)
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-
-            for dev in self._devices[hwclass.BALLOON]:
-                if address and not hasattr(dev, 'address'):
-                    dev.address = address
-                if not hasattr(dev, 'alias'):
-                    dev.alias = alias
-
-            for dev in self.conf['devices']:
-                if dev['type'] == hwclass.BALLOON:
-                    if address and not dev.get('address'):
-                        dev['address'] = address
-                    if not dev.get('alias'):
-                        dev['alias'] = alias
 
     def _getUnderlyingConsoleDeviceInfo(self):
         """

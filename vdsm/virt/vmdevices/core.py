@@ -100,6 +100,29 @@ class Balloon(Base):
         m.setAttrs(model=self.specParams['model'])
         return m
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('memballoon'):
+            # Ignore balloon devices without address.
+            if not x.getElementsByTagName('address'):
+                address = None
+            else:
+                address = vmxml.device_address(x)
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+
+            for dev in device_conf:
+                if address and not hasattr(dev, 'address'):
+                    dev.address = address
+                if not hasattr(dev, 'alias'):
+                    dev.alias = alias
+
+            for dev in vm.conf['devices']:
+                if dev['type'] == hwclass.BALLOON:
+                    if address and not dev.get('address'):
+                        dev['address'] = address
+                    if not dev.get('alias'):
+                        dev['alias'] = alias
+
 
 class Console(Base):
     __slots__ = ('_path',)
