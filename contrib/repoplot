@@ -186,9 +186,12 @@ def dataframe(stats, key):
 
 
 def plot(stats, filename, size):
+    rows = 3
+    columns = 1
+
     pyplot.figure(figsize=size, dpi=300)
 
-    pyplot.subplot(311)
+    pyplot.subplot(rows, columns, 1)
     pyplot.title("lastCheck")
     pyplot.ylabel("lastCheck (seconds)")
     pyplot.xlabel("time")
@@ -203,7 +206,7 @@ def plot(stats, filename, size):
     # non-operational.
     pyplot.axis([lastcheck.index[0], lastcheck.index[-1], 0, 330])
 
-    pyplot.subplot(312)
+    pyplot.subplot(rows, columns, 2)
     pyplot.title("read delay")
     pyplot.ylabel("delay (seconds)")
     pyplot.xlabel("time")
@@ -218,7 +221,7 @@ def plot(stats, filename, size):
     # warning in engine log.
     pyplot.axis([lastcheck.index[0], lastcheck.index[-1], 0, 10])
 
-    pyplot.subplot(313)
+    pyplot.subplot(rows, columns, 3)
     pyplot.title("LVM commands")
     pyplot.ylabel("runtime (seconds)")
     pyplot.xlabel("time")
