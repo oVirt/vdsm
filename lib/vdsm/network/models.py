@@ -201,7 +201,7 @@ class Bridge(NetDevice):
 class Bond(NetDevice):
     def __init__(self, name, configurator, ipv4=None, ipv6=None,
                  blockingdhcp=False, mtu=None, slaves=(), options=None,
-                 destroyOnMasterRemoval=None):
+                 on_removal_just_detach_from_network=False):
         self.validateName(name)
         for slave in slaves:
             slave.master = self
@@ -209,7 +209,8 @@ class Bond(NetDevice):
         options = options or ''
         self.validateOptions(options)
         self.options = self._reorderOptions(options)
-        self.destroyOnMasterRemoval = destroyOnMasterRemoval
+        self.on_removal_just_detach_from_network = \
+            on_removal_just_detach_from_network
         super(Bond, self).__init__(name, configurator, ipv4, ipv6,
                                    blockingdhcp, mtu)
 
@@ -274,7 +275,7 @@ class Bond(NetDevice):
 
     @classmethod
     def objectivize(cls, name, configurator, options, nics, mtu, _netinfo,
-                    destroyOnMasterRemoval=None):
+                    on_removal_just_detach_from_network=False):
 
         if nics:  # New bonding or edit bonding.
             slaves = cls._objectivizeSlaves(name, configurator, _nicSort(nics),
@@ -298,8 +299,9 @@ class Bond(NetDevice):
                                      'Missing required nics on a bonding %s '
                                      'that is unknown to Vdsm ' % name)
 
+        detach = on_removal_just_detach_from_network  # argument is too long
         return cls(name, configurator, slaves=slaves, options=options, mtu=mtu,
-                   destroyOnMasterRemoval=destroyOnMasterRemoval)
+                   on_removal_just_detach_from_network=detach)
 
     @staticmethod
     def validateName(name):

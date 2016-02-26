@@ -215,16 +215,17 @@ class Ifcfg(Configurator):
         to_be_removed = self._ifaceDownAndCleanup(bonding)
         if to_be_removed:
             self.configApplier.removeBonding(bonding.name)
-            if bonding.destroyOnMasterRemoval:
-                for slave in bonding.slaves:
-                    slave.remove()
-                if self.unifiedPersistence:
-                    self.runningConfig.removeBonding(bonding.name)
-            else:  # Recreate the bond with ip and master info cleared
+            if bonding.on_removal_just_detach_from_network:
+                # Recreate the bond with ip and master info cleared
                 bonding.ipv4 = IPv4()
                 bonding.ipv6 = IPv6()
                 bonding.master = None
                 bonding.configure()
+            else:
+                for slave in bonding.slaves:
+                    slave.remove()
+                if self.unifiedPersistence:
+                    self.runningConfig.removeBonding(bonding.name)
         else:
             set_mtu = self._setNewMtu(bonding,
                                       vlans.vlan_devs_for_iface(bonding.name))

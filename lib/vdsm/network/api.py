@@ -94,7 +94,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
                         ipv6addr=None, ipv6gateway=None, ipv6autoconf=None,
                         dhcpv6=None, defaultRoute=None, _netinfo=None,
                         configurator=None, blockingdhcp=None,
-                        implicitBonding=None, opts=None):
+                        opts=None):
     """
     Constructs an object hierarchy that describes the network configuration
     that is passed in the parameters.
@@ -116,8 +116,6 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
     :param _netinfo: network information snapshot.
     :param configurator: instance to use to apply the network configuration.
     :param blockingdhcp: whether to acquire dhcp IP config in a synced manner.
-    :param implicitBonding: whether the bond's existance is tied to it's
-                            master's.
     :param defaultRoute: Should this network's gateway be set in the main
                          routing table?
     :param opts: misc options received by the callee, e.g., {'stp': True}. this
@@ -138,7 +136,7 @@ def _objectivizeNetwork(bridge=None, vlan=None, vlan_id=None, bonding=None,
     if bonding:
         topNetDev = Bond.objectivize(bonding, configurator, options=None,
                                      nics=None, mtu=mtu, _netinfo=_netinfo,
-                                     destroyOnMasterRemoval=implicitBonding)
+                                     on_removal_just_detach_from_network=True)
     elif nic:
         bond = _netinfo.getBondingForNic(nic)
         if bond:
@@ -316,7 +314,7 @@ def _delBrokenNetwork(network, netAttr, configurator):
             configurator.runningConfig.removeNetwork(network)
         return
     _delNetwork(network, configurator, bypassValidation=True,
-                implicitBonding=False, _netinfo=_netinfo)
+                _netinfo=_netinfo)
 
 
 def _validateDelNetwork(network, vlan, bonding, nics, bridge_should_be_clean,
@@ -337,7 +335,6 @@ def _disconnect_bridge_port(port):
 @_alterRunningConfig
 def _delNetwork(network, configurator, vlan=None, bonding=None,
                 bypassValidation=False,
-                implicitBonding=True,
                 _netinfo=None, keep_bridge=False, **options):
     if _netinfo is None:
         _netinfo = CachingNetInfo()
@@ -359,8 +356,7 @@ def _delNetwork(network, configurator, vlan=None, bonding=None,
                                   nic=nics[0] if nics and not bonding
                                   else None,
                                   _netinfo=_netinfo,
-                                  configurator=configurator,
-                                  implicitBonding=implicitBonding)
+                                  configurator=configurator)
     net_ent.ipv4.bootproto = (
         'dhcp' if _netinfo.networks[network]['dhcpv4'] else 'none')
 
@@ -554,7 +550,7 @@ def _bonds_remove(bonds, configurator, _netinfo, in_rollback, logger):
         if _is_bond_valid_for_removal(name, _netinfo, in_rollback, logger):
             bond = Bond.objectivize(
                 name, configurator, options=None, nics=None, mtu=None,
-                _netinfo=_netinfo, destroyOnMasterRemoval=True)
+                _netinfo=_netinfo)
             logger.debug('Removing bond %r', bond)
             bond.remove()
             _netinfo.del_bonding(name)
@@ -597,7 +593,7 @@ def _bonds_edit(bonds, configurator, _netinfo, logger):
     for name, attrs in six.iteritems(bonds):
         bond = Bond.objectivize(
             name, configurator, attrs.get('options'), attrs.get('nics'),
-            mtu=None, _netinfo=_netinfo, destroyOnMasterRemoval=False)
+            mtu=None, _netinfo=_netinfo)
         logger.debug('Editing bond %r with options %s', bond, bond.options)
         configurator.editBonding(bond, _netinfo)
 
@@ -612,7 +608,7 @@ def _bonds_add(bonds, configurator, _netinfo, logger):
     for name, attrs in six.iteritems(bonds):
         bond = Bond.objectivize(
             name, configurator, attrs.get('options'), attrs.get('nics'),
-            mtu=None, _netinfo=_netinfo, destroyOnMasterRemoval=False)
+            mtu=None, _netinfo=_netinfo)
         logger.debug('Creating bond %r with options %s', bond, bond.options)
         configurator.configureBond(bond)
 
@@ -635,8 +631,7 @@ def _emergencyNetworkCleanup(network, networkAttrs, configurator):
         if networkAttrs['bonding'] in _netinfo.bondings:
             topNetDev = Bond.objectivize(networkAttrs['bonding'], configurator,
                                          options=None, nics=None, mtu=None,
-                                         _netinfo=_netinfo,
-                                         destroyOnMasterRemoval=True)
+                                         _netinfo=_netinfo)
     elif 'nic' in networkAttrs:
         if networkAttrs['nic'] in _netinfo.nics:
             topNetDev = Nic(networkAttrs['nic'], configurator,
@@ -677,7 +672,7 @@ def _add_missing_networks(configurator, networks, bondings, logger, _netinfo):
         logger.debug("Adding network %r", network)
         try:
             _addNetwork(network, configurator,
-                        implicitBonding=True, _netinfo=_netinfo, **attrs)
+                        _netinfo=_netinfo, **attrs)
         except ConfigNetworkError as cne:
             if cne.errCode == ne.ERR_FAILED_IFUP:
                 logger.debug("Adding network %r failed. Running "
@@ -820,7 +815,7 @@ def setupNetworks(networks, bondings, options):
                 )
 
                 _delNetwork(network, configurator,
-                            implicitBonding=False, _netinfo=_netinfo,
+                            _netinfo=_netinfo,
                             keep_bridge=keep_bridge)
                 _netinfo.del_network(network)
                 _netinfo.updateDevices()

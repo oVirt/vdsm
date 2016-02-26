@@ -183,12 +183,12 @@ class Iproute2(Configurator):
                 DynamicSourceRoute.addInterfaceTracking(bonding)
                 self._removeSourceRoute(bonding, DynamicSourceRoute)
 
-            if bonding.destroyOnMasterRemoval:
-                self._destroyBond(bonding)
-                self.runningConfig.removeBonding(bonding.name)
-            else:
+            if bonding.on_removal_just_detach_from_network:
                 self.configApplier.setIfaceMtu(bonding.name,  mtus.DEFAULT_MTU)
                 self.configApplier.ifdown(bonding)
+            else:
+                self._destroyBond(bonding)
+                self.runningConfig.removeBonding(bonding.name)
         else:
             self._setNewMtu(bonding, vlans.vlan_devs_for_iface(bonding.name))
 
