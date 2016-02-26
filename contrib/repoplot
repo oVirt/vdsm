@@ -114,7 +114,7 @@ def add_repostats(stats, line, start, end):
 
 def parse_timestamp(line):
     timestamp = line.split("::", 3)[2]
-    timestamp, millis = timestamp.split(",", 1)
+    timestamp = timestamp.replace(",", ".")
     return pandas.Timestamp(timestamp)
 
 
