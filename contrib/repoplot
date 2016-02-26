@@ -161,6 +161,36 @@ def parse(files):
         (add_qemuimg_operation,
             "::Storage.Image::(_wait_for_qemuimg_operation)",
             "qemuimg_operations"),
+
+        # Match qemu-img convert used for copying images in 3.6. This matches
+        # the start of the command.
+        #
+        # d9633df0-5f67-442a-861b-91d417b046f5::DEBUG::2016-02-09
+        # 12:37:59,885::utils::669::root::(execCmd) /usr/bin/taskset --cpu-list
+        # 0-23 /usr/bin/nice -n 19 /usr/bin/ionice -c 3 /usr/bin/qemu-img
+        # convert ...
+        (add_qemuimg_convert, "::root::(execCmd)", "qemuimg_operations"),
+
+        # Match qemu-img convert used for copying images in 3.6. This matches
+        # the end of the command.
+        #
+        # d9633df0-5f67-442a-861b-91d417b046f5::DEBUG::2016-02-09
+        # 12:39:51,177::utils::716::root::(watchCmd) SUCCESS: ...
+        (add_qemuimg_convert, "::root::(watchCmd)", "qemuimg_operations"),
+
+        # Match qemu-img convert used for copying disks on 3.5. This matches
+        # both start and end of the command on 3.5.
+        #
+        # Begin:
+        # 8c6193e7-cec6-44d1-afa2-2dd3437d40c8::DEBUG::2014-03-25
+        # 00:37:46,374::utils::546::Storage.Misc.excCmd::(watchCmd) '/bin/nice
+        # -n 19 /usr/bin/ionice -c 3 /usr/bin/qemu-img convert ...
+        #
+        # End:
+        # ffe3217e-6a91-4499-910b-cab975c5a3e4::DEBUG::2016-02-20
+        # 21:10:00,808::utils::718::root::(watchCmd) SUCCESS: ...
+        (add_qemuimg_convert, "::Storage.Misc.excCmd::(watchCmd)",
+            "qemuimg_operations"),
     ]
 
     stats = Stats()
@@ -231,6 +261,29 @@ def add_qemuimg_operation(operations, log):
     else:
         # Ignore periodic progress reports
         pass
+
+
+def add_qemuimg_convert(operations, log):
+    """
+    Add qemu-img operations start or stop events (pre 4.0).
+    """
+    cs = operations[log.thread]
+    if " SUCCESS:" in log.text or " ERROR:" in log.text:
+        if not cs.running:
+            return
+        cs.running = False
+        timedelta = log.timestamp - cs.timestamp[-1]
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(timedelta.total_seconds())
+        # Add zero in the same timestamp, to get nicer triangles in the plots.
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(0)
+    else:
+        if "/usr/bin/qemu-img convert " not in log.text:
+            return
+        cs.running = True
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(0)
 
 
 def parse_log(line):
