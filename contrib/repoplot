@@ -61,10 +61,10 @@ def parse_args(args):
     parser.add_argument("--width", "-x", dest="width", type=int,
                         help="output file width in inches (default 20)")
     parser.add_argument("--height", "-y", dest="height", type=int,
-                        help="output file height in inches (default 20)")
+                        help="output file height in inches (default 25)")
     parser.add_argument("files", nargs="+",
                         help="vdsm log files to process")
-    parser.set_defaults(name=None, format="pdf", width=20, height=20)
+    parser.set_defaults(name=None, format="pdf", width=20, height=25)
     return parser.parse_args(args)
 
 
@@ -76,6 +76,7 @@ class Stats(object):
         self.repostats = defaultdict(DomainStats)
         self.lvm_commands = defaultdict(CommandStats)
         self.mailbox_commands = defaultdict(CommandStats)
+        self.monitor_commands = defaultdict(CommandStats)
 
 
 class DomainStats(object):
@@ -103,6 +104,20 @@ def parse(files):
         # repoStats, Return response: ...
         (add_repostats, "Run and protect: repoStats, Return response:",
             "repostats"),
+
+        # Match storage domains getReadDelay commands.
+        #
+        # Begin:
+        # Thread-16::DEBUG::2016-02-17
+        # 20:14:37,049::blockSD::436::Storage.Misc.excCmd::(getReadDelay)
+        # /usr/bin/taskset --cpu-list 0-7 /usr/bin/dd ...
+        #
+        # End:
+        # Thread-16::DEBUG::2016-02-17
+        # 20:14:37,061::blockSD::436::Storage.Misc.excCmd::(getReadDelay)
+        # SUCCESS: ...
+        (add_command, "::Storage.Misc.excCmd::(getReadDelay)",
+            "monitor_commands"),
 
         # Match LVM commands begin or end logs.
         #
@@ -202,7 +217,7 @@ def dataframe(stats, key):
 
 
 def plot(stats, filename, size):
-    rows = 4
+    rows = 5
     columns = 1
 
     pyplot.figure(figsize=size, dpi=300)
@@ -255,6 +270,16 @@ def plot(stats, filename, size):
     pyplot.grid(True)
 
     for thread, cs in stats.mailbox_commands.iteritems():
+        pyplot.plot(cs.timestamp, cs.runtime)
+
+    pyplot.subplot(rows, columns, 5)
+    pyplot.title("Storage domain monitor commands")
+    pyplot.ylabel("runtime (seconds)")
+    pyplot.xlabel("time")
+    pyplot.xlim(lastcheck.index[0], lastcheck.index[-1])
+    pyplot.grid(True)
+
+    for thread, cs in stats.monitor_commands.iteritems():
         pyplot.plot(cs.timestamp, cs.runtime)
 
     pyplot.savefig(filename, bbox_inches="tight")
