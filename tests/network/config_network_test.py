@@ -29,10 +29,10 @@ from vdsm.netinfo.mtus import DEFAULT_MTU
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
-from vdsm.network import api
 from vdsm.network import errors
 from vdsm.network.configurators import ifcfg
 from vdsm.network.canonize import canonize_networks
+from vdsm.network import legacy_switch
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
 
 
@@ -49,11 +49,11 @@ def _raiseInvalidOpException(*args, **kwargs):
 class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):
-        configurator = api.ConfiguratorClass()
+        configurator = legacy_switch.ConfiguratorClass()
 
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
             canonize_networks({netName: opts})
-            api._addNetwork(netName, configurator, **opts)
+            legacy_switch._addNetwork(netName, configurator, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
@@ -147,6 +147,6 @@ class TestConfigNetwork(TestCaseBase):
                      bridged=True)
         networks = {'test-netowrk': attrs}
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-            api._validateNetworkSetup(networks, {})
+            legacy_switch.validateNetworkSetup(networks, {})
         self.assertEqual(cneContext.exception.errCode,
                          errors.ERR_BAD_PARAMS)

@@ -44,8 +44,8 @@ from vdsm.netinfo.routes import getRouteDeviceTo
 from vdsm.netlink import monitor
 from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
                                               NET_CONF_BACK_DIR)
-from vdsm.network import api
 from vdsm.network import errors
+from vdsm.network import legacy_switch
 from vdsm.network import sourceroute
 
 from vdsm import sysctl
@@ -947,7 +947,7 @@ class NetworkTest(TestCaseBase):
             # new minimum MTU of all of its connected interfaces
             self.assertMtu(BIG, NETWORK_NAME, second)
 
-            if api.ConfiguratorClass == Ifcfg:
+            if legacy_switch.ConfiguratorClass == Ifcfg:
                 # verify that the ifcfg configuration files are also updated
                 # with the new MTU
                 rc, _, _ = execCmd([EXT_IFDOWN, NETWORK_NAME])
