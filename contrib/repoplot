@@ -100,7 +100,8 @@ def parse(files):
         # jsonrpc.Executor/5::INFO::2016-02-17
         # 19:26:33,837::logUtils::51::dispatcher::(wrapper) Run and protect:
         # repoStats, Return response: ...
-        (add_repostats, "Run and protect: repoStats, Return response:"),
+        (add_repostats, "Run and protect: repoStats, Return response:",
+            "repostats"),
 
         # Match LVM commands begin or end logs.
         #
@@ -112,35 +113,39 @@ def parse(files):
         # End:
         # Thread-61::DEBUG::2016-02-17
         # 19:26:37,933::lvm::286::Storage.Misc.excCmd::(cmd) SUCCESS: ...
-        (add_lvm_command, "::Storage.Misc.excCmd::(cmd)"),
+        (add_command, "::Storage.Misc.excCmd::(cmd)", "lvm_commands"),
     ]
 
     stats = Stats()
 
     for line in fileinput.input(files):
-        for func, pattern in patterns:
+        for func, pattern, name in patterns:
             if pattern in line:
                 log = parse_log(line)
-                func(stats, log)
+                substats = getattr(stats, name)
+                func(substats, log)
 
     return stats
 
 
-def add_repostats(stats, log):
+def add_repostats(repostats, log):
     """
     Add repostats samples from repoStats response line
     """
     start = log.text.find("{")
     response = eval(log.text[start:])
     for uuid, info in response.items():
-        ds = stats.repostats[uuid]
+        ds = repostats[uuid]
         ds.timestamp.append(log.timestamp)
         ds.lastcheck.append(float(info["lastCheck"]))
         ds.delay.append(float(info["delay"]))
 
 
-def add_lvm_command(stats, log):
-    cs = stats.lvm_commands[log.thread]
+def add_command(commands, log):
+    """
+    Add commands start and stop events from execCmd calls
+    """
+    cs = commands[log.thread]
     if " SUCCESS:" in log.text or " ERROR:" in log.text:
         if not cs.running:
             return
