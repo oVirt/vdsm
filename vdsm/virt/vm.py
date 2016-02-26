@@ -1729,7 +1729,6 @@ class Vm(object):
         vmdevices.core.Video.update_device_info(
             self, devices[hwclass.VIDEO])
         self._getUnderlyingGraphicsDeviceInfo()
-        self._getUnderlyingSmartcardDeviceInfo()
         self._getUnderlyingRngDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
         vmdevices.core.Controller.update_device_info(
@@ -1738,6 +1737,8 @@ class Vm(object):
             self, devices[hwclass.BALLOON])
         vmdevices.core.Watchdog.update_device_info(
             self, devices[hwclass.WATCHDOG])
+        vmdevices.core.Smartcard.update_device_info(
+            self, devices[hwclass.SMARTCARD])
         self._getUnderlyingHostDeviceInfo()
         self._getUnderlyingMemoryDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
@@ -4071,28 +4072,6 @@ class Vm(object):
             for dev in self.conf['devices']:
                 if dev['device'] == hwclass.CONSOLE and \
                         not dev.get('alias'):
-                    dev['alias'] = alias
-
-    def _getUnderlyingSmartcardDeviceInfo(self):
-        """
-        Obtain smartcard device info from libvirt.
-        """
-        for x in self._domain.get_device_elements('smartcard'):
-            if not x.getElementsByTagName('address'):
-                continue
-
-            address = vmxml.device_address(x)
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-
-            for dev in self._devices[hwclass.SMARTCARD]:
-                if not hasattr(dev, 'address'):
-                    dev.address = address
-                    dev.alias = alias
-
-            for dev in self.conf['devices']:
-                if dev['type'] == hwclass.SMARTCARD and \
-                        not dev.get('address'):
-                    dev['address'] = address
                     dev['alias'] = alias
 
     def _getUnderlyingRngDeviceInfo(self):

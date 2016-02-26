@@ -288,6 +288,26 @@ class Smartcard(Base):
         card.setAttrs(**sourceAttrs)
         return card
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('smartcard'):
+            if not x.getElementsByTagName('address'):
+                continue
+
+            address = vmxml.device_address(x)
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+
+            for dev in device_conf:
+                if not hasattr(dev, 'address'):
+                    dev.address = address
+                    dev.alias = alias
+
+            for dev in vm.conf['devices']:
+                if dev['type'] == hwclass.SMARTCARD and \
+                        not dev.get('address'):
+                    dev['address'] = address
+                    dev['alias'] = alias
+
 
 class Sound(Base):
     __slots__ = ('address',)
