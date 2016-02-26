@@ -703,6 +703,9 @@ class ConfigWriter(object):
 def stop_devices(device_ifcfgs):
     for dev in reversed(_sort_device_ifcfgs(device_ifcfgs)):
         ifdown(dev)
+        if os.path.exists('/sys/class/net/%s/bridge' % dev):
+            # ifdown is not enough to remove nicless bridges
+            commands.execCmd([constants.EXT_BRCTL, 'delbr', dev])
 
 
 def start_devices(device_ifcfgs):
