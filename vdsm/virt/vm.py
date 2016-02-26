@@ -1729,7 +1729,6 @@ class Vm(object):
         vmdevices.core.Video.update_device_info(
             self, devices[hwclass.VIDEO])
         self._getUnderlyingGraphicsDeviceInfo()
-        self._getUnderlyingWatchdogDeviceInfo()
         self._getUnderlyingSmartcardDeviceInfo()
         self._getUnderlyingRngDeviceInfo()
         self._getUnderlyingConsoleDeviceInfo()
@@ -1737,6 +1736,8 @@ class Vm(object):
             self, devices[hwclass.CONTROLLER])
         vmdevices.core.Balloon.update_device_info(
             self, devices[hwclass.BALLOON])
+        vmdevices.core.Watchdog.update_device_info(
+            self, devices[hwclass.WATCHDOG])
         self._getUnderlyingHostDeviceInfo()
         self._getUnderlyingMemoryDeviceInfo()
         # Obtain info of all unknown devices. Must be last!
@@ -4181,28 +4182,6 @@ class Vm(object):
                               'alias': alias,
                               'address': address}
                 self.conf['devices'].append(hostdevice)
-
-    def _getUnderlyingWatchdogDeviceInfo(self):
-        """
-        Obtain watchdog device info from libvirt.
-        """
-        for x in self._domain.get_device_elements('watchdog'):
-
-            # PCI watchdog has "address" different from ISA watchdog
-            if x.getElementsByTagName('address'):
-                address = vmxml.device_address(x)
-                alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-
-                for wd in self._devices[hwclass.WATCHDOG]:
-                    if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
-                        wd.address = address
-                        wd.alias = alias
-
-                for dev in self.conf['devices']:
-                    if ((dev['type'] == hwclass.WATCHDOG) and
-                            (not dev.get('address') or not dev.get('alias'))):
-                        dev['address'] = address
-                        dev['alias'] = alias
 
     def _getDriveIdentification(self, dom):
         sources = dom.getElementsByTagName('source')

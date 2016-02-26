@@ -463,6 +463,26 @@ class Watchdog(Base):
         if not hasattr(self, 'specParams'):
             self.specParams = {}
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('watchdog'):
+
+            # PCI watchdog has "address" different from ISA watchdog
+            if x.getElementsByTagName('address'):
+                address = vmxml.device_address(x)
+                alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+
+                for wd in device_conf:
+                    if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
+                        wd.address = address
+                        wd.alias = alias
+
+                for dev in vm.conf['devices']:
+                    if ((dev['type'] == hwclass.WATCHDOG) and
+                            (not dev.get('address') or not dev.get('alias'))):
+                        dev['address'] = address
+                        dev['alias'] = alias
+
     def getXML(self):
         """
         Create domxml for a watchdog device.
