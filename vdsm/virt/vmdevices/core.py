@@ -363,6 +363,30 @@ class Video(Base):
         video.appendChildWithArgs('model', type=self.device, **sourceAttrs)
         return video
 
+    @classmethod
+    def update_device_info(cls, vm, device_conf):
+        for x in vm.domain.get_device_elements('video'):
+            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            # Get video card address
+            address = vmxml.device_address(x)
+
+            # FIXME. We have an identification problem here.
+            # Video card device has not unique identifier, except the alias
+            # (but backend not aware to device's aliases). So, for now
+            # we can only assign the address according to devices order.
+            for vc in device_conf:
+                if not hasattr(vc, 'address') or not hasattr(vc, 'alias'):
+                    vc.alias = alias
+                    vc.address = address
+                    break
+            # Update vm's conf with address
+            for dev in vm.conf['devices']:
+                if ((dev['type'] == hwclass.VIDEO) and
+                        (not dev.get('address') or not dev.get('alias'))):
+                    dev['address'] = address
+                    dev['alias'] = alias
+                    break
+
 
 class Watchdog(Base):
     __slots__ = ('address',)

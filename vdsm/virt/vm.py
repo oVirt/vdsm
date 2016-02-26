@@ -1726,7 +1726,8 @@ class Vm(object):
         self._getUnderlyingDriveInfo()
         vmdevices.core.Sound.update_device_info(
             self, devices[hwclass.SOUND])
-        self._getUnderlyingVideoDeviceInfo()
+        vmdevices.core.Video.update_device_info(
+            self, devices[hwclass.VIDEO])
         self._getUnderlyingGraphicsDeviceInfo()
         self._getUnderlyingControllerDeviceInfo()
         self._getUnderlyingBalloonDeviceInfo()
@@ -4270,32 +4271,6 @@ class Vm(object):
                             (not dev.get('address') or not dev.get('alias'))):
                         dev['address'] = address
                         dev['alias'] = alias
-
-    def _getUnderlyingVideoDeviceInfo(self):
-        """
-        Obtain video devices info from libvirt.
-        """
-        for x in self._domain.get_device_elements('video'):
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            # Get video card address
-            address = vmxml.device_address(x)
-
-            # FIXME. We have an identification problem here.
-            # Video card device has not unique identifier, except the alias
-            # (but backend not aware to device's aliases). So, for now
-            # we can only assign the address according to devices order.
-            for vc in self._devices[hwclass.VIDEO]:
-                if not hasattr(vc, 'address') or not hasattr(vc, 'alias'):
-                    vc.alias = alias
-                    vc.address = address
-                    break
-            # Update vm's conf with address
-            for dev in self.conf['devices']:
-                if ((dev['type'] == hwclass.VIDEO) and
-                        (not dev.get('address') or not dev.get('alias'))):
-                    dev['address'] = address
-                    dev['alias'] = alias
-                    break
 
     def _getDriveIdentification(self, dom):
         sources = dom.getElementsByTagName('source')
