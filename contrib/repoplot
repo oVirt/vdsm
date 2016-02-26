@@ -31,7 +31,9 @@ Requirements: python-pandas
 import argparse
 import fileinput
 import sys
+
 from collections import defaultdict
+from collections import namedtuple
 
 # Use non-interactive backend so we can generate graphs on a headless server.
 # See http://matplotlib.org/faq/howto_faq.html#howto-webapp
@@ -45,10 +47,8 @@ from matplotlib import pyplot
 def main(args):
     args = parse_args(args)
     stats = parse(args.files)
-    lastcheck = dataframe(stats, "lastcheck")
-    delay = dataframe(stats, "delay")
     filename = "%s.%s" % ((args.name or args.files[0]), args.format)
-    plot(lastcheck, delay, filename, (args.width, args.height))
+    plot(stats, filename, (args.width, args.height))
 
 
 def parse_args(args):
@@ -61,11 +61,20 @@ def parse_args(args):
     parser.add_argument("--width", "-x", dest="width", type=int,
                         help="output file width in inches (default 20)")
     parser.add_argument("--height", "-y", dest="height", type=int,
-                        help="output file height in inches (default 10)")
+                        help="output file height in inches (default 15)")
     parser.add_argument("files", nargs="+",
                         help="vdsm log files to process")
-    parser.set_defaults(name=None, format="pdf", width=20, height=10)
+    parser.set_defaults(name=None, format="pdf", width=20, height=15)
     return parser.parse_args(args)
+
+
+Log = namedtuple("Log", "thread,loglevel,timestamp,module,lineno,logger,text")
+
+
+class Stats(object):
+    def __init__(self):
+        self.repostats = defaultdict(DomainStats)
+        self.lvm_commands = defaultdict(CommandStats)
 
 
 class DomainStats(object):
@@ -75,9 +84,16 @@ class DomainStats(object):
         self.delay = []
 
 
+class CommandStats(object):
+    def __init__(self):
+        self.timestamp = []
+        self.runtime = []
+        self.running = False
+
+
 def parse(files):
     """
-    Parse patterns from vdsm log. Return dict of DomainStats objects.
+    Parse patterns from vdsm log and return Stats object.
     """
     patterns = [
         # Match repoStats response log:
@@ -85,37 +101,70 @@ def parse(files):
         # 19:26:33,837::logUtils::51::dispatcher::(wrapper) Run and protect:
         # repoStats, Return response: ...
         (add_repostats, "Run and protect: repoStats, Return response:"),
+
+        # Match LVM commands begin or end logs.
+        #
+        # Begin:
+        # Thread-61::DEBUG::2016-02-17
+        # 19:26:33,854::lvm::286::Storage.Misc.excCmd::(cmd) /usr/bin/taskset
+        # --cpu-list 0-7 /usr/bin/sudo -n /usr/sbin/lvm vgck ...
+        #
+        # End:
+        # Thread-61::DEBUG::2016-02-17
+        # 19:26:37,933::lvm::286::Storage.Misc.excCmd::(cmd) SUCCESS: ...
+        (add_lvm_command, "::Storage.Misc.excCmd::(cmd)"),
     ]
 
-    stats = defaultdict(DomainStats)
+    stats = Stats()
 
     for line in fileinput.input(files):
         for func, pattern in patterns:
-            start = line.find(pattern)
-            if start != -1:
-                end = start + len(pattern)
-                func(stats, line, start, end)
+            if pattern in line:
+                log = parse_log(line)
+                func(stats, log)
 
     return stats
 
 
-def add_repostats(stats, line, start, end):
+def add_repostats(stats, log):
     """
     Add repostats samples from repoStats response line
     """
-    timestamp = parse_timestamp(line)
-    response = eval(line[end:])
+    start = log.text.find("{")
+    response = eval(log.text[start:])
     for uuid, info in response.items():
-        ds = stats[uuid]
-        ds.timestamp.append(timestamp)
+        ds = stats.repostats[uuid]
+        ds.timestamp.append(log.timestamp)
         ds.lastcheck.append(float(info["lastCheck"]))
         ds.delay.append(float(info["delay"]))
 
 
-def parse_timestamp(line):
-    timestamp = line.split("::", 3)[2]
+def add_lvm_command(stats, log):
+    cs = stats.lvm_commands[log.thread]
+    if " SUCCESS:" in log.text or " ERROR:" in log.text:
+        if not cs.running:
+            return
+        cs.running = False
+        timedelta = log.timestamp - cs.timestamp[-1]
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(timedelta.total_seconds())
+        # Add zero in the same timestamp, to get nicer triangles in the plots.
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(0)
+    else:
+        cs.running = True
+        cs.timestamp.append(log.timestamp)
+        cs.runtime.append(0)
+
+
+def parse_log(line):
+    # MainThread::DEBUG::2016-02-17
+    # 19:26:03,875::sp::398::Storage.StoragePool::(cleanupMasterMount) ...
+    fields = line.split("::", 7)
+    timestamp = fields[2]
     timestamp = timestamp.replace(",", ".")
-    return pandas.Timestamp(timestamp)
+    fields[2] = pandas.Timestamp(timestamp)
+    return Log(*fields)
 
 
 def dataframe(stats, key):
@@ -131,15 +180,16 @@ def dataframe(stats, key):
     return combined
 
 
-def plot(lastcheck, delay, filename, size):
+def plot(stats, filename, size):
     pyplot.figure(figsize=size, dpi=300)
 
-    pyplot.subplot(211)
+    pyplot.subplot(311)
     pyplot.title("lastCheck")
     pyplot.ylabel("lastCheck (seconds)")
     pyplot.xlabel("time")
     pyplot.grid(True)
 
+    lastcheck = dataframe(stats.repostats, "lastcheck")
     pyplot.plot(lastcheck.index, lastcheck)
 
     pyplot.axhline(y=30, color="gray", linewidth="2")
@@ -148,12 +198,13 @@ def plot(lastcheck, delay, filename, size):
     # non-operational.
     pyplot.axis([lastcheck.index[0], lastcheck.index[-1], 0, 330])
 
-    pyplot.subplot(212)
+    pyplot.subplot(312)
     pyplot.title("read delay")
     pyplot.ylabel("delay (seconds)")
     pyplot.xlabel("time")
     pyplot.grid(True)
 
+    delay = dataframe(stats.repostats, "delay")
     pyplot.plot(delay.index, delay)
 
     pyplot.axhline(y=5, color="gray", linewidth="2")
@@ -161,6 +212,16 @@ def plot(lastcheck, delay, filename, size):
     # Show values up to 10 seconds. Values bigger then 5 seconds will show a
     # warning in engine log.
     pyplot.axis([lastcheck.index[0], lastcheck.index[-1], 0, 10])
+
+    pyplot.subplot(313)
+    pyplot.title("LVM commands")
+    pyplot.ylabel("runtime (seconds)")
+    pyplot.xlabel("time")
+    pyplot.xlim(lastcheck.index[0], lastcheck.index[-1])
+    pyplot.grid(True)
+
+    for thread, cs in stats.lvm_commands.iteritems():
+        pyplot.plot(cs.timestamp, cs.runtime)
 
     pyplot.savefig(filename, bbox_inches="tight")
 
