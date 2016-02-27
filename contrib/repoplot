@@ -86,7 +86,7 @@ class Stats(object):
         self.lvm_commands = defaultdict(CommandStats)
         self.mailbox_commands = defaultdict(CommandStats)
         self.monitor_commands = defaultdict(CommandStats)
-        self.qemuimg_commands = defaultdict(CommandStats)
+        self.disk_commands = defaultdict(CommandStats)
 
 
 class DomainStats(object):
@@ -201,7 +201,7 @@ def parse(files):
         # qemu-img operation has completed
         (add_qemuimg_operation,
             "::Storage.Image::(_wait_for_qemuimg_operation)",
-            "qemuimg_commands"),
+            "disk_commands"),
 
         # Match qemu-img convert used for copying images in 3.6. This matches
         # the start of the command.
@@ -210,17 +210,16 @@ def parse(files):
         # 12:37:59,885::utils::669::root::(execCmd) /usr/bin/taskset --cpu-list
         # 0-23 /usr/bin/nice -n 19 /usr/bin/ionice -c 3 /usr/bin/qemu-img
         # convert ...
-        (add_qemuimg_convert, "::root::(execCmd)", "qemuimg_commands"),
+        (add_qemuimg_copy, "::root::(execCmd)", "disk_commands"),
 
         # Match qemu-img convert used for copying images in 3.6. This matches
         # the end of the command.
         #
         # d9633df0-5f67-442a-861b-91d417b046f5::DEBUG::2016-02-09
         # 12:39:51,177::utils::716::root::(watchCmd) SUCCESS: ...
-        (add_qemuimg_convert, "::root::(watchCmd)", "qemuimg_commands"),
+        (add_qemuimg_copy, "::root::(watchCmd)", "disk_commands"),
 
-        # Match qemu-img convert used for copying disks on 3.5. This matches
-        # both start and end of the command on 3.5.
+        # Match qemu-img convert used for copying disks on 3.5.
         #
         # Begin:
         # 8c6193e7-cec6-44d1-afa2-2dd3437d40c8::DEBUG::2014-03-25
@@ -230,8 +229,20 @@ def parse(files):
         # End:
         # ffe3217e-6a91-4499-910b-cab975c5a3e4::DEBUG::2016-02-20
         # 21:10:00,808::utils::718::root::(watchCmd) SUCCESS: ...
-        (add_qemuimg_convert, "::Storage.Misc.excCmd::(watchCmd)",
-            "qemuimg_commands"),
+        (add_qemuimg_copy, "::Storage.Misc.excCmd::(watchCmd)",
+            "disk_commands"),
+
+        # Match dd copy commands used for copying disks on 3.5.
+        #
+        # Begin:
+        # d5e74756-f1df-407d-9d83-0b4b4c844b15::DEBUG::2016-02-27
+        # 20:51:37,210::utils::796::Storage.Misc.excCmd::(watchCmd)
+        # /usr/bin/nice -n 19 /usr/bin/ionice -c 3 /usr/bin/dd ...
+        #
+        # End:
+        # d5e74756-f1df-407d-9d83-0b4b4c844b15::DEBUG::2016-02-27
+        # 20:52:00,310::utils::808::Storage.Misc.excCmd::(watchCmd) SUCCESS:
+        (add_dd_copy, "::Storage.Misc.excCmd::(watchCmd)", "disk_commands"),
     ]
 
     stats = Stats()
@@ -280,13 +291,23 @@ def add_qemuimg_operation(commands, log):
         pass  # Periodic progress reports
 
 
-def add_qemuimg_convert(commands, log):
+def add_qemuimg_copy(commands, log):
     """
-    Add qemu-img commands start or stop events (pre 4.0).
+    Add qemu-img copy commands start or stop events (pre 4.0).
     """
     if is_command_end(log):
         commands[log.thread].end(log.timestamp)
-    elif "/usr/bin/qemu-img convert " in log.text:
+    elif "/bin/qemu-img convert " in log.text:
+        commands[log.thread].start(log.timestamp)
+
+
+def add_dd_copy(commands, log):
+    """
+    Add dd copy commands start or stop events (3.5).
+    """
+    if is_command_end(log):
+        commands[log.thread].end(log.timestamp)
+    elif "/bin/dd " in log.text:
         commands[log.thread].start(log.timestamp)
 
 
@@ -388,13 +409,13 @@ def plot(stats, filename, size):
         pyplot.plot(cs.timestamp, cs.runtime)
 
     pyplot.subplot(rows, columns, 6)
-    pyplot.title("qemu-img commands")
+    pyplot.title("disk commands")
     pyplot.ylabel("runtime (seconds)")
     pyplot.xlabel("time")
     pyplot.xlim(lastcheck.index[0], lastcheck.index[-1])
     pyplot.grid(True)
 
-    for thread, cs in stats.qemuimg_commands.iteritems():
+    for thread, cs in stats.disk_commands.iteritems():
         pyplot.plot(cs.timestamp, cs.runtime)
 
     pyplot.savefig(filename, bbox_inches="tight")
