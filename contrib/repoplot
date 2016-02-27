@@ -262,7 +262,7 @@ def add_command(commands, log):
     """
     Add commands start and stop events from execCmd calls
     """
-    if "SUCCESS:" in log.text or "ERROR:" in log.text:
+    if is_command_end(log):
         commands[log.thread].end(log.timestamp)
     else:
         commands[log.thread].start(log.timestamp)
@@ -284,10 +284,14 @@ def add_qemuimg_convert(commands, log):
     """
     Add qemu-img commands start or stop events (pre 4.0).
     """
-    if "SUCCESS:" in log.text or "ERROR:" in log.text:
+    if is_command_end(log):
         commands[log.thread].end(log.timestamp)
     elif "/usr/bin/qemu-img convert " in log.text:
         commands[log.thread].start(log.timestamp)
+
+
+def is_command_end(log):
+    return log.text.startswith(("SUCCESS:", "ERROR:"))
 
 
 def parse_log(line):
