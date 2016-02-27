@@ -253,22 +253,20 @@ def add_command(commands, log):
     """
     Add commands start and stop events from execCmd calls
     """
-    cs = commands[log.thread]
     if " SUCCESS:" in log.text or " ERROR:" in log.text:
-        cs.end(log.timestamp)
+        commands[log.thread].end(log.timestamp)
     else:
-        cs.start(log.timestamp)
+        commands[log.thread].start(log.timestamp)
 
 
 def add_qemuimg_operation(commands, log):
     """
     Add qemu-img commands start and stop events
     """
-    cs = commands[log.thread]
     if "waiting for qemu-img operation" in log.text:
-        cs.start(log.timestamp)
+        commands[log.thread].start(log.timestamp)
     elif "operation has completed" in log.text:
-        cs.end(log.timestamp)
+        commands[log.thread].end(log.timestamp)
     else:
         pass  # Periodic progress reports
 
@@ -277,11 +275,10 @@ def add_qemuimg_convert(commands, log):
     """
     Add qemu-img commands start or stop events (pre 4.0).
     """
-    cs = commands[log.thread]
     if " SUCCESS:" in log.text or " ERROR:" in log.text:
-        cs.end(log.timestamp)
+        commands[log.thread].end(log.timestamp)
     elif "/usr/bin/qemu-img convert " in log.text:
-        cs.start(log.timestamp)
+        commands[log.thread].start(log.timestamp)
 
 
 def parse_log(line):
