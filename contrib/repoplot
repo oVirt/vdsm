@@ -77,21 +77,53 @@ class Stats(object):
         self.lvm_commands = defaultdict(CommandStats)
         self.mailbox_commands = defaultdict(CommandStats)
         self.monitor_commands = defaultdict(CommandStats)
-        self.qemuimg_operations = defaultdict(CommandStats)
+        self.qemuimg_commands = defaultdict(CommandStats)
 
 
 class DomainStats(object):
+
     def __init__(self):
         self.timestamp = []
         self.lastcheck = []
         self.delay = []
 
+    def add(self, timestamp, lastcheck, delay):
+        """
+        Called when repoStats event was detected for this domain.
+        """
+        self.timestamp.append(timestamp)
+        self.lastcheck.append(lastcheck)
+        self.delay.append(delay)
+
 
 class CommandStats(object):
+
     def __init__(self):
         self.timestamp = []
         self.runtime = []
         self.running = False
+
+    def start(self, timestamp):
+        """
+        Called when a commnad start log was detected for this thread.
+        """
+        self.running = True
+        self.timestamp.append(timestamp)
+        self.runtime.append(0)
+
+    def end(self, timestamp):
+        """
+        Called when a commnad end log was detected for this thread.
+        """
+        if not self.running:
+            return
+        self.running = False
+        timedelta = timestamp - self.timestamp[-1]
+        self.timestamp.append(timestamp)
+        self.runtime.append(timedelta.total_seconds())
+        # Add zero in the same timestamp, to get nicer triangles in the plots.
+        self.timestamp.append(timestamp)
+        self.runtime.append(0)
 
 
 def parse(files):
@@ -160,7 +192,7 @@ def parse(files):
         # qemu-img operation has completed
         (add_qemuimg_operation,
             "::Storage.Image::(_wait_for_qemuimg_operation)",
-            "qemuimg_operations"),
+            "qemuimg_commands"),
 
         # Match qemu-img convert used for copying images in 3.6. This matches
         # the start of the command.
@@ -169,14 +201,14 @@ def parse(files):
         # 12:37:59,885::utils::669::root::(execCmd) /usr/bin/taskset --cpu-list
         # 0-23 /usr/bin/nice -n 19 /usr/bin/ionice -c 3 /usr/bin/qemu-img
         # convert ...
-        (add_qemuimg_convert, "::root::(execCmd)", "qemuimg_operations"),
+        (add_qemuimg_convert, "::root::(execCmd)", "qemuimg_commands"),
 
         # Match qemu-img convert used for copying images in 3.6. This matches
         # the end of the command.
         #
         # d9633df0-5f67-442a-861b-91d417b046f5::DEBUG::2016-02-09
         # 12:39:51,177::utils::716::root::(watchCmd) SUCCESS: ...
-        (add_qemuimg_convert, "::root::(watchCmd)", "qemuimg_operations"),
+        (add_qemuimg_convert, "::root::(watchCmd)", "qemuimg_commands"),
 
         # Match qemu-img convert used for copying disks on 3.5. This matches
         # both start and end of the command on 3.5.
@@ -190,7 +222,7 @@ def parse(files):
         # ffe3217e-6a91-4499-910b-cab975c5a3e4::DEBUG::2016-02-20
         # 21:10:00,808::utils::718::root::(watchCmd) SUCCESS: ...
         (add_qemuimg_convert, "::Storage.Misc.excCmd::(watchCmd)",
-            "qemuimg_operations"),
+            "qemuimg_commands"),
     ]
 
     stats = Stats()
@@ -212,10 +244,9 @@ def add_repostats(repostats, log):
     start = log.text.find("{")
     response = eval(log.text[start:])
     for uuid, info in response.items():
-        ds = repostats[uuid]
-        ds.timestamp.append(log.timestamp)
-        ds.lastcheck.append(float(info["lastCheck"]))
-        ds.delay.append(float(info["delay"]))
+        lastcheck = float(info["lastCheck"])
+        delay = float(info["delay"])
+        repostats[uuid].add(log.timestamp, lastcheck, delay)
 
 
 def add_command(commands, log):
@@ -224,66 +255,33 @@ def add_command(commands, log):
     """
     cs = commands[log.thread]
     if " SUCCESS:" in log.text or " ERROR:" in log.text:
-        if not cs.running:
-            return
-        cs.running = False
-        timedelta = log.timestamp - cs.timestamp[-1]
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(timedelta.total_seconds())
-        # Add zero in the same timestamp, to get nicer triangles in the plots.
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(0)
+        cs.end(log.timestamp)
     else:
-        cs.running = True
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(0)
+        cs.start(log.timestamp)
 
 
-def add_qemuimg_operation(operations, log):
+def add_qemuimg_operation(commands, log):
     """
-    Add qemu-img operations start and stop events
+    Add qemu-img commands start and stop events
     """
-    cs = operations[log.thread]
+    cs = commands[log.thread]
     if "waiting for qemu-img operation" in log.text:
-        cs.running = True
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(0)
+        cs.start(log.timestamp)
     elif "operation has completed" in log.text:
-        if not cs.running:
-            return
-        cs.running = False
-        timedelta = log.timestamp - cs.timestamp[-1]
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(timedelta.total_seconds())
-        # Add zero in the same timestamp, to get nicer triangles in the plots.
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(0)
+        cs.end(log.timestamp)
     else:
-        # Ignore periodic progress reports
-        pass
+        pass  # Periodic progress reports
 
 
-def add_qemuimg_convert(operations, log):
+def add_qemuimg_convert(commands, log):
     """
-    Add qemu-img operations start or stop events (pre 4.0).
+    Add qemu-img commands start or stop events (pre 4.0).
     """
-    cs = operations[log.thread]
+    cs = commands[log.thread]
     if " SUCCESS:" in log.text or " ERROR:" in log.text:
-        if not cs.running:
-            return
-        cs.running = False
-        timedelta = log.timestamp - cs.timestamp[-1]
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(timedelta.total_seconds())
-        # Add zero in the same timestamp, to get nicer triangles in the plots.
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(0)
-    else:
-        if "/usr/bin/qemu-img convert " not in log.text:
-            return
-        cs.running = True
-        cs.timestamp.append(log.timestamp)
-        cs.runtime.append(0)
+        cs.end(log.timestamp)
+    elif "/usr/bin/qemu-img convert " in log.text:
+        cs.start(log.timestamp)
 
 
 def parse_log(line):
@@ -376,13 +374,13 @@ def plot(stats, filename, size):
         pyplot.plot(cs.timestamp, cs.runtime)
 
     pyplot.subplot(rows, columns, 6)
-    pyplot.title("qemu-img operations")
+    pyplot.title("qemu-img commands")
     pyplot.ylabel("runtime (seconds)")
     pyplot.xlabel("time")
     pyplot.xlim(lastcheck.index[0], lastcheck.index[-1])
     pyplot.grid(True)
 
-    for thread, cs in stats.qemuimg_operations.iteritems():
+    for thread, cs in stats.qemuimg_commands.iteritems():
         pyplot.plot(cs.timestamp, cs.runtime)
 
     pyplot.savefig(filename, bbox_inches="tight")
