@@ -68,7 +68,16 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
-Log = namedtuple("Log", "thread,loglevel,timestamp,module,lineno,logger,text")
+Log = namedtuple("Log", (
+    "thread",
+    "loglevel",
+    "timestamp",
+    "module",
+    "lineno",
+    "logger",
+    "func",
+    "text"
+))
 
 
 class Stats(object):
@@ -253,7 +262,7 @@ def add_command(commands, log):
     """
     Add commands start and stop events from execCmd calls
     """
-    if " SUCCESS:" in log.text or " ERROR:" in log.text:
+    if "SUCCESS:" in log.text or "ERROR:" in log.text:
         commands[log.thread].end(log.timestamp)
     else:
         commands[log.thread].start(log.timestamp)
@@ -275,16 +284,20 @@ def add_qemuimg_convert(commands, log):
     """
     Add qemu-img commands start or stop events (pre 4.0).
     """
-    if " SUCCESS:" in log.text or " ERROR:" in log.text:
+    if "SUCCESS:" in log.text or "ERROR:" in log.text:
         commands[log.thread].end(log.timestamp)
     elif "/usr/bin/qemu-img convert " in log.text:
         commands[log.thread].start(log.timestamp)
 
 
 def parse_log(line):
-    # MainThread::DEBUG::2016-02-17
-    # 19:26:03,875::sp::398::Storage.StoragePool::(cleanupMasterMount) ...
-    fields = line.split("::", 7)
+    # thread::loglevel::timestamp::module::lineno::logger::(func) text
+    fields = line.split("::", 6)
+    # Split "(func) text"
+    func, text = fields[6].split(" ", 1)
+    fields[6] = func[1:-1]
+    fields.append(text)
+    # Parse timestamp
     timestamp = fields[2]
     timestamp = timestamp.replace(",", ".")
     fields[2] = pandas.Timestamp(timestamp)
