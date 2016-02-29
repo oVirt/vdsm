@@ -47,7 +47,6 @@
 ./usr/share/vdsm/jobs.py
 ./usr/share/vdsm/mk_sysprep_floppy
 ./usr/share/vdsm/mkimage.py
-./usr/share/vdsm/momIF.py
 ./usr/share/vdsm/network/__init__.py
 ./usr/share/vdsm/network/api.py
 ./usr/share/vdsm/network/errors.py

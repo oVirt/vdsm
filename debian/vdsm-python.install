@@ -22,6 +22,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/libvirtconnection.py
 ./usr/lib/python2.7/dist-packages/vdsm/logUtils.py
 ./usr/lib/python2.7/dist-packages/vdsm/machinetype.py
+./usr/lib/python2.7/dist-packages/vdsm/momIF.py
 ./usr/lib/python2.7/dist-packages/vdsm/netconfpersistence.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/netinfo/addresses.py

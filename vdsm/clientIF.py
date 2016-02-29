@@ -34,9 +34,9 @@ from yajsonrpc.stompreactor import StompClient, StompRpcServer
 from yajsonrpc import Notification, JsonRpcBindingsError
 import alignmentScan
 from vdsm.config import config
-from momIF import MomClient
 from vdsm.define import doneCode, errCode
 from vdsm.protocoldetector import MultiProtocolAcceptor
+from vdsm.momIF import MomClient
 from vdsm.sslcompat import sslutils
 from vdsm.virt import secret
 from vdsm.virt import vmstatus

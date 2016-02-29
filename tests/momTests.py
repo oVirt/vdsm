@@ -20,8 +20,8 @@
 from unittest import TestCase
 import logging
 import threading
-from momIF import MomClient
 from vdsm.define import Mbytes
+from vdsm.momIF import MomClient
 from mom import unixrpc
 from six.moves import configparser
 import os.path
