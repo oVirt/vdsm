@@ -148,9 +148,9 @@ class TestCaps(TestCaseBase):
                                 '17': [40, 40, 20, 10]}
         self.assertEqual(t, expectedDistanceInfo)
 
-    @MonkeyPatch(commands, 'execCmd', lambda x: (0, ['0'], []))
+    @MonkeyPatch(commands, 'execCmd', lambda x, raw: (0, ['0'], []))
     def testAutoNumaBalancingInfo(self):
-        t = caps.getAutoNumaBalancingInfo()
+        t = numa.autonuma_status()
         self.assertEqual(t, 0)
 
     def testLiveSnapshotNoElementX86_64(self):

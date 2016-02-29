@@ -23,11 +23,35 @@ from __future__ import absolute_import
 from collections import defaultdict, namedtuple
 import xml.etree.ElementTree as ET
 
+from . import cmdutils
+from . import commands
 from . import utils
 from . import libvirtconnection
 
 
 NumaTopology = namedtuple('NumaTopology', 'topology, distances, cpu_topology')
+
+
+_SYSCTL = utils.CommandPath("sysctl", "/sbin/sysctl", "/usr/sbin/sysctl")
+
+
+AUTONUMA_STATUS_DISABLE = 0
+AUTONUMA_STATUS_ENABLE = 1
+AUTONUMA_STATUS_UNKNOWN = 2
+
+
+@utils.memoized
+def autonuma_status():
+    out = _run_command(['-n', '-e', 'kernel.numa_balancing'])
+
+    if not out:
+        return AUTONUMA_STATUS_UNKNOWN
+    elif out[0] == '0':
+        return AUTONUMA_STATUS_DISABLE
+    elif out[0] == '1':
+        return AUTONUMA_STATUS_ENABLE
+    else:
+        return AUTONUMA_STATUS_UNKNOWN
 
 
 def _get_libvirt_caps():
@@ -102,3 +126,13 @@ def distances():
 
 def cpu_topology(capabilities=None):
     return _numa(capabilities).cpu_topology
+
+
+def _run_command(args):
+    cmd = [_SYSCTL.cmd]
+    cmd.extend(args)
+    rc, out, err = commands.execCmd(cmd, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd, rc, out, err)
+
+    return out

@@ -41,7 +41,6 @@ from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import numa
 from vdsm import host
-from vdsm import commands
 from vdsm import utils
 import storage.hba
 from virt import vmdevices
@@ -81,10 +80,8 @@ class OSName:
     POWERKVM = 'PowerKVM'
 
 
-class AutoNumaBalancingStatus:
-    DISABLE = 0
-    ENABLE = 1
-    UNKNOWN = 2
+RNG_SOURCES = {'random': '/dev/random',
+               'hwrng': '/dev/hwrng'}
 
 
 class KdumpStatus(object):
@@ -164,20 +161,6 @@ def getLiveMergeSupport():
             logging.debug("libvirt is missing '%s': live merge disabled", flag)
             return False
     return True
-
-
-@utils.memoized
-def getAutoNumaBalancingInfo():
-    retcode, out, err = commands.execCmd(['sysctl', '-n', '-e',
-                                          'kernel.numa_balancing'])
-    if not out:
-        return AutoNumaBalancingStatus.UNKNOWN
-    elif out[0] == '0':
-        return AutoNumaBalancingStatus.DISABLE
-    elif out[0] == '1':
-        return AutoNumaBalancingStatus.ENABLE
-    else:
-        return AutoNumaBalancingStatus.UNKNOWN
 
 
 def _get_emulated_machines_from_node(node):
@@ -469,7 +452,7 @@ def get():
 
     caps['numaNodes'] = numa.topology()
     caps['numaNodeDistance'] = numa.distances()
-    caps['autoNumaBalancing'] = getAutoNumaBalancingInfo()
+    caps['autoNumaBalancing'] = numa.autonuma_status()
 
     caps['selinux'] = _getSELinux()
 
