@@ -22,8 +22,8 @@ import threading
 import time
 import libvirt
 
-import kaxmlrpclib
 from vdsm import hooks
+from vdsm import kaxmlrpclib
 from vdsm import response
 from vdsm import utils
 from vdsm import vdscli

@@ -29,7 +29,6 @@ dist_vdsm_PYTHON = \
 	caps.py \
 	clientIF.py \
 	hooking.py \
-	kaxmlrpclib.py \
 	mkimage.py \
 	momIF.py \
 	numaUtils.py \

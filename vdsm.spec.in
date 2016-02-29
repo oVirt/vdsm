@@ -1030,7 +1030,6 @@ exit 0
 
 %{_datadir}/%{vdsm_name}/dumpStorageTable.py*
 %{_datadir}/%{vdsm_name}/get-conf-item
-%{_datadir}/%{vdsm_name}/kaxmlrpclib.py*
 %{_datadir}/%{vdsm_name}/momIF.py*
 %{_datadir}/%{vdsm_name}/set-conf-item
 %dir %{_datadir}/%{vdsm_name}/gluster
@@ -1103,6 +1102,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/ipwrapper.py*
 %{python_sitelib}/%{vdsm_name}/jobs.py*
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
+%{python_sitelib}/%{vdsm_name}/kaxmlrpclib.py*
 %{python_sitelib}/%{vdsm_name}/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/logUtils.py*

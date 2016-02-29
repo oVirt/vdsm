@@ -30,6 +30,7 @@ Sets up an xmlrpc Server with a modified Transport
 (TcpkeepTransport) which uses TcpkeepHTTPConnection when it
 needs to set up a connection.
 """
+from __future__ import absolute_import
 from __future__ import print_function
 
 import xmlrpclib

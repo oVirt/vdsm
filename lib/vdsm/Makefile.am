@@ -40,6 +40,7 @@ dist_vdsmpylib_PYTHON = \
 	ipwrapper.py \
 	jobs.py \
 	jsonrpcvdscli.py \
+	kaxmlrpclib.py \
 	kernelconfig.py \
 	libvirtconnection.py \
 	logUtils.py \
