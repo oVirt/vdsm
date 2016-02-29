@@ -41,19 +41,56 @@ AUTONUMA_STATUS_UNKNOWN = 2
 
 
 def topology(capabilities=None):
+    '''
+    Get what we call 'numa topology' of the host from libvirt. This topology
+    contains mapping numa cell -> (cpu ids, total memory).
+
+    Example:
+        {'0': {'cpus': [0, 1, 2, 3, 4, 10, 11, 12, 13, 14],
+               'totalMemory': '32657'},
+         '1': {'cpus': [5, 6, 7, 8, 9, 15, 16, 17, 18, 19],
+               'totalMemory': '32768'}}
+    '''
     return _numa(capabilities).topology
 
 
 def distances():
+    '''
+    Get distances between numa nodes. The information is a mapping
+    numa cell -> [distance], where distances are sorted relatively to cell id
+    in ascending order.
+
+    Example:
+        {'0': [10, 21],
+         '1': [21, 10]}
+    '''
     return _numa().distances
 
 
 def cpu_topology(capabilities=None):
+    '''
+    Get 'cpu topology' of the host from libvirt. This topology tries to
+    summarize the cpu attributes over all numa cells. It is not reliable and
+    should be reworked in future.
+
+    Example:
+        {'sockets': 1,
+         'cores': 10,
+         'threads': 20,
+         'onlineCpus': '0,1,2,3,4,10,11,12,13,14,5,6,7,8,9,15,16,17,18,19'}
+    '''
     return _numa(capabilities).cpu_topology
 
 
 @utils.memoized
 def autonuma_status():
+    '''
+    Query system for autonuma status. Returns one of following:
+
+        AUTONUMA_STATUS_DISABLE = 0
+        AUTONUMA_STATUS_ENABLE = 1
+        AUTONUMA_STATUS_UNKNOWN = 2
+    '''
     out = _run_command(['-n', '-e', 'kernel.numa_balancing'])
 
     if not out:
@@ -67,13 +104,13 @@ def autonuma_status():
 
 
 def memory_by_cell(index):
-    """
+    '''
     Get the memory stats of a specified numa node, the unit is MiB.
 
     :param cell: the index of numa node
     :type cell: int
     :return: dict like {'total': '49141', 'free': '46783'}
-    """
+    '''
     conn = libvirtconnection.get()
     meminfo = conn.getMemoryStats(index, 0)
     meminfo['total'] = str(meminfo['total'] / 1024)
