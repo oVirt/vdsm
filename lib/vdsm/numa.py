@@ -40,6 +40,18 @@ AUTONUMA_STATUS_ENABLE = 1
 AUTONUMA_STATUS_UNKNOWN = 2
 
 
+def topology(capabilities=None):
+    return _numa(capabilities).topology
+
+
+def distances():
+    return _numa().distances
+
+
+def cpu_topology(capabilities=None):
+    return _numa(capabilities).cpu_topology
+
+
 @utils.memoized
 def autonuma_status():
     out = _run_command(['-n', '-e', 'kernel.numa_balancing'])
@@ -54,9 +66,19 @@ def autonuma_status():
         return AUTONUMA_STATUS_UNKNOWN
 
 
-def _get_libvirt_caps():
+def memory_by_cell(index):
+    """
+    Get the memory stats of a specified numa node, the unit is MiB.
+
+    :param cell: the index of numa node
+    :type cell: int
+    :return: dict like {'total': '49141', 'free': '46783'}
+    """
     conn = libvirtconnection.get()
-    return conn.getCapabilities()
+    meminfo = conn.getMemoryStats(index, 0)
+    meminfo['total'] = str(meminfo['total'] / 1024)
+    meminfo['free'] = str(meminfo['free'] / 1024)
+    return meminfo
 
 
 @utils.memoized
@@ -101,31 +123,9 @@ def _numa(capabilities=None):
     return NumaTopology(topology, distances, cpu_topology)
 
 
-def memory_by_cell(index):
-    """
-    Get the memory stats of a specified numa node, the unit is MiB.
-
-    :param cell: the index of numa node
-    :type cell: int
-    :return: dict like {'total': '49141', 'free': '46783'}
-    """
+def _get_libvirt_caps():
     conn = libvirtconnection.get()
-    meminfo = conn.getMemoryStats(index, 0)
-    meminfo['total'] = str(meminfo['total'] / 1024)
-    meminfo['free'] = str(meminfo['free'] / 1024)
-    return meminfo
-
-
-def topology(capabilities=None):
-    return _numa(capabilities).topology
-
-
-def distances():
-    return _numa().distances
-
-
-def cpu_topology(capabilities=None):
-    return _numa(capabilities).cpu_topology
+    return conn.getCapabilities()
 
 
 def _run_command(args):
