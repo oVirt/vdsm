@@ -72,7 +72,6 @@
 ./usr/share/vdsm/network/utils.py
 ./usr/share/vdsm/numaUtils.py
 ./usr/share/vdsm/parted_utils.py
-./usr/share/vdsm/protocoldetector.py
 ./usr/share/vdsm/set-conf-item
 ./usr/share/vdsm/storage/__init__.py
 ./usr/share/vdsm/storage/blockSD.py

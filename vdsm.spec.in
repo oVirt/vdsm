@@ -855,7 +855,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/parted_utils.py*
 %{_datadir}/%{vdsm_name}/mkimage.py*
 %{_datadir}/%{vdsm_name}/numaUtils.py*
-%{_datadir}/%{vdsm_name}/protocoldetector.py*
 %{_datadir}/%{vdsm_name}/sitecustomize.py*
 %{_datadir}/%{vdsm_name}/supervdsmServer
 %{_datadir}/%{vdsm_name}/vdsm
@@ -1156,6 +1155,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tc/cls.py*
 %{python_sitelib}/%{vdsm_name}/tc/filter.py*
 %{python_sitelib}/%{vdsm_name}/tc/qdisc.py*
+%{python_sitelib}/%{vdsm_name}/protocoldetector.py*
 %{python_sitelib}/%{vdsm_name}/pthread.py*
 %{python_sitelib}/%{vdsm_name}/qemuimg.py*
 %{python_sitelib}/%{vdsm_name}/response.py*

@@ -33,7 +33,6 @@ dist_vdsm_PYTHON = \
 	momIF.py \
 	numaUtils.py \
 	parted_utils.py \
-	protocoldetector.py \
 	sitecustomize.py \
 	$(NULL)
 

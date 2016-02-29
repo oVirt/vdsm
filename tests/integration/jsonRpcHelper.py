@@ -33,9 +33,9 @@ from yajsonrpc.stomp import (
     LEGACY_SUBSCRIPTION_ID_RESPONSE
 )
 from yajsonrpc import Notification
-from protocoldetector import MultiProtocolAcceptor
 from vdsm.config import config
 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
+from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm import schedule
 from vdsm import utils
 

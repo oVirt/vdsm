@@ -36,6 +36,7 @@ import alignmentScan
 from vdsm.config import config
 from momIF import MomClient
 from vdsm.define import doneCode, errCode
+from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslcompat import sslutils
 from vdsm.virt import secret
 from vdsm.virt import vmstatus
@@ -47,7 +48,6 @@ from vdsm import numa
 from vdsm import utils
 from vdsm import supervdsm
 import blkid
-from protocoldetector import MultiProtocolAcceptor
 
 from virt import migration
 from virt import recovery

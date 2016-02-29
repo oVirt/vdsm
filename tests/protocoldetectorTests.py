@@ -27,7 +27,7 @@ from contextlib import contextmanager
 
 from yajsonrpc.betterAsyncore import Reactor
 from vdsm.config import config
-from protocoldetector import MultiProtocolAcceptor
+from vdsm.protocoldetector import MultiProtocolAcceptor
 from testlib import VdsmTestCase, expandPermutations, permutations
 
 if config.get('vars', 'ssl_implementation') == 'm2c':

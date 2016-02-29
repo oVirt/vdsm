@@ -49,6 +49,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/errors.py
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/memory.py
 ./usr/lib/python2.7/dist-packages/vdsm/profiling/profile.py
+./usr/lib/python2.7/dist-packages/vdsm/protocoldetector.py
 ./usr/lib/python2.7/dist-packages/vdsm/pthread.py
 ./usr/lib/python2.7/dist-packages/vdsm/rpc/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/rpc/bindingjsonrpc.py
