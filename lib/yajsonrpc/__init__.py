@@ -469,6 +469,10 @@ class JsonRpcClient(object):
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
+    FILTERED_METHODS = frozenset(['Host_getVMList', 'Host_getAllVmStats',
+                                  'Host_getStats', 'StorageDomain_getStats',
+                                  'VM_getStats', 'Host_fenceNode'])
+
     """
     Creates new JsonrRpcServer by providing a bridge, timeout in seconds
     which defining how often we should log connections stats and thread
@@ -502,9 +506,7 @@ class JsonRpcServer(object):
         self._attempt_log_stats()
         mangledMethod = req.method.replace(".", "_")
         logLevel = logging.DEBUG
-        if mangledMethod in ('Host_getVMList', 'Host_getAllVmStats',
-                             'Host_getStats', 'StorageDomain_getStats',
-                             'VM_getStats', 'Host_fenceNode'):
+        if mangledMethod in self.FILTERED_METHODS:
             logLevel = logging.TRACE
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
                      req.method, req.params)
