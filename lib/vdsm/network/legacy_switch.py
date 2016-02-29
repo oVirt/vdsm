@@ -38,7 +38,7 @@ from vdsm.netinfo.cache import CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm import utils
 
-from .configurators import libvirt, dhclient
+from .configurators import libvirt
 from .models import Bond, Bridge, Nic, Vlan
 from .models import hierarchy_backing_device
 from . import errors as ne
@@ -145,9 +145,10 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
         top_net_dev = Bridge(
             bridge, configurator, port=top_net_dev, mtu=mtu,
             stp=opts.get('stp', None))
-        # inherit DUID from the port's existing DHCP lease (BZ#1219429)
+        # Inherit DUID from the port's possibly still active DHCP lease so the
+        # bridge gets the same IP address. (BZ#1219429)
         if top_net_dev.port and bootproto == 'dhcp':
-            _inherit_dhcp_unique_identifier(top_net_dev, _netinfo)
+            top_net_dev.duid_source = top_net_dev.port.name
     if top_net_dev is None:
         raise ConfigNetworkError(ne.ERR_BAD_PARAMS, 'Network defined without '
                                  'devices.')
@@ -157,26 +158,6 @@ def _objectivize_network(bridge=None, vlan=None, vlan_id=None, bonding=None,
     top_net_dev.blockingdhcp = (configurator._inRollback or
                                 utils.tobool(blockingdhcp))
     return top_net_dev
-
-
-def _inherit_dhcp_unique_identifier(bridge, _netinfo):
-    """
-    If there is dhclient already running on a bridge's port we have to use the
-    same DHCP unique identifier (DUID) in order to get the same IP address.
-    """
-    # On EL7 dhclient doesn't have a -df option (to read DUID from the port's
-    # lease file). We must detect if the option is available, by running
-    # dhclient manually. To unbreak a beta4 release we just won't use the -df
-    # option in that case. A proper fix is probably to fall back to -lf,
-    # passing to it a modified NIC lease file.
-    if not dhclient.supports_duid_file():
-        return
-
-    for devices in (_netinfo.nics, _netinfo.bondings, _netinfo.vlans):
-        port = devices.get(bridge.port.name)
-        if port and port['dhcpv4']:
-            bridge.duid_source = bridge.port.name
-            break
 
 
 def _alter_running_config(func):

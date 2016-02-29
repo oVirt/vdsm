@@ -556,7 +556,7 @@ class ConfigWriter(object):
         if bridge.stp is not None:
             conf += 'STP=%s\n' % ('on' if bridge.stp else 'off')
         conf += 'ONBOOT=yes\n'
-        if bridge.duid_source:
+        if bridge.duid_source and dhclient.supports_duid_file():
             duid_source_file = dhclient.LEASE_FILE.format(
                 '', bridge.duid_source)
             conf += 'DHCLIENTARGS="-df %s"\n' % duid_source_file

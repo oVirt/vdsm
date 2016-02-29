@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import errno
 import logging
 import os
+import subprocess
 import threading
 
 from vdsm import cmdutils
@@ -30,6 +31,7 @@ from vdsm import netinfo
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized, pgrep, kill_and_rm_pid
 
+DHCLIENT_BINARY = CommandPath('dhclient', '/sbin/dhclient')
 DHCLIENT_CGROUP = 'vdsm-dhclient'
 LEASE_DIR = '/var/lib/dhclient'
 LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
@@ -37,7 +39,6 @@ LEASE_FILE = os.path.join(LEASE_DIR, 'dhclient{0}--{1}.lease')
 
 class DhcpClient(object):
     PID_FILE = '/var/run/dhclient%s-%s.pid'
-    DHCLIENT = CommandPath('dhclient', '/sbin/dhclient')
 
     def __init__(self, iface, family=4, default_route=False, duid_source=None,
                  cgroup=DHCLIENT_CGROUP):
@@ -57,12 +58,12 @@ class DhcpClient(object):
         # Ask dhclient to stop any dhclient running for the device
         if os.path.exists(os.path.join(netinfo.NET_PATH, self.iface)):
             kill_dhclient(self.iface, self.family)
-        cmd = [self.DHCLIENT.cmd, '-%s' % self.family, '-1', '-pf',
+        cmd = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
                self.pidFile, '-lf', self.leaseFile, self.iface]
         if not self.default_route:
             # Instruct Fedora/EL's dhclient-script not to set gateway on iface
             cmd += ['-e', 'DEFROUTE=no']
-        if self.duid_source_file:
+        if self.duid_source_file and supports_duid_file():
             cmd += ['-df', self.duid_source_file]
         cmd = cmdutils.systemd_run(cmd, scope=True, slice=self._cgroup)
         return execCmd(cmd)
@@ -124,12 +125,16 @@ def kill_dhclient(device_name, family=4):
 
 @memoized
 def supports_duid_file():
-    probe = DhcpClient('-invalid-option')  # dhclient doesn't have -h/--help
-    rc, out, err = probe.start(blocking=True)
-    if rc:  # -invalid-option should always fail, unlike --help if implemented
-        for line in err:
-            if '-df' in line:
-                return True
-        return False
-    else:
-        raise AssertionError("dhclient shouldn't succeed with invalid options")
+    """
+    On EL7 dhclient doesn't have the -df option (to read the DUID from a bridge
+    port's lease file). We must detect if the option is available, by running
+    dhclient manually. To support EL7, we should probably fall back to -lf and
+    refer dhclient to a new lease file with a device name substituted.
+    """
+    probe = subprocess.Popen(
+        [DHCLIENT_BINARY.cmd,  # dhclient doesn't have -h/--help
+         '-do-you-support-loading-duid-from-lease-files?'],
+        stderr=subprocess.PIPE)
+
+    _, err = probe.communicate()
+    return '-df' in err
