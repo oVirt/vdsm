@@ -213,5 +213,5 @@ class RecoveryAllVmsTests(TestCaseBase):
             with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpdir + '/'),
                                    (recovery, '_list_domains', lambda: [])]):
                 fakecif = fake.ClientIF()
-                recovery.all_vms(fakecif)
+                recovery.all_domains(fakecif)
                 self.assertEqual(fakecif.vmContainer, {})

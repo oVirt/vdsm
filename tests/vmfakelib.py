@@ -27,6 +27,7 @@ import threading
 import libvirt
 
 from vdsm import constants
+from vdsm import containersconnection
 from vdsm import cpuarch
 from vdsm import libvirtconnection
 from vdsm.common import response
@@ -240,6 +241,7 @@ def VM(params=None, devices=None, runCpu=False,
     with namedTemporaryDir() as tmpDir:
         with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/'),
                                (libvirtconnection, 'get', Connection),
+                               (containersconnection, 'get', Connection),
                                (vm.Vm, 'send_status_event',
                                    lambda _, **kwargs: None)]):
             vmParams = {'vmId': 'TESTING'}

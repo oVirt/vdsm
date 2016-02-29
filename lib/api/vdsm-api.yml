@@ -6543,6 +6543,13 @@ types:
             name: nestedVirtualization
             type: boolean
             added: '4.1'
+
+        -   defaultvalue: no-default
+            description: Indication whether the system is capable of running
+                 containers alongside virtual machines.
+            name: containers
+            type: boolean
+            added: '4.1'
         type: object
 
     VmShortStatus: &VmShortStatus

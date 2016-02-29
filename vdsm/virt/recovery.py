@@ -30,6 +30,7 @@ import libvirt
 from vdsm.common import response
 from vdsm.compat import pickle
 from vdsm import constants
+from vdsm import containersconnection
 from vdsm import libvirtconnection
 from vdsm import utils
 from vdsm.virt import vmchannels
@@ -156,25 +157,25 @@ class File(object):
         return params
 
 
-def all_vms(cif):
-    # Recover stage 1: domains from libvirt
-    _all_vms_from_libvirt(cif)
+def all_domains(cif):
+    # Recover stage 1: domains from libvirt, or from containers
+    _all_domains_running(cif)
 
     # Recover stage 2: domains from recovery files
     # we do this to safely handle VMs which disappeared
     # from the host while VDSM was down/restarting
-    _all_vms_from_files(cif)
+    _all_domains_from_files(cif)
 
 
-def _all_vms_from_libvirt(cif):
-    doms = _get_vdsm_domains()
+def _all_domains_running(cif):
+    doms = _get_vdsm_domains() + containersconnection.recovery()
     num_doms = len(doms)
     for idx, v in enumerate(doms):
         vm_id = v.UUIDString()
         vm_state = File(vm_id)
         if vm_state.load(cif):
             cif.log.info(
-                'recovery [1:%d/%d]: recovered domain %s from libvirt',
+                'recovery [1:%d/%d]: recovered domain %s',
                 idx+1, num_doms, vm_id)
         else:
             cif.log.info(
@@ -188,7 +189,7 @@ def _all_vms_from_libvirt(cif):
                     idx+1, num_doms, vm_id)
 
 
-def _all_vms_from_files(cif):
+def _all_domains_from_files(cif):
     rec_vms = _find_vdsm_vms_from_files(cif)
     num_rec_vms = len(rec_vms)
     if rec_vms:

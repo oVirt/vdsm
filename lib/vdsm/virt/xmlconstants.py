@@ -1,8 +1,9 @@
-# Copyright 2015 Red Hat, Inc.
+#
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
+# it under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -16,22 +17,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmvirtdir = $(vdsmpylibdir)/virt
-dist_vdsmvirt_PYTHON = \
-	__init__.py \
-	guestagent.py \
-	periodic.py \
-	sampling.py \
-	secret.py \
-	utils.py \
-	virdomain.py \
-	vmchannels.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstats.py \
-	vmstatus.py \
-	xmlconstants.py \
-	$(NULL)
+_METADATA_PREFIX = 'ovirt'
+
+METADATA_CONTAINERS_URI = 'http://github.com/ovirt/containers/1.0'
+METADATA_CONTAINERS_ELEMENT = 'container'
+METADATA_CONTAINERS_PREFIX = _METADATA_PREFIX + 'cnt'
+
+METADATA_VM_DRIVE_MAP_URI = 'http://github.com/ovirt/containers/drivemap/1.0'
+METADATA_VM_DRIVE_MAP_ELEMENT = 'drivemap'
+METADATA_VM_DRIVE_VOLUME_PREFIX = 'volume'
+METADATA_VM_DRIVE_MAP_PREFIX = _METADATA_PREFIX + 'dm'

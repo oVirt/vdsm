@@ -27,6 +27,7 @@ dist_vdsmpylib_PYTHON = \
 	compat.py \
 	commands.py \
 	concurrent.py \
+	containersconnection.py \
 	cpuarch.py \
 	cpuinfo.py \
 	dmidecodeUtil.py \

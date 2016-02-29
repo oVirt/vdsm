@@ -29,6 +29,7 @@ import libvirt
 from vdsm.config import config
 from vdsm.host import rngsources
 from vdsm.storage import hba
+from vdsm import containersconnection
 from vdsm import cpuarch
 from vdsm import cpuinfo
 from vdsm import dsaversion
@@ -201,6 +202,7 @@ def get():
     if osinfo.glusterEnabled:
         from gluster.api import glusterAdditionalFeatures
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
+    caps['containers'] = containersconnection.is_supported()
     return caps
 
 

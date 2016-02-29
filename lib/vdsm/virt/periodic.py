@@ -28,6 +28,7 @@ import threading
 
 import libvirt
 
+from vdsm import containersconnection
 from vdsm import executor
 from vdsm import host
 from vdsm import libvirtconnection
@@ -110,8 +111,12 @@ def start(cif, scheduler):
         Operation(
             sampling.HostMonitor(cif=cif),
             config.getint('vars', 'host_sample_stats_interval'),
-            scheduler)
+            scheduler),
 
+        Operation(
+            containersconnection.monitor,
+            config.getint('vars', 'vm_sample_interval'),
+            scheduler),
     ]
 
     host.stats.start()

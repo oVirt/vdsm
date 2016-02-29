@@ -1107,6 +1107,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/concurrent.py*
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
+%{python_sitelib}/%{vdsm_name}/containersconnection.py*
 %{python_sitelib}/%{vdsm_name}/cpuarch.py*
 %{python_sitelib}/%{vdsm_name}/cpuinfo.py*
 %{python_sitelib}/%{vdsm_name}/dsaversion.py*
@@ -1256,6 +1257,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/vmpowerdown.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmstats.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmstatus.py*
+%{python_sitelib}/%{vdsm_name}/virt/xmlconstants.py*
 
 %files tests
 %doc %{_datadir}/%{vdsm_name}/tests/README
@@ -1571,6 +1573,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/storagedev.py*
 %{_datadir}/%{vdsm_name}/gluster/tasks.py*
 %endif
+
 
 %changelog
 * Wed Aug 03 2016 Yaniv Bronhaim <ybronhei@redhat.com> - 4.18.999

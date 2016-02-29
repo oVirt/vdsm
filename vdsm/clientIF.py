@@ -474,7 +474,7 @@ class clientIF(object):
                       numa.cpu_topology().cores)
             migration.SourceThread.ongoingMigrations.bound = mog
 
-            recovery.all_vms(self)
+            recovery.all_domains(self)
 
             # recover stage 3: waiting for domains to go up
             self._waitForDomainsUp()

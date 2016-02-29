@@ -39,6 +39,7 @@ import libvirt
 from vdsm.common import response
 from vdsm import concurrent
 from vdsm import constants
+from vdsm import containersconnection
 from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import host
@@ -62,7 +63,7 @@ from vdsm.virt import virdomain
 from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
-from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
+from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
 from storage import outOfProcess as oop
 from storage import sd
 from storage import sdc
@@ -284,7 +285,10 @@ class Vm(object):
         self._pathsPreparedEvent = threading.Event()
         self._devices = self._emptyDevMap()
 
-        self._connection = libvirtconnection.get(cif)
+        if is_kvm(self.conf):
+            self._connection = libvirtconnection.get(cif)
+        else:
+            self._connection = containersconnection.get(cif)
         if 'vmName' not in self.conf:
             self.conf['vmName'] = 'n%s' % self.id
         self._guestSocketFile = self._makeChannelPath(vmchannels.DEVICE_NAME)
@@ -1683,6 +1687,12 @@ class Vm(object):
         sampling.stats_cache.add(self.id)
         self._monitorable = True
 
+        if is_kvm(self.conf):
+            self._vmDependentInit()
+        else:
+            self._containerDependentInit()
+
+    def _vmDependentInit(self):
         self._guestEventTime = self._startTime
 
         self._updateDomainDescriptor()
@@ -1746,6 +1756,11 @@ class Vm(object):
                 self.conf['pid'] = str(self._getPid())
 
         self._dom_vcpu_setup()
+
+    def _containerDependentInit(self):
+        self._guestEventTime = self._startTime
+        self._guestCpuRunning = self._isDomainRunning()
+        self._logGuestCpuStatus('domain initialization')
 
     def _dom_vcpu_setup(self):
         nice = int(self.conf.get('nice', '0'))
