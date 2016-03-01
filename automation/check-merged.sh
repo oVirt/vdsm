@@ -65,6 +65,9 @@ for distro in fc23; do
     # otherwise
     lago ovirt deploy
     {
+        # Mock the KSM directory, we do not want real KSM to be affected
+        lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
+
         lago shell "$vm_name" -c \
             " \
                 cd /usr/share/vdsm/tests

@@ -24,6 +24,7 @@ dist_supervdsm_api_PYTHON = \
 	__init__.py \
 	test.py \
 	hwinfo.py \
+	ksm.py \
 	mkimage.py \
 	network.py \
 	virt.py \

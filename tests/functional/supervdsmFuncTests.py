@@ -37,3 +37,18 @@ class TestSuperVdsmRemotly(TestCaseBase):
         self.dropPrivileges()
         proxy = supervdsm.getProxy()
         self.assertTrue(proxy.ping())
+
+    # This requires environment with tmpfs mounted to /sys/kernel/mm/ksm
+    @testValidation.ValidateRunningAsRoot
+    def testKsmAction(self):
+        self.dropPrivileges()
+        proxy = supervdsm.getProxy()
+        ksmParams = {"run": 0,
+                     "merge_across_nodes": 0xf,
+                     "sleep_millisecs": 0xffff,
+                     "pages_to_scan": 0xffff}
+        proxy.ksmTune(ksmParams)
+
+        for k, v in ksmParams.iteritems():
+            self.assertEqual(str(v),
+                             open("/sys/kernel/mm/ksm/%s" % k, "r").read())

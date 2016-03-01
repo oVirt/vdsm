@@ -913,6 +913,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/supervdsm_api/__init__.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/hwinfo.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/mkimage.py*
+%{_datadir}/%{vdsm_name}/supervdsm_api/ksm.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/network.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/virt.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
