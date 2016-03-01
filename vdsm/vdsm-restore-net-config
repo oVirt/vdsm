@@ -28,8 +28,6 @@ import threading
 import time
 import errno
 
-import six
-
 from vdsm.config import config
 from vdsm import ipwrapper
 from vdsm import hostdev
@@ -130,6 +128,8 @@ def unified_restoration():
 
     _wait_for_for_all_devices_up(
         available_config.networks.keys() + available_config.bonds.keys())
+    if ipv6_supported():
+        _restore_disable_ipv6()
     changed_config = _filter_changed_nets_bonds(available_config)
     nets = changed_config.networks
     bonds = changed_config.bonds
@@ -139,8 +139,6 @@ def unified_restoration():
                       'and bond (%s).', nets, bonds)
         setupNetworks(nets, bonds, {'connectivityCheck': False,
                                     '_inRollback': True})
-    if ipv6_supported():
-        _restore_disable_ipv6(available_config.networks)
 
 
 def _verify_all_devices_are_up(owned_ifcfg_files):
@@ -350,16 +348,30 @@ def _get_links_with_state_down(links):
                not l.oper_up)
 
 
-def _restore_disable_ipv6(networks):
+def _ifcfg_dev_name(file_name):
+    """Return the device name from the full path to its ifcfg- file."""
+    return os.path.basename(file_name)[6:]
+
+
+def _ipv6_ifcfg(link_name):
+    def ipv6init(content):
+        return all(line != 'IPV6INIT=no' for line in content.splitlines())
+    return _ifcfg_predicate(link_name, ipv6init)
+
+
+def _restore_disable_ipv6():
     """
-    Disable IPv6 on bridges with no IPv6 configuration, after networks have
-    been restored. This is implemented for unified persistence only.
+    Disable IPv6 on networks with no IPv6 configuration. This must be done even
+    before actual restoration is performed because there is probably going to
+    be a link-local address already (or "worse", initscripts may have acquired
+    a global address through autoconfiguration) and thus the network's state
+    would differ from the persisted config, causing needless restoration.
+    This is implemented for unified persistence only.
     """
-    for net, net_attr in six.iteritems(networks):
-        if net_attr.get('bridged') and not net_attr.get('ipv6addr') and not (
-                net_attr.get('ipv6autoconf')) and not net_attr.get('dhcpv6'):
-            # _wait_for_for_all_devices_up has already run, so assuming up
-            sysctl.disable_ipv6(net)
+    for filename in _owned_ifcfg_files():
+        device = _ifcfg_dev_name(filename)
+        if not _ipv6_ifcfg(device):
+            sysctl.disable_ipv6(device)
 
 
 def _owned_ifcfg(link_name):
