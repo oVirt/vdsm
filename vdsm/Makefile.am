@@ -89,6 +89,7 @@ EXTRA_DIST = \
 	mom.d/02-balloon.policy \
 	mom.d/03-ksm.policy \
 	mom.d/04-cputune.policy \
+	mom.d/05-iotune.policy \
 	sourceRoute.sh \
 	sudoers.vdsm.in \
 	svdsm.logger.conf.in \
