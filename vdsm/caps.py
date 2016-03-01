@@ -387,13 +387,13 @@ def get():
     caps['kvmEnabled'] = str(os.path.exists('/dev/kvm')).lower()
 
     if config.getboolean('vars', 'report_host_threads_as_cores'):
-        caps['cpuCores'] = str(cpu_topology['threads'])
+        caps['cpuCores'] = str(cpu_topology.threads)
     else:
-        caps['cpuCores'] = str(cpu_topology['cores'])
+        caps['cpuCores'] = str(cpu_topology.cores)
 
-    caps['cpuThreads'] = str(cpu_topology['threads'])
-    caps['cpuSockets'] = str(cpu_topology['sockets'])
-    caps['onlineCpus'] = ','.join(cpu_topology['onlineCpus'])
+    caps['cpuThreads'] = str(cpu_topology.threads)
+    caps['cpuSockets'] = str(cpu_topology.sockets)
+    caps['onlineCpus'] = ','.join(cpu_topology.online_cpus)
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
     caps['cpuFlags'] = ','.join(cpuinfo.flags() + _getCompatibleCpuModels())

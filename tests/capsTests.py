@@ -71,9 +71,9 @@ class TestCaps(TestCaseBase):
         # PPC64 4 sockets, 5 cores, 1 threads per core
         path = os.path.join(dirName, "caps_libvirt_ibm_S822L.out")
         t = numa.cpu_topology(open(path).read())
-        self.assertEqual(t['threads'], 20)
-        self.assertEqual(t['cores'], 20)
-        self.assertEqual(t['sockets'], 4)
+        self.assertEqual(t.threads, 20)
+        self.assertEqual(t.cores, 20)
+        self.assertEqual(t.sockets, 4)
 
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '1', 'free': '1'})
@@ -85,23 +85,23 @@ class TestCaps(TestCaseBase):
         path = os.path.join(dirName, "caps_libvirt_intel_E5649.out")
         with open(path) as p:
             t = numa.cpu_topology(p.read())
-        self.assertEqual(t['threads'], 24)
-        self.assertEqual(t['cores'], 12)
-        self.assertEqual(t['sockets'], 2)
+        self.assertEqual(t.threads, 24)
+        self.assertEqual(t.cores, 12)
+        self.assertEqual(t.sockets, 2)
         # 2 x AMD 6272 (with Modules)
         path = os.path.join(dirName, "caps_libvirt_amd_6274.out")
         with open(path) as p:
             t = numa.cpu_topology(p.read())
-        self.assertEqual(t['threads'], 32)
-        self.assertEqual(t['cores'], 16)
-        self.assertEqual(t['sockets'], 2)
+        self.assertEqual(t.threads, 32)
+        self.assertEqual(t.cores, 16)
+        self.assertEqual(t.sockets, 2)
         # 1 x Intel E31220 (normal Multi-core)
         path = os.path.join(dirName, "caps_libvirt_intel_E31220.out")
         with open(path) as p:
             t = numa.cpu_topology(p.read())
-        self.assertEqual(t['threads'], 4)
-        self.assertEqual(t['cores'], 4)
-        self.assertEqual(t['sockets'], 1)
+        self.assertEqual(t.threads, 4)
+        self.assertEqual(t.cores, 4)
+        self.assertEqual(t.sockets, 1)
 
     def testEmulatedMachines(self):
         capsData = self._readCaps("caps_libvirt_amd_6274.out")
@@ -322,7 +322,9 @@ class TestCaps(TestCaseBase):
         'total': '1', 'free': '1'})
     def test_getCpuTopology(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        result = numa.cpu_topology(capsData)
-        expected = {'cores': 4, 'threads': 8, 'sockets': 1,
-                    'onlineCpus': ['0', '1', '2', '3', '4', '5', '6', '7']}
-        self.assertEqual(expected, result)
+        t = numa.cpu_topology(capsData)
+        self.assertEqual(t.threads, 8)
+        self.assertEqual(t.cores, 4)
+        self.assertEqual(t.sockets, 1)
+        self.assertEqual(t.online_cpus,
+                         ['0', '1', '2', '3', '4', '5', '6', '7'])

@@ -467,7 +467,7 @@ class clientIF(object):
             # we prefer running this code in external thread to avoid blocking
             # API response.
             mog = min(config.getint('vars', 'max_outgoing_migrations'),
-                      numa.cpu_topology()['cores'])
+                      numa.cpu_topology().cores)
             migration.SourceThread.setMaxOutgoingMigrations(mog)
 
             recovery.all_vms(self)

@@ -30,6 +30,7 @@ from . import libvirtconnection
 
 
 NumaTopology = namedtuple('NumaTopology', 'topology, distances, cpu_topology')
+CpuTopology = namedtuple('CpuTopology', 'sockets, cores, threads, online_cpus')
 
 
 _SYSCTL = utils.CommandPath("sysctl", "/sbin/sysctl", "/usr/sbin/sysctl")
@@ -74,10 +75,9 @@ def cpu_topology(capabilities=None):
     should be reworked in future.
 
     Example:
-        {'sockets': 1,
-         'cores': 10,
-         'threads': 20,
-         'onlineCpus': '0,1,2,3,4,10,11,12,13,14,5,6,7,8,9,15,16,17,18,19'}
+        (sockets, cores, threads, online_cpus)
+        (1, 10, 20, [0, 1, 2, 3, 4, 10, 11, 12, 13,
+                     14, 5, 6, 7, 8, 9, 15, 16, 17, 18, 19])
     '''
     return _numa(capabilities).cpu_topology
 
@@ -150,12 +150,8 @@ def _numa(capabilities=None):
             for sibling in cell.find('distances').findall('sibling'):
                 distances[cell_id].append(int(sibling.get('value')))
 
-    cpu_topology = {
-        'sockets': len(sockets),
-        'cores': len(siblings),
-        'threads': len(online_cpus),
-        'onlineCpus': online_cpus,
-    }
+    cpu_topology = CpuTopology(len(sockets), len(siblings),
+                               len(online_cpus), online_cpus)
 
     return NumaTopology(topology, distances, cpu_topology)
 
