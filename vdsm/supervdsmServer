@@ -419,7 +419,7 @@ def main(sockfile, pidfile=None):
 
     if _glusterEnabled:
         for name, func in listPublicFunctions(GLUSTER_MGMT_ENABLED):
-            setattr(_SuperVdsm, name, logDecorator(bind(func)))
+            setattr(_SuperVdsm, name, bind(logDecorator(func)))
 
     for _, module_name, _ in pkgutil.iter_modules([supervdsm_api.__path__[0]]):
         module = importlib.import_module('%s.%s' %
@@ -428,7 +428,7 @@ def main(sockfile, pidfile=None):
         api_funcs = [f for _, f in module.__dict__.iteritems()
                      if callable(f) and getattr(f, 'exposed_api', False)]
         for func in api_funcs:
-            setattr(_SuperVdsm, func.__name__, logDecorator(bind(func)))
+            setattr(_SuperVdsm, func.__name__, bind(logDecorator(func)))
 
     try:
         log.debug("Making sure I'm root - SuperVdsm")
