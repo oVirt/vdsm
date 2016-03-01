@@ -20,16 +20,12 @@
 #
 # pylint: disable=R0904
 
-from contextlib import contextmanager
 import os
-import six
-import sys
 import time
 import logging
 import errno
 
 from vdsm.network.errors import ConfigNetworkError
-from vdsm.network.configurators import RollbackIncomplete
 
 from vdsm import commands
 from vdsm import utils
@@ -68,15 +64,6 @@ except ImportError:
 
 # default message for system shutdown, will be displayed in guest
 USER_SHUTDOWN_MESSAGE = 'System going down'
-
-
-def _after_network_setup_fail(networks, bondings, options):
-    # TODO: it might be useful to pass failure description in 'response' field
-    network_config_dict = {
-        'request': {'networks': dict(networks),
-                    'bondings': dict(bondings),
-                    'options': dict(options)}}
-    hooks.after_network_setup_fail(network_config_dict)
 
 
 def updateTimestamp():
@@ -1480,58 +1467,20 @@ class Global(APIBase):
         if not self._cif._networkSemaphore.acquire(blocking=False):
             self.log.warn('concurrent network verb already executing')
             return errCode['unavail']
+
         try:
             self._cif._netConfigDirty = True
-
-            with self._rollback() as rollbackCtx:
-                supervdsm.getProxy().setupNetworks(networks, bondings, options)
-
-            if rollbackCtx['status'] != doneCode:
-                _after_network_setup_fail(networks, bondings, options)
-            return rollbackCtx
+            supervdsm.getProxy().setupNetworks(networks, bondings, options)
+            return {'status': doneCode}
+        except ConfigNetworkError as e:
+            self.log.error(e.message, exc_info=True)
+            return {'status': {'code': e.errCode, 'message': e.message}}
         except exception.HookError as e:
-            _after_network_setup_fail(networks, bondings, options)
             return response.error('hookError', 'Hook error: ' + str(e))
         except:
-            _after_network_setup_fail(networks, bondings, options)
             raise
         finally:
             self._cif._networkSemaphore.release()
-
-    @contextmanager
-    def _rollback(self):
-        rollbackCtx = {'status': doneCode}
-        try:
-            yield rollbackCtx
-        except ConfigNetworkError as e:
-            # Only a configuration error in setupNetworks before any damage
-            # done. No need for cleanup.
-            self.log.error(e.message, exc_info=True)
-            rollbackCtx['status'] = {'code': e.errCode, 'message': e.message}
-        except RollbackIncomplete as roi:
-            # a previous call to setupNetworks (with 'inRollback': False)
-            # failed and we need to try and cleanup.
-            config, excType, value = roi
-            tb = sys.exc_info()[2]
-            try:
-                # config holds the difference between RunningConfig on disk and
-                # the one in memory with the addition of {'remove': True}
-                # hence, the next call to setupNetworks will perform a cleanup.
-                supervdsm.getProxy().setupNetworks(
-                    config.networks, config.bonds, {'inRollback': True,
-                                                    'connectivityCheck': 0})
-            except Exception:
-                self.log.error('Memory rollback failed.', exc_info=True)
-            finally:
-                if excType is ConfigNetworkError:
-                    rollbackCtx['status'] = {'code': value.errCode,
-                                             'message': value.message}
-                else:
-                    # We raise the original unexpected exception since any
-                    # exception that might have happened on rollback is
-                    # properly logged and derived from actions to respond to
-                    # the original exception.
-                    six.reraise(excType, value, tb)
 
     def setSafeNetworkConfig(self):
         """Declare current network configuration as 'safe'"""

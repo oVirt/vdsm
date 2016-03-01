@@ -28,6 +28,7 @@ from distutils.version import LooseVersion
 import libvirt
 
 from vdsm.config import config
+from vdsm.netinfo import cache as netinfo_cache
 from vdsm import cpuarch
 from vdsm import cpuinfo
 from vdsm import dsaversion
@@ -35,7 +36,6 @@ from vdsm import hooks
 from vdsm import hostdev
 from vdsm import libvirtconnection
 from vdsm import machinetype
-from vdsm import netinfo
 from vdsm import numa
 from vdsm import osinfo
 from vdsm import host
@@ -164,7 +164,7 @@ def get():
     caps.update(_getVersionInfo())
 
     # TODO: Version requests by engine to ease handling of compatibility.
-    netinfo_data = netinfo.cache.get(compatibility=30600)
+    netinfo_data = netinfo_cache.get(compatibility=30600)
     caps.update(netinfo_data)
 
     try:

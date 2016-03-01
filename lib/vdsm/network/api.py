@@ -19,10 +19,14 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
+from contextlib import contextmanager
 import errno
 import os
+import sys
 import time
 import logging
+
+import six
 
 from vdsm.config import config
 from vdsm import commands
@@ -39,6 +43,7 @@ from vdsm import ipwrapper
 from . canonicalize import canonicalize_networks
 from . import legacy_switch
 from . import errors as ne
+from .configurators import RollbackIncomplete
 from .errors import ConfigNetworkError
 
 CONNECTIVITY_TIMEOUT_DEFAULT = 4
@@ -151,6 +156,29 @@ def _apply_hook(bondings, networks, options):
     return bondings, networks, options
 
 
+@contextmanager
+def _rollback():
+    try:
+        yield
+    except RollbackIncomplete as roi:
+        diff, excType, value = roi
+        tb = sys.exc_info()[2]
+        try:
+            # diff holds the difference between RunningConfig on disk and
+            # the one in memory with the addition of {'remove': True}
+            # hence, the next call to setupNetworks will perform a cleanup.
+            setupNetworks(diff.networks, diff.bonds,
+                          {'inRollback': True, 'connectivityCheck': 0})
+        except Exception:
+            logging.error('Memory rollback failed.', exc_info=True)
+        finally:
+            # We raise the original unexpected exception since any
+            # exception that might have happened on rollback is
+            # properly logged and derived from actions to respond to
+            # the original exception.
+            six.reraise(excType, value, tb)
+
+
 def setupNetworks(networks, bondings, options):
     """Add/Edit/Remove configuration for networks and bondings.
 
@@ -194,7 +222,23 @@ def setupNetworks(networks, bondings, options):
     logging.debug('Setting up network according to configuration: '
                   'networks:%r, bondings:%r, options:%r' % (networks,
                                                             bondings, options))
+    try:
+        _setup_networks(networks, bondings, options)
+    except:
+        # TODO: it might be useful to pass failure description in 'response'
+        # field
+        network_config_dict = {
+            'request': {'networks': dict(networks),
+                        'bondings': dict(bondings),
+                        'options': dict(options)}}
+        hooks.after_network_setup_fail(network_config_dict)
+        raise
+    else:
+        hooks.after_network_setup(
+            _build_setup_hook_dict(networks, bondings, options))
 
+
+def _setup_networks(networks, bondings, options):
     canonicalize_networks(networks)
     # TODO: Add canonicalize_bondings(bondings)
 
@@ -209,23 +253,21 @@ def setupNetworks(networks, bondings, options):
 
     logging.debug('Applying...')
     in_rollback = options.get('_inRollback', False)
-    with legacy_switch.ConfiguratorClass(in_rollback) as configurator:
-        # from this point forward, any exception thrown will be handled by
-        # Configurator.__exit__.
+    with _rollback():
+        with legacy_switch.ConfiguratorClass(in_rollback) as configurator:
+            # from this point forward, any exception thrown will be handled by
+            # Configurator.__exit__.
 
-        legacy_switch.remove_networks(networks, bondings, configurator,
-                                      _netinfo, libvirt_nets)
+            legacy_switch.remove_networks(networks, bondings, configurator,
+                                          _netinfo, libvirt_nets)
 
-        legacy_switch.bonds_setup(bondings, configurator, _netinfo,
-                                  in_rollback)
+            legacy_switch.bonds_setup(bondings, configurator, _netinfo,
+                                      in_rollback)
 
-        legacy_switch.add_missing_networks(configurator, networks, bondings,
-                                           _netinfo)
+            legacy_switch.add_missing_networks(configurator, networks,
+                                               bondings, _netinfo)
 
-        _check_connectivity(networks, bondings, options)
-
-    hooks.after_network_setup(
-        _build_setup_hook_dict(networks, bondings, options))
+            _check_connectivity(networks, bondings, options)
 
 
 def setSafeNetworkConfig():
