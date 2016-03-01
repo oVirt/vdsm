@@ -8,4 +8,5 @@
 (defvar ksmEnabled 1)
 (defvar balloonEnabled 0)
 (defvar cpuTuneEnabled 1)
+(defvar ioTuneEnabled 1)
 

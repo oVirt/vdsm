@@ -1,0 +1,36 @@
+### Auto-IoTune ################################################################
+
+(defvar unlimited_io 0)
+
+### Helper functions
+(def set_io_limits (guest) {
+    (with guest.io_tune tune {
+        (defvar max_io tune.maximum)
+        (tune.setTotalBytesSec max_io.total_bytes_sec)
+        (tune.setReadBytesSec  max_io.read_bytes_sec)
+        (tune.setWriteBytesSec max_io.write_bytes_sec)
+
+        (tune.setTotalIopsSec max_io.total_iops_sec)
+        (tune.setReadIopsSec  max_io.read_iops_sec)
+        (tune.setWriteIopsSec max_io.write_iops_sec)
+    })
+})
+
+(def reset_io_limits (guest) {
+    (with guest.io_tune tune {
+        (tune.setTotalBytesSec unlimited_io)
+        (tune.setReadBytesSec  unlimited_io)
+        (tune.setWriteBytesSec unlimited_io)
+
+        (tune.setTotalIopsSec unlimited_io)
+        (tune.setReadIopsSec  unlimited_io)
+        (tune.setWriteIopsSec unlimited_io)
+    })
+})
+
+### Main Script
+(if (== True ioTuneEnabled) {
+    (with Guests guest (set_io_limits guest))
+}{
+    (with Guests guest (reset_io_limits guest))
+})

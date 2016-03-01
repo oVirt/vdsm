@@ -25,7 +25,7 @@ hypervisor-interface: vdsmxmlrpc
 policy-engine-interval: 15
 
 # A comma-separated list of Controller plugins to enable
-controllers: Balloon, KSM, CpuTune
+controllers: Balloon, KSM, CpuTune, IoTune
 
 # Sets the maximum number of statistic samples to keep for the purpose of
 # calculating moving averages.
@@ -81,4 +81,4 @@ collectors: HostMemory, HostKSM, HostCpu
 
 [guest]
 # A comma-separated list of Collector plugins to use for Guest data collection.
-collectors: GuestQemuProc, GuestMemoryOptional, GuestBalloon, GuestCpuTune
+collectors: GuestQemuProc, GuestMemoryOptional, GuestBalloon, GuestCpuTune, GuestIoTune
