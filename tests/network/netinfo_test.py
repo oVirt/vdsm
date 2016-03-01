@@ -22,7 +22,6 @@ from __future__ import absolute_import
 import os
 from functools import partial
 import io
-import netaddr
 
 from vdsm import ipwrapper
 from vdsm import netinfo
@@ -321,9 +320,6 @@ class TestNetinfo(TestCaseBase):
             on the device depending on OS configuration"""
             ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = \
                 addresses.getIpInfo(*a, **kw)
-            ipv6addrs = [
-                addr for addr in ipv6addrs
-                if not netaddr.IPAddress(addr.split('/')[0]).is_link_local()]
             return ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
 
         IP_ADDR = '192.0.2.2'
@@ -366,6 +362,24 @@ class TestNetinfo(TestCaseBase):
                  [IP_ADDR_CIDR, IP_ADDR2_CIDR, IP_ADDR3_CIDR,
                   IP_ADDR_SECOND_CIDR],
                  [IPV6_ADDR_CIDR]))
+
+    def test_netinfo_ignoring_link_scope_ip(self):
+        v4_link = {'family': 'inet', 'address': '169.254.0.0/16',
+                   'scope': 'link', 'prefixlen': 16, 'flags': ['permanent']}
+        v4_global = {'family': 'inet', 'address': '192.0.2.2/24',
+                     'scope': 'global', 'prefixlen': 24,
+                     'flags': ['permanent']}
+        v6_link = {'family': 'inet6', 'address': 'fe80::5054:ff:fea3:f9f3/64',
+                   'scope': 'link', 'prefixlen': 64, 'flags': ['permanent']}
+        v6_global = {'family': 'inet6',
+                     'address': 'ee80::5054:ff:fea3:f9f3/64',
+                     'scope': 'global', 'prefixlen': 64,
+                     'flags': ['permanent']}
+        ipaddrs = {'eth0': (v4_link, v4_global, v6_link, v6_global)}
+        ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = \
+            addresses.getIpInfo('eth0', ipaddrs=ipaddrs)
+        self.assertEqual(ipv4addrs, ['192.0.2.2/24'])
+        self.assertEqual(ipv6addrs, ['ee80::5054:ff:fea3:f9f3/64'])
 
     def _cidr_form(self, ip_addr, prefix_length):
         return '{}/{}'.format(ip_addr, prefix_length)

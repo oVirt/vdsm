@@ -45,6 +45,8 @@ def getIpInfo(dev, ipaddrs=None, ipv4_gateway=None):
         return addr_net in gw_net
 
     for addr in ipaddrs[dev]:
+        if addr['scope'] == 'link':
+            continue
         address_cidr = nl_addr.cidr_form(addr)  # x.y.z.t/N
         if addr['family'] == 'inet':  # ipv4
             ipv4addrs.append(address_cidr)

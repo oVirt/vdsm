@@ -19,7 +19,6 @@
 #
 from __future__ import absolute_import
 import copy
-import netaddr
 import six
 import string
 
@@ -106,17 +105,10 @@ def _translate_ipaddr(attributes, net_attr):
         if net_attr['gateway']:
             attributes['gateway'] = net_attr['gateway']
     if not attributes['dhcpv6']:
-        non_local_addresses = _translate_ipv6_addr(net_attr['ipv6addrs'])
-        if non_local_addresses:
-            attributes['ipv6addr'] = non_local_addresses
+        if net_attr['ipv6addrs']:
+            attributes['ipv6addr'] = net_attr['ipv6addrs']
         if net_attr['ipv6gateway'] != '::':
             attributes['ipv6gateway'] = net_attr['ipv6gateway']
-
-
-def _translate_ipv6_addr(ipv6_addrs):
-    return [
-        addr for addr in ipv6_addrs
-        if not netaddr.IPAddress(addr.split('/')[0]).is_link_local()]
 
 
 def _translate_nics(attributes, nics):
