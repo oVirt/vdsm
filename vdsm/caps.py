@@ -22,7 +22,6 @@
 
 import itertools
 import os
-import platform
 import logging
 import time
 import linecache
@@ -39,6 +38,7 @@ from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import hostdev
 from vdsm import libvirtconnection
+from vdsm import machinetype
 from vdsm import netinfo
 from vdsm import numa
 from vdsm import host
@@ -60,7 +60,6 @@ except ImportError:
     pass
 
 PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
-CPU_MAP_FILE = '/usr/share/libvirt/cpu_map.xml'
 
 try:
     from gluster.api import GLUSTER_RPM_PACKAGES
@@ -162,125 +161,6 @@ def getLiveMergeSupport():
             logging.debug("libvirt is missing '%s': live merge disabled", flag)
             return False
     return True
-
-
-def _get_emulated_machines_from_node(node):
-    # We have to make sure to inspect 'canonical' attribute where
-    # libvirt puts the real machine name. Relevant bug:
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1229666
-    return list(set((itertools.chain.from_iterable(
-        (
-            (m.text, m.get('canonical'))
-            if m.get('canonical') else
-            (m.text,)
-        )
-        for m in node.iterfind('machine')))))
-
-
-def _get_emulated_machines_from_arch(arch, caps):
-    arch_tag = caps.find('.//guest/arch[@name="%s"]' % arch)
-    if not arch_tag:
-        logging.error('Error while looking for architecture '
-                      '"%s" in libvirt capabilities', arch)
-        return []
-
-    return _get_emulated_machines_from_node(arch_tag)
-
-
-def _get_emulated_machines_from_domain(arch, caps):
-    domain_tag = caps.find(
-        './/guest/arch[@name="%s"]/domain[@type="kvm"]' % arch)
-    if not domain_tag:
-        logging.error('Error while looking for kvm domain (%s) '
-                      'libvirt capabilities', arch)
-        return []
-
-    return _get_emulated_machines_from_node(domain_tag)
-
-
-@utils.memoized
-def _getEmulatedMachines(arch, capabilities=None):
-    if capabilities is None:
-        capabilities = _getCapsXMLStr()
-    caps = ET.fromstring(capabilities)
-
-    # machine list from domain can legally be empty
-    # (e.g. only qemu-kvm installed)
-    # in that case it is fine to use machines list from arch
-    return (_get_emulated_machines_from_domain(arch, caps) or
-            _get_emulated_machines_from_arch(arch, caps))
-
-
-def _getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
-
-    with open(capfile) as xml:
-        cpu_map = ET.fromstring(xml.read())
-
-    if arch is None:
-        arch = platform.machine()
-
-    # In libvirt CPU map XML, both x86_64 and x86 are
-    # the same architecture, so in order to find all
-    # the CPU models for this architecture, 'x86'
-    # must be used
-    if cpuarch.is_x86(arch):
-        arch = 'x86'
-
-    if cpuarch.is_ppc(arch):
-        arch = 'ppc64'
-
-    architectureElement = None
-
-    architectureElements = cpu_map.findall('arch')
-
-    if architectureElements:
-        for a in architectureElements:
-            if a.get('name') == arch:
-                architectureElement = a
-
-    if architectureElement is None:
-        logging.error('Error while getting all CPU models: the host '
-                      'architecture is not supported', exc_info=True)
-        return {}
-
-    allModels = dict()
-
-    for m in architectureElement.findall('model'):
-        element = m.find('vendor')
-        if element is not None:
-            vendor = element.get('name')
-        else:
-            element = m.find('model')
-            if element is None:
-                vendor = None
-            else:
-                elementName = element.get('name')
-                vendor = allModels.get(elementName, None)
-        allModels[m.get('name')] = vendor
-    return allModels
-
-
-@utils.memoized
-def _getCompatibleCpuModels():
-    c = libvirtconnection.get()
-    allModels = _getAllCpuModels()
-
-    def compatible(model, vendor):
-        if not vendor:
-            return False
-        xml = '<cpu match="minimum"><model>%s</model>' \
-              '<vendor>%s</vendor></cpu>' % (model, vendor)
-        try:
-            return c.compareCPU(xml, 0) in (libvirt.VIR_CPU_COMPARE_SUPERSET,
-                                            libvirt.VIR_CPU_COMPARE_IDENTICAL)
-        except libvirt.libvirtError as e:
-            # hack around libvirt BZ#795836
-            if e.get_error_code() == libvirt.VIR_ERR_OPERATION_INVALID:
-                return False
-            raise
-
-    return ['model_' + model for (model, vendor)
-            in allModels.iteritems() if compatible(model, vendor)]
 
 
 def _parseKeyVal(lines, delim='='):
@@ -396,7 +276,8 @@ def get():
     caps['onlineCpus'] = ','.join(cpu_topology.online_cpus)
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
-    caps['cpuFlags'] = ','.join(cpuinfo.flags() + _getCompatibleCpuModels())
+    caps['cpuFlags'] = ','.join(cpuinfo.flags() +
+                                machinetype.getCompatibleCpuModels())
 
     caps.update(_getVersionInfo())
 
@@ -412,7 +293,8 @@ def get():
     caps['operatingSystem'] = osversion()
     caps['uuid'] = host.uuid()
     caps['packages2'] = _getKeyPackages()
-    caps['emulatedMachines'] = _getEmulatedMachines(cpuarch.effective())
+    caps['emulatedMachines'] = machinetype.getEmulatedMachines(
+        cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
     caps['HBAInventory'] = storage.hba.HBAInventory()
     caps['vmTypes'] = ['kvm']

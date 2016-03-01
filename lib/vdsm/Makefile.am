@@ -45,6 +45,7 @@ dist_vdsmpylib_PYTHON = \
 	libvirtconnection.py \
 	logUtils.py \
 	m2cutils.py \
+	machinetype.py \
 	netconfpersistence.py \
 	numa.py \
 	panic.py \
