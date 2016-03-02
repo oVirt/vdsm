@@ -188,44 +188,46 @@ def cpu_count(stats, sample):
 def _nic_traffic(vm_obj, name, model, mac,
                  start_sample, start_index,
                  end_sample, end_index, interval):
-    ifSpeed = [100, 1000][model in ('e1000', 'virtio')]
+    if_speed = 1000 if model in ('e1000', 'virtio') else 100
 
-    ifStats = {'macAddr': mac,
-               'name': name,
-               'speed': str(ifSpeed),
-               'state': 'unknown'}
-
-    with _skip_if_missing_stats(vm_obj):
-        ifStats['rxErrors'] = str(end_sample['net.%d.rx.errs' % end_index])
-        ifStats['rxDropped'] = str(end_sample['net.%d.rx.drop' % end_index])
-        ifStats['txErrors'] = str(end_sample['net.%d.tx.errs' % end_index])
-        ifStats['txDropped'] = str(end_sample['net.%d.tx.drop' % end_index])
+    if_stats = {
+        'macAddr': mac,
+        'name': name,
+        'speed': str(if_speed),
+        'state': 'unknown',
+    }
 
     with _skip_if_missing_stats(vm_obj):
-        rxDelta = (
+        if_stats['rxErrors'] = str(end_sample['net.%d.rx.errs' % end_index])
+        if_stats['rxDropped'] = str(end_sample['net.%d.rx.drop' % end_index])
+        if_stats['txErrors'] = str(end_sample['net.%d.tx.errs' % end_index])
+        if_stats['txDropped'] = str(end_sample['net.%d.tx.drop' % end_index])
+
+    with _skip_if_missing_stats(vm_obj):
+        rx_delta = (
             end_sample['net.%d.rx.bytes' % end_index] -
             start_sample['net.%d.rx.bytes' % start_index]
         )
-        txDelta = (
+        tx_delta = (
             end_sample['net.%d.tx.bytes' % end_index] -
             start_sample['net.%d.tx.bytes' % start_index]
         )
 
-    ifRxBytes = (100.0 *
-                 (rxDelta % 2 ** 32) /
-                 interval / ifSpeed / _MBPS_TO_BPS)
-    ifTxBytes = (100.0 *
-                 (txDelta % 2 ** 32) /
-                 interval / ifSpeed / _MBPS_TO_BPS)
+    if_rx_bytes = (100.0 *
+                   (rx_delta % 2 ** 32) /
+                   interval / if_speed / _MBPS_TO_BPS)
+    if_tx_bytes = (100.0 *
+                   (tx_delta % 2 ** 32) /
+                   interval / if_speed / _MBPS_TO_BPS)
 
-    ifStats['rxRate'] = '%.1f' % ifRxBytes
-    ifStats['txRate'] = '%.1f' % ifTxBytes
+    if_stats['rxRate'] = '%.1f' % if_rx_bytes
+    if_stats['txRate'] = '%.1f' % if_tx_bytes
 
-    ifStats['rx'] = str(end_sample['net.%d.rx.bytes' % end_index])
-    ifStats['tx'] = str(end_sample['net.%d.tx.bytes' % end_index])
-    ifStats['sampleTime'] = monotonic_time()
+    if_stats['rx'] = str(end_sample['net.%d.rx.bytes' % end_index])
+    if_stats['tx'] = str(end_sample['net.%d.tx.bytes' % end_index])
+    if_stats['sampleTime'] = monotonic_time()
 
-    return ifStats
+    return if_stats
 
 
 def networks(vm, stats, first_sample, last_sample, interval):
