@@ -99,7 +99,10 @@ def tune_io(vm, stats):
 
 def cpu(stats, first_sample, last_sample, interval):
     """
-    Add cpu statistics to the `stats' dict.
+    Add cpu statistics to the `stats' dict:
+    - cpuUser
+    - cpuSys
+    - cpuTime
     Expect two samplings `first_sample' and `last_sample'
     which must be data in the format of the libvirt bulk stats.
     `interval' is the time between the two samplings, in seconds.
@@ -188,6 +191,31 @@ def cpu_count(stats, sample):
 def _nic_traffic(vm_obj, name, model, mac,
                  start_sample, start_index,
                  end_sample, end_index, interval):
+    """
+    Return per-nic statistics packed into a dictionary
+    - macAddr
+    - name
+    - speed
+    - state
+    - {rx,tx}Errors
+    - {rx,tx}Dropped
+    - {rx,tx}Rate
+    - {rx,tx}
+    - sampleTime
+    Produce as many statistics as possible, skipping errors.
+    Expect two samplings `start_sample' and `end_sample'
+    which must be data in the format of the libvirt bulk stats.
+    Expects the indexes of the nic whose statistics needs to be produced,
+    for each sampling:
+    `start_index' for `start_sample', `end_index' for `end_sample'.
+    `interval' is the time between the two samplings, in seconds.
+    `vm_obj' is the Vm instance to which the nic belongs.
+    `name', `model' and `mac' are the attributes of the said nic.
+    Those three value are reported in the output stats.
+    Return None on error,  if any needed data is missing or wrong.
+    Return the `stats' dictionary on success.
+    """
+
     if_speed = 1000 if model in ('e1000', 'virtio') else 100
 
     if_stats = {
@@ -204,6 +232,8 @@ def _nic_traffic(vm_obj, name, model, mac,
         if_stats['txDropped'] = str(end_sample['net.%d.tx.drop' % end_index])
 
     with _skip_if_missing_stats(vm_obj):
+        if_stats['rx'] = str(end_sample['net.%d.rx.bytes' % end_index])
+        if_stats['tx'] = str(end_sample['net.%d.tx.bytes' % end_index])
         rx_delta = (
             end_sample['net.%d.rx.bytes' % end_index] -
             start_sample['net.%d.rx.bytes' % start_index]
@@ -213,18 +243,16 @@ def _nic_traffic(vm_obj, name, model, mac,
             start_sample['net.%d.tx.bytes' % start_index]
         )
 
-    if_rx_bytes = (100.0 *
-                   (rx_delta % 2 ** 32) /
-                   interval / if_speed / _MBPS_TO_BPS)
-    if_tx_bytes = (100.0 *
-                   (tx_delta % 2 ** 32) /
-                   interval / if_speed / _MBPS_TO_BPS)
+        if_rx_bytes = (100.0 *
+                       (rx_delta % 2 ** 32) /
+                       interval / if_speed / _MBPS_TO_BPS)
+        if_tx_bytes = (100.0 *
+                       (tx_delta % 2 ** 32) /
+                       interval / if_speed / _MBPS_TO_BPS)
 
-    if_stats['rxRate'] = '%.1f' % if_rx_bytes
-    if_stats['txRate'] = '%.1f' % if_tx_bytes
+        if_stats['rxRate'] = '%.1f' % if_rx_bytes
+        if_stats['txRate'] = '%.1f' % if_tx_bytes
 
-    if_stats['rx'] = str(end_sample['net.%d.rx.bytes' % end_index])
-    if_stats['tx'] = str(end_sample['net.%d.tx.bytes' % end_index])
     if_stats['sampleTime'] = monotonic_time()
 
     return if_stats
@@ -401,6 +429,12 @@ def _find_bulk_stats_reverse_map(stats, group):
 
 @contextlib.contextmanager
 def _skip_if_missing_stats(vm_obj):
+    """
+    Depending on the VM state, some exceptions while accessing
+    the bulk stats samples are to be expected, and harmless.
+    This context manager swallows those and let the others
+    bubble up.
+    """
     try:
         yield
     except KeyError:

@@ -370,6 +370,30 @@ class NetworkStatsTests(VmStatsTestCase):
                              0) is None
         )
 
+    @permutations([
+        ['net.0.rx.bytes'], ['net.0.rx.pkts'],
+        ['net.0.rx.errs'], ['net.0.rx.drop'], ['net.0.tx.bytes'],
+        ['net.0.tx.pkts'], ['net.0.tx.errs'], ['net.0.tx.drop'],
+    ])
+    def test_networks_missing_key(self, key):
+        nics = (
+            FakeNic(name='vnet0', model='virtio',
+                    mac_addr='00:1a:4a:16:01:51'),
+        )
+        vm = FakeVM(nics=nics)
+        vm.migrationPending = True
+
+        faulty_bulk_stats = {}
+        faulty_bulk_stats.update(self.bulk_stats)
+        del faulty_bulk_stats[key]
+
+        stats = {}
+        self.assertTrue(
+            vmstats.networks(vm, stats,
+                             self.bulk_stats, faulty_bulk_stats,
+                             1)
+        )
+
 
 class DiskStatsTests(VmStatsTestCase):
 
@@ -556,6 +580,10 @@ class FakeVM(object):
         self.id = str(uuid.uuid4())
         self.nics = nics if nics is not None else []
         self.drives = drives if drives is not None else []
+        self.migrationPending = False
+
+    def incomingMigrationPending(self):
+        return self.migrationPending
 
     def getNicDevices(self):
         return self.nics
