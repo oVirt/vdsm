@@ -179,19 +179,21 @@ class Config(BaseConfig):
         utils.rmFile(path)
 
     def _clearDisk(self):
-        try:
-            logging.info('Clearing %s and %s', self.networksPath,
-                         self.bondingsPath)
-            for filePath in os.listdir(self.networksPath):
-                self._removeConfig(self.networksPath + filePath)
+        def _clear_dir(path_to_dir):
+            try:
+                for filePath in os.listdir(path_to_dir):
+                    self._removeConfig(path_to_dir + filePath)
+            except OSError as ose:
+                if ose.errno == errno.ENOENT:
+                    logging.debug('No existent config to clear on %s' %
+                                  path_to_dir)
+                else:
+                    raise
 
-            for filePath in os.listdir(self.bondingsPath):
-                self._removeConfig(self.bondingsPath + filePath)
-        except OSError as ose:
-            if ose.errno == errno.ENOENT:
-                logging.debug('No existent config to clear.')
-            else:
-                raise
+        logging.info('Clearing %s and %s', self.networksPath,
+                     self.bondingsPath)
+        _clear_dir(self.networksPath)
+        _clear_dir(self.bondingsPath)
 
 
 class RunningConfig(Config):
