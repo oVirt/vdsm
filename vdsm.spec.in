@@ -1069,6 +1069,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
+%dir %{python_sitelib}/%{vdsm_name}/network/ip
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
@@ -1133,6 +1134,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/configurators/qos.py*
 %{python_sitelib}/%{vdsm_name}/network/errors.py*
 %{python_sitelib}/%{vdsm_name}/network/canonicalize.py*
+%{python_sitelib}/%{vdsm_name}/network/ip/*.py*
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
 %{python_sitelib}/%{vdsm_name}/network/models.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*

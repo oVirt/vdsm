@@ -359,6 +359,7 @@ AC_OUTPUT([
 	lib/vdsm/infra/zombiereaper/Makefile
 	lib/vdsm/network/Makefile
 	lib/vdsm/network/configurators/Makefile
+	lib/vdsm/network/ip/Makefile
 	lib/vdsm/rpc/Makefile
 	lib/vdsm/storage/Makefile
 	lib/vdsm/tc/Makefile

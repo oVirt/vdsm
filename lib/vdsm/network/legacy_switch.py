@@ -35,10 +35,11 @@ from vdsm.netinfo import bridges
 from vdsm.netinfo import mtus
 from vdsm.netinfo import nics as netinfo_nics
 from vdsm.netinfo.cache import CachingNetInfo
+from vdsm.network.ip.address import IPv4, IPv6
 from vdsm import utils
 
 from .configurators import libvirt, dhclient
-from .models import Bond, Bridge, IPv4, IPv6, Nic, Vlan
+from .models import Bond, Bridge, Nic, Vlan
 from .models import hierarchy_backing_device
 from . import errors as ne
 from .errors import ConfigNetworkError

@@ -52,9 +52,10 @@ from vdsm.netlink import monitor
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
 
+from vdsm.network.ip.address import IPv4, IPv6
 from . import Configurator, dhclient, getEthtoolOpts, libvirt, wait_for_device
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
-from ..models import Nic, Bridge, IPv4, IPv6
+from ..models import Nic, Bridge
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
 from ..utils import remove_custom_bond_option
 

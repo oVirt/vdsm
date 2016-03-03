@@ -25,7 +25,8 @@ import six
 from vdsm import ipwrapper, sysctl
 from vdsm.network.configurators.dhclient import DhcpClient, kill_dhclient
 from vdsm.network.configurators.iproute2 import Iproute2
-from vdsm.network.models import NetDevice, IPv4, IPv6
+from vdsm.network.ip.address import IPv4, IPv6
+from vdsm.network.models import NetDevice
 from vdsm.network.sourceroute import DynamicSourceRoute
 
 from ovs_utils import suppress, BRIDGE_NAME
