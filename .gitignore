@@ -22,6 +22,7 @@ client/vdsClient
 config.log
 config.status
 configure
+cscope.out
 doc/build
 init/systemd/supervdsmd.service
 init/systemd/systemd-vdsmd
