@@ -99,23 +99,23 @@ def cpu_models(capfile=CPU_MAP_FILE, arch=None):
     if cpuarch.is_ppc(arch):
         arch = 'ppc64'
 
-    architectureElement = None
+    architecture_element = None
 
-    architectureElements = cpu_map.findall('arch')
+    architecture_elements = cpu_map.findall('arch')
 
-    if architectureElements:
-        for a in architectureElements:
+    if architecture_elements:
+        for a in architecture_elements:
             if a.get('name') == arch:
-                architectureElement = a
+                architecture_element = a
 
-    if architectureElement is None:
+    if architecture_element is None:
         logging.error('Error while getting all CPU models: the host '
                       'architecture is not supported', exc_info=True)
         return {}
 
-    allModels = dict()
+    all_models = dict()
 
-    for m in architectureElement.findall('model'):
+    for m in architecture_element.findall('model'):
         element = m.find('vendor')
         if element is not None:
             vendor = element.get('name')
@@ -125,15 +125,15 @@ def cpu_models(capfile=CPU_MAP_FILE, arch=None):
                 vendor = None
             else:
                 elementName = element.get('name')
-                vendor = allModels.get(elementName, None)
-        allModels[m.get('name')] = vendor
-    return allModels
+                vendor = all_models.get(elementName, None)
+        all_models[m.get('name')] = vendor
+    return all_models
 
 
 @utils.memoized
 def compatible_cpu_models():
     c = libvirtconnection.get()
-    allModels = cpu_models()
+    all_models = cpu_models()
 
     def compatible(model, vendor):
         if not vendor:
@@ -150,7 +150,7 @@ def compatible_cpu_models():
             raise
 
     return ['model_' + model for (model, vendor)
-            in allModels.iteritems() if compatible(model, vendor)]
+            in all_models.iteritems() if compatible(model, vendor)]
 
 
 def _get_libvirt_caps():
