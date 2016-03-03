@@ -106,8 +106,8 @@ class TestCaps(TestCaseBase):
 
     def testEmulatedMachines(self):
         capsData = self._readCaps("caps_libvirt_amd_6274.out")
-        machines = machinetype.getEmulatedMachines(cpuarch.X86_64,
-                                                   capsData)
+        machines = machinetype.emulated_machines(cpuarch.X86_64,
+                                                 capsData)
         expectedMachines = ['pc-1.0', 'pc', 'isapc', 'pc-0.12', 'pc-0.13',
                             'pc-0.10', 'pc-0.11', 'pc-0.14', 'pc-0.15']
         self.assertEqual(machines, expectedMachines)
@@ -227,8 +227,8 @@ class TestCaps(TestCaseBase):
         self.assertTrue(result)
 
     def test_getAllCpuModels(self):
-        result = machinetype.getAllCpuModels(capfile=self.CPU_MAP_FILE,
-                                             arch=cpuarch.X86_64)
+        result = machinetype.cpu_models(capfile=self.CPU_MAP_FILE,
+                                        arch=cpuarch.X86_64)
         expected = {
             'qemu32': None,
             'Haswell': 'Intel',
@@ -262,21 +262,21 @@ class TestCaps(TestCaseBase):
         self.assertEqual(expected, result)
 
     def test_getAllCpuModels_noArch(self):
-        result = machinetype.getAllCpuModels(capfile=self.CPU_MAP_FILE,
-                                             arch='non_existent_arch')
+        result = machinetype.cpu_models(capfile=self.CPU_MAP_FILE,
+                                        arch='non_existent_arch')
         self.assertEqual(dict(), result)
 
-    def test_getEmulatedMachines(self):
+    def test_get_emulated_machines(self):
         capsData = self._readCaps("caps_libvirt_intel_i73770_nosnap.out")
-        result = machinetype.getEmulatedMachines('x86_64', capsData)
+        result = machinetype.emulated_machines('x86_64', capsData)
         expected = ['rhel6.3.0', 'rhel6.1.0', 'rhel6.2.0', 'pc', 'rhel5.4.0',
                     'rhel5.4.4', 'rhel6.4.0', 'rhel6.0.0', 'rhel6.5.0',
                     'rhel5.5.0']
         self.assertEqual(expected, result)
 
-    def test_getEmulatedMachinesCanonical(self):
+    def test_get_emulated_machinesCanonical(self):
         capsData = self._readCaps("caps_libvirt_intel_E5606.out")
-        result = machinetype.getEmulatedMachines('x86_64', capsData)
+        result = machinetype.emulated_machines('x86_64', capsData)
         expected = ['pc-i440fx-rhel7.1.0',
                     'rhel6.3.0',
                     'pc-q35-rhel7.0.0',
@@ -292,9 +292,9 @@ class TestCaps(TestCaseBase):
                     'pc-i440fx-rhel7.0.0']
         self.assertEqual(expected, result)
 
-    def test_getEmulatedMachinesWithTwoQEMUInstalled(self):
+    def test_get_emulated_machinesWithTwoQEMUInstalled(self):
         capsData = self._readCaps("caps_libvirt_multiqemu.out")
-        result = machinetype.getEmulatedMachines('x86_64', capsData)
+        result = machinetype.emulated_machines('x86_64', capsData)
         expected = ['pc-i440fx-rhel7.1.0',
                     'rhel6.3.0',
                     'pc-q35-rhel7.0.0',

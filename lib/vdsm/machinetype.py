@@ -69,7 +69,7 @@ def _get_emulated_machines_from_domain(arch, caps):
 
 
 @utils.memoized
-def getEmulatedMachines(arch, capabilities=None):
+def emulated_machines(arch, capabilities=None):
     if capabilities is None:
         capabilities = _get_libvirt_caps()
     caps = ET.fromstring(capabilities)
@@ -81,7 +81,7 @@ def getEmulatedMachines(arch, capabilities=None):
             _get_emulated_machines_from_arch(arch, caps))
 
 
-def getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
+def cpu_models(capfile=CPU_MAP_FILE, arch=None):
 
     with open(capfile) as xml:
         cpu_map = ET.fromstring(xml.read())
@@ -131,9 +131,9 @@ def getAllCpuModels(capfile=CPU_MAP_FILE, arch=None):
 
 
 @utils.memoized
-def getCompatibleCpuModels():
+def compatible_cpu_models():
     c = libvirtconnection.get()
-    allModels = getAllCpuModels()
+    allModels = cpu_models()
 
     def compatible(model, vendor):
         if not vendor:

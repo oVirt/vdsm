@@ -277,7 +277,7 @@ def get():
     caps['cpuSpeed'] = cpuinfo.frequency()
     caps['cpuModel'] = cpuinfo.model()
     caps['cpuFlags'] = ','.join(cpuinfo.flags() +
-                                machinetype.getCompatibleCpuModels())
+                                machinetype.compatible_cpu_models())
 
     caps.update(_getVersionInfo())
 
@@ -293,7 +293,7 @@ def get():
     caps['operatingSystem'] = osversion()
     caps['uuid'] = host.uuid()
     caps['packages2'] = _getKeyPackages()
-    caps['emulatedMachines'] = machinetype.getEmulatedMachines(
+    caps['emulatedMachines'] = machinetype.emulated_machines(
         cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
     caps['HBAInventory'] = storage.hba.HBAInventory()
