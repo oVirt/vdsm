@@ -22,7 +22,6 @@ from __future__ import absolute_import
 
 import itertools
 import logging
-import platform
 import xml.etree.ElementTree as ET
 
 import libvirt
@@ -82,40 +81,19 @@ def emulated_machines(arch, capabilities=None):
 
 
 def cpu_models(capfile=CPU_MAP_FILE, arch=None):
-
-    with open(capfile) as xml:
-        cpu_map = ET.fromstring(xml.read())
-
     if arch is None:
-        arch = platform.machine()
+        arch = cpuarch.real()
 
-    # In libvirt CPU map XML, both x86_64 and x86 are
-    # the same architecture, so in order to find all
-    # the CPU models for this architecture, 'x86'
-    # must be used
-    if cpuarch.is_x86(arch):
-        arch = 'x86'
+    arch_element = _caps_arch_element(capfile, arch)
 
-    if cpuarch.is_ppc(arch):
-        arch = 'ppc64'
-
-    architecture_element = None
-
-    architecture_elements = cpu_map.findall('arch')
-
-    if architecture_elements:
-        for a in architecture_elements:
-            if a.get('name') == arch:
-                architecture_element = a
-
-    if architecture_element is None:
+    if not arch_element:
         logging.error('Error while getting all CPU models: the host '
                       'architecture is not supported', exc_info=True)
         return {}
 
     all_models = dict()
 
-    for m in architecture_element.findall('model'):
+    for m in arch_element.findall('model'):
         element = m.find('vendor')
         if element is not None:
             vendor = element.get('name')
@@ -151,6 +129,32 @@ def compatible_cpu_models():
 
     return ['model_' + model for (model, vendor)
             in all_models.iteritems() if compatible(model, vendor)]
+
+
+def _caps_arch_element(capfile, arch):
+    with open(capfile) as xml:
+        cpu_map = ET.fromstring(xml.read())
+
+    # In libvirt CPU map XML, both x86_64 and x86 are
+    # the same architecture, so in order to find all
+    # the CPU models for this architecture, 'x86'
+    # must be used
+    if cpuarch.is_x86(arch):
+        arch = 'x86'
+
+    if cpuarch.is_ppc(arch):
+        arch = 'ppc64'
+
+    arch_element = None
+
+    arch_elements = cpu_map.findall('arch')
+
+    if arch_elements:
+        for element in arch_elements:
+            if element.get('name') == arch:
+                arch_element = element
+
+    return arch_element
 
 
 def _get_libvirt_caps():
