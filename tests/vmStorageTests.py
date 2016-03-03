@@ -22,11 +22,14 @@ from __future__ import absolute_import
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
 from testlib import XMLTestCase
+from testlib import make_config
 from testlib import permutations, expandPermutations
 
 from vdsm import constants
 from vdsm import utils
-from virt.vmdevices.storage import Drive, DISK_TYPE
+
+from virt.vmdevices import storage
+from virt.vmdevices.storage import Drive, DISK_TYPE, DRIVE_SHARED_TYPE
 
 
 class DriveXMLTests(XMLTestCase):
@@ -462,6 +465,106 @@ class DriveVolumeSizeTests(VdsmTestCase):
         size = utils.round(self.CAPACITY * drive.VOLWM_COW_OVERHEAD,
                            constants.MEGAB)
         self.assertEqual(drive.getMaxVolumeSize(self.CAPACITY), size)
+
+
+@expandPermutations
+class TestDriveLeases(XMLTestCase):
+    """
+    To have leases, drive must have a non-empty volumeChain,
+    shared="exclusive", or shared="false" and irs:use_volume_leases=True.
+
+    Any other setting results in no leases.
+    """
+
+    # Drive without leases
+
+    @MonkeyPatch(storage, 'config', make_config([
+        ("irs", "use_volume_leases", "false")
+    ]))
+    @permutations([
+        ["true"],
+        ["True"],
+        ["TRUE"],
+        ["false"],
+        ["False"],
+        ["FALSE"],
+        [DRIVE_SHARED_TYPE.NONE],
+        [DRIVE_SHARED_TYPE.EXCLUSIVE],
+        [DRIVE_SHARED_TYPE.SHARED],
+        [DRIVE_SHARED_TYPE.TRANSIENT],
+    ])
+    def test_shared_no_volume_leases_no_chain(self, shared):
+        conf = drive_config(shared=shared, volumeChain=[])
+        self.check_no_leases(conf)
+
+    @MonkeyPatch(storage, 'config', make_config([
+        ("irs", "use_volume_leases", "true")
+    ]))
+    @permutations([
+        ["true"],
+        ["True"],
+        ["TRUE"],
+        ["false"],
+        ["False"],
+        ["FALSE"],
+        [DRIVE_SHARED_TYPE.NONE],
+        [DRIVE_SHARED_TYPE.EXCLUSIVE],
+        [DRIVE_SHARED_TYPE.SHARED],
+        [DRIVE_SHARED_TYPE.TRANSIENT],
+    ])
+    def test_shared_use_volume_leases_no_chain(self, shared):
+        conf = drive_config(shared=shared, volumeChain=[])
+        self.check_no_leases(conf)
+
+    # Drive with leases
+
+    @MonkeyPatch(storage, 'config', make_config([
+        ("irs", "use_volume_leases", "true")
+    ]))
+    @permutations([
+        ["false"],
+        [DRIVE_SHARED_TYPE.EXCLUSIVE],
+    ])
+    def test_use_volume_leases(self, shared):
+        conf = drive_config(shared=shared, volumeChain=make_volume_chain())
+        self.check_leases(conf)
+
+    @MonkeyPatch(storage, 'config', make_config([
+        ("irs", "use_volume_leases", "false")
+    ]))
+    @permutations([
+        [DRIVE_SHARED_TYPE.EXCLUSIVE],
+    ])
+    def test_no_volume_leases(self, shared):
+        conf = drive_config(shared=shared, volumeChain=make_volume_chain())
+        self.check_leases(conf)
+
+    # Helpers
+
+    def check_no_leases(self, conf):
+        drive = Drive({}, self.log, **conf)
+        leases = list(drive.getLeasesXML())
+        self.assertEqual([], leases)
+
+    def check_leases(self, conf):
+        drive = Drive({}, self.log, **conf)
+        leases = list(drive.getLeasesXML())
+        self.assertEqual(1, len(leases))
+        xml = """
+        <lease>
+            <key>vol_id</key>
+            <lockspace>dom_id</lockspace>
+            <target offset="0" path="path" />
+        </lease>
+        """
+        self.assertXMLEqual(leases[0].toxml(), xml)
+
+
+def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
+    return [{"leasePath": path,
+             "leaseOffset": offset,
+             "volumeID": vol_id,
+             "domainID": dom_id}]
 
 
 def drive_config(**kw):
