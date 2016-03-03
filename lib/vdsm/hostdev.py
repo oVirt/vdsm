@@ -19,9 +19,10 @@
 #
 from __future__ import absolute_import
 
-
+import os
 import xml.etree.ElementTree as etree
 
+from . import cpuarch
 from vdsm import hooks
 from vdsm import libvirtconnection
 from vdsm import supervdsm
@@ -33,6 +34,18 @@ CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
 
 class NoIOMMUSupportException(Exception):
     pass
+
+
+def is_supported():
+    try:
+        iommu_groups_exist = bool(len(os.listdir('/sys/kernel/iommu_groups')))
+        if cpuarch.is_ppc(cpuarch.real()):
+            return iommu_groups_exist
+
+        dmar_exists = bool(len(os.listdir('/sys/class/iommu')))
+        return iommu_groups_exist and dmar_exists
+    except OSError:
+        return False
 
 
 def name_to_pci_path(device_name):

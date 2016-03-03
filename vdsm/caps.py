@@ -37,6 +37,7 @@ from vdsm import cpuarch
 from vdsm import cpuinfo
 from vdsm import dsaversion
 from vdsm import hooks
+from vdsm import hostdev
 from vdsm import libvirtconnection
 from vdsm import netinfo
 from vdsm import numa
@@ -379,18 +380,6 @@ def _getSELinux():
     return selinux
 
 
-def _getHostdevPassthorughSupport():
-    try:
-        iommu_groups_exist = bool(len(os.listdir('/sys/kernel/iommu_groups')))
-        if cpuarch.is_ppc(cpuarch.real()):
-            return iommu_groups_exist
-
-        dmar_exists = bool(len(os.listdir('/sys/class/iommu')))
-        return iommu_groups_exist and dmar_exists
-    except OSError:
-        return False
-
-
 def get():
     caps = {}
     cpu_topology = numa.cpu_topology()
@@ -462,7 +451,7 @@ def get():
     caps['liveMerge'] = str(getLiveMergeSupport()).lower()
     caps['kdumpStatus'] = _getKdumpStatus()
 
-    caps['hostdevPassthrough'] = str(_getHostdevPassthorughSupport()).lower()
+    caps['hostdevPassthrough'] = str(hostdev.is_supported()).lower()
     caps['additionalFeatures'] = []
     if _glusterEnabled:
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
