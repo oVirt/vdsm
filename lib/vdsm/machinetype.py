@@ -35,6 +35,26 @@ CPU_MAP_FILE = '/usr/share/libvirt/cpu_map.xml'
 
 @utils.memoized
 def emulated_machines(arch, capabilities=None):
+    """
+    Parse libvirt capabilties to obtain supported emulated machines on the
+    host.
+
+    Arguments:
+
+    arch            Target emulation architecture.
+
+    capabilities    Libvirt capabilities (virsh -r capabilities) string.
+
+    Returns:
+        A list of strings indicating the supported emulated machine types.
+
+    Example:
+        ['pc-i440fx-rhel7.1.0', 'rhel6.3.0', 'pc-q35-rhel7.2.0',
+        'pc-i440fx-rhel7.0.0', 'rhel6.1.0', 'rhel6.6.0', 'rhel6.2.0',
+        'pc', 'pc-q35-rhel7.0.0', 'pc-q35-rhel7.1.0', 'q35',
+        'pc-i440fx-rhel7.2.0', 'rhel6.4.0', 'rhel6.0.0', 'rhel6.5.0']
+
+    """
     if capabilities is None:
         capabilities = _get_libvirt_caps()
     caps = ET.fromstring(capabilities)
@@ -47,6 +67,22 @@ def emulated_machines(arch, capabilities=None):
 
 
 def cpu_models(capfile=CPU_MAP_FILE, arch=None):
+    """
+    Parse libvirt capabilties to obtain supported cpu models on the host.
+
+    Arguments:
+
+    capfile     Path to file in libvirt's CPU_MAP.xml format.
+
+    arch        Architecture of the CPUs. Defaults to host's real architecture.
+
+    Returns:
+        {str: str} - mapping where key is CPU model and value is CPU vendor.
+
+    Example:
+        {'POWER7': 'IBM', 'POWER6': 'IBM', 'POWERPC_e6500': 'Freescale',
+        'POWERPC_e5500': 'Freescale', 'POWER8': 'IBM'}
+    """
     if arch is None:
         arch = cpuarch.real()
 
@@ -76,6 +112,19 @@ def cpu_models(capfile=CPU_MAP_FILE, arch=None):
 
 @utils.memoized
 def compatible_cpu_models():
+    """
+    Compare qemu's CPU models to models the host is capable of emulating.
+    Due to historic reasons, this comparison takes into account the CPU vendor.
+
+    Returns:
+        A list of strings indicating compatible CPU models prefixed
+        with 'model_'.
+
+    Example:
+        ['model_Haswell-noTSX', 'model_Nehalem', 'model_Conroe',
+        'model_coreduo', 'model_core2duo', 'model_Penryn',
+        'model_IvyBridge', 'model_Westmere', 'model_n270', 'model_SandyBridge']
+    """
     c = libvirtconnection.get()
     all_models = cpu_models()
 
