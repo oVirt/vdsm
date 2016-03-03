@@ -23,9 +23,9 @@ import os
 import xml.etree.ElementTree as etree
 
 from . import cpuarch
-from vdsm import hooks
-from vdsm import libvirtconnection
-from vdsm import supervdsm
+from . import hooks
+from . import libvirtconnection
+from . import supervdsm
 
 CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'scsi': 'scsi',
