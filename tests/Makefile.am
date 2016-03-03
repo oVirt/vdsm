@@ -21,6 +21,7 @@
 include $(top_srcdir)/build-aux/Makefile.subs
 
 SUBDIRS = \
+	  common \
 	  cpuinfo \
 	  functional \
 	  devices \
@@ -42,6 +43,8 @@ test_modules_py3 = \
 	scheduleTests.py \
 	vmStatsTests.py \
 	$(NULL)
+
+common_modules = common/*_test.py
 
 device_modules = \
 	devices/parsing/complex_vm_tests.py \
@@ -242,6 +245,7 @@ server.crt server.csr server.key other.crt other.csr other.key: makecert.sh
 run_modules  = $(test_modules)
 run_modules += $(network_modules)
 run_modules += $(device_modules)
+run_modules += $(common_modules)
 
 # crossImportsTests.py has to be run separate due to different tests which
 # load modules first, making the env dirty. Unloading python modules

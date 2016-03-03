@@ -343,6 +343,8 @@ AC_OUTPUT([
 	init/systemd/Makefile
 	lib/Makefile
 	lib/vdsm/Makefile
+	lib/vdsm/common/Makefile
+	lib/vdsm/common/network/Makefile
 	lib/vdsm/netinfo/Makefile
 	lib/vdsm/netlink/Makefile
 	lib/vdsm/profiling/Makefile
@@ -362,6 +364,7 @@ AC_OUTPUT([
 	lib/vdsm/tc/Makefile
 	lib/vdsm/virt/Makefile
 	tests/Makefile
+	tests/common/Makefile
 	tests/cpuinfo/Makefile
 	tests/functional/Makefile
 	tests/devices/Makefile

@@ -1059,6 +1059,8 @@ exit 0
 %{_mandir}/man1/vdsm-tool.1*
 %{_bindir}/vdsm-tool
 %dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/common
+%dir %{python_sitelib}/%{vdsm_name}/common/network
 %dir %{python_sitelib}/%{vdsm_name}/netinfo
 %dir %{python_sitelib}/%{vdsm_name}/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network
@@ -1073,6 +1075,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
 %{python_sitelib}/%{vdsm_name}/compat.py*
 %{python_sitelib}/%{vdsm_name}/commands.py*
+%{python_sitelib}/%{vdsm_name}/common/*.py*
+%{python_sitelib}/%{vdsm_name}/common/network/*.py*
 %{python_sitelib}/%{vdsm_name}/concurrent.py*
 %{python_sitelib}/%{vdsm_name}/config.py*
 %{python_sitelib}/%{vdsm_name}/constants.py*
@@ -1210,6 +1214,7 @@ exit 0
 %defattr(-, root, root, -)
 %dir %{_datadir}/%{vdsm_name}
 %dir %{_datadir}/%{vdsm_name}/tests
+%dir %{_datadir}/%{vdsm_name}/tests/common
 %dir %{_datadir}/%{vdsm_name}/tests/cpuinfo
 %dir %{_datadir}/%{vdsm_name}/tests/functional
 %dir %{_datadir}/%{vdsm_name}/tests/devices
@@ -1230,6 +1235,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_intel_i73770_nosnap.out
 %{_datadir}/%{vdsm_name}/tests/caps_libvirt_multiqemu.out
 %{_datadir}/%{vdsm_name}/tests/caps_numactl_4_nodes.out
+%{_datadir}/%{vdsm_name}/tests/common/*.py*
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-add
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-agent
