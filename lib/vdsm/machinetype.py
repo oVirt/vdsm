@@ -33,40 +33,6 @@ from . import utils
 CPU_MAP_FILE = '/usr/share/libvirt/cpu_map.xml'
 
 
-def _get_emulated_machines_from_node(node):
-    # We have to make sure to inspect 'canonical' attribute where
-    # libvirt puts the real machine name. Relevant bug:
-    # https://bugzilla.redhat.com/show_bug.cgi?id=1229666
-    return list(set((itertools.chain.from_iterable(
-        (
-            (m.text, m.get('canonical'))
-            if m.get('canonical') else
-            (m.text,)
-        )
-        for m in node.iterfind('machine')))))
-
-
-def _get_emulated_machines_from_arch(arch, caps):
-    arch_tag = caps.find('.//guest/arch[@name="%s"]' % arch)
-    if not arch_tag:
-        logging.error('Error while looking for architecture '
-                      '"%s" in libvirt capabilities', arch)
-        return []
-
-    return _get_emulated_machines_from_node(arch_tag)
-
-
-def _get_emulated_machines_from_domain(arch, caps):
-    domain_tag = caps.find(
-        './/guest/arch[@name="%s"]/domain[@type="kvm"]' % arch)
-    if not domain_tag:
-        logging.error('Error while looking for kvm domain (%s) '
-                      'libvirt capabilities', arch)
-        return []
-
-    return _get_emulated_machines_from_node(domain_tag)
-
-
 @utils.memoized
 def emulated_machines(arch, capabilities=None):
     if capabilities is None:
@@ -76,8 +42,8 @@ def emulated_machines(arch, capabilities=None):
     # machine list from domain can legally be empty
     # (e.g. only qemu-kvm installed)
     # in that case it is fine to use machines list from arch
-    return (_get_emulated_machines_from_domain(arch, caps) or
-            _get_emulated_machines_from_arch(arch, caps))
+    return (_emulated_machines_from_caps_domain(arch, caps) or
+            _emulated_machines_from_caps_arch(arch, caps))
 
 
 def cpu_models(capfile=CPU_MAP_FILE, arch=None):
@@ -155,6 +121,40 @@ def _caps_arch_element(capfile, arch):
                 arch_element = element
 
     return arch_element
+
+
+def _emulated_machines_from_caps_node(node):
+    # We have to make sure to inspect 'canonical' attribute where
+    # libvirt puts the real machine name. Relevant bug:
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1229666
+    return list(set((itertools.chain.from_iterable(
+        (
+            (m.text, m.get('canonical'))
+            if m.get('canonical') else
+            (m.text,)
+        )
+        for m in node.iterfind('machine')))))
+
+
+def _emulated_machines_from_caps_arch(arch, caps):
+    arch_tag = caps.find('.//guest/arch[@name="%s"]' % arch)
+    if not arch_tag:
+        logging.error('Error while looking for architecture '
+                      '"%s" in libvirt capabilities', arch)
+        return []
+
+    return _emulated_machines_from_caps_node(arch_tag)
+
+
+def _emulated_machines_from_caps_domain(arch, caps):
+    domain_tag = caps.find(
+        './/guest/arch[@name="%s"]/domain[@type="kvm"]' % arch)
+    if not domain_tag:
+        logging.error('Error while looking for kvm domain (%s) '
+                      'libvirt capabilities', arch)
+        return []
+
+    return _emulated_machines_from_caps_node(domain_tag)
 
 
 def _get_libvirt_caps():
