@@ -124,6 +124,7 @@ Requires: libnl3
 Requires: curl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
+Requires: %{name}-cli = %{version}-%{release}
 %if 0%{?fedora} >= 23
 Requires: safelease >= 1.0-6
 %else
