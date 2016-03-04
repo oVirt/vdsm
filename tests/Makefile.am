@@ -63,6 +63,7 @@ test_modules = \
 	cpuProfileTests.py \
 	deviceTests.py \
 	domainDescriptorTests.py \
+	domain_manifest_test.py \
 	encodingTests.py \
 	exception_test.py \
 	executorTests.py \
@@ -83,7 +84,6 @@ test_modules = \
 	libvirtconnectionTests.py \
 	lvmTests.py \
 	main.py \
-	manifest_tests.py \
 	miscTests.py \
 	mkimageTests.py \
 	modprobe.py \
