@@ -29,3 +29,6 @@ LEASE_FILEEXT = ".lease"
 # Temporary volume indicators
 TEMP_VOL_FILEEXT = ".volatile"         # Added to FileVolume metadata filenames
 TEMP_VOL_LVTAG = "OVIRT_VOL_VOLATILE"  # Tag applied to BlockVolume LVs
+
+# StorageDomain Metadata keys
+MDK_POOLS = "POOL_UUID"
