@@ -439,8 +439,8 @@ def get():
     else:
         caps['rngSources'] = vmdevices.core.Rng.available_sources()
 
-    caps['numaNodes'] = numa.topology()
-    caps['numaNodeDistance'] = numa.distances()
+    caps['numaNodes'] = dict(numa.topology())
+    caps['numaNodeDistance'] = dict(numa.distances())
     caps['autoNumaBalancing'] = numa.autonuma_status()
 
     caps['selinux'] = _getSELinux()
