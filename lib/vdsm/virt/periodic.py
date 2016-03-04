@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
 """
 code to perform periodic maintenance and bookkeeping of the VMs.
@@ -30,11 +31,10 @@ import libvirt
 from vdsm import executor
 from vdsm import libvirtconnection
 from vdsm.config import config
+from vdsm.virt import hoststats
+from vdsm.virt import sampling
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
-
-from . import hoststats
-from . import sampling
 
 
 # just a made up number. Maybe should be equal to number of cores?

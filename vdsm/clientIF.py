@@ -40,6 +40,7 @@ from vdsm.protocoldetector import MultiProtocolAcceptor
 from vdsm.sslcompat import sslutils
 from vdsm.virt import secret
 from vdsm.virt import vmstatus
+from vdsm.virt.vmchannels import Listener
 from vdsm.virt.utils import isVdsmImage
 import libvirt
 from vdsm import libvirtconnection
@@ -53,7 +54,6 @@ from virt import migration
 from virt import recovery
 from virt import vm
 from virt.vm import Vm
-from virt.vmchannels import Listener
 try:
     import gluster.api as gapi
     _glusterEnabled = True

@@ -862,14 +862,8 @@ exit 0
 %{_datadir}/%{vdsm_name}/vdsm-store-net-config
 %{_datadir}/%{vdsm_name}/virt/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/domain_descriptor.py*
-%{_datadir}/%{vdsm_name}/virt/guestagent.py*
-%{_datadir}/%{vdsm_name}/virt/hoststats.py*
 %{_datadir}/%{vdsm_name}/virt/migration.py*
-%{_datadir}/%{vdsm_name}/virt/periodic.py*
 %{_datadir}/%{vdsm_name}/virt/recovery.py*
-%{_datadir}/%{vdsm_name}/virt/sampling.py*
-%{_datadir}/%{vdsm_name}/virt/vmchannels.py*
-%{_datadir}/%{vdsm_name}/virt/vmstats.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
 %{_datadir}/%{vdsm_name}/virt/vmxml.py*
@@ -1195,11 +1189,17 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/tool/validate_ovirt_certs.py*
 %{python_sitelib}/%{vdsm_name}/tool/vdsm-id.py*
 %{python_sitelib}/%{vdsm_name}/virt/__init__.py*
+%{python_sitelib}/%{vdsm_name}/virt/guestagent.py*
+%{python_sitelib}/%{vdsm_name}/virt/hoststats.py*
+%{python_sitelib}/%{vdsm_name}/virt/periodic.py*
+%{python_sitelib}/%{vdsm_name}/virt/sampling.py*
 %{python_sitelib}/%{vdsm_name}/virt/secret.py*
 %{python_sitelib}/%{vdsm_name}/virt/utils.py*
 %{python_sitelib}/%{vdsm_name}/virt/virdomain.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmchannels.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmexitreason.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmpowerdown.py*
+%{python_sitelib}/%{vdsm_name}/virt/vmstats.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmstatus.py*
 
 %files tests

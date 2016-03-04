@@ -46,8 +46,8 @@ from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 
 from vdsm.infra import sigutils
+from vdsm.virt import periodic
 import vdsm.infra.zombiereaper as zombiereaper
-from virt import periodic
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 

@@ -53,8 +53,12 @@ from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm.netinfo import DUMMY_BRIDGE
+from vdsm.virt import guestagent
+from vdsm.virt import sampling
+from vdsm.virt import vmchannels
 from vdsm.virt import vmexitreason
 from vdsm.virt import virdomain
+from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
@@ -69,13 +73,9 @@ import numaUtils
 
 # local package imports
 from .domain_descriptor import DomainDescriptor
-from . import guestagent
 from . import migration
 from . import recovery
-from . import sampling
-from . import vmchannels
 from . import vmdevices
-from . import vmstats
 from .vmdevices import hwclass
 from .vmdevices.storage import DISK_TYPE
 from .vmtune import update_io_tune_dom, collect_inner_elements

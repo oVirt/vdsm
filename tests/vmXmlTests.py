@@ -20,9 +20,9 @@
 from __future__ import absolute_import
 
 from vdsm import cpuarch
+from vdsm.virt import vmchannels
 
 from virt import domain_descriptor
-from virt import vmchannels
 from virt import vmxml
 
 from testlib import VdsmTestCase as TestCaseBase

@@ -21,9 +21,10 @@
 from __future__ import print_function
 import logging
 from collections import namedtuple
-from virt import guestagent
 import json
 import timeit
+
+from vdsm.virt import guestagent
 
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
@@ -116,7 +117,7 @@ class TestFiltering(TestCaseBase):
 
     @slowtest
     def test_filter_xml_chars_timing(self):
-        setup = ('from virt.guestagent import _filterXmlChars;'
+        setup = ('from vdsm.virt.guestagent import _filterXmlChars;'
                  'x = u"x" * 1024 * 1024')
         elapsed = timeit.timeit('_filterXmlChars(x)', setup=setup, number=10)
         print(elapsed, "seconds")
@@ -157,7 +158,7 @@ class TestFiltering(TestCaseBase):
     @slowtest
     def test_filter_object_timing(self):
         setup = """
-from virt.guestagent import _filterObject
+from vdsm.virt.guestagent import _filterObject
 d = {u'netIfaces': [
         {
             u'hw': u'00:21:cc:68:d7:38',

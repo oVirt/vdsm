@@ -22,7 +22,7 @@ import os
 import tempfile
 import shutil
 
-from virt import hoststats
+from vdsm.virt import hoststats
 
 from vdsm import numa
 

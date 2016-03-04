@@ -22,10 +22,16 @@ include $(top_srcdir)/build-aux/Makefile.subs
 vdsmvirtdir = $(vdsmpylibdir)/virt
 dist_vdsmvirt_PYTHON = \
 	__init__.py \
+	guestagent.py \
+	hoststats.py \
+	periodic.py \
+	sampling.py \
 	secret.py \
 	utils.py \
 	virdomain.py \
+	vmchannels.py \
 	vmexitreason.py \
 	vmpowerdown.py \
+	vmstats.py \
 	vmstatus.py \
 	$(NULL)

@@ -24,7 +24,7 @@ import uuid
 
 import six
 
-from virt import vmstats
+from vdsm.virt import vmstats
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations

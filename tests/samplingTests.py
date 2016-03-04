@@ -26,7 +26,7 @@ import threading
 from vdsm import ipwrapper
 from vdsm import numa
 from vdsm.password import ProtectedPassword
-import virt.sampling as sampling
+from vdsm.virt import sampling
 
 from testValidation import ValidateRunningAsRoot
 from testlib import permutations, expandPermutations

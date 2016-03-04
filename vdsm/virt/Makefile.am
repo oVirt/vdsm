@@ -26,15 +26,9 @@ vdsm_virtdir = $(vdsmdir)/virt
 dist_vdsm_virt_PYTHON = \
 	__init__.py \
 	domain_descriptor.py \
-	guestagent.py \
-	hoststats.py \
 	migration.py \
-	periodic.py \
 	recovery.py \
-	sampling.py \
 	vm.py \
-	vmchannels.py \
-	vmstats.py \
 	vmtune.py \
 	vmxml.py \
 	$(NULL)

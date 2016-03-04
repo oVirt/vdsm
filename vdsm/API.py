@@ -42,15 +42,15 @@ from vdsm import response
 from vdsm import supervdsm
 from vdsm import jobs
 from vdsm import v2v
+from vdsm.virt import hoststats
 from vdsm.virt import vmstatus
+from vdsm.virt import sampling
 from vdsm.virt import secret
 import storage.misc
 import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
-from virt import hoststats
-from virt import sampling
 from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle

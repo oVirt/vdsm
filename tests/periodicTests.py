@@ -27,9 +27,9 @@ import libvirt
 from vdsm import executor
 from vdsm import schedule
 from vdsm.utils import monotonic_time
+from vdsm.virt import periodic
 from vdsm.virt import vmstatus
 
-from virt import periodic
 
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase

@@ -87,9 +87,15 @@
 ./usr/lib/python2.7/dist-packages/vdsm/vdscli.py
 ./usr/lib/python2.7/dist-packages/vdsm/v2v.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/__init__.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/guestagent.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/hoststats.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/periodic.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/sampling.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/virdomain.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/vmchannels.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/vmexitreason.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/vmpowerdown.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/vmstats.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/vmstatus.py
 ./usr/lib/python2.7/dist-packages/vdsm/virtsparsify.py
 ./usr/lib/python2.7/dist-packages/vdsm/xmlrpc.py
