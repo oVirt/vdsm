@@ -76,14 +76,16 @@ def get_metafile_path(domaindir):
     return os.path.join(domaindir, sd.DOMAIN_META_DATA, sd.METADATA)
 
 
-def make_filesd_manifest(tmpdir, metadata=None):
+def make_filesd_manifest(tmpdir):
+    spuuid = str(uuid.uuid4())
     sduuid = str(uuid.uuid4())
-    domain_path = os.path.join(tmpdir, sduuid)
+
+    domain_path = os.path.join(tmpdir, spuuid, sduuid)
     metafile = get_metafile_path(domain_path)
     make_file(metafile)
-    if metadata is None:
-        metadata = fileSD.FileSDMetadata(metafile)
-        metadata.update(make_sd_metadata(sduuid))
+    metadata = fileSD.FileSDMetadata(metafile)
+    metadata.update(make_sd_metadata(sduuid, pools=[spuuid]))
+
     manifest = fileSD.FileStorageDomainManifest(domain_path, metadata)
     os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
     return manifest

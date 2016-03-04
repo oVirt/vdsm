@@ -23,7 +23,11 @@ import uuid
 from testlib import VdsmTestCase, namedTemporaryDir, make_file, recorded
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeLVM
-from storagetestlib import make_filesd_manifest, make_blocksd, make_file_volume
+from storagetestlib import (
+    make_filesd_manifest,
+    make_blocksd,
+    make_file_volume,
+)
 
 from storage import sd, blockSD, blockVolume
 
@@ -65,9 +69,7 @@ class FileManifestTests(VdsmTestCase):
 
     def test_getmetaparam(self):
         with namedTemporaryDir() as tmpdir:
-            metadata = {sd.DMDK_VERSION: 3}
-            manifest = make_filesd_manifest(tmpdir, metadata)
-            metadata[sd.DMDK_SDUUID] = manifest.sdUUID
+            manifest = make_filesd_manifest(tmpdir)
             self.assertEquals(manifest.sdUUID,
                               manifest.getMetaParam(sd.DMDK_SDUUID))
 
