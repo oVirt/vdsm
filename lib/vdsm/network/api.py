@@ -116,11 +116,11 @@ def _get_connectivity_timeout(options):
                            CONNECTIVITY_TIMEOUT_DEFAULT))
 
 
-def _check_connectivity(networks, bondings, options, logger):
+def _check_connectivity(networks, bondings, options):
     if utils.tobool(options.get('connectivityCheck', True)):
-        logger.debug('Checking connectivity...')
+        logging.debug('Checking connectivity...')
         if not _clientSeen(_get_connectivity_timeout(options)):
-            logger.info('Connectivity check failed, rolling back')
+            logging.info('Connectivity check failed, rolling back')
             raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                      'connectivity check failed')
 
@@ -192,11 +192,9 @@ def setupNetworks(networks, bondings, options):
         the attachment in the network's attributes). Similarly, if you edit
         a bonding, it's not necessary to specify its networks.
     """
-    logger = logging.getLogger("setupNetworks")
-
-    logger.debug("Setting up network according to configuration: "
-                 "networks:%r, bondings:%r, options:%r" % (networks,
-                                                           bondings, options))
+    logging.debug("Setting up network according to configuration: "
+                  "networks:%r, bondings:%r, options:%r" % (networks,
+                                                            bondings, options))
 
     canonicalize_networks(networks)
     # TODO: Add canonicalize_bondings(bondings)
@@ -210,22 +208,22 @@ def setupNetworks(networks, bondings, options):
     _netinfo = CachingNetInfo(_netinfo=netinfo_get(
         libvirtNets2vdsm(libvirt_nets)))
 
-    logger.debug("Applying...")
+    logging.debug("Applying...")
     in_rollback = options.get('_inRollback', False)
     with legacy_switch.ConfiguratorClass(in_rollback) as configurator:
         # from this point forward, any exception thrown will be handled by
         # Configurator.__exit__.
 
         legacy_switch.remove_networks(networks, bondings, configurator,
-                                      _netinfo, libvirt_nets, logger)
+                                      _netinfo, libvirt_nets)
 
         legacy_switch.bonds_setup(bondings, configurator, _netinfo,
-                                  in_rollback, logger)
+                                  in_rollback)
 
         legacy_switch.add_missing_networks(configurator, networks, bondings,
-                                           logger, _netinfo)
+                                           _netinfo)
 
-        _check_connectivity(networks, bondings, options, logger)
+        _check_connectivity(networks, bondings, options)
 
     hooks.after_network_setup(_buildSetupHookDict(networks, bondings, options))
 
