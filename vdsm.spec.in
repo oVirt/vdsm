@@ -1145,6 +1145,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/profiling/errors.py*
 %{python_sitelib}/%{vdsm_name}/profiling/memory.py*
 %{python_sitelib}/%{vdsm_name}/profiling/profile.py*
+%{python_sitelib}/%{vdsm_name}/storage/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tc/_parser.py*
 %{python_sitelib}/%{vdsm_name}/tc/_wrapper.py*
