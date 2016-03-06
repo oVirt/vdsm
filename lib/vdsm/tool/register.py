@@ -257,7 +257,7 @@ class Register(object):
         if self.vdsm_uuid:
             self.uuid = self.vdsm_uuid
         else:
-            self.uuid = host.uuid(legacy=False)
+            self.uuid = host.uuid()
 
         self.url_reg += "&uniqueId={u}".format(u=self.uuid)
 

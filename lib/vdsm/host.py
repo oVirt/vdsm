@@ -29,11 +29,8 @@ from . import cpuarch
 
 
 @memoized
-def uuid(legacy=False):
+def uuid():
     host_UUID = None
-
-    if legacy:
-        raise NotImplementedError
 
     try:
         if os.path.exists(constants.P_VDSM_NODE_ID):
