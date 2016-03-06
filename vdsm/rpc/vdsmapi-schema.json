@@ -680,6 +680,9 @@
 #
 # @ipv6gateway: The default IPv6 gateway for the bridge device
 #
+# @dhcpv6:      Whether DHCPv6 was used to set up the network.
+#               (Since version 4.17.0.)
+#
 # @mtu:         The Maximum Transmission Unit size for the bridge device
 #
 # @cfg:         A map containing network interface parameters from ifcfg-*
@@ -700,7 +703,8 @@
 {'type': 'NetInfoBridgedNetwork',
  'data': {'ports': ['str'], 'stp': 'bool', 'dhcpv4': 'bool', 'addr': 'str',
           'netmask': 'str', 'gateway': 'str', 'ipv4addrs': ['str'],
-          'ipv6addrs': ['str'], 'ipv6gateway': 'str', 'mtu': 'uint',
+          'ipv6addrs': ['str'], 'ipv6gateway': 'str',  'dhcpv6': 'bool',
+          'mtu': 'uint',
           'cfg': 'StringMap', 'bridged': 'bool', '*hostQos': 'HostQoSParams',
           'opts': 'StringMap'}}
 
@@ -753,6 +757,11 @@
 # @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
 #               that are assigned to the nic
 #
+# @ipv6gateway: The default IPv6 gateway for the bridge device
+#
+# @dhcpv6:      Whether DHCPv6 was used to set up the network.
+#               (Since version 4.17.0.)
+#
 # @hwaddr:      The Media Access Control address being used by the nic
 #
 # @mtu:         The Maximum Transmission Unit size for the nic
@@ -765,6 +774,7 @@
 {'type': 'NetInfoNic',
  'data': {'speed': 'int', 'dhcpv4': 'bool', 'addr': 'str', 'netmask': 'str',
           'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'hwaddr': 'str',
+          'ipv6gateway': 'str',  'dhcpv6': 'bool',
           'mtu': 'uint', '*permhwaddr': 'str'}}
 
 ##
@@ -789,6 +799,11 @@
 # @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
 #               that are assigned to the bond device
 #
+# @ipv6gateway: The default IPv6 gateway for the bridge device
+#
+# @dhcpv6:      Whether DHCPv6 was used to set up the network.
+#               (Since version 4.17.0.)
+#
 # @hwaddr:      The Media Access Control address being used by the bond device
 #
 # @cfg:         Raw device configuration parameters
@@ -803,7 +818,8 @@
 {'type': 'NetInfoBond',
  'data': {'slaves': ['str'], 'active_slave': 'str','dhcpv4': 'bool',
           'addr': 'str', 'netmask': 'str', 'ipv4addrs': ['str'],
-          'ipv6addrs': ['str'], 'hwaddr': 'str', 'cfg': 'StringMap',
+          'ipv6addrs': ['str'],  'ipv6gateway': 'str',  'dhcpv6': 'bool',
+          'hwaddr': 'str', 'cfg': 'StringMap',
           'mtu': 'uint', 'opts': 'StringMap'}}
 
 ##
@@ -826,6 +842,11 @@
 # @ipv6addrs:   A list of IPv6 addresses in the format of 'address/prefixlen'
 #               that are assigned to the vlan device
 #
+# @ipv6gateway: The default IPv6 gateway for the bridge device
+#
+# @dhcpv6:      Whether DHCPv6 was used to set up the network.
+#               (Since version 4.17.0.)
+#
 # @mtu:         The Maximum Transmission Unit size for the vlan
 #
 # @vlanid:      The vlan ID assigned to the vlan device
@@ -835,6 +856,7 @@
 {'type': 'NetInfoVlan',
  'data': {'iface': 'str', 'dhcpv4': 'bool', 'addr': 'str', 'netmask': 'str',
           'ipv4addrs': ['str'], 'ipv6addrs': ['str'], 'mtu': 'uint',
+          'ipv6gateway': 'str',  'dhcpv6': 'bool',
           'vlanid': 'uint'}}
 
 ##
