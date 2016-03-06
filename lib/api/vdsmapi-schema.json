@@ -44,37 +44,6 @@
 {'alias': 'UUID', 'data': 'str'}
 
 ##
-# @NetworkOptions:
-#
-# Detailed network configuration options.
-#
-# @ipaddr:          #optional Assign this static IP address to the interface
-#
-# @netmask:         #optional The netmask of this subnet
-#
-# @gateway:         #optional IP address of the network gateway
-#
-# @bootproto:       #optional Interface autoconfiguration protocol (typically
-#                   'dhcp' or 'none')
-#
-# @blockingdhcp:    #optional whether ifaces that have 'dhcp' as bootproto
-#                   should wait to get an address before returning creation
-#                   success. If not set, the default is False.
-#
-# @bondingOptions:  #optional A string of space-separated <option>=<value>
-#                   pairs
-#
-# @hostQos:         #optional Host networking QoS params.
-#
-# Since: 4.10.0
-##
-{'type': 'NetworkOptions',
- 'data': {'*ipaddr': 'str', '*netmask': 'str', '*gateway': 'str',
-          '*bootproto': 'str', '*bondingOptions', 'str',
-          '*blockingdhcp': 'bool',
-          '*hostQos': 'HostQoSParams'}}
-
-##
 # @SetupNetworkNetAttributes:
 #
 # Configuration attributes for a single host network.
