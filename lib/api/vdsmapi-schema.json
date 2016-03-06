@@ -65,6 +65,17 @@
 # @bootproto:     #optional Interface autoconfiguration protocol (typically
 #                 'dhcp' or 'none')
 #
+# @ipv6addr:      #optional Assign this static IPv6 address to the interface
+#                 ('<ip>/<prefixlen>') (new in version 4.17.0)
+#
+# @ipv6gateway:   #optional IPv6 address of the network gateway
+#                 (new in version 4.17.0)
+#
+# @ipv6autoconf:  #optional Whether use stateless autoconfiguration
+#                 (new in version 4.17.0)
+#
+# @dhcpv6:        #optional Whether use DHCPv6 (new in version 4.17.0)
+#
 # @remove:        #optional If True, remove existing network only
 #
 # @hostQos:       #optional host traffic QoS params.
@@ -80,6 +91,8 @@
 {'type': 'SetupNetworkNetAttributes',
  'data': {'*vlan': 'str', '*bonding': 'str', '*nic': ['str'], '*ipaddr': 'str',
           '*netmask': 'str', '*gateway': 'str', '*bootproto': 'str',
+          '*ipv6addr': 'str',
+          '*ipv6gateway': 'str', '*ipv6autoconf': 'bool', '*dhcpv6': 'bool',
           '*remove': 'bool',
           '*hostQos': 'HostQoSParams',
           '*defaultRoute': 'bool',
