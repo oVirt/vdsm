@@ -250,8 +250,8 @@ run_modules += $(device_modules)
 check-local:
 	@echo '*** Running tests.  To skip this step place NOSE_EXCLUDE=.* ***'
 	@echo '*** into your environment.  Do not submit untested code!    ***'
-	$(top_srcdir)/tests/run_tests_local.sh crossImportsTests.py
-	$(top_srcdir)/tests/run_tests_local.sh  $(run_modules)
+	$(top_srcdir)/tests/run_tests_local.sh $(args) crossImportsTests.py
+	$(top_srcdir)/tests/run_tests_local.sh $(args) $(run_modules)
 	if [ -x "$(PYTHON3)" ]; then \
 		PYTHON_EXE="$(PYTHON3)" $(top_srcdir)/tests/run_tests_local.sh \
 			$(test_modules_py3); \

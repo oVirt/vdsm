@@ -133,6 +133,10 @@ check-recursive: gitignore abs_imports python3 pyflakes pep8
 check-all:
 	$(MAKE) check NOSE_STRESS_TESTS=1 NOSE_SLOW_TESTS=1
 
+.PHONY: check-unit
+check-unit:
+	$(MAKE) -C tests/ check args='-a type=unit'
+
 all-local: \
 	vdsm.spec
 
