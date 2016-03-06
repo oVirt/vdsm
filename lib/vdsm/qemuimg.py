@@ -32,7 +32,7 @@ from .compat import CPopen
 from . config import config
 
 _qemuimg = utils.CommandPath("qemu-img",
-                             "/usr/bin/qemu-img",)  # Fedora, EL6
+                             "/usr/bin/qemu-img",)  # Fedora
 
 _log = logging.getLogger("QemuImg")
 
