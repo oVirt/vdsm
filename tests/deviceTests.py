@@ -265,6 +265,39 @@ class TestVmDevices(XMLTestCase):
         balloon = vmdevices.core.Balloon(self.conf, self.log, **dev)
         self.assertXMLEqual(balloon.getXML().toxml(), balloonXML)
 
+    @permutations([
+        # alias, memballoonXML
+        (None, "<memballoon model='none'/>"),
+        ('balloon0',
+         "<memballoon model='none'><alias name='balloon0'/></memballoon>"),
+    ])
+    def testBalloonDeviceAliasUpdateConfig(self, alias, memballoonXML):
+        domainXML = """<domain>
+        <devices>
+        %s
+        </devices>
+        </domain>""" % memballoonXML
+        with fake.VM() as testvm:
+            balloonConf = {
+                'device': 'memballoon', 'type': 'none', 'specParams': {}
+            }
+            balloonDev = vmdevices.core.Balloon(
+                testvm.conf, testvm.log, **balloonConf
+            )
+
+            testvm.conf['devices'] = [balloonConf]
+            testvm._devices = {hwclass.BALLOON: [balloonDev]}
+
+            testvm._domain = DomainDescriptor(domainXML)
+
+            testvm._getUnderlyingBalloonDeviceInfo()
+
+            dev = testvm._devices[hwclass.BALLOON][0]
+            if alias is None:
+                self.assertFalse(hasattr(dev, 'alias'))
+            else:
+                self.assertEqual(dev.alias, alias)
+
     def testRngXML(self):
         rngXML = """
             <rng model="virtio">

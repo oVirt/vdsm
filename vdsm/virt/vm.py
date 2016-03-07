@@ -4164,19 +4164,23 @@ class Vm(object):
                 address = None
             else:
                 address = self._getUnderlyingDeviceAddress(x)
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias_elems = x.getElementsByTagName('alias')
+            if not alias_elems:
+                alias = None
+            else:
+                alias = alias_elems[0].getAttribute('name')
 
             for dev in self._devices[hwclass.BALLOON]:
                 if address and not hasattr(dev, 'address'):
                     dev.address = address
-                if not hasattr(dev, 'alias'):
+                if alias and not hasattr(dev, 'alias'):
                     dev.alias = alias
 
             for dev in self.conf['devices']:
                 if dev['type'] == hwclass.BALLOON:
                     if address and not dev.get('address'):
                         dev['address'] = address
-                    if not dev.get('alias'):
+                    if alias and not dev.get('alias'):
                         dev['alias'] = alias
 
     def _getUnderlyingConsoleDeviceInfo(self):
