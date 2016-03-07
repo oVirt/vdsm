@@ -130,19 +130,23 @@ class Balloon(Base):
                 address = None
             else:
                 address = vmxml.device_address(x)
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias_elems = x.getElementsByTagName('alias')
+            if not alias_elems:
+                alias = None
+            else:
+                alias = alias_elems[0].getAttribute('name')
 
             for dev in device_conf:
                 if address and not hasattr(dev, 'address'):
                     dev.address = address
-                if not hasattr(dev, 'alias'):
+                if alias and not hasattr(dev, 'alias'):
                     dev.alias = alias
 
             for dev in vm.conf['devices']:
                 if dev['type'] == hwclass.BALLOON:
                     if address and not dev.get('address'):
                         dev['address'] = address
-                    if not dev.get('alias'):
+                    if alias and not dev.get('alias'):
                         dev['alias'] = alias
 
 
