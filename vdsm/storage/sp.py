@@ -35,6 +35,7 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm.panic import panic
 from vdsm.storage.constants import STORAGE
+from vdsm.storage.securable import secured, unsecured
 
 import storage_mailbox
 import blockSD
@@ -46,7 +47,6 @@ from vdsm.config import config
 from sdc import sdCache
 import storage_exception as se
 from remoteFileHandler import Timeout
-from securable import secured, unsecured
 import image
 from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm

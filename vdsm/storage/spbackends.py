@@ -1,5 +1,5 @@
 #
-# Copyright 2013-2014 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@
 import logging
 import weakref
 
+from vdsm.storage.securable import secured
+from vdsm.storage.securable import unsecured
+
 import blockSD
 import misc
 import sd
@@ -29,8 +32,6 @@ import storage_exception as se
 from persistentDict import DictValidator
 from persistentDict import unicodeDecoder
 from persistentDict import unicodeEncoder
-from securable import secured
-from securable import unsecured
 from sp import LVER_INVALID
 from sp import SPM_ACQUIRED
 from sp import SPM_FREE

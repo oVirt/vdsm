@@ -31,8 +31,8 @@
 #
 #######################################################
 
-from securable import SecureError
 from vdsm.exception import GeneralException
+from vdsm.storage.securable import SecureError
 SPM_STATUS_ERROR = (654, "Not SPM")
 
 GENERAL_EXCEPTION = lambda e: (100, str(e))

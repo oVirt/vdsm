@@ -58,7 +58,6 @@ dist_vdsmstorage_PYTHON = \
 	resourceManager.py \
 	sdc.py \
 	sd.py \
-	securable.py \
 	sp.py \
 	spbackends.py \
 	storage_exception.py \

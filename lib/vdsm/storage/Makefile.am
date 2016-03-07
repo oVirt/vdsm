@@ -24,4 +24,5 @@ vdsmstoragedir = $(vdsmpylibdir)/storage
 dist_vdsmstorage_PYTHON = \
 	__init__.py \
 	constants.py \
+	securable.py \
 	$(NULL)

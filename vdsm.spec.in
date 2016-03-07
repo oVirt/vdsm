@@ -945,7 +945,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/clusterlock.py*
 %{_datadir}/%{vdsm_name}/storage/sdc.py*
 %{_datadir}/%{vdsm_name}/storage/sd.py*
-%{_datadir}/%{vdsm_name}/storage/securable.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
 %{_datadir}/%{vdsm_name}/storage/spbackends.py*
 %{_datadir}/%{vdsm_name}/storage/storage_exception.py*
@@ -1150,6 +1149,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/profiling/profile.py*
 %{python_sitelib}/%{vdsm_name}/storage/__init__.py*
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
+%{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/tc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tc/_parser.py*
 %{python_sitelib}/%{vdsm_name}/tc/_wrapper.py*
