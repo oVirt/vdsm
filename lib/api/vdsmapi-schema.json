@@ -2359,6 +2359,8 @@
 #
 # @rng:         A rng device
 #
+# @tpm:         A TPM device
+#
 # @graphics:    The graphics device
 #               (new in version 4.15.0)
 #
@@ -2373,7 +2375,7 @@
 {'enum': 'VmDeviceType',
  'data': ['disk', 'interface', 'video', 'sound', 'controller', 'balloon',
           'channel', 'console', 'smartcard', 'rng', 'graphics', 'hostdev',
-          'memory']}
+          'memory', 'tpm']}
 
 ##
 # @VmDiskDeviceType:
@@ -3671,7 +3673,8 @@
  'union': ['VmDiskDevice', 'VmInterfaceDevice', 'VmVideoDevice',
           'VmSoundDevice', 'VmControllerDevice', 'VmBalloonDevice',
           'VmChannelDevice', 'VmWatchdogDevice', 'VmConsoleDevice',
-          'VmSmartcardDevice', 'VmGraphicsDevice', 'VmHostDevice']}
+          'VmSmartcardDevice', 'VmGraphicsDevice', 'VmHostDevice',
+          'VmRngDevice', 'VmTpmDevice']}
 
 ##
 # @VmShortStatus:
