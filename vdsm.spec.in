@@ -1069,6 +1069,7 @@ exit 0
 %{_mandir}/man1/vdsm-tool.1*
 %{_bindir}/vdsm-tool
 %dir %{python_sitelib}/%{vdsm_name}
+%dir %{python_sitelib}/%{vdsm_name}/netinfo
 %dir %{python_sitelib}/%{vdsm_name}/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
@@ -1076,6 +1077,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
 %dir %{python_sitelib}/%{vdsm_name}/storage
+%dir %{python_sitelib}/%{vdsm_name}/virt
 %dir %{python_sitelib}/%{vdsm_name}/tc
 %{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
