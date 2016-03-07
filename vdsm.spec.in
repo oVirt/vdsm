@@ -1075,6 +1075,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
+%dir %{python_sitelib}/%{vdsm_name}/storage
 %dir %{python_sitelib}/%{vdsm_name}/tc
 %{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
