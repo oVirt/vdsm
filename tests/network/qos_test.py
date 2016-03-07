@@ -18,6 +18,7 @@
 #
 
 from __future__ import absolute_import
+from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase as TestCaseBase
 
@@ -25,6 +26,7 @@ from vdsm.netinfo import qos
 from vdsm.tc import cls
 
 
+@attr(type='unit')
 class TestConversions(TestCaseBase):
     def test_qos_to_str(self):
         data = (({'ls': {'m1': 100, 'd': 10, 'm2': 300},

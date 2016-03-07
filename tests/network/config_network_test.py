@@ -22,6 +22,8 @@
 
 from __future__ import absolute_import
 
+from nose.plugins.attrib import attr
+
 from vdsm import netinfo
 from vdsm.netinfo import mtus
 from vdsm.netinfo.mtus import DEFAULT_MTU
@@ -46,6 +48,7 @@ def _raiseInvalidOpException(*args, **kwargs):
                         'testing.')
 
 
+@attr(type='unit')
 class TestConfigNetwork(TestCaseBase):
 
     def _addNetworkWithExc(self, netName, opts, errCode):

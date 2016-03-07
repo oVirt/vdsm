@@ -33,10 +33,12 @@ from vdsm.network.configurators import ifcfg, libvirt
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
+from nose.plugins.attrib import attr
 from nose.plugins.skip import SkipTest
 from testlib import VdsmTestCase as TestCaseBase
 
 
+@attr(type='unit')
 class ifcfgConfigWriterTests(TestCaseBase):
     INITIAL_CONTENT = '123-testing'
     SOME_GARBAGE = '456'
@@ -100,6 +102,7 @@ class ifcfgConfigWriterTests(TestCaseBase):
         self._cw.restoreAtomicBackup()
         self._assertFilesRestored()
 
+    @attr(type='integration')
     @MonkeyPatch(os, 'chown', lambda *x: 0)
     def testPersistentBackup(self):
 

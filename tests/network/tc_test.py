@@ -28,6 +28,8 @@ from binascii import unhexlify
 from itertools import izip_longest
 from subprocess import Popen, PIPE
 
+from nose.plugins.attrib import attr
+
 import six
 
 from hostdevTests import Connection
@@ -87,6 +89,7 @@ class TestQdisc(TestCaseBase):
                           "__nosuchiface__", 'ingress')
 
 
+@attr(type='unit')
 class TestFilters(TestCaseBase):
     def test_filter_objs(self):
         dirName = os.path.dirname(os.path.realpath(__file__))

@@ -22,6 +22,8 @@
 from __future__ import absolute_import
 import os
 
+from nose.plugins.attrib import attr
+
 from vdsm.netinfo import bonding, mtus
 from vdsm.netinfo.cache import CachingNetInfo
 from vdsm.network import errors
@@ -34,6 +36,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch, MonkeyClass
 
 
+@attr(type='unit')
 @MonkeyClass(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
              if os.path.exists(bonding.BONDING_DEFAULTS)
              else '../vdsm/bonding-defaults.json')

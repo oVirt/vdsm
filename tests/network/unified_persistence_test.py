@@ -24,6 +24,8 @@ from contextlib import contextmanager
 import os
 import six
 
+from nose.plugins.attrib import attr
+
 from vdsm.netinfo import misc
 from vdsm.tool import unified_persistence
 
@@ -137,6 +139,7 @@ def _fake_ifcfgs():
         yield temp_dir
 
 
+@attr(type='unit')
 class unfiedPersistenceTests(TestCaseBase):
 
     def test_getNetInfo(self):

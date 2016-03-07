@@ -26,6 +26,8 @@ import pwd
 from shutil import rmtree
 import tempfile
 
+from nose.plugins.attrib import attr
+
 from vdsm.netconfpersistence import Config
 from vdsm.utils import rmFile
 
@@ -39,6 +41,7 @@ BONDING = 'skywalker'
 BONDING_ATTRIBUTES = {'options': 'mode=4 miimon=100', 'nics': ['eth0', 'eth1']}
 
 
+@attr(type='unit')
 class NetConfPersistenceTests(TestCaseBase):
     def setUp(self):
         self.tempdir = tempfile.mkdtemp()

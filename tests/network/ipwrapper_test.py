@@ -21,6 +21,8 @@
 
 from __future__ import absolute_import
 
+from nose.plugins.attrib import attr
+
 from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
 from vdsm.ipwrapper import Route
@@ -35,6 +37,7 @@ def _fakeTypeDetection(cls, devname):
     pass
 
 
+@attr(type='unit')
 class TestIpwrapper(TestCaseBase):
     def testRouteFromText(self):
         _getRouteAttrs = lambda x: (x.network, x.via, x.device, x.table)

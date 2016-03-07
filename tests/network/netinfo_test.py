@@ -23,6 +23,8 @@ import os
 from functools import partial
 import io
 
+from nose.plugins.attrib import attr
+
 from vdsm import ipwrapper
 from vdsm import netinfo
 from vdsm.netinfo import addresses, bonding, dns, misc, nics, routes
@@ -42,6 +44,7 @@ from testValidation import brokentest
 ETHTOOL_SPEEDS = set([10, 100, 1000, 2500, 10000])
 
 
+@attr(type='unit')
 class TestNetinfo(TestCaseBase):
 
     def testGetHostNameservers(self):
@@ -199,6 +202,7 @@ class TestNetinfo(TestCaseBase):
             self.assertEqual(set(nics.nics()),
                              set(['em', 'me', 'fake', 'fake0']))
 
+    @attr(type='integration')
     @ValidateRunningAsRoot
     def testFakeNics(self):
         with MonkeyPatchScope([(ipwrapper.Link, '_fakeNics', ['veth_*',
@@ -238,6 +242,7 @@ class TestNetinfo(TestCaseBase):
     @MonkeyPatch(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
                  if os.path.exists(bonding.BONDING_DEFAULTS)
                  else '../vdsm/bonding-defaults.json')
+    @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
     def testGetBondingOptions(self):
@@ -314,6 +319,7 @@ class TestNetinfo(TestCaseBase):
         gateway = routes.get_gateway(DUPLICATED_GATEWAY, TEST_IFACE)
         self.assertEqual(gateway, '12.34.56.1')
 
+    @attr(type='integration')
     @ValidateRunningAsRoot
     def test_ip_info(self):
         def get_ip_info(*a, **kw):
