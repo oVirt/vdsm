@@ -32,7 +32,7 @@ from yajsonrpc import \
     JsonRpcNoResponseError, \
     CALL_TIMEOUT
 
-from api import vdsmapi
+from api import schemaapi
 from vdsm import response
 from .config import config
 from . import sslutils
@@ -109,7 +109,7 @@ _COMMAND_CONVERTER = {
 class _Server(object):
 
     def __init__(self, client, xml_compat):
-        self._vdsmapi = vdsmapi.get_api()
+        self._schema = schemaapi.Schema([schemaapi.find_schema()])
         self._client = client
         self._xml_compat = xml_compat
         self._default_timeout = CALL_TIMEOUT
@@ -122,9 +122,7 @@ class _Server(object):
         self._default_timeout = timeout
 
     def _prepare_args(self, className, methodName, args, kwargs):
-        sym = self._vdsmapi['commands'][className][methodName]
-        allargs = (arg[1:] if arg.startswith('*') else arg for arg
-                   in six.iterkeys(sym.get('data', {})))
+        allargs = self._schema.get_arg_names(className, methodName)
         params = dict(zip(allargs, args))
         params.update(kwargs)
         return params

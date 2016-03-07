@@ -112,7 +112,7 @@ class SchemaValidation(TestCaseBase):
 
                 try:
                     # get args from schema
-                    method_args = cache.get_params(spec_class, method_name)
+                    method_args = cache.get_args(spec_class, method_name)
                 except KeyError:
                     raise AssertionError('Missing method %s.%s' % (
                                          spec_class, method_name))
@@ -208,7 +208,7 @@ class JsonToYamlValidation(TestCaseBase):
 
         for (command, method, obj) in self.methods():
             params = obj.get('data', {})
-            y_params = cache.get_params(command, method)
+            y_params = cache.get_args(command, method)
             for param in y_params:
                 name = param.get('name')
                 if 'defaultvalue' in param:

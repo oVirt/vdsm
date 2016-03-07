@@ -1,4 +1,4 @@
-# Copyright (C) 2012  2016 Adam Litke, IBM Corporation
+# Copyright (C) 2012 - 2016 Adam Litke, IBM Corporation
 # Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,15 +17,13 @@
 from __future__ import absolute_import
 from functools import partial
 
-import collections
-import inspect
 import logging
 import threading
 import types
 
 import API
 import yajsonrpc
-from api import vdsmapi
+from api import schemaapi
 
 from vdsm.network.netinfo.addresses import getDeviceByIP
 from vdsm.exception import VdsmException
@@ -62,7 +60,11 @@ class InvalidCall(Exception):
 
 class DynamicBridge(object):
     def __init__(self):
-        self.api = vdsmapi.get_api()
+        paths = [schemaapi.find_schema()]
+        if _glusterEnabled:
+            paths.append(schemaapi.find_schema('vdsm-api-gluster'))
+        self._schema = schemaapi.Schema(paths)
+
         self._threadLocal = threading.local()
         self.log = logging.getLogger('DynamicBridge')
 
@@ -72,17 +74,16 @@ class DynamicBridge(object):
     def unregister_server_address(self):
         self._threadLocal.server = None
 
-    def _get_args(self, argobj, arglist, defaultArgs):
+    def _get_args(self, argobj, arglist, defaultArgs, defaultValues):
         ret = ()
         for arg in arglist:
-            if arg.startswith('*'):
-                name = self._sym_name_filter(arg)
-                if name in argobj:
-                    ret = ret + (argobj[name],)
+            if arg in defaultArgs:
+                if arg in argobj:
+                    ret = ret + (argobj[arg],)
                 else:
-                    if len(defaultArgs) > 0:
-                        ret = ret + (defaultArgs[0],)
-                defaultArgs = defaultArgs[1:]
+                    if len(defaultValues) > 0:
+                        ret = ret + (defaultValues[0],)
+                defaultValues = defaultValues[1:]
             elif arg in argobj:
                 ret = ret + (argobj[arg],)
         return ret
@@ -98,7 +99,7 @@ class DynamicBridge(object):
     def dispatch(self, method):
         try:
             className, methodName = method.split('.', 1)
-            self.api['commands'][className][methodName]
+            self._schema.get_method(className, methodName)
         except (KeyError, ValueError):
             raise yajsonrpc.JsonRpcMethodNotFoundError(method)
         return partial(self._dynamicMethod, className, methodName)
@@ -127,40 +128,26 @@ class DynamicBridge(object):
         them from here.  For any given method, the method_args are obtained by
         chopping off the ctor_args from the beginning of argObj.
         """
-        # Get the full argument list
-        sym = self.api['commands'][className][methodName]
-        allArgs = sym.get('data', {}).keys()
+        allArgs = self._schema.get_arg_names(className, methodName)
 
-        className = self._convert_class_name(className)
-        # Get the list of ctor_args
-        if _glusterEnabled and className.startswith('Gluster'):
-            ctorArgs = getattr(gapi, className).ctorArgs
-            defaultArgs = self._get_default_args(gapi, className, methodName)
+        class_name = self._convert_class_name(className)
+        if _glusterEnabled and class_name.startswith('Gluster'):
+            ctorArgs = getattr(gapi, class_name).ctorArgs
         else:
-            ctorArgs = getattr(API, className).ctorArgs
-            defaultArgs = self._get_default_args(API, className, methodName)
+            ctorArgs = getattr(API, class_name).ctorArgs
+
+        defaultArgs = self._schema.get_default_arg_names(className,
+                                                         methodName)
+        defaultValues = self._schema.get_default_arg_values(className,
+                                                            methodName)
 
         # Determine the method arguments by subtraction
         methodArgs = []
         for arg in allArgs:
-            name = self._sym_name_filter(arg)
-
-            if name not in ctorArgs:
+            if arg not in ctorArgs:
                 methodArgs.append(arg)
 
-        return self._get_args(argObj, methodArgs, defaultArgs)
-
-    def _get_default_args(self, api, className, methodName):
-        result = []
-        for class_name, class_obj in inspect.getmembers(api, inspect.isclass):
-            if class_name == className:
-                for method_name, method_obj in inspect.getmembers(
-                        class_obj, inspect.ismethod):
-                    if method_name == methodName:
-                        args = inspect.getargspec(method_obj).defaults
-                        if args:
-                            result = list(args)
-        return result
+        return self._get_args(argObj, methodArgs, defaultArgs, defaultValues)
 
     def _get_api_instance(self, className, argObj):
         className = self._convert_class_name(className)
@@ -170,67 +157,8 @@ class DynamicBridge(object):
         else:
             apiObj = getattr(API, className)
 
-        ctorArgs = self._get_args(argObj, apiObj.ctorArgs, [])
+        ctorArgs = self._get_args(argObj, apiObj.ctorArgs, [], [])
         return apiObj(*ctorArgs)
-
-    def _sym_name_filter(self, symName):
-        """
-        The schema prefixes symbol names with '*' if they are optional.  Strip
-        that annotation to get the correct symbol name.
-        """
-        if symName.startswith('*'):
-            symName = symName[1:]
-        return symName
-
-    # TODO: Add support for map types
-    def _type_fixup(self, symName, symTypeName, obj):
-        isList = False
-        if isinstance(symTypeName, list):
-            symTypeName = symTypeName[0]
-            isList = True
-        symName = self._sym_name_filter(symName)
-
-        try:
-            symbol = self.api['types'][symTypeName]
-        except KeyError:
-            return
-
-        if isList:
-            itemList = obj
-        else:
-            itemList = [obj]
-
-        for item in itemList:
-            if symTypeName in typefixups:
-                typefixups[symTypeName](item)
-            for (k, v) in symbol.get('data', {}).items():
-                k = self._sym_name_filter(k)
-                # first check if the 'item' supports indexing
-                if isinstance(item, collections.Iterable) and k in item:
-                    self._type_fixup(k, v, item[k])
-
-    def _fixup_args(self, className, methodName, args):
-        argDef = self.api['commands'][className][methodName].get('data', {})
-        argInfo = zip(argDef.items(), args)
-        for typeInfo, val in argInfo:
-            argName, argType = typeInfo
-            if isinstance(argType, list):
-                # check type of first element
-                argType = argType[0]
-            if argType not in self.api['types']:
-                continue
-            if val is None:
-                continue
-            self._type_fixup(argName, argType, val)
-
-    def _fixup_ret(self, className, methodName, result):
-        retType = self._get_ret_list(className, methodName)
-        if retType is not None:
-            self._type_fixup('return', retType, result)
-        return result
-
-    def _get_ret_list(self, className, methodName):
-        return self.api['commands'][className][methodName].get('returns')
 
     def _name_args(self, args, kwargs, arglist):
         kwargs = kwargs.copy()
@@ -240,16 +168,14 @@ class DynamicBridge(object):
 
         return kwargs
 
-    def _get_arg_list(self, className, methodName):
-        sym = self.api['commands'][className][methodName]
-        return sym.get('data', {}).keys()
-
     def _dynamicMethod(self, className, methodName, *args, **kwargs):
         argobj = self._name_args(args, kwargs,
-                                 self._get_arg_list(className, methodName))
+                                 self._schema.get_arg_names(className,
+                                                            methodName))
+
         api = self._get_api_instance(className, argobj)
+
         methodArgs = self._get_method_args(className, methodName, argobj)
-        self._fixup_args(className, methodName, methodArgs)
 
         # Call the override function (if given).  Otherwise, just call directly
         cmd = '%s_%s' % (className, methodName)
@@ -288,7 +214,8 @@ class DynamicBridge(object):
                         if key is not 'status'])
         else:
             ret = self._get_result(result, retfield)
-        return self._fixup_ret(className, methodName, ret)
+
+        return ret
 
 
 def Host_fenceNode_Ret(ret):

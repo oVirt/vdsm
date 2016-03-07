@@ -24,6 +24,10 @@ import os
 import yaml
 
 
+default_values = {'{}': {},
+                  '()': ()}
+
+
 class SchemaNotFound(Exception):
     pass
 
@@ -73,8 +77,23 @@ class Schema(object):
         except EnvironmentError:
             raise SchemaNotFound("Unable to find API schema file")
 
-    def get_params(self, class_name, method_name):
+    def get_args(self, class_name, method_name):
         return self.get_method(class_name, method_name).get('params', [])
+
+    def get_arg_names(self, class_name, method_name):
+        return [arg.get('name') for arg in self.get_args(class_name,
+                                                         method_name)]
+
+    def get_default_arg_names(self, class_name, method_name):
+        return frozenset([arg.get('name') for arg in self.get_args(class_name,
+                                                                   method_name)
+                          if 'defaultvalue' in arg])
+
+    def get_default_arg_values(self, class_name, method_name):
+        return [default_values.get(arg.get('defaultvalue'),
+                                   arg.get('defaultvalue'))
+                for arg in self.get_args(class_name, method_name)
+                if 'defaultvalue' in arg]
 
     def get_ret_param(self, class_name, method_name):
         return self.get_method(class_name, method_name).get('return', {})

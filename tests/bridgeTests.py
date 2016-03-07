@@ -54,6 +54,16 @@ class Host():
     def ping(self):
         raise GeneralException("Kaboom!!!")
 
+    def getDeviceList(self, storageType=None, guids=(), checkStatus=True):
+        if storageType != 3:
+            return {'status': {'code': -1, 'message': 'Failed'}}
+        if not isinstance(guids, tuple):
+            return {'status': {'code': -1, 'message': 'Failed'}}
+        if checkStatus:
+            return {'status': {'code': -1, 'message': 'Failed'}}
+        return {'status': {'code': 0, 'message': 'Done'},
+                'devList': []}
+
 
 class VM():
     ctorArgs = ['vmID']
@@ -112,7 +122,7 @@ def _get_api_instance(self, className, argObj):
 
     apiObj = getattr(getFakeAPI(), className)
 
-    ctorArgs = self._get_args(argObj, apiObj.ctorArgs, [])
+    ctorArgs = self._get_args(argObj, apiObj.ctorArgs, [], [])
     return apiObj(*ctorArgs)
 
 
@@ -167,3 +177,12 @@ class BridgeTests(TestCaseBase):
                   "incomingLimit": 42}
         self.assertEqual(bridge.dispatch('VM.migrationCreate')(**params),
                          {'migrationPort': 0, 'params': {}})
+
+    @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
+    def testDefaultValues(self):
+        bridge = DynamicBridge()
+
+        params = {'storageType': 3, 'checkStatus': False}
+
+        self.assertEqual(bridge.dispatch('Host.getDeviceList')(**params),
+                         [])

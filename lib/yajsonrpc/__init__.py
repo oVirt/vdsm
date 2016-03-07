@@ -68,9 +68,8 @@ class JsonRpcMethodNotFoundError(JsonRpcError):
 
 
 class JsonRpcInvalidParamsError(JsonRpcError):
-    def __init__(self):
-        JsonRpcError.__init__(self, -32602,
-                              "Invalid method parameter(s).")
+    def __init__(self, msg="Invalid method parameter(s)."):
+        JsonRpcError.__init__(self, -32602, msg)
 
 
 class JsonRpcInternalError(JsonRpcError):
