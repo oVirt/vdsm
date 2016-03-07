@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,8 @@ from imageRepository.formatConverter import DefaultFormatConverter
 from vdsm import concurrent
 from vdsm import constants
 from vdsm.panic import panic
+from vdsm.storage.constants import STORAGE
+
 import storage_mailbox
 import blockSD
 import fileSD
@@ -50,8 +52,6 @@ from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 import volume
 import mount
-
-from storage.constants import STORAGE
 
 POOL_MASTER_DOMAIN = 'mastersd'
 

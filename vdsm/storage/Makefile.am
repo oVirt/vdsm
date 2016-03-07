@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2011 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,7 +28,6 @@ dist_vdsmstorage_PYTHON = \
 	blockSD.py \
 	blockVolume.py \
 	clusterlock.py \
-	constants.py \
 	curlImgWrap.py \
 	devicemapper.py \
 	dispatcher.py \

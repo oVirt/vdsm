@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2012 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,9 @@ from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
+from vdsm.storage.constants import STORAGE
+from vdsm.storage.constants import SECTOR_SIZE
+
 import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
 from spbackends import StoragePoolDiskBackend
@@ -75,9 +78,6 @@ import mount
 import dispatcher
 import storageServer
 
-
-from storage.constants import STORAGE
-from storage.constants import SECTOR_SIZE
 
 GUID = "guid"
 NAME = "name"

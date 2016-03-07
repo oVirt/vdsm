@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,10 +36,9 @@ from remoteFileHandler import Timeout
 from persistentDict import PersistentDict, DictValidator
 from vdsm import constants
 from vdsm.utils import stripNewLines
+from vdsm.storage.constants import LEASE_FILEEXT
 from vdsm import supervdsm
 import mount
-
-from storage.constants import LEASE_FILEEXT
 
 REMOTE_PATH = "REMOTE_PATH"
 

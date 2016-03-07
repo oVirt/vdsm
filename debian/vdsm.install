@@ -78,7 +78,6 @@
 ./usr/share/vdsm/storage/blockSD.py
 ./usr/share/vdsm/storage/blockVolume.py
 ./usr/share/vdsm/storage/clusterlock.py
-./usr/share/vdsm/storage/constants.py
 ./usr/share/vdsm/storage/curlImgWrap.py
 ./usr/share/vdsm/storage/devicemapper.py
 ./usr/share/vdsm/storage/dispatcher.py

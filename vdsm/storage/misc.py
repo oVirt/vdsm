@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,9 +51,9 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm import logUtils
 from vdsm import utils
-import storage_exception as se
+from vdsm.storage.constants import SECTOR_SIZE
 
-from storage.constants import SECTOR_SIZE
+import storage_exception as se
 
 IOUSER = "vdsm"
 DIRECTFLAG = "direct"

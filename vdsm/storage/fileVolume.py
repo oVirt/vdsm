@@ -26,6 +26,8 @@ import storage_exception as se
 from vdsm import exception
 from vdsm import qemuimg
 from vdsm.commands import grepCmd
+from vdsm.storage.constants import FILE_VOLUME_PERMISSIONS
+from vdsm.storage.constants import LEASE_FILEEXT
 from sdc import sdCache
 import outOfProcess as oop
 import volume
@@ -36,9 +38,6 @@ import misc
 from misc import deprecated
 import task
 from threadLocal import vars
-
-from storage.constants import FILE_VOLUME_PERMISSIONS
-from storage.constants import LEASE_FILEEXT
 
 META_FILEEXT = ".meta"
 LEASE_FILEOFFSET = 0
