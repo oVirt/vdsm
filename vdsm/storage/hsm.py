@@ -37,7 +37,11 @@ import numbers
 import stat
 
 from vdsm import concurrent
+from vdsm import constants
 from vdsm import logUtils
+from vdsm import qemuimg
+from vdsm import supervdsm
+from vdsm import utils
 from vdsm.config import config
 import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
@@ -64,16 +68,13 @@ import taskManager
 import clusterlock
 import storage_exception as se
 from threadLocal import vars
-from vdsm import constants
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
 import devicemapper
 import mount
 import dispatcher
 import storageServer
-from vdsm import supervdsm
-from vdsm import utils
-from vdsm import qemuimg
+
 
 from storage.constants import STORAGE
 from storage.constants import SECTOR_SIZE
