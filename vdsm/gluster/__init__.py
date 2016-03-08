@@ -42,7 +42,8 @@ def listPublicFunctions(gluster_mgmt_enabled=True):
             module = __import__('gluster.' + modName, fromlist=['gluster'])
             for name in dir(module):
                 func = getattr(module, name)
-                if _shouldPublish(func, gluster_mgmt_enabled):
+                if callable(func) and \
+                        _shouldPublish(func, gluster_mgmt_enabled):
                     funcName = 'gluster%s%s' % (name[0].upper(), name[1:])
                     methods.append((funcName, func))
         except ImportError:
