@@ -30,7 +30,7 @@ from ..netconfpersistence import RunningConfig
 from ..netlink import link as nl_link
 
 from vdsm import netinfo
-from .addresses import getIpAddrs, getIpInfo
+from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
 from .dhcp import (propose_updates_to_reported_dhcp,  update_reported_dhcp,
@@ -141,6 +141,7 @@ def _devinfo(link, routes, ipaddrs):
             'cfg': getIfaceCfg(link.name),
             'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
+            'ipv6autoconf': is_ipv6_local_auto(link.name),
             'gateway': gateway,
             'ipv6gateway': get_gateway(routes, link.name, family=6),
             'dhcpv4': is_dhcpv4,

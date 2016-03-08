@@ -31,6 +31,7 @@ from vdsm.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.netinfo.cache import get
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
+from vdsm import sysctl
 
 from .ipwrapper_test import _fakeTypeDetection
 from modprobe import RequireBondingMod
@@ -390,3 +391,23 @@ class TestNetinfo(TestCaseBase):
 
     def _cidr_form(self, ip_addr, prefix_length):
         return '{}/{}'.format(ip_addr, prefix_length)
+
+
+class TestIPv6Addresses(TestCaseBase):
+    def test_local_auto_when_ipv6_is_disabled(self):
+        with dummy_device() as dev:
+            sysctl.disable_ipv6(dev)
+            self.assertEqual(False, addresses.is_ipv6_local_auto(dev))
+
+    def test_local_auto_without_router_advertisement_server(self):
+        with dummy_device() as dev:
+            self.assertEqual(True, addresses.is_ipv6_local_auto(dev))
+
+    def test_local_auto_with_static_address_without_ra_server(self):
+        with dummy_device() as dev:
+            ipwrapper.addrAdd(dev, '2001::88', '64', family=6)
+            ip_addrs = addresses.getIpAddrs()[dev]
+            self.assertEqual(True, addresses.is_ipv6_local_auto(dev))
+            self.assertEqual(1, len(ip_addrs))
+            self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
+            self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))

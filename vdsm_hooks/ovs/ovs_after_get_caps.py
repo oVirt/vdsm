@@ -68,6 +68,7 @@ def _get_net_info(interface, routes):
         'dhcpv4': dhcpv4,
         'ipv4addrs': ipv4addrs,
         'ipv6addrs': ipv6addrs,
+        'ipv6autoconf': addresses.is_ipv6_local_auto(interface),
         'ipv6gateway': ipv6gateway,
         'dhcpv6': dhcpv6,
         'cfg': {'BOOTPROTO': 'dhcp' if dhcpv4 else 'none'}}

@@ -25,6 +25,7 @@ import socket
 import struct
 
 from ..netlink import addr as nl_addr
+from ..sysctl import is_ipv6_local_auto as sysctl_is_ipv6_local_auto
 
 
 def getIpInfo(dev, ipaddrs=None, ipv4_gateway=None):
@@ -125,3 +126,7 @@ def is_ipv6(nladdr):
 
 def is_dynamic(nladdr):
     return not nl_addr.is_permanent(nladdr)
+
+
+def is_ipv6_local_auto(iface):
+    return sysctl_is_ipv6_local_auto(iface)

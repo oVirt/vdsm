@@ -20,6 +20,8 @@
 
 
 from __future__ import absolute_import
+import errno
+
 _RPFILTER_STRICT = '1'
 _RPFILTER_LOOSE = '2'
 
@@ -43,7 +45,25 @@ def disable_ipv6(dev, disable=True):
         f.write('1' if disable else '0')
 
 
-def is_disabled_ipv6():
-    with open('/proc/sys/net/ipv6/conf/default/disable_ipv6') as f:
-        ipv6_enabled = f.read()
-    return int(ipv6_enabled)
+def is_disabled_ipv6(dev='default'):
+    with open('/proc/sys/net/ipv6/conf/%s/disable_ipv6' % dev) as f:
+        return int(f.read())
+
+
+def is_ipv6_local_auto(dev):
+    try:
+        is_disabled = is_disabled_ipv6(dev)
+        with open('/proc/sys/net/ipv6/conf/%s/autoconf' % dev) as f:
+            is_autoconf = int(f.read())
+        with open('/proc/sys/net/ipv6/conf/%s/accept_ra' % dev) as f:
+            is_accept_ra = int(f.read())
+        with open('/proc/sys/net/ipv6/conf/%s/accept_redirects' % dev) as f:
+            is_accept_redirects = int(f.read())
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            return False
+        else:
+            raise
+
+    return bool(not is_disabled and
+                is_autoconf and is_accept_ra and is_accept_redirects)
