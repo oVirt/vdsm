@@ -37,7 +37,7 @@ from vdsm import udevadm
 from vdsm import utils
 from vdsm import ipwrapper
 
-from . canonize import canonize_networks
+from . canonicalize import canonicalize_networks
 from . import legacy_switch
 from . import errors as ne
 from .errors import ConfigNetworkError
@@ -198,8 +198,8 @@ def setupNetworks(networks, bondings, options):
                  "networks:%r, bondings:%r, options:%r" % (networks,
                                                            bondings, options))
 
-    canonize_networks(networks)
-    # TODO: Add canonize_bondings(bondings)
+    canonicalize_networks(networks)
+    # TODO: Add canonicalize_bondings(bondings)
 
     logging.debug("Validating configuration")
     legacy_switch.validateNetworkSetup(networks, bondings)

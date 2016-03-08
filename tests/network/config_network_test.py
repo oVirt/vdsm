@@ -31,7 +31,7 @@ from monkeypatch import MonkeyPatch
 
 from vdsm.network import errors
 from vdsm.network.configurators import ifcfg
-from vdsm.network.canonize import canonize_networks
+from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network import legacy_switch
 from vdsm.network.models import Bond, Bridge, Nic, Vlan
 
@@ -52,7 +52,7 @@ class TestConfigNetwork(TestCaseBase):
         configurator = legacy_switch.ConfiguratorClass()
 
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-            canonize_networks({netName: opts})
+            canonicalize_networks({netName: opts})
             legacy_switch._addNetwork(netName, configurator, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 

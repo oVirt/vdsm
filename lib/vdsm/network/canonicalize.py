@@ -28,7 +28,7 @@ from .errors import ConfigNetworkError
 from . import errors as ne
 
 
-def canonize_networks(nets):
+def canonicalize_networks(nets):
     """
     Given networks configuration, explicitly add missing defaults.
     :param nets: The network configuration
@@ -36,28 +36,28 @@ def canonize_networks(nets):
     for attrs in six.itervalues(nets):
         # If net is marked for removal, normalize the mark to boolean and
         # ignore all other attributes canonization.
-        if _canonize_remove(attrs):
+        if _canonicalize_remove(attrs):
                 continue
 
-        _canonize_mtu(attrs)
-        _canonize_vlan(attrs)
-        _canonize_bridged(attrs)
-        _canonize_stp(attrs)
-        _canonize_ipv6(attrs)
+        _canonicalize_mtu(attrs)
+        _canonicalize_vlan(attrs)
+        _canonicalize_bridged(attrs)
+        _canonicalize_stp(attrs)
+        _canonicalize_ipv6(attrs)
 
 
-def _canonize_remove(data):
+def _canonicalize_remove(data):
     if 'remove' in data:
         data['remove'] = utils.tobool(data['remove'])
         return data['remove']
     return False
 
 
-def _canonize_mtu(data):
+def _canonicalize_mtu(data):
     data['mtu'] = int(data['mtu']) if 'mtu' in data else mtus.DEFAULT_MTU
 
 
-def _canonize_vlan(data):
+def _canonicalize_vlan(data):
     vlan = data.get('vlan', None)
     if vlan in (None, ''):
         data.pop('vlan', None)
@@ -65,14 +65,14 @@ def _canonize_vlan(data):
         data['vlan'] = int(vlan)
 
 
-def _canonize_bridged(data):
+def _canonicalize_bridged(data):
     if 'bridged' in data:
         data['bridged'] = utils.tobool(data['bridged'])
     else:
         data['bridged'] = True
 
 
-def _canonize_stp(data):
+def _canonicalize_stp(data):
     if data['bridged']:
         stp = False
         if 'stp' in data:
@@ -86,6 +86,6 @@ def _canonize_stp(data):
                                      'a valid bridge STP value.' % stp)
 
 
-def _canonize_ipv6(data):
+def _canonicalize_ipv6(data):
     if 'dhcpv6' not in data:
         data['dhcpv6'] = False
