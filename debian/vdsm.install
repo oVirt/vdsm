@@ -125,6 +125,7 @@
 ./usr/share/vdsm/supervdsm_api/mkimage.py
 ./usr/share/vdsm/supervdsm_api/ksm.py
 ./usr/share/vdsm/supervdsm_api/network.py
+./usr/share/vdsm/supervdsm_api/udev.py
 ./usr/share/vdsm/supervdsm_api/virt.py
 ./usr/share/vdsm/supervdsmServer
 ./usr/share/vdsm/v2v.py
