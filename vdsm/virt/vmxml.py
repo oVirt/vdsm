@@ -63,19 +63,19 @@ def filter_devices_with_alias(devices):
             yield deviceXML, alias
 
 
-def device_address(devXml, index=0):
+def device_address(device_xml, index=0):
     """
     Obtain device's address from libvirt
     """
     address = {}
-    adrXml = devXml.getElementsByTagName('address')[index]
+    address_xml = device_xml.getElementsByTagName('address')[index]
     # Parse address to create proper dictionary.
     # Libvirt device's address definition is:
     # PCI = {'type':'pci', 'domain':'0x0000', 'bus':'0x00',
     #        'slot':'0x0c', 'function':'0x0'}
     # IDE = {'type':'drive', 'controller':'0', 'bus':'0', 'unit':'0'}
-    for key in adrXml.attributes.keys():
-        address[key.strip()] = adrXml.getAttribute(key).strip()
+    for key in address_xml.attributes.keys():
+        address[key.strip()] = address_xml.getAttribute(key).strip()
 
     return address
 
