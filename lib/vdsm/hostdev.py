@@ -242,5 +242,5 @@ def reattach_detachable(device_name):
 
 def change_numvfs(device_name, numvfs):
     net_name = physical_function_net_name(device_name)
-    supervdsm.getProxy().changeNumvfs(name_to_pci_path(device_name), numvfs,
-                                      net_name)
+    supervdsm.getProxy().change_numvfs(name_to_pci_path(device_name), numvfs,
+                                       net_name)
