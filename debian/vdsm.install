@@ -121,6 +121,12 @@
 ./usr/share/vdsm/storage/threadPool.py
 ./usr/share/vdsm/storage/volume.py
 ./usr/share/vdsm/sitecustomize.py
+./usr/share/vdsm/supervdsm_api/__init__.py
+./usr/share/vdsm/supervdsm_api/hwinfo.py
+./usr/share/vdsm/supervdsm_api/mkimage.py
+./usr/share/vdsm/supervdsm_api/ksm.py
+./usr/share/vdsm/supervdsm_api/network.py
+./usr/share/vdsm/supervdsm_api/virt.py
 ./usr/share/vdsm/supervdsmServer
 ./usr/share/vdsm/v2v.py
 ./usr/share/vdsm/vdsm
