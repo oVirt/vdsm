@@ -367,7 +367,13 @@ def _restore_disable_ipv6():
     for filename in _owned_ifcfg_files():
         device = _ifcfg_dev_name(filename)
         if not _ipv6_ifcfg(device):
-            sysctl.disable_ipv6(device)
+            try:
+                sysctl.disable_ipv6(device)
+            except IOError as e:
+                if e.errno == errno.ENOENT:
+                    pass  # the network is broken, but we have to handle it
+                else:
+                    raise
 
 
 def _owned_ifcfg(link_name):
