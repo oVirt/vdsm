@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,12 +22,12 @@ import logging
 
 from vdsm import constants
 from vdsm import qemuimg
+from vdsm.storage import exception as se
 
 from storage import sd
 from storage import blockSD
 from storage import volume
 from storage import blockVolume
-from storage import storage_exception as se
 
 
 def __convertDomainMetadataToTags(domain, targetVersion):

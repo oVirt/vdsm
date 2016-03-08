@@ -26,8 +26,9 @@ from vdsm import qemuimg
 from vdsm import constants
 from vdsm import exception
 from vdsm.config import config
+from vdsm.storage import exception as se
 import vdsm.utils as utils
-import storage_exception as se
+
 import volume
 import image
 import sd

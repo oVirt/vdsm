@@ -946,7 +946,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/sd.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
 %{_datadir}/%{vdsm_name}/storage/spbackends.py*
-%{_datadir}/%{vdsm_name}/storage/storage_exception.py*
 %{_datadir}/%{vdsm_name}/storage/storage_mailbox.py*
 %{_datadir}/%{vdsm_name}/storage/storageServer.py*
 %{_datadir}/%{vdsm_name}/storage/sync.py*
@@ -1148,6 +1147,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/profiling/profile.py*
 %{python_sitelib}/%{vdsm_name}/storage/__init__.py*
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
+%{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/tc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tc/_parser.py*

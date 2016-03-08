@@ -63,6 +63,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/storage/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/storage/constants.py
 ./usr/lib/python2.7/dist-packages/vdsm/storage/securable.py
+./usr/lib/python2.7/dist-packages/vdsm/storage/exception.py
 ./usr/lib/python2.7/dist-packages/vdsm/supervdsm.py
 ./usr/lib/python2.7/dist-packages/vdsm/taskset.py
 ./usr/lib/python2.7/dist-packages/vdsm/tool/__init__.py

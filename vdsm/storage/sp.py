@@ -34,6 +34,7 @@ from imageRepository.formatConverter import DefaultFormatConverter
 from vdsm import concurrent
 from vdsm import constants
 from vdsm.panic import panic
+from vdsm.storage import exception as se
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.securable import secured, unsecured
 
@@ -45,7 +46,6 @@ import misc
 import fileUtils
 from vdsm.config import config
 from sdc import sdCache
-import storage_exception as se
 from remoteFileHandler import Timeout
 import image
 from resourceFactories import IMAGE_NAMESPACE
@@ -240,7 +240,7 @@ class StoragePool(object):
         .. note::
             if the SPM is already started the function will fail silently.
 
-        :raises: :exc:`storage_exception.MiscOperationInProgress` if
+        :raises: :exc:`storage.exception.MiscOperationInProgress` if
                        called during an already running connection
                        attempt. (makes the fact that it fails silently
                        does not matter very much).

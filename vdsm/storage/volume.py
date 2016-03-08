@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,8 +24,10 @@ import time
 from contextlib import contextmanager
 
 import image
+
 from vdsm import qemuimg
-import storage_exception as se
+from vdsm.storage import exception as se
+
 import sd
 from sdc import sdCache
 import misc

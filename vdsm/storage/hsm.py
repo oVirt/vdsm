@@ -43,6 +43,7 @@ from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
+from vdsm.storage import exception as se
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
 
@@ -69,7 +70,6 @@ import misc
 from misc import deprecated
 import taskManager
 import clusterlock
-import storage_exception as se
 from threadLocal import vars
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
@@ -291,7 +291,7 @@ class HSM(object):
 
         If the domain doesn't exist an exception will be thrown.
         If the domain isn't a backup domain a
-        :exc:`storage_exception.StorageDomainTypeNotBackup` exception
+        :exc:`storage.exception.StorageDomainTypeNotBackup` exception
         will be raised.
         """
         if not sdCache.produce(sdUUID=sdUUID).isBackup():
@@ -305,7 +305,7 @@ class HSM(object):
         :param sdUUID: The UUID to test.
         :type sdUUID: UUID
 
-        :raises: :exc:`storage_exception.StorageDomainAlreadyExists` exception
+        :raises: :exc:`storage.exception.StorageDomainAlreadyExists` exception
         if a domain with this UUID exists.
         """
         try:
@@ -582,7 +582,7 @@ class HSM(object):
         :type spUUID: UUID
         :param options: ?
 
-        :raises: :exc:`storage_exception.TaskInProgress`
+        :raises: :exc:`storage.exception.TaskInProgress`
                  if there are tasks running for this pool.
 
         """
@@ -890,7 +890,7 @@ class HSM(object):
         :returns: True if everything went as planned.
         :rtype: bool
 
-        :raises: a :exc:`Storage_Exception.StoragePoolMaterNotFound`
+        :raises: a :exc:`storage.exception.StoragePoolMaterNotFound`
                  if the storage pool and the master storage domain don't
                  exist or don't match.
 
@@ -966,7 +966,7 @@ class HSM(object):
         :returns: The newly created storage pool object.
         :rtype: :class:`sp.StoragePool`
 
-        :raises: an :exc:`Storage_Exception.InvalidParameterException` if the
+        :raises: an :exc:`storage.exception.InvalidParameterException` if the
                  master domain is not supplied in the domain list.
         """
         leaseParams = sd.packLeaseParams(
@@ -1024,7 +1024,7 @@ class HSM(object):
         :returns: :keyword:`True` if connection was successful.
         :rtype: bool
 
-        :raises: :exc:`storage_exception.ConnotConnectMultiplePools` when
+        :raises: :exc:`storage.exception.ConnotConnectMultiplePools` when
                  storage pool is not connected to the system.
         """
         vars.task.setDefaultException(
@@ -2224,7 +2224,7 @@ class HSM(object):
         :returns: a dict with information about the task.
         :rtype: dict
 
-        :raises: :exc:`storage_exception.UnknownTask` if a task with the
+        :raises: :exc:`storage.exception.UnknownTask` if a task with the
                  specified taskID doesn't exist.
         """
         # getSharedLock(tasksResource...)
@@ -3017,7 +3017,7 @@ class HSM(object):
         :returns: a dict containing the info about the VG.
         :rtype: dict
 
-        :raises: :exc:`storage_exception.VolumeGroupDoesNotExist`
+        :raises: :exc:`storage.exception.VolumeGroupDoesNotExist`
                  if no VG with the specified UUID is found
         """
         vars.task.setDefaultException(se.VolumeGroupActionError("%s" % vgUUID))

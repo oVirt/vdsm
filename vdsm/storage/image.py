@@ -28,13 +28,14 @@ import volume
 from vdsm import qemuimg
 from vdsm import virtsparsify
 from vdsm.config import config
+from vdsm.storage import exception as se
+
 from sdc import sdCache
 import sd
 import misc
 import fileUtils
 import imageSharing
 from vdsm.exception import ActionStopped
-import storage_exception as se
 import task
 from threadLocal import vars
 import resourceFactories

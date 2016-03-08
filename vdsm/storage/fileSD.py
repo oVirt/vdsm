@@ -26,8 +26,9 @@ import glob
 import fnmatch
 import re
 
+from vdsm.storage import exception as se
+
 import sd
-import storage_exception as se
 import fileUtils
 import fileVolume
 import misc

@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,8 +25,9 @@ from copy import deepcopy
 
 from testlib import recorded
 
+from vdsm.storage import exception as se
+
 from storage import lvm as real_lvm
-from storage import storage_exception as se
 
 
 class FakeLVM(object):

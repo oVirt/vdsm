@@ -60,7 +60,6 @@ dist_vdsmstorage_PYTHON = \
 	sd.py \
 	sp.py \
 	spbackends.py \
-	storage_exception.py \
 	storage_mailbox.py \
         storageServer.py \
 	sync.py \

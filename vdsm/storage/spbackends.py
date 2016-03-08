@@ -21,13 +21,13 @@
 import logging
 import weakref
 
+from vdsm.storage import exception as se
 from vdsm.storage.securable import secured
 from vdsm.storage.securable import unsecured
 
 import blockSD
 import misc
 import sd
-import storage_exception as se
 
 from persistentDict import DictValidator
 from persistentDict import unicodeDecoder

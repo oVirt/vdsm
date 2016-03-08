@@ -1,5 +1,5 @@
 #
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,11 +27,11 @@ from contextlib import nested
 from uuid import uuid4
 from Queue import Queue
 
-import storage_exception as se
 import misc
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
 from vdsm import utils
+from vdsm.storage import exception as se
 
 
 # Errors

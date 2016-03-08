@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2014 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,8 @@ import weakref
 
 from vdsm import constants
 from vdsm.config import config
+from vdsm.storage import exception as se
+
 import threading
 from functools import partial
 
@@ -38,7 +40,6 @@ except ImportError:
     pass
 
 from remoteFileHandler import RemoteFileHandlerPool
-import storage_exception as se
 
 RFH = 'rfh'
 IOPROC = 'ioprocess'

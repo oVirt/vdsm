@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,10 +20,11 @@
 
 import logging
 from functools import wraps
+
 from vdsm.config import config
+from vdsm.storage import exception as se
 
 import task
-import storage_exception as se
 
 _EXPORTED_ATTRIBUTE = "__dispatcher_exported__"
 

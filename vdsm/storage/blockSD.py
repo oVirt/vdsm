@@ -36,6 +36,7 @@ from vdsm.config import config
 from vdsm import constants
 from vdsm import exception
 from vdsm import utils
+from vdsm.storage import exception as se
 import vdsm.supervdsm as svdsm
 
 import misc
@@ -49,7 +50,6 @@ import resourceFactories
 from resourceFactories import LVM_ACTIVATION_NAMESPACE
 from persistentDict import PersistentDict, DictValidator
 import iscsi
-import storage_exception as se
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
 import mount

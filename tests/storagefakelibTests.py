@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,12 +20,13 @@
 from contextlib import contextmanager
 import os
 
+from vdsm.storage import exception as se
+
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
 from storagefakelib import FakeLVM, FakeResourceManager
 
 from storage import blockSD, blockVolume
-from storage import storage_exception as se
 from storage import lvm as real_lvm
 
 

@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Red Hat, Inc.
+# Copyright 2010-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,9 +38,10 @@ from itertools import chain
 from subprocess import list2cmdline
 
 from vdsm import constants
+from vdsm.storage import exception as se
+
 import misc
 import multipath
-import storage_exception as se
 from vdsm.config import config
 import devicemapper
 

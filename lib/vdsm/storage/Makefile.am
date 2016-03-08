@@ -25,4 +25,5 @@ dist_vdsmstorage_PYTHON = \
 	__init__.py \
 	constants.py \
 	securable.py \
+	exception.py \
 	$(NULL)

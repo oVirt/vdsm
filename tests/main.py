@@ -22,8 +22,9 @@ import types
 import unittest
 
 from gluster import exception as gluster_exception
-from storage import storage_exception
+
 from vdsm.exception import GeneralException
+from vdsm.storage import exception as storage_exception
 
 from testlib import VdsmTestCase as TestCaseBase
 

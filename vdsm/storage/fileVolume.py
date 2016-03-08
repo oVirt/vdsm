@@ -22,12 +22,13 @@ import errno
 import os
 import sanlock
 
-import storage_exception as se
 from vdsm import exception
 from vdsm import qemuimg
 from vdsm.commands import grepCmd
+from vdsm.storage import exception as se
 from vdsm.storage.constants import FILE_VOLUME_PERMISSIONS
 from vdsm.storage.constants import LEASE_FILEEXT
+
 from sdc import sdCache
 import outOfProcess as oop
 import volume

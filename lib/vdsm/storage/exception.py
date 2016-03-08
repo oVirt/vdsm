@@ -31,6 +31,8 @@
 #
 #######################################################
 
+from __future__ import absolute_import
+
 from vdsm.exception import GeneralException
 from vdsm.storage.securable import SecureError
 SPM_STATUS_ERROR = (654, "Not SPM")

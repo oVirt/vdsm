@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2015 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,6 +36,7 @@ from vdsm import concurrent
 from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
+from vdsm.storage import exception as se
 
 import mount
 import fileUtils
@@ -45,7 +46,6 @@ from sync import asyncmethod, AsyncCallStub
 from mount import MountError
 import gluster.cli
 import gluster.exception as ge
-import storage_exception as se
 
 
 class AliasAlreadyRegisteredError(RuntimeError):

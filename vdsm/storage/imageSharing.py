@@ -1,4 +1,4 @@
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ import signal
 import curlImgWrap
 from vdsm import constants
 from vdsm import commands
-import storage_exception as se
+from vdsm.storage import exception as se
 
 
 log = logging.getLogger("Storage.ImageSharing")

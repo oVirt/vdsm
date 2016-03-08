@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,12 +24,13 @@ for keeping storage related data that is expensive to harvest, but needed often
 """
 import logging
 import threading
+
 from vdsm.config import config
+from vdsm.storage import exception as se
 
 import multipath
 import lvm
 import misc
-import storage_exception as se
 
 # Default cache age until forcibly refreshed
 DEFAULT_REFRESH_INTERVAL = 300

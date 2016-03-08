@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,8 @@ import logging
 import threading
 
 from vdsm.config import config
-import storage_exception as se
+from vdsm.storage import exception as se
+
 from task import Task, Job, TaskCleanType
 from threadPool import ThreadPool
 

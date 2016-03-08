@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Red Hat, Inc.
+# Copyright 2010-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,13 @@
 #
 
 import os
+
 from vdsm.config import config
+from vdsm.storage import exception as se
+
 import logging
 import lvm
 import resourceManager as rm
-import storage_exception as se
 from sdc import sdCache
 import sd
 import image

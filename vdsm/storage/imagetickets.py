@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2012 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,7 @@ import os
 from contextlib import closing
 
 from vdsm import constants
-
-import storage_exception as se
+from vdsm.storage import exception as se
 
 try:
     from ovirt_image_daemon import uhttp

@@ -27,10 +27,11 @@ from contextlib import nested
 import sanlock
 
 import misc
-import storage_exception as se
+
 from vdsm import constants
 from vdsm.config import config
 from vdsm import utils
+from vdsm.storage import exception as se
 
 
 MAX_HOST_ID = 250

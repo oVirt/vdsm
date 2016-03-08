@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,8 +38,9 @@ try:
 except ImportError:
     pass
 
+from vdsm.storage import exception as se
+
 import storage.sd
-import storage.storage_exception as se
 import storage.volume
 from storage.misc import execCmd
 from storage.mount import Mount
