@@ -24,7 +24,7 @@ from testlib import make_file, namedTemporaryDir
 from storagefakelib import FakeLVM
 from monkeypatch import MonkeyPatchScope
 
-from storage import sd, blockSD, fileSD, blockVolume
+from storage import sd, blockSD, fileSD, image, volume, blockVolume
 
 
 NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default
@@ -138,3 +138,18 @@ def make_file_volume(domaindir, size, imguuid=None, voluuid=None):
     for mdfile in mdfiles:
         make_file(mdfile)
     return imguuid, voluuid
+
+
+def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid):
+    sduuid = sd_manifest.sdUUID
+    image_manifest = image.ImageManifest(sd_manifest.getRepoPath())
+    imagedir = image_manifest.getImageDir(sduuid, imguuid)
+    os.makedirs(imagedir)
+    lvm.createLV(sduuid, voluuid, size / MB)
+    with sd_manifest.acquireVolumeMetadataSlot(
+            voluuid, blockVolume.VOLUME_MDNUMBLKS) as slot:
+        lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_MD, slot))
+        lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_PARENT,
+                                              volume.BLANK_UUID))
+        lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_IMAGE,
+                                              imguuid))
