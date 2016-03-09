@@ -69,23 +69,23 @@ def kdump_status():
     try:
         # check if kdump service is running
         with open('/sys/kernel/kexec_crash_loaded', 'r') as f:
-            kdumpStatus = int(f.read().strip('\n'))
+            status = int(f.read().strip('\n'))
 
-        if kdumpStatus == KdumpStatus.ENABLED:
+        if status == KdumpStatus.ENABLED:
             # check if fence_kdump is configured
-            kdumpStatus = KdumpStatus.DISABLED
+            status = KdumpStatus.DISABLED
             with open('/etc/kdump.conf', 'r') as f:
                 for line in f:
                     if line.startswith('fence_kdump_nodes'):
-                        kdumpStatus = KdumpStatus.ENABLED
+                        status = KdumpStatus.ENABLED
                         break
     except (IOError, OSError, ValueError):
-        kdumpStatus = KdumpStatus.UNKNOWN
+        status = KdumpStatus.UNKNOWN
         logging.debug(
             'Error detecting fence_kdump configuration status',
             exc_info=True,
         )
-    return kdumpStatus
+    return status
 
 
 @utils.memoized
