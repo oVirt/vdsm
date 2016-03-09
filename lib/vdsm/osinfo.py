@@ -65,7 +65,7 @@ class KdumpStatus(object):
     ENABLED = 1
 
 
-def getKdumpStatus():
+def kdump_status():
     try:
         # check if kdump service is running
         with open('/sys/kernel/kexec_crash_loaded', 'r') as f:
@@ -89,7 +89,7 @@ def getKdumpStatus():
 
 
 @utils.memoized
-def _getos():
+def _release_name():
     if os.path.exists('/etc/rhev-hypervisor-release'):
         return OSName.RHEVH
     elif glob.glob('/etc/ovirt-node-*-release'):
@@ -121,16 +121,16 @@ def _parse_node_version(path):
 
 
 @utils.memoized
-def osversion():
-    version = release = ''
+def version():
+    version = release_name = ''
 
-    osname = _getos()
+    osname = _release_name()
     try:
         if osname == OSName.RHEVH or osname == OSName.OVIRT:
-            version, release = _parse_node_version('/etc/default/version')
+            version, release_name = _parse_node_version('/etc/default/version')
         elif osname == OSName.DEBIAN:
             version = linecache.getline('/etc/debian_version', 1).strip("\n")
-            release = ""  # Debian just has a version entry
+            release_name = ""  # Debian just has a version entry
         else:
             if osname == OSName.POWERKVM:
                 release_path = '/etc/ibm_powerkvm-release'
@@ -140,21 +140,21 @@ def osversion():
             ts = rpm.TransactionSet()
             for er in ts.dbMatch('basenames', release_path):
                 version = er['version']
-                release = er['release']
+                release_name = er['release']
     except:
         logging.error('failed to find version/release', exc_info=True)
 
-    return dict(release=release, version=version, name=osname)
+    return dict(release=release_name, version=version, name=osname)
 
 
-def getSELinux():
+def selinux_status():
     selinux = dict()
     selinux['mode'] = str(utils.get_selinux_enforce_mode())
 
     return selinux
 
 
-def getKeyPackages():
+def package_versions():
     def kernelDict():
         try:
             ret = os.uname()
@@ -173,8 +173,8 @@ def getKeyPackages():
 
     pkgs = {'kernel': kernelDict()}
 
-    if _getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL,
-                    OSName.POWERKVM):
+    if _release_name() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA,
+                           OSName.RHEL, OSName.POWERKVM):
         KEY_PACKAGES = {
             'glusterfs-cli': ('glusterfs-cli',),
             'librbd1': ('librbd1',),
@@ -208,7 +208,7 @@ def getKeyPackages():
         except:
             logging.error('', exc_info=True)
 
-    elif _getos() == OSName.DEBIAN and python_apt:
+    elif _release_name() == OSName.DEBIAN and python_apt:
         KEY_PACKAGES = {
             'glusterfs-cli': 'glusterfs-cli',
             'librbd1': 'librbd1',

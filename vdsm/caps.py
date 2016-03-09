@@ -172,9 +172,9 @@ def get():
     except:
         logging.debug('not reporting hooks', exc_info=True)
 
-    caps['operatingSystem'] = osinfo.osversion()
+    caps['operatingSystem'] = osinfo.version()
     caps['uuid'] = host.uuid()
-    caps['packages2'] = osinfo.getKeyPackages()
+    caps['packages2'] = osinfo.package_versions()
     caps['emulatedMachines'] = machinetype.emulated_machines(
         cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
@@ -207,13 +207,13 @@ def get():
     caps['numaNodeDistance'] = dict(numa.distances())
     caps['autoNumaBalancing'] = numa.autonuma_status()
 
-    caps['selinux'] = osinfo.getSELinux()
+    caps['selinux'] = osinfo.selinux_status()
 
     liveSnapSupported = _getLiveSnapshotSupport(cpuarch.effective())
     if liveSnapSupported is not None:
         caps['liveSnapshot'] = str(liveSnapSupported).lower()
     caps['liveMerge'] = str(getLiveMergeSupport()).lower()
-    caps['kdumpStatus'] = osinfo.getKdumpStatus()
+    caps['kdumpStatus'] = osinfo.kdump_status()
 
     caps['hostdevPassthrough'] = str(hostdev.is_supported()).lower()
     caps['additionalFeatures'] = []
