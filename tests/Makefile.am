@@ -38,6 +38,8 @@ test_modules_py3 = \
 	permutationTests.py \
 	pthreadTests.py \
 	responseTests.py \
+	scheduleTests.py \
+	vmStatsTests.py \
 	$(NULL)
 
 device_modules = \
