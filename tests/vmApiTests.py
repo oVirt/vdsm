@@ -19,8 +19,6 @@
 #
 from __future__ import absolute_import
 
-import os.path
-
 from vdsm.virt import vmexitreason
 
 from virt import vm
@@ -40,23 +38,21 @@ import vmfakelib as fake
 class TestSchemaCompliancyBase(TestCaseBase):
     @utils.memoized
     def _getAPI(self):
-        testPath = os.path.realpath(__file__)
-        dirName = os.path.split(testPath)[0]
-        apiPath = os.path.join(
-            dirName, '..', 'lib', 'api', 'vdsmapi-schema.json')
-        return vdsmapi.get_api(apiPath)
+        paths = [vdsmapi.find_schema()]
+        return vdsmapi.Schema(paths)
 
     def assertVmStatsSchemaCompliancy(self, schema, stats):
         api = self._getAPI()
-        ref = api['types'][schema]['data']
-        for apiItem, apiType in ref.items():
-            if apiItem[0] == '*':
+        ref = api.get_type(schema)
+        for prop in ref.get('properties'):
+            name = prop.get('name')
+            if 'defaultvalue' in prop:
                 # optional, may be absent and it is fine
-                if apiItem[1:] in stats:
-                    self.assertNotEqual(stats[apiItem[1:]], None)
+                if name in stats:
+                    self.assertNotEqual(stats[name], None)
             else:
                 # mandatory
-                self.assertIn(apiItem, stats)
+                self.assertIn(name, stats)
         # TODO: type checking
 
 

@@ -1620,17 +1620,13 @@ exit 0
 %{python_sitelib}/yajsonrpc/__init__.py*
 
 %files api
-%doc lib/api/vdsm-api.html
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/rpc
-%{python_sitelib}/%{vdsm_name}/rpc/vdsmapi-schema.json
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api.yml
-%{python_sitelib}/api/schemaapi.py*
 %{python_sitelib}/api/vdsmapi.py*
 %{python_sitelib}/api/__init__.py*
 %if ! 0%{?with_gluster_mgmt}
 %exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
-%exclude %{python_sitelib}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
 %endif
 
 %files yajsonrpc
@@ -1669,7 +1665,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/api.py*
 %{_datadir}/%{vdsm_name}/gluster/apiwrapper.py*
 %{_datadir}/%{vdsm_name}/gluster/fstab.py*
-%{python_sitelib}/%{vdsm_name}/rpc/vdsmapi-gluster-schema.json
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
 %{_datadir}/%{vdsm_name}/gluster/gfapi.py*
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*

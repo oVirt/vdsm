@@ -23,7 +23,7 @@ import types
 
 import API
 import yajsonrpc
-from api import schemaapi
+from api import vdsmapi
 
 from vdsm.network.netinfo.addresses import getDeviceByIP
 from vdsm.exception import VdsmException
@@ -60,10 +60,10 @@ class InvalidCall(Exception):
 
 class DynamicBridge(object):
     def __init__(self):
-        paths = [schemaapi.find_schema()]
+        paths = [vdsmapi.find_schema()]
         if _glusterEnabled:
-            paths.append(schemaapi.find_schema('vdsm-api-gluster'))
-        self._schema = schemaapi.Schema(paths)
+            paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
+        self._schema = vdsmapi.Schema(paths)
 
         self._threadLocal = threading.local()
         self.log = logging.getLogger('DynamicBridge')

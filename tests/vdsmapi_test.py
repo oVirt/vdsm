@@ -19,7 +19,7 @@
 #
 from __future__ import absolute_import
 
-from api import schemaapi
+from api import vdsmapi
 from yajsonrpc import JsonRpcError
 
 from monkeypatch import MonkeyPatch
@@ -34,7 +34,7 @@ except ImportError:
 
 
 def api_strict_mode():
-        return MonkeyPatch(schemaapi, 'config', make_config(
+        return MonkeyPatch(vdsmapi, 'config', make_config(
             [('devel', 'api_strict_mode', 'true')]))
 
 
@@ -45,10 +45,10 @@ class SchemaWrapper(object):
 
     def schema(self):
         if self._schema is None:
-            paths = [schemaapi.find_schema()]
+            paths = [vdsmapi.find_schema()]
             if _glusterEnabled:
-                paths.append(schemaapi.find_schema('vdsm-api-gluster'))
-            self._schema = schemaapi.Schema(paths)
+                paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
+            self._schema = vdsmapi.Schema(paths)
         return self._schema
 
     def _name_args(self, args, kwargs, arglist):
@@ -300,9 +300,9 @@ class DataVerificationTests(TestCaseBase):
         self.assertIn('is not a list', e.exception.message)
 
     def test_missing_method(self):
-        with self.assertRaises(schemaapi.MethodNotFound):
+        with self.assertRaises(vdsmapi.MethodNotFound):
             _schema.schema().get_method('Missing_class', 'missing_method')
 
     def test_missing_type(self):
-        with self.assertRaises(schemaapi.TypeNotFound):
+        with self.assertRaises(vdsmapi.TypeNotFound):
             _schema.schema().get_type('Missing_type')

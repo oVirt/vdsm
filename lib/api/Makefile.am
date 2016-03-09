@@ -21,38 +21,19 @@
 vdsmpyrpcdir = $(pythondir)/api
 vdsmrpcdir = $(vdsmpylibdir)/rpc
 
-CLEANFILES = \
-	vdsm-api.html \
-	$(NULL)
-
 EXTRA_DIST = \
 	schema_to_html.py \
-	vdsmapi-schema.json \
 	$(NULL)
 
 dist_vdsmpyrpc_PYTHON = \
 	__init__.py \
-	schemaapi.py\
 	vdsmapi.py \
 	$(NULL)
 
 dist_vdsmrpc_DATA = \
 	vdsm-api.yml \
 	vdsm-api-gluster.yml \
-	vdsmapi-gluster-schema.json \
-	vdsmapi-schema.json \
 	$(NULL)
-
-nodist_noinst_DATA = \
-	vdsm-api.html \
-	$(NULL)
-
-vdsm-api.html: schema_to_html.py vdsmapi-schema.json
-	@echo "  Generate $@"
-	chmod u+w $(srcdir)
-	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(srcdir)/../lib \
-	    $(PYTHON) $(srcdir)/schema_to_html.py \
-	              $(srcdir)/vdsmapi-schema.json $(srcdir)/$@
 
 all-local: \
 	$(nodist_noinst_DATA)
