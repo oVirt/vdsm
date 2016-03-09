@@ -20,13 +20,47 @@ import os
 import uuid
 from contextlib import contextmanager
 
-from testlib import make_file
+from testlib import make_file, namedTemporaryDir
+from storagefakelib import FakeLVM
+from monkeypatch import MonkeyPatchScope
 
-from storage import sd, blockSD, fileSD
+from storage import sd, blockSD, fileSD, blockVolume
 
 
 NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default
 MDSIZE = 524288  # The size (in bytes) of fake metadata files
+MB = 2 << 20     # Used to convert bytes to MB
+
+
+class FakeEnv(object):
+    def __init__(self, sd_manifest, lvm=None):
+        self.sd_manifest = sd_manifest
+        if lvm:
+            self.lvm = lvm
+
+
+@contextmanager
+def fake_file_env(obj=None):
+    with namedTemporaryDir() as tmpdir:
+        sd_manifest = make_filesd_manifest(tmpdir)
+        with MonkeyPatchScope([
+            [sd, 'storage_repository', tmpdir]
+        ]):
+
+            yield FakeEnv(sd_manifest)
+
+
+@contextmanager
+def fake_block_env(obj=None):
+    with namedTemporaryDir() as tmpdir:
+        lvm = FakeLVM(tmpdir)
+        with MonkeyPatchScope([
+            (blockSD, 'lvm', lvm),
+            (blockVolume, 'lvm', lvm),
+            (sd, 'storage_repository', tmpdir)
+        ]):
+            sd_manifest = make_blocksd(tmpdir, lvm)
+            yield FakeEnv(sd_manifest, lvm=lvm)
 
 
 class FakeMetadata(dict):
