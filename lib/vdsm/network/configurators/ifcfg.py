@@ -53,7 +53,7 @@ if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
 
 from vdsm.network.ip.address import IPv4, IPv6
-from . import Configurator, dhclient, getEthtoolOpts, libvirt, wait_for_device
+from . import Configurator, dhclient, getEthtoolOpts, libvirt
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
@@ -107,10 +107,6 @@ class Ifcfg(Configurator):
             bridge.port.configure(**opts)
         self._addSourceRoute(bridge)
         _ifup(bridge)
-        if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
-                not bridge.ipv6.dhcpv6 and misc.ipv6_supported()):
-            wait_for_device(bridge.name)
-            sysctl.disable_ipv6(bridge.name)
 
     def configureVlan(self, vlan, **opts):
         self.configApplier.addVlan(vlan, **opts)
@@ -163,12 +159,12 @@ class Ifcfg(Configurator):
             if slave.name in nicsToAdd:
                 ifdown(slave.name)  # nics must be down to join a bond
                 self.configApplier.addNic(slave)
-                _exec_ifup(slave.name)
+                _exec_ifup(slave)
 
         if bondIfcfgWritten:
             ifdown(bond.name)
             _restore_default_bond_options(bond.name, bond.options)
-            _exec_ifup(bond.name)
+            _exec_ifup(bond)
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
@@ -241,7 +237,7 @@ class Ifcfg(Configurator):
         if to_be_removed:
             self.configApplier.removeNic(nic.name)
             if nic.name in nics.nics():
-                _exec_ifup(nic.name)
+                _exec_ifup(nic)
             else:
                 logging.warning('host interface %s missing', nic.name)
         else:
@@ -721,7 +717,7 @@ def start_devices(device_ifcfgs):
                 if dev not in names:
                     with open(netinfo_bonding.BONDING_MASTERS, 'w') as masters:
                         masters.write('+%s\n' % dev)
-            _exec_ifup(dev)
+            _exec_ifup_by_name(dev)
         except ConfigNetworkError:
             logging.error('Failed to ifup device %s during rollback.', dev,
                           exc_info=True)
@@ -767,8 +763,10 @@ def ifdown(iface):
     return rc
 
 
-def _exec_ifup(iface_name, cgroup=dhclient.DHCLIENT_CGROUP):
-    """Bring up an interface"""
+def _exec_ifup_by_name(iface_name, cgroup=dhclient.DHCLIENT_CGROUP):
+    """
+    Actually bring up an interface (by name).
+    """
     cmd = [constants.EXT_IFUP, iface_name]
 
     if cgroup is not None:
@@ -786,29 +784,61 @@ def _exec_ifup(iface_name, cgroup=dhclient.DHCLIENT_CGROUP):
         raise ConfigNetworkError(ERR_FAILED_IFUP, out[-1] if out else '')
 
 
+def _exec_ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
+    """
+    Bring up an interface.
+
+    If IPv6 is requested, enable it before the actual ifup because it may have
+    been disabled (during network restoration after boot, or by a previous
+    setupNetworks). If IPv6 is not requested, disable it after ifup.
+    """
+    if iface.ipv6:
+        _enable_ipv6(iface.name)
+
+    _exec_ifup_by_name(iface.name, cgroup)
+
+    if not iface.ipv6:
+        _enable_ipv6(iface.name, enable=False)
+
+
+def _enable_ipv6(device_name, enable=True):
+    # In broken networks, the device (and thus its sysctl node) may be missing.
+    with _ignore_missing_device(device_name, enable):
+        sysctl.disable_ipv6(device_name, disable=not enable)
+
+
+@contextmanager
+def _ignore_missing_device(device_name, enable_ipv6):
+    try:
+        yield
+    except IOError as e:
+        if e.errno == errno.ENOENT:
+            logging.warning("%s didn't exist (yet) and so IPv6 wasn't %sabled."
+                            % (device_name, 'en' if enable_ipv6 else 'dis'))
+        else:
+            raise
+
+
 def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
     if not iface.blockingdhcp and (iface.ipv4.bootproto == 'dhcp' or
                                    iface.ipv6.dhcpv6):
         # wait for dhcp in another thread, so vdsm won't get stuck (BZ#498940)
         t = threading.Thread(target=_exec_ifup, name='ifup-waiting-on-dhcp',
-                             args=(iface.name, cgroup))
+                             args=(iface, cgroup))
         t.daemon = True
         t.start()
     else:
-        if not iface.master:
+        if not iface.master and (iface.ipv4 or iface.ipv6):
             if iface.ipv4:
                 expected_event = {'label': iface.name, 'family': 'inet',
                                   'scope': 'global'}
             elif iface.ipv6:
                 expected_event = {'label': iface.name, 'family': 'inet6',
                                   'scope': 'global'}
-            else:
-                expected_event = {'label': iface.name, 'family': 'inet6',
-                                  'scope': 'link'}
             with _wait_for_event(iface, expected_event):
-                _exec_ifup(iface.name, cgroup)
+                _exec_ifup(iface, cgroup)
         else:
-            _exec_ifup(iface.name, cgroup)
+            _exec_ifup(iface, cgroup)
 
 
 def _restore_default_bond_options(bond_name, desired_options):

@@ -1890,19 +1890,34 @@ class NetworkTest(TestCaseBase):
                 status, msg = self.setupNetworks(delete_networks, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
 
-    @permutations([[(4,)], [(6,)], [(4, 6)]])
+    def test_static_ip_configuration_v4_to_dual(self):
+        self._test_static_ip_configuration(([4], [4, 6]))
+
+    def test_static_ip_configuration_dual_to_v4(self):
+        self._test_static_ip_configuration(([4, 6], [4]))
+
+    def test_static_ip_configuration_dual_to_v6_and_back(self):
+        self._test_static_ip_configuration(([4, 6], [6], [4, 6]))
+
     @cleanupNet
-    def testStaticNetworkConfig(self, families):
+    def _test_static_ip_configuration(self, use_case):
+        """
+        Show that configuring IPv4 and/or IPv6 works. This is shown by going
+        e.g. from v4 to v6 (or dual-stack), depending on the given use-case.
+        At each step it is checked that IPv6 is disabled (by sysctl) when not
+        requested, and that IPv6 link-local address doesn't exist in that case.
+        """
         with dummyIf(1) as nics:
             nic, = nics
-            ipv4 = dict(nic=nic, bootproto='none', ipaddr=IP_ADDRESS,
+            IPv4 = dict(nic=nic, bootproto='none', ipaddr=IP_ADDRESS,
                         netmask=IP_MASK, gateway=IP_GATEWAY)
-            ipv6 = dict(nic=nic, bootproto='none', ipv6gateway=IPv6_GATEWAY,
+            IPv6 = dict(nic=nic, bootproto='none', ipv6gateway=IPv6_GATEWAY,
                         ipv6addr=IPv6_ADDRESS_AND_CIDR)
-            netdict = ipv4 if 4 in families else {}
-            if 6 in families:
-                netdict.update(ipv6)
-            with self.vdsm_net.pinger():
+
+            def change_ip_configuration_and_verify(families):
+                netdict = dict(IPv4) if 4 in families else {}
+                if 6 in families:
+                    netdict.update(IPv6)
                 status, msg = self.setupNetworks(
                     {NETWORK_NAME: netdict}, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
@@ -1918,6 +1933,12 @@ class NetworkTest(TestCaseBase):
                     self.assertEqual(IPv6_GATEWAY, test_net['ipv6gateway'])
                 else:
                     self.assertEqual([], test_net['ipv6addrs'])
+                    self.assertTrue(sysctl.is_disabled_ipv6(nic))
+
+            with self.vdsm_net.pinger():
+                for ip_families in use_case:
+                    change_ip_configuration_and_verify(ip_families)
+
                 delete = {NETWORK_NAME: {'remove': True}}
                 status, msg = self.setupNetworks(delete, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
@@ -2184,6 +2205,7 @@ class NetworkTest(TestCaseBase):
             finally:
                 addrFlush(nic)
 
+            sysctl.disable_ipv6(nic, False)
             addrAdd(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
             try:
                 linkSet(nic, ['up'])
@@ -2760,6 +2782,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
     def test_drop_initial_network_nic_ip_config(self):
         with dummyIf(1) as nics:
             nic, = nics
+            sysctl.disable_ipv6(nic, False)
             addrAdd(nic, IP_ADDRESS, IP_CIDR)
             addrAdd(nic, IPv6_ADDRESS, IPv6_CIDR, family=6)
             try:
@@ -2784,6 +2807,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
     def test_drop_initial_bond_slaves_ip_config(self):
         with dummyIf(2) as nics:
             nic_1, nic_2 = nics
+            sysctl.disable_ipv6(nic_1, False)
             addrAdd(nic_1, IP_ADDRESS, IP_CIDR)
             addrAdd(nic_1, IPv6_ADDRESS, IPv6_CIDR, family=6)
             try:
