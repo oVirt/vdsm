@@ -98,6 +98,9 @@ def make_blocksd(tmpdir, fake_lvm, sduuid=None, devices=None, metadata=None):
     manifest.domaindir = tmpdir
     os.makedirs(os.path.join(manifest.domaindir, sduuid, sd.DOMAIN_IMAGES))
 
+    metafile_path = fake_lvm.lvPath(sduuid, sd.METADATA)
+    make_file(metafile_path, manifest.metaSize(sduuid))
+
     return manifest
 
 

@@ -187,7 +187,6 @@ class FakeLVM(object):
 
     def fake_lv_symlink_create(self, vg_name, lv_name):
         volpath = self.lvPath(vg_name, lv_name)
-        os.makedirs(os.path.dirname(volpath))
         with open(volpath, "w") as f:
             f.truncate(int(self.lvmd[(vg_name, lv_name)]['size']))
 
