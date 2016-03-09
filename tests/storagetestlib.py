@@ -59,7 +59,7 @@ def fake_block_env(obj=None):
             (blockVolume, 'lvm', lvm),
             (sd, 'storage_repository', tmpdir)
         ]):
-            sd_manifest = make_blocksd(tmpdir, lvm)
+            sd_manifest = make_blocksd_manifest(tmpdir, lvm)
             yield FakeEnv(sd_manifest, lvm=lvm)
 
 
@@ -78,7 +78,8 @@ def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     return md
 
 
-def make_blocksd(tmpdir, fake_lvm, sduuid=None, devices=None, metadata=None):
+def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
+                          metadata=None):
     if sduuid is None:
         sduuid = str(uuid.uuid4())
     if devices is None:
