@@ -51,6 +51,7 @@ from virt.vmdevices.network import Interface
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm import define
+from vdsm import osinfo
 from vdsm import password
 from vdsm import response
 from testlib import VdsmTestCase as TestCaseBase
@@ -58,7 +59,6 @@ from testlib import permutations, expandPermutations
 from testlib import find_xml_element
 from testlib import make_config
 from testlib import XMLTestCase
-import caps
 from vdsm import host
 from vdsm import utils
 from vdsm import libvirtconnection
@@ -513,7 +513,7 @@ class TestVm(XMLTestCase):
             self.assertEquals(cm.exception.args[0], exceptionMsg)
 
     @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.X86_64)
-    @MonkeyPatch(caps, 'osversion', lambda: {
+    @MonkeyPatch(osinfo, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(constants, 'SMBIOS_MANUFACTURER', 'oVirt')
     @MonkeyPatch(constants, 'SMBIOS_OSNAME', 'oVirt Node')
@@ -525,7 +525,7 @@ class TestVm(XMLTestCase):
         self.assertBuildCmdLine(CONF_TO_DOMXML_X86_64)
 
     @MonkeyPatch(cpuarch, 'effective', lambda: cpuarch.PPC64)
-    @MonkeyPatch(caps, 'osversion', lambda: {
+    @MonkeyPatch(osinfo, 'osversion', lambda: {
         'release': '1', 'version': '18', 'name': 'Fedora'})
     @MonkeyPatch(libvirtconnection, 'get', fake.Connection)
     @MonkeyPatch(host, 'uuid',

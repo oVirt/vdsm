@@ -48,6 +48,7 @@ dist_vdsmpylib_PYTHON = \
 	machinetype.py \
 	netconfpersistence.py \
 	numa.py \
+	osinfo.py \
 	panic.py \
 	password.py \
 	ppc64HardwareInfo.py \

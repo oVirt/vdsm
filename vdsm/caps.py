@@ -20,12 +20,8 @@
 
 """Collect host capabilities"""
 
-import itertools
 import os
 import logging
-import time
-import linecache
-import glob
 import xml.etree.ElementTree as ET
 from distutils.version import LooseVersion
 
@@ -41,53 +37,16 @@ from vdsm import libvirtconnection
 from vdsm import machinetype
 from vdsm import netinfo
 from vdsm import numa
+from vdsm import osinfo
 from vdsm import host
 from vdsm import utils
 import storage.hba
 from virt import vmdevices
 
-# For debian systems we can use python-apt if available
-try:
-    import apt
-    python_apt = True
-except ImportError:
-    python_apt = False
-
-# For systems without rpm support
-try:
-    import rpm
-except ImportError:
-    pass
-
-PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
-
-try:
-    from gluster.api import GLUSTER_RPM_PACKAGES
-    from gluster.api import GLUSTER_DEB_PACKAGES
-    from gluster.api import glusterAdditionalFeatures
-    _glusterEnabled = True
-except ImportError:
-    _glusterEnabled = False
-
-
-class OSName:
-    UNKNOWN = 'unknown'
-    OVIRT = 'oVirt Node'
-    RHEL = 'RHEL'
-    FEDORA = 'Fedora'
-    RHEVH = 'RHEV Hypervisor'
-    DEBIAN = 'Debian'
-    POWERKVM = 'PowerKVM'
-
-
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
 
-
-class KdumpStatus(object):
-    UNKNOWN = -1
-    DISABLED = 0
-    ENABLED = 1
+PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 
 def _getFreshCapsXMLStr():
@@ -183,83 +142,6 @@ def _getIscsiIniName():
     return ''
 
 
-def _getKdumpStatus():
-    try:
-        # check if kdump service is running
-        with open('/sys/kernel/kexec_crash_loaded', 'r') as f:
-            kdumpStatus = int(f.read().strip('\n'))
-
-        if kdumpStatus == KdumpStatus.ENABLED:
-            # check if fence_kdump is configured
-            kdumpStatus = KdumpStatus.DISABLED
-            with open('/etc/kdump.conf', 'r') as f:
-                for line in f:
-                    if line.startswith('fence_kdump_nodes'):
-                        kdumpStatus = KdumpStatus.ENABLED
-                        break
-    except (IOError, OSError, ValueError):
-        kdumpStatus = KdumpStatus.UNKNOWN
-        logging.debug(
-            'Error detecting fence_kdump configuration status',
-            exc_info=True,
-        )
-    return kdumpStatus
-
-
-@utils.memoized
-def getos():
-    if os.path.exists('/etc/rhev-hypervisor-release'):
-        return OSName.RHEVH
-    elif glob.glob('/etc/ovirt-node-*-release'):
-        return OSName.OVIRT
-    elif os.path.exists('/etc/fedora-release'):
-        return OSName.FEDORA
-    elif os.path.exists('/etc/redhat-release'):
-        return OSName.RHEL
-    elif os.path.exists('/etc/debian_version'):
-        return OSName.DEBIAN
-    elif os.path.exists('/etc/ibm_powerkvm-release'):
-        return OSName.POWERKVM
-    else:
-        return OSName.UNKNOWN
-
-
-@utils.memoized
-def osversion():
-    version = release = ''
-
-    osname = getos()
-    try:
-        if osname == OSName.RHEVH or osname == OSName.OVIRT:
-            d = _parseKeyVal(file('/etc/default/version'))
-            version = d.get('VERSION', '')
-            release = d.get('RELEASE', '')
-        elif osname == OSName.DEBIAN:
-            version = linecache.getline('/etc/debian_version', 1).strip("\n")
-            release = ""  # Debian just has a version entry
-        else:
-            if osname == OSName.POWERKVM:
-                release_path = '/etc/ibm_powerkvm-release'
-            else:
-                release_path = '/etc/redhat-release'
-
-            ts = rpm.TransactionSet()
-            for er in ts.dbMatch('basenames', release_path):
-                version = er['version']
-                release = er['release']
-    except:
-        logging.error('failed to find version/release', exc_info=True)
-
-    return dict(release=release, version=version, name=osname)
-
-
-def _getSELinux():
-    selinux = dict()
-    selinux['mode'] = str(utils.get_selinux_enforce_mode())
-
-    return selinux
-
-
 def get():
     caps = {}
     cpu_topology = numa.cpu_topology()
@@ -290,9 +172,9 @@ def get():
     except:
         logging.debug('not reporting hooks', exc_info=True)
 
-    caps['operatingSystem'] = osversion()
+    caps['operatingSystem'] = osinfo.osversion()
     caps['uuid'] = host.uuid()
-    caps['packages2'] = _getKeyPackages()
+    caps['packages2'] = osinfo.getKeyPackages()
     caps['emulatedMachines'] = machinetype.emulated_machines(
         cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
@@ -325,17 +207,18 @@ def get():
     caps['numaNodeDistance'] = dict(numa.distances())
     caps['autoNumaBalancing'] = numa.autonuma_status()
 
-    caps['selinux'] = _getSELinux()
+    caps['selinux'] = osinfo.getSELinux()
 
     liveSnapSupported = _getLiveSnapshotSupport(cpuarch.effective())
     if liveSnapSupported is not None:
         caps['liveSnapshot'] = str(liveSnapSupported).lower()
     caps['liveMerge'] = str(getLiveMergeSupport()).lower()
-    caps['kdumpStatus'] = _getKdumpStatus()
+    caps['kdumpStatus'] = osinfo.getKdumpStatus()
 
     caps['hostdevPassthrough'] = str(hostdev.is_supported()).lower()
     caps['additionalFeatures'] = []
-    if _glusterEnabled:
+    if osinfo.glusterEnabled:
+        from gluster.api import glusterAdditionalFeatures
         caps['additionalFeatures'].extend(glusterAdditionalFeatures())
     return caps
 
@@ -376,86 +259,3 @@ def _getVersionInfo():
                             ' libvirt from the virt-preview repository')
 
     return dsaversion.version_info
-
-
-def _getKeyPackages():
-    def kernelDict():
-        try:
-            ret = os.uname()
-            ver, rel = ret[2].split('-', 1)
-        except:
-            logging.error('kernel release not found', exc_info=True)
-            ver, rel = '0', '0'
-        try:
-            t = ret[3].split()[2:]
-            del t[4]  # Delete timezone
-            t = time.mktime(time.strptime(' '.join(t)))
-        except:
-            logging.error('kernel build time not found', exc_info=True)
-            t = '0'
-        return dict(version=ver, release=rel, buildtime=t)
-
-    pkgs = {'kernel': kernelDict()}
-
-    if getos() in (OSName.RHEVH, OSName.OVIRT, OSName.FEDORA, OSName.RHEL,
-                   OSName.POWERKVM):
-        KEY_PACKAGES = {
-            'glusterfs-cli': ('glusterfs-cli',),
-            'librbd1': ('librbd1',),
-            'libvirt': ('libvirt', 'libvirt-daemon-kvm'),
-            'mom': ('mom',),
-            'qemu-img': ('qemu-img', 'qemu-img-rhev', 'qemu-img-ev'),
-            'qemu-kvm': ('qemu-kvm', 'qemu-kvm-rhev', 'qemu-kvm-ev'),
-            'spice-server': ('spice-server',),
-            'vdsm': ('vdsm',),
-        }
-
-        if _glusterEnabled:
-            KEY_PACKAGES.update(GLUSTER_RPM_PACKAGES)
-
-        try:
-            ts = rpm.TransactionSet()
-
-            for pkg, names in KEY_PACKAGES.iteritems():
-                try:
-                    mi = itertools.chain(*[ts.dbMatch('name', name)
-                                           for name in names]).next()
-                except StopIteration:
-                    logging.debug("rpm package %s not found",
-                                  KEY_PACKAGES[pkg])
-                else:
-                    pkgs[pkg] = {
-                        'version': mi['version'],
-                        'release': mi['release'],
-                        'buildtime': mi['buildtime'],
-                    }
-        except:
-            logging.error('', exc_info=True)
-
-    elif getos() == OSName.DEBIAN and python_apt:
-        KEY_PACKAGES = {
-            'glusterfs-cli': 'glusterfs-cli',
-            'librbd1': 'librbd1',
-            'libvirt': 'libvirt0',
-            'mom': 'mom',
-            'qemu-img': 'qemu-utils',
-            'qemu-kvm': 'qemu-kvm',
-            'spice-server': 'libspice-server1',
-            'vdsm': 'vdsmd',
-        }
-
-        if _glusterEnabled:
-            KEY_PACKAGES.update(GLUSTER_DEB_PACKAGES)
-
-        cache = apt.Cache()
-
-        for pkg in KEY_PACKAGES:
-            try:
-                deb_pkg = KEY_PACKAGES[pkg]
-                ver = cache[deb_pkg].installed.version
-                # Debian just offers a version
-                pkgs[pkg] = dict(version=ver, release="", buildtime="")
-            except:
-                logging.error('', exc_info=True)
-
-    return pkgs

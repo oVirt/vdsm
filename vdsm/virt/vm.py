@@ -44,6 +44,7 @@ from vdsm import hooks
 from vdsm import hostdev
 from vdsm import libvirtconnection
 from vdsm import netinfo
+from vdsm import osinfo
 from vdsm import qemuimg
 from vdsm import response
 from vdsm import supervdsm
@@ -1638,7 +1639,7 @@ class Vm(object):
         domxml.appendOs(use_serial_console=(serial_console is not None))
 
         if cpuarch.is_x86(self.arch):
-            osd = caps.osversion()
+            osd = osinfo.osversion()
 
             osVersion = osd.get('version', '') + '-' + osd.get('release', '')
             serialNumber = self.conf.get('serial', host.uuid())

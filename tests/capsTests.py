@@ -21,6 +21,7 @@
 
 import os
 import platform
+import tempfile
 import xml.etree.ElementTree as ET
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
@@ -30,6 +31,7 @@ from vdsm import commands
 from vdsm import cpuarch
 from vdsm import numa
 from vdsm import machinetype
+from vdsm import osinfo
 from vdsm import utils
 
 
@@ -119,6 +121,24 @@ class TestCaps(TestCaseBase):
         sign = ["=", "&"]
         for res, s in zip(expectedRes, sign):
             self.assertEqual(res, caps._parseKeyVal(lines, s))
+
+    def test_parse_node_version(self):
+        inputs = ('',
+                  'VERSION = 1\n',
+                  'RELEASE = 2\n',
+                  'VERSION = 1\nRELEASE = 2\n',
+                  'VERSIO = 1\nRELEASE = 2\n')
+        expected_results = (('', ''),
+                            ('1', ''),
+                            ('', '2'),
+                            ('1', '2'),
+                            ('', '2'))
+        for test_input, expected_result in zip(inputs, expected_results):
+            with tempfile.NamedTemporaryFile() as f:
+                f.write(test_input)
+                f.flush()
+                self.assertEqual(osinfo._parse_node_version(f.name),
+                                 expected_result)
 
     @MonkeyPatch(numa, 'memory_by_cell', lambda x: {
         'total': '49141', 'free': '46783'})
