@@ -32,6 +32,8 @@ def _parse_dnss(file_text):
     dnss = []
     for line in file_text.splitlines():
         words = line.strip().split()
+        if len(words) < 2:
+            continue
         if words[0] == 'nameserver':
             dnss.append(words[1])
     return dnss

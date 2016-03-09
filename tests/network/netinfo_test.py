@@ -57,12 +57,13 @@ class TestNetinfo(TestCaseBase):
         with namedTemporaryDir() as temp_dir:
             file_path = os.path.join(temp_dir, 'resolv.conf')
 
-            with MonkeyPatchScope([(dns, 'DNS_CONF_FILE', file_path)]):
-                with open(file_path, 'w') as file_object:
-                    file_object.write(RESOLV_CONF)
+            for content in (RESOLV_CONF, RESOLV_CONF + '\n'):
+                with MonkeyPatchScope([(dns, 'DNS_CONF_FILE', file_path)]):
+                    with open(file_path, 'w') as file_object:
+                        file_object.write(content)
 
-                self.assertEqual(
-                    dns.get_host_nameservers(), dnss)
+                    self.assertEqual(
+                        dns.get_host_nameservers(), dnss)
 
     def testNetmaskConversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
