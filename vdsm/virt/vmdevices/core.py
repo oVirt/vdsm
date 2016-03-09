@@ -260,6 +260,14 @@ class Rng(Base):
             <backend model='random'>/dev/random</backend>
         </rng>
         """
+        # TODO: we can simplify both schema and code getting rid
+        # of either VmRngDeviceType or VmRngDeviceModel.
+        # libvirt supports only one device type, 'virtio'.
+        # To do so, we need
+        # 1. to ensure complete test coverage
+        # 2. cleanup attribute access and names:
+        #    we use the 'model' attribute here, does it map
+        #    to VmRngDeviceModel? Why we need VmRngDeviceType.
         rng = self.createXmlElem('rng', None, ['model'])
 
         # <rate... /> element
