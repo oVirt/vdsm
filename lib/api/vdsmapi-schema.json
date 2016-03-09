@@ -7998,22 +7998,6 @@
  'data': {'vmID': 'UUID'}}
 
 ##
-# @VM.sendKeys:
-#
-# Send a string of keys to a guest's keyboard.
-#
-# @vmID:         The UUID of the VM
-#
-# @keySequence:  A sequence of keystrokes to send
-#
-# Since: 4.10.0
-#
-# Notes:  This function is not implemented.
-##
-{'command': {'class': 'VM', 'name': 'sendKeys'},
- 'data': {'vmID': 'UUID', 'keySequence': 'str'}}
-
-##
 # @VmTicketConflictAction:
 #
 # An enumeration of consequences if another user is connected to a display.

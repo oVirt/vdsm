@@ -508,10 +508,6 @@ class service:
         print(response['status']['message'])
         sys.exit(response['status']['code'])
 
-    def do_sendkeys(self, args):
-        vmId = args[0]
-        return self.ExecAndExit(self.s.sendkeys(vmId, args[1:]))
-
     def hibernate(self, args):
         vmId, hiberVolHandle = args[0], args[1]
         response = self.s.hibernate(vmId, hiberVolHandle)
@@ -2229,10 +2225,6 @@ if __name__ == '__main__':
                           ('<vmId>',
                            '(not implemented) cancel machine migration'
                            )),
-        'sendkeys': (serv.do_sendkeys,
-                     ('<vmId> <key1> ...... <keyN>',
-                      'Send the key sequence to the vm'
-                      )),
         'getVdsCapabilities': (serv.do_getCap,
                                ('',
                                 'Get Capabilities info of the VDS'

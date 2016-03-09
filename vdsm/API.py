@@ -661,14 +661,6 @@ class VM(APIBase):
         """
         return errCode['noimpl']
 
-    def sendKeys(self, keySequence):
-        """
-        Send a string of keys to a guest's keyboard (OBSOLETE)
-
-        Used only by QA and might be discontinued in next version.
-        """
-        return errCode['noimpl']
-
     def setTicket(self, password, ttl, existingConnAction, params):
         """
         Set the ticket (password) to be used to connect to a VM display

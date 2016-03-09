@@ -433,10 +433,6 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.changeFloppy(driveSpec)
 
-    def vmSendKeys(self, vmId, keySequence):
-        vm = API.VM(vmId)
-        return vm.sendKeys(keySequence)
-
     def vmMigrate(self, params):
         vm = API.VM(params['vmId'])
         return vm.migrate(params)
@@ -1060,7 +1056,6 @@ class BindingXMLRPC(object):
                 (self.vmSetTicket, 'setVmTicket'),
                 (self.vmChangeCD, 'changeCD'),
                 (self.vmChangeFloppy, 'changeFloppy'),
-                (self.vmSendKeys, 'sendkeys'),
                 (self.vmMigrate, 'migrate'),
                 (self.vmGetMigrationStatus, 'migrateStatus'),
                 (self.vmMigrationCancel, 'migrateCancel'),
