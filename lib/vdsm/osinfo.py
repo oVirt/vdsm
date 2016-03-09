@@ -156,17 +156,17 @@ def selinux_status():
 
 def package_versions():
     def kernelDict():
+        ret = os.uname()
         try:
-            ret = os.uname()
             ver, rel = ret[2].split('-', 1)
-        except:
+        except ValueError:
             logging.error('kernel release not found', exc_info=True)
             ver, rel = '0', '0'
         try:
             t = ret[3].split()[2:]
             del t[4]  # Delete timezone
             t = time.mktime(time.strptime(' '.join(t)))
-        except:
+        except ValueError:
             logging.error('kernel build time not found', exc_info=True)
             t = '0'
         return dict(version=ver, release=rel, buildtime=t)
@@ -205,7 +205,7 @@ def package_versions():
                         'release': mi['release'],
                         'buildtime': mi['buildtime'],
                     }
-        except:
+        except Exception:
             logging.error('', exc_info=True)
 
     elif _release_name() == OSName.DEBIAN and python_apt:
@@ -231,7 +231,7 @@ def package_versions():
                 ver = cache[deb_pkg].installed.version
                 # Debian just offers a version
                 pkgs[pkg] = dict(version=ver, release="", buildtime="")
-            except:
+            except Exception:
                 logging.error('', exc_info=True)
 
     return pkgs
