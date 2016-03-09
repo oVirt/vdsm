@@ -28,8 +28,8 @@ from testlib import VdsmTestCase
 from testlib import expandPermutations, permutations
 from testlib import recorded
 
+from vdsm.storage import exception as se
 from storage import imagetickets
-from storage import storage_exception as se
 
 
 class FakeResponse(object):
