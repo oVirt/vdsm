@@ -587,10 +587,6 @@ class BindingXMLRPC(object):
         vm = API.VM(vmId)
         return vm.hibernate(hiberVolHandle)
 
-    def vmMonitorCommand(self, vmId, cmd):
-        vm = API.VM(vmId)
-        return vm.monitorCommand(cmd)
-
     def vmDiskReplicateStart(self, vmId, srcDisk, dstDisk):
         vm = API.VM(vmId)
         return vm.diskReplicateStart(srcDisk, dstDisk)
@@ -1074,7 +1070,6 @@ class BindingXMLRPC(object):
                 (self.vmDesktopLock, 'desktopLock'),
                 (self.vmDesktopSendHcCommand, 'sendHcCmdToDesktop'),
                 (self.vmHibernate, 'hibernate'),
-                (self.vmMonitorCommand, 'monitorCommand'),
                 (self.vmDiskReplicateStart, 'diskReplicateStart'),
                 (self.vmDiskReplicateFinish, 'diskReplicateFinish'),
                 (self.diskSizeExtend, 'diskSizeExtend'),

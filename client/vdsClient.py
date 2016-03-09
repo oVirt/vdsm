@@ -491,17 +491,6 @@ class service:
         vmId = args[0]
         return self.ExecAndExit(self.s.reset(vmId))
 
-    def monitorCommand(self, args):
-        vmId = args[0]
-        cmd = args[1]
-        response = self.s.monitorCommand(vmId, cmd)
-        if response['status']['code']:
-            print(response['status']['message'])
-        else:
-            for line in response['output']:
-                print(line)
-        sys.exit(response['status']['code'])
-
     def do_newDisk(self, args):
         file, size = args
         response = self.s.newDisk(file, size)
@@ -2767,11 +2756,6 @@ if __name__ == '__main__':
                       ('<vmId> <hiberVolHandle>',
                        'Hibernates the desktop'
                        )),
-        'monitorCommand': (serv.monitorCommand,
-                           ('<vmId> <string>',
-                            'Send a string containing monitor command to the '
-                            'desktop'
-                            )),
         'getVmsInfo': (serv.do_getVmsInfo,
                        ('<spUUID> [<sdUUID> [vmList](vmId1,vmId2,...)]',
                         'Return info of VMs from the pool or a backup domain '

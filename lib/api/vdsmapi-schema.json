@@ -8007,22 +8007,6 @@
  'returns': 'MigrationCreateState'}
 
 ##
-# @VM.monitorCommand:
-#
-# Send a command to the qemu monitor.
-#
-# @vmID:     The UUID of the VM
-#
-# @command:  The command string
-#
-# Since: 4.10.0
-#
-# Notes:  This function is not implemented.
-##
-{'command': {'class': 'VM', 'name': 'monitorCommand'},
- 'data': {'vmID': 'UUID', 'command': 'str'}}
-
-##
 # @VM.pause:
 #
 # Pause the CPUs of a running VM.

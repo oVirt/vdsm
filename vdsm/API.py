@@ -612,17 +612,6 @@ class VM(APIBase):
         return {'status': doneCode, 'migrationPort': 0,
                 'params': result['vmList']}
 
-    def monitorCommand(self, command):
-        """
-        Send a monitor command to the specified VM and wait for the answer.
-
-        :param vmId: uuid of the specified VM
-        :type vmId: UUID
-        :param command: a single monitor command (without terminating newline)
-        :type command: string
-        """
-        return errCode['noimpl']
-
     def diskReplicateStart(self, srcDisk, dstDisk):
         v = self._cif.vmContainer.get(self._UUID)
         if not v:
