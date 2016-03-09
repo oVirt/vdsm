@@ -84,6 +84,9 @@ class FakeLVM(object):
         for dev in devices:
             self.pvmd[dev]['vg_uuid'] = vg_md['uuid']
 
+    def invalidateVG(self, vgName):
+        pass
+
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
                  initialTag=None):
         # Size is expected as a string in MB, convert to a string in bytes.
