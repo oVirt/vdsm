@@ -44,8 +44,10 @@ class Dnsmasq():
     def __init__(self):
         self.proc = None
 
-    def start(self, interface, dhcp_range_from, dhcp_range_to,
-              dhcpv6_range_from=None, dhcpv6_range_to=None, router=None):
+    def start(self, interface, dhcp_range_from=None, dhcp_range_to=None,
+              dhcpv6_range_from=None, dhcpv6_range_to=None, router=None,
+              ipv6_slaac_prefix=None):
+        # --dhcp-authoritative      The only DHCP server on network
         # -p 0                      don't act as a DNS server
         # --dhcp-option=3,<router>  advertise a specific gateway (or None)
         # --dhcp-option=6           don't reply with any DNS servers
@@ -54,14 +56,21 @@ class Dnsmasq():
         command = [
             _DNSMASQ_BINARY.cmd, '--dhcp-authoritative',
             '-p', '0',
-            '--dhcp-range={0},{1},2m'.format(dhcp_range_from, dhcp_range_to),
             '--dhcp-option=3' + (',{0}'.format(router) if router else ''),
             '--dhcp-option=6',
             '-i', interface, '-I', 'lo', '-d', '--bind-dynamic',
         ]
+
+        if dhcp_range_from and dhcp_range_to:
+            command += ['--dhcp-range={0},{1},2m'.format(dhcp_range_from,
+                                                         dhcp_range_to)]
         if dhcpv6_range_from and dhcpv6_range_to:
             command += ['--dhcp-range={0},{1},2m'.format(dhcpv6_range_from,
                                                          dhcpv6_range_to)]
+        if ipv6_slaac_prefix:
+            command += ['--enable-ra']
+            command += ['--dhcp-range={0},slaac,2m'.format(ipv6_slaac_prefix)]
+
         self.proc = execCmd(command, sync=False)
         sleep(_START_CHECK_TIMEOUT)
         if self.proc.returncode:
