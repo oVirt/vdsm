@@ -37,12 +37,12 @@ from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
 from vdsm.storage import exception as se
+from vdsm.storage import sync
 
 import mount
 import fileUtils
 import fileSD
 import iscsi
-from sync import asyncmethod, AsyncCallStub
 from mount import MountError
 import gluster.cli
 import gluster.exception as ge
@@ -928,12 +928,12 @@ class ConnectionMonitor(object):
             if con not in self._conDict.values():
                 return self._asyncDisconnect(con)
 
-        return AsyncCallStub(None)
+        return sync.AsyncCallStub(None)
 
     def getLastError(self, conId):
         return self._lastErrors.get(self._conDict[conId], None)
 
-    @asyncmethod
+    @sync.asyncmethod
     def _asyncConnect(self, con):
         try:
             con.connect()
@@ -943,7 +943,7 @@ class ConnectionMonitor(object):
             self._log.error("Could not connect to %s", con, exc_info=True)
             raise
 
-    @asyncmethod
+    @sync.asyncmethod
     def _asyncDisconnect(self, con):
         try:
             con.disconnect()

@@ -61,8 +61,7 @@ dist_vdsmstorage_PYTHON = \
 	sp.py \
 	spbackends.py \
 	storage_mailbox.py \
-        storageServer.py \
-	sync.py \
+	storageServer.py \
 	taskManager.py \
 	task.py \
 	threadLocal.py \

@@ -26,4 +26,5 @@ dist_vdsmstorage_PYTHON = \
 	constants.py \
 	securable.py \
 	exception.py \
+	sync.py \
 	$(NULL)

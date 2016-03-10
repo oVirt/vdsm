@@ -114,7 +114,6 @@
 ./usr/share/vdsm/storage/spbackends.py
 ./usr/share/vdsm/storage/storageServer.py
 ./usr/share/vdsm/storage/storage_mailbox.py
-./usr/share/vdsm/storage/sync.py
 ./usr/share/vdsm/storage/task.py
 ./usr/share/vdsm/storage/taskManager.py
 ./usr/share/vdsm/storage/threadLocal.py
