@@ -36,6 +36,7 @@ test_modules_py3 = \
 	domainDescriptorTests.py \
 	passwordsTests.py \
 	permutationTests.py \
+	pthreadTests.py \
 	responseTests.py \
 	$(NULL)
 

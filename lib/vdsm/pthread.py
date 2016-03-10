@@ -83,8 +83,8 @@ def getname():
     Return empty string if the thread has no system name.
     """
     bufsize = NAME_MAX_LENGTH + 1
-    buf = ctypes.create_string_buffer('\0' * bufsize)
+    buf = ctypes.create_string_buffer(b'\0' * bufsize)
 
     thread = threading.current_thread()
     _pthread_getname_np(thread.ident, buf, bufsize)
-    return buf.value
+    return buf.value.decode('ascii')
