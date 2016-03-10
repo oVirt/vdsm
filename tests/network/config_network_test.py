@@ -53,7 +53,7 @@ class TestConfigNetwork(TestCaseBase):
 
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
             canonicalize_networks({netName: opts})
-            legacy_switch._addNetwork(netName, configurator, **opts)
+            legacy_switch._add_network(netName, configurator, **opts)
         self.assertEqual(cneContext.exception.errCode, errCode)
 
     # Monkey patch the real network detection from the netinfo module.
@@ -147,6 +147,6 @@ class TestConfigNetwork(TestCaseBase):
                      bridged=True)
         networks = {'test-netowrk': attrs}
         with self.assertRaises(errors.ConfigNetworkError) as cneContext:
-            legacy_switch.validateNetworkSetup(networks, {})
+            legacy_switch.validate_network_setup(networks, {})
         self.assertEqual(cneContext.exception.errCode,
                          errors.ERR_BAD_PARAMS)

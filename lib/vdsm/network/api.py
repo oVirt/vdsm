@@ -24,7 +24,6 @@ import os
 import time
 import logging
 
-
 from vdsm.config import config
 from vdsm import commands
 from vdsm import constants
@@ -85,24 +84,25 @@ def _persist_numvfs(device_name, numvfs):
 
 def change_numvfs(pci_path, numvfs, net_name):
     """Change number of virtual functions of a device.
+
     The persistence is stored in the same place as other network persistence is
     stored. A call to setSafeNetworkConfig() will persist it across reboots.
     """
     # TODO: net_name is here only because it is hard to call pf_to_net_name
     # TODO: from here. once all our code will be under lib/vdsm this should be
     # TODO: removed.
-    logging.info("changing number of vfs on device %s -> %s.",
+    logging.info('Changing number of vfs on device %s -> %s.',
                  pci_path, numvfs)
     _update_numvfs(pci_path, numvfs)
 
-    logging.info("changing number of vfs on device %s -> %s. succeeded.",
+    logging.info('Changing number of vfs on device %s -> %s. succeeded.',
                  pci_path, numvfs)
     _persist_numvfs(pci_path, numvfs)
 
     ipwrapper.linkSet(net_name, ['up'])
 
 
-def _buildSetupHookDict(req_networks, req_bondings, req_options):
+def _build_setup_hook_dict(req_networks, req_bondings, req_options):
 
     hook_dict = {'request': {'networks': dict(req_networks),
                              'bondings': dict(req_bondings),
@@ -119,13 +119,13 @@ def _get_connectivity_timeout(options):
 def _check_connectivity(networks, bondings, options):
     if utils.tobool(options.get('connectivityCheck', True)):
         logging.debug('Checking connectivity...')
-        if not _clientSeen(_get_connectivity_timeout(options)):
+        if not _client_seen(_get_connectivity_timeout(options)):
             logging.info('Connectivity check failed, rolling back')
             raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
                                      'connectivity check failed')
 
 
-def _clientSeen(timeout):
+def _client_seen(timeout):
     start = time.time()
     while timeout >= 0:
         try:
@@ -142,9 +142,8 @@ def _clientSeen(timeout):
 
 
 def _apply_hook(bondings, networks, options):
-    results = hooks.before_network_setup(_buildSetupHookDict(networks,
-                                                             bondings,
-                                                             options))
+    results = hooks.before_network_setup(
+        _build_setup_hook_dict(networks, bondings, options))
     # gather any changes that could have been done by the hook scripts
     networks = results['request']['networks']
     bondings = results['request']['bondings']
@@ -192,15 +191,15 @@ def setupNetworks(networks, bondings, options):
         the attachment in the network's attributes). Similarly, if you edit
         a bonding, it's not necessary to specify its networks.
     """
-    logging.debug("Setting up network according to configuration: "
-                  "networks:%r, bondings:%r, options:%r" % (networks,
+    logging.debug('Setting up network according to configuration: '
+                  'networks:%r, bondings:%r, options:%r' % (networks,
                                                             bondings, options))
 
     canonicalize_networks(networks)
     # TODO: Add canonicalize_bondings(bondings)
 
-    logging.debug("Validating configuration")
-    legacy_switch.validateNetworkSetup(networks, bondings)
+    logging.debug('Validating configuration')
+    legacy_switch.validate_network_setup(networks, bondings)
 
     bondings, networks, options = _apply_hook(bondings, networks, options)
 
@@ -208,7 +207,7 @@ def setupNetworks(networks, bondings, options):
     _netinfo = CachingNetInfo(_netinfo=netinfo_get(
         libvirtNets2vdsm(libvirt_nets)))
 
-    logging.debug("Applying...")
+    logging.debug('Applying...')
     in_rollback = options.get('_inRollback', False)
     with legacy_switch.ConfiguratorClass(in_rollback) as configurator:
         # from this point forward, any exception thrown will be handled by
@@ -225,7 +224,8 @@ def setupNetworks(networks, bondings, options):
 
         _check_connectivity(networks, bondings, options)
 
-    hooks.after_network_setup(_buildSetupHookDict(networks, bondings, options))
+    hooks.after_network_setup(
+        _build_setup_hook_dict(networks, bondings, options))
 
 
 def setSafeNetworkConfig():
