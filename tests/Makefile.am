@@ -154,6 +154,7 @@ nodist_vdsmtests_PYTHON = \
 
 CLEANFILES = \
 	$(nodist_vdsmtests_PYTHON) \
+	$(dist_noinst_DATA) \
 	$(NULL)
 
 EXTRA_DIST = \
@@ -165,6 +166,7 @@ dist_noinst_DATA = \
 	server.crt \
 	server.csr \
 	server.key \
+	server.p12 \
 	other.crt \
 	other.csr \
 	other.key \
@@ -235,7 +237,7 @@ dist_vdsmtests_SCRIPTS = \
 all-local: \
 	$(nodist_vdsmtests_PYTHON)
 
-server.crt server.csr server.key other.crt other.csr other.key:
+server.crt server.csr server.key other.crt other.csr other.key: makecert.sh
 	./makecert.sh
 
 run_modules  = $(test_modules)
