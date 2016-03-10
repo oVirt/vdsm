@@ -39,6 +39,9 @@ from vdsm.netlink import monitor
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, random_iface_name
 
+from . import dhcp
+from . import firewall
+
 EXT_IP = "/sbin/ip"
 _IPERF3_BINARY = CommandPath('iperf3', '/usr/bin/iperf3')
 
@@ -382,6 +385,27 @@ def requires_iperf3(f):
         _check_iperf()
         return f(*a, **kw)
     return wrapper
+
+
+@contextmanager
+def dnsmasq_run(interface, dhcp_range_from=None, dhcp_range_to=None,
+                dhcpv6_range_from=None, dhcpv6_range_to=None, router=None,
+                ipv6_slaac_prefix=None):
+    """Manages the life cycle of dnsmasq as a DHCP/RA server."""
+    server = dhcp.Dnsmasq()
+    try:
+        server.start(interface, dhcp_range_from, dhcp_range_to,
+                     dhcpv6_range_from, dhcpv6_range_to, router,
+                     ipv6_slaac_prefix)
+    # TODO: Why should we skip and not fail?
+    except dhcp.DhcpError as e:
+        raise SkipTest(e)
+
+    with firewall.allow_dhcp(interface):
+        try:
+            yield
+        finally:
+            server.stop()
 
 
 def requires_tun(f):

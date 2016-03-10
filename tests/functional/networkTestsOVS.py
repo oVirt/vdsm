@@ -24,16 +24,15 @@ from vdsm.ipwrapper import linkSet, addrAdd
 from vdsm.utils import RollbackContext
 
 from modprobe import RequireVethMod
-from network.nettestlib import veth_pair
+from network.nettestlib import veth_pair, dhcp, dnsmasq_run
 from testlib import expandPermutations, permutations
 
 import networkTests
 from networkTests import (setupModule, tearDownModule, NetworkTest, dummyIf,
-                          _get_source_route, dnsmasqDhcp, NETWORK_NAME,
+                          _get_source_route, NETWORK_NAME,
                           IP_ADDRESS, IP_MASK, IP_CIDR, IP_GATEWAY,
                           IPv6_ADDRESS, IPv6_CIDR, VLAN_ID, NOCHK, SUCCESS)
 from utils import VdsProxy
-import dhcp
 
 # WARNING: because of this module changes networkTests module, we cannot run
 # networkTests.py and networkTestsOVS.py in one run
@@ -46,6 +45,11 @@ tearDownModule
 NetworkTest.__test__ = False
 
 BRIDGE_NAME = 'ovsbr0'
+
+DHCP_RANGE_FROM = '192.0.2.10'
+DHCP_RANGE_TO = '192.0.2.100'
+DHCPv6_RANGE_FROM = 'fdb3:84e5:4ff4:55e3::a'
+DHCPv6_RANGE_TO = 'fdb3:84e5:4ff4:55e3::64'
 
 # Tests which are not supported by OVS hook (because of OVS hook or because of
 # tests themselves). Some of these tests should be inherited and 'repaired'
@@ -218,7 +222,8 @@ class OVSNetworkTest(NetworkTest):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             linkSet(left, ['up'])
-            with dnsmasqDhcp(left):
+            with dnsmasq_run(left, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
                 network = {
                     NETWORK_NAME: {'nic': right, 'bootproto': 'dhcp',
                                    'bridged': True, 'blockingdhcp': True}}
@@ -310,7 +315,8 @@ class OVSNetworkTest(NetworkTest):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             linkSet(left, ['up'])
-            with dnsmasqDhcp(left):
+            with dnsmasq_run(left, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
                 dhcpv4 = 4 in families
                 dhcpv6 = 6 in families
                 bootproto = 'dhcp' if dhcpv4 else 'none'

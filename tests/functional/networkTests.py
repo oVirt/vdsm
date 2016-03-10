@@ -60,9 +60,8 @@ from modprobe import RequireDummyMod, RequireVethMod
 from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import brokentest, slowtest, ValidateRunningAsRoot
-from network.nettestlib import Dummy, Tap, veth_pair
+from network.nettestlib import Dummy, Tap, veth_pair, dnsmasq_run
 from network import dhcp
-from network import firewall
 from utils import SUCCESS, getProxy
 
 NETWORK_NAME = 'test-network'
@@ -114,23 +113,6 @@ def tearDownModule():
     getProxy().restoreNetConfig()
     for nic in dummyPool:
         nic.remove()
-
-
-@contextmanager
-def dnsmasqDhcp(interface):
-    """Manages the life cycle of dnsmasq as a DHCP server."""
-    dhcpServer = dhcp.Dnsmasq()
-    try:
-        dhcpServer.start(interface, DHCP_RANGE_FROM, DHCP_RANGE_TO,
-                         DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, router=IP_GATEWAY)
-    except dhcp.DhcpError as e:
-        raise SkipTest(e)
-
-    with firewall.allow_dhcp(interface):
-        try:
-            yield
-        finally:
-            dhcpServer.stop()
 
 
 @contextmanager
@@ -1430,7 +1412,8 @@ class NetworkTest(TestCaseBase):
 
             self.vdsm_net.save_config()
 
-            with dnsmasqDhcp(server):
+            with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                     dhclient_runner = dhcp.DhclientRunner(client, 4, dhdir,
                                                           'default')
@@ -2009,7 +1992,8 @@ class NetworkTest(TestCaseBase):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             linkSet(left, ['up'])
-            with dnsmasqDhcp(left):
+            with dnsmasq_run(left, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
                 dhcpv4 = 4 in families
                 dhcpv6 = 6 in families
                 bootproto = 'dhcp' if dhcpv4 else 'none'
@@ -2057,7 +2041,8 @@ class NetworkTest(TestCaseBase):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             addrAdd(left, IPv6_ADDRESS, IPv6_CIDR, 6)
             linkSet(left, ['up'])
-            with dnsmasqDhcp(left):
+            with dnsmasq_run(left, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
 
                 # first, a network without a bridge should get a certain
                 # address
@@ -2136,7 +2121,8 @@ class NetworkTest(TestCaseBase):
         with veth_pair() as (left, right):
             addrAdd(left, IP_ADDRESS, IP_CIDR)
             linkSet(left, ['up'])
-            with dnsmasqDhcp(left):
+            with dnsmasq_run(left, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
                 try:
                     setup_test_network(dhcp=True)
                     dhcp.delete_dhclient_leases(NETWORK_NAME, dhcpv4=True)
@@ -2153,7 +2139,8 @@ class NetworkTest(TestCaseBase):
             addrAdd(server, IPv6_ADDRESS, IPv6_CIDR, 6)
             linkSet(server, ['up'])
 
-            with dnsmasqDhcp(server):
+            with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
 
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dir:
                     dhclient_runner = dhcp.DhclientRunner(
@@ -2422,7 +2409,8 @@ class NetworkTest(TestCaseBase):
         with veth_pair() as (server, client):
             addrAdd(server, IP_ADDRESS, IP_CIDR)
             linkSet(server, ['up'])
-            with dnsmasqDhcp(server):
+            with dnsmasq_run(server, DHCP_RANGE_FROM, DHCP_RANGE_TO,
+                             DHCPv6_RANGE_FROM, DHCPv6_RANGE_TO, IP_GATEWAY):
                 with namedTemporaryDir(dir='/var/lib/dhclient') as dhdir:
                     # Start a non-vdsm owned dhclient for the 'client' iface
                     dhclient_runner = dhcp.DhclientRunner(
