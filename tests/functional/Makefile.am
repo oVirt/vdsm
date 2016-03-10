@@ -22,8 +22,6 @@ vdsmfunctestsdir = ${vdsmtestsdir}/functional
 
 dist_vdsmfunctests_PYTHON = \
 	__init__.py \
-	dhcp.py \
-	firewall.py \
 	momTests.py \
 	networkTests.py \
 	networkTestsOVS.py \

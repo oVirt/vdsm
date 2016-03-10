@@ -61,8 +61,8 @@ from testlib import (VdsmTestCase as TestCaseBase, namedTemporaryDir,
                      expandPermutations, permutations)
 from testValidation import brokentest, slowtest, ValidateRunningAsRoot
 from network.nettestlib import Dummy, Tap, veth_pair
-import dhcp
-import firewall
+from network import dhcp
+from network import firewall
 from utils import SUCCESS, getProxy
 
 NETWORK_NAME = 'test-network'
