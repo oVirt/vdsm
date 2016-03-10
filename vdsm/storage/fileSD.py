@@ -27,6 +27,7 @@ import fnmatch
 import re
 
 from vdsm.storage import exception as se
+from vdsm.storage.persistent import PersistentDict, DictValidator
 
 import sd
 import fileUtils
@@ -34,7 +35,6 @@ import fileVolume
 import misc
 import outOfProcess as oop
 from remoteFileHandler import Timeout
-from persistentDict import PersistentDict, DictValidator
 from vdsm import constants
 from vdsm.utils import stripNewLines
 from vdsm.storage.constants import LEASE_FILEEXT

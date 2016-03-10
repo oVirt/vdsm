@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from testlib import VdsmTestCase as TestCaseBase
-import storage.persistentDict as persistentDict
+from vdsm.storage import persistent as persistentDict
 
 
 class DummyFailWriter(object):
