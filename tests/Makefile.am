@@ -34,6 +34,7 @@ test_modules_py3 = \
 	cpuProfileTests.py \
 	sslTests.py \
 	domainDescriptorTests.py \
+	executorTests.py \
 	passwordsTests.py \
 	permutationTests.py \
 	pthreadTests.py \

@@ -71,7 +71,7 @@ class Executor(object):
             if self._running:
                 raise AlreadyStarted()
             self._running = True
-            for _ in xrange(self._workers_count):
+            for _ in range(self._workers_count):
                 self._add_worker()
 
     def stop(self, wait=True):
@@ -79,7 +79,7 @@ class Executor(object):
         with self._lock:
             self._running = False
             self._tasks.clear()
-            for _ in xrange(self._workers_count):
+            for _ in range(self._workers_count):
                 self._tasks.put(_STOP)
             workers = tuple(self._workers) if wait else ()
         for worker in workers:
