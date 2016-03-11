@@ -411,3 +411,29 @@ def requires_tun(f):
             raise SkipTest("This test requires tun device")
         return f(*a, **kw)
     return wrapper
+
+
+@contextmanager
+def wait_for_ipv6(iface, wait_for_scopes=None):
+    """Wait for iface to get their IPv6 addresses with netlink Monitor"""
+    if not wait_for_scopes:
+        wait_for_scopes = ['global', 'link']
+    try:
+        with monitor.Monitor(groups=('ipv6-ifaddr',), timeout=20) as mon:
+            yield
+            for event in mon:
+                dev_name = event.get('label')
+                if (dev_name == iface and
+                        event.get('event') == 'new_addr' and
+                        event.get('scope') in wait_for_scopes):
+
+                    wait_for_scopes.remove(event.get('scope'))
+                    if not wait_for_scopes:
+                        return
+
+    except monitor.MonitorError as e:
+        if e[0] == monitor.E_TIMEOUT:
+            raise Exception('IPv6 addresses has not been caught within the '
+                            'given timeout.\n')
+        else:
+            raise

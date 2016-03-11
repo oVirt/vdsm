@@ -36,7 +36,7 @@ from vdsm import sysctl
 from .ipwrapper_test import _fakeTypeDetection
 from modprobe import RequireBondingMod
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from .nettestlib import dummy_device, veth_pair
+from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot
 from testValidation import brokentest
@@ -411,3 +411,27 @@ class TestIPv6Addresses(TestCaseBase):
             self.assertEqual(1, len(ip_addrs))
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
+
+    def test_local_auto_with_dynamic_address_from_ra(self):
+        IPV6_NETADDRESS = '2001:1:1:1'
+        IPV6_NETPREFIX_LEN = '64'
+        with veth_pair() as (server, client):
+            with dnsmasq_run(server, ipv6_slaac_prefix=IPV6_NETADDRESS + '::'):
+                with wait_for_ipv6(client):
+                    ipwrapper.linkSet(client, ['up'])
+                    ipwrapper.linkSet(server, ['up'])
+                    ipwrapper.addrAdd(server, IPV6_NETADDRESS + '::1',
+                                      IPV6_NETPREFIX_LEN, family=6)
+
+                # Expecting link and global addresses on client iface
+                # The addresses are given randomly, so we sort them
+                ip_addrs = sorted(addresses.getIpAddrs()[client],
+                                  key=lambda ip: ip['address'])
+                self.assertEqual(2, len(ip_addrs))
+
+                self.assertTrue(addresses.is_dynamic(ip_addrs[0]))
+                self.assertEqual('global', ip_addrs[0]['scope'])
+                self.assertEqual(IPV6_NETADDRESS,
+                                 ip_addrs[0]['address'][:len(IPV6_NETADDRESS)])
+
+                self.assertEqual('link', ip_addrs[1]['scope'])
