@@ -113,15 +113,23 @@ class BlockManifestTests(VdsmTestCase):
             self.assertEquals(512, env.sd_manifest.logBlkSize)
             self.assertEquals(512, env.sd_manifest.phyBlkSize)
 
-    def test_getblocksize(self):
+    def test_overwrite_blocksize(self):
+        metadata = {sd.DMDK_VERSION: 3,
+                    blockSD.DMDK_LOGBLKSIZE: 2048,
+                    blockSD.DMDK_PHYBLKSIZE: 1024}
         with fake_block_env() as env:
-            sduuid = env.sd_manifest.sdUUID
-            metadata = dict(env.sd_manifest._metadata)
-            metadata[blockSD.DMDK_LOGBLKSIZE] = 2048
-            metadata[blockSD.DMDK_PHYBLKSIZE] = 1024
-            sd_manifest = blockSD.BlockStorageDomainManifest(sduuid, metadata)
-            self.assertEquals(2048, sd_manifest.logBlkSize)
-            self.assertEquals(1024, sd_manifest.phyBlkSize)
+            # Replacing the metadata will not overwrite these values since they
+            # are set only in the manifest constructor.
+            env.sd_manifest.replaceMetadata(metadata)
+            self.assertEquals(512, env.sd_manifest.logBlkSize)
+            self.assertEquals(512, env.sd_manifest.phyBlkSize)
+
+            # If we supply values in the metadata used to construct the
+            # manifest then those values will apply.
+            new_manifest = blockSD.BlockStorageDomainManifest(
+                env.sd_manifest.sdUUID, metadata)
+            self.assertEquals(2048, new_manifest.logBlkSize)
+            self.assertEquals(1024, new_manifest.phyBlkSize)
 
 
 class BlockDomainMetadataSlotTests(VdsmTestCase):
