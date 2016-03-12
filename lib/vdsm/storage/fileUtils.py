@@ -242,14 +242,6 @@ def chown(path, user=-1, group=-1):
     return True
 
 
-def open_ex(path, mode):
-    # TODO: detect if on nfs to do this out of process
-    if "d" in mode:
-        return DirectFile(path, mode)
-    else:
-        return open(path, mode)
-
-
 def atomic_symlink(target, name):
     """
     Create s symbolic link atomically, updating stale links.
