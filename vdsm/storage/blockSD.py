@@ -335,7 +335,7 @@ class LvMetadataRW(object):
         metaStr.write('\0' * (self._size - metaStr.pos))
 
         data = metaStr.getvalue()
-        with fileUtils.DirectFile(self.metavol, "r+d") as f:
+        with fileUtils.DirectFile(self.metavol, "r+") as f:
             f.seek(self._offset)
             f.write(data)
 

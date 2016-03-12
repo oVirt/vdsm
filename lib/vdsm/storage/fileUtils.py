@@ -291,12 +291,6 @@ def atomic_symlink(target, name):
 
 class DirectFile(object):
     def __init__(self, path, mode):
-        if "d" not in mode:
-            raise ValueError("This class only handles direct IO")
-
-        if len(mode) < 2:
-            raise ValueError("Invalid mode parameter")
-
         self._writable = True
         flags = os.O_DIRECT
 

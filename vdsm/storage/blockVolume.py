@@ -239,7 +239,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         data += "\0" * (sc.METADATA_SIZE - len(data))
 
         metavol = lvm.lvPath(vgname, sd.METADATA)
-        with fileUtils.DirectFile(metavol, "r+d") as f:
+        with fileUtils.DirectFile(metavol, "r+") as f:
             f.seek(offs * sc.METADATA_SIZE)
             f.write(data)
 

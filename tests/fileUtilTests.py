@@ -36,26 +36,26 @@ class DirectFileTests(TestCaseBase):
     @permutations([[0], [512], [1024], [1024 + 512]])
     def testRead(self, size):
         with temporaryPath(data=self.DATA) as srcPath, \
-                fileUtils.DirectFile(srcPath, "dr") as f:
+                fileUtils.DirectFile(srcPath, "r") as f:
             self.assertEquals(f.read(size), self.DATA[:size])
 
     @permutations([[512], [1024]])
     def testSeekRead(self, offset):
         with temporaryPath(data=self.DATA) as srcPath, \
-                fileUtils.DirectFile(srcPath, "dr") as f:
+                fileUtils.DirectFile(srcPath, "r") as f:
             f.seek(offset)
             self.assertEquals(f.read(), self.DATA[offset:])
 
     def testWrite(self):
         with temporaryPath() as srcPath, \
-                fileUtils.DirectFile(srcPath, "dw") as f:
+                fileUtils.DirectFile(srcPath, "w") as f:
             f.write(self.DATA)
             with open(srcPath) as f:
                 self.assertEquals(f.read(), self.DATA)
 
     def testSmallWrites(self):
         with temporaryPath() as srcPath, \
-                fileUtils.DirectFile(srcPath, "dw") as f:
+                fileUtils.DirectFile(srcPath, "w") as f:
             f.write(self.DATA[:512])
             f.write(self.DATA[512:])
 
@@ -64,10 +64,10 @@ class DirectFileTests(TestCaseBase):
 
     def testUpdateRead(self):
         with temporaryPath() as srcPath, \
-                fileUtils.DirectFile(srcPath, "wd") as f:
+                fileUtils.DirectFile(srcPath, "w") as f:
             f.write(self.DATA[:512])
 
-            with fileUtils.DirectFile(srcPath, "r+d") as f:
+            with fileUtils.DirectFile(srcPath, "r+") as f:
                 f.seek(512)
                 f.write(self.DATA[512:])
 
