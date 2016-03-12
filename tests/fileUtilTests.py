@@ -28,9 +28,6 @@ from testlib import namedTemporaryDir
 
 
 class DirectFileTests(TestCaseBase):
-    @classmethod
-    def getConfigTemplate(cls):
-        return {}
 
     def testRead(self):
         data = """Vestibulum. Libero leo nostra, pede nunc eu. Pellentesque
