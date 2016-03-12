@@ -37,10 +37,9 @@ class DirectFileTests(TestCaseBase):
         platea lacus morbi nisl montes ve. Ac. A, consectetuer erat, justo eu.
         Elementum et, phasellus fames et rutrum donec magnis eu bibendum. Arcu,
         ante aliquam ipsum ut facilisis ad."""
-        with temporaryPath(data=data) as srcPath:
-            # two nested withs to be py2.6 friendly.
-            with fileUtils.open_ex(srcPath, "dr") as f:
-                self.assertEquals(f.read(), data)
+        with temporaryPath(data=data) as srcPath, \
+                fileUtils.open_ex(srcPath, "dr") as f:
+            self.assertEquals(f.read(), data)
 
     def testSeekRead(self):
         data = """
@@ -60,20 +59,18 @@ class DirectFileTests(TestCaseBase):
         quam.
         """
         self.assertTrue(len(data) > 512)
-        with temporaryPath(data=data) as srcPath:
-            # two nested withs to be py2.6 friendly.
-            with fileUtils.open_ex(srcPath, "dr") as f:
-                f.seek(512)
-                self.assertEquals(f.read(), data[512:])
+        with temporaryPath(data=data) as srcPath, \
+                fileUtils.open_ex(srcPath, "dr") as f:
+            f.seek(512)
+            self.assertEquals(f.read(), data[512:])
 
     def testWrite(self):
         data = """In ut non platea egestas, quisque magnis nunc nostra ac etiam
         suscipit nec integer sociosqu. Fermentum. Ante orci luctus, ipsum
         ullamcorper enim arcu class neque inceptos class. Ut, sagittis
         torquent, commodo facilisi."""
-        with temporaryPath() as srcPath:
-            with fileUtils.open_ex(srcPath, "dw") as f:
-                f.write(data)
+        with temporaryPath() as srcPath, fileUtils.open_ex(srcPath, "dw") as f:
+            f.write(data)
             with fileUtils.open_ex(srcPath, "r") as f:
                 self.assertEquals(f.read(len(data)), data)
 
@@ -100,10 +97,10 @@ class DirectFileTests(TestCaseBase):
         """
         self.assertTrue(len(data) > 512)
 
-        with temporaryPath() as srcPath:
-            with fileUtils.open_ex(srcPath, "dw") as f:
-                f.write(data[:512])
-                f.write(data[512:])
+        with temporaryPath() as srcPath, \
+                fileUtils.open_ex(srcPath, "dw") as f:
+            f.write(data[:512])
+            f.write(data[512:])
 
             with fileUtils.open_ex(srcPath, "r") as f:
                 self.assertEquals(f.read(len(data)), data)
@@ -126,9 +123,9 @@ class DirectFileTests(TestCaseBase):
         """
         self.assertTrue(len(data) > 512)
 
-        with temporaryPath() as srcPath:
-            with fileUtils.open_ex(srcPath, "wd") as f:
-                f.write(data[:512])
+        with temporaryPath() as srcPath, \
+                fileUtils.open_ex(srcPath, "wd") as f:
+            f.write(data[:512])
 
             with fileUtils.open_ex(srcPath, "r+d") as f:
                 f.seek(512)
