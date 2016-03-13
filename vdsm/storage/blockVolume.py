@@ -29,8 +29,8 @@ from vdsm import exception
 from vdsm.config import config
 from vdsm.storage import blkdiscard
 from vdsm.storage import constants as sc
+from vdsm.storage import directio
 from vdsm.storage import exception as se
-from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
 from vdsm.storage.misc import logskip
@@ -239,7 +239,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         data += "\0" * (sc.METADATA_SIZE - len(data))
 
         metavol = lvm.lvPath(vgname, sd.METADATA)
-        with fileUtils.DirectFile(metavol, "r+") as f:
+        with directio.DirectFile(metavol, "r+") as f:
             f.seek(offs * sc.METADATA_SIZE)
             f.write(data)
 

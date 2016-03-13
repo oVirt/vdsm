@@ -40,6 +40,7 @@ from vdsm import utils
 from vdsm.storage import blkdiscard
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
+from vdsm.storage import directio
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -335,7 +336,7 @@ class LvMetadataRW(object):
         metaStr.write('\0' * (self._size - metaStr.pos))
 
         data = metaStr.getvalue()
-        with fileUtils.DirectFile(self.metavol, "r+") as f:
+        with directio.DirectFile(self.metavol, "r+") as f:
             f.seek(self._offset)
             f.write(data)
 

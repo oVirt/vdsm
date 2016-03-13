@@ -30,6 +30,7 @@ dist_vdsmstorage_PYTHON = \
 	constants.py \
 	curlImgWrap.py \
 	devicemapper.py \
+	directio.py \
 	exception.py \
 	fileUtils.py \
 	fuser.py \

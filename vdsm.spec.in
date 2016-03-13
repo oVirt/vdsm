@@ -1239,6 +1239,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
 %{python_sitelib}/%{vdsm_name}/storage/curlImgWrap.py*
 %{python_sitelib}/%{vdsm_name}/storage/devicemapper.py*
+%{python_sitelib}/%{vdsm_name}/storage/directio.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
 %{python_sitelib}/%{vdsm_name}/storage/fuser.py*
