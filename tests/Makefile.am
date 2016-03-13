@@ -225,7 +225,6 @@ blacklist_modules_python3 = \
 	stompAsyncDispatcherTests.py \
 	stompTests.py \
 	storageMailboxTests.py \
-	storage_directio_test.py \
 	storage_monitor_test.py \
 	storageServerTests.py \
 	storage_rwlock_test.py \

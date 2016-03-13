@@ -20,10 +20,10 @@
 from __future__ import absolute_import
 
 import ctypes
+import io
 import logging
 import os
 
-from StringIO import StringIO
 from contextlib import closing
 from contextlib import contextmanager
 
@@ -142,7 +142,7 @@ class DirectFile(object):
 
     def readall(self):
         buffsize = 1024
-        res = StringIO()
+        res = io.BytesIO()
         with closing(res):
             while True:
                 buff = self.read(buffsize)

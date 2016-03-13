@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import io
+
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import temporaryPath
@@ -28,7 +30,7 @@ from vdsm.storage import directio
 @expandPermutations
 class TestDirectFile(TestCaseBase):
 
-    DATA = "a" * 512 + "b" * 512
+    DATA = b"a" * 512 + b"b" * 512
 
     @permutations([[0], [512], [1024], [1024 + 512]])
     def test_read(self, size):
@@ -47,7 +49,7 @@ class TestDirectFile(TestCaseBase):
         with temporaryPath() as srcPath, \
                 directio.DirectFile(srcPath, "w") as f:
             f.write(self.DATA)
-            with open(srcPath) as f:
+            with io.open(srcPath, "rb") as f:
                 self.assertEquals(f.read(), self.DATA)
 
     def test_small_writes(self):
@@ -56,7 +58,7 @@ class TestDirectFile(TestCaseBase):
             f.write(self.DATA[:512])
             f.write(self.DATA[512:])
 
-            with open(srcPath) as f:
+            with io.open(srcPath, "rb") as f:
                 self.assertEquals(f.read(), self.DATA)
 
     def test_update_and_read(self):
@@ -68,5 +70,5 @@ class TestDirectFile(TestCaseBase):
                 f.seek(512)
                 f.write(self.DATA[512:])
 
-            with open(srcPath) as f:
+            with io.open(srcPath, "rb") as f:
                 self.assertEquals(f.read(), self.DATA)
