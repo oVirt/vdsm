@@ -47,7 +47,6 @@ import misc
 import fileUtils
 from vdsm.config import config
 from sdc import sdCache
-from remoteFileHandler import Timeout
 import image
 from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
@@ -1130,9 +1129,8 @@ class StoragePool(object):
 
         try:
             dom = sdCache.produce(sdUUID)
-        except (se.StorageException, AttributeError, Timeout):
+        except (se.StorageException, AttributeError):
             # AttributeError: Unreloadable blockSD
-            # Timeout: NFS unreachable domain
             self.log.warn("deactivating missing domain %s", sdUUID,
                           exc_info=True)
             if newMsdUUID != sd.BLANK_UUID:

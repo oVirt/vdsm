@@ -360,8 +360,6 @@ class HSM(object):
 
         self.__validateLvmLockingType()
 
-        oop.setDefaultImpl(config.get('irs', 'oop_impl'))
-
         # cleanStorageRepoitory uses tasksDir value, this must be assigned
         # before calling it
         self.tasksDir = config.get('irs', 'hsm_tasks')

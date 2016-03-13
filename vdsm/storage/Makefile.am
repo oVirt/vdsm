@@ -51,7 +51,6 @@ dist_vdsmstorage_PYTHON = \
 	multipath.py \
 	nfsSD.py \
 	outOfProcess.py \
-	remoteFileHandler.py \
 	resourceFactories.py \
 	resourceManager.py \
 	sdc.py \

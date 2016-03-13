@@ -34,7 +34,6 @@ from weakref import ref
 class OopWrapperTests(TestCaseBase):
 
     def setUp(self):
-        oop.setDefaultImpl(oop.IOPROC)
         self.pool = oop.getGlobalProcPool()
 
     def tearDown(self):

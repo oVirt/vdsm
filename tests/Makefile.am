@@ -119,7 +119,6 @@ test_modules = \
 	protocoldetectorTests.py \
 	pthreadTests.py \
 	qemuimgTests.py \
-	remoteFileHandlerTests.py \
 	resourceManagerTests.py \
 	responseTests.py \
 	rwlock_test.py \

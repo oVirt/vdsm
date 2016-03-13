@@ -22,7 +22,6 @@ import grp
 import logging
 import os
 import stat
-import sys
 import types
 from warnings import warn
 import weakref
@@ -34,18 +33,9 @@ from vdsm.storage import exception as se
 import threading
 from functools import partial
 
-try:
-    from ioprocess import IOProcess
-except ImportError:
-    pass
+from ioprocess import IOProcess
 
-from remoteFileHandler import RemoteFileHandlerPool
-
-RFH = 'rfh'
-IOPROC = 'ioprocess'
 GLOBAL = 'Global'
-
-_oopImpl = RFH
 
 DEFAULT_TIMEOUT = config.getint("irs", "process_pool_timeout")
 IOPROC_IDLE_TIME = config.getint("irs", "max_ioprocess_idle_time")
@@ -55,19 +45,10 @@ MAX_QUEUED = config.getint("irs", "process_pool_max_queued_slots_per_domain")
 _procPoolLock = threading.Lock()
 _procPool = {}
 _refProcPool = {}
-_rfhPool = {}
 
 elapsed_time = lambda: os.times()[4]
 
 log = logging.getLogger('Storage.oop')
-
-
-def setDefaultImpl(impl):
-    global _oopImpl
-    _oopImpl = impl
-    if impl == IOPROC and IOPROC not in sys.modules:
-        log.warning("Cannot import IOProcess, set oop to use RFH")
-        _oopImpl = RFH
 
 
 def cleanIdleIOProcesses(clientName):
@@ -77,37 +58,20 @@ def cleanIdleIOProcesses(clientName):
             del _procPool[name]
 
 
-def _getRfhPool(clientName):
-    with _procPoolLock:
-        try:
-            return _rfhPool[clientName]
-        except KeyError:
-            _rfhPool[clientName] = _OopWrapper(
-                RemoteFileHandlerPool(HELPERS_PER_DOMAIN))
-
-            return _rfhPool[clientName]
-
-
-def _getIOProcessPool(clientName):
+def getProcessPool(clientName):
     with _procPoolLock:
         cleanIdleIOProcesses(clientName)
 
         proc = _refProcPool.get(clientName, lambda: None)()
         if proc is None:
-            proc = _OopWrapper(IOProcess(max_threads=HELPERS_PER_DOMAIN,
-                                         timeout=DEFAULT_TIMEOUT,
-                                         max_queued_requests=MAX_QUEUED))
+            proc = IOProcess(max_threads=HELPERS_PER_DOMAIN,
+                             timeout=DEFAULT_TIMEOUT,
+                             max_queued_requests=MAX_QUEUED)
+            proc = _IOProcWrapper("oop", proc)
             _refProcPool[clientName] = weakref.ref(proc)
 
         _procPool[clientName] = (elapsed_time() + IOPROC_IDLE_TIME, proc)
         return proc
-
-
-def getProcessPool(clientName):
-    if _oopImpl == IOPROC:
-        return _getIOProcessPool(clientName)
-    else:
-        return _getRfhPool(clientName)
 
 
 def getGlobalProcPool():
@@ -400,43 +364,3 @@ class _IOProcWrapper(types.ModuleType):
         self.simpleWalk = partial(simpleWalk, ioproc)
         self.directTouch = partial(directTouch, ioproc)
         self.truncateFile = partial(truncateFile, ioproc)
-
-
-class _ModuleWrapper(types.ModuleType):
-    def __init__(self, modName, procPool, timeout, subModNames=()):
-        self._modName = modName
-        self._procPool = procPool
-        self._timeout = timeout
-
-        for subModName in subModNames:
-            subSubModNames = []
-            if isinstance(subModName, tuple):
-                subModName, subSubModNames = subModName
-
-            fullModName = "%s.%s" % (modName, subModName)
-
-            setattr(self, subModName,
-                    _ModuleWrapper(fullModName,
-                                   self._procPool,
-                                   DEFAULT_TIMEOUT,
-                                   subSubModNames)
-                    )
-
-    def __getattr__(self, name):
-        # Root modules is fake, we need to remove it
-        fullName = ".".join(self._modName.split(".")[1:] + [name])
-
-        return partial(self._procPool.callCrabRPCFunction, self._timeout,
-                       fullName)
-
-
-def _OopWrapper(procPool):
-    if _oopImpl == IOPROC:
-        return _IOProcWrapper("oop", procPool)
-    else:
-        return _ModuleWrapper("oop", procPool, DEFAULT_TIMEOUT,
-                              (("os",
-                                ("path",)),
-                               "glob",
-                               "fileUtils",
-                               "utils"))
