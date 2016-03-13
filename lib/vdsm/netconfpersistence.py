@@ -258,13 +258,7 @@ class KernelConfig(BaseConfig):
                 attributes['netmask'] = net_attr['netmask']
             if net_attr['gateway']:
                 attributes['gateway'] = net_attr['gateway']
-        if not attributes['dhcpv6']:
-            non_local_addresses = self._translate_ipv6_addr(
-                net_attr['ipv6addrs'])
-            if non_local_addresses:
-                attributes['ipv6addr'] = non_local_addresses
-            if net_attr['ipv6gateway'] != '::':
-                attributes['ipv6gateway'] = net_attr['ipv6gateway']
+        # IPv6 is ignored to avoid needless reconfiguration of networks
 
     def _translate_ipv6_addr(self, ipv6_addrs):
         return [
@@ -398,8 +392,12 @@ class KernelConfig(BaseConfig):
             prefix = net_attr.pop('prefix', None)
             if prefix is not None:
                 net_attr['netmask'] = self._netinfo.prefix2netmask(int(prefix))
+            # Ignore IPv6 to avoid needless reconfiguration of networks
             if 'ipv6addr' in net_attr:
-                net_attr['ipv6addr'] = [net_attr['ipv6addr']]
+                del net_attr['ipv6addr']
+            if 'ipv6gateway' in net_attr:
+                del net_attr['ipv6gateway']
+
             if 'defaultRoute' not in net_attr:
                 net_attr['defaultRoute'] = net_name in \
                     constants.LEGACY_MANAGEMENT_NETWORKS
