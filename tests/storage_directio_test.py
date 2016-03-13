@@ -81,3 +81,9 @@ class TestDirectFile(TestCaseBase):
                 io.open(srcPath, "rb") as buffered_file:
             self.assertEquals(direct_file.readlines(),
                               buffered_file.readlines())
+
+    def test_read_all(self):
+        with temporaryPath(data=self.DATA) as srcPath, \
+                directio.DirectFile(srcPath, "r") as direct_file, \
+                io.open(srcPath, "rb") as buffered_file:
+            self.assertEquals(direct_file.read(), buffered_file.read())
