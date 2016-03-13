@@ -26,31 +26,31 @@ from vdsm.storage import directio
 
 
 @expandPermutations
-class DirectFileTests(TestCaseBase):
+class TestDirectFile(TestCaseBase):
 
     DATA = "a" * 512 + "b" * 512
 
     @permutations([[0], [512], [1024], [1024 + 512]])
-    def testRead(self, size):
+    def test_read(self, size):
         with temporaryPath(data=self.DATA) as srcPath, \
                 directio.DirectFile(srcPath, "r") as f:
             self.assertEquals(f.read(size), self.DATA[:size])
 
     @permutations([[512], [1024]])
-    def testSeekRead(self, offset):
+    def test_seek_and_read(self, offset):
         with temporaryPath(data=self.DATA) as srcPath, \
                 directio.DirectFile(srcPath, "r") as f:
             f.seek(offset)
             self.assertEquals(f.read(), self.DATA[offset:])
 
-    def testWrite(self):
+    def test_write(self):
         with temporaryPath() as srcPath, \
                 directio.DirectFile(srcPath, "w") as f:
             f.write(self.DATA)
             with open(srcPath) as f:
                 self.assertEquals(f.read(), self.DATA)
 
-    def testSmallWrites(self):
+    def test_small_writes(self):
         with temporaryPath() as srcPath, \
                 directio.DirectFile(srcPath, "w") as f:
             f.write(self.DATA[:512])
@@ -59,7 +59,7 @@ class DirectFileTests(TestCaseBase):
             with open(srcPath) as f:
                 self.assertEquals(f.read(), self.DATA)
 
-    def testUpdateRead(self):
+    def test_update_and_read(self):
         with temporaryPath() as srcPath, \
                 directio.DirectFile(srcPath, "w") as f:
             f.write(self.DATA[:512])
