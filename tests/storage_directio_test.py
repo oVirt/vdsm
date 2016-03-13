@@ -20,6 +20,7 @@
 
 import io
 
+from testValidation import brokentest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import temporaryPath
@@ -30,7 +31,7 @@ from vdsm.storage import directio
 @expandPermutations
 class TestDirectFile(TestCaseBase):
 
-    DATA = b"a" * 512 + b"b" * 512
+    DATA = b"".join(c.encode('ascii') * 127 + b"\n" for c in "abcdefgh")
 
     @permutations([[0], [512], [1024], [1024 + 512]])
     def test_read(self, size):
@@ -72,3 +73,11 @@ class TestDirectFile(TestCaseBase):
 
             with io.open(srcPath, "rb") as f:
                 self.assertEquals(f.read(), self.DATA)
+
+    @brokentest("DirectFile does not keep line terminator")
+    def test_readlines(self):
+        with temporaryPath(data=self.DATA) as srcPath, \
+                directio.DirectFile(srcPath, "r") as direct_file, \
+                io.open(srcPath, "rb") as buffered_file:
+            self.assertEquals(direct_file.readlines(),
+                              buffered_file.readlines())
