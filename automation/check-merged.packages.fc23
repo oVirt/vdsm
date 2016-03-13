@@ -3,7 +3,6 @@ automake
 git
 lago
 lago-ovirt
-lago-ovirt-extras
 libguestfs-tools-c
 m2crypto
 make

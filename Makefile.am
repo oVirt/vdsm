@@ -118,13 +118,9 @@ pep8: all
 
 .PHONY: python3
 python3: all
-	if [ -x "$(PYTHON3)" ]; then \
-	    PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
-		$(WHITELIST) \
-		`find . -name '*.py'`; \
-	else \
-	    echo "Warning: skipping python3 syntax check"; \
-	fi
+	PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
+	    $(WHITELIST) \
+	    `find . -name '*.py'`;
 
 # Note: dependencies ordered by time needed to run them
 check-recursive: gitignore abs_imports python3 pyflakes pep8
