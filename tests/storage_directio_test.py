@@ -20,7 +20,6 @@
 
 import io
 
-from testValidation import brokentest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import temporaryPath
@@ -74,7 +73,6 @@ class TestDirectFile(TestCaseBase):
             with io.open(srcPath, "rb") as f:
                 self.assertEquals(f.read(), self.DATA)
 
-    @brokentest("DirectFile does not keep line terminator")
     def test_readlines(self):
         with temporaryPath(data=self.DATA) as srcPath, \
                 directio.DirectFile(srcPath, "r") as direct_file, \
