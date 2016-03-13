@@ -5,7 +5,7 @@
 VDSM_DIR=~/code/vdsm
 
 _latest_version() {
-    ls ~/rpmbuild/RPMS/*/vdsm* -t -w 1 | head -1 | perl -pe 's|^.*?git|git|' | perl -pe 's|\..*$||'
+    ls ~/rpmbuild/RPMS/*/vdsm* -t -w 1 | head -1 | sed 's/.*vdsm-[a-z]*-//;s/.noarch.rpm//'
 }
 
 _latest_rpms() {
