@@ -61,6 +61,13 @@ class TestDirectFile(TestCaseBase):
             with io.open(srcPath, "rb") as f:
                 self.assertEquals(f.read(), self.DATA)
 
+    def test_write_unaligned(self):
+        with temporaryPath(data=self.DATA) as srcPath, \
+                directio.DirectFile(srcPath, "r+") as f:
+            self.assertRaises(ValueError, f.write, "x" * 511)
+            with io.open(srcPath, "rb") as f:
+                self.assertEqual(f.read(), self.DATA)
+
     def test_update_and_read(self):
         with temporaryPath() as srcPath, \
                 directio.DirectFile(srcPath, "w") as f:

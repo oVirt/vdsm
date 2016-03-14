@@ -152,10 +152,8 @@ class DirectFile(object):
 
     def write(self, data):
         length = len(data)
-        padding = 512 - (length % 512)
-        if padding == 512:
-            padding = 0
-        length = length + padding
+        if length % 512:
+            raise ValueError("You can only write in 512 multiplies")
         pdata = ctypes.c_char_p(data)
         with self._createAlignedBuffer(length) as pbuff:
             ctypes.memmove(pbuff, pdata, len(data))
