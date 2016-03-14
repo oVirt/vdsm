@@ -93,10 +93,6 @@ class DirectFile(object):
     def readlines(self):
         return self.readall().splitlines(True)  # Keep ends
 
-    def writelines(self, lines):
-        data = ''.join([l if l.endswith('\n') else l + '\n' for l in lines])
-        self.write(data)
-
     def tell(self):
         return self.seek(0, os.SEEK_CUR)
 
