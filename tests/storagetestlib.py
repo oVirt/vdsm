@@ -35,8 +35,9 @@ class FakeMetadata(dict):
         yield
 
 
-def make_sd_metadata(version=3, dom_class=sd.DATA_DOMAIN, pools=None):
+def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     md = FakeMetadata()
+    md[sd.DMDK_SDUUID] = sduuid
     md[sd.DMDK_VERSION] = version
     md[sd.DMDK_CLASS] = dom_class
     md[sd.DMDK_POOLS] = pools if pools is not None else [str(uuid.uuid4())]
@@ -49,7 +50,7 @@ def make_blocksd(tmpdir, fake_lvm, sduuid=None, devices=None, metadata=None):
     if devices is None:
         devices = get_random_devices()
     if metadata is None:
-        metadata = make_sd_metadata()
+        metadata = make_sd_metadata(sduuid)
 
     fake_lvm.createVG(sduuid, devices, blockSD.STORAGE_DOMAIN_TAG,
                       blockSD.VG_METADATASIZE)
@@ -82,7 +83,7 @@ def make_filesd_manifest(tmpdir, metadata=None):
     make_file(metafile)
     if metadata is None:
         metadata = fileSD.FileSDMetadata(metafile)
-        metadata.update(make_sd_metadata())
+        metadata.update(make_sd_metadata(sduuid))
     manifest = fileSD.FileStorageDomainManifest(domain_path, metadata)
     os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
     return manifest
