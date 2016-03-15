@@ -356,6 +356,11 @@ parameters = [
             'Time to wait (in seconds) between consecutive progress reports '
             'during long operations such as copying images (default 30)'),
 
+        ('qcow2_compat', '0.10',
+            'Recent qemu-img supports two incompatible qcow2 versions. '
+            'We use 0.10 format by default so hosts with older qemu '
+            'can consume images created by newer versions. '
+            'See https://bugzilla.redhat.com/1139707'),
     ]),
 
     # Section: [addresses]
