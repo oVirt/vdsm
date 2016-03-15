@@ -98,6 +98,19 @@ class MethodRep(object):
         return self._class_name
 
 
+class EventRep(object):
+    def __init__(self, sub_id):
+        self._id = self._trim_subscription_id(sub_id)
+
+    def _trim_subscription_id(self, sub_id):
+        idx = len(sub_id) - sub_id.rfind('|')
+        return sub_id[:1 - idx]
+
+    @property
+    def id(self):
+        return self._id
+
+
 class Schema(object):
 
     log = logging.getLogger("SchemaCache")
@@ -209,8 +222,8 @@ class Schema(object):
         if t == 'dict':
             # it seems that there is no other way to have it fixed
             self._report_inconsistency(
-                'Unsupported type %s in %s please fix'
-                % (t, identifier))
+                'Unsupported type %s in %s please fix' % (t, identifier))
+
         # check whether it is a primitive type
         elif t in TYPE_KEYS:
             self._check_primitive_type(t, value, name)
@@ -319,4 +332,31 @@ class Schema(object):
             raise
         except Exception:
             self._report_inconsistency('Unexpected issue with response type'
+                                       ' verification for %s' % rep.id)
+
+    def verify_event_params(self, sub_id, args):
+        rep = EventRep(sub_id)
+        try:
+            # due to issue with vm status changes key names (vm_ids)
+            # we are not able to find unknown params
+            for param in self.get_args(rep):
+                name = param.get('name')
+                if name == 'no_name':
+                    for key, value in six.iteritems(args):
+                        if key == "notify_time":
+                            continue
+                        self._verify_type(param, {key: value}, rep.id)
+                    continue
+                arg = args.get(name)
+                if arg is None:
+                    if 'defaultvalue' not in param:
+                        self._report_inconsistency(
+                            'Required parameter %s is not '
+                            'provided when sending %s' % (name, rep.id))
+                    continue
+                self._verify_type(param, arg, rep.id)
+        except JsonRpcInvalidParamsError:
+            raise
+        except Exception:
+            self._report_inconsistency('Unexpected issue with event type'
                                        ' verification for %s' % rep.id)

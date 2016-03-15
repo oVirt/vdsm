@@ -87,7 +87,8 @@ class SchemaValidation(TestCaseBase):
         testPath = os.path.realpath(__file__)
         dirName = os.path.split(testPath)[0]
 
-        for tail in ('vdsm-api.yml', 'vdsm-api-gluster.yml'):
+        for tail in ('vdsm-api.yml', 'vdsm-api-gluster.yml',
+                     'vdsm-events.yml'):
             yield os.path.join(
                 dirName, '..', 'lib', 'api', tail)
 

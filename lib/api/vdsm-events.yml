@@ -1,0 +1,193 @@
+types:
+    UUID: &UUID
+        description: A universally unique identifier in RFC 4122 format.eg.
+            "407cb255-34be-432c-be7c-eb43b8de82be"
+        name: UUID
+        sourcetype: string
+        type: alias
+
+    VmStatus: &VmStatus
+        description: An enumeration of possible virtual machine statuses.
+        name: VmStatus
+        type: enum
+        values:
+            Down: The VM is powered off
+            Migration Destination: The VM is migrating to this host
+            Migration Source: The VM is migrating away from this host
+            Paused: The VM is paused
+            Powering down: A shutdown command has been sent to the VM
+            Powering up: The VM is booting
+            RebootInProgress: The VM is currently rebooting
+            Restoring state: The VM is waking from hibernation
+            Saving State: The VM is preparing for hibernation
+            Up: The VM is running
+            WaitForLaunch: The VM is being created
+
+    VmGraphicsDeviceType: &VmGraphicsDeviceType
+        description: An enumeration of VM graphics device types.
+        name: VmGraphicsDeviceType
+        type: enum
+        values:
+            spice: SPICE graphics device
+            vnc: VNC graphics device
+
+    VmDisplayInfo: &VmDisplayInfo
+        description: Display and graphics device information.
+        name: VmDisplayInfo
+        properties:
+        -   description: The port in use for encrypted display data
+            name: tlsPort
+            type: uint
+
+        -   description: The port in use for unencrypted display data
+            name: port
+            type: uint
+
+        -   description: The type of display in use
+            name: type
+            type: *VmGraphicsDeviceType
+
+        -   description: The IP address to use for accessing the VM
+                display
+            name: ipAddress
+            type: string
+        type: object
+
+    VmDisplayType: &VmDisplayType
+        description: An enumeration of VM display modes.
+        name: VmDisplayType
+        type: enum
+        values:
+            qxl: Graphical VM interaction is available via SPICE
+            vnc: Graphical VM interaction is available via the VNC protocol
+
+    StatusDetails: &StatusDetails
+        description: Represent information which are send as part of vm status
+            change event
+        name: StatusDetails
+        properties:
+        -   name: status
+            type: *VmStatus
+            description: New status for a vm for which the event was triggered
+
+        -   name: timeOffset
+            type: string
+            description: The time difference from host to the VM in seconds
+            defaultvalue: no-default
+
+        -   name: exitReason
+            type: int
+            description: The specific exit reason code
+            defaultvalue: no-default
+
+        -   name: exitMessage
+            type: string
+            description: Detailed reason for the virtual machine exit
+            defaultvalue: no-default
+
+        -   name: exitCode
+            type: int
+            description: Code indicating whether the VM exit was normal or
+                in error
+            defaultvalue: no-default
+
+        -   name: displayInfo
+            type:
+            - *VmDisplayInfo
+            description: Display and graphics device informations.
+            defaultvalue: no-default
+
+        -   name: hash
+            type: string
+            description: Devices has
+            defaultvalue: no-default
+
+        -   description: Ratio of CPU time spent by the guest VM
+            name: cpuUser
+            type: string
+            defaultvalue: no-default
+
+        -   name: displayIp
+            type: string
+            description: The IP address to use for accessing the VM display
+            defaultvalue: no-default
+
+        -   name: monitorResponse
+            type: int
+            description: Indicates if the qemu monitor is responsive
+            defaultvalue: no-default
+
+        -   name: elapsedTime
+            type: uint
+            description: The number of seconds that the VM has been running
+            defaultvalue: no-default
+
+        -   name: displayType
+            type: *VmDisplayType
+            description: The type of display in use
+            defaultvalue: no-default
+
+        -   name: cpuSys
+            type: string
+            description: Ratio of CPU time spent by qemu on other than guest
+                time
+            defaultvalue: no-default
+
+        -   name: displayPort
+            type: string
+            description: The port in use for unencrypted display data
+            defaultvalue: no-default
+
+        -   name: displaySecurePort
+            type: string
+            description: The port in use for encrypted display data
+            defaultvalue: no-default
+
+        -   name: clientIp
+            type: string
+            description: The IP address of the client connected to the display
+            defaultvalue: no-default
+
+        -   name: vcpuQuota
+            type: string
+            description: Setting for libvirt cpu_quota.
+            defaultvalue: no-default
+
+        -   name: vcpuPeriod
+            type: int
+            description: Setting for libvirt cpu_period.
+            defaultvalue: no-default
+
+        -   name: pauseCode
+            type: string
+            description: Indicates the reason a VM has been paused
+            defaultvalue: no-default
+        type: object
+
+    StatusMap: &StatusMap
+        description: A mapping of vm status details indexed by vm UUID.
+        key-type: *UUID
+        name: StatusMap
+        type: map
+        value-type: *StatusDetails
+
+'|virt|VM_status|':
+    description: Provides status information about virtual machines
+    params:
+    -   name: notify_time
+        type: uint
+        description: auto generated based on monotonic time when an event was
+            sent
+
+    -   name: no_name
+        type: *StatusMap
+        description: A map containing vm status details
+
+'|net|host_conn|':
+    description: Gives a hint to a client that capabilities needs to be
+        refreshed
+    params:
+    -   name: notify_time
+        type: uint
+        description: auto generated based on monotonic time when an event was
+            sent

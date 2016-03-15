@@ -33,6 +33,7 @@ dist_vdsmpyrpc_PYTHON = \
 dist_vdsmrpc_DATA = \
 	vdsm-api.yml \
 	vdsm-api-gluster.yml \
+	vdsm-events.yml \
 	$(NULL)
 
 all-local: \

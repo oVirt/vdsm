@@ -1620,6 +1620,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/rpc
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api.yml
+%{python_sitelib}/%{vdsm_name}/rpc/vdsm-events.yml
 %{python_sitelib}/api/vdsmapi.py*
 %{python_sitelib}/api/__init__.py*
 %if ! 0%{?with_gluster_mgmt}

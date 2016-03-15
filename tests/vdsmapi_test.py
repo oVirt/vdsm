@@ -42,6 +42,7 @@ class SchemaWrapper(object):
 
     def __init__(self):
         self._schema = None
+        self._events_schema = None
 
     def schema(self):
         if self._schema is None:
@@ -51,15 +52,14 @@ class SchemaWrapper(object):
             self._schema = vdsmapi.Schema(paths)
         return self._schema
 
-    def _name_args(self, args, kwargs, arglist):
-        kwargs = kwargs.copy()
-        for i, arg in enumerate(args):
-            argName = arglist[i]
-            kwargs[argName] = arg
-
-        return kwargs
+    def events_schema(self):
+        if self._events_schema is None:
+            path = [vdsmapi.find_schema('vdsm-events')]
+            self._events_schema = vdsmapi.Schema(path)
+        return self._events_schema
 
 
+_events_schema = SchemaWrapper()
 _schema = SchemaWrapper()
 
 
@@ -468,3 +468,31 @@ class DataVerificationTests(TestCaseBase):
     def test_missing_type(self):
         with self.assertRaises(vdsmapi.TypeNotFound):
             _schema.schema().get_type('Missing_type')
+
+    @MonkeyPatch(vdsmapi, 'config',
+                 make_config([('devel', 'api_strict_mode', 'true')]))
+    def test_events_params(self):
+        params = {u"notify_time": 4303947020,
+                  u"426aef82-ea1d-4442-91d3-fd876540e0f0":
+                      {u"status": u"Up",
+                       u"displayInfo": [{u"tlsPort": u"5901",
+                                         u"ipAddress": u"0",
+                                         u"type": u"spice",
+                                         u"port": u"5900"}],
+                       u"hash": u"880508647164395013",
+                       u"cpuUser": u"0.00",
+                       u"displayIp": u"0",
+                       u"monitorResponse": u"0",
+                       u"elapsedTime": u"110",
+                       u"displayType": u"qxl",
+                       u"cpuSys": u"0.00",
+                       u"pauseCode": u"NOERR",
+                       u"displayPort": u"5900",
+                       u"displaySecurePort": u"5901",
+                       u"timeOffset": u"0",
+                       u"clientIp": u"",
+                       u"vcpuQuota": u"-1",
+                       u"vcpuPeriod": 100000}}
+        sub_id = '|virt|VM_status|426aef82-ea1d-4442-91d3-fd876540e0f0'
+
+        _events_schema.events_schema().verify_event_params(sub_id, params)
