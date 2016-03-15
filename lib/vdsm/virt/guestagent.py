@@ -180,6 +180,7 @@ class GuestAgent(object):
         self.events = GuestAgentEvents(self)
         self._completion_lock = threading.Lock()
         self._completion_events = {}
+        self._first_connect = threading.Event()
 
     def _on_completion(self, reply_id):
         with self._completion_lock:
@@ -286,6 +287,7 @@ class GuestAgent(object):
             self._stopped = True
             self.log.debug("Attempting connection to %s", self._socketName)
             result = self._sock.connect_ex(self._socketName)
+            self._first_connect.set()
             if result == 0:
                 self.log.debug("Connected to %s", self._socketName)
                 self._messageState = MessageState.NORMAL
@@ -308,6 +310,7 @@ class GuestAgent(object):
         if ver > self.effectiveApiVersion:
             raise GuestAgentUnsupportedMessage(cmd, ver,
                                                self.effectiveApiVersion)
+        self._first_connect.wait(self._channelListener.timeout())
         args['__name__'] = cmd
         # TODO: encoding is required only on Python 3. Replace with wrapper
         # hiding this difference.

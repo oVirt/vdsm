@@ -218,6 +218,10 @@ class Listener(threading.Thread):
         self.log.info("Setting channels' timeout to %d seconds.", seconds)
         self._timeout = seconds
 
+    def timeout(self):
+        """ Returns the currently configured timeout value """
+        return self._timeout
+
     def register(self, create_callback, connect_callback, read_callback,
                  timeout_callback):
         """ Register a new file descriptor to the listener. """
