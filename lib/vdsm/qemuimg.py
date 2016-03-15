@@ -24,6 +24,7 @@ import re
 import signal
 
 from . import utils
+from . config import config
 
 _qemuimg = utils.CommandPath("qemu-img",
                              "/usr/bin/qemu-img",)  # Fedora, EL6
@@ -35,12 +36,6 @@ class FORMAT:
     QED = "qed"
     RAW = "raw"
     VMDK = "vmdk"
-
-
-# Recent qemu-img supports two incompatible qcow2 versions. We use 0.10 format
-# so hosts with older qemu can consume images created by newer versions.
-# See https://bugzilla.redhat.com/1139707
-QCOW2_COMPAT = '0.10'
 
 __iregex = {
     'format': re.compile("^file format: (?P<value>\w+)$"),
@@ -121,7 +116,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     if format:
         cmd.extend(("-f", format))
         if format == FORMAT.QCOW2 and _supports_qcow2_compat('create'):
-            cmd.extend(('-o', 'compat=' + QCOW2_COMPAT))
+            cmd.extend(('-o', 'compat=' + config.get('irs', 'qcow2_compat')))
 
     if backing:
         if not os.path.isabs(backing):
@@ -185,7 +180,7 @@ def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None,
     if dstFormat:
         cmd.extend(("-O", dstFormat))
         if dstFormat == FORMAT.QCOW2 and _supports_qcow2_compat('convert'):
-            options.append('compat=' + QCOW2_COMPAT)
+            options.append('compat=' + config.get('irs', 'qcow2_compat'))
 
     if backing:
         if not os.path.isabs(backing):

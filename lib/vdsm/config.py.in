@@ -351,6 +351,12 @@ parameters = [
         ('oop_impl', 'ioprocess',
             'Whether to use RFH or ioprocess implementation for oop.'
             'Values can be either ioprocess or rfh.'),
+
+        ('qcow2_compat', '0.10',
+            'Recent qemu-img supports two incompatible qcow2 versions. '
+            'We use 0.10 format by default so hosts with older qemu '
+            'can consume images created by newer versions. '
+            'See https://bugzilla.redhat.com/1139707'),
     ]),
 
     # Section: [addresses]
