@@ -393,13 +393,9 @@ def dnsmasq_run(interface, dhcp_range_from=None, dhcp_range_to=None,
                 ipv6_slaac_prefix=None):
     """Manages the life cycle of dnsmasq as a DHCP/RA server."""
     server = dhcp.Dnsmasq()
-    try:
-        server.start(interface, dhcp_range_from, dhcp_range_to,
-                     dhcpv6_range_from, dhcpv6_range_to, router,
-                     ipv6_slaac_prefix)
-    # TODO: Why should we skip and not fail?
-    except dhcp.DhcpError as e:
-        raise SkipTest(e)
+    server.start(interface, dhcp_range_from, dhcp_range_to,
+                 dhcpv6_range_from, dhcpv6_range_to, router,
+                 ipv6_slaac_prefix)
 
     with firewall.allow_dhcp(interface):
         try:
