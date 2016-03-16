@@ -89,6 +89,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/vdscli.py
 ./usr/lib/python2.7/dist-packages/vdsm/v2v.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/__init__.py
+./usr/lib/python2.7/dist-packages/vdsm/virt/api.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/guestagent.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/hoststats.py
 ./usr/lib/python2.7/dist-packages/vdsm/virt/periodic.py

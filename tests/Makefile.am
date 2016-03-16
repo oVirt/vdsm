@@ -31,6 +31,7 @@ SUBDIRS = \
 
 test_modules_py3 = \
 	apiData.py \
+	virt_api_test.py \
 	cmdutilsTests.py \
 	cpuProfileTests.py \
 	sslTests.py \
@@ -54,6 +55,7 @@ network_modules = network/*_test.py
 
 test_modules = \
 	alignmentScanTests.py \
+	virt_api_test.py \
 	blocksdTests.py \
 	blockVolumeTests.py \
 	bridgeTests.py \
