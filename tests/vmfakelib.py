@@ -298,7 +298,8 @@ class VirNodeDeviceStub(object):
 
     def __init__(self, xml):
         self.xml = xml
-        self._name = etree.fromstring(self.XMLDesc(0)).find('name').text
+        self._name = etree.fromstring(self.XMLDesc(0).decode(
+            'ascii', errors='ignore')).find('name').text
 
     def XMLDesc(self, flags=0):
         return self.xml
