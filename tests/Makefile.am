@@ -113,6 +113,7 @@ test_modules = \
 	storageMailboxTests.py \
 	storageServerTests.py \
 	storagetestlibTests.py \
+	storage_asyncevent_test.py \
 	storage_monitor_test.py \
 	storage_rwlock_test.py \
 	storage_sdm_api_test.py \
