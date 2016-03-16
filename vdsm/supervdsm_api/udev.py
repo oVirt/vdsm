@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import os
 import errno
+import glob
 import re
 import logging
 
@@ -47,6 +48,7 @@ _UDEV_RULE_FILE_NAME_USB = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "usb_%s_%s" +
     _UDEV_RULE_FILE_EXT)
 _USB_DEVICE_PATH = '/dev/bus/usb/%03d/%03d'
+_HWRNG_PATH = '/dev/hwrng'
 
 _log = logging.getLogger("SuperVdsm.ServerCallback")
 
@@ -218,3 +220,32 @@ def _udevTrigger(*args, **kwargs):
     except cmdutils.Error as e:
         raise OSError(errno.EINVAL, 'Could not trigger change '
                       'out %s\nerr %s' % (e.out, e.err))
+
+
+@expose
+def appropriateHwrngDevice(vmId):
+    ruleFile = _UDEV_RULE_FILE_NAME % ('hwrng', vmId)
+    rule = ('KERNEL=="hw_random" SUBSYSTEM=="misc" RUN+="%s %s:%s %s"\n' %
+            (EXT_CHOWN, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, _HWRNG_PATH))
+    with open(ruleFile, "w") as rf:
+        _log.debug("Creating rule %s: %r", ruleFile, rule)
+        rf.write(rule)
+
+    _udevTrigger(subsystem_matches=('misc',))
+
+
+@expose
+def rmAppropriateHwrngDevice(vmId):
+    rule_file = _UDEV_RULE_FILE_NAME % ('hwrng', vmId)
+    _log.debug("Removing rule %s", rule_file)
+    try:
+        os.remove(rule_file)
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+
+    # Check that there are no other hwrng rules in place
+    if not glob.glob(_UDEV_RULE_FILE_NAME % ('hwrng', '*')):
+        _log.debug('Changing ownership (to root:root) of device '
+                   '%s', _HWRNG_PATH)
+        os.chown(_HWRNG_PATH, 0, 0)

@@ -415,6 +415,12 @@ class Rng(Base):
     def uses_source(self, source):
         return self._SOURCES[self.specParams['source']] == source
 
+    def setup(self):
+        supervdsm.getProxy().appropriateHwrngDevice(self.conf['vmId'])
+
+    def teardown(self):
+        supervdsm.getProxy().rmAppropriateHwrngDevice(self.conf['vmId'])
+
     def getXML(self):
         """
         <rng model='virtio'>
