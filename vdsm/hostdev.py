@@ -104,7 +104,7 @@ def _parse_device_params(device_xml):
 
     params = {}
 
-    devXML = etree.fromstring(device_xml)
+    devXML = etree.fromstring(device_xml.decode('ascii', errors='ignore'))
     name = devXML.find('name').text
     if name != 'computer':
         params['parent'] = devXML.find('parent').text

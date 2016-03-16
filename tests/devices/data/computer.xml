@@ -1,0 +1,17 @@
+<device>
+  <name>computer</name>
+  <capability type='system'>
+    <product>ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ</product>
+    <hardware>
+      <vendor>ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ</vendor>
+      <version>ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ</version>
+      <serial>ÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿÿ</serial>
+      <uuid>77ad6766-3273-498f-bb18-03db6f46c62c</uuid>
+    </hardware>
+    <firmware>
+      <vendor>Intel Corp.</vendor>
+      <version>FYBYT10H.86A.0050.2015.0326.1731</version>
+      <release_date>03/26/2015</release_date>
+    </firmware>
+  </capability>
+</device>

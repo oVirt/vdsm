@@ -37,6 +37,7 @@ _SCSI_DEVICES = ['scsi_host0', 'scsi_target0_0_0', 'scsi_0_0_0_0']
 _SRIOV_PF = 'pci_0000_05_00_1'
 _SRIOV_VF = 'pci_0000_05_10_7'
 _ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
+_COMPUTER_DEVICE = 'computer'
 _NET_DEVICE = 'net_em1_28_d2_44_55_66_88'
 
 _DEVICE_XML = {
@@ -227,6 +228,8 @@ ADDITIONAL_DEVICE_PARSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                                         'domain': '0',
                                         'function': '0'}}
 
+_COMPUTER_DEVICE_PARSED = {'capability': 'system'}
+
 _NET_DEVICE_PARSED = {
     'parent': 'pci_0000_00_19_0',
     'capability': 'net',
@@ -328,6 +331,14 @@ class HostdevTests(TestCaseBase):
         )
 
         self.assertEquals(ADDITIONAL_DEVICE_PARSED, deviceXML)
+
+    def testParseDeviceParamsInvalidEncoding(self):
+        deviceXML = hostdev._parse_device_params(
+            libvirtconnection.get().nodeDeviceLookupByName(
+                _COMPUTER_DEVICE).XMLDesc()
+        )
+
+        self.assertEquals(_COMPUTER_DEVICE_PARSED, deviceXML)
 
     def testParseSRIOV_PFDeviceParams(self):
         deviceXML = hostdev._parse_device_params(
