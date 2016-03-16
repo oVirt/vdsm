@@ -134,11 +134,7 @@ Requires: libnl3
 Requires: curl
 Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
-%if 0%{?fedora} >= 23
-Requires: safelease >= 1.0-6
-%else
-Requires: safelease >= 1.0-5
-%endif
+Requires: safelease >= 1.0-7
 Requires: mom >= 0.4.5
 Requires: ovirt-vmconsole >= 1.0.0-0
 

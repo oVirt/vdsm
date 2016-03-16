@@ -120,6 +120,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  xz-utils,
  vdsm-python-zombiereaper (= ${source:Version}),
  vdsm-yajsonrpc (= ${source:Version})
+Suggests: virt-v2v
 Conflicts: apparmor, vdsm-hook-sriov
 Description: VDSM: Virtual Desktop Server Manager
  The VDSM service is required by a Virtualization Manager to manage the
