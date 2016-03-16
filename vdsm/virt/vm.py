@@ -242,7 +242,7 @@ class Vm(object):
         vmdevices.graphics.initLegacyConf(self.conf)
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
-        self._destroyed = False
+        self._destroyed = threading.Event()
         self._recovery_file = recovery.File(self.conf['vmId'])
         self._monitorResponse = 0
         self.memCommitted = 0
@@ -289,7 +289,7 @@ class Vm(object):
             self._guestSocketFile, self.cif.channelListener, self.log,
             self._onGuestStatusChange)
         self._domain = DomainDescriptor.from_id(self.id)
-        self._released = False
+        self._released = threading.Event()
         self._releaseLock = threading.Lock()
         self._watchdogEvent = {}
         self.arch = cpuarch.effective()
@@ -775,7 +775,7 @@ class Vm(object):
     def _preparePathsForDrives(self, drives):
         for drive in drives:
             with self._volPrepareLock:
-                if self._destroyed:
+                if self._destroyed.is_set():
                     # A destroy request has been issued, exit early
                     break
                 drive['path'] = self.cif.prepareVolumePath(drive, self.id)
@@ -851,7 +851,7 @@ class Vm(object):
         # This is not a definite fix, we're aware that there is still the
         # possibility of a race condition, however this covers more cases
         # than before and a quick gain
-        if not self.conf.get('clientIp', '') and not self._destroyed:
+        if not self.conf.get('clientIp', '') and not self._destroyed.is_set():
             delay = config.get('vars', 'user_shutdown_timeout')
             timeout = config.getint('vars', 'sys_shutdown_timeout')
             CDA = ConsoleDisconnectAction
@@ -1745,7 +1745,7 @@ class Vm(object):
                                    uuidPath, name)
 
     def _domDependentInit(self):
-        if self._destroyed:
+        if self._destroyed.is_set():
             # reaching here means that Vm.destroy() was called before we could
             # handle it. We must handle it now
             try:
@@ -3841,7 +3841,7 @@ class Vm(object):
                 supervdsm.getProxy().removeFs(drive.path)
 
         with self._releaseLock:
-            if self._released:
+            if self._released.is_set():
                 return response.success()
 
             # unsetting mirror network will clear both mirroring
@@ -3879,7 +3879,7 @@ class Vm(object):
                 hooks.after_device_destroy(dev._deviceXML, self.conf,
                                            dev.custom)
 
-            self._released = True
+            self._released.set()
 
         return response.success()
 
@@ -3956,7 +3956,7 @@ class Vm(object):
         hooks.before_vm_destroy(self._domain.xml, self.conf)
         with self._shutdownLock:
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
-        self._destroyed = True
+        self._destroyed.set()
 
         return self.releaseVm(gracefulAttempts)
 
