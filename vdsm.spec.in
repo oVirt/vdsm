@@ -1048,8 +1048,8 @@ exit 0
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
-%{_localstatedir}/lib/%{vdsm_name}/bonding-defaults.json
-%{_localstatedir}/lib/%{vdsm_name}/bonding-name2numeric.json
+%{_datadir}/%{vdsm_name}/bonding-defaults.json
+%{_datadir}/%{vdsm_name}/bonding-name2numeric.json
 
 %files python
 %defattr(-, root, root, -)

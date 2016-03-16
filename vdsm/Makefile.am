@@ -172,17 +172,15 @@ install-data-libvirtpass:
 uninstall-data-libvirtpass:
 	$(RM) $(DESTDIR)$(vdsmtsdir)/keys/libvirt_password
 
-# lib/vdsm does not exist yet
 install-data-bonding-defaults:
-	$(MKDIR_P) $(DESTDIR)$(vdsmlibdir)
 	$(INSTALL_DATA) -m 600 $(srcdir)/bonding-defaults.json \
-		$(DESTDIR)$(vdsmlibdir)/bonding-defaults.json
+		$(DESTDIR)$(vdsmdir)/bonding-defaults.json
 	$(INSTALL_DATA) -m 600 $(srcdir)/bonding-name2numeric.json \
-		$(DESTDIR)$(vdsmlibdir)/bonding-name2numeric.json
+		$(DESTDIR)$(vdsmdir)/bonding-name2numeric.json
 
 uninstall-data-bonding-defaults:
-	$(RM) $(DESTDIR)$(vdsmlibdir)/bonding-defaults.json
-	$(RM) $(DESTDIR)$(vdsmlibdir)/bonding-name2numeric.json
+	$(RM) $(DESTDIR)$(vdsmdir)/bonding-defaults.json
+	$(RM) $(DESTDIR)$(vdsmdir)/bonding-name2numeric.json
 
 install-data-rwtab:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/rwtab.d
