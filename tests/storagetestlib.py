@@ -27,6 +27,7 @@ from monkeypatch import MonkeyPatchScope
 from vdsm import utils
 
 from storage import sd, blockSD, fileSD, image, volume, blockVolume
+from storage.sdm import volume_artifacts
 
 
 NR_PVS = 2       # The number of fake PVs we use to make a fake VG by default
@@ -59,7 +60,8 @@ def fake_block_env(obj=None):
         with MonkeyPatchScope([
             (blockSD, 'lvm', lvm),
             (blockVolume, 'lvm', lvm),
-            (sd, 'storage_repository', tmpdir)
+            (volume_artifacts, 'lvm', lvm),
+            (sd, 'storage_repository', tmpdir),
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm)
             yield FakeEnv(sd_manifest, lvm=lvm)

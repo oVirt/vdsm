@@ -22,12 +22,14 @@ import os
 import uuid
 
 from testlib import VdsmTestCase
+from monkeypatch import MonkeyPatchScope
 from testValidation import brokentest
-from storagetestlib import fake_file_env
+from storagetestlib import fake_block_env, fake_file_env
 
 from vdsm.storage import exception as se
+from vdsm.storage.constants import TEMP_VOL_LVTAG
 
-from storage import image, sd, volume
+from storage import image, misc, sd, blockVolume, volume
 from storage.sdm.api import create_volume
 
 
@@ -43,6 +45,7 @@ BASE_RAW_PARAMS = (1073741824, volume.RAW_FORMAT,
                    image.SYSTEM_DISK_TYPE, 'raw_volume')
 BASE_COW_PARAMS = (1073741824, volume.COW_FORMAT,
                    image.SYSTEM_DISK_TYPE, 'cow_volume')
+MB = 1024 ** 2
 
 
 class VolumeArtifactsTestsMixin(object):
@@ -139,6 +142,7 @@ class VolumeArtifactsTestsMixin(object):
             self.assertEqual(desc, vol.getDescription())
             self.assertEqual(volume.LEGAL_VOL, vol.getLegality())
             self.assertEqual(size / volume.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(size, os.stat(artifacts.volume_path).st_size)
             self.assertEqual(vol_format, vol.getFormat())
             self.assertEqual(str(disk_type), vol.getDiskType())
 
@@ -287,5 +291,183 @@ class FileVolumeArtifactVisibilityTests(VdsmTestCase):
                 self.img_id, self.vol_id)
             artifacts.create(*BASE_RAW_PARAMS)
             self.assertEqual({garbage_img_id}, env.sd_manifest.getAllImages())
+            artifacts.commit()
+            self.assertEqual({self.img_id}, env.sd_manifest.getAllImages())
+
+
+class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
+
+    def fake_env(self):
+        return fake_block_env()
+
+    def test_raw_volume_preallocation(self):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            size, vol_format, disk_type, desc = BASE_RAW_PARAMS
+            artifacts.create(size, vol_format, disk_type, desc)
+            artifacts.commit()
+            vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
+            self.assertEqual(volume.PREALLOCATED_VOL, vol.getType())
+
+    def test_size_rounded_up(self):
+        # If the underlying device is larger the size will be updated
+        with fake_block_env() as env:
+            sd_id = env.sd_manifest.sdUUID
+            vg = env.lvm.getVG(sd_id)
+            expected_size = int(vg.extent_size)
+            requested_size = expected_size - MB
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            artifacts.create(requested_size, volume.RAW_FORMAT,
+                             image.SYSTEM_DISK_TYPE, 'raw_volume')
+            artifacts.commit()
+            vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
+            self.assertEqual(expected_size / volume.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(expected_size,
+                             int(env.lvm.getLV(sd_id, self.vol_id).size))
+
+    def test_create_fail_creating_lv(self):
+        # If we fail to create the LV then storage is clean and we can retry
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(self.img_id,
+                                                             self.vol_id)
+            with MonkeyPatchScope([[env.lvm, 'createLV', failure]]):
+                self.assertRaises(ExpectedFailure, artifacts.create,
+                                  *BASE_RAW_PARAMS)
+            self.validate_invisibility(env, artifacts, is_garbage=False)
+
+            # Storage is clean so we should be able to retry
+            artifacts = env.sd_manifest.get_volume_artifacts(self.img_id,
+                                                             self.vol_id)
+            artifacts.create(*BASE_RAW_PARAMS)
+
+    def test_create_fail_acquiring_meta_slot(self):
+        # If we fail to acquire the meta_slot we have just a garbage LV
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(self.img_id,
+                                                             self.vol_id)
+            with MonkeyPatchScope([
+                [env.sd_manifest, 'acquireVolumeMetadataSlot', failure]
+            ]):
+                self.assertRaises(ExpectedFailure, artifacts.create,
+                                  *BASE_RAW_PARAMS)
+            self.validate_invisibility(env, artifacts, is_garbage=True)
+            self.validate_domain_has_garbage(env.sd_manifest)
+
+    def test_create_fail_setting_metadata_lvtag(self):
+        # If we fail to set the meta_slot in the LV tags that slot remains
+        # available for allocation (even without garbage collection)
+        with self.fake_env() as env:
+            slot_before = self.get_next_free_slot(env)
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            with MonkeyPatchScope([[env.lvm, 'changeLVTags', failure]]):
+                self.assertRaises(ExpectedFailure, artifacts.create,
+                                  *BASE_RAW_PARAMS)
+            self.assertEqual(slot_before, self.get_next_free_slot(env))
+            self.validate_invisibility(env, artifacts, is_garbage=True)
+            self.validate_domain_has_garbage(env.sd_manifest)
+
+    def test_create_fail_writing_metadata(self):
+        # If we fail to write metadata we will be left with a garbage LV and an
+        # allocated metadata slot which is not freed until the LV is removed.
+        with self.fake_env() as env:
+            slot_before = self.get_next_free_slot(env)
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            with MonkeyPatchScope([
+                [blockVolume.BlockVolumeManifest, 'newMetadata', failure]
+            ]):
+                self.assertRaises(ExpectedFailure, artifacts.create,
+                                  *BASE_RAW_PARAMS)
+            self.validate_invisibility(env, artifacts, is_garbage=True)
+            self.validate_domain_has_garbage(env.sd_manifest)
+            self.assertNotEqual(slot_before, self.get_next_free_slot(env))
+
+    def test_create_fail_creating_lease(self):
+        # We leave behind a garbage LV and metadata area
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            with MonkeyPatchScope([
+                [blockVolume.BlockVolumeManifest, 'newVolumeLease', failure]
+            ]):
+                self.assertRaises(ExpectedFailure, artifacts.create,
+                                  *BASE_RAW_PARAMS)
+            self.validate_invisibility(env, artifacts, is_garbage=True)
+            self.validate_domain_has_garbage(env.sd_manifest)
+
+    # Invalid use of artifacts
+
+    def test_commit_without_create(self):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            self.assertRaises(se.LogicalVolumeDoesNotExistError,
+                              artifacts.commit)
+
+    def test_commit_twice(self):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            artifacts.create(*BASE_RAW_PARAMS)
+            artifacts.commit()
+            self.assertRaises(se.VolumeAlreadyExists, artifacts.commit)
+
+    def validate_artifacts(self, artifacts, env):
+        try:
+            lv = env.lvm.getLV(artifacts.sd_manifest.sdUUID, artifacts.vol_id)
+        except se.LogicalVolumeDoesNotExistError:
+            raise AssertionError("LV missing")
+
+        if TEMP_VOL_LVTAG not in lv.tags:
+            raise AssertionError("Missing TEMP_VOL_LVTAG")
+
+        md_slot = int(blockVolume.getVolumeTag(artifacts.sd_manifest.sdUUID,
+                                               self.vol_id,
+                                               blockVolume.TAG_PREFIX_MD))
+        self.validate_metadata(env, md_slot, artifacts)
+        # TODO: Validate lease area once we have a SANLock mock
+
+    def validate_metadata(self, env, md_slot, artifacts):
+        path = env.lvm.lvPath(artifacts.sd_manifest.sdUUID, sd.METADATA)
+        offset = md_slot * volume.METADATA_SIZE
+        md_lines = misc.readblock(path, offset, volume.METADATA_SIZE)
+        md = volume.VolumeMetadata.from_lines(md_lines)
+
+        # Test a few fields just to check that metadata was written
+        self.assertEqual(artifacts.sd_manifest.sdUUID, md.domain)
+        self.assertEqual(artifacts.img_id, md.image)
+
+    def validate_invisibility(self, env, artifacts, is_garbage):
+        self.assertEqual(is_garbage, artifacts.is_garbage())
+        self.assertFalse(artifacts.is_image())
+        self.assertRaises(se.VolumeDoesNotExist,
+                          env.sd_manifest.produceVolume, artifacts.img_id,
+                          artifacts.vol_id)
+
+    def get_next_free_slot(self, env):
+        with env.sd_manifest.acquireVolumeMetadataSlot(
+                self.vol_id, blockVolume.VOLUME_MDNUMBLKS) as slot:
+            return slot
+
+
+class BlockVolumeArtifactVisibilityTests(VdsmTestCase):
+
+    def setUp(self):
+        self.img_id = str(uuid.uuid4())
+        self.vol_id = str(uuid.uuid4())
+
+    def test_getallimages(self):
+        # The current behavior of getAllImages for block domains does not
+        # report images that contain only artifacts.  This differs from the
+        # file implementation.
+        with fake_block_env() as env:
+            self.assertEqual(set(), env.sd_manifest.getAllImages())
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            artifacts.create(*BASE_RAW_PARAMS)
+            self.assertEqual(set(), env.sd_manifest.getAllImages())
             artifacts.commit()
             self.assertEqual({self.img_id}, env.sd_manifest.getAllImages())

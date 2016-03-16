@@ -45,6 +45,7 @@ import vdsm.supervdsm as svdsm
 
 import misc
 import sd
+from sdm import volume_artifacts
 import lvm
 import clusterlock
 import blockVolume
@@ -590,7 +591,7 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         return blockVolume.BlockVolumeManifest
 
     def get_volume_artifacts(self, img_id, vol_id):
-        raise NotImplementedError()
+        return volume_artifacts.BlockVolumeArtifacts(self, img_id, vol_id)
 
     def _getImgExclusiveVols(self, imgUUID, volsImgs):
         """Filter vols belonging to imgUUID only."""
