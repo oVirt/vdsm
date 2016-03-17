@@ -850,10 +850,6 @@ class BindingXMLRPC(object):
             hostId, poolName, masterDom, masterVersion, domDict,
             lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec, leaseRetries)
 
-    def poolRefresh(self, spUUID, msdUUID, masterVersion, options=None):
-        pool = API.StoragePool(spUUID)
-        return pool.refresh(msdUUID, masterVersion)
-
     def poolSetDescription(self, spUUID, description, options=None):
         pool = API.StoragePool(spUUID)
         return pool.setDescription(description)
@@ -1143,7 +1139,6 @@ class BindingXMLRPC(object):
                 (self.poolGetInfo, 'getStoragePoolInfo'),
                 (self.poolMoveMultipleImages, 'moveMultipleImages'),
                 (self.poolReconstructMaster, 'reconstructMaster'),
-                (self.poolRefresh, 'refreshStoragePool'),
                 (self.poolSetDescription, 'setStoragePoolDescription'),
                 (self.poolSpmStart, 'spmStart'),
                 (self.poolSpmStop, 'spmStop'),

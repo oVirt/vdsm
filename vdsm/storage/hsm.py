@@ -877,58 +877,6 @@ class HSM(object):
                                  name, func, *args)
 
     @public
-    def refreshStoragePool(self, spUUID, msdUUID,
-                           masterVersion, options=None):
-        """
-        Refresh the Storage Pool info in HSM.
-
-        :param spUUID: The UUID of the storage pool you want to refresh.
-        :type spUUID: UUID
-        :param msdUUID: The UUID of the master storage domain.
-        :type msdUUID: UUID
-        :param masterVersion: The master version of the storage pool.
-        :type masterVersion: uint
-        :param options: Lot of options. ?
-
-        :returns: True if everything went as planned.
-        :rtype: bool
-
-        :raises: a :exc:`storage.exception.StoragePoolMaterNotFound`
-                 if the storage pool and the master storage domain don't
-                 exist or don't match.
-
-        """
-        vars.task.setDefaultException(
-            se.StoragePoolActionError(
-                "spUUID=%s, msdUUID=%s, masterVersion=%s" %
-                (spUUID, msdUUID, masterVersion)))
-
-        vars.task.getSharedLock(STORAGE, spUUID)
-
-        try:
-            # The refreshStoragePool command is an HSM command and
-            # should not be issued (and executed) on the SPM. At the
-            # moment we just ignore it for legacy reasons but in the
-            # future vdsm could raise an exception.
-            self.getPool(spUUID).validateNotSPM()
-        except se.IsSpm:
-            self.log.info("Ignoring the refreshStoragePool request "
-                          "(the host is the SPM)")
-            return
-
-        pool = self.getPool(spUUID)
-
-        try:
-            pool.refresh(msdUUID, masterVersion)
-            self.validateSdUUID(msdUUID)
-        except:
-            self._disconnectPool(pool, pool.id, False)
-            raise
-
-        if pool.hsmMailer:
-            pool.hsmMailer.flushMessages()
-
-    @public
     def createStoragePool(self, poolType, spUUID, poolName, masterDom,
                           domList, masterVersion, lockPolicy=None,
                           lockRenewalIntervalSec=None, leaseTimeSec=None,

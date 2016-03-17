@@ -1137,10 +1137,6 @@ class StoragePool(APIBase):
             lockPolicy, lockRenewalIntervalSec, leaseTimeSec, ioOpTimeoutSec,
             leaseRetries, hostId)
 
-    def refresh(self, masterSdUUID, masterVersion):
-        return self._irs.refreshStoragePool(self._UUID, masterSdUUID,
-                                            masterVersion)
-
     def setDescription(self, description):
         return self._irs.setStoragePoolDescription(self._UUID, description)
 

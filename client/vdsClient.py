@@ -1028,15 +1028,6 @@ class service:
             return pool['status']['code'], pool['status']['message']
         return 0, ''
 
-    def refreshStoragePool(self, args):
-        spUUID = args[0]
-        msdUUID = args[1]
-        masterVersion = int(args[2])
-        pool = self.s.refreshStoragePool(spUUID, msdUUID, masterVersion)
-        if pool['status']['code']:
-            return pool['status']['code'], pool['status']['message']
-        return 0, ''
-
     def setStoragePoolDescription(self, args):
         spUUID = args[0]
         descr = args[1]
@@ -2413,10 +2404,6 @@ if __name__ == '__main__':
                                    '(maintained only for the command line '
                                    'backward compatibility)'
                                    )),
-        'refreshStoragePool': (serv.refreshStoragePool,
-                               ('<spUUID> <masterDom> <masterVersion>',
-                                'Refresh storage pool'
-                                )),
         'setStoragePoolDescription': (serv.setStoragePoolDescription,
                                       ('<spUUID> <descr>',
                                        'Set storage pool description'
