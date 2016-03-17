@@ -203,7 +203,7 @@ class GuestAgent(object):
             # Only update if the value changed
             self.log.info("Guest API version changed from %d to %d",
                           self.effectiveApiVersion, commonVersion)
-            self.effectiveApiVersion = version
+            self.effectiveApiVersion = commonVersion
             if commonVersion != _IMPLICIT_API_VERSION_ZERO:
                 # Only notify the guest agent if the API was not disabled
                 self._forward('api-version', {'apiVersion': commonVersion})
