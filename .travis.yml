@@ -1,0 +1,15 @@
+sudo: required
+language: python
+services:
+  - docker
+
+# Disable depth (for ./autogen.sh --system to pass)
+git:
+  depth: 9999999
+
+before_install:
+  - docker --version
+  - docker pull edwardhaas/ovirt-vdsm-dev
+
+script:
+  - docker run --rm=true -it -v `pwd`:/vdsm:rw edwardhaas/ovirt-vdsm-dev /bin/bash -c "cd /vdsm && ./autogen.sh --system && make; make check-unit"
