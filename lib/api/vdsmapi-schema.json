@@ -4571,6 +4571,20 @@
  'data': {'deviceName': 'str', 'numvfs': 'uint'}}
 
 ##
+# @Host.hostdevReattach:
+#
+# Reattach device back to the host
+#
+# @deviceName:      Libvirt name of the device (specified using
+#                   underscores - pci_0000_05_00_0 for example)
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'Host', 'name': 'hostdevReattach'},
+ 'data': {'deviceName': 'str'}}
+
+
+##
 # @Host.ping:
 #
 # Test connectivity to vdsm.

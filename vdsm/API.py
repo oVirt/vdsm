@@ -1325,6 +1325,10 @@ class Global(APIBase):
         hostdev.change_numvfs(deviceName, numvfs)
         return {'status': doneCode}
 
+    def hostdevReattach(self, deviceName):
+        hostdev.reattach_detachable(deviceName)
+        return {'status': doneCode}
+
     def getStats(self):
         """
         Report host statistics.

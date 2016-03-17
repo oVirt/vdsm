@@ -546,6 +546,10 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.hostdevChangeNumvfs(device_name, numvfs)
 
+    def hostdevReattach(self, device_name):
+        api = API.Global()
+        return api.hostdevReattach(device_name)
+
     def vmGetIoTunePolicy(self, vmId):
         vm = API.VM(vmId)
         return vm.getIoTunePolicy()
@@ -1056,6 +1060,7 @@ class BindingXMLRPC(object):
                 (self.getAllVmStats, 'getAllVmStats'),
                 (self.hostdevListByCaps, 'hostdevListByCaps'),
                 (self.hostdevChangeNumvfs, 'hostdevChangeNumvfs'),
+                (self.hostdevReattach, 'hostdevReattach'),
                 (self.vmMigrationCreate, 'migrationCreate'),
                 (self.vmDesktopLogin, 'desktopLogin'),
                 (self.vmDesktopLogoff, 'desktopLogoff'),

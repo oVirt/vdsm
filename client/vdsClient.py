@@ -559,6 +559,10 @@ class service:
         return self.ExecAndExit(self.s.hostdevChangeNumvfs(device_name,
                                                            numvfs))
 
+    def do_hostdevReattach(self, args):
+        device_name = args[0]
+        return self.ExecAndExit(self.s.hostdevReattach(device_name))
+
     def desktopLogin(self, args):
         vmId, domain, user, password = tuple(args[:4])
         if len(args) > 4:
@@ -2230,6 +2234,9 @@ if __name__ == '__main__':
                                  'Change number of virtual functions for '
                                  'given physical function.'
                                  )),
+        'hostdevReattach': (serv.do_hostdevReattach,
+                            ('<device_name>',
+                             'Reattach device back to a host.')),
         'getVGList': (serv.getVGList,
                       ('storageType',
                        'List of all VGs.'
