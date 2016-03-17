@@ -6128,22 +6128,6 @@
  'returns': ['UUID']}
 
 ##
-# @StoragePool.getFloppyList:
-#
-# Get a list of all floppy disk images associated with a Storage Pool.
-#
-# @storagepoolID:  The UUID of the Storage Pool
-#
-# Returns:
-# A list of floppy disk file names
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'StoragePool', 'name': 'getFloppyList'},
- 'data': {'storagepoolID': 'UUID'},
- 'returns': ['str']}
-
-##
 # @StoragePool.getDomainsContainingImage:
 #
 # Get a list of Data Storage Domains that contain an Image.
@@ -6160,25 +6144,6 @@
 {'command': {'class': 'StoragePool', 'name': 'getDomainsContainingImage'},
  'data': {'storagepoolID': 'UUID', 'imageID': 'UUID'},
  'returns': ['UUID']}
-
-##
-# @StoragePool.getIsoList:
-#
-# Get a list of all ISO images associated with a Storage Pool.
-#
-# @storagepoolID:      The UUID of the Storage Pool
-#
-# @filenameExtension:  #optional Specify an alternate file extension (the
-#                      default extension used is 'iso')
-#
-# Returns:
-# A list of available files
-#
-# Since: 4.10.0
-##
-{'command': {'class': 'StoragePool', 'name': 'getIsoList'},
- 'data': {'storagepoolID': 'UUID', '*filenameExtension': 'str'},
- 'returns': ['str']}
 
 ##
 # @StoragePool.getSpmStatus:

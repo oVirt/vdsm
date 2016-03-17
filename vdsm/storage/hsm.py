@@ -2349,49 +2349,6 @@ class HSM(object):
                                     caseSensitive=caseSensitive)
         return {'fileStats': fileStats}
 
-    @public
-    def getIsoList(self, spUUID, extension='iso', options=None):
-        """
-        Gets a list of all ISO/Floppy volumes in a storage pool.
-
-        :param spUUID: The UUID of the storage pool you want to query.
-        :type spUUID: UUID
-        :param extension: ?
-        :type extension: str
-        :options: ?
-
-        :returns: a dict of all the volumes found.
-        :rtype: dict
-        """
-        vars.task.setDefaultException(se.GetIsoListError(spUUID))
-        vars.task.getSharedLock(STORAGE, spUUID)
-        isoDom = self.getPool(spUUID).getIsoDomain()
-        if not isoDom:
-            raise se.GetIsoListError(spUUID)
-
-        # Get full iso files dictionary
-        isodict = isoDom.getFileList(pattern='*.' + extension,
-                                     caseSensitive=False)
-        # Get list of iso images with proper permissions only
-        isolist = [key for key, value in isodict.items()
-                   if isodict[key]['status'] == 0]
-        return {'isolist': isolist}
-
-    @public
-    def getFloppyList(self, spUUID, options=None):
-        """
-        Gets a list of all Floppy volumes if a storage pool.
-
-        :param spUUID: The UUID of the storage pool you want to query.
-        :type spUUID: UUID
-        :param options: ?
-
-        :returns: a dict of all the floppy volumes found.
-        :rtype: dict
-        """
-        vars.task.setDefaultException(se.GetFloppyListError("%s" % spUUID))
-        return self.getIsoList(spUUID=spUUID, extension='vfd')
-
     def __getSDTypeFindMethod(self, domType):
         # TODO: make sd.domain_types a real dictionary and remove this.
         # Storage Domain Types find methods

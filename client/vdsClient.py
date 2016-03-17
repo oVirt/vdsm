@@ -1220,26 +1220,6 @@ class service:
 
         return 0, ''
 
-    def getIsoList(self, args):
-        spUUID = args[0]
-        isos = self.s.getIsoList(spUUID)
-        if isos['status']['code']:
-            return isos['status']['code'], isos['status']['message']
-
-        print('------ ISO list with proper permissions only -------')
-        for entry in isos['isolist']:
-            print(entry)
-        return 0, ''
-
-    def getFloppyList(self, args):
-        spUUID = args[0]
-        floppies = self.s.getFloppyList(spUUID)
-        if floppies['status']['code']:
-            return floppies['status']['code'], floppies['status']['message']
-        for entry in floppies['isolist']:
-            print(entry)
-        return 0, ''
-
     def getImagesList(self, args):
         sdUUID = args[0]
         images = self.s.getImagesList(sdUUID)
@@ -2563,14 +2543,6 @@ if __name__ == '__main__':
                          ('<sdUUID> [pattern][caseSensitive]',
                           'Returns files statistics from ISO domain'
                           )),
-        'getIsoList': (serv.getIsoList,
-                       ('<spUUID>',
-                        'Returns list of all .iso images in ISO domain'
-                        )),
-        'getFloppyList': (serv.getFloppyList,
-                          ('<spUUID>',
-                           'Returns list of all .vfd images in ISO domain'
-                           )),
         'getImagesList': (serv.getImagesList,
                           ('<sdUUID>',
                            'Get list of all images of specific domain'

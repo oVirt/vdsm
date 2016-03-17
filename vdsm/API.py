@@ -1120,14 +1120,8 @@ class StoragePool(APIBase):
     def getBackedUpVmsList(self, storagedomainID):
         return self._irs.getVmsList(self._UUID, storagedomainID)
 
-    def getFloppyList(self):
-        return self._irs.getFloppyList(self._UUID)
-
     def getDomainsContainingImage(self, imageID):
         return self._irs.getImageDomainsList(self._UUID, imageID)
-
-    def getIsoList(self, filenameExtension='iso'):
-        return self._irs.getIsoList(self._UUID, filenameExtension)
 
     def getSpmStatus(self):
         return self._irs.getSpmStatus(self._UUID)

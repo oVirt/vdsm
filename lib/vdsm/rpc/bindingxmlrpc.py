@@ -815,17 +815,9 @@ class BindingXMLRPC(object):
         pool = API.StoragePool(spUUID)
         return pool.getBackedUpVmsList(sdUUID)
 
-    def poolGetFloppyList(self, spUUID, options=None):
-        pool = API.StoragePool(spUUID)
-        return pool.getFloppyList()
-
     def poolGetDomainsContainingImage(self, spUUID, imgUUID, options=None):
         pool = API.StoragePool(spUUID)
         return pool.getDomainsContainingImage(imgUUID)
-
-    def poolGetIsoList(self, spUUID, extension='iso', options=None):
-        pool = API.StoragePool(spUUID)
-        return pool.getIsoList(extension)
 
     def poolGetSpmStatus(self, spUUID, options=None):
         pool = API.StoragePool(spUUID)
@@ -1145,9 +1137,7 @@ class BindingXMLRPC(object):
                 (self.poolFenceSPMStorage, 'fenceSpmStorage'),
                 (self.poolGetBackedUpVmsInfo, 'getVmsInfo'),
                 (self.poolGetBackedUpVmsList, 'getVmsList'),
-                (self.poolGetFloppyList, 'getFloppyList'),
                 (self.poolGetDomainsContainingImage, 'getImageDomainsList'),
-                (self.poolGetIsoList, 'getIsoList'),
                 (self.poolGetSpmStatus, 'getSpmStatus'),
                 (self.poolGetInfo, 'getStoragePoolInfo'),
                 (self.poolMoveMultipleImages, 'moveMultipleImages'),

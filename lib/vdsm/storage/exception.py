@@ -533,14 +533,8 @@ class StoragePoolNotConnected(StorageException):
     message = "Storage pool not connected"
 
 
-class GetIsoListError(StorageException):
-    code = 314
-    message = "Cannot get ISO list"
-
-
-class GetFloppyListError(StorageException):
-    code = 315
-    message = "Cannot get floppy list"
+# Code 314 was used for GetIsoListError, removed in 4.18
+# Code 315 was used for GetFloppyListError, removed in 4.18
 
 
 class StoragePoolAlreadyExists(StorageException):
