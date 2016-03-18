@@ -1799,7 +1799,8 @@ class Vm(object):
                 self.cont()
 
         if not self.recovering or 'pid' not in self.conf:
-            self.conf['pid'] = str(self._getPid())
+            with self._confLock:
+                self.conf['pid'] = str(self._getPid())
 
         nice = int(self.conf.get('nice', '0'))
         nice = max(min(nice, 19), 0)
@@ -1930,7 +1931,8 @@ class Vm(object):
         for dev in devices.values():
             newDevices.extend(dev)
 
-        self.conf['devices'] = newDevices
+        with self._confLock:
+            self.conf['devices'] = newDevices
 
     def _correctDiskVolumes(self, srcDomXML):
         """
