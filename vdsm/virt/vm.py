@@ -845,7 +845,8 @@ class Vm(object):
 
     def onConnect(self, clientIp='', clientPort=''):
         if clientIp:
-            self.conf['clientIp'] = clientIp
+            with self._confLock:
+                self.conf['clientIp'] = clientIp
             self._clientPort = clientPort
 
     def _timedDesktopLock(self):
