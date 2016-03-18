@@ -2190,6 +2190,63 @@ class Vm(object):
 
         return response.success(assignedDevices=assigned_devices)
 
+    def hostdevHotunplug(self, dev_names):
+        if self.isMigrating():
+            return response.error('migInProgress')
+
+        device_objects = []
+        unplugged_devices = []
+
+        for dev_name in dev_names:
+            dev_object = None
+            for dev in self._devices[hwclass.HOSTDEV][:]:
+                if dev.device == dev_name:
+                    dev_object = dev
+                    device_objects.append(dev)
+                    break
+
+            if dev_object:
+                device_xml = dev_object.getXML().toprettyxml(encoding='utf-8')
+                self.log.debug('Hotunplug hostdev xml: %s', device_xml)
+            else:
+                self.log.error('Hotunplug hostdev failed (continuing) - '
+                               'device not found: %s', dev_name)
+                continue
+
+            self._devices[hwclass.HOSTDEV].remove(dev_object)
+            dev_spec = None
+            for dev in self.conf['devices'][:]:
+                if (dev['type'] == hwclass.HOSTDEV and
+                        dev['device'] == dev_object.device):
+                    dev_spec = dev
+                    with self._confLock:
+                        self.conf['devices'].remove(dev)
+                    break
+
+            self.saveState()
+
+            try:
+                self._dom.detachDevice(device_xml)
+                self._waitForDeviceRemoval(dev_object)
+            except HotunplugTimeout as e:
+                self.log.error('%s', e)
+                self._hostdev_hotunplug_restore(dev_object, dev_spec)
+                continue
+            except libvirt.libvirtError as e:
+                self.log.exception('Hotunplug failed (continuing)')
+                self._hostdev_hotunplug_restore(dev_object, dev_spec)
+                continue
+
+            unplugged_devices.append(dev_name)
+
+        return response.success(unpluggedDevices=unplugged_devices)
+
+    def _hostdev_hotunplug_restore(self, dev_object, dev_spec):
+        with self._confLock:
+            self.conf['devices'].append(dev_spec)
+        self._devices[hwclass.HOSTDEV].append(dev_object)
+        self.saveState()
+
     def _lookupDeviceByAlias(self, devType, alias):
         for dev in self._devices[devType][:]:
             try:

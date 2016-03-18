@@ -8679,6 +8679,24 @@ VM.hostdevHotplug:
         type:
         - string
 
+VM.hostdevHotunplug:
+    added: '4.0'
+    description: Remove a host device from a running VM
+    params:
+    -   description: The UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: List of device libvirt names
+        name: devices
+        type:
+        - string
+    return:
+        description: List of libvirt device names, indicating which
+            devices were successfully hotunplugged.
+        type:
+        - string
+
 VM.hotplugNic:
     added: '3.1'
     description: Add a new network device to a running VM.

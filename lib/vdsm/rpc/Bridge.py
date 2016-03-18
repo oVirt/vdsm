@@ -464,6 +464,7 @@ command_info = {
     'VM_hotplugDisk': {'ret': 'vmList'},
     'VM_hotplugNic': {'ret': 'vmList'},
     'VM_hostdevHotplug': {'ret': 'assignedDevices'},
+    'VM_hostdevHotunplug': {'ret': 'unpluggedDevices'},
     'VM_hotunplugDisk': {'ret': 'vmList'},
     'VM_hotunplugNic': {'ret': 'vmList'},
     'VM_mergeStatus': {'ret': 'mergeStatus'},
