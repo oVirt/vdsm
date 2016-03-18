@@ -1,4 +1,5 @@
-# Copyright (C) 2012 Adam Litke, IBM Corporation
+# Copyright (C) 2012  2016 Adam Litke, IBM Corporation
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -70,11 +71,11 @@ class DynamicBridge(object):
     def unregister_server_address(self):
         self._threadLocal.server = None
 
-    def _getArgs(self, argobj, arglist, defaultArgs):
+    def _get_args(self, argobj, arglist, defaultArgs):
         ret = ()
         for arg in arglist:
             if arg.startswith('*'):
-                name = self._symNameFilter(arg)
+                name = self._sym_name_filter(arg)
                 if name in argobj:
                     ret = ret + (argobj[name],)
                 else:
@@ -85,7 +86,7 @@ class DynamicBridge(object):
                 ret = ret + (argobj[arg],)
         return ret
 
-    def _getResult(self, response, member=None):
+    def _get_result(self, response, member=None):
         if member is None:
             return None
         try:
@@ -101,7 +102,7 @@ class DynamicBridge(object):
             raise yajsonrpc.JsonRpcMethodNotFoundError(method)
         return partial(self._dynamicMethod, className, methodName)
 
-    def _convertClassName(self, name):
+    def _convert_class_name(self, name):
         """
         The schema has a different name for the 'Global' namespace.  Until
         API.py is fixed, we convert the schema name if we are looking up
@@ -113,7 +114,7 @@ class DynamicBridge(object):
         except KeyError:
             return name
 
-    def _getMethodArgs(self, className, methodName, argObj):
+    def _get_method_args(self, className, methodName, argObj):
         """
         An internal API call currently looks like:
 
@@ -129,26 +130,26 @@ class DynamicBridge(object):
         sym = self.api['commands'][className][methodName]
         allArgs = sym.get('data', {}).keys()
 
-        className = self._convertClassName(className)
+        className = self._convert_class_name(className)
         # Get the list of ctor_args
         if _glusterEnabled and className.startswith('Gluster'):
             ctorArgs = getattr(gapi, className).ctorArgs
-            defaultArgs = self._getDefaultArgs(gapi, className, methodName)
+            defaultArgs = self._get_default_args(gapi, className, methodName)
         else:
             ctorArgs = getattr(API, className).ctorArgs
-            defaultArgs = self._getDefaultArgs(API, className, methodName)
+            defaultArgs = self._get_default_args(API, className, methodName)
 
         # Determine the method arguments by subtraction
         methodArgs = []
         for arg in allArgs:
-            name = self._symNameFilter(arg)
+            name = self._sym_name_filter(arg)
 
             if name not in ctorArgs:
                 methodArgs.append(arg)
 
-        return self._getArgs(argObj, methodArgs, defaultArgs)
+        return self._get_args(argObj, methodArgs, defaultArgs)
 
-    def _getDefaultArgs(self, api, className, methodName):
+    def _get_default_args(self, api, className, methodName):
         result = []
         for class_name, class_obj in inspect.getmembers(api, inspect.isclass):
             if class_name == className:
@@ -160,18 +161,18 @@ class DynamicBridge(object):
                             result = list(args)
         return result
 
-    def _getApiInstance(self, className, argObj):
-        className = self._convertClassName(className)
+    def _get_api_instance(self, className, argObj):
+        className = self._convert_class_name(className)
 
         if _glusterEnabled and className.startswith('Gluster'):
             apiObj = getattr(gapi, className)
         else:
             apiObj = getattr(API, className)
 
-        ctorArgs = self._getArgs(argObj, apiObj.ctorArgs, [])
+        ctorArgs = self._get_args(argObj, apiObj.ctorArgs, [])
         return apiObj(*ctorArgs)
 
-    def _symNameFilter(self, symName):
+    def _sym_name_filter(self, symName):
         """
         The schema prefixes symbol names with '*' if they are optional.  Strip
         that annotation to get the correct symbol name.
@@ -181,12 +182,12 @@ class DynamicBridge(object):
         return symName
 
     # TODO: Add support for map types
-    def _typeFixup(self, symName, symTypeName, obj):
+    def _type_fixup(self, symName, symTypeName, obj):
         isList = False
         if isinstance(symTypeName, list):
             symTypeName = symTypeName[0]
             isList = True
-        symName = self._symNameFilter(symName)
+        symName = self._sym_name_filter(symName)
 
         try:
             symbol = self.api['types'][symTypeName]
@@ -202,11 +203,11 @@ class DynamicBridge(object):
             if symTypeName in typefixups:
                 typefixups[symTypeName](item)
             for (k, v) in symbol.get('data', {}).items():
-                k = self._symNameFilter(k)
+                k = self._sym_name_filter(k)
                 if k in item:
-                    self._typeFixup(k, v, item[k])
+                    self._type_fixup(k, v, item[k])
 
-    def _fixupArgs(self, className, methodName, args):
+    def _fixup_args(self, className, methodName, args):
         argDef = self.api['commands'][className][methodName].get('data', {})
         argInfo = zip(argDef.items(), args)
         for typeInfo, val in argInfo:
@@ -218,18 +219,18 @@ class DynamicBridge(object):
                 continue
             if val is None:
                 continue
-            self._typeFixup(argName, argType, val)
+            self._type_fixup(argName, argType, val)
 
-    def _fixupRet(self, className, methodName, result):
-        retType = self._getRetList(className, methodName)
+    def _fixup_ret(self, className, methodName, result):
+        retType = self._get_ret_list(className, methodName)
         if retType is not None:
-            self._typeFixup('return', retType, result)
+            self._type_fixup('return', retType, result)
         return result
 
-    def _getRetList(self, className, methodName):
+    def _get_ret_list(self, className, methodName):
         return self.api['commands'][className][methodName].get('returns')
 
-    def _nameArgs(self, args, kwargs, arglist):
+    def _name_args(self, args, kwargs, arglist):
         kwargs = kwargs.copy()
         for i, arg in enumerate(args):
             argName = arglist[i]
@@ -237,16 +238,16 @@ class DynamicBridge(object):
 
         return kwargs
 
-    def _getArgList(self, className, methodName):
+    def _get_arg_list(self, className, methodName):
         sym = self.api['commands'][className][methodName]
         return sym.get('data', {}).keys()
 
     def _dynamicMethod(self, className, methodName, *args, **kwargs):
-        argobj = self._nameArgs(args, kwargs,
-                                self._getArgList(className, methodName))
-        api = self._getApiInstance(className, argobj)
-        methodArgs = self._getMethodArgs(className, methodName, argobj)
-        self._fixupArgs(className, methodName, methodArgs)
+        argobj = self._name_args(args, kwargs,
+                                 self._get_arg_list(className, methodName))
+        api = self._get_api_instance(className, argobj)
+        methodArgs = self._get_method_args(className, methodName, argobj)
+        self._fixup_args(className, methodName, methodArgs)
 
         # Call the override function (if given).  Otherwise, just call directly
         cmd = '%s_%s' % (className, methodName)
@@ -284,8 +285,8 @@ class DynamicBridge(object):
             ret = dict([(key, value) for key, value in result.items()
                         if key is not 'status'])
         else:
-            ret = self._getResult(result, retfield)
-        return self._fixupRet(className, methodName, ret)
+            ret = self._get_result(result, retfield)
+        return self._fixup_ret(className, methodName, ret)
 
 
 def Host_fenceNode_Ret(ret):

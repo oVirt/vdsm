@@ -92,18 +92,18 @@ def getFakeAPI():
     return _newAPI
 
 
-def _getApiInstance(self, className, argObj):
-    className = self._convertClassName(className)
+def _get_api_instance(self, className, argObj):
+    className = self._convert_class_name(className)
 
     apiObj = getattr(getFakeAPI(), className)
 
-    ctorArgs = self._getArgs(argObj, apiObj.ctorArgs, [])
+    ctorArgs = self._get_args(argObj, apiObj.ctorArgs, [])
     return apiObj(*ctorArgs)
 
 
 class BridgeTests(TestCaseBase):
 
-    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
+    @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testMethodWithManyOptionalAttributes(self):
         bridge = DynamicBridge()
 
@@ -114,7 +114,7 @@ class BridgeTests(TestCaseBase):
         self.assertEquals(bridge.dispatch('Host.fenceNode')(**params),
                           {'power': 'on'})
 
-    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
+    @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testMethodWithNoParams(self):
         bridge = DynamicBridge()
 
@@ -123,7 +123,7 @@ class BridgeTests(TestCaseBase):
                           ['My caps'], 'My capabilites')
         bridge.unregister_server_address()
 
-    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
+    @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testDetach(self):
         bridge = DynamicBridge()
 
@@ -134,7 +134,7 @@ class BridgeTests(TestCaseBase):
         self.assertEqual(bridge.dispatch('StorageDomain.detach')(**params),
                          None)
 
-    @MonkeyPatch(DynamicBridge, '_getApiInstance', _getApiInstance)
+    @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testHookError(self):
         bridge = DynamicBridge()
 
