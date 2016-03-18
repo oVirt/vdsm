@@ -1256,16 +1256,6 @@ class Vm(object):
 
         cleanup_guest_socket(self._guestSocketFile)
 
-    def _reattachHostDevices(self):
-        # reattach host devices
-        for dev_name, _ in self._host_devices():
-            self.log.debug('Reattaching device %s to host.' % dev_name)
-            try:
-                hostdev.reattach_detachable(dev_name)
-            except hostdev.NoIOMMUSupportException:
-                self.log.exception('Could not reattach device %s back to host '
-                                   'due to missing IOMMU support.')
-
     def _host_devices(self):
         for device in self._devices[hwclass.HOSTDEV][:]:
             yield device.device, device
@@ -1689,7 +1679,6 @@ class Vm(object):
         self._cleanupFloppy()
         self._cleanupGuestAgent()
         cleanup_guest_socket(self._qemuguestSocketFile)
-        self._reattachHostDevices()
         self._cleanupStatsCache()
         numaUtils.invalidateNumaCache(self)
         for con in self._devices[hwclass.CONSOLE]:
