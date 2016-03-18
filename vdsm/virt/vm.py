@@ -2288,8 +2288,6 @@ class Vm(object):
         try:
             self._dom.detachDevice(nicXml)
             self._waitForDeviceRemoval(nic)
-            if nic.is_hostdevice:
-                hostdev.reattach_detachable(nic.hostdev)
         except HotunplugTimeout as e:
             self.log.error("%s", e)
             self._rollback_nic_hotunplug(nicDev, nic)
