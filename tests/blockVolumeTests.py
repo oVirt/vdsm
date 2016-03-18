@@ -42,7 +42,7 @@ class BlockVolumeSizeTests(TestCaseBase):
         [(volume.SPARSE_VOL, 8388608, 1870), 2],
         ])
     def test_block_volume_size(self, args, result):
-        size = BlockVolume._calculate_volume_alloc_size(*args)
+        size = BlockVolume.calculate_volume_alloc_size(*args)
         self.assertEqual(size, result)
 
     @permutations([
@@ -52,4 +52,4 @@ class BlockVolumeSizeTests(TestCaseBase):
         ])
     def test_fail_invalid_block_volume_size(self, preallocate):
         with self.assertRaises(se.InvalidParameterException):
-            BlockVolume._calculate_volume_alloc_size(preallocate, 2048, 2049)
+            BlockVolume.calculate_volume_alloc_size(preallocate, 2048, 2049)

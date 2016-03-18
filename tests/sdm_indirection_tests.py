@@ -555,6 +555,11 @@ class FakeBlockVolumeManifest(FakeVolumeManifest):
     def removeMetadata(self, metaId):
         pass
 
+    @classmethod
+    @recorded
+    def calculate_volume_alloc_size(cls, preallocate, capacity, initial_size):
+        pass
+
 
 class FakeFileVolumeManifest(FakeVolumeManifest):
     def __init__(self):
@@ -860,6 +865,12 @@ class BlockVolumeTests(VolumeTestMixin, VdsmTestCase):
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
+
+    @permutations([
+        ['calculate_volume_alloc_size', 3],
+        ])
+    def test_block_classmethod(self, fn, nargs):
+        self.checker.check_classmethod_call(fn, nargs)
 
 
 @expandPermutations
