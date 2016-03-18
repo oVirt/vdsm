@@ -402,6 +402,15 @@ class VM(APIBase):
 
         return curVm.hotplugNic(params)
 
+    def hostdevHotplug(self, devices):
+        try:
+            curVm = self._cif.vmContainer[self._UUID]
+        except KeyError:
+            self.log.warning("vm %s doesn't exist", self._UUID)
+            return errCode['noVM']
+
+        return curVm.hostdevHotplug(devices)
+
     def hotunplugNic(self, params):
         try:
             utils.validateMinimalKeySet(params, ('vmId', 'nic'))

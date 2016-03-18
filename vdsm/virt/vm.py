@@ -2068,6 +2068,54 @@ class Vm(object):
         raise LookupError('Device object for device identified as %s '
                           'of type %s not found' % (devIdent, devType))
 
+    def hostdevHotplug(self, dev_specs):
+        if self.isMigrating():
+            return response.error('migInProgress')
+
+        dev_objects = []
+        for dev_spec in dev_specs:
+            dev_object = vmdevices.hostdevice.HostDevice(self.conf, self.log,
+                                                         **dev_spec)
+            dev_objects.append(dev_object)
+            try:
+                dev_object.detach()
+            except libvirt.libvirtError:
+                # We couldn't detach one of the devices. Halt.
+                self.log.exception('Could not detach a device from a host.')
+                return response.error('hostdevDetachErr')
+
+        assigned_devices = []
+
+        # Hard part is done, we have detached all devices without errors.
+        # We now have to add devices to the VM while ignoring placeholders.
+        for dev_spec, dev_object in zip(dev_specs, dev_objects):
+            try:
+                dev_xml = dev_object.getXML().toprettyxml(encoding='utf-8')
+            except vmdevices.core.SkipDevice:
+                self.log.info('Skipping device %s.', dev_object.device)
+                continue
+
+            dev_object._deviceXML = dev_xml
+            self.log.info("Hotplug hostdev xml: %s", dev_xml)
+
+            try:
+                self._dom.attachDevice(dev_xml)
+            except libvirt.libvirtError:
+                self.log.exception('Skipping device %s.', dev_object.device)
+                continue
+
+            assigned_devices.append(dev_object.device)
+
+            self._devices[hwclass.HOSTDEV].append(dev_object)
+
+            with self._confLock:
+                self.conf['devices'].append(dev_spec)
+            self.saveState()
+            vmdevices.hostdevice.HostDevice.update_device_info(
+                self, self._devices[hwclass.HOSTDEV])
+
+        return response.success(assignedDevices=assigned_devices)
+
     def _lookupDeviceByAlias(self, devType, alias):
         for dev in self._devices[devType][:]:
             try:

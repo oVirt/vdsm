@@ -7413,6 +7413,24 @@
  'returns': 'VmDefinition'}
 
 ##
+# @VM.hostdevHotplug:
+#
+# Add a new host device to a running VM.
+#
+# @vmID:        The UUID of the VM
+#
+# @devices:     List of host device specifications
+#
+# Returns:
+# List of hotplugged libvirt device names
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'VM', 'name': 'hostdevHotplug'},
+ 'data': {'vmID': 'UUID', 'devices': ['VmHostDevice']},
+ 'returns': ['str']}
+
+##
 # @HotplugNicParams:
 #
 # Parameters for @VM.hotplugNic.

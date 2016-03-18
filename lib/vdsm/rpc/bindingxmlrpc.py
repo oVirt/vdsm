@@ -461,6 +461,10 @@ class BindingXMLRPC(object):
         vm = API.VM(params['vmId'])
         return vm.hotplugNic(params)
 
+    def vmHostdevHotplug(self, vmId, devices):
+        vm = API.VM(vmId)
+        return vm.hostdevHotplug(devices)
+
     def vmHotunplugNic(self, params):
         vm = API.VM(params['vmId'])
         return vm.hotunplugNic(params)
@@ -1075,6 +1079,7 @@ class BindingXMLRPC(object):
                 (self.vmHotunplugDisk, 'hotunplugDisk'),
                 (self.vmHotplugNic, 'hotplugNic'),
                 (self.vmHotunplugNic, 'hotunplugNic'),
+                (self.vmHostdevHotplug, 'hostdevHotplug'),
                 (self.vmUpdateDevice, 'vmUpdateDevice'),
                 (self.vmSetNumberOfCpus, 'setNumberOfCpus'),
                 (self.vmHotplugMemory, 'hotplugMemory'),

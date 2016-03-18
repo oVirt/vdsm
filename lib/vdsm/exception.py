@@ -342,6 +342,11 @@ class MigrationLimitExceeded(VdsmException):
     message = 'Incoming migration limit exceeded'
 
 
+class HostdevDetachFailed(VdsmException):
+    code = 83
+    message = 'Could not detach host device'
+
+
 class RecoveryInProgress(VdsmException):
     code = 99
     message = 'Recovering from crash or Initializing'
