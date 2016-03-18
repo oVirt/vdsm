@@ -19,6 +19,7 @@
 #
 
 import logging
+import xml.etree.ElementTree as ET
 
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable, \
@@ -29,17 +30,50 @@ from .. import vmxml
 
 
 class HostDevice(core.Base):
-    __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams')
+    __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
+                 'name')
 
     def __init__(self, conf, log, **kwargs):
         super(HostDevice, self).__init__(conf, log, **kwargs)
 
         self._deviceParams = get_device_params(self.device)
         self.hostAddress = self._deviceParams.get('address')
+        self.name = self.device
 
     def setup(self):
         logging.debug('Detaching device %s from the host.' % self.device)
         self._deviceParams = detach_detachable(self.device)
+
+    @property
+    def _xpath(self):
+        """
+        Returns xpath to the device in libvirt dom xml.
+        The path is relative to the root element.
+        """
+        address_fields = []
+        for key, value in self.hostAddress.items():
+            padding, base = '', ''
+            if CAPABILITY_TO_XML_ATTR[
+                    self._deviceParams['capability']] == 'pci':
+                if key == 'domain':
+                    base = '0x'
+                    padding = '04'
+                elif key == 'function':
+                    base = '0x'
+                    padding = ''
+                else:
+                    base = '0x'
+                    padding = '02'
+
+            address_fields.append('[@{key}="{base}{value:{padding}}"]'.format(
+                key=key, value=int(value), base=base, padding=padding))
+
+        return './devices/hostdev/source/address{}'.format(
+            ''.join(address_fields))
+
+    def is_attached_to(self, xml_string):
+        dom = ET.fromstring(xml_string)
+        return bool(dom.findall(self._xpath))
 
     def getXML(self):
         """
