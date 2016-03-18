@@ -181,6 +181,19 @@ class FakeLVM(object):
         vg_md['attr'] = vg_attr
         return real_lvm.VG(**vg_md)
 
+    def changeVGTags(self, vgName, delTags=(), addTags=()):
+        try:
+            vg_md = self.vgmd[vgName]
+        except KeyError:
+            raise se.VolumeGroupReplaceTagError("VG %s does not exist" %
+                                                vgName)
+
+        # Adding an existing tag or removing a nonexistent tag are ignored
+        tags = set(vg_md['tags'])
+        tags |= set(addTags)
+        tags -= set(delTags)
+        vg_md['tags'] = tuple(tags)
+
     def _getLV(self, vgName, lvName):
         try:
             lv = self.lvmd[(vgName, lvName)]

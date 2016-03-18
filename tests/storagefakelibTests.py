@@ -277,6 +277,14 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             self.assertTrue(lv.active)
             self.assertEqual('a', lv.attr.state)
 
+    def test_changevgtags(self):
+        with self.base_config() as lvm:
+            deltags = (blockSD.STORAGE_UNREADY_DOMAIN_TAG,)
+            addtags = ("FOO",)
+            lvm.changeVGTags(self.VG_NAME, delTags=deltags, addTags=addtags)
+            vg = lvm.getVG(self.VG_NAME)
+            self.assertEqual(addtags, vg.tags)
+
 
 @expandPermutations
 class FakeLVMGeneralTests(VdsmTestCase):
