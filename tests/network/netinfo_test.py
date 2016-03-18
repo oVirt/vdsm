@@ -393,16 +393,20 @@ class TestNetinfo(TestCaseBase):
         return '{}/{}'.format(ip_addr, prefix_length)
 
 
+@attr(type='integration')
 class TestIPv6Addresses(TestCaseBase):
+    @ValidateRunningAsRoot
     def test_local_auto_when_ipv6_is_disabled(self):
         with dummy_device() as dev:
             sysctl.disable_ipv6(dev)
             self.assertEqual(False, addresses.is_ipv6_local_auto(dev))
 
+    @ValidateRunningAsRoot
     def test_local_auto_without_router_advertisement_server(self):
         with dummy_device() as dev:
             self.assertEqual(True, addresses.is_ipv6_local_auto(dev))
 
+    @ValidateRunningAsRoot
     def test_local_auto_with_static_address_without_ra_server(self):
         with dummy_device() as dev:
             ipwrapper.addrAdd(dev, '2001::88', '64', family=6)
@@ -412,6 +416,7 @@ class TestIPv6Addresses(TestCaseBase):
             self.assertTrue(addresses.is_ipv6(ip_addrs[0]))
             self.assertTrue(not addresses.is_dynamic(ip_addrs[0]))
 
+    @ValidateRunningAsRoot
     def test_local_auto_with_dynamic_address_from_ra(self):
         IPV6_NETADDRESS = '2001:1:1:1'
         IPV6_NETPREFIX_LEN = '64'
