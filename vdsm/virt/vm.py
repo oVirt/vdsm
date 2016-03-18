@@ -1313,8 +1313,8 @@ class Vm(object):
             return {'vmId': self.id, 'status': self.lastStatus,
                     'statusTime': self._get_status_time()}
 
-        self.conf['status'] = self.lastStatus
         with self._confLock:
+            self.conf['status'] = self.lastStatus
             # Filter out any internal keys
             status = dict((k, v) for k, v in self.conf.iteritems()
                           if not k.startswith("_"))
