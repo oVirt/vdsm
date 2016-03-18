@@ -2884,12 +2884,13 @@ class Vm(object):
             #    there is no danger of excessive delays preventing NTP from
             #    operation.
 
-        if 'guestIPs' in self.conf:
-            del self.conf['guestIPs']
-        if 'guestFQDN' in self.conf:
-            del self.conf['guestFQDN']
-        if 'username' in self.conf:
-            del self.conf['username']
+        with self._confLock:
+            if 'guestIPs' in self.conf:
+                del self.conf['guestIPs']
+            if 'guestFQDN' in self.conf:
+                del self.conf['guestFQDN']
+            if 'username' in self.conf:
+                del self.conf['username']
         self.saveState()
         self.log.info("End of migration")
 
