@@ -18,7 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 import os
+
+from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
@@ -35,6 +38,7 @@ def _routeShowTableAll(table):
         return tabFile.readlines()
 
 
+@attr(type='unit')
 class TestFilters(TestCaseBase):
     @MonkeyPatch(sourceroute, 'routeShowTable', _routeShowTableAll)
     def test_source_route_retrieval(self):

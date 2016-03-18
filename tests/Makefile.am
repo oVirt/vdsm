@@ -112,7 +112,6 @@ test_modules = \
 	schemaValidationTest.py \
 	sdm_indirection_tests.py \
 	securableTests.py \
-	sourceroutingTests.py \
 	sparsifyTests.py \
 	sslTests.py \
 	stompAdapterTests.py \
@@ -201,7 +200,6 @@ dist_vdsmtests_DATA = \
 	glusterVolumeRebalanceStatus.xml \
 	glusterVolumeRemoveBricksStatus.xml \
 	glusterVolumeTasks.xml \
-	ip_route_show_table_all.out \
 	iscsiadm_-m_iface.out \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	mem_info.out \
