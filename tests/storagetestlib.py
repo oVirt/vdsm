@@ -78,29 +78,29 @@ def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
     return md
 
 
-def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None,
-                          metadata=None):
+def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
     if sduuid is None:
         sduuid = str(uuid.uuid4())
     if devices is None:
         devices = get_random_devices()
-    if metadata is None:
-        metadata = make_sd_metadata(sduuid)
 
     fake_lvm.createVG(sduuid, devices, blockSD.STORAGE_DOMAIN_TAG,
                       blockSD.VG_METADATASIZE)
     fake_lvm.createLV(sduuid, sd.METADATA, blockSD.SD_METADATA_SIZE)
 
+    # Create the metadata LV for storing volume metadata
+    metafile_path = fake_lvm.lvPath(sduuid, sd.METADATA)
+    make_file(metafile_path,
+              blockSD.BlockStorageDomainManifest.metaSize(sduuid))
+
     # Create the rest of the special LVs
     for metafile, sizemb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
         fake_lvm.createLV(sduuid, metafile, sizemb)
 
+    metadata = make_sd_metadata(sduuid)
     manifest = blockSD.BlockStorageDomainManifest(sduuid, metadata)
     manifest.domaindir = tmpdir
     os.makedirs(os.path.join(manifest.domaindir, sduuid, sd.DOMAIN_IMAGES))
-
-    metafile_path = fake_lvm.lvPath(sduuid, sd.METADATA)
-    make_file(metafile_path, manifest.metaSize(sduuid))
 
     return manifest
 
@@ -140,7 +140,12 @@ def make_file_volume(domaindir, size, imguuid=None, voluuid=None):
     return imguuid, voluuid
 
 
-def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid):
+def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
+                      parent_vol_id=volume.BLANK_UUID,
+                      vol_format=volume.RAW_FORMAT,
+                      prealloc=volume.PREALLOCATED_VOL,
+                      disk_type=image.UNKNOWN_DISK_TYPE,
+                      desc='fake volume'):
     sduuid = sd_manifest.sdUUID
     image_manifest = image.ImageManifest(sd_manifest.getRepoPath())
     imagedir = image_manifest.getImageDir(sduuid, imguuid)
@@ -153,3 +158,17 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid):
                                               volume.BLANK_UUID))
         lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_IMAGE,
                                               imguuid))
+
+    vol_class = sd_manifest.getVolumeClass()
+    vol_class.newMetadata(
+        (sduuid, slot),
+        sduuid,
+        imguuid,
+        parent_vol_id,
+        size / volume.BLOCK_SIZE,
+        volume.type2name(vol_format),
+        volume.type2name(prealloc),
+        volume.type2name(volume.LEAF_VOL),
+        disk_type,
+        desc,
+        volume.LEGAL_VOL)
