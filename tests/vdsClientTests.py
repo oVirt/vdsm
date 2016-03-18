@@ -24,6 +24,7 @@ import sys
 from tempfile import mkstemp
 from contextlib import contextmanager
 
+from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import brokentest
 from monkeypatch import MonkeyPatch
@@ -97,6 +98,7 @@ def createFakeService(testCase):
     return serv
 
 
+@expandPermutations
 class vdsClientTest(TestCaseBase):
     def testCreateArgumentParsing(self):
         serv = createFakeService(self)
@@ -464,6 +466,25 @@ class vdsClientTest(TestCaseBase):
         args = vdsClient.parseArgs(fixture)
         self.assertEquals(args, {'key1': 'val1', 'key2': '',
                                  'key3': 'val3'})
+
+    @permutations([
+        ['', None],
+        ['[]', None],
+        ['[{{}}]', None],
+        ['[{{}},{{}}]', None],
+        ['{a:b}', [{'a': 'b'}]],
+        ['{a:b}a', None],
+        ['{a:b,c:d}', [{'a': 'b', 'c': 'd'}]],
+        ['[{a:b,c:d}]', [{'a': 'b', 'c': 'd'}]],
+        ['[{a:b,c:d},{e:f,g:h}]', [{'a': 'b', 'c': 'd'},
+                                   {'e': 'f', 'g': 'h'}]],
+    ])
+    def testParseHostdevSpecList(self, cmdline, expected):
+        serv = createFakeService(self)
+        if not expected:
+            self.assertRaises(Exception, serv._parseHostdevSpecList, cmdline)
+        else:
+            self.assertEqual(serv._parseHostdevSpecList(cmdline), expected)
 
 
 class CannonizeHostPortTest(TestCaseBase):

@@ -343,6 +343,10 @@ class service:
         params = {'vmId': args[0], 'drive': drive}
         return self.ExecAndExit(self.s.hotunplugDisk(params))
 
+    def hostdevHotplug(self, args):
+        dev_specs = self._parseHostdevSpecList(args[1])
+        return self.ExecAndExit(self.s.hostdevHotplug(args[0], dev_specs))
+
     def hotplugMemory(self, args):
         memory = self._parseDriveSpec(args[1])
         memory['type'] = 'memory'
@@ -1709,6 +1713,22 @@ class service:
                         for item in spec.split(',') if item)
         return spec
 
+    def _parseHostdevSpecList(self, spec):
+        if spec[0] == '{':
+            val, spec = self._parseNestedSpec(spec)
+            if spec:
+                raise Exception("Trailing garbage after spec: '%s'" % spec)
+            return [val]
+        elif spec[0] == '[':
+            vals = []
+            while spec[0] != ']':
+                val, spec = self._parseNestedSpec(spec[1:])
+                vals.append(val)
+            if spec[1:]:
+                raise Exception("Trailing garbage after spec: '%s'" % spec[1:])
+
+            return vals
+
     def do_setupNetworks(self, args):
         params = self._eqSplit(args)
         networks = self._parseDriveSpec(params.get('networks', '{}'))
@@ -2105,6 +2125,11 @@ if __name__ == '__main__':
                            'o   shared: exclusive|shared|none',
                            'o   optional: True|False'
                            )),
+        'hostdevHotplug': (serv.hostdevHotplug,
+                           ('<vmId> <hostdevspec>',
+                            'Hotplug hostdevto existing VM',
+                            'hostdevspec    specification of the device'
+                            )),
         'changeCD': (serv.do_changeCD,
                      ('<vmId> <fileName|drivespec>',
                       'Changes the iso image of the cdrom'
