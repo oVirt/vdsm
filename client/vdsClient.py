@@ -347,6 +347,10 @@ class service:
         dev_specs = self._parseHostdevSpecList(args[1])
         return self.ExecAndExit(self.s.hostdevHotplug(args[0], dev_specs))
 
+    def hostdevHotunplug(self, args):
+        dev_names = args[1:]
+        return self.ExecAndExit(self.s.hostdevHotunplug(args[0], dev_names))
+
     def hotplugMemory(self, args):
         memory = self._parseDriveSpec(args[1])
         memory['type'] = 'memory'
@@ -2130,6 +2134,11 @@ if __name__ == '__main__':
                             'Hotplug hostdevto existing VM',
                             'hostdevspec    specification of the device'
                             )),
+        'hostdevHotunplug': (serv.hostdevHotunplug,
+                             ('<vmId> <hostdevspec>',
+                              'Hotplug hostdevto existing VM',
+                              'names    names of the devices'
+                              )),
         'changeCD': (serv.do_changeCD,
                      ('<vmId> <fileName|drivespec>',
                       'Changes the iso image of the cdrom'
