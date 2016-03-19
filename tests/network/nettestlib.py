@@ -327,9 +327,10 @@ def veth_pair(prefix='veth_', max_length=15):
     try:
         linkAdd(left_side, linkType='veth',
                 args=('peer', 'name', right_side))
+    except IPRoute2Error as e:
+        raise SkipTest('Failed to create a veth pair: %s', e)
+    try:
         yield left_side, right_side
-    except IPRoute2Error:
-        raise SkipTest('Failed to create a veth pair.')
     finally:
         # the peer device is removed by the kernel
         linkDel(left_side)
