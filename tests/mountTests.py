@@ -31,7 +31,8 @@ from vdsm.utils import stopwatch
 from nose.plugins.skip import SkipTest
 
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import namedTemporaryDir, expandPermutations, permutations
+from testlib import namedTemporaryDir, temporaryPath
+from testlib import expandPermutations, permutations
 from storage.misc import execCmd
 import storage.mount as mount
 from testValidation import checkSudo
@@ -275,3 +276,41 @@ class IterMountsPerfTests(TestCaseBase):
                        mount.iterMounts())),
             0)
         self.assertFalse('/dev/loop10001' in mount._getLoopFsSpecs())
+
+
+@contextmanager
+def fake_mounts(mount_lines):
+    """
+    This method gets a list of mount lines,
+    fakes the /proc/mounts and /etc/mtab files
+    using monkey patch with a temporary file,
+    and cleans everything on the end of use.
+
+    Usage example:
+    with fake_mounts([mount_line_1, mount_line_2]):
+        <do something with /proc/mounts or /etc/mtab>
+    """
+    data = b"".join(line + b"\n" for line in mount_lines)
+    with temporaryPath(data=data) as fake_mounts:
+        with monkeypatch.MonkeyPatchScope([
+            (mount, '_PROC_MOUNTS_PATH', fake_mounts),
+            (mount, '_ETC_MTAB_PATH', fake_mounts),
+        ]):
+            yield
+
+
+class TestRemoteSdIsMounted(TestCaseBase):
+
+    def test_is_mounted(self):
+        with fake_mounts([b"server:/path "
+                          b"/rhev/data-center/mnt/server:_path "
+                          b"nfs4 defaults 0 0"]):
+            self.assertTrue(mount.isMounted(
+                            b"/rhev/data-center/mnt/server:_path"))
+
+    def test_is_not_mounted(self):
+        with fake_mounts([b"server:/path "
+                          b"/rhev/data-center/mnt/server:_path "
+                          b"nfs4 defaults 0 0"]):
+            self.assertFalse(mount.isMounted(
+                             b"/rhev/data-center/mnt/server:_other_path"))
