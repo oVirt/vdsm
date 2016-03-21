@@ -46,8 +46,6 @@ from virt import vmdevices
 RNG_SOURCES = {'random': '/dev/random',
                'hwrng': '/dev/hwrng'}
 
-PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
-
 
 def _getFreshCapsXMLStr():
     return libvirtconnection.get().getCapabilities()

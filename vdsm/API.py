@@ -28,6 +28,7 @@ import errno
 from vdsm.network.errors import ConfigNetworkError
 
 from vdsm import commands
+from vdsm import cpuarch
 from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
@@ -53,7 +54,6 @@ from vdsm.compat import pickle
 from vdsm.define import doneCode, errCode, Kbytes, Mbytes
 import caps
 from vdsm.config import config
-from caps import PAGE_SIZE_BYTES
 
 
 haClient = None  # Define here to work around pyflakes issue #13
@@ -1600,7 +1600,7 @@ class Global(APIBase):
                     resident += int(statmfile.read().split()[1])
             except:
                 pass
-        resident *= PAGE_SIZE_BYTES
+        resident *= cpuarch.PAGE_SIZE_BYTES
         meminfo = utils.readMemInfo()
         freeOrCached = (meminfo['MemFree'] +
                         meminfo['Cached'] + meminfo['Buffers']) * Kbytes

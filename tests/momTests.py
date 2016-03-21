@@ -21,12 +21,13 @@ from unittest import TestCase
 import logging
 import threading
 from momIF import MomClient
-from caps import PAGE_SIZE_BYTES
 from vdsm.define import Mbytes
 from mom import unixrpc
 from six.moves import configparser
 import os.path
 import monkeypatch
+
+from vdsm import cpuarch
 
 MOM_CONF = "/dev/null"
 MOM_PORT = os.path.join(os.path.dirname(__file__), "test_mom_vdsm.sock")
@@ -160,7 +161,7 @@ class MomPolicyTests(TestCase):
             "ksmMergeAcrossNodes": True,
             "ksmState": False,
             "ksmPages": 5,
-            "memShared": 100 * PAGE_SIZE_BYTES / Mbytes
+            "memShared": 100 * cpuarch.PAGE_SIZE_BYTES / Mbytes
         }
 
         self.assertEqual(stats, expected)

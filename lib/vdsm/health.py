@@ -26,6 +26,7 @@ import threading
 
 from . config import config
 from . import concurrent
+from . import cpuarch
 
 _monitor = None
 
@@ -114,7 +115,6 @@ class Monitor(object):
 
 class ProcStat(object):
 
-    _PAGE_SIZE = os.sysconf("SC_PAGESIZE")
     _TICKS_PER_SEC = os.sysconf("SC_CLK_TCK")
     _PATH = "/proc/self/stat"
 
@@ -125,7 +125,7 @@ class ProcStat(object):
         self.utime = int(fields[13], 10) / float(self._TICKS_PER_SEC)
         self.stime = int(fields[14], 10) / float(self._TICKS_PER_SEC)
         self.threads = int(fields[19], 10)
-        self.rss = int(fields[23], 10) * self._PAGE_SIZE / 1024
+        self.rss = int(fields[23], 10) * cpuarch.PAGE_SIZE_BYTES / 1024
 
 
 def saferepr(obj):

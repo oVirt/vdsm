@@ -21,8 +21,9 @@
 import logging
 import socket
 from vdsm.config import config
-from caps import PAGE_SIZE_BYTES
 from vdsm.define import Mbytes
+
+from vdsm.cpuarch import PAGE_SIZE_BYTES
 
 try:
     import mom

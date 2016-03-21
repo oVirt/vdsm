@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+import os
 import platform
 
 from .config import config
@@ -30,6 +31,8 @@ PPC64 = 'ppc64'
 PPC64LE = 'ppc64le'
 
 SUPPORTED_ARCHITECTURES = (X86_64, PPC64, PPC64LE)
+
+PAGE_SIZE_BYTES = os.sysconf('SC_PAGESIZE')
 
 
 class UnsupportedArchitecture(Exception):
