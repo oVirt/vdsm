@@ -43,6 +43,7 @@ SUBDIRS += \
 	fileinject \
 	fakesriov \
 	fakevmstats \
+	fcoe \
 	floppy \
 	hostusb \
 	httpsisoboot \

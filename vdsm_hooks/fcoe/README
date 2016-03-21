@@ -1,0 +1,15 @@
+fcoe vdsm hook
+=================================
+This hook allow to configure one or more NICs as FCoE interface(s)
+
+Intallation:
+* Use engine-config to append the appropriate custom property:
+  engine-config -s UserDefinedNetworkCustomProperties='fcoe=^(true|false)$'
+
+* Verify that custom property was added:
+  engine-config -g UserDefinedNetworkCustomProperties
+
+Usage:
+* Define virtual network for FCoE
+* Under "setup host networks" attach (drag) it to interface.
+* Click small "Edit" button and add fcoe property with value "true"
