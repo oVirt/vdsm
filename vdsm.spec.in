@@ -614,6 +614,16 @@ Requires:       %{name} >= 4.16.7
 VDSM hook used for applying IPv6 configuration through custom network
 properties
 
+%package hook-fcoe
+Summary:        Hook to enable FCoE support
+BuildArch:      noarch
+Requires:       %{name} = %{version}-%{release}
+Requires:       fcoe-utils
+
+%description hook-fcoe
+VDSM hook used for configure specified NICs as FCoE interface through custom
+network properties
+
 %if 0%{?with_gluster}
 %package gluster
 Summary:        Gluster Plugin for VDSM
@@ -1298,6 +1308,10 @@ exit 0
 %files hook-checkimages
 %defattr(-, root, root, -)
 %{_libexecdir}/%{vdsm_name}/hooks/before_vm_start/60_checkimages
+
+%files hook-fcoe
+%defattr(-, root, root, -)
+%{_libexecdir}/%{vdsm_name}/hooks/before_network_setup/50_fcoe
 
 %files hook-diskunmap
 %defattr(-, root, root, -)

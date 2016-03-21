@@ -40,6 +40,7 @@ SUBDIRS += \
 	extnet \
 	fileinject \
 	fakevmstats \
+	fcoe \
 	floppy \
 	hostusb \
 	httpsisoboot \

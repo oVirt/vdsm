@@ -369,6 +369,7 @@ AC_OUTPUT([
 	vdsm_hooks/extnet/Makefile
 	vdsm_hooks/fakevmstats/Makefile
 	vdsm_hooks/faqemu/Makefile
+	vdsm_hooks/fcoe/Makefile
 	vdsm_hooks/fileinject/Makefile
 	vdsm_hooks/floppy/Makefile
 	vdsm_hooks/hostusb/Makefile
