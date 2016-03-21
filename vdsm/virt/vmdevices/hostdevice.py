@@ -82,33 +82,39 @@ class HostDevice(core.Base):
         return hostdev
 
     @classmethod
-    def _update_usb_device_info(cls, vm, device_conf, x):
+    def _update_nonpci_device_info(cls, vm, device_conf, x):
         alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-        address = vmxml.device_address(x)
+        host_address = vmxml.device_address(x)
 
         # The routine is quite unusual because we cannot directly reconstruct
         # the unique name. Therefore, we first look up correspondoing device
         # object address,
         for dev in device_conf:
-            if address == dev.hostAddress:
+            if host_address == dev.hostAddress:
                 dev.alias = alias
                 device = dev.device
+                # RHBZ#1215968
+                if x.getAttribute('type') != 'usb':
+                    dev.address = vmxml.device_address(x, 1)
 
         # and use that to identify the device in self.conf.
         for dev in vm.conf['devices']:
             if dev['device'] == device:
                 dev['alias'] = alias
+                # RHBZ#1215968
+                if x.getAttribute('type') != 'usb':
+                    dev['address'] = vmxml.device_address(x, 1)
 
         # This has an unfortunate effect that we will not be able to look up
-        # any new USB passthrough devices, because there is no easy
+        # any previously undefined devices, because there is no easy
         # way of reconstructing the udev name we use as unique id.
 
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('hostdev'):
             device_type = x.getAttribute('type')
-            if device_type == 'usb':
-                cls._update_usb_device_info(vm, device_conf, x)
+            if device_type != 'pci':
+                cls._update_nonpci_device_info(vm, device_conf, x)
                 continue
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             address = vmxml.device_address(x)
