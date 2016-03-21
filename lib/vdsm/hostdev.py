@@ -223,6 +223,13 @@ def _parse_device_params(device_xml):
                             PCIHeaderType.ENDPOINT).lower()
     params['is_assignable'] = is_assignable
 
+    try:
+        udev_path = caps.find('char').text
+    except AttributeError:
+        pass
+    else:
+        params['udev_path'] = udev_path
+
     iommu_group = caps.find('iommuGroup')
     if iommu_group is not None:
         params['iommu_group'] = iommu_group.attrib['number']

@@ -33,6 +33,7 @@ dist_vdsmdevdatatests_DATA = \
 	pci_0000_05_00_1.xml \
 	pci_0000_05_10_7.xml \
 	scsi_0_0_0_0.xml \
+	scsi_generic_sg0.xml \
 	scsi_host0.xml \
 	scsi_target0_0_0.xml \
 	testComplexVm.xml \

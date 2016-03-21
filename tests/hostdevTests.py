@@ -35,7 +35,7 @@ _PCI_DEVICES = ['pci_0000_00_1a_0', 'pci_0000_00_1f_2', 'pci_0000_00_02_0',
                 'pci_0000_00_19_0', 'pci_0000_00_1b_0']
 _USB_DEVICES = ['usb_usb1', 'usb_1_1', 'usb_1_1_4']
 _SCSI_DEVICES = ['scsi_host0', 'scsi_target0_0_0', 'scsi_0_0_0_0',
-                 'block_sda_ssd']
+                 'block_sda_ssd', 'scsi_generic_sg0']
 _SRIOV_PF = 'pci_0000_05_00_1'
 _SRIOV_VF = 'pci_0000_05_10_7'
 _ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
@@ -216,6 +216,10 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                                     'bus': '0',
                                                     'domain': '0',
                                                     'function': '0'}},
+                  u'scsi_generic_sg0': {'capability': 'scsi_generic',
+                                        'udev_path': '/dev/sg0',
+                                        'is_assignable': 'true',
+                                        'parent': 'scsi_0_0_0_0'},
                   u'usb_1_1_4': {'product': 'Broadcom Bluetooth Device',
                                  'vendor': 'Broadcom Corp',
                                  'product_id': '0x217f',
