@@ -9,8 +9,12 @@
 %global snlk_group @SNLKGROUP@
 %global snlk_user @SNLKUSER@
 %global cdrom_group @CDROMGROUP@
+# Not configurable because owned by ovirt-vmconsole package
+%global vmcon_user ovirt-vmconsole
+%global vmcon_group ovirt-vmconsole
 
 # Features
+%global with_ovirt_vmconsole @OVIRT_VMCONSOLE@
 %global with_gluster_mgmt @GLUSTER_MGMT@
 %global with_hooks @HOOKS@
 %global with_vhostmd @VHOSTMD@
@@ -129,7 +133,9 @@ Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.4.5
+%if 0%{?with_ovirt_vmconsole}
 Requires: ovirt-vmconsole >= 1.0.0-0
+%endif
 
 %if 0%{?rhel}
 Requires: libguestfs-tools-c >= 1:1.28.1-1.55
@@ -651,6 +657,13 @@ autoreconf -if
 %endif
         --with-smbios-manufacturer='@SMBIOS_MANUFACTURER@' \
         --with-smbios-osname='@SMBIOS_OSNAME@' \
+%if 0%{?with_ovirt_vmconsole}
+        --with-ovirt-vmconsole-user=%{vmcon_user} \
+        --with-ovirt-vmconsole-group=%{vmcon_group} \
+%else
+        --with-ovirt-vmconsole-user='@VDSMUSER@' \
+        --with-ovirt-vmconsole-group='@VDSMGROUP@' \
+%endif
         --with-qemu-kvm='@QEMU_KVM_PKG@' \
         --with-qemu-img='@QEMU_IMG_PKG@'
 

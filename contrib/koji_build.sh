@@ -4,6 +4,7 @@ echo '============================================'
 make distclean
 ./autogen.sh \
     --system \
+    --disable-ovirt-vmconsole \
     --enable-vhostmd-hook \
     --enable-hooks
 make srpm

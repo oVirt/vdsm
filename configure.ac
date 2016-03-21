@@ -84,6 +84,19 @@ AS_IF([test "${enable_gluster_mgmt}" = "yes"],
       AC_SUBST([GLUSTER_MGMT], ['0']))
 
 AC_ARG_ENABLE(
+    [ovirt-vmconsole],
+    [AS_HELP_STRING(
+        [--disable-ovirt-vmconsole],
+        [disable ovirt-vmconsole integration @<:@default=no@:>@]
+    )],
+    ,
+    [enable_ovirt_vmconsole="yes"]
+)
+AS_IF([test "${enable_ovirt_vmconsole}" = "yes"],
+      AC_SUBST([OVIRT_VMCONSOLE], ['1']),
+      AC_SUBST([OVIRT_VMCONSOLE], ['0']))
+
+AC_ARG_ENABLE(
     [libvirt-sanlock],
     [AS_HELP_STRING(
         [--disable-libvirt-sanlock],
