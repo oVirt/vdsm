@@ -26,6 +26,7 @@ import logging
 from vdsm import commands
 from vdsm import cmdutils
 from vdsm import udevadm
+from vdsm import utils
 
 from vdsm.constants import EXT_CHOWN, \
     DISKIMAGE_USER, DISKIMAGE_GROUP, \
@@ -53,6 +54,32 @@ _log = logging.getLogger("SuperVdsm.ServerCallback")
 @expose
 def udevTriggerMultipath(guid):
     _udevTrigger(property_matches=(('DM_NAME', guid),))
+
+
+@expose
+def appropriateSCSIDevice(device_name, udev_path):
+    ruleFile = _UDEV_RULE_FILE_NAME % ('scsi', device_name)
+    rule = 'RUN+="%s %s:%s %s"\n' % (
+        EXT_CHOWN, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, udev_path)
+    with open(ruleFile, "w") as rf:
+        _log.debug("Creating rule %s: %r", ruleFile, rule)
+        rf.write(rule)
+
+    _udevTrigger(subsystem_matches=('scsi_generic',))
+
+
+@expose
+def rmAppropriateSCSIDevice(device_name, udev_path):
+    rule_file = _UDEV_RULE_FILE_NAME % ('scsi', device_name)
+    _log.debug("Removing rule %s", rule_file)
+    utils.rmFile(rule_file)
+
+    _log.debug('Changing ownership (to root:disk) of device %s', udev_path)
+    cmd = [EXT_CHOWN, 'root:disk', udev_path]
+    rc, out, err = commands.execCmd(cmd)
+    if err:
+        raise OSError(errno.EINVAL, 'Could not change ownership'
+                      'out %s\nerr %s' % (out, err))
 
 
 @expose

@@ -22,7 +22,7 @@ import logging
 
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable, \
-    pci_address_to_name, CAPABILITY_TO_XML_ATTR
+    pci_address_to_name, CAPABILITY_TO_XML_ATTR, scsi_address_to_adapter
 from . import core
 from . import hwclass
 from .. import vmxml
@@ -70,6 +70,13 @@ class HostDevice(core.Base):
             managed='no', mode='subsystem',
             type=CAPABILITY_TO_XML_ATTR[self._deviceParams['capability']])
         source = hostdev.appendChildWithArgs('source')
+
+        # This must be done *before* creating the address element, as we need
+        # remove the 'host' key from real address.
+        if CAPABILITY_TO_XML_ATTR[self._deviceParams['capability']] == 'scsi':
+            source.appendChildWithArgs(
+                'adapter', **scsi_address_to_adapter(self.hostAddress))
+            hostdev.setAttr('rawio', 'yes')
 
         source.appendChildWithArgs('address', **self.hostAddress)
 

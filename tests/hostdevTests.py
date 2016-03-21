@@ -118,6 +118,16 @@ _DEVICE_XML = {
             %s
     </hostdev>
     ''',
+    'scsi_0_0_0_0':
+    '''
+    <hostdev managed="no" mode="subsystem" rawio="yes" type="scsi">
+            <source>
+                    <adapter name="scsi_host0"/>
+                    <address bus="0" unit="0" target="0"/>
+            </source>
+            %s
+    </hostdev>
+    ''',
     _SRIOV_VF:
     '''
     <interface managed="no" type="hostdev">
@@ -483,7 +493,8 @@ class HostdevCreationTests(XMLTestCase):
             'smp': '8', 'maxVCpus': '160',
             'memSize': '1024', 'memGuaranteedSize': '512'}
 
-    @permutations([[device] for device in _PCI_DEVICES + _USB_DEVICES])
+    @permutations([[device] for device in _PCI_DEVICES + _USB_DEVICES +
+                   [_SCSI_DEVICES[2]]])
     def testCreateHostDevice(self, device_name):
         dev_spec = {'type': 'hostdev', 'device': device_name}
         device = hostdevice.HostDevice(self.conf, self.log, **dev_spec)

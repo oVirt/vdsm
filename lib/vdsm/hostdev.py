@@ -32,6 +32,7 @@ from . import utils
 
 CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'scsi': 'scsi',
+                          'scsi_generic': 'scsi_generic',
                           'usb_device': 'usb'}
 
 _LIBVIRT_DEVICE_FLAGS = {
@@ -57,6 +58,10 @@ class PCIHeaderType:
 
 
 class NoIOMMUSupportException(Exception):
+    pass
+
+
+class UnsuitableSCSIDevice(Exception):
     pass
 
 
@@ -103,6 +108,19 @@ def _pci_header_type(device_name):
 
 def name_to_pci_path(device_name):
     return device_name[4:].replace('_', '.').replace('.', ':', 2)
+
+
+def scsi_address_to_adapter(scsi_address):
+    """
+    Read adapter info from scsi host address, and mutate the adress (removing
+    'host' key) to conform to libvirt.
+    """
+    adapter = 'scsi_host{}'.format(scsi_address['host'])
+    scsi_address['unit'] = scsi_address['lun']
+    del scsi_address['lun']
+    del scsi_address['host']
+
+    return {'name': adapter}
 
 
 def pci_address_to_name(domain, bus, slot, function):
@@ -355,6 +373,12 @@ def detach_detachable(device_name):
         supervdsm.getProxy().appropriateUSBDevice(
             device_params['address']['bus'],
             device_params['address']['device'])
+    elif capability == 'scsi':
+        if 'udev_path' not in device_params:
+            raise UnsuitableSCSIDevice
+
+        supervdsm.getProxy().appropriateSCSIDevice(device_name,
+                                                   device_params['udev_path'])
 
     return device_params
 
@@ -374,6 +398,12 @@ def reattach_detachable(device_name):
         supervdsm.getProxy().rmAppropriateUSBDevice(
             device_params['address']['bus'],
             device_params['address']['device'])
+    elif capability == 'scsi':
+        if 'udev_path' not in device_params:
+            raise UnsuitableSCSIDevice
+
+        supervdsm.getProxy().rmAppropriateSCSIDevice(
+            device_params['udev_path'])
 
 
 def change_numvfs(device_name, numvfs):
