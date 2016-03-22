@@ -97,7 +97,8 @@ def networks_caps(running_config):
         net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
                                  routes)
         net_info['iface'] = network
-        net_info['bridged'] = True
+        # report the network to be bridgeless if this is what Engine expects
+        net_info['bridged'] = attrs.get('bridged', True)
         net_info['ports'] = _get_ports(network, attrs)
         net_info['stp'] = _get_stp(interface)
         ovs_networks_caps[network] = net_info
@@ -109,15 +110,17 @@ def bridges_caps(running_config):
     dhcpv4ifaces, dhcpv6ifaces = netinfo._get_dhclient_ifaces()
     routes = netinfo._get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
-        interface = network if 'vlan' in attrs else BRIDGE_NAME
-        net_info = _get_net_info(attrs, interface, dhcpv4ifaces, dhcpv6ifaces,
-                                 routes)
-        net_info['bridged'] = True
-        net_info['ports'] = _get_ports(network, attrs)
-        # TODO netinfo._bridge_options does not work here
-        net_info['opts'] = {}
-        net_info['stp'] = _get_stp(interface)
-        ovs_bridges_caps[network] = net_info
+        # report the network to be bridgeless if this is what Engine expects
+        if attrs.get('bridged', True):
+            interface = network if 'vlan' in attrs else BRIDGE_NAME
+            net_info = _get_net_info(attrs, interface, dhcpv4ifaces,
+                                     dhcpv6ifaces, routes)
+            net_info['bridged'] = True
+            net_info['ports'] = _get_ports(network, attrs)
+            # TODO netinfo._bridge_options does not work here
+            net_info['opts'] = {}
+            net_info['stp'] = _get_stp(interface)
+            ovs_bridges_caps[network] = net_info
     return ovs_bridges_caps
 
 
@@ -132,7 +135,7 @@ def vlans_caps(running_config):
                                      dhcpv6ifaces, routes)
             iface = attrs.get('bonding') or attrs.get('nic')
             net_info['iface'] = iface
-            net_info['bridged'] = True
+            net_info['bridged'] = attrs.get('bridged', True)
             net_info['vlanid'] = int(vlan)
             ovs_vlans_caps['%s.%s' % (iface, vlan)] = net_info
     return ovs_vlans_caps
