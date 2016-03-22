@@ -29,7 +29,6 @@ import logging
 import threading
 
 from . import concurrent
-from . import pthread
 
 
 class NotRunning(Exception):
@@ -268,7 +267,6 @@ class _Worker(object):
         return self._discarded
 
     def _run(self):
-        pthread.setname(self.name[:15])
         self._log.debug('Worker started')
         try:
             while True:

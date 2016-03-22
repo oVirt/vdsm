@@ -22,6 +22,7 @@ from __future__ import absolute_import
 import threading
 from collections import namedtuple
 
+from . import pthread
 from . import utils
 
 
@@ -174,6 +175,8 @@ def thread(func, args=(), kwargs=None, name=None, daemon=True, logger=None):
 
     @utils.traceback(on=logger)
     def run():
+        if name is not None:
+            pthread.setname(name[:15])
         return func(*args, **kwargs)
 
     thread = threading.Thread(target=run, name=name)
