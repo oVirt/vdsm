@@ -218,3 +218,27 @@ class TestAtomicSymlink(TestCaseBase):
             link = os.path.join(tmpdir, "link")
             os.mkdir(link)
             self.assertRaises(OSError, fileUtils.atomic_symlink, target, link)
+
+
+@expandPermutations
+class TestNormalizeRemotePath(TestCaseBase):
+
+    @permutations([
+        # Remote paths without a port
+        ("server:/path", "server:/path"),
+        ("server:/path/", "server:/path"),
+        ("server:/pa:th", "server:/pa:th"),
+        ("server:/path//", "server:/path"),
+        ("server:/", "server:/"),
+        ("12.34.56.78:/", "12.34.56.78:/"),
+        ("[2001:db8::60fe:5bf:febc:912]:/", "[2001:db8::60fe:5bf:febc:912]:/"),
+        ("server:01234:/", "server:01234:"),
+
+        # Remote paths with a port (relevant for cephfs mounts)
+        ("server:6789:/path", "server:6789:/path"),
+        ("server:6789:/", "server:6789:/"),
+    ])
+    def test_normalize_remote_path_equals(self, remote_path,
+                                          normalized_remote_path):
+        self.assertEquals(normalized_remote_path,
+                          fileUtils.normalize_remote_path(remote_path))

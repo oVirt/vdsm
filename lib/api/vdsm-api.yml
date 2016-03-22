@@ -7213,7 +7213,8 @@ Host.getStorageDomains:
         type: *StorageDomainType
 
     -   defaultvalue: null
-        description: Limit to Domains having this remotePath
+        description: Limit to Domains having this remotePath.
+            If remotePath is specified, storageType is required.
         name: remotePath
         type: string
     return:

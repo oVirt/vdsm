@@ -23,7 +23,6 @@ import gluster.cli
 import gluster.exception as ge
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
-from testValidation import brokentest
 from storage.storageServer import GlusterFSConnection
 from storage.storageServer import IscsiConnection
 from storage.storageServer import MountConnection
@@ -62,27 +61,21 @@ class IscsiConnectionMismatchTests(VdsmTestCase):
 @expandPermutations
 class MountConnectionTests(VdsmTestCase):
 
-    def test_mountpoint(self):
-        mount_con = MountConnection("dummy-spec", mountClass=FakeMount)
-        self.assertEquals(mount_con._mount.fs_spec, "dummy-spec")
-        self.assertEquals(mount_con._mount.fs_file, "/tmp/dummy-spec")
-
     @permutations([
-        # spec, localpath
-        ("server:/a/", "/tmp/server:_a"),
-        ("server:/a//", "/tmp/server:_a"),
-        ("server:/a/b", "/tmp/server:_a_b"),
-        ("server:/a//b", "/tmp/server:_a_b"),
-        ("server:/a/b_c", "/tmp/server:_a_b__c"),
+        # spec, fs_spec, fs_file
+        ("server:/a/", "server:/a", "/tmp/server:_a"),
+        ("server:/a//", "server:/a", "/tmp/server:_a"),
+        ("server:/a/b", "server:/a/b", "/tmp/server:_a_b"),
+        ("server:/a//b", "server:/a/b", "/tmp/server:_a_b"),
+        ("server:/a/b_c", "server:/a/b_c", "/tmp/server:_a_b__c"),
+        ("server:/", "server:/", "/tmp/server:_"),
+        ("server:6789:/path", "server:6789:/path", "/tmp/server:6789:_path"),
+        ("server:6789:/", "server:6789:/", "/tmp/server:6789:_"),
     ])
-    def test_normalize_local_path(self, spec, localpath):
+    def test_normalize_local_path(self, spec, fs_spec, fs_file):
         con = MountConnection(spec, mountClass=FakeMount)
-        self.assertEqual(con._mount.fs_file, localpath)
-
-    @brokentest("os.path.normpath used for mount spec")
-    def test_normalize_slash(self, spec, localpath):
-        con = MountConnection("server:/", mountClass=FakeMount)
-        self.assertEqual(con._mount.fs_file, "/tmp/server:_")
+        self.assertEqual(con._mount.fs_spec, fs_spec)
+        self.assertEqual(con._mount.fs_file, fs_file)
 
 
 @expandPermutations

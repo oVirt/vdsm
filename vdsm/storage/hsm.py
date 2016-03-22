@@ -29,6 +29,7 @@ from fnmatch import fnmatch
 from itertools import imap
 from collections import defaultdict
 from functools import partial, wraps
+from os.path import normpath
 import errno
 import time
 import signal
@@ -2729,6 +2730,7 @@ class HSM(object):
             remotePath=None, options=None):
         """
         Returns a List of all or pool specific storage domains.
+        If remotePath is specified, storageType is required.
 
         :param spUUID: The UUID of the the the storage pool you want to list.
                        If spUUID equals to :attr:`~volume.BLANK_UUID` all
@@ -2742,6 +2744,12 @@ class HSM(object):
         vars.task.setDefaultException(
             se.StorageDomainActionError("spUUID: %s" % spUUID))
         sdCache.refreshStorage()
+        if remotePath:
+            if storageType == sd.LOCALFS_DOMAIN:
+                remotePath = normpath(remotePath)
+            else:
+                remotePath = fileUtils.normalize_remote_path(remotePath)
+            local_path = fileUtils.transformPath(remotePath)
         if spUUID and spUUID != sc.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
             domains = domList.keys()
@@ -2761,9 +2769,7 @@ class HSM(object):
                     domains.remove(sdUUID)
                     continue
                 # Filter domains according to 'remotePath'
-                if (remotePath and
-                    fileUtils.transformPath(remotePath) !=
-                        dom.getRemotePath()):
+                if remotePath and local_path != dom.getRemotePath():
                     domains.remove(sdUUID)
                     continue
             except Exception:
