@@ -23,6 +23,7 @@ import gluster.cli
 import gluster.exception as ge
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
+from testValidation import brokentest
 from storage.storageServer import GlusterFSConnection
 from storage.storageServer import IscsiConnection
 from storage.storageServer import MountConnection
@@ -66,6 +67,7 @@ class MountConnectionTests(VdsmTestCase):
         self.assertEquals(mount_con._mount.fs_spec, "dummy-spec")
         self.assertEquals(mount_con._mount.fs_file, "/tmp/dummy-spec")
 
+    @brokentest
     @permutations([
         # spec, localpath
         ("server:/a/", "/tmp/server:_a"),
@@ -73,6 +75,7 @@ class MountConnectionTests(VdsmTestCase):
         ("server:/a/b", "/tmp/server:_a_b"),
         ("server:/a//b", "/tmp/server:_a_b"),
         ("server:/a/b_c", "/tmp/server:_a_b__c"),
+        ("server:/", "/tmp/server:_"),
     ])
     def test_normalize_local_path(self, spec, localpath):
         con = MountConnection(spec, mountClass=FakeMount)
