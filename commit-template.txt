@@ -1,7 +1,13 @@
-<bootstrap | tests | relevant module, package or function>: short summary under 50 chars
+topic: Short summary under 50 chars (if possible)
 
-Longer description using lines' length under 72 chars.
+The topic should be a module name, a subsystem name, or a feature name,
+helping to understand what is this patch about.
 
-With multiple paragraphs if necessary.
+The rest of the commit message should include a longer description,
+explaining why this patch is needed, why it is implemented in the
+specific way, and the nature of the change.
+
+The description should use line length of 72 chars and multiple
+paragraphs if necessary.
 
 Bug-Url: https://bugzilla.redhat.com/??????
