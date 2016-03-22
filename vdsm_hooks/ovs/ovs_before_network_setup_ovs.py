@@ -185,11 +185,8 @@ def _validate_net_configuration(net, attrs, running_config, netinfo):
     nic = attrs.get('nic')
     bonding = attrs.get('bonding')
     vlan = attrs.get('vlan')
-    bridged = attrs.get('bridged', True)
     stp = attrs.get('stp', False)
 
-    if not bridged:
-        raise Exception('OVS does not support bridgeless networks')
     if bonding in running_config.bonds:
         if not is_ovs_bond(running_config.bonds[bonding]):
             raise Exception('%s is not OVS bonding' % bonding)
