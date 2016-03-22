@@ -17,8 +17,6 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-from contextlib import contextmanager
-
 import six
 
 from hooking import execCmd
@@ -99,17 +97,6 @@ def iter_ovs_bonds(bondings):
     for bond, attrs in six.iteritems(bondings):
         if is_ovs_bond(attrs):
             yield bond, attrs
-
-
-@contextmanager
-def suppress(exception=Exception):
-    """ Python 3 suppress context manager.
-    https://docs.python.org/3/library/contextlib.html#contextlib.suppress
-    """
-    try:
-        yield
-    except exception:
-        pass
 
 
 def destroy_ovs_bridge():

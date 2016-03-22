@@ -46,3 +46,10 @@ if sys.version_info[0] == 2:
 else:
     from subprocess import Popen as CPopen
     CPopen  # make pyflakes happy
+
+try:
+    from contextlib import suppress
+    suppress  # make pyflakes happy
+except ImportError:
+    from vdsm.common.contextlib import suppress
+    suppress  # yep, this is needed twice.

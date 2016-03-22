@@ -33,6 +33,7 @@ from libvirt import libvirtError
 import six
 
 from vdsm import hooks
+from vdsm.compat import suppress
 from vdsm.ipwrapper import linkSet
 from vdsm.netconfpersistence import RunningConfig
 from vdsm.network.configurators import libvirt
@@ -40,7 +41,7 @@ from vdsm.network.configurators import libvirt
 from hooking import execCmd
 import hooking
 
-from ovs_utils import (is_ovs_network, is_ovs_bond, iter_ovs_nets, suppress,
+from ovs_utils import (is_ovs_network, is_ovs_bond, iter_ovs_nets,
                        destroy_ovs_bridge, ovs_bridge_exists, EXT_IP,
                        EXT_OVS_VSCTL, BRIDGE_NAME, INIT_CONFIG_FILE)
 from ovs_setup_ovs import configure_ovs, prepare_ovs

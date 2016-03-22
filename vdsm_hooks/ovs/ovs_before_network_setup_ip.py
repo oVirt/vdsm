@@ -23,13 +23,14 @@ import os
 import six
 
 from vdsm import ipwrapper, sysctl
+from vdsm.compat import suppress
 from vdsm.network.configurators.dhclient import DhcpClient, kill_dhclient
 from vdsm.network.configurators.iproute2 import Iproute2
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm.network.models import NetDevice
 from vdsm.network.sourceroute import DynamicSourceRoute
 
-from ovs_utils import suppress, BRIDGE_NAME
+from ovs_utils import BRIDGE_NAME
 import ovs_utils
 
 log = partial(ovs_utils.log, tag='ovs_before_network_setup_ip: ')

@@ -21,13 +21,14 @@ from functools import partial
 
 import six
 
+from vdsm.compat import suppress
 from vdsm.netinfo.cache import CachingNetInfo
 from vdsm.network.configurators import libvirt
 
 import hooking
 
 from ovs_utils import (get_bond_options, is_ovs_bond, iter_ovs_nets,
-                       iter_ovs_bonds, rget, suppress, destroy_ovs_bridge,
+                       iter_ovs_bonds, rget, destroy_ovs_bridge,
                        BRIDGE_NAME, EXT_OVS_VSCTL)
 import ovs_utils
 
