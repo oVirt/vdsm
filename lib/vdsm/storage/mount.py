@@ -28,7 +28,6 @@ import stat
 import threading
 
 from collections import namedtuple
-from os.path import normpath
 
 from vdsm import cmdutils
 from vdsm import commands
@@ -58,9 +57,11 @@ def _parseFstabLine(line):
     fs_mntops = fs_mntops.split(",")
     fs_freq = int(fs_freq)
     fs_passno = int(fs_passno)
-    fs_spec = normpath(_parseFstabPath(fs_spec))
 
-    fs_file = normpath(_parseFstabPath(fs_file))
+    # We expect normalized inputs for
+    # fs_spec and fs_file from the kernel.
+    fs_spec = _parseFstabPath(fs_spec)
+    fs_file = _parseFstabPath(fs_file)
     for suffix in (" (deleted)", ):
         if not fs_file.endswith(suffix):
             continue
@@ -184,7 +185,9 @@ def isMounted(target):
 
 
 def getMountFromTarget(target):
-    target = normpath(target)
+    """
+    The given target should be normalized.
+    """
     for rec in _iterMountRecords():
         if rec.fs_file == target:
             return Mount(rec.fs_spec, rec.fs_file)
@@ -197,8 +200,11 @@ class Mount(object):
     log = logging.getLogger("storage.Mount")
 
     def __init__(self, fs_spec, fs_file):
-        self.fs_spec = normpath(fs_spec)
-        self.fs_file = normpath(fs_file)
+        """
+        The given fs_spec and fs_file should be normalized.
+        """
+        self.fs_spec = fs_spec
+        self.fs_file = fs_file
 
     def __eq__(self, other):
         return (self.__class__ == other.__class__ and

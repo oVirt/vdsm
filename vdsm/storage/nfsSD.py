@@ -69,6 +69,8 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
         cls.log.info("sdUUID=%s domainName=%s remotePath=%s "
                      "domClass=%s", sdUUID, domainName, remotePath, domClass)
 
+        remotePath = fileUtils.normalize_remote_path(remotePath)
+
         if not misc.isAscii(domainName) and not sd.supportsUnicode(version):
             raise se.UnicodeArgumentException()
 

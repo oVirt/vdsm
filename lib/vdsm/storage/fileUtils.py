@@ -39,11 +39,13 @@ import warnings
 
 from contextlib import closing
 from contextlib import contextmanager
+from os.path import normpath
 from StringIO import StringIO
 
 import six
 
 from vdsm import constants
+from vdsm.common.network import address
 
 libc = ctypes.CDLL("libc.so.6", use_errno=True)
 
@@ -53,6 +55,8 @@ CharPointer = ctypes.POINTER(ctypes.c_char)
 
 _PC_REC_XFER_ALIGN = 17
 _PC_REC_MIN_XFER_SIZE = 16
+MIN_PORT = 1
+MAX_PORT = 65535
 
 
 class TarCopyFailed(RuntimeError):
@@ -82,6 +86,40 @@ def transformPath(remotePath):
     Transform remote path to new one for local mount
     """
     return remotePath.replace('_', '__').replace('/', '_')
+
+
+def normalize_remote_path(remote_path):
+    """
+    Normalizes a remote path using normpath.
+    This method expects an input of the form "server:port:/path", where:
+    - The "port:" part is not mandatory.
+    - The "server" part can be a dns name, an ipv4 address
+    or an ipv6 address using quoted form.
+    - If the input doesn't contain a colon, a HosttailError will be raised.
+
+    Since this format is ambiguous, we treat an input that looks like a port
+    as a port, and otherwise as a path without a leading slash.
+    """
+    host, tail = address.hosttail_split(remote_path)
+    if ":" in tail:
+        port, path = tail.split(':', 1)
+        if is_port(port):
+            tail = port + ":" + normpath(path)
+        else:
+            tail = normpath(tail)
+    else:
+        tail = normpath(tail)
+    return address.hosttail_join(host, tail)
+
+
+def is_port(port_str):
+    if port_str.startswith('0'):
+        return False
+    try:
+        port = int(port_str)
+        return MIN_PORT <= port <= MAX_PORT
+    except ValueError:
+        return False
 
 
 def validateAccess(targetPath, perms=(os.R_OK | os.W_OK | os.X_OK)):
