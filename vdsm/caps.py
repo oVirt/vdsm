@@ -38,6 +38,7 @@ from vdsm import libvirtconnection
 from vdsm import machinetype
 from vdsm import numa
 from vdsm import osinfo
+from vdsm import supervdsm
 from vdsm import host
 from vdsm import utils
 import storage.hba
@@ -164,6 +165,9 @@ def get():
     # TODO: Version requests by engine to ease handling of compatibility.
     netinfo_data = netinfo_cache.get(compatibility=30600)
     caps.update(netinfo_data)
+
+    super_caps_networks = supervdsm.getProxy().caps_networks()
+    caps.update(super_caps_networks)
 
     try:
         caps['hooks'] = hooks.installed()

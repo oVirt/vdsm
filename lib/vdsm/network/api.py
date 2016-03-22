@@ -50,6 +50,11 @@ CONNECTIVITY_TIMEOUT_DEFAULT = 4
 _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
 
 
+def caps_networks():
+    """Complement existing non-root caps"""
+    return {}
+
+
 def _wait_for_udev_events():
     # FIXME: This is an ugly hack that is meant to prevent VDSM to report VFs
     # that are not yet named by udev or not report all of. This is a blocking
