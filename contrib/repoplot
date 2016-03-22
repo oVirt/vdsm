@@ -178,12 +178,14 @@ def parse(files):
         #
         # Begin:
         # mailbox.SPMMonitor::DEBUG::2016-02-17
-        # 20:15:24,521::storage_mailbox::731::Storage.Misc.excCmd::(_checkForMail)
+        # 20:15:24,521::storage_mailbox::731::Storage.Misc.excCmd::
+        # (_checkForMail)
         # /usr/bin/taskset --cpu-list 0-7 dd ...
         #
         # End:
         # mailbox.SPMMonitor::DEBUG::2016-02-17
-        # 20:15:24,547::storage_mailbox::731::Storage.Misc.excCmd::(_checkForMail)
+        # 20:15:24,547::storage_mailbox::731::Storage.Misc.excCmd::
+        # (_checkForMail)
         # SUCCESS: ...
         (add_command, "::Storage.Misc.excCmd::(_checkForMail)",
             "mailbox_commands"),
@@ -192,12 +194,14 @@ def parse(files):
         #
         # Begin:
         # 10db509a-d5e4-41e8-8751-1305f0852d68::DEBUG::2016-02-17
-        # 19:32:49,865::image::137::Storage.Image::(_wait_for_qemuimg_operation)
+        # 19:32:49,865::image::137::Storage.Image::
+        # (_wait_for_qemuimg_operation)
         # waiting for qemu-img operation to complete
         #
         # End:
         # 10db509a-d5e4-41e8-8751-1305f0852d68::DEBUG::2016-02-17
-        # 19:40:14,134::image::146::Storage.Image::(_wait_for_qemuimg_operation)
+        # 19:40:14,134::image::146::Storage.Image::
+        # (_wait_for_qemuimg_operation)
         # qemu-img operation has completed
         (add_qemuimg_operation,
             "::Storage.Image::(_wait_for_qemuimg_operation)",

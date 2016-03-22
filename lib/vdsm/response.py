@@ -43,11 +43,10 @@ def success(message=None, **kwargs):
 
 def success_raw(result=None, message=None):
     ret = {
-        'status':
-            {
-                "code": doneCode["code"],
-                "message": message or doneCode["message"],
-            }
+        'status': {
+            "code": doneCode["code"],
+            "message": message or doneCode["message"],
+        }
     }
 
     if result:
