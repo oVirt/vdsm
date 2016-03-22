@@ -139,11 +139,13 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'driver': 'snd_hda_intel',
                                         'address': {'slot': '27',
                                                     'bus': '0',
                                                     'domain': '0',
                                                     'function': '0'}},
                   u'scsi_0_0_0_0': {'capability': 'scsi',
+                                    'driver': 'sd',
                                     'parent': 'scsi_target0_0_0',
                                     'address': {'bus': '0', 'host': '0',
                                                 'lun': '0', 'target': '0'}},
@@ -167,6 +169,7 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'driver': 'ahci',
                                         'address': {'slot': '31',
                                                     'bus': '0',
                                                     'domain': '0',
@@ -181,6 +184,7 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'driver': 'i915',
                                         'address': {'slot': '2',
                                                     'bus': '0',
                                                     'domain': '0',
@@ -194,6 +198,7 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'driver': 'e1000e',
                                         'address': {'slot': '25',
                                                     'bus': '0',
                                                     'domain': '0',
@@ -204,21 +209,25 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                  'parent': 'usb_1_1',
                                  'vendor_id': '0x0a5c',
                                  'address': {'bus': '1', 'device': '10'},
-                                 'capability': 'usb_device'},
+                                 'capability': 'usb_device',
+                                 'driver': 'usb'},
                   u'usb_1_1': {'product_id': '0x0024', 'parent':
                                'usb_usb1', 'vendor_id': '0x8087',
                                'address': {'bus': '1', 'device': '2'},
-                               'capability': 'usb_device'},
+                               'capability': 'usb_device',
+                               'driver': 'usb'},
                   u'usb_usb1': {'product': 'EHCI Host Controller',
                                 'vendor': 'Linux 3.10.0-123.6.3.el7.x86_64 '
                                 'ehci_hcd', 'product_id': '0x0002',
                                 'address': {'bus': '1', 'device': '1'},
                                 'parent': 'pci_0000_00_1a_0',
                                 'vendor_id': '0x1d6b',
-                                'capability': 'usb_device'}}
+                                'capability': 'usb_device',
+                                'driver': 'usb'}}
 
 ADDITIONAL_DEVICE_PARSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                             'Express Root Port 9',
+                            'driver': 'pcieport',
                             'vendor': 'Intel Corporation',
                             'product_id': '0x3410',
                             'parent': 'computer',
@@ -238,6 +247,7 @@ _NET_DEVICE_PARSED = {
 }
 
 _SRIOV_PF_PARSED = {'capability': 'pci',
+                    'driver': 'igb',
                     'address': {'slot': '0',
                                 'bus': '5',
                                 'domain': '0',
@@ -251,6 +261,7 @@ _SRIOV_PF_PARSED = {'capability': 'pci',
                     'vendor_id': '0x8086'}
 
 _SRIOV_VF_PARSED = {'capability': 'pci',
+                    'driver': 'igbvf',
                     'address': {'slot': '16',
                                 'bus': '5',
                                 'domain': '0',

@@ -124,6 +124,14 @@ def _parse_device_params(device_xml):
     if name != 'computer':
         params['parent'] = devXML.find('parent').text
 
+    try:
+        driver_name = devXML.find('./driver/name').text
+    except AttributeError:
+        # No driver exposed by libvirt/sysfs.
+        pass
+    else:
+        params['driver'] = driver_name
+
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
 

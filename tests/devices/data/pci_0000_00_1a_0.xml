@@ -2,9 +2,6 @@
     <name>pci_0000_00_1a_0</name>
     <path>/sys/devices/pci0000:00/0000:00:1a.0</path>
     <parent>computer</parent>
-    <driver>
-        <name>ehci-pci</name>
-    </driver>
     <capability type='pci'>
         <domain>0</domain>
         <bus>0</bus>
