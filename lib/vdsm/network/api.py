@@ -33,20 +33,13 @@ from vdsm import commands
 from vdsm import constants
 from vdsm import hooks
 from vdsm import netconfpersistence
-from vdsm.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
-                                CachingNetInfo)
-from vdsm.netinfo import networks as netinfo_networks
 from vdsm import udevadm
-from vdsm import utils
 from vdsm import ipwrapper
 
 from . canonicalize import canonicalize_networks
-from . import legacy_switch
-from . import errors as ne
+from . import netswitch
 from .configurators import RollbackIncomplete
-from .errors import ConfigNetworkError
 
-CONNECTIVITY_TIMEOUT_DEFAULT = 4
 _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
 
 
@@ -119,36 +112,6 @@ def _build_setup_hook_dict(req_networks, req_bondings, req_options):
                              'options': dict(req_options)}}
 
     return hook_dict
-
-
-def _get_connectivity_timeout(options):
-    return int(options.get('connectivityTimeout',
-                           CONNECTIVITY_TIMEOUT_DEFAULT))
-
-
-def _check_connectivity(networks, bondings, options):
-    if utils.tobool(options.get('connectivityCheck', True)):
-        logging.debug('Checking connectivity...')
-        if not _client_seen(_get_connectivity_timeout(options)):
-            logging.info('Connectivity check failed, rolling back')
-            raise ConfigNetworkError(ne.ERR_LOST_CONNECTION,
-                                     'connectivity check failed')
-
-
-def _client_seen(timeout):
-    start = time.time()
-    while timeout >= 0:
-        try:
-            if os.stat(constants.P_VDSM_CLIENT_LOG).st_mtime > start:
-                return True
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                pass  # P_VDSM_CLIENT_LOG is not yet there
-            else:
-                raise
-        time.sleep(1)
-        timeout -= 1
-    return False
 
 
 def _apply_hook(bondings, networks, options):
@@ -248,31 +211,14 @@ def _setup_networks(networks, bondings, options):
     # TODO: Add canonicalize_bondings(bondings)
 
     logging.debug('Validating configuration')
-    legacy_switch.validate_network_setup(networks, bondings)
+    netswitch.validate(networks, bondings)
 
     bondings, networks, options = _apply_hook(bondings, networks, options)
-
-    libvirt_nets = netinfo_networks()
-    _netinfo = CachingNetInfo(_netinfo=netinfo_get(
-        libvirtNets2vdsm(libvirt_nets)))
 
     logging.debug('Applying...')
     in_rollback = options.get('_inRollback', False)
     with _rollback():
-        with legacy_switch.ConfiguratorClass(in_rollback) as configurator:
-            # from this point forward, any exception thrown will be handled by
-            # Configurator.__exit__.
-
-            legacy_switch.remove_networks(networks, bondings, configurator,
-                                          _netinfo, libvirt_nets)
-
-            legacy_switch.bonds_setup(bondings, configurator, _netinfo,
-                                      in_rollback)
-
-            legacy_switch.add_missing_networks(configurator, networks,
-                                               bondings, _netinfo)
-
-            _check_connectivity(networks, bondings, options)
+        netswitch.setup(networks, bondings, options, in_rollback)
 
 
 def setSafeNetworkConfig():

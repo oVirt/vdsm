@@ -27,8 +27,10 @@ dist_vdsmnetwork_PYTHON = \
 	api.py \
 	errors.py \
 	canonicalize.py \
+	connectivity.py \
 	legacy_switch.py \
 	models.py \
+	netswitch.py \
 	sourceroute.py \
 	sourceroutethread.py \
 	utils.py \
