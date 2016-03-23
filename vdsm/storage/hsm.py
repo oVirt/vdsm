@@ -3265,6 +3265,7 @@ class HSM(object):
         vars.task.getSharedLock(STORAGE, sdUUID)
 
         dom = sdCache.produce(sdUUID)
+        dom.unlinkBCImage(imgUUID)
         dom.deactivateImage(imgUUID)
 
     @public

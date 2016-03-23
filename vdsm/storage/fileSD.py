@@ -496,6 +496,10 @@ class FileStorageDomain(sd.StorageDomain):
         # Nothing to do here other than returning the path
         return self.getLinkBCImagePath(imgUUID)
 
+    def unlinkBCImage(self, imgUUID):
+        # Nothing to do since linkBCImage is a no-op
+        pass
+
     def createImageLinks(self, srcImgPath, imgUUID):
         """
         qcow chain is build by reading each qcow header and reading the path
