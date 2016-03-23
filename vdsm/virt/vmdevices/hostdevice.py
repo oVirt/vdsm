@@ -38,10 +38,6 @@ class HostDevice(core.Base):
         self.hostAddress = self._deviceParams.get('address')
 
     def setup(self):
-        """
-        Detach the device from the host. This method *must* be
-        called before getXML in order to populate _deviceParams.
-        """
         logging.debug('Detaching device %s from the host.' % self.device)
         self._deviceParams = detach_detachable(self.device)
 

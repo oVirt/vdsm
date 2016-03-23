@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
 import xml.etree.ElementTree as ET
 from xml.dom import Node
 
@@ -177,16 +178,10 @@ class Interface(Base):
                 bandwidth.appendChildWithArgs(key, **attrs)
         return bandwidth
 
-    def detach(self):
-        """
-        Detach the device from the host. This method *must* be
-        called before getXML in order to populate _deviceParams.
-        """
+    def setup(self):
         if self.is_hostdevice:
+            logging.debug('Detaching device %s from the host.' % self.device)
             detach_detachable(self.hostdev)
-        else:
-            raise Exception('Tried to detach a non host device: %s' % (
-                self.conf,))
 
     @property
     def _xpath(self):

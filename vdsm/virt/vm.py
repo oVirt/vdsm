@@ -1929,10 +1929,6 @@ class Vm(object):
         # domDependentInit, after the migration is completed.
 
         if not self.recovering:
-            for dev_name, dev in self._host_devices():
-                self.log.debug('Detaching device %s from the host.' % dev_name)
-                dev.detach()
-
             self._setup_devices()
 
         if self.recovering:
@@ -2156,7 +2152,7 @@ class Vm(object):
                                                          **dev_spec)
             dev_objects.append(dev_object)
             try:
-                dev_object.detach()
+                dev_object.setup()
             except libvirt.libvirtError:
                 # We couldn't detach one of the devices. Halt.
                 self.log.exception('Could not detach a device from a host.')
