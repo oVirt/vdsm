@@ -68,11 +68,11 @@ class MountConnectionTests(VdsmTestCase):
 
     @permutations([
         # spec, localpath
-        ("/a/", "/tmp/_a"),
-        ("/a//", "/tmp/_a"),
-        ("/a/b", "/tmp/_a_b"),
-        ("/a//b", "/tmp/_a_b"),
-        ("/a/b_c", "/tmp/_a_b__c"),
+        ("server:/a/", "/tmp/server:_a"),
+        ("server:/a//", "/tmp/server:_a"),
+        ("server:/a/b", "/tmp/server:_a_b"),
+        ("server:/a//b", "/tmp/server:_a_b"),
+        ("server:/a/b_c", "/tmp/server:_a_b__c"),
     ])
     def test_normalize_local_path(self, spec, localpath):
         con = MountConnection(spec, mountClass=FakeMount)
