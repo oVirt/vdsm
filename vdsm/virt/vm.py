@@ -23,6 +23,7 @@
 from collections import namedtuple
 from contextlib import contextmanager
 from xml.dom.minidom import parseString as _domParseStr
+import itertools
 import logging
 import os
 import tempfile
@@ -1702,6 +1703,7 @@ class Vm(object):
         self._cleanupDrives()
         self._cleanupFloppy()
         self._cleanupGuestAgent()
+        self._teardown_devices()
         cleanup_guest_socket(self._qemuguestSocketFile)
         # TODO: avoid reattach when Engine can tell free VFs otherwise
         self._reattachHostDevices()
@@ -1709,6 +1711,20 @@ class Vm(object):
         numa.invalidateNumaCache(self)
         for con in self._devices[hwclass.CONSOLE]:
             con.cleanup()
+
+    def _teardown_devices(self, devices=None):
+        """
+        Runs after the underlying libvirt domain was destroyed.
+        """
+        if devices is None:
+            devices = list(itertools.chain(*self._devices.values()))
+
+        for device in devices:
+            try:
+                device.teardown()
+            except Exception:
+                self.log.exception('Failed to tear down device %s, device in '
+                                   'inconsistent state', device.device)
 
     def _cleanupRecoveryFile(self):
         self._recovery_file.cleanup()
@@ -1844,6 +1860,29 @@ class Vm(object):
         self._updateVcpuTuneInfo()
         self._updateVcpuLimit()
 
+    def _setup_devices(self):
+        """
+        Runs before the underlying libvirt domain is created.
+
+        Handle setup of all devices. If some device cannot be setup,
+        go through the devices that were successfully setup and tear
+        them down, logging all exceptions we encounter. Exception is then
+        raised as we cannot continue the VM creation due to device failures.
+        """
+        done = []
+
+        for dev_objects in self._devices.values():
+            for dev_object in dev_objects[:]:
+                try:
+                    dev_object.setup()
+                except Exception:
+                    self.log.exception("Failed to setup device %s",
+                                       dev_object.device)
+                    self._teardown_devices(done)
+                    raise
+                else:
+                    done.append(dev_object)
+
     def _run(self):
         self.log.info("VM wrapper has started")
         dev_spec_map = self._devSpecMapFromConf()
@@ -1883,6 +1922,8 @@ class Vm(object):
             for dev_name, dev in self._host_devices():
                 self.log.debug('Detaching device %s from the host.' % dev_name)
                 dev.detach()
+
+            self._setup_devices()
 
         if self.recovering:
             self._dom = virdomain.Notifying(

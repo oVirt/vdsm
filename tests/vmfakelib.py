@@ -413,3 +413,38 @@ class HostSample(object):
     def __init__(self, timestamp, samples):
         self.timestamp = timestamp
         self.cpuCores = CpuCoreSample(samples)
+
+
+CREATED = "created"
+SETUP = "setup"
+TEARDOWN = "teardown"
+
+
+class Device(object):
+    log = logging.getLogger('fake.Device')
+
+    def __init__(self, device, fail_setup=None, fail_teardown=None):
+        self.fail_setup = fail_setup
+        self.fail_teardown = fail_teardown
+        self.device = device
+        self.state = CREATED
+
+    @recorded
+    def setup(self):
+        assert self.state is CREATED
+        self.state = SETUP
+
+        if self.fail_setup:
+            raise self.fail_setup
+
+        self.log.info("%s setup", self.device)
+
+    @recorded
+    def teardown(self):
+        assert self.state is SETUP
+        self.state = TEARDOWN
+
+        if self.fail_teardown:
+            raise self.fail_teardown
+
+        self.log.info("%s teardown", self.device)

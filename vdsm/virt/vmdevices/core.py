@@ -74,6 +74,28 @@ class Base(vmxml.Device):
         """
         raise NotImplementedError()
 
+    def setup(self):
+        """
+        Actions to be executed before VM is started. This method is therefore
+        able to modify the final device XML. Not executed in the recovery
+        flow.
+
+        It is implementation's obligation to
+        * fail without leaving the device in inconsistent state or
+        * succeed fully.
+
+        In case of failure, teardown will not be called for device where setup
+        failed, only for the devices that were successfully setup before
+        the failure.
+        """
+        pass
+
+    def teardown(self):
+        """
+        Actions to be executed after VM is destroyed.
+        """
+        pass
+
 
 class Generic(Base):
 

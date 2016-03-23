@@ -1079,6 +1079,108 @@ class TestVm(XMLTestCase):
             })
 
 
+class ExpectedError(Exception):
+    pass
+
+
+class UnexpectedError(Exception):
+    pass
+
+
+class TestVmDeviceHandling(TestCaseBase):
+    conf = {
+        'devices': [],
+        'maxVCpus': '160',
+        'memGuaranteedSize': '512',
+        'memSize': '1024',
+        'smp': '8',
+        'vmId': '9ffe28b6-6134-4b1e-beef-1185f49c436f',
+        'vmName': 'testVm',
+    }
+
+    def test_device_setup_success(self):
+        devices = [fake.Device('device_{}'.format(i)) for i in range(3)]
+
+        with fake.VM(self.conf, create_device_objects=True) as testvm:
+            testvm._devices[hwclass.GENERAL] = devices
+            self.assertNotRaises(testvm._setup_devices)
+            self.assertEqual(devices[0].state, fake.SETUP)
+            self.assertEqual(devices[1].state, fake.SETUP)
+            self.assertEqual(devices[2].state, fake.SETUP)
+
+    def test_device_setup_fail_first(self):
+        devices = ([fake.Device('device_0', fail_setup=ExpectedError)] +
+                   [fake.Device('device_{}'.format(i)) for i in range(1, 3)])
+
+        with fake.VM(self.conf, create_device_objects=True) as testvm:
+            testvm._devices[hwclass.GENERAL] = devices
+            self.assertRaises(ExpectedError, testvm._setup_devices)
+            self.assertEqual(devices[0].state, fake.SETUP)
+            self.assertEqual(devices[1].state, fake.CREATED)
+            self.assertEqual(devices[2].state, fake.CREATED)
+
+    def test_device_setup_fail_second(self):
+        devices = [fake.Device('device_0'),
+                   fake.Device('device_1', fail_setup=ExpectedError),
+                   fake.Device('device_2')]
+
+        with fake.VM(self.conf, create_device_objects=True) as testvm:
+            testvm._devices[hwclass.GENERAL] = devices
+            self.assertRaises(ExpectedError, testvm._setup_devices)
+            self.assertEqual(devices[0].state, fake.TEARDOWN)
+            self.assertEqual(devices[1].state, fake.SETUP)
+            self.assertEqual(devices[2].state, fake.CREATED)
+
+    def test_device_setup_fail_third(self):
+        devices = [fake.Device('device_0'), fake.Device('device_1'),
+                   fake.Device('device_2', fail_setup=ExpectedError)]
+
+        with fake.VM(self.conf, create_device_objects=True) as testvm:
+            testvm._devices[hwclass.GENERAL] = devices
+            self.assertRaises(ExpectedError, testvm._setup_devices)
+            self.assertEqual(devices[0].state, fake.TEARDOWN)
+            self.assertEqual(devices[1].state, fake.TEARDOWN)
+            self.assertEqual(devices[2].state, fake.SETUP)
+
+    def test_device_setup_correct_exception(self):
+        devices = [fake.Device('device_0', fail_teardown=UnexpectedError),
+                   fake.Device('device_1',
+                               fail_setup=ExpectedError,
+                               fail_teardown=UnexpectedError),
+                   fake.Device('device_2', fail_setup=UnexpectedError)]
+
+        with fake.VM(self.conf, create_device_objects=True) as testvm:
+            testvm._devices[hwclass.GENERAL] = devices
+            self.assertRaises(ExpectedError, testvm._setup_devices)
+            self.assertEqual(devices[0].state, fake.TEARDOWN)
+            self.assertEqual(devices[1].state, fake.SETUP)
+            self.assertEqual(devices[2].state, fake.CREATED)
+
+    def test_device_teardown_success(self):
+        devices = [fake.Device('device_{}'.format(i)) for i in range(3)]
+
+        with fake.VM(self.conf, create_device_objects=True) as testvm:
+            testvm._devices[hwclass.GENERAL] = devices
+            self.assertNotRaises(testvm._setup_devices)
+            self.assertNotRaises(testvm._teardown_devices)
+            self.assertEqual(devices[0].state, fake.TEARDOWN)
+            self.assertEqual(devices[1].state, fake.TEARDOWN)
+            self.assertEqual(devices[2].state, fake.TEARDOWN)
+
+    def test_device_teardown_fail_all(self):
+        devices = [fake.Device('device_{}'.format(i),
+                               fail_teardown=UnexpectedError)
+                   for i in range(3)]
+
+        with fake.VM(self.conf, create_device_objects=True) as testvm:
+            testvm._devices[hwclass.GENERAL] = devices
+            self.assertNotRaises(testvm._setup_devices)
+            self.assertNotRaises(testvm._teardown_devices)
+            self.assertEqual(devices[0].state, fake.TEARDOWN)
+            self.assertEqual(devices[1].state, fake.TEARDOWN)
+            self.assertEqual(devices[2].state, fake.TEARDOWN)
+
+
 @expandPermutations
 class TestWaitForRemoval(TestCaseBase):
 
