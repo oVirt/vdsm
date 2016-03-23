@@ -1140,6 +1140,12 @@ class BlockStorageDomain(sd.StorageDomain):
                 raise
         return dst
 
+    def unlinkBCImage(self, imgUUID):
+        img_path = self.getLinkBCImagePath(imgUUID)
+        if os.path.islink(img_path):
+            self.log.debug("Removing image directory link %r", img_path)
+            os.unlink(img_path)
+
     def createImageLinks(self, srcImgPath, imgUUID, volUUIDs):
         """
         qcow chain is built by reading each qcow header and reading the path
