@@ -61,7 +61,8 @@ def tarCopy(src, dst, exclude=()):
     tsrc = subprocess.Popen([constants.EXT_TAR, "cf", "-"] +
                             excludeArgs + ["-C", src, "."],
                             stdout=subprocess.PIPE)
-    tdst = subprocess.Popen([constants.EXT_TAR, "xf", "-", "-C", dst],
+    tdst = subprocess.Popen([constants.EXT_TAR, "xf", "-", "-C", dst,
+                             "--touch"],
                             stdin=tsrc.stdout, stderr=subprocess.PIPE,
                             stdout=subprocess.PIPE)
     tsrc.stdout.close()
