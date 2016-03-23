@@ -1258,8 +1258,6 @@ class Vm(object):
         cleanup_guest_socket(self._guestSocketFile)
 
     def _host_devices(self):
-        for device in self._devices[hwclass.HOSTDEV][:]:
-            yield device.device, device
         for device in self._devices[hwclass.NIC][:]:
             if device.is_hostdevice:
                 yield device.hostdev, device

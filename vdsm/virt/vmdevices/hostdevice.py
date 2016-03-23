@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import logging
+
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, CAPABILITY_TO_XML_ATTR
@@ -35,11 +37,12 @@ class HostDevice(core.Base):
         self._deviceParams = get_device_params(self.device)
         self.hostAddress = self._deviceParams.get('address')
 
-    def detach(self):
+    def setup(self):
         """
         Detach the device from the host. This method *must* be
         called before getXML in order to populate _deviceParams.
         """
+        logging.debug('Detaching device %s from the host.' % self.device)
         self._deviceParams = detach_detachable(self.device)
 
     def getXML(self):
