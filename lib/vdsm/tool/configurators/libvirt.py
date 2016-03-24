@@ -307,6 +307,7 @@ FILES = {
                     'remote_display_port_min': 5900,
                     'remote_display_port_max': 6923,
                     'auto_dump_path': '"/var/log/core"',
+                    'stdio_handler': '"file"',
                 },
 
             },
