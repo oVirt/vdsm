@@ -133,6 +133,14 @@ class BlockVolumeManifest(volume.VolumeManifest):
         """
         imageDir = image.ImageManifest(self.repoPath).getImageDir(self.sdUUID,
                                                                   self.imgUUID)
+
+        # Image directory may be a symlink to /run/vdsm/storage/sd/image
+        # created when preparing an image before starting a vm.
+        if os.path.islink(imageDir) and not os.path.exists(imageDir):
+            self.log.warning("Removing stale image directory link %r",
+                             imageDir)
+            os.unlink(imageDir)
+
         if not os.path.isdir(imageDir):
             try:
                 os.mkdir(imageDir, 0o755)
