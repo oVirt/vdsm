@@ -919,9 +919,10 @@ class Image(APIBase):
         return self._irs.downloadImage(
             methodArgs, self._spUUID, self._sdUUID, self._UUID, volumeID)
 
-    def prepare(self, volumeID):
-        return self._irs.prepareImage(
-            self._sdUUID, self._spUUID, self._UUID, volumeID)
+    def prepare(self, volumeID, allowIllegal=False):
+        return self._irs.prepareImage(self._sdUUID, self._spUUID,
+                                      self._UUID, volumeID,
+                                      allowIllegal=allowIllegal)
 
     def teardown(self, volumeID=None):
         return self._irs.teardownImage(

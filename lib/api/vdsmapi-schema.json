@@ -5045,6 +5045,11 @@
 #
 # @volumeID:         The UUID of the Volume
 #
+# @allowIllegal:     #optional False by default. If set to True, prepare will
+#                    succeed even if any of the image volumes are illegal,
+#                    for making the volume writable by untrusted source.
+#                    Never use this when exposing the volume's image to a vm!
+#
 # Returns:
 # Information about prepared image
 # (new in version 4.18)
@@ -5053,8 +5058,9 @@
 ##
 {'command': {'class': 'Image', 'name': 'prepare'},
  'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
-          'imageID': 'UUID', 'volumeID': 'UUID'}
- 'returns': 'ImageInfo'}}
+          'imageID': 'UUID', 'volumeID': 'UUID',
+          '*allowIllegal': 'bool'},
+ 'returns': 'ImageInfo'}
 
 ##
 # @Image.teardown:

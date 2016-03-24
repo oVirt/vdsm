@@ -3065,7 +3065,8 @@ class HSM(object):
             self.log.error("Failed to remove the following rules: %s", fails)
 
     @public
-    def prepareImage(self, sdUUID, spUUID, imgUUID, leafUUID):
+    def prepareImage(self, sdUUID, spUUID, imgUUID, leafUUID,
+                     allowIllegal=False):
         """
         Prepare an image, activating the needed volumes.
         Return the path to the leaf and an unsorted list of the image volumes.
@@ -3096,7 +3097,10 @@ class HSM(object):
         for volUUID in imgVolumes:
             legality = dom.produceVolume(imgUUID, volUUID).getLegality()
             if legality == volume.ILLEGAL_VOL:
-                raise se.prepareIllegalVolumeError(volUUID)
+                if allowIllegal:
+                    self.log.info("Preparing illegal volume %s", leafUUID)
+                else:
+                    raise se.prepareIllegalVolumeError(volUUID)
 
         imgPath = dom.activateVolumes(imgUUID, imgVolumes)
         if spUUID and spUUID != sd.BLANK_UUID:
