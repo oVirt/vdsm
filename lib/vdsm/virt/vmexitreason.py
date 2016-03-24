@@ -29,6 +29,7 @@ ADMIN_SHUTDOWN = 6
 USER_SHUTDOWN = 7
 MIGRATION_FAILED = 8
 LIBVIRT_DOMAIN_MISSING = 9
+DESTROYED_ON_STARTUP = 10
 
 
 exitReasons = {
@@ -41,5 +42,6 @@ exitReasons = {
     ADMIN_SHUTDOWN: 'Admin shut down from the engine',
     USER_SHUTDOWN: 'User shut down from within the guest',
     MIGRATION_FAILED: 'VM failed to migrate',
-    LIBVIRT_DOMAIN_MISSING: 'Failed to find the libvirt domain'
+    LIBVIRT_DOMAIN_MISSING: 'Failed to find the libvirt domain',
+    DESTROYED_ON_STARTUP: 'VM destroyed during the startup',
 }

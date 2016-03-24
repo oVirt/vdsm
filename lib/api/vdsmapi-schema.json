@@ -6774,6 +6774,9 @@
 #
 # @libvirt domain missing:  Failed to find the libvirt domain for the VM
 #
+# @destroyed on startup:    VM destroyed during the startup
+#                           (New in version 4.18.0)
+#
 # Since: 4.15.0
 ##
 {'enum': 'VmExitReason',
@@ -6781,7 +6784,7 @@
           'lost qemu connection', 'libvirt start failed',
           'migration succeeded', 'save state succeeded',
           'admin shutdown', 'user shutdown', 'migration failed',
-          'libvirt domain missing']}
+          'libvirt domain missing', 'destroyed on startup']}
 
 ##
 # @ExitedVmStats:

@@ -186,6 +186,13 @@ class MissingLibvirtDomainError(Exception):
         self.reason = reason
 
 
+class DestroyedOnStartupError(Exception):
+    """
+    The VM was destroyed while it was starting up.
+    This most likely happens because the startup is very slow.
+    """
+
+
 class Vm(object):
     """
     Used for abstracting communication between various parts of the
@@ -743,6 +750,9 @@ class Vm(object):
                 self.conf.get(
                     'exitMessage', ''))
             self.recovering = False
+        except DestroyedOnStartupError:
+            # this could not happen on recovery
+            self.setDownStatus(NORMAL, vmexitreason.DESTROYED_ON_STARTUP)
         except MigrationError:
             self.log.exception("Failed to start a migration destination vm")
             self.setDownStatus(ERROR, vmexitreason.MIGRATION_FAILED)
@@ -1767,7 +1777,7 @@ class Vm(object):
                 self._dom.destroy()
             except Exception:
                 pass
-            raise Exception('destroy() called before Vm started')
+            raise DestroyedOnStartupError()
 
         if not self._dom.connected:
             raise MissingLibvirtDomainError(vmexitreason.LIBVIRT_START_FAILED)
