@@ -319,7 +319,7 @@ class VM(APIBase):
         else:
             return errCode['nonresp']
 
-    def destroy(self):
+    def destroy(self, gracefulAttempts=1):
         """
         Destroy the specified VM.
         """
@@ -329,7 +329,7 @@ class VM(APIBase):
             v = self._cif.vmContainer.get(self._UUID)
             if not v:
                 return errCode['noVM']
-            res = v.destroy()
+            res = v.destroy(gracefulAttempts)
             status = utils.picklecopy(res)
             if status['status']['code'] == 0:
                 status['status']['message'] = "Machine destroyed"

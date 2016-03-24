@@ -3780,7 +3780,7 @@ class Vm(object):
             utils.rmFile(self.conf['floppy'])
         self._changeBlockDev('floppy', 'fda', '')
 
-    def releaseVm(self):
+    def releaseVm(self, gracefulAttempts=1):
         """
         Stop VM and release all resources
         """
@@ -3810,7 +3810,7 @@ class Vm(object):
             self._incomingMigrationFinished.set()
             self.guestAgent.stop()
             if self._dom.connected:
-                result = self._destroyVm()
+                result = self._destroyVm(gracefulAttempts)
                 if response.is_error(result):
                     return result
 
@@ -3834,8 +3834,13 @@ class Vm(object):
 
         return response.success()
 
-    def _destroyVm(self):
-        res, safe_to_force = self._destroyVmGraceful()
+    def _destroyVm(self, gracefulAttempts=1):
+        for idx in range(gracefulAttempts):
+            self.log.info("_destroyVmGraceful attempt #%i", idx)
+            res, safe_to_force = self._destroyVmGraceful()
+            if not response.is_error(res):
+                return res
+
         if safe_to_force:
             res = self._destroyVmForceful()
         return res
@@ -3883,10 +3888,10 @@ class Vm(object):
             self.log.debug("Total desktops after destroy of %s is %d",
                            self.conf['vmId'], len(self.cif.vmContainer))
 
-    def destroy(self):
+    def destroy(self, gracefulAttempts=1):
         self.log.debug('destroy Called')
 
-        result = self.doDestroy()
+        result = self.doDestroy(gracefulAttempts)
         if response.is_error(result):
             return result
         # Clean VM from the system
@@ -3894,7 +3899,7 @@ class Vm(object):
 
         return response.success()
 
-    def doDestroy(self):
+    def doDestroy(self, gracefulAttempts):
         for dev in self._customDevices():
             hooks.before_device_destroy(dev._deviceXML, self.conf,
                                         dev.custom)
@@ -3904,7 +3909,7 @@ class Vm(object):
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
         self._destroyed = True
 
-        return self.releaseVm()
+        return self.releaseVm(gracefulAttempts)
 
     def acpiShutdown(self):
         with self._shutdownLock:

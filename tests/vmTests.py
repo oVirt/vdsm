@@ -1018,6 +1018,67 @@ class TestVm(XMLTestCase):
         self.assertXMLEqual(out_dom_xml,
                             _load_xml('vm_restore_spice_after.xml'))
 
+    @MonkeyPatch(os, 'unlink', lambda _: None)
+    def test_release_vm_succeeds(self):
+        with fake.VM(self.conf) as testvm:
+            testvm.guestAgent = fake.GuestAgent()
+
+            dom = fake.Domain()
+
+            status = {
+                'graceful': 0,
+                'forceful': 0,
+            }
+
+            def graceful(*args):
+                status['graceful'] += 1
+                return response.success()
+
+            def forceful(*args):
+                status['forceful'] += 1
+                return response.success()
+
+            dom.destroyFlags = graceful
+            dom.destroy = forceful
+            testvm._dom = dom
+
+            testvm.releaseVm()
+            self.assertEqual(status, {
+                'graceful': 1,
+                'forceful': 0,
+            })
+
+    @MonkeyPatch(os, 'unlink', lambda _: None)
+    @permutations([[1], [2], [3], [9]])
+    def test_releasevm_fails(self, attempts):
+        with fake.VM(self.conf) as testvm:
+            testvm.guestAgent = fake.GuestAgent()
+
+            dom = fake.Domain()
+
+            status = {
+                'graceful': 0,
+                'forceful': 0,
+            }
+
+            def graceful(*args):
+                status['graceful'] += 1
+                raise fake.Error(libvirt.VIR_ERR_SYSTEM_ERROR)
+
+            def forceful(*args):
+                status['forceful'] += 1
+                return response.success()
+
+            dom.destroyFlags = graceful
+            dom.destroy = forceful
+            testvm._dom = dom
+
+            testvm.releaseVm(gracefulAttempts=attempts)
+            self.assertEqual(status, {
+                'graceful': attempts,
+                'forceful': 1,
+            })
+
 
 @expandPermutations
 class TestWaitForRemoval(TestCaseBase):

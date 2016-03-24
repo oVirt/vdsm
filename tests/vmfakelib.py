@@ -149,10 +149,15 @@ def parse_secret(xml):
     return uuid, usage_type, usage_id, description
 
 
+class IRS(object):
+    def inappropriateDevices(self, ident):
+        pass
+
+
 class ClientIF(clientIF.clientIF):
     def __init__(self):
         # the bare minimum initialization for our test needs.
-        self.irs = None  # just to make sure nothing ever happens
+        self.irs = IRS()  # just to make sure nothing ever happens
         self.log = logging.getLogger('fake.ClientIF')
         self.channelListener = None
         self.vmContainerLock = threading.Lock()
@@ -292,6 +297,9 @@ class GuestAgent(object):
             'netIfaces': [],
             'memoryStats': {},
             'guestCPUCount': -1}
+
+    def stop(self):
+        pass
 
 
 class VirNodeDeviceStub(object):

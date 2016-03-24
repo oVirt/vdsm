@@ -6880,12 +6880,18 @@
 #
 # Forcibly stop a running VM.
 #
-# @vmID:  The UUID of the VM
+# @vmID:               The UUID of the VM
+#
+# @gracefulAttempts:   #optional number of times Vdsm should try to
+#                      gracefully destroy the VM before to switch to
+#                      forceful. Default is 1.
+#                      (new in version 4.18.0)
+#
 #
 # Since: 4.10.0
 ##
 {'command': {'class': 'VM', 'name': 'destroy'},
- 'data': {'vmID': 'UUID'}}
+ 'data': {'vmID': 'UUID', '*gracefulAttempts': 'uint'}}
 
 ##
 # @VM.getInfo:
