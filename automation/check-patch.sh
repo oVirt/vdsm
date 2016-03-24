@@ -6,7 +6,10 @@ set -xe
 
 ./autogen.sh --system --enable-hooks
 
-make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+# Run nosetests only over fedora mock to save Jenkins resources
+if grep -q 'Fedora' /etc/redhat-release; then
+   make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+fi
 
 ./automation/build-artifacts.sh
 
