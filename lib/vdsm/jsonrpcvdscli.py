@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,18 +39,47 @@ from . import sslutils
 
 
 _COMMAND_CONVERTER = {
+    'activateStorageDomain': 'StorageDomain.activate',
+    'connectStoragePool': 'StoragePool.connect',
     'connectStorageServer': 'StoragePool.connectStorageServer',
+    'clearTask': 'Task.clear',
     'create': 'VM.create',
+    'createStorageDomain': 'StorageDomain.create',
+    'createStoragePool': 'StoragePool.create',
+    'createVG': 'LVMVolumeGroup.create',
+    'createVolume': 'Volume.create',
     'destroy': 'VM.destroy',
+    'destroyStoragePool': 'StoragePool.destroy',
+    'detachStorageDomain': 'StorageDomain.detach',
+    'disconnectStoragePool': 'StoragePool.disconnect',
     'disconnectStorageServer': 'StoragePool.disconnectStorageServer',
+    'discoverSendTargets': 'ISCSIConnection.discoverSendTargets',
+    'formatStorageDomain': 'StorageDomain.format',
     'fullList': 'Host.getVMFullList',
+    'getAllTasksStatuses': 'Host.getAllTasksStatuses',
     'getAllVmStats': 'Host.getAllVmStats',
     'getConnectedStoragePoolsList': 'Host.getConnectedStoragePools',
+    'getDeviceList': 'Host.getDeviceList',
+    'getImagesList': 'StorageDomain.getImages',
+    'getSpmStatus': 'StoragePool.getSpmStatus',
+    'getStorageDomainInfo': 'StorageDomain.getInfo',
     'getStorageDomainsList': 'Host.getStorageDomains',
+    'getStorageDomainStats': 'StorageDomain.getStats',
+    'getStoragePoolInfo': 'StoragePool.getInfo',
     'getVdsCapabilities': 'Host.getCapabilities',
     'getVdsHardwareInfo': 'Host.getHardwareInfo',
     'getVdsStats': 'Host.getStats',
+    'getVGInfo': 'LVMVolumeGroup.getInfo',
+    'getVolumeInfo': 'Volume.getInfo',
     'getVmStats': 'VM.getStats',
+    'getVolumeSize': 'Volume.getSize',
+    'getVolumesList': 'Image.getVolumes',
+    'glusterTasksList': 'GlusterTask.list',
+    'glusterVolumeCreate': 'GlusterVolume.create',
+    'glusterVolumeSet': 'GlusterVolume.set',
+    'glusterVolumesList': 'GlusterVolume.list',
+    'glusterVolumeStart': 'GlusterVolume.start',
+    'glusterTasksList': 'GlusterTask.list',
     'hotplugDisk': 'VM.hotplugDisk',
     'hotplugNic': 'VM.hotplugNic',
     'hotunplugDisk': 'VM.hotunplugDisk',
@@ -58,13 +87,22 @@ _COMMAND_CONVERTER = {
     'list': 'Host.getVMList',
     'migrationCreate': 'VM.migrationCreate',
     'ping': 'Host.ping',
+    'prepareImage': 'Image.prepare',
+    'repoStats': 'Host.getStorageRepoStats',
     'setBalloonTarget': 'VM.setBalloonTarget',
     'setCpuTunePeriod': 'VM.setCpuTunePeriod',
     'setCpuTuneQuota': 'VM.setCpuTuneQuota',
     'setMOMPolicy': 'Host.setMOMPolicy',
     'setSafeNetworkConfig': 'Host.setSafeNetworkConfig',
     'setupNetworks': 'Host.setupNetworks',
+    'setVmTicket': 'VM.setTicket',
+    'shutdown': 'VM.shutdown',
+    'spmStart': 'StoragePool.spmStart',
+    'spmStop': 'StoragePool.spmStop',
+    'startMonitoringDomain': 'Host.startMonitoringDomain',
+    'stopMonitoringDomain': 'Host.stopMonitoringDomain',
     'updateVmPolicy': 'VM.updateVmPolicy',
+    'validateStorageDomain': 'StorageDomain.validate',
 }
 
 
