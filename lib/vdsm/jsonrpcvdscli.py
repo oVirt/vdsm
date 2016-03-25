@@ -45,6 +45,7 @@ _COMMAND_CONVERTER = {
     'fullList': 'Host.getVMFullList',
     'getAllVmStats': 'Host.getAllVmStats',
     'getConnectedStoragePoolsList': 'Host.getConnectedStoragePools',
+    'getStorageDomainsList': 'Host.getStorageDomains',
     'getVdsCapabilities': 'Host.getCapabilities',
     'getVdsHardwareInfo': 'Host.getHardwareInfo',
     'getVdsStats': 'Host.getStats',
