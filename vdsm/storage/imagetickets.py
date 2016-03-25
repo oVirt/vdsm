@@ -26,13 +26,13 @@ import os
 
 from contextlib import closing
 
-from vdsm import constants
-from vdsm.storage import exception as se
-
 try:
     from ovirt_image_daemon import uhttp
 except ImportError:
     uhttp = None
+
+from vdsm import constants
+from vdsm.storage import exception as se
 
 DAEMON_SOCK = os.path.join(constants.P_VDSM_RUN, "ovirt-image-daemon.sock")
 
