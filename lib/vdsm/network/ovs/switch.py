@@ -1,4 +1,4 @@
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,22 +16,27 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
 
-SUBDIRS = configurators ip ovs
+from contextlib import contextmanager
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkdir = $(vdsmpylibdir)/network
-dist_vdsmnetwork_PYTHON = \
-	__init__.py \
-	api.py \
-	errors.py \
-	canonicalize.py \
-	connectivity.py \
-	legacy_switch.py \
-	models.py \
-	netswitch.py \
-	sourceroute.py \
-	sourceroutethread.py \
-	utils.py \
-	$(NULL)
+SWITCH_TYPE = 'ovs'
+
+
+def validate_network_setup(nets, bonds):
+    pass
+
+
+@contextmanager
+def rollback_trigger(in_rollback):
+    try:
+        yield
+    except:
+        pass
+    finally:
+        pass
+
+
+def setup(nets, bonds):
+    pass

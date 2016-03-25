@@ -399,6 +399,7 @@ AC_OUTPUT([
 	lib/vdsm/network/Makefile
 	lib/vdsm/network/configurators/Makefile
 	lib/vdsm/network/ip/Makefile
+	lib/vdsm/network/ovs/Makefile
 	lib/vdsm/rpc/Makefile
 	lib/vdsm/storage/Makefile
 	lib/vdsm/tc/Makefile

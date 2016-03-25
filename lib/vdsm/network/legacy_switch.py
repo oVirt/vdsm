@@ -45,6 +45,9 @@ from . import errors as ne
 from .errors import ConfigNetworkError
 
 
+SWITCH_TYPE = 'legacy'
+
+
 def _get_persistence_module():
     persistence = config.get('vars', 'net_persistence')
     if persistence == 'unified':
