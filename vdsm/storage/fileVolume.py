@@ -30,6 +30,7 @@ from vdsm.storage import misc
 from vdsm.storage.constants import FILE_VOLUME_PERMISSIONS
 from vdsm.storage.constants import LEASE_FILEEXT
 from vdsm.storage.misc import deprecated
+from vdsm.storage.threadlocal import vars
 
 from sdc import sdCache
 import outOfProcess as oop
@@ -38,7 +39,6 @@ import image
 import sd
 import fileSD
 import task
-from threadLocal import vars
 
 META_FILEEXT = ".meta"
 LEASE_FILEOFFSET = 0

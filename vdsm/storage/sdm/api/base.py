@@ -24,8 +24,7 @@ import logging
 
 from vdsm import jobs
 from vdsm import exception
-
-from storage.threadLocal import vars
+from vdsm.storage.threadlocal import vars
 
 
 class Job(jobs.Job):

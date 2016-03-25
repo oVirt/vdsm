@@ -31,13 +31,13 @@ from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
+from vdsm.storage.threadlocal import vars
 
 from sdc import sdCache
 import sd
 import imageSharing
 from vdsm.exception import ActionStopped
 import task
-from threadLocal import vars
 import resourceFactories
 import resourceManager as rm
 

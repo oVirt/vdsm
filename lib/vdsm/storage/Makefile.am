@@ -34,4 +34,5 @@ dist_vdsmstorage_PYTHON = \
 	rwlock.py \
 	securable.py \
 	sync.py \
+	threadlocal.py \
 	$(NULL)

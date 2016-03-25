@@ -52,6 +52,7 @@ from vdsm.storage import mount
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
 from vdsm.storage.misc import deprecated
+from vdsm.storage.threadlocal import vars
 
 import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
@@ -72,7 +73,6 @@ import imagetickets
 import volume
 import iscsi
 import taskManager
-from threadLocal import vars
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
 import devicemapper

@@ -25,9 +25,9 @@ from sdmtestlib import wait_for_job
 
 from vdsm import jobs
 from vdsm import exception
-from storage.sdm.api import base
+from vdsm.storage.threadlocal import vars
 
-from storage.threadLocal import vars
+from storage.sdm.api import base
 
 
 class ApiBaseTests(VdsmTestCase):

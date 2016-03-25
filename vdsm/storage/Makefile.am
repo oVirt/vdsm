@@ -57,7 +57,6 @@ dist_vdsmstorage_PYTHON = \
 	storageServer.py \
 	taskManager.py \
 	task.py \
-	threadLocal.py \
 	threadPool.py \
 	volume.py
 

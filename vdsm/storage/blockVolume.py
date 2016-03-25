@@ -32,6 +32,7 @@ from vdsm.storage.constants import TEMP_VOL_LVTAG
 from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
 from vdsm.storage.misc import logskip
+from vdsm.storage.threadlocal import vars
 import vdsm.utils as utils
 
 import volume
@@ -41,7 +42,6 @@ import blockSD
 import task
 import lvm
 import resourceManager as rm
-from threadLocal import vars
 from sdc import sdCache
 from resourceFactories import LVM_ACTIVATION_NAMESPACE
 

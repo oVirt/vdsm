@@ -31,11 +31,11 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
+from vdsm.storage.threadlocal import vars
 
 import sd
 from sdc import sdCache
 import task
-from threadLocal import vars
 import resourceFactories
 import resourceManager as rm
 rmanager = rm.ResourceManager.getInstance()
