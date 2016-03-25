@@ -7,10 +7,13 @@
 #
 
 from __future__ import print_function
-import threading
-from time import sleep
-from Queue import Queue, Empty
+
 import logging
+import threading
+
+from Queue import Queue, Empty
+from time import sleep
+
 from vdsm import concurrent
 
 
