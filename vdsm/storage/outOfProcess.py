@@ -17,23 +17,24 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
 import errno
 import grp
 import logging
 import os
 import stat
+import threading
 import types
-from warnings import warn
 import weakref
+
+from functools import partial
+from warnings import warn
+
+from ioprocess import IOProcess
 
 from vdsm import constants
 from vdsm.config import config
 from vdsm.storage import exception as se
-
-import threading
-from functools import partial
-
-from ioprocess import IOProcess
 
 GLOBAL = 'Global'
 
