@@ -42,6 +42,7 @@ _COMMAND_CONVERTER = {
     'connectStorageServer': 'StoragePool.connectStorageServer',
     'create': 'VM.create',
     'destroy': 'VM.destroy',
+    'disconnectStorageServer': 'StoragePool.disconnectStorageServer',
     'fullList': 'Host.getVMFullList',
     'getAllVmStats': 'Host.getAllVmStats',
     'getConnectedStoragePoolsList': 'Host.getConnectedStoragePools',
