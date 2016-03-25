@@ -44,6 +44,7 @@ _COMMAND_CONVERTER = {
     'fullList': 'Host.getVMFullList',
     'getAllVmStats': 'Host.getAllVmStats',
     'getVdsCapabilities': 'Host.getCapabilities',
+    'getVdsHardwareInfo': 'Host.getHardwareInfo',
     'getVdsStats': 'Host.getStats',
     'getVmStats': 'VM.getStats',
     'hotplugDisk': 'VM.hotplugDisk',
