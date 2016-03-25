@@ -19,8 +19,10 @@
 #
 
 import re
+
 from collections import namedtuple
 from threading import Lock
+
 from vdsm import constants
 from vdsm.storage import misc
 from vdsm.utils import AsyncProcessOperation
