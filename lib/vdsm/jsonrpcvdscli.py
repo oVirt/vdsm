@@ -39,6 +39,7 @@ from . import sslutils
 
 
 _COMMAND_CONVERTER = {
+    'connectStorageServer': 'StoragePool.connectStorageServer',
     'create': 'VM.create',
     'destroy': 'VM.destroy',
     'fullList': 'Host.getVMFullList',
