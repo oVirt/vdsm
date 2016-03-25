@@ -43,6 +43,7 @@ _COMMAND_CONVERTER = {
     'destroy': 'VM.destroy',
     'fullList': 'Host.getVMFullList',
     'getAllVmStats': 'Host.getAllVmStats',
+    'getConnectedStoragePoolsList': 'Host.getConnectedStoragePools',
     'getVdsCapabilities': 'Host.getCapabilities',
     'getVdsHardwareInfo': 'Host.getHardwareInfo',
     'getVdsStats': 'Host.getStats',
