@@ -21,9 +21,12 @@
 from __future__ import print_function
 
 import asyncore
+import os
 import random
 import socket
+import subprocess
 import time
+from contextlib import closing
 
 from testValidation import slowtest
 from testlib import VdsmTestCase
@@ -487,3 +490,94 @@ class Echo(asyncore.dispatcher):
 
     def writable(self):
         return False
+
+
+@expandPermutations
+class TestBufferedReader(VdsmTestCase):
+
+    def setUp(self):
+        self.loop = asyncevent.EventLoop()
+        self.received = None
+
+    def tearDown(self):
+        self.loop.close()
+
+    def complete(self, data):
+        self.received = data
+        self.loop.stop()
+
+    @permutations([
+        # size, bufsize
+        (0, 1),
+        (1, 32),
+        (1024, 256),
+        (4096, 1024),
+        (16384, 4096),
+        (65536, 16384),
+    ])
+    def test_read(self, size, bufsize):
+        data = b"x" * size
+        r, w = os.pipe()
+        reader = self.loop.create_dispatcher(
+            asyncevent.BufferedReader, r, self.complete, bufsize=bufsize)
+        with closing(reader):
+            os.close(r)  # Dupped by BufferedReader
+            Sender(self.loop, w, data, bufsize)
+            self.loop.run_forever()
+            self.assertEqual(self.received, data)
+
+
+class Sender(object):
+
+    def __init__(self, loop, fd, data, bufsize):
+        self.loop = loop
+        self.fd = fd
+        self.data = data
+        self.pos = 0
+        self.bufsize = bufsize
+        self.loop.call_soon(self.send)
+
+    def send(self):
+        if self.pos == len(self.data):
+            os.close(self.fd)
+            return
+        buf = memoryview(self.data)[self.pos:self.pos + self.bufsize]
+        self.pos += os.write(self.fd, buf)
+        self.loop.call_soon(self.send)
+
+
+@expandPermutations
+class TestReaper(VdsmTestCase):
+
+    def setUp(self):
+        self.loop = asyncevent.EventLoop()
+        self.rc = None
+
+    def tearDown(self):
+        self.loop.close()
+
+    def complete(self, rc):
+        self.rc = rc
+        self.loop.stop()
+
+    def test_success(self):
+        self.reap(["true"])
+        self.assertEqual(0, self.rc)
+
+    def test_failure(self):
+        self.reap(["false"])
+        self.assertEqual(1, self.rc)
+
+    @slowtest
+    @permutations([[0.1], [0.2], [0.4], [0.8], [1.6]])
+    def test_slow(self, delay):
+        start = time.time()
+        self.reap(["sleep", "%.1f" % delay])
+        reap_time = time.time() - start - delay
+        print("reap time: %.3f" % reap_time)
+        self.assertLess(reap_time, 1.0)
+
+    def reap(self, cmd):
+        proc = subprocess.Popen(cmd, stdin=None, stdout=None, stderr=None)
+        asyncevent.Reaper(self.loop, proc, self.complete)
+        self.loop.run_forever()

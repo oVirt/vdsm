@@ -497,3 +497,70 @@ class Waker(asyncore.file_dispatcher):
         self._wfd = -1
         os.close(wfd)
         asyncore.file_dispatcher.close(self)
+
+
+class BufferedReader(asyncore.file_dispatcher):
+    """
+    Read from file until file is close and notify when read was completed.
+    """
+
+    def __init__(self, fd, complete, bufsize=4096, map=None):
+        asyncore.file_dispatcher.__init__(self, fd, map=map)
+        filecontrol.set_close_on_exec(self._fileno)
+        self._complete = complete
+        self._bufsize = bufsize
+        self._data = bytearray()
+
+    def handle_read(self):
+        chunk = self.socket.read(self._bufsize)
+        if not chunk:
+            self.handle_close()
+            return
+        self._data += chunk
+
+    def handle_close(self):
+        self._complete(self._data)
+        self.close()
+
+    def handle_error(self):
+        log.exception("Unhandled error in %s", self)
+        self.handle_close()
+
+    def close(self):
+        # asyncore.dispatcher define closing attribute, but doe not use it.
+        if self.closing:
+            return
+        self.closing = True
+        self._complete = None
+        asyncore.file_dispatcher.close(self)
+
+    def writable(self):
+        return False
+
+
+class Reaper(object):
+    """
+    Wait for process and notify when it has terminated.
+    """
+
+    def __init__(self, loop, proc, complete, min_interval=2**-5,
+                 max_interval=1.0):
+        self._loop = loop
+        self._proc = proc
+        self._complete = complete
+        self._interval = min_interval
+        self._max_interval = max_interval
+        self._count = 0
+        self._loop.call_later(self._interval, self.reap)
+
+    def reap(self):
+        self._count += 1
+        rc = self._proc.poll()
+        if rc is None:
+            if self._interval < self._max_interval:
+                self._interval *= 2
+            self._loop.call_later(self._interval, self.reap)
+            return
+        log.debug("Process %s terminated (count=%d)", self._proc, self._count)
+        self._complete(rc)
+        self._complete = None
