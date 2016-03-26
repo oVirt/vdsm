@@ -28,19 +28,10 @@ from vdsm.netinfo import mtus
 from vdsm.netlink import monitor
 
 from .dhclient import DhcpClient
-from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
+from ..errors import ConfigNetworkError, RollbackIncomplete, ERR_FAILED_IFUP
 from . import qos
 from ..models import Bond, Bridge, hierarchy_vlan_tag, hierarchy_backing_device
 from ..sourceroute import StaticSourceRoute
-
-
-class RollbackIncomplete(Exception):
-    """This exception is raised in order to signal API.Global that a call to
-    setupNetworks has failed and there are leftovers that need to be cleaned
-    up.
-    Note that it is never raised by the default ifcfg configurator.
-    """
-    pass
 
 
 class Configurator(object):

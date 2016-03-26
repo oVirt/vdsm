@@ -37,8 +37,8 @@ from vdsm import udevadm
 from vdsm import ipwrapper
 
 from . canonicalize import canonicalize_networks, canonicalize_bondings
+from . errors import RollbackIncomplete
 from . import netswitch
-from .configurators import RollbackIncomplete
 
 _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
 
