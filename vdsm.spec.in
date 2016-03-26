@@ -1170,6 +1170,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/switch.py*
+%{python_sitelib}/%{vdsm_name}/network/ovs/validator.py*
 %{python_sitelib}/%{vdsm_name}/network/models.py*
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*

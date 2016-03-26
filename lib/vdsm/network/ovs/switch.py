@@ -20,12 +20,24 @@ from __future__ import absolute_import
 
 from contextlib import contextmanager
 
+import six
+
+from vdsm.netconfpersistence import RunningConfig
+from vdsm.netinfo.cache import CachingNetInfo
+
+from . import validator
 
 SWITCH_TYPE = 'ovs'
 
 
 def validate_network_setup(nets, bonds):
-    pass
+    running_networks = RunningConfig().networks
+    kernel_nics = CachingNetInfo().nics
+
+    for net, attrs in six.iteritems(nets):
+        validator.validate_net_configuration(net, attrs, running_networks)
+    for bond, attrs in six.iteritems(bonds):
+        validator.validate_bond_configuration(attrs, kernel_nics)
 
 
 @contextmanager
