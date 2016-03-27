@@ -19,7 +19,7 @@
 # RHEV build - overridable using rpmbuild --define "rhev_build 1"
 %{!?rhev_build: %global rhev_build 0}
 
-%if 0%{fedora_koji_build}
+%if 0%{fedora_koji_build} || 0%{rhev_build}
 %global with_hooks 1
 %endif
 
