@@ -26,7 +26,6 @@ from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
 
-import numaUtils
 from vdsm import numa
 
 import vmfakelib as fake
@@ -52,14 +51,14 @@ class TestNumaUtils(TestCaseBase):
     @MonkeyPatch(os.path, 'getmtime',
                  lambda x: 0)
     def testVcpuPid(self):
-        vcpuPids = numaUtils.getVcpuPid('testvm')
+        vcpuPids = numa.getVcpuPid('testvm')
         expectedVcpuPids = {0: '12266',
                             1: '12267',
                             2: '12268',
                             3: '12269'}
         self.assertEqual(vcpuPids, expectedVcpuPids)
 
-    @MonkeyPatch(numaUtils, 'supervdsm', fake.SuperVdsm())
+    @MonkeyPatch(numa, 'supervdsm', fake.SuperVdsm())
     @MonkeyPatch(numa,
                  'topology',
                  lambda: {'0': {'cpus': [0, 1, 2, 3],
@@ -80,9 +79,9 @@ class TestNumaUtils(TestCaseBase):
                       (1, 1, 10710000000, 1),
                       (2, 1, 19590000000, 0),
                       (3, 1, 19590000000, 2)]
-            with MonkeyPatchScope([(numaUtils, "_get_vcpu_positioning",
+            with MonkeyPatchScope([(numa, "_get_vcpu_positioning",
                                   lambda vm: sample)]):
-                vm_numa_info = numaUtils.getVmNumaNodeRuntimeInfo(testvm)
+                vm_numa_info = numa.getVmNumaNodeRuntimeInfo(testvm)
                 self.assertEqual(expectedResult, vm_numa_info)
 
 
@@ -91,7 +90,7 @@ class NumaUtilsHelperTests(TestCaseBase):
     Good practice dictates not to test non-public APIs.
     Here, we add this tests for the sake of practicality.
 
-    TODO: overhaul the numaUtils API to make these tests
+    TODO: overhaul the numa API to make these tests
     redundant.
     """
 
@@ -108,6 +107,6 @@ class NumaUtilsHelperTests(TestCaseBase):
             testvm._dom.vcpus = lambda: vcpu_output
 
             self.assertEqual(
-                numaUtils._get_mapping_vcpu_to_pcpu(
-                    numaUtils._get_vcpu_positioning(testvm)),
+                numa._get_mapping_vcpu_to_pcpu(
+                    numa._get_vcpu_positioning(testvm)),
                 mapping)

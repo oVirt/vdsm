@@ -30,7 +30,6 @@ dist_vdsm_PYTHON = \
 	hooking.py \
 	mkimage.py \
 	momIF.py \
-	numaUtils.py \
 	sitecustomize.py \
 	$(NULL)
 

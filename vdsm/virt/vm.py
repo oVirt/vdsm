@@ -42,6 +42,7 @@ from vdsm import host
 from vdsm import hooks
 from vdsm import hostdev
 from vdsm import libvirtconnection
+from vdsm import numa
 from vdsm import osinfo
 from vdsm import qemuimg
 from vdsm import response
@@ -68,7 +69,6 @@ from storage import fileUtils
 # local imports
 # In future those should be imported via ..
 import caps
-import numaUtils
 
 # local package imports
 from .domain_descriptor import DomainDescriptor
@@ -1681,7 +1681,7 @@ class Vm(object):
         self._cleanupGuestAgent()
         cleanup_guest_socket(self._qemuguestSocketFile)
         self._cleanupStatsCache()
-        numaUtils.invalidateNumaCache(self)
+        numa.invalidateNumaCache(self)
         for con in self._devices[hwclass.CONSOLE]:
             con.cleanup()
 
@@ -4594,7 +4594,7 @@ class Vm(object):
             stats['monitorResponse'] = '-1'
 
     def updateNumaInfo(self):
-        self._numaInfo = numaUtils.getVmNumaNodeRuntimeInfo(self)
+        self._numaInfo = numa.getVmNumaNodeRuntimeInfo(self)
 
     @property
     def hasGuestNumaNode(self):

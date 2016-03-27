@@ -24,7 +24,7 @@ import stat
 
 from storage.fileUtils import resolveGid
 from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
-import numaUtils
+from vdsm import numa
 
 from . import expose
 
@@ -54,7 +54,7 @@ def getVmPid(vmName):
 @expose
 def getVcpuNumaMemoryMapping(vmName):
     vmPid = getVmPid(vmName)
-    vCpuPids = numaUtils.getVcpuPid(vmName)
+    vCpuPids = numa.getVcpuPid(vmName)
     vCpuIdxToNode = {}
     for vCpuIndex, vCpuPid in vCpuPids.iteritems():
         numaMapsFile = "/proc/%s/task/%s/numa_maps" % (vmPid, vCpuPid)
