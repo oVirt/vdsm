@@ -19,9 +19,10 @@
 #
 
 from __future__ import absolute_import
-from SimpleXMLRPCServer import SimpleXMLRPCDispatcher
-from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
+
 import logging
+from six.moves.xmlrpc_server import SimpleXMLRPCDispatcher
+from six.moves.xmlrpc_server import SimpleXMLRPCRequestHandler
 import socket
 import sys
 
