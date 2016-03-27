@@ -32,7 +32,6 @@ dist_vdsm_PYTHON = \
 	mkimage.py \
 	momIF.py \
 	numaUtils.py \
-	parted_utils.py \
 	sitecustomize.py \
 	$(NULL)
 

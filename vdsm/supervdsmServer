@@ -57,7 +57,6 @@ except ImportError:
 from vdsm import utils
 from vdsm import sysctl
 from vdsm.supervdsm import _SuperVdsmManager
-from parted_utils import getDevicePartedInfo as _getDevicePartedInfo
 
 from vdsm.network import sourceroutethread
 
@@ -124,10 +123,6 @@ def safe_poll(mp_connection, timeout):
 class _SuperVdsm(object):
 
     log = logging.getLogger("SuperVdsm.ServerCallback")
-
-    @logDecorator
-    def getDevicePartedInfo(self, *args, **kwargs):
-        return _getDevicePartedInfo(*args, **kwargs)
 
     @logDecorator
     def getScsiSerial(self, *args, **kwargs):

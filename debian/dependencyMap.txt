@@ -45,7 +45,6 @@ policycoreutils >= 2.1.13-55	policycoreutils
 policycoreutils-python >= 2.0.83-19.30	policycoreutils python-sepolgen missing:sepolicy
 psmisc >= 22.6-15	psmisc
 pyflakes	pyflakes
-pyparted	python-parted
 python >= 2.7.3	python
 python-devel	python-dev
 python-dmidecode	python-dmidecode
