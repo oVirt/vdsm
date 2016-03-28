@@ -623,6 +623,8 @@ class OutputParser(object):
         chunk = ''
         while True:
             c = stream.read(1)
+            if not c:
+                raise OutputParserError('copy-disk stream closed unexpectedly')
             chunk += c
             if c == '\r':
                 yield chunk
