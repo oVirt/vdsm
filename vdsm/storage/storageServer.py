@@ -215,7 +215,7 @@ class MountConnection(object):
         self._mount = mountClass(spec, self._getLocalPath())
 
     def _getLocalPath(self):
-        path = self._remotePath.replace("_", "__").replace("/", "_")
+        path = fileUtils.transformPath(self._remotePath)
         return os.path.join(self.localPathBase, self.DIR, path)
 
     def connect(self):
@@ -639,7 +639,7 @@ class LocalDirectoryConnection(object):
 
     def _getLocalPath(self):
         return os.path.join(self.localPathBase,
-                            self._path.replace("_", "__").replace("/", "_"))
+                            fileUtils.transformPath(self._path))
 
     def checkTarget(self):
         if not os.path.isdir(self._path):
