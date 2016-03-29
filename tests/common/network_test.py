@@ -18,11 +18,12 @@
 #
 from __future__ import absolute_import
 
-from testlib import VdsmTestCase
+from testlib import VdsmTestCase, expandPermutations, permutations
 
 from vdsm.common.network import address as ipaddress
 
 
+@expandPermutations
 class TestIpAddressHostTail(VdsmTestCase):
 
     def test_hosttail_ipv4(self):
@@ -66,3 +67,21 @@ class TestIpAddressHostTail(VdsmTestCase):
     def test_hosttail_ipv6_no_brackets_returns_garbage(self):
         self.assertNotEqual(('2001::1', '4321'),
                             ipaddress.hosttail_split('2001::1:4321'))
+
+    @permutations([
+        # Valid host
+        ("server", "/", "server:/"),
+        ("server", "/path", "server:/path"),
+        ("12.34.56.78", "/path", "12.34.56.78:/path"),
+
+        # IPv6
+        ("2001:db8::60fe:5bf:febc:912", "/path",
+         "[2001:db8::60fe:5bf:febc:912]:/path"),
+
+        # Invalid host - concatenation still occurs
+        ("ser:ver", "/path", "[ser:ver]:/path"),
+        ("[2001:db8::60fe:5bf:febc:912]", "/path",
+         "[[2001:db8::60fe:5bf:febc:912]]:/path"),
+    ])
+    def test_hosttail_join(self, host, tail, expected):
+        self.assertEquals(expected, ipaddress.hosttail_join(host, tail))

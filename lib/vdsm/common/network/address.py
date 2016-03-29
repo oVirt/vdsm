@@ -44,6 +44,20 @@ def hosttail_split(hosttail):
     return host, tail
 
 
+def hosttail_join(host, tail):
+    """
+    Given a host and a tail, this method returns:
+    - "[host]:tail" if the host contains at least one colon,
+                    for example when the host is an IPv6 address.
+    - "host:tail"   otherwise
+
+    The tail part may be a port or a path (for mount points).
+    """
+    if ':' in host:
+        host = '[' + host + ']'
+    return host + ':' + tail
+
+
 def _is_ipv6_addr_soft_check(addr):
     return addr.startswith('[')
 
