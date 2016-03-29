@@ -73,10 +73,14 @@ class _Server(object):
         self._vdsmapi = vdsmapi.get_api()
         self._client = client
         self._xml_compat = xml_compat
+        self._default_timeout = CALL_TIMEOUT
         self._timeouts = {
             'migrationCreate': config.getint(
                 'vars', 'migration_create_timeout'),
         }
+
+    def set_default_timeout(self, timeout):
+        self._default_timeout = timeout
 
     def _prepare_args(self, className, methodName, args, kwargs):
         sym = self._vdsmapi['commands'][className][methodName]
@@ -102,7 +106,7 @@ class _Server(object):
         responses = self._client.call(
             req, timeout=self._timeouts.get(
                 method_name,
-                kwargs.pop('_transport_timeout', CALL_TIMEOUT)))
+                kwargs.pop('_transport_timeout', self._default_timeout)))
         if responses:
             resp = responses[0]
         else:
