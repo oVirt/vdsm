@@ -97,8 +97,13 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
     for metafile, sizemb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
         fake_lvm.createLV(sduuid, metafile, sizemb)
 
+    # We'll store the domain metadata in the VG's tags
     metadata = make_sd_metadata(sduuid)
-    manifest = blockSD.BlockStorageDomainManifest(sduuid, metadata)
+    assert(metadata[sd.DMDK_VERSION] >= 3)  # Tag based MD is V3 and above
+    tag_md = blockSD.TagBasedSDMetadata(sduuid)
+    tag_md.update(metadata)
+
+    manifest = blockSD.BlockStorageDomainManifest(sduuid, tag_md)
     manifest.mountpoint = os.path.join(tmpdir, sd.DOMAIN_MNT_POINT,
                                        sd.BLOCKSD_DIR)
     manifest.domaindir = tmpdir
