@@ -38,3 +38,11 @@ except ImportError:
     # no big deal, fallback to standard library
     import json
     json  # yep, this is needed twice.
+
+import sys
+if sys.version_info[0] == 2:
+    from cpopen import CPopen
+    CPopen  # make pyflakes happy
+else:
+    from subprocess import Popen as CPopen
+    CPopen  # make pyflakes happy

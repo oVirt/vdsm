@@ -24,12 +24,11 @@ import os
 import re
 import signal
 
-from cpopen import CPopen
-
 from . import exception
 from . import utils
 from . import cmdutils
 from . import commands
+from .compat import CPopen
 
 _qemuimg = utils.CommandPath("qemu-img",
                              "/usr/bin/qemu-img",)  # Fedora, EL6

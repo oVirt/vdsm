@@ -20,7 +20,6 @@
 from __future__ import absolute_import
 
 from StringIO import StringIO
-from cpopen import CPopen
 
 from weakref import proxy
 import errno
@@ -32,6 +31,7 @@ import signal
 import threading
 import time
 from . import cmdutils
+from .compat import CPopen
 from .exception import ActionStopped
 from .utils import NoIntrPoll, stripNewLines
 from vdsm import constants
