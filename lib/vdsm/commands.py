@@ -19,8 +19,6 @@
 #
 from __future__ import absolute_import
 
-from StringIO import StringIO
-
 from weakref import proxy
 import errno
 import io
@@ -194,6 +192,10 @@ class AsyncProc(object):
             return len(data)
 
     def __init__(self, popenToWrap):
+        # this is an ugly hack to let this module load on Python 3, and fail
+        # later when AsyncProc is used.
+        from StringIO import StringIO
+
         self._streamLock = threading.Lock()
         self._proc = popenToWrap
 

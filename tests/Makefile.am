@@ -31,18 +31,31 @@ SUBDIRS = \
 
 test_modules_py3 = \
 	apiData.py \
-	virt_api_test.py \
 	cmdutilsTests.py \
+	concurrentTests.py \
+	cpuinfo_test.py \
 	cpuProfileTests.py \
-	sslTests.py \
 	domainDescriptorTests.py \
+	exception_test.py \
 	executorTests.py \
+	gluster_exception_test.py \
+	glusterTestData.py \
+	hookValidation.py \
+	jobsTests.py \
+	modprobe.py \
+	monkeypatch.py \
 	passwordsTests.py \
 	permutationTests.py \
 	pthreadTests.py \
 	responseTests.py \
 	scheduleTests.py \
+	sslTests.py \
+	testlib.py \
+	testrunner.py \
+	testValidation.py \
+	virt_api_test.py \
 	vmStatsTests.py \
+	vmTestsData.py \
 	$(NULL)
 
 common_modules = common/*_test.py
