@@ -960,7 +960,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/lvm.env
 %{_datadir}/%{vdsm_name}/storage/lvm.py*
 %{_datadir}/%{vdsm_name}/storage/misc.py*
-%{_datadir}/%{vdsm_name}/storage/mount.py*
 %{_datadir}/%{vdsm_name}/storage/multipath.py*
 %{_datadir}/%{vdsm_name}/storage/nfsSD.py*
 %{_datadir}/%{vdsm_name}/storage/outOfProcess.py*
@@ -1190,6 +1189,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/storage/sync.py*
+%{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/tc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tc/_parser.py*
 %{python_sitelib}/%{vdsm_name}/tc/_wrapper.py*

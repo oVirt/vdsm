@@ -99,7 +99,6 @@
 ./usr/share/vdsm/storage/lvm.env
 ./usr/share/vdsm/storage/lvm.py
 ./usr/share/vdsm/storage/misc.py
-./usr/share/vdsm/storage/mount.py
 ./usr/share/vdsm/storage/multipath.py
 ./usr/share/vdsm/storage/nfsSD.py
 ./usr/share/vdsm/storage/outOfProcess.py

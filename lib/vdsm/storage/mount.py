@@ -17,6 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
+
 from collections import namedtuple
 import errno
 from os.path import normpath
@@ -27,7 +29,7 @@ import threading
 
 from vdsm import cmdutils
 from vdsm import constants
-import misc
+from vdsm import commands
 
 # Common vfs types
 
@@ -226,7 +228,7 @@ class Mount(object):
 
     def _runcmd(self, cmd, timeout):
         isRoot = os.geteuid() == 0
-        p = misc.execCmd(cmd, sudo=not isRoot, sync=False)
+        p = commands.execCmd(cmd, sudo=not isRoot, sync=False)
         if not p.wait(timeout):
             p.kill()
             raise OSError(errno.ETIMEDOUT,

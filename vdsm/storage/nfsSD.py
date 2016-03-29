@@ -21,12 +21,12 @@
 import os
 
 from vdsm.storage import exception as se
+from vdsm.storage import mount
 
 import sd
 import fileSD
 import fileUtils
 import outOfProcess as oop
-import mount
 import misc
 
 

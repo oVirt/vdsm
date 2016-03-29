@@ -27,6 +27,7 @@ import fnmatch
 import re
 
 from vdsm.storage import exception as se
+from vdsm.storage import mount
 from vdsm.storage.persistent import PersistentDict, DictValidator
 
 import sd
@@ -40,7 +41,6 @@ from vdsm import constants
 from vdsm.utils import stripNewLines
 from vdsm.storage.constants import LEASE_FILEEXT
 from vdsm import supervdsm
-import mount
 
 REMOTE_PATH = "REMOTE_PATH"
 

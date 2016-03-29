@@ -21,12 +21,12 @@
 import os
 
 from vdsm.storage import exception as se
+from vdsm.storage import mount
 
 import nfsSD
 import sd
 import glusterVolume
 import fileSD
-import mount
 
 
 class GlusterStorageDomain(nfsSD.NfsStorageDomain):

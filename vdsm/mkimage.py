@@ -32,8 +32,8 @@ from vdsm.constants import EXT_MKFS_MSDOS, EXT_MKISOFS, \
 from vdsm.constants import P_VDSM_RUN
 from vdsm.commands import execCmd
 from vdsm.utils import rmFile
+from vdsm.storage import mount
 from storage.fileUtils import resolveUid, resolveGid
-from storage import mount
 
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
 

@@ -35,6 +35,7 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm.panic import panic
 from vdsm.storage import exception as se
+from vdsm.storage import mount
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.securable import secured, unsecured
 
@@ -51,7 +52,6 @@ import image
 from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
 import volume
-import mount
 
 POOL_MASTER_DOMAIN = 'mastersd'
 

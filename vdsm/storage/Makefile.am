@@ -48,7 +48,6 @@ dist_vdsmstorage_PYTHON = \
 	lvm.py \
 	misc.py \
 	monitor.py \
-	mount.py \
 	multipath.py \
 	nfsSD.py \
 	outOfProcess.py \

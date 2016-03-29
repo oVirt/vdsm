@@ -39,7 +39,7 @@ from testValidation import checkSudo, ValidateRunningAsRoot
 from vdsm import udevadm
 from vdsm.commands import execCmd
 from vdsm.utils import stopwatch
-from storage import mount
+from vdsm.storage import mount
 import mkimage
 
 

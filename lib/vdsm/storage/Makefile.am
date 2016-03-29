@@ -25,6 +25,7 @@ dist_vdsmstorage_PYTHON = \
 	__init__.py \
 	constants.py \
 	exception.py \
+	mount.py \
 	persistent.py \
 	securable.py \
 	sync.py \

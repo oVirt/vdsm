@@ -45,6 +45,7 @@ from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage import mount
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
 
@@ -75,7 +76,6 @@ from threadLocal import vars
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
 import devicemapper
-import mount
 import dispatcher
 import storageServer
 
