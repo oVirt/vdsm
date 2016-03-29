@@ -20,7 +20,9 @@ if git diff-tree --no-commit-id --name-only -r HEAD | grep --quiet 'vdsm.spec.in
     yum -y install "$EXPORT_DIR/"!(*.src).rpm
 fi
 
-# Generate coverage report in HTML format
-pushd tests
-coverage html -d "$EXPORT_DIR/htmlcov"
-popd
+if grep -q 'Fedora' /etc/redhat-release; then
+   # Generate coverage report in HTML format
+   pushd tests
+   coverage html -d "$EXPORT_DIR/htmlcov"
+   popd
+fi
