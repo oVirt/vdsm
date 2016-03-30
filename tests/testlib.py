@@ -21,6 +21,7 @@
 import errno
 import functools
 import inspect
+import io
 import logging
 import os
 import pickle
@@ -125,10 +126,8 @@ def colorWrite(stream, text, color):
 def temporaryPath(perms=None, data=None, dir=TEMPDIR):
     fd, src = tempfile.mkstemp(dir=dir)
     if data is not None:
-        f = os.fdopen(fd, "wb")
-        f.write(data)
-        f.flush()
-        f.close()
+        with io.open(fd, "wb") as f:
+            f.write(data)
     else:
         os.close(fd)
     if perms is not None:
