@@ -165,6 +165,7 @@ def setupNetworks(networks, bondings, options):
                         ipv6autoconf="0|1"
                         dhcpv6="0|1"
                         defaultRoute=True|False
+                        switch="legacy|..."
                         (other options will be passed to the config file AS-IS)
                         -- OR --
                         remove=True (other attributes can't be specified)
@@ -173,6 +174,7 @@ def setupNetworks(networks, bondings, options):
             where 'attributes' is a dict with the following optional items:
                         nics=["<nic1>" , "<nic2>", ...]
                         options="<bonding-options>"
+                        switch="legacy|..."
                         -- OR --
                         remove=True (other attributes can't be specified)
 

@@ -83,6 +83,8 @@
 # @defaultRoute:  #optional boolean - Is this network's gateway the host's
 #                 default gateway?
 #
+# @switch:        #optional Specify Switch. Legacy is used if not passed
+#
 # @custom:        #optional A dictionary of custom, free-form properties for
 #                 network. (new in version 4.15.0)
 #
@@ -96,6 +98,7 @@
           '*remove': 'bool',
           '*hostQos': 'HostQoSParams',
           '*defaultRoute': 'bool',
+          '*switch': 'str',
           '*custom': 'StringMap'}}
 ##
 # @SetupNetworkBondAttributes:
@@ -106,12 +109,17 @@
 #
 # @options:  #optional A string of space-separated <option>=<value> pairs
 #
+# @switch:   #optional Specify Switch. Legacy is used if not passed
+#
 # @remove:   #optional If True, remove existing bond only
 #
 # Since: 4.10.0
 ##
 {'type': 'SetupNetworkBondAttributes',
- 'data': {'nics': ['str'], '*options': 'str', '*remove': 'bool'}}
+ 'data': {'nics': ['str'],
+          '*options': 'str',
+          '*switch': 'str',
+          '*remove': 'bool'}}
 
 ##
 # @SetupNetworkOptions:
