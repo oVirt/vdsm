@@ -65,6 +65,7 @@ def normalize(running_config):
     _normalize_bonding_nics(config_copy)
     _normalize_address(config_copy)
     _normalize_ifcfg_keys(config_copy)
+    _normalize_switch_types(config_copy)
 
     return config_copy
 
@@ -234,6 +235,14 @@ def _normalize_ifcfg_keys(config_copy):
         for k in net_attr.keys():
             if unsupported(k):
                 net_attr.pop(k)
+
+
+def _normalize_switch_types(config_copy):
+    # Hide switch type as it is not reported by netinfo and cannot be compared.
+    for data in config_copy.networks, config_copy.bonds:
+        for attrs in six.itervalues(data):
+            attrs.pop('switch', None)
+    return config_copy
 
 
 def _parse_bond_options(opts):

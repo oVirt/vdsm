@@ -36,7 +36,7 @@ from vdsm import netconfpersistence
 from vdsm import udevadm
 from vdsm import ipwrapper
 
-from . canonicalize import canonicalize_networks
+from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . import netswitch
 from .configurators import RollbackIncomplete
 
@@ -210,7 +210,7 @@ def setupNetworks(networks, bondings, options):
 
 def _setup_networks(networks, bondings, options):
     canonicalize_networks(networks)
-    # TODO: Add canonicalize_bondings(bondings)
+    canonicalize_bondings(bondings)
 
     logging.debug('Validating configuration')
     netswitch.validate(networks, bondings)

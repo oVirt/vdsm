@@ -37,13 +37,28 @@ def canonicalize_networks(nets):
         # If net is marked for removal, normalize the mark to boolean and
         # ignore all other attributes canonization.
         if _canonicalize_remove(attrs):
-                continue
+            continue
 
         _canonicalize_mtu(attrs)
         _canonicalize_vlan(attrs)
         _canonicalize_bridged(attrs)
         _canonicalize_stp(attrs)
         _canonicalize_ipv6(attrs)
+        _canonicalize_switch_type(attrs)
+
+
+def canonicalize_bondings(bonds):
+    """
+    Given bondings configuration, explicitly add missing defaults.
+    :param bonds: The bonding configuration
+    """
+    for attrs in six.itervalues(bonds):
+        # If bond is marked for removal, normalize the mark to boolean and
+        # ignore all other attributes canonization.
+        if _canonicalize_remove(attrs):
+            continue
+
+        _canonicalize_switch_type(attrs)
 
 
 def _canonicalize_remove(data):
@@ -89,3 +104,8 @@ def _canonicalize_stp(data):
 def _canonicalize_ipv6(data):
     if 'dhcpv6' not in data:
         data['dhcpv6'] = False
+
+
+def _canonicalize_switch_type(data):
+    if 'switch' not in data:
+        data['switch'] = 'legacy'
