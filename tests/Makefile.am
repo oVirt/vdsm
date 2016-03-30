@@ -223,7 +223,6 @@ blacklist_modules_python3 = \
 	storageMailboxTests.py \
 	storage_monitor_test.py \
 	storageServerTests.py \
-	storage_check_test.py \
 	storage_rwlock_test.py \
 	storage_blkdiscard_test.py \
 	storage_sdm_api_test.py \

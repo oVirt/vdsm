@@ -68,7 +68,7 @@ class TestDirectioChecker(VdsmTestCase):
 
     def test_path_ok(self):
         self.checks = 1
-        with temporaryPath(data="blah") as path:
+        with temporaryPath(data=b"blah") as path:
             checker = check.DirectioChecker(self.loop, path, self.complete)
             checker.start()
             self.loop.run_forever()
@@ -81,7 +81,7 @@ class TestDirectioChecker(VdsmTestCase):
     @MonkeyPatch(constants, "EXT_DD", "/no/such/executable")
     def test_executable_missing(self):
         self.checks = 1
-        with temporaryPath(data="blah") as path:
+        with temporaryPath(data=b"blah") as path:
             checker = check.DirectioChecker(self.loop, path, self.complete)
             checker.start()
             self.loop.run_forever()
@@ -92,7 +92,7 @@ class TestDirectioChecker(VdsmTestCase):
     @MonkeyPatch(constants, "EXT_TASKSET", "/no/such/executable")
     def test_taskset_missing(self):
         self.checks = 1
-        with temporaryPath(data="blah") as path:
+        with temporaryPath(data=b"blah") as path:
             checker = check.DirectioChecker(self.loop, path, self.complete)
             checker.start()
             self.loop.run_forever()
@@ -237,7 +237,7 @@ class TestDirectioCheckerTimings(VdsmTestCase):
     @permutations([[1], [50], [100], [200]])
     def test_path_ok(self, checkers):
         self.checkers = checkers
-        with temporaryPath(data="blah") as path:
+        with temporaryPath(data=b"blah") as path:
             start = time.time()
             for i in range(checkers):
                 checker = check.DirectioChecker(self.loop, path, self.complete)
@@ -273,21 +273,21 @@ class TestCheckResult(VdsmTestCase):
 
     @permutations([
         # err, seconds
-        ("1\n2\n1 byte (1 B) copied, 1 s, 1 B/s\n",
+        (b"1\n2\n1 byte (1 B) copied, 1 s, 1 B/s\n",
             1.0),
-        ("1\n2\n1024 bytes (1 kB) copied, 1 s, 1 kB/s\n",
+        (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 kB/s\n",
             1.0),
-        ("1\n2\n1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s\n",
+        (b"1\n2\n1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s\n",
             1.5),
-        ("1\n2\n1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s\n",
+        (b"1\n2\n1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s\n",
             1000.5),
-        ("1\n2\n479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s\n",
+        (b"1\n2\n479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s\n",
             5.6832e-05),
-        ("1\n2\n512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s\n",
+        (b"1\n2\n512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s\n",
             1.0),
-        ("1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n",
+        (b"1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n",
             1.0),
-        ("1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n",
+        (b"1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n",
             0.0)
     ])
     def test_success(self, err, seconds):
@@ -304,14 +304,14 @@ class TestCheckResult(VdsmTestCase):
         self.assertIn(reason, str(ctx.exception))
 
     @permutations([
-        ("",),
-        ("1\n2\n\n",),
-        ("1\n2\nBAD, 1 s, 1 kB/s\n",),
-        ("1\n2\n1024 bytes (1 kB) copied, 1 s, 1 BAD\n",),
-        ("1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",),
-        ("1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",),
-        ("1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",),
-        ("1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",),
+        (b"",),
+        (b"1\n2\n\n",),
+        (b"1\n2\nBAD, 1 s, 1 kB/s\n",),
+        (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 BAD\n",),
+        (b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",),
+        (b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",),
+        (b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",),
+        (b"1\n2\n1024 bytes (1 kB) copied, e3- s, 1 kB/s\n",),
     ])
     def test_unexpected_output(self, err):
         result = check.CheckResult("/path", 0, err, 0, 0)
@@ -373,6 +373,7 @@ class TestCheckService(VdsmTestCase):
 @contextmanager
 def fake_dd(delay):
     script = "#!/bin/sh\nsleep %.1f\n" % delay
+    script = script.encode('ascii')
     with temporaryPath(data=script) as fake_dd:
         os.chmod(fake_dd, 0o700)
         with MonkeyPatchScope([(constants, "EXT_DD", fake_dd)]):

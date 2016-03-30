@@ -34,13 +34,13 @@ from __future__ import absolute_import
 
 import logging
 import re
+import subprocess
 import threading
-
-import cpopen
 
 from vdsm import cmdutils
 from vdsm import concurrent
 from vdsm import constants
+from vdsm.compat import CPopen
 from vdsm.storage import asyncevent
 from vdsm.storage import exception
 
@@ -294,8 +294,8 @@ class DirectioChecker(object):
         cmd = cmdutils.wrap_command(cmd)
         _log.debug("START check %r cmd=%s delay=%.2f",
                    self._path, cmd, self._check_time - self._next_check)
-        self._proc = cpopen.CPopen(cmd, stdin=None, stdout=None,
-                                   stderr=cpopen.PIPE)
+        self._proc = CPopen(cmd, stdin=None, stdout=None,
+                            stderr=subprocess.PIPE)
         self._reader = self._loop.create_dispatcher(
             asyncevent.BufferedReader, self._proc.stderr, self._read_completed)
 
@@ -352,9 +352,9 @@ class DirectioChecker(object):
 class CheckResult(object):
 
     _PATTERN = re.compile(
-        r"\d+ bytes? \([\de\-.]+ [kMGT]*B\) copied, "
-        r"([\de\-.]+) s, "
-        r"(?:[\de\-.]+|Infinity) [kMGT]*B/s")
+        br"\d+ bytes? \([\de\-.]+ [kMGT]*B\) copied, "
+        br"([\de\-.]+) s, "
+        br"(?:[\de\-.]+|Infinity) [kMGT]*B/s")
 
     def __init__(self, path, rc, err, time, elapsed):
         self.path = path
