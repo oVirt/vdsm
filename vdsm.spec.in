@@ -18,6 +18,7 @@
 %global with_gluster_mgmt @GLUSTER_MGMT@
 %global with_hooks @HOOKS@
 %global with_vhostmd @VHOSTMD@
+%global with_python3 @PYTHON3_SUPPORT@
 
 # Glusterfs package version
 %global gluster_version 3.7.1
@@ -85,13 +86,15 @@ BuildRequires: qemu-img
 BuildRequires: rpm-python
 BuildRequires: python-blivet
 
+%if 0%{?with_python3}
 %if 0%{?rhel}
 BuildRequires: python34-nose
 BuildRequires: python34-six
-%else
+%else # fedora
 BuildRequires: python3-nose
 BuildRequires: python3-six
-%endif
+%endif # rhel
+%endif # support python3
 
 # Autotools BuildRequires
 %if 0%{?enable_autotools}
@@ -654,6 +657,9 @@ autoreconf -if
 %endif
 %if ! 0%{?with_gluster_mgmt}
         --disable-gluster-mgmt \
+%endif
+%if ! 0%{?with_python3}
+        --disable-python3 \
 %endif
         --with-smbios-manufacturer='@SMBIOS_MANUFACTURER@' \
         --with-smbios-osname='@SMBIOS_OSNAME@' \

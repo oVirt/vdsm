@@ -270,5 +270,7 @@ check-local:
 	@echo '*** into your environment.  Do not submit untested code!    ***'
 	$(top_srcdir)/tests/run_tests_local.sh $(args) crossImportsTests.py
 	$(top_srcdir)/tests/run_tests_local.sh $(args) $(run_modules)
-	PYTHON_EXE="$(PYTHON3)" $(top_srcdir)/tests/run_tests_local.sh \
-		$(test_modules_py3);
+	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
+	    PYTHON_EXE="$(PYTHON3)" $(top_srcdir)/tests/run_tests_local.sh \
+	        $(test_modules_py3); \
+	fi

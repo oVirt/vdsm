@@ -71,6 +71,20 @@ AS_IF([test "${enable_vhostmd}" = "yes"],
       AC_SUBST([VHOSTMD], ['0']))
 
 AC_ARG_ENABLE(
+    [python3],
+    [AS_HELP_STRING(
+        [--disable-python3],
+        [disable build for python3 @<:@default=no@:>@]
+    )],
+    ,
+    [enable_python3="yes"]
+)
+AS_IF([test "${enable_python3}" = "yes"],
+      AC_SUBST([PYTHON3_SUPPORT], ['1']),
+      AC_SUBST([PYTHON3_SUPPORT], ['0']))
+
+
+AC_ARG_ENABLE(
     [gluster-mgmt],
     [AS_HELP_STRING(
         [--enable-gluster-mgmt],
@@ -259,14 +273,16 @@ if test "x$PEP8" = "x"; then
   AC_MSG_WARN([python-pep8 not found])
 fi
 
-AC_PATH_PROG([PYTHON3], [python3])
-if test "x$PYTHON3" = "x"; then
-  AC_MSG_ERROR([python3 not found])
-fi
+if test "$PYTHON3_SUPPORT" = "1"; then
+  AC_PATH_PROG([PYTHON3], [python3])
+  if test "x$PYTHON3" = "x"; then
+    AC_MSG_ERROR([python3 not found])
+  fi
 
-AC_PATH_PROG([PYTHON3_NOSE], [nosetests-3.4])
-if test "x$PYTHON3_NOSE" = "x"; then
-  AC_MSG_ERROR([python3-nose not found])
+  AC_PATH_PROG([PYTHON3_NOSE], [nosetests-3.4])
+  if test "x$PYTHON3_NOSE" = "x"; then
+    AC_MSG_ERROR([python3-nose not found])
+  fi
 fi
 
 # Checking for python-devel
