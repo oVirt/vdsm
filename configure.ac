@@ -60,12 +60,13 @@ AS_IF([test "${enable_hooks}" = "yes"],
 AC_ARG_ENABLE(
     [vhostmd],
     [AS_HELP_STRING(
-        [--enable-vhostmd-hook],
+        [--enable-vhostmd],
         [build vdsm-vhostmd-hook subpackage @<:@default=no@:>@]
     )],
-    [enable_vhostmd_hook="no"]
+    ,
+    [enable_vhostmd="no"]
 )
-AS_IF([test "${enable_vhostmd_hook}" = "yes"],
+AS_IF([test "${enable_vhostmd}" = "yes"],
       AC_SUBST([VHOSTMD], ['1']),
       AC_SUBST([VHOSTMD], ['0']))
 
