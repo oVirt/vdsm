@@ -504,8 +504,6 @@ class IscsiConnection(object):
         self._iface = iface
         self._cred = credentials
 
-        self._lastSessionId = -1
-
     def connect(self):
         iscsi.addIscsiNode(self._iface, self._target, self._cred)
         timeout = config.getint("irs", "scsi_settle_timeout")
@@ -556,7 +554,6 @@ class IscsiConnection(object):
             except self.Mismatch as e:
                 errors.append(e)
             else:
-                self._lastSessionId = session.id
                 return session
 
         self.log.debug("Session mismatches: %s", errors)
