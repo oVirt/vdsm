@@ -107,7 +107,7 @@ class SchemaValidation(TestCaseBase):
 
                 try:
                     # get args from schema
-                    method_args = bridge._getArgList(spec_class, method_name)
+                    method_args = bridge._get_arg_list(spec_class, method_name)
                 except KeyError:
                     raise AssertionError('Missing method %s.%s' % (
                                          spec_class, method_name))
@@ -130,12 +130,12 @@ class SchemaValidation(TestCaseBase):
                                                method_args, args))
                         continue
                     # verify args from schema in apiobj args
-                    if not bridge._symNameFilter(marg) in args:
+                    if not bridge._sym_name_filter(marg) in args:
                         raise AssertionError(self._prep_msg(
                             class_name, method_name, method_args, args))
                 try:
                     # verify ret value with entry in command_info
-                    ret = bridge._getRetList(spec_class, method_name)
+                    ret = bridge._get_ret_list(spec_class, method_name)
                     ret_info = Bridge.command_info.get(cmd, {}).get('ret')
                     if not ret_info and not ret:
                         continue
