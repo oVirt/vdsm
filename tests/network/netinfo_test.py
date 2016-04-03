@@ -26,8 +26,6 @@ import io
 from nose.plugins.attrib import attr
 
 from vdsm.network import ipwrapper
-from vdsm.network import libvirt
-from vdsm.network import netinfo
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
 from vdsm.utils import random_iface_name
@@ -35,8 +33,8 @@ from vdsm import sysctl
 
 from .ipwrapper_test import _fakeTypeDetection
 from modprobe import RequireBondingMod
-from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from .nettestlib import dnsmasq_run, dummy_device, veth_pair, wait_for_ipv6
+from testlib import mock
 from testlib import VdsmTestCase as TestCaseBase, namedTemporaryDir
 from testValidation import ValidateRunningAsRoot
 from testValidation import brokentest
@@ -61,13 +59,12 @@ class TestNetinfo(TestCaseBase):
         with namedTemporaryDir() as temp_dir:
             file_path = os.path.join(temp_dir, 'resolv.conf')
 
-            for content in (RESOLV_CONF, RESOLV_CONF + '\n'):
-                with MonkeyPatchScope([(dns, 'DNS_CONF_FILE', file_path)]):
+            with mock.patch.object(dns, 'DNS_CONF_FILE', file_path):
+                for content in (RESOLV_CONF, RESOLV_CONF + '\n'):
                     with open(file_path, 'w') as file_object:
                         file_object.write(content)
 
-                    self.assertEqual(
-                        dns.get_host_nameservers(), nameservers)
+                    self.assertEqual(dns.get_host_nameservers(), nameservers)
 
     def testNetmaskConversions(self):
         path = os.path.join(os.path.dirname(__file__), "netmaskconversions")
@@ -91,7 +88,9 @@ class TestNetinfo(TestCaseBase):
             self.assertFalse(s < 0)
             self.assertTrue(s in ETHTOOL_SPEEDS or s == 0)
 
-    def testValidNicSpeed(self):
+    @mock.patch.object(nics, 'operstate')
+    @mock.patch.object(nics.io, 'open')
+    def testValidNicSpeed(self, mock_io_open, mock_operstate):
         values = ((0,           nics.OPERSTATE_UP, 0),
                   (-10,         nics.OPERSTATE_UP, 0),
                   (2 ** 16 - 1, nics.OPERSTATE_UP, 0),
@@ -102,22 +101,22 @@ class TestNetinfo(TestCaseBase):
                   (123,         'unknown',    0))
 
         for passed, operstate, expected in values:
-            with MonkeyPatchScope([(io, 'open',
-                                    lambda x: io.BytesIO(str(passed))),
-                                   (nics, 'operstate',
-                                    lambda x: operstate)]):
-                self.assertEqual(nics.speed('fake_nic'), expected)
+            mock_io_open.return_value = io.BytesIO(str(passed))
+            mock_operstate.return_value = operstate
 
-    @MonkeyPatch(libvirt, 'networks', lambda: {'fake': {'bridged': True}})
+            self.assertEqual(nics.speed('fake_nic'), expected)
+
+    @mock.patch('vdsm.network.netinfo.cache.libvirt.networks',
+                lambda: {'fake': {'bridged': True}})
     def testGetNonExistantBridgeInfo(self):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
         # it should.
         get()
 
-    @MonkeyPatch(netinfo.cache, 'getLinks', lambda: [])
-    @MonkeyPatch(libvirt, 'networks', lambda: {})
-    def testGetEmpty(self):
+    @mock.patch('vdsm.network.netinfo.cache.getLinks')
+    @mock.patch('vdsm.network.netinfo.cache.libvirt.networks')
+    def testGetEmpty(self, mock_networks, mock_getLinks):
         result = {}
         result.update(get())
         self.assertEqual(result['networks'], {})
@@ -139,87 +138,85 @@ class TestNetinfo(TestCaseBase):
                        'family': 'inet6'}
         NL_ADDRESSES = [NL_ADDRESS4, NL_ADDRESS6]
 
-        with MonkeyPatchScope([
-                (addresses.nl_addr, 'iter_addrs', lambda: NL_ADDRESSES)]):
+        with mock.patch.object(addresses.nl_addr, 'iter_addrs',
+                               lambda: NL_ADDRESSES):
             for nl_addr in NL_ADDRESSES:
                 self.assertEqual(
                     nl_addr['label'],
                     addresses.getDeviceByIP(nl_addr['address'].split('/')[0]))
 
-    def _testNics(self):
-        """Creates a test fixture so that nics() reports:
-        physical nics: em, me, me0, me1, hid0 and hideous
-        dummies: fake and fake0
-        bonds: jbond (over me0 and me1)"""
-        return [ipwrapper.Link(address='f0:de:f1:da:aa:e7', index=2,
-                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                               name='em', qdisc='pfifo_fast', state='up'),
-                ipwrapper.Link(address='ff:de:f1:da:aa:e7', index=3,
-                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                               name='me', qdisc='pfifo_fast', state='up'),
-                ipwrapper.Link(address='ff:de:fa:da:aa:e7', index=4,
-                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                               name='hid0', qdisc='pfifo_fast', state='up'),
-                ipwrapper.Link(address='ff:de:11:da:aa:e7', index=5,
-                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                               name='hideous', qdisc='pfifo_fast', state='up'),
-                ipwrapper.Link(address='66:de:f1:da:aa:e7', index=6,
-                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                               name='me0', qdisc='pfifo_fast', state='up',
-                               master='jbond'),
-                ipwrapper.Link(address='66:de:f1:da:aa:e7', index=7,
-                               linkType=ipwrapper.LinkType.NIC, mtu=1500,
-                               name='me1', qdisc='pfifo_fast', state='up',
-                               master='jbond'),
-                ipwrapper.Link(address='ff:aa:f1:da:aa:e7', index=34,
-                               linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
-                               name='fake0', qdisc='pfifo_fast', state='up'),
-                ipwrapper.Link(address='ff:aa:f1:da:bb:e7', index=35,
-                               linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
-                               name='fake', qdisc='pfifo_fast', state='up'),
-                ipwrapper.Link(address='66:de:f1:da:aa:e7', index=419,
-                               linkType=ipwrapper.LinkType.BOND, mtu=1500,
-                               name='jbond', qdisc='pfifo_fast', state='up')]
-
-    def testNics(self):
+    @mock.patch.object(ipwrapper.Link, '_hiddenNics', ['hid*'])
+    @mock.patch.object(ipwrapper.Link, '_hiddenBonds', ['jb*'])
+    @mock.patch.object(ipwrapper.Link, '_fakeNics', ['fake*'])
+    @mock.patch.object(ipwrapper.Link, '_detectType',
+                       partial(_fakeTypeDetection, ipwrapper.Link))
+    @mock.patch.object(ipwrapper, '_bondExists', lambda x: x == 'jbond')
+    @mock.patch.object(misc, 'getLinks')
+    def testNics(self, mock_getLinks):
         """
         managed by vdsm: em, me, fake0, fake1
         not managed due to hidden bond (jbond) enslavement: me0, me1
         not managed due to being hidden nics: hid0, hideous
         """
-        with MonkeyPatchScope([(netinfo.misc, 'getLinks',
-                                self._testNics),
-                               (ipwrapper, '_bondExists',
-                                lambda x: x == 'jbond'),
-                               (ipwrapper.Link, '_detectType',
-                                partial(_fakeTypeDetection, ipwrapper.Link)),
-                               (ipwrapper.Link, '_fakeNics', ['fake*']),
-                               (ipwrapper.Link, '_hiddenBonds', ['jb*']),
-                               (ipwrapper.Link, '_hiddenNics', ['hid*'])
-                               ]):
-            self.assertEqual(set(nics.nics()),
-                             set(['em', 'me', 'fake', 'fake0']))
+        mock_getLinks.return_value = self._LINKS_REPORT
+
+        self.assertEqual(set(nics.nics()), set(['em', 'me', 'fake', 'fake0']))
+
+    # Creates a test fixture so that nics() reports:
+    # physical nics: em, me, me0, me1, hid0 and hideous
+    # dummies: fake and fake0
+    # bonds: jbond (over me0 and me1)
+    _LINKS_REPORT = [
+        ipwrapper.Link(address='f0:de:f1:da:aa:e7', index=2,
+                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                       name='em', qdisc='pfifo_fast', state='up'),
+        ipwrapper.Link(address='ff:de:f1:da:aa:e7', index=3,
+                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                       name='me', qdisc='pfifo_fast', state='up'),
+        ipwrapper.Link(address='ff:de:fa:da:aa:e7', index=4,
+                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                       name='hid0', qdisc='pfifo_fast', state='up'),
+        ipwrapper.Link(address='ff:de:11:da:aa:e7', index=5,
+                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                       name='hideous', qdisc='pfifo_fast', state='up'),
+        ipwrapper.Link(address='66:de:f1:da:aa:e7', index=6,
+                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                       name='me0', qdisc='pfifo_fast', state='up',
+                       master='jbond'),
+        ipwrapper.Link(address='66:de:f1:da:aa:e7', index=7,
+                       linkType=ipwrapper.LinkType.NIC, mtu=1500,
+                       name='me1', qdisc='pfifo_fast', state='up',
+                       master='jbond'),
+        ipwrapper.Link(address='ff:aa:f1:da:aa:e7', index=34,
+                       linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
+                       name='fake0', qdisc='pfifo_fast', state='up'),
+        ipwrapper.Link(address='ff:aa:f1:da:bb:e7', index=35,
+                       linkType=ipwrapper.LinkType.DUMMY, mtu=1500,
+                       name='fake', qdisc='pfifo_fast', state='up'),
+        ipwrapper.Link(address='66:de:f1:da:aa:e7', index=419,
+                       linkType=ipwrapper.LinkType.BOND, mtu=1500,
+                       name='jbond', qdisc='pfifo_fast', state='up')
+    ]
 
     @attr(type='integration')
     @ValidateRunningAsRoot
+    @mock.patch.object(ipwrapper.Link, '_fakeNics', ['veth_*', 'dummy_*'])
     def testFakeNics(self):
-        with MonkeyPatchScope([(ipwrapper.Link, '_fakeNics', ['veth_*',
-                                                              'dummy_*'])]):
-            with veth_pair() as (v1a, v1b):
-                with dummy_device() as d1:
-                    fakes = set([d1, v1a, v1b])
-                    _nics = nics.nics()
-                    self.assertTrue(fakes.issubset(_nics),
-                                    'Fake devices %s are not listed in nics '
-                                    '%s' % (fakes, _nics))
+        with veth_pair() as (v1a, v1b):
+            with dummy_device() as d1:
+                fakes = set([d1, v1a, v1b])
+                _nics = nics.nics()
+                self.assertTrue(fakes.issubset(_nics),
+                                'Fake devices %s are not listed in nics '
+                                '%s' % (fakes, _nics))
 
-            with veth_pair(prefix='mehv_') as (v2a, v2b):
-                with dummy_device(prefix='mehd_') as d2:
-                    hiddens = set([d2, v2a, v2b])
-                    _nics = nics.nics()
-                    self.assertFalse(hiddens.intersection(_nics), 'Some of '
-                                     'hidden devices %s is shown in nics %s' %
-                                     (hiddens, _nics))
+        with veth_pair(prefix='mehv_') as (v2a, v2b):
+            with dummy_device(prefix='mehd_') as d2:
+                hiddens = set([d2, v2a, v2b])
+                _nics = nics.nics()
+                self.assertFalse(hiddens.intersection(_nics), 'Some of '
+                                 'hidden devices %s is shown in nics %s' %
+                                 (hiddens, _nics))
 
     def testGetIfaceCfg(self):
         deviceName = "___This_could_never_be_a_device_name___"
@@ -228,7 +225,7 @@ class TestNetinfo(TestCaseBase):
             ifcfgPrefix = os.path.join(tempDir, 'ifcfg-')
             filePath = ifcfgPrefix + deviceName
 
-            with MonkeyPatchScope([(misc, 'NET_CONF_PREF', ifcfgPrefix)]):
+            with mock.patch.object(misc, 'NET_CONF_PREF', ifcfgPrefix):
                 with open(filePath, 'w') as ifcfgFile:
                     ifcfgFile.write(ifcfg)
                 self.assertEqual(
@@ -237,9 +234,10 @@ class TestNetinfo(TestCaseBase):
                     misc.getIfaceCfg(deviceName)['NETMASK'], '255.255.0.0')
 
     @brokentest("Skipped becasue it breaks randomly on the CI")
-    @MonkeyPatch(bonding, 'BONDING_DEFAULTS', bonding.BONDING_DEFAULTS
-                 if os.path.exists(bonding.BONDING_DEFAULTS)
-                 else '../vdsm/bonding-defaults.json')
+    @mock.patch.object(bonding, 'BONDING_DEFAULTS',
+                       bonding.BONDING_DEFAULTS
+                       if os.path.exists(bonding.BONDING_DEFAULTS)
+                       else '../vdsm/bonding-defaults.json')
     @attr(type='integration')
     @ValidateRunningAsRoot
     @RequireBondingMod
