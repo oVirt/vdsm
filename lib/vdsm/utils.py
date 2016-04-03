@@ -857,7 +857,7 @@ def create_connected_socket(host, port, sslctx=None, timeout=None):
         sock = sslctx.wrapSocket(sock)
 
     sock.settimeout(timeout)
-    sock.connect(sockaddr)
+    sock.connect((host, port))
     return sock
 
 
