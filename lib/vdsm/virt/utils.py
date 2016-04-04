@@ -203,3 +203,7 @@ class DynamicBoundedSemaphore(object):
         if delta > 0:
             for i in range(delta):
                 self.release()
+
+
+def is_kvm(vm_conf):
+    return 'containerType' not in vm_conf.get('custom', {})

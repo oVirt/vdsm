@@ -207,3 +207,26 @@ class DynamicSemaphoreTests(TestCaseBase):
         self.assertAcquirable(times=3)
         self.sem.bound = 1
         self.assertNotAcquirable()
+
+
+@expandPermutations
+class TestIsKvm(TestCaseBase):
+
+    def test_empty(self):
+        # ensure backward compatibility
+        self.assertTrue(utils.is_kvm({}))
+
+    def test_custom_no_container_type(self):
+        self.assertTrue(utils.is_kvm({'custom': {}}))
+
+    @permutations([
+        # container_type
+        ['rkt'],
+        ['foobar'],  # we don't validate the value
+    ])
+    def test_detects_container_type(self, container_type):
+        self.assertFalse(utils.is_kvm({
+            'custom': {
+                'containerType': container_type,
+            },
+        }))
