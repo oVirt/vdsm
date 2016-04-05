@@ -44,7 +44,7 @@ class TestSuperVdsmRemotly(TestCaseBase):
         self.dropPrivileges()
         proxy = supervdsm.getProxy()
         ksmParams = {"run": 0,
-                     "merge_across_nodes": 0xf,
+                     "merge_across_nodes": 1,
                      "sleep_millisecs": 0xffff,
                      "pages_to_scan": 0xffff}
         proxy.ksmTune(ksmParams)
