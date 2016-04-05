@@ -90,9 +90,11 @@ public abstract class Reactor extends Thread {
                 } catch (IOException | ClientConnectionException ex) {
                     logException(LOG, "Unable to process messages", ex);
                     client.disconnect(ex.getMessage());
+                    key.cancel();
                 } catch (Throwable e) {
                     logException(LOG, "Internal server error", e);
                     client.disconnect(e.getMessage());
+                    key.cancel();
                 }
             }
 

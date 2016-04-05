@@ -141,6 +141,7 @@ public final class ResponseWorker extends Thread {
 
                     JsonRpcEvent event = new JsonRpcEvent(host + "|*|*|*", params);
                     processNotifications(event);
+                    return;
                 }
             }
             client.processResponse(response);
