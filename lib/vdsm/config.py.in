@@ -65,7 +65,7 @@ parameters = [
         ('migration_destination_timeout', '21600',
             'Maximum time the destination waits for the migration to finish.'),
 
-        ('migration_progress_timeout', '150',
+        ('migration_progress_timeout', '240',
             'Maximum time the source host waits during a migration in case '
             'that there is no progress. If the time has passed, the migration '
             'will be aborted.'),
@@ -79,7 +79,7 @@ parameters = [
             'Time to wait (in seconds) for migration destination to start '
             'listening before migration begins.'),
 
-        ('migration_max_bandwidth', '32',
+        ('migration_max_bandwidth', '52',
             'Maximum bandwidth for migration, in MiBps, 0 means libvirt\'s '
             'default, since 0.10.x default in libvirt is unlimited'),
 
@@ -110,19 +110,19 @@ parameters = [
             'liveness of migration, set to a very high value, such as '
             '600000.'),
 
-        ('migration_downtime_delay', '75',
+        ('migration_downtime_delay', '20',
             'This value is used on the source host to define the delay before '
             'setting/increasing the downtime of a migration. '
             'The value is per GiB of RAM. A minimum of twice this value is '
             'used for VMs with less than 2 GiB of RAM'),
 
-        ('migration_downtime_steps', '10',
+        ('migration_downtime_steps', '5',
             'Incremental steps used to reach migration_downtime.'),
 
-        ('max_outgoing_migrations', '3',
+        ('max_outgoing_migrations', '2',
             'Maximum concurrent outgoing migrations'),
 
-        ('max_incoming_migrations', '3',
+        ('max_incoming_migrations', '2',
             'Maximum concurrent incoming migrations'),
 
         ('sys_shutdown_timeout', '120',
