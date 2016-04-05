@@ -23,7 +23,6 @@
 import os
 import logging
 import xml.etree.ElementTree as ET
-from distutils.version import LooseVersion
 
 import libvirt
 
@@ -188,22 +187,7 @@ def get():
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
-    # Verify that our libvirt supports virtio RNG (since 10.0.2-31)
-    requiredVer = LooseVersion('0.10.2-31')
-    if 'libvirt' not in caps['packages2']:
-        libvirtVer = None
-    else:
-        libvirtVer = LooseVersion(
-            '-'.join((caps['packages2']['libvirt']['version'],
-                      caps['packages2']['libvirt']['release'])))
-
-    if libvirtVer is None:
-        logging.debug('VirtioRNG DISABLED: unknown libvirt version')
-    elif libvirtVer < requiredVer:
-        logging.debug('VirtioRNG DISABLED: libvirt version %s required >= %s',
-                      libvirtVer, requiredVer)
-    else:
-        caps['rngSources'] = vmdevices.core.Rng.available_sources()
+    caps['rngSources'] = vmdevices.core.Rng.available_sources()
 
     caps['numaNodes'] = dict(numa.topology())
     caps['numaNodeDistance'] = dict(numa.distances())
