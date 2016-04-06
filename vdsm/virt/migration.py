@@ -119,7 +119,7 @@ class SourceThread(threading.Thread):
         self._progress = 0
         threading.Thread.__init__(self)
         self._preparingMigrationEvt = True
-        self._migrationCanceledEvt = False
+        self._migrationCanceledEvt = threading.Event()
         self._monitorThread = None
         self._destServer = None
 
@@ -332,7 +332,7 @@ class SourceThread(threading.Thread):
             while self._progress < 100:
                 try:
                     with SourceThread._ongoingMigrations:
-                        if self._migrationCanceledEvt:
+                        if self._migrationCanceledEvt.is_set():
                             self._raiseAbortError()
                         self.log.debug("migration semaphore acquired "
                                        "after %d seconds",
@@ -358,7 +358,7 @@ class SourceThread(threading.Thread):
                                                   'migration_retry_timeout')
                     self.log.debug("Migration destination busy. Initiating "
                                    "retry in %d seconds.", retry_timeout)
-                    time.sleep(retry_timeout)
+                    self._migrationCanceledEvt.wait(retry_timeout)
         except MigrationDestinationSetupError as e:
             self._recover(str(e))
             # we know what happened, no need to dump hollow stack trace
@@ -435,7 +435,7 @@ class SourceThread(threading.Thread):
         # we may return migration stop but it will start at libvirt
         # side
         self._preparingMigrationEvt = False
-        if not self._migrationCanceledEvt:
+        if not self._migrationCanceledEvt.is_set():
             # TODO: use libvirt constants when bz#1222795 is fixed
             params = {VIR_MIGRATE_PARAM_URI: str(muri),
                       VIR_MIGRATE_PARAM_BANDWIDTH: self._maxBandwidth}
@@ -488,7 +488,7 @@ class SourceThread(threading.Thread):
         # if its locks we are before the migrateToURI3()
         # call so no need to abortJob()
         try:
-            self._migrationCanceledEvt = True
+            self._migrationCanceledEvt.set()
             self._vm._dom.abortJob()
         except libvirt.libvirtError:
             if not self._preparingMigrationEvt:
