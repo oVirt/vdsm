@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #
 # Copyright 2014, 2016 Red Hat, Inc.
 #
@@ -26,7 +27,7 @@ from virt import domain_descriptor
 from virt import vmxml
 
 from testlib import VdsmTestCase as TestCaseBase
-from testlib import permutations, expandPermutations
+from testlib import XMLTestCase, permutations, expandPermutations
 
 import vmfakelib as fake
 
@@ -56,6 +57,58 @@ class TestVmXmlFunctions(VmXmlTestCase):
         for _, dom_xml in self._build_domain_xml(arch):
             self.assertEqual(True, vmxml.has_channel(
                 dom_xml, vmchannels.DEVICE_NAME))
+
+
+@expandPermutations
+class TestVmXmlHelpers(XMLTestCase):
+
+    _XML = u'''<?xml version="1.0" ?>
+    <topelement>
+      <hello lang="english">hello</hello>
+      <hello cyrillic="yes" lang="русский">здра́вствуйте</hello>
+      <bye>good bye<hello lang="čeština">dobrý den</hello></bye>
+      <empty/>
+    </topelement>
+    '''
+
+    def setUp(self):
+        self._dom = vmxml.parse_xml(self._XML)
+
+    def test_import_export(self):
+        xml = vmxml.format_xml(self._dom)
+        self.assertXMLEqual(xml, self._XML)
+
+    @permutations([[None, 'topelement', 1],
+                   ['topelement', 'topelement', 1],
+                   [None, 'hello', 3],
+                   ['topelement', 'bye', 1],
+                   [None, 'none', 0]])
+    def test_find_all(self, start_tag, tag, number):
+        dom = self._dom
+        if start_tag is not None:
+            dom = vmxml.find_first(self._dom, 'topelement')
+        elements = vmxml.find_all(dom, tag)
+        matches = [vmxml.tag(e) == tag for e in elements]
+        self.assertTrue(all(matches))
+        self.assertEqual(len(matches), number)
+
+    def test_find_first_not_found(self):
+        self.assertRaises(vmxml.NotFound, vmxml.find_first, self._dom, 'none')
+
+    @permutations([['hello', 'lang', 'english'],
+                   ['hello', 'none', ''],
+                   ['none', 'lang', ''],
+                   ])
+    def test_find_attr(self, tag, attribute, result):
+        value = vmxml.find_attr(self._dom, tag, attribute)
+        self.assertEqual(value, result)
+
+    @permutations([['hello', 'hello'],
+                   ['empty', '']])
+    def test_text(self, tag, result):
+        element = vmxml.find_first(self._dom, tag)
+        text = vmxml.text(element)
+        self.assertEqual(text, result)
 
 
 @expandPermutations

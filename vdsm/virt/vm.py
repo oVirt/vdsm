@@ -3809,8 +3809,8 @@ class Vm(object):
         use updateDevice to select the device.
         """
         try:
-            graphics = self._domain.get_device_elements('graphics')[0]
-        except IndexError:
+            graphics = next(self._domain.get_device_elements('graphics'))
+        except StopIteration:
             return response.error('ticketErr',
                                   'no graphics devices configured')
         return self._setTicketForGraphicDev(

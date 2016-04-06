@@ -17,16 +17,16 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import xml.dom.minidom
+from . import vmxml
 
 
 class DomainDescriptor(object):
 
     def __init__(self, xmlStr):
         self._xml = xmlStr
-        self._dom = xml.dom.minidom.parseString(xmlStr)
-        self._devices = self._first_element_by_tag_name('devices')
-        self._devices_hash = hash(self._devices.toxml()
+        self._dom = vmxml.parse_xml(xmlStr)
+        self._devices = vmxml.find_first(self._dom, 'devices', None)
+        self._devices_hash = hash(vmxml.format_xml(self._devices)
                                   if self._devices is not None else '')
 
     @classmethod
@@ -42,31 +42,22 @@ class DomainDescriptor(object):
         return self._devices
 
     def get_device_elements(self, tagName):
-        return self._devices.getElementsByTagName(tagName)
+        return vmxml.find_all(self._devices, tagName)
 
     @property
     def devices_hash(self):
         return self._devices_hash
 
     def all_channels(self):
-        for channel in self.get_device_elements('channel'):
-            try:
-                name = channel.getElementsByTagName('target')[0].\
-                    getAttribute('name')
-                path = channel.getElementsByTagName('source')[0].\
-                    getAttribute('path')
-            except IndexError:
-                continue
-            else:
+        for channel in vmxml.find_all(self._devices, 'channel'):
+            name = vmxml.find_attr(channel, 'target', 'name')
+            path = vmxml.find_attr(channel, 'source', 'path')
+            if name and path:
                 yield name, path
-
-    def _first_element_by_tag_name(self, tagName):
-        elements = self._dom.childNodes[0].getElementsByTagName(tagName)
-        return elements[0] if elements else None
 
     def get_memory_size(self):
         """
         Return the vm memory from xml in MiB
         """
-        memory = self._first_element_by_tag_name("memory")
-        return int(memory.firstChild.nodeValue) // 1024 if memory else None
+        memory = vmxml.find_first(self._dom, "memory")
+        return (int(vmxml.text(memory)) // 1024 if memory else None)

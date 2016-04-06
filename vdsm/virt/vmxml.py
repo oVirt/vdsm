@@ -33,6 +33,147 @@ METADATA_VM_TUNE_PREFIX = 'ovirt'
 
 _BOOT_MENU_TIMEOUT = 10000  # milliseconds
 
+_UNSPECIFIED = object()
+
+
+class NotFound(Exception):
+    """
+    Raised when vmxml helpers can't find some requested entity.
+    """
+    pass
+
+
+def parse_xml(xml_string):
+    """
+    Parse given XML string to DOM element and return the element.
+
+    :param xml_string: XML string to parse
+    :type xml_string: str
+    :returns: DOM element created by parsing `xml_string`
+    :rtype: DOM element
+    """
+    return xml.dom.minidom.parseString(xml_string)
+
+
+def format_xml(element):
+    """
+    Export given DOM element to XML string.
+
+    :param element: DOM element to export
+    :type element: DOM element
+    :returns: XML corresponding to `element` content
+    :rtype: basestring
+    """
+    return element.toxml(encoding='UTF-8')
+
+
+def find_all(element, tag_):
+    """
+    Return an iterator over all DOM elements with given `tag`.
+
+    `element` may is included in the result if it is of `tag`.
+
+    :param element: DOM element to be searched for given `tag`
+    :type element: DOM element
+    :param tag: tag to look for
+    :type tag: basestring
+    :returns: all elements with given `tag`
+    :rtype: sequence of DOM elements
+    """
+    if isinstance(element, xml.dom.minidom.Element) and \
+       tag(element) == tag_:
+        yield element
+    for elt in element.getElementsByTagName(tag_):
+        yield elt
+
+
+def find_first(element, tag, default=_UNSPECIFIED):
+    """
+    Find the first DOM element with the given tag.
+
+    :param element: DOM element to be searched for given `tag`
+    :type element: DOM element
+    :param tag: tag to look for
+    :type tag: basestring
+    :param default: any object to return when no element with `tag` is found;
+      if not given then `NotFound` is raised in such a case
+    :returns: the matching element or default
+    :raises: NotFound -- when no element with `tag` is found and `default` is
+      not given
+    """
+    try:
+        return next(find_all(element, tag))
+    except StopIteration:
+        if default is _UNSPECIFIED:
+            raise NotFound((element, tag,))
+        else:
+            return default
+
+
+def find_attr(element, tag, attribute):
+    """
+    Find `attribute` value of the first DOM element with `tag`.
+
+    :param element: DOM element to be searched for given `tag`
+    :type element: DOM element
+    :param tag: tag to look for
+    :type tag: basestring
+    :param attribute: attribute name to look for
+    :type attribute: basestring
+    :returns: the attribute value or an empty string if no element with given
+      tag is found or the found element doesn't contain `attribute`
+    :rtype: basestring
+    """
+    try:
+        subelement = find_first(element, tag)
+    except NotFound:
+        return ''
+    return attr(subelement, attribute)
+
+
+def tag(element):
+    """
+    Return tag of the given DOM element.
+
+    :param element: element to get the tag of
+    :type element: DOM element
+    :returns: tag of the element
+    :rtype: basestring
+    """
+    return element.tagName
+
+
+def attr(element, attribute):
+    """
+    Return attribute values of `element`.
+
+    :param element: the element to look the attributes in
+    :type element: DOM element
+    :param attribute: attribute name to look for
+    :type attribute: basestring
+    :returns: the corresponding attribute value or empty string (if no element
+      with `tag` or exists or `attribute` is not present)
+    :rtype: basestring
+    """
+    # Minidom returns unicodes, except for empty strings.
+    return element.getAttribute(attribute)
+
+
+def text(element):
+    """
+    Return text of the given DOM element.
+
+    :param element: element to get the text from
+    :type element: DOM element
+    :returns: text of the element (empty string if it the element doesn't
+      contain any text)
+    :rtype: basestring
+    """
+    child_node = element.firstChild
+    if child_node is None:
+        return ''
+    return child_node.nodeValue
+
 
 def has_channel(domXML, name):
     domObj = etree.fromstring(domXML)
