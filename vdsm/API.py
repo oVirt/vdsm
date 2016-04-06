@@ -826,6 +826,10 @@ class Volume(APIBase):
                                       self._imgUUID, [self._UUID], postZero,
                                       force)
 
+    def verify_untrusted(self):
+        return self._irs.verify_untrusted_volume(self._spUUID, self._sdUUID,
+                                                 self._imgUUID, self._UUID)
+
     def extendSize(self, newSize):
         return self._irs.extendVolumeSize(
             self._spUUID, self._sdUUID, self._imgUUID, self._UUID, newSize)

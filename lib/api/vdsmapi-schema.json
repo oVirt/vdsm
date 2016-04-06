@@ -8304,6 +8304,32 @@
  'returns': 'UUID'}
 
 ##
+# @Volume.verify_untrusted:
+#
+# An untrusted volume is a volume that was in control of a user or untrusted
+# external program, and may contain malicious data. One example is a volume
+# uploaded by a user using ovirt-imageio.
+# The verification includes comparing the untrusted volume's format with the
+# format that is specified in the volume's metadata, and if the format is
+# QCOW, verifying that it has no backingfile.
+# If one of the verifications above fails, an ImageVerificationError will be
+# returned.
+#
+# @storagepoolID:    The Storage Pool associated with the Volume
+#
+# @storagedomainID:  The Storage Domain associated with the Volume
+#
+# @imageID:          The Image associated with the Volume
+#
+# @volumeID:         The UUID of the Volume
+#
+# Since: 4.18.0
+##
+{'command': {'class': 'Volume', 'name': 'verify_untrusted'},
+ 'data': {'storagepoolID': 'UUID', 'storagedomainID': 'UUID',
+ 'imageID': 'UUID', 'volumeID': 'UUID'}}
+
+##
 # @Volume.extendSize:
 #
 # Extends the virtual size of a volume.

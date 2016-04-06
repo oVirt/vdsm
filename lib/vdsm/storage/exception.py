@@ -1224,6 +1224,14 @@ class ImageDaemonUnsupported(StorageException):
     message = "Image daemon is unsupported"
 
 
+class ImageVerificationError(StorageException):
+    code = 484
+    message = "Image verification failed"
+
+    def __init__(self, reason):
+        self.value = "reason=%s" % reason
+
+
 #################################################
 #  LVM related Exceptions
 #################################################

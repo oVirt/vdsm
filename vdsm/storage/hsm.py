@@ -1488,6 +1488,25 @@ class HSM(object):
             self._spmSchedule(spUUID, "purgeImage_%s" % imgUUID,
                               pool.purgeImage, sdUUID, imgUUID, volsByImg)
 
+    @public
+    def verify_untrusted_volume(self, spUUID, sdUUID, imgUUID, volUUID):
+        dom = sdCache.produce(sdUUID=sdUUID)
+        vol = dom.produceVolume(imgUUID, volUUID)
+        qemu_info = qemuimg.info(vol.getVolumePath())
+
+        meta_format = volume.FMT2STR[vol.getFormat()]
+        qemu_format = qemu_info["format"]
+        if meta_format != qemu_format:
+            raise se.ImageVerificationError(
+                "Volume's format specified by QEMU is %s, while the format "
+                "specified in VDSM metadata is %s" %
+                (qemu_format, meta_format))
+        if "backingfile" in qemu_info:
+            raise se.ImageVerificationError(
+                "'%s' is defined as a backingfile, while backingfile is not "
+                "allowed for an untrusted volume." %
+                qemu_info["backingfile"])
+
     def validateImageMove(self, srcDom, dstDom, imgUUID):
         """
         Determines if the image move is legal.
