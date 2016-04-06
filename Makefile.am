@@ -21,6 +21,7 @@
 SUBDIRS = \
 	client \
 	contrib \
+	helpers \
 	init \
 	lib \
 	vdsm \
