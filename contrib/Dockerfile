@@ -7,9 +7,11 @@ RUN yum install -y http://resources.ovirt.org/pub/yum-repo/ovirt-release-master.
     libselinux-python \
     libvirt-python \
     make \
+    psmisc \
     python-cpopen mom \
     python-devel \
     python-inotify \
+    python-ioprocess \
     python-netaddr \
     python-nose \
     python-pthreading \
