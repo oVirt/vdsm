@@ -421,7 +421,7 @@ class BlockVolume(volume.Volume):
                              addTags=mdTags)
 
         try:
-            lvm.deactivateLVs(dom.sdUUID, volUUID)
+            lvm.deactivateLVs(dom.sdUUID, [volUUID])
         except se.CannotDeactivateLogicalVolume:
             cls.log.warn("Cannot deactivate new created volume %s/%s",
                          dom.sdUUID, volUUID, exc_info=True)

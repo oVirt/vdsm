@@ -1185,7 +1185,6 @@ def reduceLV(vgName, lvName, size):
 
 
 def activateLVs(vgName, lvNames):
-    lvNames = _normalizeargs(lvNames)
     toActivate = [lvName for lvName in lvNames
                   if not _isLVActive(vgName, lvName)]
     if toActivate:
@@ -1193,7 +1192,6 @@ def activateLVs(vgName, lvNames):
 
 
 def deactivateLVs(vgName, lvNames):
-    lvNames = _normalizeargs(lvNames)
     toDeactivate = [lvName for lvName in lvNames
                     if _isLVActive(vgName, lvName)]
     if toDeactivate:

@@ -334,7 +334,7 @@ class LvMetadataRW(object):
 
     def readlines(self):
         # Fetch the metadata from metadata volume
-        lvm.activateLVs(self._vgName, self._lvName)
+        lvm.activateLVs(self._vgName, [self._lvName])
 
         m = misc.readblock(self.metavol, self._offset, self._size)
         # Read from metadata volume will bring a load of zeroes trailing
@@ -344,7 +344,7 @@ class LvMetadataRW(object):
         return metadata
 
     def writelines(self, lines):
-        lvm.activateLVs(self._vgName, self._lvName)
+        lvm.activateLVs(self._vgName, [self._lvName])
 
         # Write `metadata' to metadata volume
         metaStr = StringIO()
@@ -908,7 +908,7 @@ class BlockStorageDomain(sd.StorageDomain):
         # Create VMS file system
         _createVMSfs(os.path.join("/dev", vgName, MASTERLV))
 
-        lvm.deactivateLVs(vgName, MASTERLV)
+        lvm.deactivateLVs(vgName, [MASTERLV])
 
         path = lvm.lvPath(vgName, sd.METADATA)
 
@@ -1219,7 +1219,7 @@ class BlockStorageDomain(sd.StorageDomain):
         """
         Mount the master metadata file system. Should be called only by SPM.
         """
-        lvm.activateLVs(self.sdUUID, MASTERLV)
+        lvm.activateLVs(self.sdUUID, [MASTERLV])
         masterDir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
         fileUtils.createdir(masterDir)
 
@@ -1392,7 +1392,7 @@ class BlockStorageDomain(sd.StorageDomain):
         masterdir = os.path.join(self.domaindir, sd.MASTER_FS_DIR)
         self.doUnmountMaster(masterdir)
         # It is time to deactivate the master LV now
-        lvm.deactivateLVs(self.sdUUID, MASTERLV)
+        lvm.deactivateLVs(self.sdUUID, [MASTERLV])
 
     def extendVolume(self, volumeUUID, size, isShuttingDown=None):
         return self._manifest.extendVolume(volumeUUID, size, isShuttingDown)

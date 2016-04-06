@@ -51,11 +51,11 @@ class LvmActivation(object):
         self._vg = vg
         self._lv = lv
 
-        lvm.activateLVs(self._vg, self._lv)
+        lvm.activateLVs(self._vg, [self._lv])
 
     def close(self):
         try:
-            lvm.deactivateLVs(self._vg, self._lv)
+            lvm.deactivateLVs(self._vg, [self._lv])
         except Exception as e:
             # If storage not accessible or lvm error occurred
             # the LV deactivation will failure.
