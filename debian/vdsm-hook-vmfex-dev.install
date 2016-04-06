@@ -1,3 +1,0 @@
-usr/libexec/vdsm/hooks/before_device_create/50_vmfex
-usr/libexec/vdsm/hooks/before_device_migrate_destination/50_vmfex
-usr/libexec/vdsm/hooks/before_nic_hotplug/50_vmfex

@@ -1,2 +1,0 @@
-usr/libexec/vdsm/hooks/before_device_create/50_extnet
-usr/libexec/vdsm/hooks/before_nic_hotplug/50_extnet

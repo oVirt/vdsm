@@ -1,3 +1,0 @@
-usr/libexec/vdsm/hooks/before_vm_start/50_macspoof
-usr/libexec/vdsm/hooks/before_device_create/50_macspoof
-usr/libexec/vdsm/hooks/before_nic_hotplug/50_macspoof

@@ -1,5 +1,0 @@
-./etc/bash_completion.d/vdsClient
-./usr/bin/vdsClient
-./usr/share/man/man1/vdsClient.1
-./usr/share/vdsm/vdsClient.py
-./usr/share/vdsm/vdsClientGluster.py

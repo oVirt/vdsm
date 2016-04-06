@@ -1,3 +1,0 @@
-etc/sudoers.d/50_vdsm_hook_promisc
-usr/libexec/vdsm/hooks/after_vm_start/50_promisc
-usr/libexec/vdsm/hooks/before_vm_destroy/50_promisc

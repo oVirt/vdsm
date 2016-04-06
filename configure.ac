@@ -377,7 +377,6 @@ AC_OUTPUT([
 	Makefile
 	client/Makefile
 	contrib/Makefile
-	debian/Makefile
 	init/Makefile
 	init/systemd/Makefile
 	lib/Makefile

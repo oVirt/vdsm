@@ -1,2 +1,0 @@
-usr/libexec/vdsm/hooks/before_vm_migrate_destination/50_vmfex
-usr/libexec/vdsm/hooks/before_vm_start/50_vmfex
