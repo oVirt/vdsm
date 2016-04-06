@@ -39,7 +39,7 @@ from testValidation import checkSudo, ValidateRunningAsRoot
 from vdsm import udevadm
 from vdsm.commands import execCmd
 from vdsm.utils import stopwatch
-import storage
+from storage import mount
 import mkimage
 
 
@@ -169,7 +169,7 @@ class MkimageTestCase(VdsmTestCase):
         """
         floppy = mkimage.mkFloppyFs("vmId_floppy", self.files, label)
         self.assertTrue(os.path.exists(floppy))
-        m = storage.mount.Mount(floppy, self.workdir)
+        m = mount.Mount(floppy, self.workdir)
         m.mount(mntOpts='loop')
         try:
             self._check_content(checkPerms=False)
@@ -189,10 +189,10 @@ class MkimageTestCase(VdsmTestCase):
         checkSudo(["umount", "target"])
         iso_img = mkimage.mkIsoFs("vmId_iso", self.files, label)
         self.assertTrue(os.path.exists(iso_img))
-        m = storage.mount.Mount(iso_img, self.workdir)
+        m = mount.Mount(iso_img, self.workdir)
         try:
             m.mount(mntOpts='loop')
-        except storage.mount.MountError as e:
+        except mount.MountError as e:
             raise SkipTest("Error mounting iso image: %s" % e)
         try:
             self._check_content()

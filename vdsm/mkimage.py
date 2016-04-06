@@ -33,7 +33,7 @@ from vdsm.constants import P_VDSM_RUN
 from vdsm.commands import execCmd
 from vdsm.utils import rmFile
 from storage.fileUtils import resolveUid, resolveGid
-import storage.mount
+from storage import mount
 
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
 
@@ -107,7 +107,7 @@ def mkFloppyFs(vmId, files, volumeName=None):
                           "code %s, out %s\nerr %s" % (rc, out, err))
 
         dirname = tempfile.mkdtemp()
-        m = storage.mount.Mount(floppy, dirname)
+        m = mount.Mount(floppy, dirname)
         m.mount(mntOpts='loop')
         try:
             _decodeFilesIntoDir(files, dirname)
