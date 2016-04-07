@@ -44,6 +44,12 @@ from .routes import get_routes, get_gateway
 from .qos import report_network_qos
 
 
+# By default all networks are 'legacy', it can be optionaly changed to 'ovs' in
+# OVS capabilities handling.
+# TODO: Get switch type from the system.
+LEGACY_SWITCH = {'switch': 'legacy'}
+
+
 def _get(vdsmnets=None):
     """
     Generate a networking report for all devices, including data managed by
@@ -74,6 +80,7 @@ def _get(vdsmnets=None):
         elif dev.isBOND():
             devinfo = networking['bondings'][dev.name] = bonding.info(dev)
             devinfo.update(bonding.get_bond_agg_info(dev.name))
+            devinfo.update(LEGACY_SWITCH)
         elif dev.isVLAN():
             devinfo = networking['vlans'][dev.name] = vlans.info(dev)
         else:
@@ -87,6 +94,7 @@ def _get(vdsmnets=None):
             network_info['cfg'] = networking['bridges'][network_name]['cfg']
         updates = propose_updates_to_reported_dhcp(network_info, networking)
         update_reported_dhcp(updates, networking)
+        networking['networks'][network_name].update(LEGACY_SWITCH)
 
     report_network_qos(networking)
     networking['supportsIPv6'] = ipv6_supported()

@@ -65,7 +65,6 @@ def normalize(running_config):
     _normalize_bonding_nics(config_copy)
     _normalize_address(config_copy)
     _normalize_ifcfg_keys(config_copy)
-    _normalize_switch_types(config_copy)
 
     return config_copy
 
@@ -83,6 +82,7 @@ def _translate_netinfo_net(net, net_attr, netinfo_):
         _translate_nics(attributes, nics)
     _translate_ipaddr(attributes, net_attr)
     _translate_hostqos(attributes, net_attr)
+    _translate_switch_type(attributes, net_attr)
 
     return attributes
 
@@ -139,7 +139,8 @@ def _translate_bridged(attributes, net_attr):
 def _translate_netinfo_bond(bond_attr):
     return {
         'nics': sorted(bond_attr['slaves']),
-        'options': bonding.bondOptsForIfcfg(bond_attr['opts'])
+        'options': bonding.bondOptsForIfcfg(bond_attr['opts']),
+        'switch': bond_attr['switch']
     }
 
 
@@ -147,6 +148,10 @@ def _translate_hostqos(attributes, net_attr):
     if net_attr.get('hostQos'):
         attributes['hostQos'] = _remove_zero_values_in_net_qos(
             net_attr['hostQos'])
+
+
+def _translate_switch_type(attributes, net_attr):
+    attributes['switch'] = net_attr['switch']
 
 
 def _remove_zero_values_in_net_qos(net_qos):
@@ -235,14 +240,6 @@ def _normalize_ifcfg_keys(config_copy):
         for k in net_attr.keys():
             if unsupported(k):
                 net_attr.pop(k)
-
-
-def _normalize_switch_types(config_copy):
-    # Hide switch type as it is not reported by netinfo and cannot be compared.
-    for data in config_copy.networks, config_copy.bonds:
-        for attrs in six.itervalues(data):
-            attrs.pop('switch', None)
-    return config_copy
 
 
 def _parse_bond_options(opts):
