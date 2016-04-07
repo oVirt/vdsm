@@ -23,14 +23,14 @@ import six
 
 from vdsm.compat import suppress
 from vdsm.netinfo.cache import CachingNetInfo
+from vdsm.netinfo.bonding import parse_bond_options
 from vdsm.network.configurators import libvirt
 from vdsm.utils import rget
 
 import hooking
 
-from ovs_utils import (get_bond_options, is_ovs_bond, iter_ovs_nets,
-                       iter_ovs_bonds, destroy_ovs_bridge, BRIDGE_NAME,
-                       EXT_OVS_VSCTL)
+from ovs_utils import (is_ovs_bond, iter_ovs_nets, iter_ovs_bonds,
+                       destroy_ovs_bridge, BRIDGE_NAME, EXT_OVS_VSCTL)
 import ovs_utils
 
 log = partial(ovs_utils.log, tag='ovs_before_network_setup_ovs: ')
@@ -224,7 +224,7 @@ def _setup_ovs_bond(bond, attrs, running_config):
     commands.extend(['--', '--fake-iface', '--may-exist', 'add-bond',
                      BRIDGE_NAME, bond] + attrs.get('nics'))
 
-    bond_options = get_bond_options(attrs.get('options'))
+    bond_options = parse_bond_options(attrs.get('options'))
     mode = rget(bond_options, ('custom', 'ovs_mode')) or 'active-backup'
     lacp = rget(bond_options, ('custom', 'ovs_lacp')) or 'off'
     commands.extend(['--', 'set', 'port', bond, 'bond_mode=%s' % mode])
@@ -258,7 +258,7 @@ def _edit_ovs_bond(bond, attrs, running_config):
 
 def _validate_bond_configuration(attrs, netinfo):
     nics = attrs.get('nics')
-    bond_options = get_bond_options(attrs.get('options'))
+    bond_options = parse_bond_options(attrs.get('options'))
 
     if nics is None or len(attrs.get('nics')) < 2:
         raise Exception('You have to define at least 2 slaves for '

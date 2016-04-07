@@ -22,6 +22,7 @@ import six
 from hooking import execCmd
 import hooking
 
+from vdsm.netinfo.bonding import parse_bond_options
 from vdsm.utils import CommandPath, rget
 
 EXT_IP = CommandPath('ip', '/sbin/ip').cmd
@@ -36,27 +37,6 @@ BRIDGE_NAME = 'ovsbr0'
 INIT_CONFIG_FILE = '/tmp/ovs_init_config'  # TODO: VDSM tmp folder
 
 
-def get_bond_options(options, keep_custom=False):
-    """ Parse bonding options into dictionary, if keep_custom is set to True,
-    custom option will not be recursive parsed.
-    >>> get_bond_options('mode=4 custom=foo:yes,bar:no')
-    {'custom': {'bar': 'no', 'foo': 'yes'}, 'mode': '4'}
-    """
-    def _string_to_dict(str, div, eq):
-        if options == '':
-            return {}
-        return dict(option.split(eq, 1)
-                    for option in str.strip(div).split(div))
-    if options:
-        d_options = _string_to_dict(options, ' ', '=')
-        if d_options.get('custom') and not keep_custom:
-            d_options['custom'] = _string_to_dict(d_options['custom'], ',',
-                                                  ':')
-        return d_options
-    else:
-        return {}
-
-
 def get_bool(input):
     if input in (1, True, 'True', 'true', 'Yes', 'yes', 'on'):
         return True
@@ -69,7 +49,7 @@ def is_ovs_network(network_attrs):
 
 
 def is_ovs_bond(bond_attrs):
-    bond_options = get_bond_options(bond_attrs.get('options', ''))
+    bond_options = parse_bond_options(bond_attrs.get('options', ''))
     ovs_bond = get_bool(rget(bond_options, ('custom', 'ovs')))
     return ovs_bond
 

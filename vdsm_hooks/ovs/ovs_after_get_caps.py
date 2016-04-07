@@ -23,12 +23,13 @@ import traceback
 
 from vdsm.netconfpersistence import RunningConfig
 from vdsm.netinfo import dhcp, routes as netinfo_routes, addresses, mtus
+from vdsm.netinfo.bonding import parse_bond_options
 
 from hooking import execCmd
 import hooking
 
-from ovs_utils import (get_bond_options, iter_ovs_nets, iter_ovs_bonds,
-                       EXT_OVS_APPCTL, EXT_OVS_VSCTL, BRIDGE_NAME)
+from ovs_utils import (iter_ovs_nets, iter_ovs_bonds, EXT_OVS_APPCTL,
+                       EXT_OVS_VSCTL, BRIDGE_NAME)
 
 
 def _get_stp(iface):
@@ -168,7 +169,7 @@ def bondings_caps(running_config):
     ovs_bonding_caps = {}
     routes = netinfo_routes.get_routes()
     for bonding, attrs in iter_ovs_bonds(running_config.bonds):
-        options = get_bond_options(attrs.get('options'), keep_custom=True)
+        options = parse_bond_options(attrs.get('options'), keep_custom=True)
         net_info = _get_net_info(bonding, routes)
         net_info['slaves'] = attrs.get('nics')
         net_info['active_slave'] = _get_active_slave(bonding)

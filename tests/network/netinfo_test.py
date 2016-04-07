@@ -392,6 +392,10 @@ class TestNetinfo(TestCaseBase):
     def _cidr_form(self, ip_addr, prefix_length):
         return '{}/{}'.format(ip_addr, prefix_length)
 
+    def test_parse_bond_options(self):
+        self.assertEqual(bonding.parse_bond_options('mode=4 custom=foo:bar'),
+                         {'custom': {'foo': 'bar'}, 'mode': '4'})
+
 
 @attr(type='integration')
 class TestIPv6Addresses(TestCaseBase):
