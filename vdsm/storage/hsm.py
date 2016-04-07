@@ -1219,25 +1219,13 @@ class HSM(object):
         pool = self.getPool(spUUID)
         pool.activateSD(sdUUID)
 
+    @deprecated
     @public
     def setStoragePoolDescription(self, spUUID, description, options=None):
         """
-        Sets the storage pool's description.
-
-        :param spUUID: The UUID of the storage pool that you want to set it's
-                       description.
-        :type spUUID: UUID
-        :param description: A human readable description of the storage pool.
-        :type description: str
-        :param options: ?
+        Deprecated, as the storage pool's metadata is no longer persisted.
+        TODO: Remove when the support for 3.5 clusters is dropped.
         """
-        vars.task.setDefaultException(
-            se.StoragePoolActionError(
-                "spUUID=%s, descr=%s" % (spUUID, description)))
-        vars.task.getExclusiveLock(STORAGE, spUUID)
-        pool = self.getPool(spUUID)
-        if isinstance(pool.getBackend(), StoragePoolDiskBackend):
-            pool.getBackend().setDescription(description)
 
     @public
     def setVolumeDescription(self, sdUUID, spUUID, imgUUID, volUUID,

@@ -6169,6 +6169,8 @@
 # @description:    A human-readable string describing the Storage Pool
 #
 # Since: 4.10.0
+#
+# Notes: Deprecated since 4.18.0
 ##
 {'command': {'class': 'StoragePool', 'name': 'setDescription'},
  'data': {'storagepoolID': 'UUID', 'description': 'str'}}
