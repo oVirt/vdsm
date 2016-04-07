@@ -126,7 +126,8 @@ class Ifcfg(Configurator):
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
-                            'nics': [slave.name for slave in bond.slaves]})
+                            'nics': [slave.name for slave in bond.slaves],
+                            'switch': 'legacy'})
 
     def editBonding(self, bond, _netinfo):
         """
@@ -168,7 +169,8 @@ class Ifcfg(Configurator):
         if self.unifiedPersistence:
             self.runningConfig.setBonding(
                 bond.name, {'options': bond.options,
-                            'nics': [slave.name for slave in bond.slaves]})
+                            'nics': [slave.name for slave in bond.slaves],
+                            'switch': 'legacy'})
 
     def configureNic(self, nic, **opts):
         self.configApplier.addNic(nic, **opts)

@@ -106,7 +106,8 @@ class Iproute2(Configurator):
         self._addSourceRoute(bond)
         self.runningConfig.setBonding(
             bond.name, {'options': bond.options,
-                        'nics': [slave.name for slave in bond.slaves]})
+                        'nics': [slave.name for slave in bond.slaves],
+                        'switch': 'legacy'})
 
     def editBonding(self, bond, _netinfo):
         """
@@ -139,7 +140,8 @@ class Iproute2(Configurator):
         self.configApplier.ifup(bond)
         self.runningConfig.setBonding(
             bond.name, {'options': bond.options,
-                        'nics': [slave.name for slave in bond.slaves]})
+                        'nics': [slave.name for slave in bond.slaves],
+                        'switch': 'legacy'})
 
     def configureNic(self, nic, **opts):
         DynamicSourceRoute.addInterfaceTracking(nic)
