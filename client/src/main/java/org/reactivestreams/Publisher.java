@@ -1,5 +1,8 @@
 package org.reactivestreams;
 
+import java.io.IOException;
+import java.util.Map;
+
 public interface Publisher<T, S extends Subscriber<T>> {
 
     /**
@@ -17,4 +20,13 @@ public interface Publisher<T, S extends Subscriber<T>> {
      * @param s the {@link Subscriber} that will consume signals from this {@link Publisher}
      */
     public void subscribe(S s);
+
+    /**
+     * Request {@link Publisher} to send data.
+     *
+     * @param subscriptionId the identifier for {@link Subscriber} who will consume the event
+     * @param params the data that needs to be sent to the {@link Subscriber}
+     * @throws IOException an exception is thrown if the params cannot be serialized
+     */
+    public void publish(String subscriptionId, Map<String, Object> params) throws IOException;
 }

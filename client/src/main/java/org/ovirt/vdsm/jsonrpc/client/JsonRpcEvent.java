@@ -1,10 +1,12 @@
 package org.ovirt.vdsm.jsonrpc.client;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
+import org.ovirt.vdsm.jsonrpc.client.utils.JsonUtils;
 
 /**
  * Java bean representation of an event.
@@ -13,6 +15,8 @@ import org.codehaus.jackson.node.ObjectNode;
 public class JsonRpcEvent {
     public final static String ERROR_KEY = "communicationError";
     private final static ObjectMapper MAPPER = new ObjectMapper();
+    public final static String MESSAGE_FORMAT =
+            "{\"jsonrpc\": \"2.0\", \"method\": \"%s\", \"params\": %s}";
     private String method;
     private JsonNode params;
 
@@ -83,6 +87,19 @@ public class JsonRpcEvent {
         }
 
         return new JsonRpcEvent(method, node.get("params"));
+    }
+
+    /**
+     * Create notification object for the method and params.
+     *
+     * @param method - Name of the method which will be executed remotely.
+     * @param params - Parameters used to execute method.
+     * @return
+     * @throws IOException - The exception thrown if params cannot be serialized.
+     */
+    public static JsonRpcEvent fromMethodAndParams(String method, Map<String, Object> params) throws IOException {
+        return fromByteArray(String.format(MESSAGE_FORMAT, method, MAPPER.writeValueAsString(params))
+                .getBytes(JsonUtils.UTF8));
     }
 
     /**

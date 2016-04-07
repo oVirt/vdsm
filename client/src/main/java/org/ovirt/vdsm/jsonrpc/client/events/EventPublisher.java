@@ -1,5 +1,6 @@
 package org.ovirt.vdsm.jsonrpc.client.events;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -55,6 +56,11 @@ public class EventPublisher implements Publisher<Map<String, Object>, EventSubsc
         };
         subscriber.onSubscribe(subscription);
         this.matcher.add(holder);
+    }
+
+    @Override
+    public void publish(final String subscriptionId, final Map<String, Object> params) throws IOException {
+        process(JsonRpcEvent.fromMethodAndParams(subscriptionId, params));
     }
 
     private void process(SubscriptionHolder holder) {
