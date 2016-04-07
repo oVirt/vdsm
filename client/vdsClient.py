@@ -970,12 +970,8 @@ class service:
         masterDom = args[2]
         domDict = self._parseDomainsMap(args[3])
         mVer = int(args[4])
-        if len(args) > 5:
-            st = self.s.reconstructMaster(spUUID, poolName, masterDom, domDict,
-                                          mVer, *map(int, args[5:]))
-        else:
-            st = self.s.reconstructMaster(spUUID, poolName, masterDom, domDict,
-                                          mVer)
+        st = self.s.reconstructMaster(spUUID, poolName, masterDom, domDict,
+                                      mVer, *map(int, args[5:]))
         if st['status']['code']:
             return st['status']['code'], st['status']['message']
         return 0, ''

@@ -740,20 +740,13 @@ class StoragePool(object):
 
         futureMaster = sdCache.produce(msdUUID)
 
-        # @deprecated, domain version < 3
-        # For backward compatibility we must support a reconstructMaster
-        # that doesn't specify an hostId.
-        if not hostId:
-            self._acquireTemporaryClusterLock(msdUUID, leaseParams)
-            temporaryLock = True
-        else:
-            # Forcing to acquire the host id (if it's not acquired already).
-            futureMaster.acquireHostId(hostId)
-            futureMaster.acquireClusterLock(hostId)
+        # Forcing to acquire the host id (if it's not acquired already).
+        futureMaster.acquireHostId(hostId)
+        futureMaster.acquireClusterLock(hostId)
 
-            # The host id must be set for createMaster(...).
-            self.id = hostId
-            temporaryLock = False
+        # The host id must be set for createMaster(...).
+        self.id = hostId
+
         try:
             # As in the create method we need to temporarily set the object
             # secure in order to change the domains map.
@@ -776,11 +769,7 @@ class StoragePool(object):
             finally:
                 self._setUnsecure()
         finally:
-            if temporaryLock:
-                self._releaseTemporaryClusterLock(msdUUID)
-                self.stopMonitoringDomains()
-            else:
-                futureMaster.releaseClusterLock()
+            futureMaster.releaseClusterLock()
 
     def _copyLeaseParameters(self, srcDomain, dstDomain):
         leaseParams = srcDomain.getLeaseParams()

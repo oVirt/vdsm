@@ -1855,9 +1855,8 @@ class HSM(object):
 
     @public
     def reconstructMaster(self, spUUID, poolName, masterDom, domDict,
-                          masterVersion, lockPolicy=None,
-                          lockRenewalIntervalSec=None, leaseTimeSec=None,
-                          ioOpTimeoutSec=None, leaseRetries=None, hostId=None,
+                          masterVersion, lockPolicy, lockRenewalIntervalSec,
+                          leaseTimeSec, ioOpTimeoutSec, leaseRetries, hostId,
                           options=None):
         """
         Reconstruct Master Domains - rescue action: can be issued even when
@@ -1909,8 +1908,7 @@ class HSM(object):
 
         self.validateSdUUID(masterDom)
 
-        if hostId is not None:
-            misc.validateN(hostId, 'hostId')
+        misc.validateN(hostId, 'hostId')
 
         vars.task.getExclusiveLock(STORAGE, spUUID)
 
