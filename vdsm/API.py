@@ -1114,7 +1114,7 @@ class StoragePool(APIBase):
 
     # scsiKey not used
     def connect(self, hostID, scsiKey, masterSdUUID, masterVersion,
-                domainDict=None):
+                domainDict):
         return self._irs.connectStoragePool(
             self._UUID, hostID, masterSdUUID, masterVersion, domainDict)
 

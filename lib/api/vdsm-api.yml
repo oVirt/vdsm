@@ -8256,9 +8256,7 @@ StoragePool.connect:
         name: masterVersion
         type: int
 
-    -   defaultvalue: null
-        description: The Storage Domain statuses. If this argument is present
-            the Storage Pool will use the memory backend (no metadata).
+    -   description: The Storage Domain statuses
         name: domainDict
         added: '3.4'
         type: *StorageDomainStatusMap
