@@ -51,7 +51,7 @@ class Job(base.Job):
                 artifacts.create(
                     self.vol_info.virtual_size, vol_format,
                     self.vol_info.disk_type, self.vol_info.description,
-                    self.vol_info.parent_vol_id)
+                    self.vol_info.parent)
                 artifacts.commit()
 
 
@@ -69,9 +69,15 @@ class CreateVolumeInfo(object):
         self.vol_format = _enum(params, 'vol_format', vol_types)
         self.disk_type = _enum(params, 'disk_type', image.DISK_TYPES.values())
         self.description = params.get('description', '')
-        self.parent_img_id = params.get('parent_img_id', volume.BLANK_UUID)
-        self.parent_vol_id = params.get('parent_vol_id', volume.BLANK_UUID)
+        parent = params.get('parent', None)
+        self.parent = None if parent is None else ParentVolumeInfo(parent)
         self.initial_size = params.get('initial_size', 0)
+
+
+class ParentVolumeInfo(object):
+    def __init__(self, params):
+        self.img_id = _required(params, 'img_id')
+        self.vol_id = _required(params, 'vol_id')
 
 
 def _required(params, name):

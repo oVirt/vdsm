@@ -76,7 +76,7 @@ class VolumeArtifacts(object):
         self.img_id = img_id
         self.vol_id = vol_id
 
-    def create(self, size, vol_format, disk_type, desc, parent_vol_id):
+    def create(self, size, vol_format, disk_type, desc, parent=None):
         """
         Create a new image and volume artifacts or a new volume inside an
         existing image.  The result is considered as garbage until you invoke
@@ -190,20 +190,22 @@ class FileVolumeArtifacts(VolumeArtifacts):
     def volume_path(self):
         return os.path.join(self.artifacts_dir, self.vol_id)
 
-    def create(self, size, vol_format, disk_type, desc,
-               parent_vol_id=volume.BLANK_UUID):
+    def create(self, size, vol_format, disk_type, desc, parent=None):
         """
         Create metadata file artifact, lease file, and volume file on storage.
         """
         # XXX: Remove these when support is added:
         if vol_format != volume.RAW_FORMAT:
             raise NotImplementedError("Only raw volumes are supported")
-        if parent_vol_id != volume.BLANK_UUID:
-            raise NotImplementedError("parent_vol_id not supported")
+        if parent:
+            raise NotImplementedError("parent not supported")
 
-        if self.is_image() and parent_vol_id == volume.BLANK_UUID:
-            raise se.InvalidParameterException("parent_vol_id", parent_vol_id)
+        if self.is_image() and not parent:
+            self.log.debug("parent not provided when creating a volume in an"
+                           "existing image.")
+            raise se.InvalidParameterException("parent", parent)
 
+        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
         prealloc = self._get_volume_preallocation(vol_format)
         self.sd_manifest.validateCreateVolumeParams(
             vol_format, parent_vol_id, preallocate=prealloc)

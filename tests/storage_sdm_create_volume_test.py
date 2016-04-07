@@ -24,14 +24,14 @@ import uuid
 
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeResourceManager
-from testlib import VdsmTestCase, recorded
+from testlib import VdsmTestCase, recorded, expandPermutations, permutations
 from sdmtestlib import wait_for_job
 
 from vdsm import exception
 from vdsm import jobs
 from vdsm.storage import exception as se
 
-from storage import fileVolume, sd, volume
+from storage import fileVolume, sd
 from storage import resourceManager as rm
 from storage.resourceFactories import IMAGE_NAMESPACE
 
@@ -86,10 +86,7 @@ class FakeVolumeArtifacts(object):
 def _get_vol_info():
     return dict(sd_id=str(uuid.uuid4()), img_id=str(uuid.uuid4()),
                 vol_id=str(uuid.uuid4()), virtual_size=2048,
-                vol_format='RAW', disk_type='SYSTEM',
-                description='test vol',
-                parent_img_id=volume.BLANK_UUID,
-                parent_vol_id=volume.BLANK_UUID, initial_size='0')
+                vol_format='RAW', disk_type='SYSTEM')
 
 
 class CreateVolumeTests(VdsmTestCase):
@@ -156,23 +153,32 @@ class CreateVolumeInfoTests(VdsmTestCase):
                           storage.sdm.api.create_volume.CreateVolumeInfo, info)
 
     def test_default_parameter(self):
-        defaults = dict(
-            description='',
-            parent_img_id=volume.BLANK_UUID,
-            parent_vol_id=volume.BLANK_UUID,
-            initial_size=0
-        )
-
         info = _get_vol_info()
-        for k in defaults.iterkeys():
-            del info[k]
-
         info_obj = storage.sdm.api.create_volume.CreateVolumeInfo(info)
-        for k, v in defaults.iteritems():
-            self.assertEqual(v, getattr(info_obj, k))
+        self.assertEqual('', info_obj.description)
+        self.assertEqual(0, info_obj.initial_size)
+        self.assertIsNone(info_obj.parent)
 
     def test_bad_enum_value(self):
         info = _get_vol_info()
         info['vol_format'] = 'foo'
         self.assertRaises(se.InvalidParameterException,
                           storage.sdm.api.create_volume.CreateVolumeInfo, info)
+
+
+@expandPermutations
+class ParentVolumeInfoTests(VdsmTestCase):
+
+    @permutations([
+        [{}], [{'vol_id': 'foo'}], [{'img_id': 'bar'}],
+    ])
+    def test_incomplete_params_raises(self, params):
+        self.assertRaises(
+            exception.MissingParameter,
+            storage.sdm.api.create_volume.ParentVolumeInfo, params)
+
+    def test_complete_params(self):
+        params = dict(vol_id='foo', img_id='bar')
+        obj = storage.sdm.api.create_volume.ParentVolumeInfo(params)
+        self.assertEqual(params['vol_id'], obj.vol_id)
+        self.assertEqual(params['img_id'], obj.img_id)
