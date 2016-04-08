@@ -157,7 +157,7 @@ class SchedulerTests(VdsmTestCase):
             ticker.latency.sort()
             min = ticker.latency[0]
             avg = sum(ticker.latency) / len(ticker.latency)
-            med = ticker.latency[len(ticker.latency) / 2]
+            med = ticker.latency[len(ticker.latency) // 2]
             max = ticker.latency[-1]
             print('latency - avg: %.3f min: %.3f median: %.3f max: %.3f' % (
                 avg, min, med, max))
