@@ -54,6 +54,12 @@ class _DummyBridge(object):
                 (self.ping, 'ping'),
                 (self.slow_response, 'slow_response'))
 
+    def dispatch(self, method):
+        try:
+            return getattr(self, method)
+        except AttributeError:
+            raise JsonRpcMethodNotFoundError(method)
+
     def echo(self, text):
         self.log.info("ECHO: '%s'", text)
         return text
