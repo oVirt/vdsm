@@ -22,7 +22,7 @@ import six
 from hooking import execCmd
 import hooking
 
-from vdsm.utils import CommandPath
+from vdsm.utils import CommandPath, rget
 
 EXT_IP = CommandPath('ip', '/sbin/ip').cmd
 EXT_OVS_VSCTL = CommandPath('ovs-vsctl',
@@ -34,18 +34,6 @@ EXT_OVS_APPCTL = CommandPath('ovs-appctl',
 BRIDGE_NAME = 'ovsbr0'
 
 INIT_CONFIG_FILE = '/tmp/ovs_init_config'  # TODO: VDSM tmp folder
-
-
-def rget(dict, keys, default=None):
-    """ Recursive dictionary.get()
-    >>> rget({'a': {'b': 'hello'}}, ('a', 'b'))
-    'hello'
-    """
-    if dict is None:
-        return default
-    elif len(keys) == 0:
-        return dict
-    return rget(dict.get(keys[0]), keys[1:], default)
 
 
 def get_bond_options(options, keep_custom=False):

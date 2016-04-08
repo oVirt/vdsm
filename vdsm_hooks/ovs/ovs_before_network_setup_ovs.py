@@ -24,12 +24,13 @@ import six
 from vdsm.compat import suppress
 from vdsm.netinfo.cache import CachingNetInfo
 from vdsm.network.configurators import libvirt
+from vdsm.utils import rget
 
 import hooking
 
 from ovs_utils import (get_bond_options, is_ovs_bond, iter_ovs_nets,
-                       iter_ovs_bonds, rget, destroy_ovs_bridge,
-                       BRIDGE_NAME, EXT_OVS_VSCTL)
+                       iter_ovs_bonds, destroy_ovs_bridge, BRIDGE_NAME,
+                       EXT_OVS_VSCTL)
 import ovs_utils
 
 log = partial(ovs_utils.log, tag='ovs_before_network_setup_ovs: ')
