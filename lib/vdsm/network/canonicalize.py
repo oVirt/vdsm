@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 import six
 
-from vdsm.netinfo import (bridges, mtus)
+from vdsm.netinfo import (bridges, mtus, bonding)
 from vdsm import utils
 
 from .errors import ConfigNetworkError
@@ -44,7 +44,7 @@ def canonicalize_networks(nets):
         _canonicalize_bridged(attrs)
         _canonicalize_stp(attrs)
         _canonicalize_ipv6(attrs)
-        _canonicalize_switch_type(attrs)
+        _canonicalize_switch_type_net(attrs)
 
 
 def canonicalize_bondings(bonds):
@@ -58,7 +58,7 @@ def canonicalize_bondings(bonds):
         if _canonicalize_remove(attrs):
             continue
 
-        _canonicalize_switch_type(attrs)
+        _canonicalize_switch_type_bond(attrs)
 
 
 def _canonicalize_remove(data):
@@ -106,6 +106,17 @@ def _canonicalize_ipv6(data):
         data['dhcpv6'] = False
 
 
-def _canonicalize_switch_type(data):
-    if 'switch' not in data:
+def _canonicalize_switch_type_net(data):
+    if utils.tobool(utils.rget(data, ('custom', 'ovs'))):
+        data['switch'] = 'ovs'
+    elif 'switch' not in data:
+        data['switch'] = 'legacy'
+
+
+def _canonicalize_switch_type_bond(data):
+    options = data.get('options', '')
+    ovs = utils.rget(bonding.parse_bond_options(options), ('custom', 'ovs'))
+    if utils.tobool(ovs):
+        data['switch'] = 'ovs'
+    elif 'switch' not in data:
         data['switch'] = 'legacy'
