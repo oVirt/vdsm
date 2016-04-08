@@ -99,9 +99,13 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
 
     metadata = make_sd_metadata(sduuid)
     manifest = blockSD.BlockStorageDomainManifest(sduuid, metadata)
+    manifest.mountpoint = os.path.join(tmpdir, sd.DOMAIN_MNT_POINT,
+                                       sd.BLOCKSD_DIR)
     manifest.domaindir = tmpdir
     os.makedirs(os.path.join(manifest.domaindir, sduuid, sd.DOMAIN_IMAGES))
 
+    # Make the mountpoint directory structure
+    os.makedirs(os.path.join(manifest.mountpoint, sduuid, sd.DOMAIN_IMAGES))
     return manifest
 
 
