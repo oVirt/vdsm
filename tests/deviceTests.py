@@ -24,6 +24,7 @@ from vdsm import constants
 
 from virt import vmdevices
 from virt.vmdevices import hwclass
+from virt.vmdevices import graphics
 from virt.domain_descriptor import DomainDescriptor
 
 from monkeypatch import MonkeyPatchScope
@@ -86,7 +87,8 @@ class TestVmDevices(XMLTestCase):
             'vmName': 'testVm',
             'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
             'smp': '8', 'maxVCpus': '160',
-            'memSize': '1024', 'memGuaranteedSize': '512'}
+            'memSize': '1024', 'memGuaranteedSize': '512',
+        }
 
         self.confDisplayVnc = (
             {'display': 'vnc', 'displayNetwork': 'vmDisplay'},
@@ -138,6 +140,33 @@ class TestVmDevices(XMLTestCase):
         with fake.VM(self.conf) as testvm:
             devs = testvm._devSpecMapFromConf()
             self.assertFalse(devs['graphics'])
+
+    def testGraphicDeviceUpdateConfig(self):
+        params = {
+            'displayIp': '0',
+            'displayPort': u'6101',
+            'displaySecurePort': u'6102',
+        }
+        with fake.VM(
+            self.conf, self.confDeviceGraphicsVnc[0]
+        ) as testvm:
+            devs = testvm._devSpecMapFromConf()
+            testvm._updateDevices(devs)
+            testvm._devices = testvm._devMapFromDevSpecMap(devs)
+
+            domainXML = """<domain>
+            <devices>
+            <graphics autoport="yes" listen="0" passwd="*****"
+                      passwdValidTo="1970-01-01T00:00:01" port="6101"
+                      tlsPort="6102" type="vnc" />
+            </devices>
+            </domain>"""
+            testvm._domain = DomainDescriptor(domainXML)
+            graphics.Graphics.update_device_info(
+                testvm, testvm._devices[hwclass.GRAPHICS])
+
+            for param, value in params.items():
+                self.assertEquals(testvm.conf[param], value)
 
     def testGraphicsDeviceMixed(self):
         """

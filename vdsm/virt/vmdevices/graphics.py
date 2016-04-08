@@ -177,7 +177,7 @@ class Graphics(Base):
         # the first graphic device is duplicated in the legacy conf
         # TODO: Remove this code once we stop maintaining compatibility with
         # Engines older than 3.6.
-        updateLegacyConf({'devices': vm.conf['devices']})
+        updateLegacyConf(vm.conf)
 
 
 def isSupportedDisplayType(vmParams):
