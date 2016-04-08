@@ -127,13 +127,12 @@ class Scheduler(object):
         yet.
         """
         deadline = self._clock() + delay
-        call = ScheduledCall(callable)
+        call = ScheduledCall(deadline, callable)
         with self._cond:
             if not self._running:
                 raise AssertionError("Scheduler not running")
-            heapq.heappush(self._calls, (deadline, call))
-            next_call = self._calls[0][1]
-            if next_call is call:
+            heapq.heappush(self._calls, call)
+            if self._calls[0] is call:
                 self._cond.notify()
         return call
 
@@ -161,16 +160,15 @@ class Scheduler(object):
 
     def _time_until_deadline(self):
         if len(self._calls) > 0:
-            next_deadline = self._calls[0][0]
-            return next_deadline - self._clock()
+            return self._calls[0]._deadline - self._clock()
         return self.DEFAULT_DELAY
 
     def _pop_expired_calls(self):
         now = self._clock()
         expired = []
         while len(self._calls) > 0:
-            deadline, call = self._calls[0]
-            if deadline > now:
+            call = self._calls[0]
+            if call._deadline > now:
                 break
             heapq.heappop(self._calls)
             if call.valid():
@@ -180,7 +178,7 @@ class Scheduler(object):
     def _cancel_calls(self):
         # Help the garbage collector by breaking reference cycles
         with self._cond:
-            for deadline, call in self._calls:
+            for call in self._calls:
                 call.cancel()
 
 
@@ -192,11 +190,12 @@ class ScheduledCall(object):
     This class is thread safe; any thread can cancel a call.
     """
 
-    __slots__ = ('_callable',)
+    __slots__ = ('_deadline', '_callable')
 
     _log = logging.getLogger("Scheduler")
 
-    def __init__(self, callable):
+    def __init__(self, deadline, callable):
+        self._deadline = deadline
         self._callable = callable
 
     def cancel(self):
@@ -212,6 +211,12 @@ class ScheduledCall(object):
             self._log.exception("Unhandled exception in %s", self._callable)
         finally:
             self._callable = _INVALID
+
+    # Rich comparison support (required for Python 3).  This is the minimal
+    # implementation to allow pushing a call into a heap.
+
+    def __lt__(self, other):
+        return self._deadline < other._deadline
 
 
 # Sentinel for marking calls as invalid. Callable so we can invalidate a call

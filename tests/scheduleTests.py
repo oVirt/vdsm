@@ -218,3 +218,35 @@ class FailingTask(object):
 
     def __call__(self):
         raise Exception("This task is broken")
+
+
+class TestScheduledCall(VdsmTestCase):
+
+    def setUp(self):
+        self.count = 0
+
+    def callback(self):
+        self.count += 1
+
+    def test_create(self):
+        call = schedule.ScheduledCall(0, self.callback)
+        self.assertEqual(0, self.count)
+        self.assertTrue(call.valid())
+
+    def test_execute(self):
+        call = schedule.ScheduledCall(0, self.callback)
+        call._execute()
+        self.assertEqual(1, self.count)
+        self.assertFalse(call.valid())
+
+    def test_execute_callback_once(self):
+        call = schedule.ScheduledCall(0, self.callback)
+        call._execute()
+        call._execute()
+        self.assertEqual(1, self.count)
+
+    def test_order(self):
+        now = utils.monotonic_time()
+        call_soon = schedule.ScheduledCall(now, self.callback)
+        call_later = schedule.ScheduledCall(now + 1, self.callback)
+        self.assertLess(call_soon, call_later)
