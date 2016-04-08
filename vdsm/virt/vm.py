@@ -564,7 +564,8 @@ class Vm(object):
                 'spice'
                 if self.conf['display'] in ('qxl', 'qxlnc')
                 else 'vnc'),
-            'specParams': vmdevices.graphics.makeSpecParams(self.conf)}]
+            'specParams': vmdevices.graphics.makeSpecParams(self.conf)
+        }]
 
     def getConfSound(self):
         """
@@ -1478,11 +1479,13 @@ class Vm(object):
                 'type': dev.device,
                 'port': dev.port,
                 'tlsPort': dev.tlsPort,
-                'ipAddress': dev.specParams.get('displayIp', '0')}
+                'ipAddress': dev.specParams.get('displayIp', '0'),
+            }
 
         stats = {
             'displayInfo': [getInfo(dev)
-                            for dev in self._devices[hwclass.GRAPHICS]]}
+                            for dev in self._devices[hwclass.GRAPHICS]],
+        }
         if 'display' in self.conf:
             stats['displayType'] = self.conf['display']
             stats['displayPort'] = self.conf['displayPort']

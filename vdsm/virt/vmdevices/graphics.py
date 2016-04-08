@@ -41,7 +41,8 @@ _LEGACY_MAP = {
     'displayNetwork': 'displayNetwork',
     'spiceSecureChannels': 'spiceSecureChannels',
     'copyPasteEnable': 'copyPasteEnable',
-    'fileTransferEnable': 'fileTransferEnable'}
+    'fileTransferEnable': 'fileTransferEnable',
+}
 
 
 class Graphics(Base):
