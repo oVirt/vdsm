@@ -90,16 +90,26 @@ def _get_ports(network, attrs):
 
 
 def networks_caps(running_config):
+
+    def get_engine_expected_top_dev(net, attrs):
+        """Return top device (iface) expected by Engine."""
+        nic_bond = attrs.get('bonding') or attrs.get('nic')
+        vlan = attrs.get('vlan')
+        return (net if attrs.get('bridged', True)
+                else '%s.%s' % (nic_bond, vlan) if vlan is not None
+                else nic_bond)
+
     ovs_networks_caps = {}
     routes = netinfo_routes.get_routes()
     for network, attrs in iter_ovs_nets(running_config.networks):
-        interface = network if 'vlan' in attrs else BRIDGE_NAME
-        net_info = _get_net_info(interface, routes)
-        net_info['iface'] = network
+        actual_top_dev = network if 'vlan' in attrs else BRIDGE_NAME
+        expected_top_dev = get_engine_expected_top_dev(network, attrs)
+        net_info = _get_net_info(actual_top_dev, routes)
+        net_info['iface'] = expected_top_dev
         # report the network to be bridgeless if this is what Engine expects
         net_info['bridged'] = attrs.get('bridged')
         net_info['ports'] = _get_ports(network, attrs)
-        net_info['stp'] = _get_stp(interface)
+        net_info['stp'] = _get_stp(actual_top_dev)
         ovs_networks_caps[network] = net_info
     return ovs_networks_caps
 
