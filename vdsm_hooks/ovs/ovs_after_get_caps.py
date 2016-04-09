@@ -178,6 +178,29 @@ def bondings_caps(running_config):
     return ovs_bonding_caps
 
 
+def _update_expected_ip_info(caps, running_config):
+    """
+    If a network is marked as bridgeless and untagged, we have to report its IP
+    info on attached nic/bond.
+    """
+
+    def copy_net_info(source, destination):
+        KEYS = {'addr', 'gateway', 'netmask', 'dhcpv4', 'ipv4addrs',
+                'ipv6addrs', 'ipv6autoconf', 'ipv6gateway', 'dhcpv6', 'cfg'}
+        for key in KEYS:
+            destination[key] = source[key]
+
+    for network, attrs in iter_ovs_nets(running_config.networks):
+        if not attrs.get('bridged', True) and 'vlan' not in attrs:
+            bond = attrs.get('bond')
+            nic = attrs.get('nic')
+            if bond is not None:
+                copy_net_info(
+                    caps['networks'][network], caps['bondings'][bond])
+            elif nic is not None:
+                copy_net_info(caps['networks'][network], caps['nics'][nic])
+
+
 def main():
     running_config = RunningConfig()
     caps = hooking.read_json()
@@ -185,6 +208,7 @@ def main():
     caps['bridges'].update(bridges_caps(running_config))
     caps['vlans'].update(vlans_caps(running_config))
     caps['bondings'].update(bondings_caps(running_config))
+    _update_expected_ip_info(caps, running_config)
     hooking.write_json(caps)
 
 
