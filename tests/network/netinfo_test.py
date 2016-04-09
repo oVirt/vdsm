@@ -81,14 +81,10 @@ class TestNetinfo(TestCaseBase):
         self.assertRaises(ValueError, addresses.prefix2netmask, -1)
         self.assertRaises(ValueError, addresses.prefix2netmask, 33)
 
-    @MonkeyPatch(ipwrapper.Link, '_detectType',
-                 partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInvalidNic(self):
         nicName = '0' * 20  # devices can't have so long names
         self.assertEqual(nics.speed(nicName), 0)
 
-    @MonkeyPatch(ipwrapper.Link, '_detectType',
-                 partial(_fakeTypeDetection, ipwrapper.Link))
     def testSpeedInRange(self):
         for d in nics.nics():
             s = nics.speed(d)
@@ -112,10 +108,7 @@ class TestNetinfo(TestCaseBase):
                                     lambda x: operstate)]):
                 self.assertEqual(nics.speed('fake_nic'), expected)
 
-    @MonkeyPatch(ipwrapper.Link, '_detectType',
-                 partial(_fakeTypeDetection, ipwrapper.Link))
     @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
-    @MonkeyPatch(bonding, '_getBondingOptions', lambda x: {})
     def testGetNonExistantBridgeInfo(self):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
@@ -270,20 +263,12 @@ class TestNetinfo(TestCaseBase):
             finally:
                 bonds.write('-' + bondName)
 
-    @MonkeyPatch(bonding, 'BONDING_NAME2NUMERIC_PATH',
-                 bonding.BONDING_NAME2NUMERIC_PATH
-                 if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
-                 else '../vdsm/bonding-name2numeric.json')
     def test_get_bonding_option_numeric_val_exists(self):
         mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
         self.assertNotEqual(bonding.get_bonding_option_numeric_val(
                             mode_num, "ad_select", "stable"),
                             None)
 
-    @MonkeyPatch(bonding, 'BONDING_NAME2NUMERIC_PATH',
-                 bonding.BONDING_NAME2NUMERIC_PATH
-                 if os.path.exists(bonding.BONDING_NAME2NUMERIC_PATH)
-                 else '../vdsm/bonding-name2numeric.json')
     def test_get_bonding_option_numeric_val_does_not_exists(self):
         mode_num = bonding.BONDING_MODES_NAME_TO_NUMBER["balance-rr"]
         self.assertEqual(bonding.get_bonding_option_numeric_val(
