@@ -22,7 +22,7 @@ from contextlib import contextmanager
 from ctypes import (CDLL, CFUNCTYPE, c_char, c_char_p, c_int, c_void_p,
                     c_size_t, get_errno, py_object, sizeof)
 from functools import partial
-from Queue import Empty, Queue
+from six.moves.queue import Empty, Queue
 from threading import BoundedSemaphore
 
 _POOL_SIZE = 5

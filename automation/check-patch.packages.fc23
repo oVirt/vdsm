@@ -2,6 +2,7 @@ autoconf
 automake
 git
 libguestfs-tools-c
+libvirt-python3
 m2crypto
 make
 mom
@@ -17,6 +18,7 @@ python-nose
 python-pep8
 python-pthreading
 python-six
+python3-netaddr
 python3-nose
 python3-six
 rpm-build

@@ -44,6 +44,7 @@ test_modules_py3 = \
 	jobsTests.py \
 	modprobe.py \
 	monkeypatch.py \
+	network/models_test.py \
 	passwordsTests.py \
 	permutationTests.py \
 	pthreadTests.py \

@@ -18,6 +18,7 @@
 #
 from __future__ import absolute_import
 import logging
+import six
 import re
 
 from vdsm.netinfo import bonding, mtus, nics
@@ -341,7 +342,7 @@ class Bond(NetDevice):
         opts = dict((option.split('=', 1) for option in options.split()))
 
         mode = opts.pop('mode', None)
-        opts = sorted(opts.iteritems())
+        opts = sorted(six.iteritems(opts))
         if mode:
             opts.insert(0, ('mode', mode))
 

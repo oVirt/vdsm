@@ -330,15 +330,15 @@ class CachingNetInfo(object):
     def ifaceUsers(self, iface):
         "Returns a list of entities using the interface"
         users = set()
-        for n, ndict in self.networks.iteritems():
+        for n, ndict in six.iteritems(self.networks):
             if ndict['bridged'] and iface in ndict['ports']:
                 users.add(n)
             elif not ndict['bridged'] and iface == ndict['iface']:
                 users.add(n)
-        for b, bdict in self.bondings.iteritems():
+        for b, bdict in six.iteritems(self.bondings):
             if iface in bdict['slaves']:
                 users.add(b)
-        for v, vdict in self.vlans.iteritems():
+        for v, vdict in six.iteritems(self.vlans):
             if iface == vdict['iface']:
                 users.add(v)
         return users
