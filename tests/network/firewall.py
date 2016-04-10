@@ -54,12 +54,16 @@ def _allow_dhcp(iface):
     """
     try:
         if _serviceRunning('iptables'):
-            _execCmdChecker([_IPTABLES_BINARY.cmd, '-I', 'INPUT', '-i',
-                            iface, '-p', 'udp', '--sport', '68', '--dport',
-                            '67', '-j', 'ACCEPT'])  # DHCPv4
-            _execCmdChecker([_IPTABLES_BINARY.cmd, '-I', 'INPUT', '-i',
-                            iface, '-p', 'udp', '--sport', '546', '--dport',
-                            '547', '-j', 'ACCEPT'])  # DHCPv6
+            _execCmdChecker([
+                _IPTABLES_BINARY.cmd, '--wait',
+                '-I', 'INPUT', '-i',
+                iface, '-p', 'udp', '--sport', '68', '--dport',
+                '67', '-j', 'ACCEPT'])  # DHCPv4
+            _execCmdChecker([
+                _IPTABLES_BINARY.cmd, '--wait',
+                '-I', 'INPUT', '-i',
+                iface, '-p', 'udp', '--sport', '546', '--dport',
+                '547', '-j', 'ACCEPT'])  # DHCPv6
         elif _serviceRunning('firewalld'):
             _execCmdChecker([_FIREWALLD_BINARY.cmd, '--zone=trusted',
                             '--change-interface=' + iface])
