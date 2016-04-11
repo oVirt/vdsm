@@ -256,6 +256,7 @@ nodist_vdsmtests_PYTHON = \
 CLEANFILES = \
 	$(nodist_vdsmtests_PYTHON) \
 	$(dist_noinst_DATA) \
+	$(dist_noinst_SCRIPTS) \
 	$(NULL)
 
 EXTRA_DIST = \
@@ -277,7 +278,9 @@ other_certificates = \
 
 dist_noinst_DATA = \
 	$(server_certificates) \
-	$(other_certificates) \
+	$(other_certificates)
+
+dist_noinst_SCRIPTS = \
 	run_tests_local.sh
 
 dist_vdsmtests_DATA = \
@@ -377,3 +380,7 @@ check-local:
 		PYTHON_EXE="$(PYTHON3)" \
 			$(top_srcdir)/tests/run_tests_local.sh "$$modules"; \
 	fi
+
+run_%.sh: run_%.sh.in
+	@echo "  SED $@"; $(PATHSUBST) $< |$(CONFIGSUBST) >$@
+	chmod a+x "$@"

@@ -488,13 +488,3 @@ AC_OUTPUT([
 	vdsm_hooks/vmfex/Makefile
 	vdsm_hooks/vmfex_dev/Makefile
 ])
-
-AC_OUTPUT([
-    tests/run_tests.sh
-    tests/run_tests_local.sh
-],[
-    chmod +x tests/run_tests.sh
-    chmod +x tests/run_tests_local.sh
-])
-
-

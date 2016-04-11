@@ -23,6 +23,7 @@ SUFFIXES: .in
 # Reference:
 # http://www.gnu.org/software/automake/manual/html_node/Scripts.html
 PATHSUBST = sed \
+	-e "s,[@]top_srcdir[@],$(top_srcdir),g" \
 	-e "s,[@]BACKUPDIR[@],$(vdsmbackupdir),g" \
 	-e "s,[@]BINDIR[@],$(bindir),g" \
 	-e "s,[@]CONFDIR[@],$(vdsmconfdir),g" \
