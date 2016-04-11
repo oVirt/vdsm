@@ -121,13 +121,12 @@ class SchemaValidation(TestCaseBase):
                     if method_name.startswith('_'):
                         continue
 
+                    rep = vdsmapi.MethodRep(spec_class, method_name)
                     try:
                         # get args from schema
-                        method_args = schema.get_args(spec_class,
-                                                      method_name)
+                        method_args = schema.get_args(rep)
                     except KeyError:
-                        raise AssertionError('Missing method %s.%s' % (
-                                             spec_class, method_name))
+                        raise AssertionError('Missing method %s' % rep)
 
                     # inspect apiobj and gather args and default args
                     args = ctorArgs + self._get_args(method_obj)
@@ -136,23 +135,22 @@ class SchemaValidation(TestCaseBase):
 
                     # check len equality
                     if len(args) != len(method_args):
-                        raise AssertionError(self._prep_msg(class_name,
-                                             method_name, method_args, args))
+                        raise AssertionError(self._prep_msg(rep, method_args,
+                                                            args))
                     for marg in method_args:
                         # verify optional arg
                         if 'defaultvalue' in marg:
                             if not marg.get('name') in default_args:
                                 raise AssertionError(
-                                    self._prep_msg(class_name, method_name,
-                                                   method_args, args))
+                                    self._prep_msg(rep, method_args, args))
                             continue
                         # verify args from schema in apiobj args
                         if not marg.get('name') in args:
-                            raise AssertionError(self._prep_msg(
-                                class_name, method_name, method_args, args))
+                            raise AssertionError(
+                                self._prep_msg(rep, method_args, args))
                     try:
                         # verify ret value with entry in command_info
-                        ret = schema.get_ret_param(spec_class, method_name)
+                        ret = schema.get_ret_param(rep)
                         ret_info = Bridge.command_info.get(cmd, {}).get('ret')
                         if not ret_info and not ret:
                             continue
@@ -161,8 +159,7 @@ class SchemaValidation(TestCaseBase):
                         if not ret_info or not ret:
                             raise AssertionError('wrong return type: ' + cmd)
                     except KeyError:
-                        raise AssertionError('Missing ret %s.%s' % (
-                                             spec_class, method_name))
+                        raise AssertionError('Missing ret %s' % rep.id)
 
     def _get_api_classes(self, api_mod):
         for class_name, class_obj in inspect.getmembers(api_mod,
@@ -182,9 +179,8 @@ class SchemaValidation(TestCaseBase):
         else:
             return []
 
-    def _prep_msg(self, class_name, method_name, method_args, args):
-        return '%s.%s has different args: %s, %s' % (class_name, method_name,
-                                                     method_args, args)
+    def _prep_msg(self, rep, method_args, args):
+        return '%s has different args: %s, %s' % (rep.id, method_args, args)
 
     def _get_api(self, selector):
         if (selector == 'API'):

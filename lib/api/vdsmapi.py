@@ -83,6 +83,21 @@ def find_schema(schema_name='vdsm-api'):
                          localpath, installedpath)
 
 
+class MethodRep(object):
+
+    def __init__(self, class_name, method_name):
+        self._id = '%s.%s' % (class_name, method_name)
+        self._class_name = class_name
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def object_name(self):
+        return self._class_name
+
+
 class Schema(object):
 
     log = logging.getLogger("SchemaCache")
@@ -102,33 +117,32 @@ class Schema(object):
         except EnvironmentError:
             raise SchemaNotFound("Unable to find API schema file")
 
-    def get_args(self, class_name, method_name):
-        return self.get_method(class_name, method_name).get('params', [])
+    def get_args(self, rep):
+        method = self.get_method(rep)
+        return method.get('params', [])
 
-    def get_arg_names(self, class_name, method_name):
-        return [arg.get('name') for arg in self.get_args(class_name,
-                                                         method_name)]
+    def get_arg_names(self, rep):
+        return [arg.get('name') for arg in self.get_args(rep)]
 
-    def get_default_arg_names(self, class_name, method_name):
-        return frozenset([arg.get('name') for arg in self.get_args(class_name,
-                                                                   method_name)
+    def get_default_arg_names(self, rep):
+        return frozenset([arg.get('name') for arg in self.get_args(rep)
                           if 'defaultvalue' in arg])
 
-    def get_default_arg_values(self, class_name, method_name):
+    def get_default_arg_values(self, rep):
         return [DEFAULT_VALUES.get(arg.get('defaultvalue'),
                                    arg.get('defaultvalue'))
-                for arg in self.get_args(class_name, method_name)
+                for arg in self.get_args(rep)
                 if 'defaultvalue' in arg]
 
-    def get_ret_param(self, class_name, method_name):
-        return self.get_method(class_name, method_name).get('return', {})
+    def get_ret_param(self, rep):
+        retval = self.get_method(rep)
+        return retval.get('return', {})
 
-    def get_method(self, class_name, method_name):
-        verb_name = '%s.%s' % (class_name, method_name)
+    def get_method(self, rep):
         try:
-            return self._methods[verb_name]
+            return self._methods[rep.id]
         except KeyError:
-            raise MethodNotFound(verb_name)
+            raise MethodNotFound(rep.id)
 
     def get_type(self, type_name):
         try:
@@ -148,17 +162,17 @@ class Schema(object):
         else:
             warnings.warn(message, Inconsistency)
 
-    def verify_args(self, class_name, method_name, args):
+    def verify_args(self, rep, args):
         try:
             # check whether there are extra parameters
             unknown_args = [key for key in args if key not in
-                            self.get_arg_names(class_name, method_name)]
+                            self.get_arg_names(rep)]
             if unknown_args:
                 self._report_inconsistency('Following parameters %s were not'
                                            ' recognized' % (unknown_args))
 
             # verify types of provided parameters
-            for param in self.get_args(class_name, method_name):
+            for param in self.get_args(rep):
                 name = param.get('name')
                 arg = args.get(name)
                 if arg is None:
@@ -166,25 +180,23 @@ class Schema(object):
                     if 'defaultvalue' not in param:
                         self._report_inconsistency(
                             'Required parameter %s is not '
-                            'provided when calling %s.%s' % (name, class_name,
-                                                             method_name))
+                            'provided when calling %s' % (name, rep.id))
                     continue
-                self._verify_type(param, arg, class_name, method_name)
+                self._verify_type(param, arg, rep.id)
         except JsonRpcInvalidParamsError:
             raise
         except Exception:
             self._report_inconsistency('Unexpected issue with request type'
-                                       ' verification for %s.%s'
-                                       % (class_name, method_name))
+                                       ' verification for %s' % rep.id)
 
-    def _verify_type(self, param, value, class_name, method_name):
+    def _verify_type(self, param, value, identifier):
         # check whether a parameter is in a list
         if isinstance(param, list):
             if not isinstance(value, list):
                 self._report_inconsistency('Parameter %s is not a list'
                                            % (value))
             for a in value:
-                self._verify_type(param[0], a, class_name, method_name)
+                self._verify_type(param[0], a, identifier)
             return
         # check whether a parameter is defined as primitive type
         elif param in TYPE_KEYS:
@@ -197,8 +209,8 @@ class Schema(object):
         if t == 'dict':
             # it seems that there is no other way to have it fixed
             self._report_inconsistency(
-                'Unsupported type %s in %s.%s please fix'
-                % (t, class_name, method_name))
+                'Unsupported type %s in %s please fix'
+                % (t, identifier))
         # check whether it is a primitive type
         elif t in TYPE_KEYS:
             self._check_primitive_type(t, value, name)
@@ -206,8 +218,8 @@ class Schema(object):
         else:
             # if type is a string call type verification method
             if isinstance(t, six.string_types):
-                self._verify_complex_type(t, param, value, name, class_name,
-                                          method_name)
+                self._verify_complex_type(t, param, value, name, identifier)
+
             # if type is in a list we need to get the type and call
             # type verification method
             elif isinstance(t, list):
@@ -215,14 +227,13 @@ class Schema(object):
                     self._report_inconsistency('Parameter %s is not a sequence'
                                                % (value))
                 for a in value:
-                    self._verify_type(t[0], a, class_name, method_name)
+                    self._verify_type(t[0], a, identifier)
             else:
                 # call complex type verification
                 self._verify_complex_type(t.get('type'), t, value, name,
-                                          class_name, method_name)
+                                          identifier)
 
-    def _verify_complex_type(self, t_type, t, arg, name, class_name,
-                             method_name):
+    def _verify_complex_type(self, t_type, t, arg, name, identifier):
         """
         This method verify whether argument value align with different
         types we support such as: alias, map, union, enum and object.
@@ -233,10 +244,8 @@ class Schema(object):
         elif t_type == 'map':
             # if map we need to check key and value types
             for key, value in six.iteritems(arg):
-                self._verify_type(t.get('key-type'), key, class_name,
-                                  method_name)
-                self._verify_type(t.get('value-type'), value, class_name,
-                                  method_name)
+                self._verify_type(t.get('key-type'), key, identifier)
+                self._verify_type(t.get('value-type'), value, identifier)
         elif t_type == 'union':
             # if union we need to check whether parameter matches on of the
             # values defined
@@ -245,7 +254,7 @@ class Schema(object):
                 prop_names = [prop.get('name') for prop in props]
                 if not [key for key in arg if key not in prop_names]:
                     self._verify_complex_type(value.get('type'), value, arg,
-                                              name, class_name, method_name)
+                                              name, identifier)
                     return
             self._report_inconsistency('Provided parameters %s do not match'
                                        ' any of union %s values'
@@ -255,16 +264,15 @@ class Schema(object):
             if arg not in t.get('values'):
                 self._report_inconsistency('Provided value "%s" not'
                                            ' defined in %s enum for'
-                                           ' %s.%s' % (arg,
-                                                       t.get('name'),
-                                                       class_name,
-                                                       method_name))
+                                           ' %s' % (arg,
+                                                    t.get('name'),
+                                                    identifier))
         else:
             # if custom time (object) we need to check whether all the
             # properties match values provided
-            self._verify_object_type(t, arg, class_name, method_name)
+            self._verify_object_type(t, arg, identifier)
 
-    def _verify_object_type(self, t, arg, class_name, method_name):
+    def _verify_object_type(self, t, arg, identifier):
         props = t.get('properties')
         prop_names = [prop.get('name') for prop in props]
         # check if there are any extra prarameters
@@ -285,7 +293,7 @@ class Schema(object):
                 if value == 'needs updating':
                     self._report_inconsistency(
                         'No default value specified for %s parameter in'
-                        ' %s.%s' % (p_name, class_name, method_name))
+                        ' %s' % (p_name, identifier))
                 if value == 'no-default':
                     continue
                 if a is None or a == value:
@@ -294,23 +302,21 @@ class Schema(object):
                 if a is None:
                     self._report_inconsistency(
                         'Required property %s is not provided when calling'
-                        ' %s.%s' % (p_name, class_name, method_name))
+                        ' %s' % (p_name, identifier))
                     continue
             # call type verification
-            self._verify_type(prop, a, class_name, method_name)
+            self._verify_type(prop, a, identifier)
 
-    def verify_retval(self, class_name, method_name, ret):
+    def verify_retval(self, rep, ret):
         try:
-            ret_args = self.get_ret_param(class_name, method_name)
+            ret_args = self.get_ret_param(rep)
 
             if ret_args:
                 if isinstance(ret, Suppressed):
                     ret = ret.value
-                self._verify_type(ret_args.get('type'), ret, class_name,
-                                  method_name)
+                self._verify_type(ret_args.get('type'), ret, rep.id)
         except JsonRpcInvalidParamsError:
             raise
         except Exception:
             self._report_inconsistency('Unexpected issue with response type'
-                                       ' verification for %s.%s'
-                                       % (class_name, method_name))
+                                       ' verification for %s' % rep.id)

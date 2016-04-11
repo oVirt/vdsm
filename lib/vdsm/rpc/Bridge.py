@@ -99,7 +99,7 @@ class DynamicBridge(object):
     def dispatch(self, method):
         try:
             className, methodName = method.split('.', 1)
-            self._schema.get_method(className, methodName)
+            self._schema.get_method(vdsmapi.MethodRep(className, methodName))
         except (KeyError, ValueError):
             raise yajsonrpc.JsonRpcMethodNotFoundError(method)
         return partial(self._dynamicMethod, className, methodName)
@@ -116,7 +116,7 @@ class DynamicBridge(object):
         except KeyError:
             return name
 
-    def _get_method_args(self, className, methodName, argObj):
+    def _get_method_args(self, rep, argObj):
         """
         An internal API call currently looks like:
 
@@ -128,18 +128,16 @@ class DynamicBridge(object):
         them from here.  For any given method, the method_args are obtained by
         chopping off the ctor_args from the beginning of argObj.
         """
-        allArgs = self._schema.get_arg_names(className, methodName)
+        allArgs = self._schema.get_arg_names(rep)
 
-        class_name = self._convert_class_name(className)
+        class_name = self._convert_class_name(rep.object_name)
         if _glusterEnabled and class_name.startswith('Gluster'):
             ctorArgs = getattr(gapi, class_name).ctorArgs
         else:
             ctorArgs = getattr(API, class_name).ctorArgs
 
-        defaultArgs = self._schema.get_default_arg_names(className,
-                                                         methodName)
-        defaultValues = self._schema.get_default_arg_values(className,
-                                                            methodName)
+        defaultArgs = self._schema.get_default_arg_names(rep)
+        defaultValues = self._schema.get_default_arg_values(rep)
 
         # Determine the method arguments by subtraction
         methodArgs = []
@@ -169,14 +167,13 @@ class DynamicBridge(object):
         return kwargs
 
     def _dynamicMethod(self, className, methodName, *args, **kwargs):
-        argobj = self._name_args(args, kwargs,
-                                 self._schema.get_arg_names(className,
-                                                            methodName))
+        rep = vdsmapi.MethodRep(className, methodName)
+        argobj = self._name_args(args, kwargs, self._schema.get_arg_names(rep))
 
-        self._schema.verify_args(className, methodName, argobj)
+        self._schema.verify_args(rep, argobj)
         api = self._get_api_instance(className, argobj)
 
-        methodArgs = self._get_method_args(className, methodName, argobj)
+        methodArgs = self._get_method_args(rep, argobj)
 
         # Call the override function (if given).  Otherwise, just call directly
         cmd = '%s_%s' % (className, methodName)
@@ -216,7 +213,8 @@ class DynamicBridge(object):
         else:
             ret = self._get_result(result, retfield)
 
-        self._schema.verify_retval(className, methodName, ret)
+        self._schema.verify_retval(vdsmapi.MethodRep(className, methodName),
+                                   ret)
         return ret
 
 

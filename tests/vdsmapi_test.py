@@ -72,20 +72,23 @@ class DataVerificationTests(TestCaseBase):
                   u"password": u"pass", u"action": u"off",
                   u"options": u"port=15"}
 
-        _schema.schema().verify_args('Host', 'fenceNode', params)
+        _schema.schema().verify_args(
+            vdsmapi.MethodRep('Host', 'fenceNode'), params)
 
     @api_strict_mode()
     def test_ok_response(self):
         ret = {u'power': u'on'}
 
-        _schema.schema().verify_retval('Host', 'fenceNode', ret)
+        _schema.schema().verify_retval(
+            vdsmapi.MethodRep('Host', 'fenceNode'), ret)
 
     @api_strict_mode()
     def test_unknown_response_type(self):
         with self.assertRaises(JsonRpcError) as e:
             ret = {u'My caps': u'My capabilites'}
 
-            _schema.schema().verify_retval('Host', 'getCapabilities', ret)
+            _schema.schema().verify_retval(
+                vdsmapi.MethodRep('Host', 'getCapabilities'), ret)
 
         self.assertIn('My caps', e.exception.message)
 
@@ -96,7 +99,8 @@ class DataVerificationTests(TestCaseBase):
                   u"storagedomainID": u"773adfc7-10d4-4e60-b700-3272ee1871f9"}
 
         with self.assertRaises(JsonRpcError) as e:
-            _schema.schema().verify_args('StorageDomain', 'detach', params)
+            _schema.schema().verify_args(
+                vdsmapi.MethodRep('StorageDomain', 'detach'), params)
 
         self.assertIn('onlyForce', e.exception.message)
 
@@ -110,9 +114,9 @@ class DataVerificationTests(TestCaseBase):
                                          u"retrans": 1}]}
 
         with self.assertRaises(JsonRpcError) as e:
-            _schema.schema().verify_args('StoragePool',
-                                         'disconnectStorageServer',
-                                         params)
+            _schema.schema().verify_args(
+                vdsmapi.MethodRep('StoragePool', 'disconnectStorageServer'),
+                params)
 
         self.assertIn('StorageDomainType', e.exception.message)
 
@@ -120,8 +124,8 @@ class DataVerificationTests(TestCaseBase):
     def test_list_ret(self):
         ret = [{u"status": 0, u"id": u"f6de012c-be35-47cb-94fb-f01074a5f9ef"}]
 
-        _schema.schema().verify_retval('StoragePool',
-                                       'disconnectStorageServer', ret)
+        _schema.schema().verify_retval(
+            vdsmapi.MethodRep('StoragePool', 'disconnectStorageServer'), ret)
 
     @api_strict_mode()
     def test_complex_ret_type(self):
@@ -276,7 +280,8 @@ class DataVerificationTests(TestCaseBase):
                u"v2vJobs": {},
                u"cpuSysVdsmd": u"0.53"}
 
-        _schema.schema().verify_retval('Host', 'getStats', ret)
+        _schema.schema().verify_retval(
+            vdsmapi.MethodRep('Host', 'getStats'), ret)
 
     @api_strict_mode()
     def test_badly_defined_ret_type(self):
@@ -295,8 +300,8 @@ class DataVerificationTests(TestCaseBase):
 
         # type definition is broken for this verb
         with self.assertRaises(JsonRpcError) as e:
-            _schema.schema().verify_retval('Host',
-                                           'hostdevListByCaps', ret)
+            _schema.schema().verify_retval(
+                vdsmapi.MethodRep('Host', 'hostdevListByCaps'), ret)
 
         self.assertIn('is not a list', e.exception.message)
 
@@ -452,11 +457,13 @@ class DataVerificationTests(TestCaseBase):
                 'vmName': u'vm2',
                 'vcpuPeriod': 100000}]
 
-        _schema.schema().verify_retval('Host', 'getAllVmStats', ret)
+        _schema.schema().verify_retval(
+            vdsmapi.MethodRep('Host', 'getAllVmStats'), ret)
 
     def test_missing_method(self):
         with self.assertRaises(vdsmapi.MethodNotFound):
-            _schema.schema().get_method('Missing_class', 'missing_method')
+            _schema.schema().get_method(
+                vdsmapi.MethodRep('missing_class', 'missing_method'))
 
     def test_missing_type(self):
         with self.assertRaises(vdsmapi.TypeNotFound):
