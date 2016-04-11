@@ -553,8 +553,6 @@ class HostMonitor(object):
             diff = sample.connlog_diff(second_last)
             if diff:
                 self._CONNLOG.debug('%s', diff)
-                if self._cif is not None:
-                    self._cif.notify('|net|host_conn|no_id')
 
 
 def _getLinkSpeed(dev):
