@@ -335,7 +335,11 @@ class Connection(fake.Connection):
         ]
 
     def listAllDevices(self, flags=0):
-        return self._virNodeDevices
+        if not flags:
+            return self._virNodeDevices
+        else:
+            return [device for device in self._virNodeDevices if
+                    flags & hostdev._LIBVIRT_DEVICE_FLAGS[device.capability]]
 
 
 def _fake_totalvfs(device_name):

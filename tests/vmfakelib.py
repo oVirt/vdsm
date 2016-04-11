@@ -306,8 +306,10 @@ class VirNodeDeviceStub(object):
 
     def __init__(self, xml):
         self.xml = xml
-        self._name = etree.fromstring(self.XMLDesc(0).decode(
-            'ascii', errors='ignore')).find('name').text
+        xml_processed = etree.fromstring(self.XMLDesc(0).decode(
+            'ascii', errors='ignore'))
+        self._name = xml_processed.find('name').text
+        self.capability = xml_processed.find('capability').attrib['type']
 
     def XMLDesc(self, flags=0):
         return self.xml

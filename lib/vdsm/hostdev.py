@@ -22,6 +22,8 @@ from __future__ import absolute_import
 import os
 import xml.etree.ElementTree as etree
 
+import libvirt
+
 from . import cpuarch
 from . import hooks
 from . import libvirtconnection
@@ -31,6 +33,21 @@ from . import utils
 CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'scsi': 'scsi',
                           'usb_device': 'usb'}
+
+_LIBVIRT_DEVICE_FLAGS = {
+    'system': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SYSTEM,
+    'pci': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_PCI_DEV,
+    'usb_device': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_DEV,
+    'usb': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_USB_INTERFACE,
+    'net': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_NET,
+    'scsi_host': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_HOST,
+    'scsi_target': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_TARGET,
+    'scsi': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI,
+    'storage': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_STORAGE,
+    'fc_host': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_FC_HOST,
+    'vports': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_VPORTS,
+    'scsi_generic': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_GENERIC,
+}
 
 
 class PCIHeaderType:
@@ -220,12 +237,12 @@ def _get_device_ref_and_params(device_name):
     return libvirt_device, _parse_device_params(libvirt_device.XMLDesc(0))
 
 
-def _get_devices_from_libvirt():
+def _get_devices_from_libvirt(flags=0):
     """
     Returns all available host devices from libvirt parsed to dict
     """
     return dict((device.name(), _parse_device_params(device.XMLDesc(0)))
-                for device in libvirtconnection.get().listAllDevices(0))
+                for device in libvirtconnection.get().listAllDevices(flags))
 
 
 def list_by_caps(caps=None):
@@ -240,12 +257,10 @@ def list_by_caps(caps=None):
             will be returned (e.g. ['pci', 'usb'] -> pci and usb devices)
     """
     devices = {}
-    libvirt_devices = _get_devices_from_libvirt()
+    flags = sum([_LIBVIRT_DEVICE_FLAGS[cap] for cap in caps or []])
+    libvirt_devices = _get_devices_from_libvirt(flags)
 
     for devName, params in libvirt_devices.items():
-        if caps and params['capability'] not in caps:
-            continue
-
         devices[devName] = {'params': params}
 
     devices = hooks.after_hostdev_list_by_caps(devices)
