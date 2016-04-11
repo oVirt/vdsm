@@ -1,0 +1,8 @@
+<device>
+    <name>scsi_target2_0_0</name>
+    <path>/sys/devices/pci0000:00/0000:00:1f.2/ata1/host2/target2:0:0</path>
+    <parent>scsi_host2</parent>
+    <capability type='scsi_target'>
+        <target>target2:0:0</target>
+    </capability>
+</device>

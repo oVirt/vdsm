@@ -1,0 +1,15 @@
+<device>
+    <name>scsi_2_0_0_0</name>
+    <path>/sys/devices/pci0000:00/0000:00:1f.2/ata1/host2/target2:0:0/2:0:0:0</path>
+    <parent>scsi_target2_0_0</parent>
+    <driver>
+        <name>sd</name>
+    </driver>
+    <capability type='scsi'>
+        <host>2</host>
+        <bus>0</bus>
+        <target>0</target>
+        <lun>0</lun>
+        <type>disk</type>
+    </capability>
+</device>

@@ -35,7 +35,10 @@ _PCI_DEVICES = ['pci_0000_00_1a_0', 'pci_0000_00_1f_2', 'pci_0000_00_02_0',
                 'pci_0000_00_19_0', 'pci_0000_00_1b_0']
 _USB_DEVICES = ['usb_usb1', 'usb_1_1', 'usb_1_1_4']
 _SCSI_DEVICES = ['scsi_host0', 'scsi_target0_0_0', 'scsi_0_0_0_0',
-                 'block_sda_ssd', 'scsi_generic_sg0']
+                 'block_sda_ssd', 'scsi_generic_sg0',
+                 'scsi_host1', 'scsi_target1_0_0', 'scsi_1_0_0_0',
+                 'scsi_generic_sg1',
+                 'scsi_host2', 'scsi_target2_0_0', 'scsi_2_0_0_0']
 _SRIOV_PF = 'pci_0000_05_00_1'
 _SRIOV_VF = 'pci_0000_05_10_7'
 _ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
@@ -151,6 +154,22 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                     'is_assignable': 'true',
                                     'parent': 'scsi_target0_0_0',
                                     'address': {'bus': '0', 'host': '0',
+                                                'lun': '0', 'target': '0'},
+                                    'udev_path': '/dev/sg0',
+                                    'product': 'SSD',
+                                    'vendor': 'ATA'},
+                  u'scsi_1_0_0_0': {'capability': 'scsi',
+                                    'driver': 'sd',
+                                    'parent': 'scsi_target1_0_0',
+                                    'is_assignable': 'true',
+                                    'address': {'bus': '0', 'host': '1',
+                                                'lun': '0', 'target': '0'},
+                                    'udev_path': '/dev/sg1'},
+                  u'scsi_2_0_0_0': {'capability': 'scsi',
+                                    'driver': 'sd',
+                                    'parent': 'scsi_target2_0_0',
+                                    'is_assignable': 'true',
+                                    'address': {'bus': '0', 'host': '2',
                                                 'lun': '0', 'target': '0'}},
                   u'pci_0000_00_1a_0': {'product': '6 Series/C200 Series '
                                         'Chipset Family USB Enhanced Host '
@@ -186,6 +205,16 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                      'parent': 'scsi_0_0_0_0',
                                      'vendor': 'ATA',
                                      'is_assignable': 'true'},
+                  u'scsi_target1_0_0': {'capability': 'scsi_target',
+                                        'is_assignable': 'true',
+                                        'parent': 'scsi_host1'},
+                  u'scsi_target2_0_0': {'capability': 'scsi_target',
+                                        'is_assignable': 'true',
+                                        'parent': 'scsi_host2'},
+                  u'block_sda_ssd': {'capability': 'storage', 'product': 'SSD',
+                                     'parent': 'scsi_0_0_0_0',
+                                     'is_assignable': 'true',
+                                     'vendor': 'ATA'},
                   u'pci_0000_00_02_0': {'product': '2nd Generation Core '
                                         'Processor Family Integrated '
                                         'Graphics Controller',
@@ -202,7 +231,14 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                                     'function': '0'}},
                   u'scsi_host0': {'capability': 'scsi_host',
                                   'parent': 'pci_0000_00_1f_2',
-                                  'is_assignable': 'true'},
+                                  'is_assignable': 'true',
+                                  'parent': 'pci_0000_00_1f_2'},
+                  u'scsi_host1': {'capability': 'scsi_host',
+                                  'is_assignable': 'true',
+                                  'parent': 'pci_0000_00_1f_2'},
+                  u'scsi_host2': {'capability': 'scsi_host',
+                                  'is_assignable': 'true',
+                                  'parent': 'pci_0000_00_1f_2'},
                   u'pci_0000_00_19_0': {'product': '82579LM Gigabit '
                                         'Network Connection',
                                         'vendor': 'Intel Corporation',
@@ -220,6 +256,10 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'udev_path': '/dev/sg0',
                                         'is_assignable': 'true',
                                         'parent': 'scsi_0_0_0_0'},
+                  u'scsi_generic_sg1': {'capability': 'scsi_generic',
+                                        'udev_path': '/dev/sg1',
+                                        'is_assignable': 'true',
+                                        'parent': 'scsi_1_0_0_0'},
                   u'usb_1_1_4': {'product': 'Broadcom Bluetooth Device',
                                  'vendor': 'Broadcom Corp',
                                  'product_id': '0x217f',

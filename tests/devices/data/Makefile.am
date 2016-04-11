@@ -33,9 +33,16 @@ dist_vdsmdevdatatests_DATA = \
 	pci_0000_05_00_1.xml \
 	pci_0000_05_10_7.xml \
 	scsi_0_0_0_0.xml \
+	scsi_1_0_0_0.xml \
+	scsi_2_0_0_0.xml \
 	scsi_generic_sg0.xml \
+	scsi_generic_sg1.xml \
 	scsi_host0.xml \
+	scsi_host1.xml \
+	scsi_host2.xml \
 	scsi_target0_0_0.xml \
+	scsi_target1_0_0.xml \
+	scsi_target2_0_0.xml \
 	testComplexVm.xml \
 	testSRiovVm.xml \
 	usb_1_1.xml \

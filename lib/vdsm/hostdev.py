@@ -170,6 +170,53 @@ def _process_storage(caps, params):
         params['product'] = model
 
 
+def _parse_scsi_device_params(device_xml):
+    """
+    The information we need about SCSI device is contained within multiple
+    sysfs devices:
+
+    * vendor and product (not really, more of "human readable name") are
+      provided by capability 'storage',
+    * path to udev file (/dev/sgX) is provided by 'scsi_generic' capability
+      and is required to set correct permissions.
+
+    When reporting the devices via list_by_caps, we don't care if either of
+    the devices are not found as the information provided is purely cosmetic.
+    If the device is queried in hostdev object creation flow, vendor and
+    product are still unnecessary, but udev_path becomes essential.
+    """
+    def is_parent(device, parent_name):
+        try:
+            return parent_name == device['params']['parent']
+        except KeyError:
+            return False
+
+    def find_device_by_parent(device_cap, parent_name):
+        for device in list_by_caps(device_cap).values():
+            if is_parent(device, parent_name):
+                return device
+
+    params = {}
+
+    scsi_name = device_xml.find('name').text
+    storage_dev_params = find_device_by_parent(['storage'], scsi_name)
+    if storage_dev_params:
+        for attr in ('vendor', 'product'):
+            try:
+                res = storage_dev_params['params'][attr]
+            except KeyError:
+                pass
+            else:
+                params[attr] = res
+
+    scsi_generic_dev_params = find_device_by_parent(['scsi_generic'],
+                                                    scsi_name)
+    if scsi_generic_dev_params:
+        params['udev_path'] = scsi_generic_dev_params['params']['udev_path']
+
+    return params
+
+
 def _parse_device_params(device_xml):
     """
     Process device_xml and return dict of found known parameters,
@@ -247,6 +294,8 @@ def _parse_device_params(device_xml):
         # dealing with device that is not yet supported
         pass
 
+    if params['capability'] == 'scsi':
+        params.update(_parse_scsi_device_params(devXML))
     return params
 
 
