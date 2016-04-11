@@ -2711,7 +2711,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             status, msg = self.setupNetworks(
                 {},
                 {BONDING_NAME: {'nics': nics,
-                                'options': 'custom=foo=bar mode=4'}},
+                                'options': 'custom=foo:bar mode=4'}},
                 NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondExists(BONDING_NAME, nics)
@@ -2720,7 +2720,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
                 # is used), but not reported by netinfo.
                 self._assert_exact_bond_opts(BONDING_NAME, ['mode=4'])
                 bond = self.vdsm_net.config.bonds.get(BONDING_NAME)
-                self.assertSetEqual(set(['mode=4', 'custom=foo=bar']),
+                self.assertSetEqual(set(['mode=4', 'custom=foo:bar']),
                                     set(bond.get('options').split()))
 
             status, msg = self.setupNetworks(
