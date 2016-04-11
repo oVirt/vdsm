@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import collections
 import threading
 import time
 import libvirt
@@ -573,7 +574,6 @@ class MonitorThread(threading.Thread):
                 return 100
             progress = 100 - 100 * remaining / total if total else 0
             return progress if (progress < 100) else 99
-
         self._vm.log.debug('starting migration monitor thread')
 
         memSize = int(self._vm.conf['memSize'])
@@ -586,12 +586,7 @@ class MonitorThread(threading.Thread):
 
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
-            (jobType, timeElapsed, _,
-             dataTotal, dataProcessed, dataRemaining,
-             memTotal, memProcessed, memRemaining,
-             fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
-            # from libvirt sources: data* = file* + mem*.
-            # docs can be misleading due to misaligned lines.
+            prog = Progress.from_job_stats(self._vm._dom.jobStats())
             now = time.time()
             if not self._use_conv_schedule and\
                     (0 < migrationMaxTime < now - self._startTime):
@@ -604,27 +599,29 @@ class MonitorThread(threading.Thread):
                 self._vm._dom.abortJob()
                 self.stop()
                 break
-            elif (lowmark is None) or (lowmark > dataRemaining):
-                lowmark = dataRemaining
+            elif (lowmark is None) or (lowmark > prog.data_remaining):
+                lowmark = prog.data_remaining
                 lastProgressTime = now
             else:
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
                     ' > lowmark (%sMiB).'
                     ' Refer to RHBZ#919201.',
-                    dataRemaining / Mbytes, lowmark / Mbytes)
+                    prog.data_remaining / Mbytes, lowmark / Mbytes)
 
             self._next_action(now - lastProgressTime)
 
             if self._stop.isSet():
                 break
 
-            if jobType != libvirt.VIR_DOMAIN_JOB_NONE:
-                self.progress = update_progress(dataRemaining, dataTotal)
+            if prog.job_type != libvirt.VIR_DOMAIN_JOB_NONE:
+                self.progress = update_progress(prog.data_remaining,
+                                                prog.data_total)
 
-                self._vm.log.info('Migration Progress: %s seconds elapsed,'
-                                  ' %s%% of data processed' %
-                                  (timeElapsed / 1000, self.progress))
+                self._vm.log.info(
+                    'Migration Progress: %s seconds elapsed,'
+                    ' %s%% of data processed, %s' % (
+                        (prog.time_elapsed / 1000), self.progress, prog))
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
@@ -657,3 +654,53 @@ class MonitorThread(threading.Thread):
             self._vm.log.warn('Aborting migration')
             self._vm._dom.abortJob()
             self.stop()
+
+
+_Progress = collections.namedtuple('_Progress', [
+    'job_type', 'time_elapsed', 'data_total',
+    'data_processed', 'data_remaining',
+    'mem_total', 'mem_processed', 'mem_remaining',
+    'mem_bps', 'mem_constant', 'compression_bytes',
+    'dirty_rate', 'mem_iteration'
+])
+
+
+class Progress(_Progress):
+
+    @classmethod
+    def from_job_stats(cls, stats):
+        return cls(
+            stats['type'],
+            stats[libvirt.VIR_DOMAIN_JOB_TIME_ELAPSED],
+            stats[libvirt.VIR_DOMAIN_JOB_DATA_TOTAL],
+            stats[libvirt.VIR_DOMAIN_JOB_DATA_PROCESSED],
+            stats[libvirt.VIR_DOMAIN_JOB_DATA_REMAINING],
+            stats[libvirt.VIR_DOMAIN_JOB_MEMORY_TOTAL],
+            stats[libvirt.VIR_DOMAIN_JOB_MEMORY_PROCESSED],
+            stats[libvirt.VIR_DOMAIN_JOB_MEMORY_REMAINING],
+            stats[libvirt.VIR_DOMAIN_JOB_MEMORY_BPS],
+            stats[libvirt.VIR_DOMAIN_JOB_MEMORY_CONSTANT],
+            stats[libvirt.VIR_DOMAIN_JOB_COMPRESSION_BYTES],
+            # available since libvirt 1.3
+            stats.get('memory_dirty_rate', -1),
+            # available since libvirt 1.3
+            stats.get('memory_iteration', -1),
+        )
+
+    def __str__(self):
+        return (
+            'total data: %iMB,'
+            ' processed data: %iMB, remaining data: %iMB,'
+            ' transfer speed %iMBps, zero pages: %iMB,'
+            ' compressed: %iMB, dirty rate: %i,'
+            ' memory iteration: %i' % (
+                (self.data_total / Mbytes),
+                (self.data_processed / Mbytes),
+                (self.data_remaining / Mbytes),
+                (self.mem_bps / Mbytes),
+                (self.mem_constant / Mbytes),
+                (self.compression_bytes / Mbytes),
+                self.dirty_rate,
+                self.mem_iteration,
+            )
+        )

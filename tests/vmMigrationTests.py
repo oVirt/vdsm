@@ -21,6 +21,8 @@ from __future__ import absolute_import
 
 from itertools import tee, izip, product
 
+import libvirt
+
 from six.moves import range
 from six.moves import zip
 
@@ -154,6 +156,38 @@ class MigrationParamsTests(TestCaseBase):
                 pass
 
             self.assertNotIn('_migrationParams', testvm.conf)
+
+
+class TestProgress(TestCaseBase):
+
+    def setUp(self):
+        self.job_stats = {
+            'type': libvirt.VIR_DOMAIN_JOB_UNBOUNDED,
+            libvirt.VIR_DOMAIN_JOB_TIME_ELAPSED: 42,
+            libvirt.VIR_DOMAIN_JOB_DATA_TOTAL: 8192,
+            libvirt.VIR_DOMAIN_JOB_DATA_PROCESSED: 0,
+            libvirt.VIR_DOMAIN_JOB_DATA_REMAINING: 8192,
+            libvirt.VIR_DOMAIN_JOB_MEMORY_TOTAL: 1024,
+            libvirt.VIR_DOMAIN_JOB_MEMORY_PROCESSED: 512,
+            libvirt.VIR_DOMAIN_JOB_MEMORY_REMAINING: 512,
+            libvirt.VIR_DOMAIN_JOB_MEMORY_BPS: 128,
+            libvirt.VIR_DOMAIN_JOB_MEMORY_CONSTANT: 0,
+            libvirt.VIR_DOMAIN_JOB_COMPRESSION_BYTES: 0,
+            # available since libvirt 1.3
+            'memory_dirty_rate': 2,
+            # available since libvirt 1.3
+            'memory_iteration': 0,
+        }
+
+    def test___str__(self):
+        prog = migration.Progress.from_job_stats(self.job_stats)
+        self.assertNotRaises(str, prog)
+
+    def test___str___without_optional_fields(self):
+        del self.job_stats["memory_dirty_rate"]
+        del self.job_stats["memory_iteration"]
+        prog = migration.Progress.from_job_stats(self.job_stats)
+        self.assertNotRaises(str, prog)
 
 
 # stolen^Wborrowed from itertools recipes
