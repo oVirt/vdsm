@@ -97,6 +97,14 @@ class API(object):
         pass
 
     @abc.abstractmethod
+    def attach_bond_slave(self, bond, slave):
+        pass
+
+    @abc.abstractmethod
+    def detach_bond_slave(self, bond, slave):
+        pass
+
+    @abc.abstractmethod
     def add_port(self, bridge, port, may_exist=False):
         pass
 

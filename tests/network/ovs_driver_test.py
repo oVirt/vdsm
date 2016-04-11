@@ -18,10 +18,12 @@
 #
 from __future__ import absolute_import
 
+from contextlib import contextmanager
 from uuid import UUID
 
 from nose.plugins.attrib import attr
 
+from .nettestlib import dummy_device
 from testlib import VdsmTestCase
 
 from vdsm.commands import execCmd
@@ -30,6 +32,7 @@ from vdsm.network.ovs.driver import vsctl
 
 TEST_BRIDGE = 'ovs-test-br0'
 TEST_BRIDGES = (TEST_BRIDGE, 'ovs-test-br1')
+TEST_BOND = 'bond.ovs.test'
 
 OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
 
@@ -250,3 +253,44 @@ class TestOvsApiWithSingleRealBridge(VdsmTestCase):
         with self.ovsdb.transaction() as t:
             t.add(self.ovsdb.del_vlan(101))
             t.add(self.ovsdb.del_vlan(100))
+
+    def test_create_remove_bond(self):
+        with dummy_device() as dev0, dummy_device() as dev1:
+            with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND, [dev0, dev1]):
+                self.assertEqual([TEST_BOND],
+                                 self.ovsdb.list_ports(TEST_BRIDGE).execute())
+
+            self.assertEqual([], self.ovsdb.list_ports(TEST_BRIDGE).execute())
+
+    def test_add_slave_to_bond(self):
+        with dummy_device() as dev0,\
+                dummy_device() as dev1,\
+                dummy_device() as dev2:
+            with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND, [dev0, dev1]):
+                with self.ovsdb.transaction() as t:
+                    t.add(*self.ovsdb.attach_bond_slave(TEST_BOND, dev2))
+
+                bond_data = self.ovsdb.list_port_info(TEST_BOND).execute()
+                self.assertEqual(1, len(bond_data))
+                self.assertEqual(3, len(bond_data[0]['interfaces']))
+
+    def test_remove_slave_from_bond(self):
+        with dummy_device() as dev0,\
+                dummy_device() as dev1,\
+                dummy_device() as dev2:
+            with ovs_bond(self.ovsdb, TEST_BRIDGE, TEST_BOND,
+                          [dev0, dev1, dev2]):
+                with self.ovsdb.transaction() as t:
+                    t.add(*self.ovsdb.detach_bond_slave(TEST_BOND, dev2))
+
+                bond_data = self.ovsdb.list_port_info(TEST_BOND).execute()
+                self.assertEqual(1, len(bond_data))
+                self.assertEqual(2, len(bond_data[0]['interfaces']))
+
+
+# TODO: We may want to move it to a more common location, per need.
+@contextmanager
+def ovs_bond(ovsdb, bridge, bond, ports):
+    ovsdb.add_bond(bridge, bond, ports).execute()
+    yield bond
+    ovsdb.del_port(bridge, bond).execute()

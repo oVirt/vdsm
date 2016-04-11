@@ -167,6 +167,18 @@ class Vsctl(DriverAPI):
         command.extend(['add-bond', bridge, bond] + nics)
         return Command(command)
 
+    def attach_bond_slave(self, bond, slave):
+        id = uuid.uuid4()
+        if_cmd = ['--id=@%s' % id, 'create', 'Interface', 'name=%s' % slave]
+        port_cmd = ['add', 'Port', bond, 'interfaces', '@%s' % id]
+        return Command(if_cmd), Command(port_cmd)
+
+    def detach_bond_slave(self, bond, slave):
+        id = uuid.uuid4()
+        if_cmd = ['--id=@%s' % id, 'get', 'Interface', slave]
+        port_cmd = ['remove', 'Port', bond, 'interfaces', '@%s' % id]
+        return Command(if_cmd), Command(port_cmd)
+
     def add_port(self, bridge, port, may_exist=False):
         command = []
         if may_exist:
