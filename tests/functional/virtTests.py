@@ -35,9 +35,8 @@ from testlib import temporaryPath
 import verify
 
 from vdsm import cpuarch
-from vdsm.utils import CommandPath, RollbackContext
+from vdsm.utils import CommandPath
 from vdsm.virt import vmstatus
-import storageTests as storage
 from storage.misc import execCmd
 
 from utils import getProxy, SUCCESS
@@ -285,32 +284,12 @@ class VirtTest(VirtTestBase):
             self._waitForStartup(vm, VM_MINIMAL_UPTIME)
 
     @requireKVM
-    @permutations([['localfs'], ['iscsi'], ['nfs']])
-    def testVmWithStorage(self, backendType):
-        disk = storage.StorageTest()
-        disk.setUp()
-        conf = storage.storageLayouts[backendType]
-        drives = disk.generateDriveConf(conf)
-        customization = {'vmId': '88888888-eeee-ffff-aaaa-111111111111',
-                         'vmName': 'testVmWithStorage' + backendType,
-                         'drives': drives,
-                         'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
-
-        with RollbackContext() as rollback:
-            disk.createVdsmStorageLayout(conf, 3, rollback)
-            with RunningVm(self.vdsm, customization) as vm:
-                self._waitForStartup(vm, VM_MINIMAL_UPTIME)
-                self._verifyDevices(vm)
-
-    @requireKVM
     @permutations([['hotplugNic'], ['virtioNic'], ['smartcard'],
                    ['hotplugDisk'], ['virtioRng']])
     def testVmWithDevice(self, *devices):
         customization = {'vmId': '77777777-ffff-3333-bbbb-222222222222',
                          'vmName': 'testVm', 'devices': [],
                          'display': _GRAPHICS_FOR_ARCH[platform.machine()]}
-        storageLayout = storage.storageLayouts['localfs']
-        diskSpecs = storage.StorageTest.generateDriveConf(storageLayout)
         pciSpecs = {'bus': '0x00', 'domain': '0x0000',
                     'function': '0x0', 'type': 'pci'}
         ccidSpecs = {'slot': '0', 'controller': '0', 'type': 'ccid'}
@@ -336,9 +315,7 @@ class VirtTest(VirtTestBase):
                                    'address': ccidSpecs,
                                    'alias': 'smartcard', 'specParams':
                                    {'type': 'spicevmc',
-                                    'mode': 'passthrough'}},
-                     'hotplugDisk': {'vmId': customization['vmId'],
-                                     'drive': diskSpecs}}
+                                    'mode': 'passthrough'}}}
 
         if 'virtioRng' in devices:
             status, msg, caps = self.vdsm.getVdsCapabilities()
@@ -366,12 +343,6 @@ class VirtTest(VirtTestBase):
                                          deviceDef['hotplugNic']), timeout=10)
                 self.retryAssert(partial(self.vdsm.hotunplugNic,
                                          deviceDef['hotplugNic']), timeout=10)
-
-            if 'hotplugDisk' in devices:
-                self.retryAssert(partial(self.vdsm.hotplugDisk,
-                                         deviceDef['hotplugDisk']), timeout=10)
-                self.retryAssert(partial(self.vdsm.hotunplugDisk,
-                                         deviceDef['hotplugDisk']), timeout=10)
 
     @permutations([['self'], ['specParams'], ['vmPayload']])
     def testVmWithCdrom(self, pathLocation):
