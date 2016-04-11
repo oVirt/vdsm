@@ -3470,15 +3470,23 @@ class Vm(object):
         try:
             drive = self._findDriveByUUIDs(srcDisk)
         except LookupError:
+            self.log.error("Drive not found (srcDisk: %r)", srcDisk)
             return response.error('imageErr')
 
         if drive.hasVolumeLeases:
+            self.log.error("Drive has volume leases, replication not "
+                           "supported (drive: %r, srcDisk: %r)",
+                           drive.name, srcDisk)
             return response.error('noimpl')
 
         if drive.transientDisk:
+            self.log.error("Transient disk, replication not supported "
+                           "(drive: %r, srcDisk: %r)", drive.name, srcDisk)
             return response.error('transientErr')
 
         if not drive.isDiskReplicationInProgress():
+            self.log.error("No replication in progress (drive: %r, "
+                           "srcDisk: %r)", drive.name, srcDisk)
             return response.error('replicaErr')
 
         # Looking for the replication blockJob info (checking its presence)
@@ -3486,8 +3494,9 @@ class Vm(object):
 
         if (not isinstance(blkJobInfo, dict)
                 or 'cur' not in blkJobInfo or 'end' not in blkJobInfo):
-            self.log.error("Replication job not found for disk %s (%s)",
-                           drive.name, srcDisk)
+            self.log.error("Replication job not found (drive: %r, "
+                           "srcDisk: %r, job: %r)",
+                           drive.name, srcDisk, blkJobInfo)
 
             # Making sure that we don't have any stale information
             self._delDiskReplica(drive)
@@ -3496,6 +3505,9 @@ class Vm(object):
         # Checking if we reached the replication mode ("mirroring" in libvirt
         # and qemu terms)
         if blkJobInfo['cur'] != blkJobInfo['end']:
+            self.log.error("Replication job unfinished (drive: %r, "
+                           "srcDisk: %r, job: %r)",
+                           drive.name, srcDisk, blkJobInfo)
             return response.error('unavail')
 
         dstDiskCopy = dstDisk.copy()
