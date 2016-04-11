@@ -1,0 +1,252 @@
+# Copyright 2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+from __future__ import absolute_import
+
+from uuid import UUID
+
+from nose.plugins.attrib import attr
+
+from testlib import VdsmTestCase
+
+from vdsm.commands import execCmd
+from vdsm.network.ovs.driver import create
+from vdsm.network.ovs.driver import vsctl
+
+TEST_BRIDGE = 'ovs-test-br0'
+TEST_BRIDGES = (TEST_BRIDGE, 'ovs-test-br1')
+
+OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
+
+_openvswitch_init_state_is_up = False
+
+
+def setup_module():
+    global _openvswitch_init_state_is_up
+    rc, out, err = execCmd([OVS_CTL, 'status'])
+    _openvswitch_init_state_is_up = (rc == 0)
+    if not _openvswitch_init_state_is_up:
+        execCmd([OVS_CTL, 'start'])
+
+
+def teardown_module():
+    ovsdb = create()
+    bridges = ovsdb.list_bridge_info().execute()
+
+    with ovsdb.transaction() as t:
+        for bridge in bridges:
+            if bridge in TEST_BRIDGES:
+                t.add(ovsdb.del_br(bridge['name']))
+
+    if not _openvswitch_init_state_is_up:
+        execCmd([OVS_CTL, 'stop'])
+
+
+@attr(type='unit')
+class TestOvsVsctlCommand(VdsmTestCase):
+
+    RAW_VSCTL_LIST_BRIDGE_OUTPUT = """
+    {"data":
+    [
+     [["uuid","065adffd-e37e-479f-94b4-1cf72e51d18a"],
+      ["set",[]],
+      ["set",[]],
+      "0000fedf5a069f47",
+      "",
+      "<unknown>",
+      ["map",[]],
+      ["set",[]],
+      ["set",[]],
+      ["map",[]],
+      ["set",[]],
+      false,
+      ["set",[]],
+      "ovstest1",
+      ["set",[]],
+      ["map",[]],
+      ["uuid","ac6dfc76-a346-4de0-a234-f2ebc4c9269f"],
+      ["set",[]],
+      false,
+      ["map",[]],
+      ["set",[]],
+      ["map",[]],
+      false
+     ],
+     [["uuid","4aa2740e-e28f-4778-95c9-427df114c6a2"],
+      ["set",[]],
+      ["set",[]],
+      "00000e74a24a7847",
+      "",
+      "<unknown>",
+      ["map",[]],
+      ["set",[]],
+      ["set",[]],
+      ["map",[]],
+      ["set",[]],
+      false,
+      ["set",[]],
+      "ovstest0",
+      ["set",[]],
+      ["map",[]],
+      ["uuid","a7c4c945-b8da-44c2-b911-4f43d9f71bc7"],
+      ["set",[]],
+      false,
+      ["map",[]],
+      ["set",[]],
+      ["map",[]],
+      false
+     ]
+    ],
+    "headings":
+    ["_uuid",
+     "auto_attach",
+     "controller",
+     "datapath_id",
+     "datapath_type",
+     "datapath_version",
+     "external_ids",
+     "fail_mode",
+     "flood_vlans",
+     "flow_tables",
+     "ipfix",
+     "mcast_snooping_enable",
+     "mirrors",
+     "name",
+     "netflow",
+     "other_config",
+     "ports",
+     "protocols",
+     "rstp_enable",
+     "rstp_status",
+     "sflow",
+     "status",
+     "stp_enable"]}
+    """.replace('\n', '').replace(' ', '')
+
+    PROCESSED_VSCTL_LIST_BRIDGE_OUTPUT = [
+        {u'datapath_id': u'0000fedf5a069f47',
+         u'datapath_type': u'',
+         u'mirrors': [],
+         u'rstp_status': {},
+         u'netflow': [],
+         u'rstp_enable': False,
+         u'flood_vlans': [],
+         u'datapath_version': u'<unknown>',
+         u'status': {},
+         u'ipfix': [],
+         u'_uuid': UUID('065adffd-e37e-479f-94b4-1cf72e51d18a'),
+         u'controller': [],
+         u'auto_attach': [],
+         u'mcast_snooping_enable': False,
+         u'external_ids': {},
+         u'protocols': [],
+         u'fail_mode': [],
+         u'name': u'ovstest1',
+         u'sflow': [],
+         u'other_config': {},
+         u'flow_tables': {},
+         u'ports': UUID('ac6dfc76-a346-4de0-a234-f2ebc4c9269f'),
+         u'stp_enable': False},
+        {u'datapath_id': u'00000e74a24a7847',
+         u'datapath_type': u'',
+         u'mirrors': [],
+         u'rstp_status': {},
+         u'netflow': [],
+         u'rstp_enable': False,
+         u'flood_vlans': [],
+         u'datapath_version': u'<unknown>',
+         u'status': {},
+         u'ipfix': [],
+         u'_uuid': UUID('4aa2740e-e28f-4778-95c9-427df114c6a2'),
+         u'controller': [],
+         u'auto_attach': [],
+         u'mcast_snooping_enable': False,
+         u'external_ids': {},
+         u'protocols': [],
+         u'fail_mode': [],
+         u'name': u'ovstest0',
+         u'sflow': [],
+         u'other_config': {},
+         u'flow_tables': {},
+         u'ports': UUID('a7c4c945-b8da-44c2-b911-4f43d9f71bc7'),
+         u'stp_enable': False}]
+
+    def test_db_result_command_parser(self):
+        cmd = vsctl.DBResultCommand(['fake', 'command'])
+        cmd.set_raw_result(TestOvsVsctlCommand.RAW_VSCTL_LIST_BRIDGE_OUTPUT)
+
+        self.assertEqual(
+            TestOvsVsctlCommand.PROCESSED_VSCTL_LIST_BRIDGE_OUTPUT, cmd.result)
+
+
+@attr(type='integration')
+class TestOvsApiBase(VdsmTestCase):
+
+    def test_instantiate_vsctl_implementation(self):
+        self.assertIsNotNone(create('vsctl'))
+
+    def test_execute_a_single_command(self):
+        ovsdb = create()
+        out = ovsdb.list_bridge_info().execute()
+
+        # No bridges defined
+        self.assertEqual([], out)
+
+    def test_execute_a_transaction(self):
+        ovsdb = create()
+        cmd_add_br = ovsdb.add_br(TEST_BRIDGE)
+        cmd_list_bridge_info = ovsdb.list_bridge_info()
+        t = ovsdb.transaction()
+        t.add(cmd_add_br)
+        t.add(cmd_list_bridge_info)
+        t.commit()
+
+        self.assertEqual(1, len(cmd_list_bridge_info.result))
+        bridge_name = cmd_list_bridge_info.result[0]['name']
+        self.assertIn(TEST_BRIDGE, bridge_name)
+
+        cmd_del_br = ovsdb.del_br(TEST_BRIDGE)
+        with ovsdb.transaction() as trans:
+            trans.add(cmd_del_br)
+            trans.add(cmd_list_bridge_info)
+
+        self.assertEqual([], cmd_list_bridge_info.result)
+
+
+@attr(type='integration')
+class TestOvsApiWithSingleRealBridge(VdsmTestCase):
+
+    def setUp(self):
+        self.ovsdb = create()
+
+        self.ovsdb.add_br(TEST_BRIDGE).execute()
+
+    def tearDown(self):
+        self.ovsdb.del_br(TEST_BRIDGE).execute()
+
+    def test_create_vlan_as_fake_bridge(self):
+        with self.ovsdb.transaction() as t:
+            t.add(self.ovsdb.add_vlan(TEST_BRIDGE, 100))
+            t.add(self.ovsdb.add_vlan(TEST_BRIDGE, 101))
+
+        bridges = self.ovsdb.list_br().execute()
+        self.assertEqual(3, len(bridges))
+
+        with self.ovsdb.transaction() as t:
+            t.add(self.ovsdb.del_vlan(101))
+            t.add(self.ovsdb.del_vlan(100))

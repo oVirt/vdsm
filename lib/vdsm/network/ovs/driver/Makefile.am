@@ -17,14 +17,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = driver
-
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetworkovsdir = $(vdsmpylibdir)/network/ovs
+vdsmnetworkovsdriverdir = $(vdsmpylibdir)/network/ovs/driver
 
-dist_vdsmnetworkovs_PYTHON = \
+dist_vdsmnetworkovsdriver_PYTHON = \
 	__init__.py \
-	switch.py \
-	validator.py \
+	vsctl.py \
 	$(NULL)

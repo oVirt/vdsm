@@ -7,6 +7,7 @@ libguestfs-tools-c
 m2crypto
 make
 mom
+openvswitch
 policycoreutils-python
 python-blivet
 python-coverage

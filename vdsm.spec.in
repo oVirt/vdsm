@@ -69,6 +69,7 @@ BuildRequires: libvirt-python
 BuildRequires: m2crypto
 BuildRequires: mom >= 0.5.3
 BuildRequires: openssl
+BuildRequires: openvswitch >= 2.0.0
 BuildRequires: policycoreutils-python
 BuildRequires: psmisc
 BuildRequires: python-cpopen >= 1.4
@@ -126,6 +127,7 @@ Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.3
+Requires: openvswitch >= 2.0.0
 %if 0%{?with_ovirt_vmconsole}
 Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
@@ -1087,6 +1089,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
+%dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
@@ -1158,6 +1161,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/ovs/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/switch.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/validator.py*
+%{python_sitelib}/%{vdsm_name}/network/ovs/driver/__init__.py*
+%{python_sitelib}/%{vdsm_name}/network/ovs/driver/vsctl.py*
 %{python_sitelib}/%{vdsm_name}/network/models.py*
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*

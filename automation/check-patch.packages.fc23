@@ -6,6 +6,7 @@ libvirt-python3
 m2crypto
 make
 mom
+openvswitch
 policycoreutils-python
 python-blivet
 python-coverage
