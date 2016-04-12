@@ -914,7 +914,6 @@ class TestVm(XMLTestCase):
             <disk device="hdd" snapshot="no" type="block">
                 <source dev="/dev/dummy"/>
                 <target bus="ide" dev="hda"/>
-                <serial></serial>
                 <iotune>
                     <read_bytes_sec>2</read_bytes_sec>
                     <write_bytes_sec>1</write_bytes_sec>
