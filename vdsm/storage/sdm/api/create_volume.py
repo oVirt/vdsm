@@ -40,8 +40,6 @@ class Job(base.Job):
 
     def _run(self):
         vol_format = volume.name2type(self.vol_info.vol_format)
-        self.sd_manifest.validateCreateVolumeParams(
-            vol_format, self.vol_info.parent_vol_id)
 
         with self.sd_manifest.domain_lock(self.host_id):
             image_res_ns = sd.getNamespace(self.sd_manifest.sdUUID,
