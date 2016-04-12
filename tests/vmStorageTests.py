@@ -37,6 +37,7 @@ class DriveXMLTests(XMLTestCase):
             index='2',
             path='/path/to/fedora.iso',
             readonly='True',
+            serial='54-a672-23e5b495a9ea',
         )
         xml = """
             <disk device="cdrom" snapshot="no" type="file">
@@ -52,6 +53,7 @@ class DriveXMLTests(XMLTestCase):
         conf = drive_config(
             format='cow',
             propagateErrors='on',
+            serial='54-a672-23e5b495a9ea',
             shared='shared',
             specParams={
                 'ioTune': {
@@ -78,7 +80,9 @@ class DriveXMLTests(XMLTestCase):
         self.check(vm_conf, conf, xml, is_block_device=False)
 
     def test_disk_block(self):
-        conf = drive_config()
+        conf = drive_config(
+            serial='54-a672-23e5b495a9ea',
+        )
         xml = """
             <disk device="disk" snapshot="no" type="block">
                 <source dev="/path/to/volume"/>
@@ -91,7 +95,9 @@ class DriveXMLTests(XMLTestCase):
         self.check({}, conf, xml, is_block_device=True)
 
     def test_disk_file(self):
-        conf = drive_config()
+        conf = drive_config(
+            serial='54-a672-23e5b495a9ea',
+        )
         xml = """
             <disk device="disk" snapshot="no" type="file">
                 <source file="/path/to/volume"/>
@@ -108,6 +114,7 @@ class DriveXMLTests(XMLTestCase):
             device='lun',
             iface='scsi',
             path='/dev/mapper/lun1',
+            serial='54-a672-23e5b495a9ea',
             sgio='unfiltered',
         )
         xml = """
@@ -129,6 +136,7 @@ class DriveXMLTests(XMLTestCase):
             ],
             path='poolname/volumename',
             protocol='rbd',
+            serial='54-a672-23e5b495a9ea',
         )
         xml = """
             <disk device="disk" snapshot="no" type="network">
@@ -154,6 +162,7 @@ class DriveXMLTests(XMLTestCase):
             ],
             path='poolname/volumename',
             protocol='rbd',
+            serial='54-a672-23e5b495a9ea',
         )
         xml = """
             <disk device="disk" snapshot="no" type="network">
@@ -171,6 +180,35 @@ class DriveXMLTests(XMLTestCase):
             </disk>
             """
         self.check({}, conf, xml, is_block_device=None)
+
+    def test_cdrom_without_serial(self):
+        conf = drive_config(
+            device='cdrom',
+            iface='ide',
+            index='2',
+            path='/path/to/fedora.iso',
+            readonly='True',
+        )
+        xml = """
+            <disk device="cdrom" snapshot="no" type="file">
+                <source file="/path/to/fedora.iso" startupPolicy="optional"/>
+                <target bus="ide" dev="hdc"/>
+                <readonly/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=False)
+
+    def test_disk_without_serial(self):
+        conf = drive_config()
+        xml = """
+            <disk device="disk" snapshot="no" type="file">
+                <source file="/path/to/volume"/>
+                <target bus="virtio" dev="vda"/>
+                <driver cache="none" error_policy="stop"
+                        io="threads" name="qemu" type="raw"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=False)
 
     def check(self, vm_conf, device_conf, xml, is_block_device=False):
         drive = Drive(vm_conf, self.log, **device_conf)
@@ -473,7 +511,6 @@ def drive_config(**kw):
         'path': '/path/to/volume',
         'propagateErrors': 'off',
         'readonly': 'False',
-        'serial': '54-a672-23e5b495a9ea',
         'shared': 'none',
         'type': 'disk',
     }
