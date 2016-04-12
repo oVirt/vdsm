@@ -161,9 +161,12 @@ class clientIF(object):
         notification.emit(**kwargs)
 
     def _send_notification(self, message):
-        self.bindings['jsonrpc'].reactor.server.send(message,
-                                                     config.get('addresses',
-                                                                'event_queue'))
+        try:
+            self.bindings['jsonrpc'].reactor.server.send(
+                message, config.get('addresses', 'event_queue'))
+        except KeyError:
+            self.log.warning("Attempt to send an event when jsonrpc binding"
+                             " not available")
 
     def contEIOVms(self, sdUUID, isDomainStateValid):
         # This method is called everytime the onDomainStateChange
