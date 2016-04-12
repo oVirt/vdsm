@@ -4090,9 +4090,11 @@ class Vm(object):
             return False
 
         for x in self._domain.devices.childNodes:
-            # Ignore empty nodes and devices without address
+            # Ignore empty nodes and devices without address.
             if (x.nodeName == '#text' or
-                    not x.getElementsByTagName('address')):
+                    not x.getElementsByTagName('address')
+                    # And host devices (only in 3.6!).
+                    or x.nodeName == 'hostdev'):
                 continue
 
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
@@ -4269,6 +4271,8 @@ class Vm(object):
             device_type = x.getAttribute('type')
             if device_type == 'usb':
                 self._getUnderlyingHostDeviceUSBInfo(x)
+                continue
+            elif device_type != 'pci':
                 continue
             alias = x.getElementsByTagName('alias')[0].getAttribute('name')
             address = self._getUnderlyingDeviceAddress(x)
