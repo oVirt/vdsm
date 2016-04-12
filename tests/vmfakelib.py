@@ -171,10 +171,21 @@ class _Reactor(object):
         self.server = _Server(notifications)
 
 
+class _Bridge(object):
+    def __init__(self):
+        self.event_schema = _Schema()
+
+
+class _Schema(object):
+    def verify_event_params(self, sub_id, args):
+        pass
+
+
 class JsonRpcServer(object):
     def __init__(self):
         self.notifications = []
         self.reactor = _Reactor(self.notifications)
+        self.bridge = _Bridge()
 
 
 class ClientIF(clientIF.clientIF):

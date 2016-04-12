@@ -195,12 +195,14 @@ class Notification(object):
     """
     log = logging.getLogger("jsonrpc.Notification")
 
-    def __init__(self, event_id, cb):
+    def __init__(self, event_id, cb, bridge):
         self._event_id = event_id
         self._cb = cb
+        self._bridge = bridge
 
     def emit(self, **kwargs):
         self._add_notify_time(kwargs)
+        self._bridge.event_schema.verify_event_params(self._event_id, kwargs)
         notification = json.dumps({'jsonrpc': '2.0',
                                    'method': self._event_id,
                                    'params': kwargs})

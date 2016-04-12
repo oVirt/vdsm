@@ -79,6 +79,7 @@ class FakeClientIf(object):
         notification = Notification(
             event_id,
             self._send_notification,
+            self.json_binding.bridge
         )
         notification.emit(**kwargs)
 

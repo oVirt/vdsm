@@ -157,16 +157,16 @@ class clientIF(object):
                              event_id, kwargs)
             return
 
-        notification = Notification(
-            event_id,
-            self._send_notification,
-        )
-        notification.emit(**kwargs)
+        json_binding = self.bindings['jsonrpc']
 
-    def _send_notification(self, message):
-        try:
-            self.bindings['jsonrpc'].reactor.server.send(
+        def _send_notification(message):
+            json_binding.reactor.server.send(
                 message, config.get('addresses', 'event_queue'))
+
+        try:
+            notification = Notification(event_id, _send_notification,
+                                        json_binding.bridge)
+            notification.emit(**kwargs)
         except KeyError:
             self.log.warning("Attempt to send an event when jsonrpc binding"
                              " not available")

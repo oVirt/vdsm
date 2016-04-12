@@ -39,7 +39,7 @@ class BindingJsonRpc(object):
                                            workers_count=_THREADS,
                                            max_tasks=_TASKS,
                                            scheduler=scheduler)
-
+        self._bridge = bridge
         self._server = JsonRpcServer(bridge, timeout, cif,
                                      self._executor.dispatch)
         self._reactor = StompReactor(subs)
@@ -54,6 +54,10 @@ class BindingJsonRpc(object):
     @property
     def reactor(self):
         return self._reactor
+
+    @property
+    def bridge(self):
+        return self._bridge
 
     def start(self):
         self._executor.start()

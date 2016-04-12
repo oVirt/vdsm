@@ -43,8 +43,15 @@ CALL_TIMEOUT = 15
 _USE_SSL = [[True], [False]]
 
 
+class Schema(object):
+
+    def verify_event_params(self, sub_id, args):
+        pass
+
+
 class _SampleBridge(object):
     cif = None
+    event_schema = Schema()
 
     def echo(self, text):
         return text

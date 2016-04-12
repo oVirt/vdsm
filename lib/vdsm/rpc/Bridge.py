@@ -65,11 +65,18 @@ class DynamicBridge(object):
             paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
         self._schema = vdsmapi.Schema(paths)
 
+        self._event_schema = vdsmapi.Schema(
+            [vdsmapi.find_schema('vdsm-events')])
+
         self._threadLocal = threading.local()
         self.log = logging.getLogger('DynamicBridge')
 
     def register_server_address(self, server_address):
         self._threadLocal.server = server_address
+
+    @property
+    def event_schema(self):
+        return self._event_schema
 
     def unregister_server_address(self):
         self._threadLocal.server = None
