@@ -44,19 +44,18 @@ def _update_unknown_device_info(vm):
                 return True
         return False
 
-    for x in vm.domain.devices.childNodes:
+    for x in vmxml.children(vm.domain.devices):
         # Ignore empty nodes and devices without address
-        if (x.nodeName == '#text' or
-                not x.getElementsByTagName('address')):
+        if vmxml.find_first(x, 'address', None) is None:
             continue
 
-        alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+        alias = vmxml.find_attr(x, 'alias', 'name')
         if not isKnownDevice(alias):
             address = vmxml.device_address(x)
-            # I general case we assume that device has attribute 'type',
-            # if it hasn't getAttribute returns ''.
-            device = x.getAttribute('type')
-            newDev = {'type': x.nodeName,
+            # In general case we assume that device has attribute 'type',
+            # if it hasn't dom_attribute returns ''.
+            device = vmxml.attr(x, 'type')
+            newDev = {'type': vmxml.tag(x),
                       'alias': alias,
                       'device': device,
                       'address': address}

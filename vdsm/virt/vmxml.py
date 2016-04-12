@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import itertools
 from operator import itemgetter
 import xml.dom
 import xml.dom.minidom
@@ -173,6 +174,25 @@ def text(element):
     if child_node is None:
         return ''
     return child_node.nodeValue
+
+
+def children(element, tag=None):
+    """
+    Return direct subelements of `element`.
+
+    :param element: element to get the children from
+    :type element: DOM element
+    :param tag: if given then only children with this tag are returned
+    :type tag: basestring
+    :returns: children of `element`, optionally filtered by `tag`
+    :rtype: iterator providing the selected children
+
+    """
+    children = [n for n in element.childNodes
+                if n.localName is not None and  # skip text bodies
+                (tag is None or n.nodeName == tag)]
+    # Make sure we don't return a list, just an iterator
+    return itertools.chain(children)
 
 
 def has_channel(domXML, name):

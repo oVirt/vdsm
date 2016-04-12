@@ -110,6 +110,16 @@ class TestVmXmlHelpers(XMLTestCase):
         text = vmxml.text(element)
         self.assertEqual(text, result)
 
+    @permutations([['topelement', 'hello', 2],
+                   ['bye', 'hello', 1],
+                   ['empty', 'hello', 0],
+                   ['topelement', 'none', 0],
+                   ['topelement', None, 4],
+                   ])
+    def test_children(self, start_tag, tag, number):
+        element = vmxml.find_first(self._dom, start_tag)
+        self.assertEqual(len(list(vmxml.children(element, tag))), number)
+
 
 @expandPermutations
 class TestDomainDescriptor(VmXmlTestCase):
