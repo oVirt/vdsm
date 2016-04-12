@@ -850,7 +850,7 @@ def round(n, size):
 def create_connected_socket(host, port, sslctx=None, timeout=None):
     addrinfo = socket.getaddrinfo(host, port,
                                   socket.AF_UNSPEC, socket.SOCK_STREAM)
-    family, socktype, proto, _, sockaddr = addrinfo[0]
+    family, socktype, proto, _, _ = addrinfo[0]
     sock = socket.socket(family, socktype, proto)
 
     if sslctx:
