@@ -2620,8 +2620,8 @@ class Vm(object):
                 self.log.exception("getVmPolicy failed")
                 return None
 
-        metadata = _domParseStr(metadata_xml)
-        return metadata.getElementsByTagName(METADATA_VM_TUNE_ELEMENT)[0]
+        metadata = vmxml.parse_xml(metadata_xml)
+        return vmxml.find_first(metadata, METADATA_VM_TUNE_ELEMENT)
 
     def _findDeviceByNameOrPath(self, device_name, device_path):
         for device in self._devices[hwclass.DISK]:
