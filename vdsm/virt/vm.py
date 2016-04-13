@@ -4601,8 +4601,9 @@ class Vm(object):
 
     def _driveGetActualVolumeChain(self, drives):
         def lookupDeviceXMLByAlias(domXML, targetAlias):
-            for deviceXML, alias in _devicesWithAlias(domXML):
-                if alias == targetAlias:
+            for deviceXML in vmxml.all_devices(domXML):
+                alias = vmxml.find_attr(deviceXML, 'alias', 'name')
+                if alias and alias == targetAlias:
                     return deviceXML
             raise LookupError("Unable to find matching XML for device %s",
                               targetAlias)
@@ -4912,7 +4913,3 @@ class LiveMergeCleanupThread(object):
                                   "Actual chain: %s", alias, origVols,
                                   expectedVols, curVols)
                 raise RuntimeError("Bad volume chain found")
-
-
-def _devicesWithAlias(domXML):
-    return vmxml.filter_devices_with_alias(vmxml.all_devices(domXML))

@@ -231,14 +231,6 @@ def all_devices(domXML):
             yield deviceXML
 
 
-def filter_devices_with_alias(devices):
-    for deviceXML in devices:
-        aliasElement = deviceXML.getElementsByTagName('alias')
-        if aliasElement:
-            alias = aliasElement[0].getAttribute('name')
-            yield deviceXML, alias
-
-
 def device_address(device_xml, index=0):
     """
     Obtain device's address from libvirt
