@@ -84,3 +84,9 @@ class GetAllVolumesTests(TestCaseBase):
         sdName = "3386c6f2-926f-42c4-839c-38287fac8998"
         allVols = blockSD.getAllVolumes(sdName)
         self.assertEqual(len(allVols), 23)
+
+    @MonkeyPatch(lvm, 'getLV', fakeGetLV)
+    def test_missing_tags(self):
+        sdName = "f9e55e18-67c4-4377-8e39-5833ca422bef"
+        allVols = blockSD.getAllVolumes(sdName)
+        self.assertEqual(len(allVols), 1)
