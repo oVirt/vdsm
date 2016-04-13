@@ -171,9 +171,9 @@ class Graphics(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for gxml in vm.domain.get_device_elements('graphics'):
-            port = gxml.getAttribute('port')
-            tlsPort = gxml.getAttribute('tlsPort')
-            graphicsType = gxml.getAttribute('type')
+            port = vmxml.attr(gxml, 'port')
+            tlsPort = vmxml.attr(gxml, 'tlsPort')
+            graphicsType = vmxml.attr(gxml, 'type')
 
             for d in device_conf:
                 if d.device == graphicsType:
