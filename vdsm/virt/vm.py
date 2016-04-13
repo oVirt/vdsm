@@ -2316,7 +2316,7 @@ class Vm(object):
 
     def _updateGraphicsDevice(self, params):
         graphics = self._findGraphicsDeviceXMLByType(params['graphicsType'])
-        if graphics:
+        if graphics is not None:
             result = self._setTicketForGraphicDev(
                 graphics, params['password'], params['ttl'],
                 params.get('existingConnAction'),
@@ -3870,10 +3870,9 @@ class Vm(object):
         """
         libvirt (as in 1.2.3) supports only one graphic device per type
         """
-        for graphics in _domParseStr(
-            self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)). \
-                childNodes[0].getElementsByTagName('graphics'):
-            if graphics.getAttribute('type') == deviceType:
+        desc = self._dom.XMLDesc(libvirt.VIR_DOMAIN_XML_SECURE)
+        for graphics in DomainDescriptor(desc).get_device_elements('graphics'):
+            if vmxml.attr(graphics, 'type') == deviceType:
                 return graphics
         # no graphics device configured
         return None
