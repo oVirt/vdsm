@@ -21,8 +21,10 @@
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
+from testlib import make_config
 from vdsm import qemuimg
 from vdsm import commands
+from vdsm import exception
 
 QEMU_IMG = qemuimg._qemuimg.cmd
 
@@ -152,6 +154,14 @@ class CreateTests(CommandTests):
                                 self.supported('create', True)),
                                (commands, 'execCmd', create)]):
             qemuimg.create('image', format='qcow2')
+
+    def test_invalid_config(self):
+        config = make_config([('irs', 'qcow2_compat', '1.2')])
+        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
+                                self.supported('create', True)),
+                               (qemuimg, 'config', config)]):
+            with self.assertRaises(exception.InvalidConfiguration):
+                qemuimg.create('image', format='qcow2')
 
 
 class ConvertTests(CommandTests):

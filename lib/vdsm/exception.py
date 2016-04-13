@@ -363,6 +363,11 @@ class GeneralException(VdsmException):
         return "%s: %s" % (self.message, repr(self.value))
 
 
+class InvalidConfiguration(GeneralException):
+    code = 101
+    message = "Invalid configuration value"
+
+
 class ActionStopped(GeneralException):
     code = 443
     message = "Action was stopped"

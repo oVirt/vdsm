@@ -44,6 +44,8 @@ class FORMAT:
     RAW = "raw"
     VMDK = "vmdk"
 
+_QCOW2_COMPAT_SUPPORTED = ["0.10", "1.1"]
+
 __iregex = {
     'format': re.compile("^file format: (?P<value>\w+)$"),
     'virtualsize': re.compile("^virtual size: "
@@ -123,7 +125,11 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     if format:
         cmd.extend(("-f", format))
         if format == FORMAT.QCOW2 and _supports_qcow2_compat('create'):
-            cmd.extend(('-o', 'compat=' + config.get('irs', 'qcow2_compat')))
+            value = config.get('irs', 'qcow2_compat')
+            if value not in _QCOW2_COMPAT_SUPPORTED:
+                raise exception.InvalidConfiguration(
+                    "Unsupported value for irs:qcow2_compat: %r" % value)
+            cmd.extend(('-o', 'compat=' + value))
 
     if backing:
         if not os.path.isabs(backing):
