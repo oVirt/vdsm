@@ -173,6 +173,20 @@ def attributes(element):
     return {a: attr(element, a) for a in element.attributes.keys()}
 
 
+def set_attr(element, attribute, value):
+    """
+    Set `attribute` of `element` to `value`.
+
+    :param element: the element to change the attribute in
+    :type element: DOM element
+    :param attribute: attribute name
+    :type attribute: basestring
+    :param value: new value of the attribute
+    :type value: basestring
+    """
+    element.setAttribute(attribute, value)
+
+
 def text(element):
     """
     Return text of the given DOM element.

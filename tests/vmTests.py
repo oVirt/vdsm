@@ -28,7 +28,6 @@ import threading
 import time
 import uuid
 import xml.etree.cElementTree as etree
-from xml.dom.minidom import parseString
 
 import libvirt
 import six
@@ -1723,22 +1722,6 @@ class SyncGuestTimeTests(TestCaseBase):
         vm = self._make_vm(virt_error=virt_error)
         with self.assertNotRaises():
             vm._syncGuestTime()
-
-
-class TestFilterSnappableDiskDevices(TestCaseBase):
-
-    def test_filter(self):
-        def parse(xml):
-            return parseString(xml).documentElement
-        devices = [
-            parse('<disk/>'),
-            parse('<disk device="lun"/>'),
-            parse('<disk device="disk"/>'),
-            parse('<disk device="cdrom"/>'),
-        ]
-
-        filtered = vm._filterSnappableDiskDevices(devices)
-        self.assertEqual(devices[:-1], filtered)
 
 
 def _load_xml(name):

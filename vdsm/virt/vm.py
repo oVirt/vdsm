@@ -22,7 +22,6 @@
 # stdlib imports
 from collections import namedtuple
 from contextlib import contextmanager
-from xml.dom.minidom import parseString as _domParseStr
 import itertools
 import logging
 import os
@@ -73,7 +72,7 @@ from storage import sdc
 import caps
 
 # local package imports
-from .domain_descriptor import DomainDescriptor
+from .domain_descriptor import DomainDescriptor, MutableDomainDescriptor
 from . import migration
 from . import recovery
 from . import vmdevices
@@ -91,11 +90,6 @@ _NO_CPU_QUOTA = 0
 
 # A libvirt constant for undefined cpu period
 _NO_CPU_PERIOD = 0
-
-
-def _filterSnappableDiskDevices(diskDeviceXmlElements):
-    return [x for x in diskDeviceXmlElements
-            if x.getAttribute('device') in ('disk', 'lun', '')]
 
 
 class VolumeError(RuntimeError):
@@ -1928,18 +1922,11 @@ class Vm(object):
         snapshot was taken, since we create new volume when we preview
         or revert to snapshot.
         """
-        parsedSrcDomXML = _domParseStr(srcDomXML)
-
-        allDiskDeviceXmlElements = parsedSrcDomXML.childNodes[0]. \
-            getElementsByTagName('devices')[0].getElementsByTagName('disk')
-
-        snappableDiskDeviceXmlElements = \
-            _filterSnappableDiskDevices(allDiskDeviceXmlElements)
-
-        for snappableDiskDeviceXmlElement in snappableDiskDeviceXmlElements:
-            self._changeDisk(snappableDiskDeviceXmlElement)
-
-        return parsedSrcDomXML.toxml()
+        domain = MutableDomainDescriptor(srcDomXML)
+        for element in domain.get_device_elements('disk'):
+            if vmxml.attr(element, 'device') in ('disk', 'lun', '',):
+                self._changeDisk(element)
+        return domain.xml
 
     def _correctGraphicsConfiguration(self, domXML):
         """
@@ -1960,31 +1947,24 @@ class Vm(object):
                 devObj.setupPassword(devXml)
         return ET.tostring(domObj)
 
-    def _changeDisk(self, diskDeviceXmlElement):
-        diskType = diskDeviceXmlElement.getAttribute('type')
-
+    def _changeDisk(self, disk_element):
+        diskType = vmxml.attr(disk_element, 'type')
         if diskType not in ['file', 'block']:
             return
-
-        diskSerial = diskDeviceXmlElement. \
-            getElementsByTagName('serial')[0].childNodes[0].nodeValue
-
-        for vmDrive in self._devices[hwclass.DISK]:
-            if vmDrive.serial == diskSerial:
+        serial = vmxml.text(vmxml.find_first(disk_element, 'serial'))
+        for vm_drive in self._devices[hwclass.DISK]:
+            if vm_drive.serial == serial:
                 # update the type
-                diskDeviceXmlElement.setAttribute(
-                    'type', 'block' if vmDrive.blockDev else 'file')
-
+                disk_type = 'block' if vm_drive.blockDev else 'file'
+                vmxml.set_attr(disk_element, 'type', disk_type)
                 # update the path
-                diskDeviceXmlElement.getElementsByTagName('source')[0]. \
-                    setAttribute('dev' if vmDrive.blockDev else 'file',
-                                 vmDrive.path)
-
+                source = vmxml.find_first(disk_element, 'source')
+                disk_attr = 'dev' if vm_drive.blockDev else 'file'
+                vmxml.set_attr(source, disk_attr, vm_drive.path)
                 # update the format (the disk might have been collapsed)
-                diskDeviceXmlElement.getElementsByTagName('driver')[0]. \
-                    setAttribute('type',
-                                 'qcow2' if vmDrive.format == 'cow' else 'raw')
-
+                driver = vmxml.find_first(disk_element, 'driver')
+                drive_format = 'qcow2' if vm_drive.format == 'cow' else 'raw'
+                vmxml.set_attr(driver, 'type', drive_format)
                 break
 
     def hotplugNic(self, params):
