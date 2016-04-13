@@ -129,15 +129,11 @@ class Balloon(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('memballoon'):
             # Ignore balloon devices without address.
-            if not x.getElementsByTagName('address'):
+            if vmxml.find_first(x, 'address', None) is None:
                 address = None
             else:
                 address = vmxml.device_address(x)
-            alias_elems = x.getElementsByTagName('alias')
-            if not alias_elems:
-                alias = None
-            else:
-                alias = alias_elems[0].getAttribute('name')
+            alias = vmxml.find_attr(x, 'alias', 'name')
 
             for dev in device_conf:
                 if address and not hasattr(dev, 'address'):
@@ -244,7 +240,7 @@ class Console(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('console'):
             # All we care about is the alias
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias = vmxml.find_attr(x, 'alias', 'name')
             for dev in device_conf:
                 if not hasattr(dev, 'alias'):
                     dev.alias = alias
@@ -273,13 +269,13 @@ class Controller(Base):
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('controller'):
             # Ignore controller devices without address
-            if not x.getElementsByTagName('address'):
+            if vmxml.find_first(x, 'address', None) is None:
                 continue
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            device = x.getAttribute('type')
+            alias = vmxml.find_attr(x, 'alias', 'name')
+            device = vmxml.attr(x, 'type')
             # Get model and index. Relevant for USB controllers.
-            model = x.getAttribute('model')
-            index = x.getAttribute('index')
+            model = vmxml.attr(x, 'model')
+            index = vmxml.attr(x, 'index')
 
             # Get controller address
             address = vmxml.device_address(x)
@@ -334,11 +330,11 @@ class Smartcard(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('smartcard'):
-            if not x.getElementsByTagName('address'):
+            if vmxml.find_first(x, 'address', None) is None:
                 continue
 
             address = vmxml.device_address(x)
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias = vmxml.find_attr(x, 'alias', 'name')
 
             for dev in device_conf:
                 if not hasattr(dev, 'address'):
@@ -366,7 +362,7 @@ class Sound(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('sound'):
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias = vmxml.find_attr(x, 'alias', 'name')
             # Get sound card address
             address = vmxml.device_address(x)
 
@@ -453,9 +449,8 @@ class Rng(Base):
     def update_device_info(cls, vm, device_conf):
         for rng in vm.domain.get_device_elements('rng'):
             address = vmxml.device_address(rng)
-            alias = rng.getElementsByTagName('alias')[0].getAttribute('name')
-            source = rng.getElementsByTagName('backend')[0].firstChild.\
-                nodeValue
+            alias = vmxml.find_attr(rng, 'alias', 'name')
+            source = vmxml.text(vmxml.find_first(rng, 'backend'))
 
             for dev in device_conf:
                 if dev.uses_source(source) and not hasattr(dev, 'alias'):
@@ -512,7 +507,7 @@ class Video(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('video'):
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias = vmxml.find_attr(x, 'alias', 'name')
             # Get video card address
             address = vmxml.device_address(x)
 
@@ -548,9 +543,9 @@ class Watchdog(Base):
         for x in vm.domain.get_device_elements('watchdog'):
 
             # PCI watchdog has "address" different from ISA watchdog
-            if x.getElementsByTagName('address'):
+            if vmxml.find_first(x, 'address', None) is not None:
                 address = vmxml.device_address(x)
-                alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+                alias = vmxml.find_attr(x, 'alias', 'name')
 
                 for wd in device_conf:
                     if not hasattr(wd, 'address') or not hasattr(wd, 'alias'):
@@ -590,7 +585,7 @@ class Memory(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('memory'):
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
+            alias = vmxml.find_attr(x, 'alias', 'name')
             # Get device address
             address = vmxml.device_address(x)
 
