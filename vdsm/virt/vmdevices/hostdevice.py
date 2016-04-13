@@ -110,10 +110,9 @@ class PciDevice(core.Base):
 
     @classmethod
     def update_from_xml(cls, vm, device_conf, device_xml):
-        alias = device_xml.getElementsByTagName(
-            'alias')[0].getAttribute('name')
+        alias = vmxml.find_attr(device_xml, 'alias', 'name')
         address = vmxml.device_address(device_xml)
-        source = device_xml.getElementsByTagName('source')[0]
+        source = vmxml.find_first(device_xml, 'source')
         device = pci_address_to_name(**vmxml.device_address(source))
 
         # We can assume the device name to be correct since we're
@@ -209,8 +208,7 @@ class UsbDevice(core.Base):
 
     @classmethod
     def update_from_xml(cls, vm, device_conf, device_xml):
-        alias = device_xml.getElementsByTagName(
-            'alias')[0].getAttribute('name')
+        alias = vmxml.find_attr(device_xml, 'alias', 'name')
         host_address = vmxml.device_address(device_xml)
 
         # The routine is quite unusual because we cannot directly
@@ -304,11 +302,10 @@ class ScsiDevice(core.Base):
 
     @classmethod
     def update_from_xml(cls, vm, device_conf, device_xml):
-        alias = device_xml.getElementsByTagName(
-            'alias')[0].getAttribute('name')
+        alias = vmxml.find_attr(device_xml, 'alias', 'name')
         bus_address = vmxml.device_address(device_xml)
-        adapter = device_xml.getElementsByTagName('source')[0].\
-            getElementsByTagName('adapter')[0].getAttribute('name')
+        source = vmxml.find_first(device_xml, 'source')
+        adapter = vmxml.find_attr(source, 'adapter', 'name')
 
         # The routine is quite unusual because we cannot directly
         # reconstruct the unique name. Therefore, we first look up
@@ -350,6 +347,6 @@ class HostDevice(core.Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for device_xml in vm.domain.get_device_elements('hostdev'):
-            device_type = device_xml.getAttribute('type')
+            device_type = vmxml.attr(device_xml, 'type')
             cls._DEVICE_MAPPING[device_type].update_from_xml(
                 vm, device_conf, device_xml)
