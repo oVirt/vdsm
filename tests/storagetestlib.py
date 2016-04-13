@@ -90,11 +90,6 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
                       blockSD.VG_METADATASIZE)
     fake_lvm.createLV(sduuid, sd.METADATA, blockSD.SD_METADATA_SIZE)
 
-    # Create the metadata LV for storing volume metadata
-    metafile_path = fake_lvm.lvPath(sduuid, sd.METADATA)
-    make_file(metafile_path,
-              blockSD.BlockStorageDomainManifest.metaSize(sduuid) * MB)
-
     # Create the rest of the special LVs
     for metafile, sizemb in sd.SPECIAL_VOLUME_SIZES_MIB.iteritems():
         fake_lvm.createLV(sduuid, metafile, sizemb)

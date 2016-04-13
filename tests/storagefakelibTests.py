@@ -30,6 +30,9 @@ from storage import blockSD, blockVolume
 from storage import lvm as real_lvm
 
 
+MB = 1024 ** 2
+
+
 class FakeLVMSimpleVGTests(VdsmTestCase):
     VG_NAME = '1ffead52-7363-4968-a8c7-3bc34504d452'
     DEVICES = ['360014054d75cb132d474c0eae9825766']
@@ -206,6 +209,8 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertFalse(lv.active)
             self.assertEqual('-', lv.attr.state)
+            self.assertFalse(os.path.exists(lvm.lvPath(self.VG_NAME,
+                                                       self.LV_NAME)))
 
     def test_lv_initialtag(self):
         """
@@ -272,10 +277,26 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
         with self.base_config() as lvm:
             lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
                          activate=False)
+            lv_path = lvm.lvPath(self.VG_NAME, self.LV_NAME)
+            self.assertFalse(os.path.exists(lv_path))
             lvm.activateLVs(self.VG_NAME, [self.LV_NAME])
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
             self.assertTrue(lv.active)
             self.assertEqual('a', lv.attr.state)
+            self.assertTrue(os.path.exists(lv_path))
+
+    def test_lv_io(self):
+        with self.base_config() as lvm:
+            msg = "Hello World!"
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
+                         activate=True)
+            lv_path = lvm.lvPath(self.VG_NAME, self.LV_NAME)
+            self.assertEqual(MB * self.LV_SIZE_MB,
+                             os.stat(lv_path).st_size)
+            with open(lv_path, 'w') as f:
+                f.write(msg)
+            with open(lv_path) as f:
+                self.assertEqual(msg, f.read())
 
     def test_changevgtags(self):
         with self.base_config() as lvm:
