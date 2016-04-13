@@ -19,7 +19,6 @@
 #
 
 import xml.etree.ElementTree as ET
-from xml.dom import Node
 
 from vdsm import supervdsm
 from vdsm import utils
@@ -29,6 +28,7 @@ from vdsm.network import api as net_api
 
 from .core import Base
 from . import hwclass
+from .. import vmxml
 
 
 class Interface(Base):
@@ -182,7 +182,8 @@ class Interface(Base):
         """Returns a valid libvirt xml dom element object."""
         bandwidth = self.createXmlElem('bandwidth', None)
         old = {} if oldBandwidth is None else dict(
-            (elem.nodeName, elem) for elem in oldBandwidth.childNodes)
+            (vmxml.tag(elem), elem)
+            for elem in vmxml.children(oldBandwidth))
         for key in ('inbound', 'outbound'):
             elem = specParams.get(key)
             if elem is None:  # Use the old setting if present
@@ -229,45 +230,43 @@ class Interface(Base):
     @classmethod
     def update_device_info(cls, vm, device_conf):
         for x in vm.domain.get_device_elements('interface'):
-            devType = x.getAttribute('type')
-            mac = x.getElementsByTagName('mac')[0].getAttribute('address')
-            alias = x.getElementsByTagName('alias')[0].getAttribute('name')
-            xdrivers = x.getElementsByTagName('driver')
-            driver = ({'name': xdrivers[0].getAttribute('name'),
-                       'queues': xdrivers[0].getAttribute('queues')}
+            devType = vmxml.attr(x, 'type')
+            mac = vmxml.find_attr(x, 'mac', 'address')
+            alias = vmxml.find_attr(x, 'alias', 'name')
+            xdrivers = vmxml.find_first(x, 'driver', None)
+            driver = ({'name': vmxml.attr(xdrivers, 'name'),
+                       'queues': vmxml.attr(xdrivers, 'queues')}
                       if xdrivers else {})
+            driver = vmxml.find_attr(x, 'driver', ('name', 'queues',))
             if devType == 'hostdev':
                 name = alias
                 model = 'passthrough'
             else:
-                name = x.getElementsByTagName('target')[0].getAttribute('dev')
-                model = x.getElementsByTagName('model')[0].getAttribute('type')
+                name = vmxml.find_attr(x, 'target', 'dev')
+                model = vmxml.find_attr(x, 'model', 'type')
 
             network = None
             try:
-                if x.getElementsByTagName('link')[0].getAttribute('state') == \
-                        'down':
+                if vmxml.find_attr(x, 'link', 'state') == 'down':
                     linkActive = False
                 else:
                     linkActive = True
             except IndexError:
                 linkActive = True
-            source = x.getElementsByTagName('source')
-            if source:
-                network = source[0].getAttribute('bridge')
+            source = vmxml.find_first(x, 'source', None)
+            if source is not None:
+                network = vmxml.attr(source, 'bridge')
                 if not network:
                     network = net_api.netname_l2o(
-                        source[0].getAttribute('network'))
+                        vmxml.attr(source, 'network'))
 
             # Get nic address
             address = {}
             # TODO: fix vmxml.device_address and its users to have this code.
-            for child in x.childNodes:
-                if (child.nodeType != Node.TEXT_NODE and
-                        child.tagName == 'address'):
-                    address = dict((k.strip(), child.getAttribute(k).strip())
-                                   for k in child.attributes.keys())
-                    break
+            for child in vmxml.children(x, 'address'):
+                address = dict((k.strip(), v.strip())
+                               for k, v in vmxml.attributes(child).iteritems())
+                break
 
             for nic in device_conf:
                 if nic.macAddr.lower() == mac.lower():

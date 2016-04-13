@@ -160,6 +160,19 @@ def attr(element, attribute):
     return element.getAttribute(attribute)
 
 
+def attributes(element):
+    """
+    Return dictionary of all the `element` attributes.
+
+    :param element: the element to look the attributes in
+    :type element: DOM element
+    :returns: dictionary of attribute names (basestrings) and their values
+      (basestrings)
+    :rtype: dictionary
+    """
+    return {a: attr(element, a) for a in element.attributes.keys()}
+
+
 def text(element):
     """
     Return text of the given DOM element.
