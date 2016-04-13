@@ -222,15 +222,6 @@ def has_channel(domXML, name):
     return False
 
 
-def all_devices(domXML):
-    domObj = xml.dom.minidom.parseString(domXML)
-    devices = domObj.childNodes[0].getElementsByTagName('devices')[0]
-
-    for deviceXML in devices.childNodes:
-        if deviceXML.nodeType == xml.dom.Node.ELEMENT_NODE:
-            yield deviceXML
-
-
 def device_address(device_xml, index=0):
     """
     Obtain device's address from libvirt

@@ -4262,7 +4262,7 @@ class Vm(object):
                                    "during migration at destination host" %
                                    devType)
 
-        for deviceXML in vmxml.all_devices(xml):
+        for deviceXML in vmxml.children(DomainDescriptor(xml).devices):
             aliasElement = deviceXML.getElementsByTagName('alias')
             if aliasElement:
                 alias = aliasElement[0].getAttribute('name')
@@ -4601,7 +4601,7 @@ class Vm(object):
 
     def _driveGetActualVolumeChain(self, drives):
         def lookupDeviceXMLByAlias(domXML, targetAlias):
-            for deviceXML in vmxml.all_devices(domXML):
+            for deviceXML in vmxml.children(DomainDescriptor(domXML).devices):
                 alias = vmxml.find_attr(deviceXML, 'alias', 'name')
                 if alias and alias == targetAlias:
                     return deviceXML
