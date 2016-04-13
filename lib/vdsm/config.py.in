@@ -356,7 +356,8 @@ parameters = [
             'Recent qemu-img supports two incompatible qcow2 versions. '
             'We use 0.10 format by default so hosts with older qemu '
             'can consume images created by newer versions. '
-            'See https://bugzilla.redhat.com/1139707'),
+            'See https://bugzilla.redhat.com/1139707 '
+            '(supported versions: 0.10, 1.1)'),
     ]),
 
     # Section: [addresses]

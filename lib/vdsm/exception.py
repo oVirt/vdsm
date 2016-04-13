@@ -31,6 +31,17 @@ class VdsmException(Exception):
         return {'status': {'code': self.code, 'message': str(self)}}
 
 
+class InvalidConfiguration(VdsmException):
+    code = 101
+    message = "Invalid configuration value"
+
+    def __init__(self, *value):
+        self.value = value
+
+    def __str__(self):
+        return "%s: %s" % (self.message, repr(self.value))
+
+
 class HookError(VdsmException):
     code = 1500
     message = "Hook Error"
