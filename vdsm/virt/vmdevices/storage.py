@@ -78,14 +78,13 @@ class Drive(Base):
         # vm's conf
         for x in vm.domain.get_device_elements('disk'):
             alias, devPath, name = _get_drive_identification(x)
-            readonly = bool(x.getElementsByTagName('readonly'))
-            boot = x.getElementsByTagName('boot')
-            bootOrder = boot[0].getAttribute('order') if boot else ''
+            readonly = vmxml.find_first(x, 'readonly', None) is not None
+            bootOrder = vmxml.find_attr(x, 'boot', 'order')
 
-            devType = x.getAttribute('device')
+            devType = vmxml.attr(x, 'device')
             if devType == 'disk':
                 # raw/qcow2
-                drv = x.getElementsByTagName('driver')[0].getAttribute('type')
+                drv = vmxml.find_attr(x, 'driver', 'type')
             else:
                 drv = 'raw'
             # Get disk address
@@ -94,7 +93,7 @@ class Drive(Base):
             # Keep data as dict for easier debugging
             deviceDict = {'path': devPath, 'name': name,
                           'readonly': readonly, 'bootOrder': bootOrder,
-                          'address': address, 'type': devType, 'boot': boot}
+                          'address': address, 'type': devType}
 
             # display indexed pairs of ordered values from 2 dicts
             # such as {key_1: (valueA_1, valueB_1), ...}
@@ -569,16 +568,15 @@ def _getDriverXML(drive):
 
 
 def _get_drive_identification(dom):
-    sources = dom.getElementsByTagName('source')
-    if sources:
-        devPath = (sources[0].getAttribute('file') or
-                   sources[0].getAttribute('dev') or
-                   sources[0].getAttribute('name'))
+    source = vmxml.find_first(dom, 'source', None)
+    if source is not None:
+        devPath = (vmxml.attr(source, 'file') or
+                   vmxml.attr(source, 'dev') or
+                   vmxml.attr(source, 'name'))
     else:
         devPath = ''
-    target = dom.getElementsByTagName('target')
-    name = target[0].getAttribute('dev') if target else ''
-    alias = dom.getElementsByTagName('alias')[0].getAttribute('name')
+    name = vmxml.find_attr(dom, 'target', 'dev')
+    alias = vmxml.find_attr(dom, 'alias', 'name')
     return alias, devPath, name
 
 
