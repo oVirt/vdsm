@@ -161,6 +161,15 @@ def _parse_usb_address(caps):
     return _parse_address(caps, ('bus', 'device'))
 
 
+def _process_storage(caps, params):
+    try:
+        model = caps.find('model').text
+    except AttributeError:
+        pass
+    else:
+        params['product'] = model
+
+
 def _parse_device_params(device_xml):
     """
     Process device_xml and return dict of found known parameters,
@@ -195,6 +204,9 @@ def _parse_device_params(device_xml):
                 params[element + '_id'] = elementXML.attrib['id']
             if elementXML.text:
                 params[element] = elementXML.text
+
+    if params['capability'] == 'storage':
+        _process_storage(caps, params)
 
     physfn = caps.find('capability')
     if physfn is not None and physfn.attrib['type'] == 'phys_function' \

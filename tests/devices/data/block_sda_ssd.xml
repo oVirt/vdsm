@@ -1,0 +1,16 @@
+<device>
+  <name>block_sda_ssd</name>
+  <path>/sys/devices/pci0000:00/0000:00:1f.2/ata1/host0/target0:0:0/0:0:0:0/block/sdb</path>
+  <parent>scsi_0_0_0_0</parent>
+  <capability type='storage'>
+    <block>/dev/sda</block>
+    <bus>ata</bus>
+    <drive_type>disk</drive_type>
+    <model>SSD</model>
+    <vendor>ATA</vendor>
+    <serial>1234</serial>
+    <size>1</size>
+    <logical_block_size>1</logical_block_size>
+    <num_blocks>1</num_blocks>
+  </capability>
+</device>

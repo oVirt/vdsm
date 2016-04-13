@@ -34,7 +34,8 @@ from vdsm import libvirtconnection
 _PCI_DEVICES = ['pci_0000_00_1a_0', 'pci_0000_00_1f_2', 'pci_0000_00_02_0',
                 'pci_0000_00_19_0', 'pci_0000_00_1b_0']
 _USB_DEVICES = ['usb_usb1', 'usb_1_1', 'usb_1_1_4']
-_SCSI_DEVICES = ['scsi_host0', 'scsi_target0_0_0', 'scsi_0_0_0_0']
+_SCSI_DEVICES = ['scsi_host0', 'scsi_target0_0_0', 'scsi_0_0_0_0',
+                 'block_sda_ssd']
 _SRIOV_PF = 'pci_0000_05_00_1'
 _SRIOV_VF = 'pci_0000_05_10_7'
 _ADDITIONAL_DEVICE = 'pci_0000_00_09_0'
@@ -181,6 +182,10 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                   u'scsi_target0_0_0': {'capability': 'scsi_target',
                                         'parent': 'scsi_host0',
                                         'is_assignable': 'true'},
+                  u'block_sda_ssd': {'capability': 'storage', 'product': 'SSD',
+                                     'parent': 'scsi_0_0_0_0',
+                                     'vendor': 'ATA',
+                                     'is_assignable': 'true'},
                   u'pci_0000_00_02_0': {'product': '2nd Generation Core '
                                         'Processor Family Integrated '
                                         'Graphics Controller',
