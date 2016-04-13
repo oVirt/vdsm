@@ -70,14 +70,20 @@ AS_IF([test "${enable_vhostmd}" = "yes"],
       AC_SUBST([VHOSTMD], ['1']),
       AC_SUBST([VHOSTMD], ['0']))
 
+if grep -q 'Fedora' /etc/redhat-release; then
+    fedora_run="yes"
+else
+    fedora_run="no"
+fi
+
 AC_ARG_ENABLE(
     [python3],
     [AS_HELP_STRING(
         [--disable-python3],
-        [disable build for python3 @<:@default=no@:>@]
+        [disable build for python3. Disabled by default over centos and RHEL]
     )],
     ,
-    [enable_python3="yes"]
+    [enable_python3=${fedora_run}]
 )
 AS_IF([test "${enable_python3}" = "yes"],
       AC_SUBST([PYTHON3_SUPPORT], ['1']),
