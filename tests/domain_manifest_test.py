@@ -20,7 +20,7 @@
 import os
 import uuid
 
-from testlib import VdsmTestCase, make_file, recorded
+from testlib import VdsmTestCase, recorded
 from storagetestlib import (
     make_file_volume,
     fake_block_env,
@@ -35,21 +35,27 @@ MB = 1048576
 
 class FileManifestTests(VdsmTestCase):
 
+    def setUp(self):
+        self.img_id = str(uuid.uuid4())
+        self.vol_id = str(uuid.uuid4())
+
     def test_getreaddelay(self):
         with fake_file_env() as env:
             self.assertIsInstance(env.sd_manifest.getReadDelay(), float)
 
     def test_getvsize(self):
         with fake_file_env() as env:
-            sd_manifest = env.sd_manifest
-            imguuid, voluuid = make_file_volume(sd_manifest.domaindir, VOLSIZE)
-            self.assertEqual(VOLSIZE, sd_manifest.getVSize(imguuid, voluuid))
+            make_file_volume(env.sd_manifest, VOLSIZE,
+                             self.img_id, self.vol_id)
+            self.assertEqual(VOLSIZE, env.sd_manifest.getVSize(
+                self.img_id, self.vol_id))
 
     def test_getvallocsize(self):
         with fake_file_env() as env:
-            sd_manifest = env.sd_manifest
-            imguuid, voluuid = make_file_volume(sd_manifest.domaindir, VOLSIZE)
-            self.assertEqual(0, sd_manifest.getVAllocSize(imguuid, voluuid))
+            make_file_volume(env.sd_manifest, VOLSIZE,
+                             self.img_id, self.vol_id)
+            self.assertEqual(0, env.sd_manifest.getVAllocSize(
+                self.img_id, self.vol_id))
 
     def test_getisodomainimagesdir(self):
         with fake_file_env() as env:
@@ -72,17 +78,16 @@ class FileManifestTests(VdsmTestCase):
     def test_getallimages(self):
         with fake_file_env() as env:
             self.assertEqual(set(), env.sd_manifest.getAllImages())
-            img_uuid = str(uuid.uuid4())
-            make_file_volume(env.sd_manifest.domaindir, VOLSIZE, img_uuid)
-            self.assertIn(img_uuid, env.sd_manifest.getAllImages())
+            img_id = str(uuid.uuid4())
+            vol_id = str(uuid.uuid4())
+            make_file_volume(env.sd_manifest, VOLSIZE, img_id, vol_id)
+            self.assertIn(img_id, env.sd_manifest.getAllImages())
 
 
 class BlockManifestTests(VdsmTestCase):
 
     def test_getreaddelay(self):
         with fake_block_env() as env:
-            vg_name = env.sd_manifest.sdUUID
-            make_file(env.lvm.lvPath(vg_name, 'metadata'))
             self.assertIsInstance(env.sd_manifest.getReadDelay(), float)
 
     def test_getvsize_active_lv(self):

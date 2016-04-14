@@ -63,7 +63,9 @@ class FakeFileEnvTests(VdsmTestCase):
 
     def test_volume_structure(self):
         with fake_file_env() as env:
-            img_id, vol_id = make_file_volume(env.sd_manifest.domaindir, 0)
+            img_id = str(uuid.uuid4())
+            vol_id = str(uuid.uuid4())
+            make_file_volume(env.sd_manifest, 0, img_id, vol_id)
             image_dir = env.sd_manifest.getImagePath(img_id)
             files = (vol_id, vol_id + constants.LEASE_FILEEXT,
                      vol_id + fileVolume.META_FILEEXT)
@@ -74,7 +76,9 @@ class FakeFileEnvTests(VdsmTestCase):
     def test_volume_metadata_io(self):
         with fake_file_env() as env:
             size = 1 * MB
-            img_id, vol_id = make_file_volume(env.sd_manifest.domaindir, size)
+            img_id = str(uuid.uuid4())
+            vol_id = str(uuid.uuid4())
+            make_file_volume(env.sd_manifest, size, img_id, vol_id)
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
             desc = 'foo'
             vol.setDescription(desc)

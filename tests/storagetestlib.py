@@ -141,15 +141,32 @@ def make_filesd_manifest(tmpdir):
     return manifest
 
 
-def make_file_volume(domaindir, size, imguuid=None, voluuid=None):
-    imguuid = imguuid or str(uuid.uuid4())
-    voluuid = voluuid or str(uuid.uuid4())
-    volpath = os.path.join(domaindir, "images", imguuid, voluuid)
+def make_file_volume(sd_manifest, size, imguuid, voluuid,
+                     parent_vol_id=volume.BLANK_UUID,
+                     vol_format=volume.RAW_FORMAT,
+                     prealloc=volume.SPARSE_VOL,
+                     disk_type=image.UNKNOWN_DISK_TYPE,
+                     desc='fake volume'):
+    volpath = os.path.join(sd_manifest.domaindir, "images", imguuid, voluuid)
     mdfiles = [volpath + '.meta', volpath + '.lease']
     make_file(volpath, size)
     for mdfile in mdfiles:
         make_file(mdfile)
-    return imguuid, voluuid
+
+    size_blk = size / volume.BLOCK_SIZE
+    vol_class = sd_manifest.getVolumeClass()
+    vol_class.newMetadata(
+        (volpath,),
+        sd_manifest.sdUUID,
+        imguuid,
+        parent_vol_id,
+        size_blk,
+        volume.type2name(vol_format),
+        volume.type2name(prealloc),
+        volume.type2name(volume.LEAF_VOL),
+        disk_type,
+        desc,
+        volume.LEGAL_VOL)
 
 
 def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
