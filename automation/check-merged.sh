@@ -34,9 +34,9 @@ sed -e "s|@PWD@|$PWD|g" automation/reposync-config.repo.tpl \
 rm -rf /var/lib/lago/reposync/local-vdsm-build-*
 createrepo exported-artifacts
 
-# Fix when running in a chroot in fc2*
-[[ -e /usr/libexec/qemu-kvm ]] \
-|| ln -s /usr/bin/qemu-kvm /usr/libexec/qemu-kvm
+# Fix when running in an el* chroot in fc2* host
+[[ -e /usr/bin/qemu-kvm ]] \
+|| ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
 
 TEMPLATES_REPO=http://templates.ovirt.org/repo/repo.metadata
 # If testing locally in the rh office you can use this one
