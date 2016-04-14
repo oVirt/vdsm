@@ -4,6 +4,7 @@ git
 lago
 lago-ovirt
 libguestfs-tools-c
+libvirt-python3
 m2crypto
 make
 mom
@@ -20,6 +21,7 @@ python-pep8
 python-pthreading
 python-rtslib
 python-six
+python3-netaddr
 python3-nose
 python3-six
 rpm-build
