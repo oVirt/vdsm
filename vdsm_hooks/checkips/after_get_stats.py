@@ -84,15 +84,13 @@ def test():
                         'checkipv4': '127.0.0.1'
                     }
                 },
-            'check_ipv6':
-                {
+            'check_ipv6': {
                     'bonding': 'bond_ipv6',
                     'custom': {
                         'checkipv6': '::1'
                     }
                 },
-            'check_fqdn':
-                {
+            'check_fqdn': {
                     'nic': 'eth_fqdn',
                     'custom': {
                         'checkipv4': 'test.test'
