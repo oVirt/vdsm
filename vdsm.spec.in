@@ -225,11 +225,11 @@ Requires: systemd >= 209
 %endif
 
 %if 0%{?rhel}
-Requires: qemu-kvm-rhev >= 10:2.3.0-31.el7_2.4
-Requires: qemu-img-rhev >= 10:2.3.0-31.el7_2.4
+Requires: qemu-kvm-rhev >= 10:2.3.0-31.el7_2.6
+Requires: qemu-img-rhev >= 10:2.3.0-31.el7_2.6
 %else
-Requires: qemu-kvm >= 2:2.3.0
-Requires: qemu-img >= 2:2.3.0
+Requires: qemu-kvm >= 2:2.3.1-1
+Requires: qemu-img >= 2:2.3.1-1
 %endif # rhel
 
 # GlusterFS client-side RPMs needed for Gluster SD
