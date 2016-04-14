@@ -255,9 +255,20 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         self.assertEqual(has_volume, os.path.exists(artifacts.volume_path))
 
     def validate_artifacts(self, artifacts, env):
-        self.assertTrue(os.path.exists(artifacts.meta_volatile_path))
+        self.validate_metadata(env, artifacts)
         self.assertTrue(os.path.exists(artifacts.volume_path))
         self.assertTrue(os.path.exists(artifacts.lease_path))
+
+    def validate_metadata(self, env, artifacts):
+        meta_path = artifacts.meta_volatile_path
+        self.assertTrue(os.path.exists(meta_path))
+        with open(meta_path) as f:
+            md_lines = f.readlines()
+        md = volume.VolumeMetadata.from_lines(md_lines)
+
+        # Test a few fields just to check that metadata was written
+        self.assertEqual(artifacts.sd_manifest.sdUUID, md.domain)
+        self.assertEqual(artifacts.img_id, md.image)
 
     def failure(*args):
         raise ExpectedFailure()
