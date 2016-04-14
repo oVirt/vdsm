@@ -4,6 +4,9 @@ EXPORT_DIR="$PWD/exported-artifacts"
 
 set -xe
 
+easy_install pip
+pip install -U pep8==1.5.7 pyflakes==1.1.0
+
 ./autogen.sh --system --enable-hooks
 
 # Run nosetests only over fedora mock to save Jenkins resources

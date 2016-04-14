@@ -28,13 +28,6 @@
 # touch configure.ac or Makefile.am.
 %{!?enable_autotools:%global enable_autotools 0}
 
-# Skips check since rhel default repos lack pep8 and pyflakes
-%if ! 0%{?rhel}
-%{!?with_check:%global with_check 1}
-%else
-%{!?with_check:%global with_check 0}
-%endif
-
 # Required paths
 %if 0%{?fedora}
 %global _polkitdir %{_datadir}/polkit-1/rules.d
@@ -104,11 +97,6 @@ BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: gettext-devel
 BuildRequires: libtool
-%endif
-
-%if 0%{?with_check}
-BuildRequires: pyflakes
-BuildRequires: python-pep8
 %endif
 
 BuildRequires: systemd-units
@@ -751,9 +739,7 @@ install -Dm 0755 vdsm/virt/libvirt-hook.sh \
                  %{buildroot}%{_sysconfdir}/libvirt/hooks/qemu
 
 %check
-%if 0%{?with_check}
 make check
-%endif
 
 %clean
 rm -rf %{buildroot}

@@ -101,19 +101,27 @@ abs_imports: all
 
 .PHONY: pyflakes
 pyflakes: all
-	python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'
-	( find . -path './.git' -prune -type f -o \
-		-name '*.py' && \
-		echo $(WHITELIST) ) | xargs $(PYFLAKES)
+	if [ -n "$(PYFLAKES)" ]; then \
+		python -c 'import pyflakes; print("pyflakes-%s" % pyflakes.__version__)'; \
+		( find . -path './.git' -prune -type f -o \
+			-name '*.py' && \
+			echo $(WHITELIST) ) | xargs $(PYFLAKES); \
+	else \
+	    echo "Warning: pyflakes is not installed, skipping check"; \
+	fi
 
 .PHONY: pep8
 pep8: all
-	$(PEP8) --version
-	for x in $(PEP8_BLACKLIST); do \
-	    exclude="$${exclude},$${x}" ; \
-	done ; \
-	$(PEP8) --exclude="$${exclude}" --filename '*.py' . \
-	$(WHITELIST)
+	if [ -n "$(PEP8)" ]; then \
+		$(PEP8) --version; \
+		for x in $(PEP8_BLACKLIST); do \
+			exclude="$${exclude},$${x}" ; \
+		done ; \
+		$(PEP8) --exclude="$${exclude}" --filename '*.py' . \
+		$(WHITELIST); \
+	else \
+	    echo "Warning: pep8 is not installed, skipping check"; \
+	fi
 
 .PHONY: python3
 python3: all

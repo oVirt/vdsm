@@ -9,7 +9,6 @@ m2crypto
 make
 mom
 policycoreutils-python
-pyflakes
 python-blivet
 python-coverage
 python-devel
@@ -17,7 +16,6 @@ python-inotify
 python-ioprocess
 python-netaddr
 python-nose
-python-pep8
 python-pthreading
 python-rtslib
 python-six
