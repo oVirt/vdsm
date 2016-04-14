@@ -28,7 +28,8 @@ import tempfile
 
 from nose.plugins.attrib import attr
 
-from vdsm.netconfpersistence import Config
+from vdsm.netconfpersistence import Config, Transaction
+from vdsm.network import errors as ne
 from vdsm.utils import rmFile
 
 from testlib import VdsmTestCase as TestCaseBase
@@ -43,12 +44,21 @@ BONDING_ATTRIBUTES = {'options': 'mode=4 miimon=100', 'nics': ['eth0', 'eth1'],
                       'switch': 'legacy'}
 
 
+class TestException(Exception):
+    pass
+
+
+def _create_netconf():
+    tempdir = tempfile.mkdtemp()
+    os.mkdir(os.path.join(tempdir, 'nets'))
+    os.mkdir(os.path.join(tempdir, 'bonds'))
+    return tempdir
+
+
 @attr(type='unit')
 class NetConfPersistenceTests(TestCaseBase):
     def setUp(self):
-        self.tempdir = tempfile.mkdtemp()
-        os.mkdir(os.path.join(self.tempdir, 'nets'))
-        os.mkdir(os.path.join(self.tempdir, 'bonds'))
+        self.tempdir = _create_netconf()
 
     def tearDown(self):
         rmtree(self.tempdir)
@@ -114,3 +124,54 @@ class NetConfPersistenceTests(TestCaseBase):
         configB.removeNetwork(NETWORK)
         diff = configA.diffFrom(configB)
         self.assertIn(NETWORK, diff.networks)
+
+
+@attr(type='unit')
+class TransactionTests(TestCaseBase):
+    def setUp(self):
+        self.tempdir = _create_netconf()
+        self.config = Config(self.tempdir)
+
+    def tearDown(self):
+        rmtree(self.tempdir)
+
+    @MonkeyPatch(pwd, 'getpwnam', lambda name: pwd.getpwuid(os.geteuid()))
+    def test_successful_setup(self):
+        with Transaction(config=self.config) as _config:
+            _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+
+        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
+        self.assertTrue(os.path.exists(file_path))
+
+    def test_successful_non_persistent_setup(self):
+        with Transaction(config=self.config, persistent=False) as _config:
+            _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+
+        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
+        self.assertFalse(os.path.exists(file_path))
+
+    def test_failed_setup(self):
+        with self.assertRaises(ne.RollbackIncomplete) as roi:
+            with Transaction(config=self.config) as _config:
+                _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+                raise TestException()
+
+        diff, ex_type, _ = roi.exception
+        self.assertEquals(diff.networks[NETWORK], {'remove': True})
+        self.assertEquals(ex_type, TestException)
+        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
+        self.assertFalse(os.path.exists(file_path))
+
+    def test_failed_setup_with_no_diff(self):
+        with self.assertRaises(TestException):
+            with Transaction(config=self.config):
+                raise TestException()
+
+    def test_failed_setup_in_rollback(self):
+        with self.assertRaises(TestException):
+            with Transaction(config=self.config, in_rollback=True) as _config:
+                _config.setNetwork(NETWORK, NETWORK_ATTRIBUTES)
+                raise TestException()
+
+        file_path = os.path.join(self.tempdir, 'nets', NETWORK)
+        self.assertFalse(os.path.exists(file_path))

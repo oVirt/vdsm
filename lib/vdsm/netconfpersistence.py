@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+from copy import deepcopy
 import errno
 import json
 import logging
@@ -32,6 +33,7 @@ from . import constants
 from . import utils
 from vdsm.network.canonicalize import (canonicalize_networks,
                                        canonicalize_bondings)
+from vdsm.network import errors as ne
 
 CONF_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
 # The persistent path is inside of an extra "persistence" dir in order to get
@@ -216,6 +218,30 @@ class PersistentConfig(Config):
     def restore(self):
         restore()
         return RunningConfig()
+
+
+class Transaction(object):
+    def __init__(self, config=None, persistent=True, in_rollback=False):
+        self.config = config if config is not None else RunningConfig()
+        self.base_config = deepcopy(self.config)
+        self.persistent = persistent
+        self.in_rollback = in_rollback
+
+    def __enter__(self):
+        return self.config
+
+    def __exit__(self, ex_type, ex_value, ex_traceback):
+        if ex_type is None:
+            if self.persistent:
+                self.config.save()
+        elif self.in_rollback:
+            logging.error(
+                'Failed rollback transaction to last known good network.',
+                exc_info=(ex_type, ex_value, ex_traceback))
+        else:
+            config_diff = self.base_config.diffFrom(self.config)
+            if config_diff:
+                raise ne.RollbackIncomplete(config_diff, ex_type, ex_value)
 
 
 def configuredPorts(nets, bridge):
