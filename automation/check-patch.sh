@@ -9,10 +9,7 @@ pip install -U pep8==1.5.7 pyflakes==1.1.0
 
 ./autogen.sh --system --enable-hooks
 
-# Run nosetests only over fedora mock to save Jenkins resources
-if grep -q 'Fedora' /etc/redhat-release; then
-   make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
-fi
+make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 # enable complex globs
 shopt -s extglob
@@ -23,9 +20,7 @@ if git diff-tree --no-commit-id --name-only -r HEAD | egrep --quiet 'vdsm.spec.i
     yum -y install "$EXPORT_DIR/"!(*.src).rpm
 fi
 
-if grep -q 'Fedora' /etc/redhat-release; then
-   # Generate coverage report in HTML format
-   pushd tests
-   coverage html -d "$EXPORT_DIR/htmlcov"
-   popd
-fi
+# Generate coverage report in HTML format
+pushd tests
+coverage html -d "$EXPORT_DIR/htmlcov"
+popd
