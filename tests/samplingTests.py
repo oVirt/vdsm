@@ -27,8 +27,6 @@ import shutil
 import threading
 import time
 
-import six
-
 from vdsm import ipwrapper
 from vdsm.password import ProtectedPassword
 import virt.sampling as sampling
@@ -225,6 +223,26 @@ class HostStatsThreadTests(TestCaseBase):
     FAILED_SAMPLE = 3  # random 'small' value
     STOP_SAMPLE = 6  # ditto
 
+    _core_zero_stats = {
+        'cpuIdle': '100.00',
+        'cpuSys': '0.00',
+        'cpuUser': '0.00',
+        'nodeIndex': 0
+    }
+
+    _core_one_stats = {
+        'cpuIdle': '100.00',
+        'cpuSys': '0.00',
+        'cpuUser': '0.00',
+        'nodeIndex': 1
+    }
+
+    def _fakeNumaTopology(self):
+        return {
+            0: {'cpus': [0]},
+            1: {'cpus': [1]}
+        }
+
     def setUp(self):
         self._hs = None
         self._sampleCount = 0
@@ -316,37 +334,53 @@ class HostStatsThreadTests(TestCaseBase):
                              FakeHostSample.counter - 1)
 
     def testCpuCoreStats(self):
-        node_id, cpu_id = 0, 0
         self._hs = sampling.HostStatsThread(self.log)
         cpu_sample = {'user': 1.0, 'sys': 2.0}
 
-        # "5" is the size of the SampleWindow.
-        # there is no easy way to get SampleWindow, so
-        # we hardcode a magic number here.
-        for fake_ts in six.moves.xrange(5):
-            self._hs._samples.append(
-                fake.HostSample(fake_ts, {cpu_id: cpu_sample}))
-
-        def fakeNumaTopology():
-            return {
-                node_id: {
-                    'cpus': [cpu_id]
-                }
-            }
-
-        expected = {
-            '0': {
-                'cpuIdle': '100.00',
-                'cpuSys': '0.00',
-                'cpuUser': '0.00',
-                'nodeIndex': 0
-            }
-        }
+        # Both CPUs are online and first and last samples are present
+        self._hs._samples.append(
+            fake.HostSample(1.0, {0: cpu_sample, 1: cpu_sample}))
+        self._hs._samples.append(
+            fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample}))
 
         with MonkeyPatchScope([(caps, 'getNumaTopology',
-                                fakeNumaTopology)]):
-            self.assertEqual(self._hs._getCpuCoresStats(),
-                             expected)
+                                self._fakeNumaTopology)]):
+            result = self._hs._getCpuCoresStats()
+            self.assertEqual(len(result), 2)
+            self.assertEqual(result['0'], self._core_zero_stats)
+            self.assertEqual(result['1'], self._core_one_stats)
+
+    def testSkipStatsOnMissingFirstSample(self):
+        self._hs = sampling.HostStatsThread(self.log)
+        cpu_sample = {'user': 1.0, 'sys': 2.0}
+
+        # CPU one suddenly went offline and no new sample from it is available
+        self._hs._samples.append(
+            fake.HostSample(1.0, {0: cpu_sample}))
+        self._hs._samples.append(
+            fake.HostSample(2.0, {0: cpu_sample, 1: cpu_sample}))
+
+        with MonkeyPatchScope([(caps, 'getNumaTopology',
+                                self._fakeNumaTopology)]):
+            result = self._hs._getCpuCoresStats()
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result['0'], self._core_zero_stats)
+
+    def testSkipStatsOnMissingLastSample(self):
+        self._hs = sampling.HostStatsThread(self.log)
+        cpu_sample = {'user': 1.0, 'sys': 2.0}
+
+        # CPU one suddenly came online and the second sample is still missing
+        self._hs._samples.append(
+            fake.HostSample(1.0, {0: cpu_sample, 1: cpu_sample}))
+        self._hs._samples.append(
+            fake.HostSample(2.0, {0: cpu_sample}))
+
+        with MonkeyPatchScope([(caps, 'getNumaTopology',
+                                self._fakeNumaTopology)]):
+            result = self._hs._getCpuCoresStats()
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result['0'], self._core_zero_stats)
 
 
 class NumaNodeMemorySampleTests(TestCaseBase):

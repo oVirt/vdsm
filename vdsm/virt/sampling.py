@@ -56,6 +56,7 @@ class InterfaceSample(object):
 
     The sample is set at the time of initialization and can't be updated.
     """
+
     def readIfaceStat(self, ifid, stat):
         """
         Get and interface's stat.
@@ -159,9 +160,14 @@ class CpuCoreSample(object):
                     self.coresSample[match.group(1)] = coreSample
 
     def getCoreSample(self, coreId):
-        strCoreId = str(coreId)
-        if strCoreId in self.coresSample:
-            return self.coresSample[strCoreId]
+        sample = self.coresSample.get(str(coreId))
+        if not sample:
+            raise MissingSample()
+        return sample
+
+
+class MissingSample(Exception):
+    pass
 
 
 class NumaNodeMemorySample(object):
@@ -680,19 +686,23 @@ class HostStatsThread(threading.Thread):
                 coreStat['nodeIndex'] = int(nodeIndex)
                 hs0, hs1, _ = self._samples.stats()
                 interval = hs1.timestamp - hs0.timestamp
-                jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['user'] -
-                           hs0.cpuCores.getCoreSample(cpuCore)['user']) % \
-                    JIFFIES_BOUND
-                coreStat['cpuUser'] = ("%.2f" % (jiffies / interval))
-                jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['sys'] -
-                           hs0.cpuCores.getCoreSample(cpuCore)['sys']) % \
-                    JIFFIES_BOUND
+                try:
+                    jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['user'] -
+                               hs0.cpuCores.getCoreSample(cpuCore)['user']) % \
+                        JIFFIES_BOUND
+                    coreStat['cpuUser'] = ("%.2f" % (jiffies / interval))
+                    jiffies = (hs1.cpuCores.getCoreSample(cpuCore)['sys'] -
+                               hs0.cpuCores.getCoreSample(cpuCore)['sys']) % \
+                        JIFFIES_BOUND
+                except MissingSample:
+                    continue
                 coreStat['cpuSys'] = ("%.2f" % (jiffies / interval))
                 coreStat['cpuIdle'] = ("%.2f" %
                                        max(0.0, 100.0 -
                                            float(coreStat['cpuUser']) -
                                            float(coreStat['cpuSys'])))
                 cpuCoreStats[str(cpuCore)] = coreStat
+
         return cpuCoreStats
 
     def _getInterfacesStats(self):

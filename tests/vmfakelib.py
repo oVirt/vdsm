@@ -39,6 +39,8 @@ from testlib import namedTemporaryDir
 from testlib import recorded
 from monkeypatch import MonkeyPatchScope
 
+from virt.sampling import MissingSample
+
 
 def Error(code, msg="fake error"):
     e = libvirt.libvirtError(msg)
@@ -385,7 +387,10 @@ class CpuCoreSample(object):
         self._samples = samples
 
     def getCoreSample(self, key):
-        return self._samples[key]
+        sample = self._samples.get(key)
+        if not sample:
+            raise MissingSample()
+        return sample
 
 
 class HostSample(object):
