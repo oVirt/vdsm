@@ -124,6 +124,8 @@ class _Server(object):
             # None is translated to True inside our JSONRPC implementation
             if isinstance(resp.result, list):
                 return response.success(items=resp.result)
+            elif isinstance(resp.result, six.text_type):
+                return response.success(resp.result)
             else:
                 return response.success(**resp.result)
 
