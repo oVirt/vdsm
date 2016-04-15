@@ -122,6 +122,10 @@ class Dispatcher(asyncore.dispatcher):
                 return 0
             else:
                 raise
+        except sslutils.SSLError as e:
+            self._log.error('SSL error during sending data: %s', e)
+            self.handle_close()
+            return 0
 
     def del_channel(self, map=None):
         asyncore.dispatcher.del_channel(self, map)
