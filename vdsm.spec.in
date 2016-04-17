@@ -1189,11 +1189,11 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/__init__.py*
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
+%{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/storage/sync.py*
-%{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/tc/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tc/_parser.py*
 %{python_sitelib}/%{vdsm_name}/tc/_wrapper.py*
