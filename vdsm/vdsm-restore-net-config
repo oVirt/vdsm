@@ -19,6 +19,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 import argparse
+from contextlib import contextmanager
 import glob
 import logging
 import logging.config
@@ -121,20 +122,21 @@ def unified_restoration():
 
     _verify_all_devices_are_up(list(_owned_ifcfg_files()))
 
-    _update_running_config(persistent_config)
+    with _update_running_config(persistent_config):
 
-    _wait_for_for_all_devices_up(
-        available_config.networks.keys() + available_config.bonds.keys())
-    if netinfo.ipv6_supported():
-        _restore_disable_ipv6()
-    changed_config = _filter_changed_nets_bonds(available_config)
-    nets = changed_config.networks
-    bonds = changed_config.bonds
-    if nets or bonds:
-        _convert_to_blocking_dhcp(nets)
-        logging.debug('Calling setupNetworks with networks (%s) '
-                      'and bond (%s).', nets, bonds)
-        setupNetworks(nets, bonds, connectivityCheck=False, _inRollback=True)
+        _wait_for_for_all_devices_up(
+            available_config.networks.keys() + available_config.bonds.keys())
+        if netinfo.ipv6_supported():
+            _restore_disable_ipv6()
+        changed_config = _filter_changed_nets_bonds(available_config)
+        nets = changed_config.networks
+        bonds = changed_config.bonds
+        if nets or bonds:
+            _convert_to_blocking_dhcp(nets)
+            logging.debug('Calling setupNetworks with networks (%s) '
+                          'and bond (%s).', nets, bonds)
+            setupNetworks(
+                nets, bonds, connectivityCheck=False, _inRollback=True)
 
 
 def _verify_all_devices_are_up(owned_ifcfg_files):
@@ -161,9 +163,12 @@ def _upgrade_onboot(ifcfg_file):
             f.write(new_content)
 
 
+@contextmanager
 def _update_running_config(persistent_config):
     """We must recreate RunningConfig so that following setSafeNetworkConfig
     will persist a valid configuration.
+
+    If the setup fails for any reason, cleanup running config.
     """
     running_config = RunningConfig()
     for net, net_attr in persistent_config.networks.iteritems():
@@ -171,6 +176,13 @@ def _update_running_config(persistent_config):
     for bonding, bonding_attr in persistent_config.bonds.iteritems():
         running_config.setBonding(bonding, bonding_attr)
     running_config.save()
+
+    try:
+        yield
+    except:
+        # Cleanup running config.
+        running_config.delete()
+        raise
 
 
 def _owned_ifcfg_files():
