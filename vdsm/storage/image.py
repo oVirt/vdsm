@@ -29,11 +29,11 @@ from vdsm import qemuimg
 from vdsm import virtsparsify
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage import fileUtils
 
 from sdc import sdCache
 import sd
 import misc
-import fileUtils
 import imageSharing
 from vdsm.exception import ActionStopped
 import task

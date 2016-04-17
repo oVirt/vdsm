@@ -27,6 +27,7 @@ from vdsm import constants
 from vdsm import exception
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage import fileUtils
 import vdsm.utils as utils
 
 import volume
@@ -42,7 +43,6 @@ import resourceManager as rm
 from threadLocal import vars
 from sdc import sdCache
 from resourceFactories import LVM_ACTIVATION_NAMESPACE
-import fileUtils
 
 TAG_PREFIX_MD = "MD_"
 TAG_PREFIX_MDNUMBLKS = "MS_"

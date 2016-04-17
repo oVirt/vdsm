@@ -38,10 +38,10 @@ from vdsm import cmdutils
 from vdsm import commands
 from vdsm import exception
 from vdsm import utils
+from vdsm.storage import fileUtils
 
 import storage.outOfProcess as oop
 import storage.misc as misc
-import storage.fileUtils as fileUtils
 
 from monkeypatch import MonkeyPatch
 from testValidation import checkSudo

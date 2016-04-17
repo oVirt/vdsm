@@ -20,7 +20,7 @@
 import os
 import stat
 
-import storage.fileUtils as fileUtils
+from vdsm.storage import fileUtils
 import testValidation
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath

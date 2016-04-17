@@ -53,6 +53,7 @@ from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm.netinfo import DUMMY_BRIDGE
+from vdsm.storage import fileUtils
 from vdsm.virt import guestagent
 from vdsm.virt import sampling
 from vdsm.virt import vmchannels
@@ -64,7 +65,6 @@ from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket
 from storage import outOfProcess as oop
 from storage import sd
-from storage import fileUtils
 
 # local imports
 # In future those should be imported via ..

@@ -37,12 +37,12 @@ from vdsm import constants
 from vdsm import exception
 from vdsm import utils
 from vdsm.storage import exception as se
+from vdsm.storage import fileUtils
 from vdsm.storage import mount
 from vdsm.storage.persistent import PersistentDict, DictValidator
 import vdsm.supervdsm as svdsm
 
 import misc
-import fileUtils
 import sd
 import lvm
 import clusterlock

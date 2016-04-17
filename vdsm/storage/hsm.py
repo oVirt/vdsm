@@ -45,6 +45,7 @@ from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage import fileUtils
 from vdsm.storage import mount
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
@@ -60,7 +61,6 @@ import nfsSD
 import glusterSD
 import localFsSD
 import lvm
-import fileUtils
 import multipath
 import outOfProcess as oop
 from sdc import sdCache

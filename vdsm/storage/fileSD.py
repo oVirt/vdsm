@@ -27,12 +27,12 @@ import fnmatch
 import re
 
 from vdsm.storage import exception as se
+from vdsm.storage import fileUtils
 from vdsm.storage import mount
 from vdsm.storage.persistent import PersistentDict, DictValidator
 
 import sd
 import sdm.volume_artifacts
-import fileUtils
 import fileVolume
 import misc
 import outOfProcess as oop

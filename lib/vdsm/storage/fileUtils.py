@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2011 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 NFS helper module
 """
 
+from __future__ import absolute_import
+
 import ctypes
 import errno
 import grp
@@ -35,9 +37,9 @@ import sys
 import types
 import warnings
 
-from StringIO import StringIO
 from contextlib import closing
 from contextlib import contextmanager
+from StringIO import StringIO
 
 import six
 

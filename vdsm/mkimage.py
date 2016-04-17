@@ -33,7 +33,7 @@ from vdsm.constants import P_VDSM_RUN
 from vdsm.commands import execCmd
 from vdsm.utils import rmFile
 from vdsm.storage import mount
-from storage.fileUtils import resolveUid, resolveGid
+from vdsm.storage.fileUtils import resolveUid, resolveGid
 
 _P_PAYLOAD_IMAGES = os.path.join(P_VDSM_RUN, 'payload')
 

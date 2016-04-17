@@ -22,8 +22,8 @@ import os
 import re
 import stat
 
-from storage.fileUtils import resolveGid
 from vdsm.constants import P_LIBVIRT_VMCHANNELS, P_OVIRT_VMCONSOLES
+from vdsm.storage.fileUtils import resolveGid
 from vdsm import numa
 
 from . import expose

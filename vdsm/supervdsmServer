@@ -57,6 +57,8 @@ except ImportError:
 from vdsm import utils
 from vdsm import sysctl
 from vdsm.storage import mount
+from vdsm.storage.fileUtils import chown, resolveGid, resolveUid
+from vdsm.storage.fileUtils import validateAccess as _validateAccess
 from vdsm.supervdsm import _SuperVdsmManager
 
 from vdsm.network import sourceroutethread
@@ -66,8 +68,6 @@ from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
 from storage.iscsi import readSessionInfo as _readSessionInfo
 from storage import hba
 from storage import multipath
-from storage.fileUtils import chown, resolveGid, resolveUid
-from storage.fileUtils import validateAccess as _validateAccess
 from vdsm.constants import METADATA_GROUP, \
     VDSM_USER, GLUSTER_MGMT_ENABLED
 from storage.devicemapper import _removeMapping, _getPathsStatus

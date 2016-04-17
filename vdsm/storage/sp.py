@@ -35,6 +35,7 @@ from vdsm import concurrent
 from vdsm import constants
 from vdsm.panic import panic
 from vdsm.storage import exception as se
+from vdsm.storage import fileUtils
 from vdsm.storage import mount
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.securable import secured, unsecured
@@ -44,7 +45,6 @@ import blockSD
 import fileSD
 import sd
 import misc
-import fileUtils
 from vdsm.config import config
 from sdc import sdCache
 import image

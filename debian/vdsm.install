@@ -80,7 +80,6 @@
 ./usr/share/vdsm/storage/dispatcher.py
 ./usr/share/vdsm/storage/monitor.py
 ./usr/share/vdsm/storage/fileSD.py
-./usr/share/vdsm/storage/fileUtils.py
 ./usr/share/vdsm/storage/fileVolume.py
 ./usr/share/vdsm/storage/fuser.py
 ./usr/share/vdsm/storage/imagetickets.py

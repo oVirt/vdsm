@@ -65,6 +65,7 @@
 ./usr/lib/python2.7/dist-packages/vdsm/storage/__init__.py
 ./usr/lib/python2.7/dist-packages/vdsm/storage/constants.py
 ./usr/lib/python2.7/dist-packages/vdsm/storage/exception.py
+./usr/lib/python2.7/dist-packages/vdsm/storage/fileUtils.py
 ./usr/lib/python2.7/dist-packages/vdsm/storage/mount.py
 ./usr/lib/python2.7/dist-packages/vdsm/storage/persistent.py
 ./usr/lib/python2.7/dist-packages/vdsm/storage/rwlock.py

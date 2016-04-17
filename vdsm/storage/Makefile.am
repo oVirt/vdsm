@@ -32,7 +32,6 @@ dist_vdsmstorage_PYTHON = \
 	devicemapper.py \
 	dispatcher.py \
 	fileSD.py \
-	fileUtils.py \
 	fileVolume.py \
 	fuser.py \
 	imagetickets.py \
