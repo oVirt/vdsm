@@ -17,20 +17,22 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+
 from __future__ import absolute_import
 
-from collections import namedtuple
 import errno
 import logging
-from os.path import normpath
-import re
 import os
+import re
 import stat
 import threading
 
+from collections import namedtuple
+from os.path import normpath
+
 from vdsm import cmdutils
-from vdsm import constants
 from vdsm import commands
+from vdsm import constants
 from vdsm import supervdsm
 from vdsm import utils
 
