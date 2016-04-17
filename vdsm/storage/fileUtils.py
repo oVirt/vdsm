@@ -21,21 +21,23 @@
 """
 NFS helper module
 """
-import os
-import types
-import pwd
+
+import ctypes
+import errno
 import grp
+import logging
+import os
+import pwd
+import shutil
 import stat
+import subprocess
+import sys
+import types
+import warnings
+
 from StringIO import StringIO
 from contextlib import closing
-import ctypes
 from contextlib import contextmanager
-import subprocess
-import shutil
-import logging
-import errno
-import sys
-import warnings
 
 import six
 
