@@ -138,11 +138,13 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'is_assignable': 'true',
                                         'address': {'slot': '27',
                                                     'bus': '0',
                                                     'domain': '0',
                                                     'function': '0'}},
                   u'scsi_0_0_0_0': {'capability': 'scsi',
+                                    'is_assignable': 'true',
                                     'parent': 'scsi_target0_0_0',
                                     'address': {'bus': '0', 'host': '0',
                                                 'lun': '0', 'target': '0'}},
@@ -154,6 +156,7 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'is_assignable': 'true',
                                         'address': {'slot': '26',
                                                     'bus': '0',
                                                     'domain': '0',
@@ -166,12 +169,14 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'is_assignable': 'true',
                                         'address': {'slot': '31',
                                                     'bus': '0',
                                                     'domain': '0',
                                                     'function': '2'}},
                   u'scsi_target0_0_0': {'capability': 'scsi_target',
-                                        'parent': 'scsi_host0'},
+                                        'parent': 'scsi_host0',
+                                        'is_assignable': 'true'},
                   u'pci_0000_00_02_0': {'product': '2nd Generation Core '
                                         'Processor Family Integrated '
                                         'Graphics Controller',
@@ -180,12 +185,14 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'is_assignable': 'true',
                                         'address': {'slot': '2',
                                                     'bus': '0',
                                                     'domain': '0',
                                                     'function': '0'}},
                   u'scsi_host0': {'capability': 'scsi_host',
-                                  'parent': 'pci_0000_00_1f_2'},
+                                  'parent': 'pci_0000_00_1f_2',
+                                  'is_assignable': 'true'},
                   u'pci_0000_00_19_0': {'product': '82579LM Gigabit '
                                         'Network Connection',
                                         'vendor': 'Intel Corporation',
@@ -193,6 +200,7 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                         'parent': 'computer',
                                         'vendor_id': '0x8086',
                                         'capability': 'pci',
+                                        'is_assignable': 'true',
                                         'address': {'slot': '25',
                                                     'bus': '0',
                                                     'domain': '0',
@@ -203,21 +211,25 @@ DEVICES_PARSED = {u'pci_0000_00_1b_0': {'product': '6 Series/C200 Series '
                                  'parent': 'usb_1_1',
                                  'vendor_id': '0x0a5c',
                                  'address': {'bus': '1', 'device': '10'},
-                                 'capability': 'usb_device'},
+                                 'capability': 'usb_device',
+                                 'is_assignable': 'true'},
                   u'usb_1_1': {'product_id': '0x0024', 'parent':
                                'usb_usb1', 'vendor_id': '0x8087',
                                'address': {'bus': '1', 'device': '2'},
-                               'capability': 'usb_device'},
+                               'capability': 'usb_device',
+                               'is_assignable': 'true'},
                   u'usb_usb1': {'product': 'EHCI Host Controller',
                                 'vendor': 'Linux 3.10.0-123.6.3.el7.x86_64 '
                                 'ehci_hcd', 'product_id': '0x0002',
                                 'address': {'bus': '1', 'device': '1'},
                                 'parent': 'pci_0000_00_1a_0',
                                 'vendor_id': '0x1d6b',
-                                'capability': 'usb_device'}}
+                                'capability': 'usb_device',
+                                'is_assignable': 'true'}}
 
 ADDITIONAL_DEVICE_PARSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                             'Express Root Port 9',
+                            'is_assignable': 'true',
                             'vendor': 'Intel Corporation',
                             'product_id': '0x3410',
                             'parent': 'computer',
@@ -228,15 +240,17 @@ ADDITIONAL_DEVICE_PARSED = {'product': '7500/5520/5500/X58 I/O Hub PCI '
                                         'domain': '0',
                                         'function': '0'}}
 
-_COMPUTER_DEVICE_PARSED = {'capability': 'system'}
+_COMPUTER_DEVICE_PARSED = {'capability': 'system', 'is_assignable': 'true'}
 
 _NET_DEVICE_PARSED = {
     'parent': 'pci_0000_00_19_0',
     'capability': 'net',
     'interface': 'em1',
+    'is_assignable': 'true',
 }
 
 _SRIOV_PF_PARSED = {'capability': 'pci',
+                    'is_assignable': 'true',
                     'address': {'slot': '0',
                                 'bus': '5',
                                 'domain': '0',
@@ -250,6 +264,7 @@ _SRIOV_PF_PARSED = {'capability': 'pci',
                     'vendor_id': '0x8086'}
 
 _SRIOV_VF_PARSED = {'capability': 'pci',
+                    'is_assignable': 'true',
                     'address': {'slot': '16',
                                 'bus': '5',
                                 'domain': '0',
@@ -321,6 +336,7 @@ def _fake_totalvfs(device_name):
 @expandPermutations
 @MonkeyClass(libvirtconnection, 'get', Connection)
 @MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
+@MonkeyClass(hostdev, '_pci_header_type', lambda _: 0)
 @MonkeyClass(hooks, 'after_hostdev_list_by_caps', lambda json: json)
 class HostdevTests(TestCaseBase):
 
@@ -386,6 +402,7 @@ class HostdevTests(TestCaseBase):
 @expandPermutations
 @MonkeyClass(libvirtconnection, 'get', Connection)
 @MonkeyClass(hostdev, '_sriov_totalvfs', _fake_totalvfs)
+@MonkeyClass(hostdev, '_pci_header_type', lambda _: 0)
 class HostdevCreationTests(XMLTestCase):
 
     _PCI_ADDRESS = {'slot': '0x02', 'bus': '0x01', 'domain': '0x0000',
