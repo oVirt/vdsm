@@ -26,10 +26,17 @@ from . import cpuarch
 from . import hooks
 from . import libvirtconnection
 from . import supervdsm
+from . import utils
 
 CAPABILITY_TO_XML_ATTR = {'pci': 'pci',
                           'scsi': 'scsi',
                           'usb_device': 'usb'}
+
+
+class PCIHeaderType:
+    ENDPOINT = 0
+    BRIDGE = 1
+    CARDBUS_BRIDGE = 2
 
 
 class NoIOMMUSupportException(Exception):
@@ -46,6 +53,35 @@ def is_supported():
         return iommu_groups_exist and dmar_exists
     except OSError:
         return False
+
+
+def _pci_header_type(device_name):
+    """
+    PCI header type is 1 byte located at 0x0e of PCI configuration space.
+    Relevant part of the header structures:
+
+    register (offset)|bits 31-24|bits 23-16 |bits 15-8    |bits 7-0
+    0C               |BIST      |Header type|Latency Timer|Cache Line Size
+
+    The structure of type looks like this:
+
+    Bit 7             |Bits 6 to 0
+    Multifunction flag|Header Type
+
+    This function should be replaced when [1] is resolved.
+
+    [1]https://bugzilla.redhat.com/show_bug.cgi?id=1317531
+    """
+    try:
+        with open('/sys/bus/pci/devices/{}/config'.format(
+                name_to_pci_path(device_name)), 'rb') as f:
+            f.seek(0x0e)
+            header_type = ord(f.read(1)) & 0x7f
+    except IOError:
+        # Not a PCI device, we have to treat all of these as assignable.
+        return PCIHeaderType.ENDPOINT
+
+    return int(header_type)
 
 
 def name_to_pci_path(device_name):
@@ -149,6 +185,15 @@ def _parse_device_params(device_xml):
         address = physfn.find('address')
         params['physfn'] = pci_address_to_name(**address.attrib)
 
+    is_assignable = None
+    if physfn is not None:
+        if physfn.attrib['type'] in ('pci-bridge', 'cardbus-bridge'):
+            is_assignable = 'false'
+    if is_assignable is None:
+        is_assignable = str(_pci_header_type(name) ==
+                            PCIHeaderType.ENDPOINT).lower()
+    params['is_assignable'] = is_assignable
+
     iommu_group = caps.find('iommuGroup')
     if iommu_group is not None:
         params['iommu_group'] = iommu_group.attrib['number']
@@ -216,7 +261,7 @@ def detach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if capability == 'pci':
+    if capability == 'pci' and utils.tobool(device_params['is_assignable']):
         try:
             iommu_group = device_params['iommu_group']
         except KeyError:
@@ -235,7 +280,7 @@ def reattach_detachable(device_name):
     libvirt_device, device_params = _get_device_ref_and_params(device_name)
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
-    if capability == 'pci':
+    if capability == 'pci' and utils.tobool(device_params['is_assignable']):
         try:
             iommu_group = device_params['iommu_group']
         except KeyError:
