@@ -62,6 +62,10 @@ public class JsonRpcClient {
         return this.client.getHostname();
     }
 
+    public int getConnectionId() {
+        return this.getConnectionId();
+    }
+
     /**
      * Sends single request and returns {@link Future} representation of {@link JsonRpcResponse}.
      *

@@ -13,6 +13,7 @@ import java.rmi.ConnectException;
 import java.security.cert.Certificate;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -263,6 +264,10 @@ public abstract class ReactorClient {
 
     public boolean isOpen() {
         return channel != null && channel.isOpen();
+    }
+
+    public int getConnectionId() {
+        return Objects.hashCode(this.channel);
     }
 
     public void performAction() {
