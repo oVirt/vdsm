@@ -96,7 +96,7 @@ class JsonRpcNoResponseError(JsonRpcError):
 class JsonRpcRequest(object):
     def __init__(self, method, params=(), reqId=None):
         self.method = method
-        self.params = protect_passwords(params)
+        self.params = params
         self.id = reqId
 
     @classmethod
@@ -124,7 +124,7 @@ class JsonRpcRequest(object):
         if not isinstance(params, (list, dict)):
             raise JsonRpcInvalidRequestError("wrong params type", obj)
 
-        return JsonRpcRequest(method, params, reqId)
+        return JsonRpcRequest(method, protect_passwords(params), reqId)
 
     def toDict(self):
         return {
