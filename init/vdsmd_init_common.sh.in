@@ -224,7 +224,7 @@ task_upgraded_version_check(){
 
 #### post-stop tasks ####
 task_run_final_hooks(){
-    "@PYTHON@" "@VDSMDIR@/hooks.pyc" after_vdsm_stop
+    "@PYTHON@" -m "vdsm.hooks" after_vdsm_stop
 }
 #### post-stop tasks end ####
 
