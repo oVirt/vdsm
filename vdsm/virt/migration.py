@@ -698,7 +698,7 @@ class Progress(_Progress):
                 (self.data_processed / Mbytes),
                 (self.data_remaining / Mbytes),
                 (self.mem_bps / Mbytes),
-                (self.mem_constant / Mbytes),
+                self.mem_constant,
                 (self.compression_bytes / Mbytes),
                 self.dirty_rate,
                 self.mem_iteration,
