@@ -796,6 +796,9 @@ fi
 %systemd_post mom-vdsm.service
 %systemd_post ksmtuned.service
 
+# From VDSM version 4.18 a .conf file is deployed to /etc/NetworkManager/conf.d
+/bin/systemctl reload NetworkManager >/dev/null 2>&1 || :
+
 # VDSM installs unit files - daemon-reload will refresh systemd
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 exit 0
@@ -860,6 +863,8 @@ exit 0
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
+%dir %{_sysconfdir}/NetworkManager
+%dir %{_sysconfdir}/NetworkManager/conf.d
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
@@ -897,6 +902,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/vmdevices/network.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/storage.py*
 
+%config(noreplace) %{_sysconfdir}/NetworkManager/conf.d/90-vdsm-monitor-connection-files.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
