@@ -161,6 +161,9 @@ class Ifcfg(Configurator):
                 ifdown(slave.name)  # nics must be down to join a bond
                 self.configApplier.addNic(slave)
                 _exec_ifup(slave)
+            else:
+                # Let NetworkManager know that we now own the slave.
+                self.configApplier.addNic(slave)
 
         if bondIfcfgWritten:
             ifdown(bond.name)
