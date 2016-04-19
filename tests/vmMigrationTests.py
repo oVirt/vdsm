@@ -206,6 +206,18 @@ class TestProgress(TestCaseBase):
         prog = migration.Progress.from_job_stats(self.job_stats)
         self.assertEquals(prog.percentage, progress)
 
+    @permutations([
+        # job_type, ongoing
+        # not sure could actually happen
+        [libvirt.VIR_DOMAIN_JOB_BOUNDED, True],
+        [libvirt.VIR_DOMAIN_JOB_UNBOUNDED, True],
+        [libvirt.VIR_DOMAIN_JOB_NONE, False],
+    ])
+    def test_ongoing(self, job_type, ongoing):
+        self.job_stats['type'] = job_type
+        prog = migration.Progress.from_job_stats(self.job_stats)
+        self.assertEquals(prog.ongoing, ongoing)
+
 
 # stolen^Wborrowed from itertools recipes
 def pairwise(iterable):

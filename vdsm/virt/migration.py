@@ -645,7 +645,7 @@ class MonitorThread(threading.Thread):
             if self._stop.isSet():
                 break
 
-            if progress.job_type != libvirt.VIR_DOMAIN_JOB_NONE:
+            if progress.ongoing:
                 self.progress = progress
                 self._vm.log.info('%s', progress)
 
@@ -713,6 +713,10 @@ class Progress(_Progress):
             # available since libvirt 1.3
             stats.get('memory_iteration', -1),
         )
+
+    @property
+    def ongoing(self):
+        return self.job_type != libvirt.VIR_DOMAIN_JOB_NONE
 
     def __str__(self):
         return (
