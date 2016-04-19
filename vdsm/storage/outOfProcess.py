@@ -326,6 +326,10 @@ def readLines(ioproc, path):
 
 def writeLines(ioproc, path, lines):
     data = ''.join(lines)
+    return writeFile(ioproc, path, data)
+
+
+def writeFile(ioproc, path, data):
     return ioproc.writefile(path, data)
 
 
@@ -361,6 +365,7 @@ class _IOProcWrapper(types.ModuleType):
         self.directReadLines = partial(directReadLines, ioproc)
         self.readLines = partial(readLines, ioproc)
         self.writeLines = partial(writeLines, ioproc)
+        self.writeFile = partial(writeFile, ioproc)
         self.simpleWalk = partial(simpleWalk, ioproc)
         self.directTouch = partial(directTouch, ioproc)
         self.truncateFile = partial(truncateFile, ioproc)
