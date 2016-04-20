@@ -159,7 +159,7 @@ class TestVm(XMLTestCase):
             <os>
                  <type arch="x86_64" machine="pc">hvm</type>
                  <smbios mode="sysinfo"/>
-                 <bootmenu enable="yes"/>
+                 <bootmenu enable="yes" timeout="10000"/>
             </os>""", """
             <os>
                  <type arch="x86_64" machine="pc">hvm</type>
@@ -168,7 +168,7 @@ class TestVm(XMLTestCase):
             <os>
                  <type arch="x86_64" machine="pc">hvm</type>
                  <smbios mode="sysinfo"/>
-                 <bootmenu enable="yes"/>
+                 <bootmenu enable="yes" timeout="10000"/>
             </os>""", """
             <os>
                  <type arch="x86_64" machine="pc">hvm</type>
@@ -178,7 +178,7 @@ class TestVm(XMLTestCase):
                  <type arch="x86_64" machine="pc">hvm</type>
                  <cmdline>console=ttyS0 1</cmdline>
                  <smbios mode="sysinfo"/>
-                 <bootmenu enable="yes"/>
+                 <bootmenu enable="yes" timeout="10000"/>
             </os>""", """
             <os>
                  <type arch="x86_64" machine="pc">hvm</type>

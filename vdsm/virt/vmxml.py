@@ -31,6 +31,8 @@ METADATA_VM_TUNE_URI = 'http://ovirt.org/vm/tune/1.0'
 METADATA_VM_TUNE_ELEMENT = 'qos'
 METADATA_VM_TUNE_PREFIX = 'ovirt'
 
+_BOOT_MENU_TIMEOUT = 10000  # milliseconds
+
 
 def has_channel(domXML, name):
     domObj = etree.fromstring(domXML)
@@ -298,7 +300,8 @@ class Domain(object):
             oselem.appendChildWithArgs('smbios', mode='sysinfo')
 
         if utils.tobool(self.conf.get('bootMenuEnable', False)):
-            oselem.appendChildWithArgs('bootmenu', enable='yes')
+            oselem.appendChildWithArgs('bootmenu', enable='yes',
+                                       timeout=str(_BOOT_MENU_TIMEOUT))
 
         if use_serial_console and cpuarch.is_x86(self.arch):
             oselem.appendChildWithArgs('bios', useserial='yes')
