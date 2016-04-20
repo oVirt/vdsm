@@ -24,40 +24,22 @@ from uuid import UUID
 from nose.plugins.attrib import attr
 
 from .nettestlib import dummy_device
+from .ovsnettestlib import OvsService, TEST_BRIDGE, TEST_BOND
 from testlib import VdsmTestCase
 
-from vdsm.commands import execCmd
 from vdsm.network.ovs.driver import create
 from vdsm.network.ovs.driver import vsctl
 
-TEST_BRIDGE = 'ovs-test-br0'
-TEST_BRIDGES = (TEST_BRIDGE, 'ovs-test-br1')
-TEST_BOND = 'bond.ovs.test'
 
-OVS_CTL = '/usr/share/openvswitch/scripts/ovs-ctl'
-
-_openvswitch_init_state_is_up = False
+ovs_service = OvsService()
 
 
 def setup_module():
-    global _openvswitch_init_state_is_up
-    rc, out, err = execCmd([OVS_CTL, 'status'])
-    _openvswitch_init_state_is_up = (rc == 0)
-    if not _openvswitch_init_state_is_up:
-        execCmd([OVS_CTL, 'start'])
+    ovs_service.setup()
 
 
 def teardown_module():
-    ovsdb = create()
-    bridges = ovsdb.list_bridge_info().execute()
-
-    with ovsdb.transaction() as t:
-        for bridge in bridges:
-            if bridge in TEST_BRIDGES:
-                t.add(ovsdb.del_br(bridge['name']))
-
-    if not _openvswitch_init_state_is_up:
-        execCmd([OVS_CTL, 'stop'])
+    ovs_service.teardown()
 
 
 @attr(type='unit')

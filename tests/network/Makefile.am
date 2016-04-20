@@ -26,6 +26,7 @@ dist_vdsmnetworktests_PYTHON = \
 	dhcp.py \
 	firewall.py \
 	nettestlib.py \
+	ovsnettestlib.py \
 	$(NULL)
 
 dist_vdsmnetworktests_DATA = \
