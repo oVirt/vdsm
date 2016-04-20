@@ -39,7 +39,7 @@ class TestSchemaCompliancyBase(TestCaseBase):
     @utils.memoized
     def _getAPI(self):
         paths = [vdsmapi.find_schema()]
-        return vdsmapi.Schema(paths)
+        return vdsmapi.Schema(paths, True)
 
     def assertVmStatsSchemaCompliancy(self, schema, stats):
         api = self._getAPI()

@@ -26,7 +26,6 @@ import six
 import warnings
 import yaml
 
-from vdsm.config import config
 from vdsm.logUtils import Suppressed
 from yajsonrpc import JsonRpcInvalidParamsError
 
@@ -115,8 +114,14 @@ class Schema(object):
 
     log = logging.getLogger("SchemaCache")
 
-    def __init__(self, paths):
-        self._strict_mode = config.getboolean('devel', 'api_strict_mode')
+    def __init__(self, paths, strict_mode):
+        """
+        Constructs schema object based on yaml files provided as
+        list of paths and a mode which determines request/response
+        validation behavior. Usually it is based on api_strict_mode
+        property from config.py
+        """
+        self._strict_mode = strict_mode
         self._methods = {}
         self._types = {}
         try:

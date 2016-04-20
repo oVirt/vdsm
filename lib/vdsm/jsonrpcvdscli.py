@@ -109,7 +109,9 @@ _COMMAND_CONVERTER = {
 class _Server(object):
 
     def __init__(self, client, xml_compat):
-        self._schema = vdsmapi.Schema([vdsmapi.find_schema()])
+        api_strict_mode = config.getboolean('devel', 'api_strict_mode')
+        self._schema = vdsmapi.Schema([vdsmapi.find_schema()],
+                                      api_strict_mode)
         self._client = client
         self._xml_compat = xml_compat
         self._default_timeout = CALL_TIMEOUT

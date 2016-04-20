@@ -22,8 +22,7 @@ from __future__ import absolute_import
 from api import vdsmapi
 from yajsonrpc import JsonRpcError
 
-from monkeypatch import MonkeyPatch
-from testlib import VdsmTestCase as TestCaseBase, make_config
+from testlib import VdsmTestCase as TestCaseBase
 
 try:
     import gluster.apiwrapper as gapi
@@ -31,11 +30,6 @@ try:
     gapi
 except ImportError:
     _glusterEnabled = False
-
-
-def api_strict_mode():
-        return MonkeyPatch(vdsmapi, 'config', make_config(
-            [('devel', 'api_strict_mode', 'true')]))
 
 
 class SchemaWrapper(object):
@@ -49,13 +43,13 @@ class SchemaWrapper(object):
             paths = [vdsmapi.find_schema()]
             if _glusterEnabled:
                 paths.append(vdsmapi.find_schema('vdsm-api-gluster'))
-            self._schema = vdsmapi.Schema(paths)
+            self._schema = vdsmapi.Schema(paths, True)
         return self._schema
 
     def events_schema(self):
         if self._events_schema is None:
             path = [vdsmapi.find_schema('vdsm-events')]
-            self._events_schema = vdsmapi.Schema(path)
+            self._events_schema = vdsmapi.Schema(path, True)
         return self._events_schema
 
 
@@ -65,7 +59,6 @@ _schema = SchemaWrapper()
 
 class DataVerificationTests(TestCaseBase):
 
-    @api_strict_mode()
     def test_optional_params(self):
         params = {u"addr": u"rack05-pdu01-lab4.tlv.redhat.com", u"port": 54321,
                   u"agent": u"apc_snmp", u"username": u"emesika",
@@ -75,14 +68,12 @@ class DataVerificationTests(TestCaseBase):
         _schema.schema().verify_args(
             vdsmapi.MethodRep('Host', 'fenceNode'), params)
 
-    @api_strict_mode()
     def test_ok_response(self):
         ret = {u'power': u'on'}
 
         _schema.schema().verify_retval(
             vdsmapi.MethodRep('Host', 'fenceNode'), ret)
 
-    @api_strict_mode()
     def test_unknown_response_type(self):
         with self.assertRaises(JsonRpcError) as e:
             ret = {u'My caps': u'My capabilites'}
@@ -92,7 +83,6 @@ class DataVerificationTests(TestCaseBase):
 
         self.assertIn('My caps', e.exception.message)
 
-    @api_strict_mode()
     def test_unknown_param(self):
         params = {u"storagepoolID": u"00000002-0002-0002-0002-0000000000f6",
                   u"onlyForce": True,
@@ -104,7 +94,6 @@ class DataVerificationTests(TestCaseBase):
 
         self.assertIn('onlyForce', e.exception.message)
 
-    @api_strict_mode()
     def test_wrong_param_type(self):
         params = {u"storagepoolID": u"00000000-0000-0000-0000-000000000000",
                   u"domainType": u"1",
@@ -120,14 +109,12 @@ class DataVerificationTests(TestCaseBase):
 
         self.assertIn('StorageDomainType', e.exception.message)
 
-    @api_strict_mode()
     def test_list_ret(self):
         ret = [{u"status": 0, u"id": u"f6de012c-be35-47cb-94fb-f01074a5f9ef"}]
 
         _schema.schema().verify_retval(
             vdsmapi.MethodRep('StoragePool', 'disconnectStorageServer'), ret)
 
-    @api_strict_mode()
     def test_complex_ret_type(self):
         ret = {u"cpuStatistics": {u"1": {u"cpuUser": u"1.47",
                                          u"nodeIndex": 0,
@@ -283,7 +270,6 @@ class DataVerificationTests(TestCaseBase):
         _schema.schema().verify_retval(
             vdsmapi.MethodRep('Host', 'getStats'), ret)
 
-    @api_strict_mode()
     def test_badly_defined_ret_type(self):
         ret = {u'pci_0000_00_1b_0':
                {u'params':
@@ -305,7 +291,6 @@ class DataVerificationTests(TestCaseBase):
 
         self.assertIn('is not a list', e.exception.message)
 
-    @api_strict_mode()
     def test_allvmstats(self):
         ret = [{'vcpuCount': '1',
                 'displayInfo': [{'tlsPort': u'5900',
@@ -469,8 +454,6 @@ class DataVerificationTests(TestCaseBase):
         with self.assertRaises(vdsmapi.TypeNotFound):
             _schema.schema().get_type('Missing_type')
 
-    @MonkeyPatch(vdsmapi, 'config',
-                 make_config([('devel', 'api_strict_mode', 'true')]))
     def test_events_params(self):
         params = {u"notify_time": 4303947020,
                   u"426aef82-ea1d-4442-91d3-fd876540e0f0":
