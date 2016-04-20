@@ -14,6 +14,9 @@ if [ ! -f Makefile ]; then
 fi
 
 make
+
+cp $PWD/lib/api/vdsm-api.html "$EXPORTS"
+
 # tests will be done elsewhere
 yum-builddep ./vdsm.spec
 make PYFLAKES="" PEP8="" NOSE_EXCLUDE=.* rpm

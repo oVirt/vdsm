@@ -25,6 +25,7 @@ import os
 import six
 import yaml
 
+from vdsm import utils
 from vdsm.logUtils import Suppressed
 from yajsonrpc import JsonRpcInvalidParamsError
 
@@ -160,11 +161,19 @@ class Schema(object):
         except KeyError:
             raise MethodNotFound(rep.id)
 
+    @property
+    def get_methods(self):
+        return utils.picklecopy(self._methods)
+
     def get_type(self, type_name):
         try:
             return self._types[type_name]
         except KeyError:
             raise TypeNotFound(type_name)
+
+    @property
+    def get_types(self):
+        return utils.picklecopy(self._types)
 
     def _check_primitive_type(self, t, value, name):
         condition = PRIMITIVE_TYPES.get(t)

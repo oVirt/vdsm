@@ -21,6 +21,10 @@
 vdsmpyrpcdir = $(pythondir)/api
 vdsmrpcdir = $(vdsmpylibdir)/rpc
 
+CLEANFILES = \
+	vdsm-api.html \
+	$(NULL)
+
 EXTRA_DIST = \
 	schema_to_html.py \
 	$(NULL)
@@ -35,3 +39,13 @@ dist_vdsmrpc_DATA = \
 	vdsm-api-gluster.yml \
 	vdsm-events.yml \
 	$(NULL)
+
+nodist_noinst_DATA = \
+	vdsm-api.html \
+	$(NULL)
+
+vdsm-api.html: schema_to_html.py vdsm-api.yml
+	@echo "  Generate $@"
+	chmod u+w $(srcdir)
+	PYTHONPATH=$(srcdir)/../:$(srcdir)/../vdsm \
+	    $(PYTHON) schema_to_html.py vdsm-api.yml $@
