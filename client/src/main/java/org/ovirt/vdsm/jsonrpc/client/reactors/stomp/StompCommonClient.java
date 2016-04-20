@@ -47,6 +47,10 @@ public abstract class StompCommonClient extends ReactorClient {
 
     public void send(byte[] message) {
         outbox.addFirst(ByteBuffer.wrap(message));
+        updateOps(message);
+    }
+
+    private void updateOps(byte[] message) {
         if (LOG.isDebugEnabled()) {
             try {
                 LOG.debug("Message sent: " + Message.parse(message));
@@ -62,6 +66,11 @@ public abstract class StompCommonClient extends ReactorClient {
                 return null;
             }
         });
+    }
+
+    public void sendNow(byte[] message) {
+        outbox.addLast(ByteBuffer.wrap(message));
+        updateOps(message);
     }
 
     void processMessage(Message message) {
