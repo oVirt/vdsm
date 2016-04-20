@@ -160,7 +160,6 @@ public abstract class SSLClient extends StompCommonClient {
         if (this.nioEngine != null) {
             this.nioEngine.clearBuff();
         }
-        outbox.clear();
         this.nioEngine = null;
     }
 

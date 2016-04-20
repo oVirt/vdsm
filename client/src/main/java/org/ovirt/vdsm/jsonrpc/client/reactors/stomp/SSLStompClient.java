@@ -47,7 +47,7 @@ public class SSLStompClient extends SSLClient {
             if (incoming != 0 || outgoing != 0) {
                 message.withHeader(HEADER_HEART_BEAT, outgoing + "," + reduceGracePeriod(incoming));
             }
-            send(message.build());
+            sendNow(message.build());
 
             subscribe(getResponseQueue());
 
@@ -60,7 +60,7 @@ public class SSLStompClient extends SSLClient {
         private void subscribe(String queueName) {
             String subId = UUID.randomUUID().toString();
             subscriptionIds.add(subId);
-            send(new Message().subscribe().withHeader(HEADER_DESTINATION, queueName)
+            sendNow(new Message().subscribe().withHeader(HEADER_DESTINATION, queueName)
                     .withHeader(HEADER_ID, subId).withHeader(HEADER_ACK, "auto").build());
         }
 
