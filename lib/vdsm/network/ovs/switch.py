@@ -31,12 +31,12 @@ SWITCH_TYPE = 'ovs'
 
 
 def validate_network_setup(nets, bonds):
-    running_networks = RunningConfig().networks
+    running_config = RunningConfig()
     kernel_nics = CachingNetInfo().nics
 
     for net, attrs in six.iteritems(nets):
         validator.validate_net_configuration(
-            net, attrs, running_networks, kernel_nics)
+            net, attrs, bonds, running_config, kernel_nics)
     for bond, attrs in six.iteritems(bonds):
         validator.validate_bond_configuration(attrs, kernel_nics)
 

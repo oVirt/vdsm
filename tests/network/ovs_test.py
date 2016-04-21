@@ -18,6 +18,7 @@
 #
 from __future__ import absolute_import
 
+from vdsm.netconfpersistence import BaseConfig
 from vdsm.network import errors as ne
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator
@@ -30,39 +31,73 @@ from nose.plugins.attrib import attr
 class ValidationTests(TestCaseBase):
 
     def test_adding_a_new_single_untagged_net(self):
-        fake_running_networks = {
-            'net1': {'nic': 'eth0', 'vlan': 10, 'switch': 'ovs'}}
+        fake_running_config = BaseConfig(
+            {'net1': {'nic': 'eth0', 'vlan': 10, 'switch': 'ovs'}}, {})
+        fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0']
         with self.assertNotRaises():
             ovs_validator.validate_net_configuration(
                 'net2', {'nic': 'eth0', 'switch': 'ovs'},
-                fake_running_networks, fake_kernel_nics)
+                fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
 
     def test_edit_single_untagged_net_nic(self):
-        fake_running_networks = {'net1': {'nic': 'eth0', 'switch': 'ovs'}}
+        fake_running_config = BaseConfig(
+            {'net1': {'nic': 'eth0', 'switch': 'ovs'}}, {})
+        fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0', 'eth1']
         with self.assertNotRaises():
             ovs_validator.validate_net_configuration(
                 'net1', {'nic': 'eth1', 'switch': 'ovs'},
-                fake_running_networks, fake_kernel_nics)
+                fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
 
     def test_adding_a_second_untagged_net(self):
-        fake_running_networks = {'net1': {'nic': 'eth0', 'switch': 'ovs'}}
+        fake_running_config = BaseConfig(
+            {'net1': {'nic': 'eth0', 'switch': 'ovs'}}, {})
+        fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0', 'eth1']
         with self.assertRaises(ne.ConfigNetworkError) as e:
             ovs_validator.validate_net_configuration(
                 'net2', {'nic': 'eth1', 'switch': 'ovs'},
-                fake_running_networks, fake_kernel_nics)
+                fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
         self.assertEquals(e.exception[0], ne.ERR_BAD_VLAN)
 
     def test_add_network_with_non_existing_nic(self):
-        fake_running_networks = {}
+        fake_running_config = BaseConfig({}, {})
+        fake_to_be_added_bonds = {}
         fake_kernel_nics = []
         with self.assertRaises(ne.ConfigNetworkError) as e:
             ovs_validator.validate_net_configuration(
                 'net1', {'nic': 'eth0', 'switch': 'ovs'},
-                fake_running_networks, fake_kernel_nics)
+                fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
         self.assertEquals(e.exception[0], ne.ERR_BAD_NIC)
+
+    def test_add_network_with_non_existing_bond(self):
+        fake_running_config = BaseConfig({}, {})
+        fake_to_be_added_bonds = {}
+        fake_kernel_nics = []
+        with self.assertRaises(ne.ConfigNetworkError) as e:
+            ovs_validator.validate_net_configuration(
+                'net1', {'bonding': 'bond1', 'switch': 'ovs'},
+                fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
+        self.assertEquals(e.exception[0], ne.ERR_BAD_BONDING)
+
+    def test_add_network_with_to_be_added_bond(self):
+        fake_running_config = BaseConfig({}, {})
+        fake_to_be_added_bonds = {'bond1': {}}
+        fake_kernel_nics = []
+        with self.assertNotRaises():
+            ovs_validator.validate_net_configuration(
+                'net1', {'bonding': 'bond1', 'switch': 'ovs'},
+                fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
+
+    def test_add_network_with_running_bond(self):
+        fake_running_config = BaseConfig({}, {'bond1': {}})
+        fake_to_be_added_bonds = {}
+        fake_kernel_nics = []
+        with self.assertNotRaises():
+            ovs_validator.validate_net_configuration(
+                'net1', {'bonding': 'bond1', 'switch': 'ovs'},
+                fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
 
     def test_bond_with_no_slaves(self):
         fake_kernel_nics = []
