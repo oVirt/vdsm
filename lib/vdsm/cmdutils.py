@@ -69,7 +69,13 @@ def sudo(cmd):
     return command
 
 
-def systemd_run(cmd, scope=False, unit=None, slice=None):
+class Accounting(object):
+    CPU = 'CPU'
+    Memory = 'Memory'
+    BlockIO = 'BlockIO'
+
+
+def systemd_run(cmd, scope=False, unit=None, slice=None, accounting=None):
     command = [constants.EXT_SYSTEMD_RUN]
     if scope:
         command.append('--scope')
@@ -77,6 +83,9 @@ def systemd_run(cmd, scope=False, unit=None, slice=None):
         command.append('--unit=%s' % unit)
     if slice:
         command.append('--slice=%s' % slice)
+    if accounting is not None:
+        command.extend(['--property={}Accounting=1'.format(acct)
+                        for acct in accounting])
     command.extend(cmd)
     return command
 

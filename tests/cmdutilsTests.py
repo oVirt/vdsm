@@ -46,6 +46,23 @@ class SystemdRunTests(VdsmTestCase):
         res = [constants.EXT_SYSTEMD_RUN, '--slice=slice', 'a', 'b']
         self.assertEqual(cmd, res)
 
+    def test_accounting(self):
+        accounting = (
+            cmdutils.Accounting.CPU,
+            cmdutils.Accounting.Memory,
+            cmdutils.Accounting.BlockIO,
+        )
+        cmd = cmdutils.systemd_run(['a', 'b'], accounting=accounting)
+        res = [
+            constants.EXT_SYSTEMD_RUN,
+            '--property=CPUAccounting=1',
+            '--property=MemoryAccounting=1',
+            '--property=BlockIOAccounting=1',
+            'a',
+            'b',
+        ]
+        self.assertEqual(cmd, res)
+
 
 class List2CmdlineeTests(VdsmTestCase):
 
