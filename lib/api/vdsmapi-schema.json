@@ -2122,8 +2122,6 @@
 # @netConfigDirty:  Indicates if there are uncommitted changes to the network
 #                   configuration
 #
-# @generationID:    A @UUID that is refreshed each time vdsm starts
-#
 # @momStatus:       The current status of the MOM policy engine
 #
 # @haScore:         #optional The host score according to the HA agent,
@@ -2165,7 +2163,7 @@
            'memCommitted': 'int', 'swapTotal': 'int', 'swapFree': 'int',
            'vmCount': 'int', 'vmActive': 'int', 'vmMigrating': 'int',
            'dateTime': 'str', 'ksmState': 'bool', 'ksmPages': 'int',
-           'ksmCpu': 'float', 'netConfigDirty': 'bool', 'generationID': 'UUID',
+           'ksmCpu': 'float', 'netConfigDirty': 'bool',
            'momStatus': 'MOMStatus', '*haScore': 'int',
            'haStatus': 'HostedEngineStatus', '*bootTime': 'uint',
            'numaNodeMemFree': 'NumaNodeMemoryStatsMap',

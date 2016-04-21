@@ -1368,7 +1368,6 @@ class Global(APIBase):
         stats.update(self._cif.mom.getKsmStats())
 
         stats['netConfigDirty'] = str(self._cif._netConfigDirty)
-        stats['generationID'] = self._cif._generationID
         stats['haStats'] = self._getHaInfo()
         if stats['haStats']['configured']:
             # For backwards compatibility, will be removed in the future

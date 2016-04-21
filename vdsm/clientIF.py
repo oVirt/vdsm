@@ -24,7 +24,6 @@ import os.path
 import socket
 import time
 import threading
-import uuid
 from functools import partial
 from weakref import proxy
 from collections import defaultdict
@@ -89,7 +88,6 @@ class clientIF(object):
         self.log = log
         self._recovery = True
         self.channelListener = Listener(self.log)
-        self._generationID = str(uuid.uuid4())
         self.mom = None
         self.bindings = {}
         self._broker_client = None
