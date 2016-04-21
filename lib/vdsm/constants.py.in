@@ -99,7 +99,6 @@ SYSCONF_PATH = '@sysconfdir@'
 #
 # External programs (sorted, please keep in order).
 #
-EXT_BLKID = '@BLKID_PATH@'
 EXT_BRCTL = '@BRCTL_PATH@'
 
 EXT_CHOWN = '@CHOWN_PATH@'
