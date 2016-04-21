@@ -30,13 +30,12 @@ def _get_untagged_net(running_networks):
     return None
 
 
-def validate_net_configuration(net, attrs, running_networks):
+def validate_net_configuration(net, attrs, running_networks, kernel_nics):
     """Test if network meets logical Vdsm requiremets.
 
     Bridgeless networks are allowed in order to support Engine requirements.
 
     Checked by OVS:
-        - existence of used bonding/nic
         - only one vlan per tag
     """
     nic = attrs.get('nic')
@@ -51,6 +50,9 @@ def validate_net_configuration(net, attrs, running_networks):
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_VLAN,
                 'Untagged network already defined with name %s' % untagged_net)
+        if nic and nic not in kernel_nics:
+            raise ne.ConfigNetworkError(
+                ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
     else:
         # We do not support ifaceless VLANs in Vdsm, because of legacy VLAN
         # device requires an iface to lie on. It wouldn't be a problem in OVS,

@@ -32,26 +32,37 @@ class ValidationTests(TestCaseBase):
     def test_adding_a_new_single_untagged_net(self):
         fake_running_networks = {
             'net1': {'nic': 'eth0', 'vlan': 10, 'switch': 'ovs'}}
+        fake_kernel_nics = ['eth0']
         with self.assertNotRaises():
             ovs_validator.validate_net_configuration(
                 'net2', {'nic': 'eth0', 'switch': 'ovs'},
-                fake_running_networks)
+                fake_running_networks, fake_kernel_nics)
 
     def test_edit_single_untagged_net_nic(self):
-        fake_running_networks = {
-            'net1': {'nic': 'eth0', 'switch': 'ovs'}}
+        fake_running_networks = {'net1': {'nic': 'eth0', 'switch': 'ovs'}}
+        fake_kernel_nics = ['eth0', 'eth1']
         with self.assertNotRaises():
             ovs_validator.validate_net_configuration(
                 'net1', {'nic': 'eth1', 'switch': 'ovs'},
-                fake_running_networks)
+                fake_running_networks, fake_kernel_nics)
 
     def test_adding_a_second_untagged_net(self):
-        fake_running_networks = {
-            'net1': {'nic': 'eth0', 'switch': 'ovs'}}
-        with self.assertRaises(ne.ConfigNetworkError):
+        fake_running_networks = {'net1': {'nic': 'eth0', 'switch': 'ovs'}}
+        fake_kernel_nics = ['eth0', 'eth1']
+        with self.assertRaises(ne.ConfigNetworkError) as e:
             ovs_validator.validate_net_configuration(
                 'net2', {'nic': 'eth1', 'switch': 'ovs'},
-                fake_running_networks)
+                fake_running_networks, fake_kernel_nics)
+        self.assertEquals(e.exception[0], ne.ERR_BAD_VLAN)
+
+    def test_add_network_with_non_existing_nic(self):
+        fake_running_networks = {}
+        fake_kernel_nics = []
+        with self.assertRaises(ne.ConfigNetworkError) as e:
+            ovs_validator.validate_net_configuration(
+                'net1', {'nic': 'eth0', 'switch': 'ovs'},
+                fake_running_networks, fake_kernel_nics)
+        self.assertEquals(e.exception[0], ne.ERR_BAD_NIC)
 
     def test_bond_with_no_slaves(self):
         fake_kernel_nics = []

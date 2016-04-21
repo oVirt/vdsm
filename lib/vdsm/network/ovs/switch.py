@@ -35,7 +35,8 @@ def validate_network_setup(nets, bonds):
     kernel_nics = CachingNetInfo().nics
 
     for net, attrs in six.iteritems(nets):
-        validator.validate_net_configuration(net, attrs, running_networks)
+        validator.validate_net_configuration(
+            net, attrs, running_networks, kernel_nics)
     for bond, attrs in six.iteritems(bonds):
         validator.validate_bond_configuration(attrs, kernel_nics)
 
