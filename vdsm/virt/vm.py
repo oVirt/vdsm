@@ -242,7 +242,7 @@ class Vm(object):
         vmdevices.graphics.initLegacyConf(self.conf)
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
-        self._destroyed = threading.Event()
+        self._destroy_requested = threading.Event()
         self._recovery_file = recovery.File(self.conf['vmId'])
         self._monitorResponse = 0
         self.memCommitted = 0
@@ -776,7 +776,7 @@ class Vm(object):
     def _preparePathsForDrives(self, drives):
         for drive in drives:
             with self._volPrepareLock:
-                if self._destroyed.is_set():
+                if self._destroy_requested.is_set():
                     # A destroy request has been issued, exit early
                     break
                 drive['path'] = self.cif.prepareVolumePath(drive, self.id)
@@ -853,7 +853,8 @@ class Vm(object):
         # This is not a definite fix, we're aware that there is still the
         # possibility of a race condition, however this covers more cases
         # than before and a quick gain
-        if not self.conf.get('clientIp', '') and not self._destroyed.is_set():
+        if (not self.conf.get('clientIp', '') and
+           not self._destroy_requested.is_set()):
             delay = config.get('vars', 'user_shutdown_timeout')
             timeout = config.getint('vars', 'sys_shutdown_timeout')
             CDA = ConsoleDisconnectAction
@@ -1759,7 +1760,7 @@ class Vm(object):
                                    uuidPath, name)
 
     def _domDependentInit(self):
-        if self._destroyed.is_set():
+        if self._destroy_requested.is_set():
             # reaching here means that Vm.destroy() was called before we could
             # handle it. We must handle it now
             try:
@@ -4047,7 +4048,7 @@ class Vm(object):
         hooks.before_vm_destroy(self._domain.xml, self.conf)
         with self._shutdownLock:
             self._shutdownReason = vmexitreason.ADMIN_SHUTDOWN
-        self._destroyed.set()
+        self._destroy_requested.set()
 
         return self.releaseVm(gracefulAttempts)
 
