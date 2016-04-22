@@ -986,6 +986,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/supervdsm_api/mkimage.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/ksm.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/network.py*
+%{_datadir}/%{vdsm_name}/supervdsm_api/systemd.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/udev.py*
 %{_datadir}/%{vdsm_name}/supervdsm_api/virt.py*
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
