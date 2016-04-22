@@ -107,6 +107,22 @@ class VolumeArtifacts(object):
         """
         raise NotImplementedError()
 
+    def _validate_create_params(self, vol_format, parent, prealloc):
+        # XXX: Remove these when support is added:
+        if vol_format != volume.RAW_FORMAT:
+            raise NotImplementedError("Only raw volumes are supported")
+        if parent:
+            raise NotImplementedError("parent_vol_id not supported")
+
+        if self.is_image() and not parent:
+            self.log.debug("parent not provided when creating a volume in an"
+                           "existing image.")
+            raise se.InvalidParameterException("parent", parent)
+
+        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
+        self.sd_manifest.validateCreateVolumeParams(
+            vol_format, parent_vol_id, preallocate=prealloc)
+
 
 class FileVolumeArtifacts(VolumeArtifacts):
     """
@@ -194,27 +210,14 @@ class FileVolumeArtifacts(VolumeArtifacts):
         """
         Create metadata file artifact, lease file, and volume file on storage.
         """
-        # XXX: Remove these when support is added:
-        if vol_format != volume.RAW_FORMAT:
-            raise NotImplementedError("Only raw volumes are supported")
-        if parent:
-            raise NotImplementedError("parent not supported")
-
-        if self.is_image() and not parent:
-            self.log.debug("parent not provided when creating a volume in an"
-                           "existing image.")
-            raise se.InvalidParameterException("parent", parent)
-
-        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
         prealloc = self._get_volume_preallocation(vol_format)
-        self.sd_manifest.validateCreateVolumeParams(
-            vol_format, parent_vol_id, preallocate=prealloc)
+        self._validate_create_params(vol_format, parent, prealloc)
 
         if not self.is_image():
             self._create_image_artifact()
 
         self._create_metadata_artifact(size, vol_format, prealloc, disk_type,
-                                       desc, parent_vol_id)
+                                       desc, parent)
         self._create_lease_file()
         self._create_volume_file(vol_format, size)
 
@@ -235,7 +238,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
         return volume.SPARSE_VOL
 
     def _create_metadata_artifact(self, size, vol_format, prealloc, disk_type,
-                                  desc, parent_vol_id):
+                                  desc, parent):
         if self._oop.fileUtils.pathExists(self.meta_path):
             raise se.VolumeAlreadyExists("metadata exists: %r" %
                                          self.meta_path)
@@ -244,6 +247,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
             raise se.DomainHasGarbage("metadata artifact exists: %r" %
                                       self.meta_volatile_path)
 
+        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
         # Create the metadata artifact.  The metadata file is created with a
         # special extension to prevent these artifacts from being recognized as
         # a volume until FileVolumeArtifacts.commit() is called.
