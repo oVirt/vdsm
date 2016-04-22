@@ -16,6 +16,8 @@ import org.ovirt.vdsm.jsonrpc.client.internal.ResponseTracker;
 import org.ovirt.vdsm.jsonrpc.client.reactors.ReactorClient;
 import org.ovirt.vdsm.jsonrpc.client.utils.ResponseTracking;
 import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link ReactorClient} wrapper which provides ability to send single or batched requests.
@@ -24,6 +26,7 @@ import org.ovirt.vdsm.jsonrpc.client.utils.retry.RetryContext;
  *
  */
 public class JsonRpcClient {
+    private final Logger log = LoggerFactory.getLogger(JsonRpcClient.class);
     private final ReactorClient client;
     private ResponseTracker tracker;
     private ClientPolicy policy;
@@ -81,7 +84,7 @@ public class JsonRpcClient {
     private void retryCall(final JsonRpcRequest request, final JsonRpcCall call) throws ClientConnectionException {
         ResponseTracking tracking =
                 new ResponseTracking(request, call, new RetryContext(policy), getTimeout(this.policy.getRetryTimeOut(),
-                        this.policy.getTimeUnit()), this.client);
+                        this.policy.getTimeUnit()), this.client, request.getMethod() != "Host.ping");
         this.tracker.registerTrackingRequest(request, tracking);
     }
 
@@ -128,6 +131,7 @@ public class JsonRpcClient {
         }
         JsonRpcCall call = this.tracker.removeCall(response.getId());
         if (call == null) {
+            this.log.error("No able to update response for {}", response.getId());
             return;
         }
         call.addResponse(response);

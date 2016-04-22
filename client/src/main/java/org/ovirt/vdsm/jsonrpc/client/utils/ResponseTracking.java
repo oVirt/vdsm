@@ -12,13 +12,15 @@ public class ResponseTracking {
     private JsonRpcCall call;
     private RetryContext context;
     private ReactorClient client;
+    private boolean resetConnection;
 
-    public ResponseTracking(JsonRpcRequest request, JsonRpcCall call, RetryContext context, long timeout, ReactorClient client) {
+    public ResponseTracking(JsonRpcRequest request, JsonRpcCall call, RetryContext context, long timeout, ReactorClient client, boolean resetConnection) {
         this.request = request;
         this.timeout = timeout;
         this.call = call;
         this.context = context;
         this.client = client;
+        this.resetConnection = resetConnection;
     }
 
     public JsonRpcRequest getRequest() {
@@ -43,5 +45,13 @@ public class ResponseTracking {
 
     public ReactorClient getClient() {
         return client;
+    }
+
+    public boolean isResetConnection() {
+        return resetConnection;
+    }
+
+    public void setResetConnection(boolean resetConnection) {
+        this.resetConnection = resetConnection;
     }
 }

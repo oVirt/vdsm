@@ -126,14 +126,21 @@ public class ResponseTracker implements Runnable {
 
     private void handleFailure(ResponseTracking tracking, JsonNode id) {
         remove(tracking, id, buildFailedResponse(tracking.getRequest()));
-        tracking.getClient().disconnect("Vds timeout occured");
+        if (tracking.isResetConnection()) {
+            tracking.getClient().disconnect("Vds timeout occured");
+        }
     }
 
     private void remove(ResponseTracking tracking, JsonNode id, JsonRpcResponse response) {
-        this.runningCalls.remove(id);
-        removeRequestFromTracking(id);
-        if (tracking != null && tracking.getClient() != null) {
-            tracking.getCall().addResponse(response);
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            JsonRpcCall call = this.runningCalls.remove(id);
+            if (call != null) {
+                call.addResponse(response);
+            }
+            removeRequestFromTracking(id);
+            if (tracking != null && tracking.getClient() != null) {
+                tracking.getCall().addResponse(response);
+            }
         }
     }
 
