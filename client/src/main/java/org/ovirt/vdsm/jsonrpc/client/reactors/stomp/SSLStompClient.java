@@ -74,13 +74,15 @@ public class SSLStompClient extends SSLClient {
 
     @Override
     public void sendMessage(byte[] message) throws ClientConnectionException {
-        waitForConnect();
-
-        send(new Message().send()
-                .withHeader(HEADER_DESTINATION, this.getRequestQueue())
-                .withHeader(HEADER_REPLY_TO, getResponseQueue())
-                .withContent(message)
-                .build());
+        try {
+            waitForConnect();
+        } finally {
+            send(new Message().send()
+                    .withHeader(HEADER_DESTINATION, this.getRequestQueue())
+                    .withHeader(HEADER_REPLY_TO, getResponseQueue())
+                    .withContent(message)
+                    .build());
+        }
     }
 
     @Override
