@@ -27,6 +27,8 @@ from testlib import permutations, expandPermutations
 from testValidation import brokentest
 from storagetestlib import fake_block_env, fake_file_env
 
+from vdsm import qemuimg
+from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
@@ -46,6 +48,8 @@ def failure(*args, **kwargs):
 
 MB = 1024 ** 2
 VOL_SIZE = 1073741824
+BLOCK_INITIAL_CHUNK_SIZE = MB * config.getint("irs",
+                                              "volume_utilization_chunk_mb")
 BASE_PARAMS = {
     sc.RAW_FORMAT: (VOL_SIZE, sc.RAW_FORMAT,
                     image.SYSTEM_DISK_TYPE, 'raw_volume'),
@@ -54,6 +58,7 @@ BASE_PARAMS = {
 }
 
 
+@expandPermutations
 class VolumeArtifactsTestsMixin(object):
 
     def setUp(self):
@@ -117,7 +122,7 @@ class VolumeArtifactsTestsMixin(object):
             self.assertRaises(se.InvalidParameterException, second.create,
                               *BASE_PARAMS[sc.RAW_FORMAT])
 
-    @brokentest("Broken until COW volume support is added")
+    @brokentest("Broken until parent volume support is added")
     def test_create_same_volume_in_image(self):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
@@ -150,6 +155,19 @@ class VolumeArtifactsTestsMixin(object):
             self.assertEqual(size, os.stat(artifacts.volume_path).st_size)
             self.assertEqual(vol_format, vol.getFormat())
             self.assertEqual(str(disk_type), vol.getDiskType())
+
+    @permutations([[sc.RAW_FORMAT, 'raw'], [sc.COW_FORMAT, 'qcow2']])
+    def test_qemuimg_info(self, vol_format, qemu_format):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            size, vol_format, disk_type, desc = BASE_PARAMS[vol_format]
+            artifacts.create(size, vol_format, disk_type, desc)
+            artifacts.commit()
+            info = qemuimg.info(artifacts.volume_path)
+            self.assertEqual(qemu_format, info['format'])
+            self.assertEqual(size, info['virtualsize'])
+            self.assertNotIn('backingfile', info)
 
     def test_unaligned_size_raises(self):
         with fake_block_env() as env:
@@ -189,12 +207,12 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
     def fake_env(self):
         return fake_file_env()
 
-    def test_raw_volume_preallocation(self):
+    @permutations([[sc.RAW_FORMAT], [sc.COW_FORMAT]])
+    def test_volume_preallocation(self, vol_format):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            size, vol_format, disk_type, desc = BASE_PARAMS[sc.RAW_FORMAT]
-            artifacts.create(size, vol_format, disk_type, desc)
+            artifacts.create(*BASE_PARAMS[vol_format])
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
             self.assertEqual(sc.SPARSE_VOL, vol.getType())
@@ -334,15 +352,19 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
     def fake_env(self):
         return fake_block_env()
 
-    def test_raw_volume_preallocation(self):
+    @permutations([
+        [sc.RAW_FORMAT, sc.PREALLOCATED_VOL],
+        [sc.COW_FORMAT, sc.SPARSE_VOL]
+    ])
+    def test_volume_preallocation(self, vol_format, alloc_policy):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            size, vol_format, disk_type, desc = BASE_PARAMS[sc.RAW_FORMAT]
+            size, vol_format, disk_type, desc = BASE_PARAMS[vol_format]
             artifacts.create(size, vol_format, disk_type, desc)
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
-            self.assertEqual(sc.PREALLOCATED_VOL, vol.getType())
+            self.assertEqual(alloc_policy, vol.getType())
 
     @permutations([[0], [sc.BLOCK_SIZE]])
     def test_raw_volume_initial_size(self, initial_size):
@@ -353,7 +375,28 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
                               *BASE_PARAMS[sc.RAW_FORMAT],
                               initial_size=initial_size)
 
-    # TODO: Write a test for initial_size of COW volumes when support is added
+    @permutations([
+        [None, BLOCK_INITIAL_CHUNK_SIZE],
+        [MB, sc.VG_EXTENT_SIZE_MB * MB]
+    ])
+    def test_cow_volume_initial_size(self, requested_size, actual_size):
+        test_size = 2 * BLOCK_INITIAL_CHUNK_SIZE
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            size, vol_format, disk_type, desc = BASE_PARAMS[sc.COW_FORMAT]
+            artifacts.create(test_size, vol_format, disk_type, desc,
+                             initial_size=requested_size)
+            artifacts.commit()
+
+            # Note: Here we check the size via FakeLVM instead of by using
+            # sd_manifest.getVSize.  The qemu-img program sees our fake LV as a
+            # file and 'helpfully' truncates it to the minimal size required.
+            # Therefore, we cannot use file size for this test.
+            lv = env.lvm.getLV(env.sd_manifest.sdUUID, self.vol_id)
+            self.assertEqual(actual_size, int(lv.size))
+            vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
+            self.assertEqual(test_size, vol.getSize() * sc.BLOCK_SIZE)
 
     def test_size_rounded_up(self):
         # If the underlying device is larger the size will be updated

@@ -52,6 +52,7 @@ import errno
 import logging
 import os
 
+from vdsm import qemuimg
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage.volumemetadata import VolumeMetadata
@@ -71,6 +72,13 @@ class VolumeArtifacts(object):
         self.vol_class = self.sd_manifest.getVolumeClass()
         self.img_id = img_id
         self.vol_id = vol_id
+
+    @property
+    def volume_path(self):
+        """
+        Return a path which can be used to access the volume data area.
+        """
+        raise NotImplementedError()
 
     def create(self, size, vol_format, disk_type, desc, parent=None,
                initial_size=None):
@@ -131,6 +139,10 @@ class VolumeArtifacts(object):
             self.log.debug("initial_size %s not a multiple of the block size",
                            initial_size)
             raise se.InvalidParameterException("initial_size", initial_size)
+
+    def _initialize_volume(self, vol_format, size):
+        if vol_format == sc.COW_FORMAT:
+            qemuimg.create(self.volume_path, size, sc.fmt2str(vol_format))
 
 
 class FileVolumeArtifacts(VolumeArtifacts):
@@ -234,6 +246,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
                                        desc, parent)
         self._create_lease_file()
         self._create_volume_file(vol_format, size)
+        self._initialize_volume(vol_format, size)
 
     def commit(self):
         try:
@@ -375,6 +388,7 @@ class BlockVolumeArtifacts(VolumeArtifacts):
         meta_slot = self._acquire_metadata_slot()
         self._create_metadata(meta_slot, size, vol_format, prealloc, disk_type,
                               desc, parent)
+        self._initialize_volume(vol_format, size)
         self._create_lease(meta_slot)
 
     def commit(self):
