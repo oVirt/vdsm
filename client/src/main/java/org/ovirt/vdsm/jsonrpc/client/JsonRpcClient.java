@@ -135,7 +135,7 @@ public class JsonRpcClient {
         }
         JsonRpcCall call = this.tracker.removeCall(response.getId());
         if (call == null) {
-            this.log.error("No able to update response for {}", response.getId());
+            this.log.error("Not able to update response for {}", response.getId());
             return;
         }
         call.addResponse(response);
