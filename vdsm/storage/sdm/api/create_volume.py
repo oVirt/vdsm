@@ -52,7 +52,7 @@ class Job(base.Job):
                 artifacts.create(
                     self.vol_info.virtual_size, vol_format,
                     self.vol_info.disk_type, self.vol_info.description,
-                    self.vol_info.parent)
+                    self.vol_info.parent, self.vol_info.initial_size)
                 artifacts.commit()
 
 

@@ -72,7 +72,8 @@ class VolumeArtifacts(object):
         self.img_id = img_id
         self.vol_id = vol_id
 
-    def create(self, size, vol_format, disk_type, desc, parent=None):
+    def create(self, size, vol_format, disk_type, desc, parent=None,
+               initial_size=None):
         """
         Create a new image and volume artifacts or a new volume inside an
         existing image.  The result is considered as garbage until you invoke
@@ -105,8 +106,6 @@ class VolumeArtifacts(object):
 
     def _validate_create_params(self, vol_format, parent, prealloc):
         # XXX: Remove these when support is added:
-        if vol_format != sc.RAW_FORMAT:
-            raise NotImplementedError("Only raw volumes are supported")
         if parent:
             raise NotImplementedError("parent_vol_id not supported")
 
@@ -118,6 +117,20 @@ class VolumeArtifacts(object):
         parent_vol_id = parent.vol_id if parent else sc.BLANK_UUID
         self.sd_manifest.validateCreateVolumeParams(
             vol_format, parent_vol_id, preallocate=prealloc)
+
+    def _validate_size(self, size, initial_size, vol_format):
+        if size % sc.BLOCK_SIZE != 0:
+            self.log.debug("size %s not a multiple of the block size", size)
+            raise se.InvalidParameterException("size", size)
+
+        if initial_size is not None and vol_format != sc.COW_FORMAT:
+            self.log.debug("initial_size is supported only for COW volumes")
+            raise se.InvalidParameterException("initial_size", initial_size)
+
+        if initial_size and initial_size % sc.BLOCK_SIZE != 0:
+            self.log.debug("initial_size %s not a multiple of the block size",
+                           initial_size)
+            raise se.InvalidParameterException("initial_size", initial_size)
 
 
 class FileVolumeArtifacts(VolumeArtifacts):
@@ -202,12 +215,17 @@ class FileVolumeArtifacts(VolumeArtifacts):
     def volume_path(self):
         return os.path.join(self.artifacts_dir, self.vol_id)
 
-    def create(self, size, vol_format, disk_type, desc, parent=None):
+    def create(self, size, vol_format, disk_type, desc, parent=None,
+               initial_size=None):
         """
         Create metadata file artifact, lease file, and volume file on storage.
         """
         prealloc = self._get_volume_preallocation(vol_format)
         self._validate_create_params(vol_format, parent, prealloc)
+        if initial_size is not None:
+            self.log.debug("initial_size is not supported for file volumes")
+            raise se.InvalidParameterException("initial_size", initial_size)
+        self._validate_size(size, initial_size, vol_format)
 
         if not self.is_image():
             self._create_image_artifact()
@@ -345,14 +363,14 @@ class BlockVolumeArtifacts(VolumeArtifacts):
     def volume_path(self):
         return lvm.lvPath(self.sd_manifest.sdUUID, self.vol_id)
 
-    def create(self, size, vol_format, disk_type, desc, parent=None):
-        # TODO: Support initialsize
+    def create(self, size, vol_format, disk_type, desc, parent=None,
+               initial_size=None):
         prealloc = self.get_volume_preallocation(vol_format)
         self._validate_create_params(vol_format, parent, prealloc)
+        self._validate_size(size, initial_size, vol_format)
 
-        size_blk = size / sc.BLOCK_SIZE
-        lv_size = self.vol_class.calculate_volume_alloc_size(
-            prealloc, size_blk, None)
+        lv_size = self._calculate_volume_alloc_size(prealloc, size,
+                                                    initial_size)
         self._create_lv_artifact(parent, lv_size)
         meta_slot = self._acquire_metadata_slot()
         self._create_metadata(meta_slot, size, vol_format, prealloc, disk_type,
@@ -372,6 +390,13 @@ class BlockVolumeArtifacts(VolumeArtifacts):
             return sc.PREALLOCATED_VOL
         else:
             return sc.SPARSE_VOL
+
+    def _calculate_volume_alloc_size(self, prealloc, size, initial_size):
+        size_blk = size / sc.BLOCK_SIZE
+        initial_size_blk = (None if initial_size is None else
+                            initial_size / sc.BLOCK_SIZE)
+        return self.vol_class.calculate_volume_alloc_size(
+            prealloc, size_blk, initial_size_blk)
 
     def _create_lv_artifact(self, parent, lv_size):
         try:

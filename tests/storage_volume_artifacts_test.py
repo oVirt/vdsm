@@ -21,8 +21,9 @@
 import os
 import uuid
 
-from testlib import VdsmTestCase
 from monkeypatch import MonkeyPatchScope
+from testlib import VdsmTestCase
+from testlib import permutations, expandPermutations
 from testValidation import brokentest
 from storagetestlib import fake_block_env, fake_file_env
 
@@ -99,7 +100,7 @@ class VolumeArtifactsTestsMixin(object):
             first.commit()
             second = env.sd_manifest.get_volume_artifacts(
                 self.img_id, str(uuid.uuid4()))
-            self.assertRaises(NotImplementedError,
+            self.assertRaises(se.InvalidParameterException,
                               second.create, *BASE_COW_PARAMS)
 
     def test_create_additional_raw_vol(self):
@@ -147,6 +148,16 @@ class VolumeArtifactsTestsMixin(object):
             self.assertEqual(vol_format, vol.getFormat())
             self.assertEqual(str(disk_type), vol.getDiskType())
 
+    def test_unaligned_size_raises(self):
+        with fake_block_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            size, vol_format, disk_type, desc = BASE_COW_PARAMS
+            size = MB + 1
+            self.assertRaises(se.InvalidParameterException,
+                              artifacts.create, size, vol_format, disk_type,
+                              desc)
+
     # Artifacts visibility
 
     def test_getallvolumes(self):
@@ -169,6 +180,7 @@ class VolumeArtifactsTestsMixin(object):
                           *BASE_RAW_PARAMS)
 
 
+@expandPermutations
 class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 
     def fake_env(self):
@@ -248,6 +260,15 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             artifacts.commit()
             self.assertRaises(OSError, artifacts.commit)
 
+    @permutations([[0], [MB]])
+    def test_initial_size_not_supported(self, initial_size):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            self.assertRaises(se.InvalidParameterException,
+                              artifacts.create, *BASE_RAW_PARAMS,
+                              initial_size=initial_size)
+
     def validate_new_image_path(self, artifacts, has_md=False,
                                 has_lease=False, has_volume=False):
         path = artifacts.artifacts_dir
@@ -296,6 +317,7 @@ class FileVolumeArtifactVisibilityTests(VdsmTestCase):
             self.assertEqual({self.img_id}, env.sd_manifest.getAllImages())
 
 
+@expandPermutations
 class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 
     def fake_env(self):
@@ -310,6 +332,17 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
             self.assertEqual(sc.PREALLOCATED_VOL, vol.getType())
+
+    @permutations([[0], [sc.BLOCK_SIZE]])
+    def test_raw_volume_initial_size(self, initial_size):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            self.assertRaises(se.InvalidParameterException,
+                              artifacts.create, *BASE_RAW_PARAMS,
+                              initial_size=initial_size)
+
+    # TODO: Write a test for initial_size of COW volumes when support is added
 
     def test_size_rounded_up(self):
         # If the underlying device is larger the size will be updated
@@ -415,6 +448,25 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             artifacts.create(*BASE_RAW_PARAMS)
             artifacts.commit()
             self.assertRaises(se.VolumeAlreadyExists, artifacts.commit)
+
+    def test_unaligned_initial_size_raises(self):
+        with fake_block_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            size, vol_format, disk_type, desc = BASE_COW_PARAMS
+            initial_size = size - 1
+            self.assertRaises(se.InvalidParameterException,
+                              artifacts.create, size, vol_format, disk_type,
+                              desc, initial_size=initial_size)
+
+    def test_oversized_initial_size_raises(self):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            size, vol_format, disk_type, desc = BASE_COW_PARAMS
+            self.assertRaises(se.InvalidParameterException,
+                              artifacts.create, size, vol_format, disk_type,
+                              desc, initial_size=size + 1)
 
     def validate_artifacts(self, artifacts, env):
         try:
