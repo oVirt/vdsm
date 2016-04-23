@@ -126,11 +126,13 @@ def _resolveLoopDevice(path):
 
     minor = os.minor(st.st_rdev)
     major = os.major(st.st_rdev)
-    loopdir = os.path.join(_SYS_DEV_BLOCK_PATH,
-                           '%d:%d' % (major, minor),
-                           'loop')
+    backing_file = os.path.join(_SYS_DEV_BLOCK_PATH,
+                                '%d:%d' % (major, minor),
+                                'loop',
+                                'backing_file')
+
     try:
-        with open(loopdir + "/backing_file", "r") as f:
+        with open(backing_file, "r") as f:
             # Remove trailing newline
             return f.read()[:-1]
     except IOError as e:
