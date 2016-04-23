@@ -137,7 +137,7 @@ class MountTests(TestCaseBase):
                 try:
                     self.assertTrue(m.isMounted())
                 finally:
-                    m.umount(freeloop=True)
+                    m.umount()
                     # TODO: Use libudev to wait for specific event
                     with stopwatch("Wait for udev events"):
                         udevadm.settle(5)
@@ -161,7 +161,7 @@ class MountTests(TestCaseBase):
             try:
                 self.assertTrue(m.isMounted())
             finally:
-                m.umount(freeloop=True)
+                m.umount()
                 # TODO: Use libudev to wait for specific event
                 with stopwatch("Wait for udev events"):
                     udevadm.settle(5)
