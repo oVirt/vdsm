@@ -175,7 +175,7 @@ class MkimageTestCase(VdsmTestCase):
             self._check_content(checkPerms=False)
             self._check_label(floppy, label)
         finally:
-            m.umount(force=True, freeloop=True)
+            m.umount(freeloop=True)
             # TODO: Use libudev to wait for specific event
             with stopwatch("Wait for udev events"):
                 udevadm.settle(5)
@@ -197,7 +197,7 @@ class MkimageTestCase(VdsmTestCase):
             self._check_content()
             self._check_label(iso_img, label)
         finally:
-            m.umount(force=True, freeloop=True)
+            m.umount(freeloop=True)
             # TODO: Use libudev to wait for specific event
             with stopwatch("Wait for udev events"):
                 udevadm.settle(5)
