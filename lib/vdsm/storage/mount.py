@@ -25,7 +25,6 @@ import logging
 import os
 import re
 import stat
-import threading
 
 from collections import namedtuple
 
@@ -46,7 +45,6 @@ VFS_EXT3 = "ext3"
 MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "
                          "fs_mntops fs_freq fs_passno")
 
-_ETC_MTAB_PATH = '/etc/mtab'
 _PROC_MOUNTS_PATH = '/proc/mounts'
 _SYS_DEV_BLOCK_PATH = '/sys/dev/block/'
 
@@ -79,38 +77,12 @@ def _parseFstabLine(line):
                        fs_freq, fs_passno)
 
 
-def _iterateMtab():
-    with open(_ETC_MTAB_PATH, "r") as f:
-        for line in f:
-            yield _parseFstabLine(line)
-
-
 def _parseFstabPath(path):
     return _RE_ESCAPE.sub(lambda s: chr(int(s.group()[1:], 8)), path)
 
 
 class MountError(RuntimeError):
     pass
-
-
-_loopFsSpecsLock = threading.Lock()
-_loopFsSpecs = {}
-_loopFsSpecsTimestamp = None
-
-
-def _getLoopFsSpecs():
-    global _loopFsSpecsTimestamp
-    with _loopFsSpecsLock:
-        mtabTimestamp = os.stat(_ETC_MTAB_PATH).st_mtime
-        if _loopFsSpecsTimestamp != mtabTimestamp:
-            global _loopFsSpecs
-            _loopFsSpecs = {}
-            for entry in _iterateMtab():
-                for opt in entry.fs_mntops:
-                    if opt.startswith('loop='):
-                        _loopFsSpecs[opt[len('loop='):]] = entry.fs_spec
-            _loopFsSpecsTimestamp = mtabTimestamp
-    return _loopFsSpecs
 
 
 def _resolveLoopDevice(path):
@@ -143,14 +115,6 @@ def _resolveLoopDevice(path):
     except IOError as e:
         if e.errno != errno.ENOENT:
             raise
-
-    # Old kernels might not have the sysfs entry, this is a bit slower and does
-    # not work on hosts that do support the above method.
-
-    lookup = _getLoopFsSpecs()
-
-    if path in lookup:
-        return lookup[path]
 
     return path
 
