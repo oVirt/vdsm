@@ -121,6 +121,7 @@ class TestMountHash(TestCaseBase):
         self.assertNotEqual(hash(m1), hash(m2))
 
 
+@expandPermutations
 class MountTests(TestCaseBase):
 
     @ValidateRunningAsRoot
@@ -161,6 +162,39 @@ class MountTests(TestCaseBase):
                 # TODO: Use libudev to wait for specific event
                 with stopwatch("Wait for udev events"):
                     udevadm.settle(5)
+
+    @permutations([
+        # Only fs_spec matches
+        ("server:/path", "/mnt/server:_other__path", False),
+
+        # Only fs_file matches
+        ("server:/other_path", "/mnt/server:_path", False),
+
+        # Both fs_spec and fs_file don't match
+        ("server:/other_path", "/mnt/server:_other__path", False),
+
+        # Both match
+        ("server:/path", "/mnt/server:_path", True),
+    ])
+    def test_is_mounted(self, fs_spec, fs_file, equality):
+        """
+        Verifies that both fs_spec and fs_file match the mounted target.
+        """
+        with fake_mounts([b"server:/path /mnt/server:_path nfs defaults 0 0"]):
+            mnt = mount.Mount(fs_spec, fs_file)
+            self.assertEqual(mnt.isMounted(), equality)
+
+    def test_is_mounted_with_symlink(self):
+        with namedTemporaryDir() as dir:
+            file = os.path.join(dir, "file")
+            open(file, "w").close()
+            link_to_file = os.path.join(dir, "link_to_file")
+            os.symlink(file, link_to_file)
+            mountpoint = "/mnt/mountpoint"
+            with fake_mounts([b"%s %s nfs defaults 0 0" %
+                              (link_to_file, mountpoint)]):
+                mnt = mount.Mount(link_to_file, mountpoint)
+                self.assertTrue(mnt.isMounted())
 
 
 class IterMountsPerfTests(TestCaseBase):
