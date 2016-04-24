@@ -154,6 +154,8 @@ def _iterate(module, dev, out=None, **kwargs):
         out = module.show(dev, **kwargs)
 
     for line in _parser.linearize(out.splitlines()):
+        if len(line) >= 2 and line[0] == 'qdisc' and line[1] == 'noqueue':
+            continue
         tokens = iter(line)
         _parser.consume(tokens, 'qdisc', 'class', 'filter')
         yield module.parse(tokens)
