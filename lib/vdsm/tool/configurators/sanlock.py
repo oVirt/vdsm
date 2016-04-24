@@ -23,8 +23,8 @@ import grp
 import pwd
 
 from . import YES, NO, MAYBE, InvalidConfig
-from ... import commands
-from ... import constants
+from vdsm import commands
+from vdsm import constants
 
 SANLOCK_GROUPS = (constants.QEMU_PROCESS_GROUP, constants.VDSM_GROUP)
 

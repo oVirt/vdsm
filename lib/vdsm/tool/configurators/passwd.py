@@ -18,9 +18,9 @@
 #
 
 from __future__ import absolute_import
-from ... import constants
-from ... import commands
-from ... import utils
+from vdsm import constants
+from vdsm import commands
+from vdsm import utils
 
 
 from . import YES, NO

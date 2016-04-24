@@ -19,7 +19,7 @@
 #
 
 from __future__ import absolute_import
-from .. import UsageError
+from vdsm.tool import UsageError
 
 
 class InvalidConfig(UsageError):

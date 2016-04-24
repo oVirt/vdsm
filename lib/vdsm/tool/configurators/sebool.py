@@ -19,7 +19,7 @@
 
 from __future__ import absolute_import
 from . import YES, NO, MAYBE
-from ... import utils
+from vdsm import utils
 
 
 SEBOOL_ENABLED = "on"

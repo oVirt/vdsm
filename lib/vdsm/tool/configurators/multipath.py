@@ -26,10 +26,10 @@ import tempfile
 import time
 
 from . import YES, NO
-from .. import service
-from ... import commands
-from ... import utils
-from ... import constants
+from vdsm.tool import service
+from vdsm import commands
+from vdsm import utils
+from vdsm import constants
 
 
 _CONF_FILE = "/etc/multipath.conf"
