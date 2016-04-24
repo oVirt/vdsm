@@ -49,7 +49,7 @@ _PROC_MOUNTS_PATH = '/proc/mounts'
 _SYS_DEV_BLOCK_PATH = '/sys/dev/block/'
 
 _DELETED_SUFFIX = ' (deleted)'
-_RE_ESCAPE = re.compile(r"\\[0-7]{3}")
+_ESCAPED_SPACES = re.compile(r"\\[0-7]{3}")
 
 
 def _parseFstabLine(line):
@@ -61,10 +61,10 @@ def _parseFstabLine(line):
 
     # Using NFS4 the kernel shows the mount path with double slashes,
     # regarless of the original (normalized) mount path.
-    fs_spec = fileUtils.normalize_path(_parseFstabPath(fs_spec))
+    fs_spec = fileUtils.normalize_path(_unescape_spaces(fs_spec))
 
     # We expect normalized fs_file from the kernel.
-    fs_file = _parseFstabPath(fs_file)
+    fs_file = _unescape_spaces(fs_file)
     if fs_file.endswith(_DELETED_SUFFIX):
         fs_file = fs_file[:-len(_DELETED_SUFFIX)]
 
@@ -72,8 +72,8 @@ def _parseFstabLine(line):
                        fs_freq, fs_passno)
 
 
-def _parseFstabPath(path):
-    return _RE_ESCAPE.sub(lambda s: chr(int(s.group()[1:], 8)), path)
+def _unescape_spaces(path):
+    return _ESCAPED_SPACES.sub(lambda s: chr(int(s.group()[1:], 8)), path)
 
 
 class MountError(RuntimeError):
