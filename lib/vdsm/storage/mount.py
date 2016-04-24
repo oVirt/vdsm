@@ -48,6 +48,7 @@ MountRecord = namedtuple("MountRecord", "fs_spec fs_file fs_vfstype "
 _PROC_MOUNTS_PATH = '/proc/mounts'
 _SYS_DEV_BLOCK_PATH = '/sys/dev/block/'
 
+_DELETED_SUFFIX = ' (deleted)'
 _RE_ESCAPE = re.compile(r"\\0\d\d")
 
 
@@ -64,12 +65,8 @@ def _parseFstabLine(line):
 
     # We expect normalized fs_file from the kernel.
     fs_file = _parseFstabPath(fs_file)
-    for suffix in (" (deleted)", ):
-        if not fs_file.endswith(suffix):
-            continue
-
-        fs_file = fs_file[:-len(suffix)]
-        break
+    if fs_file.endswith(_DELETED_SUFFIX):
+        fs_file = fs_file[:-len(_DELETED_SUFFIX)]
 
     return MountRecord(fs_spec, fs_file, fs_vfstype, fs_mntops,
                        fs_freq, fs_passno)
