@@ -287,11 +287,9 @@ if test "$PYTHON3_SUPPORT" = "1"; then
   if test "x$PYTHON3" = "x"; then
     AC_MSG_ERROR([python3 not found])
   fi
-
-  AC_PATH_PROG([PYTHON3_NOSE], [nosetests-3.4])
-  if test "x$PYTHON3_NOSE" = "x"; then
-    AC_MSG_ERROR([python3-nose not found])
-  fi
+  AX_PYTHON_MODULE([netaddr], [fatal], python3)
+  AX_PYTHON_MODULE([libvirt], [fatal], python3)
+  AX_PYTHON_MODULE([nose], [fatal], python3)
 fi
 
 # Checking for python-devel
