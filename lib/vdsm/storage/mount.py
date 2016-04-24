@@ -71,8 +71,6 @@ def _parseFstabLine(line):
         fs_file = fs_file[:-len(suffix)]
         break
 
-    fs_mntops = [_parseFstabPath(item) for item in fs_mntops]
-
     return MountRecord(fs_spec, fs_file, fs_vfstype, fs_mntops,
                        fs_freq, fs_passno)
 
