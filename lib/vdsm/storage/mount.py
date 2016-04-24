@@ -32,8 +32,10 @@ from vdsm import cmdutils
 from vdsm import commands
 from vdsm import constants
 from vdsm import supervdsm
+from vdsm import udevadm
 from vdsm import utils
 
+from vdsm.config import config
 from vdsm.storage import fileUtils
 
 # Common vfs types
@@ -186,6 +188,7 @@ class Mount(object):
         with utils.stopwatch("%s mounted" % self.fs_file, log=self.log):
             mount(self.fs_spec, self.fs_file, mntOpts=mntOpts, vfstype=vfstype,
                   timeout=timeout, cgroup=cgroup)
+        self._wait_for_events()
 
     def umount(self, force=False, lazy=False, freeloop=False, timeout=None):
         umount = supervdsm.getProxy().umount if os.geteuid() != 0 else _umount
@@ -193,6 +196,21 @@ class Mount(object):
         with utils.stopwatch("%s unmounted" % self.fs_file, log=self.log):
             umount(self.fs_file, force=force, lazy=lazy, freeloop=freeloop,
                    timeout=timeout)
+        self._wait_for_events()
+
+    def _wait_for_events(self):
+        """
+        This is an ugly hack to wait until the udev events generated when
+        adding or removing a mount are processed.
+
+        Note that we may wait for unrelated events, or wait too little if the
+        system is overloaded.
+
+        TODO: find a way to wait for the specific event.
+        """
+        with utils.stopwatch("Waiting for udev mount events", log=self.log):
+            timeout = config.getint('irs', 'scsi_settle_timeout')
+            udevadm.settle(timeout)
 
     def isMounted(self):
         try:

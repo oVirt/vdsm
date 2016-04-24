@@ -36,9 +36,7 @@ from monkeypatch import Patch
 from testlib import VdsmTestCase, permutations, expandPermutations
 from testValidation import checkSudo, ValidateRunningAsRoot
 
-from vdsm import udevadm
 from vdsm.commands import execCmd
-from vdsm.utils import stopwatch
 from vdsm.storage import mount
 import mkimage
 
@@ -176,9 +174,6 @@ class MkimageTestCase(VdsmTestCase):
             self._check_label(floppy, label)
         finally:
             m.umount()
-            # TODO: Use libudev to wait for specific event
-            with stopwatch("Wait for udev events"):
-                udevadm.settle(5)
 
     @ValidateRunningAsRoot
     @permutations([[None], ['fslabel']])
@@ -198,9 +193,6 @@ class MkimageTestCase(VdsmTestCase):
             self._check_label(iso_img, label)
         finally:
             m.umount()
-            # TODO: Use libudev to wait for specific event
-            with stopwatch("Wait for udev events"):
-                udevadm.settle(5)
 
     def test_removeFs(self):
         """

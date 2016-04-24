@@ -25,8 +25,6 @@ from tempfile import mkstemp
 import os
 import time
 
-from vdsm import udevadm
-from vdsm.utils import stopwatch
 from vdsm.storage import mount
 from vdsm.storage.misc import execCmd
 
@@ -136,9 +134,6 @@ class MountTests(TestCaseBase):
                     self.assertTrue(m.isMounted())
                 finally:
                     m.umount()
-                    # TODO: Use libudev to wait for specific event
-                    with stopwatch("Wait for udev events"):
-                        udevadm.settle(5)
 
     @ValidateRunningAsRoot
     def testSymlinkMount(self):
@@ -160,9 +155,6 @@ class MountTests(TestCaseBase):
                 self.assertTrue(m.isMounted())
             finally:
                 m.umount()
-                # TODO: Use libudev to wait for specific event
-                with stopwatch("Wait for udev events"):
-                    udevadm.settle(5)
 
     @permutations([
         # Only fs_spec matches
