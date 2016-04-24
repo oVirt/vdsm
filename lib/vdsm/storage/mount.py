@@ -49,7 +49,7 @@ _PROC_MOUNTS_PATH = '/proc/mounts'
 _SYS_DEV_BLOCK_PATH = '/sys/dev/block/'
 
 _DELETED_SUFFIX = ' (deleted)'
-_RE_ESCAPE = re.compile(r"\\0\d\d")
+_RE_ESCAPE = re.compile(r"\\[0-7]{3}")
 
 
 def _parseFstabLine(line):

@@ -32,7 +32,6 @@ from vdsm.storage.misc import execCmd
 
 from nose.plugins.skip import SkipTest
 
-from testValidation import brokentest
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
@@ -256,7 +255,6 @@ class TestRemoteSdIsMounted(TestCaseBase):
             self.assertTrue(mount.isMounted(b"/mnt/server:_a b"))
             self.assertFalse(mount.isMounted(br"/mnt/server:_a\040b"))
 
-    @brokentest("unescaping is broken")
     def test_path_with_backslash(self):
         with fake_mounts([
                 br"server:/a\134040b /mnt/server:_a\134040b nfs4 opts 0 0"
