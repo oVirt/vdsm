@@ -30,6 +30,7 @@ from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
+from vdsm.storage import outOfProcess as oop
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
 import image
@@ -37,7 +38,6 @@ import resourceFactories
 import resourceManager as rm
 from vdsm import constants
 from vdsm import qemuimg
-import outOfProcess as oop
 
 from vdsm.config import config
 

@@ -40,8 +40,7 @@ from vdsm import utils
 from vdsm.common import exception
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
-
-import storage.outOfProcess as oop
+from vdsm.storage import outOfProcess as oop
 
 from monkeypatch import MonkeyPatch
 from testValidation import checkSudo

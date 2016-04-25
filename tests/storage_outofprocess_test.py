@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from vdsm.storage import outOfProcess as oop
+
 from testlib import VdsmTestCase as TestCaseBase
-import storage.outOfProcess as oop
 from monkeypatch import MonkeyPatchScope
 
 import gc

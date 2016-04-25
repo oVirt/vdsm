@@ -54,6 +54,7 @@ from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
+from vdsm.storage import outOfProcess as oop
 from vdsm.virt import guestagent
 from vdsm.virt import migration
 from vdsm.virt import sampling
@@ -64,7 +65,6 @@ from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
-from storage import outOfProcess as oop
 from storage import sd
 from storage import sdc
 

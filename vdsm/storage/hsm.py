@@ -53,6 +53,7 @@ from vdsm.storage import imagetickets
 from vdsm.storage import iscsi
 from vdsm.storage import misc
 from vdsm.storage import mount
+from vdsm.storage import outOfProcess as oop
 from vdsm.storage.constants import STORAGE
 from vdsm.storage.constants import SECTOR_SIZE
 from vdsm.storage.misc import deprecated
@@ -70,7 +71,6 @@ import glusterSD
 import localFsSD
 import lvm
 import multipath
-import outOfProcess as oop
 from sdc import sdCache
 import image
 import taskManager

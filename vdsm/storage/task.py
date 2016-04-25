@@ -54,6 +54,7 @@ from functools import wraps
 
 from vdsm.storage import exception as se
 from vdsm.storage.threadlocal import vars
+from vdsm.storage import outOfProcess as oop
 
 import uuid
 import resourceManager
@@ -61,7 +62,6 @@ from weakref import proxy
 from vdsm import concurrent
 from vdsm.config import config
 from vdsm.logUtils import SimpleLogAdapter
-import outOfProcess as oop
 
 
 getProcPool = oop.getGlobalProcPool

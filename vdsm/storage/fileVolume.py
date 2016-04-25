@@ -28,12 +28,12 @@ from vdsm.commands import grepCmd
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
+from vdsm.storage import outOfProcess as oop
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 from sdc import sdCache
-import outOfProcess as oop
 import volume
 import image
 import sd

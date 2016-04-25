@@ -31,12 +31,12 @@ from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import mount
+from vdsm.storage import outOfProcess as oop
 from vdsm.storage.persistent import PersistentDict, DictValidator
 
 import sd
 import sdm.volume_artifacts
 import fileVolume
-import outOfProcess as oop
 from vdsm import constants
 from vdsm.utils import stripNewLines
 from vdsm.storage.constants import LEASE_FILEEXT

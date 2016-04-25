@@ -39,7 +39,6 @@ dist_vdsmstorage_PYTHON = \
 	monitor.py \
 	multipath.py \
 	nfsSD.py \
-	outOfProcess.py \
 	resourceFactories.py \
 	resourceManager.py \
 	sdc.py \

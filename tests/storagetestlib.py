@@ -30,10 +30,10 @@ from vdsm import qemuimg
 from vdsm import utils
 from vdsm.storage import constants as sc
 from vdsm.storage import guarded
+from vdsm.storage import outOfProcess as oop
 
 from storage import sd, blockSD, fileSD, image, blockVolume, volume
 from storage import hsm
-from storage import outOfProcess as oop
 from storage.sdm import volume_artifacts
 
 
