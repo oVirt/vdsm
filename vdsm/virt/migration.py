@@ -118,22 +118,10 @@ class SourceThread(threading.Thread):
         self._migrationCanceledEvt = threading.Event()
         self._monitorThread = None
         self._destServer = None
-
-        progress_timeout = config.getint('vars', 'migration_progress_timeout')
-
         self._convergence_schedule = {
             'init': [],
-            'stalling': [
-                {
-                    'limit': progress_timeout,
-                    'action': {
-                        'name': CONVERGENCE_SCHEDULE_SET_ABORT,
-                        'params': []
-                    }
-                }
-            ]
+            'stalling': []
         }
-
         self._use_convergence_schedule = False
         if 'convergenceSchedule' in kwargs:
             self._convergence_schedule = kwargs.get('convergenceSchedule')
@@ -580,8 +568,12 @@ class MonitorThread(threading.Thread):
         maxTimePerGiB = config.getint('vars',
                                       'migration_max_time_per_gib_mem')
         migrationMaxTime = (maxTimePerGiB * memSize + 1023) / 1024
+        progress_timeout = config.getint('vars', 'migration_progress_timeout')
         lastProgressTime = time.time()
         lowmark = None
+        lastDataRemaining = None
+        iterationCount = 0
+
         self._execute_init(self._conv_schedule['init'])
 
         while not self._stop.isSet():
@@ -609,7 +601,24 @@ class MonitorThread(threading.Thread):
                     ' Refer to RHBZ#919201.',
                     prog.data_remaining / Mbytes, lowmark / Mbytes)
 
-            self._next_action(now - lastProgressTime)
+            if lastDataRemaining is not None and\
+                    lastDataRemaining < prog.data_remaining:
+                iterationCount += 1
+                self._vm.log.debug('new iteration detected: %i',
+                                   iterationCount)
+                if self._use_conv_schedule:
+                    self._next_action(iterationCount)
+
+            lastDataRemaining = prog.data_remaining
+
+            if not self._use_conv_schedule and\
+                    (now - lastProgressTime) > progress_timeout:
+                # Migration is stuck, abort
+                self._vm.log.warn(
+                    'Migration is stuck: Hasn\'t progressed in %s seconds. '
+                    'Aborting.' % (now - lastProgressTime))
+                self._vm._dom.abortJob()
+                self.stop()
 
             if self._stop.isSet():
                 break
@@ -630,7 +639,7 @@ class MonitorThread(threading.Thread):
     def _next_action(self, stalling):
         head = self._conv_schedule['stalling'][0]
 
-        self._vm.log.debug('Stalling for %d seconds, '
+        self._vm.log.debug('Stalling for %d iterations, '
                            'checking to make next action: '
                            '%s', stalling, head)
         if head['limit'] < stalling:

@@ -7582,7 +7582,7 @@
 # A convergence action which will be executed when the migration
 # is stalling longer than the first argument.
 #
-# @limit:   If the migration is stalling for this amount of time,
+# @limit:   If the migration is stalling for this amount of iterations,
 #           execute the action.
 #
 # @action:  The specific action which has to be executed.
