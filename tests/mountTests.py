@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import print_function
 
 from contextlib import contextmanager
 import errno
@@ -24,6 +25,7 @@ from tempfile import mkstemp, mkdtemp
 import os
 import shutil
 import stat
+import time
 
 from vdsm import udevadm
 from vdsm.utils import stopwatch
@@ -36,6 +38,7 @@ from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
 from testValidation import ValidateRunningAsRoot
+from testValidation import stresstest
 import monkeypatch
 
 FLOPPY_SIZE = (2 ** 20) * 4
@@ -361,3 +364,31 @@ class TestRemoteSdIsMounted(TestCaseBase):
                           b"nfs4 defaults 0 0"]):
             self.assertFalse(mount.isMounted(
                              b"/rhev/data-center/mnt/server:_other_path"))
+
+
+@expandPermutations
+class TestIsMountedTiming(TestCaseBase):
+
+    @stresstest
+    @permutations([[1], [50], [100], [1000]])
+    def test_is_mounted(self, count):
+        server = b"foobar.baz.qux.com:/var/lib/exports/%04d"
+        mountpoint = (b"/rhev/data-center/mnt/foobar.baz.qux.com:_var_lib"
+                      b"_exports_%04d")
+        options = (b"rw,relatime,vers=3,rsize=524288,wsize=524288,namlen=255,"
+                   b"soft,nosharecache,proto=tcp,timeo=600,retrans=6,sec=sys,"
+                   b"mountaddr=10.35.0.102,mountvers=3,mountport=892,"
+                   b"mountproto=udp,local_lock=none,addr=10.35.0.102")
+        version = b"nfs"
+        freq = b"0"
+        passno = b"0"
+        lines = []
+        for i in range(count):
+            line = b" ".join((server % i, mountpoint % i, options, version,
+                              freq, passno))
+            lines.append(line)
+        with fake_mounts(lines):
+            start = time.time()
+            self.assertTrue(mount.isMounted(mountpoint % i))
+            elapsed = time.time() - start
+            print("%4d mounts: %f seconds" % (count, elapsed))
