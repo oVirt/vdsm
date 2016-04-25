@@ -528,6 +528,8 @@ class MonitorThread(threading.Thread):
         lastProgressTime = time.time()
         lowmark = None
         progress_timeout = config.getint('vars', 'migration_progress_timeout')
+        lastDataRemaining = None
+        iterationCount = 0
 
         while not self._stop.isSet():
 
@@ -541,7 +543,6 @@ class MonitorThread(threading.Thread):
              fileTotal, fileProcessed, _) = self._vm._dom.jobInfo()
             # from libvirt sources: data* = file* + mem*.
             # docs can be misleading due to misaligned lines.
-            abort = False
             now = time.time()
             if 0 < migrationMaxTime < now - self._startTime:
                 self._vm.log.warn('The migration took %d seconds which is '
@@ -550,20 +551,30 @@ class MonitorThread(threading.Thread):
                                   'migration will be aborted.',
                                   now - self._startTime,
                                   migrationMaxTime)
-                abort = True
+                self._vm._dom.abortJob()
+                self.stop()
+                break
             elif (lowmark is None) or (lowmark > dataRemaining):
                 lowmark = dataRemaining
                 lastProgressTime = now
-            elif (now - lastProgressTime) > progress_timeout:
+
+            if lastDataRemaining is not None and\
+                    lastDataRemaining < dataRemaining:
+                iterationCount += 1
+                self._vm.log.debug('new iteration detected: %i',
+                                   iterationCount)
+
+            lastDataRemaining = dataRemaining
+
+            if (now - lastProgressTime) > progress_timeout:
                 # Migration is stuck, abort
                 self._vm.log.warn(
                     'Migration is stuck: Hasn\'t progressed in %s seconds. '
                     'Aborting.' % (now - lastProgressTime))
-                abort = True
-
-            if abort:
                 self._vm._dom.abortJob()
                 self.stop()
+
+            if self._stop.isSet():
                 break
 
             if dataRemaining > lowmark:
