@@ -347,11 +347,6 @@ class HSM(object):
         fileUtils.createdir(mountBasePath)
         storageServer.MountConnection.setLocalPathBase(mountBasePath)
         storageServer.LocalDirectoryConnection.setLocalPathBase(mountBasePath)
-        self._connectionAliasRegistrar = \
-            storageServer.ConnectionAliasRegistrar(STORAGE_CONNECTION_DIR)
-        self._connectionMonitor = \
-            storageServer.ConnectionMonitor(self._connectionAliasRegistrar)
-        self._connectionMonitor.startMonitoring()
 
         sp.StoragePool.cleanupMasterMount()
         self.__releaseLocks()
@@ -3269,7 +3264,6 @@ class HSM(object):
         # TODO: Implement!!!! TBD: required functionality (stop hsm tasks,
         #                          stop spm tasks if spm etc.)
         try:
-            self._connectionMonitor.stopMonitoring()
             sp.StoragePool.cleanupMasterMount()
             self.__releaseLocks()
 

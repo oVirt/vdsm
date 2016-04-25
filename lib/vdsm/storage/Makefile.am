@@ -41,7 +41,6 @@ dist_vdsmstorage_PYTHON = \
 	persistent.py \
 	rwlock.py \
 	securable.py \
-	sync.py \
 	threadlocal.py \
 	volumemetadata.py \
 	$(NULL)
