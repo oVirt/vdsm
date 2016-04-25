@@ -862,6 +862,7 @@ def _add_vm(conn, vms, vm):
     except InvalidVMConfiguration as e:
         logging.error("error adding general info: %s", e)
         return
+    _add_snapshot_info(conn, vm, params)
     _add_networks(root, params)
     _add_disks(root, params)
     _add_graphics(root, params)
@@ -986,6 +987,19 @@ def _add_networks(root, params):
         if model is not None:
             i['model'] = model.get('type')
         params['networks'].append(i)
+
+
+def _add_snapshot_info(conn, vm, params):
+    # Snapshot related API is not yet implemented in the libvirt's Xen driver
+    if conn.getType() == 'Xen':
+        return
+
+    try:
+        ret = vm.hasCurrentSnapshot()
+    except libvirt.libvirtError:
+        logging.exception('Error checking for existing snapshots.')
+    else:
+        params['has_snapshots'] = ret > 0
 
 
 def _read_ovf_from_ova(ova_path):

@@ -41,13 +41,20 @@ from monkeypatch import MonkeyPatch, MonkeyPatchScope
 import vmfakelib as fake
 
 
-VmSpec = namedtuple('VmSpec', ['name', 'uuid', 'id', 'active'])
+VmSpec = namedtuple('VmSpec',
+                    ['name', 'uuid', 'id', 'active', 'has_snapshots'])
 
 VM_SPECS = (
-    VmSpec("RHEL_0", str(uuid.uuid4()), id=0, active=True),
-    VmSpec("RHEL_1", str(uuid.uuid4()), id=1, active=True),
-    VmSpec("RHEL_2", str(uuid.uuid4()), id=2, active=False),
-    VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False)
+    VmSpec("RHEL_0", str(uuid.uuid4()), id=0, active=True,
+           has_snapshots=False),
+    VmSpec("RHEL_1", str(uuid.uuid4()), id=1, active=True,
+           has_snapshots=False),
+    VmSpec("RHEL_2", str(uuid.uuid4()), id=2, active=False,
+           has_snapshots=False),
+    VmSpec("RHEL_3", str(uuid.uuid4()), id=3, active=False,
+           has_snapshots=False),
+    VmSpec("RHEL_4", str(uuid.uuid4()), id=4, active=False,
+           has_snapshots=True),
 )
 
 FAKE_VIRT_V2V = CommandPath('fake-virt-v2v',
@@ -68,12 +75,14 @@ class MockVirDomain(object):
     def __init__(self, name="RHEL",
                  vm_uuid="564d7cb4-8e3d-06ec-ce82-7b2b13c6a611",
                  id=0,
-                 active=False):
+                 active=False,
+                 has_snapshots=False):
         self._name = name
         self._uuid = vm_uuid
         self._mac_address = _mac_from_uuid(vm_uuid)
         self._id = id
         self._active = active
+        self._has_snapshots = has_snapshots
 
     def name(self):
         return self._name
@@ -132,6 +141,9 @@ class MockVirDomain(object):
             uuid=self._uuid,
             mac=self._mac_address)
 
+    def hasCurrentSnapshot(self):
+        return self._has_snapshots
+
 
 # FIXME: extend vmfakelib allowing to set predefined domain in Connection class
 class MockVirConnect(object):
@@ -141,6 +153,9 @@ class MockVirConnect(object):
 
     def close(self):
         pass
+
+    def getType(self):
+        return "ESX"
 
     def listAllDomains(self):
         return [vm for vm in self._vms]
@@ -441,6 +456,7 @@ class v2vTests(TestCaseBase):
         self.assertEquals(vm['smp'], 1)
         self.assertEquals(len(vm['disks']), 1)
         self.assertEquals(len(vm['networks']), 1)
+        self.assertEquals(vm['has_snapshots'], spec.has_snapshots)
 
         network = vm['networks'][0]
         self.assertEquals(network['type'], 'bridge')

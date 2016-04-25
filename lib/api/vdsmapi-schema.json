@@ -4027,6 +4027,9 @@
 #                   (new in version 4.18.0)
 #
 # @video:           #optional video supported by libvirt (qxl, vga etc)
+#
+# @has_snapshots:   #optional Information on whether the VM has snapshots or
+#                   not.
 #                   (new in version 4.18.0)
 #
 # Since: 4.17.0
@@ -4036,7 +4039,7 @@
           'memSize': 'uint', '*disks': ['ExternalDiskInfo'],
           '*networks': ['ExternalNetworkInfo'], '*format': 'VolumeFormat',
           '*allocation': 'VolumeAllocation', '*virtio_iso_path': 'str',
-          '*graphics': 'str', '*video': 'str'}}
+          '*graphics': 'str', '*video': 'str', '*has_snapshots': 'bool'}}
 
 ##
 # @Host.getExternalVMs:

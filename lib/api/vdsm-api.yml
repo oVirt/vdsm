@@ -969,6 +969,12 @@ types:
             description: video supported by libvirt (qxl, vga etc)
             name: video
             type: string
+
+        -   description: Information on whether the VM has snapshots or not.
+            defaultvalue: null
+            name: has_snapshots
+            type: boolean
+            added: '4.0'
         type: object
 
     FcHba: &FcHba
