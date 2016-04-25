@@ -6,6 +6,7 @@
 # http://wiki.python.org/moin/PythonSoftwareFoundationLicenseV2Easy
 #
 
+from __future__ import absolute_import
 from __future__ import print_function
 
 import itertools

@@ -24,9 +24,9 @@ import threading
 
 from vdsm.config import config
 from vdsm.storage import exception as se
+from vdsm.storage.threadPool import ThreadPool
 
 from task import Task, Job, TaskCleanType
-from threadPool import ThreadPool
 
 
 class TaskManager:

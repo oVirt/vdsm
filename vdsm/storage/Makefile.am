@@ -50,7 +50,6 @@ dist_vdsmstorage_PYTHON = \
 	storageServer.py \
 	taskManager.py \
 	task.py \
-	threadPool.py \
 	volume.py
 
 dist_vdsmexec_SCRIPTS = \
