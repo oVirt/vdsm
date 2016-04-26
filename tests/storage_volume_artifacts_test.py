@@ -22,11 +22,13 @@ import os
 import uuid
 
 from testlib import VdsmTestCase
+from testValidation import brokentest
 from storagetestlib import fake_file_env
 
 from vdsm.storage import exception as se
 
 from storage import image, sd, volume
+from storage.sdm.api import create_volume
 
 
 class ExpectedFailure(Exception):
@@ -101,6 +103,24 @@ class VolumeArtifactsTestsMixin(object):
                 self.img_id, str(uuid.uuid4()))
             self.assertRaises(se.InvalidParameterException, second.create,
                               *BASE_RAW_PARAMS)
+
+    @brokentest("Broken until COW volume support is added")
+    def test_create_same_volume_in_image(self):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            artifacts.create(*BASE_RAW_PARAMS)
+            artifacts.commit()
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            parent = create_volume.ParentVolumeInfo(
+                dict(img_id=self.img_id, vol_id=self.vol_id))
+            params = BASE_COW_PARAMS + (parent,)
+
+            # Until COW and parent support are added, the call to create will
+            # raise NotImplementedError
+            self.assertRaises(se.VolumeAlreadyExists,
+                              artifacts.create, *params)
 
     def test_new_image_create_and_commit(self):
         with self.fake_env() as env:
