@@ -46,7 +46,6 @@ except:
     log = logging.getLogger("SuperVdsm.Server")
     log.warn("Could not init proper logging", exc_info=True)
 
-from storage import fuser
 from multiprocessing import Pipe, Process
 try:
     from gluster import listPublicFunctions
@@ -56,6 +55,7 @@ except ImportError:
 
 from vdsm import utils
 from vdsm import sysctl
+from vdsm.storage import fuser
 from vdsm.storage import mount
 from vdsm.storage.fileUtils import chown, resolveGid, resolveUid
 from vdsm.storage.fileUtils import validateAccess as _validateAccess

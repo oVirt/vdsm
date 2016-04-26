@@ -26,6 +26,7 @@ dist_vdsmstorage_PYTHON = \
 	constants.py \
 	exception.py \
 	fileUtils.py \
+	fuser.py \
 	misc.py \
 	mount.py \
 	persistent.py \

@@ -1008,7 +1008,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/monitor.py*
 %{_datadir}/%{vdsm_name}/storage/fileSD.py*
 %{_datadir}/%{vdsm_name}/storage/fileVolume.py*
-%{_datadir}/%{vdsm_name}/storage/fuser.py*
 %{_datadir}/%{vdsm_name}/storage/imagetickets.py*
 %{_datadir}/%{vdsm_name}/storage/glusterSD.py*
 %{_datadir}/%{vdsm_name}/storage/glusterVolume.py*
@@ -1251,6 +1250,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
+%{python_sitelib}/%{vdsm_name}/storage/fuser.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*

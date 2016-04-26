@@ -20,7 +20,7 @@
 
 import os
 from tempfile import NamedTemporaryFile
-from storage import fuser
+from vdsm.storage import fuser
 
 from testlib import VdsmTestCase
 
