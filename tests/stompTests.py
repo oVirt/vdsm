@@ -31,6 +31,8 @@ from yajsonrpc.stompreactor import StandAloneRpcClient
 from vdsm.config import config
 from vdsm import utils
 
+from testValidation import brokentest
+
 if config.get('vars', 'ssl_implementation') == 'm2c':
     from integration.m2chelper import DEAFAULT_SSL_CONTEXT
 else:
@@ -66,6 +68,7 @@ class _SampleBridge(object):
 @expandPermutations
 class StompTests(TestCaseBase):
 
+    @brokentest('This test randomly fails on CI with JsonRpcNoResponseError')
     @permutations([
         # size, use_ssl
         (1024, True),
@@ -90,6 +93,7 @@ class StompTests(TestCaseBase):
                                                     str(uuid4())),
                                   data)
 
+    @brokentest('This test randomly fails on CI with JsonRpcNoResponseError')
     @permutations(_USE_SSL)
     def test_event(self, use_ssl):
         done = threading.Event()
