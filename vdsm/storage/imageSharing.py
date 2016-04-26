@@ -22,9 +22,8 @@ import signal
 
 from vdsm import commands
 from vdsm import constants
+from vdsm.storage import curlImgWrap
 from vdsm.storage import exception as se
-
-import curlImgWrap
 
 log = logging.getLogger("Storage.ImageSharing")
 # Time to wait from finishing writing data to dd, until dd exists,

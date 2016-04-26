@@ -28,6 +28,7 @@ dist_vdsmstorage_PYTHON = \
 	check.py \
 	clusterlock.py \
 	constants.py \
+	curlImgWrap.py \
 	exception.py \
 	fileUtils.py \
 	fuser.py \
