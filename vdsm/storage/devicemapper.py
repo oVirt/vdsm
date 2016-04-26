@@ -19,12 +19,12 @@
 #
 
 import os
-import misc
 from glob import glob
 import errno
 import re
 
 from vdsm.constants import EXT_DMSETUP
+from vdsm.storage import misc
 from vdsm.supervdsm import getProxy
 
 DMPATH_PREFIX = "/dev/mapper/"

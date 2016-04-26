@@ -23,10 +23,10 @@ from glob import glob
 
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import misc
 
 import sd
 import fileSD
-import misc
 import clusterlock
 
 

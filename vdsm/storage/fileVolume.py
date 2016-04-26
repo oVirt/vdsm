@@ -26,8 +26,10 @@ from vdsm import exception
 from vdsm import qemuimg
 from vdsm.commands import grepCmd
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 from vdsm.storage.constants import FILE_VOLUME_PERMISSIONS
 from vdsm.storage.constants import LEASE_FILEEXT
+from vdsm.storage.misc import deprecated
 
 from sdc import sdCache
 import outOfProcess as oop
@@ -35,8 +37,6 @@ import volume
 import image
 import sd
 import fileSD
-import misc
-from misc import deprecated
 import task
 from threadLocal import vars
 

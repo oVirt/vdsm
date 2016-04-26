@@ -29,11 +29,11 @@ import re
 import errno
 from collections import namedtuple
 
-import misc
 from vdsm import supervdsm
 from vdsm.password import ProtectedPassword
 from vdsm.config import config
 from vdsm.network.netinfo.routes import getRouteDeviceTo
+from vdsm.storage import misc
 import devicemapper
 from threading import RLock
 

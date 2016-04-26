@@ -39,9 +39,9 @@ from subprocess import list2cmdline
 
 from vdsm import constants
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 
-import misc
 import multipath
 from vdsm.config import config
 import devicemapper

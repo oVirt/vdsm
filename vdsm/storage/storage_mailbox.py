@@ -30,10 +30,10 @@ import logging
 import uuid
 
 from vdsm.config import config
+from vdsm.storage import misc
 from vdsm.storage.exception import InvalidParameterException
 
 import sd
-import misc
 import task
 from threadPool import ThreadPool
 from vdsm import concurrent

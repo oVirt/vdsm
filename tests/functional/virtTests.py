@@ -37,7 +37,7 @@ import verify
 from vdsm import cpuarch
 from vdsm.utils import CommandPath
 from vdsm.virt import vmstatus
-from storage.misc import execCmd
+from vdsm.storage.misc import execCmd
 
 from utils import getProxy, SUCCESS
 

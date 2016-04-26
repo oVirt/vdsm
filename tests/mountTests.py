@@ -28,13 +28,13 @@ import stat
 from vdsm import udevadm
 from vdsm.utils import stopwatch
 from vdsm.storage import mount
+from vdsm.storage.misc import execCmd
 
 from nose.plugins.skip import SkipTest
 
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir, temporaryPath
 from testlib import expandPermutations, permutations
-from storage.misc import execCmd
 from testValidation import ValidateRunningAsRoot
 import monkeypatch
 

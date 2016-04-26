@@ -39,9 +39,9 @@ from vdsm import commands
 from vdsm import exception
 from vdsm import utils
 from vdsm.storage import fileUtils
+from vdsm.storage import misc
 
 import storage.outOfProcess as oop
-import storage.misc as misc
 
 from monkeypatch import MonkeyPatch
 from testValidation import checkSudo

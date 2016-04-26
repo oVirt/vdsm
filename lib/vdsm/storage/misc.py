@@ -27,6 +27,8 @@
 Various storage misc procedures
 """
 
+from __future__ import absolute_import
+
 import contextlib
 import errno
 import inspect

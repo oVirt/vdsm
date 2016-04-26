@@ -17,8 +17,9 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-import misc
 from vdsm import constants
+
+from vdsm.storage import misc
 
 
 def fuser(path, mountPoint=False):

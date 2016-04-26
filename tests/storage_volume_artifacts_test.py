@@ -27,9 +27,10 @@ from testValidation import brokentest
 from storagetestlib import fake_block_env, fake_file_env
 
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 from vdsm.storage.constants import TEMP_VOL_LVTAG
 
-from storage import image, misc, sd, blockVolume, volume
+from storage import image, sd, blockVolume, volume
 from storage.sdm.api import create_volume
 
 

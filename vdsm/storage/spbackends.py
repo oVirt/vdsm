@@ -22,6 +22,7 @@ import logging
 import weakref
 
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 from vdsm.storage.persistent import DictValidator
 from vdsm.storage.persistent import unicodeDecoder
 from vdsm.storage.persistent import unicodeEncoder
@@ -29,7 +30,6 @@ from vdsm.storage.securable import secured
 from vdsm.storage.securable import unsecured
 
 import blockSD
-import misc
 import sd
 
 from sp import LVER_INVALID

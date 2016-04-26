@@ -26,9 +26,9 @@ import weakref
 from vdsm import concurrent
 from vdsm import utils
 from vdsm.config import config
+from vdsm.storage import misc
 
 from . import clusterlock
-from . import misc
 from .sdc import sdCache
 
 

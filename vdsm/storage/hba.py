@@ -30,8 +30,7 @@ from vdsm import supervdsm
 from vdsm import commands
 from vdsm.config import config
 from vdsm.infra import zombiereaper
-
-import misc
+from vdsm.storage import misc
 
 log = logging.getLogger("Storage.HBA")
 

@@ -29,15 +29,15 @@ from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage.constants import TEMP_VOL_LVTAG
+from vdsm.storage import misc
+from vdsm.storage.misc import deprecated
+from vdsm.storage.misc import logskip
 import vdsm.utils as utils
 
 import volume
 import image
 import sd
 import blockSD
-import misc
-from misc import logskip
-from misc import deprecated
 import task
 import lvm
 import resourceManager as rm

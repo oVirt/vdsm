@@ -22,12 +22,12 @@ import os
 
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import misc
 from vdsm.storage import mount
 
 import sd
 import fileSD
 import outOfProcess as oop
-import misc
 
 
 class NfsStorageDomain(fileSD.FileStorageDomain):

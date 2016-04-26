@@ -39,11 +39,11 @@ from vdsm import response
 from vdsm import supervdsm
 from vdsm import jobs
 from vdsm import v2v
+from vdsm.storage import misc
 from vdsm.virt import hoststats
 from vdsm.virt import vmstatus
 from vdsm.virt import sampling
 from vdsm.virt import secret
-import storage.misc
 import storage.clusterlock
 import storage.volume
 import storage.sd
@@ -193,7 +193,7 @@ class VM(APIBase):
                                        'message': 'Missing required '
                                        'parameter %s' % (param)}}
             try:
-                storage.misc.validateUUID(vmParams['vmId'])
+                misc.validateUUID(vmParams['vmId'])
             except:
                 return {'status': {'code': errCode['MissParam']
                                                   ['status']['code'],

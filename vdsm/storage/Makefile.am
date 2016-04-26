@@ -45,7 +45,6 @@ dist_vdsmstorage_PYTHON = \
 	iscsi.py \
 	localFsSD.py \
 	lvm.py \
-	misc.py \
 	monitor.py \
 	multipath.py \
 	nfsSD.py \

@@ -27,11 +27,11 @@ from contextlib import nested
 from uuid import uuid4
 from Queue import Queue
 
-import misc
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm import concurrent
 from vdsm import utils
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 from vdsm.storage import rwlock
 
 

@@ -23,9 +23,9 @@ import os
 import tempfile
 from nose.tools import eq_, raises
 from nose.plugins.skip import SkipTest
+from vdsm.storage.misc import execCmd
 from testlib import VdsmTestCase as TestCaseBase
 from testValidation import brokentest, slowtest
-from storage.misc import execCmd
 from alignmentScan import runScanArgs, scanImage, VirtAlignError
 
 

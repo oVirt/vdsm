@@ -25,7 +25,6 @@ from threading import RLock, Lock, Event
 import socket
 import glob
 from collections import namedtuple
-import misc
 from functools import partial
 import six
 import sys
@@ -38,6 +37,7 @@ from vdsm import udevadm
 from vdsm import utils
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage import sync
 from vdsm.storage.mount import MountError

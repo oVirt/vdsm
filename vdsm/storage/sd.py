@@ -27,10 +27,10 @@ import codecs
 from contextlib import contextmanager
 
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
 
 import image
-import misc
 import resourceFactories
 from resourceFactories import IMAGE_NAMESPACE, VOLUME_NAMESPACE
 import resourceManager as rm

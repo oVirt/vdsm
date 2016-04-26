@@ -21,7 +21,7 @@
 
 from collections import namedtuple
 from vdsm.utils import CommandPath
-from storage.misc import execCmd
+from vdsm.storage.misc import execCmd
 
 ScanOutput = namedtuple(
     'ScanOutput',

@@ -29,11 +29,11 @@ from vdsm import qemuimg
 from vdsm.storage import constants as storage_constants
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import misc
+from vdsm.storage.misc import deprecated
 
 import sd
 from sdc import sdCache
-import misc
-from misc import deprecated
 import task
 from threadLocal import vars
 import resourceFactories
