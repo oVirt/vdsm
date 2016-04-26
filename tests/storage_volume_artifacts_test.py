@@ -118,21 +118,18 @@ class VolumeArtifactsTestsMixin(object):
             self.assertEqual(vol_format, vol.getFormat())
             self.assertEqual(str(disk_type), vol.getDiskType())
 
-    # Invalid use of artifacts
+    # Artifacts visibility
 
-    def test_new_image_commit_without_create(self):
+    def test_getallvolumes(self):
+        # Artifacts must not be recognized as volumes until commit is called.
         with self.fake_env() as env:
-            artifacts = env.sd_manifest.get_volume_artifacts(
-                self.img_id, self.vol_id)
-            self.assertRaises(OSError, artifacts.commit)
-
-    def test_new_image_commit_twice(self):
-        with self.fake_env() as env:
+            self.assertEqual({}, env.sd_manifest.getAllVolumes())
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
             artifacts.create(*BASE_RAW_PARAMS)
+            self.assertEqual({}, env.sd_manifest.getAllVolumes())
             artifacts.commit()
-            self.assertRaises(OSError, artifacts.commit)
+            self.assertIn(self.vol_id, env.sd_manifest.getAllVolumes())
 
 
 class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
@@ -210,6 +207,22 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             self.assertRaises(se.DomainHasGarbage, artifacts.create,
                               *BASE_RAW_PARAMS)
 
+    # Invalid use of artifacts
+
+    def test_new_image_commit_without_create(self):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            self.assertRaises(OSError, artifacts.commit)
+
+    def test_new_image_commit_twice(self):
+        with self.fake_env() as env:
+            artifacts = env.sd_manifest.get_volume_artifacts(
+                self.img_id, self.vol_id)
+            artifacts.create(*BASE_RAW_PARAMS)
+            artifacts.commit()
+            self.assertRaises(OSError, artifacts.commit)
+
     def validate_new_image_path(self, artifacts, has_md=False,
                                 has_lease=False, has_volume=False):
         path = artifacts.artifacts_dir
@@ -248,14 +261,3 @@ class FileVolumeArtifactVisibilityTests(VdsmTestCase):
             self.assertEqual({garbage_img_id}, env.sd_manifest.getAllImages())
             artifacts.commit()
             self.assertEqual({self.img_id}, env.sd_manifest.getAllImages())
-
-    def test_getallvolumes(self):
-        # Artifacts must not be recognized as volumes until commit is called.
-        with fake_file_env() as env:
-            self.assertEqual({}, env.sd_manifest.getAllVolumes())
-            artifacts = env.sd_manifest.get_volume_artifacts(
-                self.img_id, self.vol_id)
-            artifacts.create(*BASE_RAW_PARAMS)
-            self.assertEqual({}, env.sd_manifest.getAllVolumes())
-            artifacts.commit()
-            self.assertIn(self.vol_id, env.sd_manifest.getAllVolumes())
