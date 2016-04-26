@@ -26,13 +26,10 @@
 """
 Various storage misc procedures
 """
-from array import array
-from collections import defaultdict
-from contextlib import contextmanager
-from functools import wraps, partial
-from itertools import chain, imap
+
 import contextlib
 import errno
+import inspect
 import logging
 import os
 import Queue
@@ -44,13 +41,19 @@ import struct
 import threading
 import types
 import weakref
-import inspect
+
+from array import array
+from collections import defaultdict
+from contextlib import contextmanager
+from functools import wraps, partial
+from itertools import chain, imap
 
 from vdsm import commands
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import logUtils
 from vdsm import utils
+
 from vdsm.storage import exception as se
 from vdsm.storage.constants import SECTOR_SIZE
 
