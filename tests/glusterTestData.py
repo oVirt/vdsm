@@ -1230,3 +1230,22 @@ GLUSTER_ALL_VOLUME_SNAPSHOT_LIST = {
         ]
     }
 }
+
+GLUSTER_VOLUME_HEAL_INFO = {
+    'bricks': [
+        {
+            'name': 'ovirt-node-1.test.com:/brick-1',
+            'status': 'Connected',
+            'hostUuid': 'f0ef3d05-3ef3-411a-af2c-628b0a14278b',
+            'numberOfEntries': '10'},
+        {
+            'name': 'ovirt-node-1.test.com:/brick-2',
+            'status': 'Transport endpoint is not connected',
+            'hostUuid': 'f0ef3d05-3ef3-411a-af2c-628b0a14278b'},
+        {
+            'name': 'ovirt-node-1.test.com:/brick-3',
+            'status': 'Connected',
+            'hostUuid': 'f0ef3d05-3ef3-411a-af2c-628b0a14278b',
+            'numberOfEntries': '50'}
+    ]
+}

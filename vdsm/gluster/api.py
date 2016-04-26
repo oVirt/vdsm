@@ -772,6 +772,10 @@ class GlusterApi(object):
     def processesStop(self):
         self.svdsmProxy.glusterProcessesStop()
 
+    @exportAsVerb
+    def volumeHealInfo(self, volumeName, options=None):
+        return {'healInfo': self.svdsmProxy.glusterVolumeHealInfo(volumeName)}
+
 
 def getGlusterMethods(gluster):
     l = []

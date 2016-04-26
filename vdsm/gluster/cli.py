@@ -1583,6 +1583,38 @@ def volumeGeoRepSessionDelete(volumeName, remoteHost, remoteVolumeName,
         raise ge.GlusterGeoRepSessionDeleteFailedException(rc=e.rc, err=e.err)
 
 
+@gluster_mgmt_api
+def volumeHealInfo(volumeName=None):
+    command = _getGlusterVolCmd() + ["heal", volumeName, 'info']
+    try:
+        xmltree = _execGlusterXml(command)
+        return _parseVolumeHealInfo(xmltree)
+    except ge.GlusterCmdFailedException as e:
+        raise ge.GlusterVolumeHealInfoFailedException(rc=e.rc, err=e.err)
+    except _etreeExceptions:
+        raise ge.GlusterXmlErrorException(err=[etree.tostring(xmltree)])
+
+
+def _parseVolumeHealInfo(tree):
+    """
+    {'bricks': [{'name': 'Fully qualified brick path',
+                           'status': 'Connected/Not Connected'
+                           'numberOfEntries': int,
+                           'hostUuid': 'UUID'},...]
+    }
+    """
+    healInfo = {'bricks': []}
+    for el in tree.findall('healInfo/bricks/brick'):
+        brick = {}
+        brick['name'] = el.find('name').text
+        brick['status'] = el.find('status').text
+        brick['hostUuid'] = el.get('hostUuid')
+        if brick['status'] == 'Connected':
+            brick['numberOfEntries'] = el.find('numberOfEntries').text
+        healInfo['bricks'].append(brick)
+    return healInfo
+
+
 def exists():
     try:
         return os.path.exists(_glusterCommandPath.cmd)

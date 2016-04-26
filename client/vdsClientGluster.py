@@ -745,6 +745,14 @@ class GlusterService(service):
         pp.pprint(status)
         return status['status']['code'], status['status']['message']
 
+    def do_glusterVolumeHealInfo(self, args):
+        params = self._eqSplit(args)
+        volumeName = params.get('volumeName', '')
+
+        status = self.s.glusterVolumeHealInfo(volumeName)
+        pp.pprint(status)
+        return status['status']['code'], status['status']['message']
+
 
 def getGlusterCmdDict(serv):
     return \
@@ -1262,5 +1270,11 @@ def getGlusterCmdDict(serv):
              serv.do_glusterProcessesStop,
              ('',
               'Stop gluster processes'
+              )),
+         'glusterVolumeHealInfo': (
+             serv.do_glusterVolumeHealInfo,
+             ('[volumeName=<volume_name>]\n\t'
+              '<volume_name> is existing volume name '
+              'lists self-heal info for the gluster volume'
               ))
          }

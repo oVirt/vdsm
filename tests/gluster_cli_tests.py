@@ -1226,3 +1226,10 @@ class GlusterCliTests(TestCaseBase):
         status = gcli._parseAllVolumeSnapshotList(tree)
         expected = {}
         self.assertEquals(status, expected)
+
+    def test_parseVolumeHealInfo(self):
+        with open("glusterVolumeHealInfo.xml") as f:
+            out = f.read()
+        tree = etree.fromstring(out)
+        healInfo = gcli._parseVolumeHealInfo(tree)
+        self.assertEquals(healInfo, glusterTestData.GLUSTER_VOLUME_HEAL_INFO)

@@ -298,6 +298,7 @@ dist_vdsmtests_DATA = \
 	glusterVolumeRebalanceStatus.xml \
 	glusterVolumeRemoveBricksStatus.xml \
 	glusterVolumeTasks.xml \
+        glusterVolumeHealInfo.xml \
 	iscsiadm_-m_iface.out \
 	lvs_3386c6f2-926f-42c4-839c-38287fac8998.out \
 	lvs_f9e55e18-67c4-4377-8e39-5833ca422bef.out \

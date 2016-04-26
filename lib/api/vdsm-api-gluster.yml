@@ -857,6 +857,25 @@ types:
             type: string
         type: object
 
+    HealInfo: &HealInfo
+        added: '4.0'
+        description: Gluster volume self heal information.
+        name: HealInfo
+        properties:
+        -   description: Fully qualified name of the brick
+            name: name
+            type: string
+        -   description: Status of the brick
+            name: status
+            type: string
+        -   description: UUID of the host where the brick is available
+            name: hostUuid
+            type: *UUID
+        -   description: Number of entries to be healed from this brick
+            name: numberOfEntries
+            type: int
+        type: object
+
 GlusterHook.add:
     added: '3.2'
     description: Add a hook file
@@ -2063,3 +2082,15 @@ GlusterVolume.geoRepKeysUpdate:
         name: geoRepPubKeys
         type:
         - string
+
+GlusterVolume.healInfo:
+    added: '4.0'
+    description: Returns gluster self heal info for the gluster volume
+    params:
+    -   description: Gluster volume name
+        name: volumeName
+        type: string
+    return:
+        description: Volume self heal information.
+        type:
+        - *HealInfo

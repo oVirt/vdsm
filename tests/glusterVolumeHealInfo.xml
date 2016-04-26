@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cliOutput>
+  <healInfo>
+    <bricks>
+      <brick hostUuid="f0ef3d05-3ef3-411a-af2c-628b0a14278b">
+        <name>ovirt-node-1.test.com:/brick-1</name>
+        <status>Connected</status>
+        <numberOfEntries>10</numberOfEntries>
+      </brick>
+      <brick hostUuid="f0ef3d05-3ef3-411a-af2c-628b0a14278b">
+        <name>ovirt-node-1.test.com:/brick-2</name>
+        <status>Transport endpoint is not connected</status>
+        <numberOfEntries>-</numberOfEntries>
+      </brick>
+      <brick hostUuid="f0ef3d05-3ef3-411a-af2c-628b0a14278b">
+        <name>ovirt-node-1.test.com:/brick-3</name>
+        <status>Connected</status>
+        <numberOfEntries>50</numberOfEntries>
+      </brick>
+    </bricks>
+  </healInfo>
+  <opRet>0</opRet>
+  <opErrno>0</opErrno>
+  <opErrstr/>
+</cliOutput>

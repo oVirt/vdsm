@@ -328,6 +328,11 @@ class GlusterVolumeTasksFailedException(GlusterVolumeException):
     message = "Volume tasks list failed"
 
 
+class GlusterVolumeHealInfoFailedException(GlusterVolumeException):
+    code = 4162
+    message = "Volume heal info failed"
+
+
 # Host
 class GlusterHostException(GlusterException):
     code = 4400

@@ -116,6 +116,9 @@ class GlusterVolume(GlusterApiBase):
     def status(self, volumeName, brick=None, statusOption=None):
         return self._gluster.volumeStatus(volumeName, brick, statusOption)
 
+    def healInfo(self, volumeName):
+        return self._gluster.volumeHealInfo(volumeName)
+
     def list(self, volumeName=None, remoteServer=None):
         return self._gluster.volumesList(volumeName, remoteServer)
 

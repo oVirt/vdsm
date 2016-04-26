@@ -1376,6 +1376,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeSnapshotList.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeSnapshotListEmpty.xml
 %{_datadir}/%{vdsm_name}/tests/glusterVolumeTasks.xml
+%{_datadir}/%{vdsm_name}/tests/glusterVolumeHealInfo.xml
 %{_datadir}/%{vdsm_name}/tests/functional/*.py*
 %{_datadir}/%{vdsm_name}/tests/functional/*.policy
 %{_datadir}/%{vdsm_name}/tests/integration/*.py*
