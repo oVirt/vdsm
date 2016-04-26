@@ -39,12 +39,12 @@ from vdsm import response
 from vdsm import supervdsm
 from vdsm import jobs
 from vdsm import v2v
+from vdsm.storage import clusterlock
 from vdsm.storage import misc
 from vdsm.virt import hoststats
 from vdsm.virt import vmstatus
 from vdsm.virt import sampling
 from vdsm.virt import secret
-import storage.clusterlock
 import storage.volume
 import storage.sd
 import storage.image
@@ -1182,7 +1182,7 @@ class StoragePool(APIBase):
     def spmStart(self, prevID, prevLver, enableScsiFencing,
                  maxHostID=None, domVersion=None):
         if maxHostID is None:
-            maxHostID = storage.clusterlock.MAX_HOST_ID
+            maxHostID = clusterlock.MAX_HOST_ID
         return self._irs.spmStart(self._UUID, prevID, prevLver, maxHostID,
                                   domVersion)
 
@@ -1251,7 +1251,7 @@ class Global(APIBase):
             # seconds. If so, we consider the host Up and we won't execute
             # fencing, even when it's unreachable from engine
             for sd, status in result['domains'].iteritems():
-                if status == storage.clusterlock.HOST_STATUS_LIVE:
+                if status == clusterlock.HOST_STATUS_LIVE:
                     self.log.debug("Host has live lease on '%s'", sd)
                     return False
 

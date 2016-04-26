@@ -44,6 +44,7 @@ from vdsm import qemuimg
 from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
+from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -71,7 +72,6 @@ import imagetickets
 import volume
 import iscsi
 import taskManager
-import clusterlock
 from threadLocal import vars
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE

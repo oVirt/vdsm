@@ -23,6 +23,7 @@ vdsmstoragedir = $(vdsmpylibdir)/storage
 
 dist_vdsmstorage_PYTHON = \
 	__init__.py \
+	clusterlock.py \
 	constants.py \
 	exception.py \
 	fileUtils.py \

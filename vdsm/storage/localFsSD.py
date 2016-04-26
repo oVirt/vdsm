@@ -21,13 +21,13 @@
 import os
 from glob import glob
 
+from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 
 import sd
 import fileSD
-import clusterlock
 
 
 class LocalFsStorageDomainManifest(fileSD.FileStorageDomainManifest):

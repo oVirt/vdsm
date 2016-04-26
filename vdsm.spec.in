@@ -1025,7 +1025,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/outOfProcess.py*
 %{_datadir}/%{vdsm_name}/storage/resourceFactories.py*
 %{_datadir}/%{vdsm_name}/storage/resourceManager.py*
-%{_datadir}/%{vdsm_name}/storage/clusterlock.py*
 %{_datadir}/%{vdsm_name}/storage/sdc.py*
 %{_datadir}/%{vdsm_name}/storage/sd.py*
 %{_datadir}/%{vdsm_name}/storage/sp.py*
@@ -1247,6 +1246,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/profiling/memory.py*
 %{python_sitelib}/%{vdsm_name}/profiling/profile.py*
 %{python_sitelib}/%{vdsm_name}/storage/__init__.py*
+%{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*

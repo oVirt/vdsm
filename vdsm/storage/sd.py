@@ -26,6 +26,7 @@ from collections import namedtuple
 import codecs
 from contextlib import contextmanager
 
+from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
@@ -37,7 +38,6 @@ import resourceManager as rm
 from vdsm import concurrent
 from vdsm import constants
 from vdsm.storage import constants as storage_constants
-import clusterlock
 import outOfProcess as oop
 import volume
 
