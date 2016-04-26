@@ -18,19 +18,22 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
 import fcntl
-import threading
 import logging
+import os
 import subprocess
+import threading
+
 from contextlib import nested
+
 import sanlock
 
 import misc
 
 from vdsm import constants
-from vdsm.config import config
 from vdsm import utils
+
+from vdsm.config import config
 from vdsm.storage import exception as se
 
 
