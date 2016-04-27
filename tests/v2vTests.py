@@ -358,11 +358,11 @@ class v2vTests(TestCaseBase):
                               ProtectedPassword('password'))
 
     @permutations([
-        # (methodname, fakemethod)
-        ['lookupByName', lookupByNameFailure],
-        ['lookupByID', lookupByIDFailure]
+        # (methodname, fakemethod, active)
+        ['lookupByName', lookupByNameFailure, True],
+        ['lookupByID', lookupByIDFailure, False]
     ])
-    def testLookupFailure(self, methodname, fakemethod):
+    def testLookupFailure(self, methodname, fakemethod, active):
         def _connect(uri, username, passwd):
             mock = MockVirConnect(vms=self._vms)
             mock.listAllDomains = legacylistAllDomains
@@ -374,7 +374,11 @@ class v2vTests(TestCaseBase):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
                                        ProtectedPassword('password')
                                        )['vmList']
-            self.assertEqual(len(vms), 2)
+            self.assertEqual(
+                sorted(vm['vmName'] for vm in vms),
+                sorted(spec.name for spec in VM_SPECS
+                       if spec.active == active)
+                )
 
     def testOutputParser(self):
         output = ''.join(['[   0.0] Opening the source -i libvirt ://roo...\n',
@@ -511,7 +515,9 @@ class MockVirConnectTests(TestCaseBase):
 
     def test_list_defined_domains(self):
         vms = self._mock.listDefinedDomains()
-        self.assertEqual(len(vms), 2)
+        self.assertEqual(
+            sorted(vms),
+            sorted(spec.name for spec in VM_SPECS if not spec.active))
 
     def test_list_domains_id(self):
         vms = self._mock.listDomainsID()
