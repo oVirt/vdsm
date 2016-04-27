@@ -71,7 +71,7 @@ class CreateVolumeInfo(object):
         self.description = params.get('description', '')
         parent = params.get('parent', None)
         self.parent = None if parent is None else ParentVolumeInfo(parent)
-        self.initial_size = params.get('initial_size', 0)
+        self.initial_size = params.get('initial_size')
 
 
 class ParentVolumeInfo(object):

@@ -156,7 +156,7 @@ class CreateVolumeInfoTests(VdsmTestCase):
         info = _get_vol_info()
         info_obj = storage.sdm.api.create_volume.CreateVolumeInfo(info)
         self.assertEqual('', info_obj.description)
-        self.assertEqual(0, info_obj.initial_size)
+        self.assertEqual(None, info_obj.initial_size)
         self.assertIsNone(info_obj.parent)
 
     def test_bad_enum_value(self):
