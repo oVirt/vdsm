@@ -27,6 +27,7 @@ from testlib import make_file, recorded
 
 from vdsm.storage import exception as se
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
+from vdsm import utils
 
 from storage import lvm as real_lvm
 
@@ -92,11 +93,18 @@ class FakeLVM(object):
 
     def createLV(self, vgName, lvName, size, activate=True, contiguous=False,
                  initialTags=()):
-        # Size is expected as a string in MB, convert to a string in bytes.
         try:
-            size = str(int(size) << 20)
+            vg_md = self.vgmd[vgName]
+        except KeyError:
+            raise se.CannotCreateLogicalVolume(vgName, lvName)
+
+        # Size is received as a string in MB.  We need to convert it to bytes
+        # and round it up to a multiple of the VG extent size.
+        try:
+            size = int(size) << 20
         except ValueError:
             raise se.CannotCreateLogicalVolume(vgName, lvName)
+        size = utils.round(size, int(vg_md['extent_size']))
 
         # devices is hard to emulate properly (must have a PE allocator that
         # works the same as for LVM).  Since we don't need this value, use None
@@ -123,10 +131,6 @@ class FakeLVM(object):
                      opened=False,
                      active=bool(activate))
 
-        try:
-            vg_md = self.vgmd[vgName]
-        except KeyError:
-            raise se.CannotCreateLogicalVolume(vgName, lvName)
         lv_count = int(vg_md['lv_count']) + 1
 
         if (vgName, lvName) in self.lvmd:
@@ -140,7 +144,7 @@ class FakeLVM(object):
             lv_path = self.lvPath(vgName, lvName)
         else:
             lv_path = self._lvPathInactive(vgName, lvName)
-        make_file(lv_path, int(size))
+        make_file(lv_path, size)
 
     def activateLVs(self, vgName, lvNames):
         for lv in lvNames:

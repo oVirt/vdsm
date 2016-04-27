@@ -21,6 +21,7 @@ from contextlib import contextmanager
 import os
 
 from vdsm.storage import exception as se
+from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
@@ -332,6 +333,18 @@ class FakeLVMGeneralTests(VdsmTestCase):
             lvm = FakeLVM(tmpdir)
             lvm_fn = getattr(lvm, fn)
             self.assertRaises(exception, lvm_fn, *args)
+
+    def test_lv_size_rounding(self):
+        vg_name = 'foo'
+        lv_name = 'bar'
+        devices = ['360014054d75cb132d474c0eae9825766']
+        with namedTemporaryDir() as tmpdir:
+            lvm = FakeLVM(tmpdir)
+            lvm.createVG(vg_name, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
+                         blockSD.VG_METADATASIZE)
+            lvm.createLV(vg_name, lv_name, VG_EXTENT_SIZE_MB - 1)
+            lv = lvm.getLV(vg_name, lv_name)
+            self.assertEqual(VG_EXTENT_SIZE_MB * MB, int(lv.size))
 
 
 class FakeResourceManagerTests(VdsmTestCase):
