@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 STORAGE = "Storage"
 SECTOR_SIZE = 512
+VG_EXTENT_SIZE_MB = 128
 
 FILE_VOLUME_PERMISSIONS = 0o660
 LEASE_FILEEXT = ".lease"

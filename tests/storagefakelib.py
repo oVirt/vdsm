@@ -26,16 +26,20 @@ from copy import deepcopy
 from testlib import make_file, recorded
 
 from vdsm.storage import exception as se
+from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 
 from storage import lvm as real_lvm
 
 
 class FakeLVM(object):
-    _PV_SIZE = 10 << 30             # We pretend all PVs are 10G in size
-    _PV_PE_SIZE = 128 << 20         # Found via inspection of real environment
-    _PV_MDA_COUNT = 2               # The number of PEs used for metadata areas
-    _PV_UNUSABLE = (_PV_PE_SIZE *   # 2 PE for metadata + 1 PE to hold a header
-                    (1 + _PV_MDA_COUNT))
+    # We pretend all PVs are 10G in size
+    _PV_SIZE = 10 << 30
+    # Found via inspection of real environment
+    _PV_PE_SIZE = VG_EXTENT_SIZE_MB << 20
+    # The number of PEs used for metadata areas
+    _PV_MDA_COUNT = 2
+    # 2 PE for metadata + 1 PE to hold a header
+    _PV_UNUSABLE = (_PV_PE_SIZE * (1 + _PV_MDA_COUNT))
 
     def __init__(self, root):
         self.root = root
@@ -44,11 +48,10 @@ class FakeLVM(object):
         self.vgmd = {}
         self.lvmd = {}
 
-    def createVG(self, vgName, devices, initialTag, metadataSize,
-                 extentsize=128, force=False):
+    def createVG(self, vgName, devices, initialTag, metadataSize, force=False):
         # Convert params from MB to bytes to match other fields
         metadataSize <<= 20
-        extentsize <<= 20
+        extentsize = VG_EXTENT_SIZE_MB << 20
 
         for dev in devices:
             self._create_pv(dev, vgName, self._PV_SIZE)

@@ -39,6 +39,7 @@ from subprocess import list2cmdline
 
 from vdsm import constants
 from vdsm.storage import exception as se
+from vdsm.storage.constants import VG_EXTENT_SIZE_MB
 
 import misc
 import multipath
@@ -929,8 +930,7 @@ def getLV(vgName, lvName=None):
 # Public Volume Group interface
 #
 
-def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
-             force=False):
+def createVG(vgName, devices, initialTag, metadataSize, force=False):
     pvs = [_fqpvname(pdev) for pdev in _normalizeargs(devices)]
     _checkpvsblksize(pvs)
 
@@ -942,7 +942,7 @@ def createVG(vgName, devices, initialTag, metadataSize, extentsize="128m",
     if rc != 0:
         raise se.PhysDevInitializationError(pvs[0])
 
-    options = ["--physicalextentsize", extentsize]
+    options = ["--physicalextentsize", "%dm" % VG_EXTENT_SIZE_MB]
     if initialTag:
         options.extend(("--addtag", initialTag))
     cmd = ["vgcreate"] + options + [vgName] + pvs
