@@ -353,15 +353,13 @@ class SourceThread(threading.Thread):
             self._vm.log.info('starting migration to %s '
                               'with miguri %s', duri, muri)
 
-            downtimeThread = DowntimeThread(
+            self._monitorThread = MonitorThread(self._vm, startTime)
+            self._monitorThread.downtime_thread = DowntimeThread(
                 self._vm,
                 int(self._downtime),
                 config.getint('vars', 'migration_downtime_steps'))
-            self._monitorThread = MonitorThread(self._vm, startTime)
-            with utils.running(downtimeThread):
-                with utils.running(self._monitorThread):
-                    # we need to support python 2.6, so two nested with-s.
-                    self._perform_migration(duri, muri)
+            with utils.running(self._monitorThread):
+                self._perform_migration(duri, muri)
 
             self._monitorThread.join()
 
@@ -470,6 +468,20 @@ class DowntimeThread(threading.Thread):
         self._vm._dom.migrateSetMaxDowntime(downtime, 0)
 
 
+# we introduce this empty fake so the monitoring code doesn't have
+# to distinguish between no DowntimeThread and DowntimeThread present.
+class _FakeThreadInterface(object):
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def join(self):
+        pass
+
+
 class MonitorThread(threading.Thread):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
         'vars', 'migration_monitor_interval')  # seconds
@@ -481,6 +493,7 @@ class MonitorThread(threading.Thread):
         self._startTime = startTime
         self.daemon = True
         self.progress = 0
+        self.downtime_thread = _FakeThreadInterface()
 
     @property
     def enabled(self):
@@ -489,7 +502,13 @@ class MonitorThread(threading.Thread):
     @utils.traceback()
     def run(self):
         if self.enabled:
-            self.monitor_migration()
+            self.downtime_thread.start()
+            try:
+                self.monitor_migration()
+            finally:
+                self.downtime_thread.stop()
+            self.downtime_thread.join()
+            self._vm.log.debug('stopped migration monitor thread')
         else:
             self._vm.log.info('migration monitor thread disabled'
                               ' (monitoring interval set to 0)')
