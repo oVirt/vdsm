@@ -17,7 +17,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-SUBDIRS = configurators ip ovs
+SUBDIRS = configurators ip netinfo ovs
 
 include $(top_srcdir)/build-aux/Makefile.subs
 

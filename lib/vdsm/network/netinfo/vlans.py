@@ -22,8 +22,8 @@ from functools import partial
 from . import bonding
 from .misc import visible_devs
 from . import nics
-from ..ipwrapper import getLink, Link
-from ..netlink import link as nl_link
+from vdsm.ipwrapper import getLink, Link
+from vdsm.netlink import link as nl_link
 
 
 vlans = partial(visible_devs, Link.isVLAN)

@@ -22,9 +22,9 @@ import io
 from functools import partial
 import logging
 
-from ..ipwrapper import drv_name
+from vdsm.ipwrapper import drv_name
 from .misc import visible_devs
-from ..ipwrapper import Link
+from vdsm.ipwrapper import Link
 
 OPERSTATE_UP = 'up'
 OPERSTATE_UNKNOWN = 'unknown'

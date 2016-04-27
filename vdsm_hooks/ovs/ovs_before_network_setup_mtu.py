@@ -19,7 +19,8 @@
 #
 import six
 
-from vdsm import ipwrapper, netinfo
+from vdsm import ipwrapper
+from vdsm.network import netinfo
 
 from ovs_utils import iter_ovs_nets, iter_ovs_bonds
 

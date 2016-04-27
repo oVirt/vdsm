@@ -27,7 +27,7 @@ import threading
 
 from vdsm import cmdutils
 from vdsm import ipwrapper
-from vdsm import netinfo
+from vdsm.network import netinfo
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized, pgrep, kill_and_rm_pid
 

@@ -20,9 +20,9 @@ from __future__ import absolute_import
 from collections import defaultdict
 import logging
 
-from ..ipwrapper import IPRoute2Error
-from ..ipwrapper import routeGet, Route, routeShowGateways
-from ..netlink import route as nl_route
+from vdsm.ipwrapper import IPRoute2Error
+from vdsm.ipwrapper import routeGet, Route, routeShowGateways
+from vdsm.netlink import route as nl_route
 
 
 def getRouteDeviceTo(destinationIP):

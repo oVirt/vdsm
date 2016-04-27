@@ -22,7 +22,7 @@ import logging
 
 import libvirt
 
-from vdsm import netinfo
+from vdsm.network import netinfo
 from vdsm import utils
 from vdsm.config import config
 

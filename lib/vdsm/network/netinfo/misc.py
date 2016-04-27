@@ -22,8 +22,8 @@ from __future__ import absolute_import
 import shlex
 import socket
 
-from ..ipwrapper import getLinks
-from .. import utils
+from vdsm.ipwrapper import getLinks
+from vdsm import utils
 
 
 _IFCFG_ZERO_SUFFIXED = frozenset(

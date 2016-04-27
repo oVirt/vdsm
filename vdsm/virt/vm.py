@@ -53,7 +53,7 @@ from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.logUtils import SimpleLogAdapter
-from vdsm.netinfo import DUMMY_BRIDGE
+from vdsm.network.netinfo import DUMMY_BRIDGE
 from vdsm.storage import fileUtils
 from vdsm.virt import guestagent
 from vdsm.virt import sampling

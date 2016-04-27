@@ -25,11 +25,11 @@ import os
 import errno
 import six
 
+from vdsm.ipwrapper import getLinks
+from vdsm.netlink import link as nl_link
 from vdsm.network.netconfpersistence import RunningConfig
-from ..ipwrapper import getLinks
-from ..netlink import link as nl_link
 
-from vdsm import netinfo
+from vdsm.network import netinfo
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges

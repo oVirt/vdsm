@@ -21,8 +21,8 @@ import errno
 import os
 from distutils.version import StrictVersion
 
-from vdsm.netinfo.cache import ifaceUsed
-from vdsm.netinfo import qos as netinfo_qos
+from vdsm.network.netinfo.cache import ifaceUsed
+from vdsm.network.netinfo import qos as netinfo_qos
 from vdsm import tc
 
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0

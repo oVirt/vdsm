@@ -34,7 +34,7 @@ from vdsm import concurrent
 from vdsm import utils
 from vdsm import xmlrpc
 from vdsm.define import doneCode, errCode
-from vdsm.netinfo.addresses import getDeviceByIP
+from vdsm.network.netinfo.addresses import getDeviceByIP
 import API
 from vdsm.exception import VdsmException
 

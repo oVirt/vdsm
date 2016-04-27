@@ -23,9 +23,9 @@ import json
 from contextlib import contextmanager
 from functools import partial
 
-from ..netinfo.bonding import (BONDING_MASTERS, BONDING_OPT,
-                               BONDING_DEFAULTS, BONDING_NAME2NUMERIC_PATH,
-                               bond_opts_name2numeric_filtered, bondOpts)
+from vdsm.network.netinfo.bonding import (
+    BONDING_MASTERS, BONDING_OPT, BONDING_DEFAULTS, BONDING_NAME2NUMERIC_PATH,
+    bond_opts_name2numeric_filtered, bondOpts)
 from ..utils import random_iface_name
 from . import expose, ExtraArgsError
 

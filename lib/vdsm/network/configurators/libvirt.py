@@ -24,7 +24,7 @@ from xml.sax.saxutils import escape
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm import libvirtconnection
-from vdsm import netinfo
+from vdsm.network import netinfo
 
 
 def getNetworkDef(network):

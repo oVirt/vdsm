@@ -26,7 +26,7 @@ import six
 
 from nose.plugins.attrib import attr
 
-from vdsm.netinfo import misc
+from vdsm.network.netinfo import misc
 from vdsm.tool import unified_persistence
 
 from monkeypatch import MonkeyPatchScope

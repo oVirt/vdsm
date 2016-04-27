@@ -23,7 +23,7 @@ import sys
 import hooking
 import traceback
 
-from vdsm import netinfo
+from vdsm.network import netinfo
 from vdsm.utils import CommandPath
 
 ETHTOOL_BINARY = CommandPath(

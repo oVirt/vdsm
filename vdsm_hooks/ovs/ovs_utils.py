@@ -22,7 +22,7 @@ import six
 from hooking import execCmd
 import hooking
 
-from vdsm.netinfo.bonding import parse_bond_options
+from vdsm.network.netinfo.bonding import parse_bond_options
 from vdsm.utils import CommandPath, rget
 
 EXT_IP = CommandPath('ip', '/sbin/ip').cmd

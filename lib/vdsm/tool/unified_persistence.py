@@ -21,10 +21,10 @@ import errno
 import logging
 
 from vdsm.network.netconfpersistence import RunningConfig
+from vdsm.network.netinfo.cache import CachingNetInfo
+from vdsm.network.netinfo import misc, routes
 from .. import utils
 from ..config import config
-from ..netinfo.cache import CachingNetInfo
-from ..netinfo import misc, routes
 from . import expose
 from .upgrade import apply_upgrade
 

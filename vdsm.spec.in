@@ -1089,11 +1089,11 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/common
 %dir %{python_sitelib}/%{vdsm_name}/common/network
-%dir %{python_sitelib}/%{vdsm_name}/netinfo
 %dir %{python_sitelib}/%{vdsm_name}/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
+%dir %{python_sitelib}/%{vdsm_name}/network/netinfo
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
 %dir %{python_sitelib}/%{vdsm_name}/tool
@@ -1132,19 +1132,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/m2cutils.py*
 %{python_sitelib}/%{vdsm_name}/machinetype.py*
 %{python_sitelib}/%{vdsm_name}/momIF.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/__init__.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/addresses.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/bonding.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/bridges.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/cache.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/dhcp.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/dns.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/misc.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/mtus.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/nics.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/qos.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/routes.py*
-%{python_sitelib}/%{vdsm_name}/netinfo/vlans.py*
 %{python_sitelib}/%{vdsm_name}/netlink/__init__.py*
 %{python_sitelib}/%{vdsm_name}/netlink/addr.py*
 %{python_sitelib}/%{vdsm_name}/netlink/link.py*
@@ -1164,6 +1151,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/connectivity.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
+%{python_sitelib}/%{vdsm_name}/network/netinfo/*.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/switch.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/validator.py*

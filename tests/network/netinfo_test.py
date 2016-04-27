@@ -26,9 +26,9 @@ import io
 from nose.plugins.attrib import attr
 
 from vdsm import ipwrapper
-from vdsm import netinfo
-from vdsm.netinfo import addresses, bonding, dns, misc, nics, routes
-from vdsm.netinfo.cache import get
+from vdsm.network import netinfo
+from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
+from vdsm.network.netinfo.cache import get
 from vdsm.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 from vdsm import sysctl

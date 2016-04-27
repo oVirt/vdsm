@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetinfo = $(vdsmpylibdir)/netinfo
+vdsmnetinfo = $(vdsmpylibdir)/network/netinfo
 dist_vdsmnetinfo_PYTHON = \
 	__init__.py \
 	addresses.py \

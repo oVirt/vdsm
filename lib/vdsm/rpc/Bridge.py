@@ -26,7 +26,7 @@ import API
 import yajsonrpc
 from api import vdsmapi
 
-from vdsm.netinfo.addresses import getDeviceByIP
+from vdsm.network.netinfo.addresses import getDeviceByIP
 from vdsm.exception import VdsmException
 
 

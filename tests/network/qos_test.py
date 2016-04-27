@@ -22,7 +22,7 @@ from nose.plugins.attrib import attr
 
 from testlib import VdsmTestCase as TestCaseBase
 
-from vdsm.netinfo import qos
+from vdsm.network.netinfo import qos
 from vdsm.tc import cls
 
 

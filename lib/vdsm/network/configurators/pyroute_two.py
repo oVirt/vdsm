@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 import logging
 
-from vdsm import netinfo
+from vdsm.network import netinfo
 from vdsm import ipwrapper
 from vdsm.network.netconfpersistence import RunningConfig
 

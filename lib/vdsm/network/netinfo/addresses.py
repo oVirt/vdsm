@@ -24,8 +24,8 @@ from netaddr import IPNetwork
 import socket
 import struct
 
-from ..netlink import addr as nl_addr
-from ..sysctl import is_ipv6_local_auto as sysctl_is_ipv6_local_auto
+from vdsm.netlink import addr as nl_addr
+from vdsm.sysctl import is_ipv6_local_auto as sysctl_is_ipv6_local_auto
 
 
 def getIpInfo(dev, ipaddrs=None, ipv4_gateway=None):

@@ -34,19 +34,20 @@ from vdsm import kernelconfig
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet,
                             addrAdd)
-from vdsm.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
-from vdsm.netinfo.bridges import bridges
-from vdsm.netinfo.misc import NET_CONF_PREF
-from vdsm.netinfo.mtus import DEFAULT_MTU
-from vdsm.netinfo.nics import operstate, OPERSTATE_UNKNOWN, OPERSTATE_UP
-from vdsm.netinfo.routes import getRouteDeviceTo
+from vdsm.network.netconfpersistence import RunningConfig
+from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
+from vdsm.network.netinfo.bridges import bridges
+from vdsm.network.netinfo.misc import NET_CONF_PREF
+from vdsm.network.netinfo.mtus import DEFAULT_MTU
+from vdsm.network.netinfo.nics import (operstate, OPERSTATE_UNKNOWN,
+                                       OPERSTATE_UP)
+from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.netlink import monitor
 from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
                                               NET_CONF_BACK_DIR)
 from vdsm.network import errors
 from vdsm.network import legacy_switch
 from vdsm.network import sourceroute
-from vdsm.network.netconfpersistence import RunningConfig
 
 from vdsm import sysctl
 from vdsm import tc
@@ -207,7 +208,7 @@ def _get_running_and_kernel_config(bare_running_config):
     """:param config: vdsm configuration, could be retrieved from getProxy()
     """
     bare_kernel_config = kernelconfig.KernelConfig(
-        vdsm.netinfo.cache.CachingNetInfo())
+        vdsm.network.netinfo.cache.CachingNetInfo())
     normalized_running_config = kernelconfig.normalize(bare_running_config)
     # Unify strings to unicode instances so differences are easier to
     # understand. This won't be needed once we move to Python 3.
@@ -2184,9 +2185,10 @@ class NetworkTest(TestCaseBase):
                         client, family, dir, dateFormat)
                     try:
                         with running(dhclient_runner):
-                            ipaddrs = vdsm.netinfo.addresses.getIpAddrs()
+                            _netinfo = vdsm.network.netinfo
+                            ipaddrs = _netinfo.addresses.getIpAddrs()
                             is_dhcpv4, is_dhcpv6 = (
-                                vdsm.netinfo.dhcp.dhcp_status(client, ipaddrs))
+                                _netinfo.dhcp.dhcp_status(client, ipaddrs))
                     except dhcp.ProcessCannotBeKilled:
                         raise SkipTest('dhclient could not be killed')
 

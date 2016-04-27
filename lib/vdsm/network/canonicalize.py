@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 import six
 
-from vdsm.netinfo import (bridges, mtus, bonding)
+from .netinfo import (bridges, mtus, bonding)
 from vdsm import utils
 
 from .errors import ConfigNetworkError

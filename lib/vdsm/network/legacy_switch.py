@@ -28,12 +28,12 @@ import six
 from vdsm.config import config
 from vdsm import ipwrapper
 from vdsm import kernelconfig
-from vdsm.netinfo import NET_PATH
-from vdsm.netinfo import addresses
-from vdsm.netinfo import bridges
-from vdsm.netinfo import mtus
-from vdsm.netinfo import nics as netinfo_nics
-from vdsm.netinfo.cache import CachingNetInfo
+from vdsm.network.netinfo import NET_PATH
+from vdsm.network.netinfo import addresses
+from vdsm.network.netinfo import bridges
+from vdsm.network.netinfo import mtus
+from vdsm.network.netinfo import nics as netinfo_nics
+from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm import utils
 

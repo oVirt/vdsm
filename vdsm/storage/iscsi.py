@@ -33,7 +33,7 @@ import misc
 from vdsm import supervdsm
 from vdsm.password import ProtectedPassword
 from vdsm.config import config
-from vdsm.netinfo.routes import getRouteDeviceTo
+from vdsm.network.netinfo.routes import getRouteDeviceTo
 import devicemapper
 from threading import RLock
 

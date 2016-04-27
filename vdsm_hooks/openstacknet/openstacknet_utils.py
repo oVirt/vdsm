@@ -3,7 +3,7 @@
 from __future__ import print_function
 import hooking
 import subprocess
-from vdsm.netinfo import DUMMY_BRIDGE
+from vdsm.network.netinfo import DUMMY_BRIDGE
 from vdsm.utils import CommandPath
 
 # Constants for hook's API

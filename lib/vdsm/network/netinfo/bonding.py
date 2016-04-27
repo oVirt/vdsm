@@ -25,10 +25,10 @@ import logging
 import six
 import os
 
-from .. import constants
-from ..utils import memoized
+from vdsm import constants
+from vdsm.utils import memoized
 
-from ..ipwrapper import Link
+from vdsm.ipwrapper import Link
 from .misc import visible_devs
 from . import nics
 

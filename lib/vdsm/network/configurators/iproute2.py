@@ -20,8 +20,8 @@
 from __future__ import absolute_import
 import logging
 
-from vdsm.netinfo import bonding, vlans, bridges, mtus, misc
-from vdsm.netinfo.cache import ifaceUsed
+from vdsm.network.netinfo import bonding, vlans, bridges, mtus, misc
+from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm import ipwrapper
 from vdsm.constants import EXT_BRCTL
 from vdsm.ipwrapper import routeAdd, routeDel, ruleAdd, ruleDel, IPRoute2Error

@@ -21,8 +21,8 @@ import logging
 import six
 import re
 
-from vdsm.netinfo import bonding, mtus, nics
-from vdsm.netinfo.cache import ifaceUsed, CachingNetInfo
+from vdsm.network.netinfo import bonding, mtus, nics
+from vdsm.network.netinfo.cache import ifaceUsed, CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
 
 from .errors import ConfigNetworkError

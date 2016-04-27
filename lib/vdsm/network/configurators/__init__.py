@@ -23,7 +23,7 @@ from six.moves import configparser
 
 from vdsm.config import config
 from vdsm import ipwrapper
-from vdsm.netinfo import mtus
+from vdsm.network.netinfo import mtus
 from vdsm.netlink import monitor
 from vdsm.network.netconfpersistence import RunningConfig
 

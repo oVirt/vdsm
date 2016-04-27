@@ -27,7 +27,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 from vdsm.config import config
-from vdsm.netinfo import cache as netinfo_cache
+from vdsm.network.netinfo import cache as netinfo_cache
 from vdsm import cpuarch
 from vdsm import cpuinfo
 from vdsm import dsaversion

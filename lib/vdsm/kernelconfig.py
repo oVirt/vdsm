@@ -23,9 +23,9 @@ import six
 import string
 
 from . import constants
-from .netinfo import addresses
-from .netinfo import bonding
-from .netinfo import bridges
+from vdsm.network.netinfo import addresses
+from vdsm.network.netinfo import bonding
+from vdsm.network.netinfo import bridges
 from vdsm.network.netconfpersistence import BaseConfig
 
 

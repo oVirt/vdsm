@@ -24,7 +24,7 @@ from libvirt import libvirtError
 import logging
 import netaddr
 
-from vdsm import netinfo
+from vdsm.network import netinfo
 from vdsm.constants import P_VDSM_RUN
 from vdsm.ipwrapper import IPRoute2Error
 from vdsm.ipwrapper import Route

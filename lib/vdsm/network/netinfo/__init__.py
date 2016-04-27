@@ -23,8 +23,8 @@ from __future__ import absolute_import
 
 import xml.etree.cElementTree as etree
 
-from ..ipwrapper import DUMMY_BRIDGE
-from .. import libvirtconnection
+from vdsm.ipwrapper import DUMMY_BRIDGE
+from vdsm import libvirtconnection
 
 
 DUMMY_BRIDGE  # Appease flake8 since dummy bridge should be exported from here

@@ -23,7 +23,7 @@ import logging
 import os
 
 from .misc import visible_devs
-from ..ipwrapper import Link
+from vdsm.ipwrapper import Link
 
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 
