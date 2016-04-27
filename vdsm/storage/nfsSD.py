@@ -106,9 +106,10 @@ class NfsStorageDomain(fileSD.FileStorageDomain):
     @staticmethod
     def findDomainPath(sdUUID):
         for tmpSdUUID, domainPath in fileSD.scanDomains("*"):
-            if tmpSdUUID == sdUUID and mount.isMounted(
-                    os.path.join(domainPath, "..")):
-                return domainPath
+            if tmpSdUUID == sdUUID:
+                mountpoint = os.path.dirname(domainPath)
+                if mount.isMounted(mountpoint):
+                    return domainPath
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 

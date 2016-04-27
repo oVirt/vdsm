@@ -43,9 +43,10 @@ class GlusterStorageDomain(nfsSD.NfsStorageDomain):
     def findDomainPath(sdUUID):
         glusterDomPath = os.path.join(sd.GLUSTERSD_DIR, "*")
         for tmpSdUUID, domainPath in fileSD.scanDomains(glusterDomPath):
-            if tmpSdUUID == sdUUID and mount.isMounted(os.path.join(domainPath,
-                                                       "..")):
-                return domainPath
+            if tmpSdUUID == sdUUID:
+                mountpoint = os.path.dirname(domainPath)
+                if mount.isMounted(mountpoint):
+                    return domainPath
 
         raise se.StorageDomainDoesNotExist(sdUUID)
 
