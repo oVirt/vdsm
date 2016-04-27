@@ -28,7 +28,6 @@ import six
 from vdsm.config import config
 from vdsm import ipwrapper
 from vdsm import kernelconfig
-from vdsm import netconfpersistence
 from vdsm.netinfo import NET_PATH
 from vdsm.netinfo import addresses
 from vdsm.netinfo import bridges
@@ -42,6 +41,7 @@ from .configurators import libvirt
 from .models import Bond, Bridge, Nic, Vlan
 from .models import hierarchy_backing_device
 from . import errors as ne
+from . import netconfpersistence
 from .errors import ConfigNetworkError
 
 

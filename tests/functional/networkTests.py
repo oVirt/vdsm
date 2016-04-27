@@ -34,7 +34,6 @@ from vdsm import kernelconfig
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet,
                             addrAdd)
-from vdsm.netconfpersistence import RunningConfig
 from vdsm.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.netinfo.bridges import bridges
 from vdsm.netinfo.misc import NET_CONF_PREF
@@ -47,6 +46,7 @@ from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
 from vdsm.network import errors
 from vdsm.network import legacy_switch
 from vdsm.network import sourceroute
+from vdsm.network.netconfpersistence import RunningConfig
 
 from vdsm import sysctl
 from vdsm import tc

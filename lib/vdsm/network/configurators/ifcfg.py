@@ -46,8 +46,8 @@ from vdsm.netinfo import (bonding as netinfo_bonding, mtus, nics, vlans, misc,
 from vdsm.netinfo.cache import ifaceUsed
 from vdsm import sysctl
 from vdsm import utils
-from vdsm.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.netlink import monitor
+from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs

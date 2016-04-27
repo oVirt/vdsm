@@ -30,7 +30,7 @@ from vdsm import vdscli
 from vdsm import jsonrpcvdscli
 from vdsm.netinfo.cache import CachingNetInfo
 from vdsm import supervdsm
-from vdsm.netconfpersistence import RunningConfig
+from vdsm.network.netconfpersistence import RunningConfig
 
 
 SUCCESS = 0

@@ -22,7 +22,7 @@ import logging
 
 from vdsm import netinfo
 from vdsm import ipwrapper
-from vdsm.netconfpersistence import RunningConfig
+from vdsm.network.netconfpersistence import RunningConfig
 
 from . import libvirt, runDhclient
 from .dhclient import DhcpClient

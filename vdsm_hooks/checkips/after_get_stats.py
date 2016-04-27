@@ -28,7 +28,7 @@ import traceback
 import checkips_utils
 import hooking
 from vdsm import constants
-import vdsm.netconfpersistence as persist_net
+import vdsm.network.netconfpersistence as persist_net
 
 HELP_ARG = '-h'
 TEST_ARG = '-t'

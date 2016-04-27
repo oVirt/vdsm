@@ -23,7 +23,7 @@ import six
 from vdsm.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
                                 CachingNetInfo)
 from vdsm.netinfo import networks as libvirt_nets
-from vdsm.netconfpersistence import RunningConfig
+from .netconfpersistence import RunningConfig
 
 from . import connectivity
 from . import legacy_switch

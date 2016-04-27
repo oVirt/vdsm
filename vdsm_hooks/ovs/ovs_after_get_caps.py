@@ -21,7 +21,7 @@ import re
 import sys
 import traceback
 
-from vdsm.netconfpersistence import RunningConfig
+from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.netinfo import dhcp, routes as netinfo_routes, addresses, mtus
 from vdsm.netinfo.bonding import parse_bond_options
 

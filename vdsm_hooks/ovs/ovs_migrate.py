@@ -25,7 +25,7 @@ import xml.etree.cElementTree as ET
 import six
 
 # TODO: Remove the direct access to VDSM internal and interact with hooking api
-from vdsm import netconfpersistence
+from vdsm.network import netconfpersistence
 
 # The caller of this hook is libvirt, therefore there is a need to specify
 # the path to VDSMDIR before importing ovs_utils (or more precisely hooking)

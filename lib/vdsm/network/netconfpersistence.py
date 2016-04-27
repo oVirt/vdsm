@@ -26,14 +26,13 @@ import logging
 import os
 import pwd
 
-from .config import config
-from .tool.restore_nets import restore
-from . import commands
-from . import constants
-from . import utils
-from vdsm.network.canonicalize import (canonicalize_networks,
-                                       canonicalize_bondings)
-from vdsm.network import errors as ne
+from vdsm.config import config
+from vdsm.tool.restore_nets import restore
+from vdsm import commands
+from vdsm import constants
+from vdsm import utils
+from . import errors as ne
+from .canonicalize import canonicalize_networks, canonicalize_bondings
 
 CONF_RUN_DIR = constants.P_VDSM_RUN + 'netconf/'
 # The persistent path is inside of an extra "persistence" dir in order to get

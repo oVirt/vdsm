@@ -1170,6 +1170,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/ovs/driver/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/driver/vsctl.py*
 %{python_sitelib}/%{vdsm_name}/network/models.py*
+%{python_sitelib}/%{vdsm_name}/network/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroutethread.py*
@@ -1203,7 +1204,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/pthread.py*
 %{python_sitelib}/%{vdsm_name}/qemuimg.py*
 %{python_sitelib}/%{vdsm_name}/response.py*
-%{python_sitelib}/%{vdsm_name}/netconfpersistence.py*
 %{python_sitelib}/%{vdsm_name}/schedule.py*
 %{python_sitelib}/%{vdsm_name}/sslcompat.py*
 %{python_sitelib}/%{vdsm_name}/sslutils.py*

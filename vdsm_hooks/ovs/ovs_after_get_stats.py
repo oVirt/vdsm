@@ -21,7 +21,7 @@ import traceback
 
 import six
 
-from vdsm.netconfpersistence import RunningConfig
+from vdsm.network.netconfpersistence import RunningConfig
 
 import hooking
 

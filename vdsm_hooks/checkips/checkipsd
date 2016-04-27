@@ -27,7 +27,7 @@ import time
 import threading
 
 from vdsm import constants
-import vdsm.netconfpersistence as persist_net
+import vdsm.network.netconfpersistence as persist_net
 
 sys.path.append(os.path.join(constants.P_VDSM_HOOKS, 'after_get_stats'))
 import checkips_utils

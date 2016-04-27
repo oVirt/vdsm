@@ -30,6 +30,7 @@ dist_vdsmnetwork_PYTHON = \
 	connectivity.py \
 	legacy_switch.py \
 	models.py \
+	netconfpersistence.py \
 	netswitch.py \
 	sourceroute.py \
 	sourceroutethread.py \

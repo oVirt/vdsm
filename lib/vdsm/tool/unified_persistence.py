@@ -20,9 +20,9 @@ from __future__ import absolute_import
 import errno
 import logging
 
+from vdsm.network.netconfpersistence import RunningConfig
 from .. import utils
 from ..config import config
-from ..netconfpersistence import RunningConfig
 from ..netinfo.cache import CachingNetInfo
 from ..netinfo import misc, routes
 from . import expose

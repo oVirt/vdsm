@@ -37,7 +37,7 @@ from vdsm.netinfo.misc import ipv6_supported
 from vdsm.netinfo.cache import CachingNetInfo
 from vdsm import kernelconfig
 from vdsm.constants import P_VDSM_RUN
-from vdsm.netconfpersistence import RunningConfig, PersistentConfig, \
+from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
 from vdsm import sysctl
 from vdsm.utils import monotonic_time

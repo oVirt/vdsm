@@ -18,7 +18,7 @@
 #
 from __future__ import absolute_import
 
-from vdsm.netconfpersistence import BaseConfig
+from vdsm.network.netconfpersistence import BaseConfig
 from vdsm.network import errors as ne
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator

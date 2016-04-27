@@ -22,7 +22,7 @@ from contextlib import contextmanager
 
 import six
 
-from vdsm.netconfpersistence import RunningConfig
+from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.netinfo.cache import CachingNetInfo
 
 from . import validator

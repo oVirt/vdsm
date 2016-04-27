@@ -26,7 +26,7 @@ from nose.plugins.attrib import attr
 from testlib import XMLTestCase
 from monkeypatch import MonkeyPatchScope
 
-from vdsm import netconfpersistence
+from vdsm.network import netconfpersistence
 
 sys.path.append('../vdsm_hooks/ovs')     # Devel Location
 sys.path.append('../../vdsm_hooks/ovs')  # Devel Location

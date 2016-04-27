@@ -32,12 +32,12 @@ from vdsm.config import config
 from vdsm import commands
 from vdsm import constants
 from vdsm import hooks
-from vdsm import netconfpersistence
 from vdsm import udevadm
 from vdsm import ipwrapper
 
 from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . errors import RollbackIncomplete
+from . import netconfpersistence
 from . import netswitch
 
 _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'

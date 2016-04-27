@@ -28,8 +28,8 @@ import tempfile
 
 from nose.plugins.attrib import attr
 
-from vdsm.netconfpersistence import Config, Transaction
 from vdsm.network import errors as ne
+from vdsm.network.netconfpersistence import Config, Transaction
 from vdsm.utils import rmFile
 
 from testlib import VdsmTestCase as TestCaseBase

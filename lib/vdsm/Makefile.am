@@ -47,7 +47,6 @@ dist_vdsmpylib_PYTHON = \
 	m2cutils.py \
 	machinetype.py \
 	momIF.py \
-	netconfpersistence.py \
 	numa.py \
 	osinfo.py \
 	panic.py \

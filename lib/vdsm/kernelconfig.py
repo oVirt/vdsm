@@ -26,7 +26,7 @@ from . import constants
 from .netinfo import addresses
 from .netinfo import bonding
 from .netinfo import bridges
-from .netconfpersistence import BaseConfig
+from vdsm.network.netconfpersistence import BaseConfig
 
 
 class KernelConfig(BaseConfig):
