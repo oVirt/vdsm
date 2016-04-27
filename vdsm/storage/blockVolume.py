@@ -88,7 +88,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if self.metaoff:
             return self.metaoff
         try:
-            md = _getVolumeTag(self.sdUUID, self.volUUID, TAG_PREFIX_MD)
+            md = getVolumeTag(self.sdUUID, self.volUUID, TAG_PREFIX_MD)
         except se.MissingTagOnLogicalVolume:
             self.log.error("missing offset tag on volume %s/%s",
                            self.sdUUID, self.volUUID, exc_info=True)
@@ -163,7 +163,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         volume.VolumeManifest.validate(self)
 
     def getVolumeTag(self, tagPrefix):
-        return _getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
+        return getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
 
     def getParentTag(self):
         return self.getVolumeTag(TAG_PREFIX_PARENT)
@@ -679,7 +679,7 @@ class BlockVolume(volume.Volume):
         rmanager.releaseResource(lvmActivationNamespace, volUUID)
         if not justme:
             try:
-                pvolUUID = _getVolumeTag(sdUUID, volUUID, TAG_PREFIX_PARENT)
+                pvolUUID = getVolumeTag(sdUUID, volUUID, TAG_PREFIX_PARENT)
             except Exception as e:
                 # If storage not accessible or lvm error occurred
                 # we will failure to get the parent volume.
@@ -720,7 +720,7 @@ class BlockVolume(volume.Volume):
         lvm.extendLV(self.sdUUID, self.volUUID, newSizeMb)
 
 
-def _getVolumeTag(sdUUID, volUUID, tagPrefix):
+def getVolumeTag(sdUUID, volUUID, tagPrefix):
     tags = lvm.getLV(sdUUID, volUUID).tags
     if TAG_VOL_UNINIT in tags:
         log.warning("Reloading uninitialized volume %s/%s", sdUUID, volUUID)
