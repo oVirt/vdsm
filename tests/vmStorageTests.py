@@ -633,6 +633,14 @@ class TestDriveNaming(VdsmTestCase):
         ['fdc', 25, 'fdz'],
         ['fdc', 26, 'fdba'],
         ['fdc', 27, 'fdbb'],
+
+        ['sata', -1, 'sda'],
+        ['sata', 0, 'sda'],
+        ['sata', 1, 'sdb'],
+        ['sata', 2, 'sdc'],
+        ['sata', 25, 'sdz'],
+        ['sata', 26, 'sdba'],
+        ['sata', 27, 'sdbb'],
     ])
     def test_ide_drive(self, interface, index, expected_name):
         conf = drive_config(

@@ -352,7 +352,8 @@ class Drive(Base):
                 pass  # Ignore if custom disk cache is missing
 
     def _makeName(self):
-        devname = {'ide': 'hd', 'scsi': 'sd', 'virtio': 'vd', 'fdc': 'fd'}
+        devname = {'ide': 'hd', 'scsi': 'sd', 'virtio': 'vd', 'fdc': 'fd',
+                   'sata': 'sd'}
         devindex = ''
 
         i = int(self.index)
