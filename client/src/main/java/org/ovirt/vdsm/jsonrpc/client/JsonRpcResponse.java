@@ -117,16 +117,22 @@ public final class JsonRpcResponse {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public String toString() {
-        Map<String, String> result = null;
-        if (this.getResult() != null) {
-            Class<Map<String, String>> clazz = (Class) Map.class;
-            result = MAPPER.convertValue(this.getResult(), clazz);
-            if (result.containsKey("password")) {
-                result.put("password", "*****");
-            }
-        }
-        String response = this.getResult() != null ? " result: " + result
+        String response = this.getResult() != null ?
+                " result: " + toPrintableResult(this.getResult())
                 : " error: " + this.getError().toString();
         return "<JsonRpcResponse id: " + this.getId() + response + ">";
+    }
+
+    private Object toPrintableResult(JsonNode result) {
+        if (result.isArray()) {
+            // currently passwords do not appear in arrays
+            return result;
+        }
+        Class<Map<String, String>> clazz = (Class) Map.class;
+        Map<String, String> resultMap =  MAPPER.convertValue(result, clazz);
+        if (resultMap.containsKey("password")) {
+            resultMap.put("password", "*****");
+        }
+        return resultMap;
     }
 }
