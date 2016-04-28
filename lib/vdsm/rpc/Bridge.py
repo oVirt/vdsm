@@ -17,6 +17,7 @@
 from __future__ import absolute_import
 from functools import partial
 
+import collections
 import inspect
 import logging
 import threading
@@ -204,7 +205,8 @@ class DynamicBridge(object):
                 typefixups[symTypeName](item)
             for (k, v) in symbol.get('data', {}).items():
                 k = self._sym_name_filter(k)
-                if k in item:
+                # first check if the 'item' supports indexing
+                if isinstance(item, collections.Iterable) and k in item:
                     self._type_fixup(k, v, item[k])
 
     def _fixup_args(self, className, methodName, args):
