@@ -2343,7 +2343,7 @@ class Vm(object):
         if graphics:
             result = self._setTicketForGraphicDev(
                 graphics, params['password'], params['ttl'],
-                params['existingConnAction'], params['params'])
+                params.get('existingConnAction'), params['params'])
             if result['status']['code'] == 0:
                 result['vmList'] = self.status()
             return result
@@ -3853,7 +3853,7 @@ class Vm(object):
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
                                     time.gmtime(time.time() + float(seconds)))
             graphics.setAttribute('passwdValidTo', validto)
-        if graphics.getAttribute('type') == 'spice':
+        if connAct is not None and graphics.getAttribute('type') == 'spice':
             graphics.setAttribute('connected', connAct)
         hooks.before_vm_set_ticket(self._domain.xml, self.conf, params)
         try:

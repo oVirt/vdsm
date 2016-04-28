@@ -7392,7 +7392,9 @@
 #
 # @ttl:                 The number of seconds before the password expires
 #
-# @existingConnAction:  Indicate what to do with any existing connections
+# @existingConnAction:  #optional Indicate what to do with any existing
+#                       connections
+#                       (made optional in version 4.18.0)
 #
 # @params:              Arbitrary key:val pairs that will be passed to hooks
 #
@@ -7400,7 +7402,7 @@
 ##
 {'type': 'vmUpdateGraphicsDeviceParams',
  'data': {'graphicsType': 'VmGraphicsDeviceType', 'password': 'str',
-          'ttl': 'int', 'existingConnAction': 'VmTicketConflictAction',
+          'ttl': 'int', '*existingConnAction': 'VmTicketConflictAction',
           'params': 'StringMap'}}
 
 ##

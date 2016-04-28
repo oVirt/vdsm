@@ -139,7 +139,23 @@ class TestVmOperations(TestCaseBase):
                 <devices>
                     <graphics type="%s" port="5900" />
                 </devices>''' % device['device']
-            self._verifyDeviceUpdate(device, device, domXml, devXml)
+            self._verifyDeviceUpdate(device, device, domXml, devXml,
+                                     _GRAPHICS_DEVICE_PARAMS)
+
+    def testUpdateSingleDeviceGraphicsNoConnected(self):
+        graphics_params = dict(_GRAPHICS_DEVICE_PARAMS)
+        del graphics_params['existingConnAction']
+        devXmls = (
+            '<graphics passwd="12345678"'
+            ' port="5900" type="spice"/>',
+            '<graphics passwd="12345678" port="5900" type="vnc"/>')
+        for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
+            domXml = '''
+                <devices>
+                    <graphics type="%s" port="5900" />
+                </devices>''' % device['device']
+            self._verifyDeviceUpdate(device, device, domXml, devXml,
+                                     graphics_params)
 
     def testUpdateMultipleDeviceGraphics(self):
         devXmls = (
@@ -153,23 +169,26 @@ class TestVmOperations(TestCaseBase):
             </devices>'''
         for device, devXml in zip(self.GRAPHIC_DEVICES, devXmls):
             self._verifyDeviceUpdate(
-                device, self.GRAPHIC_DEVICES, domXml, devXml)
+                device, self.GRAPHIC_DEVICES, domXml, devXml,
+                _GRAPHICS_DEVICE_PARAMS)
 
-    def _updateGraphicsDevice(self, testvm, device_type):
+    def _updateGraphicsDevice(self, testvm, device_type, graphics_params):
         def _check_ticket_params(domXML, conf, params):
             self.assertEqual(params, _TICKET_PARAMS)
 
         with MonkeyPatchScope([(hooks, 'before_vm_set_ticket',
                                 _check_ticket_params)]):
             params = {'graphicsType': device_type}
-            params.update(_GRAPHICS_DEVICE_PARAMS)
+            params.update(graphics_params)
             return testvm.updateDevice(params)
 
-    def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml):
+    def _verifyDeviceUpdate(self, device, allDevices, domXml, devXml,
+                            graphics_params):
         with fake.VM(devices=allDevices) as testvm:
             testvm._dom = fake.Domain(domXml)
 
-            self._updateGraphicsDevice(testvm, device['device'])
+            self._updateGraphicsDevice(testvm, device['device'],
+                                       graphics_params)
 
             self.assertEquals(testvm._dom.devXml, devXml)
 
@@ -312,7 +331,8 @@ class TestVmOperations(TestCaseBase):
             domain.updateDeviceFlags = _fail
             testvm._dom = domain
 
-            res = self._updateGraphicsDevice(testvm, device)
+            res = self._updateGraphicsDevice(testvm, device,
+                                             _GRAPHICS_DEVICE_PARAMS)
 
             self.assertEqual(res,
                              response.error('ticketErr', message))
