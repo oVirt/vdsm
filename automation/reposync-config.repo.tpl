@@ -20,9 +20,3 @@ baseurl=http://resources.ovirt.org/pub/ovirt-master-snapshot-static/rpm/fc23/
 exclude=jasperreports-server ovirt-guest-tools-iso ovirt-engine-jboss-as *wildfly*
 enabled=0
 gpgcheck=0
-
-[glusterfs-fc23]
-name=GlusterFS repo
-baseurl=http://download.gluster.org/pub/gluster/glusterfs/nightly/glusterfs/fedora-23-x86_64/
-enabled=1
-gpgcheck=0
