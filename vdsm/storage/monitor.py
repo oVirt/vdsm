@@ -31,6 +31,8 @@ from vdsm.storage import misc
 from . import clusterlock
 from .sdc import sdCache
 
+log = logging.getLogger('Storage.Monitor')
+
 
 class Status(object):
     __slots__ = (
@@ -81,7 +83,6 @@ class FrozenStatus(Status):
 
 
 class DomainMonitor(object):
-    log = logging.getLogger('Storage.Monitor')
 
     def __init__(self, interval):
         self._monitors = {}
@@ -105,22 +106,22 @@ class DomainMonitor(object):
         if monitor is not None:
             if not poolDomain:
                 # Expected when hosted engine agent is restarting.
-                self.log.debug("Monitor for %s is already running", sdUUID)
+                log.debug("Monitor for %s is already running", sdUUID)
                 return
 
             if monitor.poolDomain:
-                self.log.warning("Monitor for %s is already attached to pool",
-                                 sdUUID)
+                log.warning("Monitor for %s is already attached to pool",
+                            sdUUID)
                 return
 
             # An external storage domain attached to the pool. From this point,
             # the storage domain is managed by Vdsm.  Expected during Vdsm
             # startup when using hosted engine.
-            self.log.info("Attaching monitor for %s to the pool", sdUUID)
+            log.info("Attaching monitor for %s to the pool", sdUUID)
             monitor.poolDomain = True
             return
 
-        self.log.info("Start monitoring %s", sdUUID)
+        log.info("Start monitoring %s", sdUUID)
         monitor = MonitorThread(weakref.proxy(self), sdUUID, hostId,
                                 self._interval)
         monitor.poolDomain = poolDomain
@@ -160,7 +161,7 @@ class DomainMonitor(object):
         Called during shutdown to stop all monitors without releasing the host
         id. To stop monitors and release the host id, use stopMonitoring().
         """
-        self.log.info("Shutting down domain monitors")
+        log.info("Shutting down domain monitors")
         self._stopMonitors(self._monitors.values(), shutdown=True)
 
     def _stopMonitors(self, monitors, shutdown=False):
@@ -173,27 +174,26 @@ class DomainMonitor(object):
         # First stop monitor threads - this take no time, and make the process
         # about 7 times faster when stopping 30 monitors.
         for monitor in monitors:
-            self.log.info("Stop monitoring %s (shutdown=%s)",
-                          monitor.sdUUID, shutdown)
+            log.info("Stop monitoring %s (shutdown=%s)",
+                     monitor.sdUUID, shutdown)
             monitor.stop(shutdown=shutdown)
 
         # Now wait for threads to finish - this takes about 10 seconds with 30
         # monitors, most of the time spent waiting for sanlock.
         for monitor in monitors:
-            self.log.debug("Waiting for monitor %s", monitor.sdUUID)
+            log.debug("Waiting for monitor %s", monitor.sdUUID)
             monitor.join()
             try:
                 del self._monitors[monitor.sdUUID]
             except KeyError:
-                self.log.warning("Montior for %s removed while stopping",
-                                 monitor.sdUUID)
+                log.warning("Montior for %s removed while stopping",
+                            monitor.sdUUID)
 
 
 class MonitorThread(object):
-    log = logging.getLogger('Storage.Monitor')
 
     def __init__(self, domainMonitor, sdUUID, hostId, interval):
-        self.thread = concurrent.thread(self._run, logger=self.log.name)
+        self.thread = concurrent.thread(self._run, logger=log.name)
         self.domainMonitor = domainMonitor
         self.stopEvent = threading.Event()
         self.domain = None
@@ -232,12 +232,12 @@ class MonitorThread(object):
         return self.stopEvent.is_set()
 
     def _run(self):
-        self.log.debug("Domain monitor for %s started", self.sdUUID)
+        log.debug("Domain monitor for %s started", self.sdUUID)
         try:
             self._monitorLoop()
         finally:
-            self.log.debug("Domain monitor for %s stopped (shutdown=%s)",
-                           self.sdUUID, self.wasShutdown)
+            log.debug("Domain monitor for %s stopped (shutdown=%s)",
+                      self.sdUUID, self.wasShutdown)
             if self._shouldReleaseHostId():
                 self._releaseHostId()
 
@@ -246,10 +246,10 @@ class MonitorThread(object):
             try:
                 self._monitorDomain()
             except utils.Canceled:
-                self.log.debug("Domain monitor for %s canceled", self.sdUUID)
+                log.debug("Domain monitor for %s canceled", self.sdUUID)
                 return
             except:
-                self.log.exception("Domain monitor for %s failed", self.sdUUID)
+                log.exception("Domain monitor for %s failed", self.sdUUID)
             self.stopEvent.wait(self.interval)
 
     def _monitorDomain(self):
@@ -278,7 +278,7 @@ class MonitorThread(object):
             self._checkReadDelay()
             self._collectStatistics()
         except Exception as e:
-            self.log.exception("Error monitoring domain %s", self.sdUUID)
+            log.exception("Error monitoring domain %s", self.sdUUID)
             self.nextStatus.error = e
 
         self.nextStatus.checkTime = time.time()
@@ -299,14 +299,14 @@ class MonitorThread(object):
 
     @utils.cancelpoint
     def _notifyStatusChanges(self):
-        self.log.info("Domain %s became %s", self.sdUUID,
-                      "VALID" if self.nextStatus.valid else "INVALID")
+        log.info("Domain %s became %s", self.sdUUID,
+                 "VALID" if self.nextStatus.valid else "INVALID")
         try:
             self.domainMonitor.onDomainStateChange.emit(
                 self.sdUUID, self.nextStatus.valid)
         except:
-            self.log.exception("Error notifying state change for domain %s",
-                               self.sdUUID)
+            log.exception("Error notifying state change for domain %s",
+                          self.sdUUID)
 
     # Refreshing domain
 
@@ -315,7 +315,7 @@ class MonitorThread(object):
 
     @utils.cancelpoint
     def _refreshDomain(self):
-        self.log.debug("Refreshing domain %s", self.sdUUID)
+        log.debug("Refreshing domain %s", self.sdUUID)
         sdCache.manuallyRemoveDomain(self.sdUUID)
         self.lastRefresh = time.time()
 
@@ -323,14 +323,14 @@ class MonitorThread(object):
 
     @utils.cancelpoint
     def _produceDomain(self):
-        self.log.debug("Producing domain %s", self.sdUUID)
+        log.debug("Producing domain %s", self.sdUUID)
         self.domain = sdCache.produce(self.sdUUID)
 
     @utils.cancelpoint
     def _setIsoDomainInfo(self):
         isIsoDomain = self.domain.isISO()
         if isIsoDomain:
-            self.log.debug("Domain %s is an ISO domain", self.sdUUID)
+            log.debug("Domain %s is an ISO domain", self.sdUUID)
             self.isoPrefix = self.domain.getIsoDomainImagesDir()
         self.isIsoDomain = isIsoDomain
 
@@ -387,12 +387,12 @@ class MonitorThread(object):
         try:
             self.domain.acquireHostId(self.hostId, async=True)
         except:
-            self.log.exception("Error acquiring host id %s for domain %s",
-                               self.hostId, self.sdUUID)
+            log.exception("Error acquiring host id %s for domain %s",
+                          self.hostId, self.sdUUID)
 
     def _releaseHostId(self):
         try:
             self.domain.releaseHostId(self.hostId, unused=True)
         except:
-            self.log.exception("Error releasing host id %s for domain %s",
-                               self.hostId, self.sdUUID)
+            log.exception("Error releasing host id %s for domain %s",
+                          self.hostId, self.sdUUID)
