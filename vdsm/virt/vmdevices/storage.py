@@ -167,7 +167,7 @@ class Drive(Base):
         self.reqsize = int(kwargs.get('reqsize', '0'))  # Backward compatible
         self.truesize = int(kwargs.get('truesize', '0'))
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
-        self.name = self._makeName()
+        self.name = makeName(self.iface, self.index)
         self.cache = config.get('vars', 'qemu_drive_cache')
 
         self._blockDev = None  # Lazy initialized
@@ -350,18 +350,6 @@ class Drive(Base):
                 self.cache = self.conf['custom']['viodiskcache']
             except KeyError:
                 pass  # Ignore if custom disk cache is missing
-
-    def _makeName(self):
-        devname = {'ide': 'hd', 'scsi': 'sd', 'virtio': 'vd', 'fdc': 'fd',
-                   'sata': 'sd'}
-        devindex = ''
-
-        i = int(self.index)
-        while i > 0:
-            devindex = chr(ord('a') + (i % 26)) + devindex
-            i /= 26
-
-        return devname.get(self.iface, 'hd') + (devindex or 'a')
 
     def _checkIoTuneCategories(self, ioTuneParamsInfo):
         categories = ("bytes", "iops")
@@ -592,3 +580,16 @@ def _get_drive_identification(dom):
     name = target[0].getAttribute('dev') if target else ''
     alias = dom.getElementsByTagName('alias')[0].getAttribute('name')
     return alias, devPath, name
+
+
+def makeName(interface, index):
+    devname = {'ide': 'hd', 'scsi': 'sd', 'virtio': 'vd', 'fdc': 'fd',
+               'sata': 'sd'}
+    devindex = ''
+
+    i = int(index)
+    while i > 0:
+        devindex = chr(ord('a') + (i % 26)) + devindex
+        i /= 26
+
+    return devname.get(interface, 'hd') + (devindex or 'a')
