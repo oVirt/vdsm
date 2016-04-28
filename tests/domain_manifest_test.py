@@ -44,9 +44,10 @@ class FileManifestTests(VdsmTestCase):
         self.img_id = str(uuid.uuid4())
         self.vol_id = str(uuid.uuid4())
 
-    def test_getreaddelay(self):
+    def test_get_monitoring_path(self):
         with fake_file_env() as env:
-            self.assertIsInstance(env.sd_manifest.getReadDelay(), float)
+            self.assertEqual(env.sd_manifest.metafile,
+                             env.sd_manifest.getMonitoringPath())
 
     def test_getvsize(self):
         with fake_file_env() as env:
@@ -91,9 +92,10 @@ class FileManifestTests(VdsmTestCase):
 
 class BlockManifestTests(VdsmTestCase):
 
-    def test_getreaddelay(self):
+    def test_get_monitoring_path(self):
         with fake_block_env() as env:
-            self.assertIsInstance(env.sd_manifest.getReadDelay(), float)
+            md_lv_path = env.lvm.lvPath(env.sd_manifest.sdUUID, sd.METADATA)
+            self.assertEqual(md_lv_path, env.sd_manifest.getMonitoringPath())
 
     def test_getvsize_active_lv(self):
         # Tests the path when the device file is present

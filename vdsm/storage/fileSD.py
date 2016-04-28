@@ -170,9 +170,8 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         if not self.oop.fileUtils.pathExists(self.metafile):
             raise se.StorageDomainMetadataNotFound(self.sdUUID, self.metafile)
 
-    def getReadDelay(self):
-        stats = misc.readspeed(self.metafile, 4096)
-        return stats['seconds']
+    def getMonitoringPath(self):
+        return self.metafile
 
     def getVSize(self, imgUUID, volUUID):
         """ Returns file volume size in bytes. """

@@ -26,6 +26,7 @@ import time
 from contextlib import contextmanager
 
 from vdsm.storage import exception as se
+from vdsm.storage import misc
 
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeStorageDomainCache
@@ -84,10 +85,8 @@ class FakeDomain(object):
     def selftest(self):
         log.debug("Performing selftest")
 
-    @maybefail
-    def getReadDelay(self):
-        log.debug("Checking read delay")
-        return 0.005
+    def getMonitoringPath(self):
+        return "/path/to/metadata"
 
     @maybefail
     def getStats(self):
@@ -137,6 +136,17 @@ class UnexpectedError(Exception):
     pass
 
 
+class FakeReadspeed(object):
+
+    def __init__(self, error=None):
+        self.error = error
+
+    def __call__(self, path, buffersize=None):
+        if self.error:
+            raise self.error
+        return {"seconds": 0.005}
+
+
 class MonitorEnv(object):
 
     def __init__(self, thread, event):
@@ -163,6 +173,7 @@ def monitor_env(shutdown=False, refresh=300):
     with MonkeyPatchScope([
         (monitor, "sdCache", FakeStorageDomainCache()),
         (monitor, 'config', config),
+        (misc, "readspeed", FakeReadspeed()),
     ]):
         event = FakeEvent()
         thread = monitor.MonitorThread('uuid', 'host_id', MONITOR_INTERVAL,
@@ -283,8 +294,8 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
 
     # In this state we do:
     # 1. If refresh timeout has expired, remove the domain from the cache
-    # 2. call domain.selftest()
-    # 3. call domain.getReadDelay()
+    # 2. check domain monitoringPath readability
+    # 3. call domain.selftest()
     # 4. call domain.getStats()
     # 5. call domain.validateMaster()
     # 6. call domain.hasHostId()
@@ -309,8 +320,6 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertEqual(env.event.received, [(('uuid', True), {})])
 
     @permutations([
-        ("getReadDelay", se.MiscFileReadException),
-        ("getReadDelay", UnexpectedError),
         ("selftest", OSError),
         ("selftest", UnexpectedError),
         ("getStats", se.FileStorageDomainStaleNFSHandle),
@@ -333,9 +342,20 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertIsInstance(status.error, exception)
             self.assertEqual(env.event.received, [(('uuid', False), {})])
 
+    @permutations([[se.MiscFileReadException], [UnexpectedError]])
+    def test_from_unknown_to_invalid_path_error(self, exception):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            misc.readspeed = FakeReadspeed(exception)
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+            status = env.thread.getStatus()
+            self.assertFalse(status.valid)
+            self.assertIsInstance(status.error, exception)
+            self.assertEqual(env.event.received, [(('uuid', False), {})])
+
     @permutations([
-        ("getReadDelay", se.MiscFileReadException),
-        ("getReadDelay", UnexpectedError),
         ("selftest", OSError),
         ("selftest", UnexpectedError),
         ("getStats", se.FileStorageDomainStaleNFSHandle),
@@ -360,6 +380,21 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertTrue(status.valid)
             self.assertEqual(env.event.received, [(('uuid', True), {})])
 
+    @permutations([[se.MiscFileReadException], [UnexpectedError]])
+    def test_from_invalid_to_valid_path_error(self, exception):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            misc.readspeed = FakeReadspeed(exception)
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+            del env.event.received[0]
+            misc.readspeed = FakeReadspeed()
+            env.wait_for_cycle()
+            status = env.thread.getStatus()
+            self.assertTrue(status.valid)
+            self.assertEqual(env.event.received, [(('uuid', True), {})])
+
     def test_keeps_valid(self):
         with monitor_env() as env:
             monitor.sdCache.domains["uuid"] = FakeDomain("uuid")
@@ -374,8 +409,6 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertEqual(env.event.received, [])
 
     @permutations([
-        ("getReadDelay", se.MiscFileReadException),
-        ("getReadDelay", UnexpectedError),
         ("selftest", OSError),
         ("selftest", UnexpectedError),
         ("getStats", se.FileStorageDomainStaleNFSHandle),
@@ -400,6 +433,21 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertIsInstance(status.error, exception)
             self.assertEqual(env.event.received, [(('uuid', False), {})])
 
+    @permutations([[se.MiscFileReadException], [UnexpectedError]])
+    def test_from_valid_to_invalid_path_error(self, exception):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+            del env.event.received[0]
+            misc.readspeed = FakeReadspeed(exception)
+            env.wait_for_cycle()
+            status = env.thread.getStatus()
+            self.assertFalse(status.valid)
+            self.assertIsInstance(status.error, exception)
+            self.assertEqual(env.event.received, [(('uuid', False), {})])
+
     def test_acquire_host_id(self):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
@@ -411,11 +459,11 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
     def test_acquire_host_id_after_error(self):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
-            domain.errors['getReadDelay'] = se.MiscFileReadException
+            domain.errors["selftest"] = OSError
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             env.wait_for_cycle()
-            del domain.errors["getReadDelay"]
+            del domain.errors["selftest"]
             env.wait_for_cycle()
             self.assertTrue(domain.acquired)
 
@@ -441,7 +489,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
     def test_dont_acquire_host_id_on_error(self):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
-            domain.errors['getReadDelay'] = se.MiscFileReadException
+            domain.errors["selftest"] = OSError
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             env.wait_for_cycle()
@@ -505,7 +553,7 @@ class TestMonitorThreadStopping(VdsmTestCase):
                 blocked.set()
                 time.sleep(MONITOR_INTERVAL)
 
-            domain.getReadDelay = block
+            domain.selftest = block
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             if not blocked.wait(CYCLE_TIMEOUT):

@@ -171,7 +171,7 @@ class FakeBlockDomainManifest(FakeDomainManifest):
         self.phyBlkSize = 512
 
     @recorded
-    def getReadDelay(self):
+    def getMonitoringPath(self):
         pass
 
     @recorded
@@ -236,7 +236,7 @@ class FakeFileDomainManifest(FakeDomainManifest):
         self.remotePath = 'b'
 
     @recorded
-    def getReadDelay(self):
+    def getMonitoringPath(self):
         pass
 
     @recorded
@@ -661,7 +661,7 @@ class DomainTestMixin(object):
                                   [(manifest_method, args, {})])
 
     @permutations([
-        ['getReadDelay', 0],
+        ['getMonitoringPath', 0],
         ['replaceMetadata', 1],
         ['getVSize', 2],
         ['getVAllocSize', 2],

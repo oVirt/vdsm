@@ -435,9 +435,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self.log.info("META MAPPING: %s" % meta)
         return meta
 
-    def getReadDelay(self):
-        stats = misc.readspeed(lvm.lvPath(self.sdUUID, sd.METADATA), 4096)
-        return stats['seconds']
+    def getMonitoringPath(self):
+        return lvm.lvPath(self.sdUUID, sd.METADATA)
 
     def getVSize(self, imgUUUID, volUUID):
         """ Return the block volume size in bytes. """

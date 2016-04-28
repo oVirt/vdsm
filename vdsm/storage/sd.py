@@ -530,8 +530,8 @@ class StorageDomain(object):
         """
         self._manifest.replaceMetadata(md)
 
-    def getReadDelay(self):
-        return self._manifest.getReadDelay()
+    def getMonitoringPath(self):
+        return self._manifest.getMonitoringPath()
 
     def getVSize(self, imgUUID, volUUID):
         return self._manifest.getVSize(imgUUID, volUUID)

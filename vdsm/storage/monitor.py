@@ -199,6 +199,7 @@ class MonitorThread(object):
         self.hostId = hostId
         self.interval = interval
         self.changeEvent = changeEvent
+        self.monitoringPath = None
         self.nextStatus = Status(actual=False)
         self.status = FrozenStatus(self.nextStatus)
         self.isIsoDomain = None
@@ -272,6 +273,11 @@ class MonitorThread(object):
             # trying until we succeed or the domain is deactivated.
             if self.domain is None:
                 self._produceDomain()
+
+            # This may fail even if the domain was produced. We will try again
+            # in the next cycle.
+            if self.monitoringPath is None:
+                self.monitoringPath = self.domain.getMonitoringPath()
 
             # The isIsoDomain assignment is delayed because the isoPrefix
             # discovery might fail (if the domain suddenly disappears) and we
@@ -350,7 +356,8 @@ class MonitorThread(object):
     def _checkReadDelay(self):
         # This may block for long time if the storage server is not accessible.
         # On overloaded machines we have seen this take up to 15 seconds.
-        self.nextStatus.readDelay = self.domain.getReadDelay()
+        stats = misc.readspeed(self.monitoringPath, 4096)
+        self.nextStatus.readDelay = stats['seconds']
 
     def _collectStatistics(self):
         stats = self.domain.getStats()
