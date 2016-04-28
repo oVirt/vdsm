@@ -29,8 +29,11 @@ from storagetestlib import (
 
 from storage import sd, blockSD, blockVolume
 
-VOLSIZE = 1048576
 MB = 1048576
+
+# We want to create volumes larger than the minimum block volume size
+# (currently 128M)
+VOLSIZE = 256 * MB
 
 
 class FileManifestTests(VdsmTestCase):
@@ -145,7 +148,7 @@ class BlockDomainMetadataSlotTests(VdsmTestCase):
                    'ea13af29-b64a-4d1a-b35f-3e6ab15c3b04')
             for lv, offset in zip(lvs, [4, 7]):
                 sduuid = env.sd_manifest.sdUUID
-                env.lvm.createLV(sduuid, lv, VOLSIZE)
+                env.lvm.createLV(sduuid, lv, VOLSIZE / MB)
                 tag = blockVolume.TAG_PREFIX_MD + str(offset)
                 env.lvm.addtag(sduuid, lv, tag)
             with env.sd_manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
