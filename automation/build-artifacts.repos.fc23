@@ -1,2 +1,1 @@
 ovirt-snapshot,http://resources.ovirt.org/pub/ovirt-master-snapshot/rpm/$distro
-ovirt-glusterfs-fedora,http://download.gluster.org/pub/gluster/glusterfs/LATEST/Fedora/fedora-23/x86_64
