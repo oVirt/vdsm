@@ -44,13 +44,15 @@ class TestVmDevices(XMLTestCase):
 
     GRAPHICS_XMLS = [
         """
-        <graphics autoport="yes" keymap="en-us" passwd="*****"
+        <graphics autoport="yes" defaultMode="secure"
+                  keymap="en-us" passwd="*****"
                   passwdValidTo="1970-01-01T00:00:01" port="-1" type="vnc">
             <listen network="vdsm-vmDisplay" type="network"/>
         </graphics>""",
 
         """
-        <graphics autoport="yes" listen="0" passwd="*****"
+        <graphics autoport="yes" defaultMode="secure"
+                  listen="0" passwd="*****"
                   passwdValidTo="1970-01-01T00:00:01" port="-1"
                   tlsPort="-1" type="spice">
             <channel mode="secure" name="main"/>
@@ -62,21 +64,24 @@ class TestVmDevices(XMLTestCase):
         </graphics>""",
 
         """
-        <graphics autoport="yes" listen="0" passwd="*****"
+        <graphics autoport="yes" defaultMode="secure"
+                  listen="0" passwd="*****"
                   passwdValidTo="1970-01-01T00:00:01" port="-1"
                   tlsPort="-1" type="spice">
             <channel mode="secure" name="main"/>
         </graphics>""",
 
         """
-        <graphics autoport="yes" listen="0" passwd="*****"
+        <graphics autoport="yes" defaultMode="secure"
+                  listen="0" passwd="*****"
                   passwdValidTo="1970-01-01T00:00:01" port="-1"
                   tlsPort="-1" type="spice">
             <clipboard copypaste="no"/>
         </graphics>""",
 
         """
-        <graphics autoport="yes" listen="0" passwd="*****"
+        <graphics autoport="yes" defaultMode="secure"
+                listen="0" passwd="*****"
                 passwdValidTo="1970-01-01T00:00:01" port="-1"
                 tlsPort="-1" type="spice">
             <filetransfer enable="no"/>

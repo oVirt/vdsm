@@ -108,7 +108,12 @@ class Graphics(Base):
         graphicsAttrs = {
             'type': self.device,
             'port': self.port,
-            'autoport': 'yes'}
+            'autoport': 'yes',
+        }
+        if config.getboolean('vars', 'ssl'):
+            graphicsAttrs['defaultMode'] = 'secure'
+        # the default, 'any', has automatic fallback to
+        # insecure mode, so works with ssl off.
 
         if self.device == 'spice':
             graphicsAttrs['tlsPort'] = self.tlsPort
@@ -128,6 +133,8 @@ class Graphics(Base):
             filetransfer = vmxml.Element('filetransfer', enable='no')
             graphics.appendChild(filetransfer)
 
+        # This list could be dropped in 4.1. We should keep only
+        # the default mode, which is both simpler and safer.
         if (self.device == 'spice' and
            'spiceSecureChannels' in self.specParams):
             for chan in self._getSpiceChannels():
