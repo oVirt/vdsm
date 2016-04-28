@@ -598,6 +598,53 @@ class TestDriveLeases(XMLTestCase):
         self.assertXMLEqual(leases[0].toxml(), xml)
 
 
+@expandPermutations
+class TestDriveNaming(VdsmTestCase):
+
+    @permutations([
+        ['ide', -1, 'hda'],
+        ['ide', 0, 'hda'],
+        ['ide', 1, 'hdb'],
+        ['ide', 2, 'hdc'],
+        ['ide', 25, 'hdz'],
+        ['ide', 26, 'hdba'],
+        ['ide', 27, 'hdbb'],
+
+        ['scsi', -1, 'sda'],
+        ['scsi', 0, 'sda'],
+        ['scsi', 1, 'sdb'],
+        ['scsi', 2, 'sdc'],
+        ['scsi', 25, 'sdz'],
+        ['scsi', 26, 'sdba'],
+        ['scsi', 27, 'sdbb'],
+
+        ['virtio', -1, 'vda'],
+        ['virtio', 0, 'vda'],
+        ['virtio', 1, 'vdb'],
+        ['virtio', 2, 'vdc'],
+        ['virtio', 25, 'vdz'],
+        ['virtio', 26, 'vdba'],
+        ['virtio', 27, 'vdbb'],
+
+        ['fdc', -1, 'fda'],
+        ['fdc', 0, 'fda'],
+        ['fdc', 1, 'fdb'],
+        ['fdc', 2, 'fdc'],
+        ['fdc', 25, 'fdz'],
+        ['fdc', 26, 'fdba'],
+        ['fdc', 27, 'fdbb'],
+    ])
+    def test_ide_drive(self, interface, index, expected_name):
+        conf = drive_config(
+            device='disk',
+            iface=interface,
+            index=index,
+        )
+
+        drive = Drive({}, self.log, **conf)
+        self.assertEqual(drive.name, expected_name)
+
+
 def make_volume_chain(path="path", offset=0, vol_id="vol_id", dom_id="dom_id"):
     return [{"leasePath": path,
              "leaseOffset": offset,
