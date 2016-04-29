@@ -35,6 +35,10 @@ class ExpectedFailure(Exception):
     pass
 
 
+def failure(*args, **kwargs):
+    raise ExpectedFailure()
+
+
 BASE_RAW_PARAMS = (1073741824, volume.RAW_FORMAT,
                    image.SYSTEM_DISK_TYPE, 'raw_volume')
 BASE_COW_PARAMS = (1073741824, volume.COW_FORMAT,
@@ -181,7 +185,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            artifacts._create_metadata_artifact = self.failure
+            artifacts._create_metadata_artifact = failure
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts)
@@ -193,7 +197,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            artifacts._create_lease_file = self.failure
+            artifacts._create_lease_file = failure
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts, has_md=True)
@@ -205,7 +209,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            artifacts._create_volume_file = self.failure
+            artifacts._create_volume_file = failure
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts,
@@ -218,7 +222,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            artifacts._create_metadata_artifact = self.failure
+            artifacts._create_metadata_artifact = failure
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
             self.validate_domain_has_garbage(env.sd_manifest)
@@ -265,9 +269,6 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         # Test a few fields just to check that metadata was written
         self.assertEqual(artifacts.sd_manifest.sdUUID, md.domain)
         self.assertEqual(artifacts.img_id, md.image)
-
-    def failure(*args):
-        raise ExpectedFailure()
 
 
 class FileVolumeArtifactVisibilityTests(VdsmTestCase):
