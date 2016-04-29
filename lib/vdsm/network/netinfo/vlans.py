@@ -36,7 +36,7 @@ def vlan_devs_for_iface(iface):
 
 
 def is_vlanned(device_name):
-    return any(vlan.startswith(device_name + '.') for vlan in vlans())
+    return any(vlan_devs_for_iface(device_name))
 
 
 def vlan_device(vlan_device_name):
