@@ -28,6 +28,7 @@ from vdsm import exception
 from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage.constants import TEMP_VOL_LVTAG
 import vdsm.utils as utils
 
 import volume
@@ -157,9 +158,14 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
     def validate(self):
         try:
-            lvm.getLV(self.sdUUID, self.volUUID)
+            lv = lvm.getLV(self.sdUUID, self.volUUID)
         except se.LogicalVolumeDoesNotExistError:
             raise se.VolumeDoesNotExist(self.volUUID)
+        else:
+            if TEMP_VOL_LVTAG in lv.tags:
+                self.log.warning("Tried to produce a volume artifact: %s/%s",
+                                 self.sdUUID, self.volUUID)
+                raise se.VolumeDoesNotExist(self.volUUID)
         volume.VolumeManifest.validate(self)
 
     def getVolumeTag(self, tagPrefix):
