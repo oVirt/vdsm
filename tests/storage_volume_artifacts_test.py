@@ -151,6 +151,14 @@ class VolumeArtifactsTestsMixin(object):
             artifacts.commit()
             self.assertIn(self.vol_id, env.sd_manifest.getAllVolumes())
 
+    def validate_domain_has_garbage(self, sd_manifest):
+        # Checks that existing garbage on the storage domain prevents creation
+        # of these artifacts again.
+        artifacts = sd_manifest.get_volume_artifacts(
+            self.img_id, self.vol_id)
+        self.assertRaises(se.DomainHasGarbage, artifacts.create,
+                          *BASE_RAW_PARAMS)
+
 
 class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 
@@ -177,6 +185,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts)
+            self.validate_domain_has_garbage(env.sd_manifest)
 
     def test_new_image_create_lease_failure(self):
         # If we fail before the lease is created we will have a garbage image
@@ -188,12 +197,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts, has_md=True)
-
-            # We cannot re-create in this state because garbage left behind
-            artifacts = env.sd_manifest.get_volume_artifacts(
-                self.img_id, self.vol_id)
-            self.assertRaises(se.DomainHasGarbage, artifacts.create,
-                              *BASE_RAW_PARAMS)
+            self.validate_domain_has_garbage(env.sd_manifest)
 
     def test_new_image_create_container_failure(self):
         # If we fail before the container is created we will have a garbage
@@ -206,12 +210,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
                               *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts,
                                          has_md=True, has_lease=True)
-
-            # We cannot re-create in this state because garbage left behind
-            artifacts = env.sd_manifest.get_volume_artifacts(
-                self.img_id, self.vol_id)
-            self.assertRaises(se.DomainHasGarbage, artifacts.create,
-                              *BASE_RAW_PARAMS)
+            self.validate_domain_has_garbage(env.sd_manifest)
 
     def test_garbage_image_dir(self):
         # Creating the an artifact using an existing garbage image directory is
@@ -222,10 +221,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             artifacts._create_metadata_artifact = self.failure
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
-            artifacts = env.sd_manifest.get_volume_artifacts(
-                self.img_id, self.vol_id)
-            self.assertRaises(se.DomainHasGarbage, artifacts.create,
-                              *BASE_RAW_PARAMS)
+            self.validate_domain_has_garbage(env.sd_manifest)
 
     # Invalid use of artifacts
 
