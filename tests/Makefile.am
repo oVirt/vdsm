@@ -139,9 +139,9 @@ test_modules = \
 	stompTests.py \
 	storagefakelibTests.py \
 	storageMailboxTests.py \
-	storageMonitorTests.py \
 	storageServerTests.py \
 	storagetestlibTests.py \
+	storage_monitor_test.py \
 	storage_rwlock_test.py \
 	storage_sdm_api_test.py \
 	storage_sdm_create_volume_test.py \
