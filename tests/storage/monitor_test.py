@@ -88,6 +88,12 @@ class FakeCheckService(object):
         callback(result)
 
 
+# Domain states
+CREATED = "created"
+SETUP = "setup"
+TEARDOWN = "teardown"
+
+
 class FakeDomain(object):
     """
     Fake storage domain implementing the minimal interface required for domain
@@ -98,6 +104,7 @@ class FakeDomain(object):
         self.sdUUID = sdUUID
         self.version = version
         self.iso_dir = iso_dir
+        self.state = CREATED
         self.acquired = False
         self.stats = {
             'disktotal': '100',
@@ -110,6 +117,18 @@ class FakeDomain(object):
         # Test may set errors here to make method calls raise expected or
         # unexpected errors.
         self.errors = {}
+
+    @maybefail
+    def setup(self):
+        log.debug("Setting up")
+        assert self.state == CREATED
+        self.state = SETUP
+
+    @maybefail
+    def teardown(self):
+        log.debug("Tearing down")
+        assert self.state == SETUP
+        self.state = TEARDOWN
 
     @maybefail
     def selftest(self):
@@ -346,6 +365,39 @@ class TestMonitorThreadSetup(VdsmTestCase):
             # Refresh timeout will expires during next cycle
             env.wait_for_cycle()
             self.assertNotIn(domain.sdUUID, monitor.sdCache.domains)
+
+    def test_domain_setup_called(self):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
+            self.assertEqual(domain.state, CREATED)
+            env.thread.start()
+            env.wait_for_cycle()
+            self.assertEqual(domain.state, SETUP)
+
+    def test_setup_retry(self):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            domain.errors["setup"] = Exception
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+            # domain.setup() fails
+            del domain.errors["setup"]
+            env.wait_for_cycle()
+            # domain.setup() succeeds
+            self.assertEqual(domain.state, SETUP)
+
+    def test_setup_failed(self):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            domain.errors["setup"] = Exception
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+            # domain.setup() fails
+            self.assertEqual(domain.state, CREATED)
+        self.assertEqual(domain.state, CREATED)
 
 
 @expandPermutations
@@ -721,6 +773,24 @@ class TestMonitorThreadStopping(VdsmTestCase):
             env.wait_for_cycle()
         self.assertFalse(domain.acquired)
         self.assertNotIn(domain.getMonitoringPath(), env.checker.checkers)
+
+    def test_teardown_called(self):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+        self.assertEqual(domain.state, TEARDOWN)
+
+    def test_teardown_failed(self):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            domain.errors["teardown"] = Exception
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+        # teardown fails
+        self.assertEqual(domain.state, SETUP)
 
 
 @expandPermutations

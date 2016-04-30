@@ -744,6 +744,21 @@ class StorageDomain(object):
         self.validate_version(manifest.getVersion())
         self._lock = threading.Lock()
 
+    # Life cycle
+
+    def setup(self):
+        """
+        Called after storage domain is produced in the storage domain monitor.
+        """
+
+    def teardown(self):
+        """
+        Called after storage domain monitor finished and will never access the
+        storage domain object.
+        """
+
+    # Other
+
     @property
     def sdUUID(self):
         return self._manifest.sdUUID

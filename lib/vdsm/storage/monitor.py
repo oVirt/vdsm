@@ -316,6 +316,7 @@ class MonitorThread(object):
             self._stopCheckingPath()
             if self._shouldReleaseHostId():
                 self._releaseHostId()
+            self._teardownDomain()
 
     # Setting up
 
@@ -348,7 +349,7 @@ class MonitorThread(object):
         # fail and we want keep trying until we succeed or the domain is
         # deactivated.
         if self.domain is None:
-            self._produceDomain()
+            self._setupDomain()
 
         # This may fail even if the domain was produced. We will try again in
         # the next cycle.
@@ -362,11 +363,6 @@ class MonitorThread(object):
         # could risk to never try to set it again.
         if self.isIsoDomain is None:
             self._setIsoDomainInfo()
-
-    @utils.cancelpoint
-    def _produceDomain(self):
-        log.debug("Producing domain %s", self.sdUUID)
-        self.domain = sdCache.produce(self.sdUUID)
 
     @utils.cancelpoint
     def _setIsoDomainInfo(self):
@@ -579,6 +575,24 @@ class MonitorThread(object):
         except:
             log.exception("Error releasing host id %s for domain %s",
                           self.hostId, self.sdUUID)
+
+    # Domain life cycle
+
+    @utils.cancelpoint
+    def _setupDomain(self):
+        log.debug("Producing domain %s", self.sdUUID)
+        domain = sdCache.produce(self.sdUUID)
+        domain.setup()
+        self.domain = domain
+
+    def _teardownDomain(self):
+        if not self.domain:
+            return
+        try:
+            self.domain.teardown()
+        except Exception:
+            log.exception("Error tearing down domain %s", self.sdUUID)
+        self.domain = None
 
 
 def _NULL_CALLBACK():

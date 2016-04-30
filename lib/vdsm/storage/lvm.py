@@ -883,35 +883,39 @@ def bootstrap(skiplvs=()):
     skiplvs = set(skiplvs)
 
     for vg in _lvminfo.getAllVgs():
+        deactivateUnusedLVs(vg.name, skiplvs=skiplvs)
+
+
+def deactivateUnusedLVs(vgname, skiplvs=()):
         deactivate = []
 
         # List prepared images LVs if any
-        pattern = "{}/{}/*/*".format(sc.P_VDSM_STORAGE, vg.name)
+        pattern = "{}/{}/*/*".format(sc.P_VDSM_STORAGE, vgname)
         prepared = frozenset(os.path.basename(n) for n in glob.iglob(pattern))
 
-        for lv in _lvminfo.getLv(vg.name):
+        for lv in _lvminfo.getLv(vgname):
             if lv.active:
                 if lv.name in skiplvs:
                     log.debug("Skipping active lv: vg=%s lv=%s",
-                              vg.name, lv.name)
+                              vgname, lv.name)
                 elif lv.name in prepared:
                     log.debug("Skipping prepared volume lv: vg=%s lv=%s",
-                              vg.name, lv.name)
+                              vgname, lv.name)
                 elif lv.opened:
-                    log.debug("Skipping open lv: vg=%s lv=%s", vg.name,
+                    log.debug("Skipping open lv: vg=%s lv=%s", vgname,
                               lv.name)
                 else:
                     deactivate.append(lv.name)
 
         if deactivate:
-            log.info("Deactivating lvs: vg=%s lvs=%s", vg.name, deactivate)
+            log.info("Deactivating lvs: vg=%s lvs=%s", vgname, deactivate)
             try:
-                _setLVAvailability(vg.name, deactivate, "n")
+                _setLVAvailability(vgname, deactivate, "n")
             except se.CannotDeactivateLogicalVolume:
-                log.error("Error deactivating lvs: vg=%s lvs=%s", vg.name,
+                log.error("Error deactivating lvs: vg=%s lvs=%s", vgname,
                           deactivate)
             # Some lvs are inactive now
-            _lvminfo._invalidatelvs(vg.name, deactivate)
+            _lvminfo._invalidatelvs(vgname, deactivate)
 
 
 def invalidateCache():

@@ -971,6 +971,24 @@ class BlockStorageDomain(sd.StorageDomain):
         self._registerResourceNamespaces()
         self._lastUncachedSelftest = 0
 
+    # Life cycle
+
+    def setup(self):
+        """
+        Ensure that unused normal lvs are deactivated, avoiding stale devices.
+        """
+        log.info("Setting up domain %s", self.sdUUID)
+        lvm.deactivateUnusedLVs(self.sdUUID, skiplvs=SPECIAL_LVS_V4)
+
+    def teardown(self):
+        """
+        Ensure that all lvs are deactivated, avoiding stale devices.
+        """
+        log.info("Tearing down domain %s", self.sdUUID)
+        lvm.deactivateUnusedLVs(self.sdUUID)
+
+    # Other
+
     def _registerResourceNamespaces(self):
         """
         Register resources namespaces and create
