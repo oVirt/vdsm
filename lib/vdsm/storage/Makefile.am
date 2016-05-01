@@ -37,6 +37,7 @@ dist_vdsmstorage_PYTHON = \
 	guarded.py \
 	hba.py \
 	imageSharing.py \
+	imagetickets.py \
 	misc.py \
 	mount.py \
 	persistent.py \

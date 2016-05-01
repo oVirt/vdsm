@@ -30,7 +30,6 @@ dist_vdsmstorage_PYTHON = \
 	dispatcher.py \
 	fileSD.py \
 	fileVolume.py \
-	imagetickets.py \
 	glusterSD.py \
 	glusterVolume.py \
 	hsm.py \

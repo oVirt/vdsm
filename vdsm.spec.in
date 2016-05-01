@@ -959,7 +959,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/monitor.py*
 %{_datadir}/%{vdsm_name}/storage/fileSD.py*
 %{_datadir}/%{vdsm_name}/storage/fileVolume.py*
-%{_datadir}/%{vdsm_name}/storage/imagetickets.py*
 %{_datadir}/%{vdsm_name}/storage/glusterSD.py*
 %{_datadir}/%{vdsm_name}/storage/glusterVolume.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
@@ -1222,6 +1221,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/guarded.py*
 %{python_sitelib}/%{vdsm_name}/storage/hba.py*
 %{python_sitelib}/%{vdsm_name}/storage/imageSharing.py*
+%{python_sitelib}/%{vdsm_name}/storage/imagetickets.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*

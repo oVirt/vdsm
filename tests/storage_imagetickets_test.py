@@ -30,7 +30,7 @@ from testlib import expandPermutations, permutations
 from testlib import recorded
 
 from vdsm.storage import exception as se
-from storage import imagetickets
+from vdsm.storage import imagetickets
 
 
 class FakeResponse(object):

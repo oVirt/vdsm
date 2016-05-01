@@ -49,6 +49,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import devicemapper
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import imagetickets
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage.constants import STORAGE
@@ -71,7 +72,6 @@ import multipath
 import outOfProcess as oop
 from sdc import sdCache
 import image
-import imagetickets
 import iscsi
 import taskManager
 import resourceManager as rm
