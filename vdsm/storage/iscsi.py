@@ -22,21 +22,23 @@
 iSCSI service module. Provides helper functions to interact with iscsiadm
 facility
 """
-import os
+
+import errno
 import glob
 import logging
+import os
 import re
-import errno
-from collections import namedtuple
 
-from vdsm import supervdsm
-from vdsm.password import ProtectedPassword
-from vdsm.config import config
-from vdsm.network.netinfo.routes import getRouteDeviceTo
-from vdsm.storage import misc
-import devicemapper
+from collections import namedtuple
 from threading import RLock
 
+from vdsm import supervdsm
+from vdsm.config import config
+from vdsm.network.netinfo.routes import getRouteDeviceTo
+from vdsm.password import ProtectedPassword
+from vdsm.storage import misc
+
+import devicemapper
 import iscsiadm
 
 IscsiPortal = namedtuple("IscsiPortal", "hostname, port")
