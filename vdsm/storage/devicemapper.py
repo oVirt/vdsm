@@ -18,10 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import os
-from glob import glob
 import errno
+import os
 import re
+
+from glob import glob
 
 from vdsm.constants import EXT_DMSETUP
 from vdsm.storage import misc
