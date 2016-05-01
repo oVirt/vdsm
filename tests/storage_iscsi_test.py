@@ -8,9 +8,8 @@ from testlib import expandPermutations, permutations
 from vdsm import commands
 from vdsm import utils
 from vdsm.password import ProtectedPassword
+from vdsm.storage import iscsi
 from vdsm.storage import iscsiadm
-
-from storage import iscsi
 
 
 def fake_rescan(timeout):

@@ -61,13 +61,13 @@ from vdsm.storage import mount
 from vdsm.storage.devicemapper import _removeMapping, _getPathsStatus
 from vdsm.storage.fileUtils import chown, resolveGid, resolveUid
 from vdsm.storage.fileUtils import validateAccess as _validateAccess
+from vdsm.storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
+from vdsm.storage.iscsi import readSessionInfo as _readSessionInfo
 from vdsm.supervdsm import _SuperVdsmManager
 
 from vdsm.network import sourceroutethread
 
 from storage.multipath import getScsiSerial as _getScsiSerial
-from storage.iscsi import getDevIscsiInfo as _getdeviSCSIinfo
-from storage.iscsi import readSessionInfo as _readSessionInfo
 from storage import multipath
 from vdsm.constants import METADATA_GROUP, \
     VDSM_USER, GLUSTER_MGMT_ENABLED

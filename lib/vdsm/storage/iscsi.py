@@ -1,5 +1,5 @@
 #
-# Copyright 2009-2012 Red Hat, Inc.
+# Copyright 2009-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,6 +22,8 @@
 iSCSI service module. Provides helper functions to interact with iscsiadm
 facility
 """
+
+from __future__ import absolute_import
 
 import errno
 import glob

@@ -38,6 +38,7 @@ dist_vdsmstorage_PYTHON = \
 	hba.py \
 	imageSharing.py \
 	imagetickets.py \
+	iscsi.py \
 	iscsiadm.py \
 	misc.py \
 	mount.py \

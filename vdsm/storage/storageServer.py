@@ -34,12 +34,12 @@ from vdsm import utils
 from vdsm.gluster import exception as ge
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import iscsi
 from vdsm.storage import misc
 from vdsm.storage import mount
 from vdsm.storage.mount import MountError
 
 import fileSD
-import iscsi
 import gluster.cli
 
 

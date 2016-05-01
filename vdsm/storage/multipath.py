@@ -36,9 +36,8 @@ from vdsm import utils
 from vdsm.config import config
 from vdsm.storage import devicemapper
 from vdsm.storage import hba
+from vdsm.storage import iscsi
 from vdsm.storage import misc
-
-import iscsi
 
 DEV_ISCSI = "iSCSI"
 DEV_FCP = "FCP"
