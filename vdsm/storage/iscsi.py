@@ -38,9 +38,8 @@ from vdsm.common.network.address import hosttail_join
 from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.password import ProtectedPassword
 from vdsm.storage import devicemapper
+from vdsm.storage import iscsiadm
 from vdsm.storage import misc
-
-import iscsiadm
 
 
 class IscsiPortal(namedtuple("IscsiPortal", "hostname, port")):
