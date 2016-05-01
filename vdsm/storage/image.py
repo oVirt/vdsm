@@ -31,13 +31,13 @@ from vdsm import virtsparsify
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
+from vdsm.storage import imageSharing
 from vdsm.storage import misc
 from vdsm.storage import workarounds
 from vdsm.storage.threadlocal import vars
 
 from sdc import sdCache
 import sd
-import imageSharing
 from vdsm.common.exception import ActionStopped
 import task
 import resourceManager as rm

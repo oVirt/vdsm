@@ -35,7 +35,6 @@ dist_vdsmstorage_PYTHON = \
 	glusterVolume.py \
 	hsm.py \
 	image.py \
-	imageSharing.py \
 	iscsiadm.py \
 	iscsi.py \
 	localFsSD.py \

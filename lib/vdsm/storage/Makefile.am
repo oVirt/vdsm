@@ -36,6 +36,7 @@ dist_vdsmstorage_PYTHON = \
 	fuser.py \
 	guarded.py \
 	hba.py \
+	imageSharing.py \
 	misc.py \
 	mount.py \
 	persistent.py \
