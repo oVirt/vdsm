@@ -36,9 +36,9 @@ from vdsm import supervdsm
 from vdsm.config import config
 from vdsm.network.netinfo.routes import getRouteDeviceTo
 from vdsm.password import ProtectedPassword
+from vdsm.storage import devicemapper
 from vdsm.storage import misc
 
-import devicemapper
 import iscsiadm
 
 IscsiPortal = namedtuple("IscsiPortal", "hostname, port")

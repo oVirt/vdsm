@@ -46,6 +46,7 @@ from vdsm import utils
 from vdsm.config import config
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
+from vdsm.storage import devicemapper
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -75,7 +76,6 @@ import iscsi
 import taskManager
 import resourceManager as rm
 from resourceFactories import IMAGE_NAMESPACE
-import devicemapper
 import dispatcher
 import storageServer
 

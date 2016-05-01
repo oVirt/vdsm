@@ -1010,7 +1010,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/__init__.py*
 %{_datadir}/%{vdsm_name}/storage/blockSD.py*
 %{_datadir}/%{vdsm_name}/storage/blockVolume.py*
-%{_datadir}/%{vdsm_name}/storage/devicemapper.py*
 %{_datadir}/%{vdsm_name}/storage/dispatcher.py*
 %{_datadir}/%{vdsm_name}/storage/monitor.py*
 %{_datadir}/%{vdsm_name}/storage/fileSD.py*
@@ -1258,6 +1257,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/clusterlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/constants.py*
 %{python_sitelib}/%{vdsm_name}/storage/curlImgWrap.py*
+%{python_sitelib}/%{vdsm_name}/storage/devicemapper.py*
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
 %{python_sitelib}/%{vdsm_name}/storage/fuser.py*
