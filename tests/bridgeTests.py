@@ -55,6 +55,20 @@ class Host():
         raise GeneralException("Kaboom!!!")
 
 
+class VM():
+    ctorArgs = ['vmID']
+
+    def __init__(self, UUID):
+        self._UUID = UUID
+
+    def migrationCreate(self, params, incomingLimit):
+        if self._UUID == params['vmID'] and incomingLimit == 42:
+            return {'status': {'code': 0, 'message': 'Done'},
+                    'migrationPort': 0, 'params': {}}
+        else:
+            return {'status': {'code': -1, 'message': 'Fail'}}
+
+
 class StorageDomain():
     ctorArgs = ['storagedomainID']
 
@@ -75,6 +89,7 @@ def getFakeAPI():
     _API = __import__('API', globals(), locals(), {}, -1)
     setattr(_newAPI, 'Global', Host)
     setattr(_newAPI, 'StorageDomain', StorageDomain)
+    setattr(_newAPI, 'VM', VM)
 
     # Apply the whitelist to our version of API
     for name in apiWhitelist:
@@ -142,3 +157,13 @@ class BridgeTests(TestCaseBase):
             bridge.dispatch('Host.ping')()
 
         self.assertEquals(e.exception.code, 100)
+
+    @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
+    def testMethodWithIntParam(self):
+        bridge = DynamicBridge()
+
+        params = {"vmID": "773adfc7-10d4-4e60-b700-3272ee1871f9",
+                  "params": {"vmID": "773adfc7-10d4-4e60-b700-3272ee1871f9"},
+                  "incomingLimit": 42}
+        self.assertEqual(bridge.dispatch('VM.migrationCreate')(**params),
+                         {'migrationPort': 0, 'params': {}})
