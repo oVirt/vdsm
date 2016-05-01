@@ -28,6 +28,7 @@ dist_vdsmstorage_PYTHON = \
 	exception.py \
 	fileUtils.py \
 	fuser.py \
+	hba.py \
 	misc.py \
 	mount.py \
 	persistent.py \

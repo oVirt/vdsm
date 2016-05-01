@@ -35,9 +35,9 @@ from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
 from vdsm.config import config
+from vdsm.storage import hba
 from vdsm.storage import misc
 
-import hba
 import iscsi
 import devicemapper
 

@@ -28,6 +28,7 @@ import libvirt
 
 from vdsm.config import config
 from vdsm.network.netinfo import cache as netinfo_cache
+from vdsm.storage import hba
 from vdsm import cpuarch
 from vdsm import cpuinfo
 from vdsm import dsaversion
@@ -40,7 +41,6 @@ from vdsm import numa
 from vdsm import osinfo
 from vdsm import supervdsm
 from vdsm import utils
-import storage.hba
 from virt import vmdevices
 
 RNG_SOURCES = {'random': '/dev/random',
@@ -180,7 +180,7 @@ def get():
     caps['emulatedMachines'] = machinetype.emulated_machines(
         cpuarch.effective())
     caps['ISCSIInitiatorName'] = _getIscsiIniName()
-    caps['HBAInventory'] = storage.hba.HBAInventory()
+    caps['HBAInventory'] = hba.HBAInventory()
     caps['vmTypes'] = ['kvm']
 
     caps['memSize'] = str(utils.readMemInfo()['MemTotal'] / 1024)

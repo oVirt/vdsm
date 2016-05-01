@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2011 Red Hat, Inc.
+# Copyright 2010-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,6 +21,9 @@
 """
 Collect HBA information
 """
+
+from __future__ import absolute_import
+
 import glob
 import logging
 import os

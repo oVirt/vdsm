@@ -35,7 +35,6 @@ dist_vdsmstorage_PYTHON = \
 	imagetickets.py \
 	glusterSD.py \
 	glusterVolume.py \
-	hba.py \
 	hsm.py \
 	image.py \
 	imageSharing.py \

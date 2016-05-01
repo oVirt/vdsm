@@ -1011,7 +1011,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/storage/imagetickets.py*
 %{_datadir}/%{vdsm_name}/storage/glusterSD.py*
 %{_datadir}/%{vdsm_name}/storage/glusterVolume.py*
-%{_datadir}/%{vdsm_name}/storage/hba.py*
 %{_datadir}/%{vdsm_name}/storage/hsm.py*
 %{_datadir}/%{vdsm_name}/storage/image.py*
 %{_datadir}/%{vdsm_name}/storage/imageSharing.py*
@@ -1251,6 +1250,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/exception.py*
 %{python_sitelib}/%{vdsm_name}/storage/fileUtils.py*
 %{python_sitelib}/%{vdsm_name}/storage/fuser.py*
+%{python_sitelib}/%{vdsm_name}/storage/hba.py*
 %{python_sitelib}/%{vdsm_name}/storage/misc.py*
 %{python_sitelib}/%{vdsm_name}/storage/mount.py*
 %{python_sitelib}/%{vdsm_name}/storage/persistent.py*
