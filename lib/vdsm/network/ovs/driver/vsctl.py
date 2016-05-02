@@ -42,7 +42,7 @@ _EXT_OVS_VSCTL = CommandPath('ovs-vsctl',
 _DB_ENTRIES_WHICH_SHOULD_BE_LIST = {'ports', 'interfaces'}
 # if a single item entry is not defined, it is reported as empty list
 _DB_ENTRIES_WHICH_SHOULD_NOT_BE_LIST = {
-    'tag', 'bond_active_slave', 'bond_mode', 'lacp'}
+    'tag', 'bond_active_slave', 'bond_mode', 'lacp', 'mac_in_use'}
 
 
 class Transaction(DriverTransaction):

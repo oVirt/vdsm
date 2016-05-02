@@ -1209,6 +1209,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netlink/monitor.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/route.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/__init__.py*
+%{python_sitelib}/%{vdsm_name}/network/ovs/info.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/switch.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/validator.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/driver/__init__.py*
