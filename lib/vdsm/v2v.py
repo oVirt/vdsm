@@ -41,11 +41,16 @@ import zipfile
 import libvirt
 
 from vdsm.commands import execCmd
-from vdsm.constants import P_VDSM_RUN
+from vdsm.constants import P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm.define import errCode, doneCode
 from vdsm import libvirtconnection, response, concurrent
 from vdsm.infra import zombiereaper
 from vdsm.utils import traceback, CommandPath, NICENESS, IOCLASS
+
+try:
+    import ovirt_image_common
+except ImportError:
+    ovirt_image_common = None
 
 
 _lock = threading.Lock()
@@ -56,6 +61,8 @@ _VIRT_V2V = CommandPath('virt-v2v', '/usr/bin/virt-v2v')
 _SSH_AGENT = CommandPath('ssh-agent', '/usr/bin/ssh-agent')
 _SSH_ADD = CommandPath('ssh-add', '/usr/bin/ssh-add')
 _XEN_SSH_PROTOCOL = 'xen+ssh'
+_VMWARE_PROTOCOL = 'vpx'
+_KVM_PROTOCOL = 'qemu'
 _SSH_AUTH_RE = '(SSH_AUTH_SOCK)=([^;]+).*;\nSSH_AGENT_PID=(\d+)'
 _OVF_RESOURCE_CPU = 3
 _OVF_RESOURCE_MEMORY = 4
@@ -155,8 +162,15 @@ def get_external_vms(uri, username, password):
 def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     if uri.startswith(_XEN_SSH_PROTOCOL):
         command = XenCommand(uri, vminfo, job_id, irs)
-    else:
+    elif uri.startswith(_VMWARE_PROTOCOL):
         command = LibvirtCommand(uri, username, password, vminfo, job_id, irs)
+    elif uri.startswith(_KVM_PROTOCOL):
+        if ovirt_image_common is None:
+            raise V2VError('Unsupported protocol KVM, ovirt_image_common'
+                           'package is needed for importing KVM images')
+        command = KVMCommand(uri, username, password, vminfo, job_id, irs)
+    else:
+        raise ClientError('Unknown protocol for Libvirt uri: %s', uri)
     job = ImportVm(job_id, command)
     job.start()
     _add_job(job_id, job)
@@ -346,11 +360,12 @@ class V2VCommand(object):
         self._vmid = vmid
         self._irs = irs
         self._prepared_volumes = []
+        self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
 
     def execute(self):
         raise NotImplementedError("Subclass must implement this")
 
-    def _start_virt_v2v(self):
+    def _start_helper(self):
         return execCmd(self._command(),
                        sync=False,
                        deathSignal=signal.SIGTERM,
@@ -427,6 +442,22 @@ class V2VCommand(object):
             env['VIRTIO_WIN'] = self._vminfo['virtio_iso_path']
         return env
 
+    @contextmanager
+    def _password_file(self):
+        fd = os.open(self._passwd_file, os.O_WRONLY | os.O_CREAT, 0o600)
+        try:
+            os.write(fd, self._password.value)
+        finally:
+            os.close(fd)
+        try:
+            yield
+        finally:
+            try:
+                os.remove(self._passwd_file)
+            except Exception:
+                logging.exception("Job %r error removing passwd file: %s",
+                                  self._vmid, self._passwd_file)
+
 
 class LibvirtCommand(V2VCommand):
     def __init__(self, uri, username, password, vminfo, vmid, irs):
@@ -434,8 +465,6 @@ class LibvirtCommand(V2VCommand):
         self._uri = uri
         self._username = username
         self._password = password
-
-        self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
 
     def _command(self):
         cmd = [_VIRT_V2V.cmd,
@@ -460,23 +489,7 @@ class LibvirtCommand(V2VCommand):
     @contextmanager
     def execute(self):
         with self._volumes(), self._password_file():
-            yield self._start_virt_v2v()
-
-    @contextmanager
-    def _password_file(self):
-        fd = os.open(self._passwd_file, os.O_WRONLY | os.O_CREAT, 0o600)
-        try:
-            os.write(fd, self._password.value)
-        finally:
-            os.close(fd)
-        try:
-            yield
-        finally:
-            try:
-                os.remove(self._passwd_file)
-            except Exception:
-                logging.exception("Job %r error removing passwd file: %s",
-                                  self._vmid, self._passwd_file)
+            yield self._start_helper()
 
 
 class OvaCommand(V2VCommand):
@@ -504,7 +517,7 @@ class OvaCommand(V2VCommand):
     @contextmanager
     def execute(self):
         with self._volumes():
-            yield self._start_virt_v2v()
+            yield self._start_helper()
 
 
 class XenCommand(V2VCommand):
@@ -543,12 +556,59 @@ class XenCommand(V2VCommand):
     @contextmanager
     def execute(self):
         with self._volumes(), self._ssh_agent:
-            yield self._start_virt_v2v()
+            yield self._start_helper()
 
     def _environment(self):
         env = super(XenCommand, self)._environment()
         env.update(self._ssh_agent.auth)
         return env
+
+
+class KVMCommand(V2VCommand):
+    def __init__(self, uri, username, password, vminfo, vmid, irs):
+        super(KVMCommand, self).__init__(vminfo, vmid, irs)
+        self._uri = uri
+        self._username = username
+        self._password = password
+
+    def _command(self):
+        cmd = [EXT_KVM_2_OVIRT,
+               '--uri', self._uri,
+               '--username', self._username,
+               '--password-file', self._passwd_file,
+               '--source']
+        cmd.extend(self._source_images())
+        cmd.append('--dest')
+        cmd.extend(self._dest_images())
+        return cmd
+
+    @contextmanager
+    def execute(self):
+        with self._volumes(), self._password_file():
+            yield self._start_helper()
+
+    def _source_images(self):
+        con = libvirtconnection.open_connection(uri=self._uri,
+                                                username=self._username,
+                                                passwd=self._password)
+
+        with closing(con):
+            vm = con.lookupByName(self._vminfo['vmName'])
+            if vm:
+                params = {}
+                root = ET.fromstring(vm.XMLDesc(0))
+                _add_disks(root, params)
+                ret = []
+                for disk in params['disks']:
+                    if 'alias' in disk:
+                        ret.append(disk['alias'])
+                return ret
+
+    def _dest_images(self):
+        ret = []
+        for vol in self._prepared_volumes:
+            ret.append(vol['path'])
+        return ret
 
 
 class ImportVm(object):
