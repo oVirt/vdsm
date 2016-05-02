@@ -32,7 +32,7 @@ from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-from storage import image, sd, blockVolume
+from storage import image, sd, blockVolume, fileVolume
 from storage.sdm.api import create_volume
 
 
@@ -202,9 +202,11 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            artifacts._create_metadata_artifact = failure
-            self.assertRaises(ExpectedFailure, artifacts.create,
-                              *BASE_RAW_PARAMS)
+            with MonkeyPatchScope([
+                [VolumeMetadata, '__init__', failure]
+            ]):
+                self.assertRaises(ExpectedFailure, artifacts.create,
+                                  *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts)
             self.validate_domain_has_garbage(env.sd_manifest)
 
@@ -214,9 +216,11 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            artifacts._create_lease_file = failure
-            self.assertRaises(ExpectedFailure, artifacts.create,
-                              *BASE_RAW_PARAMS)
+            with MonkeyPatchScope([
+                [fileVolume.FileVolumeManifest, 'newVolumeLease', failure]
+            ]):
+                self.assertRaises(ExpectedFailure, artifacts.create,
+                                  *BASE_RAW_PARAMS)
             self.validate_new_image_path(artifacts, has_md=True)
             self.validate_domain_has_garbage(env.sd_manifest)
 
@@ -226,6 +230,10 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         with self.fake_env() as env:
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
+            # We cannot MonkeyPatch the underlying function 'truncateFile'
+            # because it is also used for lease creation and would cause a
+            # premature failure.  Instead, we'll replace a function in the
+            # FileVolumeArtifacts class.
             artifacts._create_volume_file = failure
             self.assertRaises(ExpectedFailure, artifacts.create,
                               *BASE_RAW_PARAMS)
