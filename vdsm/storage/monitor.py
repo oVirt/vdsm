@@ -200,8 +200,10 @@ class MonitorThread(object):
         self.interval = interval
         self.changeEvent = changeEvent
         self.monitoringPath = None
-        self.nextStatus = Status(actual=False)
-        self.status = FrozenStatus(self.nextStatus)
+        # For backward compatibility, we must present a fake status before
+        # collecting the first sample. The fake status is marked as
+        # actual=False so engine can handle it correctly.
+        self.status = FrozenStatus(Status(actual=False))
         self.isIsoDomain = None
         self.isoPrefix = None
         self.lastRefresh = time.time()
@@ -259,7 +261,7 @@ class MonitorThread(object):
             self.stopEvent.wait(self.interval)
 
     def _monitorDomain(self):
-        self.nextStatus = Status()
+        status = Status()
 
         # Pick up changes in the domain, for example, domain upgrade.
         if self._shouldRefreshDomain():
@@ -286,34 +288,34 @@ class MonitorThread(object):
                 self._setIsoDomainInfo()
 
             self._performDomainSelftest()
-            self._checkReadDelay()
-            self._collectStatistics()
+            self._checkReadDelay(status)
+            self._collectStatistics(status)
         except Exception as e:
             log.exception("Error monitoring domain %s", self.sdUUID)
-            self.nextStatus.error = e
+            status.error = e
 
-        self.nextStatus.checkTime = time.time()
+        status.checkTime = time.time()
 
-        if self._statusDidChange():
-            self._notifyStatusChanges()
+        if self._statusDidChange(status):
+            self._notifyStatusChanges(status)
 
-        if self._shouldAcquireHostId():
+        if self._shouldAcquireHostId(status):
             self._acquireHostId()
 
-        self.status = FrozenStatus(self.nextStatus)
+        self.status = FrozenStatus(status)
 
     # Notifiying status changes
 
-    def _statusDidChange(self):
+    def _statusDidChange(self, status):
         return (not self.status.actual or
-                self.status.valid != self.nextStatus.valid)
+                self.status.valid != status.valid)
 
     @utils.cancelpoint
-    def _notifyStatusChanges(self):
+    def _notifyStatusChanges(self, status):
         log.info("Domain %s became %s", self.sdUUID,
-                 "VALID" if self.nextStatus.valid else "INVALID")
+                 "VALID" if status.valid else "INVALID")
         try:
-            self.changeEvent.emit(self.sdUUID, self.nextStatus.valid)
+            self.changeEvent.emit(self.sdUUID, status.valid)
         except:
             log.exception("Error notifying state change for domain %s",
                           self.sdUUID)
@@ -353,38 +355,35 @@ class MonitorThread(object):
         self.domain.selftest()
 
     @utils.cancelpoint
-    def _checkReadDelay(self):
+    def _checkReadDelay(self, status):
         # This may block for long time if the storage server is not accessible.
         # On overloaded machines we have seen this take up to 15 seconds.
         stats = misc.readspeed(self.monitoringPath, 4096)
-        self.nextStatus.readDelay = stats['seconds']
+        status.readDelay = stats['seconds']
 
-    def _collectStatistics(self):
+    def _collectStatistics(self, status):
         stats = self.domain.getStats()
-        self.nextStatus.diskUtilization = (stats["disktotal"],
-                                           stats["diskfree"])
+        status.diskUtilization = (stats["disktotal"], stats["diskfree"])
 
-        self.nextStatus.vgMdUtilization = (stats["mdasize"],
-                                           stats["mdafree"])
-
-        self.nextStatus.vgMdHasEnoughFreeSpace = stats["mdavalid"]
-        self.nextStatus.vgMdFreeBelowThreashold = stats["mdathreshold"]
+        status.vgMdUtilization = (stats["mdasize"], stats["mdafree"])
+        status.vgMdHasEnoughFreeSpace = stats["mdavalid"]
+        status.vgMdFreeBelowThreashold = stats["mdathreshold"]
 
         masterStats = self.domain.validateMaster()
-        self.nextStatus.masterValid = masterStats['valid']
-        self.nextStatus.masterMounted = masterStats['mount']
+        status.masterValid = masterStats['valid']
+        status.masterMounted = masterStats['mount']
 
-        self.nextStatus.hasHostId = self.domain.hasHostId(self.hostId)
-        self.nextStatus.isoPrefix = self.isoPrefix
-        self.nextStatus.version = self.domain.getVersion()
+        status.hasHostId = self.domain.hasHostId(self.hostId)
+        status.isoPrefix = self.isoPrefix
+        status.version = self.domain.getVersion()
 
     # Managing host id
 
-    def _shouldAcquireHostId(self):
+    def _shouldAcquireHostId(self, status):
         # An ISO domain can be shared by multiple pools
         return (not self.isIsoDomain and
-                self.nextStatus.valid and
-                self.nextStatus.hasHostId is False)
+                status.valid and
+                status.hasHostId is False)
 
     def _shouldReleaseHostId(self):
         # If this is an ISO domain we didn't acquire the host id and releasing
