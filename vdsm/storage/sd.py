@@ -379,7 +379,7 @@ class StorageDomainManifest(object):
 
     def produceVolume(self, imgUUID, volUUID):
         """
-        Produce a type specific volume object
+        Produce a type specific VolumeManifest object
         """
         return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
                                      volUUID)
@@ -613,7 +613,7 @@ class StorageDomain(object):
 
     def produceVolume(self, imgUUID, volUUID):
         """
-        Produce a type specific volume object
+        Produce a type specific Volume object
         """
         return self.getVolumeClass()(self.mountpoint, self.sdUUID, imgUUID,
                                      volUUID)

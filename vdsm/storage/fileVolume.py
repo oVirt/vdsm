@@ -327,6 +327,26 @@ class FileVolumeManifest(volume.VolumeManifest):
                 volList.append(volid)
         return volList
 
+    def llPrepare(self, rw=False, setrw=False):
+        """
+        Make volume accessible as readonly (internal) or readwrite (leaf)
+        """
+        volPath = self.getVolumePath()
+
+        # Volumes leaves created in 2.2 did not have group writeable bit
+        # set. We have to set it here if we want qemu-kvm to write to old
+        # NFS volumes.
+        self.oop.fileUtils.copyUserModeToGroup(volPath)
+
+        if setrw:
+            self.setrw(rw=rw)
+        if rw:
+            if not self.oop.os.access(volPath, os.R_OK | os.W_OK):
+                raise se.VolumeAccessError(volPath)
+        else:
+            if not self.oop.os.access(volPath, os.R_OK):
+                raise se.VolumeAccessError(volPath)
+
 
 class FileVolume(volume.Volume):
     """ Actually represents a single volume (i.e. part of virtual disk).
@@ -489,26 +509,6 @@ class FileVolume(volume.Volume):
         procPool.utils.rmFile(volPath)
         procPool.utils.rmFile(cls.manifestClass.metaVolumePath(volPath))
         procPool.utils.rmFile(cls.manifestClass.leaseVolumePath(volPath))
-
-    def llPrepare(self, rw=False, setrw=False):
-        """
-        Make volume accessible as readonly (internal) or readwrite (leaf)
-        """
-        volPath = self.getVolumePath()
-
-        # Volumes leaves created in 2.2 did not have group writeable bit
-        # set. We have to set it here if we want qemu-kvm to write to old
-        # NFS volumes.
-        self.oop.fileUtils.copyUserModeToGroup(volPath)
-
-        if setrw:
-            self.setrw(rw=rw)
-        if rw:
-            if not self.oop.os.access(volPath, os.R_OK | os.W_OK):
-                raise se.VolumeAccessError(volPath)
-        else:
-            if not self.oop.os.access(volPath, os.R_OK):
-                raise se.VolumeAccessError(volPath)
 
     def setParentMeta(self, puuid):
         """

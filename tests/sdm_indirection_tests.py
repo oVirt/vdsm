@@ -504,6 +504,16 @@ class FakeVolumeManifest(object):
     def getImageVolumes(cls, repoPath, sdUUID, imgUUID):
         pass
 
+    @recorded
+    def prepare(self, rw=True, justme=False,
+                chainrw=False, setrw=False, force=False):
+        pass
+
+    @classmethod
+    @recorded
+    def teardown(cls, sdUUID, volUUID, justme=False):
+        pass
+
 
 class FakeBlockVolumeManifest(FakeVolumeManifest):
     def __init__(self):
@@ -816,6 +826,7 @@ class VolumeTestMixin(object):
         ['refreshVolume', 0],
         ['_share', 1],
         ['_shareLease', 1],
+        ['prepare', 5]
         ])
     def test_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)
@@ -827,6 +838,7 @@ class VolumeTestMixin(object):
         ['newMetadata', 11],
         ['newVolumeLease', 3],
         ['getImageVolumes', 3],
+        ['teardown', 3],
         ])
     def test_class_methods(self, fn, nargs):
         self.checker.check_classmethod_call(fn, nargs)

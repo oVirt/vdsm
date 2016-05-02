@@ -428,6 +428,66 @@ class VolumeManifest(object):
         """
         pass  # Do not remove this method or the V3 upgrade will fail.
 
+    def getParentVolume(self):
+        """
+        Return parent VolumeManifest object
+        """
+        puuid = self.getParent()
+        if puuid and puuid != sc.BLANK_UUID:
+            sd_manifest = sdCache.produce(self.sdUUID).manifest
+            return sd_manifest.produceVolume(self.imgUUID, puuid)
+        return None
+
+    def prepare(self, rw=True, justme=False,
+                chainrw=False, setrw=False, force=False):
+        """
+        Prepare volume for use by consumer.
+        If justme is false, the entire COW chain is prepared.
+        Note: setrw arg may be used only by SPM flows.
+        """
+        self.log.info("Volume: preparing volume %s/%s",
+                      self.sdUUID, self.volUUID)
+
+        if not force:
+            # Cannot prepare ILLEGAL volume
+            if not self.isLegal():
+                raise se.prepareIllegalVolumeError(self.volUUID)
+
+            if rw and self.isShared():
+                if chainrw:
+                    rw = False      # Shared cannot be set RW
+                else:
+                    raise se.SharedVolumeNonWritable(self)
+
+            if (not chainrw and rw and self.isInternal() and setrw and
+                    not self.recheckIfLeaf()):
+                raise se.InternalVolumeNonWritable(self)
+
+        self.llPrepare(rw=rw, setrw=setrw)
+        self.updateInvalidatedSize()
+
+        try:
+            if justme:
+                return True
+            pvol = self.getParentVolume()
+            if pvol:
+                pvol.prepare(rw=chainrw, justme=False,
+                             chainrw=chainrw, setrw=setrw)
+        except Exception:
+            self.log.error("Unexpected error", exc_info=True)
+            self.teardown(self.sdUUID, self.volUUID)
+            raise
+
+        return True
+
+    @classmethod
+    def teardown(cls, sdUUID, volUUID, justme=False):
+        """
+        Teardown volume.
+        If justme is false, the entire COW chain is teared down.
+        """
+        pass
+
 
 class Volume(object):
     log = logging.getLogger('Storage.Volume')
@@ -1040,53 +1100,11 @@ class Volume(object):
 
     def prepare(self, rw=True, justme=False,
                 chainrw=False, setrw=False, force=False):
-        """
-        Prepare volume for use by consumer.
-        If justme is false, the entire COW chain is prepared.
-        Note: setrw arg may be used only by SPM flows.
-        """
-        self.log.info("Volume: preparing volume %s/%s",
-                      self.sdUUID, self.volUUID)
-
-        if not force:
-            # Cannot prepare ILLEGAL volume
-            if not self.isLegal():
-                raise se.prepareIllegalVolumeError(self.volUUID)
-
-            if rw and self.isShared():
-                if chainrw:
-                    rw = False      # Shared cannot be set RW
-                else:
-                    raise se.SharedVolumeNonWritable(self)
-
-            if (not chainrw and rw and self.isInternal() and setrw and
-                    not self.recheckIfLeaf()):
-                raise se.InternalVolumeNonWritable(self)
-
-        self.llPrepare(rw=rw, setrw=setrw)
-        self.updateInvalidatedSize()
-
-        try:
-            if justme:
-                return True
-            pvol = self.getParentVolume()
-            if pvol:
-                pvol.prepare(rw=chainrw, justme=False,
-                             chainrw=chainrw, setrw=setrw)
-        except Exception:
-            self.log.error("Unexpected error", exc_info=True)
-            self.teardown(self.sdUUID, self.volUUID)
-            raise
-
-        return True
+        return self._manifest.prepare(rw, justme, chainrw, setrw, force)
 
     @classmethod
     def teardown(cls, sdUUID, volUUID, justme=False):
-        """
-        Teardown volume.
-        If justme is false, the entire COW chain is teared down.
-        """
-        pass
+        return cls.manifestClass.teardown(sdUUID, volUUID, justme)
 
     def metadata2info(self, meta):
         return self._manifest.metadata2info(meta)
@@ -1103,7 +1121,7 @@ class Volume(object):
 
     def getParentVolume(self):
         """
-        Return parent volume object
+        Return parent Volume object
         """
         puuid = self.getParent()
         if puuid and puuid != sc.BLANK_UUID:
