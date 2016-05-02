@@ -22,12 +22,14 @@ from contextlib import contextmanager
 
 from testlib import make_file, namedTemporaryDir
 from storagefakelib import FakeLVM
+from storagefakelib import FakeStorageDomainCache
 from monkeypatch import MonkeyPatchScope
 
 from vdsm import utils
 from vdsm.storage import constants as sc
 
-from storage import sd, blockSD, fileSD, image, blockVolume
+from storage import sd, blockSD, fileSD, image, blockVolume, volume
+from storage import hsm
 from storage.sdm import volume_artifacts
 
 
@@ -47,10 +49,13 @@ class FakeEnv(object):
 def fake_file_env(obj=None):
     with namedTemporaryDir() as tmpdir:
         sd_manifest = make_filesd_manifest(tmpdir)
+        fake_sdc = FakeStorageDomainCache()
         with MonkeyPatchScope([
-            [sd, 'storage_repository', tmpdir]
+            [sd, 'storage_repository', tmpdir],
+            [volume, 'sdCache', fake_sdc],
+            [hsm, 'sdCache', fake_sdc],
         ]):
-
+            fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
             yield FakeEnv(sd_manifest)
 
 
@@ -58,13 +63,17 @@ def fake_file_env(obj=None):
 def fake_block_env(obj=None):
     with namedTemporaryDir() as tmpdir:
         lvm = FakeLVM(tmpdir)
+        fake_sdc = FakeStorageDomainCache()
         with MonkeyPatchScope([
             (blockSD, 'lvm', lvm),
             (blockVolume, 'lvm', lvm),
             (volume_artifacts, 'lvm', lvm),
             (sd, 'storage_repository', tmpdir),
+            (volume, 'sdCache', fake_sdc),
+            (hsm, 'sdCache', fake_sdc),
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm)
+            fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
             yield FakeEnv(sd_manifest, lvm=lvm)
 
 
@@ -72,6 +81,15 @@ class FakeMetadata(dict):
     @contextmanager
     def transaction(self):
         yield
+
+
+class FakeSD(object):
+    def __init__(self, sd_manifest):
+        self._manifest = sd_manifest
+
+    @property
+    def manifest(self):
+        return self._manifest
 
 
 def make_sd_metadata(sduuid, version=3, dom_class=sd.DATA_DOMAIN, pools=None):
