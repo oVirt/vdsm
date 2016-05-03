@@ -18,11 +18,31 @@
 #
 from __future__ import absolute_import
 
+import six
+
+from vdsm.netinfo.addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
+from vdsm.netinfo.dhcp import dhcp_status
+from vdsm.netinfo.mtus import getMtu
+from vdsm.netinfo.routes import get_routes, get_gateway
+
 from . import driver
 
 
 NORTHBOUND = 'northbound'
 SOUTHBOUND = 'southbound'
+
+EMPTY_PORT_INFO = {
+    'mtu': 1500,
+    'addr': '',
+    'ipv4addrs': [],
+    'gateway': '',
+    'netmask': '',
+    'dhcpv4': False,
+    'ipv6addrs': [],
+    'ipv6autoconf': False,
+    'ipv6gateway': '',
+    'dhcpv6': False
+}
 
 
 class OvsDB(object):
@@ -90,3 +110,112 @@ class OvsInfo(object):
 
         return {'slaves': slaves, 'active_slave': active_slave,
                 'fake_iface': fake_iface, 'mode': mode, 'lacp': lacp}
+
+    @staticmethod
+    def southbound_port(ports):
+        return next((port for port, attrs in six.iteritems(ports)
+                     if attrs['level'] == SOUTHBOUND), None)
+
+    @staticmethod
+    def northbound_ports(ports):
+        return (port for port, attrs in six.iteritems(ports)
+                if attrs['level'] == NORTHBOUND)
+
+    @staticmethod
+    def bonds(ports):
+        return ((port, attrs['bond']) for port, attrs in six.iteritems(ports)
+                if attrs['bond'])
+
+
+def get_netinfo(ovs_info):
+    addresses = getIpAddrs()
+    routes = get_routes()
+
+    _netinfo = {'networks': {}, 'bondings': {}}
+
+    for bridge, bridge_attrs in six.iteritems(ovs_info.bridges):
+        ports = bridge_attrs['ports']
+
+        southbound = ovs_info.southbound_port(ports)
+
+        # northbound ports represents networks
+        stp = bridge_attrs['stp']
+        for northbound_port in ovs_info.northbound_ports(ports):
+            _netinfo['networks'][northbound_port] = _get_network_info(
+                northbound_port, bridge, southbound, ports, stp, addresses,
+                routes)
+
+        for bond, bond_attrs in ovs_info.bonds(ports):
+            _netinfo['bondings'][bond] = _get_bond_info(bond_attrs)
+
+    return _netinfo
+
+
+def _get_network_info(northbound, bridge, southbound, ports, stp, addresses,
+                      routes):
+    southbound_bond_attrs = ports[southbound]['bond']
+    bond = southbound if southbound_bond_attrs else ''
+    nics = (southbound_bond_attrs['slaves'] if southbound_bond_attrs
+            else [southbound])
+    tag = ports[northbound]['tag']
+    network_info = {
+        'iface': northbound,
+        'bridged': True,
+        'vlanid': tag,
+        'bond': bond,
+        'nics': nics,
+        'ports': _get_net_ports(bridge, northbound, southbound, tag, ports),
+        'stp': stp,
+        'switch': 'ovs'
+    }
+    network_info.update(_get_iface_info(northbound, addresses, routes))
+    return network_info
+
+
+def _get_net_ports(bridge, northbound, southbound, net_tag, ports):
+    if net_tag:
+        net_southbound_port = '{}.{}'.format(southbound, net_tag)
+    else:
+        net_southbound_port = southbound
+
+    net_ports = [net_southbound_port]
+    net_ports += [port for port, port_attrs in six.iteritems(ports)
+                  if (port_attrs['tag'] == net_tag and port != bridge and
+                      port_attrs['level'] not in (SOUTHBOUND, NORTHBOUND))]
+
+    return net_ports
+
+
+def _get_bond_info(bond_attrs):
+    bond_info = {
+        'slaves': bond_attrs['slaves'],
+        # TODO: what should we report when no slave is active?
+        'active_slave': (bond_attrs['active_slave'] or
+                         bond_attrs['slaves'][0]),
+        'opts': _to_bond_opts(bond_attrs['mode'], bond_attrs['lacp']),
+        'switch': 'ovs'
+    }
+    bond_info.update(EMPTY_PORT_INFO)
+    return bond_info
+
+
+def _to_bond_opts(mode, lacp):
+    custom_opts = []
+    if mode:
+        custom_opts.append('ovs_mode:%s' % mode)
+    if lacp:
+        custom_opts.append('ovs_lacp:%s' % lacp)
+    return {'custom': ','.join(custom_opts)} if custom_opts else {}
+
+
+def _get_iface_info(iface, addresses, routes):
+    ipv4gateway = get_gateway(routes, iface, family=4)
+    ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs = getIpInfo(
+        iface, addresses, ipv4gateway)
+    is_dhcpv4, is_dhcpv6 = dhcp_status(iface, addresses)
+
+    return {'mtu': getMtu(iface), 'addr': ipv4addr, 'ipv4addrs': ipv4addrs,
+            'gateway': ipv4gateway, 'netmask': ipv4netmask,
+            'dhcpv4': is_dhcpv4, 'ipv6addrs': ipv6addrs,
+            'ipv6gateway': get_gateway(routes, iface, family=6),
+            'ipv6autoconf': is_ipv6_local_auto(iface), 'dhcpv6': is_dhcpv6}

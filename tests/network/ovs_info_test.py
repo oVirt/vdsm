@@ -24,8 +24,9 @@ from nose.plugins.attrib import attr
 
 from .nettestlib import dummy_device
 from .ovsnettestlib import OvsService, TEST_BRIDGE, TEST_BOND
-from testlib import VdsmTestCase
+from monkeypatch import MonkeyPatch
 from testValidation import ValidateRunningAsRoot
+from testlib import VdsmTestCase
 
 from vdsm.network.ovs import info
 from vdsm.network.ovs.driver import create
@@ -36,6 +37,7 @@ TEST_ADDRESS = '192.168.1.10'
 TEST_NETMASK = '255.255.255.0'
 TEST_ADDRESS_WITH_PREFIX = '192.168.1.10/24'
 TEST_VLAN = 10
+TEST_VLANED_BOND = '%s.%s' % (TEST_BOND, TEST_VLAN)
 
 
 @contextmanager
@@ -119,3 +121,94 @@ class TestOvsInfo(VdsmTestCase):
                 }
                 obtained_bridges = info.OvsInfo().bridges
                 self.assertEqual(obtained_bridges, expected_bridges)
+
+
+class MockedOvsInfo(info.OvsInfo):
+    def __init__(self):
+        self._bridges = {
+            TEST_BRIDGE: {
+                'stp': False,
+                'ports': {
+                    TEST_BOND: {
+                        'bond': {
+                            'active_slave': None,
+                            'fake_iface': False,
+                            'lacp': None,
+                            'mode': 'active-backup',
+                            'slaves': ['eth0', 'eth1']
+                        },
+                        'level': info.SOUTHBOUND,
+                        'tag': None
+                    },
+                    TEST_NETWORK: {
+                        'bond': None,
+                        'level': info.NORTHBOUND,
+                        'tag': TEST_VLAN
+                    },
+                    TEST_BRIDGE: {
+                        'bond': None,
+                        'level': None,
+                        'tag': None
+                    }
+                }
+            }
+        }
+
+
+@attr(type='unit')
+class TestOvsNetInfo(VdsmTestCase):
+
+    TEST_NETINFO = {
+        'networks': {
+            TEST_NETWORK: {
+                'addr': TEST_ADDRESS,
+                'bond': TEST_BOND,
+                'bridged': True,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'iface': TEST_NETWORK,
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'nics': ['eth0', 'eth1'],
+                'ports': [TEST_VLANED_BOND],
+                'stp': False,
+                'switch': 'ovs',
+                'vlanid': TEST_VLAN
+            }
+        },
+        'bondings': {
+            TEST_BOND: {
+                'active_slave': 'eth0',
+                'addr': '',
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'ipv4addrs': [],
+                'ipv6addrs': [],
+                'ipv6autoconf': False,
+                'ipv6gateway': '',
+                'mtu': 1500,
+                'netmask': '',
+                'opts': {'custom': 'ovs_mode:active-backup'},
+                'slaves': ['eth0', 'eth1'],
+                'switch': 'ovs'
+            }
+        }
+    }
+
+    @MonkeyPatch(info, 'getMtu', lambda *args: 1500)
+    @MonkeyPatch(info, 'is_ipv6_local_auto', lambda *args: True)
+    @MonkeyPatch(info, 'get_gateway',
+                 lambda *args, **kwargs: ('' if kwargs.get('family') == 4
+                                          else '::'))
+    @MonkeyPatch(info, 'getIpInfo',
+                 lambda *args: (TEST_ADDRESS, TEST_NETMASK,
+                                [TEST_ADDRESS_WITH_PREFIX], []))
+    def test_ovs_netinfo(self):
+        obtained_netinfo = info.get_netinfo(MockedOvsInfo())
+        self.assertEqual(obtained_netinfo, self.TEST_NETINFO)
