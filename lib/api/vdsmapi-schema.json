@@ -6416,17 +6416,6 @@
 {'type', 'DriveSpecGUID', 'data': {'GUID': 'str'}}
 
 ##
-# @DriveSpecUUID:
-#
-# A drive specification using a blkid UUID.
-#
-# @UUID:  The device blkid
-#
-# Since: 4.10.0
-##
-{'type', 'DriveSpecUUID', 'data': {'UUID': 'UUID'}}
-
-##
 # @DriveVmPayload:
 #
 # Directly specified data to be inserted into a VM.
@@ -6484,8 +6473,8 @@
 ##
 {'type': 'DriveSpec',
  'data': {},
- 'union': ['DriveSpecVolume', 'DriveSpecGUID', 'DriveSpecUUID',
-          'DriveSpecPayload', 'DriveSpecPath']}
+ 'union': ['DriveSpecVolume', 'DriveSpecGUID', 'DriveSpecPayload',
+           'DriveSpecPath']}
 
 ##
 # @VM.changeCD:
