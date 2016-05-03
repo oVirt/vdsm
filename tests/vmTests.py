@@ -117,9 +117,7 @@ class TestVm(XMLTestCase):
 
                     output = testVm._buildDomainXML()
 
-                    self.assertEqual(
-                        re.sub('\n\s*', ' ', output.strip(' ')),
-                        re.sub('\n\s*', ' ', expectedXML.strip(' ')))
+                    self.assertXMLEqual(output, expectedXML)
 
     def testDomXML(self):
         expectedXML = """
