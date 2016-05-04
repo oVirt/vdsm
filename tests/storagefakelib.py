@@ -179,6 +179,9 @@ class FakeLVM(object):
         tags -= set(delTags)
         lv_md['tags'] = tuple(tags)
 
+    def lvsByTag(self, vgName, tag):
+        return [lv for lv in self.getLV(vgName) if tag in lv.tags]
+
     def lvPath(self, vgName, lvName):
         return os.path.join(self.root, "dev", vgName, lvName)
 

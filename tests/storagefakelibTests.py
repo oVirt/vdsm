@@ -310,6 +310,15 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
             vg = lvm.getVG(self.VG_NAME)
             self.assertEqual(addtags, vg.tags)
 
+    def test_lvsbytag(self):
+        with self.base_config() as lvm:
+            lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB))
+            lvm.changeLVTags(self.VG_NAME, self.LV_NAME, addTags=('foo',))
+            lvs = lvm.lvsByTag(self.VG_NAME, 'foo')
+            self.assertEqual(1, len(lvs))
+            self.assertEqual(self.LV_NAME, lvs[0].name)
+            self.assertEqual([], lvm.lvsByTag(self.VG_NAME, 'bar'))
+
 
 @expandPermutations
 class FakeLVMGeneralTests(VdsmTestCase):
