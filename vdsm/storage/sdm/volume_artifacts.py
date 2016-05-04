@@ -57,7 +57,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-from storage import lvm
+from storage import image, lvm
 
 
 class VolumeArtifacts(object):
@@ -374,7 +374,7 @@ class BlockVolumeArtifacts(VolumeArtifacts):
 
     @property
     def volume_path(self):
-        return lvm.lvPath(self.sd_manifest.sdUUID, self.vol_id)
+        return os.path.join(self._get_image_path(), self.vol_id)
 
     def create(self, size, vol_format, disk_type, desc, parent=None,
                initial_size=None):
@@ -385,6 +385,7 @@ class BlockVolumeArtifacts(VolumeArtifacts):
         lv_size = self._calculate_volume_alloc_size(prealloc, size,
                                                     initial_size)
         self._create_lv_artifact(parent, lv_size)
+        self._create_image_path()
         meta_slot = self._acquire_metadata_slot()
         self._create_metadata(meta_slot, size, vol_format, prealloc, disk_type,
                               desc, parent)
@@ -431,6 +432,19 @@ class BlockVolumeArtifacts(VolumeArtifacts):
                 sc.TAG_PREFIX_IMAGE + self.img_id)
         lvm.createLV(self.sd_manifest.sdUUID, self.vol_id, lv_size,
                      activate=True, initialTags=tags)
+
+    def _get_image_path(self):
+        im = image.ImageManifest(self.sd_manifest.getRepoPath())
+        return im.getImageDir(self.sd_manifest.sdUUID, self.img_id)
+
+    def _create_image_path(self):
+        image_path = self._get_image_path()
+        if not os.path.isdir(image_path):
+            self.log.info("Create placeholder %s for image's volumes",
+                          image_path)
+            os.mkdir(image_path)
+        os.symlink(lvm.lvPath(self.sd_manifest.sdUUID, self.vol_id),
+                   self.volume_path)
 
     def _acquire_metadata_slot(self):
         sd_id = self.sd_manifest.sdUUID
