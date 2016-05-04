@@ -103,9 +103,16 @@ class FakeBlockEnvTests(VdsmTestCase):
             for lv in blockSD.SPECIAL_LVS:
                 self.assertEqual(lv, env.lvm.getLV(vg_name, lv).name)
 
-            images_dir = os.path.join(env.sd_manifest.domaindir, vg_name,
+            images_dir = os.path.join(env.sd_manifest.domaindir,
                                       sd.DOMAIN_IMAGES)
             self.assertTrue(os.path.exists(images_dir))
+
+            # Check the storage repository
+            repo_path = env.sd_manifest.getRepoPath()
+            domain_link = os.path.join(repo_path, env.sd_manifest.sdUUID)
+            self.assertTrue(os.path.islink(domain_link))
+            self.assertEqual(env.sd_manifest.domaindir,
+                             os.readlink(domain_link))
 
     def test_domain_metadata_io(self):
         with fake_block_env() as env:
@@ -136,6 +143,32 @@ class FakeBlockEnvTests(VdsmTestCase):
             # Test that metadata is persisted to our temporary storage area
             vol = env.sd_manifest.produceVolume(img_id, vol_id)
             self.assertEqual(desc, vol.getDescription())
+
+    def test_volume_accessibility(self):
+        with fake_block_env() as env:
+            sd_id = env.sd_manifest.sdUUID
+            img_id = str(uuid.uuid4())
+            vol_id = str(uuid.uuid4())
+            make_block_volume(env.lvm, env.sd_manifest, 1 * MB, img_id, vol_id)
+
+            self.assertTrue(os.path.isfile(env.lvm.lvPath(sd_id, vol_id)))
+
+            domain_path = os.path.join(env.sd_manifest.domaindir,
+                                       sd.DOMAIN_IMAGES,
+                                       img_id,
+                                       vol_id)
+            repo_path = os.path.join(env.sd_manifest.getRepoPath(),
+                                     sd_id,
+                                     sd.DOMAIN_IMAGES,
+                                     img_id,
+                                     vol_id)
+            self.assertNotEqual(repo_path, domain_path)
+            # The links to the dev are created only when producing the volume
+            self.assertFalse(os.path.isfile(domain_path))
+            self.assertFalse(os.path.isfile(repo_path))
+
+            env.sd_manifest.produceVolume(img_id, vol_id)
+            self.assertTrue(os.path.samefile(repo_path, domain_path))
 
 
 def set_domain_metaparams(manifest, params):

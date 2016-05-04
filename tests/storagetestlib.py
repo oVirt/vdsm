@@ -88,6 +88,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
         sduuid = str(uuid.uuid4())
     if devices is None:
         devices = get_random_devices()
+    spuuid = str(uuid.uuid4())
 
     fake_lvm.createVG(sduuid, devices, blockSD.STORAGE_DOMAIN_TAG,
                       blockSD.VG_METADATASIZE)
@@ -99,7 +100,7 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
     fake_lvm.createLV(sduuid, blockSD.MASTERLV, blockSD.MASTERLV_SIZE)
 
     # We'll store the domain metadata in the VG's tags
-    metadata = make_sd_metadata(sduuid)
+    metadata = make_sd_metadata(sduuid, pools=[spuuid])
     assert(metadata[sd.DMDK_VERSION] >= 3)  # Tag based MD is V3 and above
     tag_md = blockSD.TagBasedSDMetadata(sduuid)
     tag_md.update(metadata)
@@ -107,11 +108,13 @@ def make_blocksd_manifest(tmpdir, fake_lvm, sduuid=None, devices=None):
     manifest = blockSD.BlockStorageDomainManifest(sduuid, tag_md)
     manifest.mountpoint = os.path.join(tmpdir, sd.DOMAIN_MNT_POINT,
                                        sd.BLOCKSD_DIR)
-    manifest.domaindir = tmpdir
-    os.makedirs(os.path.join(manifest.domaindir, sduuid, sd.DOMAIN_IMAGES))
+    manifest.domaindir = os.path.join(manifest.mountpoint, sduuid)
+    os.makedirs(os.path.join(manifest.domaindir, sd.DOMAIN_IMAGES))
 
-    # Make the mountpoint directory structure
-    os.makedirs(os.path.join(manifest.mountpoint, sduuid, sd.DOMAIN_IMAGES))
+    # Make the repo directory structure
+    repo_pool_dir = os.path.join(tmpdir, spuuid)
+    os.mkdir(repo_pool_dir)
+    os.symlink(manifest.domaindir, os.path.join(repo_pool_dir, sduuid))
     return manifest
 
 
