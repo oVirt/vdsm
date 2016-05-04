@@ -267,7 +267,7 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
                               proc.returncode, proc.stderr.read(1000))
                 else:
                     log.debug("%s/%s was zeroed and will be deleted",
-                              sdUUID, volUUID)
+                              sdUUID, vol)
                     toDelete.append(vol)
         if toDelete:
             try:
