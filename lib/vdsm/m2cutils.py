@@ -100,6 +100,8 @@ class SSLServerSocket(SSLSocket):
     def __init__(self, raw, certfile=None, keyfile=None, ca_certs=None,
                  session_id="vdsm", protocol="sslv23"):
         self.context = SSL.Context(protocol)
+        if config.getboolean('devel', 'm2c_debug_enable'):
+            self.context.set_info_callback()
         self.context.set_session_id_ctx(session_id)
 
         if certfile and keyfile:
@@ -174,6 +176,8 @@ class SSLContext(object):
 
     def _initContext(self):
         self.context = context = SSL.Context(self.protocol)
+        if config.getboolean('devel', 'm2c_debug_enable'):
+            self.context.set_info_callback()
         context.set_session_id_ctx(self.session_id)
 
         self._loadCertChain()
