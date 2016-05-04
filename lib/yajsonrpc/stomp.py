@@ -358,7 +358,10 @@ class AsyncDispatcher(object):
             except socket.error:
                 dispatcher.handle_error()
                 return
-            if data is None:
+
+            # When a socket is closed data is not available so we do not
+            # need to parse it.
+            if not data:
                 return
             parser.parse(data)
             todo = pending()
