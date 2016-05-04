@@ -18,12 +18,16 @@
 # while enabling compositing instead of inheritance.
 from __future__ import absolute_import
 import asyncore
+import errno
 import logging
 import socket
-from errno import EWOULDBLOCK
 
 from vdsm.sslcompat import sslutils
 from vdsm.infra.eventfd import EventFD
+
+
+_BLOCKING_IO_ERRORS = (errno.EAGAIN, errno.EALREADY, errno.EINPROGRESS,
+                       errno.EWOULDBLOCK)
 
 
 class Dispatcher(asyncore.dispatcher):
@@ -96,7 +100,9 @@ class Dispatcher(asyncore.dispatcher):
                 return data
         except socket.error as why:
             # winsock sometimes raises ENOTCONN
-            if why.args[0] == EWOULDBLOCK:
+            # according to asyncore.dispatcher#recv docstring
+            # we need additional errnos.
+            if why.args[0] in _BLOCKING_IO_ERRORS:
                 return None
             elif why.args[0] in asyncore._DISCONNECTED:
                 self.handle_close()
@@ -115,7 +121,7 @@ class Dispatcher(asyncore.dispatcher):
                 return 0
             return result
         except socket.error as why:
-            if why.args[0] == EWOULDBLOCK:
+            if why.args[0] in _BLOCKING_IO_ERRORS:
                 return 0
             elif why.args[0] in asyncore._DISCONNECTED:
                 self.handle_close()
