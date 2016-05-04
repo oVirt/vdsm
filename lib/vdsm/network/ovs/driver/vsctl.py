@@ -37,6 +37,13 @@ _EXT_OVS_VSCTL = CommandPath('ovs-vsctl',
                              '/usr/sbin/ovs-vsctl',
                              '/usr/bin/ovs-vsctl').cmd
 
+# TODO: add a test which checks if following lists are mutual exclusive
+# if there is just one item in a list, it is reported as single item
+_DB_ENTRIES_WHICH_SHOULD_BE_LIST = {'ports', 'interfaces'}
+# if a single item entry is not defined, it is reported as empty list
+_DB_ENTRIES_WHICH_SHOULD_NOT_BE_LIST = {
+    'tag', 'bond_active_slave', 'bond_mode', 'lacp'}
+
 
 class Transaction(DriverTransaction):
 
@@ -107,7 +114,7 @@ class DBResultCommand(Command):
         for record in data:
             obj = {}
             for pos, heading in enumerate(headings):
-                obj[heading] = _val_to_py(record[pos])
+                obj[heading] = _normalize(heading, _val_to_py(record[pos]))
             results.append(obj)
         self._result = results
 
@@ -214,3 +221,19 @@ def _val_to_py(val):
         elif val[0] == "map":
             return {_val_to_py(x): _val_to_py(y) for x, y in val[1]}
     return val
+
+
+def _convert_to_list(data):
+    return data if isinstance(data, list) else [data]
+
+
+def _convert_to_single(data):
+    return None if data == [] else data
+
+
+def _normalize(heading, value):
+    if heading in _DB_ENTRIES_WHICH_SHOULD_BE_LIST:
+        value = _convert_to_list(value)
+    elif heading in _DB_ENTRIES_WHICH_SHOULD_NOT_BE_LIST:
+        value = _convert_to_single(value)
+    return value

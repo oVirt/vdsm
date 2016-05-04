@@ -135,7 +135,7 @@ class TestOvsVsctlCommand(VdsmTestCase):
          u'sflow': [],
          u'other_config': {},
          u'flow_tables': {},
-         u'ports': UUID('ac6dfc76-a346-4de0-a234-f2ebc4c9269f'),
+         u'ports': [UUID('ac6dfc76-a346-4de0-a234-f2ebc4c9269f')],
          u'stp_enable': False},
         {u'datapath_id': u'00000e74a24a7847',
          u'datapath_type': u'',
@@ -158,7 +158,7 @@ class TestOvsVsctlCommand(VdsmTestCase):
          u'sflow': [],
          u'other_config': {},
          u'flow_tables': {},
-         u'ports': UUID('a7c4c945-b8da-44c2-b911-4f43d9f71bc7'),
+         u'ports': [UUID('a7c4c945-b8da-44c2-b911-4f43d9f71bc7')],
          u'stp_enable': False}]
 
     def test_db_result_command_parser(self):
