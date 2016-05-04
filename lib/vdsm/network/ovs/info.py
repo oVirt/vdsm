@@ -44,6 +44,10 @@ EMPTY_PORT_INFO = {
     'dhcpv6': False
 }
 
+SHARED_NETWORK_ATTRIBUTES = [
+    'mtu', 'addr', 'ipv4addrs', 'gateway', 'netmask', 'dhcpv4', 'ipv6addrs',
+    'ipv6autoconf', 'ipv6gateway', 'dhcpv6']
+
 
 class OvsDB(object):
     def __init__(self, ovsdb):
@@ -95,8 +99,8 @@ class OvsInfo(object):
     @staticmethod
     def _is_bond(port_entry):
         """
-        Port in OVS DB does not contain explicit 'bond=True|False' entry. It is
-        our responsibility to check whether a port is bond or not.
+        OVS implicitly defines a port as bond when it has two or more
+        interfaces set on it.
         """
         return len(port_entry['interfaces']) >= 2
 
@@ -127,7 +131,46 @@ class OvsInfo(object):
                 if attrs['bond'])
 
 
-def get_netinfo(ovs_info):
+def get_netinfo():
+    netinfo = _get_netinfo(OvsInfo())
+    netinfo.update(_fake_devices(netinfo['networks']))
+    return netinfo
+
+
+def _fake_devices(networks):
+    fake_devices = {'bridges': {}, 'vlans': {}}
+
+    for net, attrs in six.iteritems(networks):
+        fake_devices['bridges'][net] = _fake_bridge(attrs)
+        vlanid = attrs['vlanid']
+        if vlanid:
+            fake_devices['vlans'].update(_fake_vlan(attrs, vlanid))
+
+    return fake_devices
+
+
+def _fake_bridge(net_attrs):
+    bridge_info = {
+        'ports': net_attrs['ports'],
+        'stp': net_attrs['stp']
+    }
+    bridge_info.update(
+        {key: net_attrs[key] for key in SHARED_NETWORK_ATTRIBUTES})
+    return bridge_info
+
+
+def _fake_vlan(net_attrs, vlanid):
+    iface = net_attrs['bond'] or net_attrs['nics'][0]
+    vlan_info = {
+        'vlanid': vlanid,
+        'iface': iface
+    }
+    vlan_info.update(EMPTY_PORT_INFO)
+    vlan_name = '%s.%s' % (iface, vlanid)
+    return {vlan_name: vlan_info}
+
+
+def _get_netinfo(ovs_info):
     addresses = getIpAddrs()
     routes = get_routes()
 

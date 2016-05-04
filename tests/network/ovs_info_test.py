@@ -38,6 +38,7 @@ TEST_NETMASK = '255.255.255.0'
 TEST_ADDRESS_WITH_PREFIX = '192.168.1.10/24'
 TEST_VLAN = 10
 TEST_VLANED_BOND = '%s.%s' % (TEST_BOND, TEST_VLAN)
+TEST_VLANED_NETWORK = 'test-network' + str(TEST_VLAN)
 
 
 @contextmanager
@@ -57,12 +58,13 @@ def _setup_ovs_network(ovsdb, nic1, nic2):
 
     def _northbound_port():
         commands = []
-        commands.append(ovsdb.add_port(TEST_BRIDGE, TEST_NETWORK))
-        commands.append(ovsdb.set_port_attr(TEST_NETWORK, 'tag', TEST_VLAN))
+        commands.append(ovsdb.add_port(TEST_BRIDGE, TEST_VLANED_NETWORK))
         commands.append(ovsdb.set_port_attr(
-            TEST_NETWORK, 'other_config:vdsm_level', info.NORTHBOUND))
+            TEST_VLANED_NETWORK, 'tag', TEST_VLAN))
+        commands.append(ovsdb.set_port_attr(
+            TEST_VLANED_NETWORK, 'other_config:vdsm_level', info.NORTHBOUND))
         commands.append(ovsdb.set_interface_attr(
-            TEST_NETWORK, 'type', 'internal'))
+            TEST_VLANED_NETWORK, 'type', 'internal'))
         return commands
 
     with ovsdb.transaction() as t:
@@ -106,7 +108,7 @@ class TestOvsInfo(VdsmTestCase):
                                 'level': info.SOUTHBOUND,
                                 'tag': None
                             },
-                            TEST_NETWORK: {
+                            TEST_VLANED_NETWORK: {
                                 'bond': None,
                                 'level': info.NORTHBOUND,
                                 'tag': TEST_VLAN
@@ -143,6 +145,11 @@ class MockedOvsInfo(info.OvsInfo):
                     TEST_NETWORK: {
                         'bond': None,
                         'level': info.NORTHBOUND,
+                        'tag': None
+                    },
+                    TEST_VLANED_NETWORK: {
+                        'bond': None,
+                        'level': info.NORTHBOUND,
                         'tag': TEST_VLAN
                     },
                     TEST_BRIDGE: {
@@ -175,6 +182,26 @@ class TestOvsNetInfo(VdsmTestCase):
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
                 'nics': ['eth0', 'eth1'],
+                'ports': [TEST_BOND],
+                'stp': False,
+                'switch': 'ovs',
+                'vlanid': None
+            },
+            TEST_VLANED_NETWORK: {
+                'addr': TEST_ADDRESS,
+                'bond': TEST_BOND,
+                'bridged': True,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'iface': TEST_VLANED_NETWORK,
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'nics': ['eth0', 'eth1'],
                 'ports': [TEST_VLANED_BOND],
                 'stp': False,
                 'switch': 'ovs',
@@ -198,6 +225,52 @@ class TestOvsNetInfo(VdsmTestCase):
                 'slaves': ['eth0', 'eth1'],
                 'switch': 'ovs'
             }
+        },
+        'bridges': {
+            TEST_NETWORK: {
+                'addr': TEST_ADDRESS,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'ports': [TEST_BOND],
+                'stp': False
+            },
+            TEST_VLANED_NETWORK: {
+                'addr': TEST_ADDRESS,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'ports': [TEST_VLANED_BOND],
+                'stp': False
+            }
+        },
+        'vlans': {
+            TEST_VLANED_BOND: {
+                'addr': '',
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'iface': TEST_BOND,
+                'ipv4addrs': [],
+                'ipv6addrs': [],
+                'ipv6autoconf': False,
+                'ipv6gateway': '',
+                'mtu': 1500,
+                'netmask': '',
+                'vlanid': TEST_VLAN
+            }
         }
     }
 
@@ -209,6 +282,7 @@ class TestOvsNetInfo(VdsmTestCase):
     @MonkeyPatch(info, 'getIpInfo',
                  lambda *args: (TEST_ADDRESS, TEST_NETMASK,
                                 [TEST_ADDRESS_WITH_PREFIX], []))
+    @MonkeyPatch(info, 'OvsInfo', MockedOvsInfo)
     def test_ovs_netinfo(self):
-        obtained_netinfo = info.get_netinfo(MockedOvsInfo())
+        obtained_netinfo = info.get_netinfo()
         self.assertEqual(obtained_netinfo, self.TEST_NETINFO)
