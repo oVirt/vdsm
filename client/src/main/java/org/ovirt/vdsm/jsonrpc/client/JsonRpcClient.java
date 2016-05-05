@@ -85,6 +85,13 @@ public class JsonRpcClient {
         return call;
     }
 
+    public void removeCall(Future<JsonRpcResponse> call) {
+        if (!Call.class.isInstance(call)) {
+            return;
+        }
+        this.tracker.removeCall(((Call)call).getId());
+    }
+
     private void retryCall(final JsonRpcRequest request, final JsonRpcCall call) throws ClientConnectionException {
         ResponseTracking tracking =
                 new ResponseTracking(request, call, new RetryContext(policy), getTimeout(this.policy.getRetryTimeOut(),
@@ -130,8 +137,9 @@ public class JsonRpcClient {
 
     public void processResponse(JsonRpcResponse response) {
         JsonNode id = response.getId();
-        if (NullNode.class.isInstance(id)) {
+        if (NullNode.class.isInstance(id) || id == null) {
             this.tracker.processIssue(response);
+            return;
         }
         JsonRpcCall call = this.tracker.removeCall(response.getId());
         if (call == null) {

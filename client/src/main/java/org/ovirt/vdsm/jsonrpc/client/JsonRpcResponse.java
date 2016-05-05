@@ -114,7 +114,6 @@ public final class JsonRpcResponse {
         return jsonToByteArray(node);
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public String toString() {
         String response = this.getResult() != null ?
@@ -123,9 +122,10 @@ public final class JsonRpcResponse {
         return "<JsonRpcResponse id: " + this.getId() + response + ">";
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     private Object toPrintableResult(JsonNode result) {
-        if (result.isArray()) {
-            // currently passwords do not appear in arrays
+        if (result.isArray() || result.isBoolean() || result.isTextual()) {
+            // currently passwords do not appear in above types
             return result;
         }
         Class<Map<String, String>> clazz = (Class) Map.class;
