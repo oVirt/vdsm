@@ -23,12 +23,14 @@ import six
 from vdsm.network.libvirt import networks as libvirt_nets
 from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
                                         CachingNetInfo)
-from .netconfpersistence import RunningConfig
+from vdsm.tool.service import service_status
+from vdsm.utils import memoized
 
 from . import connectivity
 from . import legacy_switch
 from . import errors as ne
-from .ovs import switch as ovs_switch
+from .ovs import switch as ovs_switch, info as ovs_info
+from .netconfpersistence import RunningConfig
 
 
 def _split_switch_type_entries(entries, running_config_entries):
@@ -136,3 +138,28 @@ def _setup_ovs(networks, bondings, options, in_rollback):
     with ovs_switch.rollback_trigger(in_rollback):
         ovs_switch.setup(networks, bondings)
         connectivity.check(options)
+
+
+def netinfo(compatibility=None):
+    # TODO: Version requests by engine to ease handling of compatibility.
+    _netinfo = netinfo_get(compatibility=compatibility)
+
+    if _is_ovs_service_running():
+        ovs_netinfo = ovs_info.get_netinfo()
+
+        running_networks = RunningConfig().networks
+        bridgeless_ovs_nets = [
+            net for net, attrs in six.iteritems(running_networks)
+            if attrs['switch'] == 'ovs' and not attrs['bridged']]
+        ovs_info.fake_bridgeless(
+            ovs_netinfo, _netinfo['nics'], bridgeless_ovs_nets)
+
+        for type, entries in six.iteritems(ovs_netinfo):
+            _netinfo[type].update(entries)
+
+    return _netinfo
+
+
+@memoized
+def _is_ovs_service_running():
+    return service_status('openvswitch', verbose=False) == 0

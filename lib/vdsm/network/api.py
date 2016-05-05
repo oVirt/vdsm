@@ -48,9 +48,14 @@ _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
 DUMMY_BRIDGE
 
 
-def caps_networks():
-    """Complement existing non-root caps"""
-    return {}
+def network_caps():
+    """Obtain root-requiring network capabilties
+
+    TODO: When we split netinfo, we will merge root and non-root netinfo in
+          caps to reduce the amount of work in root context.
+    """
+    # TODO: Version requests by engine to ease handling of compatibility.
+    return netswitch.netinfo(compatibility=30600)
 
 
 def _wait_for_udev_events():

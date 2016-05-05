@@ -22,7 +22,7 @@ from . import expose
 
 from vdsm.tool.restore_nets import restore
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
-                              change_numvfs, caps_networks)
+                              change_numvfs, network_caps)
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
 
 
@@ -33,7 +33,7 @@ def restoreNetworks(*args, **kwrags):
 
 expose(setSafeNetworkConfig)
 expose(setupNetworks)
-expose(caps_networks)
+expose(network_caps)
 expose(change_numvfs)
 expose(setPortMirroring)
 expose(unsetPortMirroring)
