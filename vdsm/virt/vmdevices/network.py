@@ -119,23 +119,23 @@ class Interface(Base):
          </interface>
         """
         iface = self.createXmlElem('interface', self.device, ['address'])
-        if self.is_hostdevice:
-            iface.setAttrs(managed='no')
         iface.appendChildWithArgs('mac', address=self.macAddr)
 
         if hasattr(self, 'nicModel'):
             iface.appendChildWithArgs('model', type=self.nicModel)
 
         if self.is_hostdevice:
+            # SR-IOV network interface
+            iface.setAttrs(managed='no')
             host_address = get_device_params(self.hostdev)['address']
             source = iface.appendChildWithArgs('source')
             source.appendChildWithArgs('address', type='pci', **host_address)
+
+            if self.vlanId is not None:
+                vlan = iface.appendChildWithArgs('vlan')
+                vlan.appendChildWithArgs('tag', id=str(self.vlanId))
         else:
             iface.appendChildWithArgs('source', bridge=self.network)
-
-        if self.vlanId is not None:
-            vlan = iface.appendChildWithArgs('vlan')
-            vlan.appendChildWithArgs('tag', id=str(self.vlanId))
 
         if hasattr(self, 'filter'):
             iface.appendChildWithArgs('filterref', filter=self.filter)
