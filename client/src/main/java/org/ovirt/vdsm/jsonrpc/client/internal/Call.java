@@ -7,6 +7,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.codehaus.jackson.JsonNode;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcRequest;
 import org.ovirt.vdsm.jsonrpc.client.JsonRpcResponse;
 
@@ -37,6 +38,10 @@ public class Call implements Future<JsonRpcResponse>, JsonRpcCall {
         return list.get(0);
     }
 
+    public JsonNode getId() {
+        return this.batchCall.getId().get(0);
+    }
+    
     @Override
     public JsonRpcResponse get() throws InterruptedException,
             ExecutionException {
