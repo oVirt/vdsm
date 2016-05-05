@@ -92,10 +92,7 @@ public abstract class ReactorClient {
         }
         try (LockWrapper wrapper = new LockWrapper(this.lock)) {
             if (isOpen() && isInInit()) {
-                if (!getPostConnectCallback().await(policy.getRetryTimeOut(), policy.getTimeUnit())) {
-                    closeChannel();
-                    throw new ClientConnectionException("Connection timeout");
-                }
+                getPostConnectCallback().await(policy.getRetryTimeOut(), policy.getTimeUnit());
             }
             if (isOpen()) {
                 return;
