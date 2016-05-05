@@ -29,38 +29,6 @@ SUBDIRS = \
 	  network \
 	  $(NULL)
 
-test_modules_py3 = \
-	apiData.py \
-	cmdutilsTests.py \
-	concurrentTests.py \
-	cpuinfo_test.py \
-	cpuProfileTests.py \
-	domainDescriptorTests.py \
-	exception_test.py \
-	executorTests.py \
-	gluster_exception_test.py \
-	glusterTestData.py \
-	hookValidation.py \
-	jobsTests.py \
-	moduleloader_test.py \
-	modprobe.py \
-	monkeypatch.py \
-	network/models_test.py \
-	passwordsTests.py \
-	permutationTests.py \
-	pthreadTests.py \
-	responseTests.py \
-	scheduleTests.py \
-	sslTests.py \
-	testlib.py \
-	testrunner.py \
-	testValidation.py \
-	vdsmapi_test.py \
-	virt_api_test.py \
-	vmStatsTests.py \
-	vmTestsData.py \
-	$(NULL)
-
 common_modules = common/*_test.py
 
 device_modules = \
@@ -78,11 +46,11 @@ test_modules = \
 	bulk_sampling_test.py \
 	cPopenTests.py \
 	capsTests.py \
-	cpuinfo_test.py \
 	clientifTests.py \
 	cmdutilsTests.py \
 	commands_test.py \
 	concurrentTests.py \
+	cpuinfo_test.py \
 	cpuProfileTests.py \
 	deviceTests.py \
 	domainDescriptorTests.py \
@@ -172,6 +140,110 @@ test_modules = \
 	vmUtilsTests.py \
 	vmXmlTests.py \
 	v2vTests.py \
+	$(NULL)
+
+blacklist_modules_python3 = \
+	alignmentScanTests.py \
+	blockVolumeTests.py \
+	blocksdTests.py \
+	bridgeTests.py \
+	bulk_sampling_test.py \
+	cPopenTests.py \
+	capsTests.py \
+	clientifTests.py \
+	commands_test.py \
+	common/contextlib_test.py \
+	common/network_test.py \
+	deviceTests.py \
+	devices/parsing/complex_vm_tests.py \
+	domain_manifest_test.py \
+	encodingTests.py \
+	fileSDTests.py \
+	fileUtilTests.py \
+	fileVolumeTests.py \
+	fuserTests.py \
+	gluster_cli_tests.py \
+	guestagentTests.py \
+	hooksTests.py \
+	hostdevTests.py \
+	hoststatsTests.py \
+	imagetickets_test.py \
+	iscsiTests.py \
+	libvirtconnectionTests.py \
+	lvmTests.py \
+	main.py \
+	miscTests.py \
+	mkimageTests.py \
+	momPolicyTests.py \
+	momTests.py \
+	monkeypatchTests.py \
+	mountTests.py \
+	network/conf_persistence_test.py \
+	network/conf_test.py \
+	network/config_network_test.py \
+	network/connectivity_test.py \
+	network/hook_ovs_test.py \
+	network/ip_test.py \
+	network/iproute2_test.py \
+	network/ipwrapper_test.py \
+	network/link_test.py \
+	network/netinfo_test.py \
+	network/ovs_driver_test.py \
+	network/ovs_info_test.py \
+	network/ovs_test.py \
+	network/qos_test.py \
+	network/sourcerouting_test.py \
+	network/tc_test.py \
+	network/unified_persistence_test.py \
+	numaUtilsTests.py \
+	outOfProcessTests.py \
+	periodicTests.py \
+	persistentDictTests.py \
+	protocoldetectorTests.py \
+	qemuimgTests.py \
+	resourceManagerTests.py \
+	samplingTests.py \
+	schemaTests.py \
+	schemaValidationTest.py \
+	sdm_indirection_tests.py \
+	securableTests.py \
+	sparsifyTests.py \
+	stompAdapterTests.py \
+	stompAsyncClientTests.py \
+	stompAsyncDispatcherTests.py \
+	stompTests.py \
+	storageMailboxTests.py \
+	storage_monitor_test.py \
+	storageServerTests.py \
+	storage_rwlock_test.py \
+	storage_sdm_api_test.py \
+	storage_sdm_create_volume_test.py \
+	storage_volume_artifacts_test.py \
+	storage_volume_metadata_test.py \
+	storagefakelibTests.py \
+	storagetestlibTests.py \
+	tasksetTests.py \
+	testlibTests.py \
+	toolBondingTests.py \
+	toolTests.py \
+	transportWrapperTests.py \
+	unicode_test.py \
+	utilsTests.py \
+	v2vTests.py \
+	vdsClientTests.py \
+	vdscliTests.py \
+	vdsmDumpChainsTests.py \
+	verify.py \
+	vmApiTests.py \
+	vmMigrationTests.py \
+	vmOperationsTests.py \
+	vmRecoveryTests.py \
+	vmSecretTests.py \
+	vmStorageTests.py \
+	vmTests.py \
+	vmUtilsTests.py \
+	vmXmlTests.py \
+	vmfakelibTests.py \
 	$(NULL)
 
 nodist_vdsmtests_PYTHON = \
@@ -281,6 +353,13 @@ check-local:
 	$(top_srcdir)/tests/run_tests_local.sh $(args) crossImportsTests.py
 	$(top_srcdir)/tests/run_tests_local.sh $(args) $(run_modules)
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
-	    PYTHON_EXE="$(PYTHON3)" $(top_srcdir)/tests/run_tests_local.sh \
-	        $(test_modules_py3); \
+		all_modules=`mktemp`; \
+		blacklist=`mktemp`; \
+		echo $(run_modules) | tr \  \\n |sort > "$$all_modules"; \
+		echo $(blacklist_modules_python3) | tr \  \\n | sort > \
+			"$$blacklist"; \
+		modules=$$(comm -2 -3 "$$all_modules" "$$blacklist"); \
+		rm -f "$$all_modules" "$$blacklist"; \
+		PYTHON_EXE="$(PYTHON3)" \
+			$(top_srcdir)/tests/run_tests_local.sh "$$modules"; \
 	fi
