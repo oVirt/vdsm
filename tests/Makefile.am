@@ -85,6 +85,7 @@ test_modules = \
 	mountTests.py \
 	numaUtilsTests.py \
 	outOfProcessTests.py \
+	osinfo_test.py \
 	passwordsTests.py \
 	periodicTests.py \
 	permutationTests.py \

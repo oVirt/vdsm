@@ -6277,6 +6277,12 @@ types:
             type:
             - string
             added: '3.6'
+
+        -   description: Arguments of currently running kernel (contents of
+                /proc/cmdline)
+            name: kernelArgs
+            type: string
+            added: '4.0'
         type: object
 
     VmShortStatus: &VmShortStatus

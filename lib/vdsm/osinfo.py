@@ -121,6 +121,12 @@ def _parse_node_version(path):
 
 
 @utils.memoized
+def kernel_args(path='/proc/cmdline'):
+    with open(path, 'r') as f:
+        return f.readline().strip()
+
+
+@utils.memoized
 def version():
     version = release_name = ''
 
