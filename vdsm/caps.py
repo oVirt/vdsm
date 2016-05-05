@@ -27,7 +27,6 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 from vdsm.config import config
-from vdsm.network.netinfo import cache as netinfo_cache
 from vdsm.storage import hba
 from vdsm import cpuarch
 from vdsm import cpuinfo
@@ -161,12 +160,8 @@ def get():
 
     caps.update(_getVersionInfo())
 
-    # TODO: Version requests by engine to ease handling of compatibility.
-    netinfo_data = netinfo_cache.get(compatibility=30600)
-    caps.update(netinfo_data)
-
-    super_caps_networks = supervdsm.getProxy().caps_networks()
-    caps.update(super_caps_networks)
+    net_caps = supervdsm.getProxy().network_caps()
+    caps.update(net_caps)
 
     try:
         caps['hooks'] = hooks.installed()
