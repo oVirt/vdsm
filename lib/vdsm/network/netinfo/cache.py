@@ -304,27 +304,37 @@ class CachingNetInfo(object):
         bonding = None
         lnics = []
 
-        if self.networks[network]['bridged']:
-            ports = self.networks[network]['ports']
-        else:
-            ports = []
-            interface = self.networks[network]['iface']
-            ports.append(interface)
+        if self.networks[network]['switch'] == 'legacy':
+            # TODO: CachingNetInfo should not use external resources in its
+            # methods. Drop this branch when legacy netinfo report 'bond',
+            # 'nics' and 'vlanid' as a part of network entries.
+            if self.networks[network]['bridged']:
+                ports = self.networks[network]['ports']
+            else:
+                ports = []
+                interface = self.networks[network]['iface']
+                ports.append(interface)
 
-        for port in ports:
-            if port in self.vlans:
-                assert vlan is None
-                nic = vlans.vlan_device(port)
-                vlanid = vlans.vlan_id(port)
-                vlan = port  # vlan devices can have an arbitrary name
-                assert self.vlans[port]['iface'] == nic
-                port = nic
-            if port in self.bondings:
-                assert bonding is None
-                bonding = port
-                lnics += self.bondings[bonding]['slaves']
-            elif port in self.nics:
-                lnics.append(port)
+            for port in ports:
+                if port in self.vlans:
+                    assert vlan is None
+                    nic = vlans.vlan_device(port)
+                    vlanid = vlans.vlan_id(port)
+                    vlan = port  # vlan devices can have an arbitrary name
+                    assert self.vlans[port]['iface'] == nic
+                    port = nic
+                if port in self.bondings:
+                    assert bonding is None
+                    bonding = port
+                    lnics += self.bondings[bonding]['slaves']
+                elif port in self.nics:
+                    lnics.append(port)
+        else:
+            bonding = self.networks[network]['bond']
+            lnics = self.networks[network]['nics']
+            vlanid = self.networks[network]['vlanid']
+            vlan = ('%s.%s' % (bonding or lnics[0], vlanid)
+                    if vlanid is not None else None)
 
         return lnics, vlan, vlanid, bonding
 
