@@ -288,7 +288,8 @@ An XMLRPC interface for interacting with vdsmd. Primary control interface for
 ovirt-engine and vdsClient.
 
 %package api
-Summary:       VDSM API
+Summary:        VDSM API
+BuildArch:      noarch
 
 %description api
 Contains api schema files
