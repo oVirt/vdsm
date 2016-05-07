@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 from collections import defaultdict
 
-from vdsm import tc
+from vdsm.network import tc
 
 NON_VLANNED_ID = 5000
 DEFAULT_CLASSID = '%x' % NON_VLANNED_ID

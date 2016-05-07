@@ -21,9 +21,9 @@ import errno
 import os
 from distutils.version import StrictVersion
 
+from vdsm.network import tc
 from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.network.netinfo import qos as netinfo_qos
-from vdsm import tc
 
 _ROOT_QDISC_HANDLE = '%x:' % 5001  # Leave 0 free for leaf qdisc of vlan tag 0
 _FAIR_QDISC_KIND = 'fq_codel' if (StrictVersion(os.uname()[2].split('-')[0]) >

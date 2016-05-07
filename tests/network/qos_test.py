@@ -23,7 +23,7 @@ from nose.plugins.attrib import attr
 from testlib import VdsmTestCase as TestCaseBase
 
 from vdsm.network.netinfo import qos
-from vdsm.tc import cls
+from vdsm.network.tc import cls
 
 
 @attr(type='unit')

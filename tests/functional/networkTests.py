@@ -48,9 +48,9 @@ from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
 from vdsm.network import errors
 from vdsm.network import legacy_switch
 from vdsm.network import sourceroute
+from vdsm.network import tc
 
 from vdsm import sysctl
-from vdsm import tc
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, RollbackContext, pgrep, running
 

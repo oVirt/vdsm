@@ -1138,12 +1138,12 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
+%dir %{python_sitelib}/%{vdsm_name}/network/tc
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
 %dir %{python_sitelib}/%{vdsm_name}/storage
 %dir %{python_sitelib}/%{vdsm_name}/virt
-%dir %{python_sitelib}/%{vdsm_name}/tc
 %{python_sitelib}/%{vdsm_name}/__init__.py*
 %{python_sitelib}/%{vdsm_name}/cmdutils.py*
 %{python_sitelib}/%{vdsm_name}/compat.py*
@@ -1204,6 +1204,12 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/netswitch.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroute.py*
 %{python_sitelib}/%{vdsm_name}/network/sourceroutethread.py*
+%{python_sitelib}/%{vdsm_name}/network/tc/__init__.py*
+%{python_sitelib}/%{vdsm_name}/network/tc/_parser.py*
+%{python_sitelib}/%{vdsm_name}/network/tc/_wrapper.py*
+%{python_sitelib}/%{vdsm_name}/network/tc/cls.py*
+%{python_sitelib}/%{vdsm_name}/network/tc/filter.py*
+%{python_sitelib}/%{vdsm_name}/network/tc/qdisc.py*
 %{python_sitelib}/%{vdsm_name}/network/utils.py*
 %{python_sitelib}/%{vdsm_name}/numa.py*
 %{python_sitelib}/%{vdsm_name}/osinfo.py*
@@ -1224,12 +1230,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/storage/rwlock.py*
 %{python_sitelib}/%{vdsm_name}/storage/securable.py*
 %{python_sitelib}/%{vdsm_name}/storage/sync.py*
-%{python_sitelib}/%{vdsm_name}/tc/__init__.py*
-%{python_sitelib}/%{vdsm_name}/tc/_parser.py*
-%{python_sitelib}/%{vdsm_name}/tc/_wrapper.py*
-%{python_sitelib}/%{vdsm_name}/tc/cls.py*
-%{python_sitelib}/%{vdsm_name}/tc/filter.py*
-%{python_sitelib}/%{vdsm_name}/tc/qdisc.py*
 %{python_sitelib}/%{vdsm_name}/protocoldetector.py*
 %{python_sitelib}/%{vdsm_name}/pthread.py*
 %{python_sitelib}/%{vdsm_name}/qemuimg.py*
