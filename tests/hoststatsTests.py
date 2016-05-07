@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2015 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,8 +22,7 @@ import os
 import tempfile
 import shutil
 
-from vdsm.virt import hoststats
-
+from vdsm.host import stats as hoststats
 from vdsm import numa
 
 from testlib import VdsmTestCase as TestCaseBase

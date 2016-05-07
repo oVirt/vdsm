@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,9 +29,9 @@ import threading
 import libvirt
 
 from vdsm import executor
+from vdsm import host
 from vdsm import libvirtconnection
 from vdsm.config import config
-from vdsm.virt import hoststats
 from vdsm.virt import sampling
 from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
@@ -112,7 +112,7 @@ def start(cif, scheduler):
 
     ]
 
-    hoststats.start()
+    host.stats.start()
 
     for op in _operations:
         op.start()

@@ -1,6 +1,6 @@
 #
 # Copyright (C) 2012 Adam Litke, IBM Corporation
-# Copyright (C) 2012-2014 Red Hat, Inc.
+# Copyright (C) 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,9 +39,9 @@ from vdsm import response
 from vdsm import supervdsm
 from vdsm import jobs
 from vdsm import v2v
+from vdsm.host import stats as hoststats
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
-from vdsm.virt import hoststats
 from vdsm.virt import vmstatus
 from vdsm.virt import sampling
 from vdsm.virt import secret

@@ -24,7 +24,6 @@ dist_vdsmvirt_PYTHON = \
 	__init__.py \
 	api.py \
 	guestagent.py \
-	hoststats.py \
 	periodic.py \
 	sampling.py \
 	secret.py \
