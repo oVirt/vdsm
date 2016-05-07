@@ -39,8 +39,8 @@ import libvirt
 from vdsm import concurrent
 from vdsm import constants
 from vdsm import cpuarch
-from vdsm import host
 from vdsm import hooks
+from vdsm import host
 from vdsm import hostdev
 from vdsm import libvirtconnection
 from vdsm import numa

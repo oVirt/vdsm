@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=common tool infra profiling rpc network virt storage
+SUBDIRS=common tool infra profiling rpc network virt storage host
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \
@@ -35,7 +35,6 @@ dist_vdsmpylib_PYTHON = \
 	executor.py \
 	health.py \
 	hooks.py \
-	host.py \
 	hostdev.py \
 	jobs.py \
 	jsonrpcvdscli.py \

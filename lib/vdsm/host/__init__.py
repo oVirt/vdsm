@@ -23,9 +23,9 @@ from __future__ import absolute_import
 import os
 import logging
 from vdsm.utils import memoized
-from .commands import execCmd
-from . import constants
-from . import cpuarch
+from vdsm.commands import execCmd
+from vdsm import constants
+from vdsm import cpuarch
 
 
 @memoized

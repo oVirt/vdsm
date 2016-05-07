@@ -31,8 +31,8 @@ import selinux
 from . import expose
 from .. import utils
 
-from vdsm import host
 from vdsm.utils import tobool
+from vdsm import host
 
 
 class Register(object):

@@ -1154,6 +1154,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/common
 %dir %{python_sitelib}/%{vdsm_name}/common/network
+%dir %{python_sitelib}/%{vdsm_name}/host
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
@@ -1172,6 +1173,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/compat.py*
 %{python_sitelib}/%{vdsm_name}/commands.py*
 %{python_sitelib}/%{vdsm_name}/common/*.py*
+%{python_sitelib}/%{vdsm_name}/host/*.py*
 %{python_sitelib}/%{vdsm_name}/common/network/*.py*
 %{python_sitelib}/%{vdsm_name}/concurrent.py*
 %{python_sitelib}/%{vdsm_name}/config.py*
@@ -1185,7 +1187,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/executor.py*
 %{python_sitelib}/%{vdsm_name}/health.py*
 %{python_sitelib}/%{vdsm_name}/hooks.py*
-%{python_sitelib}/%{vdsm_name}/host.py*
 %{python_sitelib}/%{vdsm_name}/hostdev.py*
 %{python_sitelib}/%{vdsm_name}/jobs.py*
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*

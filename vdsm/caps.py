@@ -32,13 +32,13 @@ from vdsm import cpuarch
 from vdsm import cpuinfo
 from vdsm import dsaversion
 from vdsm import hooks
+from vdsm import host
 from vdsm import hostdev
 from vdsm import libvirtconnection
 from vdsm import machinetype
 from vdsm import numa
 from vdsm import osinfo
 from vdsm import supervdsm
-from vdsm import host
 from vdsm import utils
 import storage.hba
 from virt import vmdevices

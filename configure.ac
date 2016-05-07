@@ -388,6 +388,7 @@ AC_OUTPUT([
 	lib/vdsm/tool/configurators/Makefile
 	lib/api/Makefile
 	lib/yajsonrpc/Makefile
+	lib/vdsm/host/Makefile
 	lib/vdsm/infra/Makefile
 	lib/vdsm/infra/eventfd/Makefile
 	lib/vdsm/infra/filecontrol/Makefile
