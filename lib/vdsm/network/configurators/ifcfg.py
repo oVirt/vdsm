@@ -41,18 +41,19 @@ from vdsm import constants
 from vdsm import dsaversion
 from vdsm import hooks
 from vdsm import ipwrapper
+from vdsm import sysctl
+from vdsm import utils
+
+from vdsm.network.ip.address import IPv4, IPv6
+from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
 from vdsm.network.netinfo.cache import ifaceUsed
-from vdsm import sysctl
-from vdsm import utils
-from vdsm.netlink import monitor
-from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
+from vdsm.network.netlink import monitor
 
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
 
-from vdsm.network.ip.address import IPv4, IPv6
 from . import Configurator, dhclient, getEthtoolOpts, libvirt
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge

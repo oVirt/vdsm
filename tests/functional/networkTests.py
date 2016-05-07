@@ -42,7 +42,7 @@ from vdsm.network.netinfo.mtus import DEFAULT_MTU
 from vdsm.network.netinfo.nics import (operstate, OPERSTATE_UNKNOWN,
                                        OPERSTATE_UP)
 from vdsm.network.netinfo.routes import getRouteDeviceTo
-from vdsm.netlink import monitor
+from vdsm.network.netlink import monitor
 from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
                                               NET_CONF_BACK_DIR)
 from vdsm.network import errors

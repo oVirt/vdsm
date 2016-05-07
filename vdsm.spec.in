@@ -1131,11 +1131,11 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/common
 %dir %{python_sitelib}/%{vdsm_name}/common/network
-%dir %{python_sitelib}/%{vdsm_name}/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
 %dir %{python_sitelib}/%{vdsm_name}/network/ip
 %dir %{python_sitelib}/%{vdsm_name}/network/netinfo
+%dir %{python_sitelib}/%{vdsm_name}/network/netlink
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
 %dir %{python_sitelib}/%{vdsm_name}/tool
@@ -1174,11 +1174,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/m2cutils.py*
 %{python_sitelib}/%{vdsm_name}/machinetype.py*
 %{python_sitelib}/%{vdsm_name}/momIF.py*
-%{python_sitelib}/%{vdsm_name}/netlink/__init__.py*
-%{python_sitelib}/%{vdsm_name}/netlink/addr.py*
-%{python_sitelib}/%{vdsm_name}/netlink/link.py*
-%{python_sitelib}/%{vdsm_name}/netlink/monitor.py*
-%{python_sitelib}/%{vdsm_name}/netlink/route.py*
 %{python_sitelib}/%{vdsm_name}/network/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/api.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/__init__.py*
@@ -1194,6 +1189,11 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
 %{python_sitelib}/%{vdsm_name}/network/netinfo/*.py*
+%{python_sitelib}/%{vdsm_name}/network/netlink/__init__.py*
+%{python_sitelib}/%{vdsm_name}/network/netlink/addr.py*
+%{python_sitelib}/%{vdsm_name}/network/netlink/link.py*
+%{python_sitelib}/%{vdsm_name}/network/netlink/monitor.py*
+%{python_sitelib}/%{vdsm_name}/network/netlink/route.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/switch.py*
 %{python_sitelib}/%{vdsm_name}/network/ovs/validator.py*

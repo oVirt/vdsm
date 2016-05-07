@@ -23,7 +23,7 @@ from . import bonding
 from .misc import visible_devs
 from . import nics
 from vdsm.ipwrapper import getLink, Link
-from vdsm.netlink import link as nl_link
+from vdsm.network.netlink import link as nl_link
 
 
 vlans = partial(visible_devs, Link.isVLAN)

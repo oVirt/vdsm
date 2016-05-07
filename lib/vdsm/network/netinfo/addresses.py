@@ -24,7 +24,7 @@ from netaddr import IPNetwork
 import socket
 import struct
 
-from vdsm.netlink import addr as nl_addr
+from vdsm.network.netlink import addr as nl_addr
 from vdsm.sysctl import is_ipv6_local_auto as sysctl_is_ipv6_local_auto
 
 

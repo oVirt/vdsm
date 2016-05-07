@@ -10,10 +10,10 @@ from os import listdir
 from os.path import isfile, join
 import sys
 
-from vdsm.network.netinfo.addresses import getIpInfo
-from vdsm.netlink import monitor
 from vdsm.network.configurators.ifcfg import NET_CONF_DIR
 from vdsm.network.configurators.ifcfg import ConfigWriter
+from vdsm.network.netinfo.addresses import getIpInfo
+from vdsm.network.netlink import monitor
 
 
 def _get_vdsm_ip_onboot_devs():

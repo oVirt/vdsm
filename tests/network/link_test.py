@@ -25,7 +25,7 @@ import time
 
 from functional.networkTests import IP_ADDRESS, IP_CIDR
 from .nettestlib import Dummy
-from vdsm.netlink import monitor
+from vdsm.network.netlink import monitor
 from vdsm.sysctl import is_disabled_ipv6
 from vdsm.utils import monotonic_time
 

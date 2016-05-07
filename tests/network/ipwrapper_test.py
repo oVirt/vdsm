@@ -27,7 +27,7 @@ from testValidation import ValidateRunningAsRoot
 from vdsm import ipwrapper
 from vdsm.ipwrapper import Route
 from vdsm.ipwrapper import Rule
-from vdsm.netlink import monitor
+from vdsm.network.netlink import monitor
 
 from .nettestlib import Bridge, requires_brctl
 from testlib import VdsmTestCase as TestCaseBase

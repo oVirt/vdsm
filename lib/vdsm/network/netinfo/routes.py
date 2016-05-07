@@ -22,7 +22,7 @@ import logging
 
 from vdsm.ipwrapper import IPRoute2Error
 from vdsm.ipwrapper import routeGet, Route, routeShowGateways
-from vdsm.netlink import route as nl_route
+from vdsm.network.netlink import route as nl_route
 
 
 def getRouteDeviceTo(destinationIP):

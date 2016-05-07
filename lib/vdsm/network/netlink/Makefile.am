@@ -18,7 +18,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-vdsmnetlinkdir = $(vdsmpylibdir)/netlink
+vdsmnetlinkdir = $(vdsmpylibdir)/network/netlink
 dist_vdsmnetlink_PYTHON = \
 	__init__.py \
 	addr.py \

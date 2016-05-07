@@ -23,9 +23,9 @@ from six.moves import configparser
 
 from vdsm.config import config
 from vdsm import ipwrapper
-from vdsm.network.netinfo import mtus
-from vdsm.netlink import monitor
 from vdsm.network.netconfpersistence import RunningConfig
+from vdsm.network.netinfo import mtus
+from vdsm.network.netlink import monitor
 
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, RollbackIncomplete, ERR_FAILED_IFUP

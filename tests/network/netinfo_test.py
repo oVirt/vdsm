@@ -29,7 +29,7 @@ from vdsm import ipwrapper
 from vdsm.network import netinfo
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
-from vdsm.netlink import addr as nl_addr
+from vdsm.network.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 from vdsm import sysctl
 

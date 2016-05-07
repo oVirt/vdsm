@@ -31,11 +31,12 @@ from netaddr.core import AddrFormatError
 from netaddr import IPAddress
 from netaddr import IPNetwork
 
+from vdsm.network.netlink import link
+
 from .config import config
 from .utils import anyFnmatch
 from .utils import CommandPath
 from .commands import execCmd
-from .netlink import link
 
 _IP_BINARY = CommandPath('ip', '/sbin/ip')
 

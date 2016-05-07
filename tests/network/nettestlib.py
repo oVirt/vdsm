@@ -35,7 +35,7 @@ from vdsm.constants import EXT_BRCTL, EXT_TC
 from vdsm import cpuarch
 from vdsm.ipwrapper import (addrAdd, linkSet, linkAdd, linkDel, IPRoute2Error,
                             netns_add, netns_delete, netns_exec)
-from vdsm.netlink import monitor
+from vdsm.network.netlink import monitor
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, random_iface_name
 

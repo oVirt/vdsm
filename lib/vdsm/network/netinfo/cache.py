@@ -26,10 +26,10 @@ import errno
 import six
 
 from vdsm.ipwrapper import getLinks
-from vdsm.netlink import link as nl_link
-from vdsm.network.netconfpersistence import RunningConfig
-
 from vdsm.network import netinfo
+from vdsm.network.netconfpersistence import RunningConfig
+from vdsm.network.netlink import link as nl_link
+
 from .addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
 from . import bonding
 from . import bridges
