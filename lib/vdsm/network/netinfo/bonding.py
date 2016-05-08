@@ -26,9 +26,9 @@ import six
 import os
 
 from vdsm import constants
+from vdsm.network.ipwrapper import Link
 from vdsm.utils import memoized
 
-from vdsm.ipwrapper import Link
 from .misc import visible_devs
 from . import nics
 

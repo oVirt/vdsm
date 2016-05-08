@@ -33,7 +33,7 @@ from vdsm import commands
 from vdsm import constants
 from vdsm import hooks
 from vdsm import udevadm
-from vdsm import ipwrapper
+from vdsm.network import ipwrapper
 
 from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . errors import RollbackIncomplete

@@ -22,7 +22,7 @@ from functools import partial
 from . import bonding
 from .misc import visible_devs
 from . import nics
-from vdsm.ipwrapper import getLink, Link
+from vdsm.network.ipwrapper import getLink, Link
 from vdsm.network.netlink import link as nl_link
 
 

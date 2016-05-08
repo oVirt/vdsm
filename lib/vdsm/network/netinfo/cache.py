@@ -25,8 +25,8 @@ import os
 import errno
 import six
 
-from vdsm.ipwrapper import getLinks
 from vdsm.network import netinfo
+from vdsm.network.ipwrapper import getLinks
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
 

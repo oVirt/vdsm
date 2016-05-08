@@ -22,8 +22,9 @@ import os
 
 import six
 
-from vdsm import ipwrapper, sysctl
+from vdsm import sysctl
 from vdsm.compat import suppress
+from vdsm.network import ipwrapper
 from vdsm.network.configurators.dhclient import DhcpClient, kill_dhclient
 from vdsm.network.configurators.iproute2 import Iproute2
 from vdsm.network.ip.address import IPv4, IPv6

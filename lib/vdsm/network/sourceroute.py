@@ -24,14 +24,15 @@ from libvirt import libvirtError
 import logging
 import netaddr
 
-from vdsm.network import netinfo
 from vdsm.constants import P_VDSM_RUN
-from vdsm.ipwrapper import IPRoute2Error
-from vdsm.ipwrapper import Route
-from vdsm.ipwrapper import routeShowTable
-from vdsm.ipwrapper import Rule
-from vdsm.ipwrapper import ruleList
+from vdsm.network import netinfo
 from vdsm.utils import rmFile
+
+from .ipwrapper import IPRoute2Error
+from .ipwrapper import Route
+from .ipwrapper import routeShowTable
+from .ipwrapper import Rule
+from .ipwrapper import ruleList
 
 
 TRACKED_INTERFACES_FOLDER = P_VDSM_RUN + 'trackedInterfaces'

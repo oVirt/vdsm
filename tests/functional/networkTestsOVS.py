@@ -20,7 +20,7 @@ from functools import wraps
 
 from nose.plugins.skip import SkipTest
 
-from vdsm.ipwrapper import linkSet, addrAdd
+from vdsm.network.ipwrapper import linkSet, addrAdd
 from vdsm.utils import RollbackContext
 
 from modprobe import RequireVethMod

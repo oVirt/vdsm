@@ -37,7 +37,6 @@ dist_vdsmpylib_PYTHON = \
 	hooks.py \
 	host.py \
 	hostdev.py \
-	ipwrapper.py \
 	jobs.py \
 	jsonrpcvdscli.py \
 	kaxmlrpclib.py \

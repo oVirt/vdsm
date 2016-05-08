@@ -38,7 +38,7 @@ import os
 import sys
 import traceback
 import xml.dom
-from vdsm.ipwrapper import Link
+from vdsm.network.ipwrapper import Link
 
 import hooking
 

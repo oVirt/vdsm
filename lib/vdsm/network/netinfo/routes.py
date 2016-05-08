@@ -20,8 +20,8 @@ from __future__ import absolute_import
 from collections import defaultdict
 import logging
 
-from vdsm.ipwrapper import IPRoute2Error
-from vdsm.ipwrapper import routeGet, Route, routeShowGateways
+from vdsm.network.ipwrapper import IPRoute2Error
+from vdsm.network.ipwrapper import routeGet, Route, routeShowGateways
 from vdsm.network.netlink import route as nl_route
 
 

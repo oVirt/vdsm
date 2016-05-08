@@ -31,12 +31,12 @@ import re
 import threading
 import time
 
-from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
-from vdsm import ipwrapper
 from vdsm import numa
+from vdsm import utils
+from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
+from vdsm.network import ipwrapper
 from vdsm.network.netinfo import nics, bonding, vlans
 from vdsm.virt.utils import ExpiringCache
-from vdsm import utils
 
 
 _THP_STATE_PATH = '/sys/kernel/mm/transparent_hugepage/enabled'

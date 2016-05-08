@@ -25,9 +25,9 @@ import threading
 
 from vdsm.config import config
 from vdsm.utils import retry
-from vdsm import ipwrapper
 from vdsm import vdscli
 from vdsm import jsonrpcvdscli
+from vdsm.network import ipwrapper
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm import supervdsm
 from vdsm.network.netconfpersistence import RunningConfig

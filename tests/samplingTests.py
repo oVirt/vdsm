@@ -23,8 +23,8 @@ import itertools
 import random
 import threading
 
-from vdsm import ipwrapper
 from vdsm import numa
+from vdsm.network import ipwrapper
 from vdsm.password import ProtectedPassword
 from vdsm.virt import sampling
 

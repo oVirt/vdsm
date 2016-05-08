@@ -24,9 +24,9 @@ from __future__ import absolute_import
 from nose.plugins.attrib import attr
 
 from testValidation import ValidateRunningAsRoot
-from vdsm import ipwrapper
-from vdsm.ipwrapper import Route
-from vdsm.ipwrapper import Rule
+from vdsm.network import ipwrapper
+from vdsm.network.ipwrapper import Route
+from vdsm.network.ipwrapper import Rule
 from vdsm.network.netlink import monitor
 
 from .nettestlib import Bridge, requires_brctl

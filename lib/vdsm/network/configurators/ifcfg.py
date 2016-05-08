@@ -40,10 +40,10 @@ from vdsm import cmdutils
 from vdsm import constants
 from vdsm import dsaversion
 from vdsm import hooks
-from vdsm import ipwrapper
 from vdsm import sysctl
 from vdsm import utils
 
+from vdsm.network import ipwrapper
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,

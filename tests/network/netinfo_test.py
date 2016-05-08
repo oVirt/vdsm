@@ -25,7 +25,7 @@ import io
 
 from nose.plugins.attrib import attr
 
-from vdsm import ipwrapper
+from vdsm.network import ipwrapper
 from vdsm.network import netinfo
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get

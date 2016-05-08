@@ -22,7 +22,7 @@ import sys
 import hooking
 import traceback
 
-from vdsm import ipwrapper
+from vdsm.network import ipwrapper
 from vdsm.network import netinfo
 from vdsm import utils
 

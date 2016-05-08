@@ -28,6 +28,7 @@ dist_vdsmnetwork_PYTHON = \
 	errors.py \
 	canonicalize.py \
 	connectivity.py \
+	ipwrapper.py \
 	kernelconfig.py \
 	legacy_switch.py \
 	models.py \

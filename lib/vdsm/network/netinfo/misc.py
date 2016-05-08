@@ -22,9 +22,8 @@ from __future__ import absolute_import
 import shlex
 import socket
 
-from vdsm.ipwrapper import getLinks
 from vdsm import utils
-
+from vdsm.network.ipwrapper import getLinks
 
 _IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))

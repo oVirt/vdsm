@@ -22,8 +22,8 @@ from glob import iglob
 import logging
 import os
 
+from vdsm.network.ipwrapper import Link
 from .misc import visible_devs
-from vdsm.ipwrapper import Link
 
 BRIDGING_OPT = '/sys/class/net/%s/bridge/%s'
 

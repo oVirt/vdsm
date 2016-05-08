@@ -23,7 +23,7 @@ from collections import namedtuple
 from functools import partial
 import errno
 
-from vdsm import ipwrapper
+from vdsm.network import ipwrapper
 
 from . import filter as tc_filter
 from . import _parser

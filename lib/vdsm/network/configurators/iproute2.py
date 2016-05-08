@@ -20,11 +20,12 @@
 from __future__ import absolute_import
 import logging
 
+from vdsm.network import ipwrapper
+from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
+                                    IPRoute2Error)
 from vdsm.network.netinfo import bonding, vlans, bridges, mtus, misc
 from vdsm.network.netinfo.cache import ifaceUsed
-from vdsm import ipwrapper
 from vdsm.constants import EXT_BRCTL
-from vdsm.ipwrapper import routeAdd, routeDel, ruleAdd, ruleDel, IPRoute2Error
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm import sysctl
 from vdsm.utils import CommandPath

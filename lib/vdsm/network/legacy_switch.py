@@ -26,7 +26,7 @@ import os
 import six
 
 from vdsm.config import config
-from vdsm import ipwrapper
+from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network.netinfo import NET_PATH
 from vdsm.network.netinfo import addresses
