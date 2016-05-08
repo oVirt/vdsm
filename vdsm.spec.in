@@ -122,6 +122,17 @@ Requires: dmidecode
 Requires: virt-v2v
 %endif
 
+# Numactl is not available on s390[x] and ARM
+%ifnarch s390 s390x %{arm}
+Requires: numactl
+%endif
+
+%ifarch x86_64
+Requires: python-dmidecode
+Requires: dmidecode
+Requires: virt-v2v
+%endif
+
 Requires: ethtool
 Requires: which
 Requires: sudo >= 1.7.3
