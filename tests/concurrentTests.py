@@ -241,3 +241,19 @@ class ThreadTests(VdsmTestCase):
         t.start()
         t.join()
         self.assertEqual(kwargs, self.kwargs)
+
+    def test_pass_args_and_kwargs(self):
+        self.args = ()
+        self.kwargs = {}
+
+        def run(*args, **kwargs):
+            self.args = args
+            self.kwargs = kwargs
+
+        args = (1, 2)
+        kwargs = {'a': 3, 'b': 4}
+        t = concurrent.thread(run, args=args, kwargs=kwargs)
+        t.start()
+        t.join()
+        self.assertEqual(args, self.args)
+        self.assertEqual(kwargs, self.kwargs)
