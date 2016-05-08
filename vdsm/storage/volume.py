@@ -319,6 +319,10 @@ class VolumeManifest(object):
             self.validateVolumePath()
         return self._volumePath
 
+    @volumePath.setter
+    def volumePath(self, value):
+        self._volumePath = value
+
     def validate(self):
         """
         Validate that the volume can be accessed
