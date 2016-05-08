@@ -41,7 +41,6 @@ dist_vdsmpylib_PYTHON = \
 	jobs.py \
 	jsonrpcvdscli.py \
 	kaxmlrpclib.py \
-	kernelconfig.py \
 	libvirtconnection.py \
 	logUtils.py \
 	m2cutils.py \

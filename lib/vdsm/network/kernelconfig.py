@@ -22,7 +22,7 @@ import copy
 import six
 import string
 
-from . import constants
+from vdsm import constants
 from vdsm.network.netinfo import addresses
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges

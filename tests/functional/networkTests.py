@@ -30,10 +30,10 @@ from nose.plugins.skip import SkipTest
 import vdsm.config
 from vdsm.constants import EXT_BRCTL, EXT_IFUP, EXT_IFDOWN
 from vdsm import ipwrapper
-from vdsm import kernelconfig
 from vdsm.ipwrapper import (routeExists, ruleExists, addrFlush, LinkType,
                             getLinks, routeShowTable, linkDel, linkSet,
                             addrAdd)
+from vdsm.network import kernelconfig
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.bonding import BONDING_SLAVES, BONDING_MASTERS
 from vdsm.network.netinfo.bridges import bridges

@@ -1168,7 +1168,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/jobs.py*
 %{python_sitelib}/%{vdsm_name}/jsonrpcvdscli.py*
 %{python_sitelib}/%{vdsm_name}/kaxmlrpclib.py*
-%{python_sitelib}/%{vdsm_name}/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/libvirtconnection.py*
 %{python_sitelib}/%{vdsm_name}/logUtils.py*
 %{python_sitelib}/%{vdsm_name}/m2cutils.py*
@@ -1187,6 +1186,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/canonicalize.py*
 %{python_sitelib}/%{vdsm_name}/network/connectivity.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
+%{python_sitelib}/%{vdsm_name}/network/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
 %{python_sitelib}/%{vdsm_name}/network/netinfo/*.py*
 %{python_sitelib}/%{vdsm_name}/network/netlink/__init__.py*
