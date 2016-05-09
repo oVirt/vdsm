@@ -2895,6 +2895,12 @@ types:
                 VMs, paused due to EIO
             name: abortOnError
             type: boolean
+
+        -   defaultvalue: needs updating
+            description: whether or not to send migration/hibernation events
+                to the guest operating systems
+            name: enableGuestEvents
+            type: boolean
         type: object
 
     MigrationStatus: &MigrationStatus
