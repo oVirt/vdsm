@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,14 +24,9 @@ from vdsm.config import config
 
 from . import YES, NO
 from vdsm.tool.validate_ovirt_certs import validate_ovirt_certs
-from vdsm.constants import P_VDSM_EXEC, SYSCONF_PATH
+from vdsm import constants
 from vdsm.commands import execCmd
 from vdsm.utils import isOvirtNode
-
-PKI_DIR = os.path.join(SYSCONF_PATH, 'pki/vdsm')
-CA_FILE = os.path.join(PKI_DIR, 'certs/cacert.pem')
-CERT_FILE = os.path.join(PKI_DIR, 'certs/vdsmcert.pem')
-KEY_FILE = os.path.join(PKI_DIR, 'keys/vdsmkey.pem')
 
 
 def validate():
@@ -42,12 +37,12 @@ def _exec_vdsm_gencerts():
     rc, out, err = execCmd(
         (
             os.path.join(
-                P_VDSM_EXEC,
+                constants.P_VDSM_EXEC,
                 'vdsm-gencerts.sh'
             ),
-            CA_FILE,
-            KEY_FILE,
-            CERT_FILE,
+            constants.CA_FILE,
+            constants.KEY_FILE,
+            constants.CERT_FILE,
         ),
         raw=True,
     )
@@ -69,4 +64,4 @@ def isconfigured():
 
 def _certsExist():
     return not config.getboolean('vars', 'ssl') or\
-        os.path.isfile(CERT_FILE)
+        os.path.isfile(constants.CERT_FILE)

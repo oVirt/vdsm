@@ -27,6 +27,7 @@ from six.moves import xmlrpc_client as xmlrpclib
 import sys
 import warnings
 from xml.parsers.expat import ExpatError
+from . import constants
 from .sslcompat import sslutils
 
 
@@ -79,7 +80,6 @@ def __guessDefaults():
     try:
         from .config import config
         _USE_SSL = config.getboolean('vars', 'ssl')
-        _TRUSTED_STORE_PATH = config.get('vars', 'trust_store_path')
         PORT = config.getint('addresses', 'management_port')
         ADDRESS = config.get('addresses', 'management_ip')
         if ADDRESS == '::':
@@ -103,7 +103,6 @@ def cannonizeHostPort(hostPort=None, port=PORT):
         addr = hostPort.group('Host')
         if hostPort.group('Port'):
             port = int(hostPort.group('Port'))
-
     return '%s:%i' % (addr, port)
 
 
@@ -115,7 +114,7 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
     if useSSL is None:
         useSSL = _USE_SSL
     if tsPath is None:
-        tsPath = _TRUSTED_STORE_PATH
+        tsPath = constants.PKI_DIR
     if useSSL:
         KEYFILE = tsPath + '/keys/vdsmkey.pem'
         CERTFILE = tsPath + '/certs/vdsmcert.pem'

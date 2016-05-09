@@ -152,3 +152,9 @@ EXT_CURL_IMG_WRAP = '@LIBEXECDIR@/curl-img-wrap'
 EXT_FC_SCAN = '@LIBEXECDIR@/fc-scan'
 EXT_KVM_2_OVIRT = '@LIBEXECDIR@/kvm2ovirt'
 EXT_SYSTEMD_RUN = '@SYSTEMD_RUN_PATH@'
+
+# location of the certificates
+PKI_DIR = os.path.join(SYSCONF_PATH, 'pki', 'vdsm')
+KEY_FILE = os.path.join(PKI_DIR, 'keys', 'vdsmkey.pem')
+CERT_FILE = os.path.join(PKI_DIR, 'certs', 'vdsmcert.pem')
+CA_FILE = os.path.join(PKI_DIR, 'certs', 'cacert.pem')

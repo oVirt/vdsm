@@ -19,13 +19,13 @@
 #
 from __future__ import absolute_import
 import logging
-import os
 from six.moves import xmlrpc_client as xmlrpclib
 from six.moves import http_client as httplib
 import socket
 import ssl
 
 from ssl import SSLError
+from vdsm import constants
 from vdsm.utils import monotonic_time
 from .config import config
 
@@ -264,17 +264,12 @@ class SSLHandshakeDispatcher(object):
 def create_ssl_context():
         sslctx = None
         if config.getboolean('vars', 'ssl'):
-            truststore_path = config.get('vars', 'trust_store_path')
             protocol = (
                 ssl.PROTOCOL_SSLv23
                 if config.get('vars', 'ssl_protocol') == 'sslv23'
                 else ssl.PROTOCOL_TLSv1
             )
-            sslctx = SSLContext(
-                key_file=os.path.join(truststore_path, 'keys', 'vdsmkey.pem'),
-                cert_file=os.path.join(truststore_path, 'certs',
-                                       'vdsmcert.pem'),
-                ca_certs=os.path.join(truststore_path, 'certs', 'cacert.pem'),
-                protocol=protocol
-            )
+            sslctx = SSLContext(key_file=constants.KEY_FILE,
+                                cert_file=constants.CERT_FILE,
+                                ca_certs=constants.CA_FILE, protocol=protocol)
         return sslctx

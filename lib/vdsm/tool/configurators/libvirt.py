@@ -25,7 +25,6 @@ import sys
 from vdsm.config import config
 
 from . import InvalidRun, NO, MAYBE
-from . certificates import CA_FILE, CERT_FILE, KEY_FILE
 from vdsm.tool.configfile import ConfigFile, ParserWrapper
 from vdsm.tool.validate_ovirt_certs import validate_ovirt_certs
 from vdsm import utils
@@ -217,8 +216,7 @@ def _removeSection(path):
 # details.
 CONF_VERSION = '4.17.0'
 
-PKI_DIR = os.path.join(constants.SYSCONF_PATH, 'pki/vdsm')
-LS_CERT_DIR = os.path.join(PKI_DIR, 'libvirt-spice')
+LS_CERT_DIR = os.path.join(constants.PKI_DIR, 'libvirt-spice')
 
 # be sure to update CONF_VERSION accordingly when updating FILES.
 FILES = {
@@ -259,9 +257,9 @@ FILES = {
                     "ssl_enabled": True,
                 },
                 'content': {
-                    'ca_file': '\"' + CA_FILE + '\"',
-                    'cert_file': '\"' + CERT_FILE + '\"',
-                    'key_file': '\"' + KEY_FILE + '\"',
+                    'ca_file': '\"' + constants.CA_FILE + '\"',
+                    'cert_file': '\"' + constants.CERT_FILE + '\"',
+                    'key_file': '\"' + constants.KEY_FILE + '\"',
                 },
 
             },

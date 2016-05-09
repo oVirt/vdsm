@@ -188,9 +188,6 @@ parameters = [
 
         ('host_sample_stats_interval', '15', None),
 
-        ('trust_store_path', '@TRUSTSTORE@',
-            'Where the certificates and keys are situated.'),
-
         ('ssl', 'true',
             'Whether to use ssl encryption and authentication.'),
 

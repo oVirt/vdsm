@@ -100,7 +100,6 @@ class vdsm(Plugin, RedHatPlugin):
         logsize = self.getOption('logsize')
         self.__addCopySpecLogLimit("/var/log/vdsm/*", logsize)
         self._addVdsmRunDir()
-        self.addCopySpec("@TRUSTSTORE@")
         self.addCopySpec("@HOOKSDIR@")
         self.addCopySpec("@VDSMLIBDIR@")
         self.addCopySpec("/var/log/ovirt.log")
