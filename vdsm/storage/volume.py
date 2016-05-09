@@ -161,7 +161,13 @@ def name2type(name):
 
 
 def getBackingVolumePath(imgUUID, volUUID):
-    return os.path.join('..', imgUUID, volUUID)
+    # We used to return a relative path ../<imgUUID>/<volUUID> but this caused
+    # unnecessary growth in the backing chain paths with repeated live merge
+    # operations (see https://bugzilla.redhat.com/show_bug.cgi?id=1333627).
+    # Since all volumes of an image are in the same directory (including cloned
+    # templates which have a hard link on file domains and a symlink on block
+    # domains) we do not need to use the image dir reference anymore.
+    return volUUID
 
 
 class VmVolumeInfo(object):
