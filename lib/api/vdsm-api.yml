@@ -959,6 +959,16 @@ types:
             description: converted disk format (raw, cow etc)
             name: format
             type: *VolumeFormat
+
+        -   defaultvalue: null
+            description: graphics supported by libvirt (spice, vnc etc)
+            name: graphics
+            type: string
+
+        -   defaultvalue: null
+            description: video supported by libvirt (qxl, vga etc)
+            name: video
+            type: string
         type: object
 
     FcHba: &FcHba

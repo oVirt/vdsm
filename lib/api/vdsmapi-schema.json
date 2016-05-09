@@ -4022,13 +4022,21 @@
 #
 # @virtio_iso_path: #optional path for iso contains virtio guest drivers
 #
+# @graphics:        #optional graphics supported by libvirt (spice, vnc etc)
+#                   such as: spice, vnc
+#                   (new in version 4.18.0)
+#
+# @video:           #optional video supported by libvirt (qxl, vga etc)
+#                   (new in version 4.18.0)
+#
 # Since: 4.17.0
 ##
 {'type': 'ExternalVmInfo',
  'data': {'vmName': 'str', 'status': 'VmStatus', 'vmId': 'UUID', 'smp': 'uint',
           'memSize': 'uint', '*disks': ['ExternalDiskInfo'],
           '*networks': ['ExternalNetworkInfo'], '*format': 'VolumeFormat',
-          '*allocation': 'VolumeAllocation', '*virtio_iso_path': 'str'}}
+          '*allocation': 'VolumeAllocation', '*virtio_iso_path': 'str',
+          '*graphics': 'str', '*video': 'str'}}
 
 ##
 # @Host.getExternalVMs:

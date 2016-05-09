@@ -864,6 +864,8 @@ def _add_vm(conn, vms, vm):
         return
     _add_networks(root, params)
     _add_disks(root, params)
+    _add_graphics(root, params)
+    _add_video(root, params)
     for disk in params['disks']:
         _add_disk_info(conn, disk)
     vms.append(params)
@@ -933,6 +935,18 @@ def _add_disks(root, params):
         if source is not None:
             d['alias'] = source.get('file')
         params['disks'].append(d)
+
+
+def _add_graphics(root, params):
+    e = root.find('./devices/graphics/[@type]')
+    if e is not None:
+        params['graphics'] = e.get('type')
+
+
+def _add_video(root, params):
+    e = root.find('./devices/video/model/[@type]')
+    if e is not None:
+        params['video'] = e.get('type')
 
 
 def _add_networks(root, params):
