@@ -128,11 +128,6 @@ def run():
 
     logging.addLevelName(5, 'TRACE')
     logging.TRACE = 5  # impolite but helpful
-
-    if config.getboolean('devel', 'coverage_enable'):
-        import coverage
-        coverage.process_startup()
-
     log = logging.getLogger('vds')
     try:
         logging.root.handlers.append(logging.StreamHandler())
