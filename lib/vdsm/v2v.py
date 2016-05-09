@@ -920,6 +920,16 @@ def _add_disk_info(conn, disk):
             disk['allocation'] = str(alloc)
 
 
+def _convert_disk_format(format):
+    # TODO: move to volume format when storage/volume.py
+    #       will be accessible for /lib/vdsm/v2v.py
+    if format == 'qcow2':
+        return 'COW'
+    elif format == 'raw':
+        return 'RAW'
+    raise KeyError
+
+
 def _add_disks(root, params):
     params['disks'] = []
     disks = root.findall('.//disk[@type="file"]')
@@ -934,6 +944,13 @@ def _add_disks(root, params):
         source = disk.find('./source/[@file]')
         if source is not None:
             d['alias'] = source.get('file')
+        driver = disk.find('./driver/[@type]')
+        if driver is not None:
+            try:
+                d["format"] = _convert_disk_format(driver.get('type'))
+            except KeyError:
+                logging.warning("Disk %s has unsupported format: %r", d,
+                                format)
         params['disks'].append(d)
 
 
