@@ -6698,9 +6698,11 @@ types:
         description: Parameters for VM.updateDevice
         name: vmUpdateGraphicsDeviceParams
         properties:
-        -   description: Indicate what to do with any existing connections
+        -   defaultvalue: null
+            description: Indicate what to do with any existing connections
             name: existingConnAction
             type: *VmTicketConflictAction
+            modified: '4.0'
 
         -   description: The type of the device to update
             name: graphicsType
