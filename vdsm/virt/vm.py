@@ -3864,11 +3864,19 @@ class Vm(object):
                       "Action: %s", self.name,
                       actionToString(action))
 
-    def changeCD(self, drivespec):
-        if cpuarch.is_ppc(self.arch):
-            blockdev = 'sda'
+    def changeCD(self, cdromspec):
+        if isinstance(cdromspec, basestring):
+            # < 4.0 - known cdrom interface/index
+            drivespec = cdromspec
+            if cpuarch.is_ppc(self.arch):
+                blockdev = 'sda'
+            else:
+                blockdev = 'hdc'
         else:
-            blockdev = 'hdc'
+            # > 4.0 - variable cdrom interface/index
+            drivespec = cdromspec['path']
+            blockdev = vmdevices.storage.makeName(
+                cdromspec['iface'], cdromspec['index'])
 
         return self._changeBlockDev('cdrom', blockdev, drivespec)
 
