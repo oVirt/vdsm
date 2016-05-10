@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 # Refer to the README and COPYING files for full details of the license
 #
 from __future__ import absolute_import
+import logging
+import sys
 import six
 
 """
@@ -28,6 +30,8 @@ import os.path
 import threading
 
 from vdsm.utils import monotonic_time, rmFile
+
+log = logging.getLogger('virt.utils')
 
 
 def isVdsmImage(drive):
@@ -208,3 +212,61 @@ class DynamicBoundedSemaphore(object):
 
 def is_kvm(vm_conf):
     return 'containerType' not in vm_conf.get('custom', {})
+
+
+class TeardownError(Exception):
+    pass
+
+
+class prepared(object):
+    """
+    A context manager to prepare a group of objects (for example, disk images)
+    for an operation.
+    """
+
+    def __init__(self, images):
+        """
+        Receives a variable number of images which must implement
+        prepare() and teardown() methods.
+        """
+        self._images = images
+        self._prepared_images = []
+
+    def __enter__(self):
+        for image in self._images:
+            try:
+                image.prepare()
+            except:
+                exc = sys.exc_info()
+                log.error("Error preparing image %r", image)
+                try:
+                    self._teardown()
+                except TeardownError:
+                    log.exception("Error tearing down images")
+                try:
+                    six.reraise(*exc)
+                finally:
+                    del exc
+
+            self._prepared_images.append(image)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        try:
+            self._teardown()
+        except TeardownError:
+            if exc_type is None:
+                raise
+            # Don't hide the original error
+            log.exception("Error tearing down images")
+
+    def _teardown(self):
+        errors = []
+        while self._prepared_images:
+            image = self._prepared_images.pop()
+            try:
+                image.teardown()
+            except Exception as e:
+                errors.append(e)
+        if errors:
+            raise TeardownError(errors)
