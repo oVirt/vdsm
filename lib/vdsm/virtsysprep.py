@@ -1,4 +1,5 @@
-# Copyright 2015-2017 Red Hat, Inc.
+#
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,32 +18,27 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+from __future__ import absolute_import
 
-SUBDIRS = jobs vmdevices
-if CONTAINERS
-SUBDIRS+=containers
-endif
+from . import cmdutils
+from . import commands
+from . import utils
 
-vdsmvirtdir = $(vdsmpylibdir)/virt
-dist_vdsmvirt_PYTHON = \
-	__init__.py \
-	domain_descriptor.py \
-	events.py \
-	guestagent.py \
-	migration.py \
-	periodic.py \
-	recovery.py \
-	sampling.py \
-	secret.py \
-	utils.py \
-	virdomain.py \
-	vmchannels.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstats.py \
-	vmstatus.py \
-	vmtune.py \
-	vmxml.py \
-	xmlconstants.py \
-	$(NULL)
+_VIRTSYSPREP = utils.CommandPath("virt-sysprep",
+                                 "/usr/bin/virt-sysprep")
+
+
+def sysprep(vol_paths):
+    """
+    Run virt-sysprep on the list of volumes
+
+    :param vol_paths: list of volume paths
+    """
+    cmd = [_VIRTSYSPREP.cmd]
+    for vol_path in vol_paths:
+        cmd.extend(('-a', vol_path))
+
+    rc, out, err = commands.execCmd(cmd)
+
+    if rc != 0:
+        raise cmdutils.Error(cmd, rc, out, err)

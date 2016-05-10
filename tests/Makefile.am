@@ -357,6 +357,7 @@ dist_vdsmtests_PYTHON = \
 	$(NULL)
 
 dist_vdsmtests_SCRIPTS = \
+	fake-virt-sysprep \
 	fake-virt-v2v \
 	fake-ssh-add \
 	fake-ssh-agent \
