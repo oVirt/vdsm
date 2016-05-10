@@ -22,9 +22,9 @@ from functools import partial
 import six
 
 from vdsm.compat import suppress
+from vdsm.network import libvirt
 from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.netinfo.bonding import parse_bond_options
-from vdsm.network.configurators import libvirt
 from vdsm.utils import rget
 
 import hooking

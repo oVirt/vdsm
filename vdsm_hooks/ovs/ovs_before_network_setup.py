@@ -34,9 +34,9 @@ import six
 
 from vdsm import hooks
 from vdsm.compat import suppress
+from vdsm.network import libvirt
 from vdsm.network.ipwrapper import linkSet
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.network.configurators import libvirt
 
 from hooking import execCmd
 import hooking

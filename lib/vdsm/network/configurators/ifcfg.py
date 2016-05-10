@@ -44,6 +44,7 @@ from vdsm import sysctl
 from vdsm import utils
 
 from vdsm.network import ipwrapper
+from vdsm.network import libvirt
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
@@ -54,7 +55,7 @@ from vdsm.network.netlink import monitor
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
 
-from . import Configurator, dhclient, getEthtoolOpts, libvirt
+from . import Configurator, dhclient, getEthtoolOpts
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute

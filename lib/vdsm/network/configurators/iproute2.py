@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import logging
 
 from vdsm.network import ipwrapper
+from vdsm.network import libvirt
 from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
                                     IPRoute2Error)
 from vdsm.network.netinfo import bonding, vlans, bridges, mtus, misc
@@ -31,8 +32,7 @@ from vdsm import sysctl
 from vdsm.utils import CommandPath
 from vdsm.commands import execCmd
 
-from . import (Configurator, runDhclient, getEthtoolOpts, libvirt,
-               wait_for_device)
+from . import Configurator, runDhclient, getEthtoolOpts, wait_for_device
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic

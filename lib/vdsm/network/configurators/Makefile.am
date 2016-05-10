@@ -26,7 +26,6 @@ dist_vdsmnetworkconfigurators_PYTHON = \
 	dhclient.py \
 	ifcfg.py \
 	iproute2.py \
-	libvirt.py \
 	pyroute_two.py \
 	qos.py \
 	$(NULL)

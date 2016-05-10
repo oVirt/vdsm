@@ -21,7 +21,7 @@ from libvirt import libvirtError
 import six
 
 from vdsm.compat import suppress
-from vdsm.network.configurators import libvirt
+from vdsm.network import libvirt
 
 
 def prepare_libvirt(nets, running_config):
