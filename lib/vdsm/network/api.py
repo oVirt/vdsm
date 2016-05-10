@@ -34,6 +34,8 @@ from vdsm import constants
 from vdsm import hooks
 from vdsm import udevadm
 from vdsm.network import ipwrapper
+from vdsm.network import libvirt
+from vdsm.network.ipwrapper import DUMMY_BRIDGE
 
 from . ip import address as ipaddress
 from . canonicalize import canonicalize_networks, canonicalize_bondings
@@ -42,6 +44,8 @@ from . import netconfpersistence
 from . import netswitch
 
 _SYSFS_SRIOV_NUMVFS = '/sys/bus/pci/devices/{}/sriov_numvfs'
+
+DUMMY_BRIDGE
 
 
 def caps_networks():
@@ -116,6 +120,21 @@ def ip_addrs_info(device):
     device, if it exists.
     """
     return ipaddress.addrs_info(device)
+
+
+def libvirt_networks():
+    """Report libvirt known networks"""
+    return libvirt.networks()
+
+
+def netname_o2l(ovirt_name):
+    """Translate ovirt network name to the name used by libvirt database"""
+    return libvirt.LIBVIRT_NET_PREFIX + ovirt_name
+
+
+def netname_l2o(libvirt_name):
+    """Translate the name used by libvirt database to the ovirt network name"""
+    return libvirt_name[len(libvirt.LIBVIRT_NET_PREFIX):]
 
 
 def _build_setup_hook_dict(req_networks, req_bondings, req_options):

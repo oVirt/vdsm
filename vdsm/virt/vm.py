@@ -53,7 +53,7 @@ from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.define import ERROR, NORMAL, doneCode, errCode
 from vdsm.logUtils import SimpleLogAdapter
-from vdsm.network.netinfo import DUMMY_BRIDGE
+from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
 from vdsm.virt import guestagent
 from vdsm.virt import sampling
@@ -2292,7 +2292,7 @@ class Vm(object):
                                              netDev.linkActive)) else 'down'
             network = params.get('network', netDev.network)
             if network == '':
-                network = DUMMY_BRIDGE
+                network = net_api.DUMMY_BRIDGE
                 linkValue = 'down'
             custom = params.get('custom', {})
             specParams = params.get('specParams')

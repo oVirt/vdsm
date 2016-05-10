@@ -22,8 +22,7 @@ import logging
 
 import libvirt
 
-from vdsm.network import libvirt as net_libvirt
-from vdsm.network import netinfo
+from vdsm.network import api as net_api
 from vdsm import utils
 from vdsm.config import config
 
@@ -145,8 +144,8 @@ class Graphics(Base):
         if self.specParams.get('displayNetwork'):
             graphics.appendChildWithArgs(
                 'listen', type='network',
-                network=net_libvirt.LIBVIRT_NET_PREFIX +
-                self.specParams.get('displayNetwork'))
+                network=net_api.netname_o2l(
+                    self.specParams.get('displayNetwork')))
         else:
             graphics.setAttrs(listen='0')
 
@@ -243,9 +242,9 @@ def getFirstGraphics(conf):
 
 def _getNetworkIp(network):
     try:
-        nets = net_libvirt.networks()
+        nets = net_api.libvirt_networks()
         device = nets[network].get('iface', network)
-        ip, _, _, _ = netinfo.addresses.getIpInfo(device)
+        ip, _, _, _ = net_api.ip_addrs_info(device)
     except (libvirt.libvirtError, KeyError, IndexError):
         ip = config.get('addresses', 'guests_gateway_ip')
         if ip == '':

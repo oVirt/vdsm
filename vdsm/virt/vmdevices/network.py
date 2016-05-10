@@ -24,8 +24,7 @@ from xml.dom import Node
 
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable
-from vdsm.network.libvirt import LIBVIRT_NET_PREFIX
-from vdsm.network.netinfo import DUMMY_BRIDGE
+from vdsm.network import api as net_api
 
 from .core import Base
 from . import hwclass
@@ -45,7 +44,7 @@ class Interface(Base):
             if attr == 'nicModel' and value == 'pv':
                 kwargs[attr] = 'virtio'
             elif attr == 'network' and value == '':
-                kwargs[attr] = DUMMY_BRIDGE
+                kwargs[attr] = net_api.DUMMY_BRIDGE
         super(Interface, self).__init__(conf, log, **kwargs)
         self.sndbufParam = False
         self.is_hostdevice = self.device == hwclass.HOSTDEV
@@ -226,8 +225,8 @@ class Interface(Base):
             if source:
                 network = source[0].getAttribute('bridge')
                 if not network:
-                    network = source[0].getAttribute('network')
-                    network = network[len(LIBVIRT_NET_PREFIX):]
+                    network = net_api.netname_l2o(
+                        source[0].getAttribute('network'))
 
             # Get nic address
             address = {}
