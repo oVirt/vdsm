@@ -461,7 +461,11 @@ class StoragePool(object):
             self.domainMonitor.onDomainStateChange.register(
                 self._upgradeCallback)
             self.log.debug("Running initial domain upgrade threads")
-            for sdUUID in self._domainsToUpgrade:
+            # We need to copy the list as the domain monitor registered
+            # callback and the initiated update threads may modify the list
+            # while we iterate over it.
+            # http://bugzilla.redhat.com/1319523
+            for sdUUID in self._domainsToUpgrade[:]:
                 concurrent.thread(self._upgradeCallback,
                                   args=(sdUUID, True),
                                   kwargs={"__securityOverride": True},
