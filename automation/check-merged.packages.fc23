@@ -10,6 +10,7 @@ make
 mom
 openvswitch
 policycoreutils-python
+PyYAML
 python-blivet
 python-coverage
 python-devel
@@ -20,7 +21,6 @@ python-nose
 python-pthreading
 python-rtslib
 python-six
-python-yaml
 python3-netaddr
 python3-nose
 python3-six
