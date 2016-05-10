@@ -35,6 +35,7 @@ from vdsm import hooks
 from vdsm import udevadm
 from vdsm.network import ipwrapper
 
+from . ip import address as ipaddress
 from . canonicalize import canonicalize_networks, canonicalize_bondings
 from . errors import RollbackIncomplete
 from . import netconfpersistence
@@ -103,6 +104,18 @@ def change_numvfs(pci_path, numvfs, net_name):
     _persist_numvfs(pci_path, numvfs)
 
     ipwrapper.linkSet(net_name, ['up'])
+
+
+def ip_addrs_info(device):
+    """"
+    Report IP addresses of a device.
+
+    Returning a 4 values: ipv4addr, ipv4netmask, ipv4addrs, ipv6addrs
+    ipv4addrs and ipv6addrs contain (each) a list of addresses.
+    ipv4netmask and ipv4addrs represents the 'primary' ipv4 address of the
+    device, if it exists.
+    """
+    return ipaddress.addrs_info(device)
 
 
 def _build_setup_hook_dict(req_networks, req_bondings, req_options):

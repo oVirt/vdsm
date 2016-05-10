@@ -24,6 +24,9 @@ import struct
 from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError
 
+# TODO: vdsm.network.netinfo.addresses should move to this module.
+from vdsm.network.netinfo import addresses
+
 
 class IPv4(object):
     def __init__(self, address=None, netmask=None, gateway=None,
@@ -146,3 +149,7 @@ class IPv6(object):
         except ConfigNetworkError as cne:
             cne.message = '%r is not a valid IPv6 gateway.'
             raise
+
+
+def addrs_info(dev, ipaddrs=None, ipv4_gateway=None):
+    return addresses.getIpInfo(dev, ipaddrs, ipv4_gateway)
