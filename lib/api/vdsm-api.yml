@@ -2899,7 +2899,7 @@ types:
             description: initial actions and actions to perform when stalling
             name: convergenceSchedule
             type: *ConvergenceSchedule
-            added: 4.0
+            added: '4.0'
 
         -   defaultvalue: needs updating
             description: ''
@@ -2917,6 +2917,7 @@ types:
                 to the guest operating systems
             name: enableGuestEvents
             type: boolean
+            added: '4.0'
 
         -   defaultvalue: null
             description: maximum number of outgoing migrations. Must be > 0.
@@ -8627,7 +8628,7 @@ VM.destroy:
             VM before to switch to forceful. Default is 1.
         name: gracefulAttempts
         type: uint
-        added: 4.0
+        added: '4.0'
 
 VM.getInfo:
     added: '3.1'
