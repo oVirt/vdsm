@@ -55,6 +55,8 @@ from vdsm.compat import pickle
 from vdsm.common.define import doneCode, errCode
 from vdsm.config import config
 from vdsm.virt import sampling
+import vdsm.virt.jobs
+from vdsm.virt.jobs import seal
 
 
 haClient = None  # Define here to work around pyflakes issue #13
@@ -834,6 +836,17 @@ class VM(APIBase):
         if not v:
             return errCode['noVM']
         return v.merge(drive, baseVolUUID, topVolUUID, bandwidth, jobUUID)
+
+    def seal(self, job_id, sp_id, images):
+        """
+        Run virt-sysprep on all disks of the VM, to erase all machine-specific
+        configuration from the filesystem: SSH keys, UDEV rules, MAC addresses,
+        system ID, hostname etc.
+        """
+        job = seal.Job(job_id, sp_id, images, self._irs)
+        jobs.add(job)
+        vdsm.virt.jobs.schedule(job)
+        return response.success()
 
 
 class Volume(APIBase):

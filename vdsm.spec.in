@@ -1269,6 +1269,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/v2v.py*
 %{python_sitelib}/%{vdsm_name}/vdscli.py*
 %{python_sitelib}/%{vdsm_name}/virtsparsify.py*
+%{python_sitelib}/%{vdsm_name}/virtsysprep.py*
 %{python_sitelib}/%{vdsm_name}/xmlrpc.py*
 %{python_sitelib}/%{vdsm_name}/tool/__init__.py*
 %{python_sitelib}/%{vdsm_name}/tool/configfile.py*
@@ -1302,6 +1303,8 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/virt/secret.py*
 %{python_sitelib}/%{vdsm_name}/virt/utils.py*
 %{python_sitelib}/%{vdsm_name}/virt/virdomain.py*
+%{python_sitelib}/%{vdsm_name}/virt/jobs/__init__.py*
+%{python_sitelib}/%{vdsm_name}/virt/jobs/seal.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmchannels.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmexitreason.py*
 %{python_sitelib}/%{vdsm_name}/virt/vmpowerdown.py*
@@ -1350,6 +1353,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/tests/cpuinfo/*.out
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-add
 %{_datadir}/%{vdsm_name}/tests/fake-ssh-agent
+%{_datadir}/%{vdsm_name}/tests/fake-virt-sysprep
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.out
 %{_datadir}/%{vdsm_name}/tests/fake-virt-v2v.err

@@ -69,6 +69,7 @@ dist_vdsmpylib_PYTHON = \
 	v2v.py \
 	vdscli.py \
 	virtsparsify.py \
+	virtsysprep.py \
 	xmlrpc.py \
 	$(NULL)
 

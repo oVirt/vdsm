@@ -403,6 +403,7 @@ AC_OUTPUT([
 	lib/vdsm/tool/configurators/Makefile
 	lib/vdsm/virt/Makefile
 	lib/vdsm/virt/containers/Makefile
+	lib/vdsm/virt/jobs/Makefile
 	lib/vdsmclient/Makefile
 	lib/yajsonrpc/Makefile
 	static/Makefile

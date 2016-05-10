@@ -356,6 +356,7 @@ dist_vdsmtests_PYTHON = \
 	$(NULL)
 
 dist_vdsmtests_SCRIPTS = \
+	fake-virt-sysprep \
 	run_tests.sh \
 	testValidation.py \
 	$(NULL)

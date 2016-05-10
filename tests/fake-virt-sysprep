@@ -1,4 +1,5 @@
-# Copyright 2015 Red Hat, Inc.
+#!/usr/bin/python2
+# Copyright 2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,27 +18,16 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-include $(top_srcdir)/build-aux/Makefile.subs
+import io
+import argparse
 
-SUBDIRS = jobs
-if CONTAINERS
-SUBDIRS+=containers
-endif
+parser = argparse.ArgumentParser()
 
-vdsmvirtdir = $(vdsmpylibdir)/virt
-dist_vdsmvirt_PYTHON = \
-	__init__.py \
-	guestagent.py \
-	migration.py \
-	periodic.py \
-	sampling.py \
-	secret.py \
-	utils.py \
-	virdomain.py \
-	vmchannels.py \
-	vmexitreason.py \
-	vmpowerdown.py \
-	vmstats.py \
-	vmstatus.py \
-	xmlconstants.py \
-	$(NULL)
+parser.add_argument('-a', '--add', action='append', dest='paths',
+                    help='Add disk image file')
+
+options = parser.parse_args()
+
+for path in options.paths:
+    with io.open(path, 'r+') as imagefile:
+        imagefile.write(u'fake-virt-sysprep was here')

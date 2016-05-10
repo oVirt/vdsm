@@ -7454,6 +7454,25 @@ types:
             type: *VolumeRole
         type: object
 
+    SealImageInfo: &SealImageInfo
+        added: '4.1'
+        description: A descriptor for an Image on a vdsm Storage Domain.
+        name: SealImageInfo
+        properties:
+        -   description: The UUID of the Storage Domain
+            name: sd_id
+            type: *UUID
+
+        -   description: The UUID of the Image
+            name: img_id
+            type: *UUID
+
+        -   description: The UUID of the Volume. Must always reference
+                         the leaf Volume of the Image.
+            name: vol_id
+            type: *UUID
+        type: object
+
 
 Host.setupNetworks:
     added: '3.1'
@@ -9957,6 +9976,28 @@ VM.merge:
             identify it in VmStats
         name: jobUUID
         type: *UUID
+
+VM.seal:
+    added: '4.1'
+    description: Run virt-sysprep on all disk images of the VM, erasing all
+        machine-specific configuration from the filesystem.
+    params:
+    -   description: The UUID of the VM
+        name: vmID
+        type: *UUID
+
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: The UUID of the Storage Pool
+        name: sp_id
+        type: *UUID
+
+    -   description: List of Images to be processed
+        name: images
+        type:
+        - *SealImageInfo
 
 Volume.copy:
     added: '3.1'
