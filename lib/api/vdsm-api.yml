@@ -10108,3 +10108,16 @@ SDM.copy_data:
     -   description: The destination endpoint
         name: destination
         type: *CopyDataEndpoint
+
+SDM.sparsify_volume:
+    added: '4.1'
+    description: Perform an in-place sparsify (e.g. not creating a new image)
+        on a given volume, removing unused space from the volume.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: Address of the Volume to be processed
+        name: vol_info
+        type: *CopyDataDIVEndpoint

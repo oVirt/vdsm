@@ -81,6 +81,7 @@ import storageServer
 
 import sdm.api.create_volume
 import sdm.api.copy_data
+import sdm.api.sparsify_volume
 
 GUID = "guid"
 NAME = "name"
@@ -3536,4 +3537,14 @@ class HSM(object):
     def sdm_copy_data(self, job_id, source, destination):
         job = sdm.api.copy_data.Job(job_id, self._get_hostid(),
                                     source, destination)
+        self.sdm_schedule(job)
+
+    @public
+    def sdm_sparsify_volume(self, job_id, vol_info):
+        """
+        Reduce sparse image size by converting free space on image to free
+        space on storage domain using virt-sparsify --inplace (without using
+        a temporary volume).
+        """
+        job = sdm.api.sparsify_volume.Job(job_id, self._get_hostid(), vol_info)
         self.sdm_schedule(job)

@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,6 +49,21 @@ def sparsify(src_vol, tmp_vol, dst_vol, src_format=None, dst_format=None):
         cmd.extend(("--convert", dst_format))
 
     cmd.extend((src_vol, dst_vol))
+
+    rc, out, err = commands.execCmd(cmd)
+
+    if rc != 0:
+        raise cmdutils.Error(cmd, rc, out, err)
+
+
+def sparsify_inplace(vol_path):
+    """
+    Sparsify the volume in place
+    (without copying from an input disk to an output disk)
+
+    :param vol_path: path to the volume
+    """
+    cmd = [_VIRTSPARSIFY.cmd, '--machine-readable', '--in-place', vol_path]
 
     rc, out, err = commands.execCmd(cmd)
 

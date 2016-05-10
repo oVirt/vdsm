@@ -27,4 +27,5 @@ dist_vdsmsdmapi_PYTHON = \
 	base.py \
 	copy_data.py \
 	create_volume.py \
+	sparsify_volume.py \
 	$(NULL)
