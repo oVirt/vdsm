@@ -21,14 +21,11 @@
 # pylint: disable=R0904
 
 import os
-import time
 import logging
-import errno
 
 from vdsm.network.errors import ConfigNetworkError
 
 from vdsm import commands
-from vdsm import cpuarch
 from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
@@ -39,12 +36,11 @@ from vdsm import response
 from vdsm import supervdsm
 from vdsm import jobs
 from vdsm import v2v
-from vdsm.host import stats as hoststats
+from vdsm.host import api as hostapi
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
 from vdsm.virt import vmstatus
-from vdsm.virt import sampling
 from vdsm.virt import secret
 import storage.volume
 import storage.sd
@@ -53,9 +49,10 @@ from virt import migration
 from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle
-from vdsm.define import doneCode, errCode, Kbytes, Mbytes
+from vdsm.define import doneCode, errCode
 import caps
 from vdsm.config import config
+from vdsm.virt import sampling
 
 
 haClient = None  # Define here to work around pyflakes issue #13
@@ -1364,48 +1361,9 @@ class Global(APIBase):
         """
         Report host statistics.
         """
-
-        def _readSwapTotalFree():
-            meminfo = utils.readMemInfo()
-            return meminfo['SwapTotal'] / 1024, meminfo['SwapFree'] / 1024
-
-        hooks.before_get_stats()
-        stats = {}
-
-        first_sample, last_sample, _ = sampling.host_samples.stats()
-        decStats = hoststats.produce(first_sample, last_sample)
-
-        if self._irs:
-            decStats['storageDomains'] = self._irs.repoStats()
-            del decStats['storageDomains']['status']
-        else:
-            decStats['storageDomains'] = {}
-
-        for var in decStats:
-            stats[var] = utils.convertToStr(decStats[var])
-
-        stats['memAvailable'] = self._memAvailable() / Mbytes
-        stats['memCommitted'] = self._memCommitted() / Mbytes
-        stats['memFree'] = self._memFree() / Mbytes
-        stats['swapTotal'], stats['swapFree'] = _readSwapTotalFree()
-        (stats['vmCount'], stats['vmActive'], stats['vmMigrating'],
-         stats['incomingVmMigrations'], stats['outgoingVmMigrations']) = \
-            self._countVms()
-        (tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec,
-         dummy, dummy, dummy) = time.gmtime(time.time())
-        stats['dateTime'] = '%02d-%02d-%02dT%02d:%02d:%02d GMT' % (
-            tm_year, tm_mon, tm_day, tm_hour, tm_min, tm_sec)
-        stats['momStatus'] = self._cif.mom.getStatus()
-        stats.update(self._cif.mom.getKsmStats())
-
-        stats['netConfigDirty'] = str(self._cif._netConfigDirty)
-        stats['haStats'] = self._getHaInfo()
-        if stats['haStats']['configured']:
-            # For backwards compatibility, will be removed in the future
-            stats['haScore'] = stats['haStats']['score']
-
-        stats = hooks.after_get_stats(stats)
-        return {'status': doneCode, 'info': stats}
+        return {'status': doneCode,
+                'info': hostapi.get_stats(self._cif,
+                                          sampling.host_samples.stats())}
 
     def setLogLevel(self, level):
         """
@@ -1612,112 +1570,6 @@ class Global(APIBase):
 
     def extend_image_ticket(self, uuid, timeout):
         return self._irs.extend_image_ticket(uuid, timeout)
-
-    # take a rough estimate on how much free mem is available for new vm
-    # memTotal = memFree + memCached + mem_used_by_non_qemu + resident  .
-    # simply returning (memFree + memCached) is not good enough, as the
-    # resident set size of qemu processes may grow - up to  memCommitted.
-    # Thus, we deduct the growth potential of qemu processes, which is
-    # (memCommitted - resident)
-
-    def _memAvailable(self):
-        """
-        Return an approximation of available memory for new VMs.
-        """
-        memCommitted = self._memCommitted()
-        resident = 0
-        for v in self._cif.vmContainer.values():
-            if v.conf['pid'] == '0':
-                continue
-            try:
-                with open('/proc/' + v.conf['pid'] + '/statm') as statmfile:
-                    resident += int(statmfile.read().split()[1])
-            except:
-                pass
-        resident *= cpuarch.PAGE_SIZE_BYTES
-        meminfo = utils.readMemInfo()
-        freeOrCached = (meminfo['MemFree'] +
-                        meminfo['Cached'] + meminfo['Buffers']) * Kbytes
-        return freeOrCached + resident - memCommitted - \
-            config.getint('vars', 'host_mem_reserve') * Mbytes
-
-    def _memFree(self):
-        """
-        Return the actual free mem on host.
-        """
-        meminfo = utils.readMemInfo()
-        return (meminfo['MemFree'] +
-                meminfo['Cached'] + meminfo['Buffers']) * Kbytes
-
-    def _memCommitted(self):
-        """
-        Return the amount of memory (Mb) committed for VMs
-        """
-        committed = 0
-        for v in self._cif.vmContainer.values():
-            committed += v.memCommitted
-        return committed
-
-    def _countVms(self):
-        count = active = incoming = outgoing = 0
-        for vmId, v in self._cif.vmContainer.items():
-            try:
-                count += 1
-                status = v.lastStatus
-                if status == vmstatus.UP:
-                    active += 1
-                elif status == vmstatus.MIGRATION_DESTINATION:
-                    incoming += 1
-                elif status == vmstatus.MIGRATION_SOURCE:
-                    outgoing += 1
-            except:
-                self.log.error(vmId + ': Lost connection to VM')
-        return count, active, incoming + outgoing, incoming, outgoing
-
-    def _getHaInfo(self):
-        """
-        Return Hosted Engine HA information for this host.
-        """
-        i = {
-            'configured': False,
-            'active': False,
-            'score': 0,
-            'globalMaintenance': False,
-            'localMaintenance': False,
-        }
-        if haClient:
-            try:
-                instance = haClient.HAClient()
-                host_id = instance.get_local_host_id()
-
-                # If a host id is available, consider HA configured
-                if host_id:
-                    i['configured'] = True
-                else:
-                    return i
-
-                stats = instance.get_all_stats()
-                if 0 in stats:
-                    i['globalMaintenance'] = stats[0].get(
-                        haClient.HAClient.GlobalMdFlags.MAINTENANCE, False)
-                if host_id in stats:
-                    i['active'] = stats[host_id]['live-data']
-                    i['score'] = stats[host_id]['score']
-                    i['localMaintenance'] = stats[host_id]['maintenance']
-            except IOError as ex:
-                if ex.errno == errno.ENOENT:
-                    self.log.error(
-                        ("failed to retrieve Hosted Engine HA score '{0}'"
-                         "Is the Hosted Engine setup finished?")
-                        .format(str(ex))
-                    )
-                else:
-                    self.log.exception(
-                        "failed to retrieve Hosted Engine HA score"
-                    )
-            except Exception:
-                self.log.exception("failed to retrieve Hosted Engine HA info")
-        return i
 
 
 class SDM(APIBase):
