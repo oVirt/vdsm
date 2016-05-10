@@ -25,7 +25,7 @@ import logging
 import netaddr
 
 from vdsm.constants import P_VDSM_RUN
-from vdsm.network import netinfo
+from vdsm.network import libvirt
 from vdsm.utils import rmFile
 
 from .ipwrapper import IPRoute2Error
@@ -195,7 +195,7 @@ class DynamicSourceRoute(StaticSourceRoute):
     @staticmethod
     def _isLibvirtInterface(device):
         try:
-            networks = netinfo.networks()
+            networks = libvirt.networks()
         except libvirtError:  # libvirt might not be started or it just fails
             logging.error('Libvirt failed to answer. It might be the case that'
                           ' this script is being run before libvirt startup. '

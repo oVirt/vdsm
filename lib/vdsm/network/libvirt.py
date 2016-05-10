@@ -24,11 +24,12 @@ from xml.sax.saxutils import escape
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm import libvirtconnection
-from vdsm.network import netinfo
+
+LIBVIRT_NET_PREFIX = 'vdsm-'
 
 
 def getNetworkDef(network):
-    netName = netinfo.LIBVIRT_NET_PREFIX + network
+    netName = LIBVIRT_NET_PREFIX + network
     conn = libvirtconnection.get()
     try:
         net = conn.networkLookupByName(netName)
@@ -56,7 +57,7 @@ def createNetworkDef(network, bridged=True, iface=None):
     or interface subelement.
     """
 
-    netName = netinfo.LIBVIRT_NET_PREFIX + network
+    netName = LIBVIRT_NET_PREFIX + network
 
     def EtreeElement(tagName, text=None, **attrs):
         elem = etree.Element(tagName)
@@ -89,7 +90,7 @@ def createNetwork(netXml):
 
 
 def removeNetwork(network):
-    netName = netinfo.LIBVIRT_NET_PREFIX + network
+    netName = LIBVIRT_NET_PREFIX + network
     conn = libvirtconnection.get()
 
     net = conn.networkLookupByName(netName)
@@ -97,3 +98,30 @@ def removeNetwork(network):
         net.destroy()
     if net.isPersistent():
         net.undefine()
+
+
+def networks():
+    """
+    Get dict of networks from libvirt
+
+    :returns: dict of networkname={properties}
+    :rtype: dict of dict
+            { 'ovirtmgmt': { 'bridge': 'ovirtmgmt', 'bridged': True}
+              'red': { 'iface': 'red', 'bridged': False}}
+    """
+    nets = {}
+    conn = libvirtconnection.get()
+    allNets = ((net, net.name()) for net in conn.listAllNetworks(0))
+    for net, netname in allNets:
+        if netname.startswith(LIBVIRT_NET_PREFIX):
+            netname = netname[len(LIBVIRT_NET_PREFIX):]
+            nets[netname] = {}
+            xml = etree.fromstring(net.XMLDesc(0))
+            interface = xml.find('.//interface')
+            if interface is not None:
+                nets[netname]['iface'] = interface.get('dev')
+                nets[netname]['bridged'] = False
+            else:
+                nets[netname]['bridge'] = xml.find('.//bridge').get('name')
+                nets[netname]['bridged'] = True
+    return nets

@@ -20,9 +20,9 @@ from __future__ import absolute_import
 
 import six
 
+from vdsm.network.libvirt import networks as libvirt_nets
 from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
                                         CachingNetInfo)
-from vdsm.network.netinfo import networks as libvirt_nets
 from .netconfpersistence import RunningConfig
 
 from . import connectivity

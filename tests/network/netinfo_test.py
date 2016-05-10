@@ -26,6 +26,7 @@ import io
 from nose.plugins.attrib import attr
 
 from vdsm.network import ipwrapper
+from vdsm.network import libvirt
 from vdsm.network import netinfo
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
@@ -108,7 +109,7 @@ class TestNetinfo(TestCaseBase):
                                     lambda x: operstate)]):
                 self.assertEqual(nics.speed('fake_nic'), expected)
 
-    @MonkeyPatch(netinfo, 'networks', lambda: {'fake': {'bridged': True}})
+    @MonkeyPatch(libvirt, 'networks', lambda: {'fake': {'bridged': True}})
     def testGetNonExistantBridgeInfo(self):
         # Getting info of non existing bridge should not raise an exception,
         # just log a traceback. If it raises an exception the test will fail as
@@ -116,7 +117,7 @@ class TestNetinfo(TestCaseBase):
         get()
 
     @MonkeyPatch(netinfo.cache, 'getLinks', lambda: [])
-    @MonkeyPatch(netinfo, 'networks', lambda: {})
+    @MonkeyPatch(libvirt, 'networks', lambda: {})
     def testGetEmpty(self):
         result = {}
         result.update(get())

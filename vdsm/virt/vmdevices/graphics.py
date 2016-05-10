@@ -22,6 +22,7 @@ import logging
 
 import libvirt
 
+from vdsm.network import libvirt as net_libvirt
 from vdsm.network import netinfo
 from vdsm import utils
 from vdsm.config import config
@@ -142,9 +143,10 @@ class Graphics(Base):
                                              mode='secure')
 
         if self.specParams.get('displayNetwork'):
-            graphics.appendChildWithArgs('listen', type='network',
-                                         network=netinfo.LIBVIRT_NET_PREFIX +
-                                         self.specParams.get('displayNetwork'))
+            graphics.appendChildWithArgs(
+                'listen', type='network',
+                network=net_libvirt.LIBVIRT_NET_PREFIX +
+                self.specParams.get('displayNetwork'))
         else:
             graphics.setAttrs(listen='0')
 
@@ -241,7 +243,7 @@ def getFirstGraphics(conf):
 
 def _getNetworkIp(network):
     try:
-        nets = netinfo.networks()
+        nets = net_libvirt.networks()
         device = nets[network].get('iface', network)
         ip, _, _, _ = netinfo.addresses.getIpInfo(device)
     except (libvirt.libvirtError, KeyError, IndexError):

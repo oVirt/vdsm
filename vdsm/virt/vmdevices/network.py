@@ -24,7 +24,8 @@ from xml.dom import Node
 
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable
-from vdsm.network.netinfo import DUMMY_BRIDGE, LIBVIRT_NET_PREFIX
+from vdsm.network.libvirt import LIBVIRT_NET_PREFIX
+from vdsm.network.netinfo import DUMMY_BRIDGE
 
 from .core import Base
 from . import hwclass

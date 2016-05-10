@@ -25,6 +25,7 @@ import os
 import errno
 import six
 
+from vdsm.network import libvirt
 from vdsm.network import netinfo
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.netconfpersistence import RunningConfig
@@ -65,7 +66,7 @@ def _get(vdsmnets=None):
     routes = get_routes()
 
     if vdsmnets is None:
-        libvirt_nets = netinfo.networks()
+        libvirt_nets = libvirt.networks()
         networking['networks'] = libvirtNets2vdsm(libvirt_nets, routes,
                                                   ipaddrs)
     else:
@@ -171,7 +172,7 @@ def ifaceUsed(iface):
             return True
         if linkDict.get('device') == iface and linkDict.get('type') == 'vlan':
             return True  # it backs a VLAN
-    for net_attr in six.itervalues(netinfo.networks()):
+    for net_attr in six.itervalues(libvirt.networks()):
         if net_attr.get('iface') == iface:
             return True
     return False
