@@ -271,14 +271,20 @@ EXTRA_DIST = \
 	tests_child.py \
 	$(NULL)
 
-dist_noinst_DATA = \
+server_certificates = \
 	server.crt \
 	server.csr \
 	server.key \
-	server.p12 \
+	server.p12
+
+other_certificates = \
 	other.crt \
 	other.csr \
-	other.key \
+	other.key
+
+dist_noinst_DATA = \
+	$(server_certificates) \
+	$(other_certificates) \
 	run_tests_local.sh
 
 dist_vdsmtests_DATA = \
@@ -348,7 +354,10 @@ dist_vdsmtests_SCRIPTS = \
 all-local: \
 	$(nodist_vdsmtests_PYTHON)
 
-server.crt server.csr server.key other.crt other.csr other.key: makecert.sh
+$(server_certificates) $(other_certificates): make_certificates
+
+.PHONY: make_certificates
+make_certificates: makecert.sh
 	./makecert.sh
 
 run_modules  = $(test_modules)
