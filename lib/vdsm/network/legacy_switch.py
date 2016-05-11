@@ -37,6 +37,7 @@ from vdsm.network.netinfo.cache import CachingNetInfo
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm import utils
 
+from .canonicalize import canonicalize_networks
 from .configurators import libvirt
 from .models import Bond, Bridge, Nic, Vlan
 from .models import hierarchy_backing_device
@@ -419,6 +420,7 @@ def _del_broken_network(network, netAttr, configurator):
         if config.get('vars', 'net_persistence') == 'unified':
             configurator.runningConfig.removeNetwork(network)
         return
+    canonicalize_networks({network: _netinfo.networks[network]})
     _del_network(network, configurator, bypass_validation=True,
                  _netinfo=_netinfo)
 
