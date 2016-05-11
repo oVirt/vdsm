@@ -6474,6 +6474,18 @@
 {'type', 'DriveSpecPath', 'data': {'path': 'str'}}
 
 ##
+# @LegacyCdromPath:
+#
+# Cdrom specification that only supplies path to an image. Should not be
+# used at all.
+#
+# Since: 4.10.0
+#
+# Notes: Deprecated since 4.18.0
+##
+{'alias': 'LegacyCdromPath', 'data': 'str'}
+
+##
 # @DriveSpec:
 #
 # A discriminated record containing a VM drive specification
@@ -6485,7 +6497,7 @@
 {'type': 'DriveSpec',
  'data': {},
  'union': ['DriveSpecVolume', 'DriveSpecGUID', 'DriveSpecPayload',
-           'DriveSpecPath']}
+           'DriveSpecPath', 'LegacyCdromPath']}
 
 ##
 # @VM.changeCD:

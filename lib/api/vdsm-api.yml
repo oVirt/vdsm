@@ -739,6 +739,15 @@ types:
             type: *UUID
         type: object
 
+    LegacyCdromPath: &LegacyCdromPath
+        added: '3.1'
+        deprecated: '4.0'
+        description: Cdrom specification that only supplies path to an image.
+            Should not be used at all.
+        name: LegacyCdromPath
+        sourcetype: string
+        type: alias
+
     DriveSpec: &DriveSpec
         added: '3.1'
         description: A discriminated record containing a VM drive specification
@@ -749,6 +758,7 @@ types:
         - *DriveSpecGUID
         - *DriveSpecPayload
         - *DriveSpecPath
+        - *LegacyCdromPath
 
     ErrorInfo: &ErrorInfo
         added: '4.0'
