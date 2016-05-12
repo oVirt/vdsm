@@ -18,8 +18,8 @@
             ],
             "metadata": {
                 "ovirt-role": "host",
-                "ovirt-scripts": [
-                    "../deploy.sh"
+                "deploy-scripts": [
+                    "$LAGO_INITFILE_PATH/deploy.sh"
                 ]
             }
         }
