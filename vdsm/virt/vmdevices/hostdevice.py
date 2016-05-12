@@ -23,7 +23,8 @@ import xml.etree.ElementTree as ET
 
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable, \
-    pci_address_to_name, CAPABILITY_TO_XML_ATTR, scsi_address_to_adapter
+    pci_address_to_name, CAPABILITY_TO_XML_ATTR, scsi_address_to_adapter, \
+    reattach_detachable
 from . import core
 from . import hwclass
 from .. import vmxml
@@ -43,6 +44,10 @@ class HostDevice(core.Base):
     def setup(self):
         logging.debug('Detaching device %s from the host.' % self.device)
         self._deviceParams = detach_detachable(self.device)
+
+    def teardown(self):
+        if CAPABILITY_TO_XML_ATTR[self._deviceParams['capability']] != 'pci':
+            reattach_detachable(self.device)
 
     @property
     def _xpath(self):
