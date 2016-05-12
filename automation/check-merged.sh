@@ -38,14 +38,12 @@ createrepo exported-artifacts
 [[ -e /usr/bin/qemu-kvm ]] \
 || ln -s /usr/libexec/qemu-kvm /usr/bin/qemu-kvm
 
-TEMPLATES_REPO=http://templates.ovirt.org/repo/repo.metadata
-# If testing locally in the rh office you can use this one
-#TEMPLATES_REPO=http://10.35.18.63/repo/repo.metadata
 
 lago init \
     "$PREFIX" \
-    automation/lago-env.json \
-    --template-repo-path "$TEMPLATES_REPO"
+    automation/lago-env.yml
+# If testing locally in the rh office you can use the option
+# --template-repo-path=http://10.35.18.63/repo/repo.metadata
 
 cd "$PREFIX"
 
