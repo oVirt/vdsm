@@ -59,8 +59,9 @@ def udevTriggerMultipath(guid):
 @expose
 def appropriateSCSIDevice(device_name, udev_path):
     ruleFile = _UDEV_RULE_FILE_NAME % ('scsi', device_name)
-    rule = 'RUN+="%s %s:%s %s"\n' % (
-        EXT_CHOWN, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, udev_path)
+    rule = 'KERNEL=="%s" SUBSYSTEM=="scsi_generic" RUN+="%s %s:%s %s"\n' % (
+        os.path.basename(udev_path), EXT_CHOWN, QEMU_PROCESS_USER,
+        QEMU_PROCESS_GROUP, udev_path)
     with open(ruleFile, "w") as rf:
         _log.debug("Creating rule %s: %r", ruleFile, rule)
         rf.write(rule)
