@@ -21,6 +21,7 @@
 from operator import itemgetter
 import xml.etree.ElementTree as etree
 
+from vdsm.virt import xmlconstants
 from vdsm import constants
 from vdsm import cpuarch
 from vdsm import utils
@@ -434,12 +435,54 @@ class Domain(object):
 
         metadata = Element('metadata')
         self._appendMetadataQOS(metadata)
+        self._appendMetadataContainer(metadata)
         self.dom.appendChild(metadata)
 
     def _appendMetadataQOS(self, metadata):
         metadata.appendChild(Element(METADATA_VM_TUNE_ELEMENT,
                                      namespace=METADATA_VM_TUNE_PREFIX,
                                      namespace_uri=METADATA_VM_TUNE_URI))
+
+    def _appendMetadataContainer(self, metadata):
+        custom = self.conf.get('custom', {})
+        # container{Type,Image} are mandatory: if either
+        # one is missing, no container-related extradata
+        # should be present at all.
+        container_type = custom.get('containerType')
+        container_image = custom.get('containerImage')
+        if not container_type or not container_image:
+            return
+
+        cont = Element(
+            xmlconstants.METADATA_CONTAINERS_ELEMENT,
+            namespace=xmlconstants.METADATA_CONTAINERS_PREFIX,
+            namespace_uri=xmlconstants.METADATA_CONTAINERS_URI,
+            image=container_image,
+            text=container_type
+        )
+
+        metadata.appendChild(cont)
+
+        # drive mapping is optional. It is totally fine for a container
+        # not to use any drive, this just means it will not have any
+        # form of persistency.
+        drive_map = parse_drive_mapping(self.conf.get('custom', {}))
+        if drive_map:
+            dm = Element(
+                xmlconstants.METADATA_VM_DRIVE_MAP_ELEMENT,
+                namespace=xmlconstants.METADATA_VM_DRIVE_MAP_PREFIX,
+                namespace_uri=xmlconstants.METADATA_VM_DRIVE_MAP_URI
+            )
+
+            for name, drive in drive_map.items():
+                vol = Element(
+                    xmlconstants.METADATA_VM_DRIVE_VOLUME_ELEMENT,
+                    namespace=xmlconstants.METADATA_VM_DRIVE_MAP_PREFIX,
+                    namespace_uri=xmlconstants.METADATA_VM_DRIVE_MAP_URI,
+                    name=name,
+                    drive=drive)
+                dm.appendChild(vol)
+            metadata.appendChild(dm)
 
     def appendOs(self, use_serial_console=False):
         """
@@ -773,3 +816,15 @@ class Domain(object):
 
     def _getMaxVCpus(self):
         return self.conf.get('maxVCpus', self._getSmp())
+
+
+def parse_drive_mapping(custom):
+    mappings = custom.get('volumeMap', None)
+    if mappings is None:
+        return {}
+
+    drive_mapping = {}
+    for mapping in mappings.split(','):
+        name, drive = mapping.strip().split(':', 1)
+        drive_mapping[name.strip()] = drive.strip()
+    return drive_mapping

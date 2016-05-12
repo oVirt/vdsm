@@ -58,6 +58,29 @@ class TestVmXmlFunctions(VmXmlTestCase):
             self.assertEqual(True, vmxml.has_channel(
                 dom_xml, vmchannels.DEVICE_NAME))
 
+    @permutations([
+        # custom, mapping
+        [{}, {}],
+        [{'volumeMap': 'data:vda'}, {'data': 'vda'}],
+        [{'volumeMap': 'data:vda,extra:vdb'},
+         {'data': 'vda', 'extra': 'vdb'}],
+        [{'volumeMap': 'data1:vda, data2:vdb'},
+         {'data1': 'vda', 'data2': 'vdb'}],
+    ])
+    def test_parse_drive_mapping(self, custom, mapping):
+        result = vmxml.parse_drive_mapping(custom)
+        self.assertEqual(result, mapping)
+
+    @permutations([
+        # custom, exc
+        [{'volumeMap': ''}, ValueError],
+        [{'volumeMap': 'foobar'}, ValueError],
+    ])
+    def test_explode_parsing_drive_mapping(self, custom, exc):
+        self.assertRaises(exc,
+                          vmxml.parse_drive_mapping,
+                          custom)
+
 
 @expandPermutations
 class TestVmXmlHelpers(XMLTestCase):
@@ -179,3 +202,122 @@ class TestDomainDescriptor(VmXmlTestCase):
             dom = domain_descriptor.DomainDescriptor(raw_xml % conf)
             self.assertNotEquals(sorted(dom.all_channels()),
                                  sorted(vmchannels.AGENT_DEVICE_NAMES))
+
+
+@expandPermutations
+class TestVmXmlMetadata(XMLTestCase):
+
+    def __init__(self, *args, **kwargs):
+        XMLTestCase.__init__(self, *args, **kwargs)
+        self.channelListener = None
+        self.conf = {
+            'vmName': 'testVm',
+            'vmId': '9ffe28b6-6134-4b1e-8804-1185f49c436f',
+            'smp': '8',
+            'maxVCpus': '160',
+            'memSize': '1024',
+            'memGuaranteedSize': '512',
+        }
+
+    def test_no_custom(self):
+        expected = """
+          <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+            <metadata>
+              <ovirt:qos/>
+            </metadata>
+          </domain>
+        """
+        conf = {}
+        conf.update(self.conf)
+        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
+        domxml.appendMetadata()
+        result = domxml.toxml()
+        self.assertXMLEqual(result, expected)
+
+    @permutations([
+        # conf
+        [{}],
+        [{'custom': {}}],
+        [{'custom': {'containerImage': 'foobar'}}],
+        [{'custom': {'containerType': 'foobar'}}],
+    ])
+    def test_no_container_data(self, conf):
+        expected = """
+          <domain type="kvm" xmlns:ovirt="http://ovirt.org/vm/tune/1.0">
+            <metadata>
+              <ovirt:qos/>
+            </metadata>
+          </domain>
+        """
+        conf.update(self.conf)
+        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
+        domxml.appendMetadata()
+        result = domxml.toxml()
+        self.assertXMLEqual(result, expected)
+
+    def test_container_data(self):
+        expected = """
+          <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ns1="http://ovirt.org/vm/containers/1.0"
+                  type="kvm">
+            <metadata>
+              <ns0:qos />
+              <ns1:container image="foobar">foobar</ns1:container>
+            </metadata>
+          </domain>
+        """
+        conf = {
+            'custom': {
+                'containerImage': 'foobar',
+                'containerType': 'foobar',
+            }
+        }
+        conf.update(self.conf)
+        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
+        domxml.appendMetadata()
+        result = domxml.toxml()
+        self.assertXMLEqual(result, expected)
+
+    def test_container_data_drive_map(self):
+        expected = """
+          <domain xmlns:ns0="http://ovirt.org/vm/tune/1.0"
+                  xmlns:ns1="http://ovirt.org/vm/containers/1.0"
+                  xmlns:ns2="http://ovirt.org/vm/containers/drivemap/1.0"
+                  type="kvm">
+            <metadata>
+              <ns0:qos />
+              <ns1:container image="foobar">foobar</ns1:container>
+              <ns2:drivemap>
+                <ns2:volume drive="vda" name="data1" />
+                <ns2:volume drive="vdb" name="data2" />
+              </ns2:drivemap>
+            </metadata>
+          </domain>
+        """
+        conf = {
+            'custom': {
+                'containerImage': 'foobar',
+                'containerType': 'foobar',
+                'volumeMap': 'data1:vda,data2:vdb',
+            }
+        }
+        conf.update(self.conf)
+        domxml = StrippedDomain(conf, self.log, cpuarch.X86_64)
+        domxml.appendMetadata()
+        result = domxml.toxml()
+        self.assertXMLEqual(result, expected)
+
+
+class StrippedDomain(vmxml.Domain):
+    """
+    Bare-bones vmxml.Domain, which doesn't add elements on its __init__
+    to sinmplify the testing. Will be dropped if vmxml.Domain is refactored.
+    """
+    def __init__(self, conf, log, arch):
+        self.conf = conf
+        self.log = log
+        self.arch = arch
+        self.dom = vmxml.Element('domain', type='kvm')
+
+    def toxml(self):
+        return vmxml.format_xml(self.dom)

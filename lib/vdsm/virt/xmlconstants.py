@@ -22,11 +22,11 @@ from __future__ import absolute_import
 
 _METADATA_PREFIX = 'ovirt'
 
-METADATA_CONTAINERS_URI = 'http://github.com/ovirt/containers/1.0'
+METADATA_CONTAINERS_URI = 'http://ovirt.org/vm/containers/1.0'
 METADATA_CONTAINERS_ELEMENT = 'container'
 METADATA_CONTAINERS_PREFIX = _METADATA_PREFIX + 'cnt'
 
-METADATA_VM_DRIVE_MAP_URI = 'http://github.com/ovirt/containers/drivemap/1.0'
+METADATA_VM_DRIVE_MAP_URI = 'http://ovirt.org/vm/containers/drivemap/1.0'
 METADATA_VM_DRIVE_MAP_ELEMENT = 'drivemap'
-METADATA_VM_DRIVE_VOLUME_PREFIX = 'volume'
+METADATA_VM_DRIVE_VOLUME_ELEMENT = 'volume'
 METADATA_VM_DRIVE_MAP_PREFIX = _METADATA_PREFIX + 'dm'
