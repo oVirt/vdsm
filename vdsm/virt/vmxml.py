@@ -241,13 +241,13 @@ class Domain(object):
         </domain>
         """
 
-        self._metadata = Element('metadata')
-        self._metadata.appendChild(Element(METADATA_VM_TUNE_PREFIX + ':' +
-                                           METADATA_VM_TUNE_ELEMENT,
-                                           namespaceUri=METADATA_VM_TUNE_URI))
+        metadata = Element('metadata')
+        metadata.appendChild(Element(METADATA_VM_TUNE_PREFIX + ':' +
+                                     METADATA_VM_TUNE_ELEMENT,
+                                     namespaceUri=METADATA_VM_TUNE_URI))
         self.dom.setAttr('xmlns:' + METADATA_VM_TUNE_PREFIX,
                          METADATA_VM_TUNE_URI)
-        self.dom.appendChild(self._metadata)
+        self.dom.appendChild(metadata)
 
     def appendOs(self, use_serial_console=False):
         """
