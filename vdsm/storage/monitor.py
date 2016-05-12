@@ -239,26 +239,90 @@ class MonitorThread(object):
     def _run(self):
         log.debug("Domain monitor for %s started", self.sdUUID)
         try:
+            self._setupLoop()
             self._monitorLoop()
+        except utils.Canceled:
+            log.debug("Domain monitor for %s canceled", self.sdUUID)
         finally:
             log.debug("Domain monitor for %s stopped (shutdown=%s)",
                       self.sdUUID, self.wasShutdown)
             if self._shouldReleaseHostId():
                 self._releaseHostId()
 
+    # Setting up
+
+    def _setupLoop(self):
+        """
+        Set up the monitor, retrying on failures. Returns when the monitor is
+        ready.
+        """
+        while True:
+            try:
+                self._setupMonitor()
+                return
+            except Exception as e:
+                log.exception("Setting up monitor for %s failed", self.sdUUID)
+                status = Status()
+                status.error = e
+                self._updateStatus(status)
+                if self.cycleCallback:
+                    self.cycleCallback()
+                if self.stopEvent.wait(self.interval):
+                    raise utils.Canceled
+
+    def _setupMonitor(self):
+        # Pick up changes in the domain, for example, domain upgrade.
+        if self._shouldRefreshDomain():
+            self._refreshDomain()
+
+        # Producing the domain is deferred because it might take some time and
+        # we don't want to slow down the thread start (and anything else that
+        # relies on that as for example updateMonitoringThreads). It also might
+        # fail and we want keep trying until we succeed or the domain is
+        # deactivated.
+        if self.domain is None:
+            self._produceDomain()
+
+        # This may fail even if the domain was produced. We will try again in
+        # the next cycle.
+        if self.monitoringPath is None:
+            self.monitoringPath = self.domain.getMonitoringPath()
+
+        # The isIsoDomain assignment is deferred because the isoPrefix
+        # discovery might fail (if the domain suddenly disappears) and we
+        # could risk to never try to set it again.
+        if self.isIsoDomain is None:
+            self._setIsoDomainInfo()
+
+    @utils.cancelpoint
+    def _produceDomain(self):
+        log.debug("Producing domain %s", self.sdUUID)
+        self.domain = sdCache.produce(self.sdUUID)
+
+    @utils.cancelpoint
+    def _setIsoDomainInfo(self):
+        isIsoDomain = self.domain.isISO()
+        if isIsoDomain:
+            log.debug("Domain %s is an ISO domain", self.sdUUID)
+            self.isoPrefix = self.domain.getIsoDomainImagesDir()
+        self.isIsoDomain = isIsoDomain
+
+    # Monitoring
+
     def _monitorLoop(self):
-        while not self.stopEvent.is_set():
+        """
+        Monitor the domain peroidically until the monitor is stopped.
+        """
+        while True:
             try:
                 self._monitorDomain()
-            except utils.Canceled:
-                log.debug("Domain monitor for %s canceled", self.sdUUID)
-                return
-            except:
+            except Exception:
                 log.exception("Domain monitor for %s failed", self.sdUUID)
             finally:
                 if self.cycleCallback:
                     self.cycleCallback()
-            self.stopEvent.wait(self.interval)
+            if self.stopEvent.wait(self.interval):
+                raise utils.Canceled
 
     def _monitorDomain(self):
         status = Status()
@@ -268,25 +332,6 @@ class MonitorThread(object):
             self._refreshDomain()
 
         try:
-            # We should produce the domain inside the monitoring loop because
-            # it might take some time and we don't want to slow down the thread
-            # start (and anything else that relies on that as for example
-            # updateMonitoringThreads). It also might fail and we want keep
-            # trying until we succeed or the domain is deactivated.
-            if self.domain is None:
-                self._produceDomain()
-
-            # This may fail even if the domain was produced. We will try again
-            # in the next cycle.
-            if self.monitoringPath is None:
-                self.monitoringPath = self.domain.getMonitoringPath()
-
-            # The isIsoDomain assignment is delayed because the isoPrefix
-            # discovery might fail (if the domain suddenly disappears) and we
-            # could risk to never try to set it again.
-            if self.isIsoDomain is None:
-                self._setIsoDomainInfo()
-
             self._performDomainSelftest()
             self._checkReadDelay(status)
             self._collectStatistics(status)
@@ -295,16 +340,17 @@ class MonitorThread(object):
             status.error = e
 
         status.checkTime = time.time()
-
-        if self._statusDidChange(status):
-            self._notifyStatusChanges(status)
+        self._updateStatus(status)
 
         if self._shouldAcquireHostId(status):
             self._acquireHostId()
 
-        self.status = FrozenStatus(status)
+    # Handling status changes
 
-    # Notifiying status changes
+    def _updateStatus(self, status):
+        if self._statusDidChange(status):
+            self._notifyStatusChanges(status)
+        self.status = FrozenStatus(status)
 
     def _statusDidChange(self, status):
         return (not self.status.actual or
@@ -330,21 +376,6 @@ class MonitorThread(object):
         log.debug("Refreshing domain %s", self.sdUUID)
         sdCache.manuallyRemoveDomain(self.sdUUID)
         self.lastRefresh = time.time()
-
-    # Deferred initialization
-
-    @utils.cancelpoint
-    def _produceDomain(self):
-        log.debug("Producing domain %s", self.sdUUID)
-        self.domain = sdCache.produce(self.sdUUID)
-
-    @utils.cancelpoint
-    def _setIsoDomainInfo(self):
-        isIsoDomain = self.domain.isISO()
-        if isIsoDomain:
-            log.debug("Domain %s is an ISO domain", self.sdUUID)
-            self.isoPrefix = self.domain.getIsoDomainImagesDir()
-        self.isIsoDomain = isIsoDomain
 
     # Collecting monitoring info
 
