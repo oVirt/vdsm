@@ -129,9 +129,8 @@ class SourceThread(threading.Thread):
         if 'convergenceSchedule' in kwargs:
             self._convergence_schedule = kwargs.get('convergenceSchedule')
             self._use_convergence_schedule = True
-
-        self.log.debug('convergence schedule set to: %s',
-                       str(self._convergence_schedule))
+            self.log.debug('convergence schedule set to: %s',
+                           str(self._convergence_schedule))
 
     @property
     def hibernating(self):
