@@ -403,7 +403,7 @@ def reattach_detachable(device_name):
             raise UnsuitableSCSIDevice
 
         supervdsm.getProxy().rmAppropriateSCSIDevice(
-            device_params['udev_path'])
+            device_name, device_params['udev_path'])
 
 
 def change_numvfs(device_name, numvfs):
