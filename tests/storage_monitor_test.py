@@ -28,6 +28,7 @@ from contextlib import contextmanager
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 
+from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
 from storagefakelib import FakeStorageDomainCache
 from testlib import VdsmTestCase
@@ -564,14 +565,97 @@ class TestMonitorThreadStopping(VdsmTestCase):
         self.assertFalse(domain.acquired)
 
 
+@expandPermutations
 class TestStatus(VdsmTestCase):
 
-    def test_valid(self):
-        s = monitor.Status()
-        self.assertIsNone(s.error)
-        self.assertTrue(s.valid)
+    def test_initial_status(self):
+        # For backward compatibility, we must publish an initial status before
+        # we collect the first samples. The initial status is marked as
+        # actual=False to allow engine to treat it specially.
+        path_status = monitor.PathStatus(actual=False)
+        domain_status = monitor.DomainStatus(actual=False)
+        status = monitor.Status(path_status, domain_status)
+        self.assertFalse(status.actual)
+        self.assertIsNone(status.error)
+        self.assertTrue(status.valid)
 
-    def test_invalid(self):
-        s = monitor.Status()
-        s.error = Exception()
-        self.assertFalse(s.valid)
+    def test_partial_status(self):
+        # We collected path status but domain status is not available yet.
+        path_status = monitor.PathStatus()
+        domain_status = monitor.DomainStatus(actual=False)
+        status = monitor.Status(path_status, domain_status)
+        self.assertFalse(status.actual)
+        self.assertIsNone(status.error)
+        self.assertTrue(status.valid)
+
+    def test_full_status(self):
+        # Both path status and domain status are available.
+        path_status = monitor.PathStatus()
+        domain_status = monitor.DomainStatus()
+        status = monitor.Status(path_status, domain_status)
+        self.assertTrue(status.actual)
+        self.assertIsNone(status.error)
+        self.assertTrue(status.valid)
+
+    def test_path_error(self):
+        path_status = monitor.PathStatus(error=Exception("path"))
+        domain_status = monitor.DomainStatus()
+        status = monitor.Status(path_status, domain_status)
+        self.assertTrue(status.actual)
+        self.assertEqual(status.error, path_status.error)
+        self.assertFalse(status.valid)
+
+    def test_path_error_non_actual_domain_status(self):
+        path_status = monitor.PathStatus(error=Exception("path"))
+        domain_status = monitor.DomainStatus(actual=False)
+        status = monitor.Status(path_status, domain_status)
+        self.assertTrue(status.actual)
+        self.assertEqual(status.error, path_status.error)
+        self.assertFalse(status.valid)
+
+    def test_domain_error(self):
+        path_status = monitor.PathStatus()
+        domain_status = monitor.DomainStatus(error=Exception("domain"))
+        status = monitor.Status(path_status, domain_status)
+        self.assertTrue(status.actual)
+        self.assertEqual(status.error, domain_status.error)
+        self.assertFalse(status.valid)
+
+    def test_domain_error_non_actual_path_status(self):
+        path_status = monitor.PathStatus(actual=False)
+        domain_status = monitor.DomainStatus(error=Exception("domain"))
+        status = monitor.Status(path_status, domain_status)
+        self.assertTrue(status.actual)
+        self.assertEqual(status.error, domain_status.error)
+        self.assertFalse(status.valid)
+
+    def test_both_error(self):
+        # For backward compatibility we have to present single error.
+        path_status = monitor.PathStatus(error=Exception("path"))
+        domain_status = monitor.DomainStatus(error=Exception("domain"))
+        status = monitor.Status(path_status, domain_status)
+        self.assertTrue(status.actual)
+        self.assertEqual(status.error, path_status.error)
+        self.assertFalse(status.valid)
+
+    @permutations([
+        ("valid", True),
+        ("error", None),
+        ("actual", True),
+        ("checkTime", 1234567),
+        ("readDelay", 0),
+        ("diskUtilization", (None, None)),
+        ("masterMounted", False),
+        ("masterValid", False),
+        ("hasHostId", False),
+        ("vgMdUtilization", (0, 0)),
+        ("vgMdHasEnoughFreeSpace", True),
+        ("vgMdFreeBelowThreashold", True),
+        ("isoPrefix", None),
+        ("version", -1),
+    ])
+    @MonkeyPatch(time, 'time', lambda: 1234567)
+    def test_readonly_attributes(self, attr, value):
+        status = monitor.Status(monitor.PathStatus(), monitor.DomainStatus())
+        self.assertEqual(value, getattr(status, attr))
+        self.assertRaises(AttributeError, setattr, status, attr, "new")

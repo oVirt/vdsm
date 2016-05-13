@@ -35,31 +35,104 @@ log = logging.getLogger('Storage.Monitor')
 
 class Status(object):
 
-    def __init__(self, actual=True):
-        self.actual = actual
-        self.error = None
-        self.checkTime = time.time()
-        self.readDelay = 0
-        self.diskUtilization = (None, None)
-        self.masterMounted = False
-        self.masterValid = False
-        self.hasHostId = False
-        # FIXME : Exposing these breaks abstraction and is not
-        #         needed. Keep exposing for BC. Remove and use
-        #         warning mechanism.
-        self.vgMdUtilization = (0, 0)
-        self.vgMdHasEnoughFreeSpace = True
-        self.vgMdFreeBelowThreashold = True
-        # The iso prefix is computed asynchronously because in any
-        # synchronous operation (e.g.: connectStoragePool, getInfo)
-        # we cannot risk to stop and wait for the iso domain to
-        # report its prefix (it might be unreachable).
-        self.isoPrefix = None
-        self.version = -1
+    def __init__(self, path_status, domain_status):
+        self._path_status = path_status
+        self._domain_status = domain_status
+        self._time = time.time()
+
+    @property
+    def actual(self):
+        """
+        Return True if this status is actual status or the initial status used
+        before the first check has completed.
+
+        Note that once we have any parial failed status (e.g. failed
+        path_status), the combined status is considered actual. But if we have
+        only partial successful status, the combined status is not considered
+        not actual, until both path status and domain status are actual.
+
+        This keeps the behvior of the old code, and prevent flipping of the
+        status when one status check fails, the other succeeds.
+        """
+        if not self.valid:
+            return True
+        return self._path_status.actual and self._domain_status.actual
+
+    @property
+    def error(self):
+        return self._path_status.error or self._domain_status.error
 
     @property
     def valid(self):
         return self.error is None
+
+    @property
+    def checkTime(self):
+        return self._time
+
+    @property
+    def readDelay(self):
+        return self._path_status.readDelay
+
+    @property
+    def diskUtilization(self):
+        return self._domain_status.diskUtilization
+
+    @property
+    def masterMounted(self):
+        return self._domain_status.masterMounted
+
+    @property
+    def masterValid(self):
+        return self._domain_status.masterValid
+
+    @property
+    def hasHostId(self):
+        return self._domain_status.hasHostId
+
+    @property
+    def vgMdUtilization(self):
+        return self._domain_status.vgMdUtilization
+
+    @property
+    def vgMdHasEnoughFreeSpace(self):
+        return self._domain_status.vgMdHasEnoughFreeSpace
+
+    @property
+    def vgMdFreeBelowThreashold(self):
+        return self._domain_status.vgMdFreeBelowThreashold
+
+    @property
+    def isoPrefix(self):
+        return self._domain_status.isoPrefix
+
+    @property
+    def version(self):
+        return self._domain_status.version
+
+
+class PathStatus(object):
+
+    def __init__(self, readDelay=0, error=None, actual=True):
+        self.readDelay = readDelay
+        self.error = error
+        self.actual = actual
+
+
+class DomainStatus(object):
+
+    def __init__(self, error=None, actual=True):
+        self.error = error
+        self.actual = actual
+        self.diskUtilization = (None, None)
+        self.masterMounted = False
+        self.masterValid = False
+        self.hasHostId = False
+        self.vgMdUtilization = (0, 0)
+        self.vgMdHasEnoughFreeSpace = True
+        self.vgMdFreeBelowThreashold = True
+        self.isoPrefix = None
+        self.version = -1
 
 
 class DomainMonitor(object):
@@ -184,7 +257,8 @@ class MonitorThread(object):
         # For backward compatibility, we must present a fake status before
         # collecting the first sample. The fake status is marked as
         # actual=False so engine can handle it correctly.
-        self.status = Status(actual=False)
+        self.status = Status(PathStatus(actual=False),
+                             DomainStatus(actual=False))
         self.isIsoDomain = None
         self.isoPrefix = None
         self.lastRefresh = time.time()
@@ -243,8 +317,8 @@ class MonitorThread(object):
                 return
             except Exception as e:
                 log.exception("Setting up monitor for %s failed", self.sdUUID)
-                status = Status()
-                status.error = e
+                domain_status = DomainStatus(error=e)
+                status = Status(self.status._path_status, domain_status)
                 self._updateStatus(status)
                 if self.cycleCallback:
                     self.cycleCallback()
@@ -306,25 +380,65 @@ class MonitorThread(object):
                 raise utils.Canceled
 
     def _monitorDomain(self):
-        status = Status()
-
         # Pick up changes in the domain, for example, domain upgrade.
         if self._shouldRefreshDomain():
             self._refreshDomain()
 
-        try:
-            self._performDomainSelftest()
-            self._checkReadDelay(status)
-            self._collectStatistics(status)
-        except Exception as e:
-            log.exception("Error monitoring domain %s", self.sdUUID)
-            status.error = e
+        if self._checkPathStatus():
+            self._checkDomainStatus()
 
-        status.checkTime = time.time()
+        if self._shouldAcquireHostId():
+            self._acquireHostId()
+
+    @utils.cancelpoint
+    def _checkPathStatus(self):
+        # This may block for long time if the storage server is not accessible.
+        # On overloaded machines we have seen this take up to 15 seconds.
+        try:
+            stats = misc.readspeed(self.monitoringPath, 4096)
+        except Exception as e:
+            log.exception("Error checking path %s", self.monitoringPath)
+            path_status = PathStatus(error=e)
+        else:
+            path_status = PathStatus(readDelay=stats['seconds'])
+
+        status = Status(path_status, self.status._domain_status)
         self._updateStatus(status)
 
-        if self._shouldAcquireHostId(status):
-            self._acquireHostId()
+        return path_status.error is None
+
+    @utils.cancelpoint
+    def _checkDomainStatus(self):
+        domain_status = DomainStatus()
+        try:
+            # This may trigger a refresh of lvm cache. We have seen this taking
+            # up to 90 seconds on overloaded machines.
+            self.domain.selftest()
+
+            stats = self.domain.getStats()
+            domain_status.diskUtilization = (stats["disktotal"],
+                                             stats["diskfree"])
+
+            domain_status.vgMdUtilization = (stats["mdasize"],
+                                             stats["mdafree"])
+            domain_status.vgMdHasEnoughFreeSpace = stats["mdavalid"]
+            domain_status.vgMdFreeBelowThreashold = stats["mdathreshold"]
+
+            masterStats = self.domain.validateMaster()
+            domain_status.masterValid = masterStats['valid']
+            domain_status.masterMounted = masterStats['mount']
+
+            domain_status.hasHostId = self.domain.hasHostId(self.hostId)
+            domain_status.version = self.domain.getVersion()
+            domain_status.isoPrefix = self.isoPrefix
+        except Exception as e:
+            log.exception("Error checking domain %s", self.sdUUID)
+            domain_status.error = e
+
+        status = Status(self.status._path_status, domain_status)
+        self._updateStatus(status)
+
+        return domain_status.error is None
 
     # Handling status changes
 
@@ -334,8 +448,14 @@ class MonitorThread(object):
         self.status = status
 
     def _statusDidChange(self, status):
-        return (not self.status.actual or
-                self.status.valid != status.valid)
+        # Wait until status contains actual data
+        if not status.actual:
+            return False
+        # Is this the first check?
+        if not self.status.actual:
+            return True
+        # Report status changes
+        return self.status.valid != status.valid
 
     @utils.cancelpoint
     def _notifyStatusChanges(self, status):
@@ -358,44 +478,13 @@ class MonitorThread(object):
         sdCache.manuallyRemoveDomain(self.sdUUID)
         self.lastRefresh = time.time()
 
-    # Collecting monitoring info
-
-    @utils.cancelpoint
-    def _performDomainSelftest(self):
-        # This may trigger a refresh of lvm cache. We have seen this taking up
-        # to 90 seconds on overloaded machines.
-        self.domain.selftest()
-
-    @utils.cancelpoint
-    def _checkReadDelay(self, status):
-        # This may block for long time if the storage server is not accessible.
-        # On overloaded machines we have seen this take up to 15 seconds.
-        stats = misc.readspeed(self.monitoringPath, 4096)
-        status.readDelay = stats['seconds']
-
-    def _collectStatistics(self, status):
-        stats = self.domain.getStats()
-        status.diskUtilization = (stats["disktotal"], stats["diskfree"])
-
-        status.vgMdUtilization = (stats["mdasize"], stats["mdafree"])
-        status.vgMdHasEnoughFreeSpace = stats["mdavalid"]
-        status.vgMdFreeBelowThreashold = stats["mdathreshold"]
-
-        masterStats = self.domain.validateMaster()
-        status.masterValid = masterStats['valid']
-        status.masterMounted = masterStats['mount']
-
-        status.hasHostId = self.domain.hasHostId(self.hostId)
-        status.isoPrefix = self.isoPrefix
-        status.version = self.domain.getVersion()
-
     # Managing host id
 
-    def _shouldAcquireHostId(self, status):
+    def _shouldAcquireHostId(self):
         # An ISO domain can be shared by multiple pools
         return (not self.isIsoDomain and
-                status.valid and
-                status.hasHostId is False)
+                self.status.valid and
+                self.status.hasHostId is False)
 
     def _shouldReleaseHostId(self):
         # If this is an ISO domain we didn't acquire the host id and releasing
