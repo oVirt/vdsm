@@ -564,31 +564,7 @@ class TestMonitorThreadStopping(VdsmTestCase):
         self.assertFalse(domain.acquired)
 
 
-class FrozenStatusTests(VdsmTestCase):
-
-    def setUp(self):
-        self.status = monitor.Status()
-        self.frozen = monitor.FrozenStatus(self.status)
-
-    def test_copy_attributes(self):
-        for name in self.status.__slots__:
-            value = getattr(self.status, name)
-            expected = getattr(self.frozen, name)
-            self.assertEquals(value, expected)
-
-    def test_setting_attribute_raises(self):
-        for name in self.status.__slots__:
-            self.assertRaises(AssertionError, setattr, self.frozen, name, 1)
-
-    def test_deleting_attribute_raises(self):
-        for name in self.status.__slots__:
-            self.assertRaises(AssertionError, delattr, self.frozen, name)
-
-    def test_valid(self):
-        self.assertEqual(self.frozen.valid, self.status.valid)
-
-
-class StatusValidTests(VdsmTestCase):
+class TestStatus(VdsmTestCase):
 
     def test_valid(self):
         s = monitor.Status()

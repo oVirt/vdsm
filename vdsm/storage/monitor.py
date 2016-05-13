@@ -34,12 +34,6 @@ log = logging.getLogger('Storage.Monitor')
 
 
 class Status(object):
-    __slots__ = (
-        "error", "checkTime", "readDelay", "masterMounted",
-        "masterValid", "diskUtilization", "vgMdUtilization",
-        "vgMdHasEnoughFreeSpace", "vgMdFreeBelowThreashold", "hasHostId",
-        "isoPrefix", "version", "actual",
-    )
 
     def __init__(self, actual=True):
         self.actual = actual
@@ -66,19 +60,6 @@ class Status(object):
     @property
     def valid(self):
         return self.error is None
-
-
-class FrozenStatus(Status):
-
-    def __init__(self, other):
-        for name in other.__slots__:
-            value = getattr(other, name)
-            super(FrozenStatus, self).__setattr__(name, value)
-
-    def __setattr__(self, *args):
-        raise AssertionError('%s is readonly' % self)
-
-    __delattr__ = __setattr__
 
 
 class DomainMonitor(object):
@@ -203,7 +184,7 @@ class MonitorThread(object):
         # For backward compatibility, we must present a fake status before
         # collecting the first sample. The fake status is marked as
         # actual=False so engine can handle it correctly.
-        self.status = FrozenStatus(Status(actual=False))
+        self.status = Status(actual=False)
         self.isIsoDomain = None
         self.isoPrefix = None
         self.lastRefresh = time.time()
@@ -350,7 +331,7 @@ class MonitorThread(object):
     def _updateStatus(self, status):
         if self._statusDidChange(status):
             self._notifyStatusChanges(status)
-        self.status = FrozenStatus(status)
+        self.status = status
 
     def _statusDidChange(self, status):
         return (not self.status.actual or
