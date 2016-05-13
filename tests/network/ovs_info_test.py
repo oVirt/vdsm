@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
+from copy import deepcopy
 
 from nose.plugins.attrib import attr
 
@@ -165,7 +166,7 @@ class MockedOvsInfo(info.OvsInfo):
 @attr(type='unit')
 class TestOvsNetInfo(VdsmTestCase):
 
-    TEST_NETINFO = {
+    TEST_OVS_NETINFO = {
         'networks': {
             TEST_NETWORK: {
                 'addr': TEST_ADDRESS,
@@ -274,6 +275,86 @@ class TestOvsNetInfo(VdsmTestCase):
         }
     }
 
+    TEST_BRIDGELESS_NETINFO = {
+        'networks': {
+            TEST_NETWORK: {
+                'addr': TEST_ADDRESS,
+                'bond': TEST_BOND,
+                'bridged': False,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'iface': TEST_BOND,
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'nics': ['eth0', 'eth1'],
+                'ports': [TEST_BOND],
+                'stp': False,
+                'switch': 'ovs',
+                'vlanid': None
+            },
+            TEST_VLANED_NETWORK: {
+                'addr': TEST_ADDRESS,
+                'bond': TEST_BOND,
+                'bridged': False,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'iface': TEST_VLANED_BOND,
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'nics': ['eth0', 'eth1'],
+                'ports': [TEST_VLANED_BOND],
+                'stp': False,
+                'switch': 'ovs',
+                'vlanid': TEST_VLAN
+            }
+        },
+        'bondings': {
+            TEST_BOND: {
+                'active_slave': 'eth0',
+                'addr': TEST_ADDRESS,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'opts': {'custom': 'ovs_mode:active-backup'},
+                'slaves': ['eth0', 'eth1'],
+                'switch': 'ovs'
+            }
+        },
+        'bridges': {},
+        'vlans': {
+            TEST_VLANED_BOND: {
+                'addr': TEST_ADDRESS,
+                'dhcpv4': False,
+                'dhcpv6': False,
+                'gateway': '',
+                'iface': TEST_BOND,
+                'ipv4addrs': [TEST_ADDRESS_WITH_PREFIX],
+                'ipv6addrs': [],
+                'ipv6autoconf': True,
+                'ipv6gateway': '::',
+                'mtu': 1500,
+                'netmask': TEST_NETMASK,
+                'vlanid': TEST_VLAN
+            }
+        }
+    }
+
     @MonkeyPatch(info, 'getMtu', lambda *args: 1500)
     @MonkeyPatch(info, 'is_ipv6_local_auto', lambda *args: True)
     @MonkeyPatch(info, 'get_gateway',
@@ -285,4 +366,16 @@ class TestOvsNetInfo(VdsmTestCase):
     @MonkeyPatch(info, 'OvsInfo', MockedOvsInfo)
     def test_ovs_netinfo(self):
         obtained_netinfo = info.get_netinfo()
-        self.assertEqual(obtained_netinfo, self.TEST_NETINFO)
+        self.assertEqual(obtained_netinfo, self.TEST_OVS_NETINFO)
+
+    def test_fake_bridgeless(self):
+        fake_running_bridgeless_ovs_networks = {
+            TEST_NETWORK, TEST_VLANED_NETWORK}
+        test_ovs_netinfo = deepcopy(self.TEST_OVS_NETINFO)
+        test_nic_netinfo = {}  # under bonding, should not be touched
+
+        info.fake_bridgeless(test_ovs_netinfo, test_nic_netinfo,
+                             fake_running_bridgeless_ovs_networks)
+
+        self.assertEqual(test_ovs_netinfo, self.TEST_BRIDGELESS_NETINFO)
+        self.assertEqual(test_nic_netinfo, {})

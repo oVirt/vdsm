@@ -155,8 +155,7 @@ def _fake_bridge(net_attrs):
         'ports': net_attrs['ports'],
         'stp': net_attrs['stp']
     }
-    bridge_info.update(
-        {key: net_attrs[key] for key in SHARED_NETWORK_ATTRIBUTES})
+    bridge_info.update(_shared_net_attrs(net_attrs))
     return bridge_info
 
 
@@ -263,3 +262,49 @@ def _get_iface_info(iface, addresses, routes):
             'dhcpv4': is_dhcpv4, 'ipv6addrs': ipv6addrs,
             'ipv6gateway': get_gateway(routes, iface, family=6),
             'ipv6autoconf': is_ipv6_local_auto(iface), 'dhcpv6': is_dhcpv6}
+
+
+def fake_bridgeless(ovs_netinfo, nic_netinfo, running_bridgeless_networks):
+    """
+    An OVS setup does not support bridgeless networks. Requested bridgeless
+    networks (as seen in running_config) are faked to appear as if they are
+    bridgeless. Faking involves modifying the netinfo report, removing the
+    faked bridge and creating the faked device that replaces it (vlan, bond
+    or a nic).
+    """
+    for net in running_bridgeless_networks:
+        net_attrs = ovs_netinfo['networks'][net]
+        iface_type, iface_name = _bridgeless_fake_iface(net_attrs)
+
+        if iface_type == 'nics':
+            nic_netinfo[iface_name].update(_shared_net_attrs(net_attrs))
+        else:
+            ovs_netinfo[iface_type][iface_name].update(
+                _shared_net_attrs(net_attrs))
+
+        ovs_netinfo['networks'][net]['iface'] = iface_name
+
+        ovs_netinfo['bridges'].pop(net)
+        ovs_netinfo['networks'][net]['bridged'] = False
+
+
+def _bridgeless_fake_iface(net_attrs):
+    vlanid = net_attrs['vlanid']
+    bond = net_attrs['bond']
+    nics = net_attrs['nics']
+
+    if vlanid is not None:
+        iface_type = 'vlans'
+        iface_name = '{}.{}'.format(bond or nics[0], vlanid)
+    elif bond:
+        iface_type = 'bondings'
+        iface_name = bond
+    else:
+        iface_type = 'nics'
+        iface_name = nics[0]
+
+    return iface_type, iface_name
+
+
+def _shared_net_attrs(attrs):
+    return {key: attrs[key] for key in SHARED_NETWORK_ATTRIBUTES}
