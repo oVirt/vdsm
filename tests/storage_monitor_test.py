@@ -26,7 +26,6 @@ import time
 from contextlib import contextmanager
 
 from vdsm.storage import exception as se
-from vdsm.storage import misc
 
 from monkeypatch import MonkeyPatch
 from monkeypatch import MonkeyPatchScope
@@ -46,7 +45,7 @@ log = logging.getLogger("test")
 
 class FakeEvent(object):
     """
-    Fake vdsm.storage.misc.Event, keeping emiting events into a list. The
+    Fake vdsm.storage.misc.Event, keeping emitting events into a list. The
     original class is starting a new thread for each event, making it hard to
     test.
     """
@@ -57,6 +56,32 @@ class FakeEvent(object):
     def emit(self, *args, **kwargs):
         log.debug("Emitting event (args=%s, kwrags=%s)", args, kwargs)
         self.received.append((args, kwargs))
+
+
+class FakeCheckService(object):
+    """
+    Fake vdsm.storage.check.CheckService, keeping registered callbacks but not
+    doing anything.
+
+    The test code should use the registered callback to submit check results.
+    """
+
+    def __init__(self):
+        self.checkers = {}
+
+    def start_checking(self, path, complete, interval=10.0):
+        log.info("Start checking %r", path)
+        if path in self.checkers:
+            raise RuntimeError("Already checking path %r" % path)
+        self.checkers[path] = (complete, interval)
+
+    def stop_checking(self, path, timeout=None):
+        log.info("Stop checking %r", path)
+        self.checkers.pop(path)
+
+    def complete(self, path, result):
+        callback = self.checkers[path][0]
+        callback(result)
 
 
 class FakeDomain(object):
@@ -116,6 +141,8 @@ class FakeDomain(object):
 
     def releaseHostId(self, hostId, unused=True):
         log.debug("Releasing host id (hostId=%s, unused=%s)", hostId, unused)
+        # Releasing unacquired host is not an error, but this should not fail
+        # in the tests.
         assert self.acquired, "Attempt to release unacquired host id"
         self.acquired = False
 
@@ -137,22 +164,23 @@ class UnexpectedError(Exception):
     pass
 
 
-class FakeReadspeed(object):
+class FakeCheckResult(object):
 
     def __init__(self, error=None):
         self.error = error
 
-    def __call__(self, path, buffersize=None):
+    def delay(self):
         if self.error:
             raise self.error
-        return {"seconds": 0.005}
+        return 0.005
 
 
 class MonitorEnv(object):
 
-    def __init__(self, thread, event):
+    def __init__(self, thread, event, checker):
         self.thread = thread
         self.event = event
+        self.checker = checker
         self.queue = Queue.Queue()
         self.thread.cycleCallback = self._callback
 
@@ -174,13 +202,13 @@ def monitor_env(shutdown=False, refresh=300):
     with MonkeyPatchScope([
         (monitor, "sdCache", FakeStorageDomainCache()),
         (monitor, 'config', config),
-        (misc, "readspeed", FakeReadspeed()),
     ]):
         event = FakeEvent()
+        checker = FakeCheckService()
         thread = monitor.MonitorThread('uuid', 'host_id', MONITOR_INTERVAL,
-                                       event)
+                                       event, checker)
         try:
-            yield MonitorEnv(thread, event)
+            yield MonitorEnv(thread, event, checker)
         finally:
             thread.stop(shutdown=shutdown)
             try:
@@ -192,7 +220,7 @@ def monitor_env(shutdown=False, refresh=300):
 class TestMonitorThreadIdle(VdsmTestCase):
 
     def test_initial_status(self):
-        thread = monitor.MonitorThread('uuid', 'host_id', 0.2, None)
+        thread = monitor.MonitorThread('uuid', 'host_id', 0.2, None, None)
         status = thread.getStatus()
         self.assertFalse(status.actual)
         self.assertTrue(status.valid)
@@ -204,13 +232,24 @@ class TestMonitorThreadSetup(VdsmTestCase):
     # in this state we do:
     # 1. If refresh timeout has expired, remove the domain from the cache
     # 2. If domain was not produced yet, produce the domain
-    # 3. If the domain is an iso domain, initialze isoPrefix
+    # 3. If domain monitoring path is available, start checking path using the
+    #    domain checker.
+    # 4. If the domain is an iso domain, initialize isoPrefix
     #
     # - On failure we abort the process, and set status.error.
     # - On the first failure, we emit a domain state change event with
     #   valid=False.
-    # - We retry these operations forever until both succeed, or monitor is
+    # - We retry these operations forever until all succeed, or the monitor is
     #   stopped.
+
+    def test_start_checking_path(self):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+            _, interval = env.checker.checkers[domain.getMonitoringPath()]
+            self.assertEqual(interval, MONITOR_INTERVAL)
 
     def test_produce_retry(self):
         with monitor_env() as env:
@@ -225,16 +264,24 @@ class TestMonitorThreadSetup(VdsmTestCase):
             self.assertEqual(env.event.received, [(('uuid', False), {})])
             del env.event.received[0]
 
-            # Seocnd cycle will fail but no event should be emitted
+            # Second cycle will fail but no event should be emitted
             env.wait_for_cycle()
             status = env.thread.getStatus()
             self.assertFalse(status.valid)
             self.assertIsInstance(status.error, se.StorageDomainDoesNotExist)
             self.assertEqual(env.event.received, [])
 
-            # Third cycle should succeed
-            monitor.sdCache.domains["uuid"] = FakeDomain("uuid")
+            # Third cycle should succeed but no event should be emitted since
+            # we don't have path status yet.
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
             env.wait_for_cycle()
+            status = env.thread.getStatus()
+            self.assertTrue(status.valid)
+            self.assertEqual(env.event.received, [])
+
+            # When path status is available, emit event
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             status = env.thread.getStatus()
             self.assertTrue(status.valid)
             self.assertEqual(env.event.received, [(('uuid', True), {})])
@@ -258,18 +305,25 @@ class TestMonitorThreadSetup(VdsmTestCase):
             self.assertEqual(env.event.received, [(('uuid', False), {})])
             del env.event.received[0]
 
-            # Seocnd cycle will fail but no event should be emitted
+            # Second cycle will fail but no event should be emitted
             env.wait_for_cycle()
             status = env.thread.getStatus()
             self.assertFalse(status.valid)
             self.assertIsInstance(status.error, exception)
             self.assertEqual(env.event.received, [])
 
-            # Third cycle should succeed
+            # Third cycle should succeed but no event should be emitted since
+            # we don't have path status yet.
             del domain.errors["isISO"]
             env.wait_for_cycle()
             status = env.thread.getStatus()
             self.assertEqual(status.isoPrefix, domain.iso_dir)
+            self.assertTrue(status.valid)
+            self.assertEqual(env.event.received, [])
+
+            # When path status is available, emit event
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+            status = env.thread.getStatus()
             self.assertTrue(status.valid)
             self.assertEqual(env.event.received, [(('uuid', True), {})])
 
@@ -295,13 +349,14 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
 
     # In this state we do:
     # 1. If refresh timeout has expired, remove the domain from the cache
-    # 2. check domain monitoringPath readability
-    # 3. call domain.selftest()
-    # 4. call domain.getStats()
-    # 5. call domain.validateMaster()
-    # 6. call domain.hasHostId()
-    # 7. call domain.getVersion()
+    # 2. call domain.selftest()
+    # 3. call domain.getStats()
+    # 4. call domain.validateMaster()
+    # 5. call domain.hasHostId()
+    # 6. call domain.getVersion()
     #
+    # - When path check completes, we get a callback from the checker thread
+    #   and update monitor status.
     # - On failure, we abort the process, and set status.error.
     # - If this is the first failure, we emit a domain state change event with
     #   valid=False.
@@ -312,9 +367,18 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
 
     def test_unknown_to_valid(self):
         with monitor_env() as env:
-            monitor.sdCache.domains["uuid"] = FakeDomain("uuid")
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # First cycle suceeds, but path status is not avialale yet
             env.wait_for_cycle()
+            status = env.thread.getStatus()
+            self.assertFalse(status.actual)
+            self.assertEqual(env.event.received, [])
+
+            # When path succeeds, emit VALID event
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             status = env.thread.getStatus()
             self.assertTrue(status.actual)
             self.assertTrue(status.valid)
@@ -337,8 +401,11 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             domain.errors[method] = exception
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # First cycle fail, emit event without waiting for path status
             env.wait_for_cycle()
             status = env.thread.getStatus()
+            self.assertTrue(status.actual)
             self.assertFalse(status.valid)
             self.assertIsInstance(status.error, exception)
             self.assertEqual(env.event.received, [(('uuid', False), {})])
@@ -347,11 +414,20 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
     def test_from_unknown_to_invalid_path(self, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
-            misc.readspeed = FakeReadspeed(exception)
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # First cycle succeed, but path status is not available yet
             env.wait_for_cycle()
             status = env.thread.getStatus()
+            self.assertFalse(status.actual)
+            self.assertEqual(env.event.received, [])
+
+            # When path fail, emit INVALID event
+            env.checker.complete(domain.getMonitoringPath(),
+                                 FakeCheckResult(exception))
+            status = env.thread.getStatus()
+            self.assertTrue(status.actual)
             self.assertFalse(status.valid)
             self.assertIsInstance(status.error, exception)
             self.assertEqual(env.event.received, [(('uuid', False), {})])
@@ -373,8 +449,21 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             domain.errors[method] = exception
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # First cycle fail, and emit INVALID event
             env.wait_for_cycle()
             del env.event.received[0]
+
+            # Path status succeeds, but domain status is not valid, so no event
+            # is emitted.
+            env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+            status = env.thread.getStatus()
+            self.assertTrue(status.actual)
+            self.assertFalse(status.valid)
+            self.assertEqual(env.event.received, [])
+
+            # When next cycle succeeds, emit VALID event
             del domain.errors[method]
             env.wait_for_cycle()
             status = env.thread.getStatus()
@@ -385,28 +474,39 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
     def test_from_invalid_to_valid_path(self, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
-            misc.readspeed = FakeReadspeed(exception)
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # First cycle succeed, but path status fail, emit INVALID event
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(),
+                                 FakeCheckResult(exception))
             del env.event.received[0]
-            misc.readspeed = FakeReadspeed()
+
+            # Both domain status and pass status succeed, emit VALID event
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             status = env.thread.getStatus()
             self.assertTrue(status.valid)
             self.assertEqual(env.event.received, [(('uuid', True), {})])
 
     def test_keeps_valid(self):
         with monitor_env() as env:
-            monitor.sdCache.domains["uuid"] = FakeDomain("uuid")
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # Both domain status and path status succeed and emit VALID event
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             del env.event.received[0]
+
+            # Both succeed again, no event emitted - domain monitor state did
+            # not change (valid -> valid)
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             status = env.thread.getStatus()
             self.assertTrue(status.valid)
-            # No event emited on the second cycle, domain monitor state did not
-            # change (valid -> valid)
             self.assertEqual(env.event.received, [])
 
     @permutations([
@@ -425,8 +525,13 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             domain = FakeDomain("uuid")
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # Both domain status and path status succeed and emit VALID event
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             del env.event.received[0]
+
+            # Domain status fail, emit INVALID event
             domain.errors[method] = exception
             env.wait_for_cycle()
             status = env.thread.getStatus()
@@ -440,10 +545,15 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             domain = FakeDomain("uuid")
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # Both domain status and path status succeed and emit VALID event
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             del env.event.received[0]
-            misc.readspeed = FakeReadspeed(exception)
+
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(),
+                                 FakeCheckResult(exception))
             status = env.thread.getStatus()
             self.assertFalse(status.valid)
             self.assertIsInstance(status.error, exception)
@@ -454,7 +564,10 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             domain = FakeDomain("uuid")
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # Both domain status and path status succeed, acquire host id
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             self.assertTrue(domain.acquired)
 
     def test_acquire_host_id_after_error(self):
@@ -463,9 +576,14 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             domain.errors["selftest"] = OSError
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # Domain status fail, emit INVALID event
             env.wait_for_cycle()
             del domain.errors["selftest"]
+
+            # Both domain status and path status succeed, acquire host id
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             self.assertTrue(domain.acquired)
 
     def test_acquire_host_id_if_lost(self):
@@ -473,8 +591,12 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             domain = FakeDomain("uuid")
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
+
+            # Both domain status and path status succeed, acquire host id
             env.wait_for_cycle()
-            # Simulate loosing host id
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
+
+            # Simulate loosing host id - acquire again because status is valid
             domain.acquired = False
             env.wait_for_cycle()
             self.assertTrue(domain.acquired)
@@ -485,6 +607,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             self.assertFalse(domain.acquired)
 
     def test_dont_acquire_host_id_on_error(self):
@@ -494,6 +617,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             self.assertFalse(domain.acquired)
 
     @permutations([[se.AcquireHostIdFailure], [UnexpectedError]])
@@ -507,6 +631,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertFalse(domain.acquired)
             del domain.errors["acquireHostId"]
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
             self.assertTrue(domain.acquired)
 
     def test_refresh(self):
@@ -535,6 +660,7 @@ class TestMonitorThreadStopping(VdsmTestCase):
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
         self.assertFalse(domain.acquired)
 
     def test_shutdown(self):
@@ -543,6 +669,7 @@ class TestMonitorThreadStopping(VdsmTestCase):
             monitor.sdCache.domains["uuid"] = domain
             env.thread.start()
             env.wait_for_cycle()
+            env.checker.complete(domain.getMonitoringPath(), FakeCheckResult())
         self.assertTrue(domain.acquired)
 
     def test_stop_while_blocked(self):
@@ -563,6 +690,15 @@ class TestMonitorThreadStopping(VdsmTestCase):
         status = env.thread.getStatus()
         self.assertFalse(status.actual)
         self.assertFalse(domain.acquired)
+
+    def test_stop_checking_path(self):
+        with monitor_env() as env:
+            domain = FakeDomain("uuid")
+            monitor.sdCache.domains["uuid"] = domain
+            env.thread.start()
+            env.wait_for_cycle()
+        self.assertFalse(domain.acquired)
+        self.assertNotIn(domain.getMonitoringPath(), env.checker.checkers)
 
 
 @expandPermutations

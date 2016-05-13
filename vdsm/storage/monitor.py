@@ -25,6 +25,7 @@ import time
 from vdsm import concurrent
 from vdsm import utils
 from vdsm.config import config
+from vdsm.storage import check
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
 
@@ -140,8 +141,12 @@ class DomainMonitor(object):
     def __init__(self, interval):
         self._monitors = {}
         self._interval = interval
+        # NOTE: This must be used in asynchronous mode to prevent blocking of
+        # the checker event loop thread.
         self.onDomainStateChange = misc.Event(
-            "Storage.DomainMonitor.onDomainStateChange")
+            "Storage.DomainMonitor.onDomainStateChange", sync=False)
+        self._checker = check.CheckService()
+        self._checker.start()
 
     @property
     def domains(self):
@@ -176,7 +181,7 @@ class DomainMonitor(object):
 
         log.info("Start monitoring %s", sdUUID)
         monitor = MonitorThread(sdUUID, hostId, self._interval,
-                                self.onDomainStateChange)
+                                self.onDomainStateChange, self._checker)
         monitor.poolDomain = poolDomain
         monitor.start()
         # The domain should be added only after it succesfully started
@@ -216,6 +221,7 @@ class DomainMonitor(object):
         """
         log.info("Shutting down domain monitors")
         self._stopMonitors(self._monitors.values(), shutdown=True)
+        self._checker.stop()
 
     def _stopMonitors(self, monitors, shutdown=False):
         # The domain monitor issues events that might become raceful if
@@ -245,7 +251,7 @@ class DomainMonitor(object):
 
 class MonitorThread(object):
 
-    def __init__(self, sdUUID, hostId, interval, changeEvent):
+    def __init__(self, sdUUID, hostId, interval, changeEvent, checker):
         self.thread = concurrent.thread(self._run, logger=log.name)
         self.stopEvent = threading.Event()
         self.domain = None
@@ -253,6 +259,8 @@ class MonitorThread(object):
         self.hostId = hostId
         self.interval = interval
         self.changeEvent = changeEvent
+        self.checker = checker
+        self.lock = threading.Lock()
         self.monitoringPath = None
         # For backward compatibility, we must present a fake status before
         # collecting the first sample. The fake status is marked as
@@ -301,6 +309,7 @@ class MonitorThread(object):
         finally:
             log.debug("Domain monitor for %s stopped (shutdown=%s)",
                       self.sdUUID, self.wasShutdown)
+            self._stopCheckingPath()
             if self._shouldReleaseHostId():
                 self._releaseHostId()
 
@@ -342,6 +351,8 @@ class MonitorThread(object):
         # the next cycle.
         if self.monitoringPath is None:
             self.monitoringPath = self.domain.getMonitoringPath()
+            self.checker.start_checking(self.monitoringPath, self._pathChecked,
+                                        interval=self.interval)
 
         # The isIsoDomain assignment is deferred because the isoPrefix
         # discovery might fail (if the domain suddenly disappears) and we
@@ -384,28 +395,7 @@ class MonitorThread(object):
         if self._shouldRefreshDomain():
             self._refreshDomain()
 
-        if self._checkPathStatus():
-            self._checkDomainStatus()
-
-        if self._shouldAcquireHostId():
-            self._acquireHostId()
-
-    @utils.cancelpoint
-    def _checkPathStatus(self):
-        # This may block for long time if the storage server is not accessible.
-        # On overloaded machines we have seen this take up to 15 seconds.
-        try:
-            stats = misc.readspeed(self.monitoringPath, 4096)
-        except Exception as e:
-            log.exception("Error checking path %s", self.monitoringPath)
-            path_status = PathStatus(error=e)
-        else:
-            path_status = PathStatus(readDelay=stats['seconds'])
-
-        status = Status(path_status, self.status._domain_status)
-        self._updateStatus(status)
-
-        return path_status.error is None
+        self._checkDomainStatus()
 
     @utils.cancelpoint
     def _checkDomainStatus(self):
@@ -435,10 +425,12 @@ class MonitorThread(object):
             log.exception("Error checking domain %s", self.sdUUID)
             domain_status.error = e
 
-        status = Status(self.status._path_status, domain_status)
-        self._updateStatus(status)
+        with self.lock:
+            status = Status(self.status._path_status, domain_status)
+            self._updateStatus(status)
 
-        return domain_status.error is None
+        if self._shouldAcquireHostId():
+            self._acquireHostId()
 
     # Handling status changes
 
@@ -462,6 +454,8 @@ class MonitorThread(object):
         log.info("Domain %s became %s", self.sdUUID,
                  "VALID" if status.valid else "INVALID")
         try:
+            # NOTE: We depend on this being asynchrounous, so we don't block
+            # the checker event loop thread.
             self.changeEvent.emit(self.sdUUID, status.valid)
         except:
             log.exception("Error notifying state change for domain %s",
@@ -478,20 +472,81 @@ class MonitorThread(object):
         sdCache.manuallyRemoveDomain(self.sdUUID)
         self.lastRefresh = time.time()
 
+    # Checking monitoring path
+
+    def _pathChecked(self, result):
+        """
+        Called from the checker event loop thread. Must not block!
+        """
+        try:
+            delay = result.delay()
+        except Exception as e:
+            log.exception("Error checking path %s", self.monitoringPath)
+            path_status = PathStatus(error=e)
+        else:
+            path_status = PathStatus(readDelay=delay)
+
+        with self.lock:
+            # NOTE: Everyting under this lock must not block for long time, or
+            # we will block the checker event loop thread.
+            status = Status(path_status, self.status._domain_status)
+            self._updateStatus(status)
+
+        if self._shouldAcquireHostId():
+            self._acquireHostId()
+
+    def _stopCheckingPath(self):
+        """
+        Called during monitor shutdown, must not raise!
+        """
+        if self.monitoringPath is None:
+            return
+        try:
+            # May fail with KeyError if path is not being checked (unlikely).
+            self.checker.stop_checking(self.monitoringPath, timeout=1.0)
+        except Exception:
+            log.exception("Error stopping checker for %s", self.monitoringPath)
+
     # Managing host id
 
     def _shouldAcquireHostId(self):
         # An ISO domain can be shared by multiple pools
-        return (not self.isIsoDomain and
-                self.status.valid and
-                self.status.hasHostId is False)
+        if self.isIsoDomain:
+            return False
+
+        # Do we have enough data?
+        if not self.status.actual:
+            return False
+
+        # No point to acquire if storage is not accessible
+        if not self.status.valid:
+            return False
+
+        # Acquire if not acquired yet
+        return self.status.hasHostId is False
 
     def _shouldReleaseHostId(self):
+        # Did we finish setup?
+        if not self.domain:
+            return False
+
         # If this is an ISO domain we didn't acquire the host id and releasing
         # it is superfluous.
+        if self.isIsoDomain:
+            return False
+
         # During shutdown we do not release the host id, in case there is a vm
         # holding a resource on this domain, such as the hosted engine vm.
-        return self.domain and not self.isIsoDomain and not self.wasShutdown
+        if self.wasShutdown:
+            return False
+
+        # Did we have enough data to acquire the host id?
+        if not self.status.actual:
+            return False
+
+        # It is possible that we tried to acquire the host id. Note that trying
+        # to relase before acquiring is safe.
+        return True
 
     @utils.cancelpoint
     def _acquireHostId(self):
@@ -502,6 +557,9 @@ class MonitorThread(object):
                           self.hostId, self.sdUUID)
 
     def _releaseHostId(self):
+        """
+        Called during monitor shutdown, must not raise!
+        """
         try:
             self.domain.releaseHostId(self.hostId, unused=True)
         except:
