@@ -18,16 +18,7 @@
 #
 from __future__ import absolute_import
 
-import six
-
 from vdsm.network import errors as ne
-
-
-def _get_untagged_net(running_networks):
-    for net, attrs in six.iteritems(running_networks):
-        if 'vlan' not in attrs and attrs['switch'] == 'ovs':
-            return net
-    return None
 
 
 def validate_net_configuration(net, attrs, to_be_configured_bonds,
@@ -44,13 +35,6 @@ def validate_net_configuration(net, attrs, to_be_configured_bonds,
     vlan = attrs.get('vlan')
 
     if vlan is None:
-        # TODO: We should support multiple utagged networks per hosts (probably
-        # via multiple OVS bridges).
-        untagged_net = _get_untagged_net(running_config.networks)
-        if untagged_net not in (None, net):
-            raise ne.ConfigNetworkError(
-                ne.ERR_BAD_VLAN,
-                'Untagged network already defined with name %s' % untagged_net)
         if nic and nic not in kernel_nics:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
