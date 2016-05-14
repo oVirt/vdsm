@@ -22,7 +22,7 @@ from vdsm.network import errors as ne
 
 
 def validate_net_configuration(net, attrs, to_be_configured_bonds,
-                               running_config, kernel_nics):
+                               running_bonds, kernel_nics):
     """Test if network meets logical Vdsm requiremets.
 
     Bridgeless networks are allowed in order to support Engine requirements.
@@ -38,7 +38,7 @@ def validate_net_configuration(net, attrs, to_be_configured_bonds,
         if nic and nic not in kernel_nics:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
-        if bond and (bond not in running_config.bonds and
+        if bond and (bond not in running_bonds and
                      bond not in to_be_configured_bonds):
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_BONDING, 'Bond %s does not exist' % bond)
