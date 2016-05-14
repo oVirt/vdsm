@@ -33,7 +33,7 @@ from .ovs import switch as ovs_switch, info as ovs_info
 from .netconfpersistence import RunningConfig
 
 
-def _split_switch_type_entries(entries, running_config_entries):
+def _split_switch_type_entries(entries, running_entries):
     legacy_entries = {}
     ovs_entries = {}
 
@@ -64,7 +64,7 @@ def _split_switch_type_entries(entries, running_config_entries):
 
     for name, attrs in six.iteritems(entries):
         if 'remove' in attrs:
-            running_attrs = running_config_entries.get(name, {})
+            running_attrs = running_entries.get(name, {})
             switch_type = running_attrs.get('switch')
         else:
             switch_type = attrs['switch']
@@ -74,11 +74,11 @@ def _split_switch_type_entries(entries, running_config_entries):
 
 
 def _split_switch_type(nets, bonds):
-    running_config = RunningConfig()
+    _netinfo = netinfo()
     legacy_nets, ovs_nets = _split_switch_type_entries(
-        nets, running_config.networks)
+        nets, _netinfo['networks'])
     legacy_bonds, ovs_bonds = _split_switch_type_entries(
-        bonds, running_config.bonds)
+        bonds, _netinfo['bondings'])
     return legacy_nets, ovs_nets, legacy_bonds, ovs_bonds
 
 
