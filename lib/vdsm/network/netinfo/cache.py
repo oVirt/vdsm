@@ -216,21 +216,8 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, net_attrs):
     return data
 
 
-class CachingNetInfo(object):
-    def __init__(self, _netinfo=None):
-        if _netinfo is None:
-            _netinfo = get()
-
-        self.networks = _netinfo['networks']
-        self.vlans = _netinfo['vlans']
-        self.nics = _netinfo['nics']
-        self.bondings = _netinfo['bondings']
-        self.bridges = _netinfo['bridges']
-
-    def updateDevices(self):
-        """Updates the object device information while keeping the cached
-        network information."""
-        _netinfo = get(vdsmnets=self.networks)
+class NetInfo(object):
+    def __init__(self, _netinfo):
         self.networks = _netinfo['networks']
         self.vlans = _netinfo['vlans']
         self.nics = _netinfo['nics']
@@ -353,3 +340,22 @@ class CachingNetInfo(object):
             if iface == vdict['iface']:
                 users.add(v)
         return users
+
+
+class CachingNetInfo(NetInfo):
+    def __init__(self, _netinfo=None):
+        if _netinfo is None:
+            _netinfo = get()
+        super(CachingNetInfo, self).__init__(_netinfo)
+
+    def updateDevices(self):
+        """
+        Updates the object device information while keeping the cached network
+        information.
+        """
+        _netinfo = get(vdsmnets=self.networks)
+        self.networks = _netinfo['networks']
+        self.vlans = _netinfo['vlans']
+        self.nics = _netinfo['nics']
+        self.bondings = _netinfo['bondings']
+        self.bridges = _netinfo['bridges']

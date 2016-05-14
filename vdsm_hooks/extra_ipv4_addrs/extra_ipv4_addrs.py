@@ -24,6 +24,7 @@ import traceback
 
 from vdsm.network import ipwrapper
 from vdsm.network import netinfo
+from vdsm.network import netswitch
 from vdsm import utils
 
 
@@ -68,8 +69,8 @@ def _top_dev(network, attrs):
     if utils.tobool(attrs.get('bridged')):
         return network
     # bridgeless
-    nics, vlan, _, bonding = netinfo.cache.CachingNetInfo().\
-        getNicsVlanAndBondingForNetwork(network)
+    nics, vlan, _, bonding = netinfo.cache.NetInfo(
+        netswitch.netinfo()).getNicsVlanAndBondingForNetwork(network)
     return vlan or bonding or nics[0]
 
 

@@ -78,6 +78,7 @@ FAKE_NETINFO = {
             'netmask': '', 'ipv4addrs': [], 'hwaddr': 'ba:8d:23:4d:d7:41',
             'slaves': [NIC_NAME], 'opts': {'miimon': '150', 'mode': '4',
                                            'arp_all_targets': '0'}}},
+    'bridges': {},
     'networks': {
         NETWORK_NAME: {
             'iface': NETWORK_NAME, 'addr': '', 'cfg': {
@@ -89,10 +90,6 @@ FAKE_NETINFO = {
             'ipv4addrs': [], 'mtu': '1500', 'ipv6gateway': '::', 'ports':
             [BOND_NAME + '.' + VLAN]}}}
 
-
-class _FakeNetInfo:
-    def __init__(self):
-        self.__dict__.update(FAKE_NETINFO)
 
 FAKE_IFCFGS = {
     NETWORK_NAME: (
@@ -149,7 +146,8 @@ class unfiedPersistenceTests(TestCaseBase):
         with _fake_ifcfgs() as ifcfgs_dir:
             FAKE_NET_CONF_PREF = ifcfgs_dir + '/ifcfg-'
             with MonkeyPatchScope(
-                [(unified_persistence, 'CachingNetInfo', _FakeNetInfo),
+                [(unified_persistence.netswitch, 'netinfo',
+                  lambda: FAKE_NETINFO),
                  (misc, 'NET_CONF_PREF', FAKE_NET_CONF_PREF)]):
                 networks, bonds = unified_persistence._getNetInfo()
 

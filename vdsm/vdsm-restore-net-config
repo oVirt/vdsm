@@ -33,9 +33,10 @@ from vdsm.config import config
 from vdsm import hostdev
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
+from vdsm.network import netswitch
 from vdsm.network.netinfo import nics, misc
 from vdsm.network.netinfo.misc import ipv6_supported
-from vdsm.network.netinfo.cache import CachingNetInfo
+from vdsm.network.netinfo.cache import NetInfo
 from vdsm.constants import P_VDSM_RUN
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \
     CONF_PERSIST_DIR, BaseConfig
@@ -258,7 +259,7 @@ def _filter_changed_nets_bonds(persistent_config):
     """filter-out unchanged networks and bond, so that we are left only with
     changes that must be applied"""
 
-    kernel_config = kernelconfig.KernelConfig(CachingNetInfo())
+    kernel_config = kernelconfig.KernelConfig(NetInfo(netswitch.netinfo()))
     normalized_config = kernelconfig.normalize(persistent_config)
 
     changed_bonds_names = _find_changed_or_missing(normalized_config.bonds,

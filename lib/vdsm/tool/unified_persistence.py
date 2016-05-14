@@ -20,8 +20,9 @@ from __future__ import absolute_import
 import errno
 import logging
 
+from vdsm.network import netswitch
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.network.netinfo.cache import CachingNetInfo
+from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netinfo import misc, routes
 from .. import utils
 from ..config import config
@@ -128,7 +129,7 @@ def _getNetInfo():
 
         return bondings
 
-    netinfo = CachingNetInfo()
+    netinfo = NetInfo(netswitch.netinfo())
     networks = _processNetworks(netinfo)
     bonds = _processBondings(netinfo)
 
