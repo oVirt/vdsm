@@ -52,16 +52,16 @@ def rollback_trigger(in_rollback):
 
 
 def setup(nets, bonds):
-    running_config = RunningConfig()
+    _netinfo = info.get_netinfo()
     nets_to_be_added, nets_to_be_removed = _split_nets_action(
-        nets, running_config.networks)
+        nets, _netinfo['networks'])
     bonds_to_be_added_or_edited, bonds_to_be_removed = _split_bonds_action(
-        bonds, running_config.bonds)
+        bonds, _netinfo['bondings'])
 
     # TODO: remove and add filtered networks
 
 
-def _split_nets_action(nets, configured_nets):
+def _split_nets_action(nets, running_nets):
     # TODO: If a nework is to be edited, we remove it and recreate again.
     # We should implement editation.
     nets_to_be_removed = set()
@@ -70,9 +70,9 @@ def _split_nets_action(nets, configured_nets):
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
             nets_to_be_removed.add(net)
-        elif net not in configured_nets:
+        elif net not in running_nets:
             nets_to_be_added[net] = attrs
-        elif attrs != configured_nets.get(net):
+        elif attrs != running_nets.get(net):
             nets_to_be_removed.add(net)
             nets_to_be_added[net] = attrs
 
