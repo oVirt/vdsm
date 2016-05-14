@@ -23,20 +23,20 @@ from contextlib import contextmanager
 import six
 
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm.network.netinfo.cache import CachingNetInfo
+from vdsm.network.netinfo.nics import nics
 
+from . import info
 from . import validator
 
 SWITCH_TYPE = 'ovs'
 
 
 def validate_network_setup(nets, bonds):
-    running_config = RunningConfig()
-    kernel_nics = CachingNetInfo().nics
-
+    running_bonds = info.get_netinfo()['bondings']
+    kernel_nics = nics()
     for net, attrs in six.iteritems(nets):
         validator.validate_net_configuration(
-            net, attrs, bonds, running_config, kernel_nics)
+            net, attrs, bonds, running_bonds, kernel_nics)
     for bond, attrs in six.iteritems(bonds):
         validator.validate_bond_configuration(attrs, kernel_nics)
 
