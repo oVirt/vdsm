@@ -55,11 +55,10 @@ class ValidationTests(TestCaseBase):
             {'net1': {'nic': 'eth0', 'switch': 'ovs'}}, {})
         fake_to_be_added_bonds = {}
         fake_kernel_nics = ['eth0', 'eth1']
-        with self.assertRaises(ne.ConfigNetworkError) as e:
+        with self.assertNotRaises():
             ovs_validator.validate_net_configuration(
                 'net2', {'nic': 'eth1', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_config, fake_kernel_nics)
-        self.assertEquals(e.exception[0], ne.ERR_BAD_VLAN)
 
     def test_add_network_with_non_existing_nic(self):
         fake_running_config = BaseConfig({}, {})
