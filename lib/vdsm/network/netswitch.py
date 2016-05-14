@@ -97,7 +97,7 @@ def validate(networks, bondings):
     if use_legacy_switch:
         legacy_switch.validate_network_setup(legacy_nets, legacy_bonds)
     elif use_ovs_switch:
-        ovs_switch.validate_network_setup(ovs_nets, legacy_bonds)
+        ovs_switch.validate_network_setup(ovs_nets, ovs_bonds)
 
 
 def setup(networks, bondings, options, in_rollback):
