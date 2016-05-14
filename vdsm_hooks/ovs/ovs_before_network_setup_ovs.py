@@ -23,7 +23,8 @@ import six
 
 from vdsm.compat import suppress
 from vdsm.network import libvirt
-from vdsm.network.netinfo.cache import CachingNetInfo
+from vdsm.network import netswitch
+from vdsm.network.netinfo.cache import NetInfo
 from vdsm.network.netinfo.bonding import parse_bond_options
 from vdsm.utils import rget
 
@@ -279,7 +280,7 @@ def _validate_bond_configuration(attrs, netinfo):
 
 def _handle_setup(nets, bonds, running_config, nets_by_nic):
     commands = []
-    netinfo = CachingNetInfo()
+    netinfo = NetInfo(netswitch.netinfo())
     for bond, attrs in six.iteritems(bonds):
         if 'remove' not in attrs:
             _validate_bond_configuration(attrs, netinfo)
