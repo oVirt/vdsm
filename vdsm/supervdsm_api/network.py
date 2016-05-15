@@ -22,7 +22,7 @@ from . import expose
 
 from vdsm.tool.restore_nets import restore
 from vdsm.network.api import (setSafeNetworkConfig, setupNetworks,
-                              change_numvfs, network_caps)
+                              change_numvfs, network_caps, ovs_bridge)
 from vdsm.network.tc import setPortMirroring, unsetPortMirroring
 
 
@@ -35,5 +35,6 @@ expose(setSafeNetworkConfig)
 expose(setupNetworks)
 expose(network_caps)
 expose(change_numvfs)
+expose(ovs_bridge)
 expose(setPortMirroring)
 expose(unsetPortMirroring)

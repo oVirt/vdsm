@@ -22,6 +22,7 @@ import logging
 import xml.etree.ElementTree as ET
 from xml.dom import Node
 
+from vdsm import supervdsm
 from vdsm import utils
 from vdsm.hostdev import get_device_params, detach_detachable
 from vdsm.network import api as net_api
@@ -135,7 +136,11 @@ class Interface(Base):
                 vlan = iface.appendChildWithArgs('vlan')
                 vlan.appendChildWithArgs('tag', id=str(self.vlanId))
         else:
-            iface.appendChildWithArgs('source', bridge=self.network)
+            ovs_bridge = supervdsm.getProxy().ovs_bridge(self.network)
+            if ovs_bridge:
+                self._source_ovs_bridge(iface, ovs_bridge)
+            else:
+                iface.appendChildWithArgs('source', bridge=self.network)
 
         if hasattr(self, 'filter'):
             iface.appendChildWithArgs('filterref', filter=self.filter)
@@ -161,6 +166,14 @@ class Interface(Base):
             iface.appendChild(self.paramsToBandwidthXML(self.specParams))
 
         return iface
+
+    def _source_ovs_bridge(self, iface, ovs_bridge):
+        iface.appendChildWithArgs('source', bridge=ovs_bridge)
+        iface.appendChildWithArgs('virtualport', type='openvswitch')
+        vlan_tag = net_api.net2vlan(self.network)
+        if vlan_tag:
+            vlan = iface.appendChildWithArgs('vlan')
+            vlan.appendChildWithArgs('tag', id=str(vlan_tag))
 
     def paramsToBandwidthXML(self, specParams, oldBandwidth=None):
         """Returns a valid libvirt xml dom element object."""

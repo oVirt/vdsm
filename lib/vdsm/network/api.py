@@ -132,6 +132,11 @@ def libvirt_networks():
     return libvirt.networks()
 
 
+def net2vlan(network_name):
+    """Returns a network vlan. For non-vlan networks, returns None"""
+    return netswitch.net2vlan(network_name)
+
+
 def netname_o2l(ovirt_name):
     """Translate ovirt network name to the name used by libvirt database"""
     return libvirt.LIBVIRT_NET_PREFIX + ovirt_name
@@ -140,6 +145,16 @@ def netname_o2l(ovirt_name):
 def netname_l2o(libvirt_name):
     """Translate the name used by libvirt database to the ovirt network name"""
     return libvirt_name[len(libvirt.LIBVIRT_NET_PREFIX):]
+
+
+def ovs_bridge(network_name):
+    """
+    If network_name is an OVS based network, return the OVS (real) bridge.
+    Otherwise, return None.
+
+    This API requires root access.
+    """
+    return netswitch.ovs_net2bridge(network_name)
 
 
 def _build_setup_hook_dict(req_networks, req_bondings, req_options):

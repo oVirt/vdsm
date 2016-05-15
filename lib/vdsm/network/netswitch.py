@@ -156,6 +156,16 @@ def _setup_ovs(networks, bondings, options, in_rollback):
         connectivity.check(options)
 
 
+def ovs_net2bridge(network_name):
+    return ovs_info.northbound2bridge(network_name)
+
+
+def net2vlan(network_name):
+    # Using RunningConfig avoids the need to require root access.
+    net_attr = RunningConfig().networks.get(network_name)
+    return net_attr.get('vlan') if net_attr else None
+
+
 def netinfo(compatibility=None):
     # TODO: Version requests by engine to ease handling of compatibility.
     _netinfo = netinfo_get(compatibility=compatibility)
