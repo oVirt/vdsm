@@ -28,6 +28,8 @@ from vdsm import exception
 
 QEMU_IMG = qemuimg._qemuimg.cmd
 
+CONFIG = make_config([('irs', 'qcow2_compat', '0.10')])
+
 
 class CommandTests(TestCaseBase):
 
@@ -152,6 +154,7 @@ class CreateTests(CommandTests):
 
         with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
                                 self.supported('create', True)),
+                               (qemuimg, 'config', CONFIG),
                                (commands, 'execCmd', create)]):
             qemuimg.create('image', format='qcow2')
 
@@ -199,6 +202,7 @@ class ConvertTests(CommandTests):
                                 self.supported('convert', True)),
                                (qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
+                               (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2')
 
@@ -212,6 +216,7 @@ class ConvertTests(CommandTests):
                                 self.supported('convert', True)),
                                (qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
+                               (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2')
 
@@ -226,6 +231,7 @@ class ConvertTests(CommandTests):
                                 self.supported('convert', True)),
                                (qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
+                               (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backing='bak')
@@ -240,6 +246,7 @@ class ConvertTests(CommandTests):
                                 self.supported('convert', True)),
                                (qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
+                               (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backingFormat='qcow2')
@@ -255,6 +262,7 @@ class ConvertTests(CommandTests):
                                 self.supported('convert', True)),
                                (qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
+                               (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2')
