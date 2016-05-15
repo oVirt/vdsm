@@ -848,9 +848,13 @@ def _ifup(iface, cgroup=dhclient.DHCLIENT_CGROUP):
 
 
 def _restore_default_bond_options(bond_name, desired_options):
-    """Restore bond options to the default options of the desired mode. First
-    we change the bond mode to the desired mode (if needed) to avoid
-    'Operation not permitted' errors and then reset the non-default options
+    """
+    Restore the bond's options to defaults corresponding to the intended
+    bonding mode. First change the mode to the desired one (if needed) to avoid
+    'Operation not permitted' errors and then reset the non-default options.
+
+    This works around an initscripts design limitation: ifup only touches
+    declared options and leaves other (possibly non-default) options as-is.
     """
 
     desired_options = dict(p.split('=', 1) for p in desired_options.split())
