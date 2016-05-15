@@ -192,45 +192,6 @@ def getProcCtime(pid):
 
     return str(ctime)
 
-_readspeed_regex = re.compile(
-    "(?P<bytes>\d+) bytes? \([\de\-.]+ [kMGT]*B\) copied, "
-    "(?P<seconds>[\de\-.]+) s, "
-    "([\de\-.]+|Infinity) [kMGT]*B/s"
-)
-
-
-def readspeed(path, buffersize=None):
-    """
-    Measures the amount of bytes transferred and the time elapsed
-    reading the content of the file/device
-    """
-    cmd = [constants.EXT_DD, "if=%s" % path, "iflag=%s" % DIRECTFLAG,
-           "of=/dev/null"]
-
-    if buffersize:
-        cmd.extend(["bs=%d" % buffersize, "count=1"])
-
-    rc, _, err = execCmd(cmd)
-    if rc != 0:
-        log.error("Unable to read file '%s'", path)
-        raise se.MiscFileReadException(path)
-
-    try:
-        # The statistics are located in the last line:
-        m = _readspeed_regex.match(err[-1])
-    except IndexError:
-        log.error("Unable to find dd statistics to parse")
-        raise se.MiscFileReadException(path)
-
-    if m is None:
-        log.error("Unable to parse dd output: '%s'", err[-1])
-        raise se.MiscFileReadException(path)
-
-    return {
-        'bytes': int(m.group('bytes')),
-        'seconds': float(m.group('seconds')),
-    }
-
 
 def readblock(name, offset, size):
     '''

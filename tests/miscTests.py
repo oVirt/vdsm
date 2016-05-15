@@ -840,35 +840,6 @@ class CleanUpDir(TestCaseBase):
         self.assertTrue(os.path.lexists(baseDir))
 
 
-@expandPermutations
-class ReadSpeed(TestCaseBase):
-
-    @permutations([
-        ("1 byte (1 B) copied, 1 s, 1 B/s",
-         "1", "1"),
-        ("1024 bytes (1 kB) copied, 1 s, 1 kB/s",
-         "1024", "1"),
-        ("1572864 bytes (1.5 MB) copied, 1.5 s, 1 MB/s",
-         "1572864", "1.5"),
-        ("1610612736 bytes (1.5 GB) copied, 1000.5 s, 1.53 MB/s",
-         "1610612736", "1000.5"),
-        ("479 bytes (479 B) copied, 5.6832e-05 s, 8.4 MB/s",
-         "479", "5.6832e-05"),
-        ("512 bytes (512e-3 MB) copied, 1 s, 512e-3 MB/s",
-         "512", "1"),
-        ("524288 bytes (512e3 B) copied, 1 s, 512e3 B/s",
-         "524288", "1"),
-        ("517 bytes (517 B) copied, 0 s, Infinity B/s",
-         "517", "0")
-    ])
-    def testReadSpeedRegExp(self, output, bytes, seconds):
-        m = misc._readspeed_regex.match(output)
-        self.assertNotEqual(m, None)
-
-        self.assertEqual(m.group("bytes"), bytes)
-        self.assertEqual(m.group("seconds"), seconds)
-
-
 class PidExists(TestCaseBase):
 
     def testPidExists(self):
