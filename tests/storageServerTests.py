@@ -67,7 +67,6 @@ class MountConnectionTests(VdsmTestCase):
         self.assertEquals(mount_con._mount.fs_spec, "dummy-spec")
         self.assertEquals(mount_con._mount.fs_file, "/tmp/dummy-spec")
 
-    @brokentest
     @permutations([
         # spec, localpath
         ("server:/a/", "/tmp/server:_a"),
@@ -75,11 +74,15 @@ class MountConnectionTests(VdsmTestCase):
         ("server:/a/b", "/tmp/server:_a_b"),
         ("server:/a//b", "/tmp/server:_a_b"),
         ("server:/a/b_c", "/tmp/server:_a_b__c"),
-        ("server:/", "/tmp/server:_"),
     ])
     def test_normalize_local_path(self, spec, localpath):
         con = MountConnection(spec, mountClass=FakeMount)
         self.assertEqual(con._mount.fs_file, localpath)
+
+    @brokentest("os.path.normpath used for mount spec")
+    def test_normalize_slash(self, spec, localpath):
+        con = MountConnection("server:/", mountClass=FakeMount)
+        self.assertEqual(con._mount.fs_file, "/tmp/server:_")
 
 
 @expandPermutations
