@@ -150,7 +150,7 @@ def _waitForKnownOperstate(device, timeout=1):
 
 
 def _waitForOperstate(device, state, timeout=1):
-    """ :param state: please use OPERSTATE_* from lib/vdsm/netinfo
+    """ :param state: please use OPERSTATE_* from lib/vdsm/network/netinfo
     """
     with monitor.Monitor(groups=('link',), timeout=timeout) as mon:
         if state != operstate(device):

@@ -20,10 +20,11 @@ from __future__ import absolute_import
 
 import six
 
-from vdsm.netinfo.addresses import getIpAddrs, getIpInfo, is_ipv6_local_auto
-from vdsm.netinfo.dhcp import dhcp_status
-from vdsm.netinfo.mtus import getMtu
-from vdsm.netinfo.routes import get_routes, get_gateway
+from vdsm.network.netinfo.addresses import (
+    getIpAddrs, getIpInfo, is_ipv6_local_auto)
+from vdsm.network.netinfo.dhcp import dhcp_status
+from vdsm.network.netinfo.mtus import getMtu
+from vdsm.network.netinfo.routes import get_routes, get_gateway
 
 from . import driver
 
