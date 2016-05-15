@@ -1292,6 +1292,7 @@ class Global(APIBase):
             return {'status': {'code': 1,
                                'message': out + err}}
         message = doneCode['message']
+        ret = 0
         if action == 'status':
             if rc == 0:
                 power = 'on'
@@ -1300,7 +1301,8 @@ class Global(APIBase):
             else:
                 power = 'unknown'
                 message = out + err
-            return {'status': {'code': 0, 'message': message},
+                ret = rc
+            return {'status': {'code': ret, 'message': message},
                     'power': power}
         if rc != 0:
             message = out + err
