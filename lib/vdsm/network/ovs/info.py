@@ -181,6 +181,21 @@ def get_netinfo():
     return netinfo
 
 
+def northbound2bridge(northbound):
+    ovs_info = OvsInfo()
+    bridges = ovs_info.bridges
+
+    if northbound in bridges:
+        return northbound
+
+    for bridge, bridge_attrs in six.iteritems(bridges):
+        ports = bridge_attrs['ports']
+        if northbound in ovs_info.northbound_ports(ports):
+            return bridge
+
+    return None
+
+
 def _fake_devices(networks):
     fake_devices = {'bridges': {}, 'vlans': {}}
 

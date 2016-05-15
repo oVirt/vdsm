@@ -27,7 +27,7 @@ from virt.vmdevices import hwclass
 from virt.vmdevices import graphics
 from virt.domain_descriptor import DomainDescriptor
 
-from monkeypatch import MonkeyPatchScope
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
@@ -371,6 +371,8 @@ class TestVmDevices(XMLTestCase):
         video = vmdevices.core.Video(self.conf, self.log, **dev_spec)
         self.assertXMLEqual(video.getXML().toxml(), video_xml)
 
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: MockedProxy())
     def testInterfaceXML(self):
         interfaceXML = """
             <interface type="bridge"> <address %s/>
@@ -402,6 +404,40 @@ class TestVmDevices(XMLTestCase):
         iface = vmdevices.network.Interface(self.conf, self.log, **dev)
         self.assertXMLEqual(iface.getXML().toxml(), interfaceXML)
 
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: MockedProxy(ovs_bridge='ovirtmgmt'))
+    @MonkeyPatch(vmdevices.network.net_api, 'net2vlan', lambda x: 101)
+    def testInterfaceOnOvsWithVlanXML(self):
+        interfaceXML = """
+            <interface type="bridge">
+                <address %s/>
+                <mac address="52:54:00:59:F5:3F"/>
+                <model type="virtio"/>
+                <source bridge="ovirtmgmt"/>
+                <virtualport type="openvswitch" />
+                <vlan>
+                    <tag id="101" />
+                </vlan>
+                <filterref filter="no-mac-spoofing"/>
+                <boot order="1"/>
+                <driver name="vhost" queues="7"/>
+                <tune>
+                    <sndbuf>0</sndbuf>
+                </tune>
+            </interface>""" % self.PCI_ADDR
+
+        dev = {'nicModel': 'virtio', 'macAddr': '52:54:00:59:F5:3F',
+               'network': 'ovirtmgmt', 'address': self.PCI_ADDR_DICT,
+               'device': 'bridge', 'type': 'interface',
+               'bootOrder': '1', 'filter': 'no-mac-spoofing',
+               'custom': {'queues': '7'}}
+
+        self.conf['custom'] = {'vhost': 'ovirtmgmt:true', 'sndbuf': '0'}
+        iface = vmdevices.network.Interface(self.conf, self.log, **dev)
+        self.assertXMLEqual(iface.getXML().toxml(), interfaceXML)
+
+    @MonkeyPatch(vmdevices.network.supervdsm,
+                 'getProxy', lambda: MockedProxy())
     def testInterfaceXMLBandwidthUpdate(self):
         originalBwidthXML = """
                 <bandwidth>
@@ -768,3 +804,12 @@ class RngTests(TestCaseBase):
         }
         rng = vmdevices.core.Rng(self.conf, self.log, **dev_conf)
         self.assertTrue(rng.uses_source(source))
+
+
+class MockedProxy(object):
+
+    def __init__(self, ovs_bridge=None):
+        self._ovs_bridge = ovs_bridge
+
+    def ovs_bridge(self, name):
+        return self._ovs_bridge
