@@ -119,11 +119,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
     if format:
         cmd.extend(("-f", format))
         if format == FORMAT.QCOW2 and _supports_qcow2_compat('create'):
-            value = config.get('irs', 'qcow2_compat')
-            if value not in _QCOW2_COMPAT_SUPPORTED:
-                raise exception.InvalidConfiguration(
-                    "Unsupported value for irs:qcow2_compat: %r" % value)
-            cmd.extend(('-o', 'compat=' + value))
+            cmd.extend(('-o', 'compat=' + _qcow2_compat()))
 
     if backing:
         if not os.path.isabs(backing):
@@ -187,7 +183,7 @@ def convert(srcImage, dstImage, stop, srcFormat=None, dstFormat=None,
     if dstFormat:
         cmd.extend(("-O", dstFormat))
         if dstFormat == FORMAT.QCOW2 and _supports_qcow2_compat('convert'):
-            options.append('compat=' + config.get('irs', 'qcow2_compat'))
+            options.append('compat=' + _qcow2_compat())
 
     if backing:
         if not os.path.isabs(backing):
@@ -251,6 +247,14 @@ def rebase(image, backing, format=None, backingFormat=None, unsafe=False,
 
     if rc != 0:
         raise QImgError(rc, out, err)
+
+
+def _qcow2_compat():
+    value = config.get('irs', 'qcow2_compat')
+    if value not in _QCOW2_COMPAT_SUPPORTED:
+        raise exception.InvalidConfiguration(
+            "Unsupported value for irs:qcow2_compat: %r" % value)
+    return value
 
 
 # Testing capabilities
