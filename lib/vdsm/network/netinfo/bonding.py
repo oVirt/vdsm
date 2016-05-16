@@ -43,7 +43,8 @@ BONDING_SLAVES = '/sys/class/net/%s/bonding/slaves'
 BONDING_SLAVE_OPT = '/sys/class/net/%s/bonding_slave/%s'
 EXCLUDED_BONDING_ENTRIES = frozenset((
     'slaves', 'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
-    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac'
+    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac',
+    'ad_actor_system'
 ))
 
 BONDING_MODES_NAME_TO_NUMBER = {
