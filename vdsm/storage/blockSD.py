@@ -240,9 +240,9 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
     poller = select.poll()
     for volUUID in volUUIDs:
         proc = _zeroVolume(sdUUID, volUUID)
-        fd = proc.stdout.fileno()
+        fd = proc.stderr.fileno()
         zerofds[fd] = ProcVol(proc, volUUID)
-        poller.register(fd, select.EPOLLHUP)
+        poller.register(fd, select.POLLIN)
 
     # Wait until all the asyncs procs return
     # Yes, this is a potentially infinite loop. Kill the vdsm task.
