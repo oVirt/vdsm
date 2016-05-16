@@ -97,6 +97,7 @@ test_modules = \
 	qemuimgTests.py \
 	resourceManagerTests.py \
 	responseTests.py \
+	rngsources_test.py \
 	samplingTests.py \
 	scheduleTests.py \
 	schemaValidationTest.py \

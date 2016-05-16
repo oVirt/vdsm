@@ -20,6 +20,7 @@
 
 import os.path
 
+from vdsm.host import rngsources
 from vdsm import constants
 from vdsm import supervdsm
 from vdsm import utils
@@ -400,24 +401,12 @@ class Redir(Base):
 
 class Rng(Base):
 
-    _SOURCES = {
-        'random': '/dev/random',
-        'hwrng': '/dev/hwrng'
-    }
-
-    @staticmethod
-    def available_sources():
-        return [
-            source for (source, path) in Rng._SOURCES.items()
-            if os.path.exists(path)
-        ]
-
     @staticmethod
     def matching_source(conf, source):
-        return Rng._SOURCES[conf['specParams']['source']] == source
+        return rngsources.get_device(conf['specParams']['source']) == source
 
     def uses_source(self, source):
-        return self._SOURCES[self.specParams['source']] == source
+        return rngsources.get_device(self.specParams['source']) == source
 
     def setup(self):
         supervdsm.getProxy().appropriateHwrngDevice(self.conf['vmId'])
@@ -452,9 +441,8 @@ class Rng(Base):
             rng.appendChildWithArgs('rate', None, **rateAttrs)
 
         # <backend... /> element
-        rng.appendChildWithArgs('backend',
-                                self._SOURCES[self.specParams['source']],
-                                model='random')
+        rng_dev = rngsources.get_device(self.specParams['source'])
+        rng.appendChildWithArgs('backend', rng_dev, model='random')
 
         return rng
 

@@ -27,6 +27,7 @@ import xml.etree.ElementTree as ET
 import libvirt
 
 from vdsm.config import config
+from vdsm.host import rngsources
 from vdsm.network.netinfo import cache as netinfo_cache
 from vdsm.storage import hba
 from vdsm import cpuarch
@@ -41,10 +42,6 @@ from vdsm import numa
 from vdsm import osinfo
 from vdsm import supervdsm
 from vdsm import utils
-from virt import vmdevices
-
-RNG_SOURCES = {'random': '/dev/random',
-               'hwrng': '/dev/hwrng'}
 
 
 def _getFreshCapsXMLStr():
@@ -188,7 +185,7 @@ def get():
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
-    caps['rngSources'] = vmdevices.core.Rng.available_sources()
+    caps['rngSources'] = rngsources.available_sources()
 
     caps['numaNodes'] = dict(numa.topology())
     caps['numaNodeDistance'] = dict(numa.distances())

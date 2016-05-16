@@ -735,24 +735,6 @@ class RngTests(TestCaseBase):
         }
 
     @permutations([
-        # avail_map, output_sources
-        [{'/dev/random': True, '/dev/hwrng': True}, ['random', 'hwrng']],
-        [{'/dev/random': True, '/dev/hwrng': False}, ['random']],
-        [{'/dev/random': False, '/dev/hwrng': True}, ['hwrng']],
-        [{'/dev/random': False, '/dev/hwrng': False}, []],
-    ])
-    def test_available_sources(self, avail_map, output_sources):
-
-        def fake_path_exists(path):
-            return avail_map.get(path, False)
-
-        with MonkeyPatchScope([(os.path, 'exists', fake_path_exists)]):
-            available = list(sorted(vmdevices.core.Rng.available_sources()))
-
-        expected = list(sorted(output_sources))
-        self.assertEqual(available, expected)
-
-    @permutations([
         # config, source
         ['random', '/dev/random'],
         ['hwrng', '/dev/hwrng'],
