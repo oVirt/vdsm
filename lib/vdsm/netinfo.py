@@ -72,7 +72,8 @@ _BONDING_FAILOVER_MODES = frozenset(('1', '3'))
 _BONDING_LOADBALANCE_MODES = frozenset(('0', '2', '4', '5', '6'))
 _EXCLUDED_BONDING_ENTRIES = frozenset((
     'slaves', 'active_slave', 'mii_status', 'queue_id', 'ad_aggregator',
-    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac'
+    'ad_num_ports', 'ad_actor_key', 'ad_partner_key', 'ad_partner_mac',
+    'ad_actor_system'
 ))
 _IFCFG_ZERO_SUFFIXED = frozenset(
     ('IPADDR0', 'GATEWAY0', 'PREFIX0', 'NETMASK0'))
