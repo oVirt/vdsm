@@ -58,6 +58,8 @@ test_modules = \
 	encodingTests.py \
 	exception_test.py \
 	executorTests.py \
+	eventfd_test.py \
+	filecontrol_test.py \
 	fileSDTests.py \
 	fileVolumeTests.py \
 	fileUtilTests.py \
@@ -100,6 +102,7 @@ test_modules = \
 	schemaValidationTest.py \
 	sdm_indirection_tests.py \
 	securableTests.py \
+	sigutils_test.py \
 	sparsifyTests.py \
 	sslTests.py \
 	stompAdapterTests.py \
@@ -141,6 +144,7 @@ test_modules = \
 	vmUtilsTests.py \
 	vmXmlTests.py \
 	v2vTests.py \
+	zombiereaper_test.py \
 	$(NULL)
 
 blacklist_modules_python3 = \

@@ -25,13 +25,3 @@ filecontroldir = $(vdsminfradir)/filecontrol
 dist_filecontrol_PYTHON = \
 	__init__.py \
 	$(NULL)
-
-dist_noinst_PYTHON = \
-	tests.py \
-	$(NULL)
-
-check-local:
-	if [ -x "$(PYTHON3_NOSE)" ]; then \
-		"$(PYTHON3_NOSE)" tests.py; \
-	fi
-	nosetests tests.py

@@ -25,14 +25,3 @@ sigutilsdir = $(vdsminfradir)/sigutils
 dist_sigutils_PYTHON = \
 	__init__.py \
 	$(NULL)
-
-dist_noinst_PYTHON = \
-	tests.py \
-	tests_child.py \
-	$(NULL)
-
-check-local:
-	if [ -x "$(PYTHON3_NOSE)" ]; then \
-		"$(PYTHON3_NOSE)" tests.py; \
-	fi
-	nosetests tests.py

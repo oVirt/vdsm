@@ -21,13 +21,13 @@ from __future__ import absolute_import
 from time import sleep
 import os
 
-from .. import zombiereaper
+from testlib import VdsmTestCase
+
+from vdsm.infra import zombiereaper
 from subprocess import Popen
 
-from unittest import TestCase
 
-
-class zombieReaperTests(TestCase):
+class zombieReaperTests(VdsmTestCase):
 
     def setUp(self):
         zombiereaper.registerSignalHandler()
@@ -55,6 +55,19 @@ class zombieReaperTests(TestCase):
         self.assertRaises(OSError, os.waitpid, p.pid, os.WNOHANG)
 
 
-class RegisterTests(TestCase):
+class RegisterTests(VdsmTestCase):
+
+    # testrunner calls zombiereaper.registerSignalHandler so for testing
+    # purposes unregisterSignalHandler is called.
+    def setUp(self):
+        self.unregistered = True
+        if zombiereaper._registered:
+            self.unregistered = True
+            zombiereaper.unregisterSignalHandler()
+
+    def tearDown(self):
+        if self.unregistered:
+            zombiereaper.registerSignalHandler()
+
     def testUnregistered(self):
         self.assertRaises(RuntimeError, zombiereaper.autoReapPID, 12345)
