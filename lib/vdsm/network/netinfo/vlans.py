@@ -31,7 +31,7 @@ vlans = partial(visible_devs, Link.isVLAN)
 
 def vlan_devs_for_iface(iface):
     for linkDict in nl_link.iter_links():
-        if linkDict.get('device') == iface:
+        if linkDict.get('device') == iface and linkDict.get('type') == 'vlan':
             yield linkDict['name']
 
 
