@@ -25,7 +25,6 @@ from vdsm.rpc.Bridge import DynamicBridge
 from yajsonrpc import JsonRpcError
 
 from monkeypatch import MonkeyPatch
-from testValidation import brokentest
 from testlib import VdsmTestCase as TestCaseBase
 
 apiWhitelist = ('StorageDomain.Classes', 'StorageDomain.Types',
@@ -159,7 +158,6 @@ class BridgeTests(TestCaseBase):
 
         self.assertEquals(e.exception.code, 100)
 
-    @brokentest("schema conflicts with the fake api")
     @MonkeyPatch(DynamicBridge, '_get_api_instance', _get_api_instance)
     def testMethodWithIntParam(self):
         bridge = DynamicBridge()
