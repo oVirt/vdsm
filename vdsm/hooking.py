@@ -36,6 +36,7 @@ Return codes:
 >2 - reserved
 """
 
+from vdsm import hooks
 import json
 import os
 import sys
@@ -81,3 +82,11 @@ def exit_hook(message, return_code=2):
     """
     sys.stderr.write(message + "\n")
     sys.exit(return_code)
+
+
+def load_vm_launch_flags_from_file(vm_id):
+    return hooks.load_vm_launch_flags_from_file(vm_id)
+
+
+def dump_vm_launch_flags_to_file(vm_id, flags):
+    hooks.dump_vm_launch_flags_to_file(vm_id, flags)

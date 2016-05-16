@@ -25,6 +25,7 @@ import glob
 import hashlib
 import itertools
 import json
+import libvirt
 import logging
 import os
 import os.path
@@ -33,7 +34,14 @@ import tempfile
 
 from . import commands
 from . import exception
-from .constants import P_VDSM_HOOKS, P_VDSM
+from .constants import P_VDSM_HOOKS, P_VDSM, P_VDSM_RUN
+
+_LAUNCH_FLAGS_FILE = 'launchflags'
+_LAUNCH_FLAGS_PATH = os.path.join(
+    P_VDSM_RUN,
+    '%s',
+    _LAUNCH_FLAGS_FILE,
+)
 
 
 # dir path is relative to '/' for test purposes
@@ -417,6 +425,31 @@ def _getScriptInfo(path):
     except:
         md5 = ''
     return {'md5': md5}
+
+
+def load_vm_launch_flags_from_file(vm_id):
+    flags_file = _LAUNCH_FLAGS_PATH % vm_id
+    if os.path.isfile(flags_file):
+        with open(flags_file) as f:
+            return int(f.readline())
+    return libvirt.VIR_DOMAIN_NONE
+
+
+def dump_vm_launch_flags_to_file(vm_id, flags):
+    flags_file = _LAUNCH_FLAGS_PATH % vm_id
+
+    dir_name = os.path.dirname(flags_file)
+    try:
+        os.makedirs(dir_name)
+    except OSError:
+        pass
+    with open(flags_file, mode='w') as f:
+        f.write(str(flags))
+
+
+def remove_vm_launch_flags_file(vm_id):
+    flags_file = _LAUNCH_FLAGS_PATH % vm_id
+    os.remove(flags_file)
 
 
 def _getHookInfo(dir):

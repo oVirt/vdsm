@@ -20,14 +20,18 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+
 import contextlib
+import libvirt
 import tempfile
 import os
 import os.path
 from contextlib import contextmanager
+from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir
 
+from vdsm import constants
 from vdsm import hooks
 
 
@@ -139,3 +143,18 @@ domXMLFile.close()
                                         params={'customProperty': ' rocks!'},
                                         vmconf=vmconf)
             self.assertEqual(result, "oVirt rocks more!")
+
+    def test_pause_flags(self):
+        vm_id = '042f6258-3446-4437-8034-0c93e3bcda1b'
+        with namedTemporaryDir() as tmpDir:
+            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
+                flags_file = hooks._LAUNCH_FLAGS_PATH % vm_id
+                for flag in [libvirt.VIR_DOMAIN_NONE,
+                             libvirt.VIR_DOMAIN_START_PAUSED]:
+                    self.assertFalse(os.path.exists(flags_file))
+                    hooks.dump_vm_launch_flags_to_file(vm_id, flag)
+                    read_flag = hooks.load_vm_launch_flags_from_file(vm_id)
+                    self.assertEqual(flag, read_flag)
+                    self.assertTrue(os.path.exists(flags_file))
+                    hooks.remove_vm_launch_flags_file(vm_id)
+                    self.assertFalse(os.path.exists(flags_file))
