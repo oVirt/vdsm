@@ -1926,10 +1926,6 @@ class Vm(object):
                 self._connection.lookupByUUIDString(self.id),
                 self._timeoutExperienced)
         else:
-            domxml = hooks.before_vm_start(self._buildDomainXML(), self.conf)
-            # TODO: this is debug information. For 3.6.x we still need to
-            # see the XML even with 'info' as default level.
-            self.log.info(domxml)
 
             flags = libvirt.VIR_DOMAIN_NONE
             with self._confLock:
@@ -1937,13 +1933,25 @@ class Vm(object):
                     flags |= libvirt.VIR_DOMAIN_START_PAUSED
                     self.conf['pauseCode'] = 'NOERR'
                     del self.conf['launchPaused']
-            self._dom = virdomain.Notifying(
-                self._connection.createXML(domxml, flags),
-                self._timeoutExperienced)
-            hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
-            for dev in self._customDevices():
-                hooks.after_device_create(dev._deviceXML, self.conf,
-                                          dev.custom)
+            hooks.dump_vm_launch_flags_to_file(self.id, flags)
+            try:
+                domxml = hooks.before_vm_start(self._buildDomainXML(),
+                                               self.conf)
+                flags = hooks.load_vm_launch_flags_from_file(self.id)
+
+                # TODO: this is debug information. For 3.6.x we still need to
+                # see the XML even with 'info' as default level.
+                self.log.info(domxml)
+
+                self._dom = virdomain.Notifying(
+                    self._connection.createXML(domxml, flags),
+                    self._timeoutExperienced)
+                hooks.after_vm_start(self._dom.XMLDesc(0), self.conf)
+                for dev in self._customDevices():
+                    hooks.after_device_create(dev._deviceXML, self.conf,
+                                              dev.custom)
+            finally:
+                hooks.remove_vm_launch_flags_file(self.id)
 
         if initDomain:
             self._domDependentInit()
