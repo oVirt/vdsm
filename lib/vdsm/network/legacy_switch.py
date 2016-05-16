@@ -585,7 +585,7 @@ def _bonds_edit(bonds, configurator, _netinfo):
         bond = Bond.objectivize(
             name, configurator, attrs.get('options'), attrs.get('nics'),
             mtu=None, _netinfo=_netinfo)
-        logging.debug('Editing bond %r with options %s', bond, bond.options)
+        logging.debug('Editing %r with options %r', bond, bond.options)
         configurator.editBonding(bond, _netinfo)
 
 
@@ -600,7 +600,7 @@ def _bonds_add(bonds, configurator, _netinfo):
         bond = Bond.objectivize(
             name, configurator, attrs.get('options'), attrs.get('nics'),
             mtu=None, _netinfo=_netinfo)
-        logging.debug('Creating bond %r with options %s', bond, bond.options)
+        logging.debug('Creating %r with options %r', bond, bond.options)
         configurator.configureBond(bond)
 
 
