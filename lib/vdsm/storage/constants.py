@@ -96,3 +96,56 @@ def name2type(name):
         if v == name.upper():
             return k
     return None
+
+
+# Volume meta data fields
+SIZE = "SIZE"
+TYPE = "TYPE"
+FORMAT = "FORMAT"
+DISKTYPE = "DISKTYPE"
+VOLTYPE = "VOLTYPE"
+PUUID = "PUUID"
+DOMAIN = "DOMAIN"
+CTIME = "CTIME"
+IMAGE = "IMAGE"
+DESCRIPTION = "DESCRIPTION"
+LEGALITY = "LEGALITY"
+MTIME = "MTIME"
+POOL = MDK_POOLS  # Deprecated
+
+# In block storage, metadata size is limited to BLOCK_SIZE (512), to
+# ensure that metadata is written atomically. This is big enough for the
+# actual metadata, but may not be big enough for the description field.
+# Since a disk may be created on file storage, and moved to block
+# storage, the metadata size must be limited on all types of storage.
+#
+# The desription field is limited to 500 characters in the engine side.
+# Since ovirt 3.5, the description field is using JSON format, keeping
+# both alias and description. In OVF_STORE disks, the description field
+# holds additional data such as content size and date.
+#
+# Here is the worst case metadata format:
+#
+# CTIME=1440935038                            # int(time.time())
+# DESCRIPTION=                                # text|JSON
+# DISKTYPE=2                                  # enum
+# DOMAIN=75f8a1bb-4504-4314-91ca-d9365a30692b # uuid
+# FORMAT=COW                                  # RAW|COW
+# IMAGE=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
+# LEGALITY=ILLEGAL                            # ILLEGAL|LEGAL|FAKE
+# MTIME=0                                     # always 0
+# POOL_UUID=                                  # always empty
+# PUUID=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
+# SIZE=2147483648                             # size in blocks
+# TYPE=PREALLOCATED                           # PREALLOCATED|UNKNOWN|SPARSE
+# VOLTYPE=INTERNAL                            # INTERNAL|SHARED|LEAF
+# EOF
+#
+# This content requires 273 bytes, leaving 239 bytes for the description
+# field. OVF_STORE JSON format needs up to 175 bytes.
+#
+# We use a limit of 210 bytes for the description field, leaving couple
+# of bytes for unexpected future changes. This should good enough for
+# ascii values, but limit non-ascii values, which are encoded by engine
+# using 4 bytes per character.
+DESCRIPTION_SIZE = 210

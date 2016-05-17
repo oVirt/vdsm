@@ -27,7 +27,6 @@ from vdsm.storage import exception as se
 
 from storage import sd
 from storage import blockSD
-from storage import volume
 from storage import blockVolume
 
 
@@ -132,7 +131,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         # by the metadata
         log.debug("Checking the volume size for the volume %s", vol.volUUID)
 
-        metaVolSize = int(vol.getMetaParam(volume.SIZE))
+        metaVolSize = int(vol.getMetaParam(sc.SIZE))
 
         if vol.getFormat() == sc.COW_FORMAT:
             qemuVolInfo = qemuimg.info(vol.getVolumePath(),
@@ -145,7 +144,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             log.warn("Fixing the mismatch between the metadata volume size "
                      "(%s) and the volume virtual size (%s) for the volume "
                      "%s", vol.volUUID, metaVolSize, virtVolSize)
-            vol.setMetaParam(volume.SIZE, str(virtVolSize))
+            vol.setMetaParam(sc.SIZE, str(virtVolSize))
 
     def v3UpgradeVolumePermissions(vol):
         log.debug("Changing permissions (read-write) for the "

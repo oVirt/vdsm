@@ -148,7 +148,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         Return parent volume UUID
         """
-        return self.getMetaParam(volume.PUUID)
+        return self.getMetaParam(sc.PUUID)
 
     def getChildren(self):
         """ Return children volume UUIDs.
@@ -158,7 +158,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         domPath = self.imagePath.split('images')[0]
         metaPattern = os.path.join(domPath, 'images', self.imgUUID, '*.meta')
         metaPaths = oop.getProcessPool(self.sdUUID).glob.glob(metaPattern)
-        pattern = "%s.*%s" % (volume.PUUID, self.volUUID)
+        pattern = "%s.*%s" % (sc.PUUID, self.volUUID)
         matches = grepCmd(pattern, metaPaths)
         if matches:
             children = []
@@ -174,7 +174,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         Return image UUID
         """
-        return self.getMetaParam(volume.IMAGE)
+        return self.getMetaParam(sc.IMAGE)
 
     def getDevPath(self):
         """
@@ -244,7 +244,7 @@ class FileVolumeManifest(volume.VolumeManifest):
         """
         Set image UUID
         """
-        self.setMetaParam(volume.IMAGE, imgUUID)
+        self.setMetaParam(sc.IMAGE, imgUUID)
 
     def removeMetadata(self):
         """
@@ -515,7 +515,7 @@ class FileVolume(volume.Volume):
         by an HSM while it is using the volume and by an SPM when no one is
         using the volume.
         """
-        self.setMetaParam(volume.PUUID, puuid)
+        self.setMetaParam(sc.PUUID, puuid)
 
     def setParentTag(self, puuid):
         """

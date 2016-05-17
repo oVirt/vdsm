@@ -43,60 +43,7 @@ rmanager = rm.ResourceManager.getInstance()
 
 DOMAIN_MNT_POINT = 'mnt'
 
-# Volume meta data fields
-SIZE = "SIZE"
-TYPE = "TYPE"
-FORMAT = "FORMAT"
-DISKTYPE = "DISKTYPE"
-VOLTYPE = "VOLTYPE"
-PUUID = "PUUID"
-DOMAIN = "DOMAIN"
-CTIME = "CTIME"
-IMAGE = "IMAGE"
-DESCRIPTION = "DESCRIPTION"
-LEGALITY = "LEGALITY"
-MTIME = "MTIME"
-POOL = sc.MDK_POOLS  # Deprecated
-
-
 log = logging.getLogger('Storage.Volume')
-
-# In block storage, metadata size is limited to BLOCK_SIZE (512), to
-# ensure that metadata is written atomically. This is big enough for the
-# actual metadata, but may not be big enough for the description field.
-# Since a disk may be created on file storage, and moved to block
-# storage, the metadata size must be limited on all types of storage.
-#
-# The desription field is limited to 500 characters in the engine side.
-# Since ovirt 3.5, the description field is using JSON format, keeping
-# both alias and description. In OVF_STORE disks, the description field
-# holds additional data such as content size and date.
-#
-# Here is the worst case metadata format:
-#
-# CTIME=1440935038                            # int(time.time())
-# DESCRIPTION=                                # text|JSON
-# DISKTYPE=2                                  # enum
-# DOMAIN=75f8a1bb-4504-4314-91ca-d9365a30692b # uuid
-# FORMAT=COW                                  # RAW|COW
-# IMAGE=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
-# LEGALITY=ILLEGAL                            # ILLEGAL|LEGAL|FAKE
-# MTIME=0                                     # always 0
-# POOL_UUID=                                  # always empty
-# PUUID=75f8a1bb-4504-4314-91ca-d9365a30692b  # uuid
-# SIZE=2147483648                             # size in blocks
-# TYPE=PREALLOCATED                           # PREALLOCATED|UNKNOWN|SPARSE
-# VOLTYPE=INTERNAL                            # INTERNAL|SHARED|LEAF
-# EOF
-#
-# This content requires 273 bytes, leaving 239 bytes for the description
-# field. OVF_STORE JSON format needs up to 175 bytes.
-#
-# We use a limit of 210 bytes for the description field, leaving couple
-# of bytes for unexpected future changes. This should good enough for
-# ascii values, but limit non-ascii values, which are encoded by engine
-# using 4 bytes per character.
-DESCRIPTION_SIZE = 210
 
 
 def getBackingVolumePath(imgUUID, volUUID):
@@ -162,18 +109,18 @@ class VolumeMetadata(object):
             md[key.strip()] = value.strip()
 
         try:
-            return cls(domain=md[DOMAIN],
-                       image=md[IMAGE],
-                       puuid=md[PUUID],
-                       size=int(md[SIZE]),
-                       format=md[FORMAT],
-                       type=md[TYPE],
-                       voltype=md[VOLTYPE],
-                       disktype=md[DISKTYPE],
-                       description=md[DESCRIPTION],
-                       legality=md[LEGALITY],
-                       ctime=int(md[CTIME]),
-                       mtime=int(md[MTIME]))
+            return cls(domain=md[sc.DOMAIN],
+                       image=md[sc.IMAGE],
+                       puuid=md[sc.PUUID],
+                       size=int(md[sc.SIZE]),
+                       format=md[sc.FORMAT],
+                       type=md[sc.TYPE],
+                       voltype=md[sc.VOLTYPE],
+                       disktype=md[sc.DISKTYPE],
+                       description=md[sc.DESCRIPTION],
+                       legality=md[sc.LEGALITY],
+                       ctime=int(md[sc.CTIME]),
+                       mtime=int(md[sc.MTIME]))
         except KeyError as e:
             raise se.MetaDataKeyNotFoundError("Missing metadata key: %s: "
                                               "found: %s" % (e, md))
@@ -192,10 +139,10 @@ class VolumeMetadata(object):
         # We cannot fail when the description is too long, since we must
         # support older engine that may send such values, or old disks
         # with long description.
-        if len(desc) > DESCRIPTION_SIZE:
+        if len(desc) > sc.DESCRIPTION_SIZE:
             cls.log.warning("Description is too long, truncating to %d bytes",
-                            DESCRIPTION_SIZE)
-            desc = desc[:DESCRIPTION_SIZE]
+                            sc.DESCRIPTION_SIZE)
+            desc = desc[:sc.DESCRIPTION_SIZE]
         return desc
 
     def storage_format(self):
@@ -218,19 +165,19 @@ class VolumeMetadata(object):
         Return metadata in dictionary format
         """
         return {
-            FORMAT: self.format,
-            TYPE: self.type,
-            VOLTYPE: self.voltype,
-            DISKTYPE: self.disktype,
-            SIZE: str(self.size),
-            CTIME: str(self.ctime),
+            sc.FORMAT: self.format,
+            sc.TYPE: self.type,
+            sc.VOLTYPE: self.voltype,
+            sc.DISKTYPE: self.disktype,
+            sc.SIZE: str(self.size),
+            sc.CTIME: str(self.ctime),
             sc.MDK_POOLS: "",  # obsolete
-            DOMAIN: self.domain,
-            IMAGE: self.image,
-            DESCRIPTION: self.description,
-            PUUID: self.puuid,
-            MTIME: str(self.mtime),
-            LEGALITY: self.legality,
+            sc.DOMAIN: self.domain,
+            sc.IMAGE: self.image,
+            sc.DESCRIPTION: self.description,
+            sc.PUUID: self.puuid,
+            sc.MTIME: str(self.mtime),
+            sc.LEGALITY: self.legality,
         }
 
 
@@ -295,7 +242,7 @@ class VolumeManifest(object):
 
     def getVolType(self):
         if not self.voltype:
-            self.voltype = self.getMetaParam(VOLTYPE)
+            self.voltype = self.getMetaParam(sc.VOLTYPE)
         return self.voltype
 
     def isLeaf(self):
@@ -308,46 +255,46 @@ class VolumeManifest(object):
         """
         Return volume description
         """
-        return self.getMetaParam(DESCRIPTION)
+        return self.getMetaParam(sc.DESCRIPTION)
 
     def getLegality(self):
         """
         Return volume legality
         """
         try:
-            legality = self.getMetaParam(LEGALITY)
+            legality = self.getMetaParam(sc.LEGALITY)
             return legality
         except se.MetaDataKeyNotFoundError:
             return sc.LEGAL_VOL
 
     def isLegal(self):
         try:
-            legality = self.getMetaParam(LEGALITY)
+            legality = self.getMetaParam(sc.LEGALITY)
             return legality != sc.ILLEGAL_VOL
         except se.MetaDataKeyNotFoundError:
             return True
 
     def isFake(self):
         try:
-            legality = self.getMetaParam(LEGALITY)
+            legality = self.getMetaParam(sc.LEGALITY)
             return legality == sc.FAKE_VOL
         except se.MetaDataKeyNotFoundError:
             return False
 
     def getSize(self):
-        size = int(self.getMetaParam(SIZE))
+        size = int(self.getMetaParam(sc.SIZE))
         if size < 1:  # Size stored in the metadata is not valid
             raise se.MetaDataValidationError()
         return size
 
     def getFormat(self):
-        return sc.name2type(self.getMetaParam(FORMAT))
+        return sc.name2type(self.getMetaParam(sc.FORMAT))
 
     def getType(self):
-        return sc.name2type(self.getMetaParam(TYPE))
+        return sc.name2type(self.getMetaParam(sc.TYPE))
 
     def getDiskType(self):
-        return self.getMetaParam(DISKTYPE)
+        return self.getMetaParam(sc.DISKTYPE)
 
     def isInternal(self):
         return self.getVolType() == sc.type2name(sc.INTERNAL_VOL)
@@ -358,19 +305,19 @@ class VolumeManifest(object):
     def metadata2info(self, meta):
         return {
             "uuid": self.volUUID,
-            "type": meta.get(TYPE, ""),
-            "format": meta.get(FORMAT, ""),
-            "disktype": meta.get(DISKTYPE, ""),
-            "voltype": meta.get(VOLTYPE, ""),
-            "size": int(meta.get(SIZE, "0")),
+            "type": meta.get(sc.TYPE, ""),
+            "format": meta.get(sc.FORMAT, ""),
+            "disktype": meta.get(sc.DISKTYPE, ""),
+            "voltype": meta.get(sc.VOLTYPE, ""),
+            "size": int(meta.get(sc.SIZE, "0")),
             "parent": self.getParent(),
-            "description": meta.get(DESCRIPTION, ""),
-            "pool": meta.get(POOL, ""),
-            "domain": meta.get(DOMAIN, ""),
+            "description": meta.get(sc.DESCRIPTION, ""),
+            "pool": meta.get(sc.POOL, ""),
+            "domain": meta.get(sc.DOMAIN, ""),
             "image": self.getImage(),
-            "ctime": meta.get(CTIME, ""),
+            "ctime": meta.get(sc.CTIME, ""),
             "mtime": "0",
-            "legality": meta.get(LEGALITY, ""),
+            "legality": meta.get(sc.LEGALITY, ""),
             }
 
     def getInfo(self):
@@ -481,13 +428,13 @@ class VolumeManifest(object):
             self._setrw(rw=rw)
 
     def setLeaf(self):
-        self.setMetaParam(VOLTYPE, sc.type2name(sc.LEAF_VOL))
+        self.setMetaParam(sc.VOLTYPE, sc.type2name(sc.LEAF_VOL))
         self.voltype = sc.type2name(sc.LEAF_VOL)
         self.setrw(rw=True)
         return self.voltype
 
     def setInternal(self):
-        self.setMetaParam(VOLTYPE, sc.type2name(sc.INTERNAL_VOL))
+        self.setMetaParam(sc.VOLTYPE, sc.type2name(sc.INTERNAL_VOL))
         self.voltype = sc.type2name(sc.INTERNAL_VOL)
         self.setrw(rw=False)
         return self.voltype
@@ -517,7 +464,7 @@ class VolumeManifest(object):
         """
         descr = VolumeMetadata.validate_description(descr)
         self.log.info("volUUID = %s descr = %s ", self.volUUID, descr)
-        self.setMetaParam(DESCRIPTION, descr)
+        self.setMetaParam(sc.DESCRIPTION, descr)
 
     def setLegality(self, legality):
         """
@@ -526,21 +473,21 @@ class VolumeManifest(object):
         """
         self.log.info("sdUUID=%s imgUUID=%s volUUID = %s legality = %s ",
                       self.sdUUID, self.imgUUID, self.volUUID, legality)
-        self.setMetaParam(LEGALITY, legality)
+        self.setMetaParam(sc.LEGALITY, legality)
 
     def setDomain(self, sdUUID):
-        self.setMetaParam(DOMAIN, sdUUID)
+        self.setMetaParam(sc.DOMAIN, sdUUID)
         self.sdUUID = sdUUID
         return self.sdUUID
 
     def setShared(self):
-        self.setMetaParam(VOLTYPE, sc.type2name(sc.SHARED_VOL))
+        self.setMetaParam(sc.VOLTYPE, sc.type2name(sc.SHARED_VOL))
         self.voltype = sc.type2name(sc.SHARED_VOL)
         self.setrw(rw=False)
         return self.voltype
 
     def setSize(self, size):
-        self.setMetaParam(SIZE, size)
+        self.setMetaParam(sc.SIZE, size)
 
     def updateInvalidatedSize(self):
         # During some complex flows the volume size might have been marked as
@@ -549,17 +496,17 @@ class VolumeManifest(object):
         # (e.g. lv active) and not in use by another process (e.g. dd, qemu).
         # Going directly to the metadata parameter as we should skip the size
         # validation in getSize.
-        if int(self.getMetaParam(SIZE)) < 1:
+        if int(self.getMetaParam(sc.SIZE)) < 1:
             volInfo = qemuimg.info(
                 self.getVolumePath(), sc.fmt2str(self.getFormat()))
             # qemu/qemu-img rounds down
             self.setSize(volInfo['virtualsize'] / sc.BLOCK_SIZE)
 
     def setType(self, prealloc):
-        self.setMetaParam(TYPE, sc.type2name(prealloc))
+        self.setMetaParam(sc.TYPE, sc.type2name(prealloc))
 
     def setFormat(self, volFormat):
-        self.setMetaParam(FORMAT, sc.type2name(volFormat))
+        self.setMetaParam(sc.FORMAT, sc.type2name(volFormat))
 
     def validateDelete(self):
         """

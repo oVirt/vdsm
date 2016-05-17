@@ -175,7 +175,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         return self.getVolumeTag(TAG_PREFIX_PARENT)
 
     def getParentMeta(self):
-        return self.getMetaParam(volume.PUUID)
+        return self.getMetaParam(sc.PUUID)
 
     def getParent(self):
         """
@@ -272,7 +272,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         by an HSM while it is using the volume and by an SPM when no one is
         using the volume.
         """
-        self.setMetaParam(volume.PUUID, puuid)
+        self.setMetaParam(sc.PUUID, puuid)
 
     def setParentTag(self, puuid):
         """
@@ -288,7 +288,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         self.changeVolumeTag(TAG_PREFIX_IMAGE, imgUUID)
         # FIXME In next version we should remove imgUUID, as it is saved on lvm
         # tags
-        self.setMetaParam(volume.IMAGE, imgUUID)
+        self.setMetaParam(sc.IMAGE, imgUUID)
 
     def removeMetadata(self, metaId):
         """

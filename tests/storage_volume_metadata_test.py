@@ -51,19 +51,19 @@ def make_init_params(**kwargs):
 
 def make_md_dict(**kwargs):
     res = {
-        volume.DOMAIN: 'domain',
-        volume.IMAGE: 'image',
-        volume.PUUID: 'parent',
-        volume.SIZE: '0',
-        volume.FORMAT: 'format',
-        volume.TYPE: 'type',
-        volume.VOLTYPE: 'voltype',
-        volume.DISKTYPE: 'disktype',
-        volume.DESCRIPTION: 'description',
-        volume.LEGALITY: 'legality',
-        volume.MTIME: '0',
-        volume.CTIME: '0',
-        volume.POOL: '',
+        sc.DOMAIN: 'domain',
+        sc.IMAGE: 'image',
+        sc.PUUID: 'parent',
+        sc.SIZE: '0',
+        sc.FORMAT: 'format',
+        sc.TYPE: 'type',
+        sc.VOLTYPE: 'voltype',
+        sc.DISKTYPE: 'disktype',
+        sc.DESCRIPTION: 'description',
+        sc.LEGALITY: 'legality',
+        sc.MTIME: '0',
+        sc.CTIME: '0',
+        sc.POOL: '',
     }
     res.update(kwargs)
     return res
@@ -124,20 +124,20 @@ class VolumeMetadataTests(VdsmTestCase):
         self.assertEqual(expected, md.storage_format())
 
     @permutations([
-        [volume.DESCRIPTION_SIZE],
-        [volume.DESCRIPTION_SIZE + 1]
+        [sc.DESCRIPTION_SIZE],
+        [sc.DESCRIPTION_SIZE + 1]
     ])
     def test_long_description(self, size):
         params = make_init_params(description="!" * size)
         md = volume.VolumeMetadata(**params)
-        self.assertEqual(volume.DESCRIPTION_SIZE, len(md.description))
+        self.assertEqual(sc.DESCRIPTION_SIZE, len(md.description))
 
     @permutations([['size'], ['ctime'], ['mtime']])
     def test_int_params_str_raises(self, param):
         params = make_init_params(**{param: 'not_an_int'})
         self.assertRaises(AssertionError, volume.VolumeMetadata, **params)
 
-    @permutations([[key] for key in make_md_dict() if key != volume.POOL])
+    @permutations([[key] for key in make_md_dict() if key != sc.POOL])
     def test_from_lines_missing_key(self, required_key):
         data = make_md_dict(CTIME=None, MTIME=None, POOL=None)
         data[required_key] = None
@@ -147,16 +147,16 @@ class VolumeMetadataTests(VdsmTestCase):
 
     @permutations([[None], ['pool']])
     def test_deprecated_pool(self, val):
-        lines = make_lines(**{volume.POOL: val})
+        lines = make_lines(**{sc.POOL: val})
         md = volume.VolumeMetadata.from_lines(lines)
-        self.assertEqual("", md.legacy_info()[volume.POOL])
+        self.assertEqual("", md.legacy_info()[sc.POOL])
 
     def test_from_lines_invalid_param(self):
         lines = make_lines(INVALID_KEY='foo')
         self.assertNotIn("INVALID_KEY",
                          volume.VolumeMetadata.from_lines(lines).legacy_info())
 
-    @permutations([[volume.SIZE], [volume.CTIME], [volume.MTIME]])
+    @permutations([[sc.SIZE], [sc.CTIME], [sc.MTIME]])
     def test_from_lines_int_parse_error(self, key):
         lines = make_lines(**{key: 'not_an_integer'})
         self.assertRaises(ValueError,
@@ -167,15 +167,15 @@ class VolumeMetadataTests(VdsmTestCase):
         lines = make_lines(**data)
 
         md = volume.VolumeMetadata.from_lines(lines)
-        self.assertEqual(data[volume.DOMAIN], md.domain)
-        self.assertEqual(data[volume.IMAGE], md.image)
-        self.assertEqual(data[volume.PUUID], md.puuid)
-        self.assertEqual(int(data[volume.SIZE]), md.size)
-        self.assertEqual(data[volume.FORMAT], md.format)
-        self.assertEqual(data[volume.TYPE], md.type)
-        self.assertEqual(data[volume.VOLTYPE], md.voltype)
-        self.assertEqual(data[volume.DISKTYPE], md.disktype)
-        self.assertEqual(data[volume.DESCRIPTION], md.description)
-        self.assertEqual(int(data[volume.MTIME]), md.mtime)
-        self.assertEqual(int(data[volume.CTIME]), md.ctime)
-        self.assertEqual(data[volume.LEGALITY], md.legality)
+        self.assertEqual(data[sc.DOMAIN], md.domain)
+        self.assertEqual(data[sc.IMAGE], md.image)
+        self.assertEqual(data[sc.PUUID], md.puuid)
+        self.assertEqual(int(data[sc.SIZE]), md.size)
+        self.assertEqual(data[sc.FORMAT], md.format)
+        self.assertEqual(data[sc.TYPE], md.type)
+        self.assertEqual(data[sc.VOLTYPE], md.voltype)
+        self.assertEqual(data[sc.DISKTYPE], md.disktype)
+        self.assertEqual(data[sc.DESCRIPTION], md.description)
+        self.assertEqual(int(data[sc.MTIME]), md.mtime)
+        self.assertEqual(int(data[sc.CTIME]), md.ctime)
+        self.assertEqual(data[sc.LEGALITY], md.legality)
