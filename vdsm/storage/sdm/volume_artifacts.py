@@ -56,7 +56,7 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage.volumemetadata import VolumeMetadata
 
-from storage import blockVolume, lvm
+from storage import lvm
 
 
 class VolumeArtifacts(object):
@@ -388,16 +388,16 @@ class BlockVolumeArtifacts(VolumeArtifacts):
 
         parent_vol_id = parent.vol_id if parent else sc.BLANK_UUID
         tags = (sc.TEMP_VOL_LVTAG,
-                blockVolume.TAG_PREFIX_PARENT + parent_vol_id,
-                blockVolume.TAG_PREFIX_IMAGE + self.img_id)
+                sc.TAG_PREFIX_PARENT + parent_vol_id,
+                sc.TAG_PREFIX_IMAGE + self.img_id)
         lvm.createLV(self.sd_manifest.sdUUID, self.vol_id, lv_size,
                      activate=True, initialTags=tags)
 
     def _acquire_metadata_slot(self):
         sd_id = self.sd_manifest.sdUUID
         with self.sd_manifest.acquireVolumeMetadataSlot(
-                self.vol_id, blockVolume.VOLUME_MDNUMBLKS) as slot:
-            md_tag = blockVolume.TAG_PREFIX_MD + str(slot)
+                self.vol_id, sc.VOLUME_MDNUMBLKS) as slot:
+            md_tag = sc.TAG_PREFIX_MD + str(slot)
             lvm.changeLVTags(sd_id, self.vol_id, addTags=[md_tag])
             return slot
 

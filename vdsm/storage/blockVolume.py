@@ -46,18 +46,8 @@ import resourceManager as rm
 from sdc import sdCache
 from resourceFactories import LVM_ACTIVATION_NAMESPACE
 
-TAG_PREFIX_MD = "MD_"
-TAG_PREFIX_MDNUMBLKS = "MS_"
-TAG_PREFIX_IMAGE = "IU_"
-TAG_PREFIX_PARENT = "PU_"
-TAG_VOL_UNINIT = "OVIRT_VOL_INITIALIZING"
-VOLUME_TAGS = [TAG_PREFIX_PARENT,
-               TAG_PREFIX_IMAGE,
-               TAG_PREFIX_MD,
-               TAG_PREFIX_MDNUMBLKS]
 
 BLOCK_SIZE = sc.BLOCK_SIZE
-VOLUME_MDNUMBLKS = 1
 
 SECTORS_TO_MB = 2048
 
@@ -90,7 +80,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         if self.metaoff:
             return self.metaoff
         try:
-            md = getVolumeTag(self.sdUUID, self.volUUID, TAG_PREFIX_MD)
+            md = getVolumeTag(self.sdUUID, self.volUUID, sc.TAG_PREFIX_MD)
         except se.MissingTagOnLogicalVolume:
             self.log.error("missing offset tag on volume %s/%s",
                            self.sdUUID, self.volUUID, exc_info=True)
@@ -173,7 +163,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         return getVolumeTag(self.sdUUID, self.volUUID, tagPrefix)
 
     def getParentTag(self):
-        return self.getVolumeTag(TAG_PREFIX_PARENT)
+        return self.getVolumeTag(sc.TAG_PREFIX_PARENT)
 
     def getParentMeta(self):
         return self.getMetaParam(sc.PUUID)
@@ -190,14 +180,14 @@ class BlockVolumeManifest(volume.VolumeManifest):
         Children can be found in any image of the volume SD.
         """
         lvs = lvm.lvsByTag(self.sdUUID,
-                           "%s%s" % (TAG_PREFIX_PARENT, self.volUUID))
+                           "%s%s" % (sc.TAG_PREFIX_PARENT, self.volUUID))
         return tuple(lv.name for lv in lvs)
 
     def getImage(self):
         """
         Return image UUID
         """
-        return self.getVolumeTag(TAG_PREFIX_IMAGE)
+        return self.getVolumeTag(sc.TAG_PREFIX_IMAGE)
 
     def getDevPath(self):
         """
@@ -251,7 +241,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
     def changeVolumeTag(self, tagPrefix, uuid):
 
-        if tagPrefix not in VOLUME_TAGS:
+        if tagPrefix not in sc.VOLUME_TAGS:
             raise se.LogicalVolumeWrongTagError(tagPrefix)
 
         oldTag = ""
@@ -280,13 +270,13 @@ class BlockVolumeManifest(volume.VolumeManifest):
         Set parent volume UUID in Volume tags.  Since this operation modifies
         LV metadata it may only be performed by an SPM.
         """
-        self.changeVolumeTag(TAG_PREFIX_PARENT, puuid)
+        self.changeVolumeTag(sc.TAG_PREFIX_PARENT, puuid)
 
     def setImage(self, imgUUID):
         """
         Set image UUID
         """
-        self.changeVolumeTag(TAG_PREFIX_IMAGE, imgUUID)
+        self.changeVolumeTag(sc.TAG_PREFIX_IMAGE, imgUUID)
         # FIXME In next version we should remove imgUUID, as it is saved on lvm
         # tags
         self.setMetaParam(sc.IMAGE, imgUUID)
@@ -332,7 +322,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         Fetch the list of the Volumes UUIDs, not including the shared base
         (template)
         """
-        lvs = lvm.lvsByTag(sdUUID, "%s%s" % (TAG_PREFIX_IMAGE, imgUUID))
+        lvs = lvm.lvsByTag(sdUUID, "%s%s" % (sc.TAG_PREFIX_IMAGE, imgUUID))
         return [lv.name for lv in lvs]
 
     @classmethod
@@ -397,7 +387,7 @@ class BlockVolume(volume.Volume):
         except se.LogicalVolumeDoesNotExistError:
             pass  # It's OK: inexistent LV, don't try to remove.
         else:
-            if TAG_VOL_UNINIT in tags:
+            if sc.TAG_VOL_UNINIT in tags:
                 try:
                     lvm.removeLVs(sdUUID, volUUID)
                 except se.CannotRemoveLogicalVolume as e:
@@ -426,7 +416,7 @@ class BlockVolume(volume.Volume):
                                                  size, initialSize)
 
         lvm.createLV(dom.sdUUID, volUUID, "%s" % lvSize, activate=True,
-                     initialTags=(TAG_VOL_UNINIT,))
+                     initialTags=(sc.TAG_VOL_UNINIT,))
 
         utils.rmFile(volPath)
         os.symlink(lvm.lvPath(dom.sdUUID, volUUID), volPath)
@@ -444,11 +434,12 @@ class BlockVolume(volume.Volume):
                          imgUUID, volUUID, srcImgUUID, srcVolUUID)
             volParent.clone(volPath, volFormat)
 
-        with dom.acquireVolumeMetadataSlot(volUUID, VOLUME_MDNUMBLKS) as slot:
-            mdTags = ["%s%s" % (TAG_PREFIX_MD, slot),
-                      "%s%s" % (TAG_PREFIX_PARENT, srcVolUUID),
-                      "%s%s" % (TAG_PREFIX_IMAGE, imgUUID)]
-            lvm.changeLVTags(dom.sdUUID, volUUID, delTags=[TAG_VOL_UNINIT],
+        with dom.acquireVolumeMetadataSlot(
+                volUUID, sc.VOLUME_MDNUMBLKS) as slot:
+            mdTags = ["%s%s" % (sc.TAG_PREFIX_MD, slot),
+                      "%s%s" % (sc.TAG_PREFIX_PARENT, srcVolUUID),
+                      "%s%s" % (sc.TAG_PREFIX_IMAGE, imgUUID)]
+            lvm.changeLVTags(dom.sdUUID, volUUID, delTags=[sc.TAG_VOL_UNINIT],
                              addTags=mdTags)
 
         try:
@@ -686,7 +677,7 @@ class BlockVolume(volume.Volume):
         rmanager.releaseResource(lvmActivationNamespace, volUUID)
         if not justme:
             try:
-                pvolUUID = getVolumeTag(sdUUID, volUUID, TAG_PREFIX_PARENT)
+                pvolUUID = getVolumeTag(sdUUID, volUUID, sc.TAG_PREFIX_PARENT)
             except Exception as e:
                 # If storage not accessible or lvm error occurred
                 # we will failure to get the parent volume.
@@ -729,11 +720,11 @@ class BlockVolume(volume.Volume):
 
 def getVolumeTag(sdUUID, volUUID, tagPrefix):
     tags = lvm.getLV(sdUUID, volUUID).tags
-    if TAG_VOL_UNINIT in tags:
+    if sc.TAG_VOL_UNINIT in tags:
         log.warning("Reloading uninitialized volume %s/%s", sdUUID, volUUID)
         lvm.invalidateVG(sdUUID)
         tags = lvm.getLV(sdUUID, volUUID).tags
-        if TAG_VOL_UNINIT in tags:
+        if sc.TAG_VOL_UNINIT in tags:
             log.error("Found uninitialized volume: %s/%s", sdUUID, volUUID)
             raise se.VolumeDoesNotExist("%s/%s" % (sdUUID, volUUID))
 

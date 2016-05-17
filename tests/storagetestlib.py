@@ -181,12 +181,11 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
     size_blk = size_mb * MB / sc.BLOCK_SIZE
     lvm.createLV(sduuid, voluuid, size_mb)
     with sd_manifest.acquireVolumeMetadataSlot(
-            voluuid, blockVolume.VOLUME_MDNUMBLKS) as slot:
-        lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_MD, slot))
-        lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_PARENT,
+            voluuid, sc.VOLUME_MDNUMBLKS) as slot:
+        lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_MD, slot))
+        lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_PARENT,
                                               sc.BLANK_UUID))
-        lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_IMAGE,
-                                              imguuid))
+        lvm.addtag(sduuid, voluuid, "%s%s" % (sc.TAG_PREFIX_IMAGE, imguuid))
 
     vol_class = sd_manifest.getVolumeClass()
     vol_class.newMetadata(

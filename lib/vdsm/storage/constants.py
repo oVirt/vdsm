@@ -31,6 +31,7 @@ VG_EXTENT_SIZE_MB = 128
 # it will depend on the storage domain.
 BLOCK_SIZE = 512
 METADATA_SIZE = BLOCK_SIZE
+VOLUME_MDNUMBLKS = 1  # The number of blocks needed to store block vol md
 
 FILE_VOLUME_PERMISSIONS = 0o660
 LEASE_FILEEXT = ".lease"
@@ -149,3 +150,14 @@ POOL = MDK_POOLS  # Deprecated
 # ascii values, but limit non-ascii values, which are encoded by engine
 # using 4 bytes per character.
 DESCRIPTION_SIZE = 210
+
+# Block volume metadata tags
+TAG_PREFIX_MD = "MD_"
+TAG_PREFIX_MDNUMBLKS = "MS_"
+TAG_PREFIX_IMAGE = "IU_"
+TAG_PREFIX_PARENT = "PU_"
+TAG_VOL_UNINIT = "OVIRT_VOL_INITIALIZING"
+VOLUME_TAGS = [TAG_PREFIX_PARENT,
+               TAG_PREFIX_IMAGE,
+               TAG_PREFIX_MD,
+               TAG_PREFIX_MDNUMBLKS]

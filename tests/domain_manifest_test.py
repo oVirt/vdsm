@@ -20,6 +20,8 @@
 import os
 import uuid
 
+from vdsm.storage import constants as sc
+
 from testlib import VdsmTestCase, recorded
 from storagetestlib import (
     make_file_volume,
@@ -27,7 +29,7 @@ from storagetestlib import (
     fake_file_env
 )
 
-from storage import sd, blockSD, blockVolume
+from storage import sd, blockSD
 
 MB = 1048576
 
@@ -149,7 +151,7 @@ class BlockDomainMetadataSlotTests(VdsmTestCase):
             for lv, offset in zip(lvs, [4, 7]):
                 sduuid = env.sd_manifest.sdUUID
                 env.lvm.createLV(sduuid, lv, VOLSIZE / MB)
-                tag = blockVolume.TAG_PREFIX_MD + str(offset)
+                tag = sc.TAG_PREFIX_MD + str(offset)
                 env.lvm.addtag(sduuid, lv, tag)
             with env.sd_manifest.acquireVolumeMetadataSlot(None, 1) as mdSlot:
                 self.assertEqual(mdSlot, 5)

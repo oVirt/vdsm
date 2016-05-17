@@ -156,10 +156,10 @@ def _getVolsTree(sdUUID):
         image = ""
         parent = ""
         for tag in lv.tags:
-            if tag.startswith(blockVolume.TAG_PREFIX_IMAGE):
-                image = tag[len(blockVolume.TAG_PREFIX_IMAGE):]
-            elif tag.startswith(blockVolume.TAG_PREFIX_PARENT):
-                parent = tag[len(blockVolume.TAG_PREFIX_PARENT):]
+            if tag.startswith(sc.TAG_PREFIX_IMAGE):
+                image = tag[len(sc.TAG_PREFIX_IMAGE):]
+            elif tag.startswith(sc.TAG_PREFIX_PARENT):
+                parent = tag[len(sc.TAG_PREFIX_PARENT):]
             if parent and image:
                 vols[lv.name] = BlockSDVol(lv.name, image, parent)
                 break
@@ -611,8 +611,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         try:
             lvm.changelv(sdUUID, volUUIDs,
                          (("-a", "y"),
-                          ("--deltag", blockVolume.TAG_PREFIX_IMAGE + imgUUID),
-                          ("--addtag", blockVolume.TAG_PREFIX_IMAGE +
+                          ("--deltag", sc.TAG_PREFIX_IMAGE + imgUUID),
+                          ("--addtag", sc.TAG_PREFIX_IMAGE +
                            opTag + imgUUID)))
         except se.StorageException as e:
             log.error("Can't activate or change LV tags in SD %s. "
@@ -772,16 +772,16 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
                 continue
 
             offset = None
-            size = blockVolume.VOLUME_MDNUMBLKS
+            size = sc.VOLUME_MDNUMBLKS
             for tag in lv.tags:
-                if tag.startswith(blockVolume.TAG_PREFIX_MD):
-                    offset = int(stripPrefix(tag, blockVolume.TAG_PREFIX_MD))
+                if tag.startswith(sc.TAG_PREFIX_MD):
+                    offset = int(stripPrefix(tag, sc.TAG_PREFIX_MD))
 
-                if tag.startswith(blockVolume.TAG_PREFIX_MDNUMBLKS):
+                if tag.startswith(sc.TAG_PREFIX_MDNUMBLKS):
                     size = int(stripPrefix(tag,
-                                           blockVolume.TAG_PREFIX_MDNUMBLKS))
+                                           sc.TAG_PREFIX_MDNUMBLKS))
 
-                if offset is not None and size != blockVolume.VOLUME_MDNUMBLKS:
+                if offset is not None and size != sc.VOLUME_MDNUMBLKS:
                     # I've found everything I need
                     break
 

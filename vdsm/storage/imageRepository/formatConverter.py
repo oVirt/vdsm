@@ -181,7 +181,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             metaContent = vol.getMetadata()
 
             with domain.acquireVolumeMetadataSlot(
-                    vol.volUUID, blockVolume.VOLUME_MDNUMBLKS) \
+                    vol.volUUID, sc.VOLUME_MDNUMBLKS) \
                     as newMetaSlot:
                 if newMetaSlot > metaMaxSlot:
                     raise se.NoSpaceLeftOnDomain(domain.sdUUID)
@@ -192,8 +192,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
                 log.debug("Switching the metadata slot for volume %s to %s",
                           vol.volUUID, newMetaSlot)
-                vol.changeVolumeTag(blockVolume.TAG_PREFIX_MD,
-                                    str(newMetaSlot))
+                vol.changeVolumeTag(sc.TAG_PREFIX_MD, str(newMetaSlot))
 
     try:
         if isMsd:

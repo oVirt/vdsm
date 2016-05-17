@@ -428,7 +428,7 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 
         md_slot = int(blockVolume.getVolumeTag(artifacts.sd_manifest.sdUUID,
                                                self.vol_id,
-                                               blockVolume.TAG_PREFIX_MD))
+                                               sc.TAG_PREFIX_MD))
         self.validate_metadata(env, md_slot, artifacts)
         # TODO: Validate lease area once we have a SANLock mock
 
@@ -451,7 +451,7 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 
     def get_next_free_slot(self, env):
         with env.sd_manifest.acquireVolumeMetadataSlot(
-                self.vol_id, blockVolume.VOLUME_MDNUMBLKS) as slot:
+                self.vol_id, sc.VOLUME_MDNUMBLKS) as slot:
             return slot
 
 

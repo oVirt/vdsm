@@ -21,13 +21,13 @@ from contextlib import contextmanager
 import os
 
 from vdsm.storage import exception as se
-from vdsm.storage.constants import VG_EXTENT_SIZE_MB
+from vdsm.storage import constants as sc
 
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
 from storagefakelib import FakeLVM, FakeResourceManager
 
-from storage import blockSD, blockVolume
+from storage import blockSD
 from storage import lvm as real_lvm
 
 
@@ -219,7 +219,7 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
 
         lvm.createLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                      '54e3378a-b2f6-46ff-b2da-a9c82522a55e',
-                     '1024', initialTags=(blockVolume.TAG_VOL_UNINIT, "FOO"))
+                     '1024', initialTags=(sc.TAG_VOL_UNINIT, "FOO"))
 
         print lvm.getLV('1ffead52-7363-4968-a8c7-3bc34504d452',
                         '54e3378a-b2f6-46ff-b2da-a9c82522a55e')
@@ -235,9 +235,9 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
         """
         with self.base_config() as lvm:
             lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
-                         initialTags=(blockVolume.TAG_VOL_UNINIT, "FOO"))
+                         initialTags=(sc.TAG_VOL_UNINIT, "FOO"))
             lv = lvm.getLV(self.VG_NAME, self.LV_NAME)
-            self.assertEqual((blockVolume.TAG_VOL_UNINIT, "FOO"), lv.tags)
+            self.assertEqual((sc.TAG_VOL_UNINIT, "FOO"), lv.tags)
 
     def test_changelvtags(self):
         """
@@ -245,8 +245,8 @@ class FakeLVMSimpleVGTests(VdsmTestCase):
         """
         with self.base_config() as lvm:
             lvm.createLV(self.VG_NAME, self.LV_NAME, str(self.LV_SIZE_MB),
-                         initialTags=(blockVolume.TAG_VOL_UNINIT,))
-            deltags = (blockVolume.TAG_VOL_UNINIT,)
+                         initialTags=(sc.TAG_VOL_UNINIT,))
+            deltags = (sc.TAG_VOL_UNINIT,)
             addtags = ("FOO",)
             lvm.changeLVTags(self.VG_NAME, self.LV_NAME,
                              delTags=deltags, addTags=addtags)
@@ -342,9 +342,9 @@ class FakeLVMGeneralTests(VdsmTestCase):
             lvm = FakeLVM(tmpdir)
             lvm.createVG(vg_name, devices, blockSD.STORAGE_UNREADY_DOMAIN_TAG,
                          blockSD.VG_METADATASIZE)
-            lvm.createLV(vg_name, lv_name, VG_EXTENT_SIZE_MB - 1)
+            lvm.createLV(vg_name, lv_name, sc.VG_EXTENT_SIZE_MB - 1)
             lv = lvm.getLV(vg_name, lv_name)
-            self.assertEqual(VG_EXTENT_SIZE_MB * MB, int(lv.size))
+            self.assertEqual(sc.VG_EXTENT_SIZE_MB * MB, int(lv.size))
 
 
 class FakeResourceManagerTests(VdsmTestCase):
