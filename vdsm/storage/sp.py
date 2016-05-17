@@ -34,11 +34,11 @@ from imageRepository.formatConverter import DefaultFormatConverter
 from vdsm import concurrent
 from vdsm import constants
 from vdsm.panic import panic
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
 from vdsm.storage import mount
-from vdsm.storage.constants import STORAGE
 from vdsm.storage.securable import secured, unsecured
 
 import storage_mailbox
@@ -50,7 +50,6 @@ from sdc import sdCache
 import image
 from resourceFactories import IMAGE_NAMESPACE
 import resourceManager as rm
-import volume
 
 POOL_MASTER_DOMAIN = 'mastersd'
 
@@ -142,14 +141,14 @@ class StoragePool(object):
             return
 
         domain = sdCache.produce(sdUUID)
-        with rmanager.acquireResource(STORAGE, self.spUUID,
+        with rmanager.acquireResource(sc.STORAGE, self.spUUID,
                                       rm.LockType.shared):
             if sdUUID not in self.getDomains(activeOnly=True):
                 self.log.debug("Domain %s is not an active pool domain, "
                                "skipping domain links refresh",
                                sdUUID)
                 return
-            with rmanager.acquireResource(STORAGE, sdUUID + "_repo",
+            with rmanager.acquireResource(sc.STORAGE, sdUUID + "_repo",
                                           rm.LockType.exclusive):
                 self.log.debug("Refreshing domain links for %s", sdUUID)
                 self._refreshDomainLinks(domain)
@@ -176,9 +175,9 @@ class StoragePool(object):
                            exc_info=True)
             return
 
-        with rmanager.acquireResource(STORAGE, "upgrade_" + sdUUID,
+        with rmanager.acquireResource(sc.STORAGE, "upgrade_" + sdUUID,
                                       rm.LockType.exclusive):
-            with rmanager.acquireResource(STORAGE, sdUUID,
+            with rmanager.acquireResource(sc.STORAGE, sdUUID,
                                           rm.LockType.exclusive):
                 if sdUUID not in self._domainsToUpgrade:
                     return
@@ -351,7 +350,7 @@ class StoragePool(object):
     @unsecured
     def _shutDownUpgrade(self):
         self.log.debug("Shutting down upgrade process")
-        with rmanager.acquireResource(STORAGE, "upgrade_" + self.spUUID,
+        with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                       rm.LockType.exclusive):
             domains = self._domainsToUpgrade[:]
             try:
@@ -370,7 +369,8 @@ class StoragePool(object):
                 res.release()
 
             for sdUUID in domains:
-                req = rmanager.registerResource(STORAGE, "upgrade_" + sdUUID,
+                req = rmanager.registerResource(sc.STORAGE,
+                                                "upgrade_" + sdUUID,
                                                 rm.LockType.exclusive,
                                                 partial(cancelUpgrade, sdUUID))
                 requests.append(req)
@@ -438,7 +438,7 @@ class StoragePool(object):
             self.spmRole = SPM_FREE
 
     def _upgradePool(self, targetDomVersion):
-        with rmanager.acquireResource(STORAGE, "upgrade_" + self.spUUID,
+        with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                       rm.LockType.exclusive):
             if len(self._domainsToUpgrade) > 0:
                 raise se.PoolUpgradeInProgress(self.spUUID)
@@ -446,7 +446,7 @@ class StoragePool(object):
             sd.validateDomainVersion(targetDomVersion)
             self.log.info("Trying to upgrade master domain `%s`",
                           self.masterDomain.sdUUID)
-            with rmanager.acquireResource(STORAGE, self.masterDomain.sdUUID,
+            with rmanager.acquireResource(sc.STORAGE, self.masterDomain.sdUUID,
                                           rm.LockType.exclusive):
                 self._convertDomain(self.masterDomain, str(targetDomVersion))
 
@@ -1867,8 +1867,8 @@ class StoragePool(object):
 
     def createVolume(self, sdUUID, imgUUID, size, volFormat, preallocate,
                      diskType, volUUID=None, desc="",
-                     srcImgUUID=volume.BLANK_UUID,
-                     srcVolUUID=volume.BLANK_UUID,
+                     srcImgUUID=sc.BLANK_UUID,
+                     srcVolUUID=sc.BLANK_UUID,
                      initialSize=None):
         """
         Creates a new volume.
@@ -1910,13 +1910,13 @@ class StoragePool(object):
         """
         imageResourcesNamespace = sd.getNamespace(sdUUID, IMAGE_NAMESPACE)
 
-        if imgUUID != srcImgUUID and srcImgUUID != volume.BLANK_UUID:
+        if imgUUID != srcImgUUID and srcImgUUID != sc.BLANK_UUID:
             srcDom = sdCache.produce(sdUUID)
             srcVol = srcDom.produceVolume(imgUUID=srcImgUUID,
                                           volUUID=srcVolUUID)
 
             if not srcVol.isShared():
-                if srcVol.getParent() == volume.BLANK_UUID:
+                if srcVol.getParent() == sc.BLANK_UUID:
                     with rmanager.acquireResource(imageResourcesNamespace,
                                                   srcImgUUID,
                                                   rm.LockType.exclusive):

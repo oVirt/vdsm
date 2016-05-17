@@ -22,6 +22,7 @@ import logging
 
 from vdsm import constants
 from vdsm import qemuimg
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 from storage import sd
@@ -133,7 +134,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
         metaVolSize = int(vol.getMetaParam(volume.SIZE))
 
-        if vol.getFormat() == volume.COW_FORMAT:
+        if vol.getFormat() == sc.COW_FORMAT:
             qemuVolInfo = qemuimg.info(vol.getVolumePath(),
                                        qemuimg.FORMAT.QCOW2)
             virtVolSize = qemuVolInfo["virtualsize"] / V2META_SECTORSIZE

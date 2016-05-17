@@ -45,6 +45,7 @@ from vdsm import supervdsm
 from vdsm import utils
 from vdsm.config import config
 from vdsm.storage import clusterlock
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -70,7 +71,6 @@ import outOfProcess as oop
 from sdc import sdCache
 import image
 import imagetickets
-import volume
 import iscsi
 import taskManager
 import resourceManager as rm
@@ -684,12 +684,12 @@ class HSM(object):
         if not volToExtend.isLeaf():
             raise se.VolumeNonWritable(volUUID)
 
-        if volFormat != volume.COW_FORMAT:
+        if volFormat != sc.COW_FORMAT:
             # This method is used only with COW volumes (see docstring),
             # for RAW volumes we just return the volume size.
             return dict(size=str(volToExtend.getVolumeSize(bs=1)))
 
-        qemuImgFormat = volume.fmt2str(volume.COW_FORMAT)
+        qemuImgFormat = sc.fmt2str(sc.COW_FORMAT)
 
         volToExtend.prepare()
         try:
@@ -1376,8 +1376,8 @@ class HSM(object):
     @public
     def createVolume(self, sdUUID, spUUID, imgUUID, size, volFormat,
                      preallocate, diskType, volUUID, desc,
-                     srcImgUUID=volume.BLANK_UUID,
-                     srcVolUUID=volume.BLANK_UUID,
+                     srcImgUUID=sc.BLANK_UUID,
+                     srcVolUUID=sc.BLANK_UUID,
                      initialSize=None):
         """
         Create a new volume
@@ -1494,7 +1494,7 @@ class HSM(object):
         vol = dom.produceVolume(imgUUID, volUUID)
         qemu_info = qemuimg.info(vol.getVolumePath())
 
-        meta_format = volume.FMT2STR[vol.getFormat()]
+        meta_format = sc.FMT2STR[vol.getFormat()]
         qemu_format = qemu_info["format"]
         if meta_format != qemu_format:
             raise se.ImageVerificationError(
@@ -1741,8 +1741,8 @@ class HSM(object):
     def copyImage(
             self, sdUUID, spUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
             dstVolUUID, description='', dstSdUUID=sd.BLANK_UUID,
-            volType=volume.SHARED_VOL, volFormat=volume.UNKNOWN_VOL,
-            preallocate=volume.UNKNOWN_VOL, postZero=False, force=False):
+            volType=sc.SHARED_VOL, volFormat=sc.UNKNOWN_VOL,
+            preallocate=sc.UNKNOWN_VOL, postZero=False, force=False):
         """
         Create new template/volume from VM.
         Do it by collapse and copy the whole chain (baseVolUUID->srcVolUUID)
@@ -1771,7 +1771,7 @@ class HSM(object):
         else:
             dom = sdUUID
         sdCache.produce(dom).validateCreateVolumeParams(
-            volFormat, volume.BLANK_UUID, preallocate)
+            volFormat, sc.BLANK_UUID, preallocate)
 
         # If dstSdUUID defined, means we copy image to it
         domains = [sdUUID]
@@ -2742,7 +2742,7 @@ class HSM(object):
         vars.task.setDefaultException(
             se.StorageDomainActionError("spUUID: %s" % spUUID))
         sdCache.refreshStorage()
-        if spUUID and spUUID != volume.BLANK_UUID:
+        if spUUID and spUUID != sc.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
             domains = domList.keys()
         else:
@@ -3101,7 +3101,7 @@ class HSM(object):
 
         for volUUID in imgVolumes:
             legality = dom.produceVolume(imgUUID, volUUID).getLegality()
-            if legality == volume.ILLEGAL_VOL:
+            if legality == sc.ILLEGAL_VOL:
                 if allowIllegal:
                     self.log.info("Preparing illegal volume %s", leafUUID)
                 else:
@@ -3155,7 +3155,7 @@ class HSM(object):
         dom.deactivateImage(imgUUID)
 
     @public
-    def getVolumesList(self, sdUUID, spUUID, imgUUID=volume.BLANK_UUID,
+    def getVolumesList(self, sdUUID, spUUID, imgUUID=sc.BLANK_UUID,
                        options=None):
         """
         Gets a list of all volumes.
@@ -3172,7 +3172,7 @@ class HSM(object):
         vars.task.getSharedLock(STORAGE, sdUUID)
         dom = sdCache.produce(sdUUID=sdUUID)
         vols = dom.getAllVolumes()
-        if imgUUID == volume.BLANK_UUID:
+        if imgUUID == sc.BLANK_UUID:
             volUUIDs = vols.keys()
         else:
             volUUIDs = [k for k, v in vols.iteritems() if imgUUID in v.imgs]

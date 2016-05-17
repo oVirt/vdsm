@@ -24,6 +24,7 @@ import uuid
 from testlib import VdsmTestCase, permutations, expandPermutations
 from monkeypatch import MonkeyPatchScope
 
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from storage import image, volume
 
@@ -38,12 +39,12 @@ def make_init_params(**kwargs):
         image=str(uuid.uuid4()),
         puuid=str(uuid.uuid4()),
         size=1024 * MB,
-        format=volume.type2name(volume.RAW_FORMAT),
-        type=volume.type2name(volume.SPARSE_VOL),
-        voltype=volume.type2name(volume.LEAF_VOL),
+        format=sc.type2name(sc.RAW_FORMAT),
+        type=sc.type2name(sc.SPARSE_VOL),
+        voltype=sc.type2name(sc.LEAF_VOL),
         disktype=image.SYSTEM_DISK_TYPE,
         description="",
-        legality=volume.LEGAL_VOL)
+        legality=sc.LEGAL_VOL)
     res.update(kwargs)
     return res
 

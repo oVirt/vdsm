@@ -52,12 +52,8 @@ import errno
 import logging
 import os
 
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
-from vdsm.storage.constants import (
-    FILE_VOLUME_PERMISSIONS,
-    TEMP_VOL_FILEEXT,
-    TEMP_VOL_LVTAG
-)
 
 from storage import blockVolume, lvm, volume
 
@@ -108,7 +104,7 @@ class VolumeArtifacts(object):
 
     def _validate_create_params(self, vol_format, parent, prealloc):
         # XXX: Remove these when support is added:
-        if vol_format != volume.RAW_FORMAT:
+        if vol_format != sc.RAW_FORMAT:
             raise NotImplementedError("Only raw volumes are supported")
         if parent:
             raise NotImplementedError("parent_vol_id not supported")
@@ -118,7 +114,7 @@ class VolumeArtifacts(object):
                            "existing image.")
             raise se.InvalidParameterException("parent", parent)
 
-        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
+        parent_vol_id = parent.vol_id if parent else sc.BLANK_UUID
         self.sd_manifest.validateCreateVolumeParams(
             vol_format, parent_vol_id, preallocate=prealloc)
 
@@ -190,7 +186,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
 
     @property
     def meta_volatile_path(self):
-        return self.meta_path + TEMP_VOL_FILEEXT
+        return self.meta_path + sc.TEMP_VOL_FILEEXT
 
     @property
     def meta_path(self):
@@ -234,7 +230,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
 
     def _get_volume_preallocation(self, vol_format):
         # File volumes are always sparse regardless of format
-        return volume.SPARSE_VOL
+        return sc.SPARSE_VOL
 
     def _create_metadata_artifact(self, size, vol_format, prealloc, disk_type,
                                   desc, parent):
@@ -246,7 +242,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
             raise se.DomainHasGarbage("metadata artifact exists: %r" %
                                       self.meta_volatile_path)
 
-        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
+        parent_vol_id = parent.vol_id if parent else sc.BLANK_UUID
         # Create the metadata artifact.  The metadata file is created with a
         # special extension to prevent these artifacts from being recognized as
         # a volume until FileVolumeArtifacts.commit() is called.
@@ -254,13 +250,13 @@ class FileVolumeArtifacts(VolumeArtifacts):
             self.sd_manifest.sdUUID,
             self.img_id,
             parent_vol_id,
-            size / volume.BLOCK_SIZE,  # Size is stored as number of blocks
-            volume.type2name(vol_format),
-            volume.type2name(prealloc),
-            volume.type2name(volume.LEAF_VOL),
+            size / sc.BLOCK_SIZE,  # Size is stored as number of blocks
+            sc.type2name(vol_format),
+            sc.type2name(prealloc),
+            sc.type2name(sc.LEAF_VOL),
             disk_type,
             desc,
-            volume.LEGAL_VOL)
+            sc.LEGAL_VOL)
         self._oop.writeFile(self.meta_volatile_path, meta.storage_format())
 
     def _create_lease_file(self):
@@ -270,10 +266,10 @@ class FileVolumeArtifacts(VolumeArtifacts):
                                           self.vol_id)
 
     def _create_volume_file(self, vol_format, size):
-        trunc_size = size if vol_format == volume.RAW_FORMAT else 0
+        trunc_size = size if vol_format == sc.RAW_FORMAT else 0
         self._oop.truncateFile(
             self.volume_path, trunc_size,
-            mode=FILE_VOLUME_PERMISSIONS, creatExcl=True)
+            mode=sc.FILE_VOLUME_PERMISSIONS, creatExcl=True)
 
     def _create_image_artifact(self):
         self.log.debug("Creating image artifact directory: %r",
@@ -342,7 +338,7 @@ class BlockVolumeArtifacts(VolumeArtifacts):
             lv = lvm.getLV(self.sd_manifest.sdUUID, self.vol_id)
         except se.LogicalVolumeDoesNotExistError:
             return False
-        return TEMP_VOL_LVTAG in lv.tags
+        return sc.TEMP_VOL_LVTAG in lv.tags
 
     @property
     def volume_path(self):
@@ -353,7 +349,7 @@ class BlockVolumeArtifacts(VolumeArtifacts):
         prealloc = self.get_volume_preallocation(vol_format)
         self._validate_create_params(vol_format, parent, prealloc)
 
-        size_blk = size / volume.BLOCK_SIZE
+        size_blk = size / sc.BLOCK_SIZE
         lv_size = self.vol_class.calculate_volume_alloc_size(
             prealloc, size_blk, None)
         self._create_lv_artifact(parent, lv_size)
@@ -364,17 +360,17 @@ class BlockVolumeArtifacts(VolumeArtifacts):
 
     def commit(self):
         lv = lvm.getLV(self.sd_manifest.sdUUID, self.vol_id)
-        if TEMP_VOL_LVTAG not in lv.tags:
+        if sc.TEMP_VOL_LVTAG not in lv.tags:
             raise se.VolumeAlreadyExists("LV %r has already been committed" %
                                          self.vol_id)
         lvm.changeLVTags(self.sd_manifest.sdUUID, self.vol_id,
-                         delTags=(TEMP_VOL_LVTAG,))
+                         delTags=(sc.TEMP_VOL_LVTAG,))
 
     def get_volume_preallocation(self, vol_format):
-        if vol_format == volume.RAW_FORMAT:
-            return volume.PREALLOCATED_VOL
+        if vol_format == sc.RAW_FORMAT:
+            return sc.PREALLOCATED_VOL
         else:
-            return volume.SPARSE_VOL
+            return sc.SPARSE_VOL
 
     def _create_lv_artifact(self, parent, lv_size):
         try:
@@ -382,15 +378,15 @@ class BlockVolumeArtifacts(VolumeArtifacts):
         except se.LogicalVolumeDoesNotExistError:
             pass
         else:
-            if TEMP_VOL_LVTAG in lv.tags:
+            if sc.TEMP_VOL_LVTAG in lv.tags:
                 raise se.DomainHasGarbage("Logical volume artifact %s exists" %
                                           self.vol_id)
             else:
                 raise se.VolumeAlreadyExists("Logical volume %s exists" %
                                              self.vol_id)
 
-        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
-        tags = (TEMP_VOL_LVTAG,
+        parent_vol_id = parent.vol_id if parent else sc.BLANK_UUID
+        tags = (sc.TEMP_VOL_LVTAG,
                 blockVolume.TAG_PREFIX_PARENT + parent_vol_id,
                 blockVolume.TAG_PREFIX_IMAGE + self.img_id)
         lvm.createLV(self.sd_manifest.sdUUID, self.vol_id, lv_size,
@@ -409,27 +405,27 @@ class BlockVolumeArtifacts(VolumeArtifacts):
         # When the volume format is RAW the real volume capacity is the device
         # size.  The device size may have been rounded up if 'size' is not
         # divisible by the domain's extent size.
-        if vol_format == volume.RAW_FORMAT:
+        if vol_format == sc.RAW_FORMAT:
             size = int(self.sd_manifest.getVSize(self.img_id, self.vol_id))
 
         # We use the BlockVolumeManifest API here because we create the
         # metadata in the standard way.  We cannot do this for file volumes
         # because the metadata needs to be written to a specially named file.
         meta_id = (self.sd_manifest.sdUUID, meta_slot)
-        parent_vol_id = parent.vol_id if parent else volume.BLANK_UUID
-        size_blk = size / volume.BLOCK_SIZE
+        parent_vol_id = parent.vol_id if parent else sc.BLANK_UUID
+        size_blk = size / sc.BLOCK_SIZE
         self.vol_class.newMetadata(
             meta_id,
             self.sd_manifest.sdUUID,
             self.img_id,
             parent_vol_id,
             size_blk,
-            volume.type2name(vol_format),
-            volume.type2name(prealloc),
-            volume.type2name(volume.LEAF_VOL),
+            sc.type2name(vol_format),
+            sc.type2name(prealloc),
+            sc.type2name(sc.LEAF_VOL),
             disk_type,
             desc,
-            volume.LEGAL_VOL)
+            sc.LEGAL_VOL)
 
     def _create_lease(self, meta_slot):
         meta_id = (self.sd_manifest.sdUUID, meta_slot)

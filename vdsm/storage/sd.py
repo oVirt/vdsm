@@ -27,6 +27,7 @@ import codecs
 from contextlib import contextmanager
 
 from vdsm.storage import clusterlock
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.persistent import unicodeEncoder, unicodeDecoder
@@ -37,9 +38,7 @@ from resourceFactories import IMAGE_NAMESPACE, VOLUME_NAMESPACE
 import resourceManager as rm
 from vdsm import concurrent
 from vdsm import constants
-from vdsm.storage import constants as sc
 import outOfProcess as oop
-import volume
 
 from vdsm.config import config
 
@@ -478,14 +477,14 @@ class StorageDomainManifest(object):
         """
         Validate create volume parameters
         """
-        if volFormat not in volume.VOL_FORMAT:
+        if volFormat not in sc.VOL_FORMAT:
             raise se.IncorrectFormat(volFormat)
 
         # Volumes with a parent must be cow
-        if srcVolUUID != volume.BLANK_UUID and volFormat != volume.COW_FORMAT:
-            raise se.IncorrectFormat(volume.type2name(volFormat))
+        if srcVolUUID != sc.BLANK_UUID and volFormat != sc.COW_FORMAT:
+            raise se.IncorrectFormat(sc.type2name(volFormat))
 
-        if preallocate is not None and preallocate not in volume.VOL_TYPE:
+        if preallocate is not None and preallocate not in sc.VOL_TYPE:
             raise se.IncorrectType(preallocate)
 
 

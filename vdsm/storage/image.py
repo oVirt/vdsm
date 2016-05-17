@@ -28,6 +28,7 @@ import volume
 from vdsm import qemuimg
 from vdsm import virtsparsify
 from vdsm.config import config
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -245,7 +246,7 @@ class Image:
             seen.add(srcVol.volUUID)
 
             parentUUID = srcVol.getParent()
-            if parentUUID == volume.BLANK_UUID:
+            if parentUUID == sc.BLANK_UUID:
                 break
 
             if parentUUID in seen:
@@ -290,17 +291,17 @@ class Image:
                     # Create fake parent volume
                     destDom.createVolume(
                         imgUUID=volParams['imgUUID'], size=volParams['size'],
-                        volFormat=volume.COW_FORMAT,
-                        preallocate=volume.SPARSE_VOL,
+                        volFormat=sc.COW_FORMAT,
+                        preallocate=sc.SPARSE_VOL,
                         diskType=volParams['disktype'],
                         volUUID=volParams['volUUID'], desc="Fake volume",
-                        srcImgUUID=volume.BLANK_UUID,
-                        srcVolUUID=volume.BLANK_UUID)
+                        srcImgUUID=sc.BLANK_UUID,
+                        srcVolUUID=sc.BLANK_UUID)
 
                     vol = destDom.produceVolume(imgUUID=volParams['imgUUID'],
                                                 volUUID=volParams['volUUID'])
                     # Mark fake volume as "FAKE"
-                    vol.setLegality(volume.FAKE_VOL)
+                    vol.setLegality(sc.FAKE_VOL)
                     # Mark fake volume as shared
                     vol.setShared()
                     # Now we should re-link all hardlinks of this template in
@@ -361,7 +362,7 @@ class Image:
             raise se.SourceImageActionError(imgUUID, srcSdUUID, str(e))
 
         fakeTemplate = False
-        pimg = volume.BLANK_UUID    # standalone chain
+        pimg = sc.BLANK_UUID    # standalone chain
         # check if the chain is build above a template, or it is a standalone
         pvol = srcChain[0].getParentVolume()
         if pvol:
@@ -386,7 +387,7 @@ class Image:
         # In destination domain we need to lock image's template if exists
         with rmanager.acquireResource(dstImageResourcesNamespace, pimg,
                                       rm.LockType.shared) \
-                if pimg != volume.BLANK_UUID else justLogIt(imgUUID):
+                if pimg != sc.BLANK_UUID else justLogIt(imgUUID):
             if fakeTemplate:
                 self.createFakeTemplate(destDom.sdUUID, volParams)
 
@@ -402,10 +403,10 @@ class Image:
                     # soon filled with the data coming from the copy) and then
                     # we change its metadata back to the original value.
                     if (destDom.supportsSparseness or
-                            volParams['volFormat'] != volume.RAW_FORMAT):
-                        tmpVolPreallocation = volume.SPARSE_VOL
+                            volParams['volFormat'] != sc.RAW_FORMAT):
+                        tmpVolPreallocation = sc.SPARSE_VOL
                     else:
-                        tmpVolPreallocation = volume.PREALLOCATED_VOL
+                        tmpVolPreallocation = sc.PREALLOCATED_VOL
 
                     destDom.createVolume(imgUUID=imgUUID,
                                          size=volParams['size'],
@@ -426,9 +427,9 @@ class Image:
                     # Change destination volume metadata to preallocated in
                     # case we've used a sparse volume to accelerate the
                     # volume creation
-                    if volParams['prealloc'] == volume.PREALLOCATED_VOL \
-                            and tmpVolPreallocation != volume.PREALLOCATED_VOL:
-                        dstVol.setType(volume.PREALLOCATED_VOL)
+                    if volParams['prealloc'] == sc.PREALLOCATED_VOL \
+                            and tmpVolPreallocation != sc.PREALLOCATED_VOL:
+                        dstVol.setType(sc.PREALLOCATED_VOL)
 
                     dstChain.append(dstVol)
                 except se.StorageException:
@@ -470,7 +471,7 @@ class Image:
                     if parentVol is not None:
                         backing = volume.getBackingVolumePath(
                             imgUUID, parentVol.volUUID)
-                        backingFormat = volume.fmt2str(parentVol.getFormat())
+                        backingFormat = sc.fmt2str(parentVol.getFormat())
                     else:
                         backing = None
                         backingFormat = None
@@ -505,7 +506,7 @@ class Image:
         """
         src_format = srcVol.getFormat()
         size_in_blk = srcVol.getSize()
-        if src_format == volume.COW_FORMAT and size_in_blk == VM_CONF_SIZE_BLK:
+        if src_format == sc.COW_FORMAT and size_in_blk == VM_CONF_SIZE_BLK:
             info = qemuimg.info(srcVol.getVolumePath())
             actual_format = info['format']
 
@@ -517,7 +518,7 @@ class Image:
                                  qemuimg.FORMAT.RAW)
                 return qemuimg.FORMAT.RAW, qemuimg.FORMAT.RAW
 
-        return volume.fmt2str(src_format), volume.fmt2str(dstVol.getFormat())
+        return sc.fmt2str(src_format), sc.fmt2str(dstVol.getFormat())
 
     def _finalizeDestinationImage(self, destDom, imgUUID, chains, force):
         for srcVol in chains['srcChain']:
@@ -631,8 +632,8 @@ class Image:
                 # TODO: Some extra space may be needed for QCOW2 headers
                 dstVolume.extend(tmpVolume.getSize())
 
-                srcFormat = volume.fmt2str(srcVolume.getFormat())
-                dstFormat = volume.fmt2str(dstVolume.getFormat())
+                srcFormat = sc.fmt2str(srcVolume.getFormat())
+                dstFormat = sc.fmt2str(dstVolume.getFormat())
 
                 virtsparsify.sparsify(srcVolume.getVolumePath(),
                                       tmpVolume.getVolumePath(),
@@ -781,8 +782,8 @@ class Image:
                       "volFormat=%s preallocate=%s force=%s postZero=%s",
                       sdUUID, vmUUID, srcImgUUID, srcVolUUID, dstImgUUID,
                       dstVolUUID, dstSdUUID, volType,
-                      volume.type2name(volFormat),
-                      volume.type2name(preallocate), str(force), str(postZero))
+                      sc.type2name(volFormat),
+                      sc.type2name(preallocate), str(force), str(postZero))
         try:
             srcVol = dstVol = None
 
@@ -808,22 +809,22 @@ class Image:
                 volParams = srcVol.getVolumeParams()
 
                 if volParams['parent'] and \
-                        volParams['parent'] != volume.BLANK_UUID:
+                        volParams['parent'] != sc.BLANK_UUID:
                     # Volume has parent and therefore is a part of a chain
                     # in that case we can not know what is the exact size of
                     # the space target file (chain ==> cow ==> sparse).
                     # Therefore compute an estimate of the target volume size
                     # using the sum of the actual size of the chain's volumes
-                    if volParams['volFormat'] != volume.COW_FORMAT or \
-                            volParams['prealloc'] != volume.SPARSE_VOL:
+                    if volParams['volFormat'] != sc.COW_FORMAT or \
+                            volParams['prealloc'] != sc.SPARSE_VOL:
                         raise se.IncorrectFormat(self)
                     volParams['apparentsize'] = self.__chainSizeCalc(
                         sdUUID, srcImgUUID, srcVolUUID, volParams['size'])
 
                 # Find out dest volume parameters
-                if preallocate in [volume.PREALLOCATED_VOL, volume.SPARSE_VOL]:
+                if preallocate in [sc.PREALLOCATED_VOL, sc.SPARSE_VOL]:
                     volParams['prealloc'] = preallocate
-                if volFormat in [volume.COW_FORMAT, volume.RAW_FORMAT]:
+                if volFormat in [sc.COW_FORMAT, sc.RAW_FORMAT]:
                     dstVolFormat = volFormat
                 else:
                     dstVolFormat = volParams['volFormat']
@@ -855,14 +856,14 @@ class Image:
                     imgUUID=dstImgUUID, size=tmpSize, volFormat=dstVolFormat,
                     preallocate=volParams['prealloc'],
                     diskType=volParams['disktype'], volUUID=dstVolUUID,
-                    desc=descr, srcImgUUID=volume.BLANK_UUID,
-                    srcVolUUID=volume.BLANK_UUID)
+                    desc=descr, srcImgUUID=sc.BLANK_UUID,
+                    srcVolUUID=sc.BLANK_UUID)
 
                 dstVol = sdCache.produce(dstSdUUID).produceVolume(
                     imgUUID=dstImgUUID, volUUID=dstVolUUID)
                 # For convert to 'raw' we need use the virtual disk size
                 # instead of apparent size
-                if dstVolFormat == volume.RAW_FORMAT:
+                if dstVolFormat == sc.RAW_FORMAT:
                     newsize = volParams['size']
                 else:
                     newsize = volParams['apparentsize']
@@ -887,8 +888,8 @@ class Image:
                     operation = qemuimg.convert(
                         volParams['path'],
                         dstPath,
-                        srcFormat=volume.fmt2str(volParams['volFormat']),
-                        dstFormat=volume.fmt2str(dstVolFormat))
+                        srcFormat=sc.fmt2str(volParams['volFormat']),
+                        dstFormat=sc.fmt2str(dstVolFormat))
                     self._wait_for_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
@@ -898,10 +899,10 @@ class Image:
                     raise se.CopyImageError(str(e))
 
                 # Mark volume as SHARED
-                if volType == volume.SHARED_VOL:
+                if volType == sc.SHARED_VOL:
                     dstVol.setShared()
 
-                dstVol.setLegality(volume.LEGAL_VOL)
+                dstVol.setLegality(sc.LEGAL_VOL)
 
                 if force:
                     # Now we should re-link all deleted hardlinks, if exists
@@ -938,7 +939,7 @@ class Image:
         # Mark all volumes as illegal
         while tmpVol and dstParent != tmpVol.volUUID:
             vol = tmpVol.getParentVolume()
-            tmpVol.setLegality(volume.ILLEGAL_VOL)
+            tmpVol.setLegality(sc.ILLEGAL_VOL)
             tmpVol = vol
 
     def __teardownSubChain(self, sdUUID, imgUUID, chain):
@@ -1048,10 +1049,10 @@ class Image:
         newUUID = str(uuid.uuid4())
         sdDom.createVolume(
             imgUUID=srcVolParams['imgUUID'], size=volParams['size'],
-            volFormat=volParams['volFormat'], preallocate=volume.SPARSE_VOL,
+            volFormat=volParams['volFormat'], preallocate=sc.SPARSE_VOL,
             diskType=volParams['disktype'], volUUID=newUUID,
-            desc="New base volume", srcImgUUID=volume.BLANK_UUID,
-            srcVolUUID=volume.BLANK_UUID)
+            desc="New base volume", srcImgUUID=sc.BLANK_UUID,
+            srcVolUUID=sc.BLANK_UUID)
 
         tmpVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                      volUUID=newUUID)
@@ -1077,7 +1078,7 @@ class Image:
             # Step 3: Remove pointer to backing file from the successor by
             #         'unsafed' rebase qemu-img rebase -u -b "" -F
             #         backingFormat -f srcFormat src
-            srcVol.rebase(volume.BLANK_UUID, "", volParams['volFormat'],
+            srcVol.rebase(sc.BLANK_UUID, "", volParams['volFormat'],
                           unsafe=True, rollback=False)
         finally:
             srcVol.teardown(sdUUID=srcVol.sdUUID, volUUID=srcVol.volUUID)
@@ -1118,8 +1119,8 @@ class Image:
                 volFormat=volParams['volFormat'],
                 preallocate=volParams['prealloc'],
                 diskType=volParams['disktype'], volUUID=newUUID,
-                desc=srcVolParams['descr'], srcImgUUID=volume.BLANK_UUID,
-                srcVolUUID=volume.BLANK_UUID)
+                desc=srcVolParams['descr'], srcImgUUID=sc.BLANK_UUID,
+                srcVolUUID=sc.BLANK_UUID)
 
             newVol = sdDom.produceVolume(imgUUID=srcVolParams['imgUUID'],
                                          volUUID=newUUID)
@@ -1130,8 +1131,8 @@ class Image:
                     operation = qemuimg.convert(
                         srcVolParams['path'],
                         newVol.getVolumePath(),
-                        srcFormat=volume.fmt2str(srcVolParams['volFormat']),
-                        dstFormat=volume.fmt2str(volParams['volFormat']))
+                        srcFormat=sc.fmt2str(srcVolParams['volFormat']),
+                        dstFormat=sc.fmt2str(volParams['volFormat']))
                     self._wait_for_qemuimg_operation(operation)
                 except qemuimg.QImgError:
                     self.log.exception('conversion failure for volume %s',
@@ -1210,7 +1211,7 @@ class Image:
         if subChainTailVol.isLeaf():
             self.log.debug("Leaf volume is being removed from the chain. "
                            "Marking it ILLEGAL to prevent data corruption")
-            subChainTailVol.setLegality(volume.ILLEGAL_VOL)
+            subChainTailVol.setLegality(sc.ILLEGAL_VOL)
         else:
             for childID in subChainTailVol.getChildren():
                 self.log.debug("Setting parent of volume %s to %s",
@@ -1235,7 +1236,7 @@ class Image:
         while volUUID is not None:
             actualVolumes.insert(0, volUUID)
             vol = dom.produceVolume(imgUUID, volUUID)
-            qemuImgFormat = volume.fmt2str(vol.getFormat())
+            qemuImgFormat = sc.fmt2str(vol.getFormat())
             imgInfo = qemuimg.info(vol.volumePath, qemuImgFormat)
             backingFile = imgInfo.get('backingfile')
             if backingFile is not None:
@@ -1251,7 +1252,7 @@ class Image:
         # mirroring and before pivoting, we mark the old leaf ILLEGAL so we
         # know it's safe to delete in case the operation is interrupted.
         vol = dom.produceVolume(imgUUID, leafVolUUID)
-        if vol.getLegality() == volume.ILLEGAL_VOL:
+        if vol.getLegality() == sc.ILLEGAL_VOL:
             actualVolumes.remove(leafVolUUID)
 
         # Now that we know the correct volume chain, sync the storge metadata
@@ -1313,7 +1314,7 @@ class Image:
             # We have 2 cases here:
             # Case 1: ancestor is a COW volume (use 'rebase' workaround)
             # Case 2: ancestor is a RAW volume (use 'convert + rebase')
-            elif volParams['volFormat'] == volume.RAW_FORMAT:
+            elif volParams['volFormat'] == sc.RAW_FORMAT:
                 self.log.info("merge with convert: src = %s dst = %s",
                               srcVol.getVolumePath(), dstVol.getVolumePath())
                 chainToRemove = self._baseRawVolumeMerge(
@@ -1382,7 +1383,7 @@ class Image:
         vol = self._activateVolumeForImportExport(domain, imgUUID, volUUID)
         try:
             # Extend the volume (if relevant) to the image size
-            vol.extend(imageSharing.getSize(methodArgs) / volume.BLOCK_SIZE)
+            vol.extend(imageSharing.getSize(methodArgs) / sc.BLOCK_SIZE)
             imageSharing.download(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)
@@ -1403,7 +1404,7 @@ class Image:
         try:
             # Extend the volume (if relevant) to the image size
             vol.extend(imageSharing.getLengthFromArgs(methodArgs)
-                       / volume.BLOCK_SIZE)
+                       / sc.BLOCK_SIZE)
             imageSharing.copyToImage(vol.getVolumePath(), methodArgs)
         finally:
             domain.deactivateImage(imgUUID)

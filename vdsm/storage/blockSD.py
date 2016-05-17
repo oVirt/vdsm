@@ -55,7 +55,6 @@ from resourceFactories import LVM_ACTIVATION_NAMESPACE
 import iscsi
 from storage_mailbox import MAILBOX_SIZE
 import resourceManager as rm
-import volume
 
 STORAGE_DOMAIN_TAG = "RHAT_storage_domain"
 STORAGE_UNREADY_DOMAIN_TAG = STORAGE_DOMAIN_TAG + "_UNREADY"
@@ -801,8 +800,8 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         super(BlockStorageDomainManifest, self).validateCreateVolumeParams(
             volFormat, srcVolUUID, preallocate=preallocate)
         # Sparse-Raw not supported for block volumes
-        if preallocate == volume.SPARSE_VOL and volFormat == volume.RAW_FORMAT:
-            raise se.IncorrectFormat(volume.type2name(volFormat))
+        if preallocate == sc.SPARSE_VOL and volFormat == sc.RAW_FORMAT:
+            raise se.IncorrectFormat(sc.type2name(volFormat))
 
 
 class BlockStorageDomain(sd.StorageDomain):

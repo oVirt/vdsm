@@ -26,6 +26,7 @@ from monkeypatch import MonkeyPatchScope
 from testValidation import brokentest
 from storagetestlib import fake_block_env, fake_file_env
 
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.constants import TEMP_VOL_LVTAG
@@ -42,9 +43,9 @@ def failure(*args, **kwargs):
     raise ExpectedFailure()
 
 
-BASE_RAW_PARAMS = (1073741824, volume.RAW_FORMAT,
+BASE_RAW_PARAMS = (1073741824, sc.RAW_FORMAT,
                    image.SYSTEM_DISK_TYPE, 'raw_volume')
-BASE_COW_PARAMS = (1073741824, volume.COW_FORMAT,
+BASE_COW_PARAMS = (1073741824, sc.COW_FORMAT,
                    image.SYSTEM_DISK_TYPE, 'cow_volume')
 MB = 1024 ** 2
 
@@ -138,11 +139,10 @@ class VolumeArtifactsTestsMixin(object):
             artifacts.create(size, vol_format, disk_type, desc)
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
-            self.assertEqual(volume.type2name(volume.LEAF_VOL),
-                             vol.getVolType())
+            self.assertEqual(sc.type2name(sc.LEAF_VOL), vol.getVolType())
             self.assertEqual(desc, vol.getDescription())
-            self.assertEqual(volume.LEGAL_VOL, vol.getLegality())
-            self.assertEqual(size / volume.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(sc.LEGAL_VOL, vol.getLegality())
+            self.assertEqual(size / sc.BLOCK_SIZE, vol.getSize())
             self.assertEqual(size, os.stat(artifacts.volume_path).st_size)
             self.assertEqual(vol_format, vol.getFormat())
             self.assertEqual(str(disk_type), vol.getDiskType())
@@ -182,7 +182,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             artifacts.create(size, vol_format, disk_type, desc)
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
-            self.assertEqual(volume.SPARSE_VOL, vol.getType())
+            self.assertEqual(sc.SPARSE_VOL, vol.getType())
 
     def test_new_image_create_metadata_failure(self):
         # If we fail before the metadata is created we will have an empty
@@ -309,7 +309,7 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             artifacts.create(size, vol_format, disk_type, desc)
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
-            self.assertEqual(volume.PREALLOCATED_VOL, vol.getType())
+            self.assertEqual(sc.PREALLOCATED_VOL, vol.getType())
 
     def test_size_rounded_up(self):
         # If the underlying device is larger the size will be updated
@@ -320,11 +320,11 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
             requested_size = expected_size - MB
             artifacts = env.sd_manifest.get_volume_artifacts(
                 self.img_id, self.vol_id)
-            artifacts.create(requested_size, volume.RAW_FORMAT,
+            artifacts.create(requested_size, sc.RAW_FORMAT,
                              image.SYSTEM_DISK_TYPE, 'raw_volume')
             artifacts.commit()
             vol = env.sd_manifest.produceVolume(self.img_id, self.vol_id)
-            self.assertEqual(expected_size / volume.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(expected_size / sc.BLOCK_SIZE, vol.getSize())
             self.assertEqual(expected_size,
                              int(env.lvm.getLV(sd_id, self.vol_id).size))
 
@@ -433,8 +433,8 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
 
     def validate_metadata(self, env, md_slot, artifacts):
         path = env.lvm.lvPath(artifacts.sd_manifest.sdUUID, sd.METADATA)
-        offset = md_slot * volume.METADATA_SIZE
-        md_lines = misc.readblock(path, offset, volume.METADATA_SIZE)
+        offset = md_slot * sc.METADATA_SIZE
+        md_lines = misc.readblock(path, offset, sc.METADATA_SIZE)
         md = volume.VolumeMetadata.from_lines(md_lines)
 
         # Test a few fields just to check that metadata was written

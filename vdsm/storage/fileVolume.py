@@ -25,10 +25,9 @@ import sanlock
 from vdsm import exception
 from vdsm import qemuimg
 from vdsm.commands import grepCmd
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
-from vdsm.storage.constants import FILE_VOLUME_PERMISSIONS
-from vdsm.storage.constants import LEASE_FILEEXT
 from vdsm.storage.misc import deprecated
 from vdsm.storage.threadlocal import vars
 
@@ -43,7 +42,7 @@ import task
 META_FILEEXT = ".meta"
 LEASE_FILEOFFSET = 0
 
-BLOCK_SIZE = volume.BLOCK_SIZE
+BLOCK_SIZE = sc.BLOCK_SIZE
 
 
 def getDomUuidFromVolumePath(volPath):
@@ -259,7 +258,7 @@ class FileVolumeManifest(volume.VolumeManifest):
     @classmethod
     def leaseVolumePath(cls, vol_path):
         if vol_path:
-            return vol_path + LEASE_FILEEXT
+            return vol_path + sc.LEASE_FILEEXT
         else:
             return None
 
@@ -387,18 +386,18 @@ class FileVolume(volume.Volume):
                                                initialSize)
 
         sizeBytes = size * BLOCK_SIZE
-        truncSize = sizeBytes if volFormat == volume.RAW_FORMAT else 0
+        truncSize = sizeBytes if volFormat == sc.RAW_FORMAT else 0
 
         try:
             oop.getProcessPool(dom.sdUUID).truncateFile(
-                volPath, truncSize, mode=FILE_VOLUME_PERMISSIONS,
+                volPath, truncSize, mode=sc.FILE_VOLUME_PERMISSIONS,
                 creatExcl=True)
         except OSError as e:
             if e.errno == errno.EEXIST:
                 raise se.VolumeAlreadyExists(volUUID)
             raise
 
-        if preallocate == volume.PREALLOCATED_VOL:
+        if preallocate == sc.PREALLOCATED_VOL:
             try:
                 # ddWatchCopy expects size to be in bytes
                 misc.ddWatchCopy("/dev/zero", volPath,
@@ -411,10 +410,10 @@ class FileVolume(volume.Volume):
 
         if not volParent:
             cls.log.info("Request to create %s volume %s with size = %s "
-                         "sectors", volume.type2name(volFormat), volPath,
+                         "sectors", sc.type2name(volFormat), volPath,
                          size)
-            if volFormat == volume.COW_FORMAT:
-                qemuimg.create(volPath, sizeBytes, volume.fmt2str(volFormat))
+            if volFormat == sc.COW_FORMAT:
+                qemuimg.create(volPath, sizeBytes, sc.fmt2str(volFormat))
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
@@ -423,7 +422,7 @@ class FileVolume(volume.Volume):
 
         # Forcing the volume permissions in case one of the tools we use
         # (dd, qemu-img, etc.) will mistakenly change the file permissiosn.
-        dom.oop.os.chmod(volPath, FILE_VOLUME_PERMISSIONS)
+        dom.oop.os.chmod(volPath, sc.FILE_VOLUME_PERMISSIONS)
 
         return (volPath,)
 
@@ -445,7 +444,7 @@ class FileVolume(volume.Volume):
             self.validateDelete()
 
         # Mark volume as illegal before deleting
-        self.setLegality(volume.ILLEGAL_VOL)
+        self.setLegality(sc.ILLEGAL_VOL)
 
         # try to cleanup as much as possible
         eFound = se.CannotDeleteVolume(self.volUUID)
@@ -454,8 +453,8 @@ class FileVolume(volume.Volume):
             # We need to blank parent record in our metadata
             # for parent to become leaf successfully.
             puuid = self.getParent()
-            self.setParent(volume.BLANK_UUID)
-            if puuid and puuid != volume.BLANK_UUID:
+            self.setParent(sc.BLANK_UUID)
+            if puuid and puuid != sc.BLANK_UUID:
                 pvol = FileVolume(self.repoPath, self.sdUUID,
                                   self.imgUUID, puuid)
                 pvol.recheckIfLeaf()
@@ -601,7 +600,7 @@ class FileVolume(volume.Volume):
         elif newSizeBytes < curSizeBytes:
             raise se.VolumeResizeValueError(newSize)
 
-        if self.getType() == volume.PREALLOCATED_VOL:
+        if self.getType() == sc.PREALLOCATED_VOL:
             # for pre-allocated we need to zero to the file size
             misc.ddWatchCopy("/dev/zero", volPath, vars.task.aborting,
                              newSizeBytes - curSizeBytes, curSizeBytes)

@@ -43,34 +43,6 @@ rmanager = rm.ResourceManager.getInstance()
 
 DOMAIN_MNT_POINT = 'mnt'
 
-# Volume Types
-UNKNOWN_VOL = 0
-PREALLOCATED_VOL = 1
-SPARSE_VOL = 2
-
-# Volume Format
-UNKNOWN_FORMAT = 3
-COW_FORMAT = 4
-RAW_FORMAT = 5
-
-# Volume Role
-SHARED_VOL = 6
-INTERNAL_VOL = 7
-LEAF_VOL = 8
-
-VOL_TYPE = [PREALLOCATED_VOL, SPARSE_VOL]
-VOL_FORMAT = [COW_FORMAT, RAW_FORMAT]
-VOL_ROLE = [SHARED_VOL, INTERNAL_VOL, LEAF_VOL]
-
-VOLUME_TYPES = {UNKNOWN_VOL: 'UNKNOWN', PREALLOCATED_VOL: 'PREALLOCATED',
-                SPARSE_VOL: 'SPARSE',
-                UNKNOWN_FORMAT: 'UNKNOWN', COW_FORMAT: 'COW',
-                RAW_FORMAT: 'RAW',
-                SHARED_VOL: 'SHARED', INTERNAL_VOL: 'INTERNAL',
-                LEAF_VOL: 'LEAF'}
-
-BLANK_UUID = misc.UUID_BLANK
-
 # Volume meta data fields
 SIZE = "SIZE"
 TYPE = "TYPE"
@@ -86,23 +58,8 @@ LEGALITY = "LEGALITY"
 MTIME = "MTIME"
 POOL = sc.MDK_POOLS  # Deprecated
 
-ILLEGAL_VOL = "ILLEGAL"
-LEGAL_VOL = "LEGAL"
-FAKE_VOL = "FAKE"
 
 log = logging.getLogger('Storage.Volume')
-
-FMT2STR = {
-    COW_FORMAT: qemuimg.FORMAT.QCOW2,
-    RAW_FORMAT: qemuimg.FORMAT.RAW,
-}
-
-# At the moment this is static and it has been introduced to group all the
-# previous implicit references to the block size in FileVolume. In the future
-# it will depend on the storage domain.
-BLOCK_SIZE = 512
-
-METADATA_SIZE = BLOCK_SIZE
 
 # In block storage, metadata size is limited to BLOCK_SIZE (512), to
 # ensure that metadata is written atomically. This is big enough for the
@@ -142,24 +99,6 @@ METADATA_SIZE = BLOCK_SIZE
 DESCRIPTION_SIZE = 210
 
 
-def fmt2str(format):
-    return FMT2STR[format]
-
-
-def type2name(volType):
-    try:
-        return VOLUME_TYPES[volType]
-    except IndexError:
-        return None
-
-
-def name2type(name):
-    for (k, v) in VOLUME_TYPES.iteritems():
-        if v == name.upper():
-            return k
-    return None
-
-
 def getBackingVolumePath(imgUUID, volUUID):
     # We used to return a relative path ../<imgUUID>/<volUUID> but this caused
     # unnecessary growth in the backing chain paths with repeated live merge
@@ -181,7 +120,7 @@ class VolumeMetadata(object):
 
     def __init__(self, domain, image, puuid, size, format,
                  type, voltype, disktype, description="",
-                 legality=ILLEGAL_VOL, ctime=None, mtime=None):
+                 legality=sc.ILLEGAL_VOL, ctime=None, mtime=None):
         assert(isinstance(size, int))
         assert(ctime is None or isinstance(ctime, int))
         assert(mtime is None or isinstance(mtime, int))
@@ -270,7 +209,7 @@ class VolumeMetadata(object):
         lines = ["%s=%s\n" % (key, info[key]) for key in keys]
         lines.append("EOF\n")
         data = "".join(lines)
-        if len(data) > METADATA_SIZE:
+        if len(data) > sc.METADATA_SIZE:
             raise se.MetadataOverflowError(data)
         return data
 
@@ -307,9 +246,9 @@ class VolumeManifest(object):
         self._imagePath = None
         self.voltype = None
 
-        if not imgUUID or imgUUID == BLANK_UUID:
+        if not imgUUID or imgUUID == sc.BLANK_UUID:
             raise se.InvalidParameterException("imgUUID", imgUUID)
-        if not volUUID or volUUID == BLANK_UUID:
+        if not volUUID or volUUID == sc.BLANK_UUID:
             raise se.InvalidParameterException("volUUID", volUUID)
         self.validate()
 
@@ -360,10 +299,10 @@ class VolumeManifest(object):
         return self.voltype
 
     def isLeaf(self):
-        return self.getVolType() == type2name(LEAF_VOL)
+        return self.getVolType() == sc.type2name(sc.LEAF_VOL)
 
     def isShared(self):
-        return self.getVolType() == type2name(SHARED_VOL)
+        return self.getVolType() == sc.type2name(sc.SHARED_VOL)
 
     def getDescription(self):
         """
@@ -379,19 +318,19 @@ class VolumeManifest(object):
             legality = self.getMetaParam(LEGALITY)
             return legality
         except se.MetaDataKeyNotFoundError:
-            return LEGAL_VOL
+            return sc.LEGAL_VOL
 
     def isLegal(self):
         try:
             legality = self.getMetaParam(LEGALITY)
-            return legality != ILLEGAL_VOL
+            return legality != sc.ILLEGAL_VOL
         except se.MetaDataKeyNotFoundError:
             return True
 
     def isFake(self):
         try:
             legality = self.getMetaParam(LEGALITY)
-            return legality == FAKE_VOL
+            return legality == sc.FAKE_VOL
         except se.MetaDataKeyNotFoundError:
             return False
 
@@ -402,19 +341,19 @@ class VolumeManifest(object):
         return size
 
     def getFormat(self):
-        return name2type(self.getMetaParam(FORMAT))
+        return sc.name2type(self.getMetaParam(FORMAT))
 
     def getType(self):
-        return name2type(self.getMetaParam(TYPE))
+        return sc.name2type(self.getMetaParam(TYPE))
 
     def getDiskType(self):
         return self.getMetaParam(DISKTYPE)
 
     def isInternal(self):
-        return self.getVolType() == type2name(INTERNAL_VOL)
+        return self.getVolType() == sc.type2name(sc.INTERNAL_VOL)
 
     def isSparse(self):
-        return self.getType() == SPARSE_VOL
+        return self.getType() == sc.SPARSE_VOL
 
     def metadata2info(self, meta):
         return {
@@ -444,7 +383,7 @@ class VolumeManifest(object):
         try:
             meta = self.getMetadata()
             info = self.metadata2info(meta)
-            info["capacity"] = str(int(info["size"]) * BLOCK_SIZE)
+            info["capacity"] = str(int(info["size"]) * sc.BLOCK_SIZE)
             del info["size"]
             # Get the image actual size on disk
             vsize = self.getVolumeSize(bs=1)
@@ -464,13 +403,13 @@ class VolumeManifest(object):
 
         # If image was set to illegal, mark the status same
         # (because of VDC constraints)
-        if info.get('legality', None) == ILLEGAL_VOL:
-            info['status'] = ILLEGAL_VOL
+        if info.get('legality', None) == sc.ILLEGAL_VOL:
+            info['status'] = sc.ILLEGAL_VOL
         self.log.info("%s/%s/%s info is %s",
                       self.sdUUID, self.imgUUID, self.volUUID, str(info))
         return info
 
-    def getVolumeParams(self, bs=BLOCK_SIZE):
+    def getVolumeParams(self, bs=sc.BLOCK_SIZE):
         volParams = {}
         volParams['volUUID'] = self.volUUID
         volParams['imgUUID'] = self.getImage()
@@ -524,7 +463,7 @@ class VolumeManifest(object):
                  for key, value in meta.iteritems()]
         lines.append("EOF\n")
         data = "".join(lines)
-        if len(data) > METADATA_SIZE:
+        if len(data) > sc.METADATA_SIZE:
             raise se.MetadataOverflowError(data)
         return data
 
@@ -542,14 +481,14 @@ class VolumeManifest(object):
             self._setrw(rw=rw)
 
     def setLeaf(self):
-        self.setMetaParam(VOLTYPE, type2name(LEAF_VOL))
-        self.voltype = type2name(LEAF_VOL)
+        self.setMetaParam(VOLTYPE, sc.type2name(sc.LEAF_VOL))
+        self.voltype = sc.type2name(sc.LEAF_VOL)
         self.setrw(rw=True)
         return self.voltype
 
     def setInternal(self):
-        self.setMetaParam(VOLTYPE, type2name(INTERNAL_VOL))
-        self.voltype = type2name(INTERNAL_VOL)
+        self.setMetaParam(VOLTYPE, sc.type2name(sc.INTERNAL_VOL))
+        self.voltype = sc.type2name(sc.INTERNAL_VOL)
         self.setrw(rw=False)
         return self.voltype
 
@@ -564,9 +503,9 @@ class VolumeManifest(object):
         type = self.getVolType()
         childrenNum = len(self.getChildren())
 
-        if childrenNum == 0 and type != LEAF_VOL:
+        if childrenNum == 0 and type != sc.LEAF_VOL:
             self.setLeaf()
-        elif childrenNum > 0 and type != INTERNAL_VOL:
+        elif childrenNum > 0 and type != sc.INTERNAL_VOL:
             self.setInternal()
 
         return self.isLeaf()
@@ -595,8 +534,8 @@ class VolumeManifest(object):
         return self.sdUUID
 
     def setShared(self):
-        self.setMetaParam(VOLTYPE, type2name(SHARED_VOL))
-        self.voltype = type2name(SHARED_VOL)
+        self.setMetaParam(VOLTYPE, sc.type2name(sc.SHARED_VOL))
+        self.voltype = sc.type2name(sc.SHARED_VOL)
         self.setrw(rw=False)
         return self.voltype
 
@@ -612,15 +551,15 @@ class VolumeManifest(object):
         # validation in getSize.
         if int(self.getMetaParam(SIZE)) < 1:
             volInfo = qemuimg.info(
-                self.getVolumePath(), fmt2str(self.getFormat()))
+                self.getVolumePath(), sc.fmt2str(self.getFormat()))
             # qemu/qemu-img rounds down
-            self.setSize(volInfo['virtualsize'] / BLOCK_SIZE)
+            self.setSize(volInfo['virtualsize'] / sc.BLOCK_SIZE)
 
     def setType(self, prealloc):
-        self.setMetaParam(TYPE, type2name(prealloc))
+        self.setMetaParam(TYPE, sc.type2name(prealloc))
 
     def setFormat(self, volFormat):
-        self.setMetaParam(FORMAT, type2name(volFormat))
+        self.setMetaParam(FORMAT, sc.type2name(volFormat))
 
     def validateDelete(self):
         """
@@ -646,7 +585,7 @@ class VolumeManifest(object):
 
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
-                    voltype, disktype, desc="", legality=ILLEGAL_VOL):
+                    voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
         meta = VolumeMetadata(sdUUID, imgUUID, puuid, size, format, type,
                               voltype, disktype, desc, legality)
         cls.createMetadata(metaId, meta.legacy_info())
@@ -792,8 +731,8 @@ class Volume(object):
 
             try:
                 qemuimg.rebase(volumePath, backingVolPath,
-                               fmt2str(vol.getFormat()),
-                               fmt2str(int(dstFormat)),
+                               sc.fmt2str(vol.getFormat()),
+                               sc.fmt2str(int(dstFormat)),
                                misc.parseBool(unsafe), vars.task.aborting)
                 vol.setParent(srcParent)
                 vol.recheckIfLeaf()
@@ -828,8 +767,9 @@ class Volume(object):
 
         try:
             qemuimg.rebase(volumePath, backingVolPath,
-                           fmt2str(self.getFormat()), fmt2str(backingFormat),
-                           unsafe, vars.task.aborting)
+                           sc.fmt2str(self.getFormat()),
+                           sc.fmt2str(backingFormat), unsafe,
+                           vars.task.aborting)
         except qemuimg.QImgError:
             self.log.exception('cannot rebase volume %s on %s', volumePath,
                                backingVolPath)
@@ -857,8 +797,8 @@ class Volume(object):
                            dstPath)
             parent = getBackingVolumePath(self.imgUUID, self.volUUID)
             qemuimg.create(dstPath, backing=parent,
-                           format=fmt2str(volFormat),
-                           backingFormat=fmt2str(self.getFormat()))
+                           format=sc.fmt2str(volFormat),
+                           backingFormat=sc.fmt2str(self.getFormat()))
             self.teardown(self.sdUUID, self.volUUID)
         except Exception as e:
             self.log.exception('cannot clone image %s volume %s to %s',
@@ -905,7 +845,7 @@ class Volume(object):
     def parentVolumeRollback(cls, taskObj, sdUUID, pimgUUID, pvolUUID):
         cls.log.info("parentVolumeRollback: sdUUID=%s pimgUUID=%s"
                      " pvolUUID=%s" % (sdUUID, pimgUUID, pvolUUID))
-        if pvolUUID != BLANK_UUID and pimgUUID != BLANK_UUID:
+        if pvolUUID != sc.BLANK_UUID and pimgUUID != sc.BLANK_UUID:
             pvol = sdCache.produce(sdUUID).produceVolume(pimgUUID,
                                                          pvolUUID)
             pvol.prepare()
@@ -973,17 +913,17 @@ class Volume(object):
 
         volPath = os.path.join(imgPath, volUUID)
         volParent = None
-        volType = type2name(LEAF_VOL)
+        volType = sc.type2name(sc.LEAF_VOL)
 
         # Get the specific class name and class module to be used in the
         # Recovery tasks.
         clsModule, clsName = cls._getModuleAndClass()
 
         try:
-            if srcVolUUID != BLANK_UUID:
+            if srcVolUUID != sc.BLANK_UUID:
                 # When the srcImgUUID isn't specified we assume it's the same
                 # as the imgUUID
-                if srcImgUUID == BLANK_UUID:
+                if srcImgUUID == sc.BLANK_UUID:
                     srcImgUUID = imgUUID
 
                 volParent = cls(repoPath, sdUUID, srcImgUUID, srcVolUUID)
@@ -1041,8 +981,9 @@ class Volume(object):
             # match the apparent size (eg: physical extent granularity in LVM)
             # we need to update the size value so that the metadata reflects
             # the correct state.
-            if volFormat == RAW_FORMAT:
-                apparentSize = int(dom.getVSize(imgUUID, volUUID) / BLOCK_SIZE)
+            if volFormat == sc.RAW_FORMAT:
+                apparentSize = int(dom.getVSize(imgUUID, volUUID) /
+                                   sc.BLOCK_SIZE)
                 if apparentSize < size:
                     cls.log.error("The volume %s apparent size %s is smaller "
                                   "than the requested size %s",
@@ -1062,8 +1003,8 @@ class Volume(object):
             )
 
             cls.newMetadata(metaId, sdUUID, imgUUID, srcVolUUID, size,
-                            type2name(volFormat), type2name(preallocate),
-                            volType, diskType, desc, LEGAL_VOL)
+                            sc.type2name(volFormat), sc.type2name(preallocate),
+                            volType, diskType, desc, sc.LEGAL_VOL)
 
             if dom.hasVolumeLeases():
                 cls.newVolumeLease(metaId, sdUUID, volUUID)
@@ -1102,7 +1043,7 @@ class Volume(object):
 
     def syncMetadata(self):
         volFormat = self.getFormat()
-        if volFormat != RAW_FORMAT:
+        if volFormat != sc.RAW_FORMAT:
             self.log.error("impossible to update metadata for volume %s ",
                            "its format is not RAW", self.volUUID)
             return
@@ -1136,18 +1077,18 @@ class Volume(object):
             raise se.VolumeNonWritable(self.volUUID)
 
         volFormat = self.getFormat()
-        if volFormat == COW_FORMAT:
+        if volFormat == sc.COW_FORMAT:
             self.log.debug("skipping cow size extension for volume %s to "
                            "size %s", self.volUUID, newSize)
             return
-        elif volFormat != RAW_FORMAT:
+        elif volFormat != sc.RAW_FORMAT:
             raise se.IncorrectFormat(self.volUUID)
 
         # Note: This function previously prohibited extending non-leaf volumes.
         # If a disk is enlarged a volume may become larger than its parent.  In
         # order to support live merge of a larger volume into its raw parent we
         # must permit extension of this raw volume prior to starting the merge.
-        isBase = self.getParent() == BLANK_UUID
+        isBase = self.getParent() == sc.BLANK_UUID
         if not (isBase or self.isLeaf()):
             raise se.VolumeNonWritable(self.volUUID)
 
@@ -1209,10 +1150,10 @@ class Volume(object):
     def getSize(self):
         return self._manifest.getSize()
 
-    def getVolumeSize(self, bs=BLOCK_SIZE):
+    def getVolumeSize(self, bs=sc.BLOCK_SIZE):
         return self._manifest.getVolumeSize(bs)
 
-    def getVolumeTrueSize(self, bs=BLOCK_SIZE):
+    def getVolumeTrueSize(self, bs=sc.BLOCK_SIZE):
         return self._manifest.getVolumeTrueSize(bs)
 
     def setSize(self, size):
@@ -1325,7 +1266,7 @@ class Volume(object):
 
     @classmethod
     def newMetadata(cls, metaId, sdUUID, imgUUID, puuid, size, format, type,
-                    voltype, disktype, desc="", legality=ILLEGAL_VOL):
+                    voltype, disktype, desc="", legality=sc.ILLEGAL_VOL):
         return cls.manifestClass.newMetadata(
             metaId, sdUUID, imgUUID, puuid, size, format, type, voltype,
             disktype, desc, legality)
@@ -1338,7 +1279,7 @@ class Volume(object):
         Return parent volume object
         """
         puuid = self.getParent()
-        if puuid and puuid != BLANK_UUID:
+        if puuid and puuid != sc.BLANK_UUID:
             return sdCache.produce(self.sdUUID).produceVolume(self.imgUUID,
                                                               puuid)
         return None
@@ -1369,7 +1310,7 @@ class Volume(object):
         """
         self._manifest.setMetaParam(key, value)
 
-    def getVolumeParams(self, bs=BLOCK_SIZE):
+    def getVolumeParams(self, bs=sc.BLOCK_SIZE):
         return self._manifest.getVolumeParams(bs)
 
     def shrinkToOptimalSize(self):

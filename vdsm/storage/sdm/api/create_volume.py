@@ -21,10 +21,11 @@
 from __future__ import absolute_import
 
 from vdsm import exception
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 
 from storage import resourceManager as rm
-from storage import image, sd, volume
+from storage import image, sd
 from storage.resourceFactories import IMAGE_NAMESPACE
 
 from . import base
@@ -39,7 +40,7 @@ class Job(base.Job):
         self.vol_info = vol_info
 
     def _run(self):
-        vol_format = volume.name2type(self.vol_info.vol_format)
+        vol_format = sc.name2type(self.vol_info.vol_format)
 
         with self.sd_manifest.domain_lock(self.host_id):
             image_res_ns = sd.getNamespace(self.sd_manifest.sdUUID,
@@ -64,8 +65,8 @@ class CreateVolumeInfo(object):
         self.img_id = _required(params, 'img_id')
         self.vol_id = _required(params, 'vol_id')
         self.virtual_size = _required(params, 'virtual_size')
-        vol_types = [volume.VOLUME_TYPES[vt]
-                     for vt in (volume.RAW_FORMAT, volume.COW_FORMAT)]
+        vol_types = [sc.VOLUME_TYPES[vt]
+                     for vt in (sc.RAW_FORMAT, sc.COW_FORMAT)]
         self.vol_format = _enum(params, 'vol_format', vol_types)
         self.disk_type = _enum(params, 'disk_type', image.DISK_TYPES.values())
         self.description = params.get('description', '')

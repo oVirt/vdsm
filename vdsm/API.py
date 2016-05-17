@@ -42,6 +42,7 @@ from vdsm import v2v
 from vdsm.host import stats as hoststats
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
+from vdsm.storage import constants as sc
 from vdsm.virt import vmstatus
 from vdsm.virt import sampling
 from vdsm.virt import secret
@@ -811,20 +812,20 @@ class Volume(APIBase):
     ctorArgs = ['volumeID', 'storagepoolID', 'storagedomainID', 'imageID']
 
     class Types:
-        UNKNOWN = storage.volume.UNKNOWN_VOL
-        PREALLOCATED = storage.volume.PREALLOCATED_VOL
-        SPARSE = storage.volume.SPARSE_VOL
+        UNKNOWN = sc.UNKNOWN_VOL
+        PREALLOCATED = sc.PREALLOCATED_VOL
+        SPARSE = sc.SPARSE_VOL
 
     class Formats:
-        UNKNOWN = storage.volume.UNKNOWN_FORMAT
-        COW = storage.volume.COW_FORMAT
-        RAW = storage.volume.RAW_FORMAT
+        UNKNOWN = sc.UNKNOWN_FORMAT
+        COW = sc.COW_FORMAT
+        RAW = sc.RAW_FORMAT
 
     class Roles:
-        SHARED = storage.volume.SHARED_VOL
-        LEAF = storage.volume.LEAF_VOL
+        SHARED = sc.SHARED_VOL
+        LEAF = sc.LEAF_VOL
 
-    BLANK_UUID = storage.volume.BLANK_UUID
+    BLANK_UUID = sc.BLANK_UUID
 
     def __init__(self, UUID, spUUID, sdUUID, imgUUID):
         APIBase.__init__(self)
@@ -895,7 +896,7 @@ class Volume(APIBase):
 class Image(APIBase):
     ctorArgs = ['imageID', 'storagepoolID', 'storagedomainID']
 
-    BLANK_UUID = storage.volume.BLANK_UUID
+    BLANK_UUID = sc.BLANK_UUID
 
     class DiskTypes:
         UNKNOWN = storage.image.UNKNOWN_DISK_TYPE

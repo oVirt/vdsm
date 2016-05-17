@@ -25,8 +25,9 @@ from storagefakelib import FakeLVM
 from monkeypatch import MonkeyPatchScope
 
 from vdsm import utils
+from vdsm.storage import constants as sc
 
-from storage import sd, blockSD, fileSD, image, volume, blockVolume
+from storage import sd, blockSD, fileSD, image, blockVolume
 from storage.sdm import volume_artifacts
 
 
@@ -139,9 +140,9 @@ def make_filesd_manifest(tmpdir):
 
 
 def make_file_volume(sd_manifest, size, imguuid, voluuid,
-                     parent_vol_id=volume.BLANK_UUID,
-                     vol_format=volume.RAW_FORMAT,
-                     prealloc=volume.SPARSE_VOL,
+                     parent_vol_id=sc.BLANK_UUID,
+                     vol_format=sc.RAW_FORMAT,
+                     prealloc=sc.SPARSE_VOL,
                      disk_type=image.UNKNOWN_DISK_TYPE,
                      desc='fake volume'):
     volpath = os.path.join(sd_manifest.domaindir, "images", imguuid, voluuid)
@@ -150,7 +151,7 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
     for mdfile in mdfiles:
         make_file(mdfile)
 
-    size_blk = size / volume.BLOCK_SIZE
+    size_blk = size / sc.BLOCK_SIZE
     vol_class = sd_manifest.getVolumeClass()
     vol_class.newMetadata(
         (volpath,),
@@ -158,18 +159,18 @@ def make_file_volume(sd_manifest, size, imguuid, voluuid,
         imguuid,
         parent_vol_id,
         size_blk,
-        volume.type2name(vol_format),
-        volume.type2name(prealloc),
-        volume.type2name(volume.LEAF_VOL),
+        sc.type2name(vol_format),
+        sc.type2name(prealloc),
+        sc.type2name(sc.LEAF_VOL),
         disk_type,
         desc,
-        volume.LEGAL_VOL)
+        sc.LEGAL_VOL)
 
 
 def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
-                      parent_vol_id=volume.BLANK_UUID,
-                      vol_format=volume.RAW_FORMAT,
-                      prealloc=volume.PREALLOCATED_VOL,
+                      parent_vol_id=sc.BLANK_UUID,
+                      vol_format=sc.RAW_FORMAT,
+                      prealloc=sc.PREALLOCATED_VOL,
                       disk_type=image.UNKNOWN_DISK_TYPE,
                       desc='fake volume'):
     sduuid = sd_manifest.sdUUID
@@ -177,13 +178,13 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
     imagedir = image_manifest.getImageDir(sduuid, imguuid)
     os.makedirs(imagedir)
     size_mb = utils.round(size, MB)
-    size_blk = size_mb * MB / volume.BLOCK_SIZE
+    size_blk = size_mb * MB / sc.BLOCK_SIZE
     lvm.createLV(sduuid, voluuid, size_mb)
     with sd_manifest.acquireVolumeMetadataSlot(
             voluuid, blockVolume.VOLUME_MDNUMBLKS) as slot:
         lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_MD, slot))
         lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_PARENT,
-                                              volume.BLANK_UUID))
+                                              sc.BLANK_UUID))
         lvm.addtag(sduuid, voluuid, "%s%s" % (blockVolume.TAG_PREFIX_IMAGE,
                                               imguuid))
 
@@ -194,9 +195,9 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         imguuid,
         parent_vol_id,
         size_blk,
-        volume.type2name(vol_format),
-        volume.type2name(prealloc),
-        volume.type2name(volume.LEAF_VOL),
+        sc.type2name(vol_format),
+        sc.type2name(prealloc),
+        sc.type2name(sc.LEAF_VOL),
         disk_type,
         desc,
-        volume.LEGAL_VOL)
+        sc.LEGAL_VOL)

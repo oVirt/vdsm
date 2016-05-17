@@ -26,9 +26,9 @@ from vdsm import qemuimg
 from vdsm import constants
 from vdsm import exception
 from vdsm.config import config
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
-from vdsm.storage.constants import TEMP_VOL_LVTAG
 from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
 from vdsm.storage.misc import logskip
@@ -55,7 +55,7 @@ VOLUME_TAGS = [TAG_PREFIX_PARENT,
                TAG_PREFIX_MD,
                TAG_PREFIX_MDNUMBLKS]
 
-BLOCK_SIZE = volume.BLOCK_SIZE
+BLOCK_SIZE = sc.BLOCK_SIZE
 VOLUME_MDNUMBLKS = 1
 
 SECTORS_TO_MB = 2048
@@ -110,8 +110,8 @@ class BlockVolumeManifest(volume.VolumeManifest):
 
         try:
             lines = misc.readblock(lvm.lvPath(vgname, sd.METADATA),
-                                   offs * volume.METADATA_SIZE,
-                                   volume.METADATA_SIZE)
+                                   offs * sc.METADATA_SIZE,
+                                   sc.METADATA_SIZE)
         except Exception as e:
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
@@ -162,7 +162,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         except se.LogicalVolumeDoesNotExistError:
             raise se.VolumeDoesNotExist(self.volUUID)
         else:
-            if TEMP_VOL_LVTAG in lv.tags:
+            if sc.TEMP_VOL_LVTAG in lv.tags:
                 self.log.warning("Tried to produce a volume artifact: %s/%s",
                                  self.sdUUID, self.volUUID)
                 raise se.VolumeDoesNotExist(self.volUUID)
@@ -241,11 +241,11 @@ class BlockVolumeManifest(volume.VolumeManifest):
         vgname, offs = metaId
 
         data = cls.formatMetadata(meta)
-        data += "\0" * (volume.METADATA_SIZE - len(data))
+        data += "\0" * (sc.METADATA_SIZE - len(data))
 
         metavol = lvm.lvPath(vgname, sd.METADATA)
         with fileUtils.DirectFile(metavol, "r+d") as f:
-            f.seek(offs * volume.METADATA_SIZE)
+            f.seek(offs * sc.METADATA_SIZE)
             f.write(data)
 
     def changeVolumeTag(self, tagPrefix, uuid):
@@ -349,12 +349,12 @@ class BlockVolumeManifest(volume.VolumeManifest):
             raise se.InvalidParameterException("initial size",
                                                initial_size)
 
-        if initial_size and preallocate == volume.PREALLOCATED_VOL:
+        if initial_size and preallocate == sc.PREALLOCATED_VOL:
             log.error("Initial size is not supported for preallocated volumes")
             raise se.InvalidParameterException("initial size",
                                                initial_size)
 
-        if preallocate == volume.SPARSE_VOL:
+        if preallocate == sc.SPARSE_VOL:
             if initial_size:
                 initial_size = int(initial_size * QCOW_OVERHEAD_FACTOR)
                 alloc_size = ((initial_size + SECTORS_TO_MB - 1)
@@ -432,11 +432,11 @@ class BlockVolume(volume.Volume):
 
         if not volParent:
             cls.log.info("Request to create %s volume %s with size = %s "
-                         "sectors", volume.type2name(volFormat), volPath,
+                         "sectors", sc.type2name(volFormat), volPath,
                          size)
-            if volFormat == volume.COW_FORMAT:
+            if volFormat == sc.COW_FORMAT:
                 qemuimg.create(
-                    volPath, size * BLOCK_SIZE, volume.fmt2str(volFormat))
+                    volPath, size * BLOCK_SIZE, sc.fmt2str(volFormat))
         else:
             # Create hardlink to template and its meta file
             cls.log.info("Request to create snapshot %s/%s of volume %s/%s",
@@ -509,7 +509,7 @@ class BlockVolume(volume.Volume):
             self.validateDelete()
 
         # Mark volume as illegal before deleting
-        self.setLegality(volume.ILLEGAL_VOL)
+        self.setLegality(sc.ILLEGAL_VOL)
 
         if postZero:
             self.prepare(justme=True, rw=True, chainrw=force, setrw=True,
@@ -532,8 +532,8 @@ class BlockVolume(volume.Volume):
             # We need to blank parent record in our metadata
             # for parent to become leaf successfully.
             puuid = self.getParent()
-            self.setParent(volume.BLANK_UUID)
-            if puuid and puuid != volume.BLANK_UUID:
+            self.setParent(sc.BLANK_UUID)
+            if puuid and puuid != sc.BLANK_UUID:
                 pvol = BlockVolume(self.repoPath, self.sdUUID, self.imgUUID,
                                    puuid)
                 pvol.recheckIfLeaf()
@@ -596,7 +596,7 @@ class BlockVolume(volume.Volume):
         closest volume utilization chunk
         """
         volParams = self.getVolumeParams()
-        if volParams['volFormat'] == volume.COW_FORMAT:
+        if volParams['volFormat'] == sc.COW_FORMAT:
             self.prepare()
             try:
                 check = qemuimg.check(self.getVolumePath(),
@@ -690,11 +690,11 @@ class BlockVolume(volume.Volume):
                 # If storage not accessible or lvm error occurred
                 # we will failure to get the parent volume.
                 # We can live with it and still succeed in volume's teardown.
-                pvolUUID = volume.BLANK_UUID
+                pvolUUID = sc.BLANK_UUID
                 cls.log.warn("Failure to get parent of volume %s/%s (%s)"
                              % (sdUUID, volUUID, e))
 
-            if pvolUUID != volume.BLANK_UUID:
+            if pvolUUID != sc.BLANK_UUID:
                 cls.teardown(sdUUID=sdUUID, volUUID=pvolUUID, justme=False)
 
     def getVolumeTag(self, tagPrefix):

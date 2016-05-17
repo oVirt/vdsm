@@ -27,9 +27,9 @@ from storagetestlib import fake_file_env
 from storagetestlib import make_block_volume
 from storagetestlib import make_file_volume
 
-from storage import blockSD, fileSD, fileVolume, sd, volume
+from storage import blockSD, fileSD, fileVolume, sd
 
-from vdsm.storage import constants
+from vdsm.storage import constants as sc
 
 
 MB = 1024 ** 2
@@ -67,7 +67,7 @@ class FakeFileEnvTests(VdsmTestCase):
             vol_id = str(uuid.uuid4())
             make_file_volume(env.sd_manifest, 0, img_id, vol_id)
             image_dir = env.sd_manifest.getImagePath(img_id)
-            files = (vol_id, vol_id + constants.LEASE_FILEEXT,
+            files = (vol_id, vol_id + sc.LEASE_FILEEXT,
                      vol_id + fileVolume.META_FILEEXT)
             for f in files:
                 path = os.path.join(image_dir, f)
@@ -123,7 +123,7 @@ class FakeBlockEnvTests(VdsmTestCase):
             img_id = str(uuid.uuid4())
             vol_id = str(uuid.uuid4())
             size_mb = 1 * MB
-            size_blk = size_mb * MB / volume.BLOCK_SIZE
+            size_blk = size_mb * MB / sc.BLOCK_SIZE
             make_block_volume(env.lvm, env.sd_manifest, size_mb,
                               img_id, vol_id)
 
