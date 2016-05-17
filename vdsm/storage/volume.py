@@ -26,7 +26,7 @@ from contextlib import contextmanager
 import image
 
 from vdsm import qemuimg
-from vdsm.storage import constants as storage_constants
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -84,7 +84,7 @@ IMAGE = "IMAGE"
 DESCRIPTION = "DESCRIPTION"
 LEGALITY = "LEGALITY"
 MTIME = "MTIME"
-POOL = storage_constants.MDK_POOLS  # Deprecated
+POOL = sc.MDK_POOLS  # Deprecated
 
 ILLEGAL_VOL = "ILLEGAL"
 LEGAL_VOL = "LEGAL"
@@ -285,7 +285,7 @@ class VolumeMetadata(object):
             DISKTYPE: self.disktype,
             SIZE: str(self.size),
             CTIME: str(self.ctime),
-            sd.DMDK_POOLS: "",  # obsolete
+            sc.MDK_POOLS: "",  # obsolete
             DOMAIN: self.domain,
             IMAGE: self.image,
             DESCRIPTION: self.description,

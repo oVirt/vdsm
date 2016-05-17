@@ -37,7 +37,7 @@ from vdsm import constants
 from vdsm import exception
 from vdsm import utils
 from vdsm.storage import clusterlock
-from vdsm.storage import constants as storage_constants
+from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -152,7 +152,7 @@ def _getVolsTree(sdUUID):
     lvs = lvm.getLV(sdUUID)
     vols = {}
     for lv in lvs:
-        if storage_constants.TEMP_VOL_LVTAG in lv.tags:
+        if sc.TEMP_VOL_LVTAG in lv.tags:
             continue
         image = ""
         parent = ""

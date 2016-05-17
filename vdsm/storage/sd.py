@@ -37,7 +37,7 @@ from resourceFactories import IMAGE_NAMESPACE, VOLUME_NAMESPACE
 import resourceManager as rm
 from vdsm import concurrent
 from vdsm import constants
-from vdsm.storage import constants as storage_constants
+from vdsm.storage import constants as sc
 import outOfProcess as oop
 import volume
 
@@ -120,7 +120,7 @@ DMDK_TYPE = "TYPE"
 DMDK_ROLE = "ROLE"
 DMDK_DESCRIPTION = "DESCRIPTION"
 DMDK_CLASS = "CLASS"
-DMDK_POOLS = storage_constants.MDK_POOLS
+DMDK_POOLS = sc.MDK_POOLS
 
 # Lock related metadata keys
 DMDK_LOCK_POLICY = 'LOCKPOLICY'
