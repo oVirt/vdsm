@@ -204,9 +204,12 @@ class MonitorThread(object):
         self.isIsoDomain = None
         self.isoPrefix = None
         self.lastRefresh = time.time()
+        # Use float to allow short refresh internal during tests.
         self.refreshTime = \
-            config.getint("irs", "repo_stats_cache_refresh_timeout")
+            config.getfloat("irs", "repo_stats_cache_refresh_timeout")
         self.wasShutdown = False
+        # Used for synchronizing during the tests
+        self.cycleCallback = None
 
     def start(self):
         self.thread.start()
@@ -249,6 +252,9 @@ class MonitorThread(object):
                 return
             except:
                 log.exception("Domain monitor for %s failed", self.sdUUID)
+            finally:
+                if self.cycleCallback:
+                    self.cycleCallback()
             self.stopEvent.wait(self.interval)
 
     def _monitorDomain(self):
