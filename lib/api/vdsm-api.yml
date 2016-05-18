@@ -511,19 +511,22 @@ types:
         properties:
         -   description: Ratio of CPU time spent in kernel
             name: cpuSys
-            type: float
+            type: string
+            datatype: float
 
         -   description: Ratio of CPU time spent in userspace
             name: cpuUser
-            type: float
+            type: string
+            datatype: float
 
         -   description: Which numa node this cpu core belongs to
-            name: numaNodeIndex
+            name: nodeIndex
             type: uint
 
         -   description: Ratio of CPU time spent idle
             name: cpuIdle
-            type: float
+            type: string
+            datatype: float
         type: object
 
     CpuCoreStatsMap: &CpuCoreStatsMap
@@ -1575,12 +1578,14 @@ types:
         -   description: The number of incoming packets that have
                 contained errors
             name: rxErrors
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The rate of incoming packets (as a percentage
                 of speed)
             name: rxRate
-            type: float
+            type: string
+            datatype: float
 
         -   description: The network device name
             name: name
@@ -1593,31 +1598,37 @@ types:
 
         -   description: The number of incoming bytes in total
             name: rx
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: The number of outgoing packets that have
                 been dropped
             name: txDropped
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The number of outgoing packets that have
                 contained errors
             name: txErrors
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The rate of outgoing packets (as a percentage
                 of speed)
             name: txRate
-            type: float
+            type: string
+            datatype: float
 
         -   description: The interface speed (in Megabits/s)
             name: speed
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The number of outgoing bytes in total
             name: tx
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: Time stamp of the sample
@@ -1628,7 +1639,8 @@ types:
         -   description: The number of incoming packets that have
                 been dropped
             name: rxDropped
-            type: uint
+            type: string
+            datatype: uint
         type: object
 
     HostedEngineStatus: &HostedEngineStatus
@@ -1691,7 +1703,8 @@ types:
         properties:
         -   description: The amount of free memory (in MB)
             name: memFree
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The ratio of used memory
             name: memPercent
@@ -1724,7 +1737,8 @@ types:
         properties:
         -   description: The amount of free space remaining (in MB)
             name: free
-            type: uint
+            type: string
+            datatype: uint
         type: object
 
     PathStatsMap: &PathStatsMap
@@ -1746,30 +1760,38 @@ types:
                 to run (sanlock) protected VMs
             name: acquired
             type: boolean
+
         -   description: Indicates if the returned status is an actual
                 monitoring result or initial result that means that
                 the first monitor run was not yet completed
             name: actual
             type: boolean
             added: '3.5'
+
         -   description: Elapsed time since the Storage Domain was
                 last checked
             name: lastCheck
-            type: float
+            type: string
+            datatype: float
+
         -   description: Indicates if the Storage Domain is functioning
                 properly
             name: valid
             type: boolean
+
         -   description: Storage Domain status code
             name: code
             type: int
+
         -   description: Indicates the Storage Domain version
             name: version
             type: int
+
         -   description: The amount of time it takes to read a small
                 amount of data from the storage.
             name: delay
-            type: float
+            type: string
+            datatype: float
         type: object
 
     StorageDomainVitalsMap: &StorageDomainVitalsMap
@@ -1838,7 +1860,8 @@ types:
 
         -   description: Ratio of CPU time spent in userspace by vdsm
             name: cpuUserVdsmd
-            type: float
+            type: string
+            datatype: float
 
         -   description: The total amount of swap space (in MB)
             name: swapTotal
@@ -1847,7 +1870,8 @@ types:
         -   description: Incoming packet rate (as a percentage of total
                 capacity)
             name: rxRate
-            type: float
+            type: string
+            datatype: float
 
         -   description: The number of VMs migrating to this host
             name: incomingVmMigrations
@@ -1856,7 +1880,8 @@ types:
 
         -   description: The 5 minute CPU load average
             name: cpuLoad
-            type: float
+            type: string
+            datatype: float
 
         -   description: The number of memory pages KSM will scan at each
                 interval
@@ -1865,16 +1890,19 @@ types:
 
         -   description: The percentage of memory used (not including caches)
             name: memUsed
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Ratio of CPU time spent idle
             name: cpuIdle
-            type: float
+            type: string
+            datatype: float
 
         -   description: Outgoing packet rate (as a percentage of total
                 capacity)
             name: txRate
-            type: float
+            type: string
+            datatype: float
 
         -   defaultvalue: 0
             description: The host score according to the HA agent, if installed
@@ -1884,7 +1912,8 @@ types:
 
         -   description: The number of outgoing packets dropped
             name: txDropped
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Indicates if KSM is enabled or disabled
             name: ksmState
@@ -1892,12 +1921,14 @@ types:
 
         -   description: The number of seconds that vdsm has been running
             name: elapsedTime
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Indicates if there are uncommitted changes to the
                 network configuration
             name: netConfigDirty
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   description: The number of VMs active on this host
             name: vmActive
@@ -1919,7 +1950,8 @@ types:
 
         -   description: Ratio of CPU time spent in kernel
             name: cpuSys
-            type: float
+            type: string
+            datatype: float
 
         -   description: The current date and time according to this host
             name: dateTime
@@ -1940,11 +1972,12 @@ types:
 
         -   description: Ratio of CPU time spent in userspace
             name: cpuUser
-            type: float
+            type: string
+            datatype: float
 
         -   description: The amount of CPU being used by the KSM thread
             name: ksmCpu
-            type: float
+            type: uint
 
         -   description: Statistics about the memory of numa nodes
             added: '3.4'
@@ -1978,10 +2011,11 @@ types:
 
         -   description: Ratio of CPU time spent in kernel by vdsm
             name: cpuSysVdsmd
-            type: float
+            type: string
+            datatype: float
 
         -   description: The current status of the Hosted Engine HA system
-            name: haStatus
+            name: haStats
             added: '3.4'
             type: *HostedEngineStatus
 
@@ -1995,7 +2029,8 @@ types:
         -   defaultvalue: 0
             description: The boot time of the system in seconds since epoch
             name: bootTime
-            type: uint
+            type: string
+            datatype: uint
             added: '3.4'
 
         -   description: Current mode of the Transparent Huge Pages feature
@@ -2004,11 +2039,17 @@ types:
 
         -   description: The number of incoming packets dropped
             name: rxDropped
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The amount of anonymous memory in huge pages (in MB)
             name: anonHugePages
-            type: uint
+            type: string
+            datatype: uint
+
+        -   description: Indicates whether ksm merge is enabled
+            name: ksmMergeAcrossNodes
+            type: boolean
         type: object
 
     VmDiskDeviceFormat: &VmDiskDeviceFormat
@@ -4392,12 +4433,14 @@ types:
             -   description: The number of incoming packets that have
                     contained errors
                 name: rxErrors
-                type: uint
+                type: string
+                datatype: uint
 
             -   description: The rate of incoming packets (as a percentage
                     of speed)
                 name: rxRate
-                type: float
+                type: string
+                datatype: float
 
             -   description: The network device name
                 name: name
@@ -4410,13 +4453,15 @@ types:
 
             -   description: The number of incoming bytes in total
                 name: rx
-                type: uint
+                type: string
+                datatype: uint
                 added: '3.6'
 
             -   description: The number of outgoing packets that have
                     been dropped
                 name: txDropped
-                type: uint
+                type: string
+                datatype: uint
 
             -   description: The hardware address
                 name: macAddr
@@ -4425,20 +4470,24 @@ types:
             -   description: The number of outgoing packets that have
                     contained errors
                 name: txErrors
-                type: uint
+                type: string
+                datatype: uint
 
             -   description: The rate of outgoing packets (as a percentage
                     of speed)
                 name: txRate
-                type: float
+                type: string
+                datatype: float
 
             -   description: The interface speed (in Megabits/s)
                 name: speed
-                type: uint
+                type: string
+                datatype: uint
 
             -   description: The number of outgoing bytes in total
                 name: tx
-                type: uint
+                type: string
+                datatype: uint
                 added: '3.6'
 
             -   description: Time stamp of the sample
@@ -4449,7 +4498,8 @@ types:
             -   description: The number of incoming packets that have
                     been dropped
                 name: rxDropped
-                type: uint
+                type: string
+                datatype: uint
             type: object
 
     NetworkInterfaceStatsMap: &NetworkInterfaceStatsMap
