@@ -21,7 +21,6 @@
 import logging
 import threading
 import time
-import weakref
 
 from vdsm import concurrent
 from vdsm import utils
@@ -122,8 +121,8 @@ class DomainMonitor(object):
             return
 
         log.info("Start monitoring %s", sdUUID)
-        monitor = MonitorThread(weakref.proxy(self), sdUUID, hostId,
-                                self._interval)
+        monitor = MonitorThread(sdUUID, hostId, self._interval,
+                                self.onDomainStateChange)
         monitor.poolDomain = poolDomain
         monitor.start()
         # The domain should be added only after it succesfully started
@@ -192,14 +191,14 @@ class DomainMonitor(object):
 
 class MonitorThread(object):
 
-    def __init__(self, domainMonitor, sdUUID, hostId, interval):
+    def __init__(self, sdUUID, hostId, interval, changeEvent):
         self.thread = concurrent.thread(self._run, logger=log.name)
-        self.domainMonitor = domainMonitor
         self.stopEvent = threading.Event()
         self.domain = None
         self.sdUUID = sdUUID
         self.hostId = hostId
         self.interval = interval
+        self.changeEvent = changeEvent
         self.nextStatus = Status(actual=False)
         self.status = FrozenStatus(self.nextStatus)
         self.isIsoDomain = None
@@ -302,8 +301,7 @@ class MonitorThread(object):
         log.info("Domain %s became %s", self.sdUUID,
                  "VALID" if self.nextStatus.valid else "INVALID")
         try:
-            self.domainMonitor.onDomainStateChange.emit(
-                self.sdUUID, self.nextStatus.valid)
+            self.changeEvent.emit(self.sdUUID, self.nextStatus.valid)
         except:
             log.exception("Error notifying state change for domain %s",
                           self.sdUUID)
