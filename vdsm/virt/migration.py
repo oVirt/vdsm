@@ -531,7 +531,11 @@ class MonitorThread(threading.Thread):
         progress_timeout = config.getint('vars', 'migration_progress_timeout')
 
         while not self._stop.isSet():
-            self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
+
+            stopped = self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
+            if stopped:
+                break
+
             (jobType, timeElapsed, _,
              dataTotal, dataProcessed, dataRemaining,
              memTotal, memProcessed, memRemaining,
