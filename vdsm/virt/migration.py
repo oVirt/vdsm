@@ -531,6 +531,7 @@ class DowntimeThread(threading.Thread):
 
         self.daemon = True
 
+    @utils.traceback()
     def run(self):
         self._vm.log.debug('migration downtime thread started (%i steps)',
                            self._steps)
@@ -593,6 +594,7 @@ class MonitorThread(threading.Thread):
     def enabled(self):
         return MonitorThread._MIGRATION_MONITOR_INTERVAL > 0
 
+    @utils.traceback()
     def run(self):
         if self.enabled:
             self._vm.log.debug('starting migration monitor thread')
