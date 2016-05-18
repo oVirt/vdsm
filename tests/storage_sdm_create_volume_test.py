@@ -62,7 +62,7 @@ class FakeDomainManifest(object):
             self.releaseDomainLock()
 
     def getVolumeClass(self):
-        return fileVolume.FileVolumeMetadata
+        return fileVolume.FileVolumeManifest
 
     def get_volume_artifacts(self, img_id, vol_id):
         return FakeVolumeArtifacts(self, img_id, vol_id)
