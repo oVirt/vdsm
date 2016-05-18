@@ -30,8 +30,9 @@ from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
 from vdsm.storage.constants import TEMP_VOL_LVTAG
+from vdsm.storage.volumemetadata import VolumeMetadata
 
-from storage import image, sd, blockVolume, volume
+from storage import image, sd, blockVolume
 from storage.sdm.api import create_volume
 
 
@@ -269,7 +270,7 @@ class FileVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         self.assertTrue(os.path.exists(meta_path))
         with open(meta_path) as f:
             md_lines = f.readlines()
-        md = volume.VolumeMetadata.from_lines(md_lines)
+        md = VolumeMetadata.from_lines(md_lines)
 
         # Test a few fields just to check that metadata was written
         self.assertEqual(artifacts.sd_manifest.sdUUID, md.domain)
@@ -435,7 +436,7 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         path = env.lvm.lvPath(artifacts.sd_manifest.sdUUID, sd.METADATA)
         offset = md_slot * sc.METADATA_SIZE
         md_lines = misc.readblock(path, offset, sc.METADATA_SIZE)
-        md = volume.VolumeMetadata.from_lines(md_lines)
+        md = VolumeMetadata.from_lines(md_lines)
 
         # Test a few fields just to check that metadata was written
         self.assertEqual(artifacts.sd_manifest.sdUUID, md.domain)

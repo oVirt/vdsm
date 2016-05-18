@@ -54,8 +54,9 @@ import os
 
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
+from vdsm.storage.volumemetadata import VolumeMetadata
 
-from storage import blockVolume, lvm, volume
+from storage import blockVolume, lvm
 
 
 class VolumeArtifacts(object):
@@ -246,7 +247,7 @@ class FileVolumeArtifacts(VolumeArtifacts):
         # Create the metadata artifact.  The metadata file is created with a
         # special extension to prevent these artifacts from being recognized as
         # a volume until FileVolumeArtifacts.commit() is called.
-        meta = volume.VolumeMetadata(
+        meta = VolumeMetadata(
             self.sd_manifest.sdUUID,
             self.img_id,
             parent_vol_id,

@@ -33,6 +33,7 @@ from vdsm.storage import misc
 from vdsm.storage.misc import deprecated
 from vdsm.storage.misc import logskip
 from vdsm.storage.threadlocal import vars
+from vdsm.storage.volumemetadata import VolumeMetadata
 import vdsm.utils as utils
 
 import volume
@@ -116,7 +117,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
             self.log.error(e, exc_info=True)
             raise se.VolumeMetadataReadError("%s: %s" % (metaId, e))
 
-        md = volume.VolumeMetadata.from_lines(lines)
+        md = VolumeMetadata.from_lines(lines)
         return md.legacy_info()
 
     def validateImagePath(self):
