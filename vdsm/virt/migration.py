@@ -623,7 +623,10 @@ class MonitorThread(threading.Thread):
         self._execute_init(self._conv_schedule['init'])
 
         while not self._stop.isSet():
-            self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
+            stopped = self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
+            if stopped:
+                break
+
             progress = Progress.from_job_stats(self._vm._dom.jobStats())
             now = time.time()
             if not self._use_conv_schedule and\
