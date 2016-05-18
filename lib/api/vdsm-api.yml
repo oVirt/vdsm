@@ -2,7 +2,7 @@ types:
     AutoNumaBalancingStatus: &AutoNumaBalancingStatus
         added: '3.4'
         description: An enumeration of the status of auto numa balancing
-            function in kernel.
+            function in kernel. Need to be fixed we get int not string
         name: AutoNumaBalancingStatus
         type: enum
         values:
@@ -1385,6 +1385,15 @@ types:
             type: string
         type: object
 
+    HookScriptAdditional: &HookScriptAdditional
+        description: A mapping of hook script information
+        name: HookScriptAdditional
+        properties:
+        -   description: A key for hook script information
+            name: 50_vmfex
+            type: *HookScriptInfo
+        type: object
+
     HookScriptInfoMap: &HookScriptInfoMap
         added: '3.1'
         description: A mapping of hook script information indexed by script
@@ -1392,7 +1401,7 @@ types:
         key-type: string
         name: HookScriptInfoMap
         type: map
-        value-type: *HookScriptInfo
+        value-type: *HookScriptAdditional
 
     HostBandwidthParams: &HostBandwidthParams
         added: '3.6'
@@ -4128,7 +4137,8 @@ types:
         -   description: The Maximum Transmission Unit size for the
                 nic
             name: mtu
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The primary IPv4 netmask of the defined subnet
             name: netmask
@@ -4143,6 +4153,23 @@ types:
                 bond device
             name: addr
             type: string
+
+        -   defaultvalue: no-default
+            description: Whether use stateless autoconfiguration
+            name: ipv6autoconf
+            type: boolean
+            added: 3.6
+
+        -   defaultvalue: no-default
+            description: Assign this gateway to the network
+            name: gateway
+            type: string
+
+        -   defaultvalue: no-default
+            description: Specify Switch. Legacy is used if not passed
+            name: switch
+            type: string
+            added: '4.0'
         type: object
 
     NetInfoBondMap: &NetInfoBondMap
@@ -4298,6 +4325,17 @@ types:
             type: boolean
             modified: '3.6'
 
+        -   defaultvalue: no-default
+            description: Assign this gateway to the network
+            name: gateway
+            type: string
+
+        -   defaultvalue: no-default
+            description: Whether use stateless autoconfiguration
+            name: ipv6autoconf
+            type: boolean
+            added: 3.6
+
         -   description: The default IPv6 gateway for the bridge device
             name: ipv6gateway
             type: string
@@ -4319,7 +4357,7 @@ types:
             name: hwaddr
             type: string
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: no-default
             description: 'For bonded nics: the real MAC address which
                 will be used if the card is freed from the bond.'
             name: permhwaddr
@@ -4340,7 +4378,8 @@ types:
         -   description: The Maximum Transmission Unit size for the
                 nic
             name: mtu
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The primary IPv4 netmask of the defined subnet
             name: netmask
@@ -4350,6 +4389,10 @@ types:
                 nic device
             name: addr
             type: string
+
+        -   description: Raw device configuration parameters
+            name: cfg
+            type: *StringMap
         type: object
 
     NetInfoNicMap: &NetInfoNicMap
@@ -4525,7 +4568,8 @@ types:
             - uint
         -   description: The total memory of this numa node in MiB.
             name: totalMemory
-            type: uint
+            type: string
+            datatype: uint
         type: object
 
     NumaNodeDistanceMap: &NumaNodeDistanceMap
@@ -5039,7 +5083,8 @@ types:
                 SELinux documentation): 1 = enforcing, 0 = permissive,
                 -1 = disabled.'
             name: mode
-            type: int
+            type: string
+            datatype: int
         type: object
 
     SecretUsageType: &SecretUsageType
@@ -5317,7 +5362,9 @@ types:
         name: SoftwarePackage
         type: enum
         values:
+            glusterfs-cli: GlusterFS a distributed file-system cli
             kernel: The Linux kernel
+            librbd1: RADOS block device client library
             libvirt: Low level virtualization API
             mom: Dynamically manage system resources on virtualization
                 hosts
@@ -5333,7 +5380,7 @@ types:
         properties:
         -   description: The time and date the software was built
             name: buildtime
-            type: string
+            type: long
 
         -   description: The release number for this version
             name: release
@@ -6170,7 +6217,8 @@ types:
         -   description: Indicates if there are uncommitted changes to the
                 network configuration
             name: netConfigDirty
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   description: Information about the network cards on the host
             name: nics
@@ -6187,7 +6235,8 @@ types:
 
         -   description: The amount of memory reserved for hypervisor overhead
             name: reservedMem
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The list of online logical CPUs
             name: onlineCpus
@@ -6196,7 +6245,8 @@ types:
 
         -   description: The speed of each CPU (in MHz)
             name: cpuSpeed
-            type: float
+            type: string
+            datatype: float
 
         -   description: VDSM version (x.y.z)
             name: software_version
@@ -6208,8 +6258,9 @@ types:
             - *VmType
 
         -   description: Indicates status of Intel VT-d or AMD-vi
-            name: directedPassthrough
-            type: boolean
+            name: hostdevPassthrough
+            type: string
+            datatype: boolean
             added: '3.6'
 
         -   description: Sources of entropy available at this host
@@ -6227,7 +6278,8 @@ types:
 
         -   description: The amount of total memory installed in the host
             name: memSize
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: A list of supported ovirt-engine versions
             name: supportedENGINEs
@@ -6248,12 +6300,14 @@ types:
 
         -   description: KVM is enabled on the host
             name: kvmEnabled
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   defaultvalue: false
             description: Indicates if live merge is supported on this host.
             name: liveMerge
-            type: boolean
+            type: string
+            datatype: boolean
             added: '3.4'
 
         -   description: The iSCSI initiator name for this host
@@ -6262,7 +6316,8 @@ types:
 
         -   description: The number of CPU threads present
             name: cpuThreads
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Extra VDSM version information
             name: software_revision
@@ -6271,7 +6326,8 @@ types:
         -   defaultvalue: false
             description: Indicates if the host supports live snapshotting
             name: liveSnapshot
-            type: boolean
+            type: string
+            datatype: boolean
             added: '3.4'
 
         -   description: Information about the network bridges on the host
@@ -6280,7 +6336,8 @@ types:
 
         -   description: The amount of memory reserved for per-guest overhead
             name: guestOverhead
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Information about available host bus adapters
             name: HBAInventory
@@ -6293,11 +6350,17 @@ types:
 
         -   description: The number of CPU cores present
             name: cpuCores
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The number of CPU sockets
             name: cpuSockets
-            type: uint
+            type: string
+            datetype: uint
+
+        -   description: Interface on which client is communicating
+            name: lastClientIface
+            type: string
 
         -   description: A unique host ID
             name: uuid
@@ -6312,7 +6375,7 @@ types:
             type: *NetInfoVlanMap
 
         -   description: Whether IPv6 is enabled in the kernel
-            name: ipv6Supported
+            name: supportsIPv6
             type: boolean
             added: '4.0'
 
@@ -6348,7 +6411,8 @@ types:
             - string
             added: '3.6'
 
-        -   description: Arguments of currently running kernel (contents of
+        -   defaultvalue: no-default
+            description: Arguments of currently running kernel (contents of
                 /proc/cmdline)
             name: kernelArgs
             type: string

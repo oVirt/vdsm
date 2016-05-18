@@ -32,6 +32,8 @@ from yajsonrpc import JsonRpcInvalidParamsError
 PRIMITIVE_TYPES = {'boolean': lambda value: isinstance(value, bool),
                    'float': lambda value: isinstance(value, float),
                    'int': lambda value: isinstance(value, int),
+                   'long': lambda value: isinstance(value, (six.integer_types,
+                                                            float)),
                    'string': lambda value: isinstance(value, six.string_types),
                    'uint': lambda value: isinstance(value, int) and value >= 0}
 TYPE_KEYS = list(PRIMITIVE_TYPES.keys())
