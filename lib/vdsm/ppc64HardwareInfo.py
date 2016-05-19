@@ -34,12 +34,12 @@ def _getFromDeviceTree(treeProperty, tree_path='/proc/device-tree'):
 
 
 @utils.memoized
-def getHardwareInfoStructure():
+def getHardwareInfoStructure(cpuinfo_path='/proc/cpuinfo'):
     infoStructure = {'systemSerialNumber': 'unavailable',
                      'systemFamily': 'unavailable',
                      'systemVersion': 'unavailable'}
 
-    with open('/proc/cpuinfo') as info:
+    with open(cpuinfo_path) as info:
         for line in info:
             if line.strip() == '':
                 continue
