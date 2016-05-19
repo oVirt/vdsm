@@ -142,7 +142,10 @@ class SourceThread(threading.Thread):
         """
         if self._monitorThread is not None:
             # fetch migration status from the monitor thread
-            self._progress = self._monitorThread.progress
+            if self._monitorThread.progress is not None:
+                self._progress = self._monitorThread.progress.percentage
+            else:
+                self._progress = 0
         self.status['progress'] = self._progress
 
         stat = self._vm._dom.jobStats(libvirt.VIR_DOMAIN_JOB_STATS_COMPLETED)
@@ -565,7 +568,7 @@ class MonitorThread(threading.Thread):
         self._vm = vm
         self._startTime = startTime
         self.daemon = True
-        self.progress = 0
+        self.progress = None
         self._conv_schedule = conv_schedule
         self._use_conv_schedule = use_conv_schedule
 
@@ -597,7 +600,7 @@ class MonitorThread(threading.Thread):
 
         while not self._stop.isSet():
             self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
-            prog = Progress.from_job_stats(self._vm._dom.jobStats())
+            progress = Progress.from_job_stats(self._vm._dom.jobStats())
             now = time.time()
             if not self._use_conv_schedule and\
                     (0 < migrationMaxTime < now - self._startTime):
@@ -610,25 +613,25 @@ class MonitorThread(threading.Thread):
                 self._vm._dom.abortJob()
                 self.stop()
                 break
-            elif (lowmark is None) or (lowmark > prog.data_remaining):
-                lowmark = prog.data_remaining
+            elif (lowmark is None) or (lowmark > progress.data_remaining):
+                lowmark = progress.data_remaining
                 lastProgressTime = now
             else:
                 self._vm.log.warn(
                     'Migration stalling: remaining (%sMiB)'
                     ' > lowmark (%sMiB).'
                     ' Refer to RHBZ#919201.',
-                    prog.data_remaining / Mbytes, lowmark / Mbytes)
+                    progress.data_remaining / Mbytes, lowmark / Mbytes)
 
             if lastDataRemaining is not None and\
-                    lastDataRemaining < prog.data_remaining:
+                    lastDataRemaining < progress.data_remaining:
                 iterationCount += 1
                 self._vm.log.debug('new iteration detected: %i',
                                    iterationCount)
                 if self._use_conv_schedule:
                     self._next_action(iterationCount)
 
-            lastDataRemaining = prog.data_remaining
+            lastDataRemaining = progress.data_remaining
 
             if not self._use_conv_schedule and\
                     (now - lastProgressTime) > progress_timeout:
@@ -642,8 +645,8 @@ class MonitorThread(threading.Thread):
             if self._stop.isSet():
                 break
 
-            if prog.job_type != libvirt.VIR_DOMAIN_JOB_NONE:
-                self.progress = prog.percentage
+            if progress.job_type != libvirt.VIR_DOMAIN_JOB_NONE:
+                self.progress = progress
                 self._vm.log.info('%s', progress)
 
     def stop(self):
