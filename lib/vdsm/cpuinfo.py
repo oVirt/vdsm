@@ -69,9 +69,9 @@ def _cpuinfo():
                 fields['ppcmodel'] = value
             elif key == 'cpu':  # ppc64, ppc64le
                 fields['model'] = value
-            elif key == 'platform':  # does not have x86_64 equivalent
+            elif key == 'platform':  # ppc64, ppc64le
                 fields['platform'] = value
-            elif key == 'machine':  # does not have x86_64 equivalent
+            elif key == 'machine':  # ppc64, ppc64le
                 fields['machine'] = value
 
             if len(fields) == 6:

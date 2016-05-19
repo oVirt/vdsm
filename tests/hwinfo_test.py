@@ -20,13 +20,22 @@
 from __future__ import absolute_import
 
 import os.path
+import platform
 import tempfile
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
 
+from vdsm import cpuarch
+from vdsm import cpuinfo
 from vdsm import ppc64HardwareInfo
+
+
+def _outfile(name):
+    test_path = os.path.realpath(__file__)
+    dir_name = os.path.split(test_path)[0]
+    return os.path.join(dir_name, 'cpuinfo', name)
 
 
 @expandPermutations
@@ -55,36 +64,18 @@ class TestHwinfo(VdsmTestCase):
             'nonexistent', tree_path='/tmp')
         self.assertEqual('unavailable', result)
 
-    @permutations([
-        # cpuinfo, difference
-        [b'', {}],
-
-        [b'platform:a',
-         {'systemFamily': 'a'}],
-
-        [b'platform:a\nmodel:b',
-         {'systemFamily': 'a',
-          'systemSerialNumber': 'b'}],
-
-        [b'platform:a\nmodel:b\nmachine:c',
-         {'systemFamily': 'a',
-          'systemSerialNumber': 'b',
-          'systemVersion': 'c'}],
-    ])
     @MonkeyPatch(ppc64HardwareInfo, '_from_device_tree', lambda _: 'exists')
-    def test_ppc_hardware_info_structure(self, cpuinfo, difference):
+    @MonkeyPatch(cpuinfo, '_PATH', _outfile('cpuinfo_POWER8E_ppc64le.out'))
+    @MonkeyPatch(platform, 'machine', lambda: cpuarch.PPC64LE)
+    def test_ppc_hardware_info_structure(self):
         expected_result = {
             'systemProductName': 'exists',
-            'systemSerialNumber': 'unavailable',
-            'systemFamily': 'unavailable',
-            'systemVersion': 'unavailable',
+            'systemSerialNumber': '8247-22L',
+            'systemFamily': 'PowerNV',
+            'systemVersion': 'PowerNV 8247-22L',
             'systemUUID': 'exists',
             'systemManufacturer': 'exists'
         }
-        expected_result.update(difference)
 
-        with tempfile.NamedTemporaryFile() as f:
-            f.write(cpuinfo)
-            f.flush()
-            result = ppc64HardwareInfo.getHardwareInfoStructure(f.name)
+        result = ppc64HardwareInfo.getHardwareInfoStructure()
         self.assertEqual(expected_result, result)

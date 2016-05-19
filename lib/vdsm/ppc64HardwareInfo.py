@@ -19,6 +19,7 @@ from __future__ import absolute_import
 
 import os.path
 
+from vdsm import cpuinfo
 from vdsm import utils
 
 
@@ -33,28 +34,12 @@ def _from_device_tree(tree_property, tree_path='/proc/device-tree'):
 
 
 @utils.memoized
-def getHardwareInfoStructure(cpuinfo_path='/proc/cpuinfo'):
-    infoStructure = {'systemSerialNumber': 'unavailable',
-                     'systemFamily': 'unavailable',
-                     'systemVersion': 'unavailable'}
-
-    with open(cpuinfo_path) as info:
-        for line in info:
-            if line.strip() == '':
-                continue
-            key, value = map(str.strip, line.split(':', 1))
-
-            if key == 'platform':
-                infoStructure['systemFamily'] = value
-            elif key == 'model':
-                infoStructure['systemSerialNumber'] = value
-            elif key == 'machine':
-                infoStructure['systemVersion'] = value
-
-    infoStructure['systemUUID'] = _from_device_tree('system-id')
-
-    infoStructure['systemProductName'] = _from_device_tree('model-name')
-
-    infoStructure['systemManufacturer'] = _from_device_tree('vendor')
-
-    return infoStructure
+def getHardwareInfoStructure():
+    return {
+        'systemSerialNumber': cpuinfo.ppcmodel(),
+        'systemFamily': cpuinfo.platform(),
+        'systemVersion': cpuinfo.machine(),
+        'systemUUID': _from_device_tree('system-id'),
+        'systemProductName': _from_device_tree('model-name'),
+        'systemManufacturer': _from_device_tree('vendor'),
+    }
