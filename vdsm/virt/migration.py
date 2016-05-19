@@ -363,6 +363,8 @@ class SourceThread(threading.Thread):
                     # we need to support python 2.6, so two nested with-s.
                     self._perform_migration(duri, muri)
 
+            self._monitorThread.join()
+
             self.log.info("migration took %d seconds to complete",
                           (time.time() - startTime) + destCreationTime)
 
