@@ -55,3 +55,37 @@ class TestHwinfo(VdsmTestCase):
         result = ppc64HardwareInfo._getFromDeviceTree(
             'nonexistent', tree_path='/tmp')
         self.assertEqual('unavailable', result)
+
+    @permutations([
+        # cpuinfo, difference
+        [b'', {}],
+
+        [b'platform:a',
+         {'systemFamily': 'a'}],
+
+        [b'platform:a\nmodel:b',
+         {'systemFamily': 'a',
+          'systemSerialNumber': 'b'}],
+
+        [b'platform:a\nmodel:b\nmachine:c',
+         {'systemFamily': 'a',
+          'systemSerialNumber': 'b',
+          'systemVersion': 'c'}],
+    ])
+    @MonkeyPatch(ppc64HardwareInfo, '_getFromDeviceTree', lambda _: 'exists')
+    def test_ppc_hardware_info_structure(self, cpuinfo, difference):
+        expected_result = {
+            'systemProductName': 'exists',
+            'systemSerialNumber': 'unavailable',
+            'systemFamily': 'unavailable',
+            'systemVersion': 'unavailable',
+            'systemUUID': 'exists',
+            'systemManufacturer': 'exists'
+        }
+        expected_result.update(difference)
+
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(cpuinfo)
+            f.flush()
+            result = ppc64HardwareInfo.getHardwareInfoStructure(f.name)
+        self.assertEqual(expected_result, result)
