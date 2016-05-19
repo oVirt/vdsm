@@ -42,6 +42,7 @@ from vdsm.virt import vmstatus
 _WORKERS = config.getint('sampling', 'periodic_workers')
 _TASK_PER_WORKER = config.getint('sampling', 'periodic_task_per_worker')
 _TASKS = _WORKERS * _TASK_PER_WORKER
+_MAX_WORKERS = config.getint('sampling', 'max_workers')
 
 
 _operations = []
@@ -62,7 +63,8 @@ def start(cif, scheduler):
     _executor = executor.Executor(name="periodic",
                                   workers_count=_WORKERS,
                                   max_tasks=_TASKS,
-                                  scheduler=scheduler)
+                                  scheduler=scheduler,
+                                  max_workers=_MAX_WORKERS)
     _executor.start()
 
     def per_vm_operation(func, period):

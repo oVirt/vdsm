@@ -51,9 +51,11 @@ class Executor(object):
 
     _log = logging.getLogger('Executor')
 
-    def __init__(self, name, workers_count, max_tasks, scheduler):
+    def __init__(self, name, workers_count, max_tasks, scheduler,
+                 max_workers=None):
         self._name = name
         self._workers_count = workers_count
+        self._max_workers = max_workers
         self._worker_id = 0
         self._tasks = TaskQueue(max_tasks)
         self._scheduler = scheduler
@@ -102,25 +104,58 @@ class Executor(object):
 
     # Serving workers
 
+    @property
+    def _active_workers(self):
+        return len([w for w in self._workers if not w.discarded])
+
+    @property
+    def _total_workers(self):
+        return len(self._workers)
+
+    def _may_add_workers(self):
+        return (self._active_workers < self._workers_count and
+                (self._max_workers is None or
+                 self._total_workers < self._max_workers))
+
     def _worker_discarded(self, worker):
         """
         Called from scheduler thread when worker was discarded. The worker
         thread is blocked on a task, and will exit when the task finish.
         """
+        worker_added = False
+
         with self._lock:
-            if self._running:
+            if not self._running:
+                return
+            if self._may_add_workers():
                 self._add_worker()
-        # this is a debug helper, it is not that important to be precise;
+                worker_added = True
+
         # intentionally done outside the lock
+        if not worker_added:
+            self._log.debug("Too many workers (limit=%s), not adding more",
+                            self._max_workers)
+        # this is a debug helper, it is not that important to be precise
         self._log.debug("executor state: count=%d workers=%s",
-                        len(self._workers), self._workers)
+                        self._total_workers, self._workers)
 
     def _worker_stopped(self, worker):
         """
         Called from worker thread before it exit.
         """
+        worker_added = False
+
         with self._lock:
             self._workers.remove(worker)
+            if not self._running:
+                return
+            if self._may_add_workers():
+                self._add_worker()
+                worker_added = True
+
+        if worker_added:
+            self._log.debug("New worker added (%s active, %s total workers)",
+                            self._active_workers, self._total_workers)
 
     def _next_task(self):
         """
@@ -169,6 +204,10 @@ class _Worker(object):
     def join(self):
         self._log.debug('Waiting for worker %s', self.name)
         self._thread.join()
+
+    @property
+    def discarded(self):
+        return self._discarded
 
     def _run(self):
         pthread.setname(self.name[:15])

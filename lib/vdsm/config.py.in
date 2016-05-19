@@ -436,6 +436,10 @@ parameters = [
         ('periodic_task_per_worker', '100',
             'Max number of tasks which can be queued on workers.'
             ' This is for internal usage and may change without warning'),
+
+        ('max_workers', '30',
+            'Maximum number of worker threads to serve the periodic tasks '
+            'at the same time.'),
     ]),
 
     # Section: [metrics]
