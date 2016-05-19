@@ -36,9 +36,13 @@ class ExecutorTests(TestCaseBase):
     def setUp(self):
         self.scheduler = schedule.Scheduler()
         self.scheduler.start()
+        self.max_tasks = 20
+        self.max_workers = 15
         self.executor = executor.Executor('test',
-                                          workers_count=10, max_tasks=20,
-                                          scheduler=self.scheduler)
+                                          workers_count=10,
+                                          max_tasks=self.max_tasks,
+                                          scheduler=self.scheduler,
+                                          max_workers=self.max_workers)
         self.executor.start()
         time.sleep(0.1)  # Give time to start all threads
 
@@ -132,6 +136,90 @@ class ExecutorTests(TestCaseBase):
         for task in tasks:
             self.assertTrue(task.executed.is_set())
 
+    @slowtest
+    def test_max_workers(self):
+        limit = self.max_workers
+        blocked_forever = threading.Event()
+        blocked = threading.Event()
+
+        try:
+            # Fill the executor with stuck tasks, one of them can be unblocked
+            # later
+            start_barrier = concurrent.Barrier(limit + 1)
+            tasks = [Task(event=blocked_forever, start_barrier=start_barrier)
+                     for n in range(limit - 1)]
+            tasks.append(Task(event=blocked, start_barrier=start_barrier))
+            for t in tasks:
+                self.executor.dispatch(t, 0)
+            # Wait until all tasks are started, i.e. the executor reaches its
+            # maximum number of workers
+            start_barrier.wait(timeout=3)
+
+            # Try to run new tasks on the executor now, when the maximum number
+            # of workers is reached
+            n_extra_tasks = 2
+            extra_tasks = [Task() for i in range(n_extra_tasks)]
+            for t in extra_tasks:
+                self.executor.dispatch(t, 0)
+
+            # Check that none of the new tasks got executed (the number of the
+            # executor workers is at the maximum limit, so nothing more may be
+            # run)
+            self.assertEqual([t for t in extra_tasks if t.executed.wait(1)],
+                             [])
+
+            # Unblock one of the tasks and check the new tasks run
+            blocked.set()
+            # The last task, the only unblocked one, should be executed now
+            self.assertTrue(tasks[-1].executed.wait(1))
+
+            # The other tasks shouldn't be unblocked and executed, let's check
+            # things go as expected before proceeding (however we don't want to
+            # stop and wait on each of the tasks, the first one is enough)
+            self.assertFalse(tasks[0].executed.wait(1))
+            self.assertEqual([t for t in tasks if t.executed.is_set()],
+                             [tasks[-1]])
+
+            # Extra tasks are not blocking, they were blocked just by the
+            # overflown executor, so they should be all executed now when there
+            # is one free worker
+            self.assertEqual([t for t in extra_tasks
+                             if not t.executed.wait(1)],
+                             [])
+
+        finally:
+            # Cleanup: Finish all the executor jobs
+            blocked.set()
+            blocked_forever.set()
+
+    @slowtest
+    def test_max_workers_many_tasks(self):
+        # Check we don't get TooManyTasks exception after reaching the limit on
+        # the total number of workers if TaskQueue is not full.
+
+        blocked = threading.Event()
+        barrier = concurrent.Barrier(self.max_workers + 1)
+
+        try:
+            # Exhaust workers
+            for i in range(self.max_workers):
+                task = Task(event=blocked, start_barrier=barrier)
+                self.executor.dispatch(task, 0)
+            barrier.wait(3)
+
+            # Task queue should accept further tasks up to its capacity
+            for i in range(self.max_tasks):
+                self.executor.dispatch(Task(), 0)
+
+            # Check we did what we intended -- the next task shouldn't be
+            # accepted
+            self.assertRaises(executor.TooManyTasks,
+                              self.executor.dispatch, Task(), 0)
+
+        finally:
+            # Cleanup: Finish all the executor jobs
+            blocked.set()
+
 
 class TestWorkerSystemNames(TestCaseBase):
 
@@ -175,14 +263,27 @@ class TestWorkerSystemNames(TestCaseBase):
 
 class Task(object):
 
-    def __init__(self, wait=None, error=None):
+    def __init__(self, wait=None, error=None, event=None, start_barrier=None):
         self.wait = wait
         self.error = error
+        self.event = event
+        self.start_barrier = start_barrier
+        self.started = threading.Event()
         self.executed = threading.Event()
 
     def __call__(self):
+        self.started.set()
+        if self.start_barrier is not None:
+            self.start_barrier.wait(10)
         if self.wait:
             time.sleep(self.wait)
+        if self.event is not None:
+            if not self.event.wait(10):
+                return
         self.executed.set()
         if self.error:
             raise self.error
+
+    def __repr__(self):
+        return ('<Task; started=%s, executed=%s>' %
+                (self.started.is_set(), self.executed.is_set(),))
