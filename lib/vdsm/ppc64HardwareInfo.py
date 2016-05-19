@@ -23,8 +23,8 @@ from vdsm import utils
 import os
 
 
-def _getFromDeviceTree(treeProperty):
-    path = '/proc/device-tree/%s' % treeProperty
+def _getFromDeviceTree(treeProperty, tree_path='/proc/device-tree'):
+    path = '%s/%s' % (tree_path, treeProperty)
     if os.path.exists(path):
         with open(path) as f:
             value = f.readline().rstrip('\0').replace(',', '')
