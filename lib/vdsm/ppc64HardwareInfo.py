@@ -15,21 +15,20 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
 from __future__ import absolute_import
+
+import os.path
 
 from vdsm import utils
 
-import os
 
-
-def _getFromDeviceTree(treeProperty, tree_path='/proc/device-tree'):
-    path = '%s/%s' % (tree_path, treeProperty)
-    if os.path.exists(path):
+def _from_device_tree(tree_property, tree_path='/proc/device-tree'):
+    path = os.path.join(tree_path, tree_property)
+    try:
         with open(path) as f:
             value = f.readline().rstrip('\0').replace(',', '')
             return value
-    else:
+    except IOError:
         return 'unavailable'
 
 
@@ -52,10 +51,10 @@ def getHardwareInfoStructure(cpuinfo_path='/proc/cpuinfo'):
             elif key == 'machine':
                 infoStructure['systemVersion'] = value
 
-    infoStructure['systemUUID'] = _getFromDeviceTree('system-id')
+    infoStructure['systemUUID'] = _from_device_tree('system-id')
 
-    infoStructure['systemProductName'] = _getFromDeviceTree('model-name')
+    infoStructure['systemProductName'] = _from_device_tree('model-name')
 
-    infoStructure['systemManufacturer'] = _getFromDeviceTree('vendor')
+    infoStructure['systemManufacturer'] = _from_device_tree('vendor')
 
     return infoStructure

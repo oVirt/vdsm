@@ -46,13 +46,12 @@ class TestHwinfo(VdsmTestCase):
             with tempfile.NamedTemporaryFile(dir=tmpdir) as f:
                 f.write(test_input)
                 f.flush()
-                result = ppc64HardwareInfo._getFromDeviceTree(
+                result = ppc64HardwareInfo._from_device_tree(
                     os.path.basename(f.name), tree_path=tmpdir)
                 self.assertEqual(expected_result, result)
 
-    @MonkeyPatch(os.path, 'exists', lambda _: False)
     def test_ppc_device_tree_no_file(self):
-        result = ppc64HardwareInfo._getFromDeviceTree(
+        result = ppc64HardwareInfo._from_device_tree(
             'nonexistent', tree_path='/tmp')
         self.assertEqual('unavailable', result)
 
@@ -72,7 +71,7 @@ class TestHwinfo(VdsmTestCase):
           'systemSerialNumber': 'b',
           'systemVersion': 'c'}],
     ])
-    @MonkeyPatch(ppc64HardwareInfo, '_getFromDeviceTree', lambda _: 'exists')
+    @MonkeyPatch(ppc64HardwareInfo, '_from_device_tree', lambda _: 'exists')
     def test_ppc_hardware_info_structure(self, cpuinfo, difference):
         expected_result = {
             'systemProductName': 'exists',
