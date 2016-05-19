@@ -485,10 +485,13 @@ class SourceThread(threading.Thread):
                 # we need to support python 2.6, so two nested with-s.
                 self._perform_migration(duri, muri)
 
+        self._monitorThread.join()
+
     def _perform_with_conv_schedule(self, duri, muri):
         self._vm.log.debug('performing migration with conv schedule')
         with utils.running(self._monitorThread):
             self._perform_migration(duri, muri)
+        self._monitorThread.join()
 
     def set_max_bandwidth(self, bandwidth):
         self._vm.log.debug('setting migration max bandwidth to %d', bandwidth)
