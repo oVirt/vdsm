@@ -67,6 +67,8 @@ class TestCpuInfo(TestCaseBase):
         self.assertEqual(cpuinfo.frequency(), '3690.000000')
         self.assertEqual(cpuinfo.model(),
                          'POWER8E (raw), altivec supported')
+        self.assertEqual(cpuinfo.platform(), 'PowerNV')
+        self.assertEqual(cpuinfo.machine(), 'PowerNV 8247-22L')
 
     @MonkeyPatch(cpuinfo, '_PATH', _outfile('cpuinfo_E5649_x86_64.out'))
     @MonkeyPatch(platform, 'machine', lambda: 'noarch')

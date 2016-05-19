@@ -27,7 +27,8 @@ from . import cpuarch
 
 
 _PATH = '/proc/cpuinfo'
-CpuInfo = namedtuple('CpuInfo', 'flags, frequency, model')
+CpuInfo = namedtuple('CpuInfo', 'flags, frequency, model, ppcmodel, platform,'
+                     'machine')
 
 
 @utils.memoized
@@ -44,6 +45,10 @@ def _cpuinfo():
 
     if cpuarch.is_ppc(cpuarch.real()):
         fields['flags'] = ['powernv']
+    if cpuarch.is_x86(cpuarch.real()):
+        fields['platform'] = 'unavailable'
+        fields['machine'] = 'unavailable'
+        fields['ppcmodel'] = 'unavailable'
 
     with open(_PATH) as info:
         for line in info:
@@ -60,10 +65,16 @@ def _cpuinfo():
                 fields['frequency'] = value[:-3]
             elif key == 'model name':  # x86_64
                 fields['model'] = value
+            elif key == 'model':  # ppc64le
+                fields['ppcmodel'] = value
             elif key == 'cpu':  # ppc64, ppc64le
                 fields['model'] = value
+            elif key == 'platform':  # does not have x86_64 equivalent
+                fields['platform'] = value
+            elif key == 'machine':  # does not have x86_64 equivalent
+                fields['machine'] = value
 
-            if len(fields) == 3:
+            if len(fields) == 6:
                 break
 
         return CpuInfo(**fields)
@@ -110,3 +121,45 @@ def model():
     is invalid.
     '''
     return _cpuinfo().model
+
+
+def ppcmodel():
+    '''
+    Get the POWER CPU identification.
+
+    Returns:
+
+    A string representing the identification of the POWER CPU
+    or
+    raises UnsupportedArchitecture exception or KeyError if cpuinfo format
+    is invalid.
+    '''
+    return _cpuinfo().ppcmodel
+
+
+def platform():
+    '''
+    Get the CPU platform.
+
+    Returns:
+
+    A string representing the platform of POWER CPU
+    or
+    raises UnsupportedArchitecture exception or KeyError if cpuinfo format
+    is invalid.
+    '''
+    return _cpuinfo().platform
+
+
+def machine():
+    '''
+    Get the CPU machine.
+
+    Returns:
+
+    A string representing the name of POWER machine
+    or
+    raises UnsupportedArchitecture exception or KeyError if cpuinfo format
+    is invalid.
+    '''
+    return _cpuinfo().machine
