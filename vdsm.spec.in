@@ -71,7 +71,7 @@ BuildRequires: libnl3
 BuildRequires: libselinux-python
 BuildRequires: libvirt-python
 BuildRequires: m2crypto
-BuildRequires: mom >= 0.5.3
+BuildRequires: mom >= 0.5.4
 BuildRequires: openssl
 BuildRequires: policycoreutils-python
 BuildRequires: psmisc
