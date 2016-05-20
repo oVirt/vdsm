@@ -158,6 +158,7 @@ class MigrationParamsTests(TestCaseBase):
             self.assertNotIn('_migrationParams', testvm.conf)
 
 
+@expandPermutations
 class TestProgress(TestCaseBase):
 
     def setUp(self):
@@ -188,6 +189,22 @@ class TestProgress(TestCaseBase):
         del self.job_stats["memory_iteration"]
         prog = migration.Progress.from_job_stats(self.job_stats)
         self.assertNotRaises(str, prog)
+
+    @permutations([
+        # data_remaining, data_total, progress
+        [0, 0, 0],
+        [0, 100, 100],
+        [100, 100, 0],
+        [50, 100, 50],
+        [33, 100, 67],
+        [1, 100, 99],
+        [99, 100, 1],
+    ])
+    def test_percentage(self, data_remaining, data_total, progress):
+        self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_REMAINING] = data_remaining
+        self.job_stats[libvirt.VIR_DOMAIN_JOB_DATA_TOTAL] = data_total
+        prog = migration.Progress.from_job_stats(self.job_stats)
+        self.assertEquals(prog.percentage, progress)
 
 
 # stolen^Wborrowed from itertools recipes

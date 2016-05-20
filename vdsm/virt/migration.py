@@ -581,11 +581,6 @@ class MonitorThread(threading.Thread):
                               ' (monitoring interval set to 0)')
 
     def monitor_migration(self):
-        def update_progress(remaining, total):
-            if remaining == 0 and total:
-                return 100
-            progress = 100 - 100 * remaining / total if total else 0
-            return progress if (progress < 100) else 99
         self._vm.log.debug('starting migration monitor thread')
 
         memSize = int(self._vm.conf['memSize'])
@@ -648,13 +643,8 @@ class MonitorThread(threading.Thread):
                 break
 
             if prog.job_type != libvirt.VIR_DOMAIN_JOB_NONE:
-                self.progress = update_progress(prog.data_remaining,
-                                                prog.data_total)
-
-                self._vm.log.info(
-                    'Migration Progress: %s seconds elapsed,'
-                    ' %s%% of data processed, %s' % (
-                        (prog.time_elapsed / 1000), self.progress, prog))
+                self.progress = prog.percentage
+                self._vm.log.info('%s', progress)
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
@@ -699,6 +689,7 @@ _Progress = collections.namedtuple('_Progress', [
 
 
 class Progress(_Progress):
+    __slots__ = ()
 
     @classmethod
     def from_job_stats(cls, stats):
@@ -722,11 +713,15 @@ class Progress(_Progress):
 
     def __str__(self):
         return (
-            'total data: %iMB,'
+            'Migration Progress: %s seconds elapsed,'
+            ' %s%% of data processed,'
+            ' total data: %iMB,'
             ' processed data: %iMB, remaining data: %iMB,'
             ' transfer speed %iMBps, zero pages: %iMB,'
             ' compressed: %iMB, dirty rate: %i,'
             ' memory iteration: %i' % (
+                (self.time_elapsed / 1000),
+                self.percentage,
                 (self.data_total / Mbytes),
                 (self.data_processed / Mbytes),
                 (self.data_remaining / Mbytes),
@@ -737,3 +732,14 @@ class Progress(_Progress):
                 self.mem_iteration,
             )
         )
+
+    @property
+    def percentage(self):
+        if self.data_remaining == 0 and self.data_total:
+            return 100
+        progress = 0
+        if self.data_total:
+            progress = 100 - 100 * self.data_remaining / self.data_total
+        if progress < 100:
+            return progress
+        return 99
