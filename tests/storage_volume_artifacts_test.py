@@ -29,7 +29,6 @@ from storagetestlib import fake_block_env, fake_file_env
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import misc
-from vdsm.storage.constants import TEMP_VOL_LVTAG
 from vdsm.storage.volumemetadata import VolumeMetadata
 
 from storage import image, sd, blockVolume
@@ -423,7 +422,7 @@ class BlockVolumeArtifactsTests(VolumeArtifactsTestsMixin, VdsmTestCase):
         except se.LogicalVolumeDoesNotExistError:
             raise AssertionError("LV missing")
 
-        if TEMP_VOL_LVTAG not in lv.tags:
+        if sc.TEMP_VOL_LVTAG not in lv.tags:
             raise AssertionError("Missing TEMP_VOL_LVTAG")
 
         md_slot = int(blockVolume.getVolumeTag(artifacts.sd_manifest.sdUUID,
