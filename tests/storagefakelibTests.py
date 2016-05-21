@@ -25,7 +25,10 @@ from vdsm.storage import constants as sc
 
 from testlib import VdsmTestCase, namedTemporaryDir
 from testlib import permutations, expandPermutations
-from storagefakelib import FakeLVM, FakeResourceManager
+
+from storagefakelib import FakeLVM
+from storagefakelib import FakeResourceManager
+from storagefakelib import FakeStorageDomainCache
 
 from storage import blockSD
 from storage import lvm as real_lvm
@@ -358,3 +361,21 @@ class FakeResourceManagerTests(VdsmTestCase):
             self.assertEqual(expected_calls, rm.__calls__)
         expected_calls.append(('releaseResource', acquire_args, {}))
         self.assertEqual(expected_calls, rm.__calls__)
+
+
+class TestFakeStorageDomainCache(VdsmTestCase):
+
+    def test_domain_does_not_exist(self):
+        sdc = FakeStorageDomainCache()
+        self.assertRaises(se.StorageDomainDoesNotExist, sdc.produce, "uuid")
+
+    def test_produce(self):
+        sdc = FakeStorageDomainCache()
+        sdc.domains["uuid"] = "fake domain"
+        self.assertEqual("fake domain", sdc.produce("uuid"))
+
+    def test_manually_remove_domain(self):
+        sdc = FakeStorageDomainCache()
+        sdc.domains["uuid"] = "fake domain"
+        sdc.manuallyRemoveDomain("uuid")
+        self.assertRaises(se.StorageDomainDoesNotExist, sdc.produce, "uuid")

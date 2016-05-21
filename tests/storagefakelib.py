@@ -286,3 +286,18 @@ class FakeResourceManager(object):
     @recorded
     def releaseResource(self, *args, **kwargs):
         pass
+
+
+class FakeStorageDomainCache(object):
+
+    def __init__(self):
+        self.domains = {}
+
+    def produce(self, sdUUID):
+        try:
+            return self.domains[sdUUID]
+        except KeyError:
+            raise se.StorageDomainDoesNotExist(sdUUID)
+
+    def manuallyRemoveDomain(self, sdUUID):
+        self.domains.pop(sdUUID, None)
