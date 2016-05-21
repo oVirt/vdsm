@@ -519,3 +519,40 @@ def forked(f):
 
 def online_cpus():
     return frozenset(range(os.sysconf('SC_NPROCESSORS_ONLN')))
+
+
+def maybefail(meth):
+    """
+    Method decorator that will raise the excpetion stored in the instance's
+    errors dict.
+
+    Objects using this decorator must define an errors instance
+    variable:
+
+    class Foo(object):
+
+        def __init__(self):
+            self.errors = {}
+
+        @maybefail
+        def method_name(self):
+            return True
+
+    To make a method fail, set an error:
+
+        obj.errors["method_name"] = ValueError
+
+    All calls to method_name will raise now ValueError.  To stop the failures,
+    delete the error:
+
+        del obj.errors["method_name"]
+
+    """
+    @functools.wraps(meth)
+    def wrapper(self, *args, **kwargs):
+        try:
+            exception = self.errors[meth.__name__]
+        except KeyError:
+            return meth(self, *args, **kwargs)
+        raise exception
+    return wrapper

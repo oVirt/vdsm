@@ -20,6 +20,7 @@
 
 from testlib import AssertingLock
 from testlib import VdsmTestCase
+from testlib import maybefail
 from testlib import recorded
 from testlib import permutations, expandPermutations, PERMUTATION_ATTR
 
@@ -230,3 +231,27 @@ class TestSubPermuated(VdsmTestCase):
     def test_sub_method(self):
         expanded_method = getattr(self.instance, "fn2(1)")
         self.assertEqual(1, expanded_method())
+
+
+class TestMaybefail(VdsmTestCase):
+
+    def setUp(self):
+        self.errors = {}
+
+    @maybefail
+    def method_name(self):
+        return True
+
+    def test_success(self):
+        self.assertTrue(self.method_name())
+
+    def test_error(self):
+        self.errors["method_name"] = RuntimeError
+        self.assertRaises(RuntimeError, self.method_name)
+        self.assertRaises(RuntimeError, self.method_name)
+
+    def test_recover(self):
+        self.errors["method_name"] = RuntimeError
+        self.assertRaises(RuntimeError, self.method_name)
+        del self.errors["method_name"]
+        self.assertTrue(self.method_name())
