@@ -143,8 +143,8 @@ def _fake_devices(networks):
 
     for net, attrs in six.iteritems(networks):
         fake_devices['bridges'][net] = _fake_bridge(attrs)
-        vlanid = attrs['vlanid']
-        if vlanid:
+        vlanid = attrs.get('vlanid')
+        if vlanid is not None:
             fake_devices['vlans'].update(_fake_vlan(attrs, vlanid))
 
     return fake_devices
@@ -204,13 +204,17 @@ def _get_network_info(northbound, bridge, southbound, ports, stp, addresses,
     network_info = {
         'iface': northbound,
         'bridged': True,
-        'vlanid': tag,
         'bond': bond,
         'nics': nics,
         'ports': _get_net_ports(bridge, northbound, southbound, tag, ports),
         'stp': stp,
         'switch': 'ovs'
     }
+    if tag is not None:
+        # TODO: We should always report vlan, even if it is None. Netinfo
+        # should be canonicalized before passed to caps, so None will not be
+        # exposed in API call result.
+        network_info['vlanid'] = tag
     network_info.update(_get_iface_info(northbound, addresses, routes))
     return network_info
 
@@ -289,7 +293,7 @@ def fake_bridgeless(ovs_netinfo, nic_netinfo, running_bridgeless_networks):
 
 
 def _bridgeless_fake_iface(net_attrs):
-    vlanid = net_attrs['vlanid']
+    vlanid = net_attrs.get('vlanid')
     bond = net_attrs['bond']
     nics = net_attrs['nics']
 

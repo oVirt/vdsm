@@ -186,7 +186,6 @@ class TestOvsNetInfo(VdsmTestCase):
                 'ports': [TEST_BOND],
                 'stp': False,
                 'switch': 'ovs',
-                'vlanid': None
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,
@@ -295,7 +294,6 @@ class TestOvsNetInfo(VdsmTestCase):
                 'ports': [TEST_BOND],
                 'stp': False,
                 'switch': 'ovs',
-                'vlanid': None
             },
             TEST_VLANED_NETWORK: {
                 'addr': TEST_ADDRESS,

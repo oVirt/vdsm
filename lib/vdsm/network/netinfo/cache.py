@@ -332,7 +332,7 @@ class CachingNetInfo(object):
         else:
             bonding = self.networks[network]['bond']
             lnics = self.networks[network]['nics']
-            vlanid = self.networks[network]['vlanid']
+            vlanid = self.networks[network].get('vlanid')
             vlan = ('%s.%s' % (bonding or lnics[0], vlanid)
                     if vlanid is not None else None)
 
