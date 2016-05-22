@@ -196,11 +196,7 @@ Requires: device-mapper-multipath >= 0.4.9-80.fc23
 %if 0%{?rhel}
 Requires: e2fsprogs
 Requires: fence-agents-all
-%if 0%{?centos}
-Requires: kernel >= 3.10.0-132.el7
-%else
-Requires: kernel >= 3.10.0-229.17.1.el7
-%endif
+Requires: kernel >= 3.10.0-327.18.1.el7
 %if 0%{?centos}
 # TODO: Remove when lvm2 2.02.130 is available
 Requires: lvm2 >= 2.02.107
