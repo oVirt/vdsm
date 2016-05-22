@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 from contextlib import closing, contextmanager
 from ctypes import CFUNCTYPE, c_int, c_void_p, py_object
-import Queue
+from six.moves import queue
 import logging
 import os
 import select
@@ -100,7 +100,7 @@ class Monitor(object):
             self._groups = groups
         else:
             self._groups = _GROUPS.keys()
-        self._queue = Queue.Queue()
+        self._queue = queue.Queue()
         self._scan_thread = concurrent.thread(self._scan)
         self._scanning_started = threading.Event()
         self._scanning_stopped = threading.Event()
