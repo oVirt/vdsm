@@ -16,6 +16,7 @@ python-coverage
 python-devel
 python-inotify
 python-ioprocess
+python-mock
 python-netaddr
 python-nose
 python-pthreading

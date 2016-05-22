@@ -38,6 +38,12 @@ import threading
 from contextlib import contextmanager
 import xml.etree.ElementTree as ET
 
+try:
+    from unittest import mock
+except ImportError:  # py2
+    import mock
+mock
+
 from nose import config
 from nose import core
 from nose import result
