@@ -27,14 +27,14 @@ import os
 from contextlib import closing
 
 try:
-    from ovirt_image_daemon import uhttp
+    from ovirt_imageio_daemon import uhttp
 except ImportError:
     uhttp = None
 
 from vdsm import constants
 from vdsm.storage import exception as se
 
-DAEMON_SOCK = os.path.join(constants.P_VDSM_RUN, "ovirt-image-daemon.sock")
+DAEMON_SOCK = os.path.join(constants.P_VDSM_RUN, "ovirt-imageio-daemon.sock")
 
 log = logging.getLogger('storage.imagetickets')
 
@@ -76,7 +76,7 @@ def request(method, uuid, body=None):
             res = con.getresponse()
         except (httplib.HTTPException, EnvironmentError) as e:
             raise se.ImageTicketsError("Error communicating with "
-                                       "ovirt-image-daemon: "
+                                       "ovirt-imageio-daemon: "
                                        "{error}".format(error=e))
 
         if res.status >= 300:
