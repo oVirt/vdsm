@@ -408,6 +408,7 @@ class StompClient(object):
 
     def close(self):
         self._stompConn.close()
+        self._reactor.stop()
 
 
 def StompListener(reactor, server, acceptHandler, connected_socket):

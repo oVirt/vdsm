@@ -156,6 +156,7 @@ class Dispatcher(asyncore.dispatcher):
 
 class AsyncoreEvent(asyncore.file_dispatcher):
     def __init__(self, map=None):
+        self.closing = False
         self._eventfd = EventFD()
         try:
             asyncore.file_dispatcher.__init__(
@@ -177,6 +178,9 @@ class AsyncoreEvent(asyncore.file_dispatcher):
         self._eventfd.read()
 
     def close(self):
+        if self.closing:
+            return
+        self.closing = True
         try:
             self._eventfd.close()
         except (OSError, IOError):
