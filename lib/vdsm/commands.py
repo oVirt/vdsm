@@ -43,7 +43,7 @@ BUFFSIZE = 1024
 def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
             printable=None, env=None, sync=True, nice=None, ioclass=None,
             ioclassdata=None, setsid=False, execCmdLogger=logging.root,
-            deathSignal=0, childUmask=None, resetCpuAffinity=True):
+            deathSignal=0, resetCpuAffinity=True):
     """
     Executes an external command, optionally via sudo.
 
@@ -68,7 +68,7 @@ def execCmd(command, sudo=False, cwd=None, data=None, raw=False,
     execCmdLogger.debug(cmdutils.command_log_line(printable, cwd=cwd))
 
     p = CPopen(command, close_fds=True, cwd=cwd, env=env,
-               deathSignal=deathSignal, childUmask=childUmask)
+               deathSignal=deathSignal)
     if not sync:
         p = AsyncProc(p)
         if data is not None:
