@@ -183,6 +183,9 @@ class _Server(object):
     def __getattr__(self, methodName):
         return partial(self._callMethod, methodName)
 
+    def close(self):
+        self._client.close()
+
     def __del__(self):
         self._client.close()
 
