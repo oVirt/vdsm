@@ -29,6 +29,7 @@ import tempfile
 from nose.plugins.attrib import attr
 
 from vdsm.network import errors as ne
+from vdsm.network.canonicalize import canonicalize_networks
 from vdsm.network.netconfpersistence import Config, Transaction
 from vdsm.utils import rmFile
 
@@ -36,9 +37,7 @@ from testlib import VdsmTestCase as TestCaseBase
 
 
 NETWORK = 'luke'
-NETWORK_ATTRIBUTES = {'bonding': 'bond0', 'bridged': True, 'vlan': 1,
-                      'mtu': 1500, 'stp': False, 'dhcpv6': False,
-                      'switch': 'legacy'}
+NETWORK_ATTRIBUTES = {'bonding': 'bond0', 'vlan': 1}
 BONDING = 'skywalker'
 BONDING_ATTRIBUTES = {'options': 'mode=4 miimon=100', 'nics': ['eth0', 'eth1'],
                       'switch': 'legacy'}
@@ -53,6 +52,10 @@ def _create_netconf():
     os.mkdir(os.path.join(tempdir, 'nets'))
     os.mkdir(os.path.join(tempdir, 'bonds'))
     return tempdir
+
+
+def setup_module():
+    canonicalize_networks({'net': NETWORK_ATTRIBUTES})
 
 
 @attr(type='unit')
