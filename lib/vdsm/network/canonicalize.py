@@ -45,6 +45,7 @@ def canonicalize_networks(nets):
         _canonicalize_stp(attrs)
         _canonicalize_ipv6(attrs)
         _canonicalize_switch_type_net(attrs)
+        _canonicalize_ip_default_route(attrs)
 
 
 def canonicalize_bondings(bonds):
@@ -120,3 +121,8 @@ def _canonicalize_switch_type_bond(data):
         data['switch'] = 'ovs'
     elif 'switch' not in data:
         data['switch'] = 'legacy'
+
+
+def _canonicalize_ip_default_route(data):
+    if 'defaultRoute' not in data:
+        data['defaultRoute'] = False
