@@ -521,7 +521,7 @@ class ConfigWriter(object):
         if ipv4.address:
             cfg += 'IPADDR=%s\n' % pipes.quote(ipv4.address)
             cfg += 'NETMASK=%s\n' % pipes.quote(ipv4.netmask)
-            if ipv4.gateway:
+            if ipv4.defaultRoute and ipv4.gateway:
                 cfg += 'GATEWAY=%s\n' % pipes.quote(ipv4.gateway)
             # According to manual the BOOTPROTO=none should be set
             # for static IP

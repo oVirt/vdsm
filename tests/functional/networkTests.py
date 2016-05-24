@@ -41,7 +41,7 @@ from vdsm.network.netinfo.misc import NET_CONF_PREF
 from vdsm.network.netinfo.mtus import DEFAULT_MTU
 from vdsm.network.netinfo.nics import (operstate, OPERSTATE_UNKNOWN,
                                        OPERSTATE_UP)
-from vdsm.network.netinfo.routes import getRouteDeviceTo
+from vdsm.network.netinfo.routes import getDefaultGateway, getRouteDeviceTo
 from vdsm.network.netlink import monitor
 from vdsm.network.configurators.ifcfg import (Ifcfg, stop_devices,
                                               NET_CONF_BACK_DIR)
@@ -1742,6 +1742,55 @@ class NetworkTest(TestCaseBase):
                 self.assertRouteDoesNotExist(route)
             for rule in source_route._buildRules():
                 self.assertRuleDoesNotExist(rule)
+
+    @cleanupNet
+    def test_ipv4_default_route(self):
+        DEFAULT_GATEWAY_NET = 'DG-NET'
+        GATEWAY_NET = 'GW-NET'
+        NO_GATEWAY_NET = 'NOGW-NET'
+        IP = [{'ipaddr': '192.168.{}.1'.format(i),
+               'netmask': '255.255.255.0',
+               'gateway': '192.168.{}.254'.format(i)}
+              for i in range(3)]
+        del IP[2]['gateway']
+
+        def create_network(net_name, ipdata, nic, is_default_route=False):
+            net_attrs = {'nic': nic, 'defaultRoute': is_default_route}
+            net_attrs.update(ipdata)
+            status, msg = self.setupNetworks({net_name: net_attrs}, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+
+        with dummyIf(3) as nics:
+            create_network(DEFAULT_GATEWAY_NET, IP[0], nics[0],
+                           is_default_route=True)
+            gw = self.vdsm_net.netinfo.networks[DEFAULT_GATEWAY_NET]['gateway']
+            self.assertEqual(IP[0]['gateway'], gw)
+            self.assertEqual(IP[0]['gateway'], getDefaultGateway().via)
+
+            create_network(GATEWAY_NET, IP[1], nics[1])
+            gw = self.vdsm_net.netinfo.networks[GATEWAY_NET]['gateway']
+            self.assertEqual(IP[1]['gateway'], gw)
+            self.assertEqual(IP[0]['gateway'], getDefaultGateway().via)
+
+            create_network(NO_GATEWAY_NET, IP[2], nics[2])
+            gw = self.vdsm_net.netinfo.networks[NO_GATEWAY_NET]['gateway']
+            self.assertEqual('', gw)
+            self.assertEqual(IP[0]['gateway'], getDefaultGateway().via)
+
+            status, msg = self.setupNetworks(
+                {NO_GATEWAY_NET: {'remove': True}}, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertEqual(IP[0]['gateway'], getDefaultGateway().via)
+
+            status, msg = self.setupNetworks(
+                {GATEWAY_NET: {'remove': True}}, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertEqual(IP[0]['gateway'], getDefaultGateway().via)
+
+            status, msg = self.setupNetworks(
+                {DEFAULT_GATEWAY_NET: {'remove': True}}, {}, NOCHK)
+            self.assertEqual(status, SUCCESS, msg)
+            self.assertEqual(None, getDefaultGateway())
 
     @cleanupNet
     def testAddVlanedBridgeless(self):
