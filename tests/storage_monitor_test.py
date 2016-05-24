@@ -331,7 +331,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
         ("getVersion", OSError),
         ("getVersion", UnexpectedError),
     ])
-    def test_from_unknown_to_invalid(self, method, exception):
+    def test_from_unknown_to_invalid_domain(self, method, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
             domain.errors[method] = exception
@@ -344,7 +344,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertEqual(env.event.received, [(('uuid', False), {})])
 
     @permutations([[se.MiscFileReadException], [UnexpectedError]])
-    def test_from_unknown_to_invalid_path_error(self, exception):
+    def test_from_unknown_to_invalid_path(self, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
             misc.readspeed = FakeReadspeed(exception)
@@ -367,7 +367,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
         ("getVersion", OSError),
         ("getVersion", UnexpectedError),
     ])
-    def test_from_invalid_to_valid(self, method, exception):
+    def test_from_invalid_to_valid_domain(self, method, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
             domain.errors[method] = exception
@@ -382,7 +382,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertEqual(env.event.received, [(('uuid', True), {})])
 
     @permutations([[se.MiscFileReadException], [UnexpectedError]])
-    def test_from_invalid_to_valid_path_error(self, exception):
+    def test_from_invalid_to_valid_path(self, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
             misc.readspeed = FakeReadspeed(exception)
@@ -420,7 +420,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
         ("getVersion", OSError),
         ("getVersion", UnexpectedError),
     ])
-    def test_from_valid_to_invalid(self, method, exception):
+    def test_from_valid_to_invalid_domain(self, method, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
             monitor.sdCache.domains["uuid"] = domain
@@ -435,7 +435,7 @@ class TestMonitorThreadMonitoring(VdsmTestCase):
             self.assertEqual(env.event.received, [(('uuid', False), {})])
 
     @permutations([[se.MiscFileReadException], [UnexpectedError]])
-    def test_from_valid_to_invalid_path_error(self, exception):
+    def test_from_valid_to_invalid_path(self, exception):
         with monitor_env() as env:
             domain = FakeDomain("uuid")
             monitor.sdCache.domains["uuid"] = domain
