@@ -423,7 +423,8 @@ class Rng(Base):
         supervdsm.getProxy().appropriateHwrngDevice(self.conf['vmId'])
 
     def teardown(self):
-        supervdsm.getProxy().rmAppropriateHwrngDevice(self.conf['vmId'])
+        if self.matching_source(self._SOURCES['hwrng']):
+            supervdsm.getProxy().rmAppropriateHwrngDevice(self.conf['vmId'])
 
     def getXML(self):
         """
