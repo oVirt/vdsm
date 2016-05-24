@@ -48,12 +48,57 @@ class Executor(object):
     """
     Executes potentially blocking task into background
     threads. Can replace stuck threads with fresh ones.
-    """
 
+    It works as follows:
+
+    - Newly added tasks (see `dispatch()` method) are put into the executor's
+      task queue.  The maximum length of the queue is set with `max_tasks`
+      constructor parameter.
+
+    - There are workers (threads) running concurrently and taking the requests
+      from the queue.  The initial number of the workers is set with
+      `workers_count` parameter.
+
+    - Each of the workers waits a certain amount of time for the completion of
+      any processed task.  If the time is exceeded then the worker continues
+      processing the task but another worker is created not to limit
+      availability of task processing.  When the original worker finishes
+      executing the long task, it's finished.
+
+    - However there is a limit on the total number of the workers in the
+      executor, set with `max_workers`.  If the limit is reached, no new
+      workers are created and the whole processing may get stuck until some of
+      the stuck task finishes.  This prevents creating an excessive number
+      of threads when many tasks are stuck.
+
+    """
     _log = logging.getLogger('Executor')
 
     def __init__(self, name, workers_count, max_tasks, scheduler,
                  max_workers=None):
+        """
+        :param name: Name of the executor; no special purpose, just for
+          logging and debugging.
+        :type name: basestring
+        :param workers_count: Number of workers (threads) processing the tasks
+          that are added to the executor (via `dispatch()` method).
+        :type workers_count: int
+        :param max_tasks: Maximum number of tasks waiting for execution in the
+          executor's task queue.
+        :type max_tasks: int
+        :param scheduler: Scheduler passed to _Worker instances to set the
+          maximum time to wait for their completion.
+        :type scheduler: `Scheduler` instance
+        :param max_workers: Maximum number of workers.  If some tasks get
+          stuck during their processing, the corresponding workers are put
+          aside and new workers ready for processing are created.  This
+          parameter limits the total number of the workers (threads), including
+          both those ready for processing and those hanging on stuck tasks.  If
+          it is not None and it gets reached then no further workers are
+          created.
+        :type max_workers: int or None
+
+        """
         self._name = name
         self._workers_count = workers_count
         self._max_workers = max_workers
