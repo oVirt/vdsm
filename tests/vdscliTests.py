@@ -28,7 +28,6 @@ import tempfile
 import time
 
 from testlib import VdsmTestCase as TestCaseBase
-from testValidation import ValidateRunningAsRoot
 from vdsm import vdscli
 try:
     from vdsm import m2cutils as sslutils
@@ -107,7 +106,6 @@ class ConnectTest(TestCaseBase):
     def tearDown(self):
         shutil.rmtree(self._tmpDir)
 
-    @ValidateRunningAsRoot
     def testTimeout(self):
         for (ssl, error) in zip((True, False),
                                 (SSLError, Exception)):
@@ -115,7 +113,6 @@ class ConnectTest(TestCaseBase):
                 with self.assertRaises(error):
                     client.myTest()
 
-    @ValidateRunningAsRoot
     def testNoTimeout(self):
         for ssl in (True, False):
             with setupclient(ssl, self._tsPath) as client:
