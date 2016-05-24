@@ -396,3 +396,95 @@ class UsbDevice(core.Base):
         # This has an unfortunate effect that we will not be able to look
         # up any previously undefined devices, because there is no easy
         # way of reconstructing the udev name we use as unique id.
+
+
+class ScsiDevice(core.Base):
+    __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
+                 'name')
+
+    def __init__(self, conf, log, **kwargs):
+        super(ScsiDevice, self).__init__(conf, log, **kwargs)
+
+        device_params = get_device_params(self.device)
+        self.hostAddress = device_params.get('address')
+        self.name = self.device
+
+    def setup(self):
+        detach_detachable(self.device)
+
+    def teardown(self):
+        reattach_detachable(self.device)
+
+    @property
+    def _xpath(self):
+        """
+        Returns xpath to the device in libvirt dom xml.
+        The path is relative to the root element.
+        """
+        address_fields = []
+        for key, value in self.hostAddress.items():
+            address_fields.append('[@{key}="{value}"]'.format(
+                key=key, value=int(value)))
+
+        return './devices/hostdev/source/address{}'.format(
+            ''.join(address_fields))
+
+    def is_attached_to(self, xml_string):
+        dom = ET.fromstring(xml_string)
+        return bool(dom.findall(self._xpath))
+
+    def getXML(self):
+        """
+        Create domxml for a host device.
+
+        <hostdev managed="no" mode="subsystem" rawio="yes" type="scsi">
+            <source>
+                <adapter name="scsi_host4"/>
+                <address bus="0" target="0" unit="0"/>
+            </source>
+        </hostdev>
+        """
+        hostdev = self.createXmlElem(hwclass.HOSTDEV, None)
+        hostdev.setAttrs(managed='no', mode='subsystem', type='scsi')
+        source = hostdev.appendChildWithArgs('source')
+
+        # This must be done *before* creating the address element, as we need
+        # remove the 'host' key from real address.
+        source.appendChildWithArgs(
+            'adapter', **scsi_address_to_adapter(self.hostAddress))
+        hostdev.setAttr('rawio', 'yes')
+
+        source.appendChildWithArgs('address', **self.hostAddress)
+
+        if hasattr(self, 'bootOrder'):
+            hostdev.appendChildWithArgs('boot', order=self.bootOrder)
+
+        if hasattr(self, 'address'):
+            hostdev.appendChildWithArgs('address', **self.address)
+
+        return hostdev
+
+    @classmethod
+    def update_from_xml(cls, vm, device_conf, device_xml):
+        alias = device_xml.getElementsByTagName(
+            'alias')[0].getAttribute('name')
+        host_address = vmxml.device_address(device_xml)
+
+        # The routine is quite unusual because we cannot directly
+        # reconstruct the unique name. Therefore, we first look up
+        # corresponding device object address,
+        for dev in device_conf:
+            if host_address == dev.hostAddress:
+                dev.alias = alias
+                device = dev.device
+                dev.address = vmxml.device_address(device_xml, 1)
+
+        # and use that to identify the device in self.conf.
+        for dev in vm.conf['devices']:
+            if dev['device'] == device:
+                dev['alias'] = alias
+                dev['address'] = vmxml.device_address(device_xml, 1)
+
+        # This has an unfortunate effect that we will not be able to look
+        # up any previously undefined devices, because there is no easy
+        # way of reconstructing the udev name we use as unique id.
