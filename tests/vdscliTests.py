@@ -43,7 +43,7 @@ HOST = '127.0.0.1'
 class TestingService():
 
     def myTest(self):
-        time.sleep(0.1)
+        time.sleep(0.2)
         return 'test'
 
 
@@ -109,7 +109,7 @@ class ConnectTest(TestCaseBase):
     def testTimeout(self):
         for (ssl, error) in zip((True, False),
                                 (SSLError, Exception)):
-            with setupclient(ssl, self._tsPath, timeout=0.01) as client:
+            with setupclient(ssl, self._tsPath, timeout=0.1) as client:
                 with self.assertRaises(error):
                     client.myTest()
 
