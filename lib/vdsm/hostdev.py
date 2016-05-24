@@ -129,15 +129,14 @@ def name_to_pci_path(device_name):
 
 def scsi_address_to_adapter(scsi_address):
     """
-    Read adapter info from scsi host address, and mutate the adress (removing
-    'host' key) to conform to libvirt.
+    Read device compatible address and adapter info from scsi host address.
     """
     adapter = 'scsi_host{}'.format(scsi_address['host'])
-    scsi_address['unit'] = scsi_address['lun']
-    del scsi_address['lun']
-    del scsi_address['host']
 
-    return {'name': adapter}
+    return ({'unit': scsi_address['lun'],
+             'bus': scsi_address['bus'],
+             'target': scsi_address['target']},
+            adapter)
 
 
 def pci_address_to_name(domain, bus, slot, function):

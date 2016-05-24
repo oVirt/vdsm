@@ -232,7 +232,7 @@ class UsbDevice(core.Base):
 
 class ScsiDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
-                 'name')
+                 'name', 'bus_address', 'adapter')
 
     def __init__(self, conf, log, **kwargs):
         super(ScsiDevice, self).__init__(conf, log, **kwargs)
@@ -240,6 +240,8 @@ class ScsiDevice(core.Base):
         device_params = get_device_params(self.device)
         self.hostAddress = device_params.get('address')
         self.name = self.device
+        self.bus_address, self.adapter = scsi_address_to_adapter(
+            self.hostAddress)
 
     def setup(self):
         detach_detachable(self.device)
@@ -282,11 +284,10 @@ class ScsiDevice(core.Base):
 
         # This must be done *before* creating the address element, as we need
         # remove the 'host' key from real address.
-        source.appendChildWithArgs(
-            'adapter', **scsi_address_to_adapter(self.hostAddress))
+        source.appendChildWithArgs('adapter', name=self.adapter)
         hostdev.setAttr('rawio', 'yes')
 
-        source.appendChildWithArgs('address', **self.hostAddress)
+        source.appendChildWithArgs('address', **self.bus_address)
 
         if hasattr(self, 'bootOrder'):
             hostdev.appendChildWithArgs('boot', order=self.bootOrder)
@@ -300,13 +301,16 @@ class ScsiDevice(core.Base):
     def update_from_xml(cls, vm, device_conf, device_xml):
         alias = device_xml.getElementsByTagName(
             'alias')[0].getAttribute('name')
-        host_address = vmxml.device_address(device_xml)
+        bus_address = vmxml.device_address(device_xml)
+        adapter = device_xml.getElementsByTagName('source')[0].\
+            getElementsByTagName('adapter')[0].getAttribute('name')
 
         # The routine is quite unusual because we cannot directly
         # reconstruct the unique name. Therefore, we first look up
         # corresponding device object address,
         for dev in device_conf:
-            if host_address == dev.hostAddress:
+            if (hasattr(dev, 'bus_address') and
+                    bus_address == dev.bus_address and adapter == dev.adapter):
                 dev.alias = alias
                 device = dev.device
                 dev.address = vmxml.device_address(device_xml, 1)
