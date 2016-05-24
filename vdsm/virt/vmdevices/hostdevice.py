@@ -195,3 +195,117 @@ class HostDevice(core.Base):
                               'alias': alias,
                               'address': address}
                 vm.conf['devices'].append(hostdevice)
+
+
+class PciDevice(core.Base):
+    __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
+                 'name')
+
+    def __init__(self, conf, log, **kwargs):
+        super(PciDevice, self).__init__(conf, log, **kwargs)
+
+        self._deviceParams = get_device_params(self.device)
+        self.hostAddress = self._deviceParams.get('address')
+        self.name = self.device
+
+    def setup(self):
+        detach_detachable(self.device)
+
+    def teardown(self):
+        supervdsm.getProxy().rmAppropriateIommuGroup(
+            self._deviceParams['iommu_group'])
+
+    @property
+    def _xpath(self):
+        """
+        Returns xpath to the device in libvirt dom xml.
+        The path is relative to the root element.
+        """
+        address_fields = []
+        for key, value in self.hostAddress.items():
+            padding, base = '02', '0x'
+            if key == 'domain':
+                base = '0x'
+                padding = '04'
+            elif key == 'function':
+                base = '0x'
+                padding = ''
+
+            address_fields.append('[@{key}="{base}{value:{padding}}"]'.format(
+                key=key, value=int(value), base=base, padding=padding))
+
+        return './devices/hostdev/source/address{}'.format(
+            ''.join(address_fields))
+
+    def is_attached_to(self, xml_string):
+        dom = ET.fromstring(xml_string)
+        return bool(dom.findall(self._xpath))
+
+    def getXML(self):
+        """
+        Create domxml for a host device.
+
+        <devices>
+            <hostdev mode='subsystem' type='pci' managed='no'>
+            <source>
+                <address domain='0x0000' bus='0x06' slot='0x02'
+                function='0x0'/>
+            </source>
+            <boot order='1'/>
+            </hostdev>
+        </devices>
+        """
+
+        if utils.tobool(self.specParams.get('iommuPlaceholder', False)):
+            raise core.SkipDevice
+
+        hostdev = self.createXmlElem(hwclass.HOSTDEV, None)
+        hostdev.setAttrs(managed='no', mode='subsystem', type='pci')
+        source = hostdev.appendChildWithArgs('source')
+
+        source.appendChildWithArgs('address', **self.hostAddress)
+
+        if hasattr(self, 'bootOrder'):
+            hostdev.appendChildWithArgs('boot', order=self.bootOrder)
+
+        if hasattr(self, 'address'):
+            hostdev.appendChildWithArgs('address', **self.address)
+
+        return hostdev
+
+    @classmethod
+    def update_from_xml(cls, vm, device_conf, device_xml):
+        alias = device_xml.getElementsByTagName(
+            'alias')[0].getAttribute('name')
+        address = vmxml.device_address(device_xml)
+        source = device_xml.getElementsByTagName('source')[0]
+        device = pci_address_to_name(**vmxml.device_address(source))
+
+        # We can assume the device name to be correct since we're
+        # inspecting source element. For the address, we may look at
+        # both addresses and determine the correct one.
+        if pci_address_to_name(**address) == device:
+            address = vmxml.device_address(device_xml, 1)
+
+        known_device = False
+        for dev in device_conf:
+            if dev.device == device:
+                dev.alias = alias
+                dev.address = address
+                known_device = True
+
+        for dev in vm.conf['devices']:
+            if dev['device'] == device:
+                dev['alias'] = alias
+                dev['address'] = address
+
+        if not known_device:
+            device = pci_address_to_name(**vmxml.device_address(source))
+
+            hostdevice = {
+                'type': hwclass.HOSTDEV,
+                'device': device,
+                'alias': alias,
+                'address': address,
+            }
+            vm.conf['devices'].append(hostdevice)
