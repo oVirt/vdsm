@@ -28,6 +28,7 @@ import tempfile
 import time
 
 from testlib import VdsmTestCase as TestCaseBase
+from testlib import expandPermutations, permutations
 from vdsm import vdscli
 try:
     from vdsm import m2cutils as sslutils
@@ -89,6 +90,7 @@ def setupclient(useSSL, tsPath,
         server.stop()
 
 
+@expandPermutations
 class ConnectTest(TestCaseBase):
     def setUp(self):
         self._tmpDir = tempfile.mkdtemp()
@@ -106,15 +108,14 @@ class ConnectTest(TestCaseBase):
     def tearDown(self):
         shutil.rmtree(self._tmpDir)
 
-    def testTimeout(self):
-        for (ssl, error) in zip((True, False),
-                                (SSLError, Exception)):
-            with setupclient(ssl, self._tsPath, timeout=0.1) as client:
-                with self.assertRaises(error):
-                    client.myTest()
+    @permutations([[True, SSLError], [False, Exception]])
+    def testTimeout(self, ssl, error):
+        with setupclient(ssl, self._tsPath, timeout=0.1) as client:
+            with self.assertRaises(error):
+                client.myTest()
 
-    def testNoTimeout(self):
-        for ssl in (True, False):
-            with setupclient(ssl, self._tsPath) as client:
-                with self.assertNotRaises():
-                    client.myTest()
+    @permutations([[True], [False]])
+    def testNoTimeout(self, ssl):
+        with setupclient(ssl, self._tsPath) as client:
+            with self.assertNotRaises():
+                client.myTest()
