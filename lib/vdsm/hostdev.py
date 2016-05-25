@@ -216,6 +216,16 @@ def _process_assignability(device_xml):
     return {'is_assignable': is_assignable}
 
 
+@_data_processor('scsi_generic')
+def _process_udev_path(device_xml):
+    try:
+        udev_path = device_xml.find('./capability/char').text
+    except AttributeError:
+        return {}
+    else:
+        return {'udev_path': udev_path}
+
+
 @_data_processor()
 def _process_driver(device_xml):
     try:
@@ -320,13 +330,6 @@ def _process_device_params(device_xml):
             and params['capability'] == 'pci':
         address = physfn.find('address')
         params['physfn'] = pci_address_to_name(**address.attrib)
-
-    try:
-        udev_path = caps.find('char').text
-    except AttributeError:
-        pass
-    else:
-        params['udev_path'] = udev_path
 
     iommu_group = caps.find('iommuGroup')
     if iommu_group is not None:
