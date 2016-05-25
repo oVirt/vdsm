@@ -19,6 +19,8 @@
 #
 from __future__ import absolute_import
 
+import collections
+import functools
 import os
 import xml.etree.ElementTree as etree
 
@@ -50,6 +52,8 @@ _LIBVIRT_DEVICE_FLAGS = {
     'scsi_generic': libvirt.VIR_CONNECT_LIST_NODE_DEVICES_CAP_SCSI_GENERIC,
 }
 
+_DATA_PROCESSORS = collections.defaultdict(list)
+
 
 class PCIHeaderType:
     ENDPOINT = 0
@@ -63,6 +67,19 @@ class NoIOMMUSupportException(Exception):
 
 class UnsuitableSCSIDevice(Exception):
     pass
+
+
+def _data_processor(target_bus='_ANY'):
+    """
+    Register function as a data processor for device processing code.
+    """
+    def processor(function):
+        @functools.wraps(function)
+        def wrapped(*args, **kwargs):
+            return function(*args, **kwargs)
+        _DATA_PROCESSORS[target_bus].append(wrapped)
+        return wrapped
+    return processor
 
 
 def is_supported():
@@ -261,6 +278,12 @@ def _process_device_params(device_xml):
 
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
+
+    data_processors = (_DATA_PROCESSORS['_ANY'] +
+                       _DATA_PROCESSORS[params['capability']])
+
+    for data_processor in data_processors:
+        params.update(data_processor(devXML))
 
     for element in ('vendor', 'product', 'interface'):
         elementXML = caps.find(element)
