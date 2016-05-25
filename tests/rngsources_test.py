@@ -37,13 +37,13 @@ class TestRng(TestCaseBase):
         [{'/dev/random': False, '/dev/hwrng': True}, ['hwrng']],
         [{'/dev/random': False, '/dev/hwrng': False}, []],
     ])
-    def test_available_sources(self, available_sources_map, output_sources):
+    def test_list_available(self, available_sources_map, output_sources):
 
         def fake_path_exists(path):
             return available_sources_map.get(path, False)
 
         with MonkeyPatchScope([(os.path, 'exists', fake_path_exists)]):
-            available = list(sorted(rngsources.available_sources()))
+            available = list(sorted(rngsources.list_available()))
 
         expected = list(sorted(output_sources))
         self.assertEqual(available, expected)

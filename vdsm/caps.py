@@ -180,7 +180,7 @@ def get():
                               config.getint('vars', 'extra_mem_reserve'))
     caps['guestOverhead'] = config.get('vars', 'guest_ram_overhead')
 
-    caps['rngSources'] = rngsources.available_sources()
+    caps['rngSources'] = rngsources.list_available()
 
     caps['numaNodes'] = dict(numa.topology())
     caps['numaNodeDistance'] = dict(numa.distances())

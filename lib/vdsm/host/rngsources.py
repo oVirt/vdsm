@@ -29,7 +29,7 @@ _SOURCES = {
 }
 
 
-def available_sources():
+def list_available():
     return [
         source for (source, path) in _SOURCES.items()
         if os.path.exists(path)
