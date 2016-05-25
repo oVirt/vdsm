@@ -3813,13 +3813,13 @@ class Vm(object):
 
     def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct,
                                 disconnectAction, params):
-        graphics.setAttribute('passwd', otp.value)
+        vmxml.set_attr(graphics, 'passwd', otp.value)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
                                     time.gmtime(time.time() + float(seconds)))
-            graphics.setAttribute('passwdValidTo', validto)
-        if connAct is not None and graphics.getAttribute('type') == 'spice':
-            graphics.setAttribute('connected', connAct)
+            vmxml.set_attr(graphics, 'passwdValidTo', validto)
+        if connAct is not None and vmxml.attr(graphics, 'type') == 'spice':
+            vmxml.set_attr(graphics, 'connected', connAct)
         hooks.before_vm_set_ticket(self._domain.xml, self.conf, params)
         try:
             self._dom.updateDeviceFlags(graphics.toxml(), 0)
@@ -3838,13 +3838,13 @@ class Vm(object):
         Needs to be called only if Vm.hasSpice == True
         """
         graphics = self._findGraphicsDeviceXMLByType('spice')  # cannot fail
-        validto = max(time.strptime(graphics.getAttribute('passwdValidTo'),
+        validto = max(time.strptime(vmxml.attr(graphics, 'passwdValidTo'),
                                     '%Y-%m-%dT%H:%M:%S'),
                       time.gmtime(time.time() + newlife))
-        graphics.setAttribute(
-            'passwdValidTo', time.strftime('%Y-%m-%dT%H:%M:%S', validto))
-        graphics.setAttribute('connected', 'keep')
-        self._dom.updateDeviceFlags(graphics.toxml(), 0)
+        vmxml.set_attr(graphics, 'passwdValidTo',
+                       time.strftime('%Y-%m-%dT%H:%M:%S', validto))
+        vmxml.set_attr(graphics, 'connected', 'keep')
+        self._dom.updateDeviceFlags(vmxml.format_xml(graphics), 0)
 
     def _findGraphicsDeviceXMLByType(self, deviceType):
         """
