@@ -31,11 +31,13 @@ from collections import namedtuple
 from contextlib import contextmanager
 from operator import itemgetter
 
+from vdsm import cmdutils
 from vdsm import concurrent
 from vdsm.config import config
 from vdsm import constants
 from vdsm import exception
 from vdsm import utils
+from vdsm.storage import blkdiscard
 from vdsm.storage import clusterlock
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
@@ -229,6 +231,12 @@ def zeroImgVolumes(sdUUID, imgUUID, volUUIDs):
             log.debug('Zero volume %s task %s completed', volUUID, taskid)
         except Exception:
             log.exception('Zero volume %s task %s failed', volUUID, taskid)
+
+        if config.getboolean('irs', 'discard_enable'):
+            try:
+                blkdiscard.blkdiscard(path)
+            except cmdutils.Error as e:
+                log.warning('Discarding %s failed: %s', path, e)
 
         try:
             log.debug('Removing volume %s task %s', volUUID, taskid)
@@ -612,9 +620,31 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         self._markForDelVols(sdUUID, imgUUID, toDel, sd.REMOVED_IMAGE_PREFIX)
 
     def purgeImage(self, sdUUID, imgUUID, volsImgs):
+        taskid = vars.task.id
+
+        def purge_volume(volUUID):
+            self.log.debug('Purge volume thread started for volume %s task %s',
+                           volUUID, taskid)
+            path = lvm.lvPath(sdUUID, volUUID)
+
+            if config.getboolean('irs', 'discard_enable'):
+                try:
+                    blkdiscard.blkdiscard(path)
+                except cmdutils.Error as e:
+                    self.log.warning('Discarding %s failed: %s', path, e)
+
+            self.log.debug('Removing volume %s task %s', volUUID, taskid)
+            deleteVolumes(sdUUID, volUUID)
+
+            self.log.debug('Purge volume thread finished for '
+                           'volume %s task %s', volUUID, taskid)
+
         self.log.debug("Purging image %s", imgUUID)
         toDel = self._getImgExclusiveVols(imgUUID, volsImgs)
-        deleteVolumes(sdUUID, toDel)
+        results = concurrent.tmap(purge_volume, toDel)
+        errors = [str(res.value) for res in results if not res.succeeded]
+        if errors:
+            raise se.CannotRemoveLogicalVolume(errors)
         self.rmDCImgDir(imgUUID, volsImgs)
 
     def getAllVolumesImages(self):

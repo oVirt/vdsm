@@ -22,10 +22,12 @@ import os
 import logging
 import sanlock
 
+from vdsm import cmdutils
 from vdsm import qemuimg
 from vdsm import constants
 from vdsm import exception
 from vdsm.config import config
+from vdsm.storage import blkdiscard
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
@@ -503,17 +505,25 @@ class BlockVolume(volume.Volume):
         # Mark volume as illegal before deleting
         self.setLegality(sc.ILLEGAL_VOL)
 
-        if postZero:
+        discard = config.getboolean('irs', 'discard_enable')
+        if postZero or discard:
             self.prepare(justme=True, rw=True, chainrw=force, setrw=True,
                          force=True)
             try:
-                misc.ddWatchCopy(
-                    "/dev/zero", vol_path, vars.task.aborting, int(size))
-            except exception.ActionStopped:
-                raise
-            except Exception:
-                self.log.error("Unexpected error", exc_info=True)
-                raise se.VolumesZeroingError(vol_path)
+                if postZero:
+                    try:
+                        misc.ddWatchCopy("/dev/zero", vol_path,
+                                         vars.task.aborting, int(size))
+                    except exception.ActionStopped:
+                        raise
+                    except Exception:
+                        self.log.error("Unexpected error", exc_info=True)
+                        raise se.VolumesZeroingError(vol_path)
+                if discard:
+                    try:
+                        blkdiscard.blkdiscard(vol_path)
+                    except cmdutils.Error as e:
+                        log.warning('Discarding %s failed: %s', vol_path, e)
             finally:
                 self.teardown(self.sdUUID, self.volUUID, justme=True)
 
