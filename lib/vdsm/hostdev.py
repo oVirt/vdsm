@@ -176,24 +176,27 @@ def physical_function_net_name(pf_pci_name):
     return libvirt_device_names[0].split('_')[1]
 
 
-def _process_address(caps, children):
+def _process_address(device_xml, children):
     params = {}
     for cap in children:
-        params[cap] = caps.find(cap).text
+        params[cap] = device_xml.find('./capability/{}'.format(cap)).text
 
-    return params
-
-
-def _process_pci_address(caps):
-    return _process_address(caps, ('domain', 'bus', 'slot', 'function'))
+    return {'address': params}
 
 
-def _process_scsi_address(caps):
-    return _process_address(caps, ('host', 'bus', 'target', 'lun'))
+@_data_processor('pci')
+def _process_pci_address(device_xml):
+    return _process_address(device_xml, ('domain', 'bus', 'slot', 'function'))
 
 
-def _process_usb_address(caps):
-    return _process_address(caps, ('bus', 'device'))
+@_data_processor('scsi')
+def _process_scsi_address(device_xml):
+    return _process_address(device_xml, ('host', 'bus', 'target', 'lun'))
+
+
+@_data_processor('usb_device')
+def _process_usb_address(device_xml):
+    return _process_address(device_xml, ('bus', 'device'))
 
 
 def _process_storage(caps, params):
@@ -257,10 +260,6 @@ def _process_device_params(device_xml):
     Process device_xml and return dict of found known parameters,
     also doing sysfs lookups for sr-iov related information
     """
-    address_processor = {'pci': _process_pci_address,
-                         'scsi': _process_scsi_address,
-                         'usb_device': _process_usb_address}
-
     params = {}
 
     devXML = etree.fromstring(device_xml.decode('ascii', errors='ignore'))
@@ -326,13 +325,6 @@ def _process_device_params(device_xml):
         params['totalvfs'] = _sriov_totalvfs(name)
     except IOError:
         # Device does not support sriov, we can safely go on
-        pass
-
-    try:
-        params['address'] = address_processor[params['capability']](caps)
-    except KeyError:
-        # We can somewhat safely ignore missing address as that means we're
-        # dealing with device that is not yet supported
         pass
 
     if params['capability'] == 'scsi':
