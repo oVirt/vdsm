@@ -216,6 +216,17 @@ def _process_assignability(device_xml):
     return {'is_assignable': is_assignable}
 
 
+@_data_processor()
+def _process_driver(device_xml):
+    try:
+        driver_name = device_xml.find('./driver/name').text
+    except AttributeError:
+        # No driver exposed by libvirt/sysfs.
+        return {}
+    else:
+        return {'driver': driver_name}
+
+
 def _process_storage(caps, params):
     try:
         model = caps.find('model').text
@@ -283,14 +294,6 @@ def _process_device_params(device_xml):
     name = devXML.find('name').text
     if name != 'computer':
         params['parent'] = devXML.find('parent').text
-
-    try:
-        driver_name = devXML.find('./driver/name').text
-    except AttributeError:
-        # No driver exposed by libvirt/sysfs.
-        pass
-    else:
-        params['driver'] = driver_name
 
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
