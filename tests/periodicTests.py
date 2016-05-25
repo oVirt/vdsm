@@ -93,13 +93,13 @@ class PeriodicOperationTests(TestCaseBase):
         PERIOD = 0.1
         TIMES = 3
 
-        invokations = [0, 0]
+        invocations = [0, 0]
         invoked = threading.Event()
 
         def _work():
-            invokations[0] += 1
-            invokations[1] = monotonic_time()
-            if invokations[0] == TIMES:
+            invocations[0] += 1
+            invocations[1] = monotonic_time()
+            if invocations[0] == TIMES:
                 invoked.set()
 
         op = periodic.Operation(_work, period=PERIOD,
@@ -112,15 +112,15 @@ class PeriodicOperationTests(TestCaseBase):
         # we don't care of this case
         op.stop()
         self.assertTrue(invoked.is_set())
-        self.assertTrue(TIMES <= invokations[0] <= TIMES+1)
+        self.assertTrue(TIMES <= invocations[0] <= TIMES+1)
 
     def test_stop(self):
         PERIOD = 0.1
 
-        invokations = [0]
+        invocations = [0]
 
         def _work():
-            invokations[0] = monotonic_time()
+            invocations[0] = monotonic_time()
 
         op = periodic.Operation(_work, period=PERIOD,
                                 scheduler=self.sched,
@@ -128,7 +128,7 @@ class PeriodicOperationTests(TestCaseBase):
         op.start()
         time.sleep(PERIOD * 2)
         # avoid pathological case on which nothing ever runs
-        self.assertTrue(invokations[0] > 0)
+        self.assertTrue(invocations[0] > 0)
 
         op.stop()
 
@@ -136,7 +136,7 @@ class PeriodicOperationTests(TestCaseBase):
         time.sleep(PERIOD)
         stop = monotonic_time()
 
-        self.assertTrue(stop > invokations[0])
+        self.assertTrue(stop > invocations[0])
 
     @slowtest
     def test_repeating_after_block(self):
@@ -144,19 +144,19 @@ class PeriodicOperationTests(TestCaseBase):
         TIMES = 5
         BLOCK_AT = 2
 
-        invokations = [0, 0]
+        invocations = [0, 0]
         executions = [0, 0]
         done = threading.Event()
 
         def _work():
-            invokations[0] += 1
-            invokations[1] = monotonic_time()
-            if invokations[0] == BLOCK_AT:
+            invocations[0] += 1
+            invocations[1] = monotonic_time()
+            if invocations[0] == BLOCK_AT:
                 # must be > (PERIOD * TIMES) ~= forever
                 time.sleep(10 * PERIOD * TIMES)
             executions[0] += 1
             executions[1] = monotonic_time()
-            if invokations[0] == TIMES:
+            if invocations[0] == TIMES:
                 done.set()
 
         op = periodic.Operation(_work, period=PERIOD,
@@ -169,10 +169,10 @@ class PeriodicOperationTests(TestCaseBase):
         # we don't care of this case
         op.stop()
         self.assertTrue(done.is_set())
-        self.assertTrue(executions[1] >= invokations[1])
-        self.assertTrue(TIMES <= invokations[0] <= TIMES+1)
+        self.assertTrue(executions[1] >= invocations[1])
+        self.assertTrue(TIMES <= invocations[0] <= TIMES+1)
         # one execution never completed
-        self.assertEqual(executions[0], invokations[0]-1)
+        self.assertEqual(executions[0], invocations[0]-1)
 
 
 VM_NUM = 5  # just a number, no special meaning
