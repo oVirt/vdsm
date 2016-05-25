@@ -290,6 +290,16 @@ def _process_productinfo(device_xml):
     return params
 
 
+@_data_processor()
+def _process_parent(device_xml):
+    name = device_xml.find('name').text
+
+    if name != 'computer':
+        return {'parent': device_xml.find('parent').text}
+
+    return {}
+
+
 @_data_processor('scsi')
 def _process_scsi_device_params(device_xml):
     """
@@ -346,9 +356,6 @@ def _process_device_params(device_xml):
     params = {}
 
     devXML = etree.fromstring(device_xml.decode('ascii', errors='ignore'))
-    name = devXML.find('name').text
-    if name != 'computer':
-        params['parent'] = devXML.find('parent').text
 
     caps = devXML.find('capability')
     params['capability'] = caps.attrib['type']
