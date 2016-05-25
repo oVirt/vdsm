@@ -3749,12 +3749,15 @@ class Vm(object):
         self.saveState()
 
     def _diskSizeExtendCow(self, drive, newSizeBytes):
-        # Apparently this is what libvirt would do anyway, except that
-        # it would fail on NFS when root_squash is enabled, see BZ#963881
-        # Patches have been submitted to avoid this behavior, the virtual
-        # and apparent sizes will be returned by the qemu process and
-        # through the libvirt blockInfo call.
-        curVirtualSize = qemuimg.info(drive.path, "qcow2")['virtualsize']
+        try:
+            # Due to an old bug in libvirt (BZ#963881) this call used to be
+            # broken for NFS domains when squash_root was enabled.  This has
+            # been fixed since libvirt-0.10.2-29
+            curVirtualSize = self._dom.blockInfo(drive.name)[0]
+        except libvirt.libvirtError:
+            self.log.exception("An error occurred while getting the current "
+                               "disk size")
+            return response.error('resizeErr')
 
         if curVirtualSize > newSizeBytes:
             self.log.error(
@@ -3776,11 +3779,14 @@ class Vm(object):
                 "to size %s", drive.name, newSizeBytes)
             return response.error('updateDevice')
         finally:
-            # In all cases we want to try and fix the size in the metadata.
-            # Same as above, this is what libvirt would do, see BZ#963881
             # Note that newVirtualSize may be larger than the requested size
             # because of rounding in qemu.
-            newVirtualSize = qemuimg.info(drive.path, "qcow2")['virtualsize']
+            try:
+                newVirtualSize = self._dom.blockInfo(drive.name)[0]
+            except libvirt.libvirtError:
+                self.log.exception("An error occurred while getting the "
+                                   "updated disk size")
+                return response.error('resizeErr')
             self._setVolumeSize(drive.domainID, drive.poolID, drive.imageID,
                                 drive.volumeID, newVirtualSize)
 
