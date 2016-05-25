@@ -237,13 +237,14 @@ def _process_driver(device_xml):
         return {'driver': driver_name}
 
 
-def _process_storage(caps, params):
+@_data_processor('storage')
+def _process_storage(device_xml):
     try:
-        model = caps.find('model').text
+        model = device_xml.find('./capability/model').text
     except AttributeError:
-        pass
+        return {}
     else:
-        params['product'] = model
+        return {'product': model}
 
 
 @_data_processor('scsi')
@@ -322,9 +323,6 @@ def _process_device_params(device_xml):
                 params[element + '_id'] = elementXML.attrib['id']
             if elementXML.text:
                 params[element] = elementXML.text
-
-    if params['capability'] == 'storage':
-        _process_storage(caps, params)
 
     physfn = caps.find('capability')
     if physfn is not None and physfn.attrib['type'] == 'phys_function' \
