@@ -257,6 +257,14 @@ def _process_vfs(device_xml):
         return {}
 
 
+@_data_processor('pci')
+def _process_iommu(device_xml):
+    iommu_group = device_xml.find('./capability/iommuGroup')
+    if iommu_group is not None:
+        return {'iommu_group': iommu_group.attrib['number']}
+    return {}
+
+
 @_data_processor('scsi')
 def _process_scsi_device_params(device_xml):
     """
@@ -339,10 +347,6 @@ def _process_device_params(device_xml):
             and params['capability'] == 'pci':
         address = physfn.find('address')
         params['physfn'] = pci_address_to_name(**address.attrib)
-
-    iommu_group = caps.find('iommuGroup')
-    if iommu_group is not None:
-        params['iommu_group'] = iommu_group.attrib['number']
 
     return params
 
