@@ -247,6 +247,17 @@ def _process_storage(device_xml):
         return {'product': model}
 
 
+@_data_processor('pci')
+def _process_vfs(device_xml):
+    name = device_xml.find('name').text
+
+    try:
+        return {'totalvfs': _sriov_totalvfs(name)}
+    except IOError:
+        # Device does not support sriov, we can safely go on
+        return {}
+
+
 @_data_processor('scsi')
 def _process_scsi_device_params(device_xml):
     """
@@ -333,12 +344,6 @@ def _process_device_params(device_xml):
     iommu_group = caps.find('iommuGroup')
     if iommu_group is not None:
         params['iommu_group'] = iommu_group.attrib['number']
-
-    try:
-        params['totalvfs'] = _sriov_totalvfs(name)
-    except IOError:
-        # Device does not support sriov, we can safely go on
-        pass
 
     return params
 
