@@ -4542,12 +4542,6 @@ class Vm(object):
         return True
 
     def _diskXMLGetVolumeChainInfo(self, diskXML, drive):
-        def find_element_by_name(doc, name):
-            for child in doc.childNodes:
-                if child.nodeName == name:
-                    return child
-            return None
-
         def pathToVolID(drive, path):
             for vol in drive.volumeChain:
                 if os.path.realpath(vol['path']) == os.path.realpath(path):
@@ -4556,21 +4550,18 @@ class Vm(object):
 
         volChain = []
         while True:
-            sourceXML = find_element_by_name(diskXML, 'source')
-            if not sourceXML:
-                break
             sourceAttr = ('file', 'dev')[drive.blockDev]
-            path = sourceXML.getAttribute(sourceAttr)
+            path = vmxml.find_attr(diskXML, 'source', sourceAttr)
+            if not path:
+                break
 
             # TODO: Allocation information is not available in the XML.  Switch
             # to the new interface once it becomes available in libvirt.
             alloc = None
-            bsXML = find_element_by_name(diskXML, 'backingStore')
-            if not bsXML:
+            if vmxml.find_first(diskXML, 'backingStore', None) is None:
                 self.log.warning("<backingStore/> missing from backing "
                                  "chain for drive %s", drive.name)
                 break
-            diskXML = bsXML
             entry = VolumeChainEntry(pathToVolID(drive, path), path, alloc)
             volChain.insert(0, entry)
         return volChain or None
