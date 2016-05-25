@@ -264,6 +264,7 @@ CLEANFILES = \
 EXTRA_DIST = \
 	crossImportsTests.py.in \
 	makecert.sh \
+	tests_child.py \
 	$(NULL)
 
 dist_noinst_DATA = \
