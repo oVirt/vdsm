@@ -266,6 +266,15 @@ def _process_iommu(device_xml):
     return {}
 
 
+@_data_processor('pci')
+def _process_physfn(device_xml):
+    physfn = device_xml.find('./capability/capability')
+    if physfn is not None and physfn.attrib['type'] == 'phys_function':
+        address = physfn.find('address')
+        return {'physfn': pci_address_to_name(**address.attrib)}
+    return {}
+
+
 @_data_processor('scsi')
 def _process_scsi_device_params(device_xml):
     """
@@ -342,12 +351,6 @@ def _process_device_params(device_xml):
                 params[element + '_id'] = elementXML.attrib['id']
             if elementXML.text:
                 params[element] = elementXML.text
-
-    physfn = caps.find('capability')
-    if physfn is not None and physfn.attrib['type'] == 'phys_function' \
-            and params['capability'] == 'pci':
-        address = physfn.find('address')
-        params['physfn'] = pci_address_to_name(**address.attrib)
 
     return params
 
