@@ -402,6 +402,10 @@ class StompClient(object):
     def send(self, message, destination=stomp.SUBSCRIPTION_ID_RESPONSE,
              headers=None):
         self.log.debug("Sending response")
+
+        if self._stompConn.is_closed():
+            raise stomp.Disconnected()
+
         self._aclient.send(
             destination,
             message,

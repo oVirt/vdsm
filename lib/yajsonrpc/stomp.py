@@ -85,6 +85,10 @@ class StompError(RuntimeError):
         super(RuntimeError, self).__init__(message)
 
 
+class Disconnected(RuntimeError):
+    pass
+
+
 class _HeartBeatFrame(object):
     def encode(self):
         return "\n"
