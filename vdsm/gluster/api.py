@@ -24,12 +24,12 @@ import os
 import selinux
 from functools import wraps
 from vdsm.define import doneCode
+from vdsm.storage import mount
 from vdsm import constants
 from vdsm import commands
 from vdsm import utils
 from vdsm import supervdsm as svdsm
 from pwd import getpwnam
-from storage import mount
 
 import exception as ge
 from . import gluster_mgmt_api
