@@ -159,7 +159,7 @@ def physical_function_net_name(pf_pci_name):
     return libvirt_device_names[0].split('_')[1]
 
 
-def _parse_address(caps, children):
+def _process_address(caps, children):
     params = {}
     for cap in children:
         params[cap] = caps.find(cap).text
@@ -167,16 +167,16 @@ def _parse_address(caps, children):
     return params
 
 
-def _parse_pci_address(caps):
-    return _parse_address(caps, ('domain', 'bus', 'slot', 'function'))
+def _process_pci_address(caps):
+    return _process_address(caps, ('domain', 'bus', 'slot', 'function'))
 
 
-def _parse_scsi_address(caps):
-    return _parse_address(caps, ('host', 'bus', 'target', 'lun'))
+def _process_scsi_address(caps):
+    return _process_address(caps, ('host', 'bus', 'target', 'lun'))
 
 
-def _parse_usb_address(caps):
-    return _parse_address(caps, ('bus', 'device'))
+def _process_usb_address(caps):
+    return _process_address(caps, ('bus', 'device'))
 
 
 def _process_storage(caps, params):
@@ -188,7 +188,7 @@ def _process_storage(caps, params):
         params['product'] = model
 
 
-def _parse_scsi_device_params(device_xml):
+def _process_scsi_device_params(device_xml):
     """
     The information we need about SCSI device is contained within multiple
     sysfs devices:
@@ -235,14 +235,14 @@ def _parse_scsi_device_params(device_xml):
     return params
 
 
-def _parse_device_params(device_xml):
+def _process_device_params(device_xml):
     """
     Process device_xml and return dict of found known parameters,
     also doing sysfs lookups for sr-iov related information
     """
-    address_parser = {'pci': _parse_pci_address,
-                      'scsi': _parse_scsi_address,
-                      'usb_device': _parse_usb_address}
+    address_processor = {'pci': _process_pci_address,
+                         'scsi': _process_scsi_address,
+                         'usb_device': _process_usb_address}
 
     params = {}
 
@@ -306,28 +306,28 @@ def _parse_device_params(device_xml):
         pass
 
     try:
-        params['address'] = address_parser[params['capability']](caps)
+        params['address'] = address_processor[params['capability']](caps)
     except KeyError:
         # We can somewhat safely ignore missing address as that means we're
         # dealing with device that is not yet supported
         pass
 
     if params['capability'] == 'scsi':
-        params.update(_parse_scsi_device_params(devXML))
+        params.update(_process_scsi_device_params(devXML))
     return params
 
 
 def _get_device_ref_and_params(device_name):
     libvirt_device = libvirtconnection.get().\
         nodeDeviceLookupByName(device_name)
-    return libvirt_device, _parse_device_params(libvirt_device.XMLDesc(0))
+    return libvirt_device, _process_device_params(libvirt_device.XMLDesc(0))
 
 
 def _get_devices_from_libvirt(flags=0):
     """
-    Returns all available host devices from libvirt parsed to dict
+    Returns all available host devices from libvirt processd to dict
     """
-    return dict((device.name(), _parse_device_params(device.XMLDesc(0)))
+    return dict((device.name(), _process_device_params(device.XMLDesc(0)))
                 for device in libvirtconnection.get().listAllDevices(flags))
 
 
