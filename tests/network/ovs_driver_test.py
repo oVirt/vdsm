@@ -277,4 +277,4 @@ class TestOvsApiWithSingleRealBridge(VdsmTestCase):
 def ovs_bond(ovsdb, bridge, bond, ports):
     ovsdb.add_bond(bridge, bond, ports).execute()
     yield bond
-    ovsdb.del_port(bridge, bond).execute()
+    ovsdb.del_port(bond, bridge=bridge).execute()

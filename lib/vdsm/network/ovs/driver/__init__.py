@@ -109,7 +109,7 @@ class API(object):
         pass
 
     @abc.abstractmethod
-    def del_port(self, bridge, port, if_exists=False):
+    def del_port(self, port, bridge=None, if_exists=False):
         pass
 
     @abc.abstractmethod

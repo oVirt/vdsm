@@ -193,11 +193,14 @@ class Vsctl(DriverAPI):
         command.extend(['add-port', bridge, port])
         return Command(command)
 
-    def del_port(self, bridge, port, if_exists=False):
+    def del_port(self, port, bridge=None, if_exists=False):
         command = []
         if if_exists:
             command.append('--if-exists')
-        command.extend(['del-port', bridge, port])
+        command.append('del-port')
+        if bridge:
+            command.append(bridge)
+        command.append(port)
         return Command(command)
 
     def list_ports(self, bridge):
