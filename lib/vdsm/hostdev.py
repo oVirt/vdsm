@@ -199,6 +199,23 @@ def _process_usb_address(device_xml):
     return _process_address(device_xml, ('bus', 'device'))
 
 
+@_data_processor()
+def _process_assignability(device_xml):
+    is_assignable = None
+
+    name = device_xml.find('name').text
+    physfn = device_xml.find('./capability/capability')
+
+    if physfn is not None:
+        if physfn.attrib['type'] in ('pci-bridge', 'cardbus-bridge'):
+            is_assignable = 'false'
+    if is_assignable is None:
+        is_assignable = str(_pci_header_type(name) ==
+                            PCIHeaderType.ENDPOINT).lower()
+
+    return {'is_assignable': is_assignable}
+
+
 def _process_storage(caps, params):
     try:
         model = caps.find('model').text
@@ -300,15 +317,6 @@ def _process_device_params(device_xml):
             and params['capability'] == 'pci':
         address = physfn.find('address')
         params['physfn'] = pci_address_to_name(**address.attrib)
-
-    is_assignable = None
-    if physfn is not None:
-        if physfn.attrib['type'] in ('pci-bridge', 'cardbus-bridge'):
-            is_assignable = 'false'
-    if is_assignable is None:
-        is_assignable = str(_pci_header_type(name) ==
-                            PCIHeaderType.ENDPOINT).lower()
-    params['is_assignable'] = is_assignable
 
     try:
         udev_path = caps.find('char').text
