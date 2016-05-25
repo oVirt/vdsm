@@ -4242,18 +4242,15 @@ class Vm(object):
                                    devType)
 
         for deviceXML in vmxml.children(DomainDescriptor(xml).devices):
-            aliasElement = deviceXML.getElementsByTagName('alias')
-            if aliasElement:
-                alias = aliasElement[0].getAttribute('name')
-
-                if alias in aliasToDevice:
-                    aliasToDevice[alias]._deviceXML = deviceXML.toxml()
-            elif deviceXML.tagName == hwclass.GRAPHICS:
+            alias = vmxml.find_attr(deviceXML, 'alias', 'name')
+            if alias in aliasToDevice:
+                aliasToDevice[alias]._deviceXML = vmxml.format_xml(deviceXML)
+            elif vmxml.tag(deviceXML) == hwclass.GRAPHICS:
                 # graphics device do not have aliases, must match by type
-                graphicsType = deviceXML.getAttribute('type')
+                graphicsType = vmxml.attr(deviceXML, 'type')
                 for devObj in self._devices[hwclass.GRAPHICS]:
                     if devObj.device == graphicsType:
-                        devObj._deviceXML = deviceXML.toxml()
+                        devObj._deviceXML = vmxml.format_xml(deviceXML)
 
     def waitForMigrationDestinationPrepare(self):
         """Wait until paths are prepared for migration destination"""
