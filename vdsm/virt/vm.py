@@ -2216,23 +2216,22 @@ class Vm(object):
     def setLinkAndNetwork(self, dev, conf, linkValue, networkValue, custom,
                           specParams=None):
         vnicXML = dev.getXML()
-        source = vnicXML.getElementsByTagName('source')[0]
-        source.setAttribute('bridge', networkValue)
+        source = vmxml.find_first(vnicXML, 'source')
+        vmxml.set_attr(source, 'bridge', networkValue)
         try:
-            link = vnicXML.getElementsByTagName('link')[0]
-        except IndexError:
+            link = vmxml.find_first(vnicXML, 'link')
+        except vmxml.NotFound:
             link = vnicXML.appendChildWithArgs('link')
-        link.setAttribute('state', linkValue)
+        vmxml.set_attr(link, 'state', linkValue)
         if (specParams and
                 ('inbound' in specParams or 'outbound' in specParams)):
-            oldBandwidths = vnicXML.getElementsByTagName('bandwidth')
-            oldBandwidth = oldBandwidths[0] if len(oldBandwidths) else None
+            oldBandwidth = vmxml.find_first(vnicXML, 'bandwidth', None)
             newBandwidth = dev.paramsToBandwidthXML(specParams, oldBandwidth)
             if oldBandwidth is None:
                 vnicXML.appendChild(newBandwidth)
             else:
                 vnicXML.replaceChild(newBandwidth, oldBandwidth)
-        vnicStrXML = vnicXML.toprettyxml(encoding='utf-8')
+        vnicStrXML = vmxml.format_xml(vnicXML)
         try:
             try:
                 vnicStrXML = hooks.before_update_device(vnicStrXML, self.conf,
@@ -2251,7 +2250,7 @@ class Vm(object):
             # Rollback link and network.
             self.log.warn('Rolling back link and net for: %s', dev.alias,
                           exc_info=True)
-            self._dom.updateDeviceFlags(vnicXML.toxml(encoding='utf-8'),
+            self._dom.updateDeviceFlags(vmxml.format_xml(vnicXML),
                                         libvirt.VIR_DOMAIN_AFFECT_LIVE)
             raise
         else:
