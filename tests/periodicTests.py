@@ -31,6 +31,7 @@ from vdsm.virt import periodic
 from vdsm.virt import vmstatus
 
 
+from testValidation import slowtest
 from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase as TestCaseBase
 import vmfakelib as fake
@@ -137,6 +138,7 @@ class PeriodicOperationTests(TestCaseBase):
 
         self.assertTrue(stop > invokations[0])
 
+    @slowtest
     def test_repeating_after_block(self):
         PERIOD = 0.1
         TIMES = 5
