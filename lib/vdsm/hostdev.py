@@ -246,6 +246,7 @@ def _process_storage(caps, params):
         params['product'] = model
 
 
+@_data_processor('scsi')
 def _process_scsi_device_params(device_xml):
     """
     The information we need about SCSI device is contained within multiple
@@ -341,8 +342,6 @@ def _process_device_params(device_xml):
         # Device does not support sriov, we can safely go on
         pass
 
-    if params['capability'] == 'scsi':
-        params.update(_process_scsi_device_params(devXML))
     return params
 
 
