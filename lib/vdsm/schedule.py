@@ -188,6 +188,10 @@ class ScheduledCall(object):
     was not called yet.
 
     This class is thread safe; any thread can cancel a call.
+
+    Please note that canceling a call works only if the function was not
+    invoked yet. But because this happens in different threads, this does not
+    guarantee that the callback will not be run after cancel() is called.
     """
 
     __slots__ = ('_deadline', '_callable')

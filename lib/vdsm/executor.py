@@ -24,6 +24,7 @@ Blocked tasks may be discarded, and the worker pool is automatically
 replenished."""
 
 import collections
+import functools
 import logging
 import threading
 
@@ -106,6 +107,11 @@ class Executor(object):
         """
         Called from scheduler thread when worker was discarded. The worker
         thread is blocked on a task, and will exit when the task finishes.
+
+        .. note::
+            This thread is different from `_worker_stopped()` thread (the
+            worker thread) and the order of `_worker_discarded()` and
+            `_worker_stopped()` execution may be arbitrary.
         """
         with self._lock:
             if self._running:
@@ -118,6 +124,11 @@ class Executor(object):
     def _worker_stopped(self, worker):
         """
         Called from the worker thread before it exits.
+
+        .. note::
+            This thread is different from `_worker_discarded()` thread (the
+            scheduler thread) and the order of `_worker_stopped()` and
+            `_worker_discarded()` execution may be arbitrary.
         """
         with self._lock:
             self._workers.remove(worker)
@@ -156,6 +167,8 @@ class _Worker(object):
         self._executor = executor
         self._scheduler = scheduler
         self._discarded = False
+        self._task_counter = 0
+        self._lock = threading.Lock()
         self._thread = concurrent.thread(self._run, name=name,
                                          logger=self._log.name)
         self._log.debug('Starting worker %s' % name)
@@ -200,20 +213,29 @@ class _Worker(object):
             # will be discarded.
             if discard is not None:
                 discard.cancel()
+            with self._lock:
+                self._task_counter += 1
             if self._discarded:
                 raise _WorkerDiscarded()
 
     def _discard_after(self, timeout):
         if timeout is not None:
-            return self._scheduler.schedule(timeout, self._discard)
+            discard = functools.partial(self._discard, self._task_counter)
+            return self._scheduler.schedule(timeout, discard)
         return None
 
-    def _discard(self):
-        if self._discarded:
-            raise AssertionError("Attempt to discard worker twice")
-        self._discarded = True
-        self._log.debug("Worker discarded: %s", self)
+    def _discard(self, task_number):
+        with self._lock:
+            if task_number != self._task_counter:
+                return
+            if self._discarded:
+                raise AssertionError("Attempt to discard worker twice")
+            self._discarded = True
+        # Please make sure the executor call is performed outside the lock --
+        # there is another lock involved in the executor and we don't want to
+        # fall into a deadlock incidentally.
         self._executor._worker_discarded(self)
+        self._log.debug("Worker discarded: %s", self)
 
     def __repr__(self):
         return "<Worker name=%s %s%s at 0x%x>" % (
