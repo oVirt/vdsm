@@ -122,8 +122,16 @@ class TestOvsInfo(VdsmTestCase):
                         }
                     }
                 }
-                obtained_bridges = info.OvsInfo().bridges
+                expected_bridges_by_sb = {TEST_BOND: TEST_BRIDGE}
+
+                ovs_info = info.OvsInfo()
+
+                obtained_bridges = ovs_info.bridges
                 self.assertEqual(obtained_bridges, expected_bridges)
+
+                obtained_bridges_by_sb = ovs_info.bridges_by_sb
+                self.assertEqual(
+                    obtained_bridges_by_sb, expected_bridges_by_sb)
 
 
 class MockedOvsInfo(info.OvsInfo):

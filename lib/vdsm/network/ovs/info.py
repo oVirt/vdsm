@@ -76,10 +76,24 @@ class OvsInfo(object):
 
         self._bridges = {bridge['name']: self._bridge_attr(bridge)
                          for bridge in ovs_db.bridges}
+        self._bridges_by_sb = self._get_bridges_by_sb()
 
     @property
     def bridges(self):
         return self._bridges
+
+    @property
+    def bridges_by_sb(self):
+        return self._bridges_by_sb
+
+    def _get_bridges_by_sb(self):
+        bridges_by_sb = {}
+
+        for bridge, attrs in six.iteritems(self.bridges):
+            bridge_sb = self.southbound_port(attrs['ports'])
+            bridges_by_sb[bridge_sb] = bridge
+
+        return bridges_by_sb
 
     def _bridge_attr(self, bridge_entry):
         stp = bridge_entry['stp_enable']
