@@ -48,9 +48,9 @@ from vdsm.infra import zombiereaper
 from vdsm.utils import traceback, CommandPath, NICENESS, IOCLASS
 
 try:
-    import ovirt_image_common
+    import ovirt_imageio_common
 except ImportError:
-    ovirt_image_common = None
+    ovirt_imageio_common = None
 
 
 _lock = threading.Lock()
@@ -165,8 +165,8 @@ def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     elif uri.startswith(_VMWARE_PROTOCOL):
         command = LibvirtCommand(uri, username, password, vminfo, job_id, irs)
     elif uri.startswith(_KVM_PROTOCOL):
-        if ovirt_image_common is None:
-            raise V2VError('Unsupported protocol KVM, ovirt_image_common'
+        if ovirt_imageio_common is None:
+            raise V2VError('Unsupported protocol KVM, ovirt_imageio_common'
                            'package is needed for importing KVM images')
         command = KVMCommand(uri, username, password, vminfo, job_id, irs)
     else:
