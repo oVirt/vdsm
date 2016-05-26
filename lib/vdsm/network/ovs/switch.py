@@ -22,12 +22,16 @@ from contextlib import contextmanager
 
 import six
 
+from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.nics import nics
+from vdsm.utils import random_iface_name
 
+from . import driver
 from . import info
 from . import validator
 
 SWITCH_TYPE = 'ovs'
+BRIDGE_PREFIX = 'vdsmbr_'
 
 
 def validate_network_setup(nets, bonds):
@@ -41,13 +45,31 @@ def validate_network_setup(nets, bonds):
 
 
 @contextmanager
-def rollback_trigger(in_rollback):
+def transaction(in_rollback, nets, bonds):
+    # FIXME: This and _update_running_config are temporary functions handling
+    # only positive flows.
+    running_config = RunningConfig()
     try:
         yield
     except:
-        pass
+        raise
     finally:
-        pass
+        _update_running_config(nets, bonds, running_config)
+        running_config.save()
+
+
+def _update_running_config(networks, bondings, running_config):
+    for net, attrs in six.iteritems(networks):
+        if 'remove' in attrs:
+            running_config.removeNetwork(net)
+        else:
+            running_config.setNetwork(net, attrs)
+
+    for bond, attrs in six.iteritems(bondings):
+        if 'remove' in attrs:
+            running_config.removeBonding(bond)
+        else:
+            running_config.setBonding(bond, attrs)
 
 
 def setup(nets, bonds):
@@ -58,7 +80,7 @@ def setup(nets, bonds):
     bonds_to_be_added_or_edited, bonds_to_be_removed = _split_bonds_action(
         bonds, _netinfo['bondings'])
 
-    # TODO: remove and add filtered networks
+    _setup_ovs_devices(nets_to_be_added, nets_to_be_removed)
 
 
 def _split_nets_action(nets, running_nets):
@@ -90,3 +112,82 @@ def _split_bonds_action(bonds, configured_bonds):
             bonds_to_be_added_or_edited[bond] = attrs
 
     return bonds_to_be_added_or_edited, bonds_to_be_removed
+
+
+def _setup_ovs_devices(nets_to_be_added, nets_to_be_removed):
+    ovsdb = driver.create()
+
+    with ovsdb.transaction() as t:
+        t.add(*_remove_nets(ovsdb, nets_to_be_removed))
+        t.add(*_add_nets(ovsdb, nets_to_be_added))
+
+    with ovsdb.transaction() as t:
+        t.add(*_cleanup_unused_bridges(ovsdb))
+
+
+def _remove_nets(ovsdb, nets):
+    return [_remove_net(ovsdb, net) for net in nets]
+
+
+def _remove_net(ovsdb, net):
+    return ovsdb.del_port(net)
+
+
+def _add_nets(ovsdb, nets):
+    commands = []
+
+    bridges_by_sb = info.OvsInfo().bridges_by_sb
+    for net, attrs in six.iteritems(nets):
+        sb = attrs['nic']
+        if sb in bridges_by_sb:
+            bridge = bridges_by_sb[sb]
+        else:
+            bridge, br_commands = _create_bridge(ovsdb, sb)
+            bridges_by_sb[sb] = bridge
+            commands.extend(br_commands)
+
+        commands.extend(_create_nb(ovsdb, bridge, net))
+
+    return commands
+
+
+def _create_br_name():
+    return random_iface_name(prefix=BRIDGE_PREFIX)
+
+
+def _create_nb(ovsdb, bridge, port):
+    commands = []
+    commands.append(ovsdb.add_port(bridge, port))
+    commands.append(ovsdb.set_port_attr(
+        port, 'other_config:vdsm_level', info.NORTHBOUND))
+    commands.append(ovsdb.set_interface_attr(port, 'type', 'internal'))
+    return commands
+
+
+def _create_bridge(ovsdb, sb):
+    commands = []
+    bridge = _create_br_name()
+    commands.append(ovsdb.add_br(bridge))
+    commands.extend(_create_sb(ovsdb, bridge, sb))
+    return bridge, commands
+
+
+def _create_sb(ovsdb, bridge, port):
+    commands = []
+    commands.append(ovsdb.add_port(bridge, port))
+    commands.append(ovsdb.set_port_attr(
+        port, 'other_config:vdsm_level', info.SOUTHBOUND))
+    return commands
+
+
+def _cleanup_unused_bridges(ovsdb):
+    return [ovsdb.del_br(bridge) for bridge in _unused_bridges()]
+
+
+def _unused_bridges():
+    unused_bridges = set()
+    for bridge, attrs in six.iteritems(info.OvsInfo().bridges):
+        northbound_ports = info.OvsInfo.northbound_ports(attrs['ports'])
+        if (bridge.startswith(BRIDGE_PREFIX) and not list(northbound_ports)):
+            unused_bridges.add(bridge)
+    return unused_bridges

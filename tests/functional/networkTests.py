@@ -724,11 +724,13 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @permutations([[True], [False]])
-    def testTwiceAdd(self, bridged):
+    @permutations([[True, 'legacy'], [False, 'legacy'],
+                   [True, 'ovs'], [False, 'ovs']])
+    def testTwiceAdd(self, bridged, switch):
         with dummyIf(1) as nics:
             nic, = nics
-            net = {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}
+            net = {NETWORK_NAME: {'nic': nic, 'bridged': bridged,
+                                  'switch': switch}}
             status, msg = self.vdsm_net.setupNetworks(net, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 

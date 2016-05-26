@@ -135,7 +135,7 @@ def _setup_legacy(networks, bondings, options, in_rollback):
 
 
 def _setup_ovs(networks, bondings, options, in_rollback):
-    with ovs_switch.rollback_trigger(in_rollback):
+    with ovs_switch.transaction(in_rollback, networks, bondings):
         ovs_switch.setup(networks, bondings)
         connectivity.check(options)
 
