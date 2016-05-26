@@ -147,6 +147,9 @@ def _add_nets(ovsdb, nets):
             commands.extend(br_commands)
 
         commands.extend(_create_nb(ovsdb, bridge, net))
+        vlan = attrs.get('vlan')
+        if vlan is not None:
+            commands.append(_set_vlan(ovsdb, net, vlan))
 
     return commands
 
@@ -178,6 +181,10 @@ def _create_sb(ovsdb, bridge, port):
     commands.append(ovsdb.set_port_attr(
         port, 'other_config:vdsm_level', info.SOUTHBOUND))
     return commands
+
+
+def _set_vlan(ovsdb, net, vlan):
+    return ovsdb.set_port_attr(net, 'tag', vlan)
 
 
 def _cleanup_unused_bridges(ovsdb):
