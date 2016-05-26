@@ -41,13 +41,10 @@ def propose_updates_to_reported_dhcp(network_info, networking):
     for devices in ('bridges', 'vlans', 'bondings', 'nics'):
         dev_info = networking[devices].get(network_device)
         if dev_info:
-            cfg = {}
             updated_networking[devices][network_device] = {
                 'dhcpv4': network_info['dhcpv4'],
                 'dhcpv6': network_info['dhcpv6'],
-                'cfg': cfg,
             }
-            cfg['BOOTPROTO'] = 'dhcp' if network_info['dhcpv4'] else 'none'
             break
 
     return updated_networking
@@ -63,10 +60,6 @@ def update_reported_dhcp(replacement, networking):
             device_info = networking[device_type][device_name]
             device_info['dhcpv4'] = replacement_device_info['dhcpv4']
             device_info['dhcpv6'] = replacement_device_info['dhcpv6']
-            # Remove when cluster level < 3.6 is no longer supported and thus
-            # it is not necessary to report ifcfg-like BOOTPROTO field.
-            if replacement_device_info['cfg']:
-                device_info['cfg'].update(replacement_device_info['cfg'])
 
 
 def dhcp_status(iface, ipaddrs):

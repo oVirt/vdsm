@@ -62,6 +62,7 @@ def _get_net_info(interface, routes):
     dhcpv4, dhcpv6 = dhcp.dhcp_status(interface, ipaddrs)
     gateway = netinfo_routes.get_gateway(routes, interface)
     ipv6gateway = netinfo_routes.get_gateway(routes, interface, family=6)
+
     return {
         'mtu': str(mtu),
         'addr': addr,
@@ -72,8 +73,7 @@ def _get_net_info(interface, routes):
         'ipv6addrs': ipv6addrs,
         'ipv6autoconf': addresses.is_ipv6_local_auto(interface),
         'ipv6gateway': ipv6gateway,
-        'dhcpv6': dhcpv6,
-        'cfg': {'BOOTPROTO': 'dhcp' if dhcpv4 else 'none'}}
+        'dhcpv6': dhcpv6}
 
 
 def _get_ports(network, attrs):
@@ -187,7 +187,7 @@ def _update_expected_ip_info(caps, running_config):
 
     def copy_net_info(source, destination):
         KEYS = {'addr', 'gateway', 'netmask', 'dhcpv4', 'ipv4addrs',
-                'ipv6addrs', 'ipv6autoconf', 'ipv6gateway', 'dhcpv6', 'cfg'}
+                'ipv6addrs', 'ipv6autoconf', 'ipv6gateway', 'dhcpv6'}
         for key in KEYS:
             destination[key] = source[key]
 

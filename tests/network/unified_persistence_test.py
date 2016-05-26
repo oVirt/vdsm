@@ -41,39 +41,27 @@ NIC_NAME = 'eth3'
 FAKE_NETINFO = {
     'nics': {
         NIC_NAME: {
-            'permhwaddr': 'ba:8d:23:4d:d7:41', 'addr': '', 'cfg': {
-                'SLAVE': 'yes', 'MTU': '1500', 'NM_CONTROLLED': 'no', 'MASTER':
-                BOND_NAME, 'DEVICE': NIC_NAME, 'ONBOOT': 'yes'},
+            'permhwaddr': 'ba:8d:23:4d:d7:41', 'addr': '',
             'ipv6addrs': [], 'mtu': '1500', 'netmask': '', 'ipv4addrs': [],
             'hwaddr': 'ba:8d:23:4d:d7:41', 'speed': 0},
         'eth0': {
             'addr': '192.168.122.4',
-            'cfg': {'UUID': 'ee97008f-180a-4640-b325-2cdbc4b471c7',
-                    'NM_CONTROLLED': 'yes', 'HWADDR': '52:54:00:C4:49:FB',
-                    'BOOTPROTO': 'dhcp', 'DEVICE': 'eth0', 'TYPE': 'Ethernet',
-                    'ONBOOT': 'yes'},
             'ipv6addrs': ['fe80::5054:ff:fec4:49fb/64'], 'mtu': '1500',
             'netmask': '255.255.255.0', 'ipv4addrs': ['192.168.122.4/24'],
             'hwaddr': '52:54:00:c4:49:fb', 'speed': 0}},
     'vlans': {
         BOND_NAME + '.' + VLAN: {
-            'iface': BOND_NAME, 'addr': '', 'cfg': {
-                'BRIDGE': NETWORK_NAME, 'VLAN': 'yes', 'HOTPLUG': 'no',
-                'NM_CONTROLLED': 'no', 'DEVICE': BOND_NAME + '.' + VLAN,
-                'ONBOOT': 'yes'},
+            'iface': BOND_NAME, 'addr': '',
             'ipv6addrs': ['fe80::b88d:23ff:fe4d:d741/64'], 'vlanid': int(VLAN),
             'mtu': '1500', 'netmask': '', 'ipv4addrs': []}},
     'bondings': {
         'bond0': {
-            'addr': '', 'cfg': {'BONDING_OPTS': 'arp_all_targets=0'},
+            'addr': '',
             'ipv6addrs': [], 'mtu': '1500', 'netmask': '', 'ipv4addrs': [],
             'hwaddr': '00:00:00:00:00:00', 'slaves': [], 'opts':
             {'arp_all_targets': '0'}},
         BOND_NAME: {
-            'addr': '', 'cfg': {
-                'DEFROUTE': 'yes', 'HOTPLUG': 'no', 'NM_CONTROLLED': 'no',
-                'BOOTPROTO': 'none', 'BONDING_OPTS': 'mode=802.3ad miimon=150',
-                'DEVICE': BOND_NAME, 'ONBOOT': 'yes'},
+            'addr': '',
             'ipv6addrs': ['fe80::b88d:23ff:fe4d:d741/64'], 'mtu': '1500',
             'netmask': '', 'ipv4addrs': [], 'hwaddr': 'ba:8d:23:4d:d7:41',
             'slaves': [NIC_NAME], 'opts': {'miimon': '150', 'mode': '4',
@@ -81,10 +69,7 @@ FAKE_NETINFO = {
     'bridges': {},
     'networks': {
         NETWORK_NAME: {
-            'iface': NETWORK_NAME, 'addr': '', 'cfg': {
-                'DEFROUTE': 'no', 'HOTPLUG': 'no', 'DELAY': '0',
-                'NM_CONTROLLED': 'no', 'BOOTPROTO': 'none', 'DEVICE':
-                NETWORK_NAME, 'TYPE': 'Bridge', 'ONBOOT': 'yes'},
+            'iface': NETWORK_NAME, 'addr': '',
             'bridged': True, 'ipv6addrs': ['fe80::b88d:23ff:fe4d:d741/64'],
             'gateway': '', 'bootproto4': 'none', 'netmask': '', 'stp': 'off',
             'ipv4addrs': [], 'mtu': '1500', 'ipv6gateway': '::', 'ports':

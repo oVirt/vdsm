@@ -1816,27 +1816,21 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
-                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
-                self.assertEqual(bootproto, 'none')
+                self.assertFalse(info['nics'][nic]['dhcpv4'])
 
                 status, msg = self.setupNetworks(
                     {vlan_name: bridged}, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(vlan_name)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
-                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
-                self.assertEqual(bootproto, 'none')
+                self.assertFalse(info['nics'][nic]['dhcpv4'])
 
                 # network should be fine even after second addition of vlan
                 status, msg = self.setupNetworks(
                     {vlan_name: bridged}, {}, {})
                 self.assertEqual(status, SUCCESS, msg)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
-                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
-                self.assertEqual(bootproto, 'none')
+                self.assertFalse(info['nics'][nic]['dhcpv4'])
 
                 delete_networks = {NETWORK_NAME: {'remove': True},
                                    vlan_name: {'remove': True}}
@@ -1860,9 +1854,7 @@ class NetworkTest(TestCaseBase):
                 self.assertNetworkExists(NETWORK_NAME)
                 self.assertNetworkExists(vlan_name)
                 status, msg, info = self.vdsm_net.getVdsCapabilities()
-                self.assertIn('BOOTPROTO', info['nics'][nic]['cfg'])
-                bootproto = info['nics'][nic]['cfg']['BOOTPROTO']
-                self.assertEqual(bootproto, 'none')
+                self.assertFalse(info['nics'][nic]['dhcpv4'])
 
                 delete_networks = {NETWORK_NAME: {'remove': True},
                                    vlan_name: {'remove': True}}
@@ -2053,8 +2045,6 @@ class NetworkTest(TestCaseBase):
             reported_network = reported.networks[network_name]
 
             if requested['bridged']:
-                self.assertEqual(reported_network['cfg']['BOOTPROTO'],
-                                 requested['bootproto'])
                 reported_devices = reported.bridges
                 device_name = network_name
             else:
@@ -2067,8 +2057,6 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(reported_network['dhcpv4'], requested_dhcpv4)
             self.assertEqual(reported_network['dhcpv6'], requested['dhcpv6'])
 
-            self.assertEqual(reported_device['cfg']['BOOTPROTO'],
-                             requested['bootproto'])
             self.assertEqual(reported_device['dhcpv4'], requested_dhcpv4)
             self.assertEqual(reported_device['dhcpv6'], requested['dhcpv6'])
 
@@ -2201,14 +2189,8 @@ class NetworkTest(TestCaseBase):
             test_net = self.vdsm_net.netinfo.networks[NETWORK_NAME]
             self.assertEqual(test_net['dhcpv4'], dhcp)
 
-            ifcfg_bootproto = 'dhcp' if dhcp else 'none'
-            self.assertEqual(test_net['cfg']['BOOTPROTO'], ifcfg_bootproto)
-
             bridges = self.vdsm_net.netinfo.bridges
             self.assertIn(NETWORK_NAME, bridges)
-            self.assertEqual(
-                bridges[NETWORK_NAME]['cfg']['BOOTPROTO'],
-                ifcfg_bootproto)
             self.assertEqual(bridges[NETWORK_NAME]['dhcpv4'], dhcp)
 
         with veth_pair() as (left, right):

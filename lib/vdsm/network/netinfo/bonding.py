@@ -198,12 +198,6 @@ def bondOptsForIfcfg(opts):
                      in sorted(opts.iteritems())))
 
 
-def bondOptsCompat(info):
-    """Add legacy ifcfg option if missing."""
-    if info['opts'] and 'BONDING_OPTS' not in info['cfg']:
-        info['cfg']['BONDING_OPTS'] = bondOptsForIfcfg(info['opts'])
-
-
 def permanent_address():
     paddr = {}
     for b in bondings():

@@ -266,8 +266,6 @@ class OVSNetworkTest(NetworkTest):
             reported_network = reported.networks[network_name]
 
             if requested['bridged']:
-                self.assertEqual(reported_network['cfg']['BOOTPROTO'],
-                                 requested['bootproto'])
                 reported_devices = reported.bridges
                 device_name = network_name
             else:
@@ -280,8 +278,6 @@ class OVSNetworkTest(NetworkTest):
             self.assertEqual(reported_network['dhcpv4'], requested_dhcpv4)
             self.assertEqual(reported_network['dhcpv6'], requested['dhcpv6'])
 
-            self.assertEqual(reported_device['cfg']['BOOTPROTO'],
-                             requested['bootproto'])
             self.assertEqual(reported_device['dhcpv4'], requested_dhcpv4)
             self.assertEqual(reported_device['dhcpv6'], requested['dhcpv6'])
 

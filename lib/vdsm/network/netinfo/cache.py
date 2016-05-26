@@ -37,7 +37,7 @@ from . import bridges
 from .dhcp import (propose_updates_to_reported_dhcp,  update_reported_dhcp,
                    dhcp_status, dhcp_faked_status)
 from .dns import get_host_nameservers
-from .misc import getIfaceCfg, ipv6_supported
+from .misc import ipv6_supported
 from .mtus import getMtu
 from . import nics
 from . import vlans
@@ -87,12 +87,8 @@ def _get(vdsmnets=None):
         else:
             continue
         devinfo.update(_devinfo(dev, routes, ipaddrs))
-        if dev.isBOND():
-            bonding.bondOptsCompat(devinfo)
 
     for network_name, network_info in six.iteritems(networking['networks']):
-        if network_info['bridged']:
-            network_info['cfg'] = networking['bridges'][network_name]['cfg']
         updates = propose_updates_to_reported_dhcp(network_info, networking)
         update_reported_dhcp(updates, networking)
         networking['networks'][network_name].update(LEGACY_SWITCH)
@@ -146,8 +142,7 @@ def _devinfo(link, routes, ipaddrs):
 
     is_dhcpv4, is_dhcpv6 = dhcp_status(link.name, ipaddrs)
 
-    info = {'addr': ipv4addr,
-            'cfg': getIfaceCfg(link.name),
+    return {'addr': ipv4addr,
             'ipv4addrs': ipv4addrs,
             'ipv6addrs': ipv6addrs,
             'ipv6autoconf': is_ipv6_local_auto(link.name),
@@ -157,9 +152,6 @@ def _devinfo(link, routes, ipaddrs):
             'dhcpv6': is_dhcpv6,
             'mtu': link.mtu,
             'netmask': ipv4netmask}
-    if 'BOOTPROTO' not in info['cfg']:
-        info['cfg']['BOOTPROTO'] = 'dhcp' if info['dhcpv4'] else 'none'
-    return info
 
 
 def ifaceUsed(iface):

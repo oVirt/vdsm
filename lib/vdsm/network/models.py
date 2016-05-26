@@ -285,15 +285,16 @@ class Bond(NetDevice):
                     mtu = max(mtu, mtus.getMtu(name))
 
                 if not options:
-                    options = _netinfo.bondings[name]['cfg'].get(
-                        'BONDING_OPTS')
+                    options = _netinfo.bondings[name].get('opts')
+                    options = Bond._dict2list(options)
         elif name in _netinfo.bondings:  # Implicit bonding.
             if _netinfo.ifaceUsers(name):
                 mtu = max(mtu, mtus.getMtu(name))
 
             slaves = [Nic(nic, configurator, mtu=mtu, _netinfo=_netinfo)
                       for nic in _netinfo.getNicsForBonding(name)]
-            options = _netinfo.bondings[name]['cfg'].get('BONDING_OPTS')
+            options = _netinfo.bondings[name].get('opts')
+            options = Bond._dict2list(options)
         else:
             raise ConfigNetworkError(ne.ERR_BAD_PARAMS,
                                      'Missing required nics on a bonding %s '
@@ -351,6 +352,11 @@ class Bond(NetDevice):
     @property
     def backing_device(self):
         return True
+
+    @staticmethod
+    def _dict2list(options):
+        options = options or {}
+        return ' '.join((opt + '=' + val for opt, val in options.items()))
 
 
 def _nicSort(nics):
