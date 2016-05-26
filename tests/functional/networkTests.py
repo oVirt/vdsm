@@ -809,8 +809,9 @@ class NetworkTest(TestCaseBase):
 
         self.assertEqual(status, SUCCESS, msg)
 
-    @permutations([[True], [False]])
-    def testSetupNetworksAddManyVlans(self, bridged):
+    @permutations([[True, 'legacy'], [False, 'legacy'],
+                   [True, 'ovs'], [False, 'ovs']])
+    def testSetupNetworksAddManyVlans(self, bridged, switch):
         VLAN_COUNT = 5
         NET_VLANS = [(NETWORK_NAME + str(index), str(index))
                      for index in range(VLAN_COUNT)]
@@ -819,7 +820,7 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             networks = dict((vlan_net,
                              {'vlan': str(tag), 'nic': nic,
-                              'bridged': bridged})
+                              'bridged': bridged, 'switch': switch})
                             for vlan_net, tag in NET_VLANS)
 
             status, msg = self.setupNetworks(networks, {}, NOCHK)
