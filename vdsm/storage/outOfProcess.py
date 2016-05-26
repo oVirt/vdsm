@@ -56,6 +56,7 @@ def cleanIdleIOProcesses(clientName):
     now = elapsed_time()
     for name, (eol, proc) in _procPool.items():
         if (eol < now and name != clientName):
+            log.debug("Removing idle ioprocess %s", name)
             del _procPool[name]
 
 
@@ -65,6 +66,7 @@ def getProcessPool(clientName):
 
         proc = _refProcPool.get(clientName, lambda: None)()
         if proc is None:
+            log.debug("Creating ioprocess %s", clientName)
             proc = IOProcess(max_threads=HELPERS_PER_DOMAIN,
                              timeout=DEFAULT_TIMEOUT,
                              max_queued_requests=MAX_QUEUED)
