@@ -53,7 +53,8 @@ def parse_xml(xml_string):
     :returns: DOM element created by parsing `xml_string`
     :rtype: DOM element
     """
-    return xml.dom.minidom.parseString(xml_string)
+    parsed = xml.dom.minidom.parseString(xml_string)
+    return parsed.firstChild
 
 
 def format_xml(element):
