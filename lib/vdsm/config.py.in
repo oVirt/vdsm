@@ -449,7 +449,7 @@ parameters = [
         ('health_check_interval', '60',
             'Number of seconds to wait between health checks.'),
 
-        ('m2c_debug_enable', 'true',
+        ('m2c_debug_enable', 'false',
             'Enable state information about the SSL connections which is by '
             'default logged to stderr.'),
 
