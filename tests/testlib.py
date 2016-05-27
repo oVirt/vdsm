@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2012-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -35,12 +35,6 @@ import tempfile
 import threading
 from contextlib import contextmanager
 import xml.etree.ElementTree as ET
-
-try:
-    from unittest import mock
-except ImportError:  # py2
-    import mock
-mock
 
 from nose import config
 from nose import core
