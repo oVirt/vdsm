@@ -1509,7 +1509,7 @@ class Vm(object):
         for devType in self._devices:
             for dev in self._devices[devType]:
                 try:
-                    deviceXML = dev.getXML().toxml(encoding='utf-8')
+                    deviceXML = vmxml.format_xml(dev.getXML())
                 except vmdevices.core.SkipDevice:
                     self.log.info('Skipping device %s.', dev.device)
                     continue
@@ -1973,7 +1973,7 @@ class Vm(object):
 
         nicParams = params['nic']
         nic = vmdevices.network.Interface(self.conf, self.log, **nicParams)
-        nicXml = nic.getXML().toprettyxml(encoding='utf-8')
+        nicXml = vmxml.format_xml(nic.getXML())
         nicXml = hooks.before_nic_hotplug(nicXml, self.conf,
                                           params=nic.custom)
         nic._deviceXML = nicXml
@@ -2056,7 +2056,7 @@ class Vm(object):
         # We now have to add devices to the VM while ignoring placeholders.
         for dev_spec, dev_object in zip(dev_specs, dev_objects):
             try:
-                dev_xml = dev_object.getXML().toprettyxml(encoding='utf-8')
+                dev_xml = vmxml.format_xml(dev_object.getXML())
             except vmdevices.core.SkipDevice:
                 self.log.info('Skipping device %s.', dev_object.device)
                 continue
@@ -2098,7 +2098,7 @@ class Vm(object):
                     break
 
             if dev_object:
-                device_xml = dev_object.getXML().toprettyxml(encoding='utf-8')
+                device_xml = vmxml.format_xml(dev_object.getXML())
                 self.log.debug('Hotunplug hostdev xml: %s', device_xml)
             else:
                 self.log.error('Hotunplug hostdev failed (continuing) - '
@@ -2332,7 +2332,7 @@ class Vm(object):
                 for network in nicParams['portMirroring']:
                     supervdsm.getProxy().unsetPortMirroring(network, nic.name)
 
-            nicXml = nic.getXML().toprettyxml(encoding='utf-8')
+            nicXml = vmxml.format_xml(nic.getXML())
             hooks.before_nic_hotunplug(nicXml, self.conf,
                                        params=nic.custom)
             # TODO: this is debug information. For 3.6.x we still need to
@@ -2398,7 +2398,7 @@ class Vm(object):
         memParams = params.get('memory', {})
         device = vmdevices.core.Memory(self.conf, self.log, **memParams)
 
-        deviceXml = device.getXML().toprettyxml(encoding='utf-8')
+        deviceXml = vmxml.format_xml(device.getXML())
         deviceXml = hooks.before_memory_hotplug(deviceXml)
         device._deviceXML = deviceXml
         self.log.debug("Hotplug memory xml: %s", deviceXml)
@@ -2563,7 +2563,7 @@ class Vm(object):
         # Save modified metadata
 
         if metadata_modified:
-            metadata_xml = qos.toprettyxml()
+            metadata_xml = vmxml.format_xml(qos)
 
             try:
                 self._dom.setMetadata(libvirt.VIR_DOMAIN_METADATA_ELEMENT,
@@ -2720,7 +2720,7 @@ class Vm(object):
             found_device.specParams['ioTune'] = io_tune
 
             # Make sure the cached XML representation is valid as well
-            xml = found_device.getXML().toprettyxml(encoding='utf-8')
+            xml = vmxml.format_xml(found_device.getXML())
             # TODO: this is debug information. For 3.6.x we still need to
             # see the XML even with 'info' as default level.
             self.log.info("New device XML for %s: %s",
@@ -2784,7 +2784,7 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return response.error('noimpl')
 
-        driveXml = drive.getXML().toprettyxml(encoding='utf-8')
+        driveXml = vmxml.format_xml(drive.getXML())
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info("Hotplug disk xml: %s" % (driveXml))
@@ -2834,7 +2834,7 @@ class Vm(object):
         if drive.hasVolumeLeases:
             return response.error('noimpl')
 
-        driveXml = drive.getXML().toprettyxml(encoding='utf-8')
+        driveXml = vmxml.format_xml(drive.getXML())
         # TODO: this is debug information. For 3.6.x we still need to
         # see the XML even with 'info' as default level.
         self.log.info("Hotunplug disk xml: %s", driveXml)
@@ -3583,7 +3583,7 @@ class Vm(object):
         return {'status': doneCode}
 
     def _startDriveReplication(self, drive):
-        destxml = drive.getReplicaXML().toprettyxml()
+        destxml = vmxml.format_xml(drive.getReplicaXML())
         self.log.debug("Replicating drive %s to %s", drive.name, destxml)
 
         flags = (libvirt.VIR_DOMAIN_BLOCK_COPY_SHALLOW |
@@ -3785,8 +3785,8 @@ class Vm(object):
         diskelem.appendChildWithArgs('target', dev=blockdev)
 
         try:
-            self._dom.updateDeviceFlags(
-                diskelem.toxml(), libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
+            self._dom.updateDeviceFlags(vmxml.format_xml(diskelem),
+                                        libvirt.VIR_DOMAIN_DEVICE_MODIFY_FORCE)
         except Exception:
             self.log.debug("updateDeviceFlags failed", exc_info=True)
             self.cif.teardownVolumePath(drivespec)
@@ -3821,7 +3821,7 @@ class Vm(object):
             vmxml.set_attr(graphics, 'connected', connAct)
         hooks.before_vm_set_ticket(self._domain.xml, self.conf, params)
         try:
-            self._dom.updateDeviceFlags(graphics.toxml(), 0)
+            self._dom.updateDeviceFlags(vmxml.format_xml(graphics), 0)
             self._consoleDisconnectAction = disconnectAction or \
                 ConsoleDisconnectAction.LOCK_SCREEN
         except virdomain.TimeoutError as tmo:
