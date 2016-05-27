@@ -5697,7 +5697,8 @@ types:
         properties:
         -   description: The remaining free disk space in bytes
             name: diskfree
-            type: int
+            type: string
+            datatype: int
 
         -   description: A list of alerts for this Storage Domain
             name: alerts
@@ -5707,7 +5708,12 @@ types:
         -   description: The total amount of disk space in the Storage
                 Domain in bytes
             name: disktotal
-            type: int
+            type: string
+            datatype: int
+
+        -   description: ISO domain images directory
+            name: isoprefix
+            type: string
 
         -   description: Current Storage Domain status
             name: status
@@ -5752,10 +5758,11 @@ types:
 
         -   description: The Storage Pool version
             name: version
-            type: int
+            type: string
+            datatype: int
 
         -   description: The type of storage managed by this Storage Pool
-            name: domainType
+            name: type
             type: *StorageDomainType
 
         -   description: The Storage Pool name
