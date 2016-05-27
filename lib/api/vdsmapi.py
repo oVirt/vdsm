@@ -40,7 +40,8 @@ TYPE_KEYS = list(PRIMITIVE_TYPES.keys())
 
 
 DEFAULT_VALUES = {'{}': {},
-                  '()': ()}
+                  '()': (),
+                  '[]': []}
 
 
 class SchemaNotFound(Exception):

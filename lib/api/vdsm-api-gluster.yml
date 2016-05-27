@@ -1217,7 +1217,7 @@ GlusterTask.list:
     added: '3.2'
     description: List Gluster tasks.
     params:
-    -   defaultvalue: []
+    -   defaultvalue: '[]'
         description: UUID of the Task
         name: taskID
         type: *UUID
@@ -1281,7 +1281,7 @@ GlusterVolume.create:
         name: stripeCount
         type: int
 
-    -   defaultvalue: []
+    -   defaultvalue: '[]'
         description: Transport type
         name: transportList
         type:
