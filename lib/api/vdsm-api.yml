@@ -946,7 +946,7 @@ types:
         description: map of VM properties
         name: ExternalVmInfo
         properties:
-        -   defaultvalue: []
+        -   defaultvalue: '[]'
             description: list of disk devices
             name: disks
             type:
@@ -982,7 +982,7 @@ types:
             name: status
             type: *VmStatus
 
-        -   defaultvalue: []
+        -   defaultvalue: '[]'
             description: list of network devices
             name: networks
             type:
@@ -2668,7 +2668,7 @@ types:
             name: linkActive
             type: boolean
 
-        -   defaultvalue: []
+        -   defaultvalue: '[]'
             description: If present, indicates the traffic of which
                 networks should be mirrored to the interface.
             name: portMirroring
