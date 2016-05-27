@@ -2450,9 +2450,9 @@ class Vm(object):
         qos = self._getVmPolicy()
         if qos is not None:
             try:
-                vcpuLimit = qos.getElementsByTagName("vcpuLimit")
-                self._vcpuLimit = vcpuLimit[0].childNodes[0].data
-            except IndexError:
+                vcpuLimit = vmxml.find_first(qos, "vcpuLimit")
+                self._vcpuLimit = vmxml.dom_text(vcpuLimit)
+            except vmxml.NotFound:
                 # missing vcpuLimit node
                 self._vcpuLimit = None
 
@@ -2501,13 +2501,13 @@ class Vm(object):
 
         if 'vcpuLimit' in params:
             # Remove old value
-            vcpuLimit = qos.getElementsByTagName("vcpuLimit")
-            if vcpuLimit:
-                qos.removeChild(vcpuLimit[0])
+            vcpuLimit = vmxml.find_first(qos, "vcpuLimit", None)
+            if vcpuLimit is not None:
+                vmxml.remove_child(qos, vcpuLimit)
 
             vcpuLimit = vmxml.Element("vcpuLimit")
             vcpuLimit.appendTextNode(str(params["vcpuLimit"]))
-            qos.appendChild(vcpuLimit)
+            vmxml.append_child(qos, vcpuLimit)
 
             metadata_modified = True
             self._vcpuLimit = params.pop('vcpuLimit')
