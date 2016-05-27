@@ -222,6 +222,32 @@ def children(element, tag=None):
     return itertools.chain(children)
 
 
+def append_child(element, child):
+    """
+    Add child element to `element`.
+
+    :param element: element to add the child to
+    :type element: DOM element
+    :param child: child element to add to `element`
+    :type child: DOM element
+
+    """
+    element.appendChild(child)
+
+
+def remove_child(element, child):
+    """
+    Remove child element from `element`.
+
+    :param element: element to add the child to
+    :type element: DOM element
+    :param child: child element to remove from `element`
+    :type child: DOM element
+
+    """
+    element.removeChild(child)
+
+
 def has_channel(domXML, name):
     domObj = etree.fromstring(domXML)
     devices = domObj.findall('devices')

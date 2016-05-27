@@ -44,7 +44,7 @@ def io_tune_values_to_dom(values, dom):
         if name in values and values[name] >= 0:
             el = vmxml.Element(name)
             el.appendTextNode(str(values[name]))
-            dom.appendChild(el)
+            vmxml.append_child(dom, el)
 
 
 def collect_inner_elements(el, d):
@@ -55,14 +55,11 @@ def collect_inner_elements(el, d):
     :param el: XML DOM element object with text only children
     :param d: Dictionary to add the values to
     """
-    for chel in el.childNodes:
-        # skip text body
-        if chel.localName is None:
-            continue
+    for chel in vmxml.children(el):
         try:
-            d[chel.localName] = int(chel.childNodes[0].data)
+            d[vmxml.tag(chel)] = int(vmxml.text(chel))
         except (IndexError, ValueError):
-            log.exception("Invalid value for %s", chel.localName)
+            log.exception("Invalid value for %s", vmxml.tag(chel))
 
 
 def io_tune_dom_to_values(dom):
@@ -75,22 +72,21 @@ def io_tune_dom_to_values(dom):
     """
     values = {}
 
-    if dom.hasAttribute("name"):
-        values["name"] = dom.getAttribute("name")
+    if vmxml.attr(dom, "name"):
+        values["name"] = vmxml.attr(dom, "name")
 
-    if dom.hasAttribute("path"):
-        values["path"] = dom.getAttribute("path")
+    if vmxml.attr(dom, "path"):
+        values["path"] = vmxml.attr(dom, "path")
 
-    els = dom.getElementsByTagName("guaranteed")
-    if els:
+    element = vmxml.find_first(dom, "guaranteed", None)
+    if element is not None:
         values["guaranteed"] = {}
-        collect_inner_elements(els[0], values["guaranteed"])
+        collect_inner_elements(element, values["guaranteed"])
 
-    els = dom.getElementsByTagName("maximum")
-    if els:
+    element = vmxml.find_first(dom, "maximum", None)
+    if element is not None:
         values["maximum"] = {}
-        for chel in els[0].childNodes:
-            collect_inner_elements(els[0], values["maximum"])
+        collect_inner_elements(element, values["maximum"])
 
     return values
 
@@ -106,19 +102,19 @@ def io_tune_to_dom(tune):
     device = vmxml.Element("device")
 
     if "name" in tune and tune["name"]:
-        device.setAttribute("name", tune["name"])
+        vmxml.set_attr(device, "name", tune["name"])
 
     if "path" in tune and tune["path"]:
-        device.setAttribute("path", tune["path"])
+        vmxml.set_attr(device, "path", tune["path"])
 
     if "maximum" in tune:
         maximum = vmxml.Element("maximum")
-        device.appendChild(maximum)
+        vmxml.append_child(device, maximum)
         io_tune_values_to_dom(tune["maximum"], maximum)
 
     if "guaranteed" in tune:
         guaranteed = vmxml.Element("guaranteed")
-        device.appendChild(guaranteed)
+        vmxml.append_child(device, guaranteed)
         io_tune_values_to_dom(tune["guaranteed"], guaranteed)
 
     return device
@@ -166,13 +162,13 @@ def create_device_index(ioTune):
     ioTuneByPath = {}
     ioTuneByName = {}
 
-    for el in ioTune.getElementsByTagName("device"):
+    for el in vmxml.find_all(ioTune, "device"):
         # Only one of the path and name fields is mandatory
-        if el.hasAttribute("path"):
-            ioTuneByPath[el.getAttribute("path")] = el
+        if vmxml.attr(el, "path"):
+            ioTuneByPath[vmxml.attr(el, "path")] = el
 
-        if el.hasAttribute("name"):
-            ioTuneByName[el.getAttribute("name")] = el
+        if vmxml.attr(el, "name"):
+            ioTuneByName[vmxml.attr(el, "name")] = el
 
     return ioTuneByName, ioTuneByPath
 
@@ -199,18 +195,18 @@ def update_io_tune_dom(ioTune, tunables):
         if ("name" in limit_object
                 and limit_object["name"] in ioTuneByName):
             old_tune = ioTuneByName[limit_object["name"]]
-            ioTune.removeChild(old_tune)
+            vmxml.remove_child(ioTune, old_tune)
         elif ("path" in limit_object
                 and limit_object["path"] in ioTuneByPath):
             old_tune = ioTuneByPath[limit_object["path"]]
-            ioTune.removeChild(old_tune)
+            vmxml.remove_child(ioTune, old_tune)
 
         if old_tune is not None:
             old_object = io_tune_dom_to_values(old_tune)
             limit_object = io_tune_merge(old_object, limit_object)
 
         new_tune = io_tune_to_dom(limit_object)
-        ioTune.appendChild(new_tune)
+        vmxml.append_child(ioTune, new_tune)
         count += 1
 
         # Make sure everything is OK when the same name is passed

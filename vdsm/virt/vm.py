@@ -2540,14 +2540,13 @@ class Vm(object):
                     return response.error('updateVmPolicyErr', e.message)
 
             # Make sure the top level element exists
-            ioTuneList = qos.getElementsByTagName("ioTune")
-            if not ioTuneList:
-                ioTuneElement = vmxml.Element("ioTune")
-                ioTuneList.append(ioTuneElement)
-                qos.appendChild(ioTuneElement)
+            io_tune_element = vmxml.find_first(qos, "ioTune", None)
+            if io_tune_element is None:
+                io_tune_element = vmxml.Element("ioTune")
+                vmxml.append_child(qos, io_tune_element)
                 metadata_modified = True
 
-            if update_io_tune_dom(ioTuneList[0], ioTuneParams) > 0:
+            if update_io_tune_dom(io_tune_element, ioTuneParams) > 0:
                 metadata_modified = True
 
             del params['ioTune']
@@ -2618,11 +2617,11 @@ class Vm(object):
     def getIoTunePolicy(self):
         tunables = []
         qos = self._getVmPolicy()
-        ioTuneList = qos.getElementsByTagName("ioTune")
-        if not ioTuneList or not ioTuneList[0].hasChildNodes():
+        io_tune = vmxml.find_first(qos, "ioTune", None)
+        if io_tune is None:
             return []
 
-        for device in ioTuneList[0].getElementsByTagName("device"):
+        for device in vmxml.find_all(io_tune, "device"):
             tunables.append(io_tune_dom_to_values(device))
 
         return tunables
@@ -2684,10 +2683,10 @@ class Vm(object):
 
             # Merge the update with current values
             dom = found_device.getXML()
-            io_dom_list = dom.getElementsByTagName("iotune")
+            io_tune_element = vmxml.find_first(dom, "iotune", None)
             old_io_tune = {}
-            if io_dom_list:
-                collect_inner_elements(io_dom_list[0], old_io_tune)
+            if io_tune_element is not None:
+                collect_inner_elements(io_tune_element, old_io_tune)
                 old_io_tune.update(io_tune)
                 io_tune = old_io_tune
 
@@ -2712,8 +2711,8 @@ class Vm(object):
             # so we are still up-to-date
             # TODO: improve once libvirt gets support for iotune events
             #       see https://bugzilla.redhat.com/show_bug.cgi?id=1114492
-            if io_dom_list:
-                dom.removeChild(io_dom_list[0])
+            if io_tune_element is not None:
+                vmxml.remove_child(dom, io_tune_element)
             io_dom = vmxml.Element("iotune")
             io_tune_values_to_dom(io_tune, io_dom)
             dom.appendChild(io_dom)

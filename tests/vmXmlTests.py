@@ -128,6 +128,22 @@ class TestVmXmlHelpers(XMLTestCase):
         element = vmxml.find_first(self._dom, start_tag)
         self.assertEqual(len(list(vmxml.children(element, tag))), number)
 
+    def test_append_child(self):
+        empty = vmxml.find_first(self._dom, 'empty')
+        vmxml.append_child(empty, vmxml.Element('new'))
+        self.assertIsNotNone(vmxml.find_first(self._dom, 'new', None))
+        empty = vmxml.find_first(self._dom, 'empty')
+        self.assertIsNotNone(vmxml.find_first(empty, 'new', None))
+
+    def test_remove_child(self):
+        top = vmxml.find_first(self._dom, 'topelement')
+        hello = list(vmxml.find_all(top, 'hello'))
+        old = hello[1]
+        vmxml.remove_child(top, old)
+        updated_hello = list(vmxml.find_all(top, 'hello'))
+        hello = hello[:1] + hello[2:]
+        self.assertEqual(updated_hello, hello)
+
 
 @expandPermutations
 class TestDomainDescriptor(VmXmlTestCase):
