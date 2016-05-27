@@ -365,8 +365,6 @@ class Domain(object):
 
         self.arch = arch
 
-        self.doc = xml.dom.minidom.Document()
-
         if utils.tobool(self.conf.get('kvmEnable', 'true')):
             domainType = 'kvm'
         else:
@@ -375,7 +373,6 @@ class Domain(object):
         domainAttrs = {'type': domainType}
 
         self.dom = Element('domain', **domainAttrs)
-        self.doc.appendChild(self.dom)
 
         self.dom.appendChildWithArgs('name', text=self.conf['vmName'])
         self.dom.appendChildWithArgs('uuid', text=self.conf['vmId'])
@@ -771,11 +768,10 @@ class Domain(object):
         self._devices.appendChild(emulator)
 
     def appendDeviceXML(self, deviceXML):
-        self._devices.appendChild(
-            xml.dom.minidom.parseString(deviceXML).firstChild)
+        self._devices.appendChild(parse_xml(deviceXML))
 
     def toxml(self):
-        return self.doc.toprettyxml(encoding='utf-8')
+        return format_xml(self.dom)
 
     def _getSmp(self):
         return self.conf.get('smp', '1')
