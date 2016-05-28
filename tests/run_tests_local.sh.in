@@ -3,6 +3,8 @@ if [ -z "$PYTHON_EXE" ]; then
     PYTHON_EXE="@PYTHON@"
 fi
 
+TIMEOUT=${TIMEOUT:-300}
+
 export \
     LC_ALL=C \
     NOSE_LOGFORMAT='%(asctime)s %(levelname)-7s [%(name)s] (%(threadName)s) %(message)s' \
@@ -11,4 +13,23 @@ export \
     PYTHONPATH="@top_srcdir@/lib:@top_srcdir@/vdsm:@top_srcdir@/client:@top_srcdir@/vdsm_api:$PYTHONPATH" \
     $NULL
 
-"$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules -A "type!='functional'" $@
+"$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules -A "type!='functional'" $@ &
+runner_pid=$!
+
+(
+    sleep $TIMEOUT
+    echo
+    echo "========================================================================"
+    echo "=           Timeout completing tests - extracting stacktrace           ="
+    echo "========================================================================"
+    echo
+    gdb -p $runner_pid --batch -ex "thread apply all py-bt"
+    echo
+    echo "========================================================================"
+    echo "=                        Aborting tests                                ="
+    echo "========================================================================"
+    kill -KILL $runner_pid
+) &
+watcher_pid=$!
+
+wait $runner_pid && kill -TERM $watcher_pid

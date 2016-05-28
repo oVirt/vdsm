@@ -5,3 +5,4 @@ centos-ovirt40-candidate,http://cbs.centos.org/repos/virt7-ovirt-40-candidate/x8
 ovirt-ci-tools,http://resources.ovirt.org/repos/ci-tools/$distro
 lago,http://resources.ovirt.org/repos/lago/stable/0.0/rpm/$distro
 epel,http://download.fedoraproject.org/pub/epel/7/x86_64
+centos-debuginfo,http://debuginfo.centos.org/7/$basearch/

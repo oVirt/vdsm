@@ -56,3 +56,14 @@ Functional test suite:
 The functional test suite is designed to test a running vdsm instance.  To run
 the full suite of functional tests from within the installed directory:
     ./run_tests.sh functional/*.py
+
+Test timeout
+------------
+
+If a test run is too slow, it is aborted, and a backtrace of all threads is
+printed.
+
+To use a different timeout for the tests temporary, set the TIMEOUT environment
+varaible to the desired value:
+
+    TIMEOUT=600 ./run_tests_local.sh foo_test.py
