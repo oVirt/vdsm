@@ -94,29 +94,69 @@ class ValidationTests(TestCaseBase):
                 'net1', {'bonding': 'bond1', 'switch': 'ovs'},
                 fake_to_be_added_bonds, fake_running_bonds, fake_kernel_nics)
 
-    def test_bond_with_no_slaves(self):
+    def test_add_bond_with_no_slaves(self):
         fake_kernel_nics = []
+        nets = {}
+        running_nets = {}
         with self.assertRaises(ne.ConfigNetworkError):
             ovs_validator.validate_bond_configuration(
-                {'switch': 'ovs'}, fake_kernel_nics)
+                'bond1', {'switch': 'ovs'}, nets, running_nets,
+                fake_kernel_nics)
 
-    def test_bond_with_one_slave(self):
+    def test_add_bond_with_one_slave(self):
         fake_kernel_nics = ['eth0']
+        nets = {}
+        running_nets = {}
         with self.assertRaises(ne.ConfigNetworkError):
             ovs_validator.validate_bond_configuration(
-                {'nics': ['eth0'], 'switch': 'ovs'}, fake_kernel_nics)
+                'bond1', {'nics': ['eth0'], 'switch': 'ovs'}, nets,
+                running_nets, fake_kernel_nics)
 
-    def test_bond_with_two_slaves(self):
+    def test_add_bond_with_two_slaves(self):
         fake_kernel_nics = ['eth0', 'eth1']
+        nets = {}
+        running_nets = {}
         with self.assertNotRaises():
             ovs_validator.validate_bond_configuration(
-                {'nics': ['eth0', 'eth1'], 'switch': 'ovs'}, fake_kernel_nics)
+                'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'}, nets,
+                running_nets, fake_kernel_nics)
 
-    def test_bond_with_not_existing_slaves(self):
+    def test_add_bond_with_not_existing_slaves(self):
         fake_kernel_nics = []
+        nets = {}
+        running_nets = {}
         with self.assertRaises(ne.ConfigNetworkError):
             ovs_validator.validate_bond_configuration(
-                {'nics': ['eth0', 'eth1'], 'switch': 'ovs'}, fake_kernel_nics)
+                'bond1', {'nics': ['eth0', 'eth1'], 'switch': 'ovs'},
+                nets, running_nets, fake_kernel_nics)
+
+    def test_remove_bond_attached_to_a_network(self):
+        fake_kernel_nics = ['eth0', 'eth1']
+        nets = {}
+        running_nets = {}
+        with self.assertNotRaises():
+            ovs_validator.validate_bond_configuration(
+                'bond1', {'remove': True, 'switch': 'ovs'}, nets, running_nets,
+                fake_kernel_nics)
+
+    def test_remove_bond_attached_to_network_that_was_removed(self):
+        fake_kernel_nics = ['eth0', 'eth1']
+        nets = {'net1': {'remove': True}}
+        running_nets = {'net1': {'bond': 'bond1'}}
+        with self.assertNotRaises():
+            ovs_validator.validate_bond_configuration(
+                'bond1', {'remove': True, 'switch': 'ovs'}, nets, running_nets,
+                fake_kernel_nics)
+
+    def test_remove_bond_attached_to_network_that_was_not_removed(self):
+        fake_kernel_nics = ['eth0', 'eth1']
+        nets = {}
+        running_nets = {'net1': {'bond': 'bond1'}}
+        with self.assertRaises(ne.ConfigNetworkError) as e:
+            ovs_validator.validate_bond_configuration(
+                'bond1', {'remove': True, 'switch': 'ovs'}, nets, running_nets,
+                fake_kernel_nics)
+        self.assertEquals(e.exception[0], ne.ERR_USED_BOND)
 
 
 @attr(type='unit')

@@ -18,6 +18,8 @@
 #
 from __future__ import absolute_import
 
+import six
+
 from vdsm.network import errors as ne
 
 
@@ -53,7 +55,7 @@ def validate_net_configuration(net, attrs, to_be_configured_bonds,
                 ne.ERR_BAD_VLAN, 'Vlan device requires a nic/bond')
 
 
-def validate_bond_configuration(attrs, kernel_nics):
+def validate_bond_configuration(bond, attrs, nets, running_nets, kernel_nics):
     """Validate bonding parameters which are not verified by OVS itself.
 
     OVS database commands used for bond's editation do not verify slaves'
@@ -63,12 +65,31 @@ def validate_bond_configuration(attrs, kernel_nics):
         - bond mode
         - lacp
     """
-    nics = attrs.get('nics')
+    if 'remove' in attrs:
+        _validate_bond_removal(bond, nets, running_nets)
+    else:
+        _validate_bond_addition(attrs.get('nics'), kernel_nics)
 
-    if nics is None or len(attrs.get('nics')) < 2:
+
+def _validate_bond_addition(nics, kernel_nics):
+    if nics is None or len(nics) < 2:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_BONDING, 'OVS bond requires at least 2 slaves')
     for nic in nics:
         if nic not in kernel_nics:
             raise ne.ConfigNetworkError(
                 ne.ERR_BAD_NIC, 'Nic %s does not exist' % nic)
+
+
+def _validate_bond_removal(bond, nets, running_nets):
+    for net in _nets_with_bond(running_nets, bond):
+        to_be_removed = 'remove' in nets.get(net, {})
+        if not to_be_removed:
+            raise ne.ConfigNetworkError(
+                ne.ERR_USED_BOND, 'Cannot remove bonding %s: used by '
+                'network %s' % (bond, net))
+
+
+def _nets_with_bond(running_nets, bond):
+    return (net for net, attrs in six.iteritems(running_nets)
+            if attrs['bond'] == bond)
