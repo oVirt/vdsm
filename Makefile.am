@@ -62,22 +62,6 @@ ABS_IMPORT_WHITELIST = \
 	tests/network/*.py \
 	$(NULL)
 
-WHITELIST = \
-	contrib/logdb \
-	contrib/profile-stats \
-	contrib/repoplot \
-	init/daemonAdapter \
-	vdsm/get-conf-item \
-	vdsm/set-conf-item \
-	vdsm/supervdsmServer \
-	vdsm/vdsm \
-	vdsm/vdsm-restore-net-config \
-	vdsm/storage/curl-img-wrap \
-	vdsm/storage/fc-scan \
-	vdsm-tool/vdsm-tool \
-	$(NULL)
-
-
 .PHONY: gitignore
 gitignore:
 	@echo "Checking that .in files are ignored..."
@@ -115,7 +99,6 @@ pep8:
 python3: all
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
 	    PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
-		$(WHITELIST) \
 		`find -not -path './.tox/*' -name '*.py'` ; \
 	else \
 	    echo "Warning: skipping python3 syntax check"; \
