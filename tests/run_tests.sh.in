@@ -4,4 +4,12 @@ if [ -z "$PYTHON_EXE" ]; then
 fi
 
 prefix="@prefix@"
-LC_ALL=C NOSE_VERBOSE=${NOSE_VERBOSE:-3} PYTHONPATH="@datarootdir@/vdsm" "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py $@
+
+export \
+    LC_ALL=C \
+    NOSE_LOGFORMAT='%(asctime)s %(levelname)-7s [%(name)s] (%(threadName)s) %(message)s' \
+    NOSE_VERBOSE=${NOSE_VERBOSE:-3} \
+    PYTHONPATH="@datarootdir@/vdsm" \
+    $NULL
+
+"$PYTHON_EXE" @top_srcdir@/tests/testrunner.py $@
