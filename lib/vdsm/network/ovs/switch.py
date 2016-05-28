@@ -35,13 +35,14 @@ BRIDGE_PREFIX = 'vdsmbr_'
 
 
 def validate_network_setup(nets, bonds):
-    running_bonds = info.get_netinfo()['bondings']
+    _netinfo = info.create_netinfo(info.OvsInfo())
     kernel_nics = nics()
     for net, attrs in six.iteritems(nets):
         validator.validate_net_configuration(
-            net, attrs, bonds, running_bonds, kernel_nics)
+            net, attrs, bonds, _netinfo['bondings'], kernel_nics)
     for bond, attrs in six.iteritems(bonds):
-        validator.validate_bond_configuration(attrs, kernel_nics)
+        validator.validate_bond_configuration(
+            bond, attrs, nets, _netinfo['networks'], kernel_nics)
 
 
 @contextmanager
