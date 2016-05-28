@@ -116,7 +116,7 @@ python3: all
 	if [ "$(PYTHON3_SUPPORT)" == "1" ]; then \
 	    PYTHONDONTWRITEBYTECODE=1 $(PYTHON3) -m compileall \
 		$(WHITELIST) \
-		`find -not -path './.tox/*' -name '*.py'` \
+		`find -not -path './.tox/*' -name '*.py'` ; \
 	else \
 	    echo "Warning: skipping python3 syntax check"; \
 	fi
