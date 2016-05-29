@@ -26,6 +26,7 @@ from vdsm import constants
 from vdsm.network.netinfo import addresses
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo import bridges
+from vdsm.network.netinfo import routes
 from vdsm.network.netconfpersistence import BaseConfig
 
 
@@ -90,13 +91,14 @@ def _translate_netinfo_net(net, net_attr, netinfo_):
 def _translate_ipaddr(attributes, net_attr):
     attributes['bootproto'] = 'dhcp' if net_attr['dhcpv4'] else 'none'
     attributes['dhcpv6'] = net_attr['dhcpv6']
-    ifcfg = net_attr.get('cfg')
-    # TODO: we must not depend on 'cfg', which is configurator-dependent.
-    # TODO: Look up in the routing table instead.
-    if ifcfg and ifcfg.get('DEFROUTE') == 'yes':
-        attributes['defaultRoute'] = True
+
+    dg_obj = routes.getDefaultGateway()
+    dg = dg_obj.via if dg_obj else None
+    if dg and net_attr['gateway']:
+        attributes['defaultRoute'] = (dg == net_attr['gateway'])
     else:
         attributes['defaultRoute'] = False
+
     # only static addresses are part of {Persistent,Running}Config.
     if attributes['bootproto'] == 'none':
         if net_attr['addr']:
