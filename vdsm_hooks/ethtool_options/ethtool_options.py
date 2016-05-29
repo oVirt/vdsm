@@ -23,7 +23,7 @@ import sys
 import hooking
 import traceback
 
-from vdsm.network import netinfo
+from vdsm.network.netinfo import bonding
 from vdsm.utils import CommandPath
 
 ETHTOOL_BINARY = CommandPath(
@@ -119,7 +119,7 @@ def _process_network(network, attrs):
 
 def _net_nics(attrs):
     if 'bonding' in attrs:
-        return netinfo.bonding.slaves(attrs['bonding'])
+        return bonding.slaves(attrs['bonding'])
     else:
         return [attrs.pop('nic')] if 'nic' in attrs else ()
 
