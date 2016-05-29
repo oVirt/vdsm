@@ -1472,26 +1472,29 @@ class NetworkTest(TestCaseBase):
         IP_ADD_UNCHANGED = '240.0.0.100'
         VLAN_UNCHANGED = 100
         NET_UNCHANGED = NETWORK_NAME + '100'
-        NET_CHANGED = NETWORK_NAME + '101'
-        NET_MISSING = NETWORK_NAME + '102'
-        IP_ADDR_NET_CHANGED = '240.0.0.101'
-        IP_ADDR_MISSING = '204.0.0.102'
+        NET_CHANGED = NETWORK_NAME + '108'
+        NET_MISSING = NETWORK_NAME + '116'
+        IP_ADDR_NET_CHANGED = '240.0.0.108'
+        IP_ADDR_MISSING = '204.0.0.116'
+        IP_NETMASK = '255.255.255.248'
+        IP_GATEWAY = '240.0.0.102'
         nets = {
             NET_UNCHANGED: {
                 'bootproto': 'none', 'ipaddr': IP_ADD_UNCHANGED,
-                'vlan': str(VLAN_UNCHANGED), 'netmask': IP_MASK,
+                'vlan': str(VLAN_UNCHANGED), 'netmask': IP_NETMASK,
+                'gateway': IP_GATEWAY,
                 'bonding': BOND_UNCHANGED, 'defaultRoute': True},
             NET_CHANGED: {
                 'bootproto': 'none',
                 'ipaddr': IP_ADDR_NET_CHANGED,
                 'vlan': str(VLAN_UNCHANGED + 1),
-                'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
+                'netmask': IP_NETMASK, 'bonding': BOND_UNCHANGED,
                 'defaultRoute': False},
             NET_MISSING: {
                 'bootproto': 'none',
                 'ipaddr': IP_ADDR_MISSING,
                 'vlan': str(VLAN_UNCHANGED + 2),
-                'netmask': IP_MASK, 'bonding': BOND_MISSING},
+                'netmask': IP_NETMASK, 'bonding': BOND_MISSING},
         }
 
         def _assert_all_nets_exist():
@@ -1561,29 +1564,31 @@ class NetworkTest(TestCaseBase):
         BOND_CHANGED = 'bond101'
         IP_MGMT = '240.0.0.100'
         NET_MGMT = NETWORK_NAME + '100'
-        NET_UNCHANGED = NETWORK_NAME + '101'
-        NET_CHANGED = NETWORK_NAME + '102'
-        NET_ADDITIONAL = NETWORK_NAME + '103'
-        IP_ADDR_UNCHANGED = '240.0.0.101'
-        IP_ADDR_CHANGED = '204.0.0.102'
-        IP_ADDR_ADDITIONAL = '204.0.0.102'
+        NET_UNCHANGED = NETWORK_NAME + '108'
+        NET_CHANGED = NETWORK_NAME + '116'
+        NET_ADDITIONAL = NETWORK_NAME + '124'
+        IP_ADDR_UNCHANGED = '240.0.0.108'
+        IP_ADDR_CHANGED = '204.0.0.116'
+        IP_ADDR_ADDITIONAL = '204.0.0.124'
+        IP_NETMASK = '255.255.255.248'
+        IP_GATEWAY = '240.0.0.102'
         nets = {
             NET_MGMT: {
-                'bootproto': 'none', 'ipaddr': IP_MGMT,
-                'netmask': IP_MASK, 'defaultRoute': True},
+                'bootproto': 'none', 'ipaddr': IP_MGMT, 'gateway': IP_GATEWAY,
+                'netmask': IP_NETMASK, 'defaultRoute': True},
             NET_UNCHANGED: {
                 'bootproto': 'none',
                 'ipaddr': IP_ADDR_UNCHANGED,
-                'netmask': IP_MASK, 'bonding': BOND_UNCHANGED,
+                'netmask': IP_NETMASK, 'bonding': BOND_UNCHANGED,
                 'defaultRoute': False},
             NET_CHANGED: {
                 'bootproto': 'none',
                 'ipaddr': IP_ADDR_CHANGED,
-                'netmask': IP_MASK, 'bonding': BOND_CHANGED},
+                'netmask': IP_NETMASK, 'bonding': BOND_CHANGED},
         }
         net_additional_attrs = {
             'bootproto': 'none', 'ipaddr': IP_ADDR_ADDITIONAL,
-            'netmask': IP_MASK}
+            'netmask': IP_NETMASK}
 
         def _assert_all_nets_exist():
             self.vdsm_net.refreshNetinfo()
