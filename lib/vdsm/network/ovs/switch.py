@@ -51,7 +51,8 @@ def rollback_trigger(in_rollback):
 
 
 def setup(nets, bonds):
-    _netinfo = info.get_netinfo()
+    ovs_info = info.OvsInfo()
+    _netinfo = info.create_netinfo(ovs_info)
     nets_to_be_added, nets_to_be_removed = _split_nets_action(
         nets, _netinfo['networks'])
     bonds_to_be_added_or_edited, bonds_to_be_removed = _split_bonds_action(
