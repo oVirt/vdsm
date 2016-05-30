@@ -264,11 +264,11 @@ class TestEventLoop(VdsmTestCase):
         def callback(arg):
             self.calls.append(arg)
 
-        self.loop.call_later(0.03, callback, 3)
-        self.loop.call_later(0.01, callback, 1)
-        self.loop.call_later(0.04, self.loop.stop)
-        self.loop.call_later(0.00, callback, 0)
-        self.loop.call_later(0.02, callback, 2)
+        self.loop.call_later(0.3, callback, 3)
+        self.loop.call_later(0.1, callback, 1)
+        self.loop.call_later(0.4, self.loop.stop)
+        self.loop.call_later(0.0, callback, 0)
+        self.loop.call_later(0.2, callback, 2)
         self.loop.run_forever()
         self.assertEqual([0, 1, 2, 3], self.calls)
 
