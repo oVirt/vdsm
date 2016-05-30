@@ -70,10 +70,10 @@ def _split_nets_action(nets, running_nets):
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
             nets_to_be_removed.add(net)
-        elif net not in running_nets:
-            nets_to_be_added[net] = attrs
-        elif attrs != running_nets.get(net):
+        elif net in running_nets:
             nets_to_be_removed.add(net)
+            nets_to_be_added[net] = attrs
+        else:
             nets_to_be_added[net] = attrs
 
     return nets_to_be_added, nets_to_be_removed
