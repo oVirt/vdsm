@@ -147,7 +147,7 @@ class OvsInfo(object):
 
 
 def get_netinfo():
-    netinfo = _get_netinfo(OvsInfo())
+    netinfo = create_netinfo(OvsInfo())
     netinfo.update(_fake_devices(netinfo['networks']))
     return netinfo
 
@@ -184,7 +184,7 @@ def _fake_vlan(net_attrs, vlanid):
     return {vlan_name: vlan_info}
 
 
-def _get_netinfo(ovs_info):
+def create_netinfo(ovs_info):
     addresses = getIpAddrs()
     routes = get_routes()
 
