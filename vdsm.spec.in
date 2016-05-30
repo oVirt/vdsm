@@ -14,6 +14,7 @@
 %global vmcon_group ovirt-vmconsole
 
 # Features
+%global with_ovirt_imageio @OVIRT_IMAGEIO@
 %global with_ovirt_vmconsole @OVIRT_VMCONSOLE@
 %global with_gluster_mgmt @GLUSTER_MGMT@
 %global with_hooks @HOOKS@
@@ -144,6 +145,12 @@ Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.3
 Requires: openvswitch >= 2.0.0
+
+%if 0%{?with_ovirt_imageio}
+Requires: ovirt-imageio-common
+Requires: ovirt-imageio-daemon
+%endif
+
 %if 0%{?with_ovirt_vmconsole}
 Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
@@ -729,6 +736,9 @@ autoreconf -if
 %endif
         --with-smbios-manufacturer='@SMBIOS_MANUFACTURER@' \
         --with-smbios-osname='@SMBIOS_OSNAME@' \
+%if ! 0%{?with_ovirt_imageio}
+        --disable-ovirt-imageio \
+%endif
 %if 0%{?with_ovirt_vmconsole}
         --with-ovirt-vmconsole-user=%{vmcon_user} \
         --with-ovirt-vmconsole-group=%{vmcon_group} \

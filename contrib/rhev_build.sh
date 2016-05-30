@@ -10,6 +10,7 @@ make distclean
         --with-qemu-img='qemu-img-rhev' \
         --enable-hooks \
         --disable-gluster-mgmt \
+        --disable-ovirt-imageio \
         --disable-python3
 make dist
 
