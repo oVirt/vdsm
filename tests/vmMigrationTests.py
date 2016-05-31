@@ -244,6 +244,7 @@ def _update_downtime_repeatedly(downtime, steps):
             cfg = make_config([('vars', 'migration_downtime_delay', '0')])
             with MonkeyPatchScope([(migration, 'config', cfg)]):
                 dt = migration.DowntimeThread(testvm, downtime, steps)
+                dt.set_initial_downtime()
                 dt.start()
                 dt.join()
 
