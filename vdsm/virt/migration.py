@@ -440,6 +440,8 @@ class DowntimeThread(threading.Thread):
         self._wait = (delay_per_gib * max(memSize, 2048) + 1023) / 1024
         # do not materialize, keep as generator expression
         self._downtimes = exponential_downtime(self._downtime, self._steps)
+        # we need the first value to support set_initial_downtime
+        self._initial_downtime = next(self._downtimes)
 
         self.daemon = True
 
@@ -457,6 +459,9 @@ class DowntimeThread(threading.Thread):
             self._stop.wait(self._wait / self._steps)
 
         self._vm.log.debug('migration downtime thread exiting')
+
+    def set_initial_downtime(self):
+        self._set_downtime(self._initial_downtime)
 
     def stop(self):
         self._vm.log.debug('stopping migration downtime thread')
@@ -480,6 +485,12 @@ class _FakeThreadInterface(object):
     def join(self):
         pass
 
+    def is_alive(self):
+        return False
+
+    def set_initial_downtime(self):
+        pass
+
 
 class MonitorThread(threading.Thread):
     _MIGRATION_MONITOR_INTERVAL = config.getint(
@@ -501,12 +512,14 @@ class MonitorThread(threading.Thread):
     @utils.traceback()
     def run(self):
         if self.enabled:
-            self.downtime_thread.start()
             try:
                 self.monitor_migration()
             finally:
                 self.downtime_thread.stop()
-            self.downtime_thread.join()
+            if self.downtime_thread.is_alive():
+                # on very short migrations, the downtime thread
+                # may not be started at all.
+                self.downtime_thread.join()
             self._vm.log.debug('stopped migration monitor thread')
         else:
             self._vm.log.info('migration monitor thread disabled'
@@ -531,8 +544,10 @@ class MonitorThread(threading.Thread):
         lastDataRemaining = None
         iterationCount = 0
 
-        while not self._stop.isSet():
+        self._vm.log.debug('setting initial migration downtime')
+        self.downtime_thread.set_initial_downtime()
 
+        while not self._stop.isSet():
             stopped = self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
             if stopped:
                 break
@@ -563,6 +578,10 @@ class MonitorThread(threading.Thread):
                 iterationCount += 1
                 self._vm.log.debug('new iteration detected: %i',
                                    iterationCount)
+                if iterationCount == 1:
+                    # it does not make sense to do any adjustments before
+                    # first iteration.
+                    self.downtime_thread.start()
 
             lastDataRemaining = dataRemaining
 
