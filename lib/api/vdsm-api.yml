@@ -1578,6 +1578,7 @@ types:
         values:
             down: The interface is not active
             up: The interface is active
+            unknown: The interface state is unknown
 
     HostNetworkInterfaceStats: &HostNetworkInterfaceStats
         added: '3.2'
@@ -4687,55 +4688,68 @@ types:
         properties:
         -   description: Bytes written
             name: writtenBytes
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: The latency of flush operations in nanoseconds
             name: flushLatency
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The size of the disk (in bytes)
             name: apparentsize
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The latency of read operations in nanoseconds
             name: readLatency
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Bytes read
             name: readBytes
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: The latency of write operations in nanoseconds
             name: writeLatency
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The amount of underlying storage allocated
                 (in bytes)
             name: truesize
-            type: uint
+            type: string
+            datatype: uint
 
-        -   description: The UUID of the Image associated with
+        -   defaultvalue: null
+            description: The UUID of the Image associated with
                 this disk
             name: imageID
             type: *UUID
+
         -   description: The read activity in bytes per second
             name: readRate
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The write activity in bytes per second
             name: writeRate
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Read operations since VM start
             name: readOps
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: Write operations since VM start
             name: writeOps
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
         type: object
 
@@ -4824,11 +4838,13 @@ types:
         properties:
         -   description: The port in use for encrypted display data
             name: tlsPort
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The port in use for unencrypted display data
             name: port
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The type of display in use
             name: type
@@ -4845,24 +4861,28 @@ types:
         description: Statistics for a running virtual machine.
         name: RunningVmStats
         properties:
-        -   description: Memory statistics as reported by the guest agent
+        -   defaultvalue: null
+            description: Memory statistics as reported by the guest agent
             name: memoryStats
             type: *GuestMemoryStats
 
         -   description: The time difference from host to the VM in seconds
             name: timeOffset
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Indicates if KVM hardware acceleration is enabled
             name: kvmEnable
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   description: Ratio of CPU time spent by qemu on other than guest
                 time
             name: cpuSys
-            type: float
+            type: string
+            datatype: float
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: Cpu usage hard limit in percents.
             name: vcpuUserLimit
             type: int
@@ -4870,7 +4890,8 @@ types:
 
         -   description: The number of seconds that the VM has been running
             name: elapsedTime
-            type: uint
+            type: string
+            datatype: uint
 
         -   defaultvalue: null
             description: Information about the most recent watchdog event
@@ -4879,7 +4900,8 @@ types:
 
         -   description: Indicates if ACPI is enabled inside the VM
             name: acpiEnable
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   description: Network bandwidth/utilization statistics
             name: network
@@ -4889,15 +4911,17 @@ types:
             name: disks
             type: *VmDiskStatsMap
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: Total cpu usage since VM start in ns
             name: cpuUsage
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: Ratio of CPU time spent by the guest VM
             name: cpuUser
-            type: float
+            type: string
+            datatype: float
 
         -   description: The UUID of the Vm
             name: vmId
@@ -4910,7 +4934,8 @@ types:
             type: uint
             added: '3.4'
 
-        -   description: Guest memory balloon information
+        -   defaultvalue: null
+            description: Guest memory balloon information
             name: balloonInfo
             type: *BalloonInfo
 
@@ -4923,7 +4948,8 @@ types:
         -   defaultvalue: 0
             description: Setting for libvirt cpu_quota.
             name: vcpuQuota
-            type: int
+            type: string
+            datatype: int
             added: '3.4'
 
         -   description: A space separated string of assigned IPv4 addresses
@@ -4933,7 +4959,7 @@ types:
         -   defaultvalue: 0
             description: Setting for libvirt cpu_period.
             name: vcpuPeriod
-            type: int
+            type: long
             added: '3.4'
 
         -   defaultvalue: null
@@ -4958,9 +4984,10 @@ types:
 
         -   description: The process ID of the underlying qemu process
             name: pid
-            type: uint
+            type: string
+            datatype: uint
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: 'The path to an ISO image used in the VM''s CD-ROM
                 device'
             name: cdrom
@@ -4971,7 +4998,7 @@ types:
             type: string
             added: '3.6'
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: An alias for the type of device used to boot
                 the VM
             name: boot
@@ -4980,7 +5007,8 @@ types:
         -   description: Time in milliseconds when this structure was created.
                 It is used to order vm status updates by a client.
             name: statusTime
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: The IP address of the client connected to the display
@@ -5006,7 +5034,8 @@ types:
 
         -   description: The percent of memory in use by the guest
             name: memUsage
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: Display and graphics device informations.
             added: '3.4'
@@ -5014,13 +5043,14 @@ types:
             type:
             - *VmDisplayInfo
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: Number of vCPUs assigned to the VM
             name: vcpuCount
-            type: int
+            type: string
+            datatype: int
             added: '3.4'
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: The type of display in use
             name: displayType
             type: *VmDisplayType
@@ -5028,9 +5058,11 @@ types:
 
         -   description: Indicates if the qemu monitor is responsive
             name: monitorResponse
-            type: int
+            type: string
+            datatype: int
 
-        -   description: A list of installed applications with their versions
+        -   defaultvalue: ()
+            description: A list of installed applications with their versions
             name: appsList
             type:
             - string
@@ -5040,7 +5072,8 @@ types:
             name: guestCPUCount
             type: int
 
-        -   description: Info about mounted filesystems as reported by the
+        -   defaultvalue: null
+            description: Info about mounted filesystems as reported by the
                 agent
             name: disksUsage
             type:
@@ -5048,30 +5081,42 @@ types:
 
         -   description: The port in use for unencrypted display data
             name: displayPort
-            type: uint
+            type: string
+            datatype: uint
             modified: '3.6'
 
-        -   description: Network device address info as reported by the agent
+        -   defaultvalue: null
+            description: Network device address info as reported by the agent
             name: netIfaces
             type:
             - *GuestNetworkDeviceInfo
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: The port in use for encrypted display data
             name: displaySecurePort
-            type: uint
+            type: string
+            datatype: uint
             modified: '3.6'
 
         -   description: The current state of user interaction with the VM
             name: session
             type: *GuestSessionState
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: null
             description: A list of running containers in the Vm
             name: guestContainers
             type:
             - *GuestContainerInfo
             added: '4.0'
+
+        -   description: hash
+            name: hash
+            type: string
+            datatype: int
+
+        -   description: The current VM status
+            name: status
+            type: *VmStatus
         type: object
 
     SELinuxStatus: &SELinuxStatus

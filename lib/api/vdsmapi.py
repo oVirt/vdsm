@@ -205,8 +205,8 @@ class Schema(object):
             # if type is in a list we need to get the type and call
             # type verification method
             elif isinstance(t, list):
-                if not isinstance(value, list):
-                    self._report_inconsistency('Parameter %s is not list'
+                if not isinstance(value, (list, tuple)):
+                    self._report_inconsistency('Parameter %s is not a sequence'
                                                % (value))
                 for a in value:
                     self._verify_type(t[0], a, class_name, method_name)
