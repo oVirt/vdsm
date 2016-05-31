@@ -95,12 +95,7 @@ def _translate_ipaddr(attributes, net_attr):
     attributes['dhcpv6'] = net_attr['dhcpv6']
     attributes['ipv6autoconf'] = net_attr['ipv6autoconf']
 
-    dg_obj = routes.getDefaultGateway()
-    dg = dg_obj.via if dg_obj else None
-    if dg and net_attr['gateway']:
-        attributes['defaultRoute'] = (dg == net_attr['gateway'])
-    else:
-        attributes['defaultRoute'] = False
+    attributes['defaultRoute'] = _translate_default_route(net_attr)
 
     # only static addresses are part of {Persistent,Running}Config.
     if attributes['bootproto'] == 'none':
@@ -115,6 +110,14 @@ def _translate_ipaddr(attributes, net_attr):
             attributes['ipv6addr'] = net_attr['ipv6addrs']
         if net_attr['ipv6gateway'] != '::':
             attributes['ipv6gateway'] = net_attr['ipv6gateway']
+
+
+def _translate_default_route(net_attr):
+    is_default_route = net_attr.get('ipv4defaultroute')
+    if is_default_route is None:
+        return routes.is_default_route(net_attr['gateway'])
+    else:
+        return is_default_route
 
 
 def _translate_nics(attributes, nics):

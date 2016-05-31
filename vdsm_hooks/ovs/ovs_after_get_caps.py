@@ -74,7 +74,8 @@ def _get_net_info(interface, routes):
         'ipv6addrs': ipv6addrs,
         'ipv6autoconf': addresses.is_ipv6_local_auto(interface),
         'ipv6gateway': ipv6gateway,
-        'dhcpv6': dhcpv6}
+        'dhcpv6': dhcpv6,
+        'ipv4defaultroute': netinfo_routes.is_default_route(gateway)}
 
 
 def _get_ports(network, attrs):

@@ -46,6 +46,14 @@ def getDefaultGateway():
     return Route.fromText(output[0]) if output else None
 
 
+def is_default_route(gateway):
+    if not gateway:
+        return False
+
+    dg = getDefaultGateway()
+    return (gateway == dg.via) if dg else False
+
+
 def get_gateway(routes_by_dev, dev, family=4, table=nl_route._RT_TABLE_UNSPEC):
     """
     Return the default gateway for a device and an address family

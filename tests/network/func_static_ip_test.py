@@ -34,6 +34,7 @@ VLAN = 10
 IPv4_ADDRESS = '192.0.2.1'
 IPv4_NETMASK = '255.255.255.0'
 IPv4_PREFIX_LEN = '24'
+IPv4_GATEWAY = '192.0.2.254'
 IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
 
 IPv4 = [4]
@@ -80,6 +81,19 @@ class NetworkStaticIpBasicTemplate(NetFuncTestCase):
 
     def test_add_net_with_ipv4_ipv6_based_on_bridge(self):
         self._test_add_net_with_ip(IPv4IPv6, bridged=True)
+
+    def test_add_net_with_ipv4_default_gateway(self):
+        with dummy_device() as nic:
+            network_attrs = {'nic': nic,
+                             'ipaddr': IPv4_ADDRESS,
+                             'netmask': IPv4_NETMASK,
+                             'gateway': IPv4_GATEWAY,
+                             'defaultRoute': True,
+                             'switch': self.switch}
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with self.setupNetworks(netcreate, {}, NOCHK):
+                self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
 
     def _test_add_net_with_ip(self, families, bonded=False, vlaned=False,
                               bridged=False):

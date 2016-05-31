@@ -41,7 +41,7 @@ from .dns import get_host_nameservers
 from .mtus import getMtu
 from . import nics
 from . import vlans
-from .routes import get_routes, get_gateway
+from .routes import get_routes, get_gateway, is_default_route
 from .qos import report_network_qos
 
 
@@ -151,7 +151,8 @@ def _devinfo(link, routes, ipaddrs):
             'dhcpv4': is_dhcpv4,
             'dhcpv6': is_dhcpv6,
             'mtu': link.mtu,
-            'netmask': ipv4netmask}
+            'netmask': ipv4netmask,
+            'ipv4defaultroute': is_default_route(gateway)}
 
 
 def ifaceUsed(iface):
@@ -200,6 +201,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, net_attrs):
                      'ipv6autoconf': is_ipv6_local_auto(iface),
                      'gateway': gateway,
                      'ipv6gateway': get_gateway(routes, iface, family=6),
+                     'ipv4defaultroute': is_default_route(gateway),
                      'mtu': getMtu(iface)})
     except (IOError, OSError) as e:
         if e.errno == errno.ENOENT:

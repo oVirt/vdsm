@@ -4174,6 +4174,11 @@ types:
             type: string
 
         -   defaultvalue: no-default
+            description: Whether the gateway is the host default
+            name: ipv4defaultroute
+            type: boolean
+
+        -   defaultvalue: no-default
             description: Specify Switch. Legacy is used if not passed
             name: switch
             type: string
@@ -4211,6 +4216,11 @@ types:
         -   description: The IP address of the subnet's gateway
             name: gateway
             type: string
+
+        -   defaultvalue: no-default
+            description: Whether the gateway is the host default
+            name: ipv4defaultroute
+            type: boolean
 
         -   description: A list of IPv6 addresses in the format
                 of 'address/prefixlen' that are assigned to the
@@ -4333,6 +4343,11 @@ types:
             type: string
 
         -   defaultvalue: no-default
+            description: Whether the gateway is the host default
+            name: ipv4defaultroute
+            type: boolean
+
+        -   defaultvalue: no-default
             description: Whether use stateless autoconfiguration
             name: ipv6autoconf
             type: boolean
@@ -4410,6 +4425,11 @@ types:
             name: dhcpv4
             type: boolean
             modified: '3.6'
+
+        -   defaultvalue: no-default
+            description: Whether the gateway is the host default
+            name: ipv4defaultroute
+            type: boolean
 
         -   description: The network device associated with the vlan
             name: iface

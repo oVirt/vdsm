@@ -24,9 +24,9 @@ from vdsm.network.ip import dhclient
 from vdsm.network.netinfo.addresses import (
     getIpAddrs, getIpInfo, is_ipv6_local_auto)
 from vdsm.network.netinfo.mtus import getMtu
-from vdsm.network.netinfo.routes import get_routes, get_gateway
+from vdsm.network.netinfo.routes import (get_routes, get_gateway,
+                                         is_default_route)
 from vdsm.utils import rget
-
 from . import driver
 
 
@@ -38,6 +38,7 @@ EMPTY_PORT_INFO = {
     'addr': '',
     'ipv4addrs': [],
     'gateway': '',
+    'ipv4defaultroute': False,
     'netmask': '',
     'dhcpv4': False,
     'ipv6addrs': [],
@@ -47,8 +48,8 @@ EMPTY_PORT_INFO = {
 }
 
 SHARED_NETWORK_ATTRIBUTES = [
-    'mtu', 'addr', 'ipv4addrs', 'gateway', 'netmask', 'dhcpv4', 'ipv6addrs',
-    'ipv6autoconf', 'ipv6gateway', 'dhcpv6']
+    'mtu', 'addr', 'ipv4addrs', 'gateway', 'ipv4defaultroute', 'netmask',
+    'dhcpv4', 'ipv6addrs', 'ipv6autoconf', 'ipv6gateway', 'dhcpv6']
 
 BOND_CONFIGURABLES = [
     'bond_mode',
@@ -333,6 +334,7 @@ def _get_iface_info(iface, addresses, routes):
 
     return {'mtu': getMtu(iface), 'addr': ipv4addr, 'ipv4addrs': ipv4addrs,
             'gateway': ipv4gateway, 'netmask': ipv4netmask,
+            'ipv4defaultroute': is_default_route(ipv4gateway),
             'dhcpv4': is_dhcpv4, 'ipv6addrs': ipv6addrs,
             'ipv6gateway': get_gateway(routes, iface, family=6),
             'ipv6autoconf': is_ipv6_local_auto(iface), 'dhcpv6': is_dhcpv6}

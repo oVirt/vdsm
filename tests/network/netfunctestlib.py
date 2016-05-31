@@ -280,6 +280,8 @@ class NetFuncTestCase(VdsmTestCase):
         elif _ipv6_is_unused(attrs):
             self.assertDisabledIPv6(network_netinfo)
 
+        self.assertDefaultRouteIPv4(attrs, network_netinfo)
+
     def assertStaticIPv4(self, netattrs, ipinfo):
         requires_ipaddress()
         address = netattrs['ipaddr']
@@ -313,6 +315,10 @@ class NetFuncTestCase(VdsmTestCase):
 
     def assertNoDhclient(self, iface, family):
         self.assertFalse(self.assertDhclient(iface, family))
+
+    def assertDefaultRouteIPv4(self, netattrs, ipinfo):
+        req_droute = netattrs.get('defaultRoute', False)
+        self.assertEqual(req_droute, ipinfo['ipv4defaultroute'])
 
     def assertLinksUp(self, net, attrs):
         switch = attrs.get('switch', 'legacy')
