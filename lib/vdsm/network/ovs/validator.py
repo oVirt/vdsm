@@ -73,7 +73,7 @@ def validate_bond_configuration(bond, attrs, nets, running_nets, kernel_nics):
 
 
 def _validate_bond_addition(nics, kernel_nics):
-    if nics is None or len(nics) < 2:
+    if nics is None or len(set(nics)) < 2:
         raise ne.ConfigNetworkError(
             ne.ERR_BAD_BONDING, 'OVS bond requires at least 2 slaves')
     for nic in nics:
