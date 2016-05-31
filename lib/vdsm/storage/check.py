@@ -351,10 +351,7 @@ class DirectioChecker(object):
 
 class CheckResult(object):
 
-    _PATTERN = re.compile(
-        br"\d+ bytes? \([\de\-.]+ [kMGT]*B\) copied, "
-        br"([\de\-.]+) s, "
-        br"(?:[\de\-.]+|Infinity) [kMGT]*B/s")
+    _PATTERN = re.compile(br".*, ([\de\-.]+) s,[^,]+")
 
     def __init__(self, path, rc, err, time, elapsed):
         self.path = path

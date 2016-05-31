@@ -288,7 +288,12 @@ class TestCheckResult(VdsmTestCase):
         (b"1\n2\n524288 bytes (512e3 B) copied, 1 s, 512e3 B/s\n",
             1.0),
         (b"1\n2\n517 bytes (517 B) copied, 0 s, Infinity B/s\n",
-            0.0)
+            0.0),
+        (b"1\n2\n4096 bytes (4.1 kB, 4.0 KiB) copied, "
+         b"0.00887814 s, 461 kB/s\n",
+            0.00887814),
+        (b"1\n2\n30 bytes copied, 0.00156704 s, 19.1 kB/s",
+            0.00156704),
     ])
     def test_success(self, err, seconds):
         result = check.CheckResult("/path", 0, err, 0, 0)
@@ -306,8 +311,6 @@ class TestCheckResult(VdsmTestCase):
     @permutations([
         (b"",),
         (b"1\n2\n\n",),
-        (b"1\n2\nBAD, 1 s, 1 kB/s\n",),
-        (b"1\n2\n1024 bytes (1 kB) copied, 1 s, 1 BAD\n",),
         (b"1\n2\n1024 bytes (1 kB) copied, BAD, 1 kB/s\n",),
         (b"1\n2\n1024 bytes (1 kB) copied, BAD s, 1 kB/s\n",),
         (b"1\n2\n1024 bytes (1 kB) copied, -1- s, 1 kB/s\n",),
