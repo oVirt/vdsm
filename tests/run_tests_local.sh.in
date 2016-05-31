@@ -11,4 +11,4 @@ export \
     PYTHONPATH="@top_srcdir@/lib:@top_srcdir@/vdsm:@top_srcdir@/client:@top_srcdir@/vdsm_api:$PYTHONPATH" \
     $NULL
 
-"$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules $@
+"$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules -A "type!='functional'" $@
