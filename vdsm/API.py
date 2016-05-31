@@ -34,10 +34,11 @@ from vdsm import hooks
 from vdsm import hostdev
 from vdsm import response
 from vdsm import supervdsm
+from vdsm import throttledlog
 from vdsm import jobs
 from vdsm import v2v
 from vdsm.host import api as hostapi
-from vdsm.logUtils import Suppressed
+from vdsm.logUtils import AllVmStatsValue, Suppressed
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
@@ -64,6 +65,9 @@ except ImportError:
 
 # default message for system shutdown, will be displayed in guest
 USER_SHUTDOWN_MESSAGE = 'System going down'
+
+
+throttledlog.throttle('getAllVmStats', 100)
 
 
 def updateTimestamp():
@@ -1343,6 +1347,8 @@ class Global(APIBase):
         hooks.before_get_all_vm_stats()
         statsList = self._cif.getAllVmStats()
         statsList = hooks.after_get_all_vm_stats(statsList)
+        throttledlog.info('getAllVmStats', "Current getAllVmStats: %s",
+                          AllVmStatsValue(statsList))
         return {'status': doneCode, 'statsList': Suppressed(statsList)}
 
     def hostdevListByCaps(self, caps=None):

@@ -77,6 +77,7 @@ test_modules = \
 	iscsiTests.py \
 	jobsTests.py \
 	libvirtconnectionTests.py \
+	logutils_test.py \
 	lvmTests.py \
 	main.py \
 	miscTests.py \

@@ -221,6 +221,12 @@ class Suppressed(object):
         return '(suppressed)'
 
 
+class AllVmStatsValue(Suppressed):
+
+    def __repr__(self):
+        return repr({vm.get('vmId'): vm.get('status') for vm in self._value})
+
+
 def set_level(level):
     logging.warning('Setting loglevel to %s', level)
     handlers = logging.getLogger().handlers
