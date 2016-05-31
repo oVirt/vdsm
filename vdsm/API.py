@@ -40,6 +40,7 @@ from vdsm import netinfo
 from vdsm import constants
 from vdsm import exception
 from vdsm import response
+from vdsm import throttledlog
 import storage.misc
 import storage.clusterlock
 import storage.volume
@@ -68,6 +69,8 @@ except ImportError:
 
 # default message for system shutdown, will be displayed in guest
 USER_SHUTDOWN_MESSAGE = 'System going down'
+
+throttledlog.throttle('getAllVmStats', 100)
 
 
 def _after_network_setup_fail(networks, bondings, options):
@@ -1354,6 +1357,8 @@ class Global(APIBase):
         hooks.before_get_all_vm_stats()
         statsList = self._cif.getAllVmStats()
         statsList = hooks.after_get_all_vm_stats(statsList)
+        throttledlog.info('getAllVmStats', "Current getAllVmStats: %s",
+                          utils.AllVmStatsValue(statsList))
         return {'status': doneCode, 'statsList': utils.Suppressed(statsList)}
 
     def hostdevListByCaps(self, caps=None):

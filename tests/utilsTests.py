@@ -1016,3 +1016,20 @@ class NoIntrPollTests(TestCaseBase):
         proc.start()
         self._noIntrWatchFd(myPipe, isEpoll=False, mask=select.POLLIN)
         proc.join()
+
+
+class TestAllVmStats(TestCaseBase):
+
+    _STATS = [{'foo': 'bar',
+               'status': 'Up',
+               'vmId': u'43f02a2d-e563-4f11-a7bc-9ee191cfeba1'},
+              {'foo': 'bar',
+               'status': 'Powering up',
+               'vmId': u'bd0d066b-971e-42f8-8bc6-d647ab7e0e70'}]
+    _SIMPLIFIED = ({u'43f02a2d-e563-4f11-a7bc-9ee191cfeba1': 'Up',
+                    u'bd0d066b-971e-42f8-8bc6-d647ab7e0e70': 'Powering up'})
+
+    def test_allvmstats(self):
+        data = utils.AllVmStatsValue(self._STATS)
+        result = str(data)
+        self.assertEqual(eval(result), self._SIMPLIFIED)
