@@ -121,6 +121,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Tue May 31 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.3
+- Release of 1.2.3
+
 * Mon Feb 8 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.1
 - Initial release of 4.0
 
