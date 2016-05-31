@@ -21,9 +21,9 @@
 
 from __future__ import absolute_import
 from __future__ import print_function
-import xmlrpclib
 import os
 import re
+from six.moves import xmlrpc_client as xmlrpclib
 import sys
 import warnings
 from xml.parsers.expat import ExpatError
