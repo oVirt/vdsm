@@ -20,6 +20,7 @@
 %global with_hooks @HOOKS@
 %global with_vhostmd @VHOSTMD@
 %global with_python3 @PYTHON3_SUPPORT@
+%global with_openvswitch @OPENVSWITCH@
 
 # Glusterfs package version
 %global gluster_version 3.7.1
@@ -72,7 +73,6 @@ BuildRequires: libvirt-python
 BuildRequires: m2crypto
 BuildRequires: mom >= 0.5.3
 BuildRequires: openssl
-BuildRequires: openvswitch >= 2.0.0
 BuildRequires: policycoreutils-python
 BuildRequires: psmisc
 BuildRequires: PyYAML
@@ -83,6 +83,10 @@ BuildRequires: python-pthreading
 BuildRequires: qemu-img
 BuildRequires: rpm-python
 BuildRequires: python-blivet
+
+%if 0%{?with_openvswitch}
+BuildRequires: openvswitch >= 2.0.0
+%endif
 
 %if 0%{?with_python3}
 %if 0%{?rhel}
@@ -144,7 +148,10 @@ Requires: %{name}-xmlrpc = %{version}-%{release}
 Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.3
+
+%if 0%{?with_openvswitch}
 Requires: openvswitch >= 2.0.0
+%endif
 
 %if 0%{?with_ovirt_imageio}
 Requires: ovirt-imageio-common

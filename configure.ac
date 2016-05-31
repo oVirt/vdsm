@@ -152,6 +152,19 @@ AC_ARG_ENABLE(
 )
 AC_SUBST([ENABLE_LIBVIRT_SELINUX], ["${enable_libvirt_selinux}"])
 
+AC_ARG_ENABLE(
+    [openvswitch],
+    [AS_HELP_STRING(
+        [--enable-openvswitch],
+        [enable openvswitch usage @<:@default=yes@:>@]
+    )],
+    ,
+    [enable_openvswitch="yes"]
+)
+AS_IF([test "${enable_openvswitch}" = "yes"],
+      AC_SUBST([OPENVSWITCH], ['1']),
+      AC_SUBST([OPENVSWITCH], ['0']))
+
 AC_ARG_WITH(
     [qemu-user],
     [AS_HELP_STRING(
