@@ -502,16 +502,17 @@ class NetworkTest(TestCaseBase):
             self.retryAssert(assertStatsInRange, timeout=3)
 
     @cleanupNet
-    @permutations([[True], [False]])
-    def testSetupNetworksAddBondWithManyVlans(self, bridged):
+    @permutations([[True, 'legacy'], [False, 'legacy'],
+                   [True, 'ovs'], [False, 'ovs']])
+    def testSetupNetworksAddBondWithManyVlans(self, bridged, switch):
         VLAN_COUNT = 5
         network_names = [NETWORK_NAME + str(tag) for tag in range(VLAN_COUNT)]
         with dummyIf(2) as nics:
             networks = dict((vlan_net,
                              {'vlan': str(tag), 'bonding': BONDING_NAME,
-                              'bridged': bridged})
+                              'bridged': bridged, 'switch': switch})
                             for tag, vlan_net in enumerate(network_names))
-            bondings = {BONDING_NAME: {'nics': nics}}
+            bondings = {BONDING_NAME: {'nics': nics, 'switch': switch}}
 
             status, msg = self.setupNetworks(networks, bondings, NOCHK)
             self.assertEqual(status, SUCCESS, msg)

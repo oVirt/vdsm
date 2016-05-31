@@ -25,6 +25,7 @@ from vdsm.network.netinfo.addresses import (
 from vdsm.network.netinfo.dhcp import dhcp_status
 from vdsm.network.netinfo.mtus import getMtu
 from vdsm.network.netinfo.routes import get_routes, get_gateway
+from vdsm.utils import rget
 
 from . import driver
 
@@ -48,6 +49,13 @@ EMPTY_PORT_INFO = {
 SHARED_NETWORK_ATTRIBUTES = [
     'mtu', 'addr', 'ipv4addrs', 'gateway', 'netmask', 'dhcpv4', 'ipv6addrs',
     'ipv6autoconf', 'ipv6gateway', 'dhcpv6']
+
+BOND_CONFIGURABLES = [
+    'bond_mode',
+    'lacp',
+    'other_config:bond-detect-mode',
+    'other_config:bond-miimon-interval'
+]
 
 
 class OvsDB(object):
@@ -137,13 +145,19 @@ class OvsInfo(object):
     def _bond_info(self, port_entry):
         slaves = sorted([self._ifaces_uuids[uuid]['name']
                          for uuid in port_entry['interfaces']])
-        active_slave = self._ifaces_macs.get(port_entry['bond_active_slave'])
-        fake_iface = port_entry['bond_fake_iface']
-        mode = port_entry['bond_mode']
-        lacp = port_entry['lacp']
 
-        return {'slaves': slaves, 'active_slave': active_slave,
-                'fake_iface': fake_iface, 'mode': mode, 'lacp': lacp}
+        active_slave = self._ifaces_macs.get(
+            port_entry['bond_active_slave'], {})
+        active_slave_name = active_slave.get('name')
+
+        fake_iface = port_entry['bond_fake_iface']
+
+        bond_info = {'slaves': slaves, 'active_slave': active_slave_name,
+                     'fake_iface': fake_iface}
+        for key in BOND_CONFIGURABLES:
+            bond_info[key] = rget(port_entry, key.split(':'))
+
+        return bond_info
 
     @staticmethod
     def southbound_port(ports):
@@ -268,20 +282,30 @@ def _get_bond_info(bond_attrs):
         # TODO: what should we report when no slave is active?
         'active_slave': (bond_attrs['active_slave'] or
                          bond_attrs['slaves'][0]),
-        'opts': _to_bond_opts(bond_attrs['mode'], bond_attrs['lacp']),
+        'opts': _get_bond_opts(bond_attrs),
         'switch': 'ovs'
     }
     bond_info.update(EMPTY_PORT_INFO)
     return bond_info
 
 
-def _to_bond_opts(mode, lacp):
-    custom_opts = []
-    if mode:
-        custom_opts.append('ovs_mode:%s' % mode)
-    if lacp:
-        custom_opts.append('ovs_lacp:%s' % lacp)
-    return {'custom': ','.join(custom_opts)} if custom_opts else {}
+def _get_bond_opts(bond_attrs):
+    opts = {}
+
+    lacp = bond_attrs['lacp']
+    bond_mode = bond_attrs['bond_mode']
+    if lacp == 'active':
+        mode = '4'
+    elif bond_mode == 'active-backup' or bond_mode is None:
+        mode = '1'
+    opts['mode'] = mode
+
+    bond_detect_mode = bond_attrs['other_config:bond-detect-mode']
+    if bond_detect_mode == 'miimon':
+        bond_miimon_interval = bond_attrs['other_config:bond-miimon-interval']
+        opts['miimon'] = bond_miimon_interval
+
+    return opts
 
 
 def _get_iface_info(iface, addresses, routes):
