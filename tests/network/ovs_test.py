@@ -116,6 +116,15 @@ class ValidationTests(TestCaseBase):
                 'bond1', {'nics': ['eth0'], 'switch': 'ovs'}, nets,
                 running_nets, fake_kernel_nics)
 
+    def test_add_bond_with_one_slave_twice(self):
+        fake_kernel_nics = ['eth0']
+        nets = {}
+        running_nets = {}
+        with self.assertRaises(ne.ConfigNetworkError):
+            ovs_validator.validate_bond_configuration(
+                'bond1', {'nics': ['eth0', 'eth0'], 'switch': 'ovs'}, nets,
+                running_nets, fake_kernel_nics)
+
     def test_add_bond_with_two_slaves(self):
         fake_kernel_nics = ['eth0', 'eth1']
         nets = {}
