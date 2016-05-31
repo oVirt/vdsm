@@ -13,26 +13,25 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
 #
 # Refer to the README and COPYING files for full details of the license
 #
 
-vdsmnetworktestsdir = ${vdsmtestsdir}/network
+from __future__ import absolute_import
+from nose.plugins.attrib import attr
 
-dist_vdsmnetworktests_PYTHON = \
-	__init__.py \
-	*_test.py \
-	dhcp.py \
-	firewall.py \
-	netfunctestlib.py \
-	nettestlib.py \
-	ovsnettestlib.py \
-	$(NULL)
+from .netfunctestlib import NetFuncTestCase, NOCHK
+from .nettestlib import dummy_device
 
-dist_vdsmnetworktests_DATA = \
-	ip_route_show_table_all.out \
-	netmaskconversions \
-	tc_filter_show.out \
-	$(NULL)
+NETWORK_NAME = 'test-network'
 
+
+@attr(type='functional')
+class NetworkCreateBasicTest(NetFuncTestCase):
+
+    def test_add_net_based_on_nic(self):
+        with dummy_device() as nic:
+            NETSETUP = {NETWORK_NAME: {'nic': nic}}
+            with self.setupNetworks(NETSETUP, {}, NOCHK):
+                self.assertNetwork(NETWORK_NAME, NETSETUP[NETWORK_NAME])
