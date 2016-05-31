@@ -54,6 +54,8 @@ def _setup_ovs_network(ovsdb, nic1, nic2):
         commands.append(ovsdb.set_port_attr(
             TEST_BOND, 'bond_mode', 'active-backup'))
         commands.append(ovsdb.set_port_attr(
+            TEST_BOND, 'other_config:bond-detect-mode', 'carrier'))
+        commands.append(ovsdb.set_port_attr(
             TEST_BOND, 'other_config:vdsm_level', info.SOUTHBOUND))
         return commands
 
@@ -103,7 +105,9 @@ class TestOvsInfo(VdsmTestCase):
                                     'active_slave': None,
                                     'fake_iface': False,
                                     'lacp': None,
-                                    'mode': 'active-backup',
+                                    'bond_mode': 'active-backup',
+                                    'other_config:bond-detect-mode': 'carrier',
+                                    'other_config:bond-miimon-interval': None,
                                     'slaves': sorted([nic1, nic2])
                                 },
                                 'level': info.SOUTHBOUND,
@@ -145,7 +149,9 @@ class MockedOvsInfo(info.OvsInfo):
                             'active_slave': None,
                             'fake_iface': False,
                             'lacp': None,
-                            'mode': 'active-backup',
+                            'bond_mode': 'active-backup',
+                            'other_config:bond-detect-mode': 'carrier',
+                            'other_config:bond-miimon-interval': None,
                             'slaves': ['eth0', 'eth1']
                         },
                         'level': info.SOUTHBOUND,
@@ -229,7 +235,7 @@ class TestOvsNetInfo(VdsmTestCase):
                 'ipv6gateway': '',
                 'mtu': 1500,
                 'netmask': '',
-                'opts': {'custom': 'ovs_mode:active-backup'},
+                'opts': {'mode': '1'},
                 'slaves': ['eth0', 'eth1'],
                 'switch': 'ovs'
             }
@@ -337,7 +343,7 @@ class TestOvsNetInfo(VdsmTestCase):
                 'ipv6gateway': '::',
                 'mtu': 1500,
                 'netmask': TEST_NETMASK,
-                'opts': {'custom': 'ovs_mode:active-backup'},
+                'opts': {'mode': '1'},
                 'slaves': ['eth0', 'eth1'],
                 'switch': 'ovs'
             }

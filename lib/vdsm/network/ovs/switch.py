@@ -23,7 +23,9 @@ import itertools
 
 import six
 
+from vdsm.network import errors as ne
 from vdsm.network.netconfpersistence import RunningConfig
+from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo.nics import nics
 from vdsm.utils import random_iface_name
 
@@ -171,6 +173,9 @@ class Setup(object):
             detach_commands.extend(detach)
             attach_commands.extend(attach)
 
+            attach_commands.extend(
+                self._edit_mode(bond, attrs.get('options', '')))
+
         self._transaction.add(*detach_commands)
         self._transaction.add(*attach_commands)
 
@@ -184,6 +189,9 @@ class Setup(object):
             self._bridges_by_sb[bond] = bridge
             self._create_sb_bond(bridge, bond, attrs['nics'])
 
+            self._transaction.add(*self._edit_mode(
+                bond, attrs.get('options', '')))
+
     def _edit_slaves(self, bond, running_slaves, to_be_configured_slaves):
         running = frozenset(running_slaves)
         to_be_configured = frozenset(to_be_configured_slaves)
@@ -196,6 +204,49 @@ class Setup(object):
             for slave in running - to_be_configured))
 
         return detach, attach
+
+    def _edit_mode(self, bond, options):
+        # TODO: Support setup of all OVS bond-related attributes and move
+        # fallback setup into a separate function.
+
+        commands = []
+
+        parsed_options = bonding.parse_bond_options(options)
+        mode = parsed_options.get('mode')
+        miimon = parsed_options.get('miimon')
+
+        bond_mode = 'active-backup'
+        if mode is None:
+            lacp = 'off'
+        else:
+            if mode in ('1', bonding.BONDING_MODES_NUMBER_TO_NAME['1']):
+                lacp = 'off'
+            elif mode in ('4', bonding.BONDING_MODES_NUMBER_TO_NAME['4']):
+                lacp = 'active'
+            else:
+                # TODO: Validation should be moved to validator.py as soon as
+                # we implement bond options canonicalization.
+                raise ne.ConfigNetworkError(
+                    ne.ERR_BAD_PARAMS,
+                    'Mode {} is not available for OVS bondings'.format(mode))
+        commands.append(self._ovsdb.set_port_attr(
+            bond, 'bond_mode', bond_mode))
+        commands.append(self._ovsdb.set_port_attr(bond, 'lacp', lacp))
+
+        if miimon is None:
+            bond_detect_mode = 'carrier'
+            bond_miimon_interval = None
+        else:
+            bond_detect_mode = 'miimon'
+            bond_miimon_interval = miimon
+        commands.append(self._ovsdb.set_port_attr(
+            bond, 'other_config:bond-detect-mode', bond_detect_mode))
+        if bond_miimon_interval is not None:
+            commands.append(self._ovsdb.set_port_attr(
+                bond, 'other_config:bond-miimon-interval',
+                bond_miimon_interval))
+
+        return commands
 
     def remove_nets(self, nets):
         ovs_netinfo = info.create_netinfo(self._ovs_info)
