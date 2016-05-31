@@ -219,3 +219,9 @@ class Suppressed(object):
 
     def __repr__(self):
         return '(suppressed)'
+
+
+class AllVmStatsValue(Suppressed):
+
+    def __repr__(self):
+        return repr({vm.get('vmId'): vm.get('status') for vm in self._value})
