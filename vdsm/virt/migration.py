@@ -509,11 +509,14 @@ class SourceThread(threading.Thread):
 
 
 def exponential_downtime(downtime, steps):
-    offset = downtime / float(steps)
-    base = (downtime - offset) ** (1 / float(steps - 1))
+    if steps > 1:
+        offset = downtime / float(steps)
+        base = (downtime - offset) ** (1 / float(steps - 1))
 
-    for i in range(steps):
-        yield int(offset + base ** i)
+        for i in range(steps):
+            yield int(offset + base ** i)
+    else:
+        yield downtime
 
 
 class DowntimeThread(threading.Thread):
@@ -528,6 +531,8 @@ class DowntimeThread(threading.Thread):
         delay_per_gib = config.getint('vars', 'migration_downtime_delay')
         memSize = int(vm.conf['memSize'])
         self._wait = (delay_per_gib * max(memSize, 2048) + 1023) / 1024
+        # do not materialize, keep as generator expression
+        self._downtimes = exponential_downtime(self._downtime, self._steps)
 
         self.daemon = True
 
@@ -536,25 +541,19 @@ class DowntimeThread(threading.Thread):
         self._vm.log.debug('migration downtime thread started (%i steps)',
                            self._steps)
 
-        if self._steps > 1:
-            self._set_downtime_by_steps(self._downtime)
-        else:
-            self._set_downtime(self._downtime)
+        for downtime in self._downtimes:
+            if self._stop.is_set():
+                break
+
+            self._set_downtime(downtime)
+
+            self._stop.wait(self._wait / self._steps)
 
         self._vm.log.debug('migration downtime thread exiting')
 
     def stop(self):
         self._vm.log.debug('stopping migration downtime thread')
         self._stop.set()
-
-    def _set_downtime_by_steps(self, max_downtime):
-        for downtime in exponential_downtime(max_downtime, self._steps):
-            if self._stop.isSet():
-                break
-
-            self._set_downtime(downtime)
-
-            self._stop.wait(self._wait / self._steps)
 
     def _set_downtime(self, downtime):
         self._vm.log.debug('setting migration downtime to %d', downtime)
