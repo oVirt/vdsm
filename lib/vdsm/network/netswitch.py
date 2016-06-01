@@ -153,17 +153,27 @@ def _setup_ovs(networks, bondings, options, in_rollback):
         ovs_switch.setup(_ovs_info, nets2add, nets2remove, bonds2add,
                          bonds2edit, bonds2remove)
         _setup_ipv6autoconf(networks)
+        _setup_ovs_ip_config(nets2add)
         connectivity.check(options)
 
 
-def ovs_net2bridge(network_name):
-    return ovs_info.northbound2bridge(network_name)
+def _setup_ovs_ip_config(nets):
+    # TODO: This should be moved to network/api.py when we solve rollback
+    # transactions.
+    for net, attrs in six.iteritems(nets):
+        _set_static_ip_config(net, attrs)
 
 
-def net2vlan(network_name):
-    # Using RunningConfig avoids the need to require root access.
-    net_attr = RunningConfig().networks.get(network_name)
-    return net_attr.get('vlan') if net_attr else None
+def _set_static_ip_config(iface, attrs):
+    address.flush(iface)
+    ipv4 = address.IPv4(
+        attrs.get('ipaddr'), attrs.get('netmask'), attrs.get('gateway'),
+        attrs.get('defaultRoute'), attrs.get('bootproto'))
+    ipv6 = address.IPv6(
+        attrs.get('ipv6addr'), attrs.get('ipv6gateway'),
+        attrs.get('defaultRoute'), attrs.get('ipv6autoconf'),
+        attrs.get('dhcpv6'))
+    address.add(iface, ipv4, ipv6)
 
 
 def netinfo(compatibility=None):
@@ -218,3 +228,13 @@ def _split_setup_actions(query, running_entries):
             entries2add[entry] = attrs
 
     return entries2add, entries2edit, entries2remove
+
+
+def ovs_net2bridge(network_name):
+    return ovs_info.northbound2bridge(network_name)
+
+
+def net2vlan(network_name):
+    # Using RunningConfig avoids the need to require root access.
+    net_attr = RunningConfig().networks.get(network_name)
+    return net_attr.get('vlan') if net_attr else None
