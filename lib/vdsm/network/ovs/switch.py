@@ -76,53 +76,8 @@ def _update_running_config(networks, bondings, running_config):
             running_config.setBonding(bond, attrs)
 
 
-def setup(nets, bonds):
-    ovs_info = info.OvsInfo()
-    _netinfo = info.create_netinfo(ovs_info)
-    nets2add, nets2remove = _split_nets_action(nets, _netinfo['networks'])
-    bonds2add, bonds2edit, bonds2remove = _split_bonds_action(
-        bonds, _netinfo['bondings'])
-
-    _setup_ovs_devices(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
-                       bonds2remove)
-
-
-def _split_nets_action(nets, running_nets):
-    # TODO: If a nework is to be edited, we remove it and recreate again.
-    # We should implement editation.
-    nets2remove = set()
-    nets2add = {}
-
-    for net, attrs in six.iteritems(nets):
-        if 'remove' in attrs:
-            nets2remove.add(net)
-        elif net in running_nets:
-            nets2remove.add(net)
-            nets2add[net] = attrs
-        else:
-            nets2add[net] = attrs
-
-    return nets2add, nets2remove
-
-
-def _split_bonds_action(bonds, configured_bonds):
-    bonds2remove = set()
-    bonds2edit = {}
-    bonds2add = {}
-
-    for bond, attrs in six.iteritems(bonds):
-        if 'remove' in attrs:
-            bonds2remove.add(bond)
-        elif bond not in configured_bonds:
-            bonds2add[bond] = attrs
-        elif attrs != configured_bonds.get(bond):
-            bonds2edit[bond] = attrs
-
-    return bonds2add, bonds2edit, bonds2remove
-
-
-def _setup_ovs_devices(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
-                       bonds2remove):
+def setup(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
+          bonds2remove):
     ovsdb = driver.create()
 
     with Setup(ovsdb, ovs_info) as s:
@@ -155,7 +110,8 @@ class Setup(object):
             six.reraise(type, value, traceback)
 
     def remove_bonds(self, bonds):
-        self._transaction.add(*[self._ovsdb.del_port(bond) for bond in bonds])
+        self._transaction.add(
+            *[self._ovsdb.del_port(bond) for bond in bonds])
 
     def edit_bonds(self, bonds):
         detach_commands = []
