@@ -22,6 +22,7 @@ import logging
 
 from vdsm.network import ipwrapper
 from vdsm.network import libvirt
+from vdsm.network.ip import address
 from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
                                     IPRoute2Error)
 from vdsm.network.netinfo import bonding, vlans, bridges, mtus, misc
@@ -182,7 +183,7 @@ class Iproute2(Configurator):
 
         if toBeRemoved:
             if bonding.master is None:
-                self.configApplier.removeIpConfig(bonding)
+                address.flush(bonding.name)
                 DynamicSourceRoute.addInterfaceTracking(bonding)
                 self._removeSourceRoute(bonding, DynamicSourceRoute)
 
@@ -206,7 +207,7 @@ class Iproute2(Configurator):
 
         if toBeRemoved:
             if nic.master is None:
-                self.configApplier.removeIpConfig(nic)
+                address.flush(nic.name)
                 DynamicSourceRoute.addInterfaceTracking(nic)
                 self._removeSourceRoute(nic, DynamicSourceRoute)
             else:
@@ -242,30 +243,6 @@ class Iproute2(Configurator):
 
 class ConfigApplier(object):
 
-    def _setIpConfig(self, iface):
-        ipv4 = iface.ipv4
-        ipv6 = iface.ipv6
-        if ipv4.address or ipv6.address:
-            self.removeIpConfig(iface)
-        if ipv4.address:
-            ipwrapper.addrAdd(iface.name, ipv4.address,
-                              ipv4.netmask)
-            if ipv4.gateway and ipv4.defaultRoute:
-                ipwrapper.routeAdd(['default', 'via', ipv4.gateway])
-        if ipv6.address:
-            ipv6addr, ipv6netmask = ipv6.address.split('/')
-            ipwrapper.addrAdd(iface.name, ipv6addr, ipv6netmask, family=6)
-            if ipv6.gateway:
-                ipwrapper.routeAdd(['default', 'via', ipv6.gateway],
-                                   dev=iface.name, family=6)
-        if ipv6.ipv6autoconf is not None:
-            with open('/proc/sys/net/ipv6/conf/%s/autoconf' % iface.name,
-                      'w') as ipv6_autoconf:
-                ipv6_autoconf.write('1' if ipv6.ipv6autoconf else '0')
-
-    def removeIpConfig(self, iface):
-        ipwrapper.addrFlush(iface.name)
-
     def setIfaceMtu(self, iface, mtu):
         ipwrapper.linkSet(iface, ['mtu', str(mtu)])
 
@@ -286,7 +263,8 @@ class ConfigApplier(object):
 
     def setIfaceConfigAndUp(self, iface):
         if iface.ipv4 or iface.ipv6:
-            self._setIpConfig(iface)
+            address.flush(iface.name)
+            address.add(iface.name, iface.ipv4, iface.ipv6)
         if iface.mtu:
             self.setIfaceMtu(iface.name, iface.mtu)
         self.ifup(iface)
