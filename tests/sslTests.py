@@ -207,6 +207,7 @@ class SSLTests(TestCaseBase):
 
         # Start the server thread:
         self.thread = SSLServerThread(self.server)
+        self.thread.deamon = True
         self.thread.start()
 
     def tryBind(self, address):
