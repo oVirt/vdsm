@@ -168,6 +168,20 @@ def get_external_vms(uri, username, password, vm_names=None):
         return {'status': doneCode, 'vmList': vms}
 
 
+def get_external_vm_names(uri, username, password):
+    try:
+        conn = libvirtconnection.open_connection(uri=uri,
+                                                 username=username,
+                                                 passwd=password)
+    except libvirt.libvirtError as e:
+        logging.error('error connecting to hypervisor: %r', e.message)
+        return response.error('V2VConnection', e.message)
+
+    with closing(conn):
+        vms = [vm.name() for vm in _list_domains(conn)]
+        return response.success(vmNames=vms)
+
+
 def convert_external_vm(uri, username, password, vminfo, job_id, irs):
     if uri.startswith(_XEN_SSH_PROTOCOL):
         command = XenCommand(uri, vminfo, job_id, irs)

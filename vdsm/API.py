@@ -1408,6 +1408,12 @@ class Global(APIBase):
         """
         return v2v.get_external_vms(uri, username, password, vm_names)
 
+    def getExternalVMNames(self, uri, username, password):
+        """
+        Return names of VMs running on external hypervisor.
+        """
+        return v2v.get_external_vm_names(uri, username, password)
+
     def getExternalVmFromOva(self, ova_path):
         """
         Return information regarding a VM that is a part of the ova:

@@ -334,6 +334,7 @@ command_info = {
     'Host_getDeviceList': {'ret': 'devList'},
     'Host_getDevicesVisibility': {'ret': 'visible'},
     'Host_getExternalVMs': {'ret': 'vmList'},
+    'Host_getExternalVMNames': {'ret': 'vmNames'},
     'Host_getExternalVmFromOva': {'ret': 'vmList'},
     'Host_getConvertedVm': {'ret': 'ovf'},
     'Host_getHardwareInfo': {'ret': 'info'},

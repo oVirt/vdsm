@@ -7305,6 +7305,27 @@ Host.getExternalVMs:
         type:
         - *ExternalVmInfo
 
+Host.getExternalVMNames:
+    added: '4.1'
+    description: Get names of all the VMs on external hypervisor
+    params:
+    -   description: Libvirt connection uri
+        name: uri
+        type: string
+
+    -   description: Libvirt connection user name
+        name: username
+        type: string
+
+    -   description: Libvirt connection password
+        name: password
+        type: string
+
+    return:
+        description: A list of VM names
+        type:
+        - string
+
 Host.getExternalVmFromOva:
     added: '3.6'
     description: Get VM information (disks, interfaces, memory etc) from OVA

@@ -368,6 +368,11 @@ class BindingXMLRPC(object):
         api = API.Global()
         return api.getExternalVMs(uri, username, password, vm_names)
 
+    def getExternalVMNames(self, uri, username, password):
+        password = ProtectedPassword(password)
+        api = API.Global()
+        return api.getExternalVMNames(uri, username, password)
+
     def getExternalVmFromOva(self, ova_path):
         api = API.Global()
         return api.getExternalVmFromOva(ova_path)
@@ -1098,6 +1103,7 @@ class BindingXMLRPC(object):
                 (self.vmSetCpuTunePeriod, 'vmSetCpuTunePeriod'),
                 (self.hostGetJobs, 'getHostJobs'),
                 (self.getExternalVMs, 'getExternalVMs'),
+                (self.getExternalVMNames, 'getExternalVMNames'),
                 (self.getExternalVmFromOva, 'getExternalVmFromOva'),
                 (self.convertExternalVm, 'convertExternalVm'),
                 (self.convertExternalVmFromOva, 'convertExternalVmFromOva'),
@@ -1208,6 +1214,9 @@ def wrapApiMethod(f):
             elif f.__name__ == 'getExternalVMs':
                 if len(args) >= 3:
                     displayArgs = args[:2] + ('****',) + args[3:]
+            elif f.__name__ == 'getExternalVMNames':
+                if len(args) == 3:
+                    displayArgs = args[:2] + ('****',)
             elif f.__name__ == 'convertExternalVm':
                 if len(args) > 3:
                     displayArgs = args[:2] + ('****',) + args[3:]

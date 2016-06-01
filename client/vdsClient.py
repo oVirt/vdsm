@@ -1915,6 +1915,18 @@ class service:
 
         return status['status']['code'], status['status']['message']
 
+    def getExternalVMNames(self, args):
+        if len(args) != 3:
+            raise ValueError('Wrong number of arguments')
+
+        uri, username, password = args
+
+        status = self.s.getExternalVMNames(uri, username, password)
+        if status['status']['code'] == 0:
+            print(status['vmNames'])
+
+        return status['status']['code'], status['status']['message']
+
     def convertExternalVm(self, args):
         validateArgTypes(args, [str, str, str, parse_dict, str],
                          requiredArgsNumber=5)
@@ -2871,6 +2883,11 @@ if __name__ == '__main__':
                 '<uri> <username> <password> [<vm_name> ...]',
                 'get VMs from external hypervisor, possibly limiting '
                 'the output only to a subset of VMs'
+            )),
+        'externalVMNames': (
+            serv.getExternalVMNames, (
+                '<uri> <username> <password>',
+                'get names of VMs on external hypervisor'
             )),
         'getHostJobs': (
             serv.getHostJobs, (

@@ -344,6 +344,20 @@ class v2vTests(TestCaseBase):
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
 
+    def testGetExternalVMNames(self):
+        def _connect(uri, username, passwd):
+            return MockVirConnect(vms=self._vms)
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vm_names(
+                'esx://mydomain', 'user',
+                ProtectedPassword('password'))['vmNames']
+
+        self.assertEqual(
+            sorted(vms),
+            sorted(spec.name for spec in VM_SPECS))
+
     def testGetExternalVMsWithXMLDescFailure(self):
         specs = list(VM_SPECS)
 
