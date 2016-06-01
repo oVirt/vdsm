@@ -23,6 +23,7 @@ import struct
 
 from vdsm import sysctl
 from vdsm.network import errors as ne
+from vdsm.network import ipwrapper
 from vdsm.network.errors import ConfigNetworkError
 
 # TODO: vdsm.network.netinfo.addresses should move to this module.
@@ -162,3 +163,24 @@ def enable_ipv6_local_auto(dev):
 
 def disable_ipv6_local_auto(dev):
     sysctl.disable_ipv6_local_auto(dev)
+
+
+def add(iface, ipv4, ipv6):
+    if ipv4.address:
+        ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
+        if ipv4.gateway and ipv4.defaultRoute:
+            ipwrapper.routeAdd(['default', 'via', ipv4.gateway])
+    if ipv6.address:
+        ipv6addr, ipv6netmask = ipv6.address.split('/')
+        ipwrapper.addrAdd(iface, ipv6addr, ipv6netmask, family=6)
+        if ipv6.gateway:
+            ipwrapper.routeAdd(['default', 'via', ipv6.gateway],
+                               dev=iface, family=6)
+    if ipv6.ipv6autoconf is not None:
+        with open('/proc/sys/net/ipv6/conf/%s/autoconf' % iface,
+                  'w') as ipv6_autoconf:
+            ipv6_autoconf.write('1' if ipv6.ipv6autoconf else '0')
+
+
+def flush(iface):
+    ipwrapper.addrFlush(iface)
