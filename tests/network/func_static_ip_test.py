@@ -1,0 +1,118 @@
+#
+# Copyright 2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+from __future__ import absolute_import
+
+from nose.plugins.attrib import attr
+
+from .netfunctestlib import NetFuncTestCase, NOCHK
+from .nettestlib import dummy_devices
+
+NETWORK_NAME = 'test-network'
+BOND_NAME = 'bond1'
+VLAN = 10
+
+IPv4_ADDRESS = '192.0.2.1'
+IPv4_NETMASK = '255.255.255.0'
+IPv6_ADDRESS = 'fdb3:84e5:4ff4:55e3::1/64'
+
+IPv4 = [4]
+IPv6 = [6]
+IPv4IPv6 = [4, 6]
+
+
+@attr(type='functional')
+class NetworkStaticIpBasicTemplate(NetFuncTestCase):
+    __test__ = False
+
+    def test_add_net_with_ipv4_based_on_nic(self):
+        self._test_add_net_with_ip(IPv4)
+
+    def test_add_net_with_ipv6_based_on_nic(self):
+        self._test_add_net_with_ip(IPv6)
+
+    def test_add_net_with_ipv4_ipv6_based_on_nic(self):
+        self._test_add_net_with_ip(IPv4IPv6)
+
+    def test_add_net_with_ipv4_based_on_bond(self):
+        self._test_add_net_with_ip(IPv4, bonded=True)
+
+    def test_add_net_with_ipv6_based_on_bond(self):
+        self._test_add_net_with_ip(IPv6, bonded=True)
+
+    def test_add_net_with_ipv4_ipv6_based_on_bond(self):
+        self._test_add_net_with_ip(IPv4IPv6, bonded=True)
+
+    def test_add_net_with_ipv4_based_on_vlan(self):
+        self._test_add_net_with_ip(IPv4, vlaned=True)
+
+    def test_add_net_with_ipv6_based_on_vlan(self):
+        self._test_add_net_with_ip(IPv6, vlaned=True)
+
+    def test_add_net_with_ipv4_ipv6_based_on_vlan(self):
+        self._test_add_net_with_ip(IPv4IPv6, vlaned=True)
+
+    def test_add_net_with_ipv4_based_on_bridge(self):
+        self._test_add_net_with_ip(IPv4, bridged=True)
+
+    def test_add_net_with_ipv6_based_on_bridge(self):
+        self._test_add_net_with_ip(IPv6, bridged=True)
+
+    def test_add_net_with_ipv4_ipv6_based_on_bridge(self):
+        self._test_add_net_with_ip(IPv4IPv6, bridged=True)
+
+    def _test_add_net_with_ip(self, families, bonded=False, vlaned=False,
+                              bridged=False):
+        with dummy_devices(2) as (nic1, nic2):
+            network_attrs = {'bridged': bridged, 'switch': self.switch}
+
+            if 4 in families:
+                network_attrs['ipaddr'] = IPv4_ADDRESS
+                network_attrs['netmask'] = IPv4_NETMASK
+            if 6 in families:
+                network_attrs['ipv6addr'] = IPv6_ADDRESS
+
+            if bonded:
+                bondcreate = {
+                    BOND_NAME: {'nics': [nic1, nic2], 'switch': self.switch}}
+                network_attrs['bonding'] = BOND_NAME
+            else:
+                bondcreate = {}
+                network_attrs['nic'] = nic1
+
+            if vlaned:
+                network_attrs['vlan'] = VLAN
+
+            netcreate = {NETWORK_NAME: network_attrs}
+
+            with self.setupNetworks(netcreate, bondcreate, NOCHK):
+                self.assertNetworkIp(NETWORK_NAME, netcreate[NETWORK_NAME])
+
+
+@attr(type='functional', switch='legacy')
+class NetworkStaticIpBasicLegacyTest(NetworkStaticIpBasicTemplate):
+    __test__ = True
+    switch = 'legacy'
+
+
+@attr(type='functional', switch='ovs')
+class NetworkStaticIpBasicOvsTest(NetworkStaticIpBasicTemplate):
+    __test__ = True
+    switch = 'ovs'

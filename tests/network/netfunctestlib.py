@@ -24,6 +24,8 @@ from copy import deepcopy
 
 import six
 
+from nose.plugins.skip import SkipTest
+
 import vdsm.config
 from vdsm.network import kernelconfig
 
@@ -36,11 +38,25 @@ if sys.version_info >= (3, 0):
 
 from functional.utils import getProxy, SUCCESS
 
+try:
+    import ipaddress
+except ImportError:
+    ipaddress = None
+
 CAPS_INFO = 2
 USING_UNIFIED_PERSISTENCE = (
     vdsm.config.config.get('vars', 'net_persistence') == 'unified')
 
 NOCHK = {'connectivityCheck': False}
+
+
+def requires_ipaddress():
+    """
+    ipaddress package is a part of the Python std from PY3.3, on PY2 we need
+    the backported implementation installed.
+    """
+    if ipaddress is None:
+        raise SkipTest('ipaddress package is not installed')
 
 
 class NetFuncTestCase(VdsmTestCase):
@@ -87,6 +103,7 @@ class NetFuncTestCase(VdsmTestCase):
 
         self.assertSouthboundIface(netname, netattrs)
         self.assertVlan(netattrs)
+        self.assertNetworkIp(netname, netattrs)
 
     def assertHostQos(self, netname, netattrs):
         network_caps = self.netinfo.networks[netname]
@@ -222,6 +239,46 @@ class NetFuncTestCase(VdsmTestCase):
 
         self.update_running_config()
         self.assertNotIn(bond, self.running_config.bonds)
+
+    def assertNetworkIp(self, net, attrs):
+        if 'ipaddr' not in attrs and 'ipv6addr' not in attrs:
+            return
+
+        network_netinfo = self.netinfo.networks[net]
+
+        bridged = attrs.get('bridged', True)
+        vlan = attrs.get('vlan')
+        bond = attrs.get('bonding')
+        nic = attrs.get('nic')
+        if bridged:
+            topdev_netinfo = self.netinfo.bridges[net]
+        elif vlan is not None:
+            vlan_name = '{}.{}'.format(bond or nic, attrs['vlan'])
+            topdev_netinfo = self.netinfo.vlans[vlan_name]
+        elif bond:
+            topdev_netinfo = self.netinfo.bondings[bond]
+        else:
+            topdev_netinfo = self.netinfo.nics[nic]
+
+        if 'ipaddr' in attrs:
+            self.assertStaticIPv4(attrs, network_netinfo)
+            self.assertStaticIPv4(attrs, topdev_netinfo)
+        if 'ipv6addr' in attrs:
+            self.assertStaticIPv6(attrs, network_netinfo)
+            self.assertStaticIPv6(attrs, topdev_netinfo)
+
+    def assertStaticIPv4(self, netattrs, ipinfo):
+        requires_ipaddress()
+        address = netattrs['ipaddr']
+        netmask = netattrs['netmask']
+        self.assertEqual(address, ipinfo['addr'])
+        self.assertEqual(netmask, ipinfo['netmask'])
+        ipv4 = ipaddress.IPv4Interface(
+            u'{}/{}'.format(address, netmask))
+        self.assertIn(str(ipv4.with_prefixlen), ipinfo['ipv4addrs'])
+
+    def assertStaticIPv6(self, netattrs, ipinfo):
+        self.assertIn(netattrs['ipv6addr'], ipinfo['ipv6addrs'])
 
     def assert_kernel_vs_running_config(self):
         """
