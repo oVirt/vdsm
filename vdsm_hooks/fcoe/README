@@ -4,7 +4,7 @@ This hook allow to configure one or more NICs as FCoE interface(s)
 
 Intallation:
 * Use engine-config to append the appropriate custom property:
-  engine-config -s UserDefinedNetworkCustomProperties='fcoe=^((enabled|dcb|auto_vlan)=(yes|no),?)*$'
+  engine-config -s UserDefinedNetworkCustomProperties='fcoe=^((enable|dcb|auto_vlan)=(yes|no),?)*$'
 
 * Verify that custom property was added:
   engine-config -g UserDefinedNetworkCustomProperties
@@ -16,6 +16,6 @@ Usage:
 * Under "setup host networks" attach (drag) it to interface.
 * Click small "Edit" button
     - To enable FCoE add fcoe property with value in following format:
-        "enabled=yes[,dcb=yes][,auto_vlan=yes]" or left it blank for default values
+        "enable=yes[,dcb=yes][,auto_vlan=yes]" or left it blank for default values
 * Click small "Edit" button and add fcoe property with value "true"
-* To disable FCoE delete custom propery or change enabled value to "no"
+* To disable FCoE delete custom propery or change "enable" value to "no"
