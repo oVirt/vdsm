@@ -502,8 +502,7 @@ class JsonRpcServer(object):
     def _serveRequest(self, ctx, req):
         self._attempt_log_stats()
         logLevel = logging.DEBUG
-        if req.method in self.FILTERED_METHODS:
-            logLevel = logging.TRACE
+        suppress_logging = req.method in self.FILTERED_METHODS
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
                      req.method, req.params)
         try:
@@ -532,8 +531,9 @@ class JsonRpcServer(object):
                                             req.id))
         else:
             res = True if res is None else res
+            log_res = "(suppressed)" if suppress_logging else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
-                         req.method, res)
+                         req.method, log_res)
             ctx.requestDone(JsonRpcResponse(res, None, req.id))
 
     @traceback(on=log.name)
