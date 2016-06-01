@@ -115,11 +115,9 @@ parameters = [
             'liveness of migration, set to a very high value, such as '
             '600000.'),
 
-        ('migration_downtime_delay', '20',
-            'This value is used on the source host to define the delay before '
-            'setting/increasing the downtime of a migration. '
-            'The value is per GiB of RAM. A minimum of twice this value is '
-            'used for VMs with less than 2 GiB of RAM'),
+        ('migration_downtime_delay', '100',
+            'Timespan in seconds per GiB of RAM, used on the source side '
+            'to reach incrementally the final value of migration_downtime. '),
 
         ('migration_downtime_steps', '5',
             'Incremental steps used to reach migration_downtime.'),

@@ -53,6 +53,9 @@ VIR_MIGRATE_PARAM_BANDWIDTH = 'bandwidth'
 VIR_MIGRATE_PARAM_GRAPHICS_URI = 'graphics_uri'
 
 
+_MiB_IN_GiB = 1024
+
+
 class MigrationDestinationSetupError(RuntimeError):
     """
     Failed to create migration destination VM.
@@ -427,6 +430,10 @@ def exponential_downtime(downtime, steps):
 
 
 class DowntimeThread(threading.Thread):
+
+    # avoid grow too large for large VMs
+    _WAIT_STEP_LIMIT = 60  # seconds
+
     def __init__(self, vm, downtime, steps):
         super(DowntimeThread, self).__init__()
 
@@ -437,7 +444,9 @@ class DowntimeThread(threading.Thread):
 
         delay_per_gib = config.getint('vars', 'migration_downtime_delay')
         memSize = int(vm.conf['memSize'])
-        self._wait = (delay_per_gib * max(memSize, 2048) + 1023) / 1024
+        self._wait = min(
+            delay_per_gib * memSize / (_MiB_IN_GiB * self._steps),
+            self._WAIT_STEP_LIMIT)
         # do not materialize, keep as generator expression
         self._downtimes = exponential_downtime(self._downtime, self._steps)
         # we need the first value to support set_initial_downtime
@@ -456,7 +465,7 @@ class DowntimeThread(threading.Thread):
 
             self._set_downtime(downtime)
 
-            self._stop.wait(self._wait / self._steps)
+            self._stop.wait(self._wait)
 
         self._vm.log.debug('migration downtime thread exiting')
 
