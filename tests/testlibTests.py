@@ -19,6 +19,9 @@
 #
 
 from __future__ import absolute_import
+import os
+import time
+
 from testlib import AssertingLock
 from testlib import VdsmTestCase
 from testlib import maybefail
@@ -256,3 +259,11 @@ class TestMaybefail(VdsmTestCase):
         self.assertRaises(RuntimeError, self.method_name)
         del self.errors["method_name"]
         self.assertTrue(self.method_name())
+
+
+class TestTimeout(VdsmTestCase):
+
+    def test_interactive(self):
+        timeout = int(os.environ.get("STUCK", 0))
+        time.sleep(timeout)
+        assert not os.environ.get("FAIL")
