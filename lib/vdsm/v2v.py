@@ -142,7 +142,13 @@ class InvalidInputError(ClientError):
     ''' Invalid input received '''
 
 
-def get_external_vms(uri, username, password):
+def get_external_vms(uri, username, password, vm_names=None):
+    if vm_names is not None:
+        if not vm_names:
+            vm_names = None
+        else:
+            vm_names = frozenset(vm_names)
+
     try:
         conn = libvirtconnection.open_connection(uri=uri,
                                                  username=username,
@@ -155,6 +161,9 @@ def get_external_vms(uri, username, password):
     with closing(conn):
         vms = []
         for vm in _list_domains(conn):
+            if vm_names is not None and vm.name() not in vm_names:
+                # Skip this VM.
+                continue
             _add_vm(conn, vms, vm)
         return {'status': doneCode, 'vmList': vms}
 

@@ -1396,7 +1396,7 @@ class Global(APIBase):
             vmlist = [v['vmId'] for v in vmlist]
         return {'status': doneCode, 'vmList': vmlist}
 
-    def getExternalVMs(self, uri, username, password):
+    def getExternalVMs(self, uri, username, password, vm_names=None):
         """
         Return information about the not-KVM virtual machines:
         getExternalVMs returns list of VMs with subsection of  properties
@@ -1406,7 +1406,7 @@ class Global(APIBase):
             disk: dev, alias
             network: type, macAddr, bridge, dev
         """
-        return v2v.get_external_vms(uri, username, password)
+        return v2v.get_external_vms(uri, username, password, vm_names)
 
     def getExternalVmFromOva(self, ova_path):
         """

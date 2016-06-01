@@ -363,10 +363,10 @@ class BindingXMLRPC(object):
         job_type = None if job_type == '' else job_type
         return api.getJobs(job_type=job_type, job_ids=job_ids)
 
-    def getExternalVMs(self, uri, username, password):
+    def getExternalVMs(self, uri, username, password, vm_names=None):
         password = ProtectedPassword(password)
         api = API.Global()
-        return api.getExternalVMs(uri, username, password)
+        return api.getExternalVMs(uri, username, password, vm_names)
 
     def getExternalVmFromOva(self, ova_path):
         api = API.Global()
@@ -1206,8 +1206,8 @@ def wrapApiMethod(f):
                 if len(args) > 3:
                     displayArgs = args[:3] + ('****',) + args[4:]
             elif f.__name__ == 'getExternalVMs':
-                if len(args) == 3:
-                    displayArgs = args[:2] + ('****',)
+                if len(args) >= 3:
+                    displayArgs = args[:2] + ('****',) + args[3:]
             elif f.__name__ == 'convertExternalVm':
                 if len(args) > 3:
                     displayArgs = args[:2] + ('****',) + args[3:]

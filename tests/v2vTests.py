@@ -313,11 +313,34 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'))['vmList']
+                                       ProtectedPassword('password'),
+                                       None)['vmList']
 
         self.assertEqual(len(vms), len(VM_SPECS))
 
         for vm, spec in zip(vms, VM_SPECS):
+            self._assertVmMatchesSpec(vm, spec)
+            self._assertVmDisksMatchSpec(vm, spec)
+
+    def testGetExternalVMsList(self):
+        def _connect(uri, username, passwd):
+            return MockVirConnect(vms=self._vms)
+
+        vmIDs = [1, 3]
+        names = [vm.name for vm in VM_SPECS if vm.id in vmIDs]
+        # Add a non-existent name to check that nothing bad happens.
+        names.append('Some nonexistent name')
+
+        with MonkeyPatchScope([(libvirtconnection, 'open_connection',
+                                _connect)]):
+            vms = v2v.get_external_vms('esx://mydomain', 'user',
+                                       ProtectedPassword('password'),
+                                       names)['vmList']
+
+        self.assertEqual(len(vms), len(vmIDs))
+
+        for vm, vmID in zip(vms, vmIDs):
+            spec = VM_SPECS[vmID]
             self._assertVmMatchesSpec(vm, spec)
             self._assertVmDisksMatchSpec(vm, spec)
 
@@ -338,7 +361,8 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'))['vmList']
+                                       ProtectedPassword('password'),
+                                       None)['vmList']
 
         self.assertEqual(len(vms), len(specs))
 
@@ -355,8 +379,8 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password')
-                                       )['vmList']
+                                       ProtectedPassword('password'),
+                                       None)['vmList']
             self.assertEqual(len(vms), len(self._vms))
 
     def testLegacyGetExternalVMsFailure(self):
@@ -370,7 +394,8 @@ class v2vTests(TestCaseBase):
             self.assertRaises(libvirt.libvirtError,
                               v2v.get_external_vms,
                               'esx://mydomain', 'user',
-                              ProtectedPassword('password'))
+                              ProtectedPassword('password'),
+                              None)
 
     @permutations([
         # (methodname, fakemethod, active)
@@ -387,8 +412,8 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password')
-                                       )['vmList']
+                                       ProtectedPassword('password'),
+                                       None)['vmList']
             self.assertEqual(
                 sorted(vm['vmName'] for vm in vms),
                 sorted(spec.name for spec in VM_SPECS
@@ -435,7 +460,8 @@ class v2vTests(TestCaseBase):
         with MonkeyPatchScope([(libvirtconnection, 'open_connection',
                                 _connect)]):
             vms = v2v.get_external_vms('esx://mydomain', 'user',
-                                       ProtectedPassword('password'))['vmList']
+                                       ProtectedPassword('password'),
+                                       None)['vmList']
         self.assertEquals(len(vms), 1)
         self._assertVmMatchesSpec(vms[0], VM_SPECS[0])
         for disk in vms[0]['disks']:

@@ -1900,10 +1900,13 @@ class service:
         return 0, ''
 
     def getExternalVMs(self, args):
-        if len(args) != 3:
+        if len(args) < 3:
             raise ValueError('Wrong number of arguments')
-        uri, username, password = args
-        status = self.s.getExternalVMs(uri, username, password)
+
+        uri, username, password = args[0:3]
+        vm_names = args[3:]
+
+        status = self.s.getExternalVMs(uri, username, password, vm_names)
         if status['status']['code'] == 0:
             vmList = status['vmList']
             for vm in vmList:
@@ -2865,8 +2868,9 @@ if __name__ == '__main__':
             )),
         'externalVMList': (
             serv.getExternalVMs, (
-                '<uri> <username> <password>',
-                'get VMs from external hypervisor'
+                '<uri> <username> <password> [<vm_name> ...]',
+                'get VMs from external hypervisor, possibly limiting '
+                'the output only to a subset of VMs'
             )),
         'getHostJobs': (
             serv.getHostJobs, (

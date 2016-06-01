@@ -7292,6 +7292,14 @@ Host.getExternalVMs:
     -   description: libvirt connection password
         name: password
         type: string
+
+    -   defaultvalue: null
+        description: Limit query only to hosts with specified names
+        name: vm_names
+        added: '4.1'
+        type:
+        - string
+
     return:
         description: A list of VMs (List of ExternalVmInfo)
         type:
