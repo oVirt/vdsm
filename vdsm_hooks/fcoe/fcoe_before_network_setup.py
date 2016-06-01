@@ -63,7 +63,7 @@ def _custom_parameter_to_config(custom_params):
     # Check man fcoe-utils to add more parameters
     # TODO add mode to regexp in engine-config
     parameter_config_mapping = {'dcb': 'DCB_REQUIRED',
-                                'enabled': 'FCOE_ENABLED',
+                                'enable': 'FCOE_ENABLE',
                                 'auto_vlan': 'AUTO_VLAN', }
 
     config_params = {}
