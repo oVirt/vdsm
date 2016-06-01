@@ -136,8 +136,22 @@ def _setup_legacy(networks, bondings, options, in_rollback):
 
 
 def _setup_ovs(networks, bondings, options, in_rollback):
+    _ovs_info = ovs_info.OvsInfo()
+    ovs_netinfo = ovs_info.create_netinfo(_ovs_info)
+
+    nets2add, nets2edit, nets2remove = _split_setup_actions(
+        networks, ovs_netinfo['networks'])
+    bonds2add, bonds2edit, bonds2remove = _split_setup_actions(
+        bondings, ovs_netinfo['bondings'])
+
+    # TODO: If a nework is to be edited, we remove it and recreate again.
+    # We should implement editation.
+    nets2add.update(nets2edit)
+    nets2remove.update(nets2edit)
+
     with ovs_switch.transaction(in_rollback, networks, bondings):
-        ovs_switch.setup(networks, bondings)
+        ovs_switch.setup(_ovs_info, nets2add, nets2remove, bonds2add,
+                         bonds2edit, bonds2remove)
         _setup_ipv6autoconf(networks)
         connectivity.check(options)
 
@@ -177,3 +191,20 @@ def _setup_ipv6autoconf(networks):
             address.enable_ipv6_local_auto(net)
         else:
             address.disable_ipv6_local_auto(net)
+
+
+# TODO: use this function also for legacy switch
+def _split_setup_actions(query, running_entries):
+    entries2add = {}
+    entries2edit = {}
+    entries2remove = {}
+
+    for entry, attrs in six.iteritems(query):
+        if 'remove' in attrs:
+            entries2remove[entry] = attrs
+        elif entry in running_entries:
+            entries2edit[entry] = attrs
+        else:
+            entries2add[entry] = attrs
+
+    return entries2add, entries2edit, entries2remove

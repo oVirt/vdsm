@@ -191,34 +191,6 @@ class ValidationTests(TestCaseBase):
         self.assertEquals(e.exception[0], ne.ERR_USED_BOND)
 
 
-@attr(type='unit')
-class SplitActionTests(TestCaseBase):
-
-    def test_split_nets_action(self):
-        fake_running_nets = {'to-stay': {'nic': 'eth0'},
-                             'to-edit': {'nic': 'eth1'},
-                             'to-remove': {'nic': 'eth2'}}
-        nets_query = {'to-edit': {'nic': 'eth3'},
-                      'to-add': {'nic': 'eth4'},
-                      'to-remove': {'remove': True}}
-        nets_to_be_added, nets_to_be_removed = ovs_switch._split_nets_action(
-            nets_query, fake_running_nets)
-        self.assertEquals(set(nets_to_be_added.keys()), {'to-edit', 'to-add'})
-        self.assertEquals(nets_to_be_removed, {'to-edit', 'to-remove'})
-
-    def test_split_bonds_action(self):
-        fake_running_bonds = {'to-stay': {'nics': ['eth0', 'eth1']},
-                              'to-edit': {'nics': ['eth2', 'eth3']}}
-        bonds_query = {'to-edit': {'nic': ['eth0', 'eth4']},
-                       'to-add': {'nic': ['eth5', 'eth6']},
-                       'to-remove': {'remove': True}}
-        bonds2add, bonds2edit, bonds2remove = ovs_switch._split_bonds_action(
-            bonds_query, fake_running_bonds)
-        self.assertEquals(set(bonds2add.keys()), {'to-add'})
-        self.assertEquals(set(bonds2edit.keys()), {'to-edit'})
-        self.assertEquals(bonds2remove, {'to-remove'})
-
-
 class MockedOvsInfo(ovs_info.OvsInfo):
     def __init__(self):
         self._bridges = {}
