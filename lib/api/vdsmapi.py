@@ -23,6 +23,7 @@ from __future__ import absolute_import
 import logging
 import os
 import six
+import warnings
 import yaml
 
 from vdsm.config import config
@@ -55,6 +56,10 @@ class TypeNotFound(Exception):
 
 class MethodNotFound(Exception):
     pass
+
+
+class Inconsistency(Warning):
+    """ API usage conflicts with the schema """
 
 
 def find_schema(schema_name='vdsm-api'):
@@ -141,7 +146,7 @@ class Schema(object):
         if self._strict_mode:
             raise JsonRpcInvalidParamsError(message)
         else:
-            self.log.warning(message)
+            warnings.warn(message, Inconsistency)
 
     def verify_args(self, class_name, method_name, args):
         try:
