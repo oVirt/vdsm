@@ -173,16 +173,6 @@ Requires: ovirt-imageio-daemon
 Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
 
-%if 0%{?rhel}
-%if 0%{?centos}
-Requires: libguestfs-tools-c >= 1:1.28.1-1.55.el7.centos.2
-%else # rhel
-Requires: libguestfs-tools-c >= 1:1.28.1-1.55.el7_2.2
-%endif
-%else # fedora
-Requires: libguestfs-tools-c >= 1:1.26.7-2
-%endif
-
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-daemon-driver-network
 Requires: libvirt-daemon-driver-nwfilter
