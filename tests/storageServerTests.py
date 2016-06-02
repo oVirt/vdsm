@@ -89,21 +89,21 @@ class MountConnectionTests(VdsmTestCase):
 class TestMountConnectionEquality(VdsmTestCase):
 
     def test_eq_equal(self):
-        c1 = MountConnection("spec", "vfstype", "options")
-        c2 = MountConnection("spec", "vfstype", "options")
+        c1 = MountConnection("server:/path", "vfstype", "options")
+        c2 = MountConnection("server:/path", "vfstype", "options")
         self.assertTrue(c1 == c2, "%s should equal %s" % (c1, c2))
 
     def test_eq_subclass(self):
         class Subclass(MountConnection):
             pass
-        c1 = MountConnection("spec", "vfstype", "options")
-        c2 = Subclass("spec", "vfstype", "options")
+        c1 = MountConnection("server:/path", "vfstype", "options")
+        c2 = Subclass("server:/path", "vfstype", "options")
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
     @permutations([
-        ("s1", "s2", "t", "t", "o", "o"),
-        ("s", "s", "t1", "t2", "o", "o"),
-        ("s", "s", "t", "t", "o1", "o2"),
+        ("server:/path1", "server:/path2", "t", "t", "o", "o"),
+        ("server:/path", "server:/path", "t1", "t2", "o", "o"),
+        ("server:/path", "server:/path", "t", "t", "o1", "o2"),
     ])
     def test_eq_different(self, s1, s2, t1, t2, o1, o2):
         c1 = MountConnection(s1, t1, o1)
@@ -111,8 +111,8 @@ class TestMountConnectionEquality(VdsmTestCase):
         self.assertFalse(c1 == c2, "%s should not equal %s" % (c1, c2))
 
     def test_ne_equal(self):
-        c1 = MountConnection("spec", "vfstype", "options")
-        c2 = MountConnection("spec", "vfstype", "options")
+        c1 = MountConnection("server:/path", "vfstype", "options")
+        c2 = MountConnection("server:/path", "vfstype", "options")
         self.assertFalse(c1 != c2, "%s should equal %s" % (c1, c2))
 
 
@@ -120,21 +120,21 @@ class TestMountConnectionEquality(VdsmTestCase):
 class TestMountConnectionHash(VdsmTestCase):
 
     def test_equal_same_hash(self):
-        c1 = MountConnection("spec", "vfstype", "options")
-        c2 = MountConnection("spec", "vfstype", "options")
+        c1 = MountConnection("server:/path", "vfstype", "options")
+        c2 = MountConnection("server:/path", "vfstype", "options")
         self.assertEqual(hash(c1), hash(c2))
 
     def test_subclass_different_hash(self):
         class Subclass(MountConnection):
             pass
-        c1 = MountConnection("spec", "vfstype", "options")
-        c2 = Subclass("spec", "vfstype", "options")
+        c1 = MountConnection("server:/path", "vfstype", "options")
+        c2 = Subclass("server:/path", "vfstype", "options")
         self.assertNotEqual(hash(c1), hash(c2))
 
     @permutations([
-        ("s1", "s2", "t", "t", "o", "o"),
-        ("s", "s", "t1", "t2", "o", "o"),
-        ("s", "s", "t", "t", "o1", "o2"),
+        ("server:/path1", "server:/path2", "t", "t", "o", "o"),
+        ("server:/path", "server:/path", "t1", "t2", "o", "o"),
+        ("server:/path", "server:/path", "t", "t", "o1", "o2"),
     ])
     def test_not_equal_different_hash(self, s1, s2, t1, t2, o1, o2):
         c1 = MountConnection(s1, t1, o1)
