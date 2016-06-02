@@ -52,12 +52,12 @@ TIMEOUT = 3
 class FakeClientIf(object):
     log = logging.getLogger("FakeClientIf")
 
-    def __init__(self, binding, dest):
+    def __init__(self, dest):
         self.threadLocal = threading.local()
         self.dest = dest
-        self.json_binding = binding
         self.irs = True
         self.gluster = None
+        self.json_binding = None
 
         # API module is redefined for apiTests so we need to add BLANK_UUIDs
         import API
@@ -96,10 +96,14 @@ def constructAcceptor(log, ssl, jsonBridge,
     scheduler = schedule.Scheduler(name="test.Scheduler",
                                    clock=utils.monotonic_time)
     scheduler.start()
-    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list), 60, scheduler)
+
+    cif = FakeClientIf(dest)
+
+    json_binding = BindingJsonRpc(jsonBridge, defaultdict(list), 60,
+                                  scheduler, cif)
     json_binding.start()
 
-    cif = FakeClientIf(json_binding, dest)
+    cif.json_binding = json_binding
 
     xml_binding = BindingXMLRPC(cif, cif.log)
     xml_binding.start()

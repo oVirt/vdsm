@@ -225,7 +225,8 @@ class clientIF(object):
                     self._broker_client,
                     destination,
                     broker_address,
-                    config.getint('vars', 'connection_stats_timeout')
+                    config.getint('vars', 'connection_stats_timeout'),
+                    self
                 )
 
     def _prepareXMLRPCBinding(self):
@@ -256,7 +257,7 @@ class clientIF(object):
                 json_binding = BindingJsonRpc(
                     bridge, self._subscriptions,
                     config.getint('vars', 'connection_stats_timeout'),
-                    self._scheduler)
+                    self._scheduler, self)
                 self.bindings['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)

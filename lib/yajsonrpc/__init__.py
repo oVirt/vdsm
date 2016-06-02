@@ -23,6 +23,7 @@ from vdsm.compat import json
 
 from vdsm.password import protect_passwords, unprotect_passwords
 from vdsm.utils import monotonic_time, traceback
+from vdsm.define import errCode
 
 __all__ = ["betterAsyncore", "stompreactor", "stomp"]
 
@@ -475,8 +476,9 @@ class JsonRpcServer(object):
     which defining how often we should log connections stats and thread
     factory.
     """
-    def __init__(self, bridge, timeout, threadFactory=None):
+    def __init__(self, bridge, timeout, cif, threadFactory=None):
         self._bridge = bridge
+        self._cif = cif
         self._workQueue = Queue()
         self._threadFactory = threadFactory
         self._timeout = timeout
@@ -503,6 +505,16 @@ class JsonRpcServer(object):
         self._attempt_log_stats()
         logLevel = logging.DEBUG
         suppress_logging = req.method in self.FILTERED_METHODS
+
+        # VDSM should never respond to any request before all information about
+        # running VMs is recovered, see https://bugzilla.redhat.com/1339291
+        if not self._cif.ready:
+            self.log.info("In recovery, ignoring '%s' in bridge with %s",
+                          req.method, req.params)
+            # TODO: take the response from the exception instead of via errCode
+            ctx.requestDone(JsonRpcResponse(errCode['recovery'], None, req.id))
+            return
+
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
                      req.method, req.params)
         try:
