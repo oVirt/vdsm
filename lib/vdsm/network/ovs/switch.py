@@ -22,7 +22,6 @@ from contextlib import contextmanager
 
 import six
 
-from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo.nics import nics
 
 from . import info
