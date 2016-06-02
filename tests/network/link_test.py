@@ -20,7 +20,6 @@
 
 from __future__ import absolute_import
 from collections import deque
-import threading
 import time
 
 from functional.networkTests import IP_ADDRESS, IP_CIDR
@@ -30,7 +29,7 @@ from vdsm.sysctl import is_disabled_ipv6
 from vdsm.utils import monotonic_time
 
 from testValidation import ValidateRunningAsRoot
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import start_thread, VdsmTestCase as TestCaseBase
 
 
 class NetlinkEventMonitorTests(TestCaseBase):
@@ -60,10 +59,9 @@ class NetlinkEventMonitorTests(TestCaseBase):
             time.sleep(.2)
             dummy.up()
             dummy.remove()
-        add_device_thread = threading.Thread(target=_set_and_remove_device)
 
         with monitor.Monitor(timeout=self.TIMEOUT) as mon:
-            add_device_thread.start()
+            add_device_thread = start_thread(_set_and_remove_device)
             for event in mon:
                 if event.get('name') == dummy_name:
                     break
