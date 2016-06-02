@@ -34,13 +34,14 @@ _TASKS = _THREADS * _TASK_PER_WORKER
 class BindingJsonRpc(object):
     log = logging.getLogger('BindingJsonRpc')
 
-    def __init__(self, bridge, subs, timeout, scheduler):
+    def __init__(self, bridge, subs, timeout, scheduler, cif):
         self._executor = executor.Executor(name="jsonrpc.Executor",
                                            workers_count=_THREADS,
                                            max_tasks=_TASKS,
                                            scheduler=scheduler)
 
-        self._server = JsonRpcServer(bridge, timeout, self._executor.dispatch)
+        self._server = JsonRpcServer(bridge, timeout, cif,
+                                     self._executor.dispatch)
         self._reactor = StompReactor(subs)
         self.startReactor()
 
