@@ -7,12 +7,6 @@ the host's storage, memory and networks as well as virtual machine
 creation, other host administration tasks, statistics gathering, and
 log collection.
 
-Vdsm service originated as a service to be used by a RHEV Manager to
-control RHEV Hypervisors and Red Hat Enterprise Linux hosts. It is
-now independent of RHEV, usable by any management application and
-is intended to be portable to any Linux host providing the KVM
-virtualization technology.
-
 Installation
 ============
 

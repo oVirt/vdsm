@@ -30,7 +30,7 @@ To work with VDSM hooks you need first to do the following:
    If you find regular expression too complex, you can always use the following command:
    # engine-config -s UserDefinedVMProperties='pincpu=.*' --cver=3.0
 
-   Which mean that RHEV-M validation will get any input - but please note that giving
+   Which mean that oVirt-engine validation will get any input - but please note that giving
    a bad input - the hook will probably fail or run with unexpected results!
 
    There is explanation to each hooks expected syntax in the syntax section in this
@@ -39,7 +39,7 @@ To work with VDSM hooks you need first to do the following:
 2. In order that your changes will take effect you need to restart the JBoss service:
    # service jbossas restart
 
-3. Edit the VM that you want to run the hook with by running the RHEV-M Admin GUI and
+3. Edit the VM that you want to run the hook with by running the oVirt-engine Admin GUI and
    do one of the following options:
    a. Select the VM and press "edit" button - edit dialog will pop-up,
       select the last option from the left option list with the label "Custom Properties"

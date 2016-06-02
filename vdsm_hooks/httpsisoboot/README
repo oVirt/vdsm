@@ -9,8 +9,8 @@ The https source won't work reliably unless you can guarantee a low latency
 between the VM and the web server: in case of latency spikes or packet loss,
 the guest will see EIO errors.
 So it could be adopted with a local web server with plenty of spare capacity
-and a fast LAN link to RHEV-H, but using it with remotely available ISO
-images is not recommended.
+and a fast LAN link to the oVirt nodes, but using it with remotely available
+ISO images is not recommended.
 
 The support for plain http has been removed from qemu-kvm-rhev and qemu-kvm-ev
  as a security improvement but it's available upstream.

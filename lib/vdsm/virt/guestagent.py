@@ -384,7 +384,7 @@ class GuestAgent(object):
         elif message == 'session-logoff':
             self.guestInfo['session'] = "LoggedOff"
         elif message == 'uninstalled':
-            self.log.debug("RHEV agent was uninstalled.")
+            self.log.debug("guest agent was uninstalled.")
             self.guestInfo['appsList'] = ()
         elif message == 'session-startup':
             self.log.debug("Guest system is started or restarted.")

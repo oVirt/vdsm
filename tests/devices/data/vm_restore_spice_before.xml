@@ -15,8 +15,8 @@
   </resource>
     <sysinfo type='smbios'>
       <system>
-        <entry name='manufacturer'>Red Hat</entry>
-        <entry name='product'>RHEV Hypervisor</entry>
+        <entry name='manufacturer'>oVirt</entry>
+        <entry name='product'>oVirt Node</entry>
         <entry name='version'>7.2-1.el7</entry>
         <entry name='serial'>4C4C4544-0059-4410-8043-B6C04F4E5A31</entry>
         <entry name='uuid'>42e30017-b29c-4646-aa75-e42c4d0fe659</entry>
