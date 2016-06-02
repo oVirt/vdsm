@@ -587,8 +587,8 @@ def StandAloneRpcClient(host, port, request_queue, response_queue,
     return jsonclient
 
 
-def StompRpcServer(bridge, stomp_client, request_queue, address, timeout):
-    server = JsonRpcServer(bridge, timeout)
+def StompRpcServer(bridge, stomp_client, request_queue, address, timeout, cif):
+    server = JsonRpcServer(bridge, timeout, cif)
 
     return stomp_client.subscribe(
         request_queue,
