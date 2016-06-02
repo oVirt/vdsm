@@ -138,16 +138,6 @@ Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.3
 Requires: ovirt-vmconsole >= 1.0.0-0
 
-%if 0%{?rhel}
-%if 0%{?centos}
-Requires: libguestfs-tools-c >= 1:1.28.1-1.55.el7.centos.2
-%else
-Requires: libguestfs-tools-c >= 1:1.28.1-1.55.el7_2.2
-%endif # centos
-%else # fedora
-Requires: libguestfs-tools-c >= 1:1.26.7-2
-%endif # rhel
-
 Requires: libvirt-daemon-config-nwfilter
 Requires: libvirt-daemon-driver-network
 Requires: libvirt-daemon-driver-nwfilter
