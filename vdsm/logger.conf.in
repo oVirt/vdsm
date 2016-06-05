@@ -40,7 +40,7 @@ propagate=0
 level=INFO
 handlers=logfile
 qualname=IOProcess
-propagate=1
+propagate=0
 
 [logger_connectivity]
 level=DEBUG
