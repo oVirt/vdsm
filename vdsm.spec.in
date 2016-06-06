@@ -1147,6 +1147,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs
 %dir %{python_sitelib}/%{vdsm_name}/network/ovs/driver
 %dir %{python_sitelib}/%{vdsm_name}/network/tc
+%dir %{python_sitelib}/%{vdsm_name}/reports
 %dir %{python_sitelib}/%{vdsm_name}/tool
 %dir %{python_sitelib}/%{vdsm_name}/tool/configurators
 %dir %{python_sitelib}/%{vdsm_name}/profiling
@@ -1231,6 +1232,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/profiling/errors.py*
 %{python_sitelib}/%{vdsm_name}/profiling/memory.py*
 %{python_sitelib}/%{vdsm_name}/profiling/profile.py*
+%{python_sitelib}/%{vdsm_name}/reports/*.py*
 %{python_sitelib}/%{vdsm_name}/storage/__init__.py*
 %{python_sitelib}/%{vdsm_name}/storage/asyncevent.py*
 %{python_sitelib}/%{vdsm_name}/storage/blkdiscard.py*

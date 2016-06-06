@@ -414,6 +414,18 @@ parameters = [
             ' This is for internal usage and may change without warning'),
     ]),
 
+    # Section: [reports]
+    ('reports', [
+        ('enabled', 'false',
+            'Enable metric reporting (default false)'),
+
+        ('collector_address', 'localhost',
+            'Reports collector address (default localhost)'),
+
+        ('collector_type', 'statsd',
+            'Reports collector type (supporting statsd)'),
+    ]),
+
     # Section: [devel]
     ('devel', [
 
