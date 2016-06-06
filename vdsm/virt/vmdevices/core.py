@@ -409,7 +409,8 @@ class Rng(Base):
         return rngsources.get_device(self.specParams['source']) == source
 
     def setup(self):
-        supervdsm.getProxy().appropriateHwrngDevice(self.conf['vmId'])
+        if self.uses_source('/dev/hwrng'):
+            supervdsm.getProxy().appropriateHwrngDevice(self.conf['vmId'])
 
     def teardown(self):
         if self.uses_source('/dev/hwrng'):
