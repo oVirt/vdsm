@@ -497,8 +497,7 @@ class JsonRpcServer(object):
         self._attempt_log_stats()
         mangledMethod = req.method.replace(".", "_")
         logLevel = logging.DEBUG
-        if mangledMethod in ('Host_getAllVmStats',):
-            logLevel = logging.TRACE
+        suppress_logging = mangledMethod in ('Host_getAllVmStats',)
 
         # VDSM should never respond to any request before all information about
         # running VMs is recovered, see https://bugzilla.redhat.com/1339291
@@ -539,8 +538,9 @@ class JsonRpcServer(object):
                                             req.id))
         else:
             res = True if res is None else res
+            log_res = "(suppressed)" if suppress_logging else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
-                         req.method, res)
+                         req.method, log_res)
             ctx.requestDone(JsonRpcResponse(res, None, req.id))
 
     @traceback(on=log.name)
