@@ -278,6 +278,8 @@ class DirectioChecker(object):
         assert self._state is RUNNING
         self._timer = None
         self._check_time = self._loop.time()
+        _log.debug("START check %r (delay=%.2f)",
+                   self._path, self._check_time - self._next_check)
         try:
             self._start_process()
         except Exception as e:
@@ -292,8 +294,6 @@ class DirectioChecker(object):
         cmd = [constants.EXT_DD, "if=%s" % self._path, "of=/dev/null",
                "bs=4096", "count=1", "iflag=direct"]
         cmd = cmdutils.wrap_command(cmd)
-        _log.debug("START check %r cmd=%s delay=%.2f",
-                   self._path, cmd, self._check_time - self._next_check)
         self._proc = CPopen(cmd, stdin=None, stdout=None,
                             stderr=subprocess.PIPE)
         self._reader = self._loop.create_dispatcher(
@@ -323,8 +323,8 @@ class DirectioChecker(object):
         assert self._state is not IDLE
         now = self._loop.time()
         elapsed = now - self._check_time
-        _log.debug("FINISH check %r rc=%s err=%r elapsed=%.02f",
-                   self._path, rc, self._err, elapsed)
+        _log.debug("FINISH check %r (rc=%s, elapsed=%.02f)",
+                   self._path, rc, elapsed)
         self._reaper = None
         self._proc = None
         if self._state is STOPPING:
