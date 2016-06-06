@@ -44,6 +44,9 @@ _UDEV_RULE_FILE_NAME = os.path.join(
 _UDEV_RULE_FILE_NAME_VFIO = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "iommu_group_%s" +
     _UDEV_RULE_FILE_EXT)
+_UDEV_RULE_FILE_NAME_HWRNG = os.path.join(
+    _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "hwrng_%s" +
+    _UDEV_RULE_FILE_EXT)
 _UDEV_RULE_FILE_NAME_USB = os.path.join(
     _UDEV_RULE_FILE_DIR, _UDEV_RULE_FILE_PREFIX + "usb_%s_%s" +
     _UDEV_RULE_FILE_EXT)
@@ -224,7 +227,7 @@ def _udevTrigger(*args, **kwargs):
 
 @expose
 def appropriateHwrngDevice(vmId):
-    ruleFile = _UDEV_RULE_FILE_NAME % ('hwrng', vmId)
+    ruleFile = _UDEV_RULE_FILE_NAME_HWRNG % (vmId,)
     rule = ('KERNEL=="hw_random" SUBSYSTEM=="misc" RUN+="%s %s:%s %s"\n' %
             (EXT_CHOWN, QEMU_PROCESS_USER, QEMU_PROCESS_GROUP, _HWRNG_PATH))
     with open(ruleFile, "w") as rf:
@@ -236,7 +239,7 @@ def appropriateHwrngDevice(vmId):
 
 @expose
 def rmAppropriateHwrngDevice(vmId):
-    rule_file = _UDEV_RULE_FILE_NAME % ('hwrng', vmId)
+    rule_file = _UDEV_RULE_FILE_NAME_HWRNG % (vmId,)
     _log.debug("Removing rule %s", rule_file)
     try:
         os.remove(rule_file)
@@ -245,7 +248,7 @@ def rmAppropriateHwrngDevice(vmId):
             raise
 
     # Check that there are no other hwrng rules in place
-    if not glob.glob(_UDEV_RULE_FILE_NAME % ('hwrng', '*')):
+    if not glob.glob(_UDEV_RULE_FILE_NAME_HWRNG % ('*',)):
         _log.debug('Changing ownership (to root:root) of device '
                    '%s', _HWRNG_PATH)
         os.chown(_HWRNG_PATH, 0, 0)
