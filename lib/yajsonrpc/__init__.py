@@ -497,9 +497,7 @@ class JsonRpcServer(object):
         self._attempt_log_stats()
         mangledMethod = req.method.replace(".", "_")
         logLevel = logging.DEBUG
-        if mangledMethod in ('Host_getVMList', 'Host_getAllVmStats',
-                             'Host_getStats', 'StorageDomain_getStats',
-                             'VM_getStats', 'Host_fenceNode'):
+        if mangledMethod in ('Host_getAllVmStats',):
             logLevel = logging.TRACE
 
         # VDSM should never respond to any request before all information about
