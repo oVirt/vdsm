@@ -469,9 +469,7 @@ class JsonRpcClient(object):
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
-    FILTERED_METHODS = frozenset(['Host.getVMList', 'Host.getAllVmStats',
-                                  'Host.getStats', 'StorageDomain.getStats',
-                                  'VM.getStats', 'Host.fenceNode'])
+    FILTERED_METHODS = frozenset(['Host.getAllVmStats'])
 
     """
     Creates new JsonrRpcServer by providing a bridge, timeout in seconds
