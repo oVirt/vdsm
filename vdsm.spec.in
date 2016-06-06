@@ -162,27 +162,17 @@ Requires: ovirt-imageio-daemon
 Requires: ovirt-vmconsole >= 1.0.0-0
 %endif
 
+Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
-Requires: libvirt-daemon-driver-network
-Requires: libvirt-daemon-driver-nwfilter
-Requires: libvirt-daemon-driver-qemu
+Requires: libvirt-lock-sanlock
 
-%if 0%{?rhel}
-Requires: libvirt-daemon >= 1.2.17-13.el7_2.4
-Requires: libvirt-python >= 1.2.17-2
-%endif # rhel
-
-%if 0%{?fedora} >= 23
-Requires: libvirt-daemon >= 1.2.18.1-1
+%if 0%{?fedora}
 Requires: libvirt-python >= 1.2.18-1
+Requires: libvirt-daemon-kvm >= 1.2.18.1-1
+%else # rhel
+Requires: libvirt-daemon-kvm >= 1.2.17-13.el7_2.4
+Requires: libvirt-python >= 1.2.17-2
 %endif
-
-%if 0%{?fedora} == 22
-Requires: libvirt-daemon >= 1.2.13
-Requires: libvirt-python >= 1.2.9-2
-%endif
-
-Requires: libvirt-lock-sanlock, libvirt-client
 
 # iscsi-intiator versions
 %if 0%{?rhel}
