@@ -19,9 +19,11 @@
 #
 import httplib
 import logging
+import os.path
 import threading
 from collections import defaultdict
 
+import API
 from xmlrpclib import Transport, dumps, Fault
 from contextlib import contextmanager
 from itertools import product
@@ -36,8 +38,12 @@ from yajsonrpc import Notification
 from vdsm.config import config
 from vdsm.rpc.bindingjsonrpc import BindingJsonRpc
 from vdsm.protocoldetector import MultiProtocolAcceptor
+from vdsm import constants
 from vdsm import schedule
 from vdsm import utils
+
+from testlib import namedTemporaryDir
+from monkeypatch import MonkeyPatchScope
 
 if config.get('vars', 'ssl_implementation') == 'm2c':
     from integration.m2chelper import DEAFAULT_SSL_CONTEXT
@@ -105,28 +111,32 @@ def constructAcceptor(log, ssl, jsonBridge,
 
     cif.json_binding = json_binding
 
-    xml_binding = BindingXMLRPC(cif, cif.log)
-    xml_binding.start()
-    xmlDetector = XmlDetector(xml_binding)
-    acceptor.add_detector(xmlDetector)
+    with namedTemporaryDir() as tmp_dir:
+        client_log = os.path.join(tmp_dir, 'client.log')
+        with MonkeyPatchScope([(API.clientIF, 'getInstance', lambda _: cif),
+                              (constants, 'P_VDSM_CLIENT_LOG', client_log)]):
+            xml_binding = BindingXMLRPC(cif, cif.log)
+            xml_binding.start()
+            xmlDetector = XmlDetector(xml_binding)
+            acceptor.add_detector(xmlDetector)
 
-    jsonBridge.cif = cif
+            jsonBridge.cif = cif
 
-    stompDetector = StompDetector(json_binding)
-    acceptor.add_detector(stompDetector)
+            stompDetector = StompDetector(json_binding)
+            acceptor.add_detector(stompDetector)
 
-    thread = threading.Thread(target=reactor.process_requests,
-                              name='Detector thread')
-    thread.setDaemon(True)
-    thread.start()
+            thread = threading.Thread(target=reactor.process_requests,
+                                      name='Detector thread')
+            thread.setDaemon(True)
+            thread.start()
 
-    try:
-        yield acceptor
-    finally:
-        acceptor.stop()
-        json_binding.stop()
-        xml_binding.stop()
-        scheduler.stop(wait=False)
+            try:
+                yield acceptor
+            finally:
+                acceptor.stop()
+                json_binding.stop()
+                xml_binding.stop()
+                scheduler.stop(wait=False)
 
 
 @contextmanager
