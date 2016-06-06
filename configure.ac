@@ -165,6 +165,10 @@ AS_IF([test "${enable_openvswitch}" = "yes"],
       AC_SUBST([OPENVSWITCH], ['1']),
       AC_SUBST([OPENVSWITCH], ['0']))
 
+AS_IF([test "${enable_openvswitch}" = "yes"],
+      AC_SUBST([OPENVSWITCHSERVICE], ['openvswitch.service']),
+      AC_SUBST([OPENVSWITCHSERVICE], []))
+
 AC_ARG_WITH(
     [qemu-user],
     [AS_HELP_STRING(

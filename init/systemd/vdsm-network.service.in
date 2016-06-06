@@ -1,8 +1,8 @@
 [Unit]
 Description=Virtual Desktop Server Manager network restoration
 Wants=network.target
-Requires=libvirtd.service
-After=libvirtd.service
+Requires=libvirtd.service @OPENVSWITCHSERVICE@
+After=libvirtd.service @OPENVSWITCHSERVICE@
 
 [Service]
 Type=oneshot
