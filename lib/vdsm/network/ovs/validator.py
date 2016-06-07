@@ -55,6 +55,7 @@ def validate_net_configuration(net, attrs, to_be_configured_bonds,
                 ne.ERR_BAD_VLAN, 'Vlan device requires a nic/bond')
 
 
+# TODO: Pass all nets and bonds to validator at once, not one by one.
 def validate_bond_configuration(bond, attrs, nets, running_nets, kernel_nics):
     """Validate bonding parameters which are not verified by OVS itself.
 
@@ -82,12 +83,32 @@ def _validate_bond_addition(nics, kernel_nics):
 
 
 def _validate_bond_removal(bond, nets, running_nets):
-    for net in _nets_with_bond(running_nets, bond):
-        to_be_removed = 'remove' in nets.get(net, {})
-        if not to_be_removed:
-            raise ne.ConfigNetworkError(
-                ne.ERR_USED_BOND, 'Cannot remove bonding %s: used by '
-                'network %s' % (bond, net))
+    running_nets_with_bond = set([
+        net for net, attrs in six.iteritems(running_nets)
+        if attrs['bond'] == bond])
+
+    add_nets_with_bond = set()
+    remove_nets_with_bond = set()
+    for net, attrs in six.iteritems(nets):
+        if 'remove' in attrs:
+            running_bond = running_nets.get(net, {}).get('bond')
+            if running_bond == bond:
+                remove_nets_with_bond.add(net)
+        elif net in running_nets:
+            running_bond = running_nets[net].get('bond')
+            if running_bond == bond:
+                remove_nets_with_bond.add(net)
+            if attrs.get('bonding') == bond:
+                add_nets_with_bond.add(net)
+        else:
+            if attrs.get('bonding') == bond:
+                add_nets_with_bond.add(net)
+
+    if (add_nets_with_bond or
+            (running_nets_with_bond - remove_nets_with_bond)):
+        raise ne.ConfigNetworkError(
+            ne.ERR_USED_BOND,
+            'Cannot remove bonding {}: used by network.'.format(bond))
 
 
 def _nets_with_bond(running_nets, bond):
