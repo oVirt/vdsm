@@ -136,7 +136,7 @@ class ValidationTests(TestCaseBase):
         running_nets = {}
         with self.assertNotRaises():
             ovs_validator.validate_bond_configuration(
-                'bond1', {'remove': True, 'switch': 'ovs'}, nets, running_nets,
+                'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
 
     def test_remove_bond_attached_to_network_that_was_removed(self):
@@ -145,7 +145,7 @@ class ValidationTests(TestCaseBase):
         running_nets = {'net1': {'bond': 'bond1'}}
         with self.assertNotRaises():
             ovs_validator.validate_bond_configuration(
-                'bond1', {'remove': True, 'switch': 'ovs'}, nets, running_nets,
+                'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
 
     def test_remove_bond_attached_to_network_that_was_not_removed(self):
@@ -154,7 +154,26 @@ class ValidationTests(TestCaseBase):
         running_nets = {'net1': {'bond': 'bond1'}}
         with self.assertRaises(ne.ConfigNetworkError) as e:
             ovs_validator.validate_bond_configuration(
-                'bond1', {'remove': True, 'switch': 'ovs'}, nets, running_nets,
+                'bond1', {'remove': True}, nets, running_nets,
+                fake_kernel_nics)
+        self.assertEquals(e.exception[0], ne.ERR_USED_BOND)
+
+    def test_remove_bond_attached_to_network_that_will_use_nic(self):
+        fake_kernel_nics = ['eth0', 'eth1']
+        nets = {'net1': {'nic': 'eth0'}}
+        running_nets = {'net1': {'bond': 'bond1'}}
+        with self.assertNotRaises():
+            ovs_validator.validate_bond_configuration(
+                'bond1', {'remove': True}, nets, running_nets,
+                fake_kernel_nics)
+
+    def test_remove_bond_reattached_to_another_network(self):
+        fake_kernel_nics = ['eth0', 'eth1', 'eth2']
+        nets = {'net1': {'nic': 'eth0'}, 'net2': {'bonding': 'bond1'}}
+        running_nets = {'net1': {'bond': 'bond1'}}
+        with self.assertRaises(ne.ConfigNetworkError) as e:
+            ovs_validator.validate_bond_configuration(
+                'bond1', {'remove': True}, nets, running_nets,
                 fake_kernel_nics)
         self.assertEquals(e.exception[0], ne.ERR_USED_BOND)
 
