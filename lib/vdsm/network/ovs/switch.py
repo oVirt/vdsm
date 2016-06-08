@@ -118,74 +118,72 @@ def _split_bonds_action(bonds, configured_bonds):
 def _setup_ovs_devices(nets_to_be_added, nets_to_be_removed):
     ovsdb = driver.create()
 
-    with ovsdb.transaction() as t:
-        t.add(*_remove_nets(ovsdb, nets_to_be_removed))
-        t.add(*_add_nets(ovsdb, nets_to_be_added))
+    with Setup(ovsdb) as s:
+        s.remove_nets(nets_to_be_removed)
+        s.add_nets(nets_to_be_added)
 
     with ovsdb.transaction() as t:
         t.add(*_cleanup_unused_bridges(ovsdb))
 
 
-def _remove_nets(ovsdb, nets):
-    return [_remove_net(ovsdb, net) for net in nets]
+# TODO: We could move all setup() code into __init__ and __exit__.
+class Setup(object):
+    def __init__(self, ovsdb):
+        self._ovsdb = ovsdb
+        self._transaction = self._ovsdb.transaction()
+        self._bridges_by_sb = info.OvsInfo().bridges_by_sb
 
+    def __enter__(self):
+        return self
 
-def _remove_net(ovsdb, net):
-    return ovsdb.del_port(net)
-
-
-def _add_nets(ovsdb, nets):
-    commands = []
-
-    bridges_by_sb = info.OvsInfo().bridges_by_sb
-    for net, attrs in six.iteritems(nets):
-        sb = attrs['nic']
-        if sb in bridges_by_sb:
-            bridge = bridges_by_sb[sb]
+    def __exit__(self, type, value, traceback):
+        if type is None:
+            self._transaction.commit()
         else:
-            bridge, br_commands = _create_bridge(ovsdb, sb)
-            bridges_by_sb[sb] = bridge
-            commands.extend(br_commands)
+            six.reraise(type, value, traceback)
 
-        commands.extend(_create_nb(ovsdb, bridge, net))
-        vlan = attrs.get('vlan')
-        if vlan is not None:
-            commands.append(_set_vlan(ovsdb, net, vlan))
+    def remove_nets(self, nets):
+        for net in nets:
+            self._remove_net(net)
 
-    return commands
+    def _remove_net(self, net):
+        self._transaction.add(self._ovsdb.del_port(net))
 
+    def add_nets(self, nets):
+        for net, attrs in six.iteritems(nets):
+            sb = attrs['nic']
+            bridge = self._bridges_by_sb.get(sb) or self._create_bridge(sb)
 
-def _create_br_name():
-    return random_iface_name(prefix=BRIDGE_PREFIX)
+            self._create_nb(bridge, net)
+            vlan = attrs.get('vlan')
+            if vlan is not None:
+                self._set_vlan(net, vlan)
 
+    def _create_nb(self, bridge, port):
+        self._transaction.add(self._ovsdb.add_port(bridge, port))
+        self._transaction.add(self._ovsdb.set_port_attr(
+            port, 'other_config:vdsm_level', info.NORTHBOUND))
+        self._transaction.add(self._ovsdb.set_interface_attr(
+            port, 'type', 'internal'))
 
-def _create_nb(ovsdb, bridge, port):
-    commands = []
-    commands.append(ovsdb.add_port(bridge, port))
-    commands.append(ovsdb.set_port_attr(
-        port, 'other_config:vdsm_level', info.NORTHBOUND))
-    commands.append(ovsdb.set_interface_attr(port, 'type', 'internal'))
-    return commands
+    def _set_vlan(self, net, vlan):
+        self._transaction.add(self._ovsdb.set_port_attr(net, 'tag', vlan))
 
+    def _create_bridge(self, sb):
+        bridge = self._create_br_name()
+        self._transaction.add(self._ovsdb.add_br(bridge))
+        self._create_sb(bridge, sb)
+        self._bridges_by_sb[sb] = bridge
+        return bridge
 
-def _create_bridge(ovsdb, sb):
-    commands = []
-    bridge = _create_br_name()
-    commands.append(ovsdb.add_br(bridge))
-    commands.extend(_create_sb(ovsdb, bridge, sb))
-    return bridge, commands
+    @staticmethod
+    def _create_br_name():
+        return random_iface_name(prefix=BRIDGE_PREFIX)
 
-
-def _create_sb(ovsdb, bridge, port):
-    commands = []
-    commands.append(ovsdb.add_port(bridge, port))
-    commands.append(ovsdb.set_port_attr(
-        port, 'other_config:vdsm_level', info.SOUTHBOUND))
-    return commands
-
-
-def _set_vlan(ovsdb, net, vlan):
-    return ovsdb.set_port_attr(net, 'tag', vlan)
+    def _create_sb(self, bridge, port):
+        self._transaction.add(self._ovsdb.add_port(bridge, port))
+        self._transaction.add(self._ovsdb.set_port_attr(
+            port, 'other_config:vdsm_level', info.SOUTHBOUND))
 
 
 def _cleanup_unused_bridges(ovsdb):
