@@ -3510,7 +3510,7 @@ class HSM(object):
     @public
     def sdm_create_volume(self, job_id, vol_info):
         vol_info = sdm.api.create_volume.CreateVolumeInfo(vol_info)
-        dom_manifest = sdCache.produce(vol_info.sd_id).manifest
+        dom_manifest = sdCache.produce_manifest(vol_info.sd_id)
         host_id = self.domainMonitor.getHostId(vol_info.sd_id)
         job = sdm.api.create_volume.Job(job_id, host_id, dom_manifest,
                                         vol_info)

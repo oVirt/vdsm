@@ -93,7 +93,18 @@ class StorageDomainCache:
             if self.__staleStatus == self.STORAGE_REFRESHING:
                 self.__staleStatus = self.STORAGE_UPDATED
 
+    def produce_manifest(self, sdUUID):
+        """
+        Return a StorageDomainManifest for sdUUID. New code must use this, as
+        StorgeDomain is not safe for use in spm-less code.
+        """
+        return self.produce(sdUUID).manifest
+
     def produce(self, sdUUID):
+        """
+        Return a StorageDomain for sdUUID. This must be used only in legacy
+        code.
+        """
         domain = DomainProxy(self, sdUUID)
         # This is needed to preserve the semantic where if the domain
         # was absent from the cache and the domain cannot be found the

@@ -206,7 +206,7 @@ class BlockVolumeManifest(volume.VolumeManifest):
         # Just call the SD Manifest method getVSize() - apparently it does what
         # we need. We consider incurred overhead of producing the object
         # to be a small price for code de-duplication.
-        manifest = sdCache.produce(self.sdUUID).manifest
+        manifest = sdCache.produce_manifest(self.sdUUID)
         return int(manifest.getVSize(self.imgUUID, self.volUUID) / bs)
 
     getVolumeTrueSize = getVolumeSize

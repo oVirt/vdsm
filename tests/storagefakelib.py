@@ -302,5 +302,8 @@ class FakeStorageDomainCache(object):
         except KeyError:
             raise se.StorageDomainDoesNotExist(sdUUID)
 
+    def produce_manifest(self, sdUUID):
+        return self.produce(sdUUID).manifest
+
     def manuallyRemoveDomain(self, sdUUID):
         self.domains.pop(sdUUID, None)

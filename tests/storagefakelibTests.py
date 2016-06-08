@@ -29,6 +29,7 @@ from testlib import permutations, expandPermutations
 from storagefakelib import FakeLVM
 from storagefakelib import FakeResourceManager
 from storagefakelib import FakeStorageDomainCache
+from storagetestlib import FakeSD
 
 from storage import blockSD
 from storage import lvm as real_lvm
@@ -382,6 +383,11 @@ class TestFakeStorageDomainCache(VdsmTestCase):
         sdc = FakeStorageDomainCache()
         sdc.domains["uuid"] = "fake domain"
         self.assertEqual("fake domain", sdc.produce("uuid"))
+
+    def test_produce_manifest(self):
+        sdc = FakeStorageDomainCache()
+        sdc.domains["uuid"] = FakeSD("fake manifest")
+        self.assertEqual("fake manifest", sdc.produce_manifest("uuid"))
 
     def test_manually_remove_domain(self):
         sdc = FakeStorageDomainCache()
