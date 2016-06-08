@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
+import itertools
 
 import six
 
@@ -76,51 +77,58 @@ def _update_running_config(networks, bondings, running_config):
 def setup(nets, bonds):
     ovs_info = info.OvsInfo()
     _netinfo = info.create_netinfo(ovs_info)
-    nets_to_be_added, nets_to_be_removed = _split_nets_action(
-        nets, _netinfo['networks'])
-    bonds_to_be_added_or_edited, bonds_to_be_removed = _split_bonds_action(
+    nets2add, nets2remove = _split_nets_action(nets, _netinfo['networks'])
+    bonds2add, bonds2edit, bonds2remove = _split_bonds_action(
         bonds, _netinfo['bondings'])
 
-    _setup_ovs_devices(nets_to_be_added, nets_to_be_removed)
+    _setup_ovs_devices(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
+                       bonds2remove)
 
 
 def _split_nets_action(nets, running_nets):
     # TODO: If a nework is to be edited, we remove it and recreate again.
     # We should implement editation.
-    nets_to_be_removed = set()
-    nets_to_be_added = {}
+    nets2remove = set()
+    nets2add = {}
 
     for net, attrs in six.iteritems(nets):
         if 'remove' in attrs:
-            nets_to_be_removed.add(net)
+            nets2remove.add(net)
         elif net in running_nets:
-            nets_to_be_removed.add(net)
-            nets_to_be_added[net] = attrs
+            nets2remove.add(net)
+            nets2add[net] = attrs
         else:
-            nets_to_be_added[net] = attrs
+            nets2add[net] = attrs
 
-    return nets_to_be_added, nets_to_be_removed
+    return nets2add, nets2remove
 
 
 def _split_bonds_action(bonds, configured_bonds):
-    bonds_to_be_removed = set()
-    bonds_to_be_added_or_edited = {}
+    bonds2remove = set()
+    bonds2edit = {}
+    bonds2add = {}
 
     for bond, attrs in six.iteritems(bonds):
         if 'remove' in attrs:
-            bonds_to_be_removed.add(bond)
+            bonds2remove.add(bond)
+        elif bond not in configured_bonds:
+            bonds2add[bond] = attrs
         elif attrs != configured_bonds.get(bond):
-            bonds_to_be_added_or_edited[bond] = attrs
+            bonds2edit[bond] = attrs
 
-    return bonds_to_be_added_or_edited, bonds_to_be_removed
+    return bonds2add, bonds2edit, bonds2remove
 
 
-def _setup_ovs_devices(nets_to_be_added, nets_to_be_removed):
+def _setup_ovs_devices(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
+                       bonds2remove):
     ovsdb = driver.create()
 
-    with Setup(ovsdb) as s:
-        s.remove_nets(nets_to_be_removed)
-        s.add_nets(nets_to_be_added)
+    with Setup(ovsdb, ovs_info) as s:
+        s.remove_nets(nets2remove)
+        s.remove_bonds(bonds2remove)
+        s.edit_bonds(bonds2edit)
+        s.add_bonds(bonds2add)
+        s.add_nets(nets2add)
 
     with ovsdb.transaction() as t:
         t.add(*_cleanup_unused_bridges(ovsdb))
@@ -128,10 +136,12 @@ def _setup_ovs_devices(nets_to_be_added, nets_to_be_removed):
 
 # TODO: We could move all setup() code into __init__ and __exit__.
 class Setup(object):
-    def __init__(self, ovsdb):
+    def __init__(self, ovsdb, ovs_info):
         self._ovsdb = ovsdb
         self._transaction = self._ovsdb.transaction()
-        self._bridges_by_sb = info.OvsInfo().bridges_by_sb
+        self._ovs_info = ovs_info
+        self._bridges_by_sb = ovs_info.bridges_by_sb
+        self._northbounds_by_sb = ovs_info.northbounds_by_sb
 
     def __enter__(self):
         return self
@@ -142,22 +152,91 @@ class Setup(object):
         else:
             six.reraise(type, value, traceback)
 
-    def remove_nets(self, nets):
-        for net in nets:
-            self._remove_net(net)
+    def remove_bonds(self, bonds):
+        self._transaction.add(*[self._ovsdb.del_port(bond) for bond in bonds])
 
-    def _remove_net(self, net):
-        self._transaction.add(self._ovsdb.del_port(net))
+    def edit_bonds(self, bonds):
+        detach_commands = []
+        attach_commands = []
+
+        for bond, attrs in six.iteritems(bonds):
+            bridge = self._bridges_by_sb[bond]
+
+            to_be_configured_slaves = attrs['nics']
+            running_bond = self._ovs_info.bridges[bridge]['ports'][bond]
+            running_slaves = running_bond['bond']['slaves']
+
+            detach, attach = self._edit_slaves(
+                bond, running_slaves, to_be_configured_slaves)
+            detach_commands.extend(detach)
+            attach_commands.extend(attach)
+
+        self._transaction.add(*detach_commands)
+        self._transaction.add(*attach_commands)
+
+    def add_bonds(self, bonds):
+        """
+        On a bond creation, OVS bridge is created. Northbound port (network)
+        then can be attached to it.
+        """
+        for bond, attrs in six.iteritems(bonds):
+            bridge = self._create_bridge()
+            self._bridges_by_sb[bond] = bridge
+            self._create_sb_bond(bridge, bond, attrs['nics'])
+
+    def _edit_slaves(self, bond, running_slaves, to_be_configured_slaves):
+        running = frozenset(running_slaves)
+        to_be_configured = frozenset(to_be_configured_slaves)
+
+        attach = list(itertools.chain.from_iterable(
+            self._ovsdb.attach_bond_slave(bond, slave)
+            for slave in to_be_configured - running))
+        detach = list(itertools.chain.from_iterable(
+            self._ovsdb.detach_bond_slave(bond, slave)
+            for slave in running - to_be_configured))
+
+        return detach, attach
+
+    def remove_nets(self, nets):
+        ovs_netinfo = info.create_netinfo(self._ovs_info)
+        running_networks = ovs_netinfo['networks']
+        for net in nets:
+            running_attrs = running_networks[net]
+            bond = running_attrs['bond']
+            nic = running_attrs['nics'][0] if not bond else None
+            sb = nic or bond
+
+            self._northbounds_by_sb[sb].discard(net)
+
+            # Detach NIC if not used anymore.
+            if nic and not self._northbounds_by_sb[nic]:
+                self._detach_sb_nic(nic)
+
+            self._transaction.add(self._ovsdb.del_port(net))
+
+    def _detach_sb_nic(self, nic):
+        self._northbounds_by_sb.pop(nic)
+        self._bridges_by_sb.pop(nic)
+        self._transaction.add(self._ovsdb.del_port(nic))
 
     def add_nets(self, nets):
         for net, attrs in six.iteritems(nets):
-            sb = attrs['nic']
-            bridge = self._bridges_by_sb.get(sb) or self._create_bridge(sb)
+            nic = attrs.get('nic')
+            bond = attrs.get('bonding')
+            sb = nic or bond
+            if sb in self._bridges_by_sb:
+                bridge = self._bridges_by_sb[sb]
+            else:
+                bridge = self._create_bridge()
+                self._bridges_by_sb[nic] = bridge
+                self._create_sb_nic(bridge, nic)
 
             self._create_nb(bridge, net)
             vlan = attrs.get('vlan')
             if vlan is not None:
                 self._set_vlan(net, vlan)
+
+            self._northbounds_by_sb.setdefault(sb, set()).add(net)
 
     def _create_nb(self, bridge, port):
         self._transaction.add(self._ovsdb.add_port(bridge, port))
@@ -169,31 +248,44 @@ class Setup(object):
     def _set_vlan(self, net, vlan):
         self._transaction.add(self._ovsdb.set_port_attr(net, 'tag', vlan))
 
-    def _create_bridge(self, sb):
+    def _create_bridge(self):
         bridge = self._create_br_name()
         self._transaction.add(self._ovsdb.add_br(bridge))
-        self._create_sb(bridge, sb)
-        self._bridges_by_sb[sb] = bridge
         return bridge
 
     @staticmethod
     def _create_br_name():
         return random_iface_name(prefix=BRIDGE_PREFIX)
 
-    def _create_sb(self, bridge, port):
-        self._transaction.add(self._ovsdb.add_port(bridge, port))
+    def _create_sb_nic(self, bridge, nic):
+        self._transaction.add(self._ovsdb.add_port(bridge, nic))
         self._transaction.add(self._ovsdb.set_port_attr(
-            port, 'other_config:vdsm_level', info.SOUTHBOUND))
+            nic, 'other_config:vdsm_level', info.SOUTHBOUND))
+
+    def _create_sb_bond(self, bridge, bond, slaves):
+        self._transaction.add(self._ovsdb.add_bond(
+            bridge, bond, slaves, fake_iface=True))
+        self._transaction.add(self._ovsdb.set_port_attr(
+            bond, 'other_config:vdsm_level', info.SOUTHBOUND))
 
 
 def _cleanup_unused_bridges(ovsdb):
+    """
+    Remove bridges with no ports. Southbound ports are detached from bridge by
+    Setup.remove_bonds() and Setup.detach_unused_sb_nics(). Northbound ports
+    are detached by Setup.remove_nets().
+    """
     return [ovsdb.del_br(bridge) for bridge in _unused_bridges()]
 
 
 def _unused_bridges():
     unused_bridges = set()
-    for bridge, attrs in six.iteritems(info.OvsInfo().bridges):
-        northbound_ports = info.OvsInfo.northbound_ports(attrs['ports'])
-        if (bridge.startswith(BRIDGE_PREFIX) and not list(northbound_ports)):
+    ovs_info = info.OvsInfo()
+    for bridge, attrs in six.iteritems(ovs_info.bridges):
+        ports = attrs['ports']
+        northbound_ports = ovs_info.northbound_ports(ports)
+        southbound_port = ovs_info.southbound_port(ports)
+        if (bridge.startswith(BRIDGE_PREFIX) and not list(northbound_ports) and
+                not southbound_port):
             unused_bridges.add(bridge)
     return unused_bridges

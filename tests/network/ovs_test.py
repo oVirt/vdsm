@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 from vdsm.network import errors as ne
 from vdsm.network.ovs import driver as ovs_driver
+from vdsm.network.ovs import info as ovs_info
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator
 
@@ -202,10 +203,18 @@ class SplitActionTests(TestCaseBase):
         bonds_query = {'to-edit': {'nic': ['eth0', 'eth4']},
                        'to-add': {'nic': ['eth5', 'eth6']},
                        'to-remove': {'remove': True}}
-        bonds_to_be_added, bonds_to_be_removed_or_edited = \
-            ovs_switch._split_bonds_action(bonds_query, fake_running_bonds)
-        self.assertEquals(set(bonds_to_be_added.keys()), {'to-edit', 'to-add'})
-        self.assertEquals(bonds_to_be_removed_or_edited, {'to-remove'})
+        bonds2add, bonds2edit, bonds2remove = ovs_switch._split_bonds_action(
+            bonds_query, fake_running_bonds)
+        self.assertEquals(set(bonds2add.keys()), {'to-add'})
+        self.assertEquals(set(bonds2edit.keys()), {'to-edit'})
+        self.assertEquals(bonds2remove, {'to-remove'})
+
+
+class MockedOvsInfo(ovs_info.OvsInfo):
+    def __init__(self):
+        self._bridges = {}
+        self._bridges_by_sb = {}
+        self._northbounds_by_sb = {}
 
 
 @attr(type='integration')
@@ -221,6 +230,10 @@ class SetupTransactionTests(TestCaseBase):
         self.ovs_service.teardown()
 
     def test_dry_run(self):
-        with ovs_switch.Setup(self.ovsdb) as s:
+        ovs_info = MockedOvsInfo()
+        with ovs_switch.Setup(self.ovsdb, ovs_info) as s:
             s.remove_nets({})
+            s.remove_bonds({})
+            s.edit_bonds({})
+            s.add_bonds({})
             s.add_nets({})
