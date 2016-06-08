@@ -18,8 +18,11 @@
 #
 from __future__ import absolute_import
 
+import itertools
+
 import six
 
+from vdsm.network import ipwrapper
 from vdsm.network.ip import address
 from vdsm.network.libvirt import networks as libvirt_nets
 from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
@@ -153,6 +156,7 @@ def _setup_ovs(networks, bondings, options, in_rollback):
         ovs_switch.setup(_ovs_info, nets2add, nets2remove, bonds2add,
                          bonds2edit, bonds2remove)
         _setup_ipv6autoconf(networks)
+        _set_ovs_links_up(nets2add, bonds2add, bonds2edit)
         _setup_ovs_ip_config(nets2add)
         connectivity.check(options)
 
@@ -162,6 +166,30 @@ def _setup_ovs_ip_config(nets):
     # transactions.
     for net, attrs in six.iteritems(nets):
         _set_static_ip_config(net, attrs)
+
+
+def _set_ovs_links_up(nets2add, bonds2add, bonds2edit):
+    # TODO: Make this universal for legacy and ovs.
+    for dev in _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
+        # TODO: Create a link package/module and use link.up(dev).
+        ipwrapper.linkSet(dev, ['up'])
+
+
+def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
+    nets_and_bonds = set(
+        itertools.chain.from_iterable([nets2add, bonds2add, bonds2edit]))
+
+    nets_nics = {attrs['nic'] for attrs in six.itervalues(nets2add)
+                 if 'nic' in attrs}
+
+    bonds_nics = set()
+    for bonds in (bonds2add, bonds2edit):
+        bond_nics = itertools.chain.from_iterable(
+            attrs['nics'] for attrs in six.itervalues(bonds))
+        bonds_nics.update(bond_nics)
+
+    return itertools.chain.from_iterable(
+        [nets_and_bonds, nets_nics, bonds_nics])
 
 
 def _set_static_ip_config(iface, attrs):

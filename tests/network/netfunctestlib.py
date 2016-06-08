@@ -28,6 +28,7 @@ from nose.plugins.skip import SkipTest
 
 import vdsm.config
 from vdsm.network import kernelconfig
+from vdsm.network.netinfo.nics import operstate
 
 from testlib import VdsmTestCase
 
@@ -104,6 +105,7 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertSouthboundIface(netname, netattrs)
         self.assertVlan(netattrs)
         self.assertNetworkIp(netname, netattrs)
+        self.assertLinksUp(netname, netattrs)
 
     def assertHostQos(self, netname, netattrs):
         network_caps = self.netinfo.networks[netname]
@@ -280,6 +282,19 @@ class NetFuncTestCase(VdsmTestCase):
     def assertStaticIPv6(self, netattrs, ipinfo):
         self.assertIn(netattrs['ipv6addr'], ipinfo['ipv6addrs'])
 
+    def assertLinksUp(self, net, attrs):
+        switch = attrs.get('switch', 'legacy')
+        if switch == 'legacy':
+            expected_links = _gather_expected_legacy_links(
+                net, attrs, self.netinfo)
+        elif switch == 'ovs':
+            expected_links = _gather_expected_ovs_links(
+                net, attrs, self.netinfo)
+        if expected_links:
+            for dev in expected_links:
+                # Links are sometimes marked as UNKNOWN after turned UP.
+                self.assertIn(operstate(dev).upper(), ('UP', 'UNKNOWN'))
+
     def assert_kernel_vs_running_config(self):
         """
         This is a special test, that checks setup integrity through
@@ -375,3 +390,40 @@ def _normalize_qos_config(qos):
 
 def _normalize_bond_opts(opts):
     return [opt + '=' + val for (opt, val) in six.iteritems(opts)]
+
+
+def _gather_expected_legacy_links(net, attrs, netinfo):
+    bridged = attrs.get('bridged', True)
+    vlan = attrs.get('vlan')
+    bond = attrs.get('bonding')
+    nic = attrs.get('nic')
+
+    devs = set()
+    if bridged:
+        devs.add(net)
+    if vlan is not None:
+        vlan_name = '{}.{}'.format(bond or nic, vlan)
+        devs.add(vlan_name)
+    if bond:
+        devs.add(bond)
+        slaves = netinfo.bondings[bond]['slaves']
+        devs.update(slaves)
+    elif nic:
+        devs.add(nic)
+
+    return devs
+
+
+def _gather_expected_ovs_links(net, attrs, netinfo):
+    bond = attrs.get('bonding')
+    nic = attrs.get('nic')
+
+    devs = {net}
+    if bond:
+        devs.add(bond)
+        slaves = netinfo.bondings[bond]['slaves']
+        devs.update(slaves)
+    elif nic:
+        devs.add(nic)
+
+    return devs
