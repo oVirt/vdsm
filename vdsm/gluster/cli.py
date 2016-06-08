@@ -1097,7 +1097,7 @@ def _parseGeoRepStatus(tree):
             sessionDetail = {}
             sessionDetail['sessionKey'] = session.find('session_slave').text
             sessionDetail['remoteVolumeName'] = sessionDetail[
-                'sessionKey'].split("::")[-1]
+                'sessionKey'].split("::")[-1].split(":")[0]
             for pair in session.findall('pair'):
                 pairDetail = {}
                 pairDetail['host'] = pair.find('master_node').text
