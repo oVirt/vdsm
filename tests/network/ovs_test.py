@@ -19,10 +19,13 @@
 from __future__ import absolute_import
 
 from vdsm.network import errors as ne
+from vdsm.network.ovs import driver as ovs_driver
 from vdsm.network.ovs import switch as ovs_switch
 from vdsm.network.ovs import validator as ovs_validator
 
+from .ovsnettestlib import OvsService
 from testlib import VdsmTestCase as TestCaseBase
+from testValidation import ValidateRunningAsRoot
 from nose.plugins.attrib import attr
 
 
@@ -203,3 +206,21 @@ class SplitActionTests(TestCaseBase):
             ovs_switch._split_bonds_action(bonds_query, fake_running_bonds)
         self.assertEquals(set(bonds_to_be_added.keys()), {'to-edit', 'to-add'})
         self.assertEquals(bonds_to_be_removed_or_edited, {'to-remove'})
+
+
+@attr(type='integration')
+class SetupTransactionTests(TestCaseBase):
+
+    @ValidateRunningAsRoot
+    def setUp(self):
+        self.ovs_service = OvsService()
+        self.ovs_service.setup()
+        self.ovsdb = ovs_driver.create()
+
+    def tearDown(self):
+        self.ovs_service.teardown()
+
+    def test_dry_run(self):
+        with ovs_switch.Setup(self.ovsdb) as s:
+            s.remove_nets({})
+            s.add_nets({})
