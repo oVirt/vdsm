@@ -58,6 +58,7 @@ class FakeClientIf(object):
         self.threadLocal = threading.local()
         self.irs = True
         self.gluster = None
+        self.json_binding = None
 
         # API module is redefined for apiTests so we need to add BLANK_UUIDs
         import API
@@ -86,8 +87,11 @@ def constructAcceptor(log, ssl, jsonBridge):
                                    clock=utils.monotonic_time)
     scheduler.start()
 
-    json_binding = BindingJsonRpc(jsonBridge, scheduler)
+    json_binding = BindingJsonRpc(jsonBridge, scheduler, cif)
     json_binding.start()
+
+    cif.json_binding = json_binding
+
     stompDetector = StompDetector(json_binding)
     acceptor.add_detector(stompDetector)
 

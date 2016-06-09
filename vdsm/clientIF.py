@@ -201,7 +201,7 @@ class clientIF(object):
                               'Please make sure it is installed.')
             else:
                 bridge = Bridge.DynamicBridge()
-                json_binding = BindingJsonRpc(bridge, self._scheduler)
+                json_binding = BindingJsonRpc(bridge, self._scheduler, self)
                 self.bindings['jsonrpc'] = json_binding
                 stomp_detector = StompDetector(json_binding)
                 self._acceptor.add_detector(stomp_detector)
