@@ -152,6 +152,11 @@ class clientIF(object):
         event_id and a dictionary as event body. Before sending
         there is notify_time added on top level to the dictionary.
         """
+        if not self.ready:
+            self.log.warning('Not ready yet, ignoring event %r args=%r',
+                             event_id, kwargs)
+            return
+
         notification = Notification(
             event_id,
             self._send_notification,
