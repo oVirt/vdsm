@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Red Hat, Inc.
+# Copyright 2015-2017 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,9 @@ import random
 from contextlib import contextmanager
 from copy import deepcopy
 
+import monkeypatch
 from testlib import make_file, recorded
+from testlib import namedTemporaryDir
 
 from vdsm.storage import exception as se
 from vdsm.storage.constants import VG_EXTENT_SIZE_MB
@@ -31,6 +33,7 @@ from vdsm import utils
 
 from storage import lvm as real_lvm
 from storage import resourceManager as rm
+from storage import sd
 
 
 class FakeLVM(object):
@@ -348,3 +351,25 @@ class fake_guarded_context(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+
+@contextmanager
+def fake_repo():
+    """
+    Create a temporary repository and monkeypatch the system to use it instead
+    of /rhev/data-center.
+    """
+    with namedTemporaryDir() as repo:
+        # /rhev/data-center/mnt
+        mnt_dir = os.path.join(repo, sd.DOMAIN_MNT_POINT)
+        os.mkdir(mnt_dir)
+        # /rhev/data-center/mnt/blockSD
+        mnt_blocksd_dir = os.path.join(mnt_dir, sd.BLOCKSD_DIR)
+        os.mkdir(mnt_blocksd_dir)
+        # /rhev/data-center/mnt/glusterSD
+        mnt_glustersd_dir = os.path.join(mnt_dir, sd.GLUSTERSD_DIR)
+        os.mkdir(mnt_glustersd_dir)
+        with monkeypatch.MonkeyPatchScope([
+            (sd.StorageDomain, 'storage_repository', repo),
+        ]):
+            yield repo
