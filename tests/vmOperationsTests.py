@@ -36,7 +36,7 @@ from vdsm import libvirtconnection
 from vdsm import password
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
-from testlib import VdsmTestCase as TestCaseBase
+from testlib import XMLTestCase
 from testlib import permutations, expandPermutations
 import vmfakelib as fake
 
@@ -69,7 +69,7 @@ _GRAPHICS_DEVICE_PARAMS = {
 
 
 @expandPermutations
-class TestVmOperations(TestCaseBase):
+class TestVmOperations(XMLTestCase):
     # just numbers, no particular meaning
     UPDATE_OFFSETS = [-3200, 3502, -2700, 3601]
     BASE_OFFSET = 42
@@ -190,7 +190,7 @@ class TestVmOperations(TestCaseBase):
             self._updateGraphicsDevice(testvm, device['device'],
                                        graphics_params)
 
-            self.assertEquals(testvm._dom.devXml, devXml)
+            self.assertXMLEqual(testvm._dom.devXml, devXml)
 
     def testDomainNotRunningWithoutDomain(self):
         with fake.VM() as testvm:
