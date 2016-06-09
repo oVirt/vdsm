@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import json
 import os.path
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import temporaryPath
@@ -212,3 +213,29 @@ class getVMsTests(TestCaseBase):
                 self.assertEqual(len(vms), 2)
                 self.assertIn(testvm1.id, vms)
                 self.assertIn(testvm2.id, vms)
+
+
+class TestNotification(TestCaseBase):
+
+    TEST_EVENT_NAME = 'test_event'
+
+    def setUp(self):
+        self.cif = fake.ClientIF()
+        self.serv = fake.JsonRpcServer()
+        self.cif.bindings["jsonrpc"] = self.serv
+
+    def test_notify(self):
+        self.assertTrue(self.cif.ready)
+        self.cif.notify(self.TEST_EVENT_NAME)
+        message, address = self.serv.notifications[0]
+        self._assertEvent(message, self.TEST_EVENT_NAME)
+
+    def test_skip_notify_in_recovery(self):
+        self.cif._recovery = True
+        self.assertFalse(self.cif.ready)
+        self.cif.notify('test_event')
+        self.assertEquals(self.serv.notifications, [])
+
+    def _assertEvent(self, event, method):
+        ev = json.loads(event)
+        self.assertEquals(ev["method"], method)

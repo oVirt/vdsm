@@ -150,8 +150,31 @@ def parse_secret(xml):
 
 
 class IRS(object):
+
+    def __init__(self):
+        self.ready = True
+
     def inappropriateDevices(self, ident):
         pass
+
+
+class _Server(object):
+    def __init__(self, notifications):
+        self.notifications = notifications
+
+    def send(self, message, address):
+        self.notifications.append((message, address))
+
+
+class _Reactor(object):
+    def __init__(self, notifications):
+        self.server = _Server(notifications)
+
+
+class JsonRpcServer(object):
+    def __init__(self):
+        self.notifications = []
+        self.reactor = _Reactor(self.notifications)
 
 
 class ClientIF(clientIF.clientIF):
@@ -163,9 +186,8 @@ class ClientIF(clientIF.clientIF):
         self.vmContainerLock = threading.Lock()
         self.vmContainer = {}
         self.vmRequests = {}
-
-    def notify(self, event_id, **kwargs):
-        pass
+        self.bindings = {}
+        self._recovery = False
 
     def createVm(self, vmParams, vmRecover=False):
         self.vmRequests[vmParams['vmId']] = (vmParams, vmRecover)
