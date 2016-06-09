@@ -149,17 +149,44 @@ def parse_secret(xml):
     return uuid, usage_type, usage_id, description
 
 
+class IRS(object):
+
+    def __init__(self):
+        self.ready = True
+
+    def inappropriateDevices(self, ident):
+        pass
+
+
+class _Server(object):
+    def __init__(self, notifications):
+        self.notifications = notifications
+
+    def send(self, message, address):
+        self.notifications.append((message, address))
+
+
+class _Reactor(object):
+    def __init__(self, notifications):
+        self.server = _Server(notifications)
+
+
+class JsonRpcServer(object):
+    def __init__(self):
+        self.notifications = []
+        self.reactor = _Reactor(self.notifications)
+
+
 class ClientIF(clientIF.clientIF):
     def __init__(self):
         # the bare minimum initialization for our test needs.
-        self.irs = None  # just to make sure nothing ever happens
+        self.irs = IRS()
         self.log = logging.getLogger('fake.ClientIF')
         self.channelListener = None
         self.vmContainerLock = threading.Lock()
         self.vmContainer = {}
-
-    def notify(self, event_id, **kwargs):
-        pass
+        self.bindings = {}
+        self._recovery = False
 
 
 class Domain(object):
