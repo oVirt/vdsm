@@ -2,11 +2,14 @@
 
 from __future__ import print_function
 import hooking
+import os
 import subprocess
+from vdsm import constants
 from vdsm.network.netinfo import DUMMY_BRIDGE
 from vdsm.utils import CommandPath
 
 # Constants for hook's API
+VM_ID_KEY = 'vmId'
 PROVIDER_TYPE_KEY = 'provider_type'
 OPENSTACK_NET_PROVIDER_TYPE = 'OPENSTACK_NETWORK'
 VNIC_ID_KEY = 'vnic_id'
@@ -26,6 +29,12 @@ EXT_IP = CommandPath('ip', '/sbin/ip').cmd
 ovs_vsctl = CommandPath('ovs-vsctl',
                         '/usr/sbin/ovs-vsctl',
                         '/usr/bin/ovs-vsctl')
+MARK_FOR_UNPAUSE_FILE = 'marked_for_unpause'
+MARK_FOR_UNPAUSE_PATH = os.path.join(
+    constants.P_VDSM_RUN,
+    '%s',
+    MARK_FOR_UNPAUSE_FILE,
+)
 
 # Make pyflakes happy
 DUMMY_BRIDGE
