@@ -105,6 +105,8 @@ def _canonicalize_stp(data):
 def _canonicalize_ipv6(data):
     if 'dhcpv6' not in data:
         data['dhcpv6'] = False
+    if 'ipv6autoconf' not in data:
+        data['ipv6autoconf'] = False
 
 
 def _canonicalize_switch_type_net(data):

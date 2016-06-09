@@ -196,6 +196,7 @@ def _getNetInfo(iface, bridged, routes, ipaddrs, net_attrs):
                      'dhcpv6': is_dhcpv6,
                      'ipv4addrs': ipv4addrs,
                      'ipv6addrs': ipv6addrs,
+                     'ipv6autoconf': is_ipv6_local_auto(iface),
                      'gateway': gateway,
                      'ipv6gateway': get_gateway(routes, iface, family=6),
                      'mtu': getMtu(iface)})

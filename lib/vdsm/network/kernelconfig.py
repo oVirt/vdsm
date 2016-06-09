@@ -91,6 +91,7 @@ def _translate_netinfo_net(net, net_attr, netinfo_):
 def _translate_ipaddr(attributes, net_attr):
     attributes['bootproto'] = 'dhcp' if net_attr['dhcpv4'] else 'none'
     attributes['dhcpv6'] = net_attr['dhcpv6']
+    attributes['ipv6autoconf'] = net_attr['ipv6autoconf']
 
     dg_obj = routes.getDefaultGateway()
     dg = dg_obj.via if dg_obj else None
