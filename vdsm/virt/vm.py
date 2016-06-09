@@ -1835,6 +1835,9 @@ class Vm(object):
         except Exception:
             self.log.exception("Unexpected error on guest event notification")
 
+        # Drop enableGuestEvents from conf - Not required from here anymore
+        self.conf.pop('enableGuestEvents', None)
+
         for con in self._devices[hwclass.CONSOLE]:
             con.prepare()
 

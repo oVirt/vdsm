@@ -96,7 +96,7 @@ class SourceThread(threading.Thread):
                 method)
         self._dstparams = dstparams
         self._enableGuestEvents = kwargs.get('enableGuestEvents', False)
-        self._machineParams = {'enableGuestEvents': self._enableGuestEvents}
+        self._machineParams = {}
         self._tunneled = utils.tobool(tunneled)
         self._abortOnError = utils.tobool(abortOnError)
         self._consoleAddress = consoleAddress
@@ -217,6 +217,7 @@ class SourceThread(threading.Thread):
         if not self.hibernating:
             self._machineParams['migrationDest'] = 'libvirt'
         self._machineParams['_srcDomXML'] = self._vm._dom.XMLDesc(0)
+        self._machineParams['enableGuestEvents'] = self._enableGuestEvents
 
     def _prepareGuest(self):
         if self.hibernating:
