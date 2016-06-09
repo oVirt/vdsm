@@ -23,7 +23,6 @@ from __future__ import absolute_import
 from itertools import product
 import logging
 import os.path
-import re
 import threading
 import time
 import uuid
@@ -554,9 +553,6 @@ class TestVm(XMLTestCase):
             testvm._dom = fake.Domain(virtError=libvirt.VIR_ERR_NO_DOMAIN)
             self.assertEqual(testvm._getVmPolicy(), None)
 
-    def _xml_sanitizer(self, text):
-        return re.sub(">[\t\n ]+<", "><", text).strip()
-
     def testUpdateVmPolicy(self):
         with fake.VM() as machine:
             dom = fake.Domain()
@@ -596,7 +592,7 @@ class TestVm(XMLTestCase):
 
             machine.updateVmPolicy(policy)
 
-            expected_xml = self._xml_sanitizer(u"""
+            expected_xml = (u"""
             <qos>
                 <vcpuLimit>50</vcpuLimit>
                 <ioTune>
@@ -639,8 +635,7 @@ class TestVm(XMLTestCase):
             </qos>
             """)
 
-            self.assertXMLEqual(expected_xml,
-                                self._xml_sanitizer(dom._metadata))
+            self.assertXMLEqual(expected_xml, dom._metadata)
 
     def testCpuTune(self):
         LIMIT = 50
@@ -787,7 +782,7 @@ class TestVm(XMLTestCase):
 
             machine.updateVmPolicy(policy)
 
-            expected_xml = self._xml_sanitizer(u"""
+            expected_xml = (u"""
             <qos>
                 <ioTune>
                     <device name="other-device">
@@ -836,8 +831,7 @@ class TestVm(XMLTestCase):
             </qos>
             """)
 
-            self.assertXMLEqual(expected_xml,
-                                self._xml_sanitizer(dom._metadata))
+            self.assertXMLEqual(expected_xml, dom._metadata)
 
     def testGetIoTunePolicy(self):
         with fake.VM() as machine:
@@ -940,8 +934,7 @@ class TestVm(XMLTestCase):
             # Test that caches were properly updated
             self.assertEqual(drives[0].specParams["ioTune"],
                              expected_io_tune[drives[0].name])
-            self.assertXMLEqual(self._xml_sanitizer(drives[0]._deviceXML),
-                                self._xml_sanitizer(expected_xml))
+            self.assertXMLEqual(drives[0]._deviceXML, expected_xml)
 
     def testSdIds(self):
         """
