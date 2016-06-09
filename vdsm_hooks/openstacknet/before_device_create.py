@@ -31,6 +31,7 @@ Where:
 '''
 from __future__ import print_function
 
+import libvirt
 import os
 import sys
 import traceback
@@ -39,12 +40,14 @@ from xml.dom import minidom
 import hooking
 from openstacknet_utils import DUMMY_BRIDGE
 from openstacknet_utils import INTEGRATION_BRIDGE
+from openstacknet_utils import MARK_FOR_UNPAUSE_PATH
 from openstacknet_utils import OPENSTACK_NET_PROVIDER_TYPE
 from openstacknet_utils import PLUGIN_TYPE_KEY
 from openstacknet_utils import PROVIDER_TYPE_KEY
 from openstacknet_utils import PT_BRIDGE
 from openstacknet_utils import PT_OVS
 from openstacknet_utils import SECURITY_GROUPS_KEY
+from openstacknet_utils import VM_ID_KEY
 from openstacknet_utils import VNIC_ID_KEY
 from openstacknet_utils import devName
 from openstacknet_utils import setUpSecurityGroupVnic
@@ -120,6 +123,16 @@ def addOpenstackVnic(domxml, pluginType, portId, hasSecurityGroups):
         hooking.exit_hook("Unknown plugin type: %s" % pluginType)
 
 
+def mark_for_unpause(vm_id):
+    unpause_file = MARK_FOR_UNPAUSE_PATH % vm_id
+    try:
+        os.makedirs(os.path.dirname(unpause_file))
+    except OSError:
+        pass
+    with open(unpause_file, mode='w') as f:
+        f.write("true")
+
+
 def main():
     if PROVIDER_TYPE_KEY not in os.environ:
         return
@@ -134,6 +147,15 @@ def main():
                          % (vNicId, providerType, pluginType))
         addOpenstackVnic(domxml, pluginType, vNicId, hasSecurityGroups)
         hooking.write_domxml(domxml)
+
+        vm_id = os.environ[VM_ID_KEY]
+        PAUSE_FLAG = libvirt.VIR_DOMAIN_START_PAUSED
+        flags = hooking.load_vm_launch_flags_from_file(vm_id)
+
+        if (flags & PAUSE_FLAG) != PAUSE_FLAG:
+            flags |= PAUSE_FLAG
+            hooking.dump_vm_launch_flags_to_file(vm_id, flags)
+            mark_for_unpause(vm_id)
 
 
 def test(ovs, withSecurityGroups):
