@@ -244,7 +244,9 @@ class NetFuncTestCase(VdsmTestCase):
         self.assertNotIn(bond, self.running_config.bonds)
 
     def assertNetworkIp(self, net, attrs):
-        if 'ipaddr' not in attrs and 'ipv6addr' not in attrs:
+        if ('ipaddr' not in attrs and attrs.get('bootproto') != 'dhcp' and
+                'ipv6addr' not in attrs and 'dhcpv6' not in attrs and
+                'ipv6autoconf' not in attrs):
             return
 
         network_netinfo = self.netinfo.networks[net]
@@ -266,6 +268,10 @@ class NetFuncTestCase(VdsmTestCase):
         if 'ipaddr' in attrs:
             self.assertStaticIPv4(attrs, network_netinfo)
             self.assertStaticIPv4(attrs, topdev_netinfo)
+        if attrs.get('bootproto') == 'dhcp':
+            self.assertDHCPv4(network_netinfo)
+            self.assertDHCPv4(topdev_netinfo)
+
         if 'ipv6addr' in attrs:
             self.assertStaticIPv6(attrs, network_netinfo)
             self.assertStaticIPv6(attrs, topdev_netinfo)
@@ -284,6 +290,11 @@ class NetFuncTestCase(VdsmTestCase):
 
     def assertStaticIPv6(self, netattrs, ipinfo):
         self.assertIn(netattrs['ipv6addr'], ipinfo['ipv6addrs'])
+
+    def assertDHCPv4(self, ipinfo):
+        self.assertTrue(ipinfo['dhcpv4'])
+        self.assertNotEqual(ipinfo['addr'], '')
+        self.assertGreater(len(ipinfo['ipv4addrs']), 0)
 
     def assertDisabledIPv6(self, ipinfo):
         # TODO: We need to report if IPv6 is enabled on iface/host and
