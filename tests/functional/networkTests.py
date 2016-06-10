@@ -55,7 +55,6 @@ from vdsm import sysctl
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, RollbackContext, pgrep, running
 
-
 from hookValidation import ValidatesHook
 
 from modprobe import RequireDummyMod, RequireVethMod
@@ -408,9 +407,9 @@ class NetworkTest(TestCaseBase):
         self.assertIn(bondName, netinfo.bondings)
         self.assertEqual(netinfo.bondings[bondName]['active_slave'], '')
 
-    def setupNetworks(self, *args, **kwargs):
+    def setupNetworks(self, networks, bonds, options, **kwargs):
         test_kernel_config = kwargs.pop('test_kernel_config', True)
-        status, msg = self.vdsm_net.setupNetworks(*args, **kwargs)
+        status, msg = self.vdsm_net.setupNetworks(networks, bonds, options)
         unified = (
             vdsm.config.config.get('vars', 'net_persistence') == 'unified')
         if unified and test_kernel_config:
@@ -633,7 +632,7 @@ class NetworkTest(TestCaseBase):
         with dummyIf(2) as nics:
             invalid_bond_names = ('bond', 'bonda', 'bond0a', 'jamesbond007')
             for bond_name in invalid_bond_names:
-                status, msg = self.vdsm_net.setupNetworks(
+                status, msg = self.setupNetworks(
                     {NETWORK_NAME: {'bonding': bond_name,
                                     'bridged': bridged}},
                     {bond_name: {'nics': nics}}, NOCHK)
@@ -643,8 +642,7 @@ class NetworkTest(TestCaseBase):
     def testFailWithInvalidBridgeName(self):
         invalid_bridge_names = ('a' * 16, 'a b', 'a\tb', 'a.b', 'a:b')
         for bridge_name in invalid_bridge_names:
-            status, msg = self.vdsm_net.setupNetworks({bridge_name: {}}, {},
-                                                      NOCHK)
+            status, msg = self.setupNetworks({bridge_name: {}}, {}, NOCHK)
             self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
     @cleanupNet
@@ -659,14 +657,14 @@ class NetworkTest(TestCaseBase):
                                    gateway='1.2.3.256'),
                               )
         for ipconfig in invalid_ip_configs:
-            status, msg = self.vdsm_net.setupNetworks({NETWORK_NAME: ipconfig},
-                                                      {}, NOCHK)
+            status, msg = self.setupNetworks({NETWORK_NAME: ipconfig},
+                                             {}, NOCHK)
             self.assertEqual(status, errors.ERR_BAD_ADDR, msg)
 
     @cleanupNet
     @permutations([[True], [False]])
     def testFailWithInvalidNic(self, bridged):
-        status, msg = self.vdsm_net.setupNetworks(
+        status, msg = self.setupNetworks(
             {NETWORK_NAME: {'nic': 'nowaythisnicexists', 'bridged': bridged}},
             {}, NOCHK)
         self.assertEqual(status, errors.ERR_BAD_NIC, msg)
@@ -674,11 +672,11 @@ class NetworkTest(TestCaseBase):
     @cleanupNet
     @permutations([[True], [False]])
     def testFailWithInvalidParams(self, bridged):
-        status, msg = self.vdsm_net.setupNetworks(
+        status, msg = self.setupNetworks(
             {NETWORK_NAME: {'vlan': VLAN_ID, 'bridged': bridged}}, {}, NOCHK)
         self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
 
-        status, msg = self.vdsm_net.setupNetworks(
+        status, msg = self.setupNetworks(
             {NETWORK_NAME: {'bonding': BONDING_NAME, 'bridged': bridged}},
             {BONDING_NAME: {'nics': []}}, NOCHK)
         self.assertEqual(status, errors.ERR_BAD_PARAMS, msg)
@@ -710,7 +708,7 @@ class NetworkTest(TestCaseBase):
     def testDelNetworkWithMTU(self, bridged):
         MTU = 1280  # required for sysctl.disable_ipv6() on the bridge
         with dummyIf(2) as nics:
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'vlan': VLAN_ID, 'bonding': BONDING_NAME,
                                 'mtu': MTU, 'bridged': bridged}},
                 {BONDING_NAME: {'nics': nics}}, NOCHK)
@@ -719,7 +717,7 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
             self.assertMtu(MTU, NETWORK_NAME, vlan_name, BONDING_NAME, nics[0])
 
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
@@ -731,19 +729,19 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             net = {NETWORK_NAME: {'nic': nic, 'bridged': bridged,
                                   'switch': switch}}
-            status, msg = self.vdsm_net.setupNetworks(net, {}, NOCHK)
+            status, msg = self.setupNetworks(net, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
-            status, msg = self.vdsm_net.setupNetworks(net, {}, NOCHK)
+            status, msg = self.setupNetworks(net, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
     def testDelWithoutAdd(self):
-        status, msg = self.vdsm_net.setupNetworks(
+        status, msg = self.setupNetworks(
             {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
         self.assertEqual(status, errors.ERR_BAD_BRIDGE, msg)
 
@@ -1295,7 +1293,7 @@ class NetworkTest(TestCaseBase):
     def testDelNetworkBondAccumulation(self):
         with dummyIf(2) as nics:
             for bigBond in ('bond555', 'bond666', 'bond777'):
-                status, msg = self.vdsm_net.setupNetworks(
+                status, msg = self.setupNetworks(
                     {NETWORK_NAME: {'vlan': VLAN_ID, 'bonding': bigBond}},
                     {bigBond: {'nics': nics}}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
@@ -1362,7 +1360,7 @@ class NetworkTest(TestCaseBase):
                 nets = {NETWORK_NAME: {'bridged': bridged,
                                        'bonding': BONDING_NAME}}
                 bonds = {BONDING_NAME: {'nics': nics}}
-                status, msg = self.vdsm_net.setupNetworks(nets, bonds, NOCHK)
+                status, msg = self.setupNetworks(nets, bonds, NOCHK)
                 self.assertEquals(status, SUCCESS, msg)
                 hwaddr = self.vdsm_net.netinfo.bondings[BONDING_NAME]['hwaddr']
 
@@ -1386,7 +1384,7 @@ class NetworkTest(TestCaseBase):
         """
         with dummyIf(1) as nics:
             nic, = nics
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
 
@@ -1398,7 +1396,7 @@ class NetworkTest(TestCaseBase):
 
             self.assertNetworkExists(NETWORK_NAME, bridged=bridged)
 
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
             self.assertEquals(status, SUCCESS, msg)
 
@@ -2547,7 +2545,7 @@ class NetworkTest(TestCaseBase):
             self.assertBondExists(BONDING_NAME, nics)
 
             # cleanup
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
             self.assertBondDoesntExist(BONDING_NAME, nics)
@@ -2807,13 +2805,13 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.assertNetworkExists(NETWORK_NAME)
             self.assertBondExists(BONDING_NAME, nics)
 
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {}, {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, errors.ERR_USED_BOND, msg)
             self.assertNetworkExists(NETWORK_NAME)
             self.assertBondExists(BONDING_NAME, nics)
 
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {NETWORK_NAME: {'remove': True}},
                 {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
@@ -2838,7 +2836,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
                 self.assertNotIn(IP_ADDRESS_AND_CIDR, ipv4addrs)
                 self.assertNotIn(IPv6_ADDRESS_AND_CIDR, ipv6addrs)
 
-                status, msg = self.vdsm_net.setupNetworks(
+                status, msg = self.setupNetworks(
                     {NETWORK_NAME: {'remove': True}}, {}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkDoesntExist(NETWORK_NAME)
@@ -2863,7 +2861,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
                 self.assertNotIn(IP_ADDRESS_AND_CIDR, ipv4addrs)
                 self.assertNotIn(IPv6_ADDRESS_AND_CIDR, ipv6addrs)
 
-                status, msg = self.vdsm_net.setupNetworks(
+                status, msg = self.setupNetworks(
                     {}, {BONDING_NAME: {'remove': True}}, NOCHK)
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertBondDoesntExist(BONDING_NAME, nics)
@@ -2899,7 +2897,7 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
             self.assertBondExists(BONDING_NAME, nics[:2])
 
             # cleanup
-            status, msg = self.vdsm_net.setupNetworks(
+            status, msg = self.setupNetworks(
                 {NET1: {'remove': True}},
                 {BONDING_NAME: {'remove': True}}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
