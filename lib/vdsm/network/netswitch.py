@@ -24,6 +24,7 @@ import six
 
 from vdsm.network import ipwrapper
 from vdsm.network.ip import address
+from vdsm.network.ip import dhclient
 from vdsm.network.libvirt import networks as libvirt_nets
 from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
                                         CachingNetInfo)
@@ -157,15 +158,51 @@ def _setup_ovs(networks, bondings, options, in_rollback):
                          bonds2edit, bonds2remove)
         _setup_ipv6autoconf(networks)
         _set_ovs_links_up(nets2add, bonds2add, bonds2edit)
-        _setup_ovs_ip_config(nets2add)
+        _setup_ovs_ip_config(nets2add, nets2remove)
         connectivity.check(options)
 
 
-def _setup_ovs_ip_config(nets):
+def _setup_ovs_ip_config(nets2add, nets2remove):
     # TODO: This should be moved to network/api.py when we solve rollback
     # transactions.
-    for net, attrs in six.iteritems(nets):
+    for net in nets2remove:
+        _drop_dhcp_config(net)
+
+    for net, attrs in six.iteritems(nets2add):
         _set_static_ip_config(net, attrs)
+        _set_dhcp_config(net, attrs)
+
+
+def _drop_dhcp_config(iface):
+    dhclient.stop(iface)
+
+
+def _set_dhcp_config(iface, attrs):
+    # TODO: DHCPv6
+    blocking_dhcp = attrs.get('blockingdhcp', False)
+    duid_source = attrs.get('bonding') or attrs.get('nic')
+
+    ipv4 = address.IPv4(*_ipv4_conf_params(attrs))
+    if ipv4.bootproto == 'dhcp':
+        dhclient.run(iface, 4, ipv4.defaultRoute, duid_source, blocking_dhcp)
+
+
+def _set_static_ip_config(iface, attrs):
+    address.flush(iface)
+    ipv4 = address.IPv4(*_ipv4_conf_params(attrs))
+    ipv6 = address.IPv6(*_ipv6_conf_params(attrs))
+    address.add(iface, ipv4, ipv6)
+
+
+def _ipv4_conf_params(attrs):
+    return (attrs.get('ipaddr'), attrs.get('netmask'), attrs.get('gateway'),
+            attrs.get('defaultRoute'), attrs.get('bootproto'))
+
+
+def _ipv6_conf_params(attrs):
+    return (attrs.get('ipv6addr'), attrs.get('ipv6gateway'),
+            attrs.get('defaultRoute'), attrs.get('ipv6autoconf'),
+            attrs.get('dhcpv6'))
 
 
 def _set_ovs_links_up(nets2add, bonds2add, bonds2edit):
@@ -190,18 +227,6 @@ def _gather_ovs_ifaces(nets2add, bonds2add, bonds2edit):
 
     return itertools.chain.from_iterable(
         [nets_and_bonds, nets_nics, bonds_nics])
-
-
-def _set_static_ip_config(iface, attrs):
-    address.flush(iface)
-    ipv4 = address.IPv4(
-        attrs.get('ipaddr'), attrs.get('netmask'), attrs.get('gateway'),
-        attrs.get('defaultRoute'), attrs.get('bootproto'))
-    ipv6 = address.IPv6(
-        attrs.get('ipv6addr'), attrs.get('ipv6gateway'),
-        attrs.get('defaultRoute'), attrs.get('ipv6autoconf'),
-        attrs.get('dhcpv6'))
-    address.add(iface, ipv4, ipv6)
 
 
 def netinfo(compatibility=None):
