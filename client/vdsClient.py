@@ -1567,9 +1567,13 @@ class service:
         return 0, ''
 
     def do_setLogLevel(self, args):
-        validateArgTypes(args, [int], requiredArgsNumber=1)
+        validateArgTypes(args, [str, str], requiredArgsNumber=1)
         level = args[0]
-        stats = self.s.setLogLevel(level)
+        if len(args) >= 2:
+            name = args[1]
+        else:
+            name = ''
+        stats = self.s.setLogLevel(level, name)
         if stats['status']['code']:
             return stats['status']['code'], stats['status']['message']
         return 0, ''
@@ -2636,8 +2640,12 @@ if __name__ == '__main__':
         'prepareForShutdown': (serv.prepareForShutdown,
                                ('', '')),
         'setLogLevel': (serv.do_setLogLevel,
-                        ('<level> [logName][,logName]...', 'set log verbosity'
-                         ' level (10=DEBUG, 50=CRITICAL'
+                        ('<level> [loggerName]',
+                         'set log verbosity. Arguments:\n'
+                         ' <level> is one of DEBUG INFO WARNING ERROR CRITICAL'
+                         ' case sensitive\n'
+                         ' <loggerName> is the logger to set.'
+                         ' If not given, sets the root logger.'
                          )),
         'setMOMPolicy': (serv.do_setMOMPolicy,
                          ('<policyfile>', 'set MOM policy')),

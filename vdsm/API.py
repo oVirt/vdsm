@@ -1372,16 +1372,18 @@ class Global(APIBase):
                 'info': hostapi.get_stats(self._cif,
                                           sampling.host_samples.stats())}
 
-    def setLogLevel(self, level):
+    def setLogLevel(self, level, name=''):
         """
         Set verbosity level of vdsm's log.
 
         params
             level: requested logging level. `logging.DEBUG` `logging.ERROR`
+            name: logger name to set. If not provided, defaults to the root
+                  logger. Otherwise, tune the specific logger provided.
 
         Doesn't survive a restart
         """
-        logUtils.set_level(level)
+        logUtils.set_level(level, name)
         return dict(status=doneCode)
 
     # VM-related functions

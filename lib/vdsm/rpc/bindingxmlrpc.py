@@ -653,9 +653,9 @@ class BindingXMLRPC(object):
         return api.fenceNode(addr, port, agent, username, password, action,
                              secure, options, policy)
 
-    def setLogLevel(self, level):
+    def setLogLevel(self, level, name=''):
         api = API.Global()
-        return api.setLogLevel(level)
+        return api.setLogLevel(level, name)
 
     def setMOMPolicy(self, policy):
         api = API.Global()
