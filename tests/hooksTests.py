@@ -31,7 +31,6 @@ from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import namedTemporaryDir
 
-from vdsm import constants
 from vdsm import hooks
 
 
@@ -147,7 +146,8 @@ domXMLFile.close()
     def test_pause_flags(self):
         vm_id = '042f6258-3446-4437-8034-0c93e3bcda1b'
         with namedTemporaryDir() as tmpDir:
-            with MonkeyPatchScope([(constants, 'P_VDSM_RUN', tmpDir + '/')]):
+            flags_path = os.path.join(tmpDir, '%s')
+            with MonkeyPatchScope([(hooks, '_LAUNCH_FLAGS_PATH', flags_path)]):
                 flags_file = hooks._LAUNCH_FLAGS_PATH % vm_id
                 for flag in [libvirt.VIR_DOMAIN_NONE,
                              libvirt.VIR_DOMAIN_START_PAUSED]:
