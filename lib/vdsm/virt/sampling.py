@@ -484,11 +484,13 @@ class VMBulkSampler(object):
         self._log = logging.getLogger("virt.sampling.VMBulkSampler")
 
     def __call__(self):
+        log_status = True
         timestamp = self._stats_cache.clock()
         acquired = self._sampling.acquire(blocking=False)
         # we are deep in the hot path. bool(ExpiringCache)
         # *is* costly so we should avoid it if we can.
         fast_path = acquired and not self._skip_doms
+        doms = []  # whitelist, meaningful only in the slow path
         try:
             if fast_path:
                 # This is expected to be the common case.
@@ -498,7 +500,6 @@ class VMBulkSampler(object):
                 # A previous call got stuck, or not every domain
                 # has properly recovered. Thus we must whitelist domains.
                 doms = self._get_responsive_doms()
-                self._log.debug('sampling %d domains', len(doms))
                 if doms:
                     bulk_stats = self._conn.domainListGetStats(
                         doms, self._stats_flags)
@@ -506,11 +507,17 @@ class VMBulkSampler(object):
                     bulk_stats = []
         except Exception:
             self._log.exception("vm sampling failed")
+            log_status = False
         else:
             self._stats_cache.put(_translate(bulk_stats), timestamp)
         finally:
             if acquired:
                 self._sampling.release()
+        if log_status:
+            self._log.debug(
+                'sampled timestamp %r elapsed %.3f acquired %r domains %s',
+                timestamp,  self._stats_cache.clock() - timestamp, acquired,
+                'all' if fast_path else len(doms))
 
     def _get_responsive_doms(self):
         vms = self._get_vms()
