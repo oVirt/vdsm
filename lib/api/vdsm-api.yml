@@ -7459,6 +7459,10 @@ Host.setLogLevel:
     -   description: The new verosity level desired
         name: level
         type: *LoggingLevel
+    -   defaultvalue: ''
+        description: The logger to set
+        name: name
+        type: string
 
 Host.setSafeNetworkConfig:
     added: '3.1'

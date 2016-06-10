@@ -236,13 +236,14 @@ _LEVELS = {
 }
 
 
-def set_level(level):
+def set_level(level, name=''):
     if level not in _LEVELS:
         raise ValueError("unknown log level: %r" % level)
 
     log_level = _LEVELS[level]
-    logging.warning('Setting loglevel to %s (%d)', level, log_level)
-    handlers = logging.getLogger().handlers
-    [fileHandler] = [h for h in handlers if
-                     isinstance(h, logging.FileHandler)]
-    fileHandler.setLevel(int(level))
+    log_name = None if not name else name
+    # getLogger() default argument is None, not ''
+    logger = logging.getLogger(log_name)
+    logging.warning('Setting loglevel on %r to %s (%d)',
+                    logger.name, level, log_level)
+    logger.setLevel(log_level)
