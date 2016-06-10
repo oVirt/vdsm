@@ -20,6 +20,7 @@ from contextlib import contextmanager
 from functools import wraps
 import json
 import re
+import os
 import os.path
 import six
 
@@ -53,7 +54,7 @@ from vdsm.network import tc
 
 from vdsm import sysctl
 from vdsm.commands import execCmd
-from vdsm.utils import CommandPath, RollbackContext, pgrep, running
+from vdsm.utils import CommandPath, RollbackContext, pgrep, running, memoized
 
 from hookValidation import ValidatesHook
 
@@ -408,12 +409,27 @@ class NetworkTest(TestCaseBase):
         self.assertEqual(netinfo.bondings[bondName]['active_slave'], '')
 
     def setupNetworks(self, networks, bonds, options, test_kernel_config=True):
+        switch = switch_to_test()
+        if switch:
+            for net, attrs in networks.items():
+                self._skip_per_switch_type(switch, attrs)
+            for bond, attrs in bonds.items():
+                self._skip_per_switch_type(switch, attrs)
         status, msg = self.vdsm_net.setupNetworks(networks, bonds, options)
         unified = (
             vdsm.config.config.get('vars', 'net_persistence') == 'unified')
         if unified and test_kernel_config:
             self._assert_kernel_config_matches_running_config()
         return status, msg
+
+    def _skip_per_switch_type(self, switch, attrs):
+        """
+        Skip setupNetwork if it attempts to create a switch type other than
+        switch (VDSM_TESTER_SWITCH_TYPE)
+        """
+        tested_switch = attrs.get('switch', 'legacy')
+        if tested_switch != switch and 'remove' not in attrs:
+            raise SkipTest('{} switch tests'.format(tested_switch))
 
     def _assert_kernel_config_matches_running_config(self):
         running_config, kernel_config = _get_running_and_kernel_config(
@@ -2994,3 +3010,8 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
                 self.assertNotIn('ad_partner_mac', bond_caps[bond])
             for nic in nics:
                 self.assertNotIn('ad_aggregator_id', nic_caps[nic])
+
+
+@memoized
+def switch_to_test():
+    return os.environ.get('VDSM_TESTER_SWITCH_TYPE')
