@@ -32,8 +32,8 @@ from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.utils import CommandPath
 from vdsm.commands import execCmd
 
-from . import Configurator, runDhclient, getEthtoolOpts
-from .dhclient import DhcpClient
+from . import Configurator, getEthtoolOpts
+from .dhclient import run_dhclient, stop_dhclient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
 from ..sourceroute import DynamicSourceRoute
@@ -247,14 +247,15 @@ class ConfigApplier(object):
     def ifup(self, iface):
         ipwrapper.linkSet(iface.name, ['up'])
         if iface.ipv4.bootproto == 'dhcp':
-            runDhclient(iface, 4, iface.ipv4.defaultRoute)
+            run_dhclient(iface.name, 4, iface.ipv4.defaultRoute,
+                         iface.duid_source, iface.blockingdhcp)
         if iface.ipv6.dhcpv6:
-            runDhclient(iface, 6, iface.ipv6.defaultRoute)
+            run_dhclient(iface.name, 6, iface.ipv6.defaultRoute,
+                         iface.duid_source, iface.blockingdhcp)
 
     def ifdown(self, iface):
         ipwrapper.linkSet(iface.name, ['down'])
-        dhclient = DhcpClient(iface.name)
-        dhclient.shutdown()
+        stop_dhclient(iface.name)
 
     def setIfaceConfigAndUp(self, iface):
         if iface.ipv4 or iface.ipv6:
