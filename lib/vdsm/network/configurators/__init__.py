@@ -25,8 +25,7 @@ from vdsm.config import config
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import mtus
 
-from .dhclient import DhcpClient
-from ..errors import ConfigNetworkError, RollbackIncomplete, ERR_FAILED_IFUP
+from ..errors import RollbackIncomplete
 from . import qos
 from ..models import Bond, Bridge, hierarchy_vlan_tag, hierarchy_backing_device
 from ..sourceroute import StaticSourceRoute
@@ -170,10 +169,3 @@ def getEthtoolOpts(name):
     except configparser.NoOptionError:
         opts = config.get('vars', 'ethtool_opts')
     return opts
-
-
-def runDhclient(iface, family=4, default_route=False):
-    dhclient = DhcpClient(iface.name, family, default_route, iface.duid_source)
-    ret = dhclient.start(iface.blockingdhcp)
-    if iface.blockingdhcp and ret[0]:
-        raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed' % family)

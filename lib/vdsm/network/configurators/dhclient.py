@@ -26,6 +26,7 @@ import subprocess
 import threading
 
 from vdsm import cmdutils
+from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
 from vdsm.network import netinfo
 from vdsm.commands import execCmd
@@ -138,3 +139,17 @@ def supports_duid_file():
 
     _, err = probe.communicate()
     return '-df' in err
+
+
+def run_dhclient(iface, family=4, default_route=False, duid_source=None,
+                 blocking_dhcp=False):
+    dhclient = DhcpClient(iface, family, default_route, duid_source)
+    ret = dhclient.start(blocking_dhcp)
+    if blocking_dhcp and ret[0]:
+        raise ne.ConfigNetworkError(
+            ne.ERR_FAILED_IFUP, 'dhclient%s failed' % family)
+
+
+def stop_dhclient(iface):
+    dhclient = DhcpClient(iface)
+    dhclient.shutdown()

@@ -25,8 +25,7 @@ from vdsm.network import libvirt
 from vdsm.network import netinfo
 from vdsm.network.netconfpersistence import RunningConfig
 
-from . import runDhclient
-from .dhclient import DhcpClient
+from .dhclient import run_dhclient, stop_dhclient
 from .iproute2 import Iproute2
 from ..utils import remove_custom_bond_option
 
@@ -95,15 +94,16 @@ class ConfigApplier(object):
         with self.ip.interfaces[iface.name] as i:
             i.up()
         if iface.ipv4.bootproto == 'dhcp':
-            runDhclient(iface, 4, iface.ipv4.defaultRoute)
+            run_dhclient(iface.name, 4, iface.ipv4.defaultRoute,
+                         iface.duid_source, iface.blockingdhcp)
         if iface.ipv6.dhcpv6:
-            runDhclient(iface, 6, iface.ipv6.defaultRoute)
+            run_dhclient(iface.name, 6, iface.ipv6.defaultRoute,
+                         iface.duid_source, iface.blockingdhcp)
 
     def ifdown(self, iface):
         with self.ip.interfaces[iface.name] as i:
             i.down()
-        dhclient = DhcpClient(iface.name)
-        dhclient.shutdown()
+        stop_dhclient(iface.name)
 
     def setIfaceConfigAndUp(self, iface):
         if iface.ipv4 or iface.ipv6:
