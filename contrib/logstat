@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+#
+# Copyright 2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+
+"""
+Usage: logstat logfile ...
+
+Show the amount of data each log call produce.
+"""
+
+import collections
+import sys
+
+from operator import itemgetter
+
+Message = collections.namedtuple("Message", "level, logger, location, line")
+
+
+def main(args):
+    if len(args) < 1:
+        print __doc__
+        sys.exit(2)
+
+    levels = collections.defaultdict(int)
+    loggers = collections.defaultdict(int)
+    locations = collections.defaultdict(int)
+
+    logfile = sys.argv[1]
+    with open(logfile) as f:
+        for msg in parse(f):
+            size = len(msg.line)
+            levels[msg.level] += size
+            loggers[msg.logger] += size
+            locations[msg.location] += size
+
+    print
+    print "Levels"
+    for label, size in sorted(levels.items(), reverse=True,
+                              key=itemgetter(1)):
+        print "%10d %s" % (size, label)
+
+    print
+    print "Loggers"
+    for label, size in sorted(loggers.items(), reverse=True,
+                              key=itemgetter(1)):
+        print "%10d %s" % (size, label)
+
+    print
+    print "Locations"
+    for label, size in sorted(locations.items(), reverse=True,
+                              key=itemgetter(1)):
+        print "%10s %s" % (size, label)
+
+
+def parse(logfile):
+    msg = None
+    for line in logfile:
+        line = line.rstrip()
+        try:
+            # thread::level::timestamp::module::lineno::logger::(func) message
+            thread, level, timestamp, module, lineno, logger, rest = \
+                line.split("::", 6)
+        except ValueError:
+            # Some message text has multiple lines
+            if msg:
+                msg[-1] += "\n" + line
+        else:
+            if msg:
+                yield Message(*msg)
+            # (func) text
+            try:
+                func = rest.split(" ", 1)[0]
+            except ValueError:
+                func = ""
+            # We log short module names (e.g. __init__), so it is not enough to
+            # detect the location.
+            location = logger + ":" + module + ":" + lineno + func
+            msg = [level, logger, location, line]
+    if msg:
+        yield Message(*msg)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

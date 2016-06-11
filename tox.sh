@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
 WHITELIST=(contrib/logdb \
+           contrib/logstat \
            contrib/profile-stats \
            init/daemonAdapter \
            vdsm/get-conf-item \
