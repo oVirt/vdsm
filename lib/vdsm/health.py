@@ -27,6 +27,8 @@ import threading
 from . config import config
 from . import concurrent
 from . import cpuarch
+from . import reports
+from . import host
 
 _monitor = None
 
@@ -56,6 +58,7 @@ class Monitor(object):
         self._thread = concurrent.thread(self._run)
         self._done = threading.Event()
         self._last = ProcStat()
+        self._stats = {}
 
     def start(self):
         self.log.info("Starting health monitor (interval=%d)", self._interval)
@@ -87,6 +90,7 @@ class Monitor(object):
         self.log.debug("Checking health")
         self._check_garbage()
         self._check_resources()
+        self._report_stats()
 
     def _check_garbage(self):
         collected = gc.collect()
@@ -97,20 +101,36 @@ class Monitor(object):
             uncollectable = [saferepr(obj) for obj in uncollectable]
             self.log.warning("Found %d uncollectable objects: %s",
                              len(uncollectable), uncollectable)
+        self._stats['uncollectable_obj'] = len(uncollectable)
 
     def _check_resources(self):
         current = ProcStat()
-        utime_pct = (current.utime - self._last.utime) / self._interval * 100
-        stime_pct = (current.stime - self._last.stime) / self._interval * 100
+        self._stats['utime_pct'] = ((current.utime - self._last.utime) /
+                                    self._interval * 100)
+        self._stats['stime_pct'] = ((current.stime - self._last.stime) /
+                                    self._interval * 100)
+        self._stats['rss'] = current.rss
         delta_rss = current.rss - self._last.rss
+        self._stats['threads'] = current.threads
         self._last = current
         self.log.debug("user=%.2f%%, sys=%.2f%%, rss=%d kB (%s%d), threads=%d",
-                       utime_pct,
-                       stime_pct,
-                       current.rss,
+                       self._stats['utime_pct'],
+                       self._stats['stime_pct'],
+                       self._stats['rss'],
                        "+" if delta_rss >= 0 else "-",
                        abs(delta_rss),
-                       current.threads)
+                       self._stats['threads'])
+
+    def _report_stats(self):
+        prefix = "hosts." + host.uuid() + ".vdsm"
+        report = {}
+        report[prefix + '.gc.uncollectable'] = \
+            self._stats['uncollectable_obj']
+        report[prefix + '.cpu.user_pct'] = self._stats['utime_pct']
+        report[prefix + '.cpu.sys_pct'] = self._stats['stime_pct']
+        report[prefix + '.memory.rss'] = self._stats['rss']
+        report[prefix + '.threads_count'] = self._stats['threads']
+        reports.send(report)
 
 
 class ProcStat(object):
