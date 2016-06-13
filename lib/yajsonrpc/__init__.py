@@ -494,6 +494,14 @@ class JsonRpcServer(object):
             self._counter = 0
 
     def _serveRequest(self, ctx, req):
+        start_time = monotonic_time()
+        response = self._handle_request(req, ctx.address)
+        self.log.info("RPC call %s finished in %.2f seconds",
+                      req.method, monotonic_time() - start_time)
+        if response is not None:
+            ctx.requestDone(response)
+
+    def _handle_request(self, req, server_address):
         self._attempt_log_stats()
         mangledMethod = req.method.replace(".", "_")
         logLevel = logging.DEBUG
@@ -504,8 +512,7 @@ class JsonRpcServer(object):
             self.log.info("In recovery, ignoring '%s' in bridge with %s",
                           req.method, req.params)
             # TODO: take the response from the exception instead of via errCode
-            ctx.requestDone(JsonRpcResponse(None, errCode['recovery'], req.id))
-            return
+            return JsonRpcResponse(None, errCode['recovery'], req.id)
 
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
                      req.method, req.params)
@@ -513,35 +520,30 @@ class JsonRpcServer(object):
             method = getattr(self._bridge, mangledMethod)
         except AttributeError:
             if req.isNotification():
-                return
+                return None
 
-            ctx.requestDone(JsonRpcResponse(None,
-                                            JsonRpcMethodNotFoundError(),
-                                            req.id))
-            return
+            return JsonRpcResponse(None, JsonRpcMethodNotFoundError(), req.id)
 
         try:
             params = req.params
-            self._bridge.register_server_address(ctx.address)
+            self._bridge.register_server_address(server_address)
             if isinstance(req.params, list):
                 res = method(*params)
             else:
                 res = method(**params)
             self._bridge.unregister_server_address()
         except JsonRpcError as e:
-            ctx.requestDone(JsonRpcResponse(None, e, req.id))
+            return JsonRpcResponse(None, e, req.id)
         except Exception as e:
             self.log.exception("Internal server error")
-            ctx.requestDone(JsonRpcResponse(None,
-                                            JsonRpcInternalError(str(e)),
-                                            req.id))
+            return JsonRpcResponse(None, JsonRpcInternalError(str(e)), req.id)
         else:
             res = True if res is None else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
                          req.method, res)
             if isinstance(res, Suppressed):
                 res = res.value
-            ctx.requestDone(JsonRpcResponse(res, None, req.id))
+            return JsonRpcResponse(res, None, req.id)
 
     @traceback(on=log.name)
     def serve_requests(self):

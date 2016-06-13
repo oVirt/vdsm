@@ -310,6 +310,8 @@ class BindingXMLRPC(object):
     def _registerFunctions(self):
         def wrapIrsMethod(f):
             def wrapper(*args, **kwargs):
+                start_time = utils.monotonic_time()
+
                 fmt = ""
                 logargs = []
 
@@ -329,6 +331,10 @@ class BindingXMLRPC(object):
                 except:
                     self.log.error("Unexpected exception", exc_info=True)
                     return errCode['unexpected']
+                finally:
+                    self.log.info("RPC call %s finished in %.2f seconds",
+                                  f.__name__,
+                                  utils.monotonic_time() - start_time)
 
             wrapper.__name__ = f.__name__
             wrapper.__doc__ = f.__doc__
@@ -1217,6 +1223,7 @@ class BindingXMLRPC(object):
 
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
+        start_time = utils.monotonic_time()
         try:
             logLevel = logging.DEBUG
             suppress_args = f.__name__ in ('fenceNode',)
@@ -1286,6 +1293,10 @@ def wrapApiMethod(f):
         except:
             f.__self__.cif.log.error("unexpected error", exc_info=True)
             return errCode['unexpected']
+        finally:
+            f.__self__.cif.log.info("RPC call %s finished in %.2f seconds",
+                                    f.__name__,
+                                    utils.monotonic_time() - start_time)
     wrapper.__name__ = f.__name__
     wrapper.__doc__ = f.__doc__
     return wrapper
