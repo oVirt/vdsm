@@ -210,7 +210,7 @@ class MountConnection(object):
         self._vfsType = vfsType
         # Note: must be normalized before we escape "/" in _getLocalPath.
         # See https://bugzilla.redhat.com/1300749
-        self._remotePath = fileUtils.normalize_remote_path(spec)
+        self._remotePath = fileUtils.normalize_path(spec)
         self._options = options
         self._mount = mountClass(self._remotePath, self._getLocalPath())
 
