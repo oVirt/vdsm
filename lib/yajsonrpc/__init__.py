@@ -21,6 +21,7 @@ from threading import Lock, Event
 
 from vdsm.compat import json
 
+from vdsm.logUtils import Suppressed
 from vdsm.password import protect_passwords, unprotect_passwords
 from vdsm.utils import monotonic_time, traceback
 from vdsm.define import errCode
@@ -469,8 +470,6 @@ class JsonRpcClient(object):
 class JsonRpcServer(object):
     log = logging.getLogger("jsonrpc.JsonRpcServer")
 
-    FILTERED_METHODS = frozenset(['Host.getAllVmStats'])
-
     """
     Creates new JsonrRpcServer by providing a bridge, timeout in seconds
     which defining how often we should log connections stats and thread
@@ -504,7 +503,6 @@ class JsonRpcServer(object):
     def _serveRequest(self, ctx, req):
         self._attempt_log_stats()
         logLevel = logging.DEBUG
-        suppress_logging = req.method in self.FILTERED_METHODS
 
         # VDSM should never respond to any request before all information about
         # running VMs is recovered, see https://bugzilla.redhat.com/1339291
@@ -542,10 +540,10 @@ class JsonRpcServer(object):
                                             JsonRpcInternalError(str(e)),
                                             req.id))
         else:
-            res = True if res is None else res
-            log_res = "(suppressed)" if suppress_logging else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
-                         req.method, log_res)
+                         req.method, res)
+            if isinstance(res, Suppressed):
+                res = res.value
             ctx.requestDone(JsonRpcResponse(res, None, req.id))
 
     @traceback(on=log.name)

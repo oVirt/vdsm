@@ -206,3 +206,16 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
             raise RuntimeError(
                 "Attempt to open log with incorrect credentials")
         return logging.handlers.WatchedFileHandler._open(self)
+
+
+class Suppressed(object):
+
+    def __init__(self, value):
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    def __repr__(self):
+        return '(suppressed)'
