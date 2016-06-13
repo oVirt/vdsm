@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2015 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import logging
 
 import six
 
+from vdsm import metrics
 from vdsm.utils import convertToStr
 
 from vdsm.utils import monotonic_time
@@ -187,6 +188,79 @@ def cpu_count(stats, sample):
             stats['vcpuCount'] = vcpu_count
         else:
             logging.error('Failed to get VM cpu count')
+
+
+def report_stats(vms_stats):
+    report = {}
+    try:
+        for vm_uuid in vms_stats:
+            prefix = "vms." + vm_uuid
+            stat = vms_stats[vm_uuid]
+            report[prefix + '.cpu.user'] = stat['cpuUser']
+            report[prefix + '.cpu.sys'] = stat['cpuSys']
+            report[prefix + '.cpu.usage'] = stat['cpuUsage']
+
+            report[prefix + '.balloon.max'] = \
+                stat['balloonInfo']['balloon_max']
+            report[prefix + '.balloon.min'] = \
+                stat['balloonInfo']['balloon_min']
+            report[prefix + '.balloon.target'] = \
+                stat['balloonInfo']['balloon_target']
+            report[prefix + '.balloon.cur'] = \
+                stat['balloonInfo']['balloon_cur']
+
+            if 'disks' in stat:
+                for disk in stat['disks']:
+                    diskprefix = prefix + '.vm_disk.' + disk
+                    diskinfo = stat['disks'][disk]
+
+                    report[diskprefix + '.read.latency'] = \
+                        diskinfo['readLatency']
+                    report[diskprefix + '.read.ops'] = \
+                        diskinfo['readOps']
+                    report[diskprefix + '.read.bytes'] = \
+                        diskinfo['readBytes']
+                    report[diskprefix + '.read.rate'] = \
+                        diskinfo['readRate']
+
+                    report[diskprefix + '.write.bytes'] = \
+                        diskinfo['writtenBytes']
+                    report[diskprefix + '.write.ops'] = \
+                        diskinfo['writeOps']
+                    report[diskprefix + '.write.latency'] = \
+                        diskinfo['writeLatency']
+                    report[diskprefix + '.write.rate'] = \
+                        diskinfo['writeRate']
+
+                    report[diskprefix + '.apparent_size'] = \
+                        diskinfo['apparentsize']
+                    report[diskprefix + '.flush_latency'] = \
+                        diskinfo['flushLatency']
+                    report[diskprefix + '.true_size'] = \
+                        diskinfo['truesize']
+
+            if 'network' in stat:
+                for interface in stat['network']:
+                    netprefix = prefix + '.network_interfaces.' + interface
+                    if_info = stat['network'][interface]
+                    report[netprefix + '.speed'] = if_info['speed']
+                    report[netprefix + '.rx.bytes'] = if_info['rx']
+                    report[netprefix + '.rx.errors'] = if_info['rxErrors']
+                    report[netprefix + '.rx.dropped'] = if_info['rxDropped']
+
+                    report[netprefix + '.tx.bytes'] = if_info['tx']
+                    report[netprefix + '.tx.errors'] = if_info['txErrors']
+                    report[netprefix + '.tx.dropped'] = if_info['txDropped']
+
+        # Guest cpu-count,apps list, status, mac addr, client IP,
+        # display type, kvm enabled, username, vcpu info, vm jobs,
+        # displayinfo, hash, acpi, fqdn, vm uuid, pid, vNodeRuntimeInfo,
+        #
+        # are all meta-data that should be published separately
+
+        metrics.send(report)
+    except KeyError:
+        logging.exception('Report vm stats failed')
 
 
 def _nic_traffic(vm_obj, name, model, mac,
