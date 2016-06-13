@@ -27,6 +27,7 @@ import warnings
 import yaml
 
 from vdsm.config import config
+from vdsm.logUtils import Suppressed
 from yajsonrpc import JsonRpcInvalidParamsError
 
 
@@ -303,6 +304,8 @@ class Schema(object):
             ret_args = self.get_ret_param(class_name, method_name)
 
             if ret_args:
+                if isinstance(ret, Suppressed):
+                    ret = ret.value
                 self._verify_type(ret_args.get('type'), ret, class_name,
                                   method_name)
         except JsonRpcInvalidParamsError:
