@@ -22,6 +22,7 @@ import logging
 import xml.etree.ElementTree as ET
 
 from vdsm import utils
+from vdsm import supervdsm
 from vdsm.hostdev import get_device_params, detach_detachable, \
     pci_address_to_name, CAPABILITY_TO_XML_ATTR, scsi_address_to_adapter, \
     reattach_detachable
@@ -48,6 +49,9 @@ class HostDevice(core.Base):
     def teardown(self):
         if CAPABILITY_TO_XML_ATTR[self._deviceParams['capability']] != 'pci':
             reattach_detachable(self.device)
+        else:
+            supervdsm.getProxy().rmAppropriateIommuGroup(
+                self._deviceParams['iommu_group'])
 
     @property
     def _xpath(self):

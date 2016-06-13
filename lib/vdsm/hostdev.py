@@ -411,11 +411,6 @@ def reattach_detachable(device_name):
     capability = CAPABILITY_TO_XML_ATTR[device_params['capability']]
 
     if capability == 'pci' and utils.tobool(device_params['is_assignable']):
-        try:
-            iommu_group = device_params['iommu_group']
-        except KeyError:
-            raise NoIOMMUSupportException
-        supervdsm.getProxy().rmAppropriateIommuGroup(iommu_group)
         libvirt_device.reAttach()
     elif capability == 'usb':
         supervdsm.getProxy().rmAppropriateUSBDevice(

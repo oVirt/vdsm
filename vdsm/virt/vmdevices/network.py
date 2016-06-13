@@ -208,6 +208,10 @@ class Interface(Base):
                                    'due to missing IOMMU support.',
                                    self.hostdev)
 
+            device_params = get_device_params(self.hostdev)
+            supervdsm.getProxy().rmAppropriateIommuGroup(
+                device_params['iommu_group'])
+
     @property
     def _xpath(self):
         """
