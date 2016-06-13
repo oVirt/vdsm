@@ -22,10 +22,12 @@ from __future__ import absolute_import
 import errno
 import logging
 import time
+from . import uuid
 from . import stats
 from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import utils
+from vdsm import reports
 from vdsm.config import config
 from vdsm.define import Kbytes, Mbytes
 from vdsm.virt import vmstatus
@@ -77,6 +79,62 @@ def get_stats(cif, sample):
 
     ret = hooks.after_get_stats(ret)
     return ret
+
+
+def report_stats(hoststats):
+    prefix = "hosts." + uuid()
+    report = {}
+
+    try:
+        for dom in hoststats['storageDomains']:
+            storage_prefix = prefix + '.storage.' + dom
+            dom_info = hoststats['storageDomains'][dom]
+            report[storage_prefix + '.delay'] = dom_info['delay']
+            report[storage_prefix + '.last_check'] = dom_info['lastCheck']
+
+        report[prefix + '.memory.available'] = hoststats['memAvailable']
+        report[prefix + '.memory.committed'] = hoststats['memCommitted']
+        report[prefix + '.memory.free_mb'] = hoststats['memFree']
+        report[prefix + '.memory.usage_percent'] = hoststats['memUsed']
+        report[prefix + '.memory.anon_huge_pages'] = hoststats['anonHugePages']
+
+        report[prefix + '.swap.total_mb'] = hoststats['swapTotal']
+        report[prefix + '.swap.free_mb'] = hoststats['swapFree']
+
+        report[prefix + '.vms.active'] = hoststats['vmActive']
+        report[prefix + '.vms.total'] = hoststats['vmCount']
+
+        report[prefix + '.cpu.load'] = hoststats['cpuLoad']
+        report[prefix + '.cpu.user'] = hoststats['cpuUser']
+        report[prefix + '.cpu.sys'] = hoststats['cpuSys']
+        report[prefix + '.cpu.idle'] = hoststats['cpuIdle']
+        report[prefix + '.cpu.sys_vdsmd'] = hoststats['cpuSysVdsmd']
+        report[prefix + '.cpu.user_vdsmd'] = hoststats['cpuUserVdsmd']
+        report[prefix + '.cpu.ksm_pages'] = hoststats['ksmPages']
+        report[prefix + '.cpu.ksm_cpu_precent'] = hoststats['ksmCpu']
+
+        if hoststats['haStats']['configured']:
+            report[prefix + '.ha_score'] = hoststats['haScore']
+
+        report[prefix + '.elapsed_time'] = hoststats['elapsedTime']
+
+        if 'network' in hoststats:
+            for interface in hoststats['network']:
+                if_info = hoststats['network'][interface]
+                net_prefix = prefix + '.network_interfaces.' + interface
+                report[net_prefix + '.speed'] = if_info['speed']
+                report[net_prefix + '.rx_rate'] = if_info['rxRate']
+                report[net_prefix + '.tx_rate'] = if_info['txRate']
+                report[net_prefix + '.rx_errors'] = if_info['rxErrors']
+                report[net_prefix + '.tx_errors'] = if_info['txErrors']
+                report[net_prefix + '.rx_dropped'] = if_info['rxDropped']
+                report[net_prefix + '.tx_dropped'] = if_info['txDropped']
+                report[net_prefix + '.rx'] = if_info['rx']
+                report[net_prefix + '.tx'] = if_info['tx']
+
+        reports.send(report)
+    except KeyError:
+        logging.exception('Report host stats failed')
 
 
 def _readSwapTotalFree():
