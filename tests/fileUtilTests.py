@@ -175,7 +175,7 @@ class TestAtomicSymlink(TestCaseBase):
 
 
 @expandPermutations
-class TestNormalizeRemotePath(TestCaseBase):
+class TestNormalizePath(TestCaseBase):
 
     @permutations([
         # Remote paths without a port
@@ -191,8 +191,10 @@ class TestNormalizeRemotePath(TestCaseBase):
         # Remote paths with a port (relevant for cephfs mounts)
         ("server:6789:/path", "server:6789:/path"),
         ("server:6789:/", "server:6789:/"),
+
+        # Local paths
+        ("/path/to/device", "/path/to/device"),
+        ("/path/to//device/", "/path/to/device"),
     ])
-    def test_normalize_remote_path_equals(self, remote_path,
-                                          normalized_remote_path):
-        self.assertEquals(normalized_remote_path,
-                          fileUtils.normalize_remote_path(remote_path))
+    def test_normalize_path_equals(self, path, normalized_path):
+        self.assertEquals(normalized_path, fileUtils.normalize_path(path))

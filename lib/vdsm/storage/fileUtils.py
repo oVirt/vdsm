@@ -78,19 +78,23 @@ def transformPath(remotePath):
     return remotePath.replace('_', '__').replace('/', '_')
 
 
-def normalize_remote_path(remote_path):
+def normalize_path(path):
     """
-    Normalizes a remote path using normpath.
-    This method expects an input of the form "server:port:/path", where:
-    - The "port:" part is not mandatory.
-    - The "server" part can be a dns name, an ipv4 address
-    or an ipv6 address using quoted form.
-    - If the input doesn't contain a colon, a HosttailError will be raised.
+    Normalizes a path using normpath.
+    This method expects an input of one of the forms:
+    1. "server:port:/path", where:
+        - The "port:" part is not mandatory.
+        - The "server" part can be a dns name, an ipv4 address
+        or an ipv6 address using quoted form.
+        - If the input doesn't contain a colon, a HosttailError will be raised.
+        Since this format is ambiguous, we treat an input that looks like a
+        port as a port, and otherwise as a path without a leading slash.
+    2. "/path/to/device"
+    """
+    if path.startswith("/"):
+        return normpath(path)
 
-    Since this format is ambiguous, we treat an input that looks like a port
-    as a port, and otherwise as a path without a leading slash.
-    """
-    host, tail = address.hosttail_split(remote_path)
+    host, tail = address.hosttail_split(path)
     if ":" in tail:
         port, path = tail.split(':', 1)
         if is_port(port):

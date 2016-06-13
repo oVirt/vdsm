@@ -2748,7 +2748,7 @@ class HSM(object):
             if storageType == sd.LOCALFS_DOMAIN:
                 remotePath = normpath(remotePath)
             else:
-                remotePath = fileUtils.normalize_remote_path(remotePath)
+                remotePath = fileUtils.normalize_path(remotePath)
             local_path = fileUtils.transformPath(remotePath)
         if spUUID and spUUID != sc.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
