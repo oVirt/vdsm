@@ -87,7 +87,7 @@ class Executor(object):
 
     def dispatch(self, callable, timeout=None):
         """
-        dispatches a new task to the executor.
+        Dispatches a new task to the executor.
 
         The task may be any callable.
         The task will be executed as soon as possible
@@ -105,7 +105,7 @@ class Executor(object):
     def _worker_discarded(self, worker):
         """
         Called from scheduler thread when worker was discarded. The worker
-        thread is blocked on a task, and will exit when the task finish.
+        thread is blocked on a task, and will exit when the task finishes.
         """
         with self._lock:
             if self._running:
@@ -117,14 +117,14 @@ class Executor(object):
 
     def _worker_stopped(self, worker):
         """
-        Called from worker thread before it exit.
+        Called from the worker thread before it exits.
         """
         with self._lock:
             self._workers.remove(worker)
 
     def _next_task(self):
         """
-        Called from worker thread to get the next task from the taks queue.
+        Called from the worker thread to get the next task from the task queue.
         Raises NotRunning exception if executor was stopped.
         """
         task = self._tasks.get()
