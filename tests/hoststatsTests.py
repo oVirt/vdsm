@@ -174,9 +174,12 @@ class HostStatsThreadTests(TestCaseBase):
             'cpuSysVdsmd': 0.0,
             'cpuUser': 0.0,
             'cpuUserVdsmd': 0.0,
+            'memUsed': 0.0,
             'rxRate': 0.0,
             'txRate': 0.0,
             'elapsedTime': 0,
+            'anonHugePages': 0.0,
+            'cpuLoad': 0.0,
         }
         hoststats.start(lambda: 0)
         self.assertEquals(hoststats.produce(None, None), expected)

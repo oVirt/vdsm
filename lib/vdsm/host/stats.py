@@ -231,6 +231,7 @@ def _boot_time():
 
 def _empty_stats():
     return {
+        'cpuLoad': 0.0,
         'cpuUser': 0.0,
         'cpuSys': 0.0,
         'cpuIdle': 100.0,
@@ -239,4 +240,6 @@ def _empty_stats():
         'cpuSysVdsmd': 0.0,
         'cpuUserVdsmd': 0.0,
         'elapsedTime': _elapsed_time(),
+        'memUsed': 0.0,
+        'anonHugePages': 0.0,
     }
