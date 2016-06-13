@@ -1219,7 +1219,6 @@ def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         try:
             logLevel = logging.DEBUG
-            suppress_logging = f.__name__ in ('getAllVmStats',)
             suppress_args = f.__name__ in ('fenceNode',)
 
             # TODO: This password protection code is fragile and ugly. Password
@@ -1266,9 +1265,14 @@ def wrapApiMethod(f):
                 res = f(*args, **kwargs)
             else:
                 res = errCode['recovery']
-            log_res = "(suppressed)" if suppress_logging else res
+
             f.__self__.cif.log.log(logLevel, 'return %s with %s',
-                                   f.__name__, log_res)
+                                   f.__name__, res)
+
+            # Ugly hack, but this code is going to be deleted soon.
+            if isinstance(res.get('statsList'), utils.Suppressed):
+                res['statsList'] = res['statsList'].value
+
             return res
         except libvirt.libvirtError as e:
             f.__self__.cif.log.error("libvirt error", exc_info=True)

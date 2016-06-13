@@ -25,6 +25,7 @@ import yajsonrpc
 
 from vdsm.netinfo import getDeviceByIP
 from vdsm.exception import VdsmException
+from vdsm.utils import Suppressed
 
 
 try:
@@ -237,7 +238,10 @@ class DynamicBridge(object):
     def _fixupRet(self, className, methodName, result):
         retType = self._getRetList(className, methodName)
         if retType is not None:
-            self._typeFixup('return', retType, result)
+            fixup_result = result
+            if isinstance(result, Suppressed):
+                fixup_result = result.value
+            self._typeFixup('return', retType, fixup_result)
         return result
 
     def _getRetList(self, className, methodName):

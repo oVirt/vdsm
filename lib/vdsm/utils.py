@@ -1317,3 +1317,16 @@ def weakmethod(meth):
 
 def is_persistence_unified():
     return config.get('vars', 'net_persistence') == 'unified'
+
+
+class Suppressed(object):
+
+    def __init__(self, value):
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    def __repr__(self):
+        return '(suppressed)'

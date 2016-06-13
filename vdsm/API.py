@@ -1354,7 +1354,7 @@ class Global(APIBase):
         hooks.before_get_all_vm_stats()
         statsList = self._cif.getAllVmStats()
         statsList = hooks.after_get_all_vm_stats(statsList)
-        return {'status': doneCode, 'statsList': statsList}
+        return {'status': doneCode, 'statsList': utils.Suppressed(statsList)}
 
     def hostdevListByCaps(self, caps=None):
         devices = hostdev.list_by_caps(caps)
