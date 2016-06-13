@@ -238,10 +238,11 @@ class _Worker(object):
         self._log.debug("Worker discarded: %s", self)
 
     def __repr__(self):
-        return "<Worker name=%s %s%s at 0x%x>" % (
+        return "<Worker name=%s %s%s task#=%s at 0x%x>" % (
             self.name,
             "running %s" % (self._task,) if self._task else "waiting",
             " discarded" if self._discarded else "",
+            self._task_counter,
             id(self)
         )
 
