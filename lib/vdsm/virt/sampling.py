@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2015 Red Hat, Inc.
+# Copyright 2008-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ import time
 from vdsm import numa
 from vdsm import utils
 from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
+from vdsm.host import api as hostapi
 from vdsm.network import ipwrapper
 from vdsm.network.netinfo import nics, bonding, vlans
 from vdsm.virt.utils import ExpiringCache
@@ -546,6 +547,11 @@ class HostMonitor(object):
     def __call__(self):
         sample = HostSample(self._pid)
         self._samples.append(sample)
+
+        if self._cif:
+            stats = hostapi.get_stats(self._cif, self._samples.stats())
+            hostapi.report_stats(stats)
+
         second_last = self._samples.last(nth=2)
         if second_last is None:
             self._CONNLOG.debug('%s', sample.to_connlog())
