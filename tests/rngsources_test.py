@@ -32,6 +32,8 @@ class TestRng(TestCaseBase):
 
     @permutations([
         # available_sources_map, output_sources
+        [{'/dev/random': True, '/dev/hwrng': True, '/dev/urandom': True},
+         ['random', 'hwrng']],
         [{'/dev/random': True, '/dev/hwrng': True}, ['random', 'hwrng']],
         [{'/dev/random': True, '/dev/hwrng': False}, ['random']],
         [{'/dev/random': False, '/dev/hwrng': True}, ['hwrng']],

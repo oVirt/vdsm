@@ -25,6 +25,7 @@ import os.path
 
 _SOURCES = {
     'random': '/dev/random',
+    'urandom': '/dev/urandom',
     'hwrng': '/dev/hwrng'
 }
 
@@ -32,7 +33,9 @@ _SOURCES = {
 def list_available():
     return [
         source for (source, path) in _SOURCES.items()
-        if os.path.exists(path)
+        if os.path.exists(path) and
+        # REQUIRE_FOR: Engine <= 4.0
+        source != 'urandom'
     ]
 
 
