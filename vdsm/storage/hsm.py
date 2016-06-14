@@ -29,7 +29,6 @@ from fnmatch import fnmatch
 from itertools import imap
 from collections import defaultdict
 from functools import partial, wraps
-from os.path import normpath
 import errno
 import time
 import signal
@@ -2745,10 +2744,7 @@ class HSM(object):
             se.StorageDomainActionError("spUUID: %s" % spUUID))
         sdCache.refreshStorage()
         if remotePath:
-            if storageType == sd.LOCALFS_DOMAIN:
-                remotePath = normpath(remotePath)
-            else:
-                remotePath = fileUtils.normalize_path(remotePath)
+            remotePath = fileUtils.normalize_path(remotePath)
             local_path = fileUtils.transformPath(remotePath)
         if spUUID and spUUID != sc.BLANK_UUID:
             domList = self.getPool(spUUID).getDomains()
