@@ -326,15 +326,18 @@ class BindingXMLRPC(object):
 
                 self.log.debug(fmt, *logargs)
 
+                res = {}
                 try:
-                    return f(*args, **kwargs)
+                    res = f(*args, **kwargs)
                 except:
                     self.log.error("Unexpected exception", exc_info=True)
-                    return errCode['unexpected']
-                finally:
-                    self.log.info("RPC call %s finished in %.2f seconds",
-                                  f.__name__,
-                                  utils.monotonic_time() - start_time)
+                    res = errCode['unexpected']
+                self.log.info("RPC call %s finished (code=%s) in "
+                              "%.2f seconds",
+                              f.__name__,
+                              res.get('status', {}).get('code'),
+                              utils.monotonic_time() - start_time)
+                return res
 
             wrapper.__name__ = f.__name__
             wrapper.__doc__ = f.__doc__
@@ -1224,6 +1227,7 @@ class BindingXMLRPC(object):
 def wrapApiMethod(f):
     def wrapper(*args, **kwargs):
         start_time = utils.monotonic_time()
+        res = {}
         try:
             logLevel = logging.DEBUG
             suppress_args = f.__name__ in ('fenceNode',)
@@ -1284,18 +1288,23 @@ def wrapApiMethod(f):
         except libvirt.libvirtError as e:
             f.__self__.cif.log.error("libvirt error", exc_info=True)
             if e.get_error_code() == libvirt.VIR_ERR_NO_DOMAIN:
-                return errCode['noVM']
+                res = errCode['noVM']
             else:
-                return errCode['unexpected']
+                res = errCode['unexpected']
+            return res
         except VdsmException as e:
             f.__self__.cif.log.error("vdsm exception occured", exc_info=True)
-            return e.response()
+            res = e.response()
+            return res
         except:
             f.__self__.cif.log.error("unexpected error", exc_info=True)
-            return errCode['unexpected']
+            res = errCode['unexpected']
+            return res
         finally:
-            f.__self__.cif.log.info("RPC call %s finished in %.2f seconds",
+            f.__self__.cif.log.info("RPC call %s finished (code=%s) in "
+                                    "%.2f seconds",
                                     f.__name__,
+                                    res.get('status', {}).get('code'),
                                     utils.monotonic_time() - start_time)
     wrapper.__name__ = f.__name__
     wrapper.__doc__ = f.__doc__
