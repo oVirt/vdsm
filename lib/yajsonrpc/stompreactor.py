@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
+# Copyright (C) 2014-2016 Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -20,6 +20,7 @@ from uuid import uuid4
 import functools
 
 from vdsm import concurrent
+from vdsm import constants
 from vdsm import utils
 from vdsm.config import config
 from vdsm.compat import json
@@ -327,23 +328,12 @@ class StompServer(object):
         resp = json.loads(message)
         response_id = resp.get("id")
 
-        if response_id is None:
-            # events do not have ids
+        try:
+            destination = self._req_dest[response_id]
+            del self._req_dest[response_id]
+        except KeyError:
+            # we could have no reply-to or we could send events (no message id)
             pass
-        else:
-            try:
-                destination = self._req_dest[response_id]
-            except KeyError:
-                # we could have no reply-to we will use destination
-                # provided as method argument
-                pass
-            try:
-                del self._req_dest[response_id]
-            except KeyError:
-                self.log.warning(
-                    "Response to a message with id %s was not found",
-                    response_id
-                )
 
         try:
             connections = self._sub_map[destination]
@@ -584,6 +574,23 @@ def StompRpcClient(stomp_client, request_queue, response_queue):
             stomp_client,
         )
     )
+
+
+def SimpleClient(host, port=54321, ssl=True):
+    """
+    Returns JsonRpcClient able to receive jsonrpc messages and notifications.
+    It is required to provide a host where we want to connect, port and whether
+    we want to use ssl (True by default). Other settings use defaults and if
+    there is a need to customize please use StandAloneRpcClient().
+    """
+    sslctx = None
+    if ssl:
+        from vdsm.sslutils import SSLContext
+        sslctx = SSLContext(key_file=constants.KEY_FILE,
+                            cert_file=constants.CERT_FILE,
+                            ca_certs=constants.CA_FILE)
+    return StandAloneRpcClient(host, port, "jms.topic.vdsm_requests",
+                               str(uuid4()), sslctx, lazy_start=False)
 
 
 def StandAloneRpcClient(host, port, request_queue, response_queue,
