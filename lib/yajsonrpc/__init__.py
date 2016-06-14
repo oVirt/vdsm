@@ -503,8 +503,13 @@ class JsonRpcServer(object):
     def _serveRequest(self, ctx, req):
         start_time = monotonic_time()
         response = self._handle_request(req, ctx.server_address)
-        self.log.info("RPC call %s finished in %.2f seconds",
-                      req.method, monotonic_time() - start_time)
+        error = getattr(response, "error", None)
+        if error is None:
+            response_log = "succeeded"
+        else:
+            response_log = "failed (error %s)" % (error.code,)
+        self.log.info("RPC call %s %s in %.2f seconds",
+                      req.method, response_log, monotonic_time() - start_time)
         if response is not None:
             ctx.requestDone(response)
 
