@@ -1,5 +1,5 @@
 #
-# Copyright 2008-2016 Red Hat, Inc.
+# Copyright 2008-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -125,8 +125,7 @@ install-data-local: \
 		install-data-networkmanager \
 		install-data-rwtab \
 		install-data-sudoers \
-		install-data-sysctl \
-		install-data-vdsmconf
+		install-data-sysctl
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/hsm-tasks
 	$(MKDIR_P) $(DESTDIR)$(vdsmrepo)/mnt
@@ -154,8 +153,7 @@ uninstall-local: \
 		uninstall-data-networkmanager \
 		uninstall-data-rwtab \
 		uninstall-data-sudoers \
-		uninstall-data-sysctl \
-		uninstall-data-vdsmconf
+		uninstall-data-sysctl
 
 install-data-logger:
 	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)
@@ -240,12 +238,6 @@ install-data-sysctl:
 
 uninstall-data-sysctl:
 	$(RM) $(DESTDIR)$(sysconfdir)/sysctl.d/vdsm.conf
-
-install-data-vdsmconf:
-	$(MKDIR_P) $(DESTDIR)$(vdsmconfdir)/vdsm.conf.d
-
-uninstall-data-vdsmconf:
-	$(RM) $(DESTDIR)$(vdsmconfdir)/vdsm.conf.d
 
 install-data-dhclient-hooks:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/dhcp/dhclient.d

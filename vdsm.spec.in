@@ -917,7 +917,6 @@ exit 0
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/hsm-tasks
 %ghost %dir %attr(-, %{vdsm_user}, %{vdsm_group}) @vdsmrepo@/mnt
 %dir %{_libexecdir}/%{vdsm_name}
-%dir %{_sysconfdir}/%{vdsm_name}/vdsm.conf.d
 %dir %{_sysconfdir}/NetworkManager
 %dir %{_sysconfdir}/NetworkManager/conf.d
 %dir %{_sysconfdir}/%{vdsm_name}

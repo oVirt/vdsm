@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2016 Red Hat, Inc.
+# Copyright 2011-2013 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,10 +22,6 @@ from __future__ import absolute_import
 import os
 from six.moves import configparser
 import textwrap
-import glob
-
-
-DEFAULT_PATHS = ("/usr/lib/", "/run/", '@CONFDIR@')
 
 parameters = [
     # Section: [vars]
@@ -505,39 +501,9 @@ def print_config():
             print(twp.fill("%s = %s" % (key, value)))
             print('')
 
-
-def load(paths=DEFAULT_PATHS):
-    cfg = configparser.ConfigParser()
-    set_defaults(cfg)
-    read_configs(cfg, "vdsm", paths)
-    return cfg
-
-
-def read_configs(cfg, name="vdsm", paths=DEFAULT_PATHS):
-    """This function is reading config files in a specific scheme
-
-    The function reads - for one component - config files from several
-    locations and in addition it is also reading configuration snippets
-    from drop-in directories.
-    This scheme allows to store the vendor provided (default) configuration
-    in a different directory, and override it using either defaults from
-    other packages which can then be put into the vendor drop-in dir,
-    or users can overwrite the defaults, by placing a complete or partial
-    configuration file into /etc or a drop-in directory.
-    """
-    default_conf = os.path.join('@CONFDIR@', name, name + ".conf")
-    cfg.read(default_conf)
-
-    dropins = []
-    for path in paths:
-        pattern = os.path.join(path, name, name + ".conf.d", "*.conf")
-        dropins.extend(glob.glob(pattern))
-
-    dropins.sort(key=os.path.basename)
-    cfg.read(dropins)
-
-
-config = load()
+config = configparser.ConfigParser()
+set_defaults(config)
+config.read([os.path.join('@CONFDIR@', 'vdsm.conf')])
 
 if __name__ == '__main__':
     print_config()

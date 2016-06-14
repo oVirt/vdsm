@@ -1,6 +1,6 @@
 # vdscli: contact vdsm running on localhost over xmlrpc easily
 #
-# Copyright 2009-2016 Red Hat, Inc.
+# Copyright 2009-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -75,8 +75,10 @@ class SingleRequestTransport(xmlrpclib.Transport):
 
 def __guessDefaults():
     global _USE_SSL, _TRUSTED_STORE_PATH, ADDRESS, PORT
+    VDSM_CONF = '/etc/vdsm/vdsm.conf'
     try:
         from .config import config
+        config.read(VDSM_CONF)
         _USE_SSL = config.getboolean('vars', 'ssl')
         _TRUSTED_STORE_PATH = config.get('vars', 'trust_store_path')
         PORT = config.getint('addresses', 'management_port')

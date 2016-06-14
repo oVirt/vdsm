@@ -1,4 +1,4 @@
-# Copyright 2014-2016 Red Hat, Inc.
+# Copyright 2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -39,8 +39,6 @@ requires = frozenset(('certificates',))
 
 services = ("vdsmd", "supervdsmd", "libvirtd")
 
-_vdsm_cfg = config
-
 
 def _getFile(fname):
     return FILES[fname]['path']
@@ -56,8 +54,9 @@ def configure():
     # Remove a previous configuration (if present)
     removeConf()
 
+    config.read(_getFile('VDSM_CONF'))
     vdsmConfiguration = {
-        'ssl_enabled': _vdsm_cfg.getboolean('vars', 'ssl'),
+        'ssl_enabled': config.getboolean('vars', 'ssl'),
         'sanlock_enabled': constants.SANLOCK_ENABLED,
         'libvirt_selinux': constants.LIBVIRT_SELINUX
     }
@@ -110,7 +109,8 @@ def _isSslConflict():
     return True if libvirt configuration files match ssl configuration of
     vdsm.conf.
     """
-    ssl = _vdsm_cfg.getboolean('vars', 'ssl')
+    config.read(_getFile('VDSM_CONF'))
+    ssl = config.getboolean('vars', 'ssl')
 
     lconf_p = ParserWrapper({
         'listen_tcp': '0',
@@ -224,6 +224,16 @@ LS_CERT_DIR = os.path.join(PKI_DIR, 'libvirt-spice')
 
 # be sure to update CONF_VERSION accordingly when updating FILES.
 FILES = {
+
+    'VDSM_CONF': {
+        'path': os.path.join(
+            constants.SYSCONF_PATH,
+            'vdsm/vdsm.conf'
+        ),
+        'configure': lambda x, y: True,
+        'removeConf': lambda x: True,
+        'persisted': False,
+    },
 
     'LCONF': {
         'path': os.path.join(
