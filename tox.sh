@@ -1,6 +1,7 @@
 #!/bin/sh -e
 
-WHITELIST=(contrib/logdb \
+WHITELIST=(build-aux/vercmp \
+           contrib/logdb \
            contrib/logstat \
            contrib/profile-stats \
            init/daemonAdapter \

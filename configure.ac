@@ -299,12 +299,6 @@ AC_ARG_WITH(
     [QEMU_IMG_PKG="qemu-img"])
 AC_SUBST([QEMU_IMG_PKG])
 
-# Checking for tox
-AC_PATH_PROG([TOX], [tox])
-if test "x$TOX" = "x"; then
-  AC_MSG_WARN([python-tox not found])
-fi
-
 if test "$PYTHON3_SUPPORT" = "1"; then
   AC_PATH_PROG([PYTHON3], [python3])
   if test "x$PYTHON3" = "x"; then

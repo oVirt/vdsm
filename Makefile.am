@@ -17,6 +17,7 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+TOX_MIN_VERSION = 2.1.1
 
 SUBDIRS = \
 	client \
@@ -42,6 +43,7 @@ EXTRA_DIST = \
 	autobuild.sh \
 	autogen.sh \
 	build-aux/pkg-version \
+	build-aux/vercmp \
 	contrib/logdb \
 	contrib/logstat \
 	contrib/profile-stats \
@@ -81,19 +83,26 @@ abs_imports: all
 	done;
 
 .PHONY: pyflakes
-pyflakes:
-	if [ -n "$(TOX)" ]; then \
-		tox -- pyflakes; \
-	else \
-		echo "Warning: tox is not installed, skipping check"; \
-	fi
+pyflakes: tox
+	tox -- pyflakes
 
 .PHONY: pep8
-pep8:
-	if [ -n "$(TOX)" ]; then \
-		tox -- pep8; \
-	else \
-		echo "Warning: tox is not installed, skipping check"; \
+pep8: tox
+	tox -- pep8
+
+.PHONY: tox
+tox:
+	out=`tox --version`; \
+	if [ $$? -ne 0 ]; then \
+		echo "Error: cannot run tox, please install tox \
+		$(TOX_MIN_VERSION) or later"; \
+		exit 1; \
+	fi; \
+	version=`echo $$out | cut -d' ' -f1`; \
+	if build-aux/vercmp $$version $(TOX_MIN_VERSION); then \
+		echo "Error: tox is too old, please install tox \
+		$(TOX_MIN_VERSION) or later"; \
+		exit 1; \
 	fi
 
 .PHONY: python3
