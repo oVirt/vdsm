@@ -75,7 +75,6 @@ CLEANFILES = \
 	$(nodist_man8_MANS)
 
 EXTRA_DIST = \
-	90-vdsm-monitor-connection-files.conf \
 	bonding-defaults.json \
 	bonding-name2numeric.json \
 	dumpStorageTable.py.in \
@@ -124,7 +123,6 @@ install-data-local: \
 		install-data-logrotate \
 		install-data-modprobe \
 		install-data-mom \
-		install-data-networkmanager \
 		install-data-rwtab \
 		install-data-sudoers \
 		install-data-sysctl \
@@ -154,7 +152,6 @@ uninstall-local: \
 		uninstall-data-logrotate \
 		uninstall-data-modprobe \
 		uninstall-data-mom \
-		uninstall-data-networkmanager \
 		uninstall-data-rwtab \
 		uninstall-data-sudoers \
 		uninstall-data-sysctl \
@@ -227,14 +224,6 @@ install-data-mom:
 uninstall-data-mom:
 		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.d/*.policy
 		$(RM) $(DESTDIR)$(vdsmconfdir)/mom.conf
-
-install-data-networkmanager:
-	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/NetworkManager/conf.d
-	$(INSTALL_DATA) 90-vdsm-monitor-connection-files.conf \
-		$(DESTDIR)$(sysconfdir)/NetworkManager/conf.d
-
-uninstall-data-networkmanager:
-	$(RM) $(DESTDIR)$(sysconfdir)/NetworkManager/conf.d/90-vdsm-monitor-connection-files.conf
 
 install-data-sudoers:
 	$(MKDIR_P) $(DESTDIR)$(sysconfdir)/sudoers.d
