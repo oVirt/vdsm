@@ -213,6 +213,10 @@ Requires: python >= 2.7.5-18.el7_1.1
 Requires: policycoreutils-python
 Requires: selinux-policy-targeted >= 3.13.1-16.el7
 Requires: systemd >= 219-11.el7
+%if ! 0%{?centos}
+# TODO drop this if when this initscripts is available on centos
+Requires: initscripts >= 9.49.30-1.el7_2.3
+%endif  #!centos
 %else
 Requires: fence-agents-all
 Requires: kernel >= 4.1.6
@@ -852,9 +856,6 @@ fi
 %systemd_post mom-vdsm.service
 %systemd_post ksmtuned.service
 
-# From VDSM version 4.18 a .conf file is deployed to /etc/NetworkManager/conf.d
-/bin/systemctl reload NetworkManager >/dev/null 2>&1 || :
-
 # VDSM installs unit files - daemon-reload will refresh systemd
 /bin/systemctl daemon-reload >/dev/null 2>&1 || :
 exit 0
@@ -921,8 +922,6 @@ exit 0
 %dir %{_libexecdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/vdsm.conf.d
 %dir %{_sysconfdir}/modprobe.d/
-%dir %{_sysconfdir}/NetworkManager
-%dir %{_sysconfdir}/NetworkManager/conf.d
 %dir %{_sysconfdir}/%{vdsm_name}
 %dir %{_sysconfdir}/%{vdsm_name}/mom.d
 %dir %{_datadir}/%{vdsm_name}
@@ -960,7 +959,6 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/vmdevices/network.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/storage.py*
 
-%config(noreplace) %{_sysconfdir}/NetworkManager/conf.d/90-vdsm-monitor-connection-files.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/vdsm.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/logger.conf
 %config(noreplace) %{_sysconfdir}/%{vdsm_name}/svdsm.logger.conf
