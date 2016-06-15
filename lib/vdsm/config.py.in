@@ -423,7 +423,12 @@ parameters = [
             'Reports collector address (default localhost)'),
 
         ('collector_type', 'statsd',
-            'Reports collector type (supporting statsd)'),
+            'Reports collector type (supporting statsd or hawkular)'),
+
+        ('queue_size', '100',
+            'Number of reports to queue if collector is not responsive.'
+            ' When the queue is full, oldest reports are dropped. Used only'
+            ' by hawkular reporter (default 100).'),
     ]),
 
     # Section: [devel]
