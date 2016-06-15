@@ -310,6 +310,8 @@ class Schema(object):
         unknown_props = [key for key in arg
                          if key not in prop_names]
         if unknown_props:
+            if 'any_string' in prop_names:
+                return
             self._report_inconsistency('Following parameters %s were not'
                                        ' recognized' % (unknown_props))
         # iterate over properties

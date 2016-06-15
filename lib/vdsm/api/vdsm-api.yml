@@ -2,13 +2,13 @@ types:
     AutoNumaBalancingStatus: &AutoNumaBalancingStatus
         added: '3.4'
         description: An enumeration of the status of auto numa balancing
-            function in kernel. Need to be fixed we get int not string
+            function in kernel.
         name: AutoNumaBalancingStatus
         type: enum
         values:
-            DISABLE: Auto numa balancing is not active
-            ENABLE: Auto numa balancing is active
-            UNKNOWN: Can't get the status(maybe not support in this kernel
+            0: Auto numa balancing is not active
+            1: Auto numa balancing is active
+            2: Can't get the status(maybe not support in this kernel
                 version)
 
     BalloonInfo: &BalloonInfo
@@ -1466,7 +1466,7 @@ types:
         name: HookScriptAdditional
         properties:
         -   description: A key for hook script information
-            name: 50_vmfex
+            name: any_string
             type: *HookScriptInfo
         type: object
 
@@ -4293,7 +4293,8 @@ types:
         -   description: The Maximum Transmission Unit size for
                 the bridge device
             name: mtu
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The default IPv6 gateway for the bridge
                 device
@@ -4334,15 +4335,16 @@ types:
         -   description: Whether Spanning Tree Protocol status
                 for the bridge device should be turned on
             name: stp
-            type: boolean
+            type: string
 
-        -   description: A map containing information about the
+        -   defaultvalue: no-default
+            description: A map containing information about the
                 bridge specific options.
             name: opts
             type: *StringMap
             added: '3.4'
 
-        -   defaultvalue: needs updating
+        -   defaultvalue: no-default
             description: host traffic QoS params.
             name: hostQos
             type: *HostQoSParams
@@ -4355,7 +4357,8 @@ types:
             - string
             added: '3.4'
 
-        -   description: Always True to distinguish this type
+        -   defaultvalue: no-default
+            description: Always True to distinguish this type
                 from NetInfoBridgelessNetwork
             name: bridged
             type: boolean
@@ -4364,6 +4367,21 @@ types:
                 the bridge device
             name: addr
             type: string
+
+        -   defaultvalue: no-default
+            description: The network device associated with the network
+            name: iface
+            type: string
+
+        -   defaultvalue: no-default
+            description: Specify Switch. Legacy is used if not passed
+            name: switch
+            type: string
+
+        -   defaultvalue: no-default
+            description: Whether use ipv6 stateless autoconfiguration
+            name: ipv6autoconf
+            type: boolean
         type: object
 
     NetInfoBridgeMap: &NetInfoBridgeMap
@@ -5528,7 +5546,12 @@ types:
         name: SoftwarePackage
         type: enum
         values:
+            glusterfs: Glusterfs binary and glusterfs translator modules common
             glusterfs-cli: GlusterFS a distributed file-system cli
+            glusterfs-geo-replication: Glusterfs geo-replication support
+            glusterfs-fuse: FUSE based clients and glusterfsd
+            glusterfs-rdma: Supports to ib-verbs library neede by Glusterfs
+            glusterfs-server: Glusterfs server daemon
             kernel: The Linux kernel
             librbd1: RADOS block device client library
             libvirt: Low level virtualization API
