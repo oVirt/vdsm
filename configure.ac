@@ -250,7 +250,6 @@ AC_SUBST([vdsmhooksdir], ['${vdsmexecdir}/hooks'])
 AC_SUBST([vdsmtsdir], ['${sysconfdir}/pki/vdsm'])
 AC_SUBST([vdsmrepo], ['/rhev/data-center'])
 AC_SUBST([vdsmpylibdir], ['${pythondir}/vdsm'])
-AC_SUBST([vdsminfradir], ['${vdsmpylibdir}/infra'])
 AC_SUBST([vdsmnetinfodir], ['${vdsmpylibdir}/network/netinfo'])
 AC_SUBST([vdsmtooldir], ['${vdsmpylibdir}/tool'])
 AC_SUBST([configuratorsdir], ['${vdsmtooldir}/configurators'])
@@ -411,11 +410,6 @@ AC_OUTPUT([
 	lib/api/Makefile
 	lib/yajsonrpc/Makefile
 	lib/vdsm/host/Makefile
-	lib/vdsm/infra/Makefile
-	lib/vdsm/infra/eventfd/Makefile
-	lib/vdsm/infra/filecontrol/Makefile
-	lib/vdsm/infra/sigutils/Makefile
-	lib/vdsm/infra/zombiereaper/Makefile
 	lib/vdsm/network/Makefile
 	lib/vdsm/network/configurators/Makefile
 	lib/vdsm/network/ip/Makefile

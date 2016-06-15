@@ -32,7 +32,7 @@ import weakref
 
 from vdsm import supervdsm
 from vdsm import utils
-from vdsm.infra import filecontrol
+from vdsm.common import filecontrol
 from vdsm.virt import vmstatus
 
 _MAX_SUPPORTED_API_VERSION = 3

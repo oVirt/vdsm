@@ -32,8 +32,8 @@ import logging.config
 from contextlib import closing
 
 from vdsm import concurrent
-from vdsm.infra import sigutils
-from vdsm.infra import zombiereaper
+from vdsm.common import sigutils
+from vdsm.common import zombiereaper
 
 
 LOG_CONF_PATH = "/etc/vdsm/svdsm.logger.conf"

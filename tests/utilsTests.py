@@ -42,7 +42,7 @@ from vdsm import utils
 from vdsm import cmdutils
 from vdsm import commands
 from vdsm import panic
-from vdsm.infra import zombiereaper
+from vdsm.common import zombiereaper
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
 from vmTestsData import VM_STATUS_DUMP

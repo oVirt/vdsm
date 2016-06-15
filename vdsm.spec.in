@@ -140,7 +140,6 @@ Requires: python-ioprocess >= 0.15.0-4
 Requires: python-pthreading >= 0.1.3-3
 Requires: python-six >= 1.9.0
 Requires: python-requests
-Requires: %{name}-infra = %{version}-%{release}
 Requires: rpm-python
 Requires: nfs-utils
 Requires: m2crypto
@@ -151,6 +150,8 @@ Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.3
 Requires(pre): shadow-utils
+
+Obsoletes: %{name}-infra
 
 %if 0%{?with_openvswitch}
 Requires: openvswitch >= 2.0.0
@@ -318,15 +319,6 @@ Requires:       python >= 2.6
 %description yajsonrpc
 A JSON RPC server and client implementation.
 
-%package infra
-Summary:        Utilities and libraries for vdsm
-BuildArch:      noarch
-Requires:       python >= 2.6
-Obsoletes:      %{name}-python-zombiereaper
-
-%description infra
-Utilities and libraries for vdsm.
-
 %package reg
 Summary:        VDSM registration package
 BuildArch:      noarch
@@ -343,7 +335,6 @@ Manager.
 Summary:        VDSM python libraries
 Requires:       %{name}-api = %{version}-%{release}
 BuildArch:      noarch
-Requires:       %{name}-infra = %{version}-%{release}
 Requires:       python-cpopen >= 1.4
 Requires:       m2crypto
 Requires:       python-ioprocess >= 0.15.0-4
@@ -1637,19 +1628,6 @@ exit 0
 %{python_sitelib}/yajsonrpc/betterAsyncore.py*
 %{python_sitelib}/yajsonrpc/stomp.py*
 %{python_sitelib}/yajsonrpc/stompreactor.py*
-
-%files infra
-%dir %{python_sitelib}/%{vdsm_name}
-%dir %{python_sitelib}/%{vdsm_name}/infra
-%dir %{python_sitelib}/%{vdsm_name}/infra/eventfd
-%dir %{python_sitelib}/%{vdsm_name}/infra/filecontrol
-%dir %{python_sitelib}/%{vdsm_name}/infra/sigutils
-%dir %{python_sitelib}/%{vdsm_name}/infra/zombiereaper
-%{python_sitelib}/%{vdsm_name}/infra/eventfd/__init__.py*
-%{python_sitelib}/%{vdsm_name}/infra/filecontrol/__init__.py*
-%{python_sitelib}/%{vdsm_name}/infra/sigutils/__init__.py*
-%{python_sitelib}/%{vdsm_name}/infra/zombiereaper/__init__.py*
-%{python_sitelib}/%{vdsm_name}/infra/__init__.py*
 
 %files hook-faqemu
 %defattr(-, root, root, -)

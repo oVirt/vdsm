@@ -68,7 +68,7 @@ import logging
 import os
 
 from vdsm import utils
-from vdsm.infra import filecontrol
+from vdsm.common import filecontrol
 
 log = logging.getLogger("storage.asyncevent")
 

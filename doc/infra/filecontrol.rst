@@ -1,5 +1,5 @@
 File Control
 =============
 
-.. automodule:: vdsm.infra.filecontrol
+.. automodule:: vdsm.common.filecontrol
         :members:

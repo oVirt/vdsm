@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2009 Red Hat, Inc. and/or its affiliates.
+# Copyright 2009-2016 Red Hat, Inc. and/or its affiliates.
 #
 # Licensed to you under the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -36,19 +36,19 @@ from vdsm import dsaversion
 from vdsm import health
 from vdsm import schedule
 from vdsm import utils
-from vdsm.config import config
 from vdsm import libvirtconnection
 from vdsm import taskset
 from vdsm import reports
+from vdsm.common import sigutils
+from vdsm.common import zombiereaper
+from vdsm.config import config
 from vdsm.panic import panic
 from vdsm.profiling import profile
+from vdsm.virt import periodic
 
 from storage.dispatcher import Dispatcher
 from storage.hsm import HSM
 
-from vdsm.infra import sigutils
-from vdsm.virt import periodic
-import vdsm.infra.zombiereaper as zombiereaper
 
 loggerConfFile = constants.P_VDSM_CONF + 'logger.conf'
 

@@ -1,5 +1,5 @@
 Signal utilities
 =============
 
-.. automodule:: vdsm.infra.sigutils
+.. automodule:: vdsm.common.sigutils
         :members:

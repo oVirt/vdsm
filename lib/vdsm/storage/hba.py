@@ -28,11 +28,11 @@ import glob
 import logging
 import os
 
+from vdsm import commands
 from vdsm import constants
 from vdsm import supervdsm
-from vdsm import commands
 from vdsm.config import config
-from vdsm.infra import zombiereaper
+from vdsm.common import zombiereaper
 from vdsm.storage import misc
 
 log = logging.getLogger("Storage.HBA")

@@ -24,7 +24,7 @@ import fcntl
 import os
 
 from testlib import VdsmTestCase
-from vdsm.infra import filecontrol
+from vdsm.common import filecontrol
 
 
 @contextmanager

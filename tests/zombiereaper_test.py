@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,10 +21,10 @@ from __future__ import absolute_import
 from time import sleep
 import os
 
+from subprocess import Popen
 from testlib import VdsmTestCase
 
-from vdsm.infra import zombiereaper
-from subprocess import Popen
+from vdsm.common import zombiereaper
 
 
 class zombieReaperTests(VdsmTestCase):

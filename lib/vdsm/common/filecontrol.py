@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,11 +17,27 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+from __future__ import absolute_import
+import fcntl
+import os
 
-include $(top_srcdir)/build-aux/Makefile.subs
 
-filecontroldir = $(vdsminfradir)/filecontrol
+def _set_or_clear_bits(set, word, bits):
+    if set:
+        return word | bits
+    else:
+        return word & (~bits)
 
-dist_filecontrol_PYTHON = \
-	__init__.py \
-	$(NULL)
+
+def set_non_blocking(fd, value=True):
+    """Set O_NONBLOCK flag on file descriptor"""
+    flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+    flags = _set_or_clear_bits(value, flags, os.O_NONBLOCK)
+    return fcntl.fcntl(fd, fcntl.F_SETFL, flags)
+
+
+def set_close_on_exec(fd, value=True):
+    """Set O_CLOEXEC flag on file descriptor"""
+    flags = fcntl.fcntl(fd, fcntl.F_GETFD)
+    flags = _set_or_clear_bits(value, flags, fcntl.FD_CLOEXEC)
+    return fcntl.fcntl(fd, fcntl.F_SETFD, flags)

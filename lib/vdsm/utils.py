@@ -51,7 +51,7 @@ import threading
 import time
 import weakref
 
-import vdsm.infra.zombiereaper as zombiereaper
+from vdsm.common import zombiereaper
 
 try:
     from ovirt.node.utils.fs import Config

@@ -1,6 +1,6 @@
 #!/usr/bin/python -u
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ import time
 import threading
 
 sys.path.insert(0, '../../..')
-from vdsm.infra import sigutils
+from vdsm.common import sigutils
 
 
 def child_test(register=True):

@@ -1,4 +1,4 @@
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -41,10 +41,10 @@ import zipfile
 import libvirt
 
 from vdsm.commands import execCmd
+from vdsm.common import zombiereaper
 from vdsm.constants import P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm.define import errCode, doneCode
 from vdsm import libvirtconnection, response, concurrent
-from vdsm.infra import zombiereaper
 from vdsm.utils import traceback, CommandPath, NICENESS, IOCLASS
 
 try:

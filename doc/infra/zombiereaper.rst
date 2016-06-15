@@ -1,5 +1,5 @@
 Zombie Reaper
 =============
 
-.. automodule:: vdsm.infra.zombiereaper
+.. automodule:: vdsm.common.zombiereaper
         :members:

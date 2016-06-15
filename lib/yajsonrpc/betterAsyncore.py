@@ -1,4 +1,4 @@
-# Copyright (C) 2014 Saggi Mizrahi, Red Hat Inc.
+# Copyright (C) 2014-2016 Saggi Mizrahi, Red Hat Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License version 2 as
@@ -22,8 +22,8 @@ import errno
 import logging
 import socket
 
+from vdsm.common.eventfd import EventFD
 from vdsm.sslcompat import sslutils
-from vdsm.infra.eventfd import EventFD
 
 
 _BLOCKING_IO_ERRORS = (errno.EAGAIN, errno.EALREADY, errno.EINPROGRESS,

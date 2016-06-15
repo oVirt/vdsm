@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,8 +23,7 @@ from __future__ import absolute_import
 import logging
 import socket
 
-import vdsm.infra.filecontrol as filecontrol
-
+from vdsm.common import filecontrol
 from vdsm.utils import monotonic_time
 from vdsm.sslcompat import SSLHandshakeDispatcher
 

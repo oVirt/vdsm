@@ -1,5 +1,5 @@
 #
-# Copyright 2014 Red Hat, Inc.
+# Copyright 2014-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,7 +24,7 @@ import os
 import select
 import signal
 
-from vdsm.infra import filecontrol
+from vdsm.common import filecontrol
 
 _signal_poller = None
 _signal_read_fd = None
