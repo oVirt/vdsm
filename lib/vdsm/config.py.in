@@ -1,5 +1,5 @@
 #
-# Copyright 2011-2013 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,11 +17,35 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
+"""
+This module creates vdsm configuration from a default vdsm configuration file
+under /etc/vdsm/vdsm.conf. It reads conf files from drop-in dirs and updates
+the configuration according to the files.
+
+The semantics of the directories and the search order is as follows:
+
+- /etc/vdsm/vdsm.conf - for user configuration. We install this
+  file if missing, and never touch this file during upgrade.
+- /etc/vdsm/vdsm.conf.d/ - for admin drop-in conf files.
+- /usr/lib/vdsm/vdsm.conf.d/ - for vendor drop-in configuration files.
+- /var/run/vdsm/vdsm.conf.d/ - for admin temporary configuration.
+
+Files with a .conf suffix can be placed into any of the vdsm.conf.d drop-in
+directories.
+
+The priority of the configuration files is determined by the number prefix of
+each file.
+"""
 
 from __future__ import absolute_import
 import os
 from six.moves import configparser
 import textwrap
+import glob
+
+_SYSCONFDIR = '@sysconfdir@'
+_DROPPIN_BASES = ("/usr/lib/", "/run/", _SYSCONFDIR)
+
 
 parameters = [
     # Section: [vars]
@@ -518,9 +542,39 @@ def print_config():
             print(twp.fill("%s = %s" % (key, value)))
             print('')
 
-config = configparser.ConfigParser()
-set_defaults(config)
-config.read([os.path.join('@CONFDIR@', 'vdsm.conf')])
+
+def load(name):
+    cfg = configparser.ConfigParser()
+    set_defaults(cfg)
+    read_configs(cfg, name)
+    return cfg
+
+
+def read_configs(cfg, name):
+    """This function is reading config files in a specific scheme
+
+    The function reads - for one component - config files from several
+    locations and in addition it is also reading configuration snippets
+    from drop-in directories.
+    This scheme allows to store the vendor provided (default) configuration
+    in a different directory, and override it using either defaults from
+    other packages which can then be put into the vendor drop-in dir,
+    or users can overwrite the defaults, by placing a complete or partial
+    configuration file into /etc or a drop-in directory.
+    """
+    default_conf = os.path.join(_SYSCONFDIR, name, name + '.conf')
+    cfg.read(default_conf)
+
+    dropins = []
+    for path in _DROPPIN_BASES:
+        pattern = os.path.join(path, name, name + '.conf.d', '*.conf')
+        dropins.extend(glob.glob(pattern))
+
+    dropins.sort(key=os.path.basename)
+    cfg.read(dropins)
+
+
+config = load('vdsm')
 
 if __name__ == '__main__':
     print_config()

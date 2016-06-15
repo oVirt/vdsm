@@ -50,6 +50,7 @@ test_modules = \
 	cmdutilsTests.py \
 	commands_test.py \
 	concurrentTests.py \
+	config_test.py \
 	cpuinfo_test.py \
 	cpuProfileTests.py \
 	deviceTests.py \
