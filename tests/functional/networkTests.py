@@ -407,8 +407,7 @@ class NetworkTest(TestCaseBase):
         self.assertIn(bondName, netinfo.bondings)
         self.assertEqual(netinfo.bondings[bondName]['active_slave'], '')
 
-    def setupNetworks(self, networks, bonds, options, **kwargs):
-        test_kernel_config = kwargs.pop('test_kernel_config', True)
+    def setupNetworks(self, networks, bonds, options, test_kernel_config=True):
         status, msg = self.vdsm_net.setupNetworks(networks, bonds, options)
         unified = (
             vdsm.config.config.get('vars', 'net_persistence') == 'unified')
