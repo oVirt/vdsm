@@ -219,3 +219,11 @@ class Suppressed(object):
 
     def __repr__(self):
         return '(suppressed)'
+
+
+def set_level(level):
+    logging.warning('Setting loglevel to %s', level)
+    handlers = logging.getLogger().handlers
+    [fileHandler] = [h for h in handlers if
+                     isinstance(h, logging.FileHandler)]
+    fileHandler.setLevel(int(level))
