@@ -62,7 +62,8 @@ class Drive(Base):
                  'index', 'name', 'optional', 'shared', 'truesize',
                  'volumeChain', 'baseVolumeID', 'serial', 'reqsize', 'cache',
                  '_blockDev', 'extSharedState', 'drv', 'sgio', 'GUID',
-                 'diskReplicate', '_diskType', 'hosts', 'protocol', 'auth')
+                 'diskReplicate', '_diskType', 'hosts', 'protocol', 'auth',
+                 'discard')
     VOLWM_CHUNK_SIZE = (config.getint('irs', 'volume_utilization_chunk_mb') *
                         constants.MEGAB)
     VOLWM_FREE_PCT = 100 - config.getint('irs', 'volume_utilization_percent')
@@ -168,6 +169,7 @@ class Drive(Base):
         self.apparentsize = int(kwargs.get('apparentsize', '0'))
         self.name = makeName(self.iface, self.index)
         self.cache = config.get('vars', 'qemu_drive_cache')
+        self.discard = kwargs.get('discard', False)
 
         self._blockDev = None  # Lazy initialized
 
@@ -549,6 +551,9 @@ def _getDriverXML(drive):
         driverAttrs['type'] = 'qcow2'
     elif drive['format']:
         driverAttrs['type'] = 'raw'
+
+    if 'discard' in drive and drive['discard']:
+        driverAttrs['discard'] = 'unmap'
 
     try:
         driverAttrs['iothread'] = str(drive['specParams']['pinToIoThread'])

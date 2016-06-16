@@ -99,6 +99,38 @@ class DriveXMLTests(XMLTestCase):
             """
         self.check({}, conf, xml, is_block_device=True)
 
+    def test_disk_with_discard_on(self):
+        conf = drive_config(
+            serial='54-a672-23e5b495a9ea',
+            discard=True,
+        )
+        xml = """
+            <disk device="disk" snapshot="no" type="block">
+                <source dev="/path/to/volume"/>
+                <target bus="virtio" dev="vda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="none" discard="unmap" error_policy="stop"
+                        io="native" name="qemu" type="raw"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=True)
+
+    def test_disk_with_discard_off(self):
+        conf = drive_config(
+            serial='54-a672-23e5b495a9ea',
+            discard=False,
+        )
+        xml = """
+            <disk device="disk" snapshot="no" type="block">
+                <source dev="/path/to/volume"/>
+                <target bus="virtio" dev="vda"/>
+                <serial>54-a672-23e5b495a9ea</serial>
+                <driver cache="none" error_policy="stop"
+                        io="native" name="qemu" type="raw"/>
+            </disk>
+            """
+        self.check({}, conf, xml, is_block_device=True)
+
     def test_disk_file(self):
         conf = drive_config(
             serial='54-a672-23e5b495a9ea',
