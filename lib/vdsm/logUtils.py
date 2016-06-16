@@ -208,8 +208,21 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
         return logging.handlers.WatchedFileHandler._open(self)
 
 
+_LEVELS = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL
+}
+
+
 def set_level(level):
-    logging.warning('Setting loglevel to %s', level)
+    if level not in _LEVELS:
+        raise ValueError("unknown log level: %r" % level)
+
+    log_level = _LEVELS[level]
+    logging.warning('Setting loglevel to %s (%d)', level, log_level)
     handlers = logging.getLogger().handlers
     [fileHandler] = [h for h in handlers if
                      isinstance(h, logging.FileHandler)]
