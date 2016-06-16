@@ -280,7 +280,7 @@ class _JsonRpcServeRequestContext(object):
             try:
                 encodedObjects.append(response.encode())
             except:  # Error encoding data
-                response = JsonRpcResponse(None, JsonRpcInternalError,
+                response = JsonRpcResponse(None, JsonRpcInternalError(),
                                            response.id)
                 encodedObjects.append(response.encode())
 
