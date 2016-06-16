@@ -35,9 +35,9 @@ version_info = {
     'version_name': version_name,
     'software_version': software_version,
     'software_revision': software_revision,
-    'supportedENGINEs': ['3.5', '3.6', '4.0'],
-    'clusterLevels': ['3.5', '3.6', '4.0'],
+    'supportedENGINEs': ['3.5', '3.6', '4.0', '4.1'],
+    'clusterLevels': ['3.5', '3.6', '4.0', '4.1'],
 }
 
 if cpuarch.real() == cpuarch.PPC64LE:
-    version_info['clusterLevels'] = ['3.6', '4.0']
+    version_info['clusterLevels'] = ['3.6', '4.0', '4.1']
