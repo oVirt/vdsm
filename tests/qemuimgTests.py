@@ -70,13 +70,16 @@ class InfoTests(TestCaseBase):
             leaf_path = os.path.join(tmpdir, 'leaf.img')
             size = 1048576
             leaf_fmt = qemuimg.FORMAT.QCOW2
-            qemuimg.create(base_path, size=size, format=qemuimg.FORMAT.RAW)
-            qemuimg.create(leaf_path, format=leaf_fmt, backing=base_path)
+            with MonkeyPatchScope([(qemuimg, 'config', CONFIG)]):
+                qemuimg.create(base_path, size=size, format=qemuimg.FORMAT.RAW)
+                qemuimg.create(leaf_path, format=leaf_fmt, backing=base_path)
+
             info = qemuimg.info(leaf_path)
             self.assertEqual(leaf_fmt, info['format'])
             self.assertEqual(size, info['virtualsize'])
             self.assertEqual(self.CLUSTER_SIZE, info['clustersize'])
             self.assertEqual(base_path, info['backingfile'])
+            self.assertEqual('0.10', info['compat'])
 
     def test_parse_error(self):
         def call(cmd, **kw):
@@ -94,6 +97,13 @@ class InfoTests(TestCaseBase):
                                 partial(fake_json_call, data))]):
             self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
 
+    def test_missing_compat_for_qcow2_raises(self):
+        data = self._fake_info()
+        del data['format-specific']['data']['compat']
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(fake_json_call, data))]):
+            self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
+
     @permutations((
         ('backing-filename', 'backingfile'),
         ('cluster-size', 'clustersize'),
@@ -105,6 +115,19 @@ class InfoTests(TestCaseBase):
                                 partial(fake_json_call, data))]):
             info = qemuimg.info('unused')
             self.assertNotIn(info_field, info)
+
+    def test_compat_reported_for_qcow2_only(self):
+        data = {
+            "virtual-size": 1048576,
+            "filename": "raw.img",
+            "format": "raw",
+            "actual-size": 0,
+            "dirty-flag": False
+        }
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(fake_json_call, data))]):
+            info = qemuimg.info('unused')
+            self.assertNotIn('compat', info)
 
 
 class CreateTests(TestCaseBase):
