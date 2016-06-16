@@ -88,6 +88,11 @@ def info(image, format=None):
         info['clustersize'] = qemu_info['cluster-size']
     if 'backing-filename' in qemu_info:
         info['backingfile'] = qemu_info['backing-filename']
+    if qemu_info['format'] == FORMAT.QCOW2:
+        try:
+            info['compat'] = qemu_info['format-specific']['data']['compat']
+        except KeyError:
+            raise QImgError(rc, out, err, "'compat' expected but not found")
 
     return info
 
