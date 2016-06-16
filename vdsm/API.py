@@ -21,7 +21,6 @@
 # pylint: disable=R0904
 
 import os
-import logging
 
 from vdsm.network.errors import ConfigNetworkError
 
@@ -30,6 +29,7 @@ from vdsm import utils
 from clientIF import clientIF
 from vdsm import constants
 from vdsm import exception
+from vdsm import logUtils
 from vdsm import hooks
 from vdsm import hostdev
 from vdsm import response
@@ -1374,12 +1374,7 @@ class Global(APIBase):
 
         Doesn't survive a restart
         """
-        logging.warning('Setting loglevel to %s', level)
-        handlers = logging.getLogger().handlers
-        [fileHandler] = [h for h in handlers if
-                         isinstance(h, logging.FileHandler)]
-        fileHandler.setLevel(int(level))
-
+        logUtils.set_level(level)
         return dict(status=doneCode)
 
     # VM-related functions

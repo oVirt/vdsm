@@ -206,3 +206,11 @@ class UserGroupEnforcingHandler(logging.handlers.WatchedFileHandler):
             raise RuntimeError(
                 "Attempt to open log with incorrect credentials")
         return logging.handlers.WatchedFileHandler._open(self)
+
+
+def set_level(level):
+    logging.warning('Setting loglevel to %s', level)
+    handlers = logging.getLogger().handlers
+    [fileHandler] = [h for h in handlers if
+                     isinstance(h, logging.FileHandler)]
+    fileHandler.setLevel(int(level))
