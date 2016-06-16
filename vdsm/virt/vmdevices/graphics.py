@@ -18,10 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import logging
-
 import libvirt
 
+from vdsm import supervdsm
 from vdsm.network import api as net_api
 from vdsm import utils
 from vdsm.config import config
@@ -141,7 +140,17 @@ class Graphics(Base):
                 graphics.appendChildWithArgs('channel', name=chan,
                                              mode='secure')
 
-        if self.specParams.get('displayNetwork'):
+        # For the listen type IP to be used, the display network must be OVS.
+        # We assume that the cluster in which the host operates is OVS enabled
+        # and all other hosts in the cluster have the migration hook installed.
+        # The migration hook is responsible to convert ip to net and vice versa
+        display_network = self.specParams.get('displayNetwork')
+        display_ip = self.specParams.get('displayIp', '0')
+        if (display_network and display_ip != '0' and
+                supervdsm.getProxy().ovs_bridge(display_network)):
+            graphics.appendChildWithArgs(
+                'listen', type='address', address=display_ip)
+        elif display_network:
             graphics.appendChildWithArgs(
                 'listen', type='network',
                 network=net_api.netname_o2l(
@@ -243,11 +252,16 @@ def getFirstGraphics(conf):
 def _getNetworkIp(network):
     try:
         nets = net_api.libvirt_networks()
-        device = nets[network].get('iface', network)
+        # On a legacy based network, the device is the iface specified in the
+        # network report (supporting real bridgeless networks).
+        # In case the report or the iface key is missing,
+        # the device is defaulted to the network name (i.e. northbound port).
+        device = (nets[network].get('iface', network)
+                  if network in nets else network)
         ip, _, _, _ = net_api.ip_addrs_info(device)
     except (libvirt.libvirtError, KeyError, IndexError):
         ip = config.get('addresses', 'guests_gateway_ip')
+    finally:
         if ip == '':
             ip = '0'
-        logging.info('network %s: using %s', network, ip)
     return ip
