@@ -1508,6 +1508,14 @@ class HSM(object):
                 "allowed for an untrusted volume." %
                 qemu_info["backingfile"])
 
+        if qemu_format == qemuimg.FORMAT.QCOW2:
+            # Vdsm depends on qemu-img 2.3.0 or later which always reports
+            # 'compat' for qcow2 volumes.
+            qemu_compat = qemu_info["compat"]
+            if not qemuimg.supports_compat(qemu_compat):
+                raise se.ImageVerificationError(
+                    "qcow2 compat %r is not supported" % qemu_compat)
+
     def validateImageMove(self, srcDom, dstDom, imgUUID):
         """
         Determines if the image move is legal.
