@@ -50,6 +50,13 @@ def fake_json_call(data, cmd, **kw):
 
 
 @expandPermutations
+class GeneralTests(TestCaseBase):
+    @permutations((("0.10", True), ("1.1", True), ("10.1", False)))
+    def test_supports_compat(self, compat, result):
+        self.assertEqual(result, qemuimg.supports_compat(compat))
+
+
+@expandPermutations
 class InfoTests(TestCaseBase):
     CLUSTER_SIZE = 65536
 

@@ -48,6 +48,10 @@ class FORMAT:
 _QCOW2_COMPAT_SUPPORTED = ("0.10", "1.1")
 
 
+def supports_compat(compat):
+    return compat in _QCOW2_COMPAT_SUPPORTED
+
+
 class QImgError(Exception):
     def __init__(self, ecode, stdout, stderr, message=None):
         self.ecode = ecode
