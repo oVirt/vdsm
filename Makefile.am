@@ -106,7 +106,10 @@ python3: all
 	fi
 
 # Note: dependencies ordered by time needed to run them
-check-recursive: gitignore abs_imports python3 pyflakes pep8
+check: gitignore abs_imports python3 pyflakes pep8 tests
+
+check-recursive:
+	@true
 
 .PHONY: check-all
 check-all:
@@ -115,6 +118,10 @@ check-all:
 .PHONY: check-unit
 check-unit:
 	$(MAKE) -C tests/ check args='-a type=unit'
+
+.PHONY: tests
+tests:
+	$(MAKE) -C tests/ check
 
 all-local: \
 	vdsm.spec
