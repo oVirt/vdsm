@@ -40,6 +40,10 @@ def set_rp_filter_strict(dev):
     set_rp_filter(dev, _RPFILTER_STRICT)
 
 
+def enable_ipv6(dev):
+    disable_ipv6(dev, disable=False)
+
+
 def disable_ipv6(dev, disable=True):
     with open('/proc/sys/net/ipv6/conf/%s/disable_ipv6' % dev, 'w') as f:
         f.write('1' if disable else '0')
@@ -67,3 +71,27 @@ def is_ipv6_local_auto(dev):
 
     return bool(not is_disabled and
                 is_autoconf and is_accept_ra and is_accept_redirects)
+
+
+def enable_ipv6_local_auto(dev):
+    return _set_ipv6_local_auto(dev, True)
+
+
+def disable_ipv6_local_auto(dev):
+    return _set_ipv6_local_auto(dev, False)
+
+
+def _set_ipv6_local_auto(dev, state):
+    if is_disabled_ipv6(dev):
+        if state:
+            enable_ipv6(dev)
+        else:
+            return
+
+    setstate = '1' if state else '0'
+    with open('/proc/sys/net/ipv6/conf/%s/autoconf' % dev, 'w') as f:
+        f.write(setstate)
+    with open('/proc/sys/net/ipv6/conf/%s/accept_ra' % dev, 'w') as f:
+        f.write(setstate)
+    with open('/proc/sys/net/ipv6/conf/%s/accept_redirects' % dev, 'w') as f:
+        f.write(setstate)

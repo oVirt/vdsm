@@ -21,6 +21,7 @@ from __future__ import absolute_import
 import socket
 import struct
 
+from vdsm import sysctl
 from vdsm.network import errors as ne
 from vdsm.network.errors import ConfigNetworkError
 
@@ -153,3 +154,11 @@ class IPv6(object):
 
 def addrs_info(dev, ipaddrs=None, ipv4_gateway=None):
     return addresses.getIpInfo(dev, ipaddrs, ipv4_gateway)
+
+
+def enable_ipv6_local_auto(dev):
+    sysctl.enable_ipv6_local_auto(dev)
+
+
+def disable_ipv6_local_auto(dev):
+    sysctl.disable_ipv6_local_auto(dev)
