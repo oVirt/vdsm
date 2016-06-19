@@ -97,6 +97,7 @@ BuildRequires: python3-nose
 BuildRequires: python3-six
 BuildRequires: python3-netaddr
 BuildRequires: python3-yaml
+BuildRequires: libselinux-python3
 BuildRequires: libvirt-python3
 %endif # rhel
 %endif # support python3
