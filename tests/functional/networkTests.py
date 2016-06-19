@@ -2668,13 +2668,7 @@ class NetworkTest(TestCaseBase):
     @ValidateRunningAsRoot
     def test_setupNetworks_on_external_bond(self):
         with dummyIf(2) as nics:
-            with open(BONDING_MASTERS, 'w') as bonds:
-                bonds.write('+%s\n' % BONDING_NAME)
-            try:
-                with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
-                    for nic in nics:
-                        linkSet(nic, ['down'])
-                        f.write('+%s\n' % nic)
+            with _create_external_bond(BONDING_NAME, nics):
                 status, msg = self.setupNetworks(
                     {NETWORK_NAME:
                         {'bonding': BONDING_NAME, 'bridged': False}},
@@ -2682,9 +2676,6 @@ class NetworkTest(TestCaseBase):
                 self.assertEqual(status, SUCCESS, msg)
                 self.assertNetworkExists(NETWORK_NAME)
                 self.assertBondExists(BONDING_NAME, nics)
-            finally:
-                with open(BONDING_MASTERS, 'w') as bonds:
-                    bonds.write('-%s\n' % BONDING_NAME)
 
             self.vdsm_net.save_config()
             self.vdsm_net.restoreNetConfig()
@@ -3016,3 +3007,18 @@ HOTPLUG=no""" % (BONDING_NAME, VLAN_ID))
 @memoized
 def switch_to_test():
     return os.environ.get('VDSM_TESTER_SWITCH_TYPE')
+
+
+@contextmanager
+def _create_external_bond(name, slaves):
+    with open(BONDING_MASTERS, 'w') as bonds:
+        bonds.write('+%s\n' % name)
+    try:
+        with open(BONDING_SLAVES % BONDING_NAME, 'w') as f:
+            for slave in slaves:
+                linkSet(slave, ['down'])
+                f.write('+%s\n' % slave)
+        yield
+    finally:
+        with open(BONDING_MASTERS, 'w') as bonds:
+            bonds.write('-%s\n' % name)
