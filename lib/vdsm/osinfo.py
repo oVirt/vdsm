@@ -106,18 +106,34 @@ def _release_name():
         return OSName.UNKNOWN
 
 
-def _parse_node_version(path):
+def _parse_release_file(path):
     data = {}
-    with open(path) as f:
-        for line in f:
-            try:
-                key, value = [kv.strip() for kv in line.split('=', 1)]
-            except ValueError:
-                continue
+    try:
+        with open(path) as f:
+            for line in f:
+                try:
+                    key, value = [kv.strip() for kv in line.split('=', 1)]
+                except ValueError:
+                    continue
 
-            data[key] = value
+                data[key] = value
+    except IOError:
+        logging.exception('Fail to read release file')
+    return data
 
+
+def _parse_node_version(path):
+    data = _parse_release_file(path)
     return data.get('VERSION', ''), data.get('RELEASE', '')
+
+
+def _get_pretty_name():
+    pretty_name = ''
+    if os.path.exists('/etc/os-release'):
+        data = _parse_release_file('/etc/os-release')
+        if data.get('PRETTY_NAME') is not None:
+            pretty_name = data.get('PRETTY_NAME').strip('"')
+    return pretty_name
 
 
 @utils.memoized
@@ -131,6 +147,7 @@ def version():
     version = release_name = ''
 
     osname = _release_name()
+    pretty_name = _get_pretty_name()
     try:
         if osname == OSName.RHEVH or osname == OSName.OVIRT:
             version, release_name = _parse_node_version('/etc/default/version')
@@ -150,7 +167,8 @@ def version():
     except:
         logging.error('failed to find version/release', exc_info=True)
 
-    return dict(release=release_name, version=version, name=osname)
+    return dict(release=release_name, version=version,
+                name=osname, pretty_name=pretty_name)
 
 
 def selinux_status():
