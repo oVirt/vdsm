@@ -4649,6 +4649,10 @@ types:
         -   description: The OS version (eg. 17 for Fedora 17)
             name: version
             type: string
+
+        -   description: The OS pretty name
+            name: pretty_name
+            type: string
         type: object
 
     WatchdogEventAction: &WatchdogEventAction
