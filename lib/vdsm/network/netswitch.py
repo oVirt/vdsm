@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import six
 
+from vdsm.network.ip import address
 from vdsm.network.libvirt import networks as libvirt_nets
 from vdsm.network.netinfo.cache import (libvirtNets2vdsm, get as netinfo_get,
                                         CachingNetInfo)
@@ -137,6 +138,7 @@ def _setup_legacy(networks, bondings, options, in_rollback):
 def _setup_ovs(networks, bondings, options, in_rollback):
     with ovs_switch.transaction(in_rollback, networks, bondings):
         ovs_switch.setup(networks, bondings)
+        _setup_ipv6autoconf(networks)
         connectivity.check(options)
 
 
@@ -163,3 +165,15 @@ def netinfo(compatibility=None):
 @memoized
 def _is_ovs_service_running():
     return service_status('openvswitch', verbose=False) == 0
+
+
+def _setup_ipv6autoconf(networks):
+    # TODO: Move func to IP or LINK level.
+    # TODO: Implicitly disable ipv6 on SB iface/s and fake ifaces (br, bond).
+    for net, attrs in six.iteritems(networks):
+        if 'remove' in attrs:
+            continue
+        if attrs['ipv6autoconf']:
+            address.enable_ipv6_local_auto(net)
+        else:
+            address.disable_ipv6_local_auto(net)
