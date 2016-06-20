@@ -45,6 +45,7 @@ dist_vdsmpylib_PYTHON = \
 	sslutils.py \
 	sysctl.py \
 	taskset.py \
+	throttledlog.py \
 	udevadm.py \
 	utils.py \
 	vdscli.py \
