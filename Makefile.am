@@ -43,6 +43,7 @@ EXTRA_DIST = \
 	autogen.sh \
 	build-aux/pkg-version \
 	contrib/logdb \
+	contrib/logstat \
 	contrib/profile-stats \
 	contrib/repoplot \
 	pylintrc \
