@@ -540,6 +540,7 @@ class JsonRpcServer(object):
                                             JsonRpcInternalError(str(e)),
                                             req.id))
         else:
+            res = True if res is None else res
             self.log.log(logLevel, "Return '%s' in bridge with %s",
                          req.method, res)
             if isinstance(res, Suppressed):
