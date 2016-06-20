@@ -60,6 +60,7 @@ dist_vdsmpylib_PYTHON = \
 	supervdsm.py \
 	sysctl.py \
 	taskset.py \
+	throttledlog.py \
 	udevadm.py \
 	utils.py \
 	v2v.py \
