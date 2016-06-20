@@ -441,16 +441,31 @@ class DowntimeThread(threading.Thread):
         self._downtime = downtime
         self._steps = steps
         self._stop = threading.Event()
+        use_qemu_iterations = config.getboolean(
+            'vars', 'migration_use_iterations')
+
+        self._vm.log.debug(
+            'migration downtime thread will use: %s',
+            'QEMU iterations' if use_qemu_iterations else
+            'elapsed time')
 
         delay_per_gib = config.getint('vars', 'migration_downtime_delay')
         memSize = int(vm.conf['memSize'])
-        self._wait = min(
-            delay_per_gib * memSize / (_MiB_IN_GiB * self._steps),
-            self._WAIT_STEP_LIMIT)
+        if use_qemu_iterations:
+            self._wait = min(
+                delay_per_gib * memSize / (_MiB_IN_GiB * self._steps),
+                self._WAIT_STEP_LIMIT)
+        else:
+            self._wait = (delay_per_gib * max(memSize, 2048) + 1023) / 1024
+
         # do not materialize, keep as generator expression
         self._downtimes = exponential_downtime(self._downtime, self._steps)
-        # we need the first value to support set_initial_downtime
-        self._initial_downtime = next(self._downtimes)
+
+        if use_qemu_iterations:
+            # we need the first value to support set_initial_downtime
+            self._initial_downtime = next(self._downtimes)
+        else:
+            self._initial_downtime = None
 
         self.daemon = True
 
@@ -470,7 +485,10 @@ class DowntimeThread(threading.Thread):
         self._vm.log.debug('migration downtime thread exiting')
 
     def set_initial_downtime(self):
-        self._set_downtime(self._initial_downtime)
+        if self._initial_downtime is not None:
+            self._set_downtime(self._initial_downtime)
+        else:
+            self._vm.log.warning('migration initial downtime disabled')
 
     def stop(self):
         self._vm.log.debug('stopping migration downtime thread')
@@ -521,6 +539,10 @@ class MonitorThread(threading.Thread):
     @utils.traceback()
     def run(self):
         if self.enabled:
+            if not config.getboolean(
+                'vars', 'migration_use_iterations'
+            ):
+                self.downtime_thread.start()
             try:
                 self.monitor_migration()
             finally:
@@ -553,8 +575,9 @@ class MonitorThread(threading.Thread):
         lastDataRemaining = None
         iterationCount = 0
 
-        self._vm.log.debug('setting initial migration downtime')
-        self.downtime_thread.set_initial_downtime()
+        if not self.downtime_thread.is_alive():
+            self._vm.log.debug('setting initial migration downtime')
+            self.downtime_thread.set_initial_downtime()
 
         while not self._stop.isSet():
             stopped = self._stop.wait(self._MIGRATION_MONITOR_INTERVAL)
@@ -587,7 +610,8 @@ class MonitorThread(threading.Thread):
                 iterationCount += 1
                 self._vm.log.debug('new iteration detected: %i',
                                    iterationCount)
-                if iterationCount == 1:
+                if (iterationCount == 1 and
+                   not self._dowtime_thread.is_alive()):
                     # it does not make sense to do any adjustments before
                     # first iteration.
                     self.downtime_thread.start()

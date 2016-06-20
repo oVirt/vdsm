@@ -231,6 +231,11 @@ parameters = [
         ('migration_create_timeout', '600',
             'Time in seconds defining how long we are going to wait for '
             'create migration response.'),
+
+        ('migration_use_iterations', 'true',
+            'Adjust migration downtime considering QEMU iterations, not '
+            'elapsed time. This option is provisional for v4.17.z only, '
+            'it should not be expected to be found in v4.18.z or greater.'),
     ]),
 
     # Section: [rpc]
