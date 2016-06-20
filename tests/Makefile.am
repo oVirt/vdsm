@@ -130,6 +130,7 @@ test_modules = \
 	toolTests.py \
 	toolBondingTests.py \
 	transportWrapperTests.py \
+	throttledlog_test.py \
 	unicode_test.py \
 	utilsTests.py \
 	vdscliTests.py \
