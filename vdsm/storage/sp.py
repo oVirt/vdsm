@@ -419,32 +419,39 @@ class StoragePool(object):
 
             self.spmRole = SPM_FREE
 
-    def _upgradePool(self, targetDomVersion):
-        with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
-                                      rm.LockType.exclusive):
-            sd.validateDomainVersion(targetDomVersion)
-            self.log.info("Trying to upgrade master domain `%s`",
-                          self.masterDomain.sdUUID)
-            with rmanager.acquireResource(sc.STORAGE, self.masterDomain.sdUUID,
-                                          rm.LockType.exclusive):
-                self._convertDomain(self.masterDomain, str(targetDomVersion))
+    def _upgradePool(self, targetDomVersion, lockTimeout=None):
+        try:
+            with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
+                                          rm.LockType.exclusive,
+                                          timeout=lockTimeout):
+                sd.validateDomainVersion(targetDomVersion)
+                self.log.info("Trying to upgrade master domain `%s`",
+                              self.masterDomain.sdUUID)
+                with rmanager.acquireResource(sc.STORAGE,
+                                              self.masterDomain.sdUUID,
+                                              rm.LockType.exclusive):
+                    self._convertDomain(self.masterDomain,
+                                        str(targetDomVersion))
 
-            self.log.debug("Marking all domains for upgrade")
-            self._domainsToUpgrade = self.getDomains(activeOnly=True).keys()
-            try:
-                self._domainsToUpgrade.remove(self.masterDomain.sdUUID)
-            except ValueError:
-                pass
+                self.log.debug("Marking all domains for upgrade")
+                self._domainsToUpgrade = self.getDomains(activeOnly=True)\
+                    .keys()
+                try:
+                    self._domainsToUpgrade.remove(self.masterDomain.sdUUID)
+                except ValueError:
+                    pass
 
-            self.log.debug("Registering with state change event")
-            self.domainMonitor.onDomainStateChange.register(
-                self._upgradeCallback)
-            self.log.debug("Running initial domain upgrade threads")
-            for sdUUID in self._domainsToUpgrade:
-                concurrent.thread(self._upgradeCallback,
-                                  args=(sdUUID, True),
-                                  kwargs={"__securityOverride": True},
-                                  logger=self.log.name).start()
+                self.log.debug("Registering with state change event")
+                self.domainMonitor.onDomainStateChange.register(
+                    self._upgradeCallback)
+                self.log.debug("Running initial domain upgrade threads")
+                for sdUUID in self._domainsToUpgrade:
+                    concurrent.thread(self._upgradeCallback,
+                                      args=(sdUUID, True),
+                                      kwargs={"__securityOverride": True},
+                                      logger=self.log.name).start()
+        except rm.RequestTimedOutError:
+            raise se.PoolUpgradeInProgress(self.spUUID)
 
     @unsecured
     def __createMailboxMonitor(self):
