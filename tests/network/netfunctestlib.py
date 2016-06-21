@@ -182,6 +182,47 @@ class NetFuncTestCase(VdsmTestCase):
         self.update_running_config()
         self.assertNotIn(net, self.running_config.networks)
 
+    def assertBond(self, bond, attrs):
+        self.assertBondExists(bond)
+        self.assertBondSlaves(bond, attrs['nics'])
+        if 'options' in attrs:
+            self.assertBondOptions(bond, attrs['options'])
+        self.assertBondExistsInRunninng(bond, attrs['nics'])
+
+    def assertBondExists(self, bond):
+        self.assertIn(bond, self.netinfo.bondings)
+
+    def assertBondSlaves(self, bond, nics):
+        self.assertEqual(
+            set(nics), set(self.netinfo.bondings[bond]['slaves']))
+
+    def assertBondOptions(self, bond, options):
+        running_opts = self.netinfo.bondings[bond]['opts']
+        normalized_active_opts = _normalize_bond_opts(running_opts)
+        self.assertLessEqual(set(options.split()), set(normalized_active_opts))
+
+    def assertBondExistsInRunninng(self, bond, nics):
+        if not USING_UNIFIED_PERSISTENCE:
+            return
+
+        self.assertIn(bond, self.running_config.bonds)
+        self.assertEqual(
+            set(nics), set(self.running_config.bonds[bond]['nics']))
+
+    def assertNoBond(self, bond):
+        self.assertNoBondExists(bond)
+        self.assertNoBondExistsInRunning(bond)
+
+    def assertNoBondExists(self, bond):
+        self.assertNotIn(bond, self.netinfo.bondings)
+
+    def assertNoBondExistsInRunning(self, bond):
+        if not USING_UNIFIED_PERSISTENCE:
+            return
+
+        self.update_running_config()
+        self.assertNotIn(bond, self.running_config.bonds)
+
     def assert_kernel_vs_running_config(self):
         """
         This is a special test, that checks setup integrity through
@@ -216,6 +257,7 @@ class SetupNetworks(object):
 
     def __call__(self, networks, bonds, options):
         self.setup_networks = networks
+        self.setup_bonds = bonds
 
         status, msg = self.vdsm_proxy.setupNetworks(networks, bonds, options)
         if status != SUCCESS:
@@ -240,9 +282,12 @@ class SetupNetworks(object):
 
     def _cleanup(self):
         networks_caps = self.vdsm_proxy.netinfo.networks
+        bonds_caps = self.vdsm_proxy.netinfo.bondings
         NETSETUP = {net: {'remove': True}
                     for net in self.setup_networks if net in networks_caps}
-        status, msg = self.vdsm_proxy.setupNetworks(NETSETUP, {}, NOCHK)
+        BONDSETUP = {bond: {'remove': True}
+                     for bond in self.setup_bonds if bond in bonds_caps}
+        status, msg = self.vdsm_proxy.setupNetworks(NETSETUP, BONDSETUP, NOCHK)
         return status, msg
 
 
@@ -269,3 +314,7 @@ def _normalize_qos_config(qos):
                 del attrs['m1']
             if attrs.get('d') == 0:
                 del attrs['d']
+
+
+def _normalize_bond_opts(opts):
+    return [opt + '=' + val for (opt, val) in six.iteritems(opts)]

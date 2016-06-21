@@ -316,6 +316,20 @@ def dummy_device(prefix='dummy_', max_length=11):
 
 
 @contextmanager
+def dummy_devices(amount, prefix='dummy_', max_length=11):
+    dummy_interfaces = [Dummy(prefix, max_length) for _ in range(amount)]
+    created = []
+    try:
+        for iface in dummy_interfaces:
+            iface.create()
+            created.append(iface)
+        yield [iface.devName for iface in created]
+    finally:
+        for iface in created:
+            iface.remove()
+
+
+@contextmanager
 def veth_pair(prefix='veth_', max_length=15):
     """
     Yield a pair of veth devices. This assumes root privileges (currently
