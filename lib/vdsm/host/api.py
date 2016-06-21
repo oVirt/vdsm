@@ -123,8 +123,6 @@ def report_stats(hoststats):
                 if_info = hoststats['network'][interface]
                 net_prefix = prefix + '.network_interfaces.' + interface
                 report[net_prefix + '.speed'] = if_info['speed']
-                report[net_prefix + '.rx_rate'] = if_info['rxRate']
-                report[net_prefix + '.tx_rate'] = if_info['txRate']
                 report[net_prefix + '.rx_errors'] = if_info['rxErrors']
                 report[net_prefix + '.tx_errors'] = if_info['txErrors']
                 report[net_prefix + '.rx_dropped'] = if_info['rxDropped']

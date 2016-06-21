@@ -1626,12 +1626,6 @@ types:
             type: string
             datatype: uint
 
-        -   description: The rate of incoming packets (as a percentage
-                of speed)
-            name: rxRate
-            type: string
-            datatype: float
-
         -   description: The network device name
             name: name
             type: string
@@ -1658,12 +1652,6 @@ types:
             name: txErrors
             type: string
             datatype: uint
-
-        -   description: The rate of outgoing packets (as a percentage
-                of speed)
-            name: txRate
-            type: string
-            datatype: float
 
         -   description: The interface speed (in Megabits/s)
             name: speed
@@ -1912,12 +1900,6 @@ types:
             name: swapTotal
             type: int
 
-        -   description: Incoming packet rate (as a percentage of total
-                capacity)
-            name: rxRate
-            type: string
-            datatype: float
-
         -   description: The number of VMs migrating to this host
             name: incomingVmMigrations
             type: uint
@@ -1940,12 +1922,6 @@ types:
 
         -   description: Ratio of CPU time spent idle
             name: cpuIdle
-            type: string
-            datatype: float
-
-        -   description: Outgoing packet rate (as a percentage of total
-                capacity)
-            name: txRate
             type: string
             datatype: float
 
@@ -4501,12 +4477,6 @@ types:
                 type: string
                 datatype: uint
 
-            -   description: The rate of incoming packets (as a percentage
-                    of speed)
-                name: rxRate
-                type: string
-                datatype: float
-
             -   description: The network device name
                 name: name
                 type: string
@@ -4537,12 +4507,6 @@ types:
                 name: txErrors
                 type: string
                 datatype: uint
-
-            -   description: The rate of outgoing packets (as a percentage
-                    of speed)
-                name: txRate
-                type: string
-                datatype: float
 
             -   description: The interface speed (in Megabits/s)
                 name: speed

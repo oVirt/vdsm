@@ -137,11 +137,8 @@ class MissingSample(Exception):
 
 
 def _get_interfaces_stats(first_sample, last_sample):
-    interval = last_sample.timestamp - first_sample.timestamp
-
     rx = tx = rxDropped = txDropped = 0
     stats = {'network': {}}
-    total_rate = 0
     for ifid in last_sample.interfaces:
         # it skips hot-plugged devices if we haven't enough information
         # to count stats from it
@@ -149,7 +146,6 @@ def _get_interfaces_stats(first_sample, last_sample):
             continue
 
         ifrate = last_sample.interfaces[ifid].speed or 1000
-        Mbps2Bps = (10 ** 6) / 8
         thisRx = (
             last_sample.interfaces[ifid].rx -
             first_sample.interfaces[ifid].rx
@@ -158,12 +154,6 @@ def _get_interfaces_stats(first_sample, last_sample):
             last_sample.interfaces[ifid].tx -
             first_sample.interfaces[ifid].tx
             ) % NETSTATS_BOUND
-        rxRate = 100.0 * thisRx / interval / ifrate / Mbps2Bps
-        txRate = 100.0 * thisTx / interval / ifrate / Mbps2Bps
-        if txRate > 100 or rxRate > 100:
-            txRate = min(txRate, 100.0)
-            rxRate = min(rxRate, 100.0)
-            logging.debug('Rate above 100%%.')
         iface = last_sample.interfaces[ifid]
         stats['network'][ifid] = {
             'name': ifid, 'speed': str(ifrate),
@@ -172,8 +162,6 @@ def _get_interfaces_stats(first_sample, last_sample):
             'rxErrors': str(iface.rxErrors),
             'txErrors': str(iface.txErrors),
             'state': iface.operstate,
-            'rxRate': '%.1f' % rxRate,
-            'txRate': '%.1f' % txRate,
             'rx': str(iface.rx),
             'tx': str(iface.tx),
             'sampleTime': last_sample.timestamp,
@@ -182,15 +170,7 @@ def _get_interfaces_stats(first_sample, last_sample):
         tx += thisTx
         rxDropped += last_sample.interfaces[ifid].rxDropped
         txDropped += last_sample.interfaces[ifid].txDropped
-        total_rate += ifrate
 
-    total_bytes_per_sec = (total_rate or 1000) * (10 ** 6) / 8
-    stats['rxRate'] = 100.0 * rx / interval / total_bytes_per_sec
-    stats['txRate'] = 100.0 * tx / interval / total_bytes_per_sec
-    if stats['txRate'] > 100 or stats['rxRate'] > 100:
-        stats['txRate'] = min(stats['txRate'], 100.0)
-        stats['rxRate'] = min(stats['rxRate'], 100.0)
-        logging.debug(stats)
     stats['rxDropped'] = rxDropped
     stats['txDropped'] = txDropped
 
@@ -235,8 +215,6 @@ def _empty_stats():
         'cpuUser': 0.0,
         'cpuSys': 0.0,
         'cpuIdle': 100.0,
-        'rxRate': 0.0,  # REQUIRED_FOR: engine < 3.6
-        'txRate': 0.0,  # REQUIRED_FOR: engine < 3.6
         'cpuSysVdsmd': 0.0,
         'cpuUserVdsmd': 0.0,
         'elapsedTime': _elapsed_time(),

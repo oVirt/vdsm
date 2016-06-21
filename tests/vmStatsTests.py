@@ -306,8 +306,6 @@ class NetworkStatsTests(VmStatsTestCase):
         'rxDropped',
         'txErrors',
         'txDropped',
-        'rxRate',
-        'txRate',
         'rx',
         'tx',
         'sampleTime',

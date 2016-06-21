@@ -131,10 +131,8 @@ def randomizeRuntimeStats(stats):
 
     # Network:
     for net in stats['network'].values():
-        net['rxRate'] = '%.1f' % (random.uniform(0, 100))
         net['rxDropped'] = str(random.randint(0, 2*31))
         net['rxErrors'] = str(random.randint(0, 2*31))
-        net['txRate'] = '%.1f' % (random.uniform(0, 100))
         net['txDropped'] = str(random.randint(0, 2*31))
         net['txErrors'] = str(random.randint(0, 2*31))
 

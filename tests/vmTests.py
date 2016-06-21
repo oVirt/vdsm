@@ -1382,7 +1382,6 @@ class TestVmStats(TestCaseBase):
             'txErrors': '11', 'txDropped': '12',
             'macAddr': MAC, 'name': 'vnettest',
             'speed': '1000', 'state': 'unknown',
-            'rxRate': '100.0', 'txRate': '33.3',
             'rx': '0', 'tx': '625000000',
         })
 

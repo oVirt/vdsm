@@ -309,24 +309,6 @@ def _nic_traffic(vm_obj, name, model, mac,
     with _skip_if_missing_stats(vm_obj):
         if_stats['rx'] = str(end_sample['net.%d.rx.bytes' % end_index])
         if_stats['tx'] = str(end_sample['net.%d.tx.bytes' % end_index])
-        rx_delta = (
-            end_sample['net.%d.rx.bytes' % end_index] -
-            start_sample['net.%d.rx.bytes' % start_index]
-        )
-        tx_delta = (
-            end_sample['net.%d.tx.bytes' % end_index] -
-            start_sample['net.%d.tx.bytes' % start_index]
-        )
-
-        if_rx_bytes = (100.0 *
-                       (rx_delta % 2 ** 32) /
-                       interval / if_speed / _MBPS_TO_BPS)
-        if_tx_bytes = (100.0 *
-                       (tx_delta % 2 ** 32) /
-                       interval / if_speed / _MBPS_TO_BPS)
-
-        if_stats['rxRate'] = '%.1f' % if_rx_bytes
-        if_stats['txRate'] = '%.1f' % if_tx_bytes
 
     if_stats['sampleTime'] = monotonic_time()
 
