@@ -3352,7 +3352,7 @@ class HSM(object):
         # activateSD/deactivateSD) as the operation uses the pool metadata.
         vars.task.getExclusiveLock(STORAGE, spUUID)
         pool = self.getPool(spUUID)
-        pool._upgradePool(targetDomVersion)
+        pool._upgradePool(targetDomVersion, lockTimeout=0)
         return {"upgradeStatus": "started"}
 
     def _getDomsStats(self, domainMonitor, doms):
