@@ -175,8 +175,8 @@ class StoragePool(object):
                            exc_info=True)
             return
 
-        with rmanager.acquireResource(sc.STORAGE, "upgrade_" + sdUUID,
-                                      rm.LockType.exclusive):
+        with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
+                                      rm.LockType.shared):
             with rmanager.acquireResource(sc.STORAGE, sdUUID,
                                           rm.LockType.exclusive):
                 if sdUUID not in self._domainsToUpgrade:
@@ -352,31 +352,13 @@ class StoragePool(object):
         self.log.debug("Shutting down upgrade process")
         with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                       rm.LockType.exclusive):
-            domains = self._domainsToUpgrade[:]
             try:
                 self.domainMonitor.onDomainStateChange.unregister(
                     self._upgradeCallback)
             except KeyError:
                 pass
-            requests = []
 
-            def cancelUpgrade(sdUUID, req, res):
-                try:
-                    self._domainsToUpgrade.remove(sdUUID)
-                except ValueError:
-                    pass
-
-                res.release()
-
-            for sdUUID in domains:
-                req = rmanager.registerResource(sc.STORAGE,
-                                                "upgrade_" + sdUUID,
-                                                rm.LockType.exclusive,
-                                                partial(cancelUpgrade, sdUUID))
-                requests.append(req)
-
-            for req in requests:
-                req.wait()
+            self._domainsToUpgrade = []
 
     @classmethod
     def cleanupMasterMount(cls):
@@ -440,9 +422,6 @@ class StoragePool(object):
     def _upgradePool(self, targetDomVersion):
         with rmanager.acquireResource(sc.STORAGE, "upgrade_" + self.spUUID,
                                       rm.LockType.exclusive):
-            if len(self._domainsToUpgrade) > 0:
-                raise se.PoolUpgradeInProgress(self.spUUID)
-
             sd.validateDomainVersion(targetDomVersion)
             self.log.info("Trying to upgrade master domain `%s`",
                           self.masterDomain.sdUUID)
@@ -461,11 +440,7 @@ class StoragePool(object):
             self.domainMonitor.onDomainStateChange.register(
                 self._upgradeCallback)
             self.log.debug("Running initial domain upgrade threads")
-            # We need to copy the list as the domain monitor registered
-            # callback and the initiated update threads may modify the list
-            # while we iterate over it.
-            # http://bugzilla.redhat.com/1319523
-            for sdUUID in self._domainsToUpgrade[:]:
+            for sdUUID in self._domainsToUpgrade:
                 concurrent.thread(self._upgradeCallback,
                                   args=(sdUUID, True),
                                   kwargs={"__securityOverride": True},
