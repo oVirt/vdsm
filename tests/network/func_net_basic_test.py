@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+
 from nose.plugins.attrib import attr
 
 from .netfunctestlib import NetFuncTestCase, NOCHK
@@ -27,19 +28,31 @@ from .nettestlib import dummy_device
 NETWORK_NAME = 'test-network'
 
 
-@attr(type='functional')
-class NetworkBasicTest(NetFuncTestCase):
+class NetworkBasicTemplate(NetFuncTestCase):
+    __test__ = False
 
     def test_add_net_based_on_nic(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic}}
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
 
     def test_remove_net_based_on_nic(self):
         with dummy_device() as nic:
-            NETCREATE = {NETWORK_NAME: {'nic': nic}}
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'switch': self.switch}}
             NETREMOVE = {NETWORK_NAME: {'remove': True}}
             with self.setupNetworks(NETCREATE, {}, NOCHK):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
                 self.assertNoNetwork(NETWORK_NAME)
+
+
+@attr(type='functional', switch='legacy')
+class NetworkCreateBasicLegacyTest(NetworkBasicTemplate):
+    __test__ = True
+    switch = 'legacy'
+
+
+@attr(type='functional', switch='ovs')
+class NetworkCreateBasicOvsTest(NetworkBasicTemplate):
+    __test__ = True
+    switch = 'ovs'
