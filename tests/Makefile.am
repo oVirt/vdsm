@@ -192,9 +192,7 @@ blacklist_modules_python3 = \
 	network/conf_persistence_test.py \
 	network/conf_test.py \
 	network/config_network_test.py \
-	network/connectivity_test.py \
 	network/hook_ovs_test.py \
-	network/ip_test.py \
 	network/iproute2_test.py \
 	network/ipwrapper_test.py \
 	network/link_test.py \
@@ -202,8 +200,6 @@ blacklist_modules_python3 = \
 	network/ovs_driver_test.py \
 	network/ovs_info_test.py \
 	network/ovs_test.py \
-	network/qos_test.py \
-	network/sourcerouting_test.py \
 	network/tc_test.py \
 	network/unified_persistence_test.py \
 	numaUtilsTests.py \
