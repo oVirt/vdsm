@@ -160,6 +160,24 @@ class NetFuncTestCase(VdsmTestCase):
         bridged = netattrs.get('bridged')
         self.assertEqual(bridged, netconf.get('bridged'))
 
+    def assertNoNetwork(self, netname):
+        self.assertNoNetworkExists(netname)
+        self.assertNoBridgeExists(netname)
+        self.assertNoNetworkExistsInRunning(netname)
+
+    def assertNoNetworkExists(self, net):
+        self.assertNotIn(net, self.netinfo.networks)
+
+    def assertNoBridgeExists(self, bridge):
+        self.assertNotIn(bridge, self.netinfo.bridges)
+
+    def assertNoNetworkExistsInRunning(self, net):
+        if not USING_UNIFIED_PERSISTENCE:
+            return
+
+        self.update_running_config()
+        self.assertNotIn(net, self.running_config.networks)
+
     def assert_kernel_vs_running_config(self):
         """
         This is a special test, that checks setup integrity through
