@@ -28,10 +28,18 @@ NETWORK_NAME = 'test-network'
 
 
 @attr(type='functional')
-class NetworkCreateBasicTest(NetFuncTestCase):
+class NetworkBasicTest(NetFuncTestCase):
 
     def test_add_net_based_on_nic(self):
         with dummy_device() as nic:
-            NETSETUP = {NETWORK_NAME: {'nic': nic}}
-            with self.setupNetworks(NETSETUP, {}, NOCHK):
-                self.assertNetwork(NETWORK_NAME, NETSETUP[NETWORK_NAME])
+            NETCREATE = {NETWORK_NAME: {'nic': nic}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+
+    def test_remove_net_based_on_nic(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK_NAME: {'nic': nic}}
+            NETREMOVE = {NETWORK_NAME: {'remove': True}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                self.setupNetworks(NETREMOVE, {}, NOCHK)
+                self.assertNoNetwork(NETWORK_NAME)
