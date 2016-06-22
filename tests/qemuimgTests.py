@@ -18,10 +18,15 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import json
+import os
+from functools import partial
+
 from monkeypatch import MonkeyPatchScope
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import permutations, expandPermutations
 from testlib import make_config
+from testlib import namedTemporaryDir
 from vdsm import qemuimg
 from vdsm import commands
 from vdsm import exception
@@ -31,77 +36,75 @@ QEMU_IMG = qemuimg._qemuimg.cmd
 CONFIG = make_config([('irs', 'qcow2_compat', '0.10')])
 
 
+def fake_json_call(data, cmd, **kw):
+    return 0, json.dumps(data), []
+
+
+@expandPermutations
 class InfoTests(TestCaseBase):
+    CLUSTER_SIZE = 65536
+
+    def _fake_info(self):
+        return {
+            "virtual-size": 1048576,
+            "filename": "leaf.img",
+            "cluster-size": self.CLUSTER_SIZE,
+            "format": "qcow2",
+            "actual-size": 200704,
+            "format-specific": {
+                "type": "qcow2",
+                "data": {
+                    "compat": "1.1",
+                    "lazy-refcounts": False,
+                    "refcount-bits": 16,
+                    "corrupt": False
+                }
+            },
+            "backing-filename": "/var/tmp/test.img",
+            "dirty-flag": False
+        }
+
+    def test_info(self):
+        with namedTemporaryDir() as tmpdir:
+            base_path = os.path.join(tmpdir, 'base.img')
+            leaf_path = os.path.join(tmpdir, 'leaf.img')
+            size = 1048576
+            leaf_fmt = qemuimg.FORMAT.QCOW2
+            qemuimg.create(base_path, size=size, format=qemuimg.FORMAT.RAW)
+            qemuimg.create(leaf_path, format=leaf_fmt, backing=base_path)
+            info = qemuimg.info(leaf_path)
+            self.assertEqual(leaf_fmt, info['format'])
+            self.assertEqual(size, info['virtualsize'])
+            self.assertEqual(self.CLUSTER_SIZE, info['clustersize'])
+            self.assertEqual(base_path, info['backingfile'])
 
     def test_parse_error(self):
         def call(cmd, **kw):
-            out = ["image: leaf.img", "invalid file format line"]
-            return 0, out, []
+            out = "image: leaf.img\ninvalid file format line"
+            return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):
             self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
 
-    def test_qemu1_no_backing_file(self):
-        def call(cmd, **kw):
-            out = ["image: leaf.img",
-                   "file format: qcow2",
-                   "virtual size: 1.0G (1073741824 bytes)",
-                   "disk size: 196K",
-                   "cluster_size: 65536"]
-            return 0, out, []
+    @permutations((('format',), ('virtual-size',)))
+    def test_missing_required_field_raises(self, field):
+        data = self._fake_info()
+        del data[field]
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(fake_json_call, data))]):
+            self.assertRaises(qemuimg.QImgError, qemuimg.info, 'leaf.img')
 
-        with MonkeyPatchScope([(commands, "execCmd", call)]):
-            info = qemuimg.info('leaf.img')
-            self.assertNotIn('backingfile', info)
-
-    def test_qemu1_backing(self):
-        def call(cmd, **kw):
-            out = ["image: leaf.img",
-                   "file format: qcow2",
-                   "virtual size: 1.0G (1073741824 bytes)",
-                   "disk size: 196K",
-                   "cluster_size: 65536",
-                   "backing file: base.img (actual path: /tmp/base.img)"]
-            return 0, out, []
-
-        with MonkeyPatchScope([(commands, "execCmd", call)]):
-            info = qemuimg.info('leaf.img')
-            self.assertEquals('base.img', info['backingfile'])
-
-    def test_qemu2_no_backing_file(self):
-        def call(cmd, **kw):
-            out = ["image: leaf.img",
-                   "file format: qcow2",
-                   "virtual size: 1.0G (1073741824 bytes)",
-                   "disk size: 196K",
-                   "cluster_size: 65536",
-                   "Format specific information:",
-                   "    compat: 1.1",
-                   "    lazy refcounts: false"]
-            return 0, out, []
-
-        with MonkeyPatchScope([(commands, "execCmd", call)]):
-            info = qemuimg.info('leaf.img')
-            self.assertEquals('qcow2', info['format'])
-            self.assertEquals(1073741824, info['virtualsize'])
-            self.assertEquals(65536, info['clustersize'])
-            self.assertNotIn('backingfile', info)
-
-    def test_qemu2_backing_no_cluster(self):
-        def call(cmd, **kw):
-            out = ["image: leaf.img",
-                   "file format: qcow2",
-                   "virtual size: 1.0G (1073741824 bytes)",
-                   "disk size: 196K",
-                   "backing file: base.img (actual path: /tmp/base.img)",
-                   "Format specific information:",
-                   "    compat: 1.1",
-                   "    lazy refcounts: false"]
-            return 0, out, []
-
-        with MonkeyPatchScope([(commands, "execCmd", call)]):
-            info = qemuimg.info('leaf.img')
-            self.assertEquals('base.img', info['backingfile'])
+    @permutations((
+        ('backing-filename', 'backingfile'),
+        ('cluster-size', 'clustersize'),
+    ))
+    def test_optional_fields(self, qemu_field, info_field):
+        data = self._fake_info()
+        del data[qemu_field]
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(fake_json_call, data))]):
+            info = qemuimg.info('unused')
+            self.assertNotIn(info_field, info)
 
 
 class CreateTests(TestCaseBase):
@@ -213,32 +216,30 @@ class ConvertTests(TestCaseBase):
 
 class CheckTests(TestCaseBase):
 
-    def test_offset_with_stats(self):
-        def call(cmd, **kw):
-            out = ["No errors were found on the image.",
-                   "65157/98304 = 66.28% allocated, 0.00% fragmented, 0.00% "
-                   "compressed clusters",
-                   "Image end offset: 4271243264"]
-            return 0, out, []
+    def _fake_info(self):
+        return {
+            "image-end-offset": 262144,
+            "total-clusters": 16,
+            "check-errors": 0,
+            "filename": "/var/tmp/leaf.img",
+            "format": "qcow2"
+        }
 
-        with MonkeyPatchScope([(commands, "execCmd", call)]):
+    def test_check(self):
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(fake_json_call, self._fake_info()))]):
             check = qemuimg.check('unused')
-            self.assertEquals(4271243264, check['offset'])
-
-    def test_offset_without_stats(self):
-        def call(cmd, **kw):
-            out = ["No errors were found on the image.",
-                   "Image end offset: 4271243264"]
-            return 0, out, []
-
-        with MonkeyPatchScope([(commands, "execCmd", call)]):
-            check = qemuimg.check('unused')
-            self.assertEquals(4271243264, check['offset'])
+            self.assertEqual(262144, check['offset'])
 
     def test_offset_no_match(self):
+        with MonkeyPatchScope([(commands, "execCmd",
+                                partial(fake_json_call, {}))]):
+            self.assertRaises(qemuimg.QImgError, qemuimg.check, 'unused')
+
+    def test_parse_error(self):
         def call(cmd, **kw):
-            out = ["All your base are belong to us."]
-            return 0, out, []
+            out = "image: leaf.img\ninvalid file format line"
+            return 0, out, ""
 
         with MonkeyPatchScope([(commands, "execCmd", call)]):
             self.assertRaises(qemuimg.QImgError, qemuimg.check, 'unused')

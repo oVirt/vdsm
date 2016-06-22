@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+import json
 import logging
 import os
 import re
@@ -46,32 +47,6 @@ class FORMAT:
 
 _QCOW2_COMPAT_SUPPORTED = ("0.10", "1.1")
 
-__iregex = {
-    'format': re.compile("^file format: (?P<value>\w+)$"),
-    'virtualsize': re.compile("^virtual size: "
-                              "[\d.]+[KMGT] \((?P<value>\d+) bytes\)$"),
-    'clustersize': re.compile("^cluster_size: (?P<value>\d+)$"),
-    'backingfile': re.compile("^backing file: (?P<value>.+) \(actual path"),
-    'offset': re.compile("^Image end offset: (?P<value>\d+)$"),
-}
-
-# The first row of qemu-img info output where optional fields may appear
-_INFO_OPTFIELDS_STARTIDX = 4
-
-# The first row of qemu-img check output where the 'offset' may appear
-_CHECK_OPTFIELDS_STARTIDX = 1
-
-
-class _RegexSearchError(Exception):
-    pass
-
-
-def __iregexSearch(pattern, text):
-    m = __iregex[pattern].search(text)
-    if m is None:
-        raise _RegexSearchError()
-    return m.group("value")
-
 
 class QImgError(Exception):
     def __init__(self, ecode, stdout, stderr, message=None):
@@ -86,34 +61,33 @@ class QImgError(Exception):
 
 
 def info(image, format=None):
-    cmd = [_qemuimg.cmd, "info"]
+    cmd = [_qemuimg.cmd, "info", "--output", "json"]
 
     if format:
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
-
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL, raw=True)
     if rc != 0:
         raise QImgError(rc, out, err)
 
     try:
-        info = {
-            'format': __iregexSearch("format", out[1]),
-            'virtualsize': int(__iregexSearch("virtualsize", out[2])),
-        }
-    except _RegexSearchError:
-        raise QImgError(rc, out, err, "unable to parse qemu-img info output")
+        qemu_info = _parse_qemuimg_json(out)
+    except ValueError:
+        raise QImgError(rc, out, err, "Failed to process qemu-img output")
 
-    # Scan for optional fields in the output
-    row = _INFO_OPTFIELDS_STARTIDX
-    for field, filterFn in (('clustersize', int), ('backingfile', str)):
-        try:
-            info[field] = filterFn(__iregexSearch(field, out[row]))
-        except (_RegexSearchError, IndexError):
-            pass
-        else:
-            row = row + 1
+    try:
+        info = {
+            'format': qemu_info['format'],
+            'virtualsize': qemu_info['virtual-size'],
+        }
+    except KeyError as key:
+        raise QImgError(rc, out, err, "Missing field: %r" % key)
+
+    if 'cluster-size' in qemu_info:
+        info['clustersize'] = qemu_info['cluster-size']
+    if 'backing-filename' in qemu_info:
+        info['backingfile'] = qemu_info['backing-filename']
 
     return info
 
@@ -148,7 +122,7 @@ def create(image, size=None, format=None, backing=None, backingFormat=None):
 
 
 def check(image, format=None):
-    cmd = [_qemuimg.cmd, "check"]
+    cmd = [_qemuimg.cmd, "check", "--output", "json"]
 
     if format:
         cmd.extend(("-f", format))
@@ -159,18 +133,15 @@ def check(image, format=None):
     # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
         raise QImgError(rc, out, err)
-    # Scan for 'offset' in the output
-    for row in range(_CHECK_OPTFIELDS_STARTIDX, len(out)):
-        try:
-            check = {
-                'offset': int(__iregexSearch("offset", out[row]))
-            }
-            return check
-        except _RegexSearchError:
-            pass
-        except:
-            break
-    raise QImgError(rc, out, err, "unable to parse qemu-img check output")
+
+    try:
+        qemu_check = _parse_qemuimg_json(out)
+    except ValueError:
+        raise QImgError(rc, out, err, "Failed to process qemu-img output")
+    try:
+        return {"offset": qemu_check["image-end-offset"]}
+    except KeyError:
+        raise QImgError(rc, out, err, "unable to parse qemu-img check output")
 
 
 def convert(srcImage, dstImage, srcFormat=None, dstFormat=None,
@@ -327,3 +298,10 @@ def _qcow2_compat():
         raise exception.InvalidConfiguration(
             "Unsupported value for irs:qcow2_compat: %r" % value)
     return value
+
+
+def _parse_qemuimg_json(output):
+    obj = json.loads(output)
+    if not isinstance(obj, dict):
+        raise ValueError("not a JSON object")
+    return obj
