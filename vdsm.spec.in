@@ -954,6 +954,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/virt/recovery.py*
 %{_datadir}/%{vdsm_name}/virt/vmtune.py*
 %{_datadir}/%{vdsm_name}/virt/vm.py*
+%{_datadir}/%{vdsm_name}/virt/vm_migrate_hook.py*
 %{_datadir}/%{vdsm_name}/virt/vmxml.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/__init__.py*
 %{_datadir}/%{vdsm_name}/virt/vmdevices/common.py*
@@ -986,6 +987,7 @@ exit 0
 %{_libexecdir}/%{vdsm_name}/ovirt_functions.sh
 %{_libexecdir}/%{vdsm_name}/vdsm-gencerts.sh
 %{_libexecdir}/%{vdsm_name}/vdsmd_init_common.sh
+%{_libexecdir}/%{vdsm_name}/vm_migrate_hook.py*
 %{_libexecdir}/%{vdsm_name}/kvm2ovirt
 %{_libexecdir}/%{vdsm_name}/wait_for_ipv4s
 %{_datadir}/%{vdsm_name}/supervdsm_api/__init__.py*

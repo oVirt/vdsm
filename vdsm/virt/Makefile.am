@@ -29,8 +29,13 @@ dist_vdsm_virt_PYTHON = \
 	migration.py \
 	recovery.py \
 	vm.py \
+	vm_migrate_hook.py \
 	vmtune.py \
 	vmxml.py \
+	$(NULL)
+
+dist_vdsmexec_SCRIPTS = \
+	vm_migrate_hook.py \
 	$(NULL)
 
 EXTRA_DIST = \

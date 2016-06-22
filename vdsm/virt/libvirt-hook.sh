@@ -20,6 +20,6 @@ fi
 if [ -x /usr/libexec/vdsm/ovs_migrate.py ]; then
 	sed -e 's|<min_guarantee[^>]*>[0-9 ]*</min_guarantee>||g' | /usr/libexec/vdsm/ovs_migrate.py $DOMAIN $EVENT $PHASE
 else
-	sed -e 's|<min_guarantee[^>]*>[0-9 ]*</min_guarantee>||g'
+	sed -e 's|<min_guarantee[^>]*>[0-9 ]*</min_guarantee>||g' | /usr/libexec/vdsm/vm_migrate_hook.py $DOMAIN $EVENT $PHASE
 fi
 
