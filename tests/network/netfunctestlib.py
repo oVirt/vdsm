@@ -171,6 +171,10 @@ class NetFuncTestCase(VdsmTestCase):
     def assertNoBridgeExists(self, bridge):
         self.assertNotIn(bridge, self.netinfo.bridges)
 
+    def assertNoVlan(self, southbound_port, tag):
+        vlan_name = '{}.{}'.format(southbound_port, tag)
+        self.assertNotIn(vlan_name, self.netinfo.vlans)
+
     def assertNoNetworkExistsInRunning(self, net):
         if not USING_UNIFIED_PERSISTENCE:
             return

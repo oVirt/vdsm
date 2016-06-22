@@ -26,6 +26,7 @@ from .netfunctestlib import NetFuncTestCase, NOCHK
 from .nettestlib import dummy_device
 
 NETWORK_NAME = 'test-network'
+VLAN = 10
 
 
 class NetworkBasicTemplate(NetFuncTestCase):
@@ -45,14 +46,31 @@ class NetworkBasicTemplate(NetFuncTestCase):
                 self.setupNetworks(NETREMOVE, {}, NOCHK)
                 self.assertNoNetwork(NETWORK_NAME)
 
+    def test_add_net_based_on_vlan(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN,
+                                        'switch': self.switch}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                self.assertNetwork(NETWORK_NAME, NETCREATE[NETWORK_NAME])
+
+    def test_remove_net_based_on_vlan(self):
+        with dummy_device() as nic:
+            NETCREATE = {NETWORK_NAME: {'nic': nic, 'vlan': VLAN,
+                                        'switch': self.switch}}
+            NETREMOVE = {NETWORK_NAME: {'remove': True}}
+            with self.setupNetworks(NETCREATE, {}, NOCHK):
+                self.setupNetworks(NETREMOVE, {}, NOCHK)
+                self.assertNoNetwork(NETWORK_NAME)
+                self.assertNoVlan(nic, VLAN)
+
 
 @attr(type='functional', switch='legacy')
-class NetworkCreateBasicLegacyTest(NetworkBasicTemplate):
+class NetworkBasicLegacyTest(NetworkBasicTemplate):
     __test__ = True
     switch = 'legacy'
 
 
 @attr(type='functional', switch='ovs')
-class NetworkCreateBasicOvsTest(NetworkBasicTemplate):
+class NetworkBasicOvsTest(NetworkBasicTemplate):
     __test__ = True
     switch = 'ovs'
