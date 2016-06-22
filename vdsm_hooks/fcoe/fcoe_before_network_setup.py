@@ -15,7 +15,7 @@ import six
 
 import hooking
 from vdsm import utils
-from vdsm.netconfpersistence import RunningConfig
+from vdsm.network.netconfpersistence import RunningConfig
 
 
 FCOE_CONFIG_DIR = '/etc/fcoe/'
