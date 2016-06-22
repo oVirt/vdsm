@@ -1,0 +1,5 @@
+libguestfs: trace: internal_autosync = 0
+libguestfs: sending SIGTERM to process 12345
+libguestfs: trace: shutdown = 0
+libguestfs: trace: close
+libguestfs: closing guestfs handle 0x1e265f0 (state 0)

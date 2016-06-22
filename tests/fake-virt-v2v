@@ -47,6 +47,12 @@ parser.add_argument('-os', dest='outputStorage',
 parser.add_argument('--machine-readable', dest='machineReadable',
                     action='store_true',
                     help='Set the terminal output to be readable')
+parser.add_argument('-v', dest='verbose',
+                    action='store_true',
+                    help='Enable verbose messages for debugging.')
+parser.add_argument('-x', dest='libguestfsTrace',
+                    action='store_true',
+                    help='Enable tracing of libguestfs API calls.')
 parser.add_argument('vmname')
 
 options = parser.parse_args(sys.argv)
@@ -57,6 +63,9 @@ def write_output(msg):
     sys.stdout.write(msg)
     sys.stdout.flush()
 
+def write_trace(msg):
+    sys.stderr.write(msg)
+    sys.stderr.flush()
 
 def write_progress():
     global elapsed_time
@@ -69,10 +78,27 @@ elapsed_time = elapsed_time + 1
 write_output('[   %d.0] Creating an overlay to protect\n' % elapsed_time)
 elapsed_time = elapsed_time + 1
 
+if options.libguestfsTrace:
+    write_trace("libguestfs: trace: internal_autosync = 0\n")
+    write_trace("libguestfs: sending SIGTERM to process 12345\n")
+    write_trace("libguestfs: trace: shutdown = 0\n")
+    write_trace("libguestfs: trace: close\n")
+    write_trace("libguestfs: closing guestfs handle 0x1e265f0 (state 0)\n")
+
 for i, o in enumerate(options.vdsmImageId):
     write_output('[  %d.0] Copying disk %d/2 to %s/%s/images/%s\n' %
                  (elapsed_time, i+1, options.outputStorage,
                   options.vdsmVmId, o))
+
+    # Immitate some verbose messages
+    # NOTE: Most verbose messages go to stderr, but some go to stdout. This can
+    # potentialy mess with our parsing routine.
+    if options.verbose:
+        write_output("target_file = %s\n" % options.vdsmVolId[i])
+        write_output("target_format = raw\n")
+        write_output("target_estimated_size = 123456789\n")
+        write_output("target_overlay = /var/tmp/v2vovl344e53.qcow2\n")
+
     write_progress()
     write_output('[ %d.0] Creating output metadata\n' % elapsed_time)
     write_output('[ %d.0] Finishing off\n' % elapsed_time)

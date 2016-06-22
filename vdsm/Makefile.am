@@ -103,6 +103,7 @@ install-data-local: \
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/certs
 	$(MKDIR_P) $(DESTDIR)$(vdsmtsdir)/libvirt-spice
 	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)
+	$(MKDIR_P) $(DESTDIR)$(vdsmlogdir)/import
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/sourceRoutes
 	$(MKDIR_P) $(DESTDIR)$(vdsmrundir)/trackedInterfaces

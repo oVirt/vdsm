@@ -513,8 +513,10 @@ class v2vTests(TestCaseBase):
         self._commonConvertExternalVM(self.xen_url)
 
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
+    @MonkeyPatch(v2v, '_LOG_DIR', None)
     def testSuccessfulImportOVA(self):
-        with temporary_ovf_dir() as ovapath:
+        with temporary_ovf_dir() as ovapath, \
+                namedTemporaryDir() as v2v._LOG_DIR:
             v2v.convert_ova(ovapath, self.vminfo, self.job_id, FakeIRS())
             job = v2v._jobs[self.job_id]
             job.wait()
@@ -523,6 +525,8 @@ class v2vTests(TestCaseBase):
 
     def testV2VOutput(self):
         cmd = [FAKE_VIRT_V2V.cmd,
+               '-v',
+               '-x',
                '-ic', self.vpx_url,
                '-o', 'vdsm',
                '-of', 'raw',
@@ -545,10 +549,15 @@ class v2vTests(TestCaseBase):
         with open('fake-virt-v2v.out', 'r') as f:
             self.assertEqual(output, f.read())
 
+        with open('fake-virt-v2v.err', 'r') as f:
+            self.assertEqual(error, f.read())
+
     @MonkeyPatch(v2v, '_VIRT_V2V', FAKE_VIRT_V2V)
     @MonkeyPatch(v2v, '_V2V_DIR', None)
+    @MonkeyPatch(v2v, '_LOG_DIR', None)
     def _commonConvertExternalVM(self, url):
-        with namedTemporaryDir() as v2v._V2V_DIR:
+        with namedTemporaryDir() as v2v._V2V_DIR, \
+                namedTemporaryDir() as v2v._LOG_DIR:
             v2v.convert_external_vm(url,
                                     'root',
                                     ProtectedPassword('mypassword'),

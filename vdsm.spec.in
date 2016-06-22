@@ -1112,6 +1112,7 @@ exit 0
 %dir %{_localstatedir}/run/%{vdsm_name}/v2v
 %dir %{_localstatedir}/log/%{vdsm_name}
 %dir %{_localstatedir}/log/%{vdsm_name}/backup
+%dir %{_localstatedir}/log/%{vdsm_name}/import
 %defattr(644, %{vdsm_user}, %{vdsm_group}, -)
 %{_datadir}/%{vdsm_name}/bonding-defaults.json
 %{_datadir}/%{vdsm_name}/bonding-name2numeric.json

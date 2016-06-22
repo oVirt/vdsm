@@ -29,10 +29,11 @@ from __future__ import absolute_import
 from collections import namedtuple
 from contextlib import closing, contextmanager
 import errno
+import io
 import logging
 import os
 import re
-import signal
+import subprocess
 import tarfile
 import time
 import threading
@@ -41,10 +42,10 @@ import zipfile
 
 import libvirt
 
-from vdsm.commands import execCmd
+from vdsm.commands import execCmd, BUFFSIZE
 from vdsm.common import zombiereaper
 from vdsm.compat import CPopen
-from vdsm.constants import P_VDSM_RUN, EXT_KVM_2_OVIRT
+from vdsm.constants import P_VDSM_LOG, P_VDSM_RUN, EXT_KVM_2_OVIRT
 from vdsm.define import errCode, doneCode
 from vdsm import cmdutils, concurrent, libvirtconnection, response
 from vdsm.utils import monotonic_time, traceback, CommandPath, \
@@ -60,6 +61,7 @@ _lock = threading.Lock()
 _jobs = {}
 
 _V2V_DIR = os.path.join(P_VDSM_RUN, 'v2v')
+_LOG_DIR = os.path.join(P_VDSM_LOG, 'import')
 _VIRT_V2V = CommandPath('virt-v2v', '/usr/bin/virt-v2v')
 _SSH_AGENT = CommandPath('ssh-agent', '/usr/bin/ssh-agent')
 _SSH_ADD = CommandPath('ssh-add', '/usr/bin/ssh-add')
@@ -387,17 +389,28 @@ class V2VCommand(object):
         self._irs = irs
         self._prepared_volumes = []
         self._passwd_file = os.path.join(_V2V_DIR, "%s.tmp" % vmid)
+        self._base_command = [_VIRT_V2V.cmd, '-v', '-x']
 
     def execute(self):
         raise NotImplementedError("Subclass must implement this")
 
     def _start_helper(self):
-        return execCmd(self._command(),
-                       sync=False,
-                       deathSignal=signal.SIGTERM,
-                       nice=NICENESS.HIGH,
-                       ioclass=IOCLASS.IDLE,
-                       env=self._environment())
+        timestamp = time.strftime('%Y%m%dT%H%M%S')
+        log = os.path.join(_LOG_DIR,
+                           "import-%s-%s.log" % (self._vmid, timestamp))
+        v2v = _simple_exec_cmd(self._command(),
+                               nice=NICENESS.HIGH,
+                               ioclass=IOCLASS.IDLE,
+                               env=self._environment(),
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.STDOUT)
+        tee = _simple_exec_cmd(['tee', log],
+                               nice=NICENESS.HIGH,
+                               ioclass=IOCLASS.IDLE,
+                               stdin=v2v.stdout,
+                               stdout=subprocess.PIPE)
+
+        return PipelineProc(v2v, tee)
 
     def _get_disk_format(self):
         fmt = self._vminfo.get('format', 'raw').lower()
@@ -497,11 +510,11 @@ class LibvirtCommand(V2VCommand):
         self._password = password
 
     def _command(self):
-        cmd = [_VIRT_V2V.cmd,
-               '-ic', self._uri,
-               '-o', 'vdsm',
-               '-of', self._get_disk_format(),
-               '-oa', self._vminfo.get('allocation', 'sparse').lower()]
+        cmd = self._base_command
+        cmd.extend(['-ic', self._uri,
+                    '-o', 'vdsm',
+                    '-of', self._get_disk_format(),
+                    '-oa', self._vminfo.get('allocation', 'sparse').lower()])
         cmd.extend(self._disk_parameters())
         cmd.extend(['--password-file',
                     self._passwd_file,
@@ -528,19 +541,19 @@ class OvaCommand(V2VCommand):
         self._ova_path = ova_path
 
     def _command(self):
-        cmd = [_VIRT_V2V.cmd,
-               '-i', 'ova', self._ova_path,
-               '-o', 'vdsm',
-               '-of', self._get_disk_format(),
-               '-oa', self._vminfo.get('allocation', 'sparse').lower(),
-               '--vdsm-vm-uuid',
-               self._vmid,
-               '--vdsm-ovf-output',
-               _V2V_DIR,
-               '--machine-readable',
-               '-os',
-               self._get_storage_domain_path(
-                   self._prepared_volumes[0]['path'])]
+        cmd = self._base_command
+        cmd.extend(['-i', 'ova', self._ova_path,
+                    '-o', 'vdsm',
+                    '-of', self._get_disk_format(),
+                    '-oa', self._vminfo.get('allocation', 'sparse').lower(),
+                    '--vdsm-vm-uuid',
+                    self._vmid,
+                    '--vdsm-ovf-output',
+                    _V2V_DIR,
+                    '--machine-readable',
+                    '-os',
+                    self._get_storage_domain_path(
+                        self._prepared_volumes[0]['path'])])
         cmd.extend(self._disk_parameters())
         return cmd
 
@@ -566,11 +579,11 @@ class XenCommand(V2VCommand):
         self._ssh_agent = SSHAgent()
 
     def _command(self):
-        cmd = [_VIRT_V2V.cmd,
-               '-ic', self._uri,
-               '-o', 'vdsm',
-               '-of', self._get_disk_format(),
-               '-oa', self._vminfo.get('allocation', 'sparse').lower()]
+        cmd = self._base_command
+        cmd.extend(['-ic', self._uri,
+                    '-o', 'vdsm',
+                    '-of', self._get_disk_format(),
+                    '-oa', self._vminfo.get('allocation', 'sparse').lower()])
         cmd.extend(self._disk_parameters())
         cmd.extend(['--vdsm-vm-uuid',
                     self._vmid,
@@ -786,16 +799,13 @@ class ImportVm(object):
         logging.info('Job %r starting import', self._id)
 
         with self._command.execute() as self._proc:
-            self._proc.blocking = True
             self._watch_process_output()
             self._wait_for_process()
 
             if self._proc.returncode != 0:
-                raise V2VProcessError('Job %r process failed exit-code: %r'
-                                      ', stderr: %s' %
+                raise V2VProcessError('Job %r process failed exit-code: %r' %
                                       (self._id,
-                                       self._proc.returncode,
-                                       self._proc.stderr.read(1024)))
+                                       self._proc.returncode))
 
             if self._status != STATUS.ABORTED:
                 self._status = STATUS.DONE
@@ -808,11 +818,13 @@ class ImportVm(object):
         logging.debug("Job %r waiting for virt-v2v process", self._id)
         if not self._proc.wait(timeout=self.PROC_WAIT_TIMEOUT):
             raise V2VProcessError("Job %r timeout waiting for process pid=%s",
-                                  self._id, self._proc.pid)
+                                  self._id, self._proc.pids)
 
     def _watch_process_output(self):
+        out = io.BufferedReader(io.FileIO(self._proc.stdout.fileno(),
+                                mode='r', closefd=False), BUFFSIZE)
         parser = OutputParser()
-        for event in parser.parse(self._proc.stdout):
+        for event in parser.parse(out):
             if isinstance(event, ImportProgress):
                 self._status = STATUS.COPYING_DISK
                 logging.info("Job %r copying disk %d/%d",
@@ -850,7 +862,8 @@ class ImportVm(object):
                 logging.debug('Job %r virt-v2v process was killed',
                               self._id)
             finally:
-                zombiereaper.autoReapPID(self._proc.pid)
+                for pid in self._proc.pids:
+                    zombiereaper.autoReapPID(pid)
 
 
 class OutputParser(object):
@@ -865,7 +878,8 @@ class OutputParser(object):
                                      description)
                 for chunk in self._iter_progress(stream):
                     progress = self._parse_progress(chunk)
-                    yield DiskProgress(progress)
+                    if progress is not None:
+                        yield DiskProgress(progress)
                     if progress == 100:
                         break
 
@@ -890,8 +904,7 @@ class OutputParser(object):
     def _parse_progress(self, chunk):
         m = self.DISK_PROGRESS_RE.match(chunk)
         if m is None:
-            raise OutputParserError('error parsing progress, chunk: %r'
-                                    % chunk)
+            return None
         try:
             return int(m.group(1))
         except ValueError:
