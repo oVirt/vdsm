@@ -44,7 +44,7 @@ class FORMAT:
     RAW = "raw"
     VMDK = "vmdk"
 
-_QCOW2_COMPAT_SUPPORTED = ["0.10", "1.1"]
+_QCOW2_COMPAT_SUPPORTED = ("0.10", "1.1")
 
 __iregex = {
     'format': re.compile("^file format: (?P<value>\w+)$"),
