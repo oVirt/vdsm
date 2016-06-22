@@ -33,9 +33,9 @@ fi
 
 if [ 'pep8' = "$1" ]; then
     for x in ${PEP8_BLACKLIST[@]}; do \
-    exclude="$${exclude},$${x}" ; \
+    exclude="${exclude},${x}" ; \
         done ; \
-        pep8 --exclude="$${exclude}" --exclude='.tox/*' \
+        pep8 --exclude="${exclude},.tox" \
         --filename '*.py' . \
         "${WHITELIST[@]}"
 fi
