@@ -355,66 +355,6 @@ types:
             type: int
         type: object
 
-    IscsiCredentialsLogin: &IscsiCredentialsLogin
-        added: '3.1'
-        description: Login credentials for an
-            ISCI target.
-        name: IscsiCredentialsLogin
-        properties:
-        -   description: The username used for
-                authentication to an ISCI target
-            name: username
-            type: string
-
-        -   description: The password associated
-                with the given username
-            name: password
-            type: string
-        type: object
-
-    IscsiCredentialsType: &IscsiCredentialsType
-        added: '3.1'
-        description: An enumeration of ISCSI login
-            credentials types.
-        name: IscsiCredentialsType
-        type: enum
-        values:
-            chap: Challenge-Handshake Authentication Protocol
-
-    IscsiCredentials: &IscsiCredentials
-        added: '3.1'
-        description: This structure stores ISCSI credentials.
-        name: IscsiCredentials
-        properties:
-        -   description: Type-specific authentication
-                credentials
-            name: params
-            type: *IscsiCredentialsLogin
-
-        -   defaultvalue: chap
-            description: The type of authentication to
-                be used
-            name: authType
-            type: *IscsiCredentialsType
-        type: object
-
-    IscsiPortal: &IscsiPortal
-        added: '3.1'
-        description: A host/port pair that identifies
-            an ISCSI target.
-        name: IscsiPortal
-        properties:
-        -   defaultvalue: 3260
-            description: A port number
-            name: port
-            type: int
-
-        -   description: A fully-qualified domain name
-                (FQDN) or IP address
-            name: host
-            type: string
-        type: object
-
     IscsiConnectionParameters: &IscsiConnectionParameters
         added: '3.1'
         description: Parameters for initiating a new ISCSI connection.
@@ -423,27 +363,38 @@ types:
         -   defaultvalue: 1
             description: The Target Portal Group Tag to use
             name: tpgt
-            type: int
+            type: string
+            datatype: int
 
-        -   description: An IscsiPortal to identify the requested
-                target
-            name: portal
-            type: *IscsiPortal
+        -   defaultvalue: 3260
+            description: A port number
+            name: port
+            type: string
+            typedata: int
+
+        -   description: A fully-qualified domain name
+                (FQDN) or IP address
+            name: connection
+            type: string
 
         -   description: The ISCSI Qualified Name
             name: iqn
             type: string
 
-        -   defaultvalue: null
-            description: An IscsiCredentials containing the required
-                authentication information
-            name: credentials
-            type: *IscsiCredentials
-
-        -   defaultvalue: default
-            description: The ISCSI interface name
-            name: iface
+        -   description: The username used for
+                authentication to an ISCI target
+            name: user
             type: string
+
+        -   description: The password associated
+                with the given username
+            name: password
+            type: string
+
+        -   description: A UUID that will be used to identify this connection
+                in subsequent API calls.
+            name: id
+            type: *UUID
         type: object
 
     LocalFsConnectionParameters: &LocalFsConnectionParameters
@@ -5796,6 +5747,20 @@ types:
             GLUSTERFS: The Storage Domain uses GlusterFS based storage
             UNKNOWN: The type is not known
 
+    StorageDomainTypeId: &StorageDomainTypeId
+        added: '3.1'
+        description: An enumeration of Storage Domain types.
+        name: StorageDomainType
+        type: enum
+        values:
+            0: The type is not known
+            1: The Storage Domain uses Network File System based storage
+            2: The Storage Domain uses FibreChannel based storage
+            3: The Storage Domain uses iSCSI based storage
+            4: The Storage Domain uses storage on the local file system
+            6: The Storage Domain uses posix file system
+            7: The Storage Domain uses glusterfs
+
     StorageDomainInfo: &StorageDomainInfo
         added: '3.1'
         description: Information about a Storage Domain.
@@ -8972,7 +8937,7 @@ StoragePool.connectStorageServer:
 
     -   description: The type of storage to connect
         name: domainType
-        type: *StorageDomainType
+        type: *StorageDomainTypeId
 
     -   description: An array of connection information
         name: connectionParams
