@@ -27,6 +27,7 @@ PEP8_BLACKLIST=(config.py \
 if [ 'pyflakes' = "$1" ]; then
     (find . -path './.tox' -prune -type f -o \
         -path './.git' -prune -type f -o \
+        -path './.ropeproject' -prune -type f -o \
         -name '*.py' && echo "${WHITELIST[@]}") | \
         xargs pyflakes | grep -w -v "${SKIP_PYFLAKES_ERR}" | \
         while read LINE; do echo "$LINE"; false; done
@@ -36,7 +37,7 @@ if [ 'pep8' = "$1" ]; then
     for x in ${PEP8_BLACKLIST[@]}; do \
     exclude="${exclude},${x}" ; \
         done ; \
-        pep8 --exclude="${exclude},.tox" \
+        pep8 --exclude="${exclude},.tox,.ropeproject" \
         --filename '*.py' . \
         "${WHITELIST[@]}"
 fi
