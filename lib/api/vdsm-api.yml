@@ -8756,11 +8756,13 @@ StoragePool.spmStart:
 
     -   description: Deprecated.  The lver of the previous SPM
         name: prevLver
-        type: int
+        type: string
+        datatype: int
 
     -   description: This parameter is not used
         name: enableScsiFencing
-        type: boolean
+        type: string
+        datatype: boolean
 
     -   defaultvalue: null
         description: The maximum number of hosts that could be in the cluster
@@ -8770,7 +8772,8 @@ StoragePool.spmStart:
     -   defaultvalue: null
         description: The expected Storage Domain version of the master domain
         name: domVersion
-        type: int
+        type: string
+        datatype: int
     return:
         description: A task UUID
         type: *UUID
