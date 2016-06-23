@@ -2417,7 +2417,8 @@ class Vm(object):
         if graphics:
             result = self._setTicketForGraphicDev(
                 graphics, params['password'], params['ttl'],
-                params.get('existingConnAction'), params['params'])
+                params.get('existingConnAction'),
+                params.get('disconnectAction'), params['params'])
             if result['status']['code'] == 0:
                 result['vmList'] = self.status()
             return result
@@ -3930,9 +3931,10 @@ class Vm(object):
             return response.error('ticketErr',
                                   'no graphics devices configured')
         return self._setTicketForGraphicDev(
-            graphics, otp, seconds, connAct, params)
+            graphics, otp, seconds, connAct, None, params)
 
-    def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct, params):
+    def _setTicketForGraphicDev(self, graphics, otp, seconds, connAct,
+                                disconnectAction, params):
         graphics.setAttribute('passwd', otp.value)
         if int(seconds) > 0:
             validto = time.strftime('%Y-%m-%dT%H:%M:%S',
@@ -3943,9 +3945,8 @@ class Vm(object):
         hooks.before_vm_set_ticket(self._domain.xml, self.conf, params)
         try:
             self._dom.updateDeviceFlags(graphics.toxml(), 0)
-            disconnectAction = params.get('disconnectAction',
-                                          ConsoleDisconnectAction.LOCK_SCREEN)
-            self._consoleDisconnectAction = disconnectAction
+            self._consoleDisconnectAction = disconnectAction or \
+                ConsoleDisconnectAction.LOCK_SCREEN
         except virdomain.TimeoutError as tmo:
             res = response.error('ticketErr', unicode(tmo))
         else:
