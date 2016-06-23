@@ -5972,6 +5972,11 @@ types:
         -   description: Indicates the Storage Domain version
             name: version
             type: int
+
+        -   description: The filesystem path from where ISO images may
+                be referenced. Empty if no iso domain exists in the pool.
+            name: isoprefix
+            type: string
         type: object
 
     StoragePoolDomainInfoMap: &StoragePoolDomainInfoMap
@@ -6004,7 +6009,7 @@ types:
 
         -   description: The Storage Pool lock version
             name: lver
-            type: int
+            type: long
 
         -   description: The Storage Pool version
             name: version
