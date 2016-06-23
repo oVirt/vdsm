@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2014 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 import errno
 import functools
 import inspect
@@ -31,6 +32,7 @@ from functools import wraps
 import shutil
 import sys
 from six.moves import configparser
+from six.moves import range
 import tempfile
 import threading
 from contextlib import contextmanager
@@ -440,7 +442,7 @@ def recorded(meth):
         except AttributeError:
             recording = []
             setattr(obj, name, recording)
-        recording.append((meth.func_name, args, kwargs))
+        recording.append((meth.__name__, args, kwargs))
         return meth(obj, *args, **kwargs)
     return wrapper
 
