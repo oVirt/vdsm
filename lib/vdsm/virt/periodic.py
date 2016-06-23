@@ -20,7 +20,7 @@
 from __future__ import absolute_import
 
 """
-code to perform periodic maintenance and bookkeeping of the VMs.
+Code to perform periodic maintenance and bookkeeping of the VMs.
 """
 
 import logging
@@ -37,7 +37,7 @@ from vdsm.virt import virdomain
 from vdsm.virt import vmstatus
 
 
-# just a made up number. Maybe should be equal to number of cores?
+# Just a made up number. Maybe should be equal to number of cores?
 # TODO: make them tunable through private, unsupported configuration items
 _WORKERS = config.getint('sampling', 'periodic_workers')
 _TASK_PER_WORKER = config.getint('sampling', 'periodic_task_per_worker')
@@ -71,13 +71,13 @@ def start(cif, scheduler):
         return Operation(disp, period, scheduler)
 
     _operations = [
-        # needs dispatching becuse updating the volume stats needs the
-        # access the storage, thus can block.
+        # Needs dispatching because updating the volume stats needs
+        # access to the storage, thus can block.
         per_vm_operation(
             UpdateVolumes,
             config.getint('irs', 'vol_size_sample_interval')),
 
-        # needs dispatching becuse access FS and libvirt data
+        # Needs dispatching because it accesses FS and libvirt data.
         per_vm_operation(
             NumaInfoMonitor,
             config.getint('vars', 'vm_sample_numa_interval')),
@@ -98,8 +98,8 @@ def start(cif, scheduler):
             config.getint('vars', 'vm_sample_interval'),
             scheduler),
 
-        # we do this only until we get high water mark notifications
-        # from qemu. Access storage and/or qemu monitor, so can block,
+        # We do this only until we get high water mark notifications
+        # from QEMU. It accesses storage and/or QEMU monitor, so can block,
         # thus we need dispatching.
         per_vm_operation(
             DriveWatermarkMonitor,
@@ -129,7 +129,7 @@ class Operation(object):
     """
     Operation runs a callable with a given period until
     someone stops it.
-    Operations builds on Schedule and on Executor,
+    Operation builds on Schedule and on Executor,
     so that the underlying "func" is called periodically.
     It would be called again even if a former call is blocked.
     """
@@ -184,14 +184,14 @@ class Operation(object):
 
     def _step(self):
         """
-        Schedule a next call of `func'
+        Schedule a next call of `func'.
         """
         self._call = self._scheduler.schedule(self._period,
                                               self._try_to_dispatch)
 
     def _try_to_dispatch(self):
         """
-        Dispatch anoter Execution, if Operation is still running.
+        Dispatch another Execution, if Operation is still running.
         """
         with self._lock:
             if self._running:
@@ -245,10 +245,10 @@ class VmDispatcher(object):
                 if not op.required:
                     continue
                 # When dealing with blocked domains, we also want to avoid
-                # to pile up jobs that libvirt can't handle and eventually
-                # clog it.
+                # to pile up jobs that libvirt can't handle and that will
+                # eventually clog it.
                 # We don't care too much about precise tracking, so it is
-                # still OK if occasional misdetection occours, but we
+                # still OK if occasional misdetection occurs, but we
                 # definitely want to avoid known-bad situation and to
                 # needlessly overload libvirt.
                 if not op.runnable:
@@ -281,8 +281,8 @@ class _RunnableOnVm(object):
 
     @property
     def required(self):
-        # disable everything until migration destination VM
-        # isn't fully started, to avoid false positives log spam.
+        # Disable everything until the migration destination VM
+        # is fully started, to avoid false positives log spam.
         return not self._vm.incomingMigrationPending()
 
     @property
@@ -328,7 +328,7 @@ class UpdateVolumes(_RunnableOnVm):
 
     def _execute(self):
         for drive in self._vm.getDiskDevices():
-            # TODO: If this block (it is actually possible?)
+            # TODO: If this blocks (is it actually possible?)
             # we must make sure we don't overwrite good data
             # with stale old data.
             self._vm.updateDriveVolume(drive)
@@ -357,7 +357,7 @@ class BlockjobMonitor(_RunnableOnVm):
     def required(self):
         # For performance reasons, we must avoid as much
         # as possible to create per-vm executor tasks, even
-        # though they will do nothing but a few check and exit
+        # though they will do nothing but a few checks and exit
         # early, as they do if a VM doesn't have Block Jobs to
         # monitor (most often true).
         return (super(BlockjobMonitor, self).required and self._vm.hasVmJobs)
