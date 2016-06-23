@@ -258,27 +258,6 @@ class DataVerificationTests(TestCaseBase):
         _schema.schema().verify_retval(
             vdsmapi.MethodRep('Host', 'getStats'), ret)
 
-    def test_badly_defined_ret_type(self):
-        ret = {u'pci_0000_00_1b_0':
-               {u'params':
-                {u'product': u'7 Series/C210 Series Chipset Family ',
-                 u'vendor': u'Intel Corporation',
-                 u'product_id': u'0x1e20',
-                 u'parent': u'computer',
-                 u'vendor_id': u'0x8086',
-                 u'capability': u'pci',
-                 u'address': {u'slot': u'27',
-                              u'bus': u'0',
-                              u'domain': u'0',
-                              u'function': u'0'}}}}
-
-        # type definition is broken for this verb
-        with self.assertRaises(JsonRpcError) as e:
-            _schema.schema().verify_retval(
-                vdsmapi.MethodRep('Host', 'hostdevListByCaps'), ret)
-
-        self.assertIn('is not a list', e.exception.message)
-
     def test_allvmstats(self):
         ret = [{'vcpuCount': '1',
                 'displayInfo': [{'tlsPort': u'5900',

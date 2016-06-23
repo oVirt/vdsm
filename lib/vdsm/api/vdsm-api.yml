@@ -1519,57 +1519,141 @@ types:
             type: *BandwidthCurve
         type: object
 
+    PCIAddress: &PCIAddress
+        description: PCI address
+        name: PCIAddress
+        properties:
+        -   description: domain
+            name: domain
+            type: string
+            datatype: uint
+
+        -   description: bus
+            name: bus
+            type: string
+            datatype: uint
+
+        -   description: slot
+            name: slot
+            type: string
+            datatype: uint
+
+        -   description: function
+            name: function
+            type: string
+            datatype: uint
+        type: object
+
+    SCSIAddress: &SCSIAddress
+        description: SCSI address
+        name: SCSIAddress
+        properties:
+        -   description: host
+            name: host
+            type: string
+            datatype: uint
+
+        -   description: bus
+            name: bus
+            type: string
+            datatype: uint
+
+        -   description: target
+            name: target
+            type: string
+            datatype: uint
+
+        -   description: lun
+            name: lun
+            type: string
+            datatype: uint
+        type: object
+
+    USBAddress: &USBAddress
+        description: USB address
+        name: USBAddress
+        properties:
+        -   description: bus
+            name: bus
+            type: string
+            datatype: uint
+
+        -   description: device
+            name: device
+            type: string
+            datatype: uint
+        type: object
+
+    HostDeviceAddress: &HostDeviceAddress
+        description: A host device address
+        name: HostDeviceAddress
+        type: union
+        values:
+        - *PCIAddress
+        - *SCSIAddress
+        - *USBAddress
+
     HostDeviceParams: &HostDeviceParams
         added: '3.6'
         description: A host device parameters
         name: HostDeviceParams
         properties:
-        -   description: The iommu group which the device belongs
-                to
-            name: iommu_group
-            type: uint
-
         -   description: The capability of the device (usually
                 pci, usb_device, scsi)
             name: capability
             type: string
 
-        -   description: String representation of the vendor
+        -   defaultvalue: no-default
+            description: String representation of the vendor
             name: vendor
             type: string
 
-        -   defaultvalue: null
-            description: Name of the physical function that this
-                VF belongs to. Also reported for physical function
-                itself, therefore in order to detect PF one must
-                consider the tuple (totalvfs, physfn). (if sriov
-                capable)
-            name: physfn
-            type: string
-
-        -   defaultvalue: null
-            description: Number of available virtual functions
-                (if sriov capable)
-            name: totalvfs
-            type: uint
-
-        -   description: Hexadecimal representation of the vendor
+        -   defaultvalue: no-default
+            description: Hexadecimal representation of the vendor
             name: vendor_id
             type: string
 
-        -   description: String representation of the product
+        -   defaultvalue: no-default
+            description: String representation of the product
                 specified by vendor
             name: product
             type: string
 
-        -   description: Name of the parent device
+        -   defaultvalue: no-default
+            description: Name of the parent device
             name: parent
             type: string
 
-        -   description: Hexadecimal representation of the product
+        -   defaultvalue: no-default
+            description: Hexadecimal representation of the product
                 specified by vendor
             name: product_id
             type: string
+
+        -   description: Assignable flag
+            name: is_assignable
+            type: string
+            datatype: boolean
+
+        -   defaultvalue: no-default
+            description: Values like usbhid, usb, qxl or sd
+            name: driver
+            type: string
+
+        -   defaultvalue: no-default
+            description: Network interface assigned to a device
+            name: interface
+            type: string
+
+        -   defaultvalue: no-default
+            description: device udev path
+            name: udev_path
+            type: string
+
+        -   defaultvalue: no-default
+            description: device address
+            name: address
+            type: *HostDeviceAddress
         type: object
 
     HostDevice: &HostDevice
@@ -1584,13 +1668,12 @@ types:
 
     HostDevices: &HostDevices
         added: '3.6'
-        description: Mapping of devices to their assignments
+        description: Mapping of device names to device details
         name: HostDevices
-        properties:
-        -   description: Name of the device
-            name: deviceName
-            type: *HostDevice
-        type: object
+        key-type: string
+        name: HostDevices
+        type: map
+        value-type: *HostDevice
 
     HostJobStatus: &HostJobStatus
         added: '4.0'
@@ -8063,8 +8146,7 @@ Host.hostdevListByCaps:
         - string
     return:
         description: A list of devices on the host
-        type:
-        - *HostDevices
+        type: *HostDevices
 
 Host.hostdevChangeNumvfs:
     added: '3.6'
