@@ -1368,13 +1368,15 @@ class Global(APIBase):
     def setLogLevel(self, level, name=''):
         """
         Set verbosity level of vdsm's log.
+        Doesn't survive a restart.
 
-        params
-            level: requested logging level. `logging.DEBUG` `logging.ERROR`
-            name: logger name to set. If not provided, defaults to the root
-                  logger. Otherwise, tune the specific logger provided.
-
-        Doesn't survive a restart
+        :param level: requested logging level.
+                Examples: `logging.DEBUG` `logging.ERROR`
+        :type level: string
+        :param name: logger name to set. If not provided,
+                defaults to the root logger.
+                Otherwise, tune the specific logger provided.
+        :type name: string
         """
         logUtils.set_level(level, name)
         return dict(status=doneCode)
