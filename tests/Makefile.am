@@ -211,7 +211,6 @@ blacklist_modules_python3 = \
 	schemaTests.py \
 	schemaValidationTest.py \
 	sdm_indirection_tests.py \
-	securableTests.py \
 	sparsifyTests.py \
 	stompAdapterTests.py \
 	stompAsyncClientTests.py \

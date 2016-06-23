@@ -21,6 +21,7 @@
 from __future__ import absolute_import
 import inspect
 from functools import wraps
+import six
 
 OVERRIDE_ARG = "__securityOverride"
 SECURE_FIELD = "__secured__"
@@ -44,7 +45,7 @@ def secured(cls):
     if not callable(cls.__dict__.get(SECURE_METHOD_NAME)):
         raise NotImplementedError("Security method not implemented")
 
-    for name, value in cls.__dict__.iteritems():
+    for name, value in six.iteritems(cls.__dict__):
         # Skipping non callable attributes, special methods (including
         # SECURE_METHOD_NAME) and unsecured methods.
         if (not inspect.isfunction(value) or
