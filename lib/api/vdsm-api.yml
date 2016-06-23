@@ -5844,6 +5844,7 @@ types:
             cleanFailure: The task failed and recovery also failed
             cleanSuccess: The task failed but was successfully recovered
             success: The task was successful
+            '': Task is in progress
 
     TaskState: &TaskState
         added: '3.1'
