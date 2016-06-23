@@ -19,6 +19,7 @@
 #
 
 from __future__ import absolute_import
+
 import errno
 import logging
 import os
@@ -58,7 +59,7 @@ class DhcpClient(object):
     def _dhclient(self):
         # Ask dhclient to stop any dhclient running for the device
         if os.path.exists(os.path.join(netinfo.NET_PATH, self.iface)):
-            kill_dhclient(self.iface, self.family)
+            kill(self.iface, self.family)
         cmd = [DHCLIENT_BINARY.cmd, '-%s' % self.family, '-1', '-pf',
                self.pidFile, '-lf', self.leaseFile, self.iface]
         if not self.default_route:
@@ -90,7 +91,7 @@ class DhcpClient(object):
             kill_and_rm_pid(pid, self.pidFile)
 
 
-def kill_dhclient(device_name, family=4):
+def kill(device_name, family=4):
     for pid in pgrep('dhclient'):
         try:
             with open('/proc/%s/cmdline' % pid) as cmdline:
@@ -141,8 +142,8 @@ def supports_duid_file():
     return '-df' in err
 
 
-def run_dhclient(iface, family=4, default_route=False, duid_source=None,
-                 blocking_dhcp=False):
+def run(iface, family=4, default_route=False, duid_source=None,
+        blocking_dhcp=False):
     dhclient = DhcpClient(iface, family, default_route, duid_source)
     ret = dhclient.start(blocking_dhcp)
     if blocking_dhcp and ret[0]:
@@ -150,6 +151,6 @@ def run_dhclient(iface, family=4, default_route=False, duid_source=None,
             ne.ERR_FAILED_IFUP, 'dhclient%s failed' % family)
 
 
-def stop_dhclient(iface):
+def stop(iface):
     dhclient = DhcpClient(iface)
     dhclient.shutdown()

@@ -45,6 +45,7 @@ from vdsm import utils
 
 from vdsm.network import ipwrapper
 from vdsm.network import libvirt
+from vdsm.network.ip import dhclient
 from vdsm.network.ip.address import IPv4, IPv6
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
@@ -55,7 +56,7 @@ from vdsm.network.netlink import monitor
 if utils.isOvirtNode():
     from ovirt.node.utils import fs as node_fs
 
-from . import Configurator, dhclient, getEthtoolOpts
+from . import Configurator, getEthtoolOpts
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP
 from ..models import Nic, Bridge
 from ..sourceroute import StaticSourceRoute, DynamicSourceRoute
@@ -531,7 +532,7 @@ class ConfigWriter(object):
             if (ipv4.bootproto == 'dhcp' and
                     os.path.exists(os.path.join(NET_PATH, name))):
                 # Ask dhclient to stop any dhclient running for the device
-                dhclient.kill_dhclient(name)
+                dhclient.kill(name)
         if mtu:
             cfg += 'MTU=%d\n' % mtu
         if ipv4.defaultRoute is not None:
