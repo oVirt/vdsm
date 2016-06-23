@@ -22,6 +22,7 @@ import socket
 import struct
 
 from vdsm import sysctl
+from vdsm import utils
 from vdsm.network import errors as ne
 from vdsm.network import ipwrapper
 from vdsm.network.errors import ConfigNetworkError
@@ -170,6 +171,13 @@ def add(iface, ipv4, ipv6):
         ipwrapper.addrAdd(iface, ipv4.address, ipv4.netmask)
         if ipv4.gateway and ipv4.defaultRoute:
             ipwrapper.routeAdd(['default', 'via', ipv4.gateway])
+    if ipv6:
+        _add_ipv6_address(iface, ipv6)
+    elif ipv6_supported():
+        sysctl.disable_ipv6(iface)
+
+
+def _add_ipv6_address(iface, ipv6):
     if ipv6.address:
         ipv6addr, ipv6netmask = ipv6.address.split('/')
         ipwrapper.addrAdd(iface, ipv6addr, ipv6netmask, family=6)
@@ -184,3 +192,15 @@ def add(iface, ipv4, ipv6):
 
 def flush(iface):
     ipwrapper.addrFlush(iface)
+
+
+@utils.memoized
+def ipv6_supported():
+    """
+    Check if IPv6 is disabled by kernel arguments (or even compiled out).
+    """
+    try:
+        socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    except socket.error:
+        return False
+    return True

@@ -25,15 +25,14 @@ from vdsm.network import libvirt
 from vdsm.network.ip import address
 from vdsm.network.ipwrapper import (routeAdd, routeDel, ruleAdd, ruleDel,
                                     IPRoute2Error)
-from vdsm.network.netinfo import bonding, vlans, bridges, mtus, misc
+from vdsm.network.netinfo import bonding, vlans, bridges, mtus
 from vdsm.network.netinfo.cache import ifaceUsed
 from vdsm.constants import EXT_BRCTL
 from vdsm.network.netconfpersistence import RunningConfig
-from vdsm import sysctl
 from vdsm.utils import CommandPath
 from vdsm.commands import execCmd
 
-from . import Configurator, runDhclient, getEthtoolOpts, wait_for_device
+from . import Configurator, runDhclient, getEthtoolOpts
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, ERR_FAILED_IFUP, ERR_FAILED_IFDOWN
 from ..models import Nic
@@ -78,10 +77,6 @@ class Iproute2(Configurator):
             self.configApplier.addBridgePort(bridge)
         DynamicSourceRoute.addInterfaceTracking(bridge)
         self.configApplier.setIfaceConfigAndUp(bridge)
-        if not bridge.ipv6.address and not bridge.ipv6.ipv6autoconf and (
-                not bridge.ipv6.dhcpv6 and misc.ipv6_supported()):
-            wait_for_device(bridge.name)
-            sysctl.disable_ipv6(bridge.name)
         self._addSourceRoute(bridge)
         if 'custom' in opts and 'bridge_opts' in opts['custom']:
             self.configApplier._setBridgeOpts(bridge,

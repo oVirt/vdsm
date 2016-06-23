@@ -20,9 +20,7 @@
 
 from __future__ import absolute_import
 import shlex
-import socket
 
-from vdsm import utils
 from vdsm.network.ipwrapper import getLinks
 
 _IFCFG_ZERO_SUFFIXED = frozenset(
@@ -52,15 +50,3 @@ def visible_devs(predicate):
     predicate is True"""
     return [dev.name for dev in getLinks() if predicate(dev) and
             not dev.isHidden()]
-
-
-@utils.memoized
-def ipv6_supported():
-    """
-    Check if IPv6 is disabled by kernel arguments (or even compiled out).
-    """
-    try:
-        socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
-    except socket.error:
-        return False
-    return True
