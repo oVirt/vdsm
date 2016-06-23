@@ -1203,7 +1203,6 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/__init__.py*
 %{python_sitelib}/%{vdsm_name}/network/api.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/__init__.py*
-%{python_sitelib}/%{vdsm_name}/network/configurators/dhclient.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/ifcfg.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/iproute2.py*
 %{python_sitelib}/%{vdsm_name}/network/configurators/pyroute_two.py*

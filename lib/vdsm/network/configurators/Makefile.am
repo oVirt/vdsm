@@ -23,7 +23,6 @@ vdsmnetworkconfiguratorsdir = $(vdsmpylibdir)/network/configurators
 
 dist_vdsmnetworkconfigurators_PYTHON = \
 	__init__.py \
-	dhclient.py \
 	ifcfg.py \
 	iproute2.py \
 	pyroute_two.py \
