@@ -300,18 +300,6 @@ AC_ARG_WITH(
     [QEMU_IMG_PKG="qemu-img"])
 AC_SUBST([QEMU_IMG_PKG])
 
-# Checking for pyflakes
-AC_PATH_PROG([PYFLAKES], [pyflakes])
-if test "x$PYFLAKES" = "x"; then
-  AC_MSG_WARN([pyflakes not found])
-fi
-
-# Checking for pep8
-AC_PATH_PROG([PEP8], [pep8])
-if test "x$PEP8" = "x"; then
-  AC_MSG_WARN([python-pep8 not found])
-fi
-
 # Checking for tox
 AC_PATH_PROG([TOX], [tox])
 if test "x$TOX" = "x"; then
