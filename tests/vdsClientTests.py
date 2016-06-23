@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Zhou Zheng Sheng, IBM Corporation
+# Copyright 2012-2016 Zhou Zheng Sheng, IBM Corporation
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 import os
 import socket
 import sys

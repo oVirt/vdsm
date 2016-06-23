@@ -235,7 +235,6 @@ blacklist_modules_python3 = \
 	unicode_test.py \
 	utilsTests.py \
 	v2vTests.py \
-	vdsClientTests.py \
 	vdscliTests.py \
 	verify.py \
 	vmApiTests.py \

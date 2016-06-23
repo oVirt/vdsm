@@ -1,4 +1,4 @@
-# Copyright 2011 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,18 +17,20 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+from __future__ import absolute_import
 from __future__ import print_function
 import errno
 import sys
 import ast
 import getopt
 import traceback
-import xmlrpclib
 import os
 import re
 import shlex
 import socket
 import pprint as pp
+
+from six.moves import xmlrpc_client
 
 from vdsm import utils, vdscli, constants
 from vdsm.compat import json
@@ -304,7 +306,7 @@ class service:
         if 'sysprepInf' in params:
             infFile = open(params['sysprepInf'], 'rb')
             try:
-                params['sysprepInf'] = xmlrpclib.Binary(infFile.read())
+                params['sysprepInf'] = xmlrpc_client.Binary(infFile.read())
             finally:
                 infFile.close()
 
