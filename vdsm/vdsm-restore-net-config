@@ -34,8 +34,8 @@ from vdsm import hostdev
 from vdsm.network import ipwrapper
 from vdsm.network import kernelconfig
 from vdsm.network import netswitch
+from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.netinfo import nics, misc
-from vdsm.network.netinfo.misc import ipv6_supported
 from vdsm.network.netinfo.cache import NetInfo
 from vdsm.constants import P_VDSM_RUN
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig, \

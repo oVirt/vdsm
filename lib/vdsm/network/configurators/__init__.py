@@ -22,10 +22,8 @@ import logging
 from six.moves import configparser
 
 from vdsm.config import config
-from vdsm.network import ipwrapper
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import mtus
-from vdsm.network.netlink import monitor
 
 from .dhclient import DhcpClient
 from ..errors import ConfigNetworkError, RollbackIncomplete, ERR_FAILED_IFUP
@@ -179,19 +177,3 @@ def runDhclient(iface, family=4, default_route=False):
     ret = dhclient.start(iface.blockingdhcp)
     if iface.blockingdhcp and ret[0]:
         raise ConfigNetworkError(ERR_FAILED_IFUP, 'dhclient%s failed' % family)
-
-
-def wait_for_device(name, timeout=1):
-    """
-    Wait for a network device to appear in a given timeout. If the device is
-    not created by then, raise a ConfigNetworkError.
-    """
-    with monitor.Monitor(timeout=timeout, groups=('link',),
-                         silent_timeout=True) as mon:
-        if name in (link.name for link in ipwrapper.getLinks()):
-            return
-        for event in mon:
-            if event.get('name') == name and event.get('event') == 'new_link':
-                return
-    raise ConfigNetworkError(ERR_FAILED_IFUP, 'Device %s was not created '
-                             'during a %ss timeout.' % (name, timeout))

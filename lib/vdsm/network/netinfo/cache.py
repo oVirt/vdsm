@@ -27,6 +27,7 @@ import six
 
 from vdsm.network import libvirt
 from vdsm.network import netinfo
+from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.ipwrapper import getLinks
 from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netlink import link as nl_link
@@ -37,7 +38,6 @@ from . import bridges
 from .dhcp import (propose_updates_to_reported_dhcp,  update_reported_dhcp,
                    dhcp_status, dhcp_faked_status)
 from .dns import get_host_nameservers
-from .misc import ipv6_supported
 from .mtus import getMtu
 from . import nics
 from . import vlans

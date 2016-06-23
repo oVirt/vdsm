@@ -28,6 +28,7 @@ from nose.plugins.skip import SkipTest
 
 import vdsm.config
 from vdsm.network import kernelconfig
+from vdsm.network.ip.address import ipv6_supported
 from vdsm.network.netinfo.nics import operstate
 
 from testlib import VdsmTestCase
@@ -268,6 +269,8 @@ class NetFuncTestCase(VdsmTestCase):
         if 'ipv6addr' in attrs:
             self.assertStaticIPv6(attrs, network_netinfo)
             self.assertStaticIPv6(attrs, topdev_netinfo)
+        elif _ipv6_is_unused(attrs):
+            self.assertDisabledIPv6(network_netinfo)
 
     def assertStaticIPv4(self, netattrs, ipinfo):
         requires_ipaddress()
@@ -281,6 +284,11 @@ class NetFuncTestCase(VdsmTestCase):
 
     def assertStaticIPv6(self, netattrs, ipinfo):
         self.assertIn(netattrs['ipv6addr'], ipinfo['ipv6addrs'])
+
+    def assertDisabledIPv6(self, ipinfo):
+        # TODO: We need to report if IPv6 is enabled on iface/host and
+        # differentiate that from not acquiring an address.
+        self.assertEqual([], ipinfo['ipv6addrs'])
 
     def assertLinksUp(self, net, attrs):
         switch = attrs.get('switch', 'legacy')
@@ -315,6 +323,11 @@ class NetFuncTestCase(VdsmTestCase):
         # breaks.
         self.assertEqual(running_config['networks'], kernel_config['networks'])
         self.assertEqual(running_config['bonds'], kernel_config['bonds'])
+
+
+def _ipv6_is_unused(attrs):
+    return ('ipv6addr' not in attrs and 'ipv6autoconf' not in attrs and
+            'dhcpv6' not in attrs and ipv6_supported())
 
 
 class SetupNetworksError(Exception):
