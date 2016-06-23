@@ -182,6 +182,7 @@ def get_netinfo():
 
 
 def northbound2bridge(northbound):
+    """Return the bridge to which northbound is connected."""
     ovs_info = OvsInfo()
     bridges = ovs_info.bridges
 

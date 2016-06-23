@@ -133,7 +133,7 @@ def libvirt_networks():
 
 
 def net2vlan(network_name):
-    """Returns a network vlan. For non-vlan networks, returns None"""
+    """Return the vlan id of the network if exists, None otherwise."""
     return netswitch.net2vlan(network_name)
 
 
