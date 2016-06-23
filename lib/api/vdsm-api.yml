@@ -5487,7 +5487,7 @@ types:
 
         -   description: The lock version of the Storage Pool
             name: spmLver
-            type: int
+            type: long
         type: object
 
     StorageDomainCreateArgumentsBlock: &StorageDomainCreateArgumentsBlock
