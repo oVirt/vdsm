@@ -131,15 +131,17 @@ types:
         -   description: The SCSI Logical Unit Number associated with
                 this path
             name: lun
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The path size (in bytes)
             name: capacity
-            type: uint
+            type: string
+            datatype: uint
             added: '3.6'
 
         -   description: The type of path (BlockDeviceType)
-            name: deviceType
+            name: type
             type: *BlockDeviceType
 
         -   description: The current state of this path
@@ -7159,6 +7161,63 @@ types:
             OK: All Physical Volumes are online
             PARTIAL: One or more Physical Volumes are not available
 
+    PhysicalVolumeInfo: &PhysicalVolumeInfo
+        description: Phisical volume information.
+        name: PhysicalVolumeInfo
+        properties:
+        -   description: The device logical size (in bytes)
+            name: capacity
+            type: string
+            datatype: uint
+
+        -   description: The device size (in bytes)
+            name: devcapacity
+            type: string
+            datatype: uint
+
+        -   description: A string identifying the device manufacturer
+            name: vendorID
+            type: string
+
+        -   description: A string identifying the device model
+            name: productID
+            type: string
+
+        -   description: The LVM physical volume associated with this device
+            name: pvUUID
+            type: *UUID
+
+        -   description: The volume group associated with this device
+            name: vgUUID
+            type: *UUID
+
+        -   description: Firmware version information
+            name: fwrev
+            type: string
+
+        -   description: The type of storage device (BlockDeviceType)
+            name: devtype
+            type: *BlockDeviceType
+
+        -   description: iSCSI session information
+            name: pathlist
+            type:
+            - *IscsiSessionInfo
+
+        -   description: The globally unique identifier of the block device
+            name: GUID
+            type: *UUID
+
+        -   description: The device serial number (if available)
+            name: serial
+            type: string
+
+        -   description: Multipath information
+            name: pathstatus
+            type:
+            - *BlockDevicePathInfo
+        type: object
+
     VolumeGroupInfo: &VolumeGroupInfo
         added: '3.1'
         description: Information about a Volume Group.
@@ -7170,12 +7229,8 @@ types:
 
         -   description: The total capacity (in bytes)
             name: vgsize
-            type: uint
-
-        -   description: The storage type of this Volume Group's Physical
-                Volumes
-            name: deviceType
-            type: *BlockDeviceType
+            type: string
+            datatype: uint
 
         -   description: The Volume Group name
             name: name
@@ -7191,7 +7246,18 @@ types:
 
         -   description: The amount of currently unassigned capacity (in bytes)
             name: vgfree
-            type: uint
+            type: string
+            datatype: uint
+
+        -   description: The type of backing storage used by this domain
+            name: type
+            type: *StorageDomainTypeId
+
+        -   defaultvalue: null
+            description: Phisical volume list
+            name: pvlist
+            type:
+            - *PhysicalVolumeInfo
         type: object
 
     VolumeStatus: &VolumeStatus
