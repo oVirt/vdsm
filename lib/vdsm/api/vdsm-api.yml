@@ -5907,14 +5907,21 @@ types:
 
     StorageDomainStatus: &StorageDomainStatus
         added: '3.1'
-        description: An enumeration of Storage Domain statuses.
+        description: An enumeration of Storage Domain statuses. There is
+            inconsistenty (capitalization) between engien and vdsm so we
+            keep both.
         name: StorageDomainStatus
         type: enum
         values:
+            active: The domain is attached to a Storage Pool and is activated
             Active: The domain is attached to a Storage Pool and is activated
+            attached: The domain is attached to a Storage Pool but is
+                deactivated
             Attached: The domain is attached to a Storage Pool but is
                 deactivated
+            unattached: The domain is not attached to a Storage Pool
             Unattached: The domain is not attached to a Storage Pool
+            unknown: The status of the Storage Domain is not known
             Unknown: The status of the Storage Domain is not known
 
     StorageDomainStatusMap: &StorageDomainStatusMap
