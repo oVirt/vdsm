@@ -371,8 +371,7 @@ class DriveWatermarkMonitor(_RunnableOnVm):
     @property
     def required(self):
         return (super(DriveWatermarkMonitor, self).required and
-                # Avoid queries from storage during recovery process
-                self._vm.isDisksStatsCollectionEnabled())
+                self._vm.needsDriveMonitoring())
 
     def _execute(self):
         self._vm.extendDrivesIfNeeded()

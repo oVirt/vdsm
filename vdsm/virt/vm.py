@@ -917,10 +917,7 @@ class Vm(object):
     def _getExtendCandidates(self):
         ret = []
 
-        for drive in self._devices[hwclass.DISK]:
-            if not (drive.chunked or drive.replicaChunked):
-                continue
-
+        for drive in self._chunkedDrives():
             try:
                 capacity, alloc, physical = self._getExtendInfo(drive)
             except libvirt.libvirtError as e:
@@ -931,6 +928,14 @@ class Vm(object):
             ret.append((drive, drive.volumeID, capacity, alloc, physical))
 
         return ret
+
+    def _chunkedDrives(self):
+        """
+        Return list of chunked drives, or non-chunked drives replicating to
+        chunked replica drive.
+        """
+        return [drive for drive in self._devices[hwclass.DISK]
+                if drive.chunked or drive.replicaChunked]
 
     def _getExtendInfo(self, drive):
         """
@@ -989,6 +994,16 @@ class Vm(object):
         if physical - alloc < drive.watermarkLimit:
             return True
         return False
+
+    def needsDriveMonitoring(self):
+        """
+        Return True if vm needs drive monitoring for this cycle.
+
+        This is called every 2 seconds (configurable) by the periodic system.
+        If this retruns True, the periodic system will invoke
+        extendDrivesIfNeeded during this periodic cycle.
+        """
+        return self._volumesPrepared and bool(self._chunkedDrives())
 
     def extendDrivesIfNeeded(self):
         try:
