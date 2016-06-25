@@ -280,7 +280,7 @@ class Vm(object):
             float(self.conf.pop('elapsedTimeOffset', 0))
 
         self._usedIndices = {}  # {'ide': [], 'virtio' = []}
-        self.stopDisksStatsCollection()
+        self.disableDriveMonitor()
         self._vmStartEvent = threading.Event()
         self._vmAsyncStartError = None
         self._vmCreationEvent = threading.Event()
@@ -772,14 +772,14 @@ class Vm(object):
     def incomingMigrationPending(self):
         return 'migrationDest' in self.conf or 'restoreState' in self.conf
 
-    def stopDisksStatsCollection(self):
-        self._volumesPrepared = False
+    def disableDriveMonitor(self):
+        self._driveMonitorEnabled = False
 
-    def startDisksStatsCollection(self):
-        self._volumesPrepared = True
+    def enableDriveMonitor(self):
+        self._driveMonitorEnabled = True
 
-    def isDisksStatsCollectionEnabled(self):
-        return self._volumesPrepared
+    def driveMonitorEnabled(self):
+        return self._driveMonitorEnabled
 
     def preparePaths(self):
         drives = self._devSpecMapFromConf()[hwclass.DISK]
@@ -795,7 +795,7 @@ class Vm(object):
 
         else:
             # Now we got all the resources we needed
-            self.startDisksStatsCollection()
+            self.enableDriveMonitor()
 
     def _prepareTransientDisks(self, drives):
         for drive in drives:
@@ -1003,7 +1003,7 @@ class Vm(object):
         If this retruns True, the periodic system will invoke
         extendDrivesIfNeeded during this periodic cycle.
         """
-        return self._volumesPrepared and bool(self._chunkedDrives())
+        return self._driveMonitorEnabled and bool(self._chunkedDrives())
 
     def extendDrivesIfNeeded(self):
         try:
@@ -3515,12 +3515,12 @@ class Vm(object):
         # see the XML even with 'info' as default level.
         self.log.info(snapxml)
 
-        # We need to stop the collection of the stats for two reasons, one
-        # is to prevent spurious libvirt errors about missing drive paths
-        # (since we're changing them), and also to prevent to trigger a drive
+        # We need to stop the drive monitoring for two reasons, one is to
+        # prevent spurious libvirt errors about missing drive paths (since
+        # we're changing them), and also to prevent to trigger a drive
         # extension for the new volume with the apparent size of the old one
         # (the apparentsize is updated as last step in updateDriveParameters)
-        self.stopDisksStatsCollection()
+        self.disableDriveMonitor()
 
         try:
             if should_freeze:
@@ -3560,7 +3560,7 @@ class Vm(object):
                     self.log.exception("Failed to update drive information"
                                        " for '%s'", drive)
         finally:
-            self.startDisksStatsCollection()
+            self.enableDriveMonitor()
             if memoryParams:
                 self.cif.teardownVolumePath(memoryVol)
 
@@ -3688,11 +3688,11 @@ class Vm(object):
             blockJobFlags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             diskToTeardown = srcDisk
 
-            # We need to stop the stats collection in order to avoid spurious
+            # We need to stop monitoring drives in order to avoid spurious
             # errors from the stats threads during the switch from the old
             # drive to the new one. This applies only to the case where we
             # actually switch to the destination.
-            self.stopDisksStatsCollection()
+            self.disableDriveMonitor()
         else:
             self.log.debug("Stopping the disk replication remaining on the "
                            "source drive: %s", dstDisk)
@@ -3722,7 +3722,7 @@ class Vm(object):
             self.updateDriveParameters(dstDiskCopy)
         finally:
             self._delDiskReplica(drive)
-            self.startDisksStatsCollection()
+            self.enableDriveMonitor()
 
         return {'status': doneCode}
 
@@ -4921,9 +4921,9 @@ class LiveMergeCleanupThread(threading.Thread):
 
         # A pivot changes the top volume being used for the VM Disk.  Until
         # we can correct our metadata following the pivot we should not
-        # attempt to collect disk stats.
-        # TODO: Stop collection only for the live merge disk
-        self.vm.stopDisksStatsCollection()
+        # attempt to monitor drives.
+        # TODO: Stop monitoring only for the live merge disk
+        self.vm.disableDriveMonitor()
 
         self.vm.log.info("Requesting pivot to complete active layer commit "
                          "(job %s)", self.job['jobID'])
@@ -4931,7 +4931,7 @@ class LiveMergeCleanupThread(threading.Thread):
             flags = libvirt.VIR_DOMAIN_BLOCK_JOB_ABORT_PIVOT
             ret = self.vm._dom.blockJobAbort(self.drive.name, flags)
         except:
-            self.vm.startDisksStatsCollection()
+            self.vm.enableDriveMonitor()
             raise
         else:
             if ret != 0:
@@ -4965,7 +4965,7 @@ class LiveMergeCleanupThread(threading.Thread):
                          "(job %s)", self.job['jobID'])
         self.vm._syncVolumeChain(self.drive)
         if self.doPivot:
-            self.vm.startDisksStatsCollection()
+            self.vm.enableDriveMonitor()
         self.success = True
         self.vm.log.info("Synchronization completed (job %s)",
                          self.job['jobID'])

@@ -324,7 +324,7 @@ class UpdateVolumes(_RunnableOnVm):
     def required(self):
         return (super(UpdateVolumes, self).required and
                 # Avoid queries from storage during recovery process
-                self._vm.isDisksStatsCollectionEnabled())
+                self._vm.driveMonitorEnabled())
 
     def _execute(self):
         for drive in self._vm.getDiskDevices():
