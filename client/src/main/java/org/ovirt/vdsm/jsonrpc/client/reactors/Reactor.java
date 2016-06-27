@@ -88,11 +88,11 @@ public abstract class Reactor extends Thread {
                 try {
                     client.process();
                 } catch (IOException | ClientConnectionException ex) {
-                    logException(LOG, "Unable to process messages", ex);
+                    logException(LOG, "Unable to process messages: " + ex.getMessage(), ex);
                     client.disconnect(ex.getMessage() != null ? ex.getMessage() : "Unable to process messages");
                     key.cancel();
                 } catch (Throwable e) {
-                    logException(LOG, "Internal server error", e);
+                    logException(LOG, "Internal server error: " + e.getMessage(), e);
                     client.disconnect(e.getMessage() != null ? e.getMessage() : "Internal server error");
                     key.cancel();
                 }

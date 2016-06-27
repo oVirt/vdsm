@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public abstract class SSLClient extends StompCommonClient {
-    private static Logger log = LoggerFactory.getLogger(SSLClient.class);
+    protected static Logger log = LoggerFactory.getLogger(SSLClient.class);
     protected final Selector selector;
     protected SSLEngineNioHelper nioEngine;
     private SSLContext sslContext;
