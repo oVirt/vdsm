@@ -165,7 +165,7 @@ class Monitor(object):
         else:
             self._scanning_stopped.set()
             self._scanning_started.wait()
-            os.write(self._pipetrick[1], 'c')
+            os.write(self._pipetrick[1], b'c')
             self._scan_thread.join()
 
     def is_stopped(self):
