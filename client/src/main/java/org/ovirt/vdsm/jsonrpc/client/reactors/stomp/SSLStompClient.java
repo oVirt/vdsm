@@ -106,6 +106,7 @@ public class SSLStompClient extends SSLClient {
         try {
             this.connected.await(policy.getRetryTimeOut(), policy.getTimeUnit());
         } catch (InterruptedException e) {
+            log.error(e.getMessage(), e);
             disconnect("Waiting for connect interrupted");
             throw new IllegalStateException("Communication interrupted");
         }
