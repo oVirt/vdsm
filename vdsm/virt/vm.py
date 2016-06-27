@@ -1898,6 +1898,9 @@ class Vm(object):
             with self._confLock:
                 self.conf['pid'] = str(self._getPid())
 
+        self._dom_vcpu_setup()
+
+    def _dom_vcpu_setup(self):
         nice = int(self.conf.get('nice', '0'))
         nice = max(min(nice, 19), 0)
 
