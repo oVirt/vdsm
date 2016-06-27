@@ -124,7 +124,8 @@ class _Server(object):
         self._default_timeout = timeout
 
     def _prepare_args(self, className, methodName, args, kwargs):
-        allargs = self._schema.get_arg_names(className, methodName)
+        allargs = self._schema.get_arg_names(vdsmapi.MethodRep(className,
+                                                               methodName))
         params = dict(zip(allargs, args))
         params.update(kwargs)
         return params
