@@ -22,7 +22,6 @@ from __future__ import absolute_import
 from collections import deque
 import time
 
-from functional.networkTests import IP_ADDRESS, IP_CIDR
 from .nettestlib import Dummy
 from vdsm.network.netlink import monitor
 from vdsm.sysctl import is_disabled_ipv6
@@ -30,6 +29,9 @@ from vdsm.utils import monotonic_time
 
 from testValidation import ValidateRunningAsRoot
 from testlib import start_thread, VdsmTestCase as TestCaseBase
+
+IP_ADDRESS = '192.0.2.1'
+IP_CIDR = '24'
 
 
 class NetlinkEventMonitorTests(TestCaseBase):
