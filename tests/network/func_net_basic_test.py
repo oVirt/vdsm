@@ -29,6 +29,7 @@ NETWORK_NAME = 'test-network'
 VLAN = 10
 
 
+@attr(type='functional')
 class NetworkBasicTemplate(NetFuncTestCase):
     __test__ = False
 
