@@ -18,10 +18,11 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import httplib
 import json
 import socket
 import io
+
+from six.moves import http_client
 
 from monkeypatch import MonkeyPatch
 from testlib import VdsmTestCase
@@ -38,6 +39,7 @@ class FakeResponse(object):
         self.status = status
         self.reason = reason
         self.headers = headers or {"content-length": len(data)}
+        # TODO: fix to return the same type in python3
         self.file = io.StringIO(data)
 
     def getheader(self, name, default=None):
@@ -158,7 +160,7 @@ class TestImageTickets(VdsmTestCase):
             self.assertTrue(err_msg in e.value)
 
     @MonkeyPatch(imagetickets, 'uhttp', FakeUHTTP())
-    @permutations([[httplib.HTTPException], [socket.error], [OSError]])
+    @permutations([[http_client.HTTPException], [socket.error], [OSError]])
     def test_image_tickets_error(self, exc_type):
         ticket = create_ticket(uuid="uuid")
 

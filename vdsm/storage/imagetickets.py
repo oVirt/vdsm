@@ -19,12 +19,12 @@
 #
 
 import functools
-import httplib
 import json
 import logging
 import os
 
 from contextlib import closing
+from six.moves import http_client
 
 try:
     from ovirt_imageio_daemon import uhttp
@@ -74,7 +74,7 @@ def request(method, uuid, body=None):
         try:
             con.request(method, "/tickets/%s" % uuid, body=body)
             res = con.getresponse()
-        except (httplib.HTTPException, EnvironmentError) as e:
+        except (http_client.HTTPException, EnvironmentError) as e:
             raise se.ImageTicketsError("Error communicating with "
                                        "ovirt-imageio-daemon: "
                                        "{error}".format(error=e))
