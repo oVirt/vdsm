@@ -359,8 +359,15 @@ class StompServer(object):
 class StompClient(object):
     log = logging.getLogger("jsonrpc.AsyncoreClient")
 
-    def __init__(self, sock, reactor):
+    """
+    We create a client by providing socket used for communication.
+    Reactor object responsible for processing I/O and flag
+    which tells client whether it should manage reactor's
+    life cycle (by default set to True).
+    """
+    def __init__(self, sock, reactor, owns_reactor=True):
         self._reactor = reactor
+        self._owns_reactor = owns_reactor
         self._messageHandler = None
         self._socket = sock
 
@@ -408,7 +415,8 @@ class StompClient(object):
 
     def close(self):
         self._stompConn.close()
-        self._reactor.stop()
+        if self._owns_reactor:
+            self._reactor.stop()
 
 
 def StompListener(reactor, server, acceptHandler, connected_socket):
@@ -456,8 +464,9 @@ class StompReactor(object):
     def server(self):
         return self._server
 
-    def createClient(self, connected_socket):
-        return StompClient(connected_socket, self._reactor)
+    def createClient(self, connected_socket, owns_reactor=False):
+        return StompClient(connected_socket, self._reactor,
+                           owns_reactor=owns_reactor)
 
     def process_requests(self):
         self._reactor.process_requests()
