@@ -179,7 +179,7 @@ class NetlinkEventMonitorTests(TestCaseBase):
                     for event in mon:
                         pass
             except monitor.MonitorError as e:
-                self.assertEquals(e[0], monitor.E_TIMEOUT)
+                self.assertEquals(e.args[0], monitor.E_TIMEOUT)
                 raise
 
         self.assertTrue(mon.is_stopped())
