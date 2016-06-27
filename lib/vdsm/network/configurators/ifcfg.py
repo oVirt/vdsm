@@ -32,6 +32,8 @@ import shutil
 import threading
 import uuid
 
+import six
+
 from libvirt import libvirtError, VIR_ERR_NO_NETWORK
 
 from vdsm.config import config
@@ -358,7 +360,7 @@ class ConfigWriter(object):
     def restoreAtomicNetworkBackup(self):
         logging.info("Rolling back logical networks configuration "
                      "(restoring atomic logical networks backup)")
-        for network, content in self._networksBackups.iteritems():
+        for network, content in six.iteritems(self._networksBackups):
             # Networks with content None should be removed.
             # Networks with real content should be recreated.
             # To avoid libvirt errors during recreation we need
@@ -398,7 +400,7 @@ class ConfigWriter(object):
 
     def restoreAtomicBackup(self):
         logging.info("Rolling back configuration (restoring atomic backup)")
-        for confFilePath, content in self._backups.iteritems():
+        for confFilePath, content in six.iteritems(self._backups):
             if content is None:
                 logging.debug('Removing empty configuration backup %s',
                               confFilePath)
@@ -474,12 +476,12 @@ class ConfigWriter(object):
         if not self._backups and not self._networksBackups:
             return
 
-        stop_devices(self._backups.iterkeys())
+        stop_devices(self._backups)
 
         self.restoreAtomicNetworkBackup()
         self.restoreAtomicBackup()
 
-        start_devices(self._backups.iterkeys())
+        start_devices(self._backups)
 
     @classmethod
     def clearBackups(cls):

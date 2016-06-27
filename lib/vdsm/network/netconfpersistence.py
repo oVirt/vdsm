@@ -26,6 +26,8 @@ import logging
 import os
 import pwd
 
+import six
+
 from vdsm.config import config
 from vdsm.tool.restore_nets import restore
 from vdsm import commands
@@ -46,9 +48,9 @@ class BaseConfig(object):
         self.networks = networks
         self.bonds = bonds
 
-    def setNetwork(self, network, attributes):
+    def setNetwork(self, network, attrs):
         # Clean netAttrs from fields that should not be serialized
-        cleanAttrs = dict((key, value) for key, value in attributes.iteritems()
+        cleanAttrs = dict((key, value) for key, value in six.iteritems(attrs)
                           if value is not None and key not in
                           ('configurator', '_netinfo', 'force',
                            'bondingOptions', 'implicitBonding'))
@@ -97,7 +99,7 @@ class BaseConfig(object):
             if name not in lhs:
                 result[name] = {'remove': True}
 
-        for name, attr in lhs.iteritems():
+        for name, attr in six.iteritems(lhs):
             if name not in rhs or attr != rhs[name]:
                 result[name] = lhs[name]
         return result
@@ -124,9 +126,9 @@ class Config(BaseConfig):
 
     def save(self):
         self._clearDisk()
-        for bond, attrs in self.bonds.iteritems():
+        for bond, attrs in six.iteritems(self.bonds):
             self._setConfig(attrs, self._bondingPath(bond))
-        for network, attrs in self.networks.iteritems():
+        for network, attrs in six.iteritems(self.networks):
             self._setConfig(attrs, self._networkPath(network))
         logging.info('Saved new config %r to %s and %s' %
                      (self, self.networksPath, self.bondingsPath))

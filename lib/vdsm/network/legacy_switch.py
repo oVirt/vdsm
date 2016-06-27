@@ -438,7 +438,7 @@ def _should_keep_bridge(network_attrs, currently_bridged, net_kernel_config):
     # special case as it is handled automatically by the os)
     def _bridge_only_config(conf):
         return dict(
-            (k, v) for k, v in conf.iteritems()
+            (k, v) for k, v in six.iteritems(conf)
             if k not in ('bonding', 'nic', 'mtu', 'vlan'))
 
     def _bridge_reconfigured(current_net_conf, required_net_conf):
@@ -457,7 +457,7 @@ def add_missing_networks(configurator, networks, bondings, _netinfo):
     # We need to use the newest host info
     _netinfo.updateDevices()
 
-    for network, attrs in networks.iteritems():
+    for network, attrs in six.iteritems(networks):
         if 'remove' in attrs:
             continue
 
@@ -612,14 +612,14 @@ def _bonds_add(bonds, configurator, _netinfo):
 
 
 def validate_network_setup(networks, bondings):
-    for network, networkAttrs in networks.iteritems():
+    for network, networkAttrs in six.iteritems(networks):
         if networkAttrs.get('remove', False):
             _validate_network_remove(networkAttrs)
         elif 'vlan' in networkAttrs:
             Vlan.validateTag(networkAttrs['vlan'])
 
     currentNicsSet = set(netinfo_nics.nics())
-    for bonding, bondingAttrs in bondings.iteritems():
+    for bonding, bondingAttrs in six.iteritems(bondings):
         Bond.validateName(bonding)
         if 'options' in bondingAttrs:
             Bond.validateOptions(bondingAttrs['options'])

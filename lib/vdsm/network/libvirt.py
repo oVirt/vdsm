@@ -1,4 +1,4 @@
-# Copyright 2011-2015 Red Hat, Inc.
+# Copyright 2011-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,6 +18,7 @@
 #
 from __future__ import absolute_import
 
+import six
 import xml.etree.cElementTree as etree
 from xml.sax.saxutils import escape
 
@@ -64,7 +65,7 @@ def createNetworkDef(network, bridged=True, iface=None):
         if text:
             elem.text = escape(text)
         if attrs:
-            for attr, value in attrs.iteritems():
+            for attr, value in six.iteritems(attrs):
                 elem.set(attr, escape(str(value)))
         return elem
 

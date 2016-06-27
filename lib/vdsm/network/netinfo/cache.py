@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -124,7 +124,7 @@ def libvirtNets2vdsm(nets, routes=None, ipAddrs=None):
         ipAddrs = getIpAddrs()
 
     d = {}
-    for net, netAttr in nets.iteritems():
+    for net, netAttr in six.iteritems(nets):
         try:
             # Pass the iface if the net is _not_ bridged, the bridge otherwise
             d[net] = _getNetInfo(netAttr.get('iface', net), netAttr['bridged'],
@@ -230,7 +230,7 @@ class NetInfo(object):
 
     def _getBridgedNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (bridge, vlan) connected to nic/bond """
-        for network, netdict in self.networks.iteritems():
+        for network, netdict in six.iteritems(self.networks):
             if netdict['bridged']:
                 for interface in netdict['ports']:
                     if iface == interface:
@@ -240,7 +240,7 @@ class NetInfo(object):
 
     def _getBridgelessNetworksAndVlansForIface(self, iface):
         """ Returns tuples of (network, vlan) connected to nic/bond """
-        for network, netdict in self.networks.iteritems():
+        for network, netdict in six.iteritems(self.networks):
             if not netdict['bridged']:
                 if iface == netdict['iface']:
                     yield (network, None)
@@ -254,14 +254,14 @@ class NetInfo(object):
 
     def getNetworkForIface(self, iface):
         """ Return the network attached to nic/bond """
-        for network, netdict in self.networks.iteritems():
+        for network, netdict in six.iteritems(self.networks):
             if ('ports' in netdict and iface in netdict['ports'] or
                     'iface' in netdict and iface == netdict['iface']):
                 return network
 
     def getBridgedNetworkForIface(self, iface):
         """ Return all bridged networks attached to nic/bond """
-        for bridge, netdict in self.networks.iteritems():
+        for bridge, netdict in six.iteritems(self.networks):
             if netdict['bridged'] and iface in netdict['ports']:
                 return bridge
 
@@ -270,7 +270,7 @@ class NetInfo(object):
         return bondAttrs['slaves']
 
     def getBondingForNic(self, nic):
-        bondings = [b for (b, attrs) in self.bondings.iteritems() if
+        bondings = [b for (b, attrs) in six.iteritems(self.bondings) if
                     nic in attrs['slaves']]
         if bondings:
             assert len(bondings) == 1, \
