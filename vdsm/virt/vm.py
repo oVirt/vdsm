@@ -1840,6 +1840,8 @@ class Vm(object):
         if not self._dom.connected:
             raise MissingLibvirtDomainError(vmexitreason.LIBVIRT_START_FAILED)
 
+        sampling.stats_cache.add(self.id)
+
         self._updateDomainDescriptor()
 
         # REQUIRED_FOR migrate from vdsm-4.16
@@ -1861,7 +1863,6 @@ class Vm(object):
                                                               nic.name)
 
         self._guestEventTime = self._startTime
-        sampling.stats_cache.add(self.id)
         try:
             self.guestAgent.start()
         except Exception:
