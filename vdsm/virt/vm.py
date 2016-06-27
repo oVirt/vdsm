@@ -1645,6 +1645,8 @@ class Vm(object):
 
         sampling.stats_cache.add(self.id)
 
+        self._guestEventTime = self._startTime
+
         self._updateDomainDescriptor()
 
         # REQUIRED_FOR migrate from vdsm-4.16
@@ -1665,7 +1667,6 @@ class Vm(object):
                         supervdsm.getProxy().setPortMirroring(network,
                                                               nic.name)
 
-        self._guestEventTime = self._startTime
         try:
             self.guestAgent.start()
         except Exception:
