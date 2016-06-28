@@ -9,6 +9,7 @@ make distclean
         --with-qemu-kvm='qemu-kvm-rhev' \
         --with-qemu-img='qemu-img-rhev' \
         --enable-hooks \
+        --enable-vhostmd-hook \
         --disable-gluster-mgmt \
         --disable-python3
 make dist
