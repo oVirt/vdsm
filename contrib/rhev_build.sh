@@ -10,7 +10,8 @@ make distclean
         --with-qemu-img='qemu-img-rhev' \
         --enable-hooks \
         --disable-gluster-mgmt \
-        --disable-python3
+        --disable-python3 \
+        --disable-openvswitch
 make dist
 
 echo
