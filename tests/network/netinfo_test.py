@@ -30,7 +30,6 @@ from vdsm.network import libvirt
 from vdsm.network import netinfo
 from vdsm.network.netinfo import addresses, bonding, dns, misc, nics, routes
 from vdsm.network.netinfo.cache import get
-from vdsm.network.netlink import addr as nl_addr
 from vdsm.utils import random_iface_name
 from vdsm import sysctl
 
@@ -132,16 +131,20 @@ class TestNetinfo(TestCaseBase):
                          addresses.IPv4toMapped('127.0.0.1'))
 
     def testGetDeviceByIP(self):
-        for addr in nl_addr.iter_addrs():
-            # Link-local IPv6 addresses are generated from the MAC address,
-            # which is shared between a nic and its bridge. Since We don't
-            # support having the same IP address on two different NICs, and
-            # link-local IPv6 addresses aren't interesting for 'getDeviceByIP'
-            # then ignore them in the test
-            if addr['scope'] != 'link':
+        NL_ADDRESS4 = {'label': 'iface0',
+                       'address': '127.0.0.1/32',
+                       'family': 'inet'}
+        NL_ADDRESS6 = {'label': 'iface1',
+                       'address': '2001::1:1:1/48',
+                       'family': 'inet6'}
+        NL_ADDRESSES = [NL_ADDRESS4, NL_ADDRESS6]
+
+        with MonkeyPatchScope([
+                (addresses.nl_addr, 'iter_addrs', lambda: NL_ADDRESSES)]):
+            for nl_addr in NL_ADDRESSES:
                 self.assertEqual(
-                    addr['label'],
-                    addresses.getDeviceByIP(addr['address'].split('/')[0]))
+                    nl_addr['label'],
+                    addresses.getDeviceByIP(nl_addr['address'].split('/')[0]))
 
     def _testNics(self):
         """Creates a test fixture so that nics() reports:
