@@ -608,7 +608,10 @@ class TestVmDevices(XMLTestCase):
         with fake.VM(vmConf) as testvm:
             dev = (testvm.getConfGraphics() if isLegacy
                    else vmConf['devices'])[0]
-            graph = vmdevices.graphics.Graphics(vmConf, self.log, **dev)
+            with MonkeyPatchScope([
+                (vmdevices.graphics.net_api, 'libvirt_networks', lambda: {})
+            ]):
+                graph = vmdevices.graphics.Graphics(vmConf, self.log, **dev)
             self.assertXMLEqual(graph.getXML().toxml(), xml)
 
             if graph.device == 'spice':
