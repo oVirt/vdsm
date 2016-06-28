@@ -883,6 +883,7 @@ class Vm(object):
             self.conf['clientIp'] = clientIp
             self._clientPort = clientPort
 
+    @utils.traceback()
     def _timedDesktopLock(self):
         # This is not a definite fix, we're aware that there is still the
         # possibility of a race condition, however this covers more cases
