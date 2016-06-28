@@ -30,7 +30,6 @@ import re
 from collections import namedtuple
 
 from vdsm import commands
-from vdsm import constants
 from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
@@ -75,9 +74,6 @@ def rescan():
     # First rescan iSCSI and FCP connections
     iscsi.rescan()
     hba.rescan()
-
-    # Now let multipath daemon pick up new devices
-    misc.execCmd([constants.EXT_MULTIPATH], sudo=True)
 
     # Scanning SCSI interconnects starts a storm of udev events. Wait until all
     # events are processed, ensuring detection of new devices and creation or
