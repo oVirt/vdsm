@@ -187,12 +187,7 @@ Requires: device-mapper-multipath >= 0.4.9-80.fc23
 Requires: e2fsprogs
 Requires: fence-agents-all
 Requires: kernel >= 3.10.0-327.18.1.el7
-%if 0%{?centos}
-# TODO: Remove when lvm2 2.02.130 is available
-Requires: lvm2 >= 2.02.107
-%else
-Requires: lvm2 >= 2.02.130-2
-%endif
+Requires: lvm2 >= 7:2.02.130-5.el7_2.5
 Requires: python >= 2.7.5-18.el7_1.1
 Requires: policycoreutils-python
 Requires: selinux-policy-targeted >= 3.13.1-16.el7
