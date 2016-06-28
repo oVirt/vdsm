@@ -18,8 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import types
-
 from testlib import VdsmTestCase
 from gluster import exception as gluster_exception
 from gluster.exception import GlusterException
@@ -85,7 +83,7 @@ class TestGlusterException(VdsmTestCase):
         for name in dir(gluster_exception):
             obj = getattr(gluster_exception, name)
 
-            if not isinstance(obj, types.TypeType):
+            if not isinstance(obj, type):
                 continue
 
             if not issubclass(obj, GlusterException):

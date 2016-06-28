@@ -175,7 +175,6 @@ blacklist_modules_python3 = \
 	fileVolumeTests.py \
 	fuserTests.py \
 	gluster_cli_tests.py \
-	gluster_exception_test.py \
 	guestagentTests.py \
 	hooksTests.py \
 	hostdevTests.py \
@@ -222,7 +221,6 @@ blacklist_modules_python3 = \
 	storageServerTests.py \
 	storage_rwlock_test.py \
 	storage_blkdiscard_test.py \
-	storage_exception_test.py \
 	storage_sdm_api_test.py \
 	storage_sdm_create_volume_test.py \
 	storage_volume_artifacts_test.py \

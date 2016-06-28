@@ -18,7 +18,7 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import types
+from __future__ import absolute_import
 
 from vdsm.exception import GeneralException
 from vdsm.storage import exception as storage_exception
@@ -33,7 +33,7 @@ class TestStorageExceptions(TestCaseBase):
         for name in dir(storage_exception):
             obj = getattr(storage_exception, name)
 
-            if not isinstance(obj, types.TypeType):
+            if not isinstance(obj, type):
                 continue
 
             if not issubclass(obj, GeneralException):
