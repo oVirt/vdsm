@@ -894,7 +894,7 @@ class Vm(object):
             if self._consoleDisconnectAction == CDA.LOCK_SCREEN:
                 self.guestAgent.desktopLock()
             elif self._consoleDisconnectAction == CDA.LOGOUT:
-                self.guestAgent.desktopLogoff()
+                self.guestAgent.desktopLogoff(False)
             elif self._consoleDisconnectAction == CDA.REBOOT:
                 self.shutdown(delay=delay, reboot=True, timeout=timeout,
                               message='Scheduled reboot on disconnect',
