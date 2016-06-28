@@ -3515,3 +3515,7 @@ class HSM(object):
         job = sdm.api.create_volume.Job(job_id, host_id, dom_manifest,
                                         vol_info)
         self.sdm_schedule(job)
+
+    @public
+    def sdm_copy_data(self, job_id, source, destination):
+        raise NotImplementedError()

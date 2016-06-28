@@ -6957,6 +6957,44 @@ types:
         - *vmUpdateInterfaceDeviceParams
         - *vmUpdateGraphicsDeviceParams
 
+    CopyDataEndpointType: &CopyDataEndpointType
+        added: '4.1'
+        description: An enumeration of possible CopyDataEndpoint types
+        name: CopyDataEndpointType
+        type: enum
+        values:
+            div: A vdsm volume identified by domain, image, and volume UUIDs
+
+    CopyDataDIVEndpoint: &CopyDataDIVEndpoint
+        added: '4.1'
+        description: An endpoint describing a Volume on a vdsm Storage Domain.
+        properties:
+        -   description: The UUID of the Storage Domain
+            name: sd_id
+            type: *UUID
+
+        -   description: The UUID of the Image
+            name: img_id
+            type: *UUID
+
+        -   description: The UUID of the Volume
+            name: vol_id
+            type: *UUID
+        type: object
+
+    CopyDataEndpoint: &CopyDataEndpoint
+        added: '4.1'
+        description: A discriminated record containing an endpoint for a
+            copy data operation.
+        name: CopyDataEndpoint
+        properties:
+        -   description: The specific type of endpoint.
+            name: endpoint_type
+            type: *CopyDataEndpointType
+        type: union
+        values:
+        - *CopyDataDIVEndpoint
+
 
 Host.setupNetworks:
     added: '3.1'
@@ -9745,3 +9783,19 @@ SDM.create_volume:
     -   description: Information about the new volume to be created
         name: vol_info
         type: *CreateVolumeInfo
+
+SDM.copy_data:
+    added: '4.1'
+    description: Copy data from one volume to another.
+    params:
+    -   description: A UUID to be used for tracking the job progress
+        name: job_id
+        type: *UUID
+
+    -   description: The source endpoint
+        name: source
+        type: *CopyDataEndpoint
+
+    -   description: The destination endpoint
+        name: destination
+        type: *CopyDataEndpoint

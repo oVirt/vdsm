@@ -1589,3 +1589,6 @@ class SDM(APIBase):
 
     def create_volume(self, job_id, vol_info):
         return self._irs.sdm_create_volume(job_id, vol_info)
+
+    def copy_data(self, job_id, source, destination):
+        return self._irs.sdm_copy_data(job_id, source, destination)
