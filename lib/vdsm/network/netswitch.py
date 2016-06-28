@@ -36,7 +36,7 @@ from . import legacy_switch
 from . import errors as ne
 from .ovs import info as ovs_info
 from .ovs import switch as ovs_switch
-from .netconfpersistence import RunningConfig
+from .netconfpersistence import RunningConfig, Transaction
 
 
 def _split_switch_type_entries(entries, running_entries):
@@ -154,14 +154,36 @@ def _setup_ovs(networks, bondings, options, in_rollback):
     nets2add.update(nets2edit)
     nets2remove.update(nets2edit)
 
-    with ovs_switch.transaction(in_rollback, networks, bondings):
+    with Transaction(in_rollback=in_rollback) as config:
         ovs_switch.setup(_ovs_info, nets2add, nets2remove, bonds2add,
                          bonds2edit, bonds2remove)
+        _update_running_config(networks, bondings, config)
         ovs_switch.cleanup()
         _setup_ipv6autoconf(networks)
         _set_ovs_links_up(nets2add, bonds2add, bonds2edit)
         _setup_ovs_ip_config(nets2add, nets2remove)
         connectivity.check(options)
+
+
+def _update_running_config(networks, bondings, running_config):
+    """Update running_config with expected configuration.
+
+    This have to be done as soon as we do any changes in the system. This
+    information will be used to generate rollback query.
+
+    TODO: We can use KernelConfig when it will be fully reliable.
+    """
+    for net, attrs in six.iteritems(networks):
+        if 'remove' in attrs:
+            running_config.removeNetwork(net)
+        else:
+            running_config.setNetwork(net, attrs)
+
+    for bond, attrs in six.iteritems(bondings):
+        if 'remove' in attrs:
+            running_config.removeBonding(bond)
+        else:
+            running_config.setBonding(bond, attrs)
 
 
 def _setup_ovs_ip_config(nets2add, nets2remove):
