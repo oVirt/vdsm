@@ -133,18 +133,7 @@ class CreateTests(CommandTests):
         with MonkeyPatchScope([(commands, "execCmd", create)]):
             qemuimg.create('image', size=0)
 
-    def test_qcow2_compat_unsupported(self):
-        def create(cmd, **kw):
-            expected = [QEMU_IMG, 'create', '-f', 'qcow2', 'image']
-            self.assertEqual(cmd, expected)
-            return 0, '', ''
-
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('create', False)),
-                               (commands, 'execCmd', create)]):
-            qemuimg.create('image', format='qcow2')
-
-    def test_qcow2_compat_supported(self):
+    def test_qcow2_compat(self):
 
         def create(cmd, **kw):
             expected = [QEMU_IMG, 'create', '-f', 'qcow2', '-o', 'compat=0.10',
@@ -152,17 +141,13 @@ class CreateTests(CommandTests):
             self.assertEqual(cmd, expected)
             return 0, '', ''
 
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('create', True)),
-                               (qemuimg, 'config', CONFIG),
+        with MonkeyPatchScope([(qemuimg, 'config', CONFIG),
                                (commands, 'execCmd', create)]):
             qemuimg.create('image', format='qcow2')
 
     def test_invalid_config(self):
         config = make_config([('irs', 'qcow2_compat', '1.2')])
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('create', True)),
-                               (qemuimg, 'config', config)]):
+        with MonkeyPatchScope([(qemuimg, 'config', config)]):
             with self.assertRaises(exception.InvalidConfiguration):
                 qemuimg.create('image', format='qcow2')
 
@@ -179,28 +164,13 @@ class ConvertTests(CommandTests):
                                 self.supported('convert', False))]):
             qemuimg.convert('src', 'dst')
 
-    def test_qcow2_compat_unsupported(self):
-        def convert(cmd, **kw):
-            expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', 'src', '-O',
-                        'qcow2', 'dst']
-            self.assertEqual(cmd, expected)
-
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('convert', False)),
-                               (qemuimg, '_supports_src_cache',
-                                self.supported('convert', False)),
-                               (qemuimg, 'QemuImgOperation', convert)]):
-            qemuimg.convert('src', 'dst', dstFormat='qcow2')
-
-    def test_qcow2_compat_supported(self):
+    def test_qcow2_compat(self):
         def convert(cmd, **kw):
             expected = [QEMU_IMG, 'convert', '-p', '-t', 'none', 'src', '-O',
                         'qcow2', '-o', 'compat=0.10', 'dst']
             self.assertEqual(cmd, expected)
 
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('convert', True)),
-                               (qemuimg, '_supports_src_cache',
+        with MonkeyPatchScope([(qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
                                (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
@@ -212,9 +182,7 @@ class ConvertTests(CommandTests):
                         '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
             self.assertEqual(cmd, expected)
 
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('convert', True)),
-                               (qemuimg, '_supports_src_cache',
+        with MonkeyPatchScope([(qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
                                (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
@@ -227,9 +195,7 @@ class ConvertTests(CommandTests):
                         'dst']
             self.assertEqual(cmd, expected)
 
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('convert', True)),
-                               (qemuimg, '_supports_src_cache',
+        with MonkeyPatchScope([(qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
                                (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
@@ -242,9 +208,7 @@ class ConvertTests(CommandTests):
                         '-O', 'qcow2', '-o', 'compat=0.10', 'dst']
             self.assertEqual(cmd, expected)
 
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('convert', True)),
-                               (qemuimg, '_supports_src_cache',
+        with MonkeyPatchScope([(qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
                                (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
@@ -258,41 +222,12 @@ class ConvertTests(CommandTests):
                         'backing_fmt=qcow2', 'dst']
             self.assertEqual(cmd, expected)
 
-        with MonkeyPatchScope([(qemuimg, '_supports_qcow2_compat',
-                                self.supported('convert', True)),
-                               (qemuimg, '_supports_src_cache',
+        with MonkeyPatchScope([(qemuimg, '_supports_src_cache',
                                 self.supported('convert', False)),
                                (qemuimg, 'config', CONFIG),
                                (qemuimg, 'QemuImgOperation', convert)]):
             qemuimg.convert('src', 'dst', dstFormat='qcow2',
                             backing='bak', backingFormat='qcow2')
-
-
-def qcow2_compat_supported(cmd, **kw):
-    return 0, 'Supported options:\ncompat ...\n', ''
-
-
-def qcow2_compat_unsupported(cmd, **kw):
-    return 0, 'Supported options:\nsize ...\n', ''
-
-
-class SupportsQcow2ComaptTests(TestCaseBase):
-
-    @MonkeyPatch(commands, 'execCmd', qcow2_compat_supported)
-    def test_create_supported(self, **kw):
-        self.assertTrue(qemuimg._supports_qcow2_compat('create'))
-
-    @MonkeyPatch(commands, 'execCmd', qcow2_compat_unsupported)
-    def test_create_unsupported(self, **kw):
-        self.assertFalse(qemuimg._supports_qcow2_compat('create'))
-
-    @MonkeyPatch(commands, 'execCmd', qcow2_compat_supported)
-    def test_convert_supported(self, **kw):
-        self.assertTrue(qemuimg._supports_qcow2_compat('convert'))
-
-    @MonkeyPatch(commands, 'execCmd', qcow2_compat_unsupported)
-    def test_convert_unsupported(self, **kw):
-        self.assertFalse(qemuimg._supports_qcow2_compat('convert'))
 
 
 def src_cache_supported(cmd, **kw):
