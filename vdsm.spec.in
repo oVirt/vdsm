@@ -137,6 +137,7 @@ Requires: %{name}-jsonrpc = %{version}-%{release}
 Requires: safelease >= 1.0-7
 Requires: mom >= 0.5.3
 Requires: ovirt-vmconsole >= 1.0.0-0
+Requires(pre): shadow-utils
 
 Requires: libvirt-client
 Requires: libvirt-daemon-config-nwfilter
