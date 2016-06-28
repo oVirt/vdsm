@@ -25,7 +25,6 @@ include $(top_srcdir)/build-aux/Makefile.subs
 dist_vdsm_PYTHON = \
 	alignmentScan.py \
 	API.py \
-	caps.py \
 	clientIF.py \
 	hooking.py \
 	mkimage.py \

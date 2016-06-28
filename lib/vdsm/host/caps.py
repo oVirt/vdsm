@@ -17,8 +17,8 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
 """Collect host capabilities"""
+from __future__ import absolute_import
 
 import os
 import logging

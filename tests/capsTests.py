@@ -26,7 +26,7 @@ import xml.etree.ElementTree as ET
 from testlib import VdsmTestCase as TestCaseBase
 from monkeypatch import MonkeyPatch
 
-import caps
+from vdsm.host import caps
 from vdsm import commands
 from vdsm import cpuarch
 from vdsm import numa

@@ -51,6 +51,7 @@ from vdsm import utils
 from vdsm.compat import pickle
 from vdsm.config import config
 from vdsm.common.define import ERROR, NORMAL, doneCode, errCode
+from vdsm.host import caps
 from vdsm.logUtils import SimpleLogAdapter
 from vdsm.network import api as net_api
 from vdsm.storage import fileUtils
@@ -65,12 +66,10 @@ from vdsm.virt import vmstats
 from vdsm.virt import vmstatus
 from vdsm.virt.vmpowerdown import VmShutdown, VmReboot
 from vdsm.virt.utils import isVdsmImage, cleanup_guest_socket, is_kvm
+
+# local imports. TODO: move to vdsm.storage
 from storage import sd
 from storage import sdc
-
-# local imports
-# In future those should be imported via ..
-import caps
 
 # local package imports
 from .domain_descriptor import DomainDescriptor, MutableDomainDescriptor

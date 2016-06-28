@@ -39,6 +39,7 @@ from vdsm.common import api
 from vdsm.common import exception
 from vdsm.common import response
 from vdsm.host import api as hostapi
+from vdsm.host import caps
 from vdsm.logUtils import AllVmStatsValue, Suppressed
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
@@ -52,7 +53,6 @@ from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from vdsm.compat import pickle
 from vdsm.common.define import doneCode, errCode
-import caps
 from vdsm.config import config
 from vdsm.virt import sampling
 

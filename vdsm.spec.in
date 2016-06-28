@@ -892,7 +892,6 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/virt
 %dir %{_datadir}/%{vdsm_name}/virt/vmdevices
 %{_datadir}/%{vdsm_name}/alignmentScan.py*
-%{_datadir}/%{vdsm_name}/caps.py*
 %{_datadir}/%{vdsm_name}/clientIF.py*
 %{_datadir}/%{vdsm_name}/daemonAdapter
 %{_datadir}/%{vdsm_name}/API.py*
