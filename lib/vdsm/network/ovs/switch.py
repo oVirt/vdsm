@@ -18,13 +18,11 @@
 #
 from __future__ import absolute_import
 
-from contextlib import contextmanager
 import itertools
 
 import six
 
 from vdsm.network import errors as ne
-from vdsm.network.netconfpersistence import RunningConfig
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo.nics import nics
 from vdsm.utils import random_iface_name
@@ -46,34 +44,6 @@ def validate_network_setup(nets, bonds):
     for bond, attrs in six.iteritems(bonds):
         validator.validate_bond_configuration(
             bond, attrs, nets, _netinfo['networks'], kernel_nics)
-
-
-@contextmanager
-def transaction(in_rollback, nets, bonds):
-    # FIXME: This and _update_running_config are temporary functions handling
-    # only positive flows.
-    running_config = RunningConfig()
-    try:
-        yield
-    except:
-        raise
-    finally:
-        _update_running_config(nets, bonds, running_config)
-        running_config.save()
-
-
-def _update_running_config(networks, bondings, running_config):
-    for net, attrs in six.iteritems(networks):
-        if 'remove' in attrs:
-            running_config.removeNetwork(net)
-        else:
-            running_config.setNetwork(net, attrs)
-
-    for bond, attrs in six.iteritems(bondings):
-        if 'remove' in attrs:
-            running_config.removeBonding(bond)
-        else:
-            running_config.setBonding(bond, attrs)
 
 
 def setup(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
