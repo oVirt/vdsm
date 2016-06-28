@@ -79,7 +79,6 @@ def _update_running_config(networks, bondings, running_config):
 def setup(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
           bonds2remove):
     ovsdb = driver.create()
-
     with Setup(ovsdb, ovs_info) as s:
         s.remove_nets(nets2remove)
         s.remove_bonds(bonds2remove)
@@ -87,6 +86,9 @@ def setup(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
         s.add_bonds(bonds2add)
         s.add_nets(nets2add)
 
+
+def cleanup():
+    ovsdb = driver.create()
     with ovsdb.transaction() as t:
         t.add(*_cleanup_unused_bridges(ovsdb))
 

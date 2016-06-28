@@ -34,7 +34,8 @@ from vdsm.utils import memoized
 from . import connectivity
 from . import legacy_switch
 from . import errors as ne
-from .ovs import switch as ovs_switch, info as ovs_info
+from .ovs import info as ovs_info
+from .ovs import switch as ovs_switch
 from .netconfpersistence import RunningConfig
 
 
@@ -156,6 +157,7 @@ def _setup_ovs(networks, bondings, options, in_rollback):
     with ovs_switch.transaction(in_rollback, networks, bondings):
         ovs_switch.setup(_ovs_info, nets2add, nets2remove, bonds2add,
                          bonds2edit, bonds2remove)
+        ovs_switch.cleanup()
         _setup_ipv6autoconf(networks)
         _set_ovs_links_up(nets2add, bonds2add, bonds2edit)
         _setup_ovs_ip_config(nets2add, nets2remove)
