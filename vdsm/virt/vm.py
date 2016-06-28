@@ -997,10 +997,10 @@ class Vm(object):
 
     def needsDriveMonitoring(self):
         """
-        Return True if vm needs drive monitoring for this cycle.
+        Return True if a vm needs drive monitoring in this cycle.
 
         This is called every 2 seconds (configurable) by the periodic system.
-        If this retruns True, the periodic system will invoke
+        If this returns True, the periodic system will invoke
         extendDrivesIfNeeded during this periodic cycle.
         """
         return self._driveMonitorEnabled and bool(self._chunkedDrives())
