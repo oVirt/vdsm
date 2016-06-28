@@ -20,6 +20,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,6 +49,7 @@ public abstract class ReactorClient {
     private final Lock lock;
     private long lastIncomingHeartbeat = 0;
     private long lastOutgoingHeartbeat = 0;
+    private AtomicBoolean closing = new AtomicBoolean();
     protected ClientPolicy policy = new DefaultConnectionRetryPolicy();
     protected final List<MessageListener> eventListeners;
     protected final Reactor reactor;
@@ -63,6 +65,7 @@ public abstract class ReactorClient {
         this.eventListeners = new CopyOnWriteArrayList<MessageListener>();
         this.lock = new ReentrantLock();
         this.outbox = new ConcurrentLinkedDeque<>();
+        this.closing.set(false);
     }
 
     public String getHostname() {
@@ -77,8 +80,14 @@ public abstract class ReactorClient {
     public void setClientPolicy(ClientPolicy policy) {
         this.policy = policy;
         this.validate();
-        if (isOpen()) {
-            disconnect("Policy reset");
+        if (!isOpen()) {
+            return;
+        }
+        try (LockWrapper wrapper = new LockWrapper(this.lock)) {
+            if (isOpen() && !this.closing.get()) {
+                scheduleClose("Policy reset");
+                this.closing.set(true);
+            }
         }
     }
 
@@ -138,17 +147,11 @@ public abstract class ReactorClient {
                 throw new ClientConnectionException("Connection failed");
             }
             postConnect(getPostConnectCallback());
+            this.closing.set(false);
         } catch (InterruptedException | ExecutionException e) {
             logException(log, "Exception during connection", e);
             final String message = "Connection issue " + e.getMessage();
-            final Callable<Void> disconnectCallable = new Callable<Void>() {
-                @Override
-                public Void call() {
-                    disconnect(message);
-                    return null;
-                }
-            };
-            scheduleTask(disconnectCallable);
+            scheduleClose(message);
             throw new ClientConnectionException(e);
         } catch (IOException e) {
             closeChannel();
@@ -182,10 +185,14 @@ public abstract class ReactorClient {
     }
 
     public Future<Void> close() {
+        return scheduleClose(CLIENT_CLOSED);
+    }
+
+    private Future<Void> scheduleClose(final String message) {
         final Callable<Void> disconnectCallable = new Callable<Void>() {
             @Override
             public Void call() {
-                disconnect(CLIENT_CLOSED);
+                disconnect(message);
                 return null;
             }
         };
@@ -200,7 +207,13 @@ public abstract class ReactorClient {
 
     public void process() throws IOException, ClientConnectionException {
         processIncoming();
+        if (this.closing.get()) {
+            return;
+        }
         processHeartbeat();
+        if (this.closing.get()) {
+            return;
+        }
         processOutgoing();
     }
 
