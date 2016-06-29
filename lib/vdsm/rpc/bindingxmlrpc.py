@@ -1195,13 +1195,16 @@ def wrapApiMethod(f):
             if f.__name__ in ('getVMList', 'getAllVmStats', 'getStats',
                               'fenceNode', 'setKsmTune'):
                 logLevel = logging.TRACE
+            suppress_args = f.__name__ in ('fenceNode',)
 
             # TODO: This password protection code is fragile and ugly. Password
             # protection should be done in the wrapped methods, and logging
             # shold be done in the next layers, similar to storage logs.
 
             displayArgs = args
-            if f.__name__ == 'vmDesktopLogin':
+            if suppress_args:
+                displayArgs = '(suppressed)'
+            elif f.__name__ == 'vmDesktopLogin':
                 if 'password' in kwargs:
                     raise TypeError("Got an unexpected keyword argument: "
                                     "'password'")
