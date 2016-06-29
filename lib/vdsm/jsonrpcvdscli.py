@@ -96,6 +96,7 @@ _COMMAND_CONVERTER = {
     'setSafeNetworkConfig': 'Host.setSafeNetworkConfig',
     'setupNetworks': 'Host.setupNetworks',
     'setVmTicket': 'VM.setTicket',
+    'setVolumeDescription': 'Volume.setDescription',
     'shutdown': 'VM.shutdown',
     'spmStart': 'StoragePool.spmStart',
     'spmStop': 'StoragePool.spmStop',
