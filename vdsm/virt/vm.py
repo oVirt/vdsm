@@ -1709,14 +1709,19 @@ class Vm(object):
         except Exception:
             self.log.exception("Failed to connect to guest agent channel")
 
-        try:
-            if self.conf.get('enableGuestEvents', False):
-                if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
+        if self.lastStatus == vmstatus.RESTORING_STATE:
+            try:
+                self.guestAgent.events.after_hibernation()
+            except Exception:
+                self.log.exception("Unexpected error on guest after "
+                                   "hibernation notification")
+        elif self.conf.get('enableGuestEvents', False):
+            if self.lastStatus == vmstatus.MIGRATION_DESTINATION:
+                try:
                     self.guestAgent.events.after_migration()
-                elif self.lastStatus == vmstatus.RESTORING_STATE:
-                    self.guestAgent.events.after_hibernation()
-        except Exception:
-            self.log.exception("Unexpected error on guest event notification")
+                except Exception:
+                    self.log.exception("Unexpected error on guest after "
+                                       "migration notification")
 
         # Drop enableGuestEvents from conf - Not required from here anymore
         self.conf.pop('enableGuestEvents', None)
