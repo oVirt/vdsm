@@ -515,7 +515,7 @@ class JsonRpcServer(object):
             self.log.info("In recovery, ignoring '%s' in bridge with %s",
                           req.method, req.params)
             # TODO: take the response from the exception instead of via errCode
-            ctx.requestDone(JsonRpcResponse(errCode['recovery'], None, req.id))
+            ctx.requestDone(JsonRpcResponse(None, errCode['recovery'], req.id))
             return
 
         self.log.log(logLevel, "Calling '%s' in bridge with %s",
