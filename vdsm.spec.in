@@ -799,7 +799,7 @@ install -Dm 0755 vdsm/virt/libvirt-hook.sh \
                  %{buildroot}%{_sysconfdir}/libvirt/hooks/qemu
 
 %check
-make check
+make tests
 
 %clean
 rm -rf %{buildroot}
