@@ -85,7 +85,14 @@ public abstract class ReactorClient {
         }
         try (LockWrapper wrapper = new LockWrapper(this.lock)) {
             if (isOpen() && !this.closing.get()) {
-                scheduleClose("Policy reset");
+                Future<Void> future = scheduleClose("Policy reset");
+                try {
+                    // we are closing here so need to wait for
+                    // reactor to run the task
+                    future.get();
+                } catch (InterruptedException | ExecutionException e) {
+                    log.warn("Interrupted");
+                }
                 this.closing.set(true);
             }
         }
