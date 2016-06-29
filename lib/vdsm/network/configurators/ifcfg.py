@@ -754,6 +754,10 @@ def stop_devices(device_ifcfgs):
         if os.path.exists('/sys/class/net/%s/bridge' % dev):
             # ifdown is not enough to remove nicless bridges
             commands.execCmd([constants.EXT_BRCTL, 'delbr', dev])
+        if _is_bond_name(dev):
+            if _is_running_bond(dev):
+                with open(netinfo_bonding.BONDING_MASTERS, 'w') as f:
+                    f.write("-%s\n" % dev)
 
 
 def start_devices(device_ifcfgs):
@@ -761,16 +765,24 @@ def start_devices(device_ifcfgs):
         try:
             # this is an ugly way to check if this is a bond but picking into
             # the ifcfg files is even worse.
-            if dev.startswith('bond') and '.' not in dev:
-                with open(netinfo_bonding.BONDING_MASTERS) as info:
-                    names = info.read().split()
-                if dev not in names:
+            if _is_bond_name(dev):
+                if not _is_running_bond(dev):
                     with open(netinfo_bonding.BONDING_MASTERS, 'w') as masters:
                         masters.write('+%s\n' % dev)
             _exec_ifup_by_name(dev)
         except ConfigNetworkError:
             logging.error('Failed to ifup device %s during rollback.', dev,
                           exc_info=True)
+
+
+def _is_bond_name(dev):
+    return dev.startswith('bond') and '.' not in dev
+
+
+def _is_running_bond(bond):
+    with open(netinfo_bonding.BONDING_MASTERS) as info:
+        names = info.read().split()
+    return bond in names
 
 
 def _sort_device_ifcfgs(device_ifcfgs):
