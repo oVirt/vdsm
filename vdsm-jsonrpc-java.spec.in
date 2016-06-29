@@ -121,6 +121,9 @@ ln -s $FILE %{buildroot}%{_javadir}/%{name}/%{name}-client.jar
 %endif
 
 %changelog
+* Wed Jun 29 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.5
+- wait on close
+
 * Tue Jun 28 2016 Piotr Kliczewski <pkliczew@redhat.com> 1.2.4
 - schedule close when we reset policy
 
