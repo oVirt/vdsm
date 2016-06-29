@@ -30,7 +30,8 @@
 
 ### Main Script
 (if (== True ioTuneEnabled) {
-    (with Guests guest (set_io_limits guest))
+    (with Guests guest (if (valid guest.io_tune) (set_io_limits guest) 0))
 }{
-    (with Guests guest (reset_io_limits guest))
+    (with Guests guest (if (valid guest.io_tune) (reset_io_limits guest) 0))
 })
+
