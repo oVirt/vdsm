@@ -560,7 +560,7 @@ class CannonizeHostPortTest(TestCaseBase):
             if not _isIPv6Address(addr[1:-1]):
                 raise AssertionError('invalid IPv6 address: %s',
                                      addr)
-        else:
+        elif addr != socket.gethostname():
             raise AssertionError('unrecognized IP address family: %s',
                                  addr)
 
