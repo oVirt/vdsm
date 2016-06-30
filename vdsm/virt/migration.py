@@ -611,7 +611,7 @@ class MonitorThread(threading.Thread):
                 self._vm.log.debug('new iteration detected: %i',
                                    iterationCount)
                 if (iterationCount == 1 and
-                   not self._dowtime_thread.is_alive()):
+                   not self.downtime_thread.is_alive()):
                     # it does not make sense to do any adjustments before
                     # first iteration.
                     self.downtime_thread.start()
