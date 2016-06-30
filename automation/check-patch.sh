@@ -11,7 +11,7 @@ pip install -U nose==1.3.7 tox==2.1.1
 
 debuginfo-install -y python
 
-make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
+TIMEOUT=600 make check NOSE_WITH_COVERAGE=1 NOSE_COVER_PACKAGE="$PWD/vdsm,$PWD/lib"
 
 # enable complex globs
 shopt -s extglob
