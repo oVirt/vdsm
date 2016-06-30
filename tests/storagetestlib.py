@@ -29,6 +29,7 @@ from vdsm import utils
 from vdsm.storage import constants as sc
 
 from storage import sd, blockSD, fileSD, image, blockVolume, volume
+from storage import hsm
 from storage.sdm import volume_artifacts
 
 
@@ -52,6 +53,7 @@ def fake_file_env(obj=None):
         with MonkeyPatchScope([
             [sd, 'storage_repository', tmpdir],
             [volume, 'sdCache', fake_sdc],
+            [hsm, 'sdCache', fake_sdc],
         ]):
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
             yield FakeEnv(sd_manifest)
@@ -68,6 +70,7 @@ def fake_block_env(obj=None):
             (volume_artifacts, 'lvm', lvm),
             (sd, 'storage_repository', tmpdir),
             (volume, 'sdCache', fake_sdc),
+            (hsm, 'sdCache', fake_sdc),
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm)
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
