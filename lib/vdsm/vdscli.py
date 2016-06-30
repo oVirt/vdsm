@@ -24,6 +24,7 @@ from __future__ import print_function
 import os
 import re
 from six.moves import xmlrpc_client as xmlrpclib
+import socket
 import sys
 import warnings
 from xml.parsers.expat import ExpatError
@@ -82,6 +83,8 @@ def __guessDefaults():
         _TRUSTED_STORE_PATH = config.get('vars', 'trust_store_path')
         PORT = config.getint('addresses', 'management_port')
         ADDRESS = config.get('addresses', 'management_ip')
+        if ADDRESS == '::':
+            ADDRESS = socket.gethostname()
     except:
         pass
 
