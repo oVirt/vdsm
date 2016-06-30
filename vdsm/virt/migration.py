@@ -652,7 +652,14 @@ class MonitorThread(threading.Thread):
             if stopped:
                 break
 
-            progress = Progress.from_job_stats(self._vm._dom.jobStats())
+            job_stats = self._vm._dom.jobStats()
+            # It may happen that the migration did not start yet
+            # so we'll keep waiting
+            if not ongoing(job_stats):
+                continue
+
+            progress = Progress.from_job_stats(job_stats)
+
             now = time.time()
             if not self._use_conv_schedule and\
                     (0 < migrationMaxTime < now - self._startTime):
@@ -701,9 +708,8 @@ class MonitorThread(threading.Thread):
             if self._stop.isSet():
                 break
 
-            if progress.ongoing:
-                self.progress = progress
-                self._vm.log.info('%s', progress)
+            self.progress = progress
+            self._vm.log.info('%s', progress)
 
     def stop(self):
         self._vm.log.debug('stopping migration monitor thread')
@@ -770,10 +776,6 @@ class Progress(_Progress):
             stats.get('memory_iteration', -1),
         )
 
-    @property
-    def ongoing(self):
-        return self.job_type != libvirt.VIR_DOMAIN_JOB_NONE
-
     def __str__(self):
         return (
             'Migration Progress: %s seconds elapsed,'
@@ -806,3 +808,12 @@ class Progress(_Progress):
         if progress < 100:
             return progress
         return 99
+
+
+def ongoing(stats):
+    try:
+        job_type = stats['type']
+    except KeyError:
+        return False
+    else:
+        return job_type != libvirt.VIR_DOMAIN_JOB_NONE

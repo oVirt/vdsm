@@ -215,8 +215,7 @@ class TestProgress(TestCaseBase):
     ])
     def test_ongoing(self, job_type, ongoing):
         self.job_stats['type'] = job_type
-        prog = migration.Progress.from_job_stats(self.job_stats)
-        self.assertEquals(prog.ongoing, ongoing)
+        self.assertEquals(migration.ongoing(self.job_stats), ongoing)
 
 
 # stolen^Wborrowed from itertools recipes
