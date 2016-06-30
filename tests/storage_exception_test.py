@@ -19,9 +19,6 @@
 #
 
 import types
-import unittest
-
-from gluster import exception as gluster_exception
 
 from vdsm.exception import GeneralException
 from vdsm.storage import exception as storage_exception
@@ -44,26 +41,3 @@ class TestStorageExceptions(TestCaseBase):
 
             self.assertFalse(obj.code in codes)
             self.assertTrue(obj.code < 5000)
-
-
-class TestGlusterExceptions(TestCaseBase):
-    def test_collisions(self):
-        codes = {}
-
-        for name in dir(gluster_exception):
-            obj = getattr(gluster_exception, name)
-
-            if not isinstance(obj, types.TypeType):
-                continue
-
-            if not issubclass(obj, gluster_exception.GlusterException):
-                continue
-
-            self.assertFalse(obj.code in codes)
-            # gluster exception range: 4100-4800
-            self.assertTrue(obj.code >= 4100)
-            self.assertTrue(obj.code <= 4800)
-
-
-if __name__ == '__main__':
-    unittest.main()

@@ -18,7 +18,10 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
+import types
+
 from testlib import VdsmTestCase
+from gluster import exception as gluster_exception
 from gluster.exception import GlusterException
 
 
@@ -75,3 +78,20 @@ class TestGlusterException(VdsmTestCase):
     def test_response(self):
         e = GlusterException()
         self.assertEqual(e.response(), {'status': e.info()})
+
+    def test_collisions(self):
+        codes = {}
+
+        for name in dir(gluster_exception):
+            obj = getattr(gluster_exception, name)
+
+            if not isinstance(obj, types.TypeType):
+                continue
+
+            if not issubclass(obj, GlusterException):
+                continue
+
+            self.assertFalse(obj.code in codes)
+            # gluster exception range: 4100-4800
+            self.assertTrue(obj.code >= 4100)
+            self.assertTrue(obj.code <= 4800)

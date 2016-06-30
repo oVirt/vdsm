@@ -79,7 +79,6 @@ test_modules = \
 	libvirtconnectionTests.py \
 	logutils_test.py \
 	lvmTests.py \
-	main.py \
 	miscTests.py \
 	mkimageTests.py \
 	modprobe.py \
@@ -114,6 +113,7 @@ test_modules = \
 	stompAsyncDispatcherTests.py \
 	stompTests.py \
 	storage_blkdiscard_test.py \
+	storage_exception_test.py \
 	storagefakelibTests.py \
 	storageMailboxTests.py \
 	storageServerTests.py \
@@ -175,6 +175,7 @@ blacklist_modules_python3 = \
 	fileVolumeTests.py \
 	fuserTests.py \
 	gluster_cli_tests.py \
+	gluster_exception_test.py \
 	guestagentTests.py \
 	hooksTests.py \
 	hostdevTests.py \
@@ -182,7 +183,6 @@ blacklist_modules_python3 = \
 	imagetickets_test.py \
 	iscsiTests.py \
 	lvmTests.py \
-	main.py \
 	miscTests.py \
 	mkimageTests.py \
 	momPolicyTests.py \
@@ -222,6 +222,7 @@ blacklist_modules_python3 = \
 	storageServerTests.py \
 	storage_rwlock_test.py \
 	storage_blkdiscard_test.py \
+	storage_exception_test.py \
 	storage_sdm_api_test.py \
 	storage_sdm_create_volume_test.py \
 	storage_volume_artifacts_test.py \
