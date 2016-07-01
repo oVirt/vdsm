@@ -22,6 +22,7 @@ import uuid
 from contextlib import contextmanager
 
 from monkeypatch import MonkeyPatchScope
+from testlib import make_config
 from testlib import VdsmTestCase
 from testlib import permutations, expandPermutations
 from storagetestlib import fake_file_env
@@ -78,6 +79,23 @@ class VerifyUntrustedVolumeTest(VdsmTestCase):
         with self.fake_volume(sc.COW_FORMAT) as vol:
             info = {"format": qemuimg.FORMAT.QCOW2, "compat": "BAD"}
             with MonkeyPatchScope([(qemuimg, 'info', lambda unused: info)]):
+                h = FakeHSM()
+                self.assertRaises(se.ImageVerificationError,
+                                  h.verify_untrusted_volume, 'sp',
+                                  vol.sdUUID, vol.imgUUID, vol.volUUID)
+
+    @permutations((
+        ('0.10', '1.1'),
+        ('1.1', '0.10'),
+    ))
+    def test_disabled_compat_raises(self, qemu_compat, hsm_compat):
+        with self.fake_volume(sc.COW_FORMAT) as vol:
+            create_conf = make_config([('irs', 'qcow2_compat', qemu_compat)])
+            check_conf = make_config([('irs', 'qcow2_compat', hsm_compat)])
+            with MonkeyPatchScope([(qemuimg, 'config', create_conf),
+                                   (hsm, 'config', check_conf)]):
+                qemuimg.create(vol.volumePath, size=self.SIZE,
+                               format=qemuimg.FORMAT.QCOW2)
                 h = FakeHSM()
                 self.assertRaises(se.ImageVerificationError,
                                   h.verify_untrusted_volume, 'sp',

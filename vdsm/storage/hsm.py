@@ -1516,6 +1516,14 @@ class HSM(object):
                 raise se.ImageVerificationError(
                     "qcow2 compat %r is not supported" % qemu_compat)
 
+            # Although we can handle both 0.1 and 1.1 compat qcow2 files, we
+            # currently limit support to one or the other via the vdsm config.
+            # Once both are supported concurrently this check can be removed.
+            required_compat = config.get('irs', 'qcow2_compat')
+            if qemu_compat != required_compat:
+                raise se.ImageVerificationError(
+                    "qcow2 compat %r not supported by this host" % qemu_compat)
+
     def validateImageMove(self, srcDom, dstDom, imgUUID):
         """
         Determines if the image move is legal.
