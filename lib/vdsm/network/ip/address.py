@@ -190,8 +190,8 @@ def _add_ipv6_address(iface, ipv6):
             ipv6_autoconf.write('1' if ipv6.ipv6autoconf else '0')
 
 
-def flush(iface):
-    ipwrapper.addrFlush(iface)
+def flush(iface, family='both'):
+    ipwrapper.addrFlush(iface, family)
 
 
 @utils.memoized
