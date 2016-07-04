@@ -10,7 +10,6 @@ make distclean
         --with-qemu-img='qemu-img-rhev' \
         --enable-hooks \
         --enable-vhostmd-hook \
-        --disable-gluster-mgmt \
         --disable-python3 \
         --disable-openvswitch
 make dist
