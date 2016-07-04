@@ -484,7 +484,7 @@ class JsonRpcServer(object):
         if not self._cif.ready:
             self.log.info("In recovery, ignoring '%s' in bridge with %s",
                           req.method, req.params)
-            ctx.requestDone(JsonRpcResponse(errCode['recovery'], None, req.id))
+            ctx.requestDone(None, JsonRpcResponse(errCode['recovery'], req.id))
             return
 
         protected_params = self._protected_params(req.method, req.params)
