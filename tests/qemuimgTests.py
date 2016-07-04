@@ -355,20 +355,14 @@ class SupportsSrcCacheTests(TestCaseBase):
 
 class CheckTests(TestCaseBase):
 
-    def _fake_info(self):
-        return {
-            "image-end-offset": 262144,
-            "total-clusters": 16,
-            "check-errors": 0,
-            "filename": "/var/tmp/leaf.img",
-            "format": "qcow2"
-        }
-
+    @MonkeyPatch(qemuimg, 'config', CONFIG)
     def test_check(self):
-        with MonkeyPatchScope([(commands, "execCmd",
-                                partial(fake_json_call, self._fake_info()))]):
-            check = qemuimg.check('unused')
-            self.assertEqual(262144, check['offset'])
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, 'test.qcow2')
+            qemuimg.create(path, size=1048576, format=qemuimg.FORMAT.QCOW2)
+            info = qemuimg.check(path)
+            # The exact value depends on qcow2 internals
+            self.assertEqual(int, type(info['offset']))
 
     def test_offset_no_match(self):
         with MonkeyPatchScope([(commands, "execCmd",
