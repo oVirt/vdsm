@@ -128,8 +128,9 @@ def _remove_network_ip_config(ip_config):
 def _drop_nic_ip_config(iface):
     """Drop IP configuration of a new nic controlled by VDSM"""
     if os.path.exists(os.path.join('/sys/class/net', iface)):
-        dhclient.kill(iface, family=4)  # kill_dhclient flushes IP
+        dhclient.kill(iface, family=4)
         dhclient.kill(iface, family=6)
+        address.flush(iface)
 
 
 def configure_ip(nets, init_nets, bonds, init_bonds):

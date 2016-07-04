@@ -28,7 +28,6 @@ import threading
 
 from vdsm import cmdutils
 from vdsm.network import errors as ne
-from vdsm.network import ipwrapper
 from vdsm.network import netinfo
 from vdsm.commands import execCmd
 from vdsm.utils import CommandPath, memoized, pgrep, kill_and_rm_pid
@@ -117,12 +116,6 @@ def kill(device_name, family=4):
         logging.info('Stopping dhclient -%s before running our own on %s',
                      family, device_name)
         kill_and_rm_pid(pid, pid_file)
-
-    #  In order to be able to configure the device with dhclient again. It is
-    #  necessary that dhclient does not find it configured with any IP address
-    #  (except 0.0.0.0 which is fine, or IPv6 link-local address needed for
-    #   DHCPv6).
-    ipwrapper.addrFlush(device_name, family)
 
 
 @memoized

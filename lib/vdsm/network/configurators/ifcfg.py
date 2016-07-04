@@ -47,8 +47,8 @@ from vdsm import utils
 
 from vdsm.network import ipwrapper
 from vdsm.network import libvirt
+from vdsm.network.ip import address
 from vdsm.network.ip import dhclient
-from vdsm.network.ip.address import IPv4, IPv6
 from vdsm.network.netconfpersistence import RunningConfig, PersistentConfig
 from vdsm.network.netinfo import (bonding as netinfo_bonding, mtus, nics,
                                   vlans, misc, NET_PATH)
@@ -224,8 +224,8 @@ class Ifcfg(Configurator):
             self.configApplier.removeBonding(bonding.name)
             if bonding.on_removal_just_detach_from_network:
                 # Recreate the bond with ip and master info cleared
-                bonding.ipv4 = IPv4()
-                bonding.ipv6 = IPv6()
+                bonding.ipv4 = address.IPv4()
+                bonding.ipv6 = address.IPv6()
                 bonding.master = None
                 bonding.configure()
             else:
@@ -535,6 +535,7 @@ class ConfigWriter(object):
                     os.path.exists(os.path.join(NET_PATH, name))):
                 # Ask dhclient to stop any dhclient running for the device
                 dhclient.kill(name)
+                address.flush(name, family=4)
         if mtu:
             cfg += 'MTU=%d\n' % mtu
         if ipv4.defaultRoute is not None:
