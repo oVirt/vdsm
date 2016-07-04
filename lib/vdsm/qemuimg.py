@@ -133,7 +133,7 @@ def check(image, format=None):
         cmd.extend(("-f", format))
 
     cmd.append(image)
-    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL)
+    rc, out, err = commands.execCmd(cmd, deathSignal=signal.SIGKILL, raw=True)
 
     # FIXME: handle different error codes and raise errors accordingly
     if rc != 0:
