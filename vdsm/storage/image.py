@@ -26,6 +26,7 @@ from contextlib import contextmanager
 
 import volume
 from vdsm import qemuimg
+from vdsm import utils
 from vdsm import virtsparsify
 from vdsm.config import config
 from vdsm.storage import constants as sc
@@ -483,7 +484,8 @@ class Image:
                         dstFormat=dstFormat,
                         backing=backing,
                         backingFormat=backingFormat)
-                    self._wait_for_qemuimg_operation(operation)
+                    with utils.stopwatch("Copy volume %s" % srcVol.volUUID):
+                        self._wait_for_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
                 except se.StorageException:
@@ -890,7 +892,8 @@ class Image:
                         dstPath,
                         srcFormat=sc.fmt2str(volParams['volFormat']),
                         dstFormat=sc.fmt2str(dstVolFormat))
-                    self._wait_for_qemuimg_operation(operation)
+                    with utils.stopwatch("Copy volume %s" % srcVol.volUUID):
+                        self._wait_for_qemuimg_operation(operation)
                 except ActionStopped:
                     raise
                 except qemuimg.QImgError as e:
@@ -1133,7 +1136,8 @@ class Image:
                         newVol.getVolumePath(),
                         srcFormat=sc.fmt2str(srcVolParams['volFormat']),
                         dstFormat=sc.fmt2str(volParams['volFormat']))
-                    self._wait_for_qemuimg_operation(operation)
+                    with utils.stopwatch("Copy volume %s" % srcVol.volUUID):
+                        self._wait_for_qemuimg_operation(operation)
                 except qemuimg.QImgError:
                     self.log.exception('conversion failure for volume %s',
                                        srcVol.volUUID)
