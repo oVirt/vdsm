@@ -25,9 +25,9 @@ import six
 from vdsm import sysctl
 from vdsm.compat import suppress
 from vdsm.network import ipwrapper
-from vdsm.network.configurators.dhclient import DhcpClient, kill_dhclient
 from vdsm.network.configurators.iproute2 import Iproute2
-from vdsm.network.ip.address import IPv4, IPv6
+from vdsm.network.ip import address
+from vdsm.network.ip import dhclient
 from vdsm.network.models import NetDevice
 from vdsm.network.sourceroute import DynamicSourceRoute
 
@@ -51,26 +51,26 @@ class IPConfig(object):
 
 
 def _get_ipv4_model(attrs):
-    address = attrs.get('ipaddr')
+    addr = attrs.get('ipaddr')
     netmask = attrs.get('netmask')
     gateway = attrs.get('gateway')
     default_route = attrs.get('defaultRoute')
     bootproto = attrs.get('bootproto')
-    return IPv4(address, netmask, gateway, default_route, bootproto)
+    return address.IPv4(addr, netmask, gateway, default_route, bootproto)
 
 
 def _get_ipv6_model(attrs):
-    address = attrs.get('ipv6addr')
+    addr = attrs.get('ipv6addr')
     gateway = attrs.get('ipv6gateway')
     default_route = attrs.get('defaultRoute')
     autoconf = attrs.get('ipv6autoconf')
     dhcp = attrs.get('dhcpv6')
-    return IPv6(address, gateway, default_route, autoconf, dhcp)
+    return address.IPv6(addr, gateway, default_route, autoconf, dhcp)
 
 
 def _run_dhclient(iface, blockingdhcp, default_route, family):
-    dhclient = DhcpClient(iface, family, default_route)
-    rc = dhclient.start(blockingdhcp)
+    dhcp = dhclient.DhcpClient(iface, family, default_route)
+    rc = dhcp.start(blockingdhcp)
     if blockingdhcp and rc:
         log('failed to start dhclient%s on iface %s' % (family, iface))
 
@@ -118,7 +118,7 @@ def _remove_network_ip_config(ip_config):
 
     net_dev = NetDevice(iface, iproute2, ipv4=ipv4, ipv6=ipv6)
     DynamicSourceRoute.addInterfaceTracking(net_dev)
-    DhcpClient(iface).shutdown()
+    dhclient.DhcpClient(iface).shutdown()
     iproute2._removeSourceRoute(net_dev, DynamicSourceRoute)
     if ipv4.address or ipv6.address:
         with suppress(ipwrapper.IPRoute2Error):  # device does not exist
@@ -128,8 +128,8 @@ def _remove_network_ip_config(ip_config):
 def _drop_nic_ip_config(iface):
     """Drop IP configuration of a new nic controlled by VDSM"""
     if os.path.exists(os.path.join('/sys/class/net', iface)):
-        kill_dhclient(iface, family=4)  # kill_dhclient flushes IP
-        kill_dhclient(iface, family=6)
+        dhclient.kill(iface, family=4)  # kill_dhclient flushes IP
+        dhclient.kill(iface, family=6)
 
 
 def configure_ip(nets, init_nets, bonds, init_bonds):
