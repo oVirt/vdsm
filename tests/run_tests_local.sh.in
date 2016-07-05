@@ -29,7 +29,13 @@ runner_pid=$!
     echo "=                        Aborting tests                                ="
     echo "========================================================================"
     kill -KILL $runner_pid
+    sleep 5
 ) &
 watcher_pid=$!
 
-wait $runner_pid && kill -TERM $watcher_pid
+wait $runner_pid
+runner_status=$?
+
+kill -TERM $watcher_pid
+
+exit $runner_status
