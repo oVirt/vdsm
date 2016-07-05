@@ -3,8 +3,6 @@ if [ -z "$PYTHON_EXE" ]; then
     PYTHON_EXE="@PYTHON@"
 fi
 
-TIMEOUT=${TIMEOUT:-300}
-
 export \
     LC_ALL=C \
     NOSE_LOGFORMAT='%(asctime)s %(levelname)-7s [%(name)s] (%(threadName)s) %(message)s' \
@@ -16,26 +14,30 @@ export \
 "$PYTHON_EXE" @top_srcdir@/tests/testrunner.py --local-modules -A "type!='functional'" $@ &
 runner_pid=$!
 
-(
-    sleep $TIMEOUT
-    echo
-    echo "========================================================================"
-    echo "=           Timeout completing tests - extracting stacktrace           ="
-    echo "========================================================================"
-    echo
-    gdb -p $runner_pid --batch -ex "thread apply all py-bt"
-    echo
-    echo "========================================================================"
-    echo "=                        Aborting tests                                ="
-    echo "========================================================================"
-    kill -KILL $runner_pid
-    sleep 5
-) &
-watcher_pid=$!
+if [ -n "$TIMEOUT" ]; then
+    (
+        sleep $TIMEOUT
+        echo
+        echo "========================================================================"
+        echo "=           Timeout completing tests - extracting stacktrace           ="
+        echo "========================================================================"
+        echo
+        gdb -p $runner_pid --batch -ex "thread apply all py-bt"
+        echo
+        echo "========================================================================"
+        echo "=                        Aborting tests                                ="
+        echo "========================================================================"
+        kill -KILL $runner_pid
+        sleep 5
+    ) &
+    watcher_pid=$!
+fi
 
 wait $runner_pid
 runner_status=$?
 
-kill -TERM $watcher_pid
+if [ -n "$TIMEOUT" ]; then
+    kill -TERM $watcher_pid
+fi
 
 exit $runner_status

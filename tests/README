@@ -60,10 +60,9 @@ the full suite of functional tests from within the installed directory:
 Test timeout
 ------------
 
-If a test run is too slow, it is aborted, and a backtrace of all threads is
-printed.
+If TIMEOUT environment variable is set, and a test run is too slow, it is
+aborted, and a backtrace of all threads is printed.
 
-To use a different timeout for the tests temporary, set the TIMEOUT environment
-varaible to the desired value:
+Example usage:
 
     TIMEOUT=600 ./run_tests_local.sh foo_test.py
