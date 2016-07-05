@@ -1051,7 +1051,7 @@ GlusterHost.createBrick:
         name: fsType
         type: string
 
-    -   defaultvalue: {}
+    -   defaultvalue: '{}'
         description: dictonary contains raid details of a raid device
         name: raidParams
         type: *RaidDevice
