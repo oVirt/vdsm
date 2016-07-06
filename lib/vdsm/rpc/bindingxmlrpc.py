@@ -800,7 +800,7 @@ class BindingXMLRPC(object):
         return image.reconcileVolumeChain(leafUUID)
 
     def poolConnect(self, spUUID, hostID, scsiKey, msdUUID, masterVersion,
-                    domainsMap, options=None):
+                    domainsMap=None, options=None):
         pool = API.StoragePool(spUUID)
         return pool.connect(hostID, scsiKey, msdUUID, masterVersion,
                             domainsMap)

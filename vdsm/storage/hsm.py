@@ -58,6 +58,7 @@ from vdsm.storage.threadlocal import vars
 
 import sp
 from spbackends import MAX_POOL_DESCRIPTION_SIZE, MAX_DOMAINS
+from spbackends import StoragePoolDiskBackend
 from spbackends import StoragePoolMemoryBackend
 import monitor
 import sd
@@ -948,14 +949,14 @@ class HSM(object):
             vars.task.getExclusiveLock(STORAGE, dom)
 
         pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
-        pool.setBackend(StoragePoolMemoryBackend(pool))
+        pool.setBackend(StoragePoolDiskBackend(pool))
 
         return pool.create(poolName, masterDom, domList, masterVersion,
                            leaseParams)
 
     @public
     def connectStoragePool(self, spUUID, hostID, msdUUID, masterVersion,
-                           domainsMap, options=None):
+                           domainsMap=None, options=None):
         """
         Connect a Host to a specific storage pool.
 
@@ -992,15 +993,21 @@ class HSM(object):
                 "hostId=%s, newHostId=%s" % (pool.id, hostId))
 
         if domainsMap is None:
-            raise se.InvalidParameterException("domainsMap", domainsMap)
-
-        pool.getBackend().updateVersionAndDomains(
-            masterVersion, domainsMap)
+            if not isinstance(pool.getBackend(), StoragePoolDiskBackend):
+                raise se.StoragePoolConnected('Cannot downgrade pool backend')
+        else:
+            if isinstance(pool.getBackend(), StoragePoolMemoryBackend):
+                pool.getBackend().updateVersionAndDomains(
+                    masterVersion, domainsMap)
+            else:
+                # Live pool backend upgrade
+                pool.setBackend(
+                    StoragePoolMemoryBackend(pool, masterVersion, domainsMap))
 
         pool.refresh(msdUUID, masterVersion)
 
     def _connectStoragePool(self, spUUID, hostID, msdUUID,
-                            masterVersion, domainsMap, options=None):
+                            masterVersion, domainsMap=None, options=None):
         misc.validateUUID(spUUID, 'spUUID')
 
         # TBD: To support multiple pool connection on single host,
@@ -1034,8 +1041,13 @@ class HSM(object):
                 return True
 
             pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
-            pool.setBackend(
-                StoragePoolMemoryBackend(pool, masterVersion, domainsMap))
+            pool.backend = StoragePoolDiskBackend(pool)
+
+            if domainsMap is None:
+                pool.setBackend(StoragePoolDiskBackend(pool))
+            else:
+                pool.setBackend(
+                    StoragePoolMemoryBackend(pool, masterVersion, domainsMap))
 
             res = pool.connect(hostID, msdUUID, masterVersion)
             if res:
@@ -1890,7 +1902,7 @@ class HSM(object):
             pool = self.getPool(spUUID)
         except se.StoragePoolUnknown:
             pool = sp.StoragePool(spUUID, self.domainMonitor, self.taskMng)
-            pool.setBackend(StoragePoolMemoryBackend(pool))
+            pool.setBackend(StoragePoolDiskBackend(pool))
         else:
             raise se.StoragePoolConnected(spUUID)
 
@@ -3319,6 +3331,10 @@ class HSM(object):
             se.SpmFenceError("spUUID=%s, lastOwner=%s, lastLver=%s" %
                              (spUUID, lastOwner, lastLver)))
         pool = self.getPool(spUUID)
+        if isinstance(pool.getBackend(), StoragePoolDiskBackend):
+            pool.getBackend().invalidateMetadata()
+            vars.task.getExclusiveLock(STORAGE, spUUID)
+            pool.getBackend().forceFreeSpm()
         return dict(spm_st=self._getSpmStatusInfo(pool))
 
     @public
