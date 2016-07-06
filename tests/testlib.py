@@ -564,3 +564,16 @@ def maybefail(meth):
             return meth(self, *args, **kwargs)
         raise exception
     return wrapper
+
+
+def read_data(filename):
+    """
+    Returns the content of a test data file, as plain string.
+    The test data file any file path under the data/ subdirectory
+    in the tests directory.
+    """
+    test_path = os.path.realpath(__file__)
+    dir_name = os.path.dirname(test_path)
+    path = os.path.join(dir_name, 'data', filename)
+    with open(path) as src:
+        return src.read()
