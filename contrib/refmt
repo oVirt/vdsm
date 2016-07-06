@@ -1,0 +1,75 @@
+#!/usr/bin/python
+#
+# Copyright 2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+#
+#
+# helper script to prettify Vdsm parameter dumps from the logs.
+# useful to extract test data.
+# This tool is intended to make it easier for humans to read
+# the dump.
+#
+# The intended workflow is:
+# 1. scan the Vdsm logs to fetch the parameter/return type
+#    dump you need.
+#    You MUST keep the dump on one line!
+# 2. copy the dump into a file, let's call it 'param.out'
+# 3. beautify the dump with
+#    /path/to/refmt /path/to/param.out
+# 4. the beautified dump will be printed on stdout
+#
+# Example:
+# - before:
+# (please note line continuations to fit in 80 columns;
+#  please remember each dump must be on its own line.)
+# {u'b0390d9e-2f1d-43c0-a56c-a20af032e934': {'code': 0, 'actual': True, \
+# 'version': 0, 'acquired': True, 'delay': '0.000521661', \
+# 'lastCheck': '9.8', 'valid': True}, \
+# u'c17ac7f2-bec0-4ed1-a04e-790799e65d7c': {'code': 0, 'actual': True, \
+# 'version': 3, 'acquired': True, 'delay': '0.000640848', \
+# 'lastCheck': '0.0', 'valid': True}}
+#
+# - after:
+# {u'b0390d9e-2f1d-43c0-a56c-a20af032e934': {'acquired': True,
+#                                            'actual': True,
+#                                            'code': 0,
+#                                            'delay': '0.000521661',
+#                                            'lastCheck': '9.8',
+#                                            'valid': True,
+#                                            'version': 0},
+#  u'c17ac7f2-bec0-4ed1-a04e-790799e65d7c': {'acquired': True,
+#                                            'actual': True,
+#                                            'code': 0,
+#                                            'delay': '0.000640848',
+#                                            'lastCheck': '0.0',
+#                                            'valid': True,
+#                                            'version': 3}}
+
+import fileinput
+import pprint
+import sys
+
+
+def _main():
+    for line in fileinput.input():
+        obj = eval(line)
+        pprint.pprint(obj)
+
+
+if __name__ == '__main__':
+    _main()
