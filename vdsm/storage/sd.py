@@ -672,7 +672,7 @@ class StorageDomain(object):
     def hasVolumeLeases(self):
         return self._manifest.hasVolumeLeases()
 
-    def getVolumeLease(self, volUUID):
+    def getVolumeLease(self, imgUUID, volUUID):
         """
         Return the volume lease (leasePath, leaseOffset)
         """
