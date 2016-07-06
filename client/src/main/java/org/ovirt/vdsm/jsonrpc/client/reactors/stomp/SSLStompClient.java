@@ -37,6 +37,13 @@ public class SSLStompClient extends SSLClient {
                 subscribed = new CountDownLatch(1);
             }
 
+            subscribe(getResponseQueue());
+
+            String eventQueue = getEventQueue();
+            if (!isEmpty(eventQueue)) {
+                subscribe(eventQueue);
+            }
+
             Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HOST, policy.getIdentifier());
             int outgoing = 0;
             int incoming = 0;
@@ -50,13 +57,6 @@ public class SSLStompClient extends SSLClient {
                 message.withHeader(HEADER_HEART_BEAT, outgoing + "," + reduceGracePeriod(incoming));
             }
             sendNow(message.build());
-
-            subscribe(getResponseQueue());
-
-            String eventQueue = getEventQueue();
-            if (!isEmpty(eventQueue)) {
-                subscribe(eventQueue);
-            }
         }
 
         private void subscribe(String queueName) {
