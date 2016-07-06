@@ -324,6 +324,17 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
                 images.add(os.path.basename(i))
         return images
 
+    def getVolumeLease(self, imgUUID, volUUID):
+        """
+        Return the volume lease (leasePath, leaseOffset)
+        """
+        if self.hasVolumeLeases():
+            vol = self.produceVolume(imgUUID, volUUID)
+            volumePath = vol.getVolumePath()
+            leasePath = volumePath + LEASE_FILEEXT
+            return leasePath, fileVolume.LEASE_FILEOFFSET
+        return None, None
+
 
 class FileStorageDomain(sd.StorageDomain):
     manifestClass = FileStorageDomainManifest
@@ -463,17 +474,6 @@ class FileStorageDomain(sd.StorageDomain):
             fileName = entry[filePrefixLen:]
             filesDict[fileName] = stats
         return filesDict
-
-    def getVolumeLease(self, imgUUID, volUUID):
-        """
-        Return the volume lease (leasePath, leaseOffset)
-        """
-        if self.hasVolumeLeases():
-            vol = self.produceVolume(imgUUID, volUUID)
-            volumePath = vol.getVolumePath()
-            leasePath = volumePath + LEASE_FILEEXT
-            return leasePath, fileVolume.LEASE_FILEOFFSET
-        return None, None
 
     def validate(self):
         """

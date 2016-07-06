@@ -229,6 +229,10 @@ class FakeBlockDomainManifest(FakeDomainManifest):
     def acquireVolumeMetadataSlot(self, vol_name, slotSize):
         yield
 
+    @recorded
+    def getVolumeLease(self, imgUUID, volUUID):
+        pass
+
 
 class FakeFileDomainManifest(FakeDomainManifest):
     def __init__(self):
@@ -253,6 +257,10 @@ class FakeFileDomainManifest(FakeDomainManifest):
 
     @recorded
     def getIdsFilePath(self):
+        pass
+
+    @recorded
+    def getVolumeLease(self, imgUUID, volUUID):
         pass
 
 
@@ -703,6 +711,7 @@ class DomainTestMixin(object):
         ['refreshDirTree', 0],
         ['refresh', 0],
         ['validateCreateVolumeParams', 3],
+        ['getVolumeLease', 2],
         ])
     def test_common_functions(self, fn, nargs):
         self.checker.check_method_call(fn, nargs)

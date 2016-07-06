@@ -410,6 +410,12 @@ class StorageDomainManifest(object):
     def hasVolumeLeases(self):
         return self._domainLock.supports_volume_leases
 
+    def getVolumeLease(self, imgUUID, volUUID):
+        """
+        Return the volume lease (leasePath, leaseOffset)
+        """
+        return None, None
+
     def acquireDomainLock(self, hostID):
         self.refresh()
         self._domainLock.setParams(
@@ -673,10 +679,7 @@ class StorageDomain(object):
         return self._manifest.hasVolumeLeases()
 
     def getVolumeLease(self, imgUUID, volUUID):
-        """
-        Return the volume lease (leasePath, leaseOffset)
-        """
-        return None, None
+        return self._manifest.getVolumeLease(imgUUID, volUUID)
 
     def acquireClusterLock(self, hostID):
         self._manifest.acquireDomainLock(hostID)

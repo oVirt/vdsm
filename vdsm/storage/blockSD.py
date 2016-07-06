@@ -799,6 +799,18 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         if preallocate == sc.SPARSE_VOL and volFormat == sc.RAW_FORMAT:
             raise se.IncorrectFormat(sc.type2name(volFormat))
 
+    def getVolumeLease(self, imgUUID, volUUID):
+        """
+        Return the volume lease (leasePath, leaseOffset)
+        """
+        if self.hasVolumeLeases():
+            # TODO: use the sanlock specific offset when present
+            leaseSlot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
+            leaseOffset = ((leaseSlot + blockVolume.RESERVED_LEASES) *
+                           self.logBlkSize * sd.LEASE_BLOCKS)
+            return self.getLeasesFilePath(), leaseOffset
+        return None, None
+
 
 class BlockStorageDomain(sd.StorageDomain):
     manifestClass = BlockStorageDomainManifest
@@ -1198,18 +1210,6 @@ class BlockStorageDomain(sd.StorageDomain):
         lvm.activateLVs(self.sdUUID, volUUIDs)
         vgDir = os.path.join("/dev", self.sdUUID)
         return self.createImageLinks(vgDir, imgUUID, volUUIDs)
-
-    def getVolumeLease(self, imgUUID, volUUID):
-        """
-        Return the volume lease (leasePath, leaseOffset)
-        """
-        if self.hasVolumeLeases():
-            # TODO: use the sanlock specific offset when present
-            leaseSlot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
-            leaseOffset = ((leaseSlot + blockVolume.RESERVED_LEASES) *
-                           self.logBlkSize * sd.LEASE_BLOCKS)
-            return self.getLeasesFilePath(), leaseOffset
-        return None, None
 
     def validateMasterMount(self):
         return mount.isMounted(self.getMasterDir())
