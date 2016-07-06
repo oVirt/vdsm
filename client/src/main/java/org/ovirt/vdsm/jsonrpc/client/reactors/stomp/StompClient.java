@@ -31,6 +31,13 @@ public class StompClient extends PlainClient {
             connected = new CountDownLatch(1);
             subscribed = new CountDownLatch(1);
 
+            subscribe(getResponseQueue());
+
+            String eventQueue = getEventQueue();
+            if (!isEmpty(eventQueue)) {
+                subscribe(eventQueue);
+            }
+
             Message message = new Message().connect().withHeader(HEADER_ACCEPT, "1.2").withHeader(HEADER_HOST,
                     policy.getIdentifier());
             int outgoing = 0;
@@ -45,13 +52,6 @@ public class StompClient extends PlainClient {
                 message.withHeader(HEADER_HEART_BEAT, outgoing + "," + reduceGracePeriod(incoming));
             }
             sendNow(message.build());
-
-            subscribe(getResponseQueue());
-
-            String eventQueue = getEventQueue();
-            if (!isEmpty(eventQueue)) {
-                subscribe(eventQueue);
-            }
 
             try {
                 AwaitRetry.retry(new Callable<Void>() {
