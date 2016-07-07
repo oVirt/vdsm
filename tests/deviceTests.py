@@ -24,7 +24,6 @@ from vdsm import constants
 
 from virt import vmdevices
 from virt.vmdevices import hwclass
-from virt.vmdevices import graphics
 from virt.domain_descriptor import DomainDescriptor
 
 from monkeypatch import MonkeyPatch, MonkeyPatchScope
@@ -95,18 +94,6 @@ class TestVmDevices(XMLTestCase):
             'memSize': '1024', 'memGuaranteedSize': '512',
         }
 
-        self.confDisplayVnc = (
-            {'display': 'vnc', 'displayNetwork': 'vmDisplay'},
-
-            {'display': 'vnc', 'displayPort': '-1', 'displayNetwork':
-             'vmDisplay', 'keyboardLayout': 'en-us'})
-
-        self.confDisplaySpice = (
-            {'display': 'qxl', 'displayNetwork': 'vmDisplay'},
-
-            {'display': 'qxl', 'displayPort': '-1',
-             'displaySecurePort': '-1'})
-
         self.confDeviceGraphicsVnc = (
             ({'type': 'graphics', 'device': 'vnc'},),
 
@@ -123,17 +110,8 @@ class TestVmDevices(XMLTestCase):
                     'spiceSecureChannels':
                     'smain,sinputs,scursor,splayback,srecord,sdisplay'}},))
 
-        self.confDisplay = self.confDisplayVnc + self.confDisplaySpice
-
         self.confDeviceGraphics = (self.confDeviceGraphicsVnc +
                                    self.confDeviceGraphicsSpice)
-
-    def testGraphicsDeviceLegacy(self):
-        for conf in self.confDisplay:
-            conf.update(self.conf)
-            with fake.VM(conf) as testvm:
-                devs = testvm._devSpecMapFromConf()
-                self.assertTrue(devs['graphics'])
 
     def testGraphicsDevice(self):
         for dev in self.confDeviceGraphics:
@@ -146,78 +124,10 @@ class TestVmDevices(XMLTestCase):
             devs = testvm._devSpecMapFromConf()
             self.assertFalse(devs['graphics'])
 
-    def testGraphicDeviceUpdateConfig(self):
-        params = {
-            'displayIp': '0',
-            'displayPort': u'6101',
-            'displaySecurePort': u'6102',
-        }
-        with fake.VM(
-            self.conf, self.confDeviceGraphicsVnc[0]
-        ) as testvm:
-            devs = testvm._devSpecMapFromConf()
-            testvm._updateDevices(devs)
-            testvm._devices = testvm._devMapFromDevSpecMap(devs)
-
-            domainXML = """<domain>
-            <devices>
-            <graphics autoport="yes" listen="0" passwd="*****"
-                      passwdValidTo="1970-01-01T00:00:01" port="6101"
-                      tlsPort="6102" type="vnc" />
-            </devices>
-            </domain>"""
-            testvm._domain = DomainDescriptor(domainXML)
-            graphics.Graphics.update_device_info(
-                testvm, testvm._devices[hwclass.GRAPHICS])
-
-            for param, value in params.items():
-                self.assertEquals(testvm.conf[param], value)
-
-    def testGraphicsDeviceMixed(self):
-        """
-        if proper Graphics Devices are supplied, display* params must be
-        ignored.
-        """
-        for conf in self.confDisplay:
-            conf.update(self.conf)
-            for dev in self.confDeviceGraphics:
-                with fake.VM(self.conf, dev) as testvm:
-                    devs = testvm._devSpecMapFromConf()
-                    self.assertEqual(len(devs['graphics']), 1)
-                    self.assertEqual(devs['graphics'][0]['device'],
-                                     dev[0]['device'])
-
-    def testGraphicsDeviceSanityLegacy(self):
-        for conf in self.confDisplay:
-            conf.update(self.conf)
-            self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
-
-    def testGraphicsDeviceSanity(self):
-        for dev in self.confDeviceGraphics:
-            conf = {'display': 'qxl', 'devices': list(dev)}
-            conf.update(self.conf)
-            self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
-
-    def testGraphicDeviceUnsupported(self):
-        conf = {'display': 'rdp'}
-        conf.update(self.conf)
-        self.assertFalse(vmdevices.graphics.isSupportedDisplayType(conf))
-
     def testGraphicDeviceHeadlessSupported(self):
         conf = {}
         conf.update(self.conf)
         self.assertTrue(vmdevices.graphics.isSupportedDisplayType(conf))
-
-    def testHasSpiceLegacy(self):
-        for conf in self.confDisplaySpice:
-            conf.update(self.conf)
-            with fake.VM(conf) as testvm:
-                self.assertTrue(testvm.hasSpice)
-
-        for conf in self.confDisplayVnc:
-            conf.update(self.conf)
-            with fake.VM(conf) as testvm:
-                self.assertFalse(testvm.hasSpice)
 
     def testHasSpice(self):
         for dev in self.confDeviceGraphicsSpice:
@@ -692,17 +602,6 @@ class TestVmDevices(XMLTestCase):
 
             self.assertEqual(graphDev.specParams['displayNetwork'],
                              'vmDisplayConf')
-
-    def testGraphicsDisplayNetworkFromSpecParamsOverridesVmConf(self):
-        conf = {'displayNetwork': 'vmDisplayConf'}
-        conf.update(self.conf)
-        with fake.VM(conf) as testvm:
-            graphDev = vmdevices.graphics.Graphics(
-                testvm.conf, testvm.log,
-                specParams={'displayNetwork': 'vmDisplaySpecParams'})
-
-            self.assertEqual(graphDev.specParams['displayNetwork'],
-                             'vmDisplaySpecParams')
 
 
 class ConsoleTests(TestCaseBase):

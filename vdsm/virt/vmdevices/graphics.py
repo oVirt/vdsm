@@ -192,11 +192,6 @@ class Graphics(Base):
                         dev['tlsPort'] = tlsPort
                     break
 
-        # the first graphic device is duplicated in the legacy conf
-        # TODO: Remove this code once we stop maintaining compatibility with
-        # Engines older than 3.6.
-        updateLegacyConf(vm.conf)
-
 
 def isSupportedDisplayType(vmParams):
     display = vmParams.get('display')
@@ -220,33 +215,6 @@ def makeSpecParams(conf):
     return dict((newName, conf[oldName])
                 for oldName, newName in _LEGACY_MAP.iteritems()
                 if oldName in conf)
-
-
-def initLegacyConf(conf):
-    conf['displayPort'] = LIBVIRT_PORT_AUTOSELECT
-    conf['displaySecurePort'] = LIBVIRT_PORT_AUTOSELECT
-    conf['displayIp'] = _getNetworkIp(conf.get('displayNetwork'))
-
-    dev = getFirstGraphics(conf)
-    if dev:
-        # proper graphics device always take precedence
-        conf['display'] = 'qxl' if dev['device'] == 'spice' else 'vnc'
-
-
-def updateLegacyConf(conf):
-    dev = getFirstGraphics(conf)
-    if dev:
-        if 'port' in dev:
-            conf['displayPort'] = dev['port']
-        if 'tlsPort' in dev:
-            conf['displaySecurePort'] = dev['tlsPort']
-
-
-def getFirstGraphics(conf):
-    for dev in conf.get('devices', ()):
-        if dev.get('type') == hwclass.GRAPHICS:
-            return dev
-    return None
 
 
 def _getNetworkIp(network):

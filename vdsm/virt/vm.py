@@ -246,8 +246,6 @@ class Vm(object):
         self.conf.update(params)
         if 'smp' not in self .conf:
             self.conf['smp'] = '1'
-        # restore placeholders for BC sake
-        vmdevices.graphics.initLegacyConf(self.conf)
         self.cif = cif
         self.log = SimpleLogAdapter(self.log, {"vmId": self.conf['vmId']})
         self._destroy_requested = threading.Event()
@@ -1965,11 +1963,6 @@ class Vm(object):
             # So, to get proper device objects during VM recovery flow
             # we must to have updated conf before VM run
             self.saveState()
-        else:
-            # we need to fix the graphics device configuration in the
-            # case VDSM is upgraded from 3.4 to 3.5 on the host without
-            # rebooting it. Evident on, but not limited to, the HE case.
-            self._fixLegacyGraphicsConf()
 
         self._devices = self._devMapFromDevSpecMap(dev_spec_map)
 
@@ -4811,11 +4804,6 @@ class Vm(object):
         newChain = [x for x in device['volumeChain']
                     if x['volumeID'] in volumes]
         device['volumeChain'] = drive.volumeChain = newChain
-
-    def _fixLegacyGraphicsConf(self):
-        with self._confLock:
-            if not vmdevices.graphics.getFirstGraphics(self.conf):
-                self.conf['devices'].extend(self.getConfGraphics())
 
     def _fixLegacyRngConf(self):
         def _is_legacy_rng_device_conf(dev):

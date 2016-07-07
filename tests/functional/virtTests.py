@@ -390,16 +390,6 @@ class VirtTest(VirtTestBase):
                         self.assertEqual(device['specParams']['path'],
                                          cdrom['specParams']['path'])
 
-    @permutations([['vnc'], ['qxl']])
-    def testVmDefinitionLegacyGraphics(self, displayType):
-        customization = {'vmId': '77777777-ffff-3333-cccc-222222222222',
-                         'vmName': 'testLegacyGraphicsVm',
-                         'display': displayType}
-
-        with RunningVm(self.vdsm, customization) as vm:
-            self._waitForStartup(vm, VM_MINIMAL_UPTIME)
-            self._verifyDevices(vm)
-
     @permutations([['vnc'], ['spice']])
     def testVmDefinitionGraphics(self, displayType):
         devices = [{'type': 'graphics', 'device': displayType}]
