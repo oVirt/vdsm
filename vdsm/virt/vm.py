@@ -435,35 +435,19 @@ class Vm(object):
         """
         devices = self._emptyDevMap()
 
-        # For BC we need to save previous behaviour for old type parameters.
-        # The new/old type parameter will be distinguished
-        # by existence/absence of the 'devices' key
+        # while this code is running, Vm is queryable for status(),
+        # thus we must fix devices in an atomic way, hence the deep copy
+        with self._confLock:
+            devConf = utils.picklecopy(self.conf['devices'])
 
-        try:
-            # while this code is running, Vm is queryable for status(),
-            # thus we must fix devices in an atomic way, hence the deep copy
-            with self._confLock:
-                devConf = utils.picklecopy(self.conf['devices'])
-        except KeyError:
-            # (very) old Engines do not send device configuration
-            devices[hwclass.DISK] = self.getConfDrives()
-            devices[hwclass.NIC] = self.getConfNetworkInterfaces()
-            devices[hwclass.SOUND] = self.getConfSound()
-            devices[hwclass.VIDEO] = self.getConfVideo()
-            devices[hwclass.GRAPHICS] = self.getConfGraphics()
-            devices[hwclass.CONTROLLER] = self.getConfController()
-        else:
-            for dev in devConf:
-                try:
-                    devices[dev['type']].append(dev)
-                except KeyError:
-                    if 'type' not in dev or dev['type'] != 'channel':
-                        self.log.warn("Unknown type found, device: '%s' "
-                                      "found", dev)
-                    devices[hwclass.GENERAL].append(dev)
-
-            if not devices[hwclass.GRAPHICS]:
-                devices[hwclass.GRAPHICS] = self.getConfGraphics()
+        for dev in devConf:
+            try:
+                devices[dev['type']].append(dev)
+            except KeyError:
+                if 'type' not in dev or dev['type'] != 'channel':
+                    self.log.warn("Unknown type found, device: '%s' "
+                                  "found", dev)
+                devices[hwclass.GENERAL].append(dev)
 
         self._checkDeviceLimits(devices)
 
