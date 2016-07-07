@@ -85,8 +85,6 @@ from .vmxml import METADATA_VM_TUNE_URI, METADATA_VM_TUNE_ELEMENT
 from .vmxml import METADATA_VM_TUNE_PREFIX
 
 
-DEFAULT_BRIDGE = config.get("vars", "default_bridge")
-
 # A libvirt constant for undefined cpu quota
 _NO_CPU_QUOTA = 0
 
@@ -534,38 +532,6 @@ class Vm(object):
                            'device': self.conf.get('soundDevice')})
 
         return scards
-
-    def getConfNetworkInterfaces(self):
-        """
-        Normalize networks interfaces provided by conf.
-        """
-        nics = []
-        macs = self.conf.get('macAddr', '').split(',')
-        models = self.conf.get('nicModel', '').split(',')
-        bridges = self.conf.get('bridge', DEFAULT_BRIDGE).split(',')
-        if macs == ['']:
-            macs = []
-        if models == ['']:
-            models = []
-        if bridges == ['']:
-            bridges = []
-        if len(models) < len(macs) or len(models) < len(bridges):
-            raise ValueError('Bad nic specification')
-        if models and not (macs or bridges):
-            raise ValueError('Bad nic specification')
-        if not macs or not models or not bridges:
-            return ''
-        macs = macs + [macs[-1]] * (len(models) - len(macs))
-        bridges = bridges + [bridges[-1]] * (len(models) - len(bridges))
-
-        for mac, model, bridge in zip(macs, models, bridges):
-            if model == 'pv':
-                model = 'virtio'
-            nics.append({'type': hwclass.NIC,
-                         'macAddr': mac,
-                         'nicModel': model, 'network': bridge,
-                         'device': 'bridge'})
-        return nics
 
     def updateDriveIndex(self, drv):
         if not drv['iface'] in self._usedIndices:

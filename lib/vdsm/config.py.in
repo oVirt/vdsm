@@ -126,8 +126,6 @@ parameters = [
             'vlans with alternative names must be hidden from vdsm '
             '(e.g. eth0.10-fcoe, em1.myvlan100, vlan200)'),
 
-        ('default_bridge', 'engine', None),
-
         ('migration_downtime', '500',
             'Maximum allowed downtime for live migration in milliseconds '
             '(anything below 100ms is ignored) if you do not care about '
