@@ -1547,15 +1547,19 @@ class Vm(object):
                 'ipAddress': dev.specParams.get('displayIp', '0'),
             }
 
-        stats = {
-            'displayInfo': [getInfo(dev)
-                            for dev in self._devices[hwclass.GRAPHICS]],
-        }
-        if 'display' in self.conf:
-            stats['displayType'] = self.conf['display']
-            stats['displayPort'] = self.conf['displayPort']
-            stats['displaySecurePort'] = self.conf['displaySecurePort']
-            stats['displayIp'] = self.conf['displayIp']
+        display_info = [
+            getInfo(dev) for dev in self._devices[hwclass.GRAPHICS]
+        ]
+
+        stats = {'displayInfo': display_info}
+        if 'display' in self.conf and display_info:
+            dev = display_info[0]
+            stats['displayType'] = (
+                'qxl' if dev['type'] == 'spice' else 'vnc'
+            )
+            stats['displayPort'] = dev['port']
+            stats['displaySecurePort'] = dev['tlsPort']
+            stats['displayIp'] = dev['ipAddress']
         # else headless VM
         return stats
 

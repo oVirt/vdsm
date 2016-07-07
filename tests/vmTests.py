@@ -1391,7 +1391,9 @@ class TestVmStats(TestCaseBase):
                    {'type': 'graphics', 'device': 'vnc', 'port': '-1'}]
 
         with fake.VM(_VM_PARAMS, devices) as testvm:
-            testvm._updateDevices(testvm._devSpecMapFromConf())
+            dev_spec_map = testvm._devSpecMapFromConf()
+            testvm._updateDevices(dev_spec_map)
+            testvm._devices = testvm._devMapFromDevSpecMap(dev_spec_map)
             res = testvm.getStats()
             self.assertIn('displayPort', res)
             self.assertEqual(res['displayType'],
