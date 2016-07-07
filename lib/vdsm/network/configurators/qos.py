@@ -21,6 +21,8 @@ import errno
 import os
 from distutils.version import StrictVersion
 
+import six
+
 from vdsm.network import tc
 from vdsm.network.netinfo import qos as netinfo_qos
 from vdsm.network.netinfo.cache import ifaceUsed, NetInfo, get as cache_get
@@ -203,7 +205,7 @@ def _is_explicit_defined_default_class(dev):
     definitions.
     """
     netinfo = NetInfo(cache_get())
-    for _, attrs in netinfo.networks:
+    for attrs in six.itervalues(netinfo.networks):
         if 'vlan' not in attrs and 'hostQos' in attrs and (
            attrs['iface'] == dev):
             return True
