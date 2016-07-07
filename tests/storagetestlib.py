@@ -39,10 +39,11 @@ MB = 1024 ** 2   # Used to convert bytes to MB
 
 
 class FakeEnv(object):
-    def __init__(self, sd_manifest, lvm=None):
+    def __init__(self, tmpdir, sd_manifest, sdcache, lvm=None):
+        self.tmpdir = tmpdir
         self.sd_manifest = sd_manifest
-        if lvm:
-            self.lvm = lvm
+        self.sdcache = sdcache
+        self.lvm = lvm
 
 
 @contextmanager
@@ -56,7 +57,7 @@ def fake_file_env(obj=None):
             [hsm, 'sdCache', fake_sdc],
         ]):
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
-            yield FakeEnv(sd_manifest)
+            yield FakeEnv(tmpdir, sd_manifest, fake_sdc)
 
 
 @contextmanager
@@ -74,7 +75,8 @@ def fake_block_env(obj=None):
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm)
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
-            yield FakeEnv(sd_manifest, lvm=lvm)
+            env = FakeEnv(tmpdir, sd_manifest, fake_sdc, lvm)
+            yield env
 
 
 class FakeMetadata(dict):
