@@ -4,7 +4,8 @@ PREFIX="$PWD"/automation/vdsm_functional
 EXPORTS="$PWD"/exported-artifacts
 TEST_PATH="functional"
 FUNCTIONAL_TESTS_LIST=" \
-    $TEST_PATH/supervdsmFuncTests.py"
+    $TEST_PATH/supervdsmFuncTests.py \
+    $TEST_PATH/upgrade_vdsm_test.py"
 
 DISABLE_TESTS_LIST=" \
     $TEST_PATH/sosPluginTests.py \
@@ -63,6 +64,9 @@ for distro in el7; do
     # otherwise
     lago ovirt deploy
     {
+        # start lago http server in order to access internal repo
+        lago ovirt serve &
+        PID=$!
         # Mock the KSM directory, we do not want real KSM to be affected
         lago shell "$vm_name" -c "mount -t tmpfs tmpfs /sys/kernel/mm/ksm"
 
@@ -76,6 +80,7 @@ for distro in el7; do
                     $FUNCTIONAL_TESTS_LIST \
             " \
         || failed=$?
+        kill $PID
     } | tee "$EXPORTS/functional_tests_stdout.$distro.log"
 
     lago copy-from-vm \

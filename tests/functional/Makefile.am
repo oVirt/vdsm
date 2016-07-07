@@ -1,5 +1,5 @@
 #
-# Copyright 2012-2013 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ dist_vdsmfunctests_PYTHON = \
 	networkTestsOVS.py \
 	sosPluginTests.py \
 	supervdsmFuncTests.py \
+	upgrade_vdsm_test.py \
 	utils.py \
 	virtTests.py \
 	vmQoSTests.py \
