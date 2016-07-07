@@ -25,6 +25,7 @@ import os
 import re
 from six.moves import xmlrpc_client as xmlrpclib
 import sys
+import warnings
 from xml.parsers.expat import ExpatError
 from .sslcompat import sslutils
 
@@ -132,6 +133,11 @@ def connect(hostPort=None, useSSL=None, tsPath=None,
             SingleRequestTransport(timeout=timeout))
         server = xmlrpclib.Server('http://%s' % hostPort, transport)
     return server
+
+warnings.simplefilter("always", category=DeprecationWarning)
+warnings.warn(
+    "vdscli uses xmlrpc. since ovirt 3.6 xmlrpc is deprecated, please use "
+    "vdsm.jsonrpcvdscli", DeprecationWarning, stacklevel=2)
 
 if __name__ == '__main__':
     print('connecting to %s:%s ssl %s ts %s' % (
