@@ -457,28 +457,6 @@ class TestVmDevices(XMLTestCase):
             self.assertEqual(graphDev.tlsPort, graphConf['tlsPort'])
 
     @MonkeyPatch(graphics, 'config', make_config([('vars', 'ssl', 'true')]))
-    def testLegacyGraphicsXML(self):
-        vmConfs = [
-            {'display': 'vnc', 'displayPort': '-1', 'displayNetwork':
-             'vmDisplay', 'keyboardLayout': 'en-us'},
-
-            {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
-             'spiceSecureChannels':
-             "smain,sinputs,scursor,splayback,srecord,sdisplay"},
-
-            {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
-             'spiceSecureChannels': "smain"},
-
-            {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
-             'copyPasteEnable': 'false'},
-
-            {'display': 'qxl', 'displayPort': '-1', 'displaySecurePort': '-1',
-             'fileTransferEnable': 'false'}]
-
-        for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
-            self._verifyGraphicsXML(vmConf, xml, isLegacy=True)
-
-    @MonkeyPatch(graphics, 'config', make_config([('vars', 'ssl', 'true')]))
     def testGraphicsDeviceXML(self):
         vmConfs = [
             {'devices': [{
@@ -509,27 +487,25 @@ class TestVmDevices(XMLTestCase):
                     'fileTransferEnable': 'false'}}]}]
 
         for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
-            self._verifyGraphicsXML(vmConf, xml, isLegacy=False)
+            self._verifyGraphicsXML(vmConf, xml)
 
-    def _verifyGraphicsXML(self, vmConf, xml, isLegacy):
+    def _verifyGraphicsXML(self, vmConf, xml):
         spiceChannelXML = """
             <channel type="spicevmc">
                 <target name="com.redhat.spice.0" type="virtio"/>
             </channel>"""
 
         vmConf.update(self.conf)
-        with fake.VM(vmConf) as testvm:
-            dev = (testvm.getConfGraphics() if isLegacy
-                   else vmConf['devices'])[0]
-            with MonkeyPatchScope([
-                (vmdevices.graphics.net_api, 'libvirt_networks', lambda: {})
-            ]):
-                graph = vmdevices.graphics.Graphics(vmConf, self.log, **dev)
-            self.assertXMLEqual(graph.getXML().toxml(), xml)
+        dev = vmConf['devices'][0]
+        with MonkeyPatchScope([
+            (vmdevices.graphics.net_api, 'libvirt_networks', lambda: {})
+        ]):
+            graph = vmdevices.graphics.Graphics(vmConf, self.log, **dev)
+        self.assertXMLEqual(graph.getXML().toxml(), xml)
 
-            if graph.device == 'spice':
-                self.assertXMLEqual(graph.getSpiceVmcChannelsXML().toxml(),
-                                    spiceChannelXML)
+        if graph.device == 'spice':
+            self.assertXMLEqual(graph.getSpiceVmcChannelsXML().toxml(),
+                                spiceChannelXML)
 
     @permutations([['''<hostdev managed="no" mode="subsystem" type="usb">
                           <alias name="testusb"/>

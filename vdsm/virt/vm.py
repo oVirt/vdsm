@@ -503,25 +503,6 @@ class Vm(object):
 
         return vcards
 
-    def getConfGraphics(self):
-        """
-        Normalize graphics device provided by conf.
-        """
-
-        # this method needs to cope both with ancient Engines and with
-        # recent Engines unaware of graphic devices.
-        if 'display' not in self.conf:
-            return []
-
-        return [{
-            'type': hwclass.GRAPHICS,
-            'device': (
-                'spice'
-                if self.conf['display'] in ('qxl', 'qxlnc')
-                else 'vnc'),
-            'specParams': vmdevices.graphics.makeSpecParams(self.conf)
-        }]
-
     def getConfSound(self):
         """
         Normalize sound device provided by conf.
