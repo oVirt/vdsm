@@ -385,40 +385,6 @@ class Vm(object):
             drv['truesize'] = 0
             drv['apparentsize'] = 0
 
-    def __legacyDrives(self):
-        """
-        Backward compatibility for qa scripts that specify direct paths.
-        """
-        legacies = []
-        DEVICE_SPEC = ((0, 'hda'), (1, 'hdb'), (2, 'hdc'), (3, 'hdd'))
-        for index, linuxName in DEVICE_SPEC:
-            path = self.conf.get(linuxName)
-            if path:
-                legacies.append({'type': hwclass.DISK,
-                                 'device': 'disk', 'path': path,
-                                 'iface': 'ide', 'index': index,
-                                 'truesize': 0})
-        return legacies
-
-    def __removableDrives(self):
-        removables = [{
-            'type': hwclass.DISK,
-            'device': 'cdrom',
-            'iface': vmdevices.storage.DEFAULT_INTERFACE_FOR_ARCH[self.arch],
-            'path': self.conf.get('cdrom', ''),
-            'index': 2,
-            'truesize': 0}]
-        floppyPath = self.conf.get('floppy')
-        if floppyPath:
-            removables.append({
-                'type': hwclass.DISK,
-                'device': 'floppy',
-                'path': floppyPath,
-                'iface': 'fdc',
-                'index': 0,
-                'truesize': 0})
-        return removables
-
     def _devMapFromDevSpecMap(self, dev_spec_map):
         dev_map = self._emptyDevMap()
 
@@ -600,33 +566,6 @@ class Vm(object):
                          'nicModel': model, 'network': bridge,
                          'device': 'bridge'})
         return nics
-
-    def getConfDrives(self):
-        """
-        Normalize drives provided by conf.
-        """
-        # FIXME
-        # Will be better to change the self.conf but this implies an API change
-        # Remove this when the API parameters will be consistent.
-        confDrives = self.conf.get('drives', [])
-        if not confDrives:
-            confDrives.extend(self.__legacyDrives())
-        confDrives.extend(self.__removableDrives())
-
-        for drv in confDrives:
-            drv['type'] = hwclass.DISK
-            drv['format'] = drv.get('format') or 'raw'
-            drv['propagateErrors'] = drv.get('propagateErrors') or 'off'
-            drv['readonly'] = False
-            drv['shared'] = False
-            # FIXME: For BC we have now two identical keys: iface = if
-            # Till the day that conf will not returned as a status anymore.
-            drv['iface'] = drv.get('iface') or \
-                drv.get(
-                    'if',
-                    vmdevices.storage.DEFAULT_INTERFACE_FOR_ARCH[self.arch])
-
-        return confDrives
 
     def updateDriveIndex(self, drv):
         if not drv['iface'] in self._usedIndices:
