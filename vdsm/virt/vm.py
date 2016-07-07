@@ -463,57 +463,6 @@ class Vm(object):
                 raise ValueError("only a single graphic device "
                                  "per type is supported")
 
-    def getConfController(self):
-        """
-        Normalize controller device.
-        """
-        controllers = []
-        # For now we create by default only 'virtio-serial' controller
-        controllers.append({'type': hwclass.CONTROLLER,
-                            'device': 'virtio-serial'})
-        return controllers
-
-    def getConfVideo(self):
-        """
-        Normalize video device provided by conf.
-        """
-
-        DEFAULT_VIDEOS = {cpuarch.X86_64: 'cirrus',
-                          cpuarch.PPC64: 'vga',
-                          cpuarch.PPC64LE: 'vga'}
-
-        vcards = []
-        if self.conf.get('display') == 'vnc':
-            devType = DEFAULT_VIDEOS[self.arch]
-        elif self.hasSpice:
-            devType = 'qxl'
-        else:
-            devType = None
-
-        if devType:
-            # this method is called only in the ancient Engines compatibility
-            # path. But ancient Engines do not support headless VMs, as they
-            # will not stop sending display data all of sudden.
-            monitors = int(self.conf.get('spiceMonitors', '1'))
-            vram = '65536' if (monitors <= 2) else '32768'
-            for idx in range(monitors):
-                vcards.append({'type': hwclass.VIDEO,
-                               'specParams': {'vram': vram},
-                               'device': devType})
-
-        return vcards
-
-    def getConfSound(self):
-        """
-        Normalize sound device provided by conf.
-        """
-        scards = []
-        if self.conf.get('soundDevice'):
-            scards.append({'type': hwclass.SOUND,
-                           'device': self.conf.get('soundDevice')})
-
-        return scards
-
     def updateDriveIndex(self, drv):
         if not drv['iface'] in self._usedIndices:
             self._usedIndices[drv['iface']] = []
