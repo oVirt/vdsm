@@ -20,6 +20,7 @@
 import os
 import uuid
 
+from testlib import expandPermutations, permutations
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
 from storagetestlib import fake_block_env
@@ -29,6 +30,7 @@ from storagetestlib import make_file_volume
 
 from storage import blockSD, fileSD, fileVolume, sd
 
+from vdsm import utils
 from vdsm.storage import constants as sc
 
 
@@ -88,6 +90,7 @@ class FakeFileEnvTests(VdsmTestCase):
             self.assertEqual(desc, vol.getDescription())
 
 
+@expandPermutations
 class FakeBlockEnvTests(VdsmTestCase):
 
     def test_repopath_location(self):
@@ -124,14 +127,39 @@ class FakeBlockEnvTests(VdsmTestCase):
             manifest = blockSD.BlockStorageDomainManifest(sd_id)
             self.assertEqual(desc, manifest.getMetaParam(sd.DMDK_DESCRIPTION))
 
+    @permutations((
+        (MB,),
+        (2 * MB - 1,),
+        (1,),
+        ((sc.VG_EXTENT_SIZE_MB - 1) * MB,),
+        (sc.VG_EXTENT_SIZE_MB * MB + 1,),
+    ))
+    def test_volume_size_alignment(self, size_param):
+        with fake_block_env() as env:
+            sd_id = env.sd_manifest.sdUUID
+            img_id = str(uuid.uuid4())
+            vol_id = str(uuid.uuid4())
+            make_block_volume(env.lvm, env.sd_manifest, size_param,
+                              img_id, vol_id)
+            vol = env.sd_manifest.produceVolume(img_id, vol_id)
+
+            extent_size = sc.VG_EXTENT_SIZE_MB * MB
+            expected_size = utils.round(size_param, extent_size)
+            self.assertEqual(expected_size / sc.BLOCK_SIZE, vol.getSize())
+            self.assertEqual(expected_size,
+                             int(env.lvm.getLV(sd_id, vol_id).size))
+            lv_file_size = os.stat(env.lvm.lvPath(sd_id, vol_id)).st_size
+            self.assertEqual(expected_size, lv_file_size)
+
     def test_volume_metadata_io(self):
         with fake_block_env() as env:
             sd_id = env.sd_manifest.sdUUID
             img_id = str(uuid.uuid4())
             vol_id = str(uuid.uuid4())
-            size_mb = 1 * MB
+            size_mb = sc.VG_EXTENT_SIZE_MB
+            size = size_mb * MB
             size_blk = size_mb * MB / sc.BLOCK_SIZE
-            make_block_volume(env.lvm, env.sd_manifest, size_mb,
+            make_block_volume(env.lvm, env.sd_manifest, size,
                               img_id, vol_id)
 
             self.assertEqual(vol_id, env.lvm.getLV(sd_id, vol_id).name)
