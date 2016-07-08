@@ -6508,11 +6508,13 @@ types:
         -   defaultvalue: 1
             description: Indicates the number of CPU threads per core
             name: smpThreadsPerCore
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The number of CPUs presented to the VM
             name: smp
-            type: uint
+            type: string
+            datatype: uint
 
         -   defaultvalue: no-default
             description: Indicates the guest numa topology.
@@ -6527,7 +6529,8 @@ types:
         -   defaultvalue: false
             description: enable the BIOS boot menu
             name: bootMenuEnable
-            type: boolean
+            type: string
+            datatype: boolean
             added: '3.4'
 
         -   defaultvalue: null
@@ -6543,12 +6546,14 @@ types:
 
         -   description: Indicates if KVM hardware acceleration is enabled
             name: kvmEnable
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   description: Indicates if the Transparent Huge Pages feature is
                 enabled for this virtual machine
             name: transparentHugePages
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   description: The VM name
             name: vmName
@@ -6556,11 +6561,13 @@ types:
 
         -   description: The time difference from host to the VM in seconds
             name: timeOffset
-            type: uint
+            type: string
+            datatype: uint
 
         -   description: The host scheduling priority
             name: nice
-            type: int
+            type: string
+            datatype: int
 
         -   defaultvalue: null
             description: Indicates the numatune configuration.
@@ -6570,7 +6577,8 @@ types:
         -   defaultvalue: 1
             description: Indicates the number of CPU cores per socket
             name: smpCoresPerSocket
-            type: uint
+            type: string
+            datatype: uint
 
         -   defaultvalue: null
             description: The host scheduling priority (relative to other VMs).
@@ -6581,11 +6589,61 @@ types:
 
         -   description: Indicates if ACPI is enabled inside the VM
             name: acpiEnable
-            type: boolean
+            type: string
+            datatype: boolean
 
         -   description: The type of VM
             name: vmType
             type: *VmType
+
+        -   description: The emulated machine type
+            name: emulatedMachine
+            type: string
+
+        -   description: The amount of memory guaranteed to be available
+                         to the VM in MB
+            name: memGuaranteedSize
+            type: uint
+
+        -   description: The model of CPU to emulate
+            name: cpuType
+            type: string
+
+        -   description: The maximum amount of the memory this VM could have.
+                         Needed for the memory hotplug.
+                         FIXME find the unit size.
+            name: maxMemSize
+            type: uint
+
+        -   description: The number of emulated memory slots for this VM.
+                         Needed for the memory hotplug.
+            name: maxMemSlots
+            type: uint
+
+        -   description: Indicates if the smartcard support is enabled
+                         for this VM.
+            name: smartcardEnable
+            type: string
+            datatype: boolean
+
+        -   description: Indicates if the PIT reinjection is enabled
+                         for this VM.
+                         DEPRECATED.
+            name: pitReinjection
+            type: string
+            datatype: boolean
+
+        -   description: The network this VM should use for the graphic display
+                         connections.
+                         DEPRECATED.
+            name: displayNetwork
+            type: string
+
+        -   description: The maximum number of virtual CPUs this VM
+                         could support. Needed for the CPU hotplug.
+            name: maxVCpus
+            type: string
+            datatype: uint
         type: object
 
     VmStats: &VmStats
