@@ -41,7 +41,7 @@ class FakeFileEnvTests(VdsmTestCase):
 
     def test_no_fakelvm(self):
         with fake_file_env() as env:
-            self.assertIsNone(env.lvm)
+            self.assertFalse(hasattr(env, 'lvm'))
 
     def test_repopath_location(self):
         with fake_file_env() as env:

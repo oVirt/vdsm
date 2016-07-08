@@ -38,12 +38,33 @@ MDSIZE = 524288  # The size (in bytes) of fake metadata files
 MB = 1024 ** 2   # Used to convert bytes to MB
 
 
-class FakeEnv(object):
-    def __init__(self, tmpdir, sd_manifest, sdcache, lvm=None):
+class FakeFileEnv(object):
+    def __init__(self, tmpdir, sd_manifest, sdcache):
+        self.tmpdir = tmpdir
+        self.sd_manifest = sd_manifest
+        self.sdcache = sdcache
+
+    def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
+                    vol_format=sc.RAW_FORMAT, prealloc=sc.SPARSE_VOL,
+                    disk_type=image.UNKNOWN_DISK_TYPE, desc='fake volume'):
+        return make_file_volume(self.sd_manifest, size, imguuid, voluuid,
+                                parent_vol_id, vol_format, prealloc, disk_type,
+                                desc)
+
+
+class FakeBlockEnv(object):
+    def __init__(self, tmpdir, sd_manifest, sdcache, lvm):
         self.tmpdir = tmpdir
         self.sd_manifest = sd_manifest
         self.sdcache = sdcache
         self.lvm = lvm
+
+    def make_volume(self, size, imguuid, voluuid, parent_vol_id=sc.BLANK_UUID,
+                    vol_format=sc.RAW_FORMAT, prealloc=sc.SPARSE_VOL,
+                    disk_type=image.UNKNOWN_DISK_TYPE, desc='fake volume'):
+        return make_block_volume(self.lvm, self.sd_manifest, size, imguuid,
+                                 voluuid, parent_vol_id, vol_format, prealloc,
+                                 disk_type, desc)
 
 
 @contextmanager
@@ -57,7 +78,7 @@ def fake_file_env(obj=None):
             [hsm, 'sdCache', fake_sdc],
         ]):
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
-            yield FakeEnv(tmpdir, sd_manifest, fake_sdc)
+            yield FakeFileEnv(tmpdir, sd_manifest, fake_sdc)
 
 
 @contextmanager
@@ -75,8 +96,7 @@ def fake_block_env(obj=None):
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm)
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
-            env = FakeEnv(tmpdir, sd_manifest, fake_sdc, lvm)
-            yield env
+            yield FakeBlockEnv(tmpdir, sd_manifest, fake_sdc, lvm)
 
 
 class FakeMetadata(dict):
