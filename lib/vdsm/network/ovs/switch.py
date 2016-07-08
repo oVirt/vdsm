@@ -46,21 +46,15 @@ def validate_network_setup(nets, bonds):
             bond, attrs, nets, _netinfo['networks'], kernel_nics)
 
 
-def setup(ovs_info, nets2add, nets2remove, bonds2add, bonds2edit,
-          bonds2remove):
-    ovsdb = driver.create()
-    with Setup(ovsdb, ovs_info) as s:
-        s.remove_nets(nets2remove)
-        s.remove_bonds(bonds2remove)
-        s.edit_bonds(bonds2edit)
-        s.add_bonds(bonds2add)
-        s.add_nets(nets2add)
-
-
 def cleanup():
     ovsdb = driver.create()
     with ovsdb.transaction() as t:
         t.add(*_cleanup_unused_bridges(ovsdb))
+
+
+def create_setup(ovs_info):
+    ovsdb = driver.create()
+    return Setup(ovsdb, ovs_info)
 
 
 # TODO: We could move all setup() code into __init__ and __exit__.
