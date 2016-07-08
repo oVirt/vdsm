@@ -155,8 +155,12 @@ def _setup_ovs(networks, bondings, options, in_rollback):
     nets2remove.update(nets2edit)
 
     with Transaction(in_rollback=in_rollback) as config:
-        ovs_switch.setup(_ovs_info, nets2add, nets2remove, bonds2add,
-                         bonds2edit, bonds2remove)
+        with ovs_switch.create_setup(_ovs_info) as s:
+            s.remove_nets(nets2remove)
+            s.remove_bonds(bonds2remove)
+            s.edit_bonds(bonds2edit)
+            s.add_bonds(bonds2add)
+            s.add_nets(nets2add)
         _update_running_config(networks, bondings, config)
         ovs_switch.cleanup()
         _setup_ipv6autoconf(networks)
