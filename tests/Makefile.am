@@ -126,6 +126,7 @@ test_modules = \
 	storage_monitor_test.py \
 	storage_rwlock_test.py \
 	storage_sdm_api_test.py \
+	storage_sdm_copy_data_test.py \
 	storage_sdm_create_volume_test.py \
 	storage_volume_artifacts_test.py \
 	storage_volume_metadata_test.py \
@@ -227,6 +228,7 @@ blacklist_modules_python3 = \
 	storage_blkdiscard_test.py \
 	storage_sdm_api_test.py \
 	storage_sdm_create_volume_test.py \
+	storage_sdm_copy_data_test.py \
 	storage_volume_artifacts_test.py \
 	storage_volume_metadata_test.py \
 	storagefakelibTests.py \

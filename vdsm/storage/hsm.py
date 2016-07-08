@@ -81,6 +81,7 @@ import storageServer
 
 
 import sdm.api.create_volume
+import sdm.api.copy_data
 
 GUID = "guid"
 NAME = "name"
@@ -3519,4 +3520,5 @@ class HSM(object):
 
     @public
     def sdm_copy_data(self, job_id, source, destination):
-        raise NotImplementedError()
+        job = sdm.api.copy_data.Job(job_id, None, source, destination)
+        self.sdm_schedule(job)
