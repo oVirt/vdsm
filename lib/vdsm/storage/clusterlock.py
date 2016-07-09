@@ -369,7 +369,10 @@ class LocalLock(object):
 
     @property
     def supports_volume_leases(self):
-        return True
+        # Current implemention use single lock using the ids file (see
+        # _getLease). We can support multiple leases, but I'm not sure if there
+        # is any value in local volume leases.
+        return False
 
     def initLock(self):
         # The LocalLock initialization is based on SANLock to maintain on-disk
