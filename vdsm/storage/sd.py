@@ -420,7 +420,19 @@ class StorageDomainManifest(object):
         """
         Return the volume lease (leasePath, leaseOffset)
         """
-        return None, None
+        return clusterlock.Lease(None, None, None)
+
+    def acquireVolumeLease(self, hostId, imgUUID, volUUID):
+        lease = self.getVolumeLease(imgUUID, volUUID)
+        self._domainLock.acquire(hostId, lease)
+
+    def releaseVolumeLease(self, imgUUID, volUUID):
+        lease = self.getVolumeLease(imgUUID, volUUID)
+        self._domainLock.release(lease)
+
+    def inquireVolumeLease(self, imgUUID, volUUID):
+        lease = self.getVolumeLease(imgUUID, volUUID)
+        return self._domainLock.inquire(lease)
 
     def getDomainLease(self):
         """

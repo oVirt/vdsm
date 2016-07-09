@@ -803,13 +803,13 @@ class BlockStorageDomainManifest(sd.StorageDomainManifest):
         """
         Return the volume lease (leasePath, leaseOffset)
         """
-        if self.hasVolumeLeases():
-            # TODO: use the sanlock specific offset when present
-            leaseSlot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
-            leaseOffset = ((leaseSlot + blockVolume.RESERVED_LEASES) *
-                           self.logBlkSize * sd.LEASE_BLOCKS)
-            return self.getLeasesFilePath(), leaseOffset
-        return None, None
+        if not self.hasVolumeLeases():
+            return clusterlock.Lease(None, None, None)
+        # TODO: use the sanlock specific offset when present
+        slot = self.produceVolume(imgUUID, volUUID).getMetaOffset()
+        offset = ((slot + blockVolume.RESERVED_LEASES) * self.logBlkSize *
+                  sd.LEASE_BLOCKS)
+        return clusterlock.Lease(volUUID, self.getLeasesFilePath(), offset)
 
 
 class BlockStorageDomain(sd.StorageDomain):

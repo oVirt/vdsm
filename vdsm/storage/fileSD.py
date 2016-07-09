@@ -26,6 +26,7 @@ import glob
 import fnmatch
 import re
 
+from vdsm.storage import clusterlock
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -328,12 +329,11 @@ class FileStorageDomainManifest(sd.StorageDomainManifest):
         """
         Return the volume lease (leasePath, leaseOffset)
         """
-        if self.hasVolumeLeases():
-            vol = self.produceVolume(imgUUID, volUUID)
-            volumePath = vol.getVolumePath()
-            leasePath = volumePath + LEASE_FILEEXT
-            return leasePath, fileVolume.LEASE_FILEOFFSET
-        return None, None
+        if not self.hasVolumeLeases():
+            return clusterlock.Lease(None, None, None)
+        vol = self.produceVolume(imgUUID, volUUID)
+        path = vol.getVolumePath() + LEASE_FILEEXT
+        return clusterlock.Lease(volUUID, path, fileVolume.LEASE_FILEOFFSET)
 
 
 class FileStorageDomain(sd.StorageDomain):

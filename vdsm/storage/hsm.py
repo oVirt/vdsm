@@ -3139,12 +3139,12 @@ class HSM(object):
                        'volumeID': volUUID, 'path': path,
                        'volType': "path"}
 
-            leasePath, leaseOffset = dom.getVolumeLease(imgUUID, volUUID)
+            lease = dom.getVolumeLease(imgUUID, volUUID)
 
-            if leasePath and isinstance(leaseOffset, numbers.Integral):
+            if lease.path and isinstance(lease.offset, numbers.Integral):
                 volInfo.update({
-                    'leasePath': leasePath,
-                    'leaseOffset': leaseOffset,
+                    'leasePath': lease.path,
+                    'leaseOffset': lease.offset,
                 })
 
             imgVolumesInfo.append(volInfo)
