@@ -414,7 +414,7 @@ class StorageDomainManifest(object):
         return self._domainLock.getHostStatus(hostId)
 
     def hasVolumeLeases(self):
-        return self._domainLock.supports_volume_leases
+        return self._domainLock.supports_multiple_leases
 
     def getVolumeLease(self, imgUUID, volUUID):
         """

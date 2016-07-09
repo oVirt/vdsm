@@ -71,6 +71,22 @@ HOST_STATUS_FAIL = "fail"
 HOST_STATUS_DEAD = "dead"
 
 
+class MultipleLeasesNotSupported(Exception):
+    """
+    Raised when trying to use multiple leases on a cluster lock that
+    supports only single lease.
+    """
+
+    msg = "Mulitple leases not supported, cannot {self.action} {self.lease}"
+
+    def __init__(self, action, lease):
+        self.action = action
+        self.lease = lease
+
+    def __str__(self):
+        return self.msg.format(self=self)
+
+
 Lease = collections.namedtuple("Lease", "name, path, offset")
 
 
@@ -91,10 +107,12 @@ class SafeLease(object):
                        ioOpTimeoutSec)
 
     @property
-    def supports_volume_leases(self):
+    def supports_multiple_leases(self):
         return False
 
     def initLock(self, lease):
+        if lease != self._lease:
+            raise MultipleLeasesNotSupported("init", lease)
         lockUtil = constants.EXT_SAFELEASE
         initCommand = [lockUtil, "release", "-f", lease.path, "0"]
         rc, out, err = misc.execCmd(initCommand, cwd=self.lockUtilPath)
@@ -127,6 +145,8 @@ class SafeLease(object):
         return HOST_STATUS_UNAVAILABLE
 
     def acquire(self, hostID, lease):
+        if lease != self._lease:
+            raise MultipleLeasesNotSupported("acquire", lease)
         leaseTimeMs = self._leaseTimeSec * 1000
         ioOpTimeoutMs = self._ioOpTimeoutSec * 1000
         with self._lock:
@@ -158,6 +178,8 @@ class SafeLease(object):
         return os.path.join(self.lockUtilPath, self.lockCmd)
 
     def release(self, lease):
+        if lease != self._lease:
+            raise MultipleLeasesNotSupported("release", lease)
         with self._lock:
             freeLockUtil = os.path.join(self.lockUtilPath, self.freeLockCmd)
             releaseLockCommand = [freeLockUtil, self._sdUUID]
@@ -216,7 +238,7 @@ class SANLock(object):
         self._sanlockfd = None
 
     @property
-    def supports_volume_leases(self):
+    def supports_multiple_leases(self):
         return True
 
     def initLock(self, lease):
@@ -366,13 +388,15 @@ class LocalLock(object):
         self._lease = lease
 
     @property
-    def supports_volume_leases(self):
+    def supports_multiple_leases(self):
         # Current implemention use single lock using the ids file (see
         # _getLease). We can support multiple leases, but I'm not sure if there
         # is any value in local volume leases.
         return False
 
     def initLock(self, lease):
+        if lease != self._lease:
+            raise MultipleLeasesNotSupported("init", lease)
         # The LocalLock initialization is based on SANLock to maintain on-disk
         # domain format consistent across all the V3 types.
         # The advantage is that the domain can be exposed as an NFS/GlusterFS
@@ -433,6 +457,8 @@ class LocalLock(object):
         return HOST_STATUS_UNAVAILABLE
 
     def acquire(self, hostId, lease):
+        if lease != self._lease:
+            raise MultipleLeasesNotSupported("acquire", lease)
         with self._globalLockMapSync:
             self.log.info("Acquiring local lock for domain %s (id: %s)",
                           self._sdUUID, hostId)
@@ -473,11 +499,15 @@ class LocalLock(object):
                        "(id: %s)", self._sdUUID, hostId)
 
     def inquire(self, lease):
+        if lease != self._lease:
+            raise MultipleLeasesNotSupported("inquire", lease)
         with self._globalLockMapSync:
             hostId, lockFile = self._getLease()
             return self.LVER, (hostId if lockFile else None)
 
     def release(self, lease):
+        if lease != self._lease:
+            raise MultipleLeasesNotSupported("release", lease)
         with self._globalLockMapSync:
             self.log.info("Releasing local lock for domain %s", self._sdUUID)
 
