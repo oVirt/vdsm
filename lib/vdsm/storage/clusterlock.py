@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import errno
 import fcntl
+import collections
 import logging
 import os
 import subprocess
@@ -41,12 +42,6 @@ from vdsm.storage import misc
 
 
 MAX_HOST_ID = 250
-
-# The LEASE_OFFSET is used by SANLock to not overlap with safelease in
-# orfer to preserve the ability to acquire both locks (e.g.: during the
-# domain upgrade)
-SDM_LEASE_NAME = 'SDM'
-SDM_LEASE_OFFSET = 512 * 2048
 
 # Host status - currently only sanlock supports this, and the documentaion
 # describes the sanlock implementation. For more info see:
@@ -76,6 +71,9 @@ HOST_STATUS_FAIL = "fail"
 HOST_STATUS_DEAD = "dead"
 
 
+Lease = collections.namedtuple("Lease", "name, path, offset")
+
+
 class SafeLease(object):
     log = logging.getLogger("Storage.SafeLease")
 
@@ -83,12 +81,12 @@ class SafeLease(object):
     lockCmd = config.get('irs', 'lock_cmd')
     freeLockCmd = config.get('irs', 'free_lock_cmd')
 
-    def __init__(self, sdUUID, idsPath, leasesPath, lockRenewalIntervalSec,
+    def __init__(self, sdUUID, idsPath, lease, lockRenewalIntervalSec,
                  leaseTimeSec, leaseFailRetry, ioOpTimeoutSec):
         self._lock = threading.Lock()
         self._sdUUID = sdUUID
         self._idsPath = idsPath
-        self._leasesPath = leasesPath
+        self._lease = lease
         self.setParams(lockRenewalIntervalSec, leaseTimeSec, leaseFailRetry,
                        ioOpTimeoutSec)
 
@@ -96,9 +94,9 @@ class SafeLease(object):
     def supports_volume_leases(self):
         return False
 
-    def initLock(self):
+    def initLock(self, lease):
         lockUtil = constants.EXT_SAFELEASE
-        initCommand = [lockUtil, "release", "-f", self._leasesPath, "0"]
+        initCommand = [lockUtil, "release", "-f", lease.path, "0"]
         rc, out, err = misc.execCmd(initCommand, cwd=self.lockUtilPath)
         if rc != 0:
             self.log.warn("could not initialise spm lease (%s): %s", rc, out)
@@ -128,7 +126,7 @@ class SafeLease(object):
     def getHostStatus(self, hostId):
         return HOST_STATUS_UNAVAILABLE
 
-    def acquire(self, hostID):
+    def acquire(self, hostID, lease):
         leaseTimeMs = self._leaseTimeSec * 1000
         ioOpTimeoutMs = self._ioOpTimeoutSec * 1000
         with self._lock:
@@ -138,7 +136,7 @@ class SafeLease(object):
             lockUtil = self.getLockUtilFullPath()
             acquireLockCommand = subprocess.list2cmdline([
                 lockUtil, "start", self._sdUUID, str(hostID),
-                str(self._lockRenewalIntervalSec), str(self._leasesPath),
+                str(self._lockRenewalIntervalSec), str(lease.path),
                 str(leaseTimeMs), str(ioOpTimeoutMs),
                 str(self._leaseFailRetry), str(os.getpid())
             ])
@@ -153,13 +151,13 @@ class SafeLease(object):
                 raise se.AcquireLockFailure(self._sdUUID, rc, out, err)
             self.log.debug("Clustered lock acquired successfully")
 
-    def inquire(self):
+    def inquire(self, lease):
         raise se.InquireNotSupportedError()
 
     def getLockUtilFullPath(self):
         return os.path.join(self.lockUtilPath, self.lockCmd)
 
-    def release(self):
+    def release(self, lease):
         with self._lock:
             freeLockUtil = os.path.join(self.lockUtilPath, self.freeLockCmd)
             releaseLockCommand = [freeLockUtil, self._sdUUID]
@@ -181,13 +179,12 @@ class SafeLease(object):
 initSANLockLog = logging.getLogger("Storage.initSANLock")
 
 
-def initSANLock(sdUUID, idsPath, leasesPath):
+def initSANLock(sdUUID, idsPath, lease):
     initSANLockLog.debug("Initializing SANLock for domain %s", sdUUID)
 
     try:
         sanlock.init_lockspace(sdUUID, idsPath)
-        sanlock.init_resource(sdUUID, SDM_LEASE_NAME,
-                              [(leasesPath, SDM_LEASE_OFFSET)])
+        sanlock.init_resource(sdUUID, lease.name, [(lease.path, lease.offset)])
     except sanlock.SanlockException:
         initSANLockLog.error("Cannot initialize SANLock for domain %s",
                              sdUUID, exc_info=True)
@@ -209,28 +206,27 @@ class SANLock(object):
     _sanlock_fd = None
     _sanlock_lock = threading.Lock()
 
-    def __init__(self, sdUUID, idsPath, leasesPath, *args):
+    def __init__(self, sdUUID, idsPath, lease, *args):
+        """
+        Note: lease and args are unused, needed by legacy locks.
+        """
         self._lock = threading.Lock()
         self._sdUUID = sdUUID
         self._idsPath = idsPath
-        self._leasesPath = leasesPath
         self._sanlockfd = None
 
     @property
     def supports_volume_leases(self):
         return True
 
-    def initLock(self):
-        initSANLock(self._sdUUID, self._idsPath, self._leasesPath)
+    def initLock(self, lease):
+        initSANLock(self._sdUUID, self._idsPath, lease)
 
     def setParams(self, *args):
         pass
 
     def getReservedId(self):
         return MAX_HOST_ID
-
-    def getLockDisk(self):
-        return [(self._leasesPath, SDM_LEASE_OFFSET)]
 
     def acquireHostId(self, hostId, async):
         with self._lock:
@@ -294,10 +290,9 @@ class SANLock(object):
     # The hostId parameter is maintained here only for compatibility with
     # ClusterLock. We could consider to remove it in the future but keeping it
     # for logging purpose is desirable.
-    def acquire(self, hostId):
+    def acquire(self, hostId, lease):
         with nested(self._lock, SANLock._sanlock_lock):
-            self.log.info("Acquiring cluster lock for domain %s (id: %s)",
-                          self._sdUUID, hostId)
+            self.log.info("Acquiring %s for host id %s", lease, hostId)
 
             while True:
                 if SANLock._sanlock_fd is None:
@@ -309,49 +304,49 @@ class SANLock(object):
                             "Cannot register to sanlock", str(e))
 
                 try:
-                    sanlock.acquire(self._sdUUID, SDM_LEASE_NAME,
-                                    self.getLockDisk(),
+                    sanlock.acquire(self._sdUUID, lease.name,
+                                    [(lease.path, lease.offset)],
                                     slkfd=SANLock._sanlock_fd)
                 except sanlock.SanlockException as e:
                     if e.errno != errno.EPIPE:
                         raise se.AcquireLockFailure(
                             self._sdUUID, e.errno,
-                            "Cannot acquire cluster lock", str(e))
+                            "Cannot acquire %s" % (lease,), str(e))
                     SANLock._sanlock_fd = None
                     continue
 
                 break
 
-            self.log.debug("Cluster lock for domain %s successfully acquired "
-                           "(id: %s)", self._sdUUID, hostId)
+            self.log.debug("Successfully acquired %s for host id %s",
+                           lease, hostId)
 
-    def inquire(self):
-        resource = sanlock.read_resource(self._leasesPath, SDM_LEASE_OFFSET)
-        owners = sanlock.read_resource_owners(self._sdUUID, SDM_LEASE_NAME,
-                                              self.getLockDisk())
+    def inquire(self, lease):
+        resource = sanlock.read_resource(lease.path, lease.offset)
+        owners = sanlock.read_resource_owners(self._sdUUID, lease.name,
+                                              [(lease.path, lease.offset)])
 
         if len(owners) == 1:
             return resource.get("version"), owners[0].get("host_id")
         elif len(owners) > 1:
             self.log.error("Cluster lock is reported to have more than "
                            "one owner: %s", owners)
-            raise RuntimeError("Cluster lock multiple owners error")
+            raise RuntimeError("Multiple owners for %s" % (lease,))
 
         return None, None
 
-    def release(self):
+    def release(self, lease):
         with self._lock:
-            self.log.info("Releasing cluster lock for domain %s", self._sdUUID)
+            self.log.info("Releasing %s", lease)
 
             try:
-                sanlock.release(self._sdUUID, SDM_LEASE_NAME,
-                                self.getLockDisk(), slkfd=SANLock._sanlock_fd)
+                sanlock.release(self._sdUUID, lease.name,
+                                [(lease.path, lease.offset)],
+                                slkfd=SANLock._sanlock_fd)
             except sanlock.SanlockException as e:
                 raise se.ReleaseLockFailure(self._sdUUID, e)
 
             self._sanlockfd = None
-            self.log.debug("Cluster lock for domain %s successfully released",
-                           self._sdUUID)
+            self.log.debug("Successfully released %s", lease)
 
 
 class LocalLock(object):
@@ -362,10 +357,13 @@ class LocalLock(object):
     _globalLockMap = {}
     _globalLockMapSync = threading.Lock()
 
-    def __init__(self, sdUUID, idsPath, leasesPath, *args):
+    def __init__(self, sdUUID, idsPath, lease, *args):
+        """
+        Note: args unused, needed only by legacy locks.
+        """
         self._sdUUID = sdUUID
         self._idsPath = idsPath
-        self._leasesPath = leasesPath
+        self._lease = lease
 
     @property
     def supports_volume_leases(self):
@@ -374,7 +372,7 @@ class LocalLock(object):
         # is any value in local volume leases.
         return False
 
-    def initLock(self):
+    def initLock(self, lease):
         # The LocalLock initialization is based on SANLock to maintain on-disk
         # domain format consistent across all the V3 types.
         # The advantage is that the domain can be exposed as an NFS/GlusterFS
@@ -383,7 +381,7 @@ class LocalLock(object):
         # and therefore concurrently using the same domain as local domain and
         # NFS domain (or any other shared file-based domain) will certainly
         # lead to disastrous consequences.
-        initSANLock(self._sdUUID, self._idsPath, self._leasesPath)
+        initSANLock(self._sdUUID, self._idsPath, lease)
 
     def setParams(self, *args):
         pass
@@ -434,7 +432,7 @@ class LocalLock(object):
     def getHostStatus(self, hostId):
         return HOST_STATUS_UNAVAILABLE
 
-    def acquire(self, hostId):
+    def acquire(self, hostId, lease):
         with self._globalLockMapSync:
             self.log.info("Acquiring local lock for domain %s (id: %s)",
                           self._sdUUID, hostId)
@@ -474,12 +472,12 @@ class LocalLock(object):
         self.log.debug("Local lock for domain %s successfully acquired "
                        "(id: %s)", self._sdUUID, hostId)
 
-    def inquire(self):
+    def inquire(self, lease):
         with self._globalLockMapSync:
             hostId, lockFile = self._getLease()
             return self.LVER, (hostId if lockFile else None)
 
-    def release(self):
+    def release(self, lease):
         with self._globalLockMapSync:
             self.log.info("Releasing local lock for domain %s", self._sdUUID)
 

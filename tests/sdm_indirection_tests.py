@@ -131,6 +131,10 @@ class FakeDomainManifest(object):
         pass
 
     @recorded
+    def getDomainLease(self):
+        pass
+
+    @recorded
     def acquireDomainLock(self, hostID):
         pass
 
@@ -668,6 +672,7 @@ class DomainTestMixin(object):
 
     @permutations([
         # dom method, manifest method, nargs
+        ['getClusterLease', 'getDomainLease', 0],
         ['acquireClusterLock', 'acquireDomainLock', 1],
         ['releaseClusterLock', 'releaseDomainLock', 0],
         ['inquireClusterLock', 'inquireDomainLock', 0],

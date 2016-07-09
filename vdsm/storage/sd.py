@@ -148,6 +148,12 @@ LEASE_BLOCKS = 2048
 
 UNICODE_MINIMAL_VERSION = 3
 
+# The LEASE_OFFSET is used by SANLock to not overlap with safelease in
+# orfer to preserve the ability to acquire both locks (e.g.: during the
+# domain upgrade)
+SDM_LEASE_NAME = 'SDM'
+SDM_LEASE_OFFSET = 512 * 2048
+
 storage_repository = config.get('irs', 'repository')
 mountBasePath = os.path.join(storage_repository, DOMAIN_MNT_POINT)
 
@@ -416,6 +422,17 @@ class StorageDomainManifest(object):
         """
         return None, None
 
+    def getDomainLease(self):
+        """
+        Return the domain lease.
+
+        This lease is used by the SPM to protect metadata operations in the
+        cluster.
+        """
+        return clusterlock.Lease(SDM_LEASE_NAME,
+                                 self.getLeasesFilePath(),
+                                 SDM_LEASE_OFFSET)
+
     def acquireDomainLock(self, hostID):
         self.refresh()
         self._domainLock.setParams(
@@ -424,10 +441,10 @@ class StorageDomainManifest(object):
             self.getMetaParam(DMDK_LEASE_RETRIES),
             self.getMetaParam(DMDK_IO_OP_TIMEOUT_SEC)
         )
-        self._domainLock.acquire(hostID)
+        self._domainLock.acquire(hostID, self.getDomainLease())
 
     def releaseDomainLock(self):
-        self._domainLock.release()
+        self._domainLock.release(self.getDomainLease())
 
     @contextmanager
     def domain_lock(self, host_id):
@@ -438,7 +455,7 @@ class StorageDomainManifest(object):
             self.releaseDomainLock()
 
     def inquireDomainLock(self):
-        return self._domainLock.inquire()
+        return self._domainLock.inquire(self.getDomainLease())
 
     def _makeDomainLock(self, domVersion=None):
         if not domVersion:
@@ -456,15 +473,19 @@ class StorageDomainManifest(object):
         except KeyError:
             raise se.UnsupportedDomainVersion(domVersion)
 
+        # Note: lease and leaseParams are needed only for legacy locks
+        # supporting only single lease, and ignored by modern lock managers
+        # like sanlock.
+
         return lockClass(self.sdUUID, self.getIdsFilePath(),
-                         self.getLeasesFilePath(), *leaseParams)
+                         self.getDomainLease(), *leaseParams)
 
     def initDomainLock(self):
         """
         Initialize the SPM lease
         """
         try:
-            self._domainLock.initLock()
+            self._domainLock.initLock(self.getDomainLease())
             self.log.debug("lease initialized successfully")
         except:
             # Original code swallowed the errors
@@ -680,6 +701,9 @@ class StorageDomain(object):
 
     def getVolumeLease(self, imgUUID, volUUID):
         return self._manifest.getVolumeLease(imgUUID, volUUID)
+
+    def getClusterLease(self):
+        return self._manifest.getDomainLease()
 
     def acquireClusterLock(self, hostID):
         self._manifest.acquireDomainLock(hostID)

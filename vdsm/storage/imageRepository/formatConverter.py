@@ -119,7 +119,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
 
     log.debug("Initializing the new cluster lock for domain %s", domain.sdUUID)
     newClusterLock = domain._makeClusterLock(targetVersion)
-    newClusterLock.initLock()
+    newClusterLock.initLock(domain.getClusterLease())
 
     log.debug("Acquiring the host id %s for domain %s", hostId, domain.sdUUID)
     newClusterLock.acquireHostId(hostId, async=False)
@@ -198,7 +198,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
         if isMsd:
             log.debug("Acquiring the cluster lock for domain %s with "
                       "host id: %s", domain.sdUUID, hostId)
-            newClusterLock.acquire(hostId)
+            newClusterLock.acquire(hostId, domain.getClusterLease())
 
         allVolumes = domain.getAllVolumes()
         allImages = {}  # {images: parent_image}
@@ -310,7 +310,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
             try:
                 log.error("Releasing the cluster lock for domain %s with "
                           "host id: %s", domain.sdUUID, hostId)
-                newClusterLock.release()
+                newClusterLock.release(domain.getClusterLease())
             except:
                 log.error("Unable to release the cluster lock for domain "
                           "%s with host id: %s", domain.sdUUID, hostId,
@@ -333,7 +333,7 @@ def v3DomainConverter(repoPath, hostId, domain, isMsd):
     # release errors.
     if isMsd:
         try:
-            domain._clusterLock.release()
+            domain._clusterLock.release(domain.getClusterLease())
         except:
             log.error("Unable to release the old cluster lock for domain "
                       "%s ", domain.sdUUID, exc_info=True)
