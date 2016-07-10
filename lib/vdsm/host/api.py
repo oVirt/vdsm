@@ -27,7 +27,7 @@ from . import stats
 from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import utils
-from vdsm import reports
+from vdsm import metrics
 from vdsm.config import config
 from vdsm.define import Kbytes, Mbytes
 from vdsm.virt import vmstatus
@@ -132,7 +132,7 @@ def report_stats(hoststats):
                 report[net_prefix + '.rx'] = if_info['rx']
                 report[net_prefix + '.tx'] = if_info['tx']
 
-        reports.send(report)
+        metrics.send(report)
     except KeyError:
         logging.exception('Report host stats failed')
 

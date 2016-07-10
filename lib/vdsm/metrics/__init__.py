@@ -28,11 +28,11 @@ _reporter = None
 
 def start():
     global _reporter
-    if config.getboolean('reports', 'enabled'):
+    if config.getboolean('metrics', 'enabled'):
         _reporter = importlib.import_module(
-            'vdsm.reports.' + config.get('reports', 'collector_type')
+            'vdsm.metrics.' + config.get('metrics', 'collector_type')
         )
-        _reporter.start(config.get('reports', 'collector_address'))
+        _reporter.start(config.get('metrics', 'collector_address'))
 
 
 def stop():

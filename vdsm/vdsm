@@ -38,7 +38,7 @@ from vdsm import schedule
 from vdsm import utils
 from vdsm import libvirtconnection
 from vdsm import taskset
-from vdsm import reports
+from vdsm import metrics
 from vdsm.common import sigutils
 from vdsm.common import zombiereaper
 from vdsm.config import config
@@ -85,7 +85,7 @@ def serve_clients(log):
     zombiereaper.registerSignalHandler()
 
     profile.start()
-    reports.start()
+    metrics.start()
 
     libvirtconnection.start_event_loop()
 
@@ -114,7 +114,7 @@ def serve_clients(log):
 
             profile.stop()
         finally:
-            reports.stop()
+            metrics.stop()
             health.stop()
             periodic.stop()
             cif.prepareForShutdown()

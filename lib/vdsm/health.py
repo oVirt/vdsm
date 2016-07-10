@@ -27,7 +27,7 @@ import threading
 from . config import config
 from . import concurrent
 from . import cpuarch
-from . import reports
+from . import metrics
 from . import host
 
 _monitor = None
@@ -130,7 +130,7 @@ class Monitor(object):
         report[prefix + '.cpu.sys_pct'] = self._stats['stime_pct']
         report[prefix + '.memory.rss'] = self._stats['rss']
         report[prefix + '.threads_count'] = self._stats['threads']
-        reports.send(report)
+        metrics.send(report)
 
 
 class ProcStat(object):
