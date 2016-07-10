@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=common tool infra profiling rpc network virt storage host reports
+SUBDIRS=common tool infra profiling rpc network virt storage host metrics
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \

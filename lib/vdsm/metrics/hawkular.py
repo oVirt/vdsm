@@ -31,7 +31,7 @@ from vdsm import concurrent
 from vdsm.config import config
 
 _running = False
-_queue = collections.deque(maxlen=config.getint('reports', 'queue_size'))
+_queue = collections.deque(maxlen=config.getint('metrics', 'queue_size'))
 _cond = threading.Condition(threading.Lock())
 _STOP = object()
 
