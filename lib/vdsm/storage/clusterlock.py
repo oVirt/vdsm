@@ -34,6 +34,7 @@ import sanlock
 from vdsm import constants
 from vdsm import utils
 
+from vdsm.common import osutils
 from vdsm.config import config
 from vdsm.storage import exception as se
 from vdsm.storage import misc
@@ -458,7 +459,7 @@ class LocalLock(object):
                 utils.NoIntrCall(fcntl.flock, lockFile,
                                  fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError as e:
-                utils.NoIntrCall(os.close, lockFile)
+                osutils.close_fd(lockFile)
                 if e.errno in (errno.EACCES, errno.EAGAIN):
                     raise se.AcquireLockFailure(
                         self._sdUUID, e.errno, "Cannot acquire local lock",
@@ -486,7 +487,7 @@ class LocalLock(object):
                                self._sdUUID)
                 return
 
-            utils.NoIntrCall(os.close, lockFile)
+            osutils.close_fd(lockFile)
             self._globalLockMap[self._sdUUID] = (hostId, None)
 
             self.log.debug("Local lock for domain %s successfully released",
