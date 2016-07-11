@@ -20,6 +20,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import fcntl
 import logging
 import os
@@ -239,7 +240,7 @@ class SANLock(object):
                 sanlock.add_lockspace(self._sdUUID, hostId, self._idsPath,
                                       async=async)
             except sanlock.SanlockException as e:
-                if e.errno == os.errno.EINPROGRESS:
+                if e.errno == errno.EINPROGRESS:
                     # if the request is not asynchronous wait for the ongoing
                     # lockspace operation to complete
                     if not async and not sanlock.inq_lockspace(
@@ -247,7 +248,7 @@ class SANLock(object):
                         raise se.AcquireHostIdFailure(self._sdUUID, e)
                     # else silently continue, the host id has been acquired
                     # or it's in the process of being acquired (async)
-                elif e.errno != os.errno.EEXIST:
+                elif e.errno != errno.EEXIST:
                     raise se.AcquireHostIdFailure(self._sdUUID, e)
 
             self.log.debug("Host id for domain %s successfully acquired "
@@ -262,7 +263,7 @@ class SANLock(object):
                 sanlock.rem_lockspace(self._sdUUID, hostId, self._idsPath,
                                       async=async, unused=unused)
             except sanlock.SanlockException as e:
-                if e.errno != os.errno.ENOENT:
+                if e.errno != errno.ENOENT:
                     raise se.ReleaseHostIdFailure(self._sdUUID, e)
 
             self.log.debug("Host id for domain %s released successfully "
@@ -311,7 +312,7 @@ class SANLock(object):
                                     self.getLockDisk(),
                                     slkfd=SANLock._sanlock_fd)
                 except sanlock.SanlockException as e:
-                    if e.errno != os.errno.EPIPE:
+                    if e.errno != errno.EPIPE:
                         raise se.AcquireLockFailure(
                             self._sdUUID, e.errno,
                             "Cannot acquire cluster lock", str(e))
@@ -444,7 +445,7 @@ class LocalLock(object):
                     del self._globalLockMap[self._sdUUID]
 
                     # Raise any other unkown error.
-                    if e.errno != os.errno.EBADF:
+                    if e.errno != errno.EBADF:
                         raise
                 else:
                     self.log.debug("Local lock already acquired for domain "
@@ -458,7 +459,7 @@ class LocalLock(object):
                                  fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError as e:
                 utils.NoIntrCall(os.close, lockFile)
-                if e.errno in (os.errno.EACCES, os.errno.EAGAIN):
+                if e.errno in (errno.EACCES, errno.EAGAIN):
                     raise se.AcquireLockFailure(
                         self._sdUUID, e.errno, "Cannot acquire local lock",
                         str(e))
