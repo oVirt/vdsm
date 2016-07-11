@@ -1,0 +1,60 @@
+Logging in Vdsm
+===============
+
+Basic configuration
+-------------------
+
+Vdsm uses the python standard module[1] for logging.
+It can be configured using /etc/vdsm/logger.conf;
+the supervdsm logging is configured separately, using
+/etc/vdsm/svdsm.logger.conf
+
+
+Tuning the logging at runtime
+-----------------------------
+
+Vdsm logging could be configured extensively[2]
+using the configuration files, but this requires a restart of the daemon.
+
+You can also configure the logging to some extent at runtime, without
+any restart, using vdsClient as explained below.
+Please note that any change you make using vdsClient is not permanent, and
+will be lost once Vdsm is restarted.
+
+Using vdsClient, you can tune the log level of any logger Vdsm uses.
+The basic syntax is:
+
+# vdsClient [-s] SERVER setLogLevel LEVEL [LOGGER]
+
+`LEVEL` is one of DEBUG, INFO, WARNING
+`LOGGER` is any logger Vdsm uses. Please check the configuration file
+to learn about some predefined loggers.
+
+If no LOGGER is given, the root logger is used implicitely.
+
+Please note that the logging configuration of Vdsm is quite complex, so
+few trivial settings may yield surprising results.
+
+
+Examples of runtime tuning of logging
+-------------------------------------
+
+1. set everything to the DEBUG level:
+vdsClient -s 0 setLogLevel DEBUG
+
+2. silence virt logs, show only warnings, errors or worse:
+vdsClient -s 0 setLogLevel WARNING virt
+
+3. same as #2, for storage (case is significant here)
+vdsClient -s 0 setLogLevel WARNING Storage
+vdsClient -s 0 setLogLevel WARNING storage
+
+4. silence JSONRPC logs:
+vdsClient -s 0 setLogLevel WARNING jsonrpc
+
+
+Notes
+-----
+
+[1] https://docs.python.org/2/library/logging.html
+[2] https://docs.python.org/2/library/logging.config.html#logging-config-fileformat
