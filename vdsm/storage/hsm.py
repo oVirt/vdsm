@@ -2014,6 +2014,8 @@ class HSM(object):
                 'serial': dev.get("serial", ""),
                 'vendorID': dev.get("vendor", ""),
                 'vgUUID': vguuid,
+                "discard_max_bytes": dev["discard_max_bytes"],
+                "discard_zeroes_data": dev["discard_zeroes_data"],
             }
             if not checkStatus:
                 devInfo["status"] = "unknown"

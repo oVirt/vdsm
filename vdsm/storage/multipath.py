@@ -166,6 +166,16 @@ def getDeviceSize(dev):
     return size
 
 
+def getDeviceDiscardMaxBytes(physDev):
+    path = os.path.join(SYS_BLOCK, physDev, QUEUE, "discard_max_bytes")
+    return read_int(path)
+
+
+def getDeviceDiscardZeroesData(physDev):
+    path = os.path.join(SYS_BLOCK, physDev, QUEUE, "discard_zeroes_data")
+    return read_int(path)
+
+
 def read_int(path):
     with open(path, "r") as f:
         data = f.readline()
@@ -245,6 +255,8 @@ def pathListIter(filterGuids=()):
             "fwrev": "",
             "logicalblocksize": "",
             "physicalblocksize": "",
+            "discard_max_bytes": getDeviceDiscardMaxBytes(dmId),
+            "discard_zeroes_data": getDeviceDiscardZeroesData(dmId),
         }
 
         for slave in devicemapper.getSlaves(dmId):

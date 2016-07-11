@@ -217,6 +217,19 @@ types:
             name: vendorID
             type: string
 
+        -   description: The maximal number of bytes that can be trimmed or
+                unmapped in a single discard operation. 0 means that the device
+                does not support discard functionality.
+            name: discard_max_bytes
+            type: uint
+
+        -   description: Indicates whether or not the device deterministically
+                returns zeroes when a discarded area is read.
+                1 means it does, 0 mesans that the result is undefined (can be
+                stale or random data).
+            name: discard_zeroes_data
+            type: uint
+
         -   description: A string identifying the device model
             name: productID
             type: string
