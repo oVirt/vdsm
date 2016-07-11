@@ -864,7 +864,7 @@ class TestVm(XMLTestCase):
                      u'totalBytes': 9999
                  }}
             ]
-            self.assertEqual(tunables['ioTunePolicy'], expected)
+            self.assertEqual(tunables['ioTunePolicyList'], expected)
 
     def testSetIoTune(self):
 
