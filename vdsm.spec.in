@@ -910,7 +910,9 @@ exit 0
 
 %files
 %defattr(-, root, root, -)
-%doc README lib/vdsm/vdsm.conf.sample
+%doc README
+%doc lib/vdsm/vdsm.conf.sample
+%doc README.logging
 %license COPYING
 /usr/lib/systemd/systemd-vdsmd
 /usr/lib/systemd/system-preset/85-vdsmd.preset

@@ -40,6 +40,7 @@ include $(top_srcdir)/build-aux/Makefile.subs
 # rpm from the tarball.
 EXTRA_DIST = \
 	.gitignore \
+	README.logging \
 	autobuild.sh \
 	autogen.sh \
 	build-aux/pkg-version \
