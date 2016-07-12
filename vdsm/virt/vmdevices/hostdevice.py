@@ -256,7 +256,7 @@ class ScsiDevice(core.Base):
         The path is relative to the root element.
         """
         address_fields = []
-        for key, value in self.hostAddress.items():
+        for key, value in self.bus_address.items():
             address_fields.append('[@{key}="{value}"]'.format(
                 key=key, value=int(value)))
 
