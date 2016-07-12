@@ -24,6 +24,8 @@ except ImportError:
     import sos.plugintools
     Plugin = RedHatPlugin = sos.plugintools.PluginBase
 
+from contextlib import closing
+import json
 import os
 import stat
 import subprocess
@@ -51,8 +53,13 @@ def _importVdsmPylibModule(fullName):
         search = os.path.join(search, name)
     return module
 
+def _connectToVdsm():
+    requestQueues = config.get("addresses", "request_queues")
+    requestQueue = requestQueues.split(",")[0]
+    return jsonrpcvdscli.connect(requestQueue=requestQueue)
 
-config = _importVdsmPylibModule('vdsm.config').config
+config = _importVdsmPylibModule("vdsm.config").config
+jsonrpcvdscli = _importVdsmPylibModule("vdsm.jsonrpcvdscli")
 
 
 class vdsm(Plugin, RedHatPlugin):
@@ -69,6 +76,7 @@ class vdsm(Plugin, RedHatPlugin):
         collectExtOutput = Plugin.add_cmd_output
         getOption = Plugin.get_option
         addForbiddenPath = Plugin.add_forbidden_path
+        addStringAsFile = Plugin.add_string_as_file
 
     def __addCopySpecLogLimit(self, path, logsize=None):
         """
@@ -81,6 +89,9 @@ class vdsm(Plugin, RedHatPlugin):
             self.addCopySpecLimit(path, logsize)
         else:
             self.addCopySpec(path)
+
+    def addObjectAsFile(self, obj, name):
+        self.addStringAsFile(json.dumps(obj), name)
 
     def setup(self):
         os.environ["LVM_SYSTEM_DIR"] = "@VDSMRUNDIR@/lvm"
@@ -123,22 +134,23 @@ class vdsm(Plugin, RedHatPlugin):
         self.collectExtOutput("/usr/bin/iostat")
         self.collectExtOutput("/sbin/iscsiadm -m node")
         self.collectExtOutput("/sbin/iscsiadm -m session")
-        sslopt = ['', '-s '][config.getboolean('vars', 'ssl')]
-        vdsclient = "/usr/bin/vdsClient " + sslopt + "0 "
-        self.collectExtOutput(vdsclient + "getVdsCapabilities")
-        self.collectExtOutput(vdsclient + "getVdsStats")
-        self.collectExtOutput(vdsclient + "getAllVmStats")
-        self.collectExtOutput(vdsclient + "list")
-        self.collectExtOutput(vdsclient + "getDeviceList")
-        self.collectExtOutput(vdsclient + "getAllTasksInfo")
-        self.collectExtOutput(vdsclient + "getAllTasksStatuses")
-        p = subprocess.Popen(vdsclient + "getConnectedStoragePoolsList",
-                             shell=True, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        out, err = p.communicate()
-        for line in out.splitlines()[1:-1]:
-            pool = line.strip()
-            self.collectExtOutput(vdsclient + "getSpmStatus " + pool)
+
+        with closing(_connectToVdsm()) as cli:
+            self.addObjectAsFile(cli.getVdsCapabilities(), "getVdsCapabilities")
+            self.addObjectAsFile(cli.getVdsStats(), "getVdsStats")
+            self.addObjectAsFile(cli.getAllVmStats(), "getAllVmStats")
+            self.addObjectAsFile(cli.list(), "list")
+            self.addObjectAsFile(cli.getDeviceList(), "getDeviceList")
+            self.addObjectAsFile(cli.getAllTasksInfo(), "getAllTasksInfo")
+            self.addObjectAsFile(
+                cli.getAllTasksStatuses(), "getAllTasksStatuses")
+
+            if "items" in cli.getConnectedStoragePoolsList():
+                pools_list = cli.getConnectedStoragePoolsList()["items"]
+                for pool in pools_list:
+                    self.addObjectAsFile(
+                        cli.getSpmStatus(pool), "getSpmStatus " + pool)
+
         self.collectExtOutput(
             '/bin/su vdsm -s %s %s/dumpStorageTable.pyc' % (
                 '@PYTHON@',
