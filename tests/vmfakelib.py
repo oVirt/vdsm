@@ -481,3 +481,21 @@ class Device(object):
             raise self.fail_teardown
 
         self.log.info("%s teardown", self.device)
+
+
+class MigrationSourceThread(object):
+
+    def __init__(self, *args, **kwargs):
+        self.status = response.success()
+        self._alive = False
+
+    def getStat(self):
+        pass
+
+    def start(self):
+        self._alive = True
+
+    def is_alive(self):
+        return self._alive
+
+    isAlive = is_alive

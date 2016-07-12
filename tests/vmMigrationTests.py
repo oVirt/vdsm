@@ -27,6 +27,8 @@ from six.moves import range
 from six.moves import zip
 
 from vdsm.config import config
+from vdsm.virt import vmstatus
+from vdsm import response
 from virt import migration
 
 from monkeypatch import MonkeyPatchScope
@@ -216,6 +218,32 @@ class TestProgress(TestCaseBase):
     def test_ongoing(self, job_type, ongoing):
         self.job_stats['type'] = job_type
         self.assertEquals(migration.ongoing(self.job_stats), ongoing)
+
+
+@expandPermutations
+class TestVmMigrate(TestCaseBase):
+
+    def setUp(self):
+        self.cif = fake.ClientIF()
+        self.serv = fake.JsonRpcServer()
+        self.cif.bindings["jsonrpc"] = self.serv
+
+    @permutations([
+        # vm_status, is_error, error_code (None == dont'care)
+        [vmstatus.WAIT_FOR_LAUNCH, True, 'noVM'],
+        [vmstatus.DOWN, True, 'noVM'],
+        [vmstatus.UP, False, None],
+    ])
+    def test_migrate_from_status(self, vm_status, is_error, error_code):
+            with MonkeyPatchScope([
+                (migration, 'SourceThread', fake.MigrationSourceThread)
+            ]):
+                with fake.VM(status=vm_status, cif=self.cif) as testvm:
+                    res = testvm.migrate({})  # no params needed
+                    self.assertEquals(
+                        response.is_error(res, error_code),
+                        is_error,
+                    )
 
 
 # stolen^Wborrowed from itertools recipes

@@ -42,7 +42,6 @@ from vdsm.logUtils import AllVmStatsValue, Suppressed
 from vdsm.storage import clusterlock
 from vdsm.storage import misc
 from vdsm.storage import constants as sc
-from vdsm.virt import vmstatus
 from vdsm.virt import secret
 import storage.volume
 import storage.sd
@@ -543,9 +542,6 @@ class VM(APIBase):
         except KeyError:
             return errCode['noVM']
 
-        vmParams = v.status()
-        if vmParams['status'] in (vmstatus.WAIT_FOR_LAUNCH, vmstatus.DOWN):
-            return errCode['noVM']
         if params.get('mode') == 'file':
             if 'dst' not in params:
                 params['dst'], params['dstparams'] = \

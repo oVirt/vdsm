@@ -1387,15 +1387,17 @@ class Vm(object):
     def migrate(self, params):
         self._acquireCpuLockWithTimeout()
         try:
+            # It is unlikely, but we could receive migrate()
+            # request right after a VM was started or right
+            # after a VM just went down
+            if self._lastStatus in (vmstatus.WAIT_FOR_LAUNCH,
+                                    vmstatus.DOWN):
+                return response.error('noVM')
             if self.isMigrating():
                 self.log.warning('vm already migrating')
                 return response.error('exist')
             if self.hasTransientDisks():
                 return response.error('transientErr')
-            # while we were blocking, another migrationSourceThread could have
-            # taken self Down
-            if self._lastStatus == vmstatus.DOWN:
-                return response.error('noVM')
             self._migrationSourceThread = migration.SourceThread(
                 self, **params)
             self._migrationSourceThread.start()
