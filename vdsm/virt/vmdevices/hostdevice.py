@@ -249,23 +249,21 @@ class ScsiDevice(core.Base):
     def teardown(self):
         reattach_detachable(self.device)
 
-    @property
-    def _xpath(self):
-        """
-        Returns xpath to the device in libvirt dom xml.
-        The path is relative to the root element.
-        """
+    def is_attached_to(self, xml_string):
         address_fields = []
         for key, value in self.bus_address.items():
             address_fields.append('[@{key}="{value}"]'.format(
                 key=key, value=int(value)))
 
-        return './devices/hostdev/source/address{}'.format(
-            ''.join(address_fields))
-
-    def is_attached_to(self, xml_string):
         dom = ET.fromstring(xml_string)
-        return bool(dom.findall(self._xpath))
+        for src in dom.findall('./devices/hostdev/source'):
+            address = src.find('address{}'.format(''.join(address_fields)))
+            adapter = src.find('adapter[@name="{}"]'.format(self.adapter))
+
+            if (address is not None and adapter is not None):
+                return True
+
+        return False
 
     def getXML(self):
         """
