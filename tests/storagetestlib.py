@@ -25,6 +25,8 @@ from storagefakelib import FakeLVM
 from storagefakelib import FakeStorageDomainCache
 from monkeypatch import MonkeyPatchScope
 
+from vdsm import cmdutils
+from vdsm import commands
 from vdsm import utils
 from vdsm.storage import constants as sc
 
@@ -246,3 +248,20 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         disk_type,
         desc,
         sc.LEGAL_VOL)
+
+
+def qemu_pattern_write(path, format, offset='512', len='1k', pattern='5'):
+    write_cmd = 'write -P %s %s %s' % (pattern, offset, len)
+    cmd = ['qemu-io', '-f', format, '-c', write_cmd, path]
+    rc, out, err = commands.execCmd(cmd, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd, rc, out, err)
+
+
+def qemu_pattern_verify(path, format, offset='512', len='1k', pattern='5'):
+    read_cmd = 'read -P %s -s 0 -l %s %s %s' % (pattern, len, offset, len)
+    cmd = ['qemu-io', '-f', format, '-c', read_cmd, path]
+    rc, out, err = commands.execCmd(cmd, raw=True)
+    if rc != 0:
+        raise cmdutils.Error(cmd, rc, out, err)
+    return "Pattern verification failed" not in out

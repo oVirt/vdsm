@@ -21,15 +21,18 @@ import os
 import uuid
 
 from testlib import expandPermutations, permutations
+from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
 from storagetestlib import fake_block_env
 from storagetestlib import fake_file_env
 from storagetestlib import make_block_volume
 from storagetestlib import make_file_volume
+from storagetestlib import qemu_pattern_write, qemu_pattern_verify
 
 from storage import blockSD, fileSD, fileVolume, sd
 
+from vdsm import qemuimg
 from vdsm import utils
 from vdsm.storage import constants as sc
 
@@ -197,6 +200,40 @@ class FakeBlockEnvTests(VdsmTestCase):
 
             env.sd_manifest.produceVolume(img_id, vol_id)
             self.assertTrue(os.path.samefile(repo_path, domain_path))
+
+
+@expandPermutations
+class QemuPatternVerificationTest(VdsmTestCase):
+
+    @permutations(((qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)))
+    def test_match(self, img_format):
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, 'test')
+            qemuimg.create(path, '1m', img_format)
+            qemu_pattern_write(path, img_format)
+            self.assertTrue(qemu_pattern_verify(path, img_format))
+
+    @permutations((
+        ('0', '128'),
+        ('10k', '5k')
+    ))
+    def test_match_custom_offset_and_len(self, offset, len):
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, 'test')
+            qemuimg.create(path, '1m', qemuimg.FORMAT.QCOW2)
+            qemu_pattern_write(path, qemuimg.FORMAT.QCOW2,
+                               offset=offset, len=len)
+            self.assertTrue(qemu_pattern_verify(
+                path, qemuimg.FORMAT.QCOW2, offset=offset, len=len))
+
+    @permutations(((qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)))
+    def test_no_match(self, img_format):
+        with namedTemporaryDir() as tmpdir:
+            path = os.path.join(tmpdir, 'test')
+            qemuimg.create(path, '1m', img_format)
+            qemu_pattern_write(path, img_format, pattern='2')
+            self.assertFalse(qemu_pattern_verify(path, img_format,
+                                                 pattern='4'))
 
 
 def set_domain_metaparams(manifest, params):
