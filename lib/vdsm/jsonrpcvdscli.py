@@ -57,6 +57,7 @@ _COMMAND_CONVERTER = {
     'extendVolumeSize': 'Volume.extendSize',
     'formatStorageDomain': 'StorageDomain.format',
     'fullList': 'Host.getVMFullList',
+    'getAllTasksInfo': 'Host.getAllTasksInfo',
     'getAllTasksStatuses': 'Host.getAllTasksStatuses',
     'getAllVmStats': 'Host.getAllVmStats',
     'getConnectedStoragePoolsList': 'Host.getConnectedStoragePools',
