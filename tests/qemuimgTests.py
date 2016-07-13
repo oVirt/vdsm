@@ -280,7 +280,7 @@ class QemuImgProgressTests(TestCaseBase):
 
     def test_failure(self):
         p = qemuimg.QemuImgOperation(['false'])
-        self.assertRaises(qemuimg.QImgError, p.wait)
+        self.assertRaises(qemuimg.QImgError, p.poll)
 
     def test_progress_simple(self):
         p = qemuimg.QemuImgOperation(['true'])
@@ -289,7 +289,7 @@ class QemuImgProgressTests(TestCaseBase):
             p._recvstdout(self.PROGRESS_FORMAT % progress)
             self.assertEquals(p.progress, progress)
 
-        p.wait()
+        p.poll()
         self.assertEquals(p.finished, True)
 
     @permutations([
@@ -303,7 +303,7 @@ class QemuImgProgressTests(TestCaseBase):
         for output, progress in zip(output_list, progress_list):
             p._recvstdout(output)
             self.assertEquals(p.progress, progress)
-        p.wait()
+        p.poll()
         self.assertEquals(p.finished, True)
 
     def test_progress_batch(self):
@@ -316,7 +316,7 @@ class QemuImgProgressTests(TestCaseBase):
 
         self.assertEquals(p.progress, 33.33)
 
-        p.wait()
+        p.poll()
         self.assertEquals(p.finished, True)
 
     def test_unexpected_output(self):
@@ -327,5 +327,5 @@ class QemuImgProgressTests(TestCaseBase):
         p._recvstdout('Hello ')
         self.assertRaises(ValueError, p._recvstdout, 'World\r')
 
-        p.wait()
+        p.poll()
         self.assertEquals(p.finished, True)

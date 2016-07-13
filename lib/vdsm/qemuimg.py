@@ -243,7 +243,7 @@ class QemuImgOperation(object):
     def finished(self):
         return self._command.poll() is not None
 
-    def wait(self, timeout=None):
+    def poll(self, timeout=None):
         self._stream.receive(timeout=timeout)
 
         if not self._stream.closed:
@@ -257,6 +257,12 @@ class QemuImgOperation(object):
         cmdutils.retcode_log_line(self._command.returncode, self.error)
         if self._command.returncode != 0:
             raise QImgError(self._command.returncode, "", self.error)
+
+    def wait_for_completion(self):
+        timeout = config.getint("irs", "progress_interval")
+        while not self.finished:
+            self.poll(timeout)
+            _log.debug('qemu-img operation progress: %s%%', self.progress)
 
     def abort(self):
         if self._command.poll() is None:

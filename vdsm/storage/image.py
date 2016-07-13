@@ -28,7 +28,6 @@ import volume
 from vdsm import qemuimg
 from vdsm import utils
 from vdsm import virtsparsify
-from vdsm.config import config
 from vdsm.storage import constants as sc
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
@@ -138,14 +137,8 @@ class Image:
 
     def _wait_for_qemuimg_operation(self, operation):
         self.log.debug('waiting for qemu-img operation to complete')
-
         with vars.task.abort_callback(operation.abort):
-            interval = config.getint("irs", "progress_interval")
-            while not operation.finished:
-                operation.wait(interval)
-                self.log.debug('qemu-img operation progress: %s%%',
-                               operation.progress)
-
+            operation.wait_for_completion()
         self.log.debug('qemu-img operation has completed')
 
     def create(self, sdUUID, imgUUID):
