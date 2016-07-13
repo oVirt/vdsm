@@ -24,7 +24,8 @@ from xml.dom import Node
 
 from vdsm import supervdsm
 from vdsm import utils
-from vdsm.hostdev import get_device_params, detach_detachable
+from vdsm.hostdev import get_device_params, detach_detachable, \
+    reattach_detachable, NoIOMMUSupportException
 from vdsm.network import api as net_api
 
 from .core import Base
@@ -195,6 +196,17 @@ class Interface(Base):
         if self.is_hostdevice:
             logging.debug('Detaching device %s from the host.' % self.hostdev)
             detach_detachable(self.hostdev)
+
+    def teardown(self):
+        if self.is_hostdevice:
+            self.log.debug('Reattaching device %s to host.' % self.hostdev)
+            try:
+                # TODO: avoid reattach when Engine can tell free VFs otherwise
+                reattach_detachable(self.hostdev)
+            except NoIOMMUSupportException:
+                self.log.exception('Could not reattach device %s back to host '
+                                   'due to missing IOMMU support.',
+                                   self.hostdev)
 
     @property
     def _xpath(self):

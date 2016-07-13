@@ -41,7 +41,6 @@ from vdsm import constants
 from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import host
-from vdsm import hostdev
 from vdsm import libvirtconnection
 from vdsm import numa
 from vdsm import osinfo
@@ -1130,21 +1129,6 @@ class Vm(object):
 
         cleanup_guest_socket(self._guestSocketFile)
 
-    def _reattachHostDevices(self):
-        # reattach host devices
-        for dev_name, _ in self._host_devices():
-            self.log.debug('Reattaching device %s to host.' % dev_name)
-            try:
-                hostdev.reattach_detachable(dev_name)
-            except hostdev.NoIOMMUSupportException:
-                self.log.exception('Could not reattach device %s back to host '
-                                   'due to missing IOMMU support.')
-
-    def _host_devices(self):
-        for device in self._devices[hwclass.NIC][:]:
-            if device.is_hostdevice:
-                yield device.hostdev, device
-
     def setDownStatus(self, code, exitReasonCode, exitMessage=''):
         if not exitMessage:
             exitMessage = vmexitreason.exitReasons.get(exitReasonCode,
@@ -1568,8 +1552,6 @@ class Vm(object):
         self._cleanupGuestAgent()
         self._teardown_devices()
         cleanup_guest_socket(self._qemuguestSocketFile)
-        # TODO: avoid reattach when Engine can tell free VFs otherwise
-        self._reattachHostDevices()
         self._cleanupStatsCache()
         numa.invalidateNumaCache(self)
         for con in self._devices[hwclass.CONSOLE]:
@@ -2340,9 +2322,7 @@ class Vm(object):
         try:
             self._dom.detachDevice(nicXml)
             self._waitForDeviceRemoval(nic)
-            # TODO: avoid reattach when Engine can tell free VFs otherwise
-            if nic.is_hostdevice:
-                hostdev.reattach_detachable(nic.hostdev)
+            nic.teardown()
         except HotunplugTimeout as e:
             self.log.error("%s", e)
             self._rollback_nic_hotunplug(nicDev, nic)
