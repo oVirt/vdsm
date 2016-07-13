@@ -12,5 +12,6 @@
     <function>0</function>
     <product id='0x0126'>2nd Generation Core Processor Family Integrated Graphics Controller</product>
     <vendor id='0x8086'>Intel Corporation</vendor>
+    <numa node='0'/>
     </capability>
 </device>

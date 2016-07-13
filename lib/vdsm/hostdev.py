@@ -299,6 +299,14 @@ def _process_parent(device_xml):
     return {}
 
 
+@_data_processor()
+def _process_numa(device_xml):
+    numa_node = device_xml.find('./capability/numa')
+    if numa_node is not None:
+        return {'numa_node': numa_node.attrib['node']}
+    return {}
+
+
 @_data_processor('scsi')
 def _process_scsi_device_params(device_xml):
     """
