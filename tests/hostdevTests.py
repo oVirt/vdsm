@@ -21,12 +21,15 @@
 
 import vmfakelib as fake
 
+from virt import vmxml
 from virt.vmdevices import hostdevice, network, hwclass
 
 from testlib import VdsmTestCase as TestCaseBase, XMLTestCase
 from testlib import permutations, expandPermutations
+from testlib import find_xml_element
 from monkeypatch import MonkeyClass
 
+from vdsm import cpuarch
 from vdsm import hooks
 from vdsm import hostdev
 from vdsm import libvirtconnection
@@ -538,3 +541,28 @@ class HostdevCreationTests(XMLTestCase):
         self.assertXMLEqual(
             device.getXML().toxml(),
             _DEVICE_XML[_SRIOV_VF] % (self._PCI_ADDRESS_XML))
+
+    @permutations([[['pci_0000_00_02_0'], 0], [[_SRIOV_PF, _SRIOV_VF], 1]])
+    def testNumaTuneXMLSingleNode(self, devices, numa_node):
+        numatuneXML = """
+          <numatune>
+              <memory mode="preferred" nodeset="{}" />
+          </numatune> """.format(numa_node)
+
+        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        devices = [hostdevice.HostDevice(
+            self.conf, self.log, **{'type': 'hostdev', 'device': device}) for
+            device in devices]
+        domxml.appendHostdevNumaTune(devices)
+        xml = domxml.dom.toxml()
+        self.assertXMLEqual(find_xml_element(xml, './numatune'), numatuneXML)
+
+    def testNumaTuneXMLMultiNode(self):
+        domxml = vmxml.Domain(self.conf, self.log, cpuarch.X86_64)
+        devices = [hostdevice.HostDevice(
+            self.conf, self.log, **{'type': 'hostdev', 'device': device}) for
+            device in [_SRIOV_PF, _SRIOV_VF, 'pci_0000_00_02_0']]
+        domxml.appendHostdevNumaTune(devices)
+        xml = domxml.dom.toxml()
+        self.assertRaises(AssertionError,
+                          lambda: find_xml_element(xml, './numatune'))

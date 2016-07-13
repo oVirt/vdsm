@@ -1521,6 +1521,11 @@ class Vm(object):
 
         if 'numaTune' in self.conf:
             domxml.appendNumaTune()
+        else:
+            if (config.getboolean('vars', 'host_numa_scheduling') and
+                    self._devices[hwclass.HOSTDEV]):
+                domxml.appendHostdevNumaTune(
+                    list(itertools.chain(*self._devices.values())))
 
         domxml._appendAgentDevice(self._guestSocketFile.decode('utf-8'),
                                   vmchannels.DEVICE_NAME)

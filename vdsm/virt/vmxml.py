@@ -509,6 +509,20 @@ class Domain(object):
                                          nodeset=numaTune['nodeset'])
             self.dom.appendChild(numatune)
 
+    def appendHostdevNumaTune(self, devices):
+        """
+        Automatically generate numatune for VM with host devices. This tuning
+        should prefer numa nodes where device's MMIO region resides.
+        """
+
+        numatune = Element('numatune')
+        numa_map = [dev_object.numa_node for dev_object in devices if
+                    dev_object.is_hostdevice and dev_object.numa_node]
+        if len(set(numa_map)) == 1:
+            numatune.appendChildWithArgs('memory', mode='preferred',
+                                         nodeset=numa_map[0])
+            self.dom.appendChild(numatune)
+
     def _appendAgentDevice(self, path, name):
         """
           <channel type='unix'>

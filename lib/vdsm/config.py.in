@@ -261,6 +261,11 @@ parameters = [
         ('migration_create_timeout', '600',
             'Time in seconds defining how long we are going to wait for '
             'create migration response.'),
+
+        ('host_numa_scheduling', 'true',
+            'Enable implicit scheduling of VMs to properly match numa '
+            'topology. Explicit settings sent from engine override '
+            'the option.'),
     ]),
 
     # Section: [rpc]
