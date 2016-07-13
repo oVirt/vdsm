@@ -31,13 +31,14 @@ from .. import vmxml
 
 class PciDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
-                 'name')
+                 'name', 'numa_node')
 
     def __init__(self, conf, log, **kwargs):
         super(PciDevice, self).__init__(conf, log, **kwargs)
 
         self._deviceParams = get_device_params(self.device)
         self.hostAddress = self._deviceParams.get('address')
+        self.numa_node = self._deviceParams.get('numa_node', None)
         self.name = self.device
 
     def setup(self):
@@ -146,13 +147,14 @@ class PciDevice(core.Base):
 
 class UsbDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
-                 'name')
+                 'name', 'numa_node')
 
     def __init__(self, conf, log, **kwargs):
         super(UsbDevice, self).__init__(conf, log, **kwargs)
 
         device_params = get_device_params(self.device)
         self.hostAddress = device_params.get('address')
+        self.numa_node = None
         self.name = self.device
 
     def setup(self):
@@ -233,13 +235,14 @@ class UsbDevice(core.Base):
 
 class ScsiDevice(core.Base):
     __slots__ = ('address', 'hostAddress', 'bootOrder', '_deviceParams',
-                 'name', 'bus_address', 'adapter')
+                 'name', 'bus_address', 'adapter', 'numa_node')
 
     def __init__(self, conf, log, **kwargs):
         super(ScsiDevice, self).__init__(conf, log, **kwargs)
 
         device_params = get_device_params(self.device)
         self.hostAddress = device_params.get('address')
+        self.numa_node = None
         self.name = self.device
         self.bus_address, self.adapter = scsi_address_to_adapter(
             self.hostAddress)
