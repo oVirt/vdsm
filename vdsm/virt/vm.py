@@ -2090,6 +2090,7 @@ class Vm(object):
                 self._hostdev_hotunplug_restore(dev_object, dev_spec)
                 continue
 
+            dev_object.teardown()
             unplugged_devices.append(dev_name)
 
         return response.success(unpluggedDevices=unplugged_devices)
