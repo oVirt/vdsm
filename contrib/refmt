@@ -60,12 +60,17 @@
 #                                            'valid': True,
 #                                            'version': 3}}
 
+import argparse
 import fileinput
 import pprint
 import sys
 
 
 def _main():
+    parser = argparse.ArgumentParser(description='Reformat python literals')
+    parser.add_argument("file", nargs="*",
+                        help="Files to reformat, nothing to process stdin")
+    parser.parse_args()
     for line in fileinput.input():
         obj = eval(line)
         pprint.pprint(obj)
