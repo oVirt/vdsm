@@ -49,19 +49,21 @@ unified_nonnode_persist() {
     # Remove stored non-VDSM network devices (BZ#1188251)
     ifcfg_nonnode_persist
 
-    # Atomic directory copy by using the atomicity of overwriting a link
-    # (rename syscall).
-    TIMESTAMP=$(date +%s%N)
-    PERS_CONF_SYMLINK=$PERS_NET_CONF_PATH
-    PERS_CONF_DIR_ROOTNAME="$PERS_CONF_SYMLINK."
-    PERS_CONF_NEW_DIR="$PERS_CONF_DIR_ROOTNAME$TIMESTAMP"
-    PERS_CONF_NEW_SYMLINK="$PERS_CONF_SYMLINK.link.$TIMESTAMP"
+    if [ -d "$RUN_CONF_DIR" ]; then
+        # Atomic directory copy by using the atomicity of overwriting a link
+        # (rename syscall).
+        TIMESTAMP=$(date +%s%N)
+        PERS_CONF_SYMLINK=$PERS_NET_CONF_PATH
+        PERS_CONF_DIR_ROOTNAME="$PERS_CONF_SYMLINK."
+        PERS_CONF_NEW_DIR="$PERS_CONF_DIR_ROOTNAME$TIMESTAMP"
+        PERS_CONF_NEW_SYMLINK="$PERS_CONF_SYMLINK.link.$TIMESTAMP"
 
-    cp -r "$RUN_CONF_DIR" "$PERS_CONF_NEW_DIR"
-    ln -s "$PERS_CONF_NEW_DIR" "$PERS_CONF_NEW_SYMLINK"
-    mv -fT "$PERS_CONF_NEW_SYMLINK" "$PERS_CONF_SYMLINK"
-    find "$PERS_CONF_PATH" -type d -path "$PERS_CONF_DIR_ROOTNAME*" | \
-        grep -v "$PERS_CONF_NEW_DIR" | xargs rm -fr
+        cp -r "$RUN_CONF_DIR" "$PERS_CONF_NEW_DIR"
+        ln -s "$PERS_CONF_NEW_DIR" "$PERS_CONF_NEW_SYMLINK"
+        mv -fT "$PERS_CONF_NEW_SYMLINK" "$PERS_CONF_SYMLINK"
+        find "$PERS_CONF_PATH" -type d -path "$PERS_CONF_DIR_ROOTNAME*" | \
+            grep -v "$PERS_CONF_NEW_DIR" | xargs rm -fr
+    fi
 }
 
 
