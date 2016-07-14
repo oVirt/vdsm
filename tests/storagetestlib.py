@@ -402,3 +402,12 @@ class FakeGuardedLock(guarded.AbstractLock):
             raise self._release_err()
         entry = ('release', self._ns, self._name, self._mode)
         self._log.append(entry)
+
+
+class Aborting(object):
+    def __init__(self, count=1):
+        self.count = count
+
+    def __call__(self):
+        self.count -= 1
+        return self.count < 0

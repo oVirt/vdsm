@@ -24,6 +24,7 @@ from testlib import make_uuid
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
+from storagetestlib import Aborting
 from storagetestlib import FakeGuardedLock
 from storagetestlib import fake_env
 from storagetestlib import fake_block_env
@@ -354,3 +355,12 @@ class FakeGuardedLockTest(VdsmTestCase):
         self.assertEqual(expected[:1], log)
         lock.release()
         self.assertEqual(expected, log)
+
+
+class AbortingTests(VdsmTestCase):
+
+    def test_aborting_flow(self):
+        aborting = Aborting(5)
+        for i in range(5):
+            self.assertEqual(aborting(), False)
+        self.assertEqual(aborting(), True)
