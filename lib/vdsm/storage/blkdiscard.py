@@ -24,6 +24,8 @@ from vdsm import cmdutils
 from vdsm import commands
 from vdsm.common.cmdutils import CommandPath
 
+from vdsm.storage import operation
+
 _blkdiscard = CommandPath("blkdiscard", "/sbin/blkdiscard")
 
 
@@ -44,3 +46,22 @@ def discard(device):
 
     if rc != 0:
         raise cmdutils.Error(cmd, rc, out, err)
+
+
+def zeroout_operation(device, step, size):
+    """
+    Returns an operation.Command object to zero a block device using
+    "blkdiscard --zeroout".
+
+    Arguments:
+        device (str): The path to the block device to zero.
+        step (int): The number of bytes to zero within one iteration.
+        size (int): The number of bytes to zero.
+    """
+    return operation.Command([
+        _blkdiscard.cmd,
+        "--zeroout",
+        "--step", "%d" % step,
+        "--length", "%d" % size,
+        device,
+    ])

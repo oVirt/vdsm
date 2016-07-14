@@ -26,9 +26,13 @@ from __future__ import absolute_import
 
 import logging
 
+from contextlib import contextmanager
+
 from vdsm import cmdutils
 from vdsm import constants
 from vdsm import utils
+from vdsm.common import exception
+from vdsm.config import config
 
 from vdsm.storage import blkdiscard
 from vdsm.storage import fsutils
@@ -44,7 +48,18 @@ log = logging.getLogger("storage.blockdev")
 OPTIMAL_BLOCK_SIZE = constants.MEGAB
 
 
-def zero(device_path, size=None, task=None):
+class _NullTask(object):
+    """
+    A task that doesn't call to its given callback when it is aborted.
+    Useful as a default non op task like object.
+    """
+
+    @contextmanager
+    def abort_callback(self, callback):
+        yield
+
+
+def zero(device_path, size=None, task=_NullTask()):
     """
     Zero a block device.
 
@@ -71,25 +86,43 @@ def zero(device_path, size=None, task=None):
     log.info("Zeroing device %s (size=%d)", device_path, size)
     with utils.stopwatch("Zero device %s" % device_path,
                          level=logging.INFO, log=log):
+        zero_method = config.get('irs', 'zero_method')
         try:
-            # Write optimal size blocks. Images are always aligned to
-            # optimal size blocks, so we typically have only one call.
-            blocks = size // OPTIMAL_BLOCK_SIZE
-            if blocks > 0:
-                _zero(device_path, 0, OPTIMAL_BLOCK_SIZE, blocks, task=task)
-
-            # When zeroing special volumes size may not be aligned to
-            # optimal block size, so we need to write the last block.
-            rest = size % OPTIMAL_BLOCK_SIZE
-            if rest > 0:
-                offset = blocks * OPTIMAL_BLOCK_SIZE
-                _zero(device_path, offset, rest, 1, task=task)
+            if zero_method == "blkdiscard":
+                _zero_blkdiscard(device_path, size, task)
+            elif zero_method == "dd":
+                _zero_dd(device_path, size, task)
+            else:
+                raise exception.InvalidConfiguration(
+                    reason="Unsupported value for irs:zero_method",
+                    zero_method=zero_method)
         except se.StorageException as e:
             raise se.VolumesZeroingError("Zeroing device %s failed: %s"
                                          % (device_path, e))
 
 
-def _zero(path, offset, block_size, count, task=None):
+def _zero_blkdiscard(device_path, size, task):
+    op = blkdiscard.zeroout_operation(device_path, OPTIMAL_BLOCK_SIZE, size)
+    with task.abort_callback(op.abort):
+        op.run()
+
+
+def _zero_dd(device_path, size, task):
+    # Write optimal size blocks. Images are always aligned to
+    # optimal size blocks, so we typically have only one call.
+    blocks = size // OPTIMAL_BLOCK_SIZE
+    if blocks > 0:
+        _run_dd(device_path, 0, OPTIMAL_BLOCK_SIZE, blocks, task)
+
+    # When zeroing special volumes size may not be aligned to
+    # optimal block size, so we need to write the last block.
+    rest = size % OPTIMAL_BLOCK_SIZE
+    if rest > 0:
+        offset = blocks * OPTIMAL_BLOCK_SIZE
+        _run_dd(device_path, offset, rest, 1, task)
+
+
+def _run_dd(path, offset, block_size, count, task):
     op = operation.Command([
         constants.EXT_DD,
         "if=/dev/zero",
@@ -100,10 +133,7 @@ def _zero(path, offset, block_size, count, task=None):
         "oflag=direct,seek_bytes",
         "conv=notrunc",
     ])
-    if task:
-        with task.abort_callback(op.abort):
-            op.run()
-    else:
+    with task.abort_callback(op.abort):
         op.run()
 
 

@@ -384,6 +384,14 @@ parameters = [
             'can consume images created by newer versions. '
             'See https://bugzilla.redhat.com/1139707 '
             '(supported versions: 0.10, 1.1)'),
+
+        ('zero_method', 'dd',
+            'The name of the method that is used to zero volumes. '
+            'The options are: '
+            '- blkdiscard - uses a "blkdiscard --zeroout" command. '
+            '- dd - uses a "dd" command. '
+            'Note that blkdiscard is more efficient than dd, in particular '
+            'when the underlying storage supports "write same".'),
     ]),
 
     # Section: [jobs]

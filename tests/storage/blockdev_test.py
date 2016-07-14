@@ -25,6 +25,7 @@ from contextlib import contextmanager
 
 import pytest
 
+from testlib import make_config
 from testlib import namedTemporaryDir
 import loopback
 
@@ -46,10 +47,17 @@ def loop_device(tmpdir):
         yield loop_device
 
 
+@pytest.fixture(params=["dd", "blkdiscard"])
+def zero_method(request, monkeypatch):
+    cfg = make_config([('irs', 'zero_method', request.param)])
+    monkeypatch.setattr(blockdev, "config", cfg)
+    return request.param
+
+
 class TestZero:
 
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
-    def test_entire_device(self, loop_device):
+    def test_entire_device(self, loop_device, zero_method):
         # Zero the entire device
         blockdev.zero(loop_device.path)
         # Check that it contains zeros
@@ -58,7 +66,7 @@ class TestZero:
             assert data == b"\0" * FILE_SIZE
 
     @pytest.mark.skipif(os.geteuid() != 0, reason="requires root")
-    def test_size(self, loop_device):
+    def test_size(self, loop_device, zero_method):
         # Zero the first OPTIMAL_BLOCK_SIZE
         blockdev.zero(loop_device.path, size=OPTIMAL_BLOCK_SIZE)
         with io.open(loop_device.backing_file, "rb") as f:
@@ -75,7 +83,7 @@ class TestZero:
         (blockdev.OPTIMAL_BLOCK_SIZE - sc.BLOCK_SIZE),
         (blockdev.OPTIMAL_BLOCK_SIZE + sc.BLOCK_SIZE),
     ])
-    def test_special_volumes(self, size, loop_device):
+    def test_special_volumes(self, size, loop_device, zero_method):
         # Zero size bytes
         blockdev.zero(loop_device.path, size=size)
         with io.open(loop_device.backing_file, "rb") as f:
