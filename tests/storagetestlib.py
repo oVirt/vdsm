@@ -32,6 +32,7 @@ from vdsm.storage import constants as sc
 
 from storage import sd, blockSD, fileSD, image, blockVolume, volume
 from storage import hsm
+from storage import outOfProcess as oop
 from storage.sdm import volume_artifacts
 
 
@@ -80,7 +81,10 @@ def fake_file_env(obj=None):
             [hsm, 'sdCache', fake_sdc],
         ]):
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
-            yield FakeFileEnv(tmpdir, sd_manifest, fake_sdc)
+            try:
+                yield FakeFileEnv(tmpdir, sd_manifest, fake_sdc)
+            finally:
+                oop.stop()
 
 
 @contextmanager
@@ -98,7 +102,10 @@ def fake_block_env(obj=None):
         ]):
             sd_manifest = make_blocksd_manifest(tmpdir, lvm)
             fake_sdc.domains[sd_manifest.sdUUID] = FakeSD(sd_manifest)
-            yield FakeBlockEnv(tmpdir, sd_manifest, fake_sdc, lvm)
+            try:
+                yield FakeBlockEnv(tmpdir, sd_manifest, fake_sdc, lvm)
+            finally:
+                oop.stop()
 
 
 class FakeMetadata(dict):
