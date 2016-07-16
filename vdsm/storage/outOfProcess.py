@@ -52,6 +52,24 @@ elapsed_time = lambda: os.times()[4]
 log = logging.getLogger('Storage.oop')
 
 
+def stop():
+    """
+    Called during application shutdown to close all running ioprocesses.
+
+    Tests using oop should call this to ensure that stale ioprocess are not
+    left when a tests ends.
+    """
+    with _procPoolLock:
+        for name, (eol, proc) in _procPool.items():
+            log.debug("Closing ioprocess %s", name)
+            try:
+                proc._ioproc.close()
+            except Exception:
+                log.exception("Error closing ioprocess %s", name)
+        _procPool.clear()
+        _refProcPool.clear()
+
+
 def cleanIdleIOProcesses(clientName):
     now = elapsed_time()
     for name, (eol, proc) in _procPool.items():

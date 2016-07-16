@@ -3293,6 +3293,7 @@ class HSM(object):
                                  exc_info=True)
 
             self.taskMng.prepareForShutdown()
+            oop.stop()
         except:
             pass
 
