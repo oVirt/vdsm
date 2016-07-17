@@ -45,6 +45,7 @@ DEV_ISCSI = "iSCSI"
 DEV_FCP = "FCP"
 DEV_MIXED = "MIXED"
 SYS_BLOCK = "/sys/block"
+QUEUE = "queue"
 
 TOXIC_CHARS = '()*+?|^$.\\'
 
@@ -152,9 +153,9 @@ def deduceType(a, b):
 def getDeviceBlockSizes(dev):
     devName = os.path.basename(dev)
     logical = int(file(os.path.join(SYS_BLOCK, devName,
-                                    "queue", "logical_block_size")).read())
+                                    QUEUE, "logical_block_size")).read())
     physical = int(file(os.path.join(SYS_BLOCK, devName,
-                                     "queue", "physical_block_size")).read())
+                                     QUEUE, "physical_block_size")).read())
     return (logical, physical)
 
 
