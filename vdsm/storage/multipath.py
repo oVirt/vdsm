@@ -152,18 +152,24 @@ def deduceType(a, b):
 
 def getDeviceBlockSizes(dev):
     devName = os.path.basename(dev)
-    logical = int(file(os.path.join(SYS_BLOCK, devName,
-                                    QUEUE, "logical_block_size")).read())
-    physical = int(file(os.path.join(SYS_BLOCK, devName,
-                                     QUEUE, "physical_block_size")).read())
+    logical = read_int(os.path.join(SYS_BLOCK, devName,
+                                    QUEUE, "logical_block_size"))
+    physical = read_int(os.path.join(SYS_BLOCK, devName,
+                                     QUEUE, "physical_block_size"))
     return (logical, physical)
 
 
 def getDeviceSize(dev):
     devName = os.path.basename(dev)
     bs, phyBs = getDeviceBlockSizes(devName)
-    size = bs * int(file(os.path.join(SYS_BLOCK, devName, "size")).read())
+    size = bs * read_int(os.path.join(SYS_BLOCK, devName, "size"))
     return size
+
+
+def read_int(path):
+    with open(path, "r") as f:
+        data = f.readline()
+    return int(data)
 
 
 def getScsiSerial(physdev):
