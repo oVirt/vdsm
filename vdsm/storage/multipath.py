@@ -44,6 +44,7 @@ import iscsi
 DEV_ISCSI = "iSCSI"
 DEV_FCP = "FCP"
 DEV_MIXED = "MIXED"
+SYS_BLOCK = "/sys/block"
 
 TOXIC_CHARS = '()*+?|^$.\\'
 
@@ -150,9 +151,9 @@ def deduceType(a, b):
 
 def getDeviceBlockSizes(dev):
     devName = os.path.basename(dev)
-    logical = int(file(os.path.join("/sys/block/", devName,
+    logical = int(file(os.path.join(SYS_BLOCK, devName,
                                     "queue", "logical_block_size")).read())
-    physical = int(file(os.path.join("/sys/block/", devName,
+    physical = int(file(os.path.join(SYS_BLOCK, devName,
                                      "queue", "physical_block_size")).read())
     return (logical, physical)
 
@@ -160,7 +161,7 @@ def getDeviceBlockSizes(dev):
 def getDeviceSize(dev):
     devName = os.path.basename(dev)
     bs, phyBs = getDeviceBlockSizes(devName)
-    size = bs * int(file(os.path.join("/sys/block/", devName, "size")).read())
+    size = bs * int(file(os.path.join(SYS_BLOCK, devName, "size")).read())
     return size
 
 
@@ -183,22 +184,22 @@ HBTL = namedtuple("HBTL", "host bus target lun")
 
 
 def getVendor(physDev):
-    with open("/sys/block/%s/device/vendor" % physDev, "r") as f:
+    with open(SYS_BLOCK + "/%s/device/vendor" % physDev, "r") as f:
         return f.read().strip()
 
 
 def getModel(physDev):
-    with open("/sys/block/%s/device/model" % physDev, "r") as f:
+    with open(SYS_BLOCK + "/%s/device/model" % physDev, "r") as f:
         return f.read().strip()
 
 
 def getFwRev(physDev):
-    with open("/sys/block/%s/device/rev" % physDev, "r") as f:
+    with open(SYS_BLOCK + "/%s/device/rev" % physDev, "r") as f:
         return f.read().strip()
 
 
 def getHBTL(physdev):
-    hbtl = os.listdir("/sys/block/%s/device/scsi_disk/" % physdev)
+    hbtl = os.listdir(SYS_BLOCK + "/%s/device/scsi_disk/" % physdev)
     if len(hbtl) > 1:
         log.warn("Found more the 1 HBTL, this shouldn't happen")
 
@@ -348,7 +349,7 @@ def getMPDevsIter():
     Collect the list of all the multipath block devices.
     Return the list of device identifiers w/o "/dev/mapper" prefix
     """
-    for dmInfoDir in glob("/sys/block/dm-*/dm/"):
+    for dmInfoDir in glob(SYS_BLOCK + "/dm-*/dm/"):
         uuidFile = os.path.join(dmInfoDir, "uuid")
         try:
             with open(uuidFile, "r") as uf:
