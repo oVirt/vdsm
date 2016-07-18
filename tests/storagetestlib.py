@@ -27,6 +27,7 @@ from monkeypatch import MonkeyPatchScope
 
 from vdsm import cmdutils
 from vdsm import commands
+from vdsm import qemuimg
 from vdsm import utils
 from vdsm.storage import constants as sc
 
@@ -267,6 +268,10 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
         sc.LEGAL_VOL)
 
 
+class ChainVerificationError(AssertionError):
+    pass
+
+
 def qemu_pattern_write(path, format, offset='512', len='1k', pattern=5):
     write_cmd = 'write -P %d %s %s' % (pattern, offset, len)
     cmd = ['qemu-io', '-f', format, '-c', write_cmd, path]
@@ -281,4 +286,73 @@ def qemu_pattern_verify(path, format, offset='512', len='1k', pattern=5):
     rc, out, err = commands.execCmd(cmd, raw=True)
     if rc != 0:
         raise cmdutils.Error(cmd, rc, out, err)
-    return "Pattern verification failed" not in out
+    if "Pattern verification failed" in out:
+        raise ChainVerificationError("Verification of volume %s failed. "
+                                     "Pattern 0x%x not found at offset %s" %
+                                     (path, pattern, offset))
+
+
+def write_qemu_chain(vol_list):
+    # Starting with the base volume in vol_list, write to the chain in a
+    # pattern like the following:
+    #
+    #  logical offset: 0K            1K            2K            3K
+    #   Base Volume 0: 0xf0 0xf0 ...
+    #               1:               0xf1 0xf1 ...
+    #               2:                             0xf2 0xf2 ...
+    #   Leaf Volume 3:                                           0xf3 0xf3 ...
+    # This allows us to verify the integrity of the whole chain.
+    for i, vol in enumerate(vol_list):
+        vol_fmt = sc.fmt2str(vol.getFormat())
+        offset = "{}k".format(i)
+        pattern = 0xf0 + i
+        qemu_pattern_write(vol.volumePath, vol_fmt, offset=offset,
+                           len='1k', pattern=pattern)
+
+
+def verify_qemu_chain(vol_list):
+    # Check the integrity of a volume chain by reading the leaf volume
+    # and verifying the pattern written by write_chain.  Also, check each
+    # volume in the chain to ensure it contains the correct data.
+    top_vol = vol_list[-1]
+    top_vol_fmt = sc.fmt2str(top_vol.getFormat())
+    for i, vol in enumerate(vol_list):
+        offset = "{}k".format(i)
+        pattern = 0xf0 + i
+
+        # Check that the correct pattern can be read through the top volume
+        qemu_pattern_verify(top_vol.volumePath, top_vol_fmt, offset=offset,
+                            len='1k', pattern=pattern)
+
+        # Check the volume where the pattern was originally written
+        vol_fmt = sc.fmt2str(vol.getFormat())
+        qemu_pattern_verify(vol.volumePath, vol_fmt, offset=offset, len='1k',
+                            pattern=pattern)
+
+        # Check that the next offset contains zeroes.  If we know this layer
+        # has zeroes at next_offset we can be sure that data read at the same
+        # offset in the next layer belongs to that layer.
+        next_offset = "{}K".format(i + 1)
+        qemu_pattern_verify(vol.volumePath, vol_fmt, offset=next_offset,
+                            len='1k', pattern=0)
+
+
+def make_qemu_chain(env, size, base_vol_fmt, chain_len):
+    vol_list = []
+    img_id = str(uuid.uuid4())
+    parent_vol_id = sc.BLANK_UUID
+    vol_fmt = base_vol_fmt
+    for i in range(chain_len):
+        vol_id = str(uuid.uuid4())
+        if parent_vol_id != sc.BLANK_UUID:
+            vol_fmt = sc.COW_FORMAT
+        env.make_volume(size, img_id, vol_id,
+                        parent_vol_id=parent_vol_id, vol_format=vol_fmt)
+        vol = env.sd_manifest.produceVolume(img_id, vol_id)
+        if vol_fmt == sc.COW_FORMAT:
+            backing = parent_vol_id if parent_vol_id != sc.BLANK_UUID else None
+            qemuimg.create(vol.volumePath, size=size,
+                           format=qemuimg.FORMAT.QCOW2, backing=backing)
+        vol_list.append(vol)
+        parent_vol_id = vol_id
+    return vol_list

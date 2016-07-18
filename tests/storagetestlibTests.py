@@ -24,11 +24,14 @@ from testlib import expandPermutations, permutations
 from testlib import namedTemporaryDir
 from testlib import VdsmTestCase
 from testlib import TEMPDIR
+from storagetestlib import fake_env
 from storagetestlib import fake_block_env
 from storagetestlib import fake_file_env
 from storagetestlib import make_block_volume
 from storagetestlib import make_file_volume
 from storagetestlib import qemu_pattern_write, qemu_pattern_verify
+from storagetestlib import make_qemu_chain, write_qemu_chain, verify_qemu_chain
+from storagetestlib import ChainVerificationError
 
 from storage import blockSD, fileSD, fileVolume, sd
 
@@ -211,7 +214,7 @@ class QemuPatternVerificationTest(VdsmTestCase):
             path = os.path.join(tmpdir, 'test')
             qemuimg.create(path, '1m', img_format)
             qemu_pattern_write(path, img_format)
-            self.assertTrue(qemu_pattern_verify(path, img_format))
+            qemu_pattern_verify(path, img_format)
 
     @permutations((
         ('0', '128'),
@@ -223,8 +226,8 @@ class QemuPatternVerificationTest(VdsmTestCase):
             qemuimg.create(path, '1m', qemuimg.FORMAT.QCOW2)
             qemu_pattern_write(path, qemuimg.FORMAT.QCOW2,
                                offset=offset, len=len)
-            self.assertTrue(qemu_pattern_verify(
-                path, qemuimg.FORMAT.QCOW2, offset=offset, len=len))
+            qemu_pattern_verify(path, qemuimg.FORMAT.QCOW2, offset=offset,
+                                len=len)
 
     @permutations(((qemuimg.FORMAT.QCOW2,), (qemuimg.FORMAT.RAW,)))
     def test_no_match(self, img_format):
@@ -232,8 +235,36 @@ class QemuPatternVerificationTest(VdsmTestCase):
             path = os.path.join(tmpdir, 'test')
             qemuimg.create(path, '1m', img_format)
             qemu_pattern_write(path, img_format, pattern=2)
-            self.assertFalse(qemu_pattern_verify(path, img_format,
-                                                 pattern=4))
+            self.assertRaises(ChainVerificationError,
+                              qemu_pattern_verify, path, img_format, pattern=4)
+
+    # Although these tests use file and block environments, due to the
+    # underlying implementation, all reads and writes are to regular files.
+    @permutations((('file',), ('block',)))
+    def test_verify_chain(self, storage_type):
+        with fake_env(storage_type) as env:
+            vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
+            write_qemu_chain(vol_list)
+            verify_qemu_chain(vol_list)
+
+    @permutations((('file',), ('block',)))
+    def test_reversed_chain_raises(self, storage_type):
+        with fake_env(storage_type) as env:
+            vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 2)
+            write_qemu_chain(reversed(vol_list))
+            self.assertRaises(ChainVerificationError,
+                              verify_qemu_chain, vol_list)
+
+    @permutations((('file',), ('block',)))
+    def test_pattern_written_to_base_raises(self, storage_type):
+        with fake_env(storage_type) as env:
+            vol_list = make_qemu_chain(env, MB, sc.RAW_FORMAT, 3)
+
+            # Writes the entire pattern into the base volume
+            bad_list = vol_list[:1] * 3
+            write_qemu_chain(bad_list)
+            self.assertRaises(ChainVerificationError,
+                              verify_qemu_chain, vol_list)
 
 
 def set_domain_metaparams(manifest, params):
