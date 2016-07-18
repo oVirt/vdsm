@@ -2141,8 +2141,7 @@ class Vm(object):
         self.log.info("Hotplug NIC xml: %s", nicXml)
 
         try:
-            if nic.is_hostdevice:
-                hostdev.detach_detachable(nicParams[hwclass.HOSTDEV])
+            nic.setup()
             self._dom.attachDevice(nicXml)
         except libvirt.libvirtError as e:
             self.log.exception("Hotplug failed")
