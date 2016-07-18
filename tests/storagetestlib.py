@@ -228,7 +228,8 @@ def make_block_volume(lvm, sd_manifest, size, imguuid, voluuid,
     sduuid = sd_manifest.sdUUID
     image_manifest = image.ImageManifest(sd_manifest.getRepoPath())
     imagedir = image_manifest.getImageDir(sduuid, imguuid)
-    os.makedirs(imagedir)
+    if not os.path.exists(imagedir):
+        os.makedirs(imagedir)
 
     size_mb = utils.round(size, MB) / MB
     lvm.createLV(sduuid, voluuid, size_mb)
