@@ -23,11 +23,12 @@ import os.path
 from vdsm import constants
 
 from virt import vmdevices
+from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from virt.domain_descriptor import DomainDescriptor
 
-from monkeypatch import MonkeyPatchScope
-from testlib import permutations, expandPermutations
+from monkeypatch import MonkeyPatch, MonkeyPatchScope
+from testlib import permutations, expandPermutations, make_config
 from testlib import VdsmTestCase as TestCaseBase
 from testlib import XMLTestCase
 import vmfakelib as fake
@@ -473,6 +474,7 @@ class TestVmDevices(XMLTestCase):
             self.assertEqual(graphDev.port, graphConf['port'])
             self.assertEqual(graphDev.tlsPort, graphConf['tlsPort'])
 
+    @MonkeyPatch(graphics, 'config', make_config([('vars', 'ssl', 'true')]))
     def testLegacyGraphicsXML(self):
         vmConfs = [
             {'display': 'vnc', 'displayPort': '-1', 'displayNetwork':
@@ -494,6 +496,7 @@ class TestVmDevices(XMLTestCase):
         for vmConf, xml in zip(vmConfs, self.GRAPHICS_XMLS):
             self._verifyGraphicsXML(vmConf, xml, isLegacy=True)
 
+    @MonkeyPatch(graphics, 'config', make_config([('vars', 'ssl', 'true')]))
     def testGraphicsDeviceXML(self):
         vmConfs = [
             {'devices': [{
