@@ -193,7 +193,7 @@ class Interface(Base):
 
     def setup(self):
         if self.is_hostdevice:
-            logging.debug('Detaching device %s from the host.' % self.device)
+            logging.debug('Detaching device %s from the host.' % self.hostdev)
             detach_detachable(self.hostdev)
 
     @property
