@@ -1211,6 +1211,7 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/network/canonicalize.py*
 %{python_sitelib}/%{vdsm_name}/network/connectivity.py*
 %{python_sitelib}/%{vdsm_name}/network/ip/*.py*
+%{python_sitelib}/%{vdsm_name}/network/ifacquire.py*
 %{python_sitelib}/%{vdsm_name}/network/ipwrapper.py*
 %{python_sitelib}/%{vdsm_name}/network/kernelconfig.py*
 %{python_sitelib}/%{vdsm_name}/network/legacy_switch.py*
