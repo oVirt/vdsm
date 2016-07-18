@@ -108,6 +108,15 @@ def fake_block_env(obj=None):
                 oop.stop()
 
 
+def fake_env(storage_type):
+    if storage_type == 'file':
+        return fake_file_env()
+    elif storage_type == 'block':
+        return fake_block_env()
+    else:
+        raise ValueError("Invalid storage_type: %r" % storage_type)
+
+
 class FakeMetadata(dict):
     @contextmanager
     def transaction(self):
