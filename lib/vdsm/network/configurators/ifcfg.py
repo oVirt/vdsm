@@ -776,6 +776,11 @@ def _dev_type(content):
         return "Other"
 
 
+def ifup(iface):
+    """Bring up an interface"""
+    _exec_ifup_by_name(iface, cgroup=None)
+
+
 def ifdown(iface):
     "Bring down an interface"
     rc, _, _ = commands.execCmd([constants.EXT_IFDOWN, iface], raw=True)
