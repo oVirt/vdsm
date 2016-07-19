@@ -231,9 +231,9 @@ class QemuPatternVerificationTest(VdsmTestCase):
         with namedTemporaryDir() as tmpdir:
             path = os.path.join(tmpdir, 'test')
             qemuimg.create(path, '1m', img_format)
-            qemu_pattern_write(path, img_format, pattern='2')
+            qemu_pattern_write(path, img_format, pattern=2)
             self.assertFalse(qemu_pattern_verify(path, img_format,
-                                                 pattern='4'))
+                                                 pattern=4))
 
 
 def set_domain_metaparams(manifest, params):
