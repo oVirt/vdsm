@@ -150,12 +150,18 @@ def run():
     except:
         log.error("Exception raised", exc_info=True)
 
-    log.info("VDSM main thread ended. Waiting for %d other threads..." %
-             (threading.activeCount() - 1))
+    log.info("Stopping threads")
     for t in threading.enumerate():
         if hasattr(t, 'stop'):
+            log.info("Stopping %s", t)
             t.stop()
-        log.info(str(t))
+
+    me = threading.current_thread()
+    for t in threading.enumerate():
+        if t is not me:
+            log.debug("%s is still running", t)
+
+    log.info("Exiting")
 
 
 def install_manhole(locals):
