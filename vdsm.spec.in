@@ -1669,6 +1669,7 @@ exit 0
 %{_datadir}/%{vdsm_name}/gluster/api.py*
 %{_datadir}/%{vdsm_name}/gluster/apiwrapper.py*
 %{_datadir}/%{vdsm_name}/gluster/fstab.py*
+%{python_sitelib}/%{vdsm_name}/gluster/fence.py*
 %{python_sitelib}/%{vdsm_name}/rpc/vdsm-api-gluster.yml
 %{_datadir}/%{vdsm_name}/gluster/gfapi.py*
 %{_datadir}/%{vdsm_name}/gluster/hooks.py*

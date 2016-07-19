@@ -27,4 +27,10 @@ common = \
 	exception.py \
 	$(NULL)
 
-dist_vdsmgluster_PYTHON = $(common)
+if GLUSTER_MGMT
+gluster_mgmt = \
+	fence.py \
+	$(NULL)
+endif
+
+dist_vdsmgluster_PYTHON = $(common) $(gluster_mgmt)

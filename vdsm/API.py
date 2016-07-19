@@ -62,6 +62,12 @@ try:
 except ImportError:
     pass
 
+try:
+    import vdsm.gluster.fence as glusterFence
+except ImportError:
+    pass
+
+
 # default message for system shutdown, will be displayed in guest
 USER_SHUTDOWN_MESSAGE = 'System going down'
 
@@ -1227,16 +1233,25 @@ class Global(APIBase):
             return cleantext
 
         def should_fence(policy):
-            # skip fence execution if map of storage domains with host id is
-            # entered and at least one storage domain connection from host is
-            # alive
+            # Skip fencing if any of the condition mentioned in the fencing
+            # policy is met
+            result = False
             if policy is None:
                 self.log.debug('No policy specified')
                 return True
+            result = check_virt_fencing_policies(policy)
+            if result:
+                result = check_gluster_fencing_policies(policy)
+            return result
 
+        def check_virt_fencing_policies(policy):
+            # skip fence execution if map of storage domains with host id is
+            # entered and at least one storage domain connection from host is
+            # alive. Also enforce the following gluster related fencing
+            # policies.
             hostIdMap = policy.get('storageDomainHostIdMap')
             if not hostIdMap:
-                self.log.warning('Invalid policy specified')
+                self.log.warning('No storageDomainHostIdMap provided')
                 return True
 
             result = self._irs.getHostLeaseStatus(hostIdMap)
@@ -1255,6 +1270,39 @@ class Global(APIBase):
                     return False
 
             self.log.debug("Host doesn't have any live lease")
+            return True
+
+        def check_gluster_fencing_policies(policy):
+            # If skipFencingIfGlusterBricksUp is set to true the fencing should
+            # should be skipped if there is any brick up running in the host
+            # being fenced.
+            skipFencingIfGlusterBricksUp = \
+                policy.get('skipFencingIfGlusterBricksUp')
+            # If skipFencingIfGlusterQuorumNotMet is set to true then fencing
+            # should be skipped if the gluster bricks are UP and fencing
+            # this host will bring down those bricks and quourm will be
+            # lost for any replicated volume in the gluster.
+            skipFencingIfGlusterQuorumNotMet = \
+                policy.get('skipFencingIfGlusterQuorumNotMet')
+            hostUuid = policy.get('glusterServerUuid')
+            if skipFencingIfGlusterBricksUp \
+                    or skipFencingIfGlusterQuorumNotMet:
+                if not glusterFence:
+                    self.log.error("Required vdsm-gluster package is "
+                                   "missing on this host. Note that "
+                                   "gluster related fencing will not be"
+                                   "enforced!. Please install the missing "
+                                   "package in order to enforce gluster "
+                                   "related fencing polices")
+                    return True
+                result, msg = glusterFence. \
+                    can_fence_host(supervdsm.getProxy(), hostUuid,
+                                   skipFencingIfGlusterBricksUp,
+                                   skipFencingIfGlusterQuorumNotMet)
+
+                self.log.debug(msg)
+                return result
+
             return True
 
         self.log.debug('fenceNode(addr=%s,port=%s,agent=%s,user=%s,passwd=%s,'

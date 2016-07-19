@@ -1112,6 +1112,28 @@ types:
                 action execution is unaffected by content of the map.
             name: storageDomainHostIdMap
             type: *HostIdMap
+
+        -   defaultvalue: False
+            description: A boolean value to indicate fence actions 'on', 'off'
+                and 'reboot' should be skipped if there is any 'UP' brick from
+                the host being fenced. Execution of 'status' action is
+                unaffected by this value.
+            name: skipFencingIfGlusterBricksUp
+            type: boolean
+
+        -   defaultvalue: False
+            description: A boolean value to indicate fence actions 'on', 'off'
+                and 'reboot' should be skipped if there is any 'UP' brick from
+                the host being fenced and killing that brick will make the
+                gluster volume to lose the quorum. Execution of 'status' action
+                is unaffected by this value.
+            name: skipFencingIfGlusterQuorumNotMet
+            type: boolean
+
+        -   defaultvalue: null
+            description: Gluster Server UUID of the host being fenced
+            name: glusterServerUuid
+            type: *UUID
         type: object
 
     GuestContainerInfo: &GuestContainerInfo
