@@ -19,10 +19,12 @@
 from __future__ import absolute_import
 
 import itertools
+import random
 
 import six
 
 from vdsm.network import errors as ne
+from vdsm.network.netlink import link
 from vdsm.network.netinfo import bonding
 from vdsm.network.netinfo.nics import nics
 from vdsm.utils import random_iface_name
@@ -225,6 +227,8 @@ class Setup(object):
             vlan = attrs.get('vlan')
             if vlan is not None:
                 self._set_vlan(net, vlan)
+            if nic is not None and vlan is None:
+                self._copy_nic_hwaddr_to_nb(net, nic)
 
             self._northbounds_by_sb.setdefault(sb, set()).add(net)
 
@@ -238,9 +242,16 @@ class Setup(object):
     def _set_vlan(self, net, vlan):
         self._transaction.add(self._ovsdb.set_port_attr(net, 'tag', vlan))
 
+    def _copy_nic_hwaddr_to_nb(self, net, nic):
+        nic_mac = _get_mac(nic)
+        self._transaction.add(self._ovsdb.set_interface_attr(
+            net, 'mac', nic_mac))
+
     def _create_bridge(self):
         bridge = self._create_br_name()
         self._transaction.add(self._ovsdb.add_br(bridge))
+        self._transaction.add(self._ovsdb.set_bridge_attr(
+            bridge, 'other-config:hwaddr', _random_unicast_local_mac()))
         return bridge
 
     @staticmethod
@@ -257,6 +268,19 @@ class Setup(object):
             bridge, bond, slaves, fake_iface=True))
         self._transaction.add(self._ovsdb.set_port_attr(
             bond, 'other_config:vdsm_level', info.SOUTHBOUND))
+
+
+def _random_unicast_local_mac():
+    macaddr = random.randint(0x000000000000, 0xffffffffffff)
+    macaddr |= 0x020000000000  # locally administered
+    macaddr &= 0xfeffffffffff  # unicast
+    macaddr_str = '{:0>12x}'.format(macaddr)
+    return ':'.join([macaddr_str[i:i+2]
+                     for i in range(0, len(macaddr_str), 2)])
+
+
+def _get_mac(iface):
+    return link.get_link(iface)['address']
 
 
 def _cleanup_unused_bridges(ovsdb):

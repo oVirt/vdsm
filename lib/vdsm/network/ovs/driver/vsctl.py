@@ -203,11 +203,21 @@ class Vsctl(DriverAPI):
         return Command(['list-ports', bridge])
 
     def set_db_entry(self, table, row, key, value):
+        if type(value) is str and ':' in value:
+            value = _escape_value(value)
         command = ['set', table, row, '%s=%s' % (key, value)]
         return Command(command)
 
     def do_nothing(self):
         return Command([])
+
+
+def _escape_value(value):
+    """
+    \"foobar\" escaping is needed in order to be able to to pass strings which
+    contains colons (such as hwaddr).
+    """
+    return '\"{}\"'.format(value)
 
 
 def _val_to_py(val):
