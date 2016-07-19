@@ -19,8 +19,8 @@
 #
 
 from testlib import VdsmTestCase
-from gluster import exception as gluster_exception
-from gluster.exception import GlusterException
+from vdsm.gluster import exception as gluster_exception
+from vdsm.gluster.exception import GlusterException
 
 
 class TestGlusterException(VdsmTestCase):

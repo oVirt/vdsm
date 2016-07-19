@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@ import os
 import selinux
 from functools import wraps
 from vdsm.define import doneCode
+from vdsm.gluster import exception as ge
 from vdsm.storage import mount
 from vdsm import constants
 from vdsm import commands
@@ -31,7 +32,6 @@ from vdsm import utils
 from vdsm import supervdsm as svdsm
 from pwd import getpwnam
 
-import exception as ge
 from . import gluster_mgmt_api
 from . import safeWrite
 import fstab

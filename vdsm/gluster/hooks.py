@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,8 +26,10 @@ import hashlib
 import magic
 import logging
 import selinux
-import exception as ge
 from functools import wraps
+
+from vdsm.gluster import exception as ge
+
 from . import gluster_mgmt_api
 from . import safeWrite
 

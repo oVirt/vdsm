@@ -1,5 +1,5 @@
 #
-# Copyright 2012 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,8 +27,8 @@ import xml.etree.cElementTree as etree
 
 from vdsm import commands
 from vdsm import utils
+from vdsm.gluster import exception as ge
 from vdsm.network.netinfo import addresses
-import exception as ge
 from . import gluster_mgmt_api, gluster_api
 
 _glusterCommandPath = utils.CommandPath("gluster",

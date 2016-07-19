@@ -402,6 +402,7 @@ AC_OUTPUT([
 	lib/vdsm/tool/configurators/Makefile
 	lib/api/Makefile
 	lib/yajsonrpc/Makefile
+	lib/vdsm/gluster/Makefile
 	lib/vdsm/host/Makefile
 	lib/vdsm/network/Makefile
 	lib/vdsm/network/configurators/Makefile

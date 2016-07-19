@@ -32,7 +32,7 @@ from vdsm.exception import VdsmException
 
 try:
     import gluster.apiwrapper as gapi
-    import gluster.exception as ge
+    from vdsm.gluster import exception as ge
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False

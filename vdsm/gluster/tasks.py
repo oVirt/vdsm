@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2013-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,11 +19,11 @@
 #
 import logging
 
-import exception as ge
 from . import gluster_mgmt_api
 from . import cli
 from cli import TaskType
 
+from vdsm.gluster import exception as ge
 
 log = logging.getLogger("Gluster")
 

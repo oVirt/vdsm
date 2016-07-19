@@ -19,7 +19,7 @@
 #
 include $(top_srcdir)/build-aux/Makefile.subs
 
-SUBDIRS=common tool profiling rpc network virt storage host metrics
+SUBDIRS=common tool profiling rpc network virt storage host metrics gluster
 
 dist_vdsmpylib_PYTHON = \
 	__init__.py \

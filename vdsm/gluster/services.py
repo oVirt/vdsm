@@ -1,5 +1,5 @@
 #
-# Copyright 2013 Red Hat, Inc.
+# Copyright 2012-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,9 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import exception as ge
+from vdsm.gluster import exception as ge
 from vdsm.tool import service
+
 from . import gluster_mgmt_api
 
 

@@ -23,7 +23,7 @@ import fileVolume
 from sdc import sdCache
 import vdsm.supervdsm as svdsm
 try:
-    from gluster.exception import GlusterException
+    from vdsm.gluster.exception import GlusterException
     _glusterEnabled = True
 except ImportError:
     _glusterEnabled = False

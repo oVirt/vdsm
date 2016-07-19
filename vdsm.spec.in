@@ -1108,7 +1108,6 @@ exit 0
 %dir %{_datadir}/%{vdsm_name}/gluster
 %{_datadir}/%{vdsm_name}/gluster/__init__.py*
 %{_datadir}/%{vdsm_name}/gluster/cli.py*
-%{_datadir}/%{vdsm_name}/gluster/exception.py*
 %{python_sitelib}/sos/plugins/vdsm.py*
 %{_udevrulesdir}/12-vdsm-lvm.rules
 /etc/security/limits.d/99-vdsm.conf
@@ -1149,6 +1148,7 @@ exit 0
 %dir %{python_sitelib}/%{vdsm_name}
 %dir %{python_sitelib}/%{vdsm_name}/common
 %dir %{python_sitelib}/%{vdsm_name}/common/network
+%dir %{python_sitelib}/%{vdsm_name}/gluster
 %dir %{python_sitelib}/%{vdsm_name}/host
 %dir %{python_sitelib}/%{vdsm_name}/network
 %dir %{python_sitelib}/%{vdsm_name}/network/configurators
@@ -1181,6 +1181,10 @@ exit 0
 %{python_sitelib}/%{vdsm_name}/dmidecodeUtil.py*
 %{python_sitelib}/%{vdsm_name}/exception.py*
 %{python_sitelib}/%{vdsm_name}/executor.py*
+# gluster.exception is used in many places like Bridge.py. So it is required
+# even without vdsm-gluster package
+%{python_sitelib}/%{vdsm_name}/gluster/__init__.py*
+%{python_sitelib}/%{vdsm_name}/gluster/exception.py*
 %{python_sitelib}/%{vdsm_name}/health.py*
 %{python_sitelib}/%{vdsm_name}/hooks.py*
 %{python_sitelib}/%{vdsm_name}/hostdev.py*

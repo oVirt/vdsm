@@ -29,6 +29,8 @@
 # IMPORTANT NOTE: USE CODES BETWEEN 4100 AND 4800
 #
 ########################################################
+#
+from __future__ import absolute_import
 
 from vdsm.exception import VdsmException
 

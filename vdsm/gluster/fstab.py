@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,7 +22,8 @@ import logging
 import os
 from collections import namedtuple
 
-import exception as ge
+from vdsm.gluster import exception as ge
+
 from . import safeWrite
 
 

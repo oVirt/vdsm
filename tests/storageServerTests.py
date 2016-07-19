@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,13 +20,14 @@
 
 from monkeypatch import MonkeyPatch
 import gluster.cli
-import gluster.exception as ge
 from testlib import permutations, expandPermutations
 from testlib import VdsmTestCase
 from storage.storageServer import GlusterFSConnection
 from storage.storageServer import IscsiConnection
 from storage.storageServer import MountConnection
 from storage import storageServer
+
+from vdsm.gluster import exception as ge
 
 
 class FakeSupervdsm(object):

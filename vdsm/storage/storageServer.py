@@ -35,6 +35,7 @@ from vdsm import concurrent
 from vdsm import supervdsm
 from vdsm import udevadm
 from vdsm import utils
+from vdsm.gluster import exception as ge
 from vdsm.storage import exception as se
 from vdsm.storage import fileUtils
 from vdsm.storage import misc
@@ -45,7 +46,6 @@ from vdsm.storage.mount import MountError
 import fileSD
 import iscsi
 import gluster.cli
-import gluster.exception as ge
 
 
 class AliasAlreadyRegisteredError(RuntimeError):

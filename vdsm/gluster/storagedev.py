@@ -1,5 +1,5 @@
 #
-# Copyright 2015 Red Hat, Inc.
+# Copyright 2015-2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,9 +32,9 @@ from blivet import udev
 
 from vdsm import commands
 from vdsm import utils
+from vdsm.gluster import exception as ge
 
 import fstab
-import exception as ge
 from . import gluster_mgmt_api
 
 

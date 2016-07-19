@@ -1,5 +1,4 @@
-#
-# Copyright 2012-2016 Red Hat, Inc.
+# Copyright 2016 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,27 +16,4 @@
 #
 # Refer to the README and COPYING files for full details of the license
 #
-
-include $(top_srcdir)/build-aux/Makefile.subs
-
-vdsmglusterdir = $(vdsmdir)/gluster
-
-common = \
-	__init__.py \
-	cli.py \
-	$(NULL)
-
-if GLUSTER_MGMT
-gluster_mgmt = \
-	api.py \
-	apiwrapper.py \
-	fstab.py \
-	gfapi.py \
-	hooks.py \
-	services.py \
-	storagedev.py \
-	tasks.py \
-	$(NULL)
-endif
-
-dist_vdsmgluster_PYTHON = $(common) $(gluster_mgmt)
+from __future__ import absolute_import
