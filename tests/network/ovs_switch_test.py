@@ -73,8 +73,12 @@ class ListAcquiredIfacesTests(VdsmTestCase):
             self, _ovs_info, nets2add, bonds2add, bonds2edit, expected_ifaces):
 
         ovsdb = driver.vsctl.create()
+
         with mock.patch('vdsm.network.ovs.driver.vsctl.Transaction.commit',
-                        lambda x: None):
+                        return_value=None), \
+            mock.patch('vdsm.network.ovs.switch.link.get_link',
+                       return_value={'address': '01:23:45:67:89:ab'}):
+
             with switch.Setup(ovsdb, _ovs_info) as s:
                 s.edit_bonds(bonds2edit)
                 s.add_bonds(bonds2add)
