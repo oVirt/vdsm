@@ -23,6 +23,7 @@ import os.path
 from vdsm import constants
 
 from virt import vmdevices
+from virt.vmdevices import graphics
 from virt.vmdevices import hwclass
 from virt.domain_descriptor import DomainDescriptor
 
