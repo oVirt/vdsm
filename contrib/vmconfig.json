@@ -1,0 +1,47 @@
+{
+  "acpiEnable": "true",
+  "bootMenuEnable": "false",
+  "cpuType": "Conroe",
+  "devices": [
+    {
+      "device": "qxl",
+      "type": "video"
+    },
+    {
+      "device": "vnc",
+      "type": "graphics"
+    },
+    {
+      "bootOrder": "1",
+      "device": "cdrom",
+      "iface": "ide",
+      "index": "2",
+      "path": "",
+      "readonly": "true",
+      "shared": "false",
+      "type": "disk"
+    }
+  ],
+  "emulatedMachine": "pc-i440fx-rhel7.2.0",
+  "guestNumaNodes": [
+    {
+      "cpus": "0,1",
+      "memory": "4096",
+      "nodeIndex": 0
+    }
+  ],
+  "kvmEnable": "true",
+  "maxMemSize": 4194304,
+  "maxMemSlots": 16,
+  "maxVCpus": "16",
+  "memGuaranteedSize": 4096,
+  "memSize": 4096,
+  "nice": "0",
+  "smp": "2",
+  "smpCoresPerSocket": "1",
+  "smpThreadsPerCore": "1",
+  "timeOffset": "0",
+  "vmId": "",
+  "vmName": "",
+  "vmType": "kvm"
+}

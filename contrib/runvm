@@ -1,0 +1,113 @@
+#!/usr/bin/python
+#
+# Copyright 2016 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+#
+# Refer to the README and COPYING files for full details of the license
+
+# vdsClient -s 0 create /dev/null vmId=33aa53ea-c262-4e96-9e19-7555838d0fcf memSize=20 display=vnc vmName=bla
+
+from __future__ import print_function
+
+import argparse
+import json
+import sys
+import uuid
+
+from vdsm import jsonrpcvdscli
+
+
+_HOST = '127.0.0.1'
+_PORT = 54321
+_REQUEST_QUEUE = 'jms.topic.vdsm_requests'
+
+
+def _read_conf(args):
+    conf = {}
+    for filename in args.config:
+        try:
+            with open(filename, 'rt') as src:
+                conf.update(json.load(src))
+        except IOError:
+            sys.stderr.write('%r not found, skipped\n' % filename)
+    return conf
+
+
+def _update_conf(conf, args, default_uuid):
+    vm_uuid = uuid.UUID(args.id)
+    vm_name = args.name
+    if vm_name == default_uuid and vm_uuid != default_uuid:
+        vm_name = str(vm_uuid)
+
+    conf['vmId'] = str(vm_uuid)
+    conf['vmName'] = vm_name
+    if args.fix_device_ids:
+        for dev_conf in conf.get('devices', []):
+            dev_conf['deviceId'] = str(uuid.uuid4())
+
+    return conf
+
+
+def main():
+    default_uuid = str(uuid.uuid4())
+    parser = argparse.ArgumentParser('run a vm from the command line')
+    parser.add_argument('--host', type=str,
+                        default=_HOST,
+                        help='hostname to connect')
+    parser.add_argument('--port', type=int,
+                        default=_PORT,
+                        help='port to connect')
+    parser.add_argument('--no-tls',
+                        action='store_true',
+                        help='do NOT use TLS to connect')
+    parser.add_argument('--request-queue', type=str,
+                        default=_REQUEST_QUEUE,
+                        help='Vdsm request queue name')
+    parser.add_argument('--name', type=str,
+                        default=default_uuid,
+                        help='vm name')
+    parser.add_argument('--id', type=str,
+                        default=default_uuid,
+                        help='vm uuid')
+    parser.add_argument('--fix-device-ids',
+                        action='store_true',
+                        help='update each deviceId')
+    parser.add_argument('--config', type=str,
+                        nargs='+',
+                        default=['vmconfig.json'],
+                        help='vm configuration, JSON format')
+    args = parser.parse_args()
+
+
+    conf = _read_conf(args)
+    conf = _update_conf(conf, args, default_uuid)
+
+    use_tls = not args.no_tls
+    serv = jsonrpcvdscli.connect(
+        args.request_queue,
+        host=args.host,
+        port=args.port,
+        useSSL=use_tls,
+        xml_compat=False,
+    )
+
+    serv.create(conf)
+
+    print(conf['vmId'])
+
+
+if __name__ == '__main__':
+    main()
