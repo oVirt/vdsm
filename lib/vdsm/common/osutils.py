@@ -41,3 +41,19 @@ def close_fd(fd):
     except EnvironmentError as e:
         if e.errno != errno.EINTR:
             raise
+
+
+def uninterruptible(func, *args, **kwargs):
+    """
+    Call func with *args and *kwargs and return the result, retrying if func
+    failed with EINTR. This may happen if func invoked a system call and the
+    call was interrupted by signal.
+
+    WARNING: Use only with functions which are safe to restart after EINTR.
+    """
+    while True:
+        try:
+            return func(*args, **kwargs)
+        except EnvironmentError as e:
+            if e.errno != errno.EINTR:
+                raise

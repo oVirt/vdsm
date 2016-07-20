@@ -258,10 +258,6 @@ def convertToStr(val):
         return val
 
 
-# NOTE: it would be best to try and unify NoIntrCall and NoIntrPoll.
-# We could do so defining a new object that can be used as a placeholder
-# for the changing timeout value in the *args/**kwargs. This would
-# lead us to rebuilding the function arguments at each loop.
 def NoIntrPoll(pollfun, timeout=-1):
     """
     This wrapper is used to handle the interrupt exceptions that might
@@ -282,20 +278,6 @@ def NoIntrPoll(pollfun, timeout=-1):
 
         if endtime is not None:
             timeout = max(0, endtime - time.time())
-
-
-def NoIntrCall(callfun, *args, **kwargs):
-    """
-    This wrapper is used to handle the interrupt exceptions that might
-    occur during a system call.
-    """
-    while True:
-        try:
-            return callfun(*args, **kwargs)
-        except (IOError, select.error) as e:
-            if e.args[0] == os.errno.EINTR:
-                continue
-            raise
 
 
 class CommandStream(object):

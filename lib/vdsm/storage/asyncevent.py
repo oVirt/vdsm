@@ -69,6 +69,7 @@ import os
 
 from vdsm import utils
 from vdsm.common import filecontrol
+from vdsm.common import osutils
 
 log = logging.getLogger("storage.asyncevent")
 
@@ -467,7 +468,7 @@ class Waker(asyncore.file_dispatcher):
 
     def wakeup(self):
         try:
-            utils.NoIntrCall(os.write, self._wfd, b"\0")
+            osutils.uninterruptible(os.write, self._wfd, b"\0")
         except OSError as e:
             if self.closing:
                 # Another thread tried to wake up after loop was closed.
@@ -478,7 +479,7 @@ class Waker(asyncore.file_dispatcher):
             raise
 
     def handle_read(self):
-        utils.NoIntrCall(self.socket.read, 1024)
+        osutils.uninterruptible(self.socket.read, 1024)
 
     def handle_close(self):
         log.error("Wakeup read end was closed")

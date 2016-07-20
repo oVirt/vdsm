@@ -46,3 +46,32 @@ class TestCloseFd(VdsmTestCase):
         with self.assertRaises(OSError) as e:
             osutils.close_fd(-1)
         self.assertEqual(e.exception.errno, errno.EBADF)
+
+
+class TestUniterruptible(VdsmTestCase):
+
+    def test_retry_on_eintr(self):
+        count = [0]
+
+        def fail(n):
+            count[0] += 1
+            if count[0] == n:
+                return n
+            raise OSError(errno.EINTR, "Fake error")
+
+        self.assertEqual(osutils.uninterruptible(fail, 3), 3)
+
+    def test_raise_other(self):
+
+        def fail():
+            raise OSError(0, "Fake error")
+
+        self.assertRaises(OSError, osutils.uninterruptible, fail)
+
+    def test_args_kwargs(self):
+
+        def func(*args, **kwargs):
+            return args, kwargs
+
+        self.assertEqual(osutils.uninterruptible(func, "a", "b", c=3),
+                         (("a", "b"), {"c": 3}))

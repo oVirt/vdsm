@@ -34,6 +34,7 @@ from testlib import expandPermutations, permutations
 
 from vdsm import concurrent
 from vdsm import utils
+from vdsm.common import osutils
 from vdsm.storage import asyncevent
 
 
@@ -468,9 +469,9 @@ class TestEventLoopTiming(VdsmTestCase):
             try:
                 start = time.time()
                 for sock in sockets:
-                    utils.NoIntrCall(sock.send, msg)
+                    osutils.uninterruptible(sock.send, msg)
                 for sock in sockets:
-                    data = utils.NoIntrCall(sock.recv, len(msg))
+                    data = osutils.uninterruptible(sock.recv, len(msg))
                     self.assertEqual(data, msg)
                 elapsed = time.time() - start
                 print("%7d echos: %f seconds" % (concurrency, elapsed))
@@ -485,8 +486,8 @@ class TestEventLoopTiming(VdsmTestCase):
 class Echo(asyncore.dispatcher):
 
     def handle_read(self):
-        data = utils.NoIntrCall(self.socket.recv, 4096)
-        utils.NoIntrCall(self.socket.send, data)
+        data = osutils.uninterruptible(self.socket.recv, 4096)
+        osutils.uninterruptible(self.socket.send, data)
 
     def writable(self):
         return False

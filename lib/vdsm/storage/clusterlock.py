@@ -467,7 +467,8 @@ class LocalLock(object):
 
             if lockFile:
                 try:
-                    utils.NoIntrCall(fcntl.fcntl, lockFile, fcntl.F_GETFD)
+                    osutils.uninterruptible(fcntl.fcntl, lockFile,
+                                            fcntl.F_GETFD)
                 except IOError as e:
                     # We found a stale file descriptor, removing.
                     del self._globalLockMap[self._sdUUID]
@@ -480,11 +481,12 @@ class LocalLock(object):
                                    "%s (id: %s)", self._sdUUID, hostId)
                     return  # success, the lock was already acquired
 
-            lockFile = utils.NoIntrCall(os.open, self._idsPath, os.O_RDONLY)
+            lockFile = osutils.uninterruptible(os.open, self._idsPath,
+                                               os.O_RDONLY)
 
             try:
-                utils.NoIntrCall(fcntl.flock, lockFile,
-                                 fcntl.LOCK_EX | fcntl.LOCK_NB)
+                osutils.uninterruptible(fcntl.flock, lockFile,
+                                        fcntl.LOCK_EX | fcntl.LOCK_NB)
             except IOError as e:
                 osutils.close_fd(lockFile)
                 if e.errno in (errno.EACCES, errno.EAGAIN):

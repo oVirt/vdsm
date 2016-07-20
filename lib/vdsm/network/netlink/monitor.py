@@ -25,8 +25,9 @@ import os
 import select
 import threading
 
-from vdsm.utils import NoIntrCall, NoIntrPoll, monotonic_time
+from vdsm.utils import NoIntrPoll, monotonic_time
 from vdsm import concurrent
+from vdsm.common.osutils import uninterruptible
 
 from . import (LIBNL, _GROUPS, _NL_ROUTE_ADDR_NAME, _NL_ROUTE_LINK_NAME,
                _NL_ROUTE_NAME, _NL_STOP, _add_socket_memberships,
@@ -153,7 +154,7 @@ class Monitor(object):
                             break
                         # stopped by pipetrick
                         elif (self._pipetrick[0], select.POLLIN) in events:
-                            NoIntrCall(os.read, self._pipetrick[0], 1)
+                            uninterruptible(os.read, self._pipetrick[0], 1)
                             self._queue.put(_STOP_FLAG)
                             break
 
