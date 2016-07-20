@@ -90,6 +90,7 @@ test_modules = \
 	numaUtilsTests.py \
 	outOfProcessTests.py \
 	osinfo_test.py \
+	osutils_test.py \
 	passwordsTests.py \
 	periodicTests.py \
 	permutationTests.py \
