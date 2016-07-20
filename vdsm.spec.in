@@ -195,8 +195,8 @@ Requires: sanlock >= 2.8-2, sanlock-python
 Requires: device-mapper-multipath >= 0.4.9-84.el7
 %endif #rhel
 
-%if 0%{?fedora} >= 23
-Requires: device-mapper-multipath >= 0.4.9-80.fc23
+%if 0%{?fedora}
+Requires: device-mapper-multipath >= 0.4.9-80
 %endif
 
 %if 0%{?rhel}
