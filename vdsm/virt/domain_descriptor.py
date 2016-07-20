@@ -20,14 +20,10 @@
 from . import vmxml
 
 
-class DomainDescriptor(object):
+class MutableDomainDescriptor(object):
 
     def __init__(self, xmlStr):
-        self._xml = xmlStr
         self._dom = vmxml.parse_xml(xmlStr)
-        self._devices = vmxml.find_first(self._dom, 'devices', None)
-        self._devices_hash = hash(vmxml.format_xml(self._devices)
-                                  if self._devices is not None else '')
 
     @classmethod
     def from_id(cls, uuid):
@@ -35,18 +31,19 @@ class DomainDescriptor(object):
 
     @property
     def xml(self):
-        return self._xml
+        return vmxml.parse_xml(self._dom)
 
     @property
     def devices(self):
-        return self._devices
+        return vmxml.find_first(self._dom, 'devices', None)
 
     def get_device_elements(self, tagName):
         return vmxml.find_all(self._devices, tagName)
 
     @property
     def devices_hash(self):
-        return self._devices_hash
+        devices = self.devices
+        return hash(vmxml.format_xml(devices) if devices is not None else '')
 
     def all_channels(self):
         for channel in vmxml.find_all(self._devices, 'channel'):
@@ -61,3 +58,24 @@ class DomainDescriptor(object):
         """
         memory = vmxml.find_first(self._dom, "memory")
         return (int(vmxml.text(memory)) // 1024 if memory else None)
+
+
+class DomainDescriptor(MutableDomainDescriptor):
+
+    def __init__(self, xmlStr):
+        super(DomainDescriptor, self).__init__(xmlStr)
+        self._xml = xmlStr
+        self._devices = super(DomainDescriptor, self).devices
+        self._devices_hash = super(DomainDescriptor, self).devices_hash
+
+    @property
+    def xml(self):
+        return self._xml
+
+    @property
+    def devices(self):
+        return self._devices
+
+    @property
+    def devices_hash(self):
+        return self._devices_hash
