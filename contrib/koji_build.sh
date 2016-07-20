@@ -6,7 +6,7 @@ make distclean
     --system \
     --disable-ovirt-imageio \
     --disable-ovirt-vmconsole \
-    --enable-vhostmd-hook \
+    --enable-vhostmd \
     --enable-hooks
 make srpm
 
