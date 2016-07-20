@@ -37,6 +37,7 @@ from vdsm.constants import P_VDSM_RUN, P_VDSM_CLIENT_LOG
 from vdsm.host import api as hostapi
 from vdsm.network import ipwrapper
 from vdsm.network.netinfo import nics, bonding, vlans
+from vdsm.virt import vmstats
 from vdsm.virt.utils import ExpiringCache
 
 
@@ -532,6 +533,21 @@ class VMBulkSampler(object):
         finally:
             if acquired:
                 self._sampling.release()
+        self._send_metrics()
+
+    def _send_metrics(self):
+        vms = self._get_vms()
+        vm_samples = self._stats_cache.get_batch()
+        if vm_samples is None:
+            return
+        stats = {
+            vm_id: vmstats.produce(vms[vm_id],
+                                   vm_sample.first_value,
+                                   vm_sample.last_value,
+                                   vm_sample.interval)
+            for vm_id, vm_sample in vm_samples.items()
+        }
+        vmstats.report_stats(stats)
 
     def _get_responsive_doms(self):
         vms = self._get_vms()
