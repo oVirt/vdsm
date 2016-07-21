@@ -18,7 +18,6 @@
 # Refer to the README and COPYING files for full details of the license
 #
 
-import logging
 import xml.etree.ElementTree as ET
 from xml.dom import Node
 
@@ -194,7 +193,7 @@ class Interface(Base):
 
     def setup(self):
         if self.is_hostdevice:
-            logging.info('Detaching device %s from the host.' % self.hostdev)
+            self.log.info('Detaching device %s from the host.' % self.hostdev)
             detach_detachable(self.hostdev)
 
     def teardown(self):
