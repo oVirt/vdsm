@@ -1184,10 +1184,26 @@ def reduceLV(vgName, lvName, size):
 
 
 def activateLVs(vgName, lvNames):
-    toActivate = [lvName for lvName in lvNames
-                  if not _isLVActive(vgName, lvName)]
-    if toActivate:
-        _setLVAvailability(vgName, toActivate, "y")
+    """
+    Ensure that all lvNames are active and reflect the current mapping on
+    storage.
+
+    Active lvs may not reflect the current mapping on storage if the lv was
+    extended or removed on another host, so they are refreshed.
+    """
+    active = []
+    inactive = []
+    for lvName in lvNames:
+        if _isLVActive(vgName, lvName):
+            active.append(lvName)
+        else:
+            inactive.append(lvName)
+
+    if active:
+        refreshLVs(vgName, active)
+
+    if inactive:
+        _setLVAvailability(vgName, inactive, "y")
 
 
 def deactivateLVs(vgName, lvNames):
