@@ -41,6 +41,7 @@ class PciDevice(core.Base):
         self.name = self.device
 
     def setup(self):
+        self.log.info('Detaching device %s from the host.' % self.device)
         detach_detachable(self.device)
 
     def teardown(self):
