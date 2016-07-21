@@ -50,6 +50,8 @@ from nose import result
 
 import vdsm
 
+from vdsm.common import osutils
+
 from monkeypatch import Patch
 from testValidation import SlowTestsPlugin, StressTestsPlugin
 
@@ -519,8 +521,8 @@ def forked(f):
                     e = pickle.loads(os.read(r, 4006))
                     raise e
         finally:
-            os.close(r)
-            os.close(w)
+            osutils.close_fd(r)
+            osutils.close_fd(w)
 
     return wrapper
 
