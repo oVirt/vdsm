@@ -488,17 +488,16 @@ class NetworkTest(TestCaseBase):
             self.retryAssert(assertStatsInRange, timeout=3)
 
     @cleanupNet
-    @permutations([[True, 'legacy'], [False, 'legacy'],
-                   [True, 'ovs'], [False, 'ovs']])
-    def testSetupNetworksAddBondWithManyVlans(self, bridged, switch):
+    @permutations([[True], [False]])
+    def testSetupNetworksAddBondWithManyVlans(self, bridged):
         VLAN_COUNT = 5
         network_names = [NETWORK_NAME + str(tag) for tag in range(VLAN_COUNT)]
         with dummyIf(2) as nics:
             networks = dict((vlan_net,
                              {'vlan': str(tag), 'bonding': BONDING_NAME,
-                              'bridged': bridged, 'switch': switch})
+                              'bridged': bridged})
                             for tag, vlan_net in enumerate(network_names))
-            bondings = {BONDING_NAME: {'nics': nics, 'switch': switch}}
+            bondings = {BONDING_NAME: {'nics': nics}}
 
             status, msg = self.setupNetworks(networks, bondings, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
@@ -725,13 +724,11 @@ class NetworkTest(TestCaseBase):
             self.assertEqual(status, SUCCESS, msg)
 
     @cleanupNet
-    @permutations([[True, 'legacy'], [False, 'legacy'],
-                   [True, 'ovs'], [False, 'ovs']])
-    def testTwiceAdd(self, bridged, switch):
+    @permutations([[True], [False]])
+    def testTwiceAdd(self, bridged):
         with dummyIf(1) as nics:
             nic, = nics
-            net = {NETWORK_NAME: {'nic': nic, 'bridged': bridged,
-                                  'switch': switch}}
+            net = {NETWORK_NAME: {'nic': nic, 'bridged': bridged}}
             status, msg = self.vdsm_net.setupNetworks(net, {}, NOCHK)
             self.assertEqual(status, SUCCESS, msg)
 
@@ -810,9 +807,8 @@ class NetworkTest(TestCaseBase):
 
         self.assertEqual(status, SUCCESS, msg)
 
-    @permutations([[True, 'legacy'], [False, 'legacy'],
-                   [True, 'ovs'], [False, 'ovs']])
-    def testSetupNetworksAddManyVlans(self, bridged, switch):
+    @permutations([[True], [False]])
+    def testSetupNetworksAddManyVlans(self, bridged):
         VLAN_COUNT = 5
         NET_VLANS = [(NETWORK_NAME + str(index), str(index))
                      for index in range(VLAN_COUNT)]
@@ -821,7 +817,7 @@ class NetworkTest(TestCaseBase):
             nic, = nics
             networks = dict((vlan_net,
                              {'vlan': str(tag), 'nic': nic,
-                              'bridged': bridged, 'switch': switch})
+                              'bridged': bridged})
                             for vlan_net, tag in NET_VLANS)
 
             status, msg = self.setupNetworks(networks, {}, NOCHK)
